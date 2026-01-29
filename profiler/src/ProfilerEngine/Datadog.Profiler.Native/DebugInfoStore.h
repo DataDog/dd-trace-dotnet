@@ -90,6 +90,7 @@ private:
         return SymbolDebugInfo{NoFileFound, NoStartLine};
     }
 
+    bool TryLoadSymbolsWithPortable(std::string pdbFilename, std::string moduleFilename, ModuleDebugInfo& moduleInfo);
 #ifdef _WINDOWS
     bool TryLoadSymbolsWithDbgHelp(std::string pdbFile, ModuleDebugInfo& moduleInfo);
     bool TryLoadSymbolsWithSym(ModuleID moduleId, std::string& pdbFile, std::string& moduleFile, ModuleDebugInfo& moduleInfo);

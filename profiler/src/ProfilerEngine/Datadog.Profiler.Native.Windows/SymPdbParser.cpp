@@ -26,15 +26,16 @@ DEFINE_GUID(IID_ISymUnmanagedBinder,
 
 const std::string NoFileFoundString = "";
 
-SymParser::SymParser(ICorProfilerInfo4* pCorProfilerInfo, ModuleID moduleId, ModuleDebugInfo* pModuleInfo)
+SymParser::SymParser(IMetaDataImport* pMetaDataImport, ModuleDebugInfo* pModuleInfo)
     :
-    _moduleId(moduleId),
-    _pCorProfilerInfo(pCorProfilerInfo),
     _pModuleInfo(pModuleInfo),
     _pReader(nullptr),
-    _pMetaDataImport(nullptr)
+    _pMetaDataImport(pMetaDataImport)
 {
-    _pCorProfilerInfo->AddRef();
+    if (_pMetaDataImport != nullptr)
+    {
+        _pMetaDataImport->AddRef();
+    }
     _sourceFileMap.reserve(1024);
     _methods.reserve(1024);
 
@@ -44,8 +45,6 @@ SymParser::SymParser(ICorProfilerInfo4* pCorProfilerInfo, ModuleID moduleId, Mod
 
 SymParser::~SymParser()
 {
-    _pCorProfilerInfo->Release();
-
     if (_pReader != nullptr)
     {
         _pReader->Release();
@@ -66,11 +65,6 @@ bool SymParser::LoadPdbFile(const std::string& pdbFilePath, const std::string& m
     }
 
     if (GetFileAttributesA(moduleFilePath.c_str()) == INVALID_FILE_ATTRIBUTES)
-    {
-        return false;
-    }
-
-    if (!GetMetadataImport(_moduleId))
     {
         return false;
     }
@@ -102,6 +96,9 @@ bool SymParser::LoadPdbFile(const std::string& pdbFilePath, const std::string& m
     {
         _pModuleInfo->RidToDebugInfo.push_back({sym.sourceFile, sym.lineNumber});
     }
+
+
+    _pModuleInfo->LoadingState = SymbolLoadingState::Windows;
 
     return true;
 }
@@ -242,7 +239,7 @@ bool SymParser::GetMethodInfoFromSymbol(ISymUnmanagedMethod* pMethod, SymMethodI
                         std::string utf8Url(len, '\0');
                         WideCharToMultiByte(CP_UTF8, 0, &url[0], urlLen, &utf8Url[0], len, NULL, NULL);
 
-                        std::string& sourceFile = FindOrAddSourceFile(utf8Url.c_str());
+                        std::string_view sourceFile = FindOrAddSourceFile(utf8Url.c_str());
                         info.sourceFile = sourceFile;
                     }
                 }
@@ -302,24 +299,13 @@ bool SymParser::GetSymReader(const std::string& moduleFilePath)
     return true;
 }
 
-bool SymParser::GetMetadataImport(ModuleID moduleId)
-{
-    HRESULT hr = _pCorProfilerInfo->GetModuleMetaData(moduleId, CorOpenFlags::ofRead, IID_IMetaDataImport, reinterpret_cast<IUnknown**>(&_pMetaDataImport));
-    if (FAILED(hr))
-    {
-        Log::Debug("GetModuleMetaData() failed with HRESULT = ", HResultConverter::ToStringWithCode(hr));
-        return false;
-    }
-
-    return true;
-}
 
 std::vector<SymMethodInfo> SymParser::GetMethods()
 {
     return _methods;
 }
 
-std::string& SymParser::FindOrAddSourceFile(const char* filePath)
+std::string_view SymParser::FindOrAddSourceFile(const char* filePath)
 {
     // Use string_view as key to avoid creating std::string for lookup
     std::string_view key(filePath);
@@ -329,7 +315,7 @@ std::string& SymParser::FindOrAddSourceFile(const char* filePath)
     if (map_it != _sourceFileMap.end())
     {
         // Return reference to existing string
-        return *map_it->second;
+        return map_it->second;
     }
 
     // Not found - create new string and add to both containers
@@ -338,7 +324,7 @@ std::string& SymParser::FindOrAddSourceFile(const char* filePath)
     std::string& new_str = _pModuleInfo->Files.back();
 
     // Store pointer to the string in the map using string_view as key
-    _sourceFileMap.emplace(new_str, &new_str);
+    _sourceFileMap.emplace(new_str, new_str);
 
     return new_str;
 }

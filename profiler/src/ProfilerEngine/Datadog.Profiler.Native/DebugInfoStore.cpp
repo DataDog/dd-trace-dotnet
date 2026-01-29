@@ -18,6 +18,7 @@
 #ifdef _WINDOWS
 #include "..\Datadog.Profiler.Native.Windows\DbgHelpParser.h"
 #include "..\Datadog.Profiler.Native.Windows\SymPdbParser.h"
+#include "HResultConverter.h"
 #endif
 
 const std::string DebugInfoStore::NoFileFound = "";
@@ -38,7 +39,6 @@ SymbolDebugInfo DebugInfoStore::Get(ModuleID moduleId, mdMethodDef methodDef)
 
     std::unique_lock _l(_modulesMutex);
 
-    nullptr;
     auto it = _modulesInfo.find(moduleId);
     if (it == _modulesInfo.cend())
     {
@@ -94,8 +94,39 @@ void DebugInfoStore::ParseModuleDebugInfo(ModuleID moduleId)
 
 void DebugInfoStore::ParseModuleDebugInfo(ModuleID moduleId, std::string pdbFilename, std::string moduleFilename, ModuleDebugInfo& moduleInfo)
 {
-
     // first, try to load the symbols via Portable PDB
+    if (TryLoadSymbolsWithPortable(pdbFilename, moduleFilename, moduleInfo))
+    {
+        Log::Debug("PDB file ", pdbFilename, " parsed successfully (for module ", moduleFilename, ")");
+        return;
+    }
+
+#ifdef _WINDOWS
+    // try to load the symbols via Windows PDB parsers as a fallback
+    if (moduleInfo.LoadingState != SymbolLoadingState::Portable)
+    {
+        if (TryLoadSymbolsWithSym(moduleId, pdbFilename, moduleFilename, moduleInfo))
+        {
+            Log::Debug("PDB file ", pdbFilename, " parsed successfully with Sym (for module ", moduleFilename, ")");
+            return;
+        }
+        if (TryLoadSymbolsWithDbgHelp(pdbFilename, moduleInfo))
+        {
+            Log::Debug("PDB file ", pdbFilename, " parsed successfully with DbgHelp (for module ", moduleFilename, ")");
+        }
+        else
+        {
+            moduleInfo.LoadingState = SymbolLoadingState::Failed;
+            Log::Debug("Failed to parse debug info from ", pdbFilename, " with DbgHelp (for module ", moduleFilename, ")");
+        }
+    }
+#else
+    moduleInfo.LoadingState = SymbolLoadingState::Failed;
+#endif
+}
+
+bool DebugInfoStore::TryLoadSymbolsWithPortable(std::string pdbFilename, std::string moduleFilename, ModuleDebugInfo& moduleInfo)
+{
     try
     {
         auto r = PPDB::PortablePdbReader::CreateReader(pdbFilename.c_str());
@@ -104,7 +135,7 @@ void DebugInfoStore::ParseModuleDebugInfo(ModuleID moduleId, std::string pdbFile
         if (dtTable == nullptr)
         {
             Log::Warn("Unable to get the DocumentTable from the PDB file ", pdbFilename, ".");
-            return;
+            return false;
         }
 
         Log::Debug("Reading DocumentTable: ", dtTable->RowCount(), " document(s)");
@@ -146,7 +177,7 @@ void DebugInfoStore::ParseModuleDebugInfo(ModuleID moduleId, std::string pdbFile
             moduleInfo.RidToDebugInfo.emplace_back() = {moduleInfo.Files[row.InitialDocument], startLine};
         }
         moduleInfo.LoadingState = SymbolLoadingState::Portable;
-        Log::Debug("PDB file ", pdbFilename, " parsed successfully (for module ", moduleFilename, ")");
+        return true;
     }
     catch (PPDB::Exception const& ec)
     {
@@ -158,31 +189,9 @@ void DebugInfoStore::ParseModuleDebugInfo(ModuleID moduleId, std::string pdbFile
         Log::Warn("Unexpected error happened while parsing the pdb file (Module: ", moduleFilename, "): ", pdbFilename);
     }
 
-#ifdef _WINDOWS
-    // try to load the symbols via DbgHelp as a fallback
-    if (moduleInfo.LoadingState != SymbolLoadingState::Portable)
-    {
-        if (TryLoadSymbolsWithSym(moduleId, pdbFilename, moduleFilename, moduleInfo))
-        {
-            moduleInfo.LoadingState = SymbolLoadingState::Windows;
-            Log::Debug("PDB file ", pdbFilename, " parsed successfully with Sym (for module ", moduleFilename, ")");
-            return;
-        }
-        if (TryLoadSymbolsWithDbgHelp(pdbFilename, moduleInfo))
-        {
-            moduleInfo.LoadingState = SymbolLoadingState::Windows;
-            Log::Debug("PDB file ", pdbFilename, " parsed successfully with DbgHelp (for module ", moduleFilename, ")");
-        }
-        else
-        {
-            moduleInfo.LoadingState = SymbolLoadingState::Failed;
-            Log::Debug("Failed to parse debug info from ", pdbFilename, " with DbgHelp (for module ", moduleFilename, ")");
-        }
-    }
-#else
-    moduleInfo.LoadingState = SymbolLoadingState::Failed;
-#endif
+    return false;
 }
+
 
 #ifdef _WINDOWS
 bool DebugInfoStore::TryLoadSymbolsWithSym(ModuleID moduleId, std::string& pdbFile, std::string& moduleFile, ModuleDebugInfo& moduleInfo)
@@ -195,13 +204,26 @@ bool DebugInfoStore::TryLoadSymbolsWithSym(ModuleID moduleId, std::string& pdbFi
     // still need to have the first file as empty string
     moduleInfo.Files.push_back(NoFileFound);
 
-    SymParser parser(_profilerInfo, moduleId, &moduleInfo);
-    if (!parser.LoadPdbFile(pdbFile, moduleFile))
+    // Get the IMetaDataImport from the ModuleID
+    IMetaDataImport* pMetaDataImport = nullptr;
+    HRESULT hr = _profilerInfo->GetModuleMetaData(moduleId, CorOpenFlags::ofRead, IID_IMetaDataImport, reinterpret_cast<IUnknown**>(&pMetaDataImport));
+    if (FAILED(hr))
     {
+        Log::Debug("GetModuleMetaData() failed with HRESULT = ", HResultConverter::ToStringWithCode(hr));
         return false;
     }
 
-    return true;
+    // the module LoadingState is set by the parser in case of success
+    SymParser parser(pMetaDataImport, &moduleInfo);
+    bool success = parser.LoadPdbFile(pdbFile, moduleFile);
+
+    // Release the IMetaDataImport as SymParser has already AddRef'd it if needed
+    if (pMetaDataImport != nullptr)
+    {
+        pMetaDataImport->Release();
+    }
+
+    return success;
 }
 
 bool DebugInfoStore::TryLoadSymbolsWithDbgHelp(std::string pdbFile, ModuleDebugInfo& moduleInfo)
@@ -214,13 +236,11 @@ bool DebugInfoStore::TryLoadSymbolsWithDbgHelp(std::string pdbFile, ModuleDebugI
     // still need to have the first file as empty string
     moduleInfo.Files.push_back(NoFileFound);
 
+    // the module LoadingState is set by the parser in case of success
     DbgHelpParser parser(&moduleInfo);
-    if (!parser.LoadPdbFile(pdbFile))
-    {
-        return false;
-    }
+    bool success = parser.LoadPdbFile(pdbFile);
 
-    return true;
+    return success;
 }
 #endif
 

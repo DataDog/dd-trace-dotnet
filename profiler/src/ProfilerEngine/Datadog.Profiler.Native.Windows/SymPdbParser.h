@@ -21,18 +21,17 @@ struct SymMethodInfo
 class SymParser
 {
 public:
-    SymParser(ICorProfilerInfo4* pCorProfilerInfo, ModuleID moduleId, ModuleDebugInfo* pModuleInfo);
+    SymParser(IMetaDataImport* pMetaDataImport, ModuleDebugInfo* pModuleInfo);
     ~SymParser();
 
     bool LoadPdbFile(const std::string& pdbFilePath, const std::string& moduleFilePath);
     std::vector<SymMethodInfo> GetMethods();
 
 private:
-    bool GetMetadataImport(ModuleID moduleId);
     bool GetSymReader(const std::string& moduleFilePath);
     bool ComputeMethodsInfo();
     bool GetMethodInfoFromSymbol(ISymUnmanagedMethod* pMethod, SymMethodInfo& info);
-    std::string& FindOrAddSourceFile(const char* filePath);
+    std::string_view FindOrAddSourceFile(const char* filePath);
 
 private:
     // Hash functor for string_view to use as key in unordered_map
@@ -57,8 +56,6 @@ private:
     };
 
 private:
-    ModuleID _moduleId;
-    ICorProfilerInfo4* _pCorProfilerInfo;
     ModuleDebugInfo* _pModuleInfo;
 
     ISymUnmanagedReader* _pReader;
@@ -66,7 +63,7 @@ private:
 
     // strings corresponding to source file paths are stored in the given ModuleDebugInfo
     // but we use this map to avoid duplications
-    std::unordered_map<std::string_view, std::string*, StringViewHash, StringViewEqual> _sourceFileMap;
+    std::unordered_map<std::string_view, std::string_view, StringViewHash, StringViewEqual> _sourceFileMap;
 
     // this stores all the managed methods found in the PDB with string views to the source file paths
     // stored in the given ModuleDebugInfo

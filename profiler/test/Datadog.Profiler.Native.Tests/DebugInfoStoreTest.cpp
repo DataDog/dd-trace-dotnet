@@ -9,13 +9,18 @@
 #include "shared/src/native-src/dd_filesystem.hpp"
 #include "shared/src/native-src/string.h"
 
+#ifdef _WINDOWS
+#include "..\Datadog.Profiler.Native.Windows\SymPdbParser.h"
+#include <metahost.h>
+#include <atlbase.h>
+#endif
+
 using ::testing::Return;
 using ::testing::ReturnRef;
 
 #ifdef _WINDOWS
 
-// This test validates that DebugInfoStore::ParseModuleDebugInfo can parse symbols
-// from a .NET Framework PDB (Windows PDB format) using DbgHelp.
+// This test validates that SymPdbParser can parse symbols from a .NET Framework PDB (Windows PDB format).
 // .NET Framework (net48) produces Windows PDB files that cannot be parsed as Portable PDBs.
 TEST(DebugInfoStoreTest, ParseModuleDebugInfo_NetFramework)
 {
@@ -38,19 +43,84 @@ TEST(DebugInfoStoreTest, ParseModuleDebugInfo_NetFramework)
         }
     }
 
-    // Parse the PDB using DebugInfoStore
-    ModuleDebugInfo moduleInfo;
-
     // Create a minimal mock configuration
     auto [configuration, mockConfiguration] = CreateConfiguration();
     EXPECT_CALL(mockConfiguration, IsDebugInfoEnabled()).WillRepeatedly(Return(true));
 
-    // Note: We don't need a real ICorProfilerInfo4 for this test since we're using
-    // the public ParseModuleDebugInfo method that doesn't use it
-    DebugInfoStore debugInfoStore(nullptr, configuration.get());
+    // Get IMetaDataImport from the module file for Windows PDB parsing
+    IMetaDataDispenser* pMetaDataDispenser = nullptr;
+    IMetaDataImport* pMetaDataImport = nullptr;
+
+    // Initialize COM
+    HRESULT hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
+    bool comInitialized = SUCCEEDED(hr);
+
+    // Get the metadata dispenser
+    ICLRMetaHost* pMetaHost = nullptr;
+    hr = CLRCreateInstance(CLSID_CLRMetaHost, IID_ICLRMetaHost, (void**)&pMetaHost);
+    ASSERT_TRUE(SUCCEEDED(hr)) << "Failed to create CLRMetaHost";
+
+    IEnumUnknown* pRuntimes = nullptr;
+    hr = pMetaHost->EnumerateInstalledRuntimes(&pRuntimes);
+    ASSERT_TRUE(SUCCEEDED(hr)) << "Failed to enumerate runtimes";
+
+    ICLRRuntimeInfo* pLatestRuntime = nullptr;
+    ICLRRuntimeInfo* pRuntime = nullptr;
+    ULONG fetched = 0;
+    while ((hr = pRuntimes->Next(1, (IUnknown**)&pRuntime, &fetched)) == S_OK && fetched > 0)
+    {
+        if (pLatestRuntime != nullptr)
+        {
+            pLatestRuntime->Release();
+        }
+        pLatestRuntime = pRuntime;
+    }
+
+    ASSERT_TRUE(pLatestRuntime != nullptr) << "No .NET runtime found";
+
+    hr = pLatestRuntime->GetInterface(CLSID_CorMetaDataDispenser, IID_IMetaDataDispenser, (void**)&pMetaDataDispenser);
+    ASSERT_TRUE(SUCCEEDED(hr)) << "Failed to get IMetaDataDispenser";
+
+    // Convert module path to wide string
+    int len = MultiByteToWideChar(CP_UTF8, 0, modulePath.string().c_str(), -1, nullptr, 0);
+    std::wstring wModulePath(len, L'\0');
+    MultiByteToWideChar(CP_UTF8, 0, modulePath.string().c_str(), -1, &wModulePath[0], len);
+
+    // Open the module to get metadata
+    CComPtr<IUnknown> pMetadataInterfaces;
+    hr = pMetaDataDispenser->OpenScope(wModulePath.c_str(), ofRead, IID_IMetaDataImport, (IUnknown**)&pMetaDataImport);
+    ASSERT_TRUE(SUCCEEDED(hr)) << "Failed to open module metadata";
 
     // Parse the PDB
-    debugInfoStore.ParseModuleDebugInfo(pdbPath.string(), modulePath.string(), moduleInfo);
+    ModuleDebugInfo moduleInfo;
+    SymParser parser(pMetaDataImport, &moduleInfo);
+    bool success = parser.LoadPdbFile(pdbPath.string(), modulePath.string());
+
+    // Cleanup
+    if (pMetaDataImport != nullptr)
+    {
+        pMetaDataImport->Release();
+    }
+    if (pMetaDataDispenser != nullptr)
+    {
+        pMetaDataDispenser->Release();
+    }
+    if (pLatestRuntime != nullptr)
+    {
+        pLatestRuntime->Release();
+    }
+    if (pRuntimes != nullptr)
+    {
+        pRuntimes->Release();
+    }
+    if (pMetaHost != nullptr)
+    {
+        pMetaHost->Release();
+    }
+    if (comInitialized)
+    {
+        CoUninitialize();
+    }
 
     // Validate that symbols were loaded
     // For .NET Framework PDB (Windows PDB format), the LoadingState should be Windows
@@ -99,7 +169,6 @@ TEST(DebugInfoStoreTest, ParseModuleDebugInfo_NetFramework)
 
 
 // Additional test to verify that .NET Core/5+ PDBs are Portable format
-// This ensures we're testing the right distinction
 TEST(DebugInfoStoreTest, ParseModuleDebugInfo_NetCorePortable)
 {
     // Try to find the BuggyBits net10.0 PDB file (as an example of Portable PDB)
@@ -124,7 +193,9 @@ TEST(DebugInfoStoreTest, ParseModuleDebugInfo_NetCorePortable)
     EXPECT_CALL(mockConfiguration, IsDebugInfoEnabled()).WillRepeatedly(Return(true));
 
     DebugInfoStore debugInfoStore(nullptr, configuration.get());
-    debugInfoStore.ParseModuleDebugInfo(pdbPath.string(), modulePath.string(), moduleInfo);
+
+    // For Portable PDB, we don't need IMetaDataImport, so pass 0 as moduleId
+    debugInfoStore.ParseModuleDebugInfo(0, pdbPath.string(), modulePath.string(), moduleInfo);
 
     // For .NET Core/5+ PDB (Portable PDB format), the LoadingState should be Portable
     ASSERT_EQ(moduleInfo.LoadingState, SymbolLoadingState::Portable)

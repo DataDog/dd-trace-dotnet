@@ -124,6 +124,7 @@ bool DbgHelpParser::LoadPdbFile(const std::string& pdbFilePath)
         _pModuleInfo->RidToDebugInfo.push_back({sym.sourceFile, sym.lineNumber});
     }
 
+    _pModuleInfo->LoadingState = SymbolLoadingState::Windows;
     return true;
 }
 
