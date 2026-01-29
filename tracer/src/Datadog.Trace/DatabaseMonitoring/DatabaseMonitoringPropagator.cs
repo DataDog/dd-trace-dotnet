@@ -98,8 +98,12 @@ namespace Datadog.Trace.DatabaseMonitoring
 
             propagatorStringBuilder.Append(',').Append(SqlCommentRootService).Append("='").Append(Uri.EscapeDataString(configuredServiceName)).Append('\'');
 
-            Log.Information("DBM: SQL comment fields - dddbs (span service): '{SpanService}', ddps (root service): '{RootService}', dddb: '{DbName}', ddh: '{OutHost}'",
-                dddbs, configuredServiceName, dbName ?? "null", outhost ?? "null");
+            Log.Information(
+                "DBM: SQL comment fields - dddbs (span service): '{SpanService}', ddps (root service): '{RootService}', dddb: '{DbName}', ddh: '{OutHost}'",
+                dddbs,
+                configuredServiceName,
+                dbName ?? "null",
+                outhost ?? "null");
 
             if (!string.IsNullOrEmpty(dbName))
             {
