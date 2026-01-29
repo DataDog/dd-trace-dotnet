@@ -534,7 +534,7 @@ profiler_cpu_timer_create-arm64:
     # Branch containing 1. scripts to launch Windows benchmarks on ephemeral 
     # instances (to be used by GitLab CI runners) and 2. scripts to run Windows 
     # benchmarks (to be used by the ephemeral instances).
-    BP_INFRA_BENCHMARKING_PLATFORM_BRANCH: "augusto/apmsp-2519.windows-instances-send-logs"
+    BP_INFRA_BENCHMARKING_PLATFORM_BRANCH: "dd-trace-dotnet/macro"
 
     # Whether to cleanup ephemeral instances after benchmarks are run
     CLEANUP: "true"
