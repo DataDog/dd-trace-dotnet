@@ -15,6 +15,7 @@ using Datadog.Trace.DataStreamsMonitoring.Aggregation;
 using Datadog.Trace.DataStreamsMonitoring.Hashes;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
+using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.DataStreamsMonitoring;
@@ -37,9 +38,12 @@ internal sealed class DataStreamsManager
     public DataStreamsManager(
         TracerSettings tracerSettings,
         IDataStreamsWriter? writer,
-        string? processTags)
+        string? processTags,
+        ContainerMetadata containerMetadata)
     {
-        UpdateNodeHash(tracerSettings.Manager.InitialMutableSettings);
+        // make sure we subscribe before calling it manually so that there is no gap
+        containerMetadata.SubscribeToContainerTagsHashChanges(newHash => UpdateNodeHash(tracerSettings.Manager.InitialMutableSettings, newHash));
+        UpdateNodeHash(tracerSettings.Manager.InitialMutableSettings, containerMetadata.ContainerTagsHash);
         _isEnabled = writer is not null;
         _isLegacyDsmHeadersEnabled = tracerSettings.IsDataStreamsLegacyHeadersEnabled;
         _writer = writer;
@@ -48,14 +52,14 @@ internal sealed class DataStreamsManager
         {
             if (updates.UpdatedMutable is { } updated)
             {
-                UpdateNodeHash(updated);
+                UpdateNodeHash(updated, containerMetadata.ContainerTagsHash);
             }
         });
 
-        void UpdateNodeHash(MutableSettings settings)
+        void UpdateNodeHash(MutableSettings settings, string? containerTagsHash)
         {
             // We don't yet support primary tag in .NET yet
-            var value = HashHelper.CalculateNodeHashBase(settings.DefaultServiceName, settings.Environment, primaryTag: null, processTags);
+            var value = HashHelper.CalculateNodeHashBase(settings.DefaultServiceName, settings.Environment, primaryTag: null, processTags, containerTagsHash);
             // Working around the fact we can't do Interlocked.Exchange with the struct
             // and also that we can't do Interlocked.Exchange with a ulong in < .NET 5
             Interlocked.Exchange(
@@ -77,7 +81,7 @@ internal sealed class DataStreamsManager
                          ? DataStreamsWriter.Create(settings, profilerSettings, discoveryService)
                          : null;
 
-        return new DataStreamsManager(settings, writer, settings.PropagateProcessTags ? ProcessTags.SerializedTags : null);
+        return new DataStreamsManager(settings, writer, settings.PropagateProcessTags ? ProcessTags.SerializedTags : null, ContainerMetadata.Instance);
     }
 
     public async Task DisposeAsync()
