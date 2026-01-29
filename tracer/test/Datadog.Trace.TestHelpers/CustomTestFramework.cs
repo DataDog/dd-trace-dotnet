@@ -357,7 +357,7 @@ namespace Datadog.Trace.TestHelpers
                     var tags = $$"""
                                      "os.platform:{{SanitizeTagValue(FrameworkDescription.Instance.OSPlatform)}}",
                                      "os.architecture:{{SanitizeTagValue(EnvironmentTools.GetPlatform())}}",
-                                     "target.framework:{FrameworkDescription.Instance.ProductVersion}",
+                                     "target.framework:{{FrameworkDescription.Instance.ProductVersion}}",
                                      "test.name:{{SanitizeTagValue(testFullName)}}",
                                      "git.branch:{{SanitizeTagValue(Environment.GetEnvironmentVariable("DD_LOGGER_BUILD_SOURCEBRANCH"))}}",
                                      "flaky_retry_reason: {{SanitizeTagValue(reason)}}"
