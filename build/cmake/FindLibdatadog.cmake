@@ -7,9 +7,10 @@ include(FetchContent)
 set(LIBDATADOG_VERSION "v1.0.1" CACHE STRING "libdatadog version")
 
 # Set up authentication header if GITHUB_TOKEN is available (for private repo access)
+# Note: Modern GitHub PATs use "Bearer" instead of "token"
 if(DEFINED ENV{GITHUB_TOKEN} AND NOT "$ENV{GITHUB_TOKEN}" STREQUAL "")
     message(STATUS "Using authenticated GitHub access for libdatadog-dotnet")
-    set(GITHUB_AUTH_HEADER "Authorization: token $ENV{GITHUB_TOKEN}")
+    set(GITHUB_AUTH_HEADER "Authorization: Bearer $ENV{GITHUB_TOKEN}")
 else()
     message(STATUS "Using unauthenticated GitHub access for libdatadog-dotnet (will fail for private repos)")
     set(GITHUB_AUTH_HEADER "")
