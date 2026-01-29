@@ -3,13 +3,13 @@ set(LIBDATADOG_VERSION ${VERSION})
 if(TARGET_TRIPLET STREQUAL "x64-windows" OR
    TARGET_TRIPLET STREQUAL "x64-windows-static")
     set(PLATFORM "x64")
-    # TODO: Update this hash after first libdatadog-dotnet release
-    set(LIBDATADOG_HASH "72e24e30f9bf4e047f46038d215f070f8f77613653867024a339c243ef9f47bb7dfdbc4536d957d1deb33181167ef86647447586b31d3404ce8d302b9415bb0c")
+    # v1.0.5 SHA512 hash
+    set(LIBDATADOG_HASH "f4b0bd10c2a667f4558cf0a9b204325279e5426d9a7081a3233dcde5c199ea54f9364fa7ff50a01434bbc94633ac6ed43e32148220e6380ceab59745f0eb2c80")
 elseif(TARGET_TRIPLET STREQUAL "x86-windows" OR
        TARGET_TRIPLET STREQUAL "x86-windows-static")
     set(PLATFORM "x86")
-    # TODO: Update this hash after first libdatadog-dotnet release (when x86 support is added)
-    set(LIBDATADOG_HASH "03a50287519e48b4fa75ea5d7cd76da5c2083da0d8613bc95707d5f87dfdd86b8a2b6e82092a277513d368c66079b3646dee2f9112dfa142d7a671ccd6bbca79")
+    # v1.0.5 SHA512 hash
+    set(LIBDATADOG_HASH "d0f78f706bcf0177335280453b1b7cf41c19ae396b6e28fcc97fdbbfe503d42353dadd9222ae800955eabccbc0a3037dc008c1b56415b039c6bf583246480558")
 else()
     message(FATAL_ERROR "Unsupported triplet: ${TARGET_TRIPLET}")
 endif()
