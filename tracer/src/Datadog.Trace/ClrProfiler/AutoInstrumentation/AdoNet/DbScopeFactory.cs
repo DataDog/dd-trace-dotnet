@@ -61,7 +61,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 tags.DbUser = tagsFromConnectionString.DbUser;
                 tags.OutHost = tagsFromConnectionString.OutHost;
 
-                Log.Debug("DBM: Span tags populated from connection string. DbName: {DbNameSet}, DbUser: {DbUserSet}, OutHost: {OutHostSet}, DbType: '{DbType}'",
+                Log.Debug(
+                    "DBM: Span tags populated from connection string. DbName: {DbNameSet}, DbUser: {DbUserSet}, OutHost: {OutHostSet}, DbType: '{DbType}'",
                     !string.IsNullOrEmpty(tags.DbName),
                     !string.IsNullOrEmpty(tags.DbUser),
                     !string.IsNullOrEmpty(tags.OutHost),
@@ -73,14 +74,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 // Log peer.service resolution for DBM UI compatibility
                 if (tags is SqlV1Tags sqlV1Tags)
                 {
-                    Log.Information("DBM: Span peer.service resolved. PeerServicePresent: {PeerServicePresent}, PeerServiceSource: '{PeerServiceSource}', ServiceNamePresent: {ServiceNamePresent}",
+                    Log.Information(
+                        "DBM: Span peer.service resolved. PeerServicePresent: {PeerServicePresent}, PeerServiceSource: '{PeerServiceSource}', ServiceNamePresent: {ServiceNamePresent}",
                         !string.IsNullOrEmpty(sqlV1Tags.PeerService),
                         sqlV1Tags.PeerServiceSource,
                         !string.IsNullOrEmpty(serviceName));
                 }
                 else
                 {
-                    Log.Debug("DBM: Using legacy SqlTags (no peer.service support). ServiceNamePresent: {ServiceNamePresent}", !string.IsNullOrEmpty(serviceName));
+                    Log.Debug(
+                        "DBM: Using legacy SqlTags (no peer.service support). ServiceNamePresent: {ServiceNamePresent}",
+                        !string.IsNullOrEmpty(serviceName));
                 }
 
                 scope = tracer.StartActiveInternal(operationName, tags: tags, serviceName: serviceName);

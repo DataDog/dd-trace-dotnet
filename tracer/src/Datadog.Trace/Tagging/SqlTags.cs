@@ -4,6 +4,7 @@
 // </copyright>
 
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Logging;
 using Datadog.Trace.SourceGenerators;
 
 #pragma warning disable SA1402 // File must contain single type
@@ -35,6 +36,7 @@ namespace Datadog.Trace.Tagging
 
     internal sealed partial class SqlV1Tags : SqlTags
     {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SqlV1Tags>();
         private string _peerServiceOverride = null;
 
         // Use a private setter for setting the "peer.service" tag so we avoid
@@ -48,19 +50,19 @@ namespace Datadog.Trace.Tagging
             get
             {
                 var result = _peerServiceOverride ?? DbName ?? OutHost;
-                if (Logging.Log.IsEnabled(Datadog.Trace.Logging.LogLevel.Debug))
-                {
-                    Logging.Log.Debug("DBM: PeerService getter called. Override: {HasOverride}, DbName: {HasDbName}, OutHost: {HasOutHost}, ResultPresent: {ResultPresent}",
-                        _peerServiceOverride != null,
-                        DbName != null,
-                        OutHost != null,
-                        !string.IsNullOrEmpty(result));
-                }
+                Log.Debug(
+                    "DBM: PeerService getter called. Override: {HasOverride}, DbName: {HasDbName}, OutHost: {HasOutHost}, ResultPresent: {ResultPresent}",
+                    _peerServiceOverride != null,
+                    DbName != null,
+                    OutHost != null,
+                    !string.IsNullOrEmpty(result));
+
                 return result;
             }
+
             private set
             {
-                Logging.Log.Debug("DBM: PeerService override set. ValuePresent: {ValuePresent}", !string.IsNullOrEmpty(value));
+                Log.Debug("DBM: PeerService override set. ValuePresent: {ValuePresent}", !string.IsNullOrEmpty(value));
                 _peerServiceOverride = value;
             }
         }
@@ -75,10 +77,8 @@ namespace Datadog.Trace.Tagging
                         : DbName is not null
                             ? "db.name"
                             : "out.host";
-                if (Logging.Log.IsEnabled(Datadog.Trace.Logging.LogLevel.Debug))
-                {
-                    Logging.Log.Debug("DBM: PeerServiceSource getter called. Source: '{Source}'", result);
-                }
+                Log.Debug("DBM: PeerServiceSource getter called. Source: '{Source}'", result);
+
                 return result;
             }
         }

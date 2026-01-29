@@ -9,12 +9,15 @@ using System.Collections.Generic;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis;
+using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.Configuration.Schema
 {
     internal sealed class DatabaseSchema
     {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DatabaseSchema>();
+
         private readonly SchemaVersion _version;
         private readonly bool _peerServiceTagsEnabled;
         private readonly bool _removeClientServiceNamesEnabled;
@@ -36,7 +39,7 @@ namespace Datadog.Trace.Configuration.Schema
         {
             if (_serviceNameMappings is not null && _serviceNameMappings.TryGetValue(databaseType, out var mappedServiceName))
             {
-                Logging.Log.Debug("DBM: Service name resolved via mapping. MappingPresent: true");
+                Log.Debug("DBM: Service name resolved via mapping. MappingPresent: true");
                 return mappedServiceName;
             }
 
@@ -46,7 +49,8 @@ namespace Datadog.Trace.Configuration.Schema
                 _ => _defaultServiceName,
             };
 
-            Logging.Log.Information("DBM: Service name resolved via schema. SchemaVersion: '{Version}', RemoveClientServiceNames: {RemoveClientServiceNames}, ServiceNamePresent: {ServiceNamePresent}",
+            Log.Information(
+                "DBM: Service name resolved via schema. SchemaVersion: '{Version}', RemoveClientServiceNames: {RemoveClientServiceNames}, ServiceNamePresent: {ServiceNamePresent}",
                 _version,
                 _removeClientServiceNamesEnabled,
                 !string.IsNullOrEmpty(result));
