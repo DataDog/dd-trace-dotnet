@@ -1,3 +1,9 @@
+include:
+  - project: 'DataDog/benchmarking-platform-tools'
+    file: 'images/templates/gitlab/check-slo-breaches.template.yml'
+  - project: 'DataDog/benchmarking-platform-tools'
+    file: 'images/templates/gitlab/notify-slo-breaches.template.yml'
+
 .dd-octo-sts-setup:
   before_script:
     - |
@@ -17,6 +23,8 @@ stages:
   - check-azure-pipeline
   - benchmarks
   - benchmarks-win
+  - gate
+  - notify
 
 workflow:
   auto_cancel:
@@ -702,4 +710,38 @@ profiler_cpu_timer_create-win:
     DD_PROFILING_CPU_ENABLED: 1
     COMPlus_EnableDiagnostics: 1
     ENDPOINT: "hello"
+
+check-slo-breaches:
+  extends: .check-slo-breaches
+  stage: gate
+  needs:
+    - baseline-win
+    - calltarget_ngen-win
+    - single_span-win
+    - trace_stats-win
+    - manual_only-win
+    - manual_and_automatic-win
+    - ddtraceenabled_false-win
+    - profiler_exceptions_baseline-win
+    - profiler-win
+    - profiler_walltime-win
+    - profiler_exceptions-win
+    - profiler_cpu-win
+    - profiler_cpu_timer_create-win
+  when: always
+  # TODO: Set to false once SLO thresholds are calibrated
+  allow_failure: true
+  variables:
+    ARTIFACTS_DIR: "reports"
+
+notify-slo-breaches:
+  extends: .notify-slo-breaches
+  stage: notify
+  needs: ["check-slo-breaches"]
+  when: always
+  # TODO: Set to false once SLO thresholds are calibrated
+  allow_failure: true
+  variables:
+    CHANNEL: "performance-quality-gates-alerts"
+    ARTIFACTS_DIR: "reports"
 
