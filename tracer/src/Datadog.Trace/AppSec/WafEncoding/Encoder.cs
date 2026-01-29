@@ -1,4 +1,4 @@
-﻿// <copyright file="Encoder.cs" company="Datadog">
+// <copyright file="Encoder.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -82,7 +82,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
         {
             var context = new EncoderContext(applySafetyLimits, Pool, new List<IntPtr>());
             var result = Encode(ref context, remainingDepth, key, o);
-            return new EncodeResult(context.Buffers, context.Pool, ref result);
+            return new EncodeResult(context.Buffers, context.Pool, ref result, context.Truncated);
         }
 
         // -----------------------------------
@@ -217,6 +217,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
 
             if (context.ApplySafetyLimits && remainingDepth-- <= 0)
             {
+                context.Truncated = true;
                 TelemetryFactory.Metrics.RecordCountInputTruncated(MetricTags.TruncationReason.ObjectTooDeep);
                 if (Log.IsEnabled(LogEventLevel.Debug))
                 {
@@ -230,6 +231,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
             {
                 if (context.ApplySafetyLimits && count > WafConstants.MaxContainerSize)
                 {
+                    context.Truncated = true;
                     TelemetryFactory.Metrics.RecordCountInputTruncated(MetricTags.TruncationReason.ListOrMapTooLarge);
                     if (Log.IsEnabled(LogEventLevel.Debug))
                     {
@@ -286,6 +288,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
                     childrenCount++;
                     if (context.ApplySafetyLimits && childrenCount == WafConstants.MaxContainerSize)
                     {
+                        context.Truncated = true;
                         TelemetryFactory.Metrics.RecordCountInputTruncated(MetricTags.TruncationReason.ListOrMapTooLarge);
                         if (Log.IsEnabled(LogEventLevel.Debug))
                         {
@@ -376,6 +379,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
                         return StringBuilderCache.GetStringAndRelease(sb);
                     }
 
+                    context.Truncated = true;
                     TelemetryFactory.Metrics.RecordCountInputTruncated(MetricTags.TruncationReason.ObjectTooDeep);
                     if (Log.IsEnabled(LogEventLevel.Debug))
                     {
@@ -387,6 +391,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
 
                 if (count > WafConstants.MaxContainerSize)
                 {
+                    context.Truncated = true;
                     TelemetryFactory.Metrics.RecordCountInputTruncated(MetricTags.TruncationReason.ListOrMapTooLarge);
                     if (Log.IsEnabled(LogEventLevel.Debug))
                     {
@@ -679,7 +684,10 @@ namespace Datadog.Trace.AppSec.WafEncoding
                 ApplySafetyLimits = applySafetyLimits;
                 Pool = pool;
                 Buffers = buffers;
+                Truncated = false;
             }
+
+            public bool Truncated { get; set; }
         }
 
         public sealed class EncodeResult : IEncodeResult
@@ -688,14 +696,17 @@ namespace Datadog.Trace.AppSec.WafEncoding
             private readonly UnmanagedMemoryPool _innerPool;
             private DdwafObjectStruct _result;
 
-            internal EncodeResult(List<IntPtr> pointers, UnmanagedMemoryPool pool, ref DdwafObjectStruct result)
+            internal EncodeResult(List<IntPtr> pointers, UnmanagedMemoryPool pool, ref DdwafObjectStruct result, bool truncated)
             {
                 _pointers = pointers;
                 _innerPool = pool;
                 _result = result;
+                Truncated = truncated;
             }
 
             public DdwafObjectStruct ResultDdwafObject => _result;
+
+            public bool Truncated { get; }
 
             public void Dispose()
             {
