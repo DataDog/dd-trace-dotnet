@@ -1,5 +1,5 @@
 # SLO definitions for dd-trace-dotnet macrobenchmarks.
-# These thresholds define performance gates that block merges when breached.
+# These thresholds define performance gates that block releases when breached.
 #
 # Format:
 #   - name: <scenario_name_regex>
@@ -8,14 +8,23 @@
 #
 # Available operators: <, >, <=, >=
 # Common units: op/s, ms, ns, B/s
+#
+# Baseline values from pipeline 93426043 (2026-01-28):
+#   - Throughput: ~10,000-10,500 op/s across all scenarios
+#   - p95 latency: 26-51 ms depending on scenario
+#
+# Current thresholds are set conservatively (~20% margin) for initial setup.
+# TODO: Calibrate thresholds based on historical data once sufficient runs are collected.
+
 experiments:
   - name: Check SLO breaches
     steps:
       - name: Fail on breach
         run: fail_on_breach
         scenarios:
-          # Dummy SLO for testing - will be replaced with real thresholds
-          - name: throughput.*
+          # Catch-all for all macrobenchmark scenarios
+          # Observed throughput: ~10k op/s, p95: 26-51ms
+          - name: .*
             thresholds:
-              - throughput > 1 op/s
-              - agg_http_req_duration_p50 < 100 ms
+              - throughput > 8000 op/s
+              - agg_http_req_duration_p95 < 65 ms
