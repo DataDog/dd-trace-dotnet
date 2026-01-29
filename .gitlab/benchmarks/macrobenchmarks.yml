@@ -530,7 +530,7 @@ profiler_cpu_timer_create-arm64:
     DDOCTOSTS_POLICY: "gitlab.github-access.read-contents"
 
     AWS_REGION: "us-east-1"
-    
+
     # Branch containing 1. scripts to launch Windows benchmarks on ephemeral 
     # instances (to be used by GitLab CI runners) and 2. scripts to run Windows 
     # benchmarks (to be used by the ephemeral instances).
