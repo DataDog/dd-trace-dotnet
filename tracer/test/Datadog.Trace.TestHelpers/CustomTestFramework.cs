@@ -240,6 +240,7 @@ namespace Datadog.Trace.TestHelpers
 
         private class CustomTestMethodRunner : XunitTestMethodRunner
         {
+            private const int _maxTestFullNameLength = 200;
             private readonly IMessageSink _diagnosticMessageSink;
             private readonly object[] _constructorArguments;
 
@@ -300,10 +301,7 @@ namespace Datadog.Trace.TestHelpers
                             testCase.DisplayName :
                             $"{TestMethod.TestClass.Class.Name}.{testCase.DisplayName}").Trim();
 
-                        if (testFullName.Length > 200)
-                        {
-                            testFullName = testFullName.Substring(0, 200);
-                        }
+                        testFullName = testFullName.Substring(0, Math.Min(testFullName.Length, _maxTestFullNameLength));
 
                         await SendMetric(_diagnosticMessageSink, "dd_trace_dotnet.ci.tests.retries", testFullName, retryReason);
                     }
