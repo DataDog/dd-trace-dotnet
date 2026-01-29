@@ -522,7 +522,7 @@ profiler_cpu_timer_create-arm64:
     name: "artifacts"
     when: always
     paths:
-      - platform/artifacts/
+      - reports/
     expire_in: 3 months
   variables:
     # Allows ephemeral instances to read content from benchmarking-platform
