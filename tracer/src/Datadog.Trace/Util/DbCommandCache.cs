@@ -72,15 +72,22 @@ namespace Datadog.Trace.Util
                 var builder = new DbConnectionStringBuilder { ConnectionString = connectionString };
 
                 // Extract the tags
-                return new TagsCacheItem(
-                    dbName: GetConnectionStringValue(builder, "Database", "Initial Catalog", "InitialCatalog"),
-                    dbUser: GetConnectionStringValue(builder, "User ID", "UserID"),
-                    outHost: GetConnectionStringValue(builder, "Server", "Data Source", "DataSource", "Network Address", "NetworkAddress", "Address", "Addr", "Host"));
+                var dbName = GetConnectionStringValue(builder, "Database", "Initial Catalog", "InitialCatalog");
+                var dbUser = GetConnectionStringValue(builder, "User ID", "UserID");
+                var outHost = GetConnectionStringValue(builder, "Server", "Data Source", "DataSource", "Network Address", "NetworkAddress", "Address", "Addr", "Host");
+
+                Logging.Log.Information("DBM: Extracted connection string metadata. DbName: {DbNamePresent}, DbUser: {DbUserPresent}, OutHost: {OutHostPresent}",
+                    !string.IsNullOrEmpty(dbName) ? "present" : "missing",
+                    !string.IsNullOrEmpty(dbUser) ? "present" : "missing",
+                    !string.IsNullOrEmpty(outHost) ? "present" : "missing");
+
+                return new TagsCacheItem(dbName, dbUser, outHost);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 // DbConnectionStringBuilder can throw exceptions if the connection string is invalid
                 // in this case we should not use the connection string and just return default
+                Logging.Log.Warning(ex, "DBM: Failed to parse connection string for metadata extraction");
                 return default;
             }
         }

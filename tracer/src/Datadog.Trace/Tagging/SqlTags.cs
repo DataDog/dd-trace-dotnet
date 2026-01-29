@@ -45,8 +45,24 @@ namespace Datadog.Trace.Tagging
         [Tag(Trace.Tags.PeerService)]
         public string PeerService
         {
-            get => _peerServiceOverride ?? DbName ?? OutHost;
-            private set => _peerServiceOverride = value;
+            get
+            {
+                var result = _peerServiceOverride ?? DbName ?? OutHost;
+                if (Logging.Log.IsEnabled(Datadog.Trace.Logging.LogLevel.Debug))
+                {
+                    Logging.Log.Debug("DBM: PeerService getter called. Override: {HasOverride}, DbName: {HasDbName}, OutHost: {HasOutHost}, ResultPresent: {ResultPresent}",
+                        _peerServiceOverride != null,
+                        DbName != null,
+                        OutHost != null,
+                        !string.IsNullOrEmpty(result));
+                }
+                return result;
+            }
+            private set
+            {
+                Logging.Log.Debug("DBM: PeerService override set. ValuePresent: {ValuePresent}", !string.IsNullOrEmpty(value));
+                _peerServiceOverride = value;
+            }
         }
 
         [Tag(Trace.Tags.PeerServiceSource)]
@@ -54,11 +70,16 @@ namespace Datadog.Trace.Tagging
         {
             get
             {
-                return _peerServiceOverride is not null
+                var result = _peerServiceOverride is not null
                         ? "peer.service"
                         : DbName is not null
                             ? "db.name"
                             : "out.host";
+                if (Logging.Log.IsEnabled(Datadog.Trace.Logging.LogLevel.Debug))
+                {
+                    Logging.Log.Debug("DBM: PeerServiceSource getter called. Source: '{Source}'", result);
+                }
+                return result;
             }
         }
     }

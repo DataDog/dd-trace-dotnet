@@ -36,14 +36,22 @@ namespace Datadog.Trace.Configuration.Schema
         {
             if (_serviceNameMappings is not null && _serviceNameMappings.TryGetValue(databaseType, out var mappedServiceName))
             {
+                Logging.Log.Debug("DBM: Service name resolved via mapping. MappingPresent: true");
                 return mappedServiceName;
             }
 
-            return _version switch
+            var result = _version switch
             {
                 SchemaVersion.V0 when !_removeClientServiceNamesEnabled => $"{_defaultServiceName}-{databaseType}",
                 _ => _defaultServiceName,
             };
+
+            Logging.Log.Information("DBM: Service name resolved via schema. SchemaVersion: '{Version}', RemoveClientServiceNames: {RemoveClientServiceNames}, ServiceNamePresent: {ServiceNamePresent}",
+                _version,
+                _removeClientServiceNamesEnabled,
+                !string.IsNullOrEmpty(result));
+
+            return result;
         }
 
         public CouchbaseTags CreateCouchbaseTags()
