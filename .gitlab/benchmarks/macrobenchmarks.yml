@@ -574,7 +574,6 @@ profiler_cpu_timer_create-arm64:
     - export GITHUB_TOKEN=$(cat /tmp/github-token)
     - git clone --branch $BP_INFRA_BENCHMARKING_PLATFORM_BRANCH https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform
     - ./platform/steps/run-windows-benchmarks.sh
-    - ./platform/steps/fetch-results.sh
   after_script:
     - |
       if [ "$CLEANUP" == "true" ]; then
@@ -584,8 +583,8 @@ profiler_cpu_timer_create-arm64:
       else
         echo "'CLEANUP' is set to 'false'. Will not cleanup."
       fi
-    - ./platform/steps/fetch-results.sh
-    - ./platform/steps/upload-to-bp-ui.sh
+    - ./platform/steps/fetch-windows-results.sh
+    - ./platform/steps/upload-windows-results-to-bp-ui.sh
 
 baseline-win:
   extends: .benchmarks-win
