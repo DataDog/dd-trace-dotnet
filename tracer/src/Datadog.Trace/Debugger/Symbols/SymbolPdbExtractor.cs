@@ -1,4 +1,4 @@
-﻿// <copyright file="SymbolPdbExtractor.cs" company="Datadog">
+// <copyright file="SymbolPdbExtractor.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -140,6 +140,71 @@ internal sealed class SymbolPdbExtractor : SymbolExtractor
 
         closureMethodScope.Name = methodName;
         closureMethodScope.ScopeType = ScopeType.Closure;
+
+        // for closure scopes we want 'this' to reflect the user-declared type
+        // that owns the original method and not the compiler-generated type.
+        if (closureMethodScope.Symbols is { Length: > 0 } symbols)
+        {
+            // If the original method is static, there is no user 'this'. The generated closure/state-machine
+            // may still have an instance 'this', but we don't want to surface that in symbols presented to users.
+            if (method.IsStaticMethod())
+            {
+                var thisIndex = -1;
+                for (var i = 0; i < symbols.Length; i++)
+                {
+                    if (symbols[i].SymbolType == SymbolType.Arg && symbols[i].Name == "this")
+                    {
+                        thisIndex = i;
+                        break;
+                    }
+                }
+
+                if (thisIndex < 0)
+                {
+                    // Nothing to remove
+                    return true;
+                }
+
+                if (symbols.Length == 1)
+                {
+                    closureMethodScope.Symbols = null;
+                    return true;
+                }
+
+                var newSymbols = new Symbol[symbols.Length - 1];
+                if (thisIndex > 0)
+                {
+                    Array.Copy(symbols, 0, newSymbols, 0, thisIndex);
+                }
+
+                if (thisIndex < symbols.Length - 1)
+                {
+                    Array.Copy(symbols, thisIndex + 1, newSymbols, thisIndex, symbols.Length - thisIndex - 1);
+                }
+
+                closureMethodScope.Symbols = newSymbols;
+
+                return true;
+            }
+
+            var declaringTypeName = method.GetDeclaringType().FullName(MetadataReader);
+            if (!string.IsNullOrEmpty(declaringTypeName))
+            {
+                for (var i = 0; i < symbols.Length; i++)
+                {
+                    if (symbols[i].SymbolType == SymbolType.Arg && symbols[i].Name == "this")
+                    {
+                        var updated = symbols[i];
+                        updated.Type = declaringTypeName;
+                        symbols[i] = updated;
+                        break;
+                    }
+                }
+
+                closureMethodScope.Symbols = symbols;
+            }
+        }
+
         return true;
     }
 
