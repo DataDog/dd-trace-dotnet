@@ -80,11 +80,24 @@ namespace Datadog.Trace.Configuration.Schema
             };
 
         public SqlTags CreateSqlTags()
-            => _version switch
+        {
+            Log.Information(
+                "DBM: CreateSqlTags called. SchemaVersion: '{Version}', PeerServiceTagsEnabled: {PeerServiceTagsEnabled}",
+                _version,
+                _peerServiceTagsEnabled);
+
+            var result = _version switch
             {
                 SchemaVersion.V0 when !_peerServiceTagsEnabled => new SqlTags(),
                 _ => new SqlV1Tags(),
             };
+
+            Log.Information(
+                "DBM: CreateSqlTags result. TagsType: '{TagsType}'",
+                result.GetType().Name);
+
+            return result;
+        }
 
         public RedisTags CreateRedisTags()
             => _version switch
