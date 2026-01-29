@@ -526,6 +526,8 @@ profiler_cpu_timer_create-arm64:
       - reports/
     expire_in: 3 months
   variables:
+    RUNNER_AFTER_SCRIPT_TIMEOUT: 1h
+
     # Allows ephemeral instances to read content from benchmarking-platform
     DDOCTOSTS_SCOPE: "DataDog/benchmarking-platform"
     DDOCTOSTS_POLICY: "gitlab.github-access.read-contents"
