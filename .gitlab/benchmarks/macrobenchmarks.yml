@@ -43,7 +43,8 @@ check-azure-pipeline:
     expire_in: 3 months
   variables:
     # Set this for quickly testing benchmarking workflows.
-    HARDCODED_BUILD_ID: "" 
+    # TODO: Revert to ""
+    HARDCODED_BUILD_ID: "192820"
   script:
     - |
       if [[ -n "$HARDCODED_BUILD_ID" ]]; then
