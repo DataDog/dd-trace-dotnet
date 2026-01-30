@@ -42,6 +42,6 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         public const string ManagedActivationEnabled = "DD_PROFILING_MANAGED_ACTIVATION_ENABLED";
         public const string HeapSnapshotEnabled = "DD_PROFILING_HEAPSNAPSHOT_ENABLED";
         public const string HeapSnapshotMemoryPressureThreshold = "DD_INTERNAL_PROFILING_HEAPSNAPSHOT_MEMORY_PRESSURE_THRESHOLD";
-        public const string UseCustomGetFunctionFromIP = "DD_INTERNAL_PROFILING_USE_CUSTOM_GET_FUNCTION_FROM_IP";
+        public const string UseManagedCodeCache = "DD_INTERNAL_PROFILING_USE_MANAGED_CODE_CACHE";
     }
 }

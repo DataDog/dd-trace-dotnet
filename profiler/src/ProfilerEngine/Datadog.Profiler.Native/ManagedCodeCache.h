@@ -76,7 +76,7 @@ class IConfiguration;
 // See: dotnet-runtime/docs/design/features/code-versioning-profiler-breaking-changes.md
 class ManagedCodeCache {
 public:
-    explicit ManagedCodeCache(ICorProfilerInfo4* pProfilerInfo, IConfiguration* pConfiguration);
+    explicit ManagedCodeCache(ICorProfilerInfo4* pProfilerInfo);
     ~ManagedCodeCache();
 
     // Signal-safe lookup methods (no allocation)
@@ -147,7 +147,6 @@ private:
 
 
     std::unordered_map<uint64_t, PageEntry> _pagesMap;
-    std::unordered_set<ModuleID> _modules;
     std::vector<ModuleCodeRange> _modulesCodeRanges;
     mutable std::shared_mutex _modulesMutex;
     
@@ -174,8 +173,6 @@ private:
     void AddFunctionImpl(FunctionID functionId, bool isAsync);
     
     AutoResetEvent _workerQueueEvent;
-
-    bool _useCustomGetFunctionFromIP;
 };
 
 // Compile-time checks for signal-safety

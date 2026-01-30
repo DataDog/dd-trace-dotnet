@@ -1475,13 +1475,23 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
     // Init global state:
     OpSysTools::InitHighPrecisionTimer();
 
+    // Use managed code cache
+    if (_pConfiguration->UseManagedCodeCache())
+    {
+        _managedCodeCache = std::make_unique<ManagedCodeCache>(_pCorProfilerInfo);
+        if (!_managedCodeCache->Initialize())
+        {
+            Log::Error("Failed to initialize managed code cache. The profiler will not run.");
+            return E_FAIL;
+        }
+    }
     // create services without starting them
     InitializeServices();
 
     // Configure which profiler callbacks we want to receive by setting the event mask:
     DWORD eventMask = COR_PRF_MONITOR_THREADS | COR_PRF_ENABLE_STACK_SNAPSHOT | COR_PRF_MONITOR_APPDOMAIN_LOADS;
 
-    if (_pConfiguration->UseCustomGetFunctionFromIP())
+    if (_pConfiguration->UseManagedCodeCache())
     {
         eventMask |= COR_PRF_MONITOR_JIT_COMPILATION | COR_PRF_ENABLE_REJIT;
     }

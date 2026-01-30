@@ -124,7 +124,7 @@ Configuration::Configuration()
     _heapSnapshotCheckInterval = ExtractHeapSnapshotCheckInterval();
     _heapSnapshotMemoryPressureThreshold = GetEnvironmentValue(EnvironmentVariables::HeapSnapshotMemoryPressureThreshold, 85);
     _heapHandleLimit = ExtractHeapHandleLimit();
-    _useCustomGetFunctionFromIP = GetEnvironmentValue(EnvironmentVariables::UseCustomGetFunctionFromIP, false);
+    _useManagedCodeCache = GetEnvironmentValue(EnvironmentVariables::UseManagedCodeCache, false);
 }
 
 fs::path Configuration::ExtractLogDirectory()
@@ -315,9 +315,9 @@ std::string const& Configuration::GetServiceName() const
     return _serviceName;
 }
 
-bool Configuration::UseCustomGetFunctionFromIP() const
+bool Configuration::UseManagedCodeCache() const
 {
-    return _useCustomGetFunctionFromIP;
+    return _useManagedCodeCache;
 }
 
 bool Configuration::IsAllocationRecorderEnabled() const

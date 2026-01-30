@@ -126,7 +126,7 @@ namespace Datadog.Profiler.SmokeTests
         public void CheckCustomGetFunctionFromIP(string appName, string framework, string appAssembly)
         {
             var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 0", output: _output);
-            runner.EnvironmentHelper.SetVariable(EnvironmentVariables.UseCustomGetFunctionFromIP, "1");
+            runner.EnvironmentHelper.SetVariable(EnvironmentVariables.UseManagedCodeCache, "1");
             if (framework == "net48")
             {
                 runner.EnvironmentHelper.SetVariable(EnvironmentVariables.EtwEnabled, "0");
@@ -139,7 +139,7 @@ namespace Datadog.Profiler.SmokeTests
             var logFile = Directory.GetFiles(runner.EnvironmentHelper.LogDir)
                 .Single(f => Path.GetFileName(f).StartsWith("DD-DotNet-Profiler-Native-"));
             File.ReadLines(logFile).Should()
-                .Contain(l => l.Contains("ManagedCodeCache initialized with useCustomGetFunctionFromIP: true"));
+                .Contain(l => l.Contains("ManagedCodeCache initialized successfully"));
         }
     }
 }

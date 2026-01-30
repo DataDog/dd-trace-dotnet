@@ -20,13 +20,9 @@ struct IMAGE_NT_HEADERS_GENERIC
     WORD    Magic;
 };
 
-ManagedCodeCache::ManagedCodeCache(ICorProfilerInfo4* pProfilerInfo, IConfiguration* pConfiguration)
+ManagedCodeCache::ManagedCodeCache(ICorProfilerInfo4* pProfilerInfo)
     : _profilerInfo(pProfilerInfo),
-      _workerQueueEvent(false),
-      _useCustomGetFunctionFromIP{pConfiguration->UseCustomGetFunctionFromIP()}
-{
-    Log::Info("ManagedCodeCache initialized with useCustomGetFunctionFromIP: ", std::boolalpha, _useCustomGetFunctionFromIP);
-}
+      _workerQueueEvent(false) = default;
 
 ManagedCodeCache::~ManagedCodeCache()
 {
@@ -43,7 +39,13 @@ bool ManagedCodeCache::Initialize()
     std::promise<void> startPromise;
     auto future = startPromise.get_future();
     _worker = std::thread(&ManagedCodeCache::WorkerThread, this, std::move(startPromise));
-    return future.wait_for(2s) == std::future_status::ready;
+    if (future.wait_for(2s) == std::future_status::ready)
+    {
+        Log::Info("ManagedCodeCache initialized successfully");
+        return true;
+    }
+    Log::Error("Failed to initialize ManagedCodeCache");
+    return false;
 }
 
 bool ManagedCodeCache::IsCodeInR2RModule(std::uintptr_t ip) const noexcept
@@ -85,11 +87,6 @@ bool ManagedCodeCache::IsCodeInR2RModule(std::uintptr_t ip) const noexcept
 // nor by a managed thread (is that really a valid constraint?)
 std::optional<FunctionID> ManagedCodeCache::GetFunctionId(std::uintptr_t ip) noexcept
 {
-    if (!_useCustomGetFunctionFromIP)
-    {
-        return GetFunctionFromIP_Original(ip);
-    }
-
     auto info = GetFunctionIdImpl(ip);
     if (info.has_value())
     {
