@@ -51,7 +51,7 @@ internal sealed class TraceClock
     public DateTimeOffset UtcNow
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => _utcStart.Add(Elapsed);
+        get => _utcStart.AddTicks(StopwatchHelpers.GetElapsedTicks(Stopwatch.GetTimestamp() - _timestamp));
     }
 
     private TimeSpan Elapsed

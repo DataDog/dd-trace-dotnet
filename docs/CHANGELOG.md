@@ -38,6 +38,100 @@
 
 
 
+
+## [Release 3.36.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.36.0)
+
+## Summary
+
+* [Tracer] Add Cosmos DB CRUD instrumentation (#7837)
+* [Profiler] Fix crash when calling GetAppDomainInfo (#8076)
+* Performance improvements and minor fixes.
+
+## Changes
+
+### Tracer
+* [Tracer] Add Cosmos DB CRUD instrumentation (#7837)
+* [Config Registry] 6/8 Forbid use of System.Environment methods and adapt everywhere (#7932)
+* LifetimeManager .NET10 fix (#7969)
+* [SymDB] DEBUG-4881 Fix type name in TypeProvider (#7990)
+* Various optimizations for Activity handling (#8040)
+* Reduce allocation in `ExposureApi` by serializing to stream (#8051)
+* Fix ASP.NET Core Diagnostic Observer's incorrect Activity copying (#8054)
+* Add a new single-span diagnostic observer for ASP.NET Core (#7964)
+* Don't do `DynamicMethod` based allocation-free enumeration on .NET 10 (#8058)
+* Replace remaining usages of `Environment.Version` (#8069)
+
+### ASM
+* [ASM] Fix RC configs apply order (#8066)
+* [Iast] Fix GetModuleInfo freezes (#7947)
+
+### Continuous Profiler
+* [Profiler] Provide more settings in Runtime Info (#7933)
+* [Profiler] Update benchmarks definitions (#7970)
+* [Profiler] Fix crash when calling GetAppDomainInfo (#8076)
+
+### Debugger
+* Add process tags to runtime metrics & dynamic instrumentation metric probes (#7871)
+* [Dynamic Instrumentation] Add NullByRefArgAndLocal test (#7987)
+* [Dynamic Instrumentation] DEBUG-4142 Subscribe to settings change in the debugger manager (#8048)
+* [Symbol Database] DEBUG-5045 DEBUG-5046 Fix trailing bytes in symbol uploader and performance improvements (#8097)
+* [SymDB] DEBUG-4760 Fix "Not enough space for all closure methods" (#8101)
+* [Dynamic Instrumentation] DEBUG-4871 Added a managed guard in LogLocal and LogArg to detect null byrefs (#7986)
+* [Dynamic Instrumentation] DEBUG-4786 Explicitly track open nodes (#7988)
+* [Dynamic Instrumentation] DEBUG-4877 Stabilize snapshot serializer (#7989)
+* [EL] DEBUG-4878 Fix null equality in expression language (#7991)
+* [EL] DEBUG-4884 Fix null expression when type is struct (#7993)
+* [EL] DEBUG-4879 Support multiple expression compilations (#7994)
+* [Dynamic Instrumentation] DEBUG-5018 Send logs to debugger intake (#8092)
+
+### Serverless
+* [Azure Functions] Update `Datadog.Serverless.Compat` version (#8085)
+* [SVLS-7360] Fix Exception Replay in Lambda (#8043)
+
+### Fixes
+* Remove unused properties from `MockTelemetryAgent` (#8020)
+
+### Feature Flags
+* [FFE] Change fee integration tests codeowner (#8075)
+* [FFE] Fix asserts being ignored in release builds (#8093)
+* [FFE] Cache the condition regexes (#8087)
+* [FFE] Add feature-flagging-and-experimentation-sdk as code owners for FFE code (#8095)
+* [FFE] Feature Flags SDK (#7896)
+* [FFE] Fix exposures url (#8074)
+* [FFE] OpenFeature 2.x shim package (#8077)
+* [FFE] Added support for Value evaluation type in OpenFeature (#8086)
+* [Feature Flags] Fix ISO 8601 date parsing to support variable precision (#8094)
+
+### Miscellaneous
+* Create a more optimized `AspNetCoreResourceNameHelper` (#7966)
+* Don't poll discovery service if we've received an update from the agent recently (#7979)
+* Switch to allocation-free enumeration of `Activity` objects (#8041)
+* Improve `OpenTelemetryTags` population to reduce allocation and work (#8042)
+* chore(ci) update one-pipeline (#8053)
+
+### Build / Test
+* Add benchmarks for single-span diagnostic observer for ASP.NET Core (#7965)
+* Automatic retry ASM integration tests under failure (#8011)
+* [SINT-4550] Use CI Identities in Windows CI Jobs (#8033)
+* Fix build by splitting `FleetInstaller` integration tests into their own test project (#8044)
+* Add missing permissions to release process (#8046)
+* Try disable the pull-request-freshness feature (#8049)
+* AzureServiceBusAPMTests flakiness fix. (#8050)
+* Fix benchmark projects (#8056)
+* Collect logs in arm64 macrobenchmark tests (#8057)
+* fix(tests): make sure we include the codeowners tag on all tests (#8060)
+* Update CODEOWNERS for feature flagging work (#8063)
+* [Build] Clean up `SuppressTfmSupportBuildWarnings` usage (#8078)
+* Fix Batching sink tests flakiness. (#8081)
+* Fix Benchmark tests (#8082)
+* fix benchmark code (#8104)
+
+### Data Streams Monitoring
+* [IBM MQ] Fix queue naming by removing URI prefix (#8080)
+
+
+[Changes since 3.35.0](https://github.com/DataDog/dd-trace-dotnet/compare/v3.35.0...v3.36.0)
+
 ## [Release 3.35.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.35.0)
 
 ## Summary
