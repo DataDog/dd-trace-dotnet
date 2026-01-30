@@ -50,14 +50,30 @@ namespace Datadog.Trace.PlatformHelpers
 
         public string GetDefaultResourceName(HttpRequest request)
         {
+            // Be defensive: in some edge cases the HttpRequest object may be null (e.g.,
+            // framework- or host-specific error paths). Avoid throwing and return a safe default.
+            if (request is null)
+            {
+                return "UNKNOWN /";
+            }
+
             string httpMethod = request.Method?.ToUpperInvariant() ?? "UNKNOWN";
 
-            string absolutePath = request.PathBase.HasValue
-                                      ? request.PathBase.ToUriComponent() + request.Path.ToUriComponent()
-                                      : request.Path.ToUriComponent();
+            string absolutePath;
+            try
+            {
+                absolutePath = request.PathBase.HasValue
+                                   ? request.PathBase.ToUriComponent() + request.Path.ToUriComponent()
+                                   : request.Path.ToUriComponent();
+            }
+            catch
+            {
+                // If anything goes wrong building the path, fall back to root
+                absolutePath = "/";
+            }
 
-            string resourceUrl = UriHelpers.GetCleanUriPath(absolutePath)
-                                           .ToLowerInvariant();
+            var cleanedPath = UriHelpers.GetCleanUriPath(absolutePath);
+            string resourceUrl = (cleanedPath ?? "/").ToLowerInvariant();
 
             return $"{httpMethod} {resourceUrl}";
         }
