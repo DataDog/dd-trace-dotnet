@@ -80,8 +80,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 }
                 else
                 {
-                    Assert.Equal(168, beginMethodCount);
-                    Assert.Equal(168, endMethodCount);
+                    Assert.Equal(215, beginMethodCount);
+                    Assert.Equal(215, endMethodCount);
                     Assert.Equal(40, exceptionCount);
                 }
 
