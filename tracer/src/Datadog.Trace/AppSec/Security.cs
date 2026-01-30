@@ -55,6 +55,7 @@ namespace Datadog.Trace.AppSec
         private string? _blockedHtmlTemplateCache;
         private string? _blockedJsonTemplateCache;
         private HashSet<string>? _activeAddresses;
+        private Telemetry.Metrics.MetricTags.AppSecEnabledOrigin _enabledSource = Telemetry.Metrics.MetricTags.AppSecEnabledOrigin.Default;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Security"/> class with default settings.
@@ -74,6 +75,7 @@ namespace Datadog.Trace.AppSec
 
                 if (_configurationState.IncomingUpdateState.ShouldInitAppsec)
                 {
+                    TelemetrySetStatus(true, Telemetry.Metrics.MetricTags.AppSecEnabledOrigin.EnvVar);
                     InitWafAndInstrumentations();
                 }
                 else
@@ -208,11 +210,13 @@ namespace Datadog.Trace.AppSec
                     _configurationState.ReceivedNewConfig(configsByProduct, removedConfigs);
                     if (_configurationState.IncomingUpdateState.ShouldDisableAppsec)
                     {
+                        TelemetrySetStatus(false);
                         // disable ASM scenario
                         DisposeWafAndInstrumentations(true);
                     } // enable ASM scenario taking into account rcm changes for other products/data
                     else if (_configurationState.IncomingUpdateState.ShouldInitAppsec)
                     {
+                        TelemetrySetStatus(true, Telemetry.Metrics.MetricTags.AppSecEnabledOrigin.RemoteConfig);
                         InitWafAndInstrumentations();
                         UpdateActiveAddresses();
                         rcmUpdateError = _wafInitResult?.ErrorMessage;
@@ -432,6 +436,20 @@ namespace Datadog.Trace.AppSec
             }
 
             return blockingAction;
+        }
+
+        private void TelemetrySetStatus(bool enabled, Telemetry.Metrics.MetricTags.AppSecEnabledOrigin source = Telemetry.Metrics.MetricTags.AppSecEnabledOrigin.Default)
+        {
+            if (_enabledSource != source || !enabled)
+            {
+                TelemetryFactory.Metrics.RecordGaugeAsmEnabled(_enabledSource, 0);
+            }
+
+            if (enabled)
+            {
+                _enabledSource = source;
+                TelemetryFactory.Metrics.RecordGaugeAsmEnabled(_enabledSource, 1);
+            }
         }
 
         private string GetJsonResponse()
