@@ -119,7 +119,7 @@ libdatadog::Success Profile::Add(std::shared_ptr<Sample> const& sample)
     auto add_res = ddog_prof_Profile_add2(&profile, ffiSample, timestamp.count());
     if (add_res.err != nullptr)
     {
-        return make_error(add_res.err);
+        return make_error(add_res);
     }
     return make_success();
 }

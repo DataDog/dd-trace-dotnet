@@ -305,7 +305,7 @@ private :
     std::unique_ptr<ISsiManager> _pSsiManager = nullptr;
     std::unique_ptr<RawSampleTransformer> _rawSampleTransformer;
 
-    libdatadog::SymbolsStore* _pSymbolsStore;
+    std::unique_ptr<libdatadog::SymbolsStore> _pSymbolsStore = nullptr;
 
 private:
     static void ConfigureDebugLog();
