@@ -19,6 +19,7 @@ using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 #nullable enable
@@ -31,7 +32,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 
         public const string OperationName = "azure_functions.invoke";
         public const string SpanType = SpanTypes.Serverless;
-        public const string AzureApim = InferredProxySpanHelper.AzureProxyHeaderValue;
+        public const string AzureApim = "azure.apim";
         public const IntegrationId IntegrationId = Configuration.IntegrationId.AzureFunctions;
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AzureFunctionsCommon));
@@ -121,9 +122,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 var functionName = instanceParam.FunctionDescriptor.ShortName;
                 var rootSpanName = tracer.InternalActiveScope?.Root.Span.OperationName;
                 // Check if there's an inferred proxy span (e.g., azure.apim) that we shouldn't overwrite
-                var isProxySpan = rootSpanName?.Contains(AzureApim) == true ||
-                                  rootSpanName?.Contains("aws.apigw") == true;
-
+                var isProxySpan = rootSpanName?.Contains(AzureApim) == true;
                 // Ignoring null because guaranteed running in AAS
                 if (tracer.Settings.AzureAppServiceMetadata is { IsIsolatedFunctionsApp: true }
                  && tracer.InternalActiveScope is { } activeScope)
@@ -148,6 +147,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                             triggerType: triggerType);
                         rootSpan.Type = SpanType;
                     }
+
                     return null;
                 }
 
@@ -257,7 +257,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     switch (triggerType)
                     {
                         case "Http":
-                            var (httpContext, extractedHeaders) = ExtractPropagatedContextandHeadersFromHttp(context, entry.Key as string);
+                            var (httpContext, extractedHeaders) = ExtractPropagatedContextandHeadersFromHttp(functionContext, entry.Key as string);
                             extractedContext = httpContext;
                             Log.Debug("These are the extracted headers {Headers}", extractedHeaders);
                             InferredProxyScopePropagationContext? proxyContext = null;
@@ -266,7 +266,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                             var hasAspNetCoreSpan = tracer.InternalActiveScope is { } activeScope &&
                                                     activeScope.Span.OperationName?.StartsWith("aspnet_core", StringComparison.OrdinalIgnoreCase) == true;
 
-                            if (!hasAspNetCoreSpan && tracer.Settings.InferredProxySpansEnabled && extractedHeaders is { } headers)
+                            if (!hasAspNetCoreSpan && tracer.Settings.InferredProxySpansEnabled && EnvironmentHelpers.IsRunningInAzureFunctionsHost() && extractedHeaders is { } headers)
                             {
                                 proxyContext = InferredProxySpanHelper.ExtractAndCreateInferredProxyScope(tracer, new AzureHeadersCollectionAdapter(headers), extractedContext);
                                 if (proxyContext != null)
@@ -274,6 +274,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                                     extractedContext = proxyContext.Value.Context;
                                 }
                             }
+
                             break;
 
                         case "ServiceBus" when tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus):
