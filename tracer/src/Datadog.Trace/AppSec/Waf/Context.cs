@@ -1,4 +1,4 @@
-﻿// <copyright file="Context.cs" company="Datadog">
+// <copyright file="Context.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -145,6 +145,7 @@ internal sealed class Context : IContext
         // not restart because it's the total runtime over runs, and we run several * during request
         _stopwatch.Start();
         WafReturnCode code;
+        bool truncated = false;
         lock (_stopwatch)
         {
             if (_disposed)
@@ -167,6 +168,7 @@ internal sealed class Context : IContext
                 var persistentArgs = _encoder.Encode(persistentAddressData, applySafetyLimits: true);
                 pwPersistentArgs = persistentArgs.ResultDdwafObject;
                 _encodeResults.Add(persistentArgs);
+                truncated |= persistentArgs.Truncated;
             }
 
             // pwEphemeralArgs follow a different lifecycle and should be disposed immediately
@@ -184,6 +186,7 @@ internal sealed class Context : IContext
             {
                 // WARNING: Don't use ref here, we need to make a copy because ephemeralArgs is on the heap
                 pwEphemeralArgsValue = ephemeralArgs.ResultDdwafObject;
+                truncated |= ephemeralArgs.Truncated;
             }
 
             // WARNING: DO NOT DISPOSE pwPersistentArgs until the end of this class's lifecycle, i.e in the dispose. Otherwise waf might crash with fatal exception.
@@ -191,7 +194,7 @@ internal sealed class Context : IContext
         }
 
         _stopwatch.Stop();
-        var result = new Result(ref retNative, code, ref _totalRuntimeOverRuns, (ulong)(_stopwatch.Elapsed.TotalMilliseconds * 1000), isRasp);
+        var result = new Result(ref retNative, code, ref _totalRuntimeOverRuns, (ulong)(_stopwatch.Elapsed.TotalMilliseconds * 1000), isRasp, truncated);
         _wafLibraryInvoker.ObjectFree(ref retNative);
 
         if (Log.IsEnabled(LogEventLevel.Debug))
