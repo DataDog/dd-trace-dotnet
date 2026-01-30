@@ -140,7 +140,8 @@ namespace Datadog.Trace.DatabaseMonitoring
             // modify the command to add the comment
             var commandText = command.CommandText ?? string.Empty;
             var propagationComment = StringBuilderCache.GetStringAndRelease(propagatorStringBuilder);
-            Log.Debug("DBM: Generated SQL comment for injection (content omitted for security)");
+            Log.Information("DBM: Generated SQL comment for injection: '{SqlComment}'", propagationComment);
+            Log.Information("DBM: Original command text (first 100 chars): '{CommandText}'", commandText.Length > 100 ? commandText.Substring(0, 100) : commandText);
 
             if (command.CommandType == CommandType.StoredProcedure && integrationId == IntegrationId.SqlClient)
             {
@@ -288,18 +289,22 @@ namespace Datadog.Trace.DatabaseMonitoring
             }
             else if (ShouldAppend(integrationId, commandText))
             {
-                Log.Debug("DBM: Appending SQL comment (pg_hint_plan detected). Integration: '{IntegrationId}'", integrationId);
+                Log.Information("DBM: Appending SQL comment (pg_hint_plan detected). Integration: '{IntegrationId}'", integrationId);
                 command.CommandText = $"{commandText} {propagationComment}";
             }
             else
             {
-                Log.Debug("DBM: Prepending SQL comment. Integration: '{IntegrationId}'", integrationId);
+                Log.Information("DBM: Prepending SQL comment. Integration: '{IntegrationId}'", integrationId);
                 // prepending the propagation comment is the preferred way,
                 // as this protects it from being truncated by the character limit if the command is very long.
                 command.CommandText = $"{propagationComment} {commandText}";
             }
 
             Log.Information("DBM: Successfully injected SQL comment with DBM metadata. Integration: '{IntegrationId}', TraceParentInjected: {TraceParentInjected}", integrationId, traceParentInjected);
+            Log.Information(
+                "DBM: Final command text (first 200 chars): '{FinalCommandText}'",
+                command.CommandText.Length > 200 ? command.CommandText.Substring(0, 200) : command.CommandText);
+
             return traceParentInjected;
         }
 

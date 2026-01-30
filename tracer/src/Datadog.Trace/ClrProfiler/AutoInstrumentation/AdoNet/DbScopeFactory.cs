@@ -133,8 +133,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
                         // PropagateDataViaComment (service) - this injects varius trace information as a comment in the query
                         // PropagateDataViaContext (full)    - this makes a special set context_info for Microsoft SQL Server (nothing else supported)
+                        Log.Information(
+                            "DBM: About to call PropagateDataViaComment. Mode: '{Mode}', Integration: '{IntegrationId}', DefaultServiceName: '{ServiceName}', DbName: '{DbName}', OutHost: '{OutHost}'",
+                            new object[] { tracer.Settings.DbmPropagationMode, integrationId, tracer.DefaultServiceName, tagsFromConnectionString.DbName ?? "null", tagsFromConnectionString.OutHost ?? "null" });
+
                         var traceParentInjectedInComment = DatabaseMonitoringPropagator.PropagateDataViaComment(tracer.Settings.DbmPropagationMode, integrationId, command, tracer.DefaultServiceName, tagsFromConnectionString.DbName, tagsFromConnectionString.OutHost, scope.Span, tracer.Settings.InjectContextIntoStoredProceduresEnabled);
-                        Log.Debug("DBM: PropagateDataViaComment result: traceParentInjected={TraceParentInjected}, integration='{IntegrationId}'", traceParentInjectedInComment, integrationId);
+                        Log.Information("DBM: PropagateDataViaComment result: traceParentInjected={TraceParentInjected}, integration='{IntegrationId}'", traceParentInjectedInComment, integrationId);
 
                         // try context injection only after comment injection, so that if it fails, we still have service level propagation
                         var traceParentInjectedInContext = DatabaseMonitoringPropagator.PropagateDataViaContext(tracer.Settings.DbmPropagationMode, integrationId, command, scope.Span);
