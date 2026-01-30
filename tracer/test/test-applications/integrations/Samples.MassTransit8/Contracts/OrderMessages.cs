@@ -25,3 +25,12 @@ public record OrderCompleted
 {
     public Guid OrderId { get; init; }
 }
+
+/// <summary>
+/// Message that causes a saga to throw an exception - for testing exception handling in sagas
+/// </summary>
+public record OrderFailed
+{
+    public Guid OrderId { get; init; }
+    public string Reason { get; init; } = string.Empty;
+}

@@ -292,10 +292,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
 
         /// <summary>
         /// Extracts a clean destination name from a MassTransit address URI.
-        /// Matches MT8 OTEL behavior in BaseSendTransportContext.ActivityDestination.
-        /// For example: "loopback://localhost/submit-order" -> "submit-order"
-        /// Or for message types: "urn:message:Namespace:MessageType" -> "MessageType"
-        /// Or for publish URIs: "loopback://localhost/urn:message:Namespace:MessageType" -> "MessageType"
+        /// Matches MT8 OTEL behavior for messaging.destination.name.
+        /// <para/>
+        /// For URN format destinations (publish/send to message type), keeps the full URN:
+        /// - "urn:message:Namespace:MessageType" -> "urn:message:Namespace:MessageType"
+        /// - "loopback://localhost/urn:message:Namespace:MessageType" -> "urn:message:Namespace:MessageType"
+        /// <para/>
+        /// For queue/endpoint destinations, extracts just the name:
+        /// - "loopback://localhost/submit-order" -> "submit-order"
+        /// - "rabbitmq://localhost/GettingStarted" -> "GettingStarted"
+        /// <para/>
         /// Special endpoints are normalized: "_bus_xxx" -> "bus", "_endpoint_xxx" -> "endpoint"
         /// </summary>
         internal static string ExtractDestinationName(string? fullAddress)
@@ -306,9 +312,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
             }
 
             // Handle direct URN format (urn:message:Namespace:MessageType)
+            // MT8 OTEL keeps the full URN for these
             if (fullAddress!.StartsWith("urn:message:", StringComparison.OrdinalIgnoreCase))
             {
-                return ExtractMessageTypeFromUrn(fullAddress);
+                return fullAddress;
             }
 
             // Try to parse as URI and extract the path
@@ -317,11 +324,20 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
             {
                 if (Uri.TryCreate(fullAddress, UriKind.Absolute, out var uri))
                 {
-                    // Get the last segment of the path
+                    // Get the path
                     var path = uri.AbsolutePath.TrimStart('/');
                     if (!string.IsNullOrEmpty(path))
                     {
-                        // If path contains slashes, get the last segment
+                        // Check if the path itself is a URN BEFORE extracting the last segment
+                        // This handles cases like "loopback://localhost/urn:message:MassTransit:Fault[[Namespace:MessageType]]"
+                        // where extracting last segment would incorrectly give just "MessageType]]"
+                        // MT8 OTEL keeps the full URN for these
+                        if (path.StartsWith("urn:message:", StringComparison.OrdinalIgnoreCase))
+                        {
+                            return path;
+                        }
+
+                        // If path contains slashes (and is not a URN), get the last segment
                         var lastSlash = path.LastIndexOf('/');
                         if (lastSlash >= 0 && lastSlash < path.Length - 1)
                         {
@@ -339,10 +355,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
                 // Continue with fullAddress as entityName
             }
 
-            // Check if the extracted path is itself a URN (e.g., from "loopback://localhost/urn:message:Namespace:MessageType")
+            // Check if the extracted entity name is itself a URN
+            // This handles edge cases where the path parsing didn't catch it
             if (entityName.StartsWith("urn:message:", StringComparison.OrdinalIgnoreCase))
             {
-                return ExtractMessageTypeFromUrn(entityName);
+                return entityName;
             }
 
             // MT8 OTEL-style normalization of special endpoint names
@@ -368,21 +385,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
             }
 
             return entityName;
-        }
-
-        /// <summary>
-        /// Extracts just the message type name from a URN like "urn:message:Namespace:MessageType" -> "MessageType"
-        /// </summary>
-        private static string ExtractMessageTypeFromUrn(string urn)
-        {
-            // Extract just the message type name (last segment after colon)
-            var lastColon = urn.LastIndexOf(':');
-            if (lastColon > 0 && lastColon < urn.Length - 1)
-            {
-                return urn.Substring(lastColon + 1);
-            }
-
-            return urn;
         }
 
         internal static string DetermineMessagingSystem(string? destination)

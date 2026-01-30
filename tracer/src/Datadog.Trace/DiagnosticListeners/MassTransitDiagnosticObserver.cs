@@ -272,27 +272,34 @@ namespace Datadog.Trace.DiagnosticListeners
 
             var activityId = GetCurrentActivityId();
 
-            // For consume, we get a ConsumeContext - try multiple address properties
-            var destinationAddress = MassTransitCommon.TryGetProperty<Uri>(arg, "DestinationAddress")?.ToString();
-
-            // If not available, try ReceiveContext.InputAddress
-            if (string.IsNullOrEmpty(destinationAddress))
+            // For consume, we get a ConsumeContext
+            // MT8 OTEL uses InputAddress (the queue name) for consumer spans, not DestinationAddress
+            // The InputAddress gives clean queue names like "GettingStarted", "OrderState"
+            // while DestinationAddress might be a URN like "loopback://localhost/urn:message:..."
+            string? inputAddress = null;
+            var receiveContext = MassTransitCommon.TryGetProperty<object>(arg, "ReceiveContext");
+            if (receiveContext != null)
             {
-                var receiveContext = MassTransitCommon.TryGetProperty<object>(arg, "ReceiveContext");
-                destinationAddress = MassTransitCommon.TryGetProperty<Uri>(receiveContext, "InputAddress")?.ToString();
+                inputAddress = MassTransitCommon.TryGetProperty<Uri>(receiveContext, "InputAddress")?.ToString();
+            }
+
+            // Fallback to DestinationAddress if InputAddress not available
+            if (string.IsNullOrEmpty(inputAddress))
+            {
+                inputAddress = MassTransitCommon.TryGetProperty<Uri>(arg, "DestinationAddress")?.ToString();
             }
 
             // If still not available, try SourceAddress
-            if (string.IsNullOrEmpty(destinationAddress))
+            if (string.IsNullOrEmpty(inputAddress))
             {
-                destinationAddress = MassTransitCommon.TryGetProperty<Uri>(arg, "SourceAddress")?.ToString();
+                inputAddress = MassTransitCommon.TryGetProperty<Uri>(arg, "SourceAddress")?.ToString();
             }
 
             var messageType = MassTransitCommon.GetMessageType(arg);
 
             Log.Debug(
-                "MassTransitDiagnosticObserver.OnConsumeStart: Destination={Destination}, MessageType={MessageType}, OperationType={OperationType}",
-                destinationAddress,
+                "MassTransitDiagnosticObserver.OnConsumeStart: InputAddress={InputAddress}, MessageType={MessageType}, OperationType={OperationType}",
+                inputAddress,
                 messageType,
                 operationType);
 
@@ -302,7 +309,7 @@ namespace Datadog.Trace.DiagnosticListeners
             var scope = MassTransitCommon.CreateConsumerScope(
                 Tracer.Instance,
                 MassTransitConstants.OperationProcess,
-                destinationAddress,
+                inputAddress,
                 messageType,
                 parentContext);
 

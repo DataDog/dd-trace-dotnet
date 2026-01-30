@@ -15,10 +15,12 @@ await RunWithTransport("amazonsqs", ConfigureAmazonSqs);
 // Run saga test with in-memory transport
 await RunSagaTest();
 
-// Run exception handling test
-await RunExceptionTest();
+// Run exception handling tests for all scenarios
+await RunExceptionTest();          // Consumer exception
+await RunHandlerExceptionTest();   // Handler exception
+await RunSagaExceptionTest();      // Saga exception
 
-Console.WriteLine("All transports tested successfully!");
+Console.WriteLine("All tests completed!");
 
 async Task RunWithTransport(string transportName, Action<IBusRegistrationConfigurator> configureTransport)
 {
@@ -193,7 +195,7 @@ async Task RunSagaTest()
 
 async Task RunExceptionTest()
 {
-    Console.WriteLine("\n========== Testing EXCEPTION HANDLING ==========");
+    Console.WriteLine("\n========== Testing CONSUMER EXCEPTION HANDLING ==========");
 
     var services = new ServiceCollection();
     services.AddLogging(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Information));
@@ -213,24 +215,145 @@ async Task RunExceptionTest()
 
     try
     {
-        Console.WriteLine("[exception] Starting the bus...");
+        Console.WriteLine("[consumer-exception] Starting the bus...");
         await busControl.StartAsync();
 
         // Give the bus time to fully initialize
         await Task.Delay(500);
 
         // Send a message that will cause the consumer to throw an exception
-        Console.WriteLine("[exception] Publishing message that will cause an exception...");
-        await busControl.Publish(new FailingMessage { Value = "This message will fail" });
+        Console.WriteLine("[consumer-exception] Publishing message that will cause an exception...");
+        await busControl.Publish(new FailingMessage { Value = "Consumer failure test" });
 
         // Wait for the message to be processed (and fail)
         await Task.Delay(1000);
 
-        Console.WriteLine("[exception] Exception test completed - check traces for error spans!");
+        Console.WriteLine("[consumer-exception] Consumer exception test completed - check traces for error spans!");
     }
     finally
     {
-        Console.WriteLine("[exception] Stopping the bus...");
+        Console.WriteLine("[consumer-exception] Stopping the bus...");
+        await busControl.StopAsync();
+        await Task.Delay(500);
+    }
+}
+
+async Task RunHandlerExceptionTest()
+{
+    Console.WriteLine("\n========== Testing HANDLER EXCEPTION HANDLING ==========");
+    Console.WriteLine("[handler-exception] NOTE: Handlers use a different Activity than Consumers - testing for gaps");
+
+    var services = new ServiceCollection();
+    services.AddLogging(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Information));
+
+    services.AddMassTransit(x =>
+    {
+        x.UsingInMemory((context, cfg) =>
+        {
+            // Register a handler (not a consumer) that throws an exception
+            // Handlers use HandlerMessageFilter which starts a Consumer.Handle activity
+            cfg.ReceiveEndpoint("handler-failing", e =>
+            {
+                e.Handler<HandlerFailingMessage>(async ctx =>
+                {
+                    Console.WriteLine($"[handler-exception] Handler received: {ctx.Message.Value} - About to throw exception");
+                    await Task.Delay(10); // Small delay to simulate work
+                    throw new InvalidOperationException($"Handler failure test: {ctx.Message.Value}");
+                });
+            });
+        });
+    });
+
+    var serviceProvider = services.BuildServiceProvider();
+    var busControl = serviceProvider.GetRequiredService<IBusControl>();
+
+    try
+    {
+        Console.WriteLine("[handler-exception] Starting the bus...");
+        await busControl.StartAsync();
+
+        // Give the bus time to fully initialize
+        await Task.Delay(500);
+
+        // Send a message to the handler endpoint
+        Console.WriteLine("[handler-exception] Sending message to handler that will throw...");
+        var sendEndpoint = await busControl.GetSendEndpoint(new Uri("loopback://localhost/handler-failing"));
+        await sendEndpoint.Send(new HandlerFailingMessage { Value = "Handler will fail" });
+
+        // Wait for the message to be processed (and fail)
+        await Task.Delay(1000);
+
+        Console.WriteLine("[handler-exception] Handler exception test completed - check traces for error spans!");
+    }
+    finally
+    {
+        Console.WriteLine("[handler-exception] Stopping the bus...");
+        await busControl.StopAsync();
+        await Task.Delay(500);
+    }
+}
+
+async Task RunSagaExceptionTest()
+{
+    Console.WriteLine("\n========== Testing SAGA EXCEPTION HANDLING ==========");
+    Console.WriteLine("[saga-exception] NOTE: Sagas use their own Activity - testing for gaps");
+
+    var services = new ServiceCollection();
+    services.AddLogging(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Information));
+
+    services.AddMassTransit(x =>
+    {
+        // Register the saga state machine with in-memory repository
+        x.AddSagaStateMachine<OrderStateMachine, OrderState>()
+            .InMemoryRepository();
+
+        x.UsingInMemory((context, cfg) =>
+        {
+            cfg.ConfigureEndpoints(context);
+        });
+    });
+
+    var serviceProvider = services.BuildServiceProvider();
+    var busControl = serviceProvider.GetRequiredService<IBusControl>();
+
+    try
+    {
+        Console.WriteLine("[saga-exception] Starting the bus...");
+        await busControl.StartAsync();
+
+        // Give the bus time to fully initialize
+        await Task.Delay(500);
+
+        // Create an order ID for the saga
+        var orderId = Guid.NewGuid();
+        Console.WriteLine($"[saga-exception] Testing saga exception with OrderId: {orderId}");
+
+        // Step 1: Submit the order (Initial -> Submitted)
+        Console.WriteLine("[saga-exception] Publishing OrderSubmitted event...");
+        await busControl.Publish(new OrderSubmitted
+        {
+            OrderId = orderId,
+            CustomerName = "Exception Test Customer",
+            Amount = 99.99m
+        });
+        await Task.Delay(500);
+
+        // Step 2: Send OrderFailed which will cause the saga to throw an exception
+        Console.WriteLine("[saga-exception] Publishing OrderFailed event (will cause saga to throw)...");
+        await busControl.Publish(new OrderFailed
+        {
+            OrderId = orderId,
+            Reason = "Intentional saga failure for testing"
+        });
+
+        // Wait for the message to be processed (and fail)
+        await Task.Delay(1000);
+
+        Console.WriteLine("[saga-exception] Saga exception test completed - check traces for error spans!");
+    }
+    finally
+    {
+        Console.WriteLine("[saga-exception] Stopping the bus...");
         await busControl.StopAsync();
         await Task.Delay(500);
     }
