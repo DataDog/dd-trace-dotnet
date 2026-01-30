@@ -20,6 +20,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             : base(new EnvironmentHelper("CallTargetNativeTest", typeof(TestHelper), output, samplesDirectory: Path.Combine("test", "test-applications", "instrumentation"), prependSamplesToAppName: false), output)
         {
             SetServiceVersion("1.0.0");
+#pragma warning disable CS0618 // Type or member is obsolete
+            EnableDebugMode();
+#pragma warning restore CS0618 // Type or member is obsolete
         }
 
         public static IEnumerable<object[]> MethodArgumentsData()
@@ -71,8 +74,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 }
                 else if (numberOfArguments == 1)
                 {
-                    Assert.Equal(175, beginMethodCount);
-                    Assert.Equal(175, endMethodCount);
+                    Assert.Equal(222, beginMethodCount);
+                    Assert.Equal(222, endMethodCount);
                     Assert.Equal(40, exceptionCount);
                 }
                 else
