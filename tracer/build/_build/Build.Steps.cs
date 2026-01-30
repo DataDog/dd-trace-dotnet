@@ -2588,6 +2588,7 @@ partial class Build
            knownPatterns.Add(new(@".*Timeout occurred when flushing spans.*", RegexOptions.Compiled));
            knownPatterns.Add(new(@".*TestOptimization: .*", RegexOptions.Compiled));
            knownPatterns.Add(new(@".*TestOptimizationClient: .*", RegexOptions.Compiled));
+           knownPatterns.Add(new(@".*No git directory found, returning empty GitInfo.*", RegexOptions.Compiled));
 
            // glibc TLS-reuse bug warnings
            knownPatterns.Add(new(@".*GLIBC version 2.34-2.36 has a TLS-reuse bug.*", RegexOptions.Compiled));

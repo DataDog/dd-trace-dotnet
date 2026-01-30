@@ -15,18 +15,40 @@ namespace Datadog.Trace.Ci.CiEnvironment;
 
 internal sealed class GitCommandGitInfoProvider : GitInfoProvider
 {
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(GitCommandGitInfoProvider));
+
     private GitCommandGitInfoProvider()
     {
     }
 
     public static IGitInfoProvider Instance { get; } = new GitCommandGitInfoProvider();
 
-    protected override bool TryGetFrom(DirectoryInfo gitDirectory, [NotNullWhen(true)] out IGitInfo? gitInfo)
+    public override bool TryGetFrom(FileSystemInfo gitDirectory, [NotNullWhen(true)] out IGitInfo? gitInfo)
     {
-        var localGitInfo = new GitInfo
+        if (gitDirectory == null)
         {
-            SourceRoot = gitDirectory.Parent?.FullName
-        };
+            Log.Warning("GitCommandGitInfoProvider: gitDirectory is null, cannot load git information.");
+            gitInfo = null;
+            return false;
+        }
+
+        var localGitInfo = new GitInfo();
+        if (gitDirectory is GitInfo.WorkTreeDirectoryInfo workTreeDirectoryInfo)
+        {
+            // If the directory is a worktree, we need to use the work tree directory as the source root
+            localGitInfo.SourceRoot = workTreeDirectoryInfo.WorkTreeDirectory.FullName;
+        }
+        else if (gitDirectory is DirectoryInfo { Parent: { } } directoryInfo)
+        {
+            // Otherwise, we use the parent directory of the .git folder as the source root
+            localGitInfo.SourceRoot = directoryInfo.Parent.FullName;
+        }
+        else
+        {
+            Log.Warning("GitCommandGitInfoProvider: gitDirectory is not a DirectoryInfo or WorkTreeDirectoryInfo, cannot load git information. Git directory: {GitDirectory}", gitDirectory.FullName);
+            gitInfo = null;
+            return false;
+        }
 
         gitInfo = localGitInfo;
 
@@ -36,8 +58,8 @@ internal sealed class GitCommandGitInfoProvider : GitInfoProvider
             var safeDirectory = ProcessHelpers.RunCommand(
                 new ProcessHelpers.Command(
                     cmd: "git",
-                    arguments: $"config --global --add safe.directory {gitDirectory.FullName}",
-                    workingDirectory: gitDirectory.FullName,
+                    arguments: $"config --global --add safe.directory {localGitInfo.SourceRoot}",
+                    workingDirectory: localGitInfo.SourceRoot,
                     useWhereIsIfFileNotFound: true));
             if (safeDirectory?.ExitCode != 0)
             {
@@ -49,7 +71,7 @@ internal sealed class GitCommandGitInfoProvider : GitInfoProvider
                 new ProcessHelpers.Command(
                     cmd: "git",
                     arguments: "ls-remote --get-url",
-                    workingDirectory: gitDirectory.FullName,
+                    workingDirectory: localGitInfo.SourceRoot,
                     useWhereIsIfFileNotFound: true));
             if (repositoryOutput?.ExitCode == 0)
             {
@@ -65,7 +87,7 @@ internal sealed class GitCommandGitInfoProvider : GitInfoProvider
                 new ProcessHelpers.Command(
                     cmd: "git",
                     arguments: "rev-parse --abbrev-ref HEAD",
-                    workingDirectory: gitDirectory.FullName,
+                    workingDirectory: localGitInfo.SourceRoot,
                     useWhereIsIfFileNotFound: true));
             if (branchOutput?.ExitCode == 0 && branchOutput.Output.Trim() is { Length: > 0 } branchName && branchName != "HEAD")
             {
@@ -81,7 +103,7 @@ internal sealed class GitCommandGitInfoProvider : GitInfoProvider
                 new ProcessHelpers.Command(
                     cmd: "git",
                     arguments: """log -1 --pretty='%H|,|%at|,|%an|,|%ae|,|%ct|,|%cn|,|%ce|,|%B'""",
-                    workingDirectory: gitDirectory.FullName,
+                    workingDirectory: localGitInfo.SourceRoot,
                     useWhereIsIfFileNotFound: true));
             if (gitLogOutput?.ExitCode != 0)
             {

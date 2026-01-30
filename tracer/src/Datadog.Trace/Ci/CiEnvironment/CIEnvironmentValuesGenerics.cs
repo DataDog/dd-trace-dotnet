@@ -262,7 +262,7 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
                         }
                         else
                         {
-                            Log.Error("DD_GIT_COMMIT_SHA must be a full-length git SHA, defaulting to '{Default}", defaultValue);
+                            Log.Error("DD_GIT_COMMIT_SHA must be a full-length git SHA, defaulting to '{Default}'", defaultValue);
                         }
 
                         return false;
