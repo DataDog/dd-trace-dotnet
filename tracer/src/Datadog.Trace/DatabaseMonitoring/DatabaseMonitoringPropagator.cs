@@ -100,10 +100,7 @@ namespace Datadog.Trace.DatabaseMonitoring
 
             Log.Information(
                 "DBM: SQL comment fields - dddbs (span service): '{SpanService}', ddps (root service): '{RootService}', dddb: '{DbName}', ddh: '{OutHost}'",
-                dddbs,
-                configuredServiceName,
-                dbName ?? "null",
-                outhost ?? "null");
+                new object[] { dddbs, configuredServiceName, dbName ?? "null", outhost ?? "null" });
 
             if (!string.IsNullOrEmpty(dbName))
             {
