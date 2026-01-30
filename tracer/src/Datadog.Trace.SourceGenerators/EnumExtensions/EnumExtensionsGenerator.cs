@@ -1,4 +1,4 @@
-﻿// <copyright file="EnumExtensionsGenerator.cs" company="Datadog">
+// <copyright file="EnumExtensionsGenerator.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -57,6 +57,13 @@ public class EnumExtensionsGenerator : IIncrementalGenerator
         StringBuilder sb = new StringBuilder();
         var result = Sources.GenerateExtensionClass(sb, in enumToGenerate);
         context.AddSource(enumToGenerate.ExtensionsName + "_EnumExtensions.g.cs", SourceText.From(result, Encoding.UTF8));
+
+        // If this is the IntegrationId enum, also generate IntegrationNameToKeys
+        if (enumToGenerate.FullyQualifiedName == "Datadog.Trace.Configuration.IntegrationId")
+        {
+            var integrationKeysResult = Sources.GenerateIntegrationNameToKeys(sb, in enumToGenerate);
+            context.AddSource("IntegrationNameToKeys.g.cs", SourceText.From(integrationKeysResult, Encoding.UTF8));
+        }
     }
 
     private static Result<(EnumToGenerate Enum, bool IsValid)> GetTypeToGenerate(

@@ -56,13 +56,13 @@ namespace Datadog.Trace.SourceGenerators.Tests
         public static (ImmutableArray<Diagnostic> Diagnostics, string[] Output) GetGeneratedTrees<T>(string[] source, string[] stages, (string Path, string Content)[] additionalFiles = null, bool assertOutput = true)
             where T : IIncrementalGenerator, new()
         {
-            IEnumerable<SyntaxTree> syntaxTrees = source.Select(static x => CSharpSyntaxTree.ParseText(x));
+            var syntaxTrees = source.Select(static x => CSharpSyntaxTree.ParseText(x));
             var references = AppDomain.CurrentDomain.GetAssemblies()
                                       .Where(_ => !_.IsDynamic && !string.IsNullOrWhiteSpace(_.Location))
                                       .Select(_ => MetadataReference.CreateFromFile(_.Location))
                                       .Concat(new[] { MetadataReference.CreateFromFile(typeof(T).Assembly.Location) });
 
-            CSharpCompilation compilation = CSharpCompilation.Create(
+            var compilation = CSharpCompilation.Create(
                 "Datadog.Trace.Generated",
                 syntaxTrees,
                 references,
