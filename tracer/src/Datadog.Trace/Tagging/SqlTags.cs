@@ -4,6 +4,7 @@
 // </copyright>
 
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Logging;
 using Datadog.Trace.SourceGenerators;
 
 #pragma warning disable SA1402 // File must contain single type
@@ -35,6 +36,7 @@ namespace Datadog.Trace.Tagging
 
     internal sealed partial class SqlV1Tags : SqlTags
     {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SqlV1Tags>();
         private string _peerServiceOverride = null;
 
         // Use a private setter for setting the "peer.service" tag so we avoid
@@ -45,8 +47,24 @@ namespace Datadog.Trace.Tagging
         [Tag(Trace.Tags.PeerService)]
         public string PeerService
         {
-            get => _peerServiceOverride ?? DbName ?? OutHost;
-            private set => _peerServiceOverride = value;
+            get
+            {
+                var result = _peerServiceOverride ?? DbName ?? OutHost;
+                Log.Debug(
+                    "DBM: PeerService getter called. Override: {HasOverride}, DbName: {HasDbName}, OutHost: {HasOutHost}, ResultPresent: {ResultPresent}",
+                    _peerServiceOverride != null,
+                    DbName != null,
+                    OutHost != null,
+                    !string.IsNullOrEmpty(result));
+
+                return result;
+            }
+
+            private set
+            {
+                Log.Debug("DBM: PeerService override set. ValuePresent: {ValuePresent}", !string.IsNullOrEmpty(value));
+                _peerServiceOverride = value;
+            }
         }
 
         [Tag(Trace.Tags.PeerServiceSource)]
@@ -54,11 +72,14 @@ namespace Datadog.Trace.Tagging
         {
             get
             {
-                return _peerServiceOverride is not null
+                var result = _peerServiceOverride is not null
                         ? "peer.service"
                         : DbName is not null
                             ? "db.name"
                             : "out.host";
+                Log.Debug("DBM: PeerServiceSource getter called. Source: '{Source}'", result);
+
+                return result;
             }
         }
     }
