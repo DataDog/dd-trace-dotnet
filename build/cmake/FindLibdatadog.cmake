@@ -4,7 +4,7 @@ endif()
 
 include(FetchContent)
 
-set(LIBDATADOG_VERSION "v1.0.5" CACHE STRING "libdatadog version")
+set(LIBDATADOG_VERSION "v1.0.7" CACHE STRING "libdatadog version")
 
 # Set up authentication header if GITHUB_TOKEN is available (for private repo access)
 # Note: Modern GitHub PATs use "Bearer" instead of "token"
@@ -18,9 +18,9 @@ endif()
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     # For Darwin, we'll download both architectures and combine them
-    # v1.0.5 SHA256 hashes
-    set(SHA256_LIBDATADOG_ARM64 "a82d9da77e0b6db634057655da3ba8133da4ba85d4bc33229296dd8012b699c1" CACHE STRING "libdatadog arm64 sha256")
-    set(SHA256_LIBDATADOG_X86_64 "d9e79b9d4dfdcb045feee447afb6df9326a2dd6f0b92c5a405194e3e31acfb86" CACHE STRING "libdatadog x86_64 sha256")
+    # v1.0.7 SHA256 hashes
+    set(SHA256_LIBDATADOG_ARM64 "153b08745ba84abd62ff0ad5816b5b554f2259c37fe3c779b3e7764801e8aa25" CACHE STRING "libdatadog arm64 sha256")
+    set(SHA256_LIBDATADOG_X86_64 "14323003292dbf113dd8b7436c2dd32dc1c1a376ffb0f2d476ef07c157305398" CACHE STRING "libdatadog x86_64 sha256")
     set(FILE_TO_DOWNLOAD_ARM64 libdatadog-aarch64-apple-darwin.tar.gz)
     set(FILE_TO_DOWNLOAD_X86_64 libdatadog-x86_64-apple-darwin.tar.gz)
 
@@ -89,23 +89,23 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
         IMPORTED_LOCATION ${LIBDATADOG_BASE_DIR}/lib/libdatadog_profiling.dylib
     )
 else()
-    # v1.0.5 SHA256 hashes
+    # v1.0.7 SHA256 hashes
     # IMPORTANT: FetchContent uses browser download URLs which won't work for private repos!
     # Consider converting to GitHub API approach like portfile.cmake if builds fail with 404
     if(CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64" OR CMAKE_SYSTEM_PROCESSOR STREQUAL "arm64")
         if(DEFINED ENV{IsAlpine} AND "$ENV{IsAlpine}" MATCHES "true")
-            set(SHA256_LIBDATADOG "3b8dda11bd0d14d9cd6fdc4783c6e3a34f31b2804e58ebe820bfc913fc82c39b" CACHE STRING "libdatadog sha256")
+            set(SHA256_LIBDATADOG "fcededfebf4ecbf3fc717cf9a5bd1c1a8f91d391b0a97a79745e47c32e5efbfd" CACHE STRING "libdatadog sha256")
             set(FILE_TO_DOWNLOAD libdatadog-aarch64-alpine-linux-musl.tar.gz)
         else()
-            set(SHA256_LIBDATADOG "d299c4bac5b8ba9353826a440a924c3ee103432b1fd517d5af59e6e7eb5477db" CACHE STRING "libdatadog sha256")
+            set(SHA256_LIBDATADOG "f0b7dfb4141d7b55a3e19e61f33183c7d0f46e99de902abbf42a83149f2dbba1" CACHE STRING "libdatadog sha256")
             set(FILE_TO_DOWNLOAD libdatadog-aarch64-unknown-linux-gnu.tar.gz)
         endif()
     else()
         if(DEFINED ENV{IsAlpine} AND "$ENV{IsAlpine}" MATCHES "true")
-            set(SHA256_LIBDATADOG "be94c38d0a4f28bed6be9cf16a2817de4f8912b9fbc73961100bd0840ba4d058" CACHE STRING "libdatadog sha256")
+            set(SHA256_LIBDATADOG "cc30a72b48020c3b43d6cd7d2ac6866f97bf49cd294c1eb0348a112888e75ff2" CACHE STRING "libdatadog sha256")
             set(FILE_TO_DOWNLOAD libdatadog-${CMAKE_SYSTEM_PROCESSOR}-alpine-linux-musl.tar.gz)
         else()
-            set(SHA256_LIBDATADOG "be45cd1ed8613cd2194ec64f74cdbead50cf582b1a91cc90f239da10a7b26872" CACHE STRING "libdatadog sha256")
+            set(SHA256_LIBDATADOG "7b0383c3511a90f356aa2e592e399d764e19d3b796fa5db3837ced2b67f580a8" CACHE STRING "libdatadog sha256")
             set(FILE_TO_DOWNLOAD libdatadog-${CMAKE_SYSTEM_PROCESSOR}-unknown-linux-gnu.tar.gz)
         endif()
     endif()
