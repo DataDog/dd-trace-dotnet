@@ -1,4 +1,4 @@
-﻿// <copyright file="SecurityReporter.cs" company="Datadog">
+// <copyright file="SecurityReporter.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -123,7 +123,7 @@ internal sealed partial class SecurityReporter
         }
     }
 
-    internal static void RecordTelemetry(IResult? result)
+    internal static void RecordWafTelemetry(IResult? result)
     {
         if (result is null)
         {
@@ -132,19 +132,23 @@ internal sealed partial class SecurityReporter
 
         if (result.Timeout)
         {
-            TelemetryFactory.Metrics.RecordCountWafRequests(MetricTags.WafAnalysis.WafTimeout);
+            TelemetryFactory.Metrics.RecordCountWafRequests(
+                result.Truncated ? MetricTags.WafAnalysis.WafTimeoutTruncated : MetricTags.WafAnalysis.WafTimeout);
         }
         else if (result.ShouldBlock)
         {
-            TelemetryFactory.Metrics.RecordCountWafRequests(MetricTags.WafAnalysis.RuleTriggeredAndBlocked);
+            TelemetryFactory.Metrics.RecordCountWafRequests(
+                result.Truncated ? MetricTags.WafAnalysis.RuleTriggeredAndBlockedTruncated : MetricTags.WafAnalysis.RuleTriggeredAndBlocked);
         }
         else if (result.ShouldReportSecurityResult)
         {
-            TelemetryFactory.Metrics.RecordCountWafRequests(MetricTags.WafAnalysis.RuleTriggered);
+            TelemetryFactory.Metrics.RecordCountWafRequests(
+                result.Truncated ? MetricTags.WafAnalysis.RuleTriggeredTruncated : MetricTags.WafAnalysis.RuleTriggered);
         }
         else
         {
-            TelemetryFactory.Metrics.RecordCountWafRequests(MetricTags.WafAnalysis.Normal);
+            TelemetryFactory.Metrics.RecordCountWafRequests(
+                result.Truncated ? MetricTags.WafAnalysis.NormalTruncated : MetricTags.WafAnalysis.Normal);
         }
     }
 

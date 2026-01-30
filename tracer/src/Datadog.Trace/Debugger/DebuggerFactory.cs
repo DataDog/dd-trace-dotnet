@@ -35,7 +35,7 @@ internal sealed class DebuggerFactory
         var diagnosticsSink = DiagnosticsSink.Create(serviceNameProvider, debuggerSettings);
 
         var snapshotUploader = CreateSnapshotUploader(discoveryService, debuggerSettings, gitMetadataTagsProvider, GetApiFactory(tracerSettings, true), snapshotSink);
-        var logUploader = CreateSnapshotUploader(discoveryService, debuggerSettings, gitMetadataTagsProvider, GetApiFactory(tracerSettings, false), logSink);
+        var logUploader = CreateLogUploader(discoveryService, debuggerSettings, gitMetadataTagsProvider, GetApiFactory(tracerSettings, false), logSink);
         var diagnosticsUploader = CreateDiagnosticsUploader(discoveryService, debuggerSettings, gitMetadataTagsProvider, GetApiFactory(tracerSettings, true), diagnosticsSink);
         var lineProbeResolver = LineProbeResolver.Create(debuggerSettings.ThirdPartyDetectionExcludes, debuggerSettings.ThirdPartyDetectionIncludes);
         var probeStatusPoller = ProbeStatusPoller.Create(diagnosticsSink, debuggerSettings);
@@ -72,6 +72,7 @@ internal sealed class DebuggerFactory
                 tracerSettings.Manager.InitialMutableSettings,
                 tracerSettings.Manager.InitialExporterSettings,
                 includeDefaultTags: false,
+                tracerSettings.PropagateProcessTags ? ProcessTags.TagsList : [],
                 prefix: DebuggerSettings.DebuggerMetricPrefix);
         }
 

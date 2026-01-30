@@ -1,4 +1,4 @@
-﻿// <copyright file="LogUploadApi.cs" company="Datadog">
+// <copyright file="LogUploadApi.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -25,7 +25,7 @@ namespace Datadog.Trace.Debugger.Upload
         {
             discoveryService.SubscribeToChanges(c =>
             {
-                Endpoint = c.DebuggerEndpoint;
+                Endpoint = c.DebuggerUploadEndpoint;
                 Log.Debug("LogUploadApi: Updated endpoint to {Endpoint}", Endpoint);
             });
         }

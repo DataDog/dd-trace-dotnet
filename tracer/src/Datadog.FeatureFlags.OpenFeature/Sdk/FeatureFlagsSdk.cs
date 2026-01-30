@@ -10,6 +10,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.FeatureFlags;
+using Newtonsoft.Json.Linq;
 using OpenFeature.Constant;
 using OpenFeature.Model;
 
@@ -81,9 +82,10 @@ internal static class FeatureFlagsSdk
                         null);
         }
 
+        var value = typeof(T) == typeof(Value) ? JsonToValue(evaluation.Value as string) : evaluation.Value!;
         var res = new ResolutionDetails<T>(
             evaluation.FlagKey,
-            (T)(evaluation.Value!),
+            (T)value,
             ToErrorType(evaluation.Reason, evaluation.Error),
             evaluation.Reason.ToString(),
             evaluation.Variant,
@@ -112,5 +114,62 @@ internal static class FeatureFlagsSdk
     {
         var dic = (metadata ?? new Dictionary<string, string>()).ToDictionary(p => p.Key, p => (object)p.Value);
         return new ImmutableMetadata(dic);
+    }
+
+    public static Value JsonToValue(string? json)
+    {
+        try
+        {
+            if (json is null)
+            {
+                return new Value();
+            }
+
+            var token = JToken.Parse(json);
+            return ConvertToken(token);
+        }
+        catch
+        {
+            return new Value();
+        }
+    }
+
+    private static Value ConvertToken(JToken token)
+    {
+        switch (token.Type)
+        {
+            case JTokenType.Object:
+                return new Value(ConvertObject((JObject)token));
+            case JTokenType.Array:
+                return new Value(ConvertArray((JArray)token));
+            case JTokenType.Integer:
+                return new Value((long)token);
+            case JTokenType.Float:
+                return new Value((double)token);
+            case JTokenType.String:
+                return new Value((string)token);
+            case JTokenType.Boolean:
+                return new Value((bool)token);
+            case JTokenType.Null:
+                return new Value();
+            default:
+                return new Value();
+        }
+    }
+
+    private static Structure ConvertObject(JObject obj)
+    {
+        var dict = new Dictionary<string, Value>();
+        foreach (var property in obj.Properties())
+        {
+            dict.Add(property.Name, ConvertToken(property.Value));
+        }
+
+        return new Structure(dict);
+    }
+
+    private static List<Value> ConvertArray(JArray array)
+    {
+        return array.Select(ConvertToken).ToList();
     }
 }
