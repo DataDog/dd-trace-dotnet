@@ -51,8 +51,7 @@ check-azure-pipeline:
     expire_in: 3 months
   variables:
     # Set this for quickly testing benchmarking workflows.
-    # TODO: Revert to ""
-    HARDCODED_BUILD_ID: "194777"
+    HARDCODED_BUILD_ID: ""
   script:
     - |
       if [[ -n "$HARDCODED_BUILD_ID" ]]; then
@@ -545,7 +544,7 @@ profiler_cpu_timer_create-arm64:
     # Branch containing 1. scripts to launch Windows benchmarks on ephemeral 
     # instances (to be used by GitLab CI runners) and 2. scripts to run Windows 
     # benchmarks (to be used by the ephemeral instances).
-    BP_INFRA_BENCHMARKING_PLATFORM_BRANCH: "augusto/dd-trace-dotnet/macro/apmsp-2292.add-perf-quality-gates"
+    BP_INFRA_BENCHMARKING_PLATFORM_BRANCH: "dd-trace-dotnet/macro"
 
     # Where benchmarking results will be stored
     BP_INFRA_ARTIFACTS_BUCKET_NAME: "windows-benchmarking-results-us-east-1"
