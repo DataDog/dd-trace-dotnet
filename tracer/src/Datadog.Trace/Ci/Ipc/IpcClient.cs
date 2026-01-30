@@ -11,7 +11,7 @@ namespace Datadog.Trace.Ci.Ipc;
 internal sealed class IpcClient : IpcDualChannel
 {
     public IpcClient(string name)
-        : base($"{name}.send", $"{name}.recv")
+        : base($"{name}_send.mtx", $"{name}_recv.mtx")
     {
     }
 }

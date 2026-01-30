@@ -12,7 +12,7 @@ namespace Datadog.Trace.Ci.Ipc;
 internal sealed class IpcServer : IpcDualChannel
 {
     public IpcServer(string name)
-        : base($"{name}.recv", $"{name}.send")
+        : base($"{name}_recv.mtx", $"{name}_send.mtx")
     {
     }
 }

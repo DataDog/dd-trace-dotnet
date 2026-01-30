@@ -826,6 +826,7 @@
       <type fullname="System.Runtime.Serialization.StreamingContext" />
       <type fullname="System.Runtime.Serialization.StreamingContextStates" />
       <type fullname="System.Runtime.Versioning.TargetFrameworkAttribute" />
+      <type fullname="System.Runtime.Versioning.UnsupportedOSPlatformAttribute" />
       <type fullname="System.RuntimeFieldHandle" />
       <type fullname="System.RuntimeMethodHandle" />
       <type fullname="System.RuntimeTypeHandle" />
