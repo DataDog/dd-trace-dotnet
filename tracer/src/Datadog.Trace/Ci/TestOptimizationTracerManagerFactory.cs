@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Ci.Agent;
+using Datadog.Trace.Ci.Agent.MessagePack;
 using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Ci.Sampling;
 using Datadog.Trace.Configuration;
@@ -22,7 +23,6 @@ using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.RuntimeMetrics;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Telemetry;
-using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace.Ci
 {
@@ -97,7 +97,7 @@ namespace Datadog.Trace.Ci
             {
                 if (!string.IsNullOrEmpty(_settings.ApiKey))
                 {
-                    return new CIVisibilityProtocolWriter(_settings, new CIWriterHttpSender(_testOptimizationTracerManagement.GetRequestFactory(settings)));
+                    return new CIVisibilityProtocolWriter(_settings, new CIWriterHttpSender(_testOptimizationTracerManagement.GetRequestFactory(settings)), CIFormatterResolver.Instance);
                 }
 
                 Environment.FailFast("An API key is required in Agentless mode.");
@@ -107,7 +107,7 @@ namespace Datadog.Trace.Ci
             // With agent scenario:
             if (_enabledEventPlatformProxy)
             {
-                return new CIVisibilityProtocolWriter(_settings, new CIWriterHttpSender(_testOptimizationTracerManagement.GetRequestFactory(settings)));
+                return new CIVisibilityProtocolWriter(_settings, new CIWriterHttpSender(_testOptimizationTracerManagement.GetRequestFactory(settings)), CIFormatterResolver.Instance);
             }
 
             // Event platform proxy not found

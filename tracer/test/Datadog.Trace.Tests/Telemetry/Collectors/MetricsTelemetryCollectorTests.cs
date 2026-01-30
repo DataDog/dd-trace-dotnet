@@ -252,7 +252,7 @@ public class MetricsTelemetryCollectorTests
                 Metric = Count.WafRequests.GetName(),
                 Points = new[] { new { Value = 5 } },
                 Type = TelemetryMetricType.Count,
-                Tags = new[] { expectedWafTag, expectedRulesetTag, "rule_triggered:false", "request_blocked:false", "waf_timeout:false", "request_excluded:false" },
+                Tags = new[] { expectedWafTag, expectedRulesetTag, "rule_triggered:false", "request_blocked:false", "waf_timeout:false", "block_failure:false", "request_excluded:false", "rate_limited:false", "input_truncated:false" },
                 Common = true,
                 Namespace = NS.ASM,
             },
