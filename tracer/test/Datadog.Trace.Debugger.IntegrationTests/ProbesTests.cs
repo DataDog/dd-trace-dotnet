@@ -867,6 +867,11 @@ public class ProbesTests : TestHelper
         {
             throw new SkipException("Current test is not supported with optimized code.");
         }
+#else
+        if (testDescription.TestType == typeof(NullByRefArgAndLocal))
+        {
+            throw new SkipException("DEBUG-4875, DEBUG-4876");
+        }
 #endif
     }
 
