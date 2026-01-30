@@ -57,7 +57,7 @@ Write-Verbose "Tracer directory: $tracerDir"
 
 # Clean up previous builds
 Write-Verbose "Cleaning up previous builds from: $tracerDir/bin/artifacts/nuget/azure-functions/"
-Remove-Item -Path "$tracerDir/bin/artifacts/nuget/azure-functions/*" -Force -ErrorAction SilentlyContinue
+Remove-Item -Path "$tracerDir/bin/artifacts/nuget/azure-functions/*" -Force -Recurse -ErrorAction SilentlyContinue
 
 # Remove package Datadog.AzureFunctions from NuGet cache
 Write-Verbose "Removing $packageId from NuGet cache..."
@@ -106,6 +106,7 @@ dotnet publish "$tracerDir/src/Datadog.Trace" -c Release -o "$tracerDir/src/Data
 
 # Build Azure Functions NuGet package
 Write-Verbose "Building Datadog.AzureFunctions NuGet package..."
+dotnet restore "$tracerDir/src/Datadog.AzureFunctions"
 & "$tracerDir/$buildScript" BuildAzureFunctionsNuget
 
 # Copy package to destination if specified
