@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.Linq;
+using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
 
@@ -29,5 +30,38 @@ public class ProcessTagsTests
                 s.Count(c => c == ':').Should().Be(1);
             });
         // cannot really assert on content because it depends on how the tests are run.
+    }
+
+    [SkippableTheory]
+    [InlineData(@"C:\Users\MyUser\Documents", "Documents")]  // no trailing separator
+    [InlineData(@"C:\Users\MyUser\Documents\", "Documents")] // with trailing separator
+    [InlineData(@"C:\Program Files\", "Program Files")]      // with space
+    [InlineData(@"simple", "simple")]                        // not rooted, no trailing separator
+    [InlineData(@"simple/", "simple")]                       // not rooted, with trailing separator
+    [InlineData(@"C:\", @"C:\")]                             // root
+    [InlineData(@"", "")]                                    // empty
+    [InlineData(null, "")]                                   // null
+    public void GetLastPathSegment_ReturnsLastDirectory_Windows(string path, string expected)
+    {
+        // run these on Windows only
+        SkipOn.AllExcept(SkipOn.PlatformValue.Windows);
+
+        ProcessTags.GetLastPathSegment(path).Should().Be(expected);
+    }
+
+    [SkippableTheory]
+    [InlineData(@"/home/user/projects", "projects")]  // no trailing separator
+    [InlineData(@"/home/user/projects/", "projects")] // with trailing separator
+    [InlineData(@"simple", "simple")]                 // not rooted, no trailing separator
+    [InlineData(@"simple/", "simple")]                // not rooted, with trailing separator
+    [InlineData(@"/", @"/")]                          // root
+    [InlineData(@"", "")]                             // empty
+    [InlineData(null, "")]                            // null
+    public void GetLastPathSegment_ReturnsLastDirectory_NonWindows(string path, string expected)
+    {
+        // do not run these on Windows
+        SkipOn.Platform(SkipOn.PlatformValue.Windows);
+
+        ProcessTags.GetLastPathSegment(path).Should().Be(expected);
     }
 }
