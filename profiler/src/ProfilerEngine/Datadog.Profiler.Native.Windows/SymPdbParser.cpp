@@ -100,6 +100,13 @@ bool SymParser::LoadPdbFile(const std::string& pdbFilePath, const std::string& m
 
     _pModuleInfo->LoadingState = SymbolLoadingState::Windows;
 
+    // Log memory size of loaded symbols
+    auto memorySize = _pModuleInfo->GetMemorySize();
+    Log::Info("Loaded symbols from Windows PDB (Sym) for module ", moduleFilePath,
+              ". Memory size: ", memorySize, " bytes (",
+              _pModuleInfo->Files.size(), " files, ",
+              _pModuleInfo->RidToDebugInfo.size(), " methods)");
+
     return true;
 }
 

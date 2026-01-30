@@ -177,6 +177,14 @@ bool DebugInfoStore::TryLoadSymbolsWithPortable(std::string pdbFilename, std::st
             moduleInfo.RidToDebugInfo.emplace_back() = {moduleInfo.Files[row.InitialDocument], startLine};
         }
         moduleInfo.LoadingState = SymbolLoadingState::Portable;
+
+        // Log memory size of loaded symbols
+        auto memorySize = moduleInfo.GetMemorySize();
+        Log::Info("Loaded symbols from Portable PDB for module ", moduleFilename,
+                  ". Memory size: ", memorySize, " bytes (",
+                  moduleInfo.Files.size(), " files, ",
+                  moduleInfo.RidToDebugInfo.size(), " methods)");
+
         return true;
     }
     catch (PPDB::Exception const& ec)

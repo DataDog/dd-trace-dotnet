@@ -125,6 +125,14 @@ bool DbgHelpParser::LoadPdbFile(const std::string& pdbFilePath)
     }
 
     _pModuleInfo->LoadingState = SymbolLoadingState::Windows;
+
+    // Log memory size of loaded symbols
+    auto memorySize = _pModuleInfo->GetMemorySize();
+    Log::Info("Loaded symbols from Windows PDB (DbgHelp) for ", pdbFilePath,
+              ". Memory size: ", memorySize, " bytes (",
+              _pModuleInfo->Files.size(), " files, ",
+              _pModuleInfo->RidToDebugInfo.size(), " methods)");
+
     return true;
 }
 

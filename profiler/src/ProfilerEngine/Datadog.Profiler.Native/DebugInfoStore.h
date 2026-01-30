@@ -36,6 +36,29 @@ public:
 
     SymbolLoadingState LoadingState;
     bool ErrorLogged = false;
+
+    // Calculate the total memory size of this debug info structure
+    std::size_t GetMemorySize() const
+    {
+        std::size_t totalSize = 0;
+
+        // Size of the ModulePath string
+        totalSize += ModulePath.capacity();
+
+        // Size of all file path strings in the Files vector
+        for (const auto& file : Files)
+        {
+            totalSize += file.capacity();
+        }
+        // Add overhead for the vector container itself
+        totalSize += Files.capacity() * sizeof(std::string);
+
+        // Size of RidToDebugInfo vector
+        // Each entry contains a string_view (2 pointers typically) and a uint32_t
+        totalSize += RidToDebugInfo.capacity() * sizeof(SymbolDebugInfo);
+
+        return totalSize;
+    }
 };
 
 
