@@ -54,14 +54,14 @@ public class MassTransit7Tests : TracingIntegrationTest
         using (await RunSampleAndWaitForExit(agent))
         {
             // Wait for spans to arrive
-            // The sample tests 3 transports (in-memory, RabbitMQ, Amazon SQS) with 2 messages each
-            // Plus a saga state machine with 3 events
-            // Each message produces: 1 send span + 1 receive span + 1 process span = 3 spans
-            // But DiagnosticSource only emits send and receive/consume events, so:
-            // - 3 transports × 2 messages × 2 spans (send + receive) = 12 spans
-            // - Saga: 3 events × 2 spans (send + receive) = 6 spans
-            // Total expected: ~24 MassTransit spans (may vary based on transport behavior)
-            const int expectedMassTransitSpanCount = 24;
+            // The sample tests:
+            // - 3 transports (inmemory, rabbitmq, amazonsqs) × 2 messages × 2 spans = 12 spans
+            // - Saga state machine test: 3 events × 2 spans (send + process) = 6 spans
+            // - Consumer exception test: 1 message × 3 spans (publish send + send + process) = 3 spans
+            // - Handler exception test: 1 message × 3 spans (send + send + process) = 3 spans
+            // - Saga exception test: 2 events × ~2.5 spans each = 5 spans
+            // Total expected: ~29 MassTransit spans
+            const int expectedMassTransitSpanCount = 29;
             var spans = await agent.WaitForSpansAsync(expectedMassTransitSpanCount, timeoutInMilliseconds: 60000);
 
             using var s = new AssertionScope();

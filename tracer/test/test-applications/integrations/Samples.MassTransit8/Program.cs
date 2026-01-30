@@ -15,6 +15,9 @@ await RunWithTransport("amazonsqs", ConfigureAmazonSqs);
 // Run saga test with in-memory transport
 await RunSagaTest();
 
+// Run exception handling test
+await RunExceptionTest();
+
 Console.WriteLine("All transports tested successfully!");
 
 async Task RunWithTransport(string transportName, Action<IBusRegistrationConfigurator> configureTransport)
@@ -183,6 +186,51 @@ async Task RunSagaTest()
     finally
     {
         Console.WriteLine("[saga] Stopping the bus...");
+        await busControl.StopAsync();
+        await Task.Delay(500);
+    }
+}
+
+async Task RunExceptionTest()
+{
+    Console.WriteLine("\n========== Testing EXCEPTION HANDLING ==========");
+
+    var services = new ServiceCollection();
+    services.AddLogging(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Information));
+
+    services.AddMassTransit(x =>
+    {
+        x.AddConsumer<FailingConsumer>();
+
+        x.UsingInMemory((context, cfg) =>
+        {
+            cfg.ConfigureEndpoints(context);
+        });
+    });
+
+    var serviceProvider = services.BuildServiceProvider();
+    var busControl = serviceProvider.GetRequiredService<IBusControl>();
+
+    try
+    {
+        Console.WriteLine("[exception] Starting the bus...");
+        await busControl.StartAsync();
+
+        // Give the bus time to fully initialize
+        await Task.Delay(500);
+
+        // Send a message that will cause the consumer to throw an exception
+        Console.WriteLine("[exception] Publishing message that will cause an exception...");
+        await busControl.Publish(new FailingMessage { Value = "This message will fail" });
+
+        // Wait for the message to be processed (and fail)
+        await Task.Delay(1000);
+
+        Console.WriteLine("[exception] Exception test completed - check traces for error spans!");
+    }
+    finally
+    {
+        Console.WriteLine("[exception] Stopping the bus...");
         await busControl.StopAsync();
         await Task.Delay(500);
     }

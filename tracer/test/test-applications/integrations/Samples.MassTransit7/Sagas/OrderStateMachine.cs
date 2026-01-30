@@ -17,6 +17,7 @@ public class OrderStateMachine : MassTransitStateMachine<OrderState>
         Event(() => OrderSubmitted, x => x.CorrelateById(context => context.Message.OrderId));
         Event(() => OrderAccepted, x => x.CorrelateById(context => context.Message.OrderId));
         Event(() => OrderCompleted, x => x.CorrelateById(context => context.Message.OrderId));
+        Event(() => OrderFailed, x => x.CorrelateById(context => context.Message.OrderId));
 
         // Initial state: when order is submitted
         Initially(
@@ -30,7 +31,7 @@ public class OrderStateMachine : MassTransitStateMachine<OrderState>
                 })
                 .TransitionTo(Submitted));
 
-        // Submitted state: waiting for acceptance
+        // Submitted state: waiting for acceptance or failure
         During(Submitted,
             When(OrderAccepted)
                 .Then(context =>
@@ -38,7 +39,14 @@ public class OrderStateMachine : MassTransitStateMachine<OrderState>
                     Console.WriteLine($"[Saga] Order {context.Data.OrderId} accepted");
                     context.Instance.AcceptedAt = DateTime.UtcNow;
                 })
-                .TransitionTo(Accepted));
+                .TransitionTo(Accepted),
+            When(OrderFailed)
+                .Then(context =>
+                {
+                    Console.WriteLine($"[Saga] Order {context.Data.OrderId} FAILING with reason: {context.Data.Reason}");
+                    // Intentionally throw an exception to test saga exception handling
+                    throw new InvalidOperationException($"Saga failure test: {context.Data.Reason}");
+                }));
 
         // Accepted state: waiting for completion
         During(Accepted,
@@ -64,4 +72,5 @@ public class OrderStateMachine : MassTransitStateMachine<OrderState>
     public Event<OrderSubmitted> OrderSubmitted { get; private set; } = null!;
     public Event<OrderAccepted> OrderAccepted { get; private set; } = null!;
     public Event<OrderCompleted> OrderCompleted { get; private set; } = null!;
+    public Event<OrderFailed> OrderFailed { get; private set; } = null!;
 }

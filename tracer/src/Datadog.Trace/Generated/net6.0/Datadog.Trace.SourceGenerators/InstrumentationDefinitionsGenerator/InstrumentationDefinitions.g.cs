@@ -42,6 +42,7 @@ namespace Datadog.Trace.ClrProfiler
             || assemblyName.StartsWith("Hangfire.Core,", StringComparison.Ordinal)
             || assemblyName.StartsWith("HotChocolate.Execution,", StringComparison.Ordinal)
             || assemblyName.StartsWith("log4net,", StringComparison.Ordinal)
+            || assemblyName.StartsWith("MassTransit,", StringComparison.Ordinal)
             || assemblyName.StartsWith("MongoDB.Driver,", StringComparison.Ordinal)
             || assemblyName.StartsWith("MongoDB.Driver.Core,", StringComparison.Ordinal)
             || assemblyName.StartsWith("MSTest.TestFramework,", StringComparison.Ordinal)
@@ -456,6 +457,8 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Log4Net.DirectSubmission.AppenderCollectionLegacyIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Log4Net.AppenderAttachedImplIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.Log4Net,
+                "Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.NotifyFaultedIntegration"
+                    => Datadog.Trace.Configuration.IntegrationId.MassTransit,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_3_5_Execute_Integration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_Generic_Execute_Integration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_3_5_ExecuteAsync_Integration"
