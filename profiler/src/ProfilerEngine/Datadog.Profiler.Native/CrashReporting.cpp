@@ -284,7 +284,11 @@ int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, ResolveManagedCa
             CHECK_RESULT(ddog_crasht_StackTrace_push_frame(&stackTrace, &frame, /*is incomplete*/ true));
         }
 
-        CHECK_RESULT(ddog_crasht_StackTrace_set_complete(&stackTrace));
+        // Only mark the stack trace as complete if we actually captured frames
+        if (!frames.empty())
+        {
+            CHECK_RESULT(ddog_crasht_StackTrace_set_complete(&stackTrace));
+        }
 
         auto threadIdStr = std::to_string(threadId);
         // stackTrace is consumed by the API, meaning that we *MUST* not use this handle
