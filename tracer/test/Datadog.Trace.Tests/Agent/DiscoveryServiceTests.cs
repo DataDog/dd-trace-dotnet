@@ -156,11 +156,17 @@ public class DiscoveryServiceTests
     public async Task DoesNotFireCallbackOnRecheckIfNoChangesToConfig()
     {
         int notificationCount = 0;
+        using var mutex1 = new ManualResetEventSlim();
         using var mutex2 = new ManualResetEventSlim();
         using var mutex3 = new ManualResetEventSlim();
         var recheckIntervalMs = 1_000; // ms
         var factory = new TestRequestFactory(
-            x => new TestApiRequest(x, responseContent: GetConfig()),
+            x =>
+            {
+                var response = new TestApiRequest(x, responseContent: GetConfig());
+                mutex1.Set(); // Signal that Request 1 has completed
+                return response;
+            },
             x =>
             {
                 mutex2.Set();
@@ -173,15 +179,22 @@ public class DiscoveryServiceTests
             });
 
         var ds = new DiscoveryService(factory, InitialRetryDelayMs, MaxRetryDelayMs, recheckIntervalMs);
+
+        // Wait for first request to complete BEFORE subscribing
+        // This ensures we test the synchronous callback path in SubscribeToChanges
+        mutex1.Wait(30_000).Should().BeTrue("Should complete first request to api");
+
+        // Subscribe after config is already fetched - callback should fire immediately
         ds.SubscribeToChanges(x => Interlocked.Increment(ref notificationCount));
 
-        // wait for second request to ensure first request completed
-        mutex2.Wait(30_000).Should().BeTrue("Should make second request to api");
+        // Verify callback fired during subscription
+        Volatile.Read(ref notificationCount).Should().Be(1);
 
-        // wait for third request
+        // Wait for additional requests to verify no more callbacks fire
+        mutex2.Wait(30_000).Should().BeTrue("Should make second request to api");
         mutex3.Wait(30_000).Should().BeTrue("Should make third request to api");
 
-        Volatile.Read(ref notificationCount).Should().Be(1); // initial
+        Volatile.Read(ref notificationCount).Should().Be(1); // Still 1 - no additional callbacks
 
         await ds.DisposeAsync();
     }
@@ -190,11 +203,17 @@ public class DiscoveryServiceTests
     public async Task FiresCallbackOnRecheckIfHasChangesToConfig()
     {
         var notificationCount = 0;
+        using var mutex1 = new ManualResetEventSlim();
         using var mutex2 = new ManualResetEventSlim();
         using var mutex3 = new ManualResetEventSlim();
         var recheckIntervalMs = 1_000; // ms
         var factory = new TestRequestFactory(
-            x => new TestApiRequest(x, responseContent: GetConfig(dropP0: true)),
+            x =>
+            {
+                var response = new TestApiRequest(x, responseContent: GetConfig(dropP0: true));
+                mutex1.Set(); // Signal that Request 1 has completed
+                return response;
+            },
             x =>
             {
                 mutex2.Set();
@@ -207,15 +226,22 @@ public class DiscoveryServiceTests
             });
 
         var ds = new DiscoveryService(factory, InitialRetryDelayMs, MaxRetryDelayMs, recheckIntervalMs);
+
+        // Wait for first request to complete BEFORE subscribing
+        // This ensures we test the synchronous callback path in SubscribeToChanges
+        mutex1.Wait(30_000).Should().BeTrue("Should complete first request to api");
+
+        // Subscribe after config is already fetched - callback should fire immediately
         ds.SubscribeToChanges(x => Interlocked.Increment(ref notificationCount));
 
-        // wait for second request to ensure first request completed
-        mutex2.Wait(30_000).Should().BeTrue("Should make second request to api");
+        // Verify initial callback fired during subscription
+        Volatile.Read(ref notificationCount).Should().Be(1);
 
-        // wait for third request
+        // Wait for additional requests - second request has different config, should fire callback
+        mutex2.Wait(30_000).Should().BeTrue("Should make second request to api");
         mutex3.Wait(30_000).Should().BeTrue("Should make third request to api");
 
-        Volatile.Read(ref notificationCount).Should().Be(2); // initial and second
+        Volatile.Read(ref notificationCount).Should().Be(2); // initial + second (config changed)
 
         await ds.DisposeAsync();
     }
@@ -224,12 +250,18 @@ public class DiscoveryServiceTests
     public async Task DoesNotFireAfterUnsubscribing()
     {
         var notificationCount = 0;
+        using var mutex1 = new ManualResetEventSlim();
         using var mutex2 = new ManualResetEventSlim();
         using var mutex3 = new ManualResetEventSlim();
 
         var recheckIntervalMs = 1_000; // ms
         var factory = new TestRequestFactory(
-            x => new TestApiRequest(x, responseContent: GetConfig(dropP0: true)),
+            x =>
+            {
+                var response = new TestApiRequest(x, responseContent: GetConfig(dropP0: true));
+                mutex1.Set(); // Signal that Request 1 has completed
+                return response;
+            },
             x =>
             {
                 mutex2.Set();
@@ -243,9 +275,17 @@ public class DiscoveryServiceTests
 
         var ds = new DiscoveryService(factory, InitialRetryDelayMs, MaxRetryDelayMs, recheckIntervalMs);
 
+        // Wait for first request to complete BEFORE subscribing
+        // This ensures we test the synchronous callback path in SubscribeToChanges
+        mutex1.Wait(30_000).Should().BeTrue("Should complete first request to api");
+
+        // Subscribe after config is already fetched - callback fires and immediately unsubscribes
         ds.SubscribeToChanges(Callback);
 
-        // wait for second request to ensure first request completed
+        // Verify callback fired once during subscription
+        Volatile.Read(ref notificationCount).Should().Be(1);
+
+        // Wait for additional requests to ensure callback doesn't fire again after unsubscribing
         mutex2.Wait(30_000).Should().BeTrue("Should make second request to api");
 
         // wait for third request
