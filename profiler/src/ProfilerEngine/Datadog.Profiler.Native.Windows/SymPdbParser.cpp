@@ -157,6 +157,16 @@ bool SymParser::ComputeMethodsInfo()
             {
                 _methods.push_back(info);
             }
+            else
+            {
+                // since methods will be added to a vector where the position
+                // corresponds to an incrementing RID, no hole should be left
+                // (i.e. unknown source file info instead)
+                info.rid = rid;
+                info.lineNumber = 0;
+                info.sourceFile = NoFileFoundString;
+                _methods.push_back(info);
+            }
             pMethod->Release();
         }
         else
@@ -166,6 +176,7 @@ bool SymParser::ComputeMethodsInfo()
             info.rid = rid;
             info.lineNumber = 0;
             info.sourceFile = NoFileFoundString;
+            _methods.push_back(info);
 
             // TODO: in case of hardcoded ranges, we could try to use
             //       the metatada API to check if the method exists
