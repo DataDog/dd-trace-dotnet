@@ -406,32 +406,3 @@ TEST(CpuTimeProviderTest, CheckValuesAndTimestamp)
         currentSample++;
     }
 }
-
-
-extern "C"
-{
-    #include "datadog/common.h"
-    #include "datadog/profiling.h"
-}
-TEST(CpuTimeProviderTest, XX)
-{
-
-    ddog_prof_ProfilesDictionaryHandle dict = {0};
-    auto status = ddog_prof_ProfilesDictionary_new(&dict);
-    if (status.err != nullptr)
-    {
-        ASSERT_FALSE(true) << "Failed to create dict";
-    }
-
-    auto fn = ddog_prof_Function2{
-        .name = DDOG_PROF_STRINGID2_EMPTY,
-        .system_name = DDOG_PROF_STRINGID2_EMPTY,
-        .file_name = DDOG_PROF_STRINGID2_EMPTY};
-
-    ddog_prof_FunctionId2 function_id;
-    status = ddog_prof_ProfilesDictionary_insert_function(&function_id, dict, &fn);
-    if (status.err != nullptr)
-    {
-        ASSERT_FALSE(true) << "Failed to intern function";
-    }
-}
