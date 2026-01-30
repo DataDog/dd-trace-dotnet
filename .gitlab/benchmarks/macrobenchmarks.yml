@@ -581,7 +581,6 @@ profiler_cpu_timer_create-arm64:
     - export GITHUB_TOKEN=$(cat /tmp/github-token)
     - git clone --branch $BP_INFRA_BENCHMARKING_PLATFORM_BRANCH https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform
     - ./platform/steps/run-windows-benchmarks.sh
-    - ./platform/steps/fetch-results.sh
   after_script:
     - |
       if [ "$CLEANUP" == "true" ]; then
