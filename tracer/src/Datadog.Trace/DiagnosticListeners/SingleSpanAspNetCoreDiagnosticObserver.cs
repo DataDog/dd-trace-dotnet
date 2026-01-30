@@ -192,7 +192,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (arg.TryDuckCast<AspNetCoreDiagnosticObserver.HttpRequestInEndpointMatchedStruct>(out var typedArg)
              && typedArg.HttpContext is { } httpContext
-             && httpContext.Items[AspNetCoreHttpRequestHandler.HttpContextItemsKey] is AspNetCoreHttpRequestHandler.SingleSpanRequestTrackingFeature { RootScope.Span: { Tags: AspNetCoreSingleSpanTags tags } rootSpan } trackingFeature)
+             && httpContext.Items[AspNetCoreHttpRequestHandler.HttpContextTrackingKey] is AspNetCoreHttpRequestHandler.SingleSpanRequestTrackingFeature { RootScope.Span: { Tags: AspNetCoreSingleSpanTags tags } rootSpan } trackingFeature)
             {
                 // NOTE: This event is when the routing middleware selects an endpoint. Additional middleware (e.g
                 //       Authorization/CORS) may still run, and the endpoint itself has not started executing.
@@ -303,7 +303,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (arg.TryDuckCast<AspNetCoreDiagnosticObserver.BeforeActionStruct>(out var typedArg)
              && typedArg.HttpContext is { } httpContext
-             && httpContext.Items[AspNetCoreHttpRequestHandler.HttpContextItemsKey] is AspNetCoreHttpRequestHandler.SingleSpanRequestTrackingFeature { RootScope.Span: { } rootSpan })
+             && httpContext.Items[AspNetCoreHttpRequestHandler.HttpContextTrackingKey] is AspNetCoreHttpRequestHandler.SingleSpanRequestTrackingFeature { RootScope.Span: { } rootSpan })
             {
                 if (isCodeOriginEnabled)
                 {
@@ -334,7 +334,7 @@ namespace Datadog.Trace.DiagnosticListeners
             }
 
             if (arg.DuckCast<AspNetCoreDiagnosticObserver.HttpRequestInStopStruct>().HttpContext is { } httpContext
-             && httpContext.Items[AspNetCoreHttpRequestHandler.HttpContextItemsKey] is AspNetCoreHttpRequestHandler.SingleSpanRequestTrackingFeature { RootScope: { } rootScope, ProxyScope: var proxyScope })
+             && httpContext.Items[AspNetCoreHttpRequestHandler.HttpContextTrackingKey] is AspNetCoreHttpRequestHandler.SingleSpanRequestTrackingFeature { RootScope: { } rootScope, ProxyScope: var proxyScope })
             {
                 AspNetCoreRequestHandler.StopAspNetCorePipelineScope(_tracer, _security, rootScope, httpContext, proxyScope);
             }
@@ -349,7 +349,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (arg.TryDuckCast<AspNetCoreDiagnosticObserver.UnhandledExceptionStruct>(out var unhandledStruct)
              && unhandledStruct.HttpContext is { } httpContext
-             && httpContext.Items[AspNetCoreHttpRequestHandler.HttpContextItemsKey] is AspNetCoreHttpRequestHandler.SingleSpanRequestTrackingFeature { RootScope.Span: { } rootSpan, ProxyScope: var proxyScope })
+             && httpContext.Items[AspNetCoreHttpRequestHandler.HttpContextTrackingKey] is AspNetCoreHttpRequestHandler.SingleSpanRequestTrackingFeature { RootScope.Span: { } rootSpan, ProxyScope: var proxyScope })
             {
                 AspNetCoreRequestHandler.HandleAspNetCoreException(_tracer, _security, rootSpan, httpContext, unhandledStruct.Exception, proxyScope);
             }
