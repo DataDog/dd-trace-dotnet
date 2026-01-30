@@ -221,7 +221,7 @@ macrobenchmarks:
     include: .gitlab/benchmarks/macrobenchmarks.yml
   allow_failure: true
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "master"'
+    - if: '$CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH =~ /^hotfix/)'
       when: always
     - if: '$CI_PIPELINE_SOURCE == "schedule" && $BENCHMARK_RUN == "true"'
       when: always

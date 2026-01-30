@@ -1,0 +1,202 @@
+experiments:
+  - name: Check SLO breaches
+    steps:
+      - name: Fail on breach
+        run: fail_on_breach
+        # Auto-generated SLO Thresholds
+        # Generated: 2026-01-29 16:46:45
+        #
+        # Generation Strategy: tight
+        #   Formula: CI_bound / (1 ± T) (T = 10.0%)
+        #
+        # SLO Checking:
+        #   - BREACH: 90% CI boundary crosses threshold
+        #   - WARNING: 90% CI boundary crosses warning_threshold (constant)
+        #
+        # Average Sample Size: 451 measurements per metric
+        #
+        # DO NOT EDIT MANUALLY - Regenerate using:
+        #   benchmark_analyzer generate slos --help
+
+        scenarios:
+          - name: high_load--baseline-win
+            thresholds:
+              # n=301, mean=529058.11, CI=[528633.08, 529483.13]
+              - agg_http_req_duration_p95 < 588314.59 ns
+              # n=301, mean=12664.03, CI=[12582.67, 12745.38]
+              - throughput > 11438.79 op/s
+
+          - name: high_load--calltarget_ngen-win
+            thresholds:
+              # n=301, mean=539947.41, CI=[539192.80, 540702.02]
+              - agg_http_req_duration_p95 < 600780.02 ns
+              # n=301, mean=11220.50, CI=[11168.70, 11272.31]
+              - throughput > 10153.37 op/s
+
+          - name: high_load--ddtraceenabled_false-win
+            thresholds:
+              # n=301, mean=512305.40, CI=[507544.00, 517066.80]
+              - agg_http_req_duration_p95 < 574518.66 ns
+              # n=301, mean=12832.94, CI=[12751.16, 12914.72]
+              - throughput > 11591.97 op/s
+
+          - name: high_load--manual_and_automatic-win
+            thresholds:
+              # n=301, mean=539467.77, CI=[538671.91, 540263.64]
+              - agg_http_req_duration_p95 < 600292.93 ns
+              # n=301, mean=11122.29, CI=[11062.77, 11181.81]
+              - throughput > 10057.06 op/s
+
+          - name: high_load--manual_only-win
+            thresholds:
+              # n=301, mean=518503.85, CI=[518418.50, 518589.21]
+              - agg_http_req_duration_p95 < 576210.23 ns
+              # n=301, mean=13298.60, CI=[13235.03, 13362.17]
+              - throughput > 12031.85 op/s
+
+          - name: high_load--profiler-win
+            thresholds:
+              # n=301, mean=543050.71, CI=[542556.24, 543545.19]
+              - agg_http_req_duration_p95 < 603939.09 ns
+              # n=301, mean=11154.88, CI=[11102.70, 11207.05]
+              - throughput > 10093.37 op/s
+
+          - name: high_load--profiler_cpu-win
+            thresholds:
+              # n=301, mean=544587.41, CI=[543959.37, 545215.45]
+              - agg_http_req_duration_p95 < 605794.94 ns
+              # n=301, mean=11232.73, CI=[11162.49, 11302.97]
+              - throughput > 10147.72 op/s
+
+          - name: high_load--profiler_cpu_timer_create-win
+            thresholds:
+              # n=301, mean=535973.65, CI=[535285.67, 536661.64]
+              - agg_http_req_duration_p95 < 596290.71 ns
+              # n=301, mean=11124.29, CI=[11069.12, 11179.46]
+              - throughput > 10062.83 op/s
+
+          - name: high_load--profiler_exceptions-win
+            thresholds:
+              # n=301, mean=529724.09, CI=[529157.90, 530290.27]
+              - agg_http_req_duration_p95 < 589211.41 ns
+              # n=301, mean=10658.80, CI=[10594.87, 10722.73]
+              - throughput > 9631.7 op/s
+
+          - name: high_load--profiler_exceptions_baseline-win
+            thresholds:
+              # n=301, mean=525040.65, CI=[524918.20, 525163.10]
+              - agg_http_req_duration_p95 < 583514.55 ns
+              # n=301, mean=12275.09, CI=[12214.96, 12335.22]
+              - throughput > 11104.51 op/s
+
+          - name: high_load--profiler_walltime-win
+            thresholds:
+              # n=301, mean=541061.01, CI=[540300.92, 541821.11]
+              - agg_http_req_duration_p95 < 602023.46 ns
+              # n=301, mean=11190.38, CI=[11138.35, 11242.41]
+              - throughput > 10125.77 op/s
+
+          - name: high_load--single_span-win
+            thresholds:
+              # n=301, mean=543803.54, CI=[543183.05, 544424.03]
+              - agg_http_req_duration_p95 < 604915.59 ns
+              # n=301, mean=11389.06, CI=[11333.53, 11444.59]
+              - throughput > 10303.21 op/s
+
+          - name: high_load--trace_stats-win
+            thresholds:
+              # n=301, mean=534634.83, CI=[534162.45, 535107.22]
+              - agg_http_req_duration_p95 < 594563.58 ns
+              # n=301, mean=11855.58, CI=[11800.80, 11910.36]
+              - throughput > 10728.0 op/s
+
+          - name: normal_operation--baseline-win
+            thresholds:
+              # n=601, mean=23996505.39, CI=[23333435.32, 24659575.46]
+              - agg_http_req_duration_p95 < 27399528.29 ns
+              # n=601, mean=10621.41, CI=[10487.49, 10755.34]
+              - throughput > 9534.08 op/s
+
+          - name: normal_operation--calltarget_ngen-win
+            thresholds:
+              # n=601, mean=33654678.56, CI=[32864548.20, 34444808.92]
+              - agg_http_req_duration_p95 < 38272009.91 ns
+              # n=601, mean=10939.42, CI=[10809.15, 11069.68]
+              - throughput > 9826.5 op/s
+
+          - name: normal_operation--ddtraceenabled_false-win
+            thresholds:
+              # n=601, mean=25679533.17, CI=[24977355.44, 26381710.90]
+              - agg_http_req_duration_p95 < 29313012.11 ns
+              # n=601, mean=11054.32, CI=[10890.77, 11217.87]
+              - throughput > 9900.7 op/s
+
+          - name: normal_operation--manual_and_automatic-win
+            thresholds:
+              # n=601, mean=34711858.89, CI=[33884670.85, 35539046.93]
+              - agg_http_req_duration_p95 < 39487829.92 ns
+              # n=601, mean=10829.85, CI=[10695.82, 10963.87]
+              - throughput > 9723.47 op/s
+
+          - name: normal_operation--manual_only-win
+            thresholds:
+              # n=601, mean=23298577.09, CI=[22658288.26, 23938865.91]
+              - agg_http_req_duration_p95 < 26598739.9 ns
+              # n=601, mean=10856.48, CI=[10717.88, 10995.07]
+              - throughput > 9743.53 op/s
+
+          - name: normal_operation--profiler-win
+            thresholds:
+              # n=601, mean=31725925.07, CI=[30848499.12, 32603351.03]
+              - agg_http_req_duration_p95 < 36225945.59 ns
+              # n=601, mean=10627.98, CI=[10460.23, 10795.72]
+              - throughput > 9509.3 op/s
+
+          - name: normal_operation--profiler_cpu-win
+            thresholds:
+              # n=601, mean=33453111.86, CI=[32586181.08, 34320042.63]
+              - agg_http_req_duration_p95 < 38133380.7 ns
+              # n=601, mean=10838.86, CI=[10679.31, 10998.40]
+              - throughput > 9708.46 op/s
+
+          - name: normal_operation--profiler_cpu_timer_create-win
+            thresholds:
+              # n=601, mean=34285073.85, CI=[33451101.70, 35119046.00]
+              - agg_http_req_duration_p95 < 39021162.23 ns
+              # n=601, mean=11006.00, CI=[10872.51, 11139.49]
+              - throughput > 9884.1 op/s
+
+          - name: normal_operation--profiler_exceptions-win
+            thresholds:
+              # n=601, mean=43551508.40, CI=[42509226.19, 44593790.61]
+              - agg_http_req_duration_p95 < 49548656.24 ns
+              # n=601, mean=11082.70, CI=[10934.81, 11230.59]
+              - throughput > 9940.74 op/s
+
+          - name: normal_operation--profiler_exceptions_baseline-win
+            thresholds:
+              # n=601, mean=28361039.11, CI=[27537100.08, 29184978.14]
+              - agg_http_req_duration_p95 < 32427753.49 ns
+              # n=601, mean=10632.91, CI=[10465.10, 10800.73]
+              - throughput > 9513.73 op/s
+
+          - name: normal_operation--profiler_walltime-win
+            thresholds:
+              # n=601, mean=34671853.36, CI=[33863511.99, 35480194.73]
+              - agg_http_req_duration_p95 < 39422438.59 ns
+              # n=601, mean=10896.43, CI=[10763.05, 11029.81]
+              - throughput > 9784.59 op/s
+
+          - name: normal_operation--single_span-win
+            thresholds:
+              # n=601, mean=32027547.73, CI=[31211885.61, 32843209.85]
+              - agg_http_req_duration_p95 < 36492455.39 ns
+              # n=601, mean=10801.39, CI=[10635.35, 10967.44]
+              - throughput > 9668.5 op/s
+
+          - name: normal_operation--trace_stats-win
+            thresholds:
+              # n=601, mean=32212590.57, CI=[31276382.79, 33148798.36]
+              - agg_http_req_duration_p95 < 36831998.18 ns
+              # n=601, mean=10609.29, CI=[10439.04, 10779.54]
+              - throughput > 9490.03 op/s
