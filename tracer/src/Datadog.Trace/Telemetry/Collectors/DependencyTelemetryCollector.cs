@@ -207,8 +207,10 @@ namespace Datadog.Trace.Telemetry
         private static bool IsZeroVersionAssemblyPattern(string assemblyName)
         {
             // e.g.
-            //    454845b558934321ad350977dd095960
-            //    akkynf62
+            //    454845b558934321ad350977dd095960 (32+ hex chars)
+            //    a43d8b99ea (10 hex chars)
+            //    akkynf62 (8 base32 chars)
+            //    dynamicclasses254
             return (assemblyName.Length == 8
                  && IsBase32Char(assemblyName[0])
                  && IsBase32Char(assemblyName[1])
@@ -218,7 +220,49 @@ namespace Datadog.Trace.Telemetry
                  && IsBase32Char(assemblyName[5])
                  && IsBase32Char(assemblyName[6])
                  && IsBase32Char(assemblyName[7]))
-                || (assemblyName.Length >= 32 && IsHexString(assemblyName, 0));
+                || (assemblyName.Length == 10 && IsHexString(assemblyName, 0))
+                || (assemblyName.Length >= 32 && IsHexString(assemblyName, 0))
+                || IsDynamicClassesPattern(assemblyName);
+        }
+
+        private static bool IsDynamicClassesPattern(string assemblyName)
+        {
+            // Pattern: "dynamicclasses" followed by digits, e.g., dynamicclasses254
+            // Length must be > 14 ("dynamicclasses".Length) to have at least one digit
+            if (assemblyName.Length <= 14)
+            {
+                return false;
+            }
+
+            // Check prefix character by character to avoid allocation (lowercase only)
+            if (assemblyName[0] != 'd'
+             || assemblyName[1] != 'y'
+             || assemblyName[2] != 'n'
+             || assemblyName[3] != 'a'
+             || assemblyName[4] != 'm'
+             || assemblyName[5] != 'i'
+             || assemblyName[6] != 'c'
+             || assemblyName[7] != 'c'
+             || assemblyName[8] != 'l'
+             || assemblyName[9] != 'a'
+             || assemblyName[10] != 's'
+             || assemblyName[11] != 's'
+             || assemblyName[12] != 'e'
+             || assemblyName[13] != 's')
+            {
+                return false;
+            }
+
+            // Verify remaining characters are all digits
+            for (int i = 14; i < assemblyName.Length; i++)
+            {
+                if (assemblyName[i] is < '0' or > '9')
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         private static bool IsBase32Char(char c)
