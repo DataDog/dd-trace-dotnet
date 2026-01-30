@@ -42,6 +42,7 @@ if(DEFINED ENV{GITHUB_TOKEN} AND NOT "$ENV{GITHUB_TOKEN}" STREQUAL "")
     set(RELEASE_JSON "${DOWNLOADS}/libdatadog/release.json")
 
     message(STATUS "Fetching release metadata from GitHub API...")
+    message(STATUS "Release API URL: ${RELEASE_API_URL}")
     file(DOWNLOAD
         "${RELEASE_API_URL}"
         "${RELEASE_JSON}"
@@ -52,8 +53,9 @@ if(DEFINED ENV{GITHUB_TOKEN} AND NOT "$ENV{GITHUB_TOKEN}" STREQUAL "")
     )
 
     list(GET api_status 0 api_code)
+    list(GET api_status 1 api_message)
     if(NOT api_code EQUAL 0)
-        message(FATAL_ERROR "Failed to fetch release metadata:\nStatus: ${api_code}\nLog: ${api_log}")
+        message(FATAL_ERROR "Failed to fetch release metadata:\nStatus code: ${api_code}\nStatus message: ${api_message}\nURL: ${RELEASE_API_URL}\nFull log:\n${api_log}")
     endif()
 
     # Step 2: Parse JSON to find the asset ID for our file

@@ -54,12 +54,18 @@ steps:
       url="https://api.github.com/app/installations/${INSTALLATION_ID}/access_tokens"
       echo "Sending request with JWT to $url"
 
+      # Request access to specific repositories including libdatadog-dotnet
+      request_body='{
+        "repositories": ["dd-trace-dotnet", "libdatadog-dotnet"]
+      }'
+
       response=$(curl --fail --silent --show-error \
         --request POST \
         --url $url \
         --header "Accept: application/vnd.github+json" \
         --header "Authorization: Bearer $JWT" \
-        --header "X-GitHub-Api-Version: 2022-11-28") || {
+        --header "X-GitHub-Api-Version: 2022-11-28" \
+        --data "$request_body") || {
           echo "❌ curl failed"
           exit 1
       }
