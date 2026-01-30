@@ -156,16 +156,11 @@ public class DiscoveryServiceTests
     public async Task DoesNotFireCallbackOnRecheckIfNoChangesToConfig()
     {
         int notificationCount = 0;
-        using var mutex1 = new ManualResetEventSlim();
         using var mutex2 = new ManualResetEventSlim();
         using var mutex3 = new ManualResetEventSlim();
         var recheckIntervalMs = 1_000; // ms
         var factory = new TestRequestFactory(
-            x =>
-            {
-                mutex1.Wait(10_000).Should().BeTrue("Should make first request to api");
-                return new TestApiRequest(x, responseContent: GetConfig());
-            },
+            x => new TestApiRequest(x, responseContent: GetConfig()),
             x =>
             {
                 mutex2.Set();
@@ -176,9 +171,6 @@ public class DiscoveryServiceTests
                 mutex3.Set();
                 return new TestApiRequest(x, responseContent: GetConfig());
             });
-
-        // Set mutex1 BEFORE creating DiscoveryService to avoid race condition
-        mutex1.Set();
 
         var ds = new DiscoveryService(factory, InitialRetryDelayMs, MaxRetryDelayMs, recheckIntervalMs);
         ds.SubscribeToChanges(x => Interlocked.Increment(ref notificationCount));
@@ -198,16 +190,11 @@ public class DiscoveryServiceTests
     public async Task FiresCallbackOnRecheckIfHasChangesToConfig()
     {
         var notificationCount = 0;
-        using var mutex1 = new ManualResetEventSlim();
         using var mutex2 = new ManualResetEventSlim();
         using var mutex3 = new ManualResetEventSlim();
         var recheckIntervalMs = 1_000; // ms
         var factory = new TestRequestFactory(
-            x =>
-            {
-                mutex1.Wait(10_000).Should().BeTrue("Should make first request to api");
-                return new TestApiRequest(x, responseContent: GetConfig(dropP0: true));
-            },
+            x => new TestApiRequest(x, responseContent: GetConfig(dropP0: true)),
             x =>
             {
                 mutex2.Set();
@@ -218,9 +205,6 @@ public class DiscoveryServiceTests
                 mutex3.Set();
                 return new TestApiRequest(x, responseContent: GetConfig(dropP0: false));
             });
-
-        // Set mutex1 BEFORE creating DiscoveryService to avoid race condition
-        mutex1.Set();
 
         var ds = new DiscoveryService(factory, InitialRetryDelayMs, MaxRetryDelayMs, recheckIntervalMs);
         ds.SubscribeToChanges(x => Interlocked.Increment(ref notificationCount));
@@ -240,17 +224,12 @@ public class DiscoveryServiceTests
     public async Task DoesNotFireAfterUnsubscribing()
     {
         var notificationCount = 0;
-        using var mutex1 = new ManualResetEventSlim();
         using var mutex2 = new ManualResetEventSlim();
         using var mutex3 = new ManualResetEventSlim();
 
         var recheckIntervalMs = 1_000; // ms
         var factory = new TestRequestFactory(
-            x =>
-            {
-                mutex1.Wait(10_000).Should().BeTrue("Should make first request to api");
-                return new TestApiRequest(x, responseContent: GetConfig(dropP0: true));
-            },
+            x => new TestApiRequest(x, responseContent: GetConfig(dropP0: true)),
             x =>
             {
                 mutex2.Set();
@@ -261,9 +240,6 @@ public class DiscoveryServiceTests
                 mutex3.Set();
                 return new TestApiRequest(x, responseContent: GetConfig(dropP0: false));
             });
-
-        // Set mutex1 BEFORE creating DiscoveryService to avoid race condition
-        mutex1.Set();
 
         var ds = new DiscoveryService(factory, InitialRetryDelayMs, MaxRetryDelayMs, recheckIntervalMs);
 
