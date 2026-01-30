@@ -71,13 +71,12 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
         Current CallTarget Limitations:
         ===============================
 
-        1. Static methods in a ValueType (struct) cannot be instrumented.
-        2. Generic ValueTypes (struct) cannot be instrumented.
-        3. Nested ValueTypes (struct) inside a Generic parent type will not expose the type instance (the instance will
+        1. Generic ValueTypes (struct) cannot be instrumented.
+        2. Nested ValueTypes (struct) inside a Generic parent type will not expose the type instance (the instance will
        be always null).
-        4. Nested types (reference types) inside a Generic parent type will not expose the type instance (the instance
+        3. Nested types (reference types) inside a Generic parent type will not expose the type instance (the instance
        will be casted as an object type).
-        5. Methods in a Generic type will not expose the Generic type instance (the instance will be casted as a non
+        4. Methods in a Generic type will not expose the Generic type instance (the instance will be casted as a non
        generic base type or object type).
     */
 
@@ -183,6 +182,7 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     ULONG callTargetStateIndex = static_cast<ULONG>(ULONG_MAX);
     ULONG exceptionIndex = static_cast<ULONG>(ULONG_MAX);
     ULONG callTargetReturnIndex = static_cast<ULONG>(ULONG_MAX);
+    ULONG staticValueTypeIndex = static_cast<ULONG>(ULONG_MAX);
     ULONG returnValueIndex = static_cast<ULONG>(ULONG_MAX);
 
     std::vector<ULONG> indexes(tracerTokens->GetAdditionalLocalsCount(methodArguments));
@@ -193,7 +193,7 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     auto returnType = caller->method_signature.GetReturnValue();
 
     tracerTokens->ModifyLocalSigAndInitialize(
-        &reWriterWrapper, &returnType, &methodArguments, &callTargetStateIndex, &exceptionIndex, &callTargetReturnIndex,
+        &reWriterWrapper, &returnType, &methodArguments, caller, &callTargetStateIndex, &exceptionIndex, &callTargetReturnIndex, &staticValueTypeIndex,
         &returnValueIndex, &callTargetStateToken, &exceptionToken, &callTargetReturnToken, &firstInstruction, indexes);
 
     ULONG exceptionValueIndex = indexes[0];
@@ -209,17 +209,35 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     {
         if (caller->type.valueType)
         {
-            // Static methods in a ValueType can't be instrumented.
-            // In the future this can be supported by adding a local for the valuetype and initialize it to the default
-            // value. After the signature modification we need to emit the following IL to initialize and load into the
-            // stack.
-            //    ldloca.s [localIndex]
-            //    initobj [valueType]
-            //    ldloc.s [localIndex]
-            Logger::Warn("*** CallTarget_RewriterCallback(): Static methods in a ValueType cannot be instrumented. ");
-            return S_FALSE;
+            reWriterWrapper.LoadLocalAddress(staticValueTypeIndex);
+            if (caller->type.type_spec != mdTypeSpecNil)
+            {
+                reWriterWrapper.InitObj(caller->type.type_spec);
+            }
+            else if (!caller->type.isGeneric)
+            {
+                reWriterWrapper.InitObj(caller->type.id);
+            }
+            else
+            {
+                // Generic struct instrumentation is not supported
+                // IMetaDataImport::GetMemberProps and IMetaDataImport::GetMemberRefProps returns
+                // The parent token as mdTypeDef and not as a mdTypeSpec
+                // that's because the method definition is stored in the mdTypeDef
+                // The problem is that we don't have the exact Spec of that generic
+                // We can't emit LoadObj or Box because that would result in an invalid IL.
+                // This problem doesn't occur on a class type because we can always relay in the
+                // object type.
+                Logger::Warn("*** CallTarget_RewriterCallback(): Generic struct (struct TypeName<T>) instrumentation is not supported.");
+                return S_FALSE;
+            }
+
+            reWriterWrapper.LoadLocal(staticValueTypeIndex);
         }
-        reWriterWrapper.LoadNull();
+        else
+        {
+            reWriterWrapper.LoadNull();
+        }
     }
     else
     {
@@ -507,19 +525,35 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     {
         if (caller->type.valueType)
         {
-            // Static methods in a ValueType can't be instrumented.
-            // In the future this can be supported by adding a local for the valuetype
-            // and initialize it to the default value. After the signature
-            // modification we need to emit the following IL to initialize and load
-            // into the stack.
-            //    ldloca.s [localIndex]
-            //    initobj [valueType]
-            //    ldloc.s [localIndex]
-            Logger::Warn("CallTarget_RewriterCallback: Static methods in a ValueType cannot "
-                         "be instrumented. ");
-            return S_FALSE;
+            endMethodTryStartInstr = reWriterWrapper.LoadLocalAddress(staticValueTypeIndex);
+            if (caller->type.type_spec != mdTypeSpecNil)
+            {
+                reWriterWrapper.InitObj(caller->type.type_spec);
+            }
+            else if (!caller->type.isGeneric)
+            {
+                reWriterWrapper.InitObj(caller->type.id);
+            }
+            else
+            {
+                // Generic struct instrumentation is not supported
+                // IMetaDataImport::GetMemberProps and IMetaDataImport::GetMemberRefProps returns
+                // The parent token as mdTypeDef and not as a mdTypeSpec
+                // that's because the method definition is stored in the mdTypeDef
+                // The problem is that we don't have the exact Spec of that generic
+                // We can't emit LoadObj or Box because that would result in an invalid IL.
+                // This problem doesn't occur on a class type because we can always relay in the
+                // object type.
+                Logger::Warn("*** CallTarget_RewriterCallback(): Generic struct (struct TypeName<T>) instrumentation is not supported.");
+                return S_FALSE;
+            }
+
+            reWriterWrapper.LoadLocal(staticValueTypeIndex);
         }
-        endMethodTryStartInstr = reWriterWrapper.LoadNull();
+        else
+        {
+            endMethodTryStartInstr = reWriterWrapper.LoadNull();
+        }
     }
     else
     {

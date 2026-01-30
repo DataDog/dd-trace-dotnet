@@ -20,6 +20,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             : base(new EnvironmentHelper("CallTargetNativeTest", typeof(TestHelper), output, samplesDirectory: Path.Combine("test", "test-applications", "instrumentation"), prependSamplesToAppName: false), output)
         {
             SetServiceVersion("1.0.0");
+#pragma warning disable CS0618 // Type or member is obsolete
+            EnableDebugMode();
+#pragma warning restore CS0618 // Type or member is obsolete
         }
 
         public static IEnumerable<object[]> MethodArgumentsData()
@@ -65,20 +68,20 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 {
                     // On number of arguments = 0 the throw exception on integrations async continuation runs.
                     // So we have 1 more case with an exception being reported from the integration.
-                    Assert.Equal(180, beginMethodCount);
-                    Assert.Equal(180, endMethodCount);
+                    Assert.Equal(227, beginMethodCount);
+                    Assert.Equal(227, endMethodCount);
                     Assert.Equal(44, exceptionCount);
                 }
                 else if (numberOfArguments == 1)
                 {
-                    Assert.Equal(175, beginMethodCount);
-                    Assert.Equal(175, endMethodCount);
+                    Assert.Equal(222, beginMethodCount);
+                    Assert.Equal(222, endMethodCount);
                     Assert.Equal(40, exceptionCount);
                 }
                 else
                 {
-                    Assert.Equal(168, beginMethodCount);
-                    Assert.Equal(168, endMethodCount);
+                    Assert.Equal(215, beginMethodCount);
+                    Assert.Equal(215, endMethodCount);
                     Assert.Equal(40, exceptionCount);
                 }
 
