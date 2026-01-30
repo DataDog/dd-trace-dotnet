@@ -711,6 +711,16 @@ profiler_cpu_timer_create-win:
     COMPlus_EnableDiagnostics: 1
     ENDPOINT: "hello"
 
+# This repository is using pre-release performance quality gates.
+
+# On master or hotfix/* branch, verify that the latest CI pipeline passed the check-slo-breaches job.
+
+# If any SLO is breached, your release will be blocked.
+
+# See our thresholds file(s) at https://github.com/DataDog/dd-trace-dotnet/blob/master/.gitlab/benchmarks/bp-runner.fail-on-breach.yml
+
+# If bypassing is necessary, see
+# https://datadoghq.atlassian.net/wiki/spaces/APMINT/pages/5158175217 for more details.
 check-slo-breaches:
   extends: .check-slo-breaches
   stage: gate
