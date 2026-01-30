@@ -195,7 +195,7 @@ TEST(WallTimeProviderTest, CheckAppDomainInfoAndRuntimeId)
         builder << "AD_" << expectedAppDomainId[currentSample];
         std::string expectedAppDomainName(builder.str());
 
-        auto expectedPid = expectedAppDomainId[currentSample];
+        auto expectedPid = OpSysTools::GetProcId();
 
         auto pidLabelId = symbolsStore->GetProcessId();
         auto appDomainLabelId = symbolsStore->GetAppDomainName();
