@@ -178,6 +178,155 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             githubEnvVars.PrBaseBranch.Should().Be("my-custom-branch");
         }
 
+        [SkippableFact]
+        public void GithubJobIdFromEnvironmentVariableTest()
+        {
+            var reloadEnvironmentData = typeof(CIEnvironmentValues).GetMethod("ReloadEnvironmentData", BindingFlags.Instance | BindingFlags.NonPublic);
+
+            // Test with JOB_CHECK_RUN_ID set
+            var githubEnvVars = new GithubActionsEnvironmentValues<DictionaryValuesProvider>(
+                new DictionaryValuesProvider(
+                    new Dictionary<string, string>
+                    {
+                        [PlatformKeys.Ci.GitHub.Sha] = "abc123",
+                        [PlatformKeys.Ci.GitHub.Repository] = "owner/repo",
+                        [PlatformKeys.Ci.GitHub.RunId] = "98765",
+                        [PlatformKeys.Ci.GitHub.Job] = "build-job",
+                        [PlatformKeys.Ci.GitHub.JobCheckRunId] = "12345678901",
+                    }));
+
+            reloadEnvironmentData?.Invoke(githubEnvVars, null);
+
+            githubEnvVars.JobId.Should().Be("12345678901");
+            githubEnvVars.JobName.Should().Be("build-job");
+            githubEnvVars.JobUrl.Should().Contain("/actions/runs/98765/job/12345678901");
+        }
+
+        [SkippableFact]
+        public void GithubJobIdFallbackTest()
+        {
+            var reloadEnvironmentData = typeof(CIEnvironmentValues).GetMethod("ReloadEnvironmentData", BindingFlags.Instance | BindingFlags.NonPublic);
+
+            // Test without JOB_CHECK_RUN_ID - should fall back to GITHUB_JOB
+            var githubEnvVars = new GithubActionsEnvironmentValues<DictionaryValuesProvider>(
+                new DictionaryValuesProvider(
+                    new Dictionary<string, string>
+                    {
+                        [PlatformKeys.Ci.GitHub.Sha] = "abc123",
+                        [PlatformKeys.Ci.GitHub.Repository] = "owner/repo",
+                        [PlatformKeys.Ci.GitHub.RunId] = "98765",
+                        [PlatformKeys.Ci.GitHub.Job] = "build-job",
+                    }));
+
+            reloadEnvironmentData?.Invoke(githubEnvVars, null);
+
+            githubEnvVars.JobId.Should().Be("build-job");
+            githubEnvVars.JobName.Should().Be("build-job");
+            githubEnvVars.JobUrl.Should().Contain("/commit/abc123/checks");
+        }
+
+        [SkippableFact]
+        public void GithubDiagnosticsFileExtractionTest()
+        {
+            var githubEnvVars = new GithubActionsEnvironmentValues<DictionaryValuesProvider>(
+                new DictionaryValuesProvider(new Dictionary<string, string>()));
+
+            var tryExtractJobIdFromFile = typeof(GithubActionsEnvironmentValues<DictionaryValuesProvider>)
+                .GetMethod("TryExtractJobIdFromFile", BindingFlags.Instance | BindingFlags.NonPublic);
+
+            // Create a temp file with valid JSON content matching the GitHub Actions diagnostics format
+            var tempFile = Path.GetTempFileName();
+            try
+            {
+                var validJsonContent = @"{
+                    ""inputs"": { ""t"": 2 },
+                    ""job"": {
+                        ""t"": 2,
+                        ""d"": [
+                            { ""k"": ""check_run_id"", ""v"": 55411116365.0 }
+                        ]
+                    },
+                    ""matrix"": null
+                }";
+                File.WriteAllText(tempFile, validJsonContent);
+
+                // Invoke the private method using reflection
+                var parameters = new object[] { tempFile, null };
+                var result = (bool)tryExtractJobIdFromFile?.Invoke(githubEnvVars, parameters);
+
+                result.Should().BeTrue("the file contains valid check_run_id");
+                parameters[1].Should().Be("55411116365", "the extracted job ID should match");
+            }
+            finally
+            {
+                File.Delete(tempFile);
+            }
+        }
+
+        [SkippableFact]
+        public void GithubDiagnosticsFileSizeLimitTest()
+        {
+            var githubEnvVars = new GithubActionsEnvironmentValues<DictionaryValuesProvider>(
+                new DictionaryValuesProvider(new Dictionary<string, string>()));
+
+            var tryExtractJobIdFromFile = typeof(GithubActionsEnvironmentValues<DictionaryValuesProvider>)
+                .GetMethod("TryExtractJobIdFromFile", BindingFlags.Instance | BindingFlags.NonPublic);
+
+            // Create a temp file larger than 10MB to test the file size limit
+            var tempFile = Path.GetTempFileName();
+            try
+            {
+                const long fileSizeBytes = 11 * 1024 * 1024; // 11MB, over the 10MB limit
+                using (var fs = new FileStream(tempFile, FileMode.Create))
+                {
+                    fs.SetLength(fileSizeBytes);
+                }
+
+                // Invoke the private method using reflection
+                var parameters = new object[] { tempFile, null };
+                var result = (bool)tryExtractJobIdFromFile?.Invoke(githubEnvVars, parameters);
+
+                result.Should().BeFalse("files larger than 10MB should be skipped");
+                parameters[1].Should().BeNull("no job ID should be extracted from oversized files");
+            }
+            finally
+            {
+                File.Delete(tempFile);
+            }
+        }
+
+        [SkippableFact]
+        public void GithubDiagnosticsFileRegexFallbackTest()
+        {
+            var githubEnvVars = new GithubActionsEnvironmentValues<DictionaryValuesProvider>(
+                new DictionaryValuesProvider(new Dictionary<string, string>()));
+
+            var tryExtractJobIdFromFile = typeof(GithubActionsEnvironmentValues<DictionaryValuesProvider>)
+                .GetMethod("TryExtractJobIdFromFile", BindingFlags.Instance | BindingFlags.NonPublic);
+
+            // Create a temp file with log content that has embedded JSON (not pure JSON)
+            var tempFile = Path.GetTempFileName();
+            try
+            {
+                var logContent = @"[2024-01-15 10:30:45Z INFO] Starting job execution
+Some random log line here
+{""k"": ""check_run_id"", ""v"": 98765432101}
+[2024-01-15 10:30:46Z INFO] Job completed";
+                File.WriteAllText(tempFile, logContent);
+
+                // Invoke the private method using reflection
+                var parameters = new object[] { tempFile, null };
+                var result = (bool)tryExtractJobIdFromFile?.Invoke(githubEnvVars, parameters);
+
+                result.Should().BeTrue("the regex fallback should extract check_run_id from embedded JSON");
+                parameters[1].Should().Be("98765432101", "the extracted job ID should match");
+            }
+            finally
+            {
+                File.Delete(tempFile);
+            }
+        }
+
         /*
          *  Test matrix
          *  ───────────
