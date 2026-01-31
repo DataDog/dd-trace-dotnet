@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.Ci;
+using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
 
@@ -92,7 +93,17 @@ public static class UnitTestRunnerRunSingleTestAsyncIntegration3_8
                         if (!skipHandled)
                         {
                             // This instrumentation catches all tests being ignored
-                            MsTestIntegration.OnMethodBegin(testMethod, instance.GetType(), isRetry: false)?.Close(TestStatus.Skip, TimeSpan.Zero, unitTestResult.IgnoreReason);
+                            var test = MsTestIntegration.OnMethodBegin(testMethod, instance.GetType(), isRetry: false);
+                            if (test is not null)
+                            {
+                                // Set final_status = skip for ignored/inconclusive tests
+                                if (test.GetTags() is { } testTags)
+                                {
+                                    testTags.FinalStatus = TestTags.StatusSkip;
+                                }
+
+                                test.Close(TestStatus.Skip, TimeSpan.Zero, unitTestResult.IgnoreReason);
+                            }
                         }
                     }
                     else if (unitTestResult.Outcome is UnitTestOutcome.Error or UnitTestOutcome.Failed)
@@ -106,6 +117,13 @@ public static class UnitTestRunnerRunSingleTestAsyncIntegration3_8
                                     MsTestIntegration.OnMethodBegin(testMethodInfo, instance.GetType(), isRetry: false) is { } test)
                                 {
                                     test.SetErrorInfo(classInitializationException);
+
+                                    // Set final_status = fail for class initialization failures
+                                    if (test.GetTags() is { } testTags)
+                                    {
+                                        testTags.FinalStatus = TestTags.StatusFail;
+                                    }
+
                                     test.Close(TestStatus.Fail);
                                 }
                             }
@@ -132,10 +150,17 @@ public static class UnitTestRunnerRunSingleTestAsyncIntegration3_8
                             if (testMethodInfo.Parent?.Parent?.Instance.TryDuckCast<AssemblyInfoExceptionsStruct>(out var assemblyInfoExceptionsStruct) == true)
                             {
                                 if (assemblyInfoExceptionsStruct.AssemblyInitializationException is { } assemblyInitializationException &&
-                                    MsTestIntegration.OnMethodBegin(testMethodInfo, instance.GetType(), isRetry: false) is { } test)
+                                    MsTestIntegration.OnMethodBegin(testMethodInfo, instance.GetType(), isRetry: false) is { } asmTest)
                                 {
-                                    test.SetErrorInfo(assemblyInitializationException);
-                                    test.Close(TestStatus.Fail);
+                                    asmTest.SetErrorInfo(assemblyInitializationException);
+
+                                    // Set final_status = fail for assembly initialization failures
+                                    if (asmTest.GetTags() is { } asmTestTags)
+                                    {
+                                        asmTestTags.FinalStatus = TestTags.StatusFail;
+                                    }
+
+                                    asmTest.Close(TestStatus.Fail);
                                 }
                             }
                             else
