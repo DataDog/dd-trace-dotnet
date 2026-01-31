@@ -7,6 +7,7 @@
 #include "DebugInfoStore.h"
 #include "IConfiguration.h"
 #include "Log.h"
+#include "ManagedCodeCache.h"
 #include "OpSysTools.h"
 
 #include "shared/src/native-src/com_ptr.h"
@@ -22,43 +23,14 @@ void FixGenericSyntax(char* name);
 
 PCCOR_SIGNATURE ParseByte(PCCOR_SIGNATURE pbSig, BYTE* pByte);
 
-FrameStore::FrameStore(ICorProfilerInfo4* pCorProfilerInfo, IConfiguration* pConfiguration, IDebugInfoStore* debugInfoStore) :
+FrameStore::FrameStore(ICorProfilerInfo4* pCorProfilerInfo,
+    IConfiguration* pConfiguration,
+    IDebugInfoStore* debugInfoStore,
+    ManagedCodeCache* pManagedCodeCache) :
     _pCorProfilerInfo{pCorProfilerInfo},
     _pDebugInfoStore{debugInfoStore},
-    _resolveNativeFrames{pConfiguration->IsNativeFramesEnabled()}
+    _pManagedCodeCache{pManagedCodeCache}
 {
-}
-
-std::optional<std::pair<HRESULT, FunctionID>> FrameStore::GetFunctionFromIP(uintptr_t instructionPointer)
-{
-    HRESULT hr;
-    FunctionID functionId;
-
-    // On Windows, the call to GetFunctionFromIP can crash:
-    // We may end up in a situation where the module containing that symbol was just unloaded.
-    // For linux, we do not have solution yet.
-#ifdef _WINDOWS
-    // Cannot return while in __try/__except (compilation error)
-    // We need a flag to know if an access violation exception was raised.
-    bool wasAccessViolationRaised = false;
-    __try
-    {
-#endif
-        hr = _pCorProfilerInfo->GetFunctionFromIP((LPCBYTE)instructionPointer, &functionId);
-#ifdef _WINDOWS
-    }
-    __except (EXCEPTION_EXECUTE_HANDLER)
-    {
-        wasAccessViolationRaised = true;
-    }
-
-    if (wasAccessViolationRaised)
-    {
-        return {};
-    }
-#endif
-
-    return {{hr, functionId}};
 }
 
 std::pair<bool, FrameInfoView> FrameStore::GetFrame(uintptr_t instructionPointer)
@@ -91,71 +63,17 @@ std::pair<bool, FrameInfoView> FrameStore::GetFrame(uintptr_t instructionPointer
         }
     }
 
-    std::optional<std::pair<HRESULT, FunctionID>> result = GetFunctionFromIP(instructionPointer);
+    std::optional<FunctionID> functionId = _pManagedCodeCache->GetFunctionId(instructionPointer);
 
-    if (!result.has_value())
+    if (!functionId.has_value())
     {
-        // we still want a frame to display a good'ish callstack shape
-        return {true, {UnloadedModuleName, NotResolvedFrame, "", 0}};
+        return {false, {NotResolvedModuleName, NotResolvedFrame, "", 0}};
     }
 
-    auto const& [hr, functionId] = result.value();
-
-    if (SUCCEEDED(hr))
-    {
-        auto frameInfo = GetManagedFrame(functionId);
-        return {true, frameInfo};
-    }
-    else
-    {
-        if (!_resolveNativeFrames)
-        {
-            return {false, {NotResolvedModuleName, NotResolvedFrame, "", 0}};
-        }
-
-        auto [moduleName, frame] = GetNativeFrame(instructionPointer);
-        return {true, {moduleName, frame, "", 0}};
-    }
+    auto frameInfo = GetManagedFrame(functionId.value());
+    return {true, frameInfo};
 }
 
-// It should be possible to use dbghlp.dll on Windows (and something else on Linux?)
-// to get function name + offset
-// see https://docs.microsoft.com/en-us/windows/win32/api/dbghelp/nf-dbghelp-symfromaddr for more details
-// However, today, no symbol resolution is done; only the module implementing the function is provided
-std::pair<std::string_view, std::string_view> FrameStore::GetNativeFrame(uintptr_t instructionPointer)
-{
-    static const std::string UnknownNativeFrame("|lm:Unknown-Native-Module |ns:NativeCode |ct:Unknown-Native-Module |fn:Function");
-    static const std::string UnknowNativeModule = "Unknown-Native-Module";
-
-    auto moduleName = OpSysTools::GetModuleName(reinterpret_cast<void*>(instructionPointer));
-    if (moduleName.empty())
-    {
-        return {UnknowNativeModule, UnknownNativeFrame};
-    }
-
-    {
-        std::lock_guard<std::mutex> lock(_nativeLock);
-
-        auto it = _framePerNativeModule.find(moduleName);
-        if (it != _framePerNativeModule.cend())
-        {
-            return {it->first, it->second};
-        }
-    }
-
-    // moduleName contains the full path: keep only the filename
-    auto moduleFilename = fs::path(moduleName).filename().string();
-    std::stringstream builder;
-    builder << "|lm:" << moduleFilename << " |ns:NativeCode |ct:" << moduleFilename << " |fn:Function";
-
-    {
-        std::lock_guard<std::mutex> lock(_nativeLock);
-        // emplace returns a pair<iterator, bool>. It returns false if the element was already there
-        // we use the iterator (first element of the pair) to get a reference to the key and the value
-        auto [it, _] = _framePerNativeModule.emplace(std::move(moduleName), builder.str());
-        return {it->first, it->second};
-    }
-}
 
 FrameInfoView FrameStore::GetManagedFrame(FunctionID functionId)
 {

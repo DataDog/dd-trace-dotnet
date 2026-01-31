@@ -229,15 +229,19 @@
     <ClInclude Include="Windows64BitStackFramesCollector.h" />
     <ClInclude Include="Windows32BitStackFramesCollector.h" />
     <ClInclude Include="WindowsThreadInfo.h" />
+    <ClInclude Include="..\Datadog.Profiler.Native\AutoResetEvent.h" />
+    <ClInclude Include="..\Datadog.Profiler.Native\ManagedCodeCache.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Datadog.Profiler.Native\DllMain.cpp" />
+    <ClCompile Include="..\Datadog.Profiler.Native\ManagedCodeCache.cpp" />
     <ClCompile Include="CrashReportingWindows.cpp" />
     <ClCompile Include="EtwEventsManager.cpp" />
     <ClCompile Include="ETW\EtwEventsHandler.cpp" />
     <ClCompile Include="ETW\IpcClient.cpp" />
     <ClCompile Include="ETW\IpcServer.cpp" />
     <ClCompile Include="ETW\ProfilerLogger.cpp" />
+    <ClCompile Include="AutoResetEvent.cpp" />
     <ClCompile Include="SecurityDescriptorHelpers.cpp" />
     <ClCompile Include="SystemTime.cpp" />
     <ClCompile Include="WindowsThreadInfo.cpp" />
