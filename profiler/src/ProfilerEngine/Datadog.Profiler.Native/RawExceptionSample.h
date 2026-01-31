@@ -26,12 +26,12 @@ public:
         return *this;
     }
 
-    inline void OnTransform(std::shared_ptr<Sample>& sample, std::vector<SampleValueTypeProvider::Offset> const& valueOffsets) const override
+    inline void OnTransform(std::shared_ptr<Sample>& sample, std::vector<SampleValueTypeProvider::Offset> const& valueOffsets, libdatadog::SymbolsStore* pSymbolsStore) const override
     {
         assert(valueOffsets.size() == 1);
         sample->AddValue(1, valueOffsets[0]);
-        sample->AddLabel(StringLabel(Sample::ExceptionMessageLabel, ExceptionMessage));
-        sample->AddLabel(StringLabel(Sample::ExceptionTypeLabel, ExceptionType));
+        sample->AddLabel(StringLabel(pSymbolsStore->GetExceptionMessage(), ExceptionMessage));
+        sample->AddLabel(StringLabel(pSymbolsStore->GetExceptionType(), ExceptionType));
     }
 
     std::string ExceptionMessage;

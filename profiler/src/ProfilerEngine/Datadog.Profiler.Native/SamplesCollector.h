@@ -18,13 +18,17 @@
 
 using namespace std::chrono_literals;
 
+namespace libdatadog {
+class SymbolsStore;
+}
+
 class SamplesCollector
     :
     public ISamplesCollector,
     public ServiceBase
 {
 public:
-    SamplesCollector(IConfiguration* configuration, IThreadsCpuManager* pThreadsCpuManager, IExporter* exporter, IMetricsSender* metricsSender);
+    SamplesCollector(IConfiguration* configuration, IThreadsCpuManager* pThreadsCpuManager, IExporter* exporter, IMetricsSender* metricsSender, libdatadog::SymbolsStore* pSymbolsStore);
 
     // Inherited via IService
     const char* GetName() override;

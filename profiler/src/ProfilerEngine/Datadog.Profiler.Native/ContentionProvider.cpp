@@ -38,9 +38,10 @@ ContentionProvider::ContentionProvider(
     IConfiguration* pConfiguration,
     MetricsRegistry& metricsRegistry,
     CallstackProvider callstackProvider,
-    shared::pmr::memory_resource* memoryResource)
+    shared::pmr::memory_resource* memoryResource,
+    libdatadog::SymbolsStore* pSymbolsStore)
     :
-    CollectorBase<RawContentionSample>("ContentionProvider", valueTypeProvider.GetOrRegister(SampleTypeDefinitions), rawSampleTransformer, memoryResource),
+    CollectorBase<RawContentionSample>("ContentionProvider", valueTypeProvider.GetOrRegister(SampleTypeDefinitions), rawSampleTransformer, memoryResource, pSymbolsStore),
     _pCorProfilerInfo{pCorProfilerInfo},
     _pManagedThreadList{pManagedThreadList},
     // keep at least 1 sampled lock contention per bucket so we will at least see long one if any

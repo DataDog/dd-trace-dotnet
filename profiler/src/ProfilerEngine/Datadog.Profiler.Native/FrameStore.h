@@ -14,6 +14,12 @@
 #include "shared/src/native-src/com_ptr.h"
 
 class IConfiguration;
+namespace libdatadog {
+class SymbolsStore;
+struct StringId;
+struct ModuleId;
+struct FunctionId;
+}
 
 class FrameStore : public IFrameStore
 {
@@ -39,11 +45,18 @@ public:
     static const uintptr_t FakeUnknownIP = 0;
     static const uintptr_t FakeLockContentionIP = 1;
     static const uintptr_t FakeAllocationIP = 2;
+    static const uintptr_t ClrModule = 3;
+    static const uintptr_t Gen0Frame = 4;
+    static const uintptr_t Gen1Frame = 5;
+    static const uintptr_t Gen2Frame = 6;
+    static const uintptr_t GCRootFrame = 7;
+    static const uintptr_t UnknownGenerationFrame = 8;
+    static const uintptr_t DotNetRootFrame = 9;
     // !!  If you add more fake IPs, update this and add new strings in FrameStore.cpp  !!
-    static const uintptr_t MaxFakeIP = 2;
+    static const uintptr_t MaxFakeIP = 9;
 
 public:
-    FrameStore(ICorProfilerInfo4* pCorProfilerInfo, IConfiguration* pConfiguration, IDebugInfoStore* pDebugInfoStore);
+    FrameStore(ICorProfilerInfo4* pCorProfilerInfo, IConfiguration* pConfiguration, IDebugInfoStore* pDebugInfoStore, libdatadog::SymbolsStore* pSymbolStore);
 
 public:
     std::pair<bool, FrameInfoView> GetFrame(uintptr_t instructionPointer) override;
@@ -80,7 +93,7 @@ private:
     bool GetTypeDesc(ClassID classId, TypeDesc*& typeDesc);
     bool GetCachedTypeDesc(ClassID classId, TypeDesc*& typeDesc);
     FrameInfoView GetManagedFrame(FunctionID functionId);
-    std::pair <std::string_view, std::string_view> GetNativeFrame(uintptr_t instructionPointer);
+    std::pair<libdatadog::ModuleId*, libdatadog::FunctionId*> GetNativeFrame(uintptr_t instructionPointer);
 
 public:   // global helpers
     static bool GetAssemblyName(ICorProfilerInfo4* pInfo, ModuleID moduleId, std::string& assemblyName);
@@ -130,14 +143,14 @@ private:
     struct FrameInfo
     {
     public:
-        std::string ModuleName;
-        std::string Frame;
-        std::string_view Filename;
+        libdatadog::ModuleId* ModuleName;
+        libdatadog::FunctionId* Frame;
+        // ?? std::string_view Filename;
         std::uint32_t StartLine;
 
         operator FrameInfoView() const
         {
-            return {ModuleName, Frame, Filename, StartLine};
+            return {ModuleName, Frame, /*Filename,*/ StartLine};
         }
     };
 
@@ -151,13 +164,14 @@ private:
     std::unordered_map<FunctionID, FrameInfo> _methods;
     std::mutex _typesLock;
     std::unordered_map<ClassID, TypeDesc> _types;
-    std::unordered_map<std::string, std::string> _framePerNativeModule;
+    std::unordered_map<libdatadog::ModuleId*, libdatadog::FunctionId*> _framePerNativeModule;
 
     // for allocation recorder
     std::mutex _fullTypeNamesLock;
     std::unordered_map<ClassID, std::string> _fullTypeNames;
 
     bool _resolveNativeFrames;
+    libdatadog::SymbolsStore* _pSymbolsStore;
     // TODO: dump stats about caches size at the end of the application
 
     // TODO: would it be needed to have a cache (moduleId + mdTypeDef) -> TypeDesc?
