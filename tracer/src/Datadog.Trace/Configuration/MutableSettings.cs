@@ -61,7 +61,8 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         ReadOnlyDictionary<string, string> serviceNameMappings,
         string? gitRepositoryUrl,
         string? gitCommitSha,
-        OverrideErrorLog errorLog)
+        OverrideErrorLog errorLog,
+        bool propagateProcessTags)
     {
         IsInitialSettings = isInitialSettings;
         TraceEnabled = traceEnabled;
@@ -91,6 +92,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         GitRepositoryUrl = gitRepositoryUrl;
         GitCommitSha = gitCommitSha;
         ErrorLog = errorLog;
+        ProcessTags = propagateProcessTags ? new ProcessTags(!string.IsNullOrWhiteSpace(serviceName), defaultServiceName) : null;
     }
 
     // Settings that can be set via remote config
@@ -260,6 +262,11 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
     internal bool IsInitialSettings { get; }
 
     internal OverrideErrorLog ErrorLog { get; }
+
+    /// <summary>
+    /// Gets the process tags instance including the service_name.user_defined tag.
+    /// </summary>
+    internal ProcessTags? ProcessTags { get; }
 
     internal static ReadOnlyDictionary<string, string>? InitializeHeaderTags(in ConfigurationBuilder.HasKeys key, bool headerTagsNormalizationFixEnabled)
         => InitializeHeaderTags(
@@ -733,7 +740,8 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
             serviceNameMappings: serviceNameMappings,
             gitRepositoryUrl: gitRepositoryUrl,
             gitCommitSha: gitCommitSha,
-            errorLog: errorLog);
+            errorLog: errorLog,
+            propagateProcessTags: tracerSettings.PropagateProcessTags);
 
         static ReadOnlyDictionary<string, string> GetHeaderTagsResult(
             ConfigurationBuilder.ClassConfigurationResultWithKey<IDictionary<string, string>> result,
@@ -1064,7 +1072,8 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
             serviceNameMappings: serviceNameMappings,
             gitRepositoryUrl: gitRepositoryUrl,
             gitCommitSha: gitCommitSha,
-            errorLog: errorLog);
+            errorLog: errorLog,
+            propagateProcessTags: tracerSettings.PropagateProcessTags);
     }
 
     /// <summary>

@@ -68,6 +68,8 @@ internal readonly struct TraceChunkModel
 
     public readonly bool ShouldPropagateProcessTags = false;
 
+    public readonly string? ProcessTags = null;
+
     public readonly bool IsApmEnabled = true;
 
     /// <summary>
@@ -117,6 +119,7 @@ internal readonly struct TraceChunkModel
                     AzureAppServiceSettings = settings.AzureAppServiceMetadata;
                     ShouldPropagateProcessTags = settings.PropagateProcessTags;
                     IsApmEnabled = settings.ApmTracingEnabled;
+                    ProcessTags = settings.Manager.InitialMutableSettings.ProcessTags?.SerializedTags;
                 }
 
                 if (tracer.GitMetadataTagsProvider?.TryExtractGitMetadata(out var gitMetadata) == true &&
