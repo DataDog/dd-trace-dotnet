@@ -486,9 +486,10 @@ std::optional<FunctionId*> SymbolsStore::InternFunction(std::string const& funct
         return std::nullopt;
     }
     auto fn = ddog_prof_Function2{
-        .name = DDOG_PROF_STRINGID2_EMPTY,
+        .name = reinterpret_cast<ddog_prof_StringId2>(nameId.value()) ,
         .system_name = DDOG_PROF_STRINGID2_EMPTY,
-        .file_name = DDOG_PROF_STRINGID2_EMPTY};
+        .file_name = reinterpret_cast<ddog_prof_StringId2>(filenameId.value())
+    };
 
     auto status = ddog_prof_ProfilesDictionary_insert_function(&id, _impl->symbols, &fn);
     if (status.err != nullptr)
