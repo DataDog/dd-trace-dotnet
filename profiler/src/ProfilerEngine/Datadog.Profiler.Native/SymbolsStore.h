@@ -58,6 +58,8 @@ public:
 
     ModuleId* GetNativeGcModuleId();
     ModuleId* GetNativeClrModuleId();
+    FunctionId* GetNativeDotNetRootFrameId();
+    FunctionId* GetNativeGCRootFrameId();
 
 #define DECLARE_GET_KNOWN_SYMBOL(fieldName) \
     StringId* Get##fieldName() const;

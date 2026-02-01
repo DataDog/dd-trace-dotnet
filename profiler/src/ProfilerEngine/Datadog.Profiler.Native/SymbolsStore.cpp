@@ -47,7 +47,9 @@ struct KnownSymbols
     FunctionId* Gen2FrameId;
     FunctionId* UnknownGenFrameId;
     FunctionId* GCRootFrameId;
+    FunctionId* NativeGCRootFrameId;
     FunctionId* DotNetRootFrameId;
+    FunctionId* NativeDotNetRootFrameId;
 
     StringId* ThreadId;
     StringId* ThreadName;
@@ -160,7 +162,7 @@ const std::string SymbolsStore::ResponseContentDurationLabel = "response_content
 const std::string SymbolsStore::RequestResponseThreadIdLabel = "response.thread_id";
 const std::string SymbolsStore::RequestResponseThreadNameLabel = "response.thread_name";
 
-const std::string SymbolsStore::GcCpuThreadLabel = "gc cpu thread";
+const std::string SymbolsStore::GcCpuThreadLabel = "gc_cpu_sample";
 
 const std::string SymbolsStore::BucketLabelName = "Duration bucket";
 const std::string SymbolsStore::WaitBucketLabelName = "Wait duration bucket";
@@ -416,12 +418,26 @@ bool SymbolsStore::RegisterKnownStuffs()
     }
     _impl->knownSymbols.GCRootFrameId = gcRootFrameId.value();
 
+    auto nativeGcRootFrameId = InternFunction("|lm:[native] |ns: |ct: |cg: |fn:Garbage Collector |fg: |sg:", "");
+    if (!nativeGcRootFrameId)
+    {
+        return false;
+    }
+    _impl->knownSymbols.NativeGCRootFrameId = nativeGcRootFrameId.value();
+
     auto dotNetRootFrameId = InternFunction("|lm: |ns: |ct: |cg: |fn:.NET |fg: |sg:", "");
     if (!dotNetRootFrameId)
     {
         return false;
     }
     _impl->knownSymbols.DotNetRootFrameId = dotNetRootFrameId.value();
+
+    auto nativeDotNetRootFrameId = InternFunction("|lm:[native] |ns: |ct: |cg: |fn:.NET |fg: |sg:", "");
+    if (!nativeDotNetRootFrameId)
+    {
+        return false;
+    }
+    _impl->knownSymbols.NativeDotNetRootFrameId = nativeDotNetRootFrameId.value();
 
     auto nativeClrModuleId = InternMapping("[native] CLR");
     if (!nativeClrModuleId)
@@ -618,9 +634,19 @@ FunctionId* SymbolsStore::GetGCRootFrameId()
     return _impl->knownSymbols.GCRootFrameId;
 }
 
+FunctionId* SymbolsStore::GetNativeGCRootFrameId()
+{
+    return _impl->knownSymbols.NativeGCRootFrameId;
+}
+
 FunctionId* SymbolsStore::GetDotNetRootFrameId()
 {
     return _impl->knownSymbols.DotNetRootFrameId;
+}
+
+FunctionId* SymbolsStore::GetNativeDotNetRootFrameId()
+{
+    return _impl->knownSymbols.NativeDotNetRootFrameId;
 }
 
 FunctionId* SymbolsStore::GetThreadStartFrame()

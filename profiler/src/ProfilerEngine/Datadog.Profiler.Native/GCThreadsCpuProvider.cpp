@@ -123,8 +123,8 @@ std::vector<FrameInfoView> GCThreadsCpuProvider::GetFrames()
 {
     return
     {
-        {_pSymbolsStore->GetNativeGcModuleId(), _pSymbolsStore->GetGCRootFrameId(), 0},
-        {_pSymbolsStore->GetNativeClrModuleId(), _pSymbolsStore->GetDotNetRootFrameId(), 0}
+        {_pSymbolsStore->GetNativeGcModuleId(), _pSymbolsStore->GetNativeGCRootFrameId(), 0},
+        {_pSymbolsStore->GetNativeClrModuleId(), _pSymbolsStore->GetNativeDotNetRootFrameId(), 0}
     };
 }
 
