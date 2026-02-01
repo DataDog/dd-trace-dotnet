@@ -170,8 +170,8 @@ const std::string SymbolsStore::BlockingThreadIdLabelName = "blocking thread id"
 const std::string SymbolsStore::BlockingThreadNameLabelName = "blocking thread name";
 const std::string SymbolsStore::ContentionTypeLabelName = "contention type";
 
-const std::string SymbolsStore::ThreadStartFrame = "thread start";
-const std::string SymbolsStore::ThreadStopFrame = "thread stop";
+const std::string SymbolsStore::ThreadStartFrame = "|lm: |ns: |ct: |cg: |fn:Thread Start |fg: |sg:";
+const std::string SymbolsStore::ThreadStopFrame = "|lm: |ns: |ct: |cg: |fn:Thread Stop |fg: |sg:";
 
 struct SymbolsStore::SymbolsStoreImpl
 {
