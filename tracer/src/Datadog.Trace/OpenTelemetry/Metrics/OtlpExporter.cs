@@ -117,7 +117,8 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error exporting OTLP metrics.");
+                // Seeing network connectivity errors so skipping telemetry
+                Log.ErrorSkipTelemetry(ex, "Error exporting OTLP metrics.");
                 TelemetryFactory.Metrics.RecordCountMetricsExportFailures(_protocolTag, _encodingTag);
                 return ExportResult.Failure;
             }
@@ -207,7 +208,8 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error sending OTLP request.");
+                // Seeing network connectivity errors so skipping telemetry
+                Log.ErrorSkipTelemetry(ex, "Error sending OTLP request.");
                 return false;
             }
         }
@@ -292,7 +294,8 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Exception when sending metrics OTLP gRPC request.");
+                // Seeing network connectivity errors so skipping telemetry
+                Log.ErrorSkipTelemetry(ex, "Exception when sending metrics OTLP gRPC request.");
                 return false;
             }
         }
@@ -358,7 +361,8 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
                 }
                 catch (Exception ex)
                 {
-                    Log.Error(ex, "Error sending OTLP request (attempt {Attempt})", (attempt + 1).ToString());
+                    // Seeing network connectivity errors so skipping telemetry
+                    Log.ErrorSkipTelemetry(ex, "Error sending OTLP request (attempt {Attempt})", (attempt + 1).ToString());
                     if (attempt < maxRetries)
                     {
                         retryDelay = TimeSpan.FromMilliseconds((long)(retryDelay.TotalMilliseconds * 2));
