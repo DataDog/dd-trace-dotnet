@@ -7,7 +7,9 @@
 
 using System;
 using System.Reflection;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.DuckTypes;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
@@ -267,6 +269,32 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
             {
                 tags.CorrelationId = correlationId.Value.ToString();
             }
+        }
+
+        /// <summary>
+        /// Extracts metadata from SendContext using duck typing.
+        /// </summary>
+        internal static void ExtractSendContextMetadata(
+            object? sendContext,
+            out string? destinationAddress,
+            out Guid? messageId,
+            out Guid? conversationId,
+            out Guid? correlationId)
+        {
+            if (sendContext == null)
+            {
+                destinationAddress = null;
+                messageId = null;
+                conversationId = null;
+                correlationId = null;
+                return;
+            }
+
+            var context = sendContext.DuckCast<ISendContext>();
+            destinationAddress = context?.DestinationAddress?.ToString();
+            messageId = context?.MessageId;
+            conversationId = context?.ConversationId;
+            correlationId = context?.CorrelationId;
         }
 
         /// <summary>

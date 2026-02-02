@@ -9,7 +9,9 @@
 using System;
 using System.Collections.Concurrent;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.DuckTypes;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.DiagnosticListeners
@@ -228,8 +230,8 @@ namespace Datadog.Trace.DiagnosticListeners
 
             var activityId = GetCurrentActivityId();
 
-            // Extract destination and message type from the SendContext
-            var destinationAddress = MassTransitCommon.TryGetProperty<Uri>(arg, "DestinationAddress")?.ToString();
+            // Extract metadata from SendContext using duck typing
+            MassTransitCommon.ExtractSendContextMetadata(arg, out var destinationAddress, out var messageId, out var conversationId, out var correlationId);
             var messageType = MassTransitCommon.GetMessageType(arg);
 
             Log.Debug(
@@ -248,9 +250,6 @@ namespace Datadog.Trace.DiagnosticListeners
                 StoreScope("Send", activityId, scope);
 
                 // Set additional context tags
-                var messageId = MassTransitCommon.TryGetProperty<Guid?>(arg, "MessageId");
-                var conversationId = MassTransitCommon.TryGetProperty<Guid?>(arg, "ConversationId");
-                var correlationId = MassTransitCommon.TryGetProperty<Guid?>(arg, "CorrelationId");
                 MassTransitCommon.SetContextTags(scope, messageId, conversationId, correlationId);
 
                 // Inject trace context into message headers for distributed tracing
@@ -276,6 +275,8 @@ namespace Datadog.Trace.DiagnosticListeners
             // MT8 OTEL uses InputAddress (the queue name) for consumer spans, not DestinationAddress
             // The InputAddress gives clean queue names like "GettingStarted", "OrderState"
             // while DestinationAddress might be a URN like "loopback://localhost/urn:message:..."
+            // Note: We use reflection here instead of duck typing because ConsumeContext properties
+            // vary across different context implementations (MessageConsumeContext, etc.)
             string? inputAddress = null;
             var receiveContext = MassTransitCommon.TryGetProperty<object>(arg, "ReceiveContext");
             if (receiveContext != null)
@@ -317,7 +318,7 @@ namespace Datadog.Trace.DiagnosticListeners
             {
                 StoreScope(operationType, activityId, scope);
 
-                // Set additional context tags
+                // Set additional context tags using reflection
                 var messageId = MassTransitCommon.TryGetProperty<Guid?>(arg, "MessageId");
                 var conversationId = MassTransitCommon.TryGetProperty<Guid?>(arg, "ConversationId");
                 var correlationId = MassTransitCommon.TryGetProperty<Guid?>(arg, "CorrelationId");
