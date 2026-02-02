@@ -1,6 +1,6 @@
 ---
 description: Perform a review on a GitHub PR, leaving comments on the PR
-argument-hint: <github-pr-url>
+argument-hint: <pr-number-or-url>
 ---
 You are an expert code reviewer. Review this PR and post your findings to GitHub: $ARGUMENTS
 
@@ -30,6 +30,7 @@ To perform the review, follow these steps:
    **Part A: Inline File Comments**
    - For each specific issue you found, create a GitHub API call
    - Use the format: `gh api -X POST -H "Accept: application/vnd.github+json" "repos/{owner}/{repo}/pulls/{pull_number}/comments" -f body="Your file-level comment" -f path="path/to/file" -F line=<line_number> -f side="RIGHT" -f commit_id="<commit_sha>"`
+     - The commit_sha should be the head commit SHA from the PR (use headRefOid from the PR details JSON)
    - Each comment should:
      - Reference the specific file and line number
      - Explain the issue clearly
@@ -45,6 +46,6 @@ To perform the review, follow these steps:
 IMPORTANT:
 - Focus on specific, actionable issues - not general praise
 - Every issue must have a file path and line number
-- Use line numbers from the diff, not absolute line numbers
+- Use the actual line number in the file (not the diff position)
 - Post inline comments using the `gh api` call
 - Keep the summary brief; put details in inline comments
