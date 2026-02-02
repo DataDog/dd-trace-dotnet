@@ -69,7 +69,7 @@ namespace Datadog.Trace.Debugger
                                   .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries) ??
                                    Enumerable.Empty<string>();
 
-            ThirdPartyDetectionIncludes = thirdPartyIncludes.ToImmutableHashSet(StringComparer.OrdinalIgnoreCase);
+            ThirdPartyDetectionIncludes = ImmutableHashSet<string>.Empty.WithComparer(StringComparer.OrdinalIgnoreCase).Union(thirdPartyIncludes);
 
             var thirdPartyExcludes = config
                                     .WithKeys(ConfigurationKeys.Debugger.ThirdPartyDetectionExcludes)
@@ -77,7 +77,7 @@ namespace Datadog.Trace.Debugger
                                     .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries) ??
                                      Enumerable.Empty<string>();
 
-            ThirdPartyDetectionExcludes = thirdPartyExcludes.ToImmutableHashSet(StringComparer.OrdinalIgnoreCase);
+            ThirdPartyDetectionExcludes = ImmutableHashSet<string>.Empty.WithComparer(StringComparer.OrdinalIgnoreCase).Union(thirdPartyExcludes);
 
             var symDb3rdPartyIncludeLibraries = config
                                                .WithKeys(ConfigurationKeys.Debugger.SymDbThirdPartyDetectionIncludes)
@@ -85,7 +85,8 @@ namespace Datadog.Trace.Debugger
                                                .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries) ??
                                                 Enumerable.Empty<string>();
 
-            SymDbThirdPartyDetectionIncludes = new HashSet<string>([.. symDb3rdPartyIncludeLibraries, .. ThirdPartyDetectionIncludes]).ToImmutableHashSet();
+            var symDbThirdPartyDetectionIncludes = new HashSet<string>([.. symDb3rdPartyIncludeLibraries, .. ThirdPartyDetectionIncludes]);
+            SymDbThirdPartyDetectionIncludes = ImmutableHashSet<string>.Empty.Union(symDbThirdPartyDetectionIncludes);
 
             var symDb3rdPartyExcludeLibraries = config
                                                .WithKeys(ConfigurationKeys.Debugger.SymDbThirdPartyDetectionExcludes)
@@ -93,7 +94,8 @@ namespace Datadog.Trace.Debugger
                                                .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries) ??
                                                 Enumerable.Empty<string>();
 
-            SymDbThirdPartyDetectionExcludes = new HashSet<string>([.. symDb3rdPartyExcludeLibraries, .. ThirdPartyDetectionExcludes]).ToImmutableHashSet();
+            var symDbThirdPartyDetectionExcludes = new HashSet<string>([.. symDb3rdPartyExcludeLibraries, .. ThirdPartyDetectionExcludes]);
+            SymDbThirdPartyDetectionExcludes = ImmutableHashSet<string>.Empty.Union(symDbThirdPartyDetectionExcludes);
 
             DiagnosticsIntervalSeconds = config
                                         .WithKeys(ConfigurationKeys.Debugger.DiagnosticsInterval)

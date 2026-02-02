@@ -51,7 +51,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation.ThirdParty
                 }
             }
 
-            return modules.ToImmutableHashSet();
+            return ImmutableHashSet<string>.Empty.Union(modules);
         }
 
         private static bool TryGetThirdPartyManifestStream(out Stream? resourceStream)
