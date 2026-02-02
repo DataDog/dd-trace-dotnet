@@ -10,8 +10,8 @@ using System;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.DuckTypes;
 
 /// <summary>
-/// Duck-typing interface for MassTransit.ReceiveContext
-/// Only includes properties that are reliably available across MassTransit versions
+/// Minimal duck-typing interface for MassTransit.ReceiveContext
+/// Only includes properties needed for instrumentation
 /// </summary>
 internal interface IReceiveContext
 {
