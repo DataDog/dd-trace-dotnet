@@ -15,9 +15,9 @@ Prerequisites:
 
 To perform the review, follow these steps:
 
-1. Extract the PR number from the URL or use it directly if a number is provided
-2. Use Bash("gh pr view <number>") to get PR details
-3. Use Bash("gh pr diff <number>") to get the full diff
+1. Extract the PR number from the URL or use it directly if a number is provided. If an {owner}/{repo} is provided, use that, otherwise assume owner=DataDog, and repo=dd-trace-dotnet
+2. Use Bash("gh pr view <number> --repo {owner}/{repo}") to get PR details
+3. Use Bash("gh pr diff <number> --repo {owner}/{repo}") to get the full diff
 4. Analyze the changes thoroughly, identifying:
    - Specific issues with file paths and line numbers
    - Potential bugs or risks
@@ -29,7 +29,7 @@ To perform the review, follow these steps:
 
    **Part A: Inline File Comments**
    - For each specific issue you found, create a GitHub API call
-   - Use the format: `gh api -X POST -H "Accept: application/vnd.github+json" "repos/{owner}/{repo}/pulls/{pull_number}/comments" -f body="Your file-level comment" -f path="path/to/file" -f position=<line_number>`
+   - Use the format: `gh api -X POST -H "Accept: application/vnd.github+json" "repos/{owner}/{repo}/pulls/{pull_number}/comments" -f body="Your file-level comment" -f path="path/to/file" -F line=<line_number> -f side="RIGHT" -f commit_id="<commit_sha>"`
    - Each comment should:
      - Reference the specific file and line number
      - Explain the issue clearly
@@ -38,7 +38,7 @@ To perform the review, follow these steps:
    - Add suffix to each: "🤖 Claude Code"
 
    **Part B: Brief Summary Comment**
-   - Use `gh pr comment <number> --body "..."` to post a brief summary (1-2 paragraphs max)
+   - Use `gh pr comment <number> --repo {owner}/{repo} --body "..."` to post a brief summary (1-2 paragraphs max)
    - Include: overall assessment, key findings. Don't provide a recommendation on approve/request changes/comment.
    - Add suffix: "Review by 🤖 Claude Code"
 
