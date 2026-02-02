@@ -234,6 +234,7 @@ tracer/src/Datadog.Trace
 - See `.editorconfig` (4-space indent, `System.*` first, prefer `var`). Types/methods PascalCase; locals camelCase
 - Add missing `using` directives instead of fully-qualified type names
 - Use modern C# syntax, but avoid features requiring types unavailable in older runtimes (e.g., no `ValueTuple` syntax for .NET Framework 4.6.1)
+  - For instance, prefer `is not null` to `!= null` 
 - Prefer modern collection expressions (`[]`)
 - Use `StringUtil.IsNullOrEmpty()` instead of `string.IsNullOrEmpty()` for compatibility across all supported runtimes
 - StyleCop: see `tracer/stylecop.json`; address warnings before pushing
@@ -318,7 +319,8 @@ The tracer runs in-process with customer applications and must have minimal perf
 **Testing patterns:**
 - Extract interfaces for environment/filesystem dependencies (e.g., `IEnvironmentVariableProvider`)
 - Use struct implementations with generic constraints for zero-allocation production code
-- Example: Managed loader tests use `MockEnvironmentVariableProvider` (see `tracer/test/Datadog.Trace.Tests/ClrProfiler/Managed/Loader/`)
+  - Example: Managed loader tests use `MockEnvironmentVariableProvider` (see `tracer/test/Datadog.Trace.Tests/ClrProfiler/Managed/Loader/`)
+- Prefer using `[Theory]` with input data rather than duplicating tests
 
 ## Commit & Pull Request Guidelines
 
