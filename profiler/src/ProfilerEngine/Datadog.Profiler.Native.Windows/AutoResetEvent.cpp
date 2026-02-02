@@ -94,16 +94,11 @@ bool AutoResetEvent::Wait(std::chrono::milliseconds timeout)
             return false;
 
         case WAIT_FAILED:
-            Log::Debug("AutoResetEvent::Wait: WaitForSingleObject failed. Error: ", GetLastError());
-            return false;
-
-        case WAIT_ABANDONED:
-            // Should not happen with events (only with mutexes)
-            Log::Debug("AutoResetEvent::Wait: Unexpected WAIT_ABANDONED");
+            LogOnce(Debug, "AutoResetEvent::Wait: WaitForSingleObject failed. Error: ", GetLastError());
             return false;
 
         default:
-            Log::Debug("AutoResetEvent::Wait: Unexpected result: ", result);
+            LogOnce(Debug, "AutoResetEvent::Wait: Unexpected result: ", result);
             return false;
     }
 }

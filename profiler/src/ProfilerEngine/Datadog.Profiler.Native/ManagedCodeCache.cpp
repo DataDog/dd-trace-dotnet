@@ -11,6 +11,24 @@
 
 #include "Log.h"
 
+
+template <typename Container, typename Value>
+std::optional<typename Container::value_type> FindRange(Container const& container, Value const& value)
+{
+    auto it = std::lower_bound(container.begin(), container.end(), value,
+    [](const typename Container::value_type& range, const Value& value) -> bool {
+        return range.startAddress <= value;
+    });
+
+    if (it == container.cbegin())
+    {
+        return std::nullopt;
+    }
+
+    --it;
+    return it->contains(value) ? std::optional{*it} : std::nullopt;
+}
+
 // PE32 and PE64 have different optional headers, which complexify the logic to fetch them
 // This struct contains the common fields between the two types of headers
 struct IMAGE_NT_HEADERS_GENERIC
@@ -22,7 +40,10 @@ struct IMAGE_NT_HEADERS_GENERIC
 
 ManagedCodeCache::ManagedCodeCache(ICorProfilerInfo4* pProfilerInfo)
     : _profilerInfo(pProfilerInfo),
-      _workerQueueEvent(false) = default;
+      _workerQueueEvent(false),
+      _requestStop(false)
+{
+}
 
 ManagedCodeCache::~ManagedCodeCache()
 {
@@ -51,36 +72,20 @@ bool ManagedCodeCache::Initialize()
 bool ManagedCodeCache::IsCodeInR2RModule(std::uintptr_t ip) const noexcept
 {
     std::shared_lock<std::shared_mutex> moduleLock(_modulesMutex);
-    
-    // Use lower_bound to find the first range where startAddress > ip
-    // The range we're looking for (if it exists) must be the PREVIOUS range
-    auto moduleIt = std::lower_bound(
-        _modulesCodeRanges.begin(),
-        _modulesCodeRanges.end(),
-        ip,
-        [](const ModuleCodeRange& range, std::uintptr_t ip)
-        {
-            // Return true if range comes before ip
-            return range.startAddress <= ip;
-        });
-    
-    // lower_bound returns first range where startAddress > ip
-    // By definition, that range cannot contain ip
-    // So we only need to check the PREVIOUS range
-    if (moduleIt == _modulesCodeRanges.begin())
+
+    auto moduleCodeRange = FindRange(_modulesCodeRanges, ip);
+    if (!moduleCodeRange.has_value())
     {
-        return false;
-    }
-    
-    --moduleIt;
-    
-    if (moduleIt->isRemoved)
-    {
-        LogOnce(Debug, "ManagedCodeCache::IsCodeInR2RModule: Module code range is removed for ip: 0x", std::hex, ip);
         return false;
     }
 
-    return moduleIt->contains(ip);
+    if (moduleCodeRange->isRemoved)
+    {
+        LogOnce(Debug, "ManagedCodeCache::IsCodeInR2RModule: Module code range was removed for ip: 0x", std::hex, ip);
+        return false;
+    }
+
+    return moduleCodeRange->contains(ip);
 }
 
 // must not be called in a signal handler (GetFunctionFromIP is not signal-safe)
@@ -99,11 +104,19 @@ std::optional<FunctionID> ManagedCodeCache::GetFunctionId(std::uintptr_t ip) noe
     {
         auto functionId = GetFunctionFromIP_Original(ip);
         if (functionId.has_value()) {
-            // in that case no need to defer this action to another thread
-            // if we let another thread do this, we can remove the constraint on managed threads
-            AddFunctionImpl(*functionId, false);
-            return std::optional<FunctionID>(*functionId);
+            // We found a function id and we can add it synchronously to our cache.
+            // It's safe to do this synchronously because this function is called
+            // by a native thread belonging to profiler.
+            // This thread won't be interrupted by the profiler.
+            AddFunctionImpl(functionId.value(), false);
+            return std::optional<FunctionID>(functionId.value());
         }
+        // If we arrive here, it means that the call to GetFunctionFromIP_Original possibly crashed.
+        // Possible reason: race against the CLR unloading the module containing the function.
+        // On Windows, we catch the exception and return nullopt.
+        // On Linux, we cannot do anything.
+        // Maybe a better value ?
+        return std::optional<FunctionID>(InvalidFunctionId);
     }
 
     return std::nullopt;
@@ -150,8 +163,8 @@ std::optional<FunctionID> ManagedCodeCache::GetFunctionIdImpl(std::uintptr_t ip)
     
     // Level 2: Binary search within the page's ranges (shared lock on page)
     std::shared_lock<std::shared_mutex> pageLock(pageIt->second.lock);
-    const CodeRange* range = FindRangeInVector(pageIt->second.ranges, static_cast<UINT_PTR>(ip));
-    if (range != nullptr)
+    auto range = FindRange(pageIt->second.ranges, static_cast<UINT_PTR>(ip));
+    if (range.has_value())
     {
         return range->functionId;
     }
@@ -176,8 +189,8 @@ bool ManagedCodeCache::IsManaged(std::uintptr_t ip) const noexcept
         // Level 2: Binary search within the page's ranges (shared lock on page)
    
         std::shared_lock<std::shared_mutex> pageLock(pageIt->second.lock);
-        const CodeRange* range = FindRangeInVector(pageIt->second.ranges, static_cast<UINT_PTR>(ip));
-        if (range != nullptr)
+        auto range = FindRange(pageIt->second.ranges, static_cast<UINT_PTR>(ip));
+        if (range.has_value())
         {
             return true;
         }
@@ -185,41 +198,6 @@ bool ManagedCodeCache::IsManaged(std::uintptr_t ip) const noexcept
 
     // Check if the IP is within a module code range
     return IsCodeInR2RModule(ip);
-}
-
-// Binary search helper (signal-safe, no allocation)
-const CodeRange* ManagedCodeCache::FindRangeInVector(
-    const std::vector<CodeRange>& ranges,
-    UINT_PTR ip) noexcept
-{
-    if (ranges.empty()) return nullptr;
-    
-    // Use lower_bound to find the first range where startAddress > ip
-    // The range we're looking for (if it exists) must be the PREVIOUS range
-    auto it = std::lower_bound(
-        ranges.begin(),
-        ranges.end(),
-        ip,
-        [](const CodeRange& range, UINT_PTR ip)
-        {
-            // Return true if range comes before ip
-            // This means range.startAddress <= ip
-            return range.startAddress <= ip;
-        });
-    
-    // lower_bound returns first range where startAddress > ip
-    // By definition, that range cannot contain ip
-    // So we only need to check the PREVIOUS range
-    if (it != ranges.begin())
-    {
-        --it;
-        if (it->contains(ip))
-        {
-            return &(*it);
-        }
-    }
-    
-    return nullptr;
 }
 
 void ManagedCodeCache::AddFunction(FunctionID functionId)
@@ -230,7 +208,7 @@ void ManagedCodeCache::AddFunction(FunctionID functionId)
 // Maybe rename this into OnJitCompilation
 void ManagedCodeCache::AddFunctionImpl(FunctionID functionId, bool isAsync)
 {
-    auto ranges = QueryCodeRanges(functionId);
+    auto ranges = GetCodeRanges(functionId);
 
     if (ranges.empty())
     {
@@ -319,7 +297,7 @@ void ManagedCodeCache::RemoveModule(ModuleID moduleId)
     }
 }
 
-std::vector<CodeRange> ManagedCodeCache::QueryCodeRanges(FunctionID functionId)
+std::vector<CodeRange> ManagedCodeCache::GetCodeRanges(FunctionID functionId)
 {
     std::vector<CodeRange> result;
     constexpr size_t MAX_CODE_INFOS = 8;
@@ -341,64 +319,48 @@ std::vector<CodeRange> ManagedCodeCache::QueryCodeRanges(FunctionID functionId)
     {
         result.emplace_back(
             codeInfos[i].startAddress,
-            codeInfos[i].startAddress + codeInfos[i].size,
+            codeInfos[i].startAddress + codeInfos[i].size - 1,
             functionId);
     }
     
     return result;
 }
 
+void ManagedCodeCache::InsertCodeRangeIntoPage(PagesMap::iterator pageIt,
+    const CodeRange& range)
+{
+    std::unique_lock<std::shared_mutex> pageLock(pageIt->second.lock);
+    auto& ranges = pageIt->second.ranges;
+    ranges.insert(std::upper_bound(ranges.begin(), ranges.end(), range), range);
+}
+
 // This function must be called by the worker thread only
 void ManagedCodeCache::AddFunctionRangesToCache(std::vector<CodeRange> newRanges)
-{    
-    // Step 1: Compute affected pages
-    std::set<uint64_t> affectedPages;
+{
     for (const auto& range : newRanges)
     {
+        // Method code range can span over 2 pages (in some weird cases, it could span over more than 2 pages).
+        // We need to add the method code range in all the pages.
         uint64_t startPage = GetPageNumber(range.startAddress);
-        uint64_t endPage = GetPageNumber(range.endAddress - 1);
-        for (uint64_t p = startPage; p <= endPage; ++p) {
-            affectedPages.insert(p);
-        }
-    }
-    
-    // Step 2: Ensure all affected pages exist
-    for (uint64_t page : affectedPages)
-    {
-        // I do not understand why the page would not exist :thinking:
-        EnsurePageExists(page);
-    }
-    
-    // Step 3: Add ranges to each affected page (keep sorted)
-    std::shared_lock<std::shared_mutex> mapLock(_pagesMutex);
-    for (uint64_t page : affectedPages)
-    {
-        auto pageIt = _pagesMap.find(page);
-        if (pageIt == _pagesMap.end())
-        {
-            continue;  // Shouldn't happen, but be safe
-        }
-        
-        // Lock only this page for update
-        std::unique_lock<std::shared_mutex> pageLock(pageIt->second.lock);
-        
-        // Add new ranges to this page (keep sorted)
-        for (const auto& newRange : newRanges)
-        {
-            uint64_t startPage = GetPageNumber(newRange.startAddress);
-            uint64_t endPage = GetPageNumber(newRange.endAddress - 1);
-            
-            if (page >= startPage && page <= endPage)
+        uint64_t endPage = GetPageNumber(range.endAddress);
+        for (uint64_t page = startPage; page <= endPage; ++page)
+        {  
+            // Check if page exists (with shared lock first - fast path)
             {
-                auto& ranges = pageIt->second.ranges;
-                
-                // Insert in sorted position
-                auto insertPos = std::upper_bound(
-                    ranges.begin(),
-                    ranges.end(),
-                    newRange);
-                ranges.insert(insertPos, newRange);
+                std::shared_lock<std::shared_mutex> mapLock(_pagesMutex);
+                auto pageIt = _pagesMap.find(page);
+                if (pageIt != _pagesMap.end())
+                {
+                    InsertCodeRangeIntoPage(pageIt, range);
+                    continue;
+                }
             }
+            
+            // Page doesn't exist, create it (with exclusive lock)
+            std::unique_lock<std::shared_mutex> mapLock(_pagesMutex);
+            
+            auto [pageIt, _] = _pagesMap.try_emplace(page);
+            InsertCodeRangeIntoPage(pageIt, range);
         }
     }
 }
@@ -454,56 +416,12 @@ struct AppendRangesWork
 using AppendCodeRangesWork = AppendRangesWork<CodeRange>;
 using AppendModuleRangesWork = AppendRangesWork<ModuleCodeRange>;
 
-// Work item is a variant of different types
-using WorkItem = std::variant<AppendCodeRangesWork, AppendModuleRangesWork>;
-
-struct ManagedCodeCache::QueueNode
-{
-    WorkItem work;
-    QueueNode* next;
-    explicit QueueNode(WorkItem w) 
-        : work(std::move(w)), next(nullptr) {}
-};
-
-std::unique_ptr<ManagedCodeCache::QueueNode> ManagedCodeCache::DequeueWorkItem()
-{
-    auto* currentHead = _workerQueueHead.load(std::memory_order_acquire);
-    while (currentHead != nullptr)
-    {
-        auto* next = currentHead->next;
-        if (_workerQueueHead.compare_exchange_weak(
-            currentHead,
-            next,
-            std::memory_order_release,
-            std::memory_order_acquire))
-        {
-            return std::unique_ptr<ManagedCodeCache::QueueNode>(currentHead);
-        }
-    }
-    return nullptr;
-}
-
 void ManagedCodeCache::WorkerThread(std::promise<void> startPromise)
 {
-    auto visitWork = [this](auto&& work)
-    {
-        using T = std::decay_t<decltype(work)>;
-        
-        if constexpr (std::is_same_v<T, AppendCodeRangesWork>) {
-            // Handle code ranges
-            AddFunctionRangesToCache(std::move(work.ranges));
-        }
-        else if constexpr (std::is_same_v<T, AppendModuleRangesWork>) {
-            // Handle module ranges
-            AddModuleRangesToCache(std::move(work.ranges));
-        }
-    };
-
     startPromise.set_value();
 
     while (!_requestStop)
     {
-
         _workerQueueEvent.Wait();
 
         if (_requestStop)
@@ -511,16 +429,15 @@ void ManagedCodeCache::WorkerThread(std::promise<void> startPromise)
             break;
         }
 
-        while (true)
+        std::forward_list<std::function<void()>> workItems;
         {
-            auto node = DequeueWorkItem();
+            std::unique_lock<std::mutex> lock(_queueMutex);
+            std::swap(_workerQueue, workItems);
+        }
 
-            if (node == nullptr)
-            {
-                break;
-            }
-            // Use std::visit to handle different work item types
-            std::visit(visitWork, node->work);
+        for (auto& workItem : workItems)
+        {
+            workItem();
         }
     }
 }
@@ -529,21 +446,21 @@ void ManagedCodeCache::WorkerThread(std::promise<void> startPromise)
 template<typename WorkType>
 void ManagedCodeCache::EnqueueWork(WorkType work)
 {
-    auto node = std::make_unique<QueueNode>(std::move(work));
-    auto* rawNode = node.get();
-    auto* currentHead = _workerQueueHead.load(std::memory_order_acquire);
-    
-    do
+    auto workFunction = [this, work = std::move(work)]() mutable{
+        using T = std::decay_t<WorkType>;
+        
+        if constexpr (std::is_same_v<T, AppendCodeRangesWork>) {
+            AddFunctionRangesToCache(std::move(work.ranges));
+        }
+        else if constexpr (std::is_same_v<T, AppendModuleRangesWork>) {
+            AddModuleRangesToCache(std::move(work.ranges));
+        }
+    };
+
     {
-        rawNode->next = currentHead;
-    } while (!_workerQueueHead.compare_exchange_weak(
-        currentHead,
-        rawNode,
-        std::memory_order_release,
-        std::memory_order_acquire));
-    
-    // Succeeded, we transferred ownership to the atomic pointer
-    node.release();
+        std::unique_lock<std::mutex> lock(_queueMutex);
+        _workerQueue.push_front(std::move(workFunction));
+    }
     
     _workerQueueEvent.Set();
 }
@@ -602,7 +519,7 @@ std::vector<ModuleCodeRange> ManagedCodeCache::GetModuleCodeRanges(ModuleID modu
         if (sectionHeaders[i].Characteristics & IMAGE_SCN_MEM_EXECUTE)
         {
             UINT_PTR codeStart = baseLoadAddress + sectionHeaders[i].VirtualAddress;
-            UINT_PTR codeEnd = codeStart + sectionHeaders[i].Misc.VirtualSize;
+            UINT_PTR codeEnd = codeStart + sectionHeaders[i].Misc.VirtualSize - 1;
             result.emplace_back(codeStart, codeEnd);
         }
     }

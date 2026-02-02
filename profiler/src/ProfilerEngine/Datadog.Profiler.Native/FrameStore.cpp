@@ -31,6 +31,46 @@ FrameStore::FrameStore(ICorProfilerInfo4* pCorProfilerInfo,
     _pDebugInfoStore{debugInfoStore},
     _pManagedCodeCache{pManagedCodeCache}
 {
+    if (_pManagedCodeCache == nullptr)
+    {
+        Log::Info("FrameStore will not rely on ManagedCodeCache to resolve function IDs.");
+    }
+    else
+    {
+        Log::Info("FrameStore will rely on ManagedCodeCache to resolve function IDs.");
+    }
+}
+
+std::optional<std::pair<HRESULT, FunctionID>> FrameStore::GetFunctionFromIP(uintptr_t instructionPointer)
+{
+    HRESULT hr;
+    FunctionID functionId;
+
+    // On Windows, the call to GetFunctionFromIP can crash:
+    // We may end up in a situation where the module containing that symbol was just unloaded.
+    // For linux, we do not have solution yet.
+#ifdef _WINDOWS
+    // Cannot return while in __try/__except (compilation error)
+    // We need a flag to know if an access violation exception was raised.
+    bool wasAccessViolationRaised = false;
+    __try
+    {
+#endif
+        hr = _pCorProfilerInfo->GetFunctionFromIP((LPCBYTE)instructionPointer, &functionId);
+#ifdef _WINDOWS
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        wasAccessViolationRaised = true;
+    }
+
+    if (wasAccessViolationRaised)
+    {
+        return std::nullopt;
+    }
+#endif
+
+    return {{hr, functionId}};
 }
 
 std::pair<bool, FrameInfoView> FrameStore::GetFrame(uintptr_t instructionPointer)
@@ -63,11 +103,39 @@ std::pair<bool, FrameInfoView> FrameStore::GetFrame(uintptr_t instructionPointer
         }
     }
 
-    std::optional<FunctionID> functionId = _pManagedCodeCache->GetFunctionId(instructionPointer);
-
-    if (!functionId.has_value())
+    HRESULT hr;
+    std::optional<FunctionID> functionId;
+    if (_pManagedCodeCache == nullptr)
     {
-        return {false, {NotResolvedModuleName, NotResolvedFrame, "", 0}};
+        std::optional<std::pair<HRESULT, FunctionID>> result = GetFunctionFromIP(instructionPointer);
+        if (!result.has_value())
+        {
+            return {true, {NotResolvedModuleName, NotResolvedFrame, "", 0}};
+        }
+        std::tie(hr, functionId) = result.value();
+        // if native frame
+        if (FAILED(hr))
+        {
+            return {false, {NotResolvedModuleName, NotResolvedFrame, "", 0}};
+        }
+    }
+    else
+    {
+        functionId = _pManagedCodeCache->GetFunctionId(instructionPointer);
+
+        if (!functionId.has_value())
+        {
+            return {false, {NotResolvedModuleName, NotResolvedFrame, "", 0}};
+        }
+
+        if (functionId.value() == ManagedCodeCache::InvalidFunctionId)
+        {
+            // We have a value but not a valid one. This is fake function ID.
+            // This can occur when the calling into the CLR from managed code cache
+            // resulted in a crash(lucky us on windows, we can catch on linux ....:grimacing:)
+            // This is to preserve the current semantic
+            return {true, {NotResolvedModuleName, NotResolvedFrame, "", 0}};
+        }
     }
 
     auto frameInfo = GetManagedFrame(functionId.value());

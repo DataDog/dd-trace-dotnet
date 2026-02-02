@@ -163,9 +163,6 @@ void CorProfilerCallback::InitializeServices()
 
     _pDebugInfoStore = std::make_unique<DebugInfoStore>(_pCorProfilerInfo, _pConfiguration.get());
 
-    _managedCodeCache = std::make_unique<ManagedCodeCache>(_pCorProfilerInfo, _pConfiguration.get());
-    _managedCodeCache->Initialize();
-    
 #ifdef LINUX
     if (_pConfiguration->IsSystemCallsShieldEnabled())
     {
@@ -1485,6 +1482,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
             return E_FAIL;
         }
     }
+
     // create services without starting them
     InitializeServices();
 
@@ -1868,7 +1866,10 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ModuleLoadFinished(ModuleID modul
         _pExceptionsProvider->OnModuleLoaded(moduleId);
     }
 
-    _managedCodeCache->AddModule(moduleId);
+    if (_managedCodeCache != nullptr)
+    {
+        _managedCodeCache->AddModule(moduleId);
+    }
 
     return S_OK;
 }
@@ -1880,7 +1881,10 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ModuleUnloadStarted(ModuleID modu
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::ModuleUnloadFinished(ModuleID moduleId, HRESULT hrStatus)
 {
-    _managedCodeCache->RemoveModule(moduleId);
+    if (_managedCodeCache != nullptr)
+    {
+        _managedCodeCache->RemoveModule(moduleId);
+    }
     return S_OK;
 }
 
@@ -1921,12 +1925,10 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::JITCompilationStarted(FunctionID 
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::JITCompilationFinished(FunctionID functionId, HRESULT hrStatus, BOOL fIsSafeToBlock)
 {
-    if (FAILED(hrStatus))
+    if (_managedCodeCache != nullptr)
     {
-        Log::Debug("JITCompilationFinished failed for functionId=0x", std::hex, functionId, std::dec, ". hrStatus=", std::hex, hrStatus, std::dec);
-        return S_OK;
+        _managedCodeCache->AddFunction(functionId);
     }
-    _managedCodeCache->AddFunction(functionId);
     return S_OK;
 }
 
@@ -2444,13 +2446,11 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::GetReJITParameters(ModuleID modul
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::ReJITCompilationFinished(FunctionID functionId, ReJITID rejitId, HRESULT hrStatus, BOOL fIsSafeToBlock)
 {
-    if (FAILED(hrStatus))
+    if (_managedCodeCache != nullptr)
     {
-        Log::Debug("ReJITCompilationFinished failed for functionId=0x", std::hex, functionId, std::dec, " ReJit ID=0x", std::hex, rejitId, std::dec, ". hrStatus=", std::hex, hrStatus, std::dec);
-        return S_OK;
+        _managedCodeCache->AddFunction(functionId);
     }
-    Log::Debug("ReJITCompilationStarted for functionId=0x", std::hex, functionId, std::dec, " ReJit ID=0x", std::hex, rejitId, std::dec);
-    _managedCodeCache->AddFunction(functionId);
+
     return S_OK;
 }
 
@@ -2491,12 +2491,10 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::DynamicMethodJITCompilationStarte
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::DynamicMethodJITCompilationFinished(FunctionID functionId, HRESULT hrStatus, BOOL fIsSafeToBlock)
 {
-    if (FAILED(hrStatus))
+    if (_managedCodeCache != nullptr)
     {
-        Log::Debug("DynamicMethodJITCompilationFinished failed for functionId=0x", std::hex, functionId, std::dec, ". hrStatus=", std::hex, hrStatus, std::dec);
-        return S_OK;
+        _managedCodeCache->AddFunction(functionId);
     }
-    _managedCodeCache->AddFunction(functionId);
     return S_OK;
 }
 

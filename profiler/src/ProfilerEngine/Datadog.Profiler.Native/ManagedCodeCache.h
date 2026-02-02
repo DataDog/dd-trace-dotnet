@@ -17,6 +17,8 @@
 #include <mutex>
 #include <set>
 #include <algorithm>
+#include <forward_list>
+#include <functional>
 
 
 #include "cor.h"
@@ -76,6 +78,8 @@ class IConfiguration;
 // See: dotnet-runtime/docs/design/features/code-versioning-profiler-breaking-changes.md
 class ManagedCodeCache {
 public:
+    static constexpr FunctionID InvalidFunctionId = -1;
+
     explicit ManagedCodeCache(ICorProfilerInfo4* pProfilerInfo);
     ~ManagedCodeCache();
 
@@ -112,7 +116,9 @@ private:
         PageEntry(const PageEntry&) = delete;
         PageEntry& operator=(const PageEntry&) = delete;
     };
-    
+        
+    using PagesMap = std::unordered_map<uint64_t, PageEntry>;
+
     // Partition address space into 64KB pages for faster lookup
     static constexpr size_t PAGE_SHIFT = 16;  // 64KB pages (size = 1ULL << 16 = 65536)
     
@@ -121,14 +127,9 @@ private:
         return address >> PAGE_SHIFT;
     }
     
-    // Helper: Find range in sorted vector using binary search (signal-safe)
-    static const CodeRange* FindRangeInVector(
-        const std::vector<CodeRange>& ranges,
-        UINT_PTR ip) noexcept;
-    
     // Query the runtime for code ranges for a specific version
     // This is called when a new tier is compiled
-    std::vector<CodeRange> QueryCodeRanges(FunctionID functionId);
+    std::vector<CodeRange> GetCodeRanges(FunctionID functionId);
     
     // Append new ranges to the cache (accumulative - never removes old ranges)
     // This preserves old tier code that might still be on the stack
@@ -137,6 +138,7 @@ private:
     void AddModuleCodeRangesAsync(std::vector<ModuleCodeRange> moduleCodeRanges);
     void AddFunctionCodeRangesAsync(std::vector<CodeRange> ranges);
     std::vector<ModuleCodeRange> GetModuleCodeRanges(ModuleID moduleId);
+    void InsertCodeRangeIntoPage(PagesMap::iterator pageIt, const CodeRange& range);
 
     void WorkerThread(std::promise<void> startPromise);
     
@@ -146,7 +148,7 @@ private:
     // Map from page number -> page entry (with its own lock)
 
 
-    std::unordered_map<uint64_t, PageEntry> _pagesMap;
+    PagesMap _pagesMap;
     std::vector<ModuleCodeRange> _modulesCodeRanges;
     mutable std::shared_mutex _modulesMutex;
     
@@ -159,11 +161,8 @@ private:
     std::thread _worker;
     std::atomic<bool> _requestStop;
     
-    struct QueueNode;
-    std::atomic<QueueNode*> _workerQueueHead;
-
-
-    std::unique_ptr<QueueNode> DequeueWorkItem();
+    std::forward_list<std::function<void()>> _workerQueue;
+    std::mutex _queueMutex;
 
     template<typename WorkType>
     void EnqueueWork(WorkType work);
