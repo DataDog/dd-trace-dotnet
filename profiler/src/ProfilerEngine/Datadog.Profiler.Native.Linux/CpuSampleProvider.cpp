@@ -7,14 +7,16 @@
 
 #include "RawCpuSample.h"
 #include "RawSampleTransformer.h"
+#include "SymbolsStore.h"
 
 CpuSampleProvider::CpuSampleProvider(
     SampleValueTypeProvider& valueTypeProvider,
     RawSampleTransformer* rawSampleTransformer,
     RingBuffer* ringBuffer,
-    MetricsRegistry& metricsRegistry
+    MetricsRegistry& metricsRegistry,
+    libdatadog::SymbolsStore* symbolsStore
     )
     :
-    RawSampleCollectorBase<RawCpuSample>("CpuSampleProvider", valueTypeProvider.GetOrRegister(CpuTimeProvider::SampleTypeDefinitions), rawSampleTransformer, ringBuffer, metricsRegistry)
+    RawSampleCollectorBase<RawCpuSample>("CpuSampleProvider", valueTypeProvider.GetOrRegister(CpuTimeProvider::SampleTypeDefinitions), rawSampleTransformer, ringBuffer, metricsRegistry, symbolsStore)
 {
 }

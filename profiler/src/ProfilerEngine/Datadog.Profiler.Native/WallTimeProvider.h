@@ -12,6 +12,9 @@
 // forward declarations
 class IConfiguration;
 class IThreadsCpuManager;
+namespace libdatadog {
+class SymbolsStore;
+}
 
 class WallTimeProvider
     :
@@ -21,7 +24,8 @@ public:
     WallTimeProvider(
         SampleValueTypeProvider& sampleTypeProvider,
         RawSampleTransformer* rawSampleTransformer,
-        shared::pmr::memory_resource* memoryResource
+        shared::pmr::memory_resource* memoryResource,
+        libdatadog::SymbolsStore* pSymbolsStore
         );
 
 private:

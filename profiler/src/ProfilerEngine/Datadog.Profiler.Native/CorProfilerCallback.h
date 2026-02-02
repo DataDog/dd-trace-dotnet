@@ -66,6 +66,10 @@ class CpuSampleProvider;
 class NetworkProvider;
 class IUnwinder;
 
+namespace libdatadog {
+class SymbolsStore;
+}
+
 #ifdef LINUX
 class SystemCallsShield;
 #endif
@@ -300,6 +304,8 @@ private :
 
     std::unique_ptr<ISsiManager> _pSsiManager = nullptr;
     std::unique_ptr<RawSampleTransformer> _rawSampleTransformer;
+
+    std::unique_ptr<libdatadog::SymbolsStore> _pSymbolsStore = nullptr;
 
 private:
     static void ConfigureDebugLog();

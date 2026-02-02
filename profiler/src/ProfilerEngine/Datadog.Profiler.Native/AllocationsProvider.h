@@ -28,6 +28,9 @@ class IRuntimeIdStore;
 class ISampledAllocationsListener;
 class RawSampleTransformer;
 class SampleValueTypeProvider;
+namespace libdatadog {
+class SymbolsStore;
+}
 
 
 class AllocationsProvider
@@ -49,7 +52,8 @@ public:
         ISampledAllocationsListener* pListener,
         MetricsRegistry& metricsRegistry,
         CallstackProvider callstackProvider,
-        shared::pmr::memory_resource* memoryResource);
+        shared::pmr::memory_resource* memoryResource,
+        libdatadog::SymbolsStore* pSymbolsStore);
 
     AllocationsProvider(
         std::vector<SampleValueTypeProvider::Offset> valueTypeProvider,
@@ -61,7 +65,8 @@ public:
         ISampledAllocationsListener* pListener,
         MetricsRegistry& metricsRegistry,
         CallstackProvider callstackProvider,
-        shared::pmr::memory_resource* memoryResource);
+        shared::pmr::memory_resource* memoryResource,
+        libdatadog::SymbolsStore* pSymbolsStore);
 
     void OnAllocation(uint32_t allocationKind,
                       ClassID classId,

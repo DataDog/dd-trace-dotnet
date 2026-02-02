@@ -14,6 +14,10 @@ class IAppDomainStore;
 class IFrameStore;
 class IRuntimeIdStore;
 
+namespace libdatadog {
+class SymbolsStore;
+}
+
 class RawSampleTransformer
 {
 public:
@@ -34,9 +38,9 @@ public:
     RawSampleTransformer(RawSampleTransformer&&) = delete;
     RawSampleTransformer& operator=(RawSampleTransformer&&) = delete;
 
-    std::shared_ptr<Sample> Transform(const RawSample& rawSample, std::vector<SampleValueTypeProvider::Offset> const& offsets);
+    std::shared_ptr<Sample> Transform(const RawSample& rawSample, std::vector<SampleValueTypeProvider::Offset> const& offsets, libdatadog::SymbolsStore* pSymbolsStore);
 
-    void Transform(const RawSample& rawSample, std::shared_ptr<Sample>& sample, std::vector<SampleValueTypeProvider::Offset> const& offsets);
+    void Transform(const RawSample& rawSample, std::shared_ptr<Sample>& sample, std::vector<SampleValueTypeProvider::Offset> const& offsets, libdatadog::SymbolsStore* pSymbolsStore);
 
 private:
     void SetAppDomainDetails(const RawSample& rawSample, std::shared_ptr<Sample>& sample);

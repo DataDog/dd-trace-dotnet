@@ -286,6 +286,7 @@
     <ClInclude Include="SuccessImpl.hpp" />
     <ClInclude Include="FileSaver.hpp" />
     <ClInclude Include="ProfileImpl.hpp" />
+    <ClInclude Include="SymbolsStore.h" />
     <ClInclude Include="TagsImpl.hpp" />
     <ClInclude Include="MetadataProvider.h" />
     <ClInclude Include="IAllocationsRecorder.h" />
@@ -465,6 +466,7 @@
     <ClCompile Include="StackSamplerLoopManager.cpp" />
     <ClCompile Include="StackSnapshotResultBuffer.cpp" />
     <ClCompile Include="SumMetric.cpp" />
+    <ClCompile Include="SymbolsStore.cpp" />
     <ClCompile Include="Tags.cpp" />
     <ClCompile Include="TagsHelper.cpp" />
     <ClCompile Include="ThreadCpuInfo.cpp" />

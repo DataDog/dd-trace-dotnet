@@ -20,9 +20,10 @@ std::vector<SampleValueType> CpuTimeProvider::SampleTypeDefinitions(
 CpuTimeProvider::CpuTimeProvider(
     SampleValueTypeProvider& valueTypeProvider,
     RawSampleTransformer* rawSampleTransformer,
-    shared::pmr::memory_resource* memoryResource
+    shared::pmr::memory_resource* memoryResource,
+    libdatadog::SymbolsStore* pSymbolsStore
     )
     :
-    CollectorBase<RawCpuSample>("CpuTimeProvider", valueTypeProvider.GetOrRegister(SampleTypeDefinitions), rawSampleTransformer, memoryResource)
+    CollectorBase<RawCpuSample>("CpuTimeProvider", valueTypeProvider.GetOrRegister(SampleTypeDefinitions), rawSampleTransformer, memoryResource, pSymbolsStore)
 {
 }

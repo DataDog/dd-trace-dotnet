@@ -144,8 +144,8 @@ public class NativeValidationHelper
             // We assume all the ddog_ and blaze_ symbols are provided by libdatadog and leave it at that
             var missingSymbols = symbols
                                 .Where(x => !(
-                                                 x.StartsWith("ddog_")
-                                              || x.StartsWith("blaze_")
+                                                 x.StartsWith("ddog_", StringComparison.OrdinalIgnoreCase)
+                                              || x.StartsWith("blaze_", StringComparison.OrdinalIgnoreCase)
                                               || allowedSymbols.Contains(x)))
                                 .ToList();
 

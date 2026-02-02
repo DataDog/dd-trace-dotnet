@@ -106,6 +106,7 @@
     <ClInclude Include="resource.h" />
     <ClInclude Include="RuntimeIdStoreHelper.h" />
     <ClInclude Include="RuntimeInfoHelper.h" />
+    <ClInclude Include="ServiceWrapper.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="HResultConverterTest.cpp" />
