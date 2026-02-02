@@ -123,6 +123,19 @@
     <Compile Include="Vendors/System.Private.CoreLib/SR.cs" />
   </ItemGroup>
 
+  <ItemGroup>
+    <AdditionalFiles Include="Configuration\supported-configurations.json">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </AdditionalFiles>
+    <AdditionalFiles Include="Configuration\supported-configurations-docs.yaml">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </AdditionalFiles>
+    <AdditionalFiles Include="Configuration\configuration_keys_mapping.json">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </AdditionalFiles>
+    <AdditionalFiles Include="..\..\..\BannedSymbols.txt" Link="BannedSymbols.txt" />
+  </ItemGroup>
+
   <!-- Below this point is reserved for vendor items -->
   <!--Newtonsoft.Json-->
   <!-- Modifications: Original condition was only for net45, but we include net461 here so that net45 and net461 generate the same Newtonsoft.Json -->
@@ -196,17 +209,4 @@
   <PropertyGroup>
     <DefineConstants>$(DefineConstants);ENABLE_IL2CPP</DefineConstants>
   </PropertyGroup>
-
-  <ItemGroup>
-    <AdditionalFiles Include="Configuration\supported-configurations.json">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </AdditionalFiles>
-    <AdditionalFiles Include="Configuration\supported-configurations-docs.yaml">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </AdditionalFiles>
-    <AdditionalFiles Include="Configuration\configuration_keys_mapping.json">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </AdditionalFiles>
-    <AdditionalFiles Include="..\..\..\BannedSymbols.txt" Link="BannedSymbols.txt" />
-  </ItemGroup>
 </Project>
