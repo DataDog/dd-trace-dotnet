@@ -156,16 +156,17 @@ public class DiscoveryServiceTests
     public async Task DoesNotFireCallbackOnRecheckIfNoChangesToConfig()
     {
         int notificationCount = 0;
-        using var mutex1 = new ManualResetEventSlim();
+        using var mutex1 = new ManualResetEventSlim(); // Allows test to control when Request 1 proceeds
         using var mutex2 = new ManualResetEventSlim();
         using var mutex3 = new ManualResetEventSlim();
         var recheckIntervalMs = 1_000; // ms
         var factory = new TestRequestFactory(
             x =>
             {
-                var response = new TestApiRequest(x, responseContent: GetConfig());
-                mutex1.Set(); // Signal that Request 1 has completed
-                return response;
+                // Block Request 1 until test signals to proceed
+                // This ensures subscription happens BEFORE Request 1 completes
+                mutex1.Wait(10_000).Should().BeTrue("Test should signal Request 1 to proceed");
+                return new TestApiRequest(x, responseContent: GetConfig());
             },
             x =>
             {
@@ -180,18 +181,18 @@ public class DiscoveryServiceTests
 
         var ds = new DiscoveryService(factory, InitialRetryDelayMs, MaxRetryDelayMs, recheckIntervalMs);
 
-        // Wait for first request to complete BEFORE subscribing
-        // This ensures we test the synchronous callback path in SubscribeToChanges
-        mutex1.Wait(30_000).Should().BeTrue("Should complete first request to api");
-
-        // Subscribe after config is already fetched - callback should fire immediately
+        // Subscribe BEFORE Request 1 completes
+        // This tests the asynchronous notification path in NotifySubscribers
         ds.SubscribeToChanges(x => Interlocked.Increment(ref notificationCount));
 
-        // Verify callback fired during subscription
-        Volatile.Read(ref notificationCount).Should().Be(1);
+        // Now allow Request 1 to proceed and complete
+        mutex1.Set();
 
-        // Wait for additional requests to verify no more callbacks fire
+        // Wait for second request - by this time Request 1 should have notified us
         mutex2.Wait(30_000).Should().BeTrue("Should make second request to api");
+        Volatile.Read(ref notificationCount).Should().Be(1); // Request 1 notification only
+
+        // Wait for third request
         mutex3.Wait(30_000).Should().BeTrue("Should make third request to api");
 
         Volatile.Read(ref notificationCount).Should().Be(1); // Still 1 - no additional callbacks
@@ -203,16 +204,17 @@ public class DiscoveryServiceTests
     public async Task FiresCallbackOnRecheckIfHasChangesToConfig()
     {
         var notificationCount = 0;
-        using var mutex1 = new ManualResetEventSlim();
+        using var mutex1 = new ManualResetEventSlim(); // Allows test to control when Request 1 proceeds
         using var mutex2 = new ManualResetEventSlim();
         using var mutex3 = new ManualResetEventSlim();
         var recheckIntervalMs = 1_000; // ms
         var factory = new TestRequestFactory(
             x =>
             {
-                var response = new TestApiRequest(x, responseContent: GetConfig(dropP0: true));
-                mutex1.Set(); // Signal that Request 1 has completed
-                return response;
+                // Block Request 1 until test signals to proceed
+                // This ensures subscription happens BEFORE Request 1 completes
+                mutex1.Wait(10_000).Should().BeTrue("Test should signal Request 1 to proceed");
+                return new TestApiRequest(x, responseContent: GetConfig(dropP0: true));
             },
             x =>
             {
@@ -227,21 +229,21 @@ public class DiscoveryServiceTests
 
         var ds = new DiscoveryService(factory, InitialRetryDelayMs, MaxRetryDelayMs, recheckIntervalMs);
 
-        // Wait for first request to complete BEFORE subscribing
-        // This ensures we test the synchronous callback path in SubscribeToChanges
-        mutex1.Wait(30_000).Should().BeTrue("Should complete first request to api");
-
-        // Subscribe after config is already fetched - callback should fire immediately
+        // Subscribe BEFORE Request 1 completes
+        // This tests the asynchronous notification path in NotifySubscribers
         ds.SubscribeToChanges(x => Interlocked.Increment(ref notificationCount));
 
-        // Verify initial callback fired during subscription
-        Volatile.Read(ref notificationCount).Should().Be(1);
+        // Now allow Request 1 to proceed and complete
+        mutex1.Set();
 
-        // Wait for additional requests - second request has different config, should fire callback
+        // Wait for second request - by this time Request 1 should have notified us
         mutex2.Wait(30_000).Should().BeTrue("Should make second request to api");
+        Volatile.Read(ref notificationCount).Should().Be(2); // Request 1 + Request 2 (config changed)
+
+        // Wait for third request
         mutex3.Wait(30_000).Should().BeTrue("Should make third request to api");
 
-        Volatile.Read(ref notificationCount).Should().Be(2); // initial + second (config changed)
+        Volatile.Read(ref notificationCount).Should().Be(2); // Still 2 - Request 3 same as Request 2
 
         await ds.DisposeAsync();
     }
@@ -250,7 +252,7 @@ public class DiscoveryServiceTests
     public async Task DoesNotFireAfterUnsubscribing()
     {
         var notificationCount = 0;
-        using var mutex1 = new ManualResetEventSlim();
+        using var mutex1 = new ManualResetEventSlim(); // Allows test to control when Request 1 proceeds
         using var mutex2 = new ManualResetEventSlim();
         using var mutex3 = new ManualResetEventSlim();
 
@@ -258,9 +260,10 @@ public class DiscoveryServiceTests
         var factory = new TestRequestFactory(
             x =>
             {
-                var response = new TestApiRequest(x, responseContent: GetConfig(dropP0: true));
-                mutex1.Set(); // Signal that Request 1 has completed
-                return response;
+                // Block Request 1 until test signals to proceed
+                // This ensures subscription happens BEFORE Request 1 completes
+                mutex1.Wait(10_000).Should().BeTrue("Test should signal Request 1 to proceed");
+                return new TestApiRequest(x, responseContent: GetConfig(dropP0: true));
             },
             x =>
             {
@@ -275,15 +278,12 @@ public class DiscoveryServiceTests
 
         var ds = new DiscoveryService(factory, InitialRetryDelayMs, MaxRetryDelayMs, recheckIntervalMs);
 
-        // Wait for first request to complete BEFORE subscribing
-        // This ensures we test the synchronous callback path in SubscribeToChanges
-        mutex1.Wait(30_000).Should().BeTrue("Should complete first request to api");
-
-        // Subscribe after config is already fetched - callback fires and immediately unsubscribes
+        // Subscribe BEFORE Request 1 completes
+        // Callback will fire when Request 1 completes, and immediately unsubscribe
         ds.SubscribeToChanges(Callback);
 
-        // Verify callback fired once during subscription
-        Volatile.Read(ref notificationCount).Should().Be(1);
+        // Now allow Request 1 to proceed and complete
+        mutex1.Set();
 
         // Wait for additional requests to ensure callback doesn't fire again after unsubscribing
         mutex2.Wait(30_000).Should().BeTrue("Should make second request to api");
