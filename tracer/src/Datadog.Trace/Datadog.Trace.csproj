@@ -121,6 +121,9 @@
     <Compile Include="Vendors/System.Private.CoreLib/src/System/Runtime/InteropServices/LibraryImportAttribute.cs" />
     <Compile Include="Vendors/System.Private.CoreLib/src/System/Runtime/InteropServices/StringMarshalling.cs" />
     <Compile Include="Vendors/System.Private.CoreLib/SR.cs" />
+
+    <!-- We use Unsafe.IsNullRef() which was added in .NET 5 -->
+    <Compile Include="Vendors/System.Runtime.CompilerServices.Unsafe/Unsafe.cs" />
   </ItemGroup>
 
   <ItemGroup>
