@@ -1,0 +1,111 @@
+﻿[
+  {
+    TraceId: Id_1,
+    SpanId: Id_2,
+    Name: http.request,
+    Resource: GET localhost:00000/proxy,
+    Service: Samples.Ocelot.DistributedTracing-http-client,
+    Type: http,
+    Tags: {
+      component: HttpMessageHandler,
+      env: integration_tests,
+      http-client-handler-type: System.Net.Http.HttpClientHandler,
+      http.method: GET,
+      http.status_code: 200,
+      http.url: http://localhost:00000/proxy,
+      language: dotnet,
+      out.host: 127.0.0.1,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.Ocelot.DistributedTracing
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_3,
+    Name: aspnet_core.request,
+    Resource: GET /proxy,
+    Service: Samples.Ocelot.DistributedTracing,
+    Type: web,
+    ParentId: Id_2,
+    Tags: {
+      component: aspnet_core,
+      env: integration_tests,
+      http.method: GET,
+      http.request.headers.host: localhost:00000,
+      http.status_code: 200,
+      http.url: http://localhost:00000/proxy,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: server,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_4,
+    Name: http.request,
+    Resource: GET localhost:00000/,
+    Service: Samples.Ocelot.DistributedTracing-http-client,
+    Type: http,
+    ParentId: Id_3,
+    Tags: {
+      component: HttpMessageHandler,
+      env: integration_tests,
+      http-client-handler-type: System.Net.Http.SocketsHttpHandler,
+      http.method: GET,
+      http.status_code: 200,
+      http.url: http://localhost:00000/,
+      language: dotnet,
+      out.host: 127.0.0.1,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.Ocelot.DistributedTracing
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_5,
+    Name: aspnet_core.request,
+    Resource: GET /,
+    Service: Samples.Ocelot.DistributedTracing,
+    Type: web,
+    ParentId: Id_4,
+    Tags: {
+      aspnet_core.endpoint: HTTP: GET /,
+      aspnet_core.route: /,
+      component: aspnet_core,
+      env: integration_tests,
+      http.method: GET,
+      http.request.headers.host: localhost:00000,
+      http.route: /,
+      http.status_code: 200,
+      http.url: http://localhost:00000/,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: server,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  }
+]

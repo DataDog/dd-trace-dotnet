@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.14.36908.2
+# Visual Studio Version 18
+VisualStudioVersion = 18.0.11222.15 d18.0
 MinimumVisualStudioVersion = 15.0.26124.0
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Datadog.Tracer.Native", "tracer\src\Datadog.Tracer.Native\Datadog.Tracer.Native.vcxproj", "{91B6272F-5780-4C94-8071-DBBA7B4F67F3}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -636,6 +636,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Datadog.FeatureFlags.OpenFeature", "tracer\src\Datadog.FeatureFlags.OpenFeature\Datadog.FeatureFlags.OpenFeature.csproj", "{CFECF8D4-3A46-35A8-7CB1-BA359974A1A9}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.LifetimeManager.TerminationSignals", "tracer\test\test-applications\integrations\Samples.LifetimeManager.TerminationSignals\Samples.LifetimeManager.TerminationSignals.csproj", "{0E3E1069-80FF-99C9-D29F-936D96D5F516}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.Ocelot.DistributedTracing", "tracer\test\test-applications\integrations\Samples.Ocelot.DistributedTracing\Samples.Ocelot.DistributedTracing.csproj", "{08C6510D-42DC-C8B4-CC79-26349F2D6DBB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -1549,6 +1551,10 @@ Global
 		{0E3E1069-80FF-99C9-D29F-936D96D5F516}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0E3E1069-80FF-99C9-D29F-936D96D5F516}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0E3E1069-80FF-99C9-D29F-936D96D5F516}.Release|Any CPU.Build.0 = Release|Any CPU
+		{08C6510D-42DC-C8B4-CC79-26349F2D6DBB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{08C6510D-42DC-C8B4-CC79-26349F2D6DBB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{08C6510D-42DC-C8B4-CC79-26349F2D6DBB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{08C6510D-42DC-C8B4-CC79-26349F2D6DBB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1801,6 +1807,7 @@ Global
 		{64258238-DE63-4A0F-A618-DF51735BA22A} = {8CEC2042-F11C-49F5-A674-2355793B600A}
 		{CFECF8D4-3A46-35A8-7CB1-BA359974A1A9} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
 		{0E3E1069-80FF-99C9-D29F-936D96D5F516} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
+		{08C6510D-42DC-C8B4-CC79-26349F2D6DBB} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}
@@ -1810,6 +1817,7 @@ Global
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{021efba6-c4ba-4de5-bf3f-c263ee9e20db}*SharedItemsImports = 5
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{061ab58b-8235-4dae-8d56-5f081dd78f5e}*SharedItemsImports = 5
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{086ff8a0-9cee-470a-9751-78b0f1340649}*SharedItemsImports = 5
+		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{08c6510d-42dc-c8b4-cc79-26349f2d6dbb}*SharedItemsImports = 5
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{0980bcdd-a231-42d1-b689-41a41bba161a}*SharedItemsImports = 5
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{0c0578cb-3b67-4f95-8547-206cd2a560cd}*SharedItemsImports = 5
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{0df4363a-0df4-4882-a39f-3c9f404b8de5}*SharedItemsImports = 5
@@ -1856,6 +1864,7 @@ Global
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{536f1d82-d40c-4e33-b7fa-76a0f17bf672}*SharedItemsImports = 5
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{560e1104-9a6e-41e7-ab3d-85ba2740a0f7}*SharedItemsImports = 5
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{56de0d44-e9e5-48da-baea-2934b1e28d4e}*SharedItemsImports = 5
+		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{59a9edcd-6892-4817-8957-54de84bdcafb}*SharedItemsImports = 5
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{5a806f4b-39e7-4f38-b36f-f5cfc4f8760a}*SharedItemsImports = 13
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{5c2829c2-ed0d-414c-b5a0-2bfdca07b493}*SharedItemsImports = 5
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{5d2c6b9c-fce2-4e46-b4ed-bc3b11cfbb3c}*SharedItemsImports = 5

@@ -742,6 +742,23 @@
   },
   {
     "integrationName": "HttpMessageHandler",
+    "assemblyName": "Ocelot",
+    "minAssemblyVersionInclusive": "24.1.0",
+    "maxAssemblyVersionInclusive": "24.65535.65535",
+    "packages": [
+      {
+        "name": "Ocelot",
+        "minVersionAvailableInclusive": "0.0.1",
+        "minVersionSupportedInclusive": "24.1.0",
+        "minVersionTestedInclusive": "24.1.0",
+        "maxVersionSupportedInclusive": "24.1.0",
+        "maxVersionAvailableInclusive": "24.1.0",
+        "maxVersionTestedInclusive": "24.1.0"
+      }
+    ]
+  },
+  {
+    "integrationName": "HttpMessageHandler",
     "assemblyName": "System.Net.Http",
     "minAssemblyVersionInclusive": "4.0.0",
     "maxAssemblyVersionInclusive": "10.65535.65535",
