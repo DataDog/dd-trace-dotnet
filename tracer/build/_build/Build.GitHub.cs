@@ -281,6 +281,41 @@ partial class Build
            }
         });
 
+    Target ValidatePrLabels => _ => _
+       .Unlisted()
+       .Requires(() => GitHubRepositoryName)
+       .Requires(() => GitHubToken)
+       .Executes(async() =>
+        {
+            // Support both PullRequestNumber parameter and PR_NUMBER environment variable
+            var prNumber = PullRequestNumber ?? (int.TryParse(Environment.GetEnvironmentVariable("PR_NUMBER"), out var envPrNumber) ? envPrNumber : (int?)null);
+
+            if (prNumber is null)
+            {
+                Logger.Error("::error::PR number not provided. Set --pull-request-number or PR_NUMBER environment variable.");
+                throw new Exception("PR number is required for validation");
+            }
+
+            var client = GetGitHubClient();
+
+            Console.WriteLine($"Fetching labels for PR {prNumber}");
+
+            var pr = await client.PullRequest.Get(
+                owner: GitHubRepositoryOwner,
+                name: GitHubRepositoryName,
+                number: prNumber.Value);
+
+            if (!pr.Labels.Any())
+            {
+                Logger.Error("::error::This PR has no labels. Please add at least one label to the PR.");
+                throw new Exception("PR validation failed: No labels found");
+            }
+
+            var labelNames = string.Join(", ", pr.Labels.Select(l => l.Name));
+            Logger.Information($"✅ PR has {pr.Labels.Count} label(s): {labelNames}");
+            Console.WriteLine("PR label validation passed!");
+        });
+
     Target CloseMilestone => _ => _
        .Unlisted()
        .Requires(() => GitHubToken)

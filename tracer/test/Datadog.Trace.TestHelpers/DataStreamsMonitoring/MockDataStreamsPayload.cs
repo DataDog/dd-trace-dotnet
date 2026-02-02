@@ -38,7 +38,7 @@ public class MockDataStreamsPayload
     public long ProductMask { get; set; }
 
     [Key(nameof(ProcessTags))]
-    public string ProcessTags { get; set; }
+    public List<string> ProcessTags { get; set; }
 
     public static MockDataStreamsPayload Normalize(IImmutableList<MockDataStreamsPayload> dataStreams)
     {
