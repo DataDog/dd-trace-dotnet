@@ -21,7 +21,6 @@ namespace Datadog.Trace.FeatureFlags
 {
     internal sealed class FeatureFlagsEvaluator
     {
-        internal const string DateFormat = "yyyy-MM-dd'T'HH:mm:ss.fff'Z'";
         internal const string MetadataAllocationKey = "dd_allocationKey";
 
         internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(FeatureFlagsEvaluator));
@@ -268,9 +267,9 @@ namespace Datadog.Trace.FeatureFlags
             switch (condition.Operator)
             {
                 case ConditionOperator.MATCHES:
-                    return MatchesRegex(attributeValue, condition.Value);
+                    return condition.MatchesRegex(attributeValue);
                 case ConditionOperator.NOT_MATCHES:
-                    return !MatchesRegex(attributeValue, condition.Value);
+                    return !condition.MatchesRegex(attributeValue);
                 case ConditionOperator.ONE_OF:
                     return IsOneOf(attributeValue, condition.Value);
                 case ConditionOperator.NOT_ONE_OF:
@@ -285,32 +284,6 @@ namespace Datadog.Trace.FeatureFlags
                     return CompareNumber(attributeValue, condition.Value, (a, b) => a < b);
                 default:
                     throw new FormatException($"Unknown condition operator {condition.Operator.ToString()}");
-            }
-        }
-
-        private static bool MatchesRegex(object attributeValue, object? conditionValue)
-        {
-            if (conditionValue is null)
-            {
-                throw new FormatException("Condition value can not be null");
-            }
-
-            try
-            {
-                var pattern = conditionValue?.ToString() ?? string.Empty;
-                var regex = new Regex(pattern);
-                return regex.IsMatch(ToString(attributeValue));
-            }
-            catch
-            {
-                return false;
-            }
-
-            static string ToString(object attributeValue)
-            {
-                if (attributeValue is null) { return string.Empty; }
-                if (attributeValue is bool boolValue) { return boolValue ? "true" : "false"; }
-                return Convert.ToString(attributeValue, CultureInfo.InvariantCulture) ?? string.Empty;
             }
         }
 
@@ -432,17 +405,11 @@ namespace Datadog.Trace.FeatureFlags
                 return null;
             }
 
-            if (DateTime.TryParseExact(
-                    dateString,
-                    DateFormat,
-                    System.Globalization.CultureInfo.InvariantCulture,
-                    System.Globalization.DateTimeStyles.AdjustToUniversal,
-                    out var dt))
-            {
-                return dt;
-            }
-
-            throw new FormatException("Wrong date format");
+            // Using Parse instead of ParseExact to support RFC 3339 dates with
+            // variable fractional second precision (0-9 digits). ParseExact would
+            // require ~10 format strings. Since dates come from our controlled backend,
+            // accepting broader date formats is acceptable.
+            return DateTime.Parse(dateString, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind);
         }
 
         private static object? ResolveAttribute(string? name, EvaluationContext? context)
