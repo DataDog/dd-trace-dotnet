@@ -186,6 +186,59 @@ This is exactly what our reflection code does! But duck typing doesn't have this
 | Requires `GetInterfaceMap()` | ❌ No | ✅ Yes |
 | Example | `IHeaders.GetAll()` | `ISendHeaders.Set()` |
 
+## Alternative Approach: Interface Instrumentation
+
+According to the [AutomaticInstrumentation.md](https://github.com/DataDog/dd-trace-dotnet/blob/master/docs/development/AutomaticInstrumentation.md#interfaces) documentation, it's possible to instrument interface methods directly using `IntegrationType.Interface`.
+
+### How It Would Work
+
+We could instrument the `MassTransit.SendHeaders.Set()` methods directly at the interface level:
+
+```csharp
+[InstrumentMethod(
+    AssemblyName = "MassTransit",
+    TypeName = "MassTransit.SendHeaders",
+    MethodName = "Set",
+    ReturnTypeName = ClrNames.Void,
+    ParameterTypeNames = new[] { ClrNames.String, ClrNames.String },
+    CallTargetIntegrationType = IntegrationType.Interface,
+    MinimumVersion = "7.0.0",
+    MaximumVersion = "8.*.*")]
+public class SendHeadersSetIntegration
+{
+    public static void OnMethodBegin<TTarget>(TTarget instance, string key, string value)
+    {
+        // Intercept ALL Set calls at the interface level
+        // Could inject trace context headers here
+    }
+}
+```
+
+### Why We Don't Use Interface Instrumentation
+
+**Cons:**
+- ⚠️ **Much higher overhead** - From the docs: "This requires much more overhead because all of the types in a module must be inspected to determine if a module requires instrumentation"
+- Would intercept ALL `Set` calls on ANY class implementing `SendHeaders` in the entire application
+- More invasive - modifies the actual method call behavior at the interface level
+- Performance impact on MassTransit assembly loading and every `Set` call
+- Overkill for our use case - we only need to inject headers in specific contexts
+
+**Pros:**
+- Would work with explicit interface implementation
+- Could potentially use duck typing in the handler
+- Intercepts at the source
+
+### Current Reflection Approach is Better
+
+The reflection-based `SendContextHeadersAdapter` is superior for this use case because:
+
+1. **Lower overhead** - Only uses reflection in our specific code path (trace context injection)
+2. **Cached lookups** - `MethodInfo` is looked up once per adapter instance via `GetInterfaceMap()`, then reused for all header sets
+3. **Targeted** - Only affects our trace propagation code in `MassTransitCommon.InjectTraceContext()`, not all `SendHeaders.Set` calls
+4. **Less invasive** - Doesn't modify MassTransit's method behavior or add instrumentation overhead
+5. **Works reliably** - ✅ Tests passing, distributed tracing working correctly
+6. **Minimal performance impact** - One-time interface mapping cost is negligible compared to network/messaging overhead
+
 ## Conclusion
 
 Duck typing cannot be used for MassTransit's `SendHeaders.Set` methods because:
@@ -194,10 +247,13 @@ Duck typing cannot be used for MassTransit's `SendHeaders.Set` methods because:
 2. Duck typing cannot find explicitly implemented interface methods on concrete types
 3. The `DuckReverseMethod` attribute is not designed for this use case
 
-**Recommendation:** Keep the reflection-based approach for `SendContextHeadersAdapter`. While reflection has some overhead, it's already optimized by:
+**Final Recommendation:** Keep the reflection-based approach for `SendContextHeadersAdapter`. While reflection has some overhead, it's already optimized by:
 - Caching the `MethodInfo` lookup (done once per adapter instance)
+- Using `GetInterfaceMap()` to find explicitly implemented interface methods
 - Only invoking the method via reflection (not repeatedly looking it up)
 - The overhead is minimal compared to the network/messaging overhead
+
+**Alternative considered:** Interface instrumentation using `IntegrationType.Interface` would work but has much higher overhead and is unnecessarily invasive for this targeted use case.
 
 ## Performance Impact
 
