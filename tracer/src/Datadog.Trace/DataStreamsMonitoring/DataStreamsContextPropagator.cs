@@ -9,9 +9,6 @@ using System;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 using Datadog.Trace.SourceGenerators;
-using Datadog.Trace.Util;
-using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
-using Datadog.Trace.VendoredMicrosoftCode.System.Buffers.Text;
 
 namespace Datadog.Trace.DataStreamsMonitoring;
 

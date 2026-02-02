@@ -122,7 +122,7 @@ internal sealed class DefaultMemoryChecker : IMemoryChecker
         return false;
     }
 
-    private Datadog.Trace.VendoredMicrosoftCode.System.ReadOnlySpan<char> ReadMemInfo()
+    private ReadOnlySpan<char> ReadMemInfo()
     {
         var empty = ReadOnlySpan<char>.Empty;
         var memInfo = System.IO.File.ReadAllText("/proc/meminfo").AsSpan();
