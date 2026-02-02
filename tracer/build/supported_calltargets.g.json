@@ -9636,7 +9636,7 @@
       "Item2": 65535,
       "Item3": 65535
     },
-    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.NotifyFaultedIntegration",
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.CallTarget.NotifyFaultedIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
     "InstrumentationCategory": 1

@@ -13,7 +13,7 @@ using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.CallTarget
 {
     /// <summary>
     /// MassTransit BaseReceiveContext.NotifyFaulted calltarget instrumentation.

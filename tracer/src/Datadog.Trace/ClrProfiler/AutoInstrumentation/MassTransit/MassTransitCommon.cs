@@ -7,6 +7,7 @@
 
 using System;
 using System.Reflection;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.CallTarget;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.DuckTypes;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;

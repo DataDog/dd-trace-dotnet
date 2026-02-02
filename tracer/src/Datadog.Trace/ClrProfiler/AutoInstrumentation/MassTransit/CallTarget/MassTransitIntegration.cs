@@ -12,7 +12,7 @@ using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.CallTarget
 {
     internal static class MassTransitIntegration
     {

@@ -457,7 +457,7 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Log4Net.DirectSubmission.AppenderCollectionLegacyIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Log4Net.AppenderAttachedImplIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.Log4Net,
-                "Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.NotifyFaultedIntegration"
+                "Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.CallTarget.NotifyFaultedIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.MassTransit,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_3_5_Execute_Integration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_Generic_Execute_Integration"
