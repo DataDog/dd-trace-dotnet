@@ -220,8 +220,7 @@ namespace Datadog.Trace.Telemetry
                  && IsBase32Char(assemblyName[5])
                  && IsBase32Char(assemblyName[6])
                  && IsBase32Char(assemblyName[7]))
-                || (assemblyName.Length == 10 && IsHexString(assemblyName, 0))
-                || (assemblyName.Length >= 32 && IsHexString(assemblyName, 0))
+                || (assemblyName.Length is 10 or >= 32 && IsHexString(assemblyName, 0))
                 || IsDynamicClassesPattern(assemblyName);
         }
 
