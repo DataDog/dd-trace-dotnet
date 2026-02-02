@@ -17,9 +17,9 @@ namespace Datadog.Trace.Tagging
     internal class TagsList : ITags
     {
         protected static readonly Lazy<IDatadogLogger> Logger = new(() => DatadogLogging.GetLoggerFor<TagsList>());
-        private List<KeyValuePair<string, string>>? _tags;
-        private List<KeyValuePair<string, double>>? _metrics;
-        private List<KeyValuePair<string, byte[]>>? _metaStruct;
+        private Dictionary<string, string>? _tags;
+        private Dictionary<string, double>? _metrics;
+        private Dictionary<string, byte[]>? _metaStruct;
 
         public virtual string? GetTag(string key)
         {
@@ -28,12 +28,9 @@ namespace Datadog.Trace.Tagging
             {
                 lock (tags)
                 {
-                    for (int i = 0; i < tags.Count; i++)
+                    if (tags.TryGetValue(key, out var value))
                     {
-                        if (tags[i].Key == key)
-                        {
-                            return tags[i].Value;
-                        }
+                        return value;
                     }
                 }
             }
@@ -47,33 +44,19 @@ namespace Datadog.Trace.Tagging
 
             if (tags == null)
             {
-                var newTags = new List<KeyValuePair<string, string>>();
+                var newTags = new Dictionary<string, string>();
                 tags = Interlocked.CompareExchange(ref _tags, newTags, null) ?? newTags;
             }
 
             lock (tags)
             {
-                for (int i = 0; i < tags.Count; i++)
+                if (value == null)
                 {
-                    if (tags[i].Key == key)
-                    {
-                        if (value == null)
-                        {
-                            tags.RemoveAt(i);
-                        }
-                        else
-                        {
-                            tags[i] = new KeyValuePair<string, string>(key, value);
-                        }
-
-                        return;
-                    }
+                    tags.Remove(key);
                 }
-
-                // If we get there, the tag wasn't in the collection
-                if (value != null)
+                else
                 {
-                    tags.Add(new KeyValuePair<string, string>(key, value));
+                    tags[key] = value;
                 }
             }
         }
@@ -86,9 +69,9 @@ namespace Datadog.Trace.Tagging
             {
                 lock (tags)
                 {
-                    for (int i = 0; i < tags.Count; i++)
+                    foreach (var kvp in tags)
                     {
-                        processor.Process(new TagItem<string>(tags[i].Key, tags[i].Value, default));
+                        processor.Process(new TagItem<string>(kvp.Key, kvp.Value, default));
                     }
                 }
             }
@@ -101,12 +84,9 @@ namespace Datadog.Trace.Tagging
             {
                 lock (metrics)
                 {
-                    for (int i = 0; i < metrics.Count; i++)
+                    if (metrics.TryGetValue(key, out var value))
                     {
-                        if (metrics[i].Key == key)
-                        {
-                            return metrics[i].Value;
-                        }
+                        return value;
                     }
                 }
             }
@@ -120,33 +100,19 @@ namespace Datadog.Trace.Tagging
 
             if (metrics == null)
             {
-                var newMetrics = new List<KeyValuePair<string, double>>();
+                var newMetrics = new Dictionary<string, double>();
                 metrics = Interlocked.CompareExchange(ref _metrics, newMetrics, null) ?? newMetrics;
             }
 
             lock (metrics)
             {
-                for (int i = 0; i < metrics.Count; i++)
+                if (value == null)
                 {
-                    if (metrics[i].Key == key)
-                    {
-                        if (value == null)
-                        {
-                            metrics.RemoveAt(i);
-                        }
-                        else
-                        {
-                            metrics[i] = new KeyValuePair<string, double>(key, value.Value);
-                        }
-
-                        return;
-                    }
+                    metrics.Remove(key);
                 }
-
-                // If we get there, the tag wasn't in the collection
-                if (value != null)
+                else
                 {
-                    metrics.Add(new KeyValuePair<string, double>(key, value.Value));
+                    metrics[key] = value.Value;
                 }
             }
         }
@@ -162,10 +128,9 @@ namespace Datadog.Trace.Tagging
 
             lock (metrics)
             {
-                for (var i = 0; i < metrics.Count; i++)
+                foreach (var kvp in metrics)
                 {
-                    var item = metrics[i];
-                    processor.Process(new TagItem<double>(item.Key, item.Value, default));
+                    processor.Process(new TagItem<double>(kvp.Key, kvp.Value, default));
                 }
             }
         }
@@ -192,33 +157,19 @@ namespace Datadog.Trace.Tagging
 
                 if (metastruct == null)
                 {
-                    var newMetastruct = new List<KeyValuePair<string, byte[]>>();
+                    var newMetastruct = new Dictionary<string, byte[]>();
                     metastruct = Interlocked.CompareExchange(ref _metaStruct, newMetastruct, null) ?? newMetastruct;
                 }
 
                 lock (metastruct)
                 {
-                    for (int i = 0; i < metastruct.Count; i++)
+                    if (value == null)
                     {
-                        if (metastruct[i].Key == key)
-                        {
-                            if (value == null)
-                            {
-                                metastruct.RemoveAt(i);
-                            }
-                            else
-                            {
-                                metastruct[i] = new KeyValuePair<string, byte[]>(key, value);
-                            }
-
-                            return;
-                        }
+                        metastruct.Remove(key);
                     }
-
-                    // If we get there, the key wasn't in the collection
-                    if (value != null)
+                    else
                     {
-                        metastruct.Add(new KeyValuePair<string, byte[]>(key, value));
+                        metastruct[key] = value;
                     }
                 }
             }
@@ -235,10 +186,9 @@ namespace Datadog.Trace.Tagging
 
             lock (metastruct)
             {
-                for (var i = 0; i < metastruct.Count; i++)
+                foreach (var kvp in metastruct)
                 {
-                    var item = metastruct[i];
-                    processor.Process(new TagItem<byte[]>(item.Key, item.Value, default));
+                    processor.Process(new TagItem<byte[]>(kvp.Key, kvp.Value, default));
                 }
             }
         }
@@ -255,7 +205,7 @@ namespace Datadog.Trace.Tagging
                 {
                     foreach (var pair in tags)
                     {
-                        sb.Append($"{pair.Key} (tag):{pair.Value},");
+                        sb.Append(pair.Key).Append(" (tag):").Append(pair.Value).Append(',');
                     }
                 }
             }
@@ -268,7 +218,7 @@ namespace Datadog.Trace.Tagging
                 {
                     foreach (var pair in metrics)
                     {
-                        sb.Append($"{pair.Key} (metric):{pair.Value}");
+                        sb.Append(pair.Key).Append(" (metric):").Append(pair.Value);
                     }
                 }
             }
@@ -281,7 +231,7 @@ namespace Datadog.Trace.Tagging
                 {
                     foreach (var pair in metaStruct)
                     {
-                        sb.Append($"{pair.Key} (metaStruct)");
+                        sb.Append(pair.Key).Append(" (metaStruct)");
                     }
                 }
             }
