@@ -254,7 +254,7 @@ public abstract class AzureFunctionsTests : TestHelper
 
                 await AssertIsolatedSpans(filteredSpans.ToImmutableList(), $"{nameof(AzureFunctionsTests)}.Isolated.V4.AspNetCore1");
 
-                spans.Count.Should().Be(expectedSpanCount);
+                filteredSpans.Count.Should().Be(expectedSpanCount);
             }
         }
     }
@@ -393,7 +393,7 @@ public abstract class AzureFunctionsTests : TestHelper
 
                 await AssertIsolatedSpans(filteredSpans.ToImmutableList(), $"{nameof(AzureFunctionsTests)}.Isolated.V4.AspNetCore");
 
-                spans.Count.Should().Be(expectedSpanCount);
+                filteredSpans.Count.Should().Be(expectedSpanCount);
             }
         }
     }
