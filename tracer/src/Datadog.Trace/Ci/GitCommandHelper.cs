@@ -90,7 +90,8 @@ internal static class GitCommandHelper
         TelemetryFactory.Metrics.RecordCountCIVisibilityGitCommand(ciVisibilityCommand);
         try
         {
-            arguments = $"-c safe.directory={workingDirectory} {arguments}";
+            var safeDirectory = QuoteCommandLineArgument(workingDirectory);
+            arguments = $"-c safe.directory={safeDirectory} {arguments}";
             var sw = RefStopwatch.Create();
             var gitOutput = ProcessHelpers.RunCommand(
                 new ProcessHelpers.Command(
@@ -156,6 +157,57 @@ internal static class GitCommandHelper
             TelemetryFactory.Metrics.RecordCountCIVisibilityGitCommandErrors(ciVisibilityCommand, MetricTags.CIVisibilityExitCodes.Missing);
             return null;
         }
+    }
+
+    private static string QuoteCommandLineArgument(string value)
+    {
+        if (string.IsNullOrEmpty(value))
+        {
+            return "\"\"";
+        }
+
+        var needsQuotes = value.IndexOfAny([' ', '\t', '\n', '\r', '"']) >= 0;
+        if (!needsQuotes)
+        {
+            return value;
+        }
+
+        var sb = StringBuilderCache.Acquire();
+        sb.Append('"');
+
+        var backslashCount = 0;
+        foreach (var ch in value)
+        {
+            if (ch == '\\')
+            {
+                backslashCount++;
+                continue;
+            }
+
+            if (ch == '"')
+            {
+                sb.Append('\\', (backslashCount * 2) + 1);
+                sb.Append('"');
+                backslashCount = 0;
+                continue;
+            }
+
+            if (backslashCount > 0)
+            {
+                sb.Append('\\', backslashCount);
+                backslashCount = 0;
+            }
+
+            sb.Append(ch);
+        }
+
+        if (backslashCount > 0)
+        {
+            sb.Append('\\', backslashCount * 2);
+        }
+
+        sb.Append('"');
+        return StringBuilderCache.GetStringAndRelease(sb);
     }
 
     public static FileCoverageInfo[] GetGitDiffFilesAndLines(string workingDirectory, string baseCommit, string? headCommit = null)
