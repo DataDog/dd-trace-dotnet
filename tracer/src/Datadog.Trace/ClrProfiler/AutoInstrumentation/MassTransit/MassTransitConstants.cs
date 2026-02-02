@@ -16,16 +16,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
 
         internal const string MessagingType = "masstransit";
 
-        // Operation types for resource naming (matching MT8 OTEL patterns)
+        // Operation types for resource naming and tags
         internal const string OperationPublish = "publish";
         internal const string OperationSend = "send";
         internal const string OperationReceive = "receive";
         internal const string OperationProcess = "process";
 
-        // MT8 OTEL-style span names - operation name is based on messaging system
-        // Examples: "in_memory.send", "rabbitmq.send", "azureservicebus.send"
-        // Consumer spans use "consumer" as the operation name
-        internal const string ConsumerOperationName = "consumer";
+        // Span operation names - fixed to make MassTransit spans easy to identify in metrics
+        // The actual transport is captured in the messaging.system tag
+        internal const string ProduceOperationName = "masstransit.produce";
+        internal const string ConsumeOperationName = "masstransit.consume";
 
         // Assembly and type names
         internal const string MassTransitAssembly = "MassTransit";

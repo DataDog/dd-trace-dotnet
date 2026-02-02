@@ -56,8 +56,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
                 var messagingSystem = DetermineMessagingSystem(destinationAddress);
                 tags.MessagingSystem = messagingSystem;
 
-                // Operation name: {messaging_system}.{operation}
-                var operationName = $"{messagingSystem.Replace("-", "_")}.{operation}";
+                // Use constant operation name for all producer operations
+                var operationName = MassTransitConstants.ProduceOperationName;
 
                 scope = tracer.StartActiveInternal(
                     operationName,
@@ -139,8 +139,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
                 var messagingSystem = DetermineMessagingSystem(inputAddress);
                 tags.MessagingSystem = messagingSystem;
 
-                // Consumer operations use "consumer" as the operation name (MT8 OTEL style)
-                var operationName = MassTransitConstants.ConsumerOperationName;
+                // Use constant operation name for all consumer operations
+                var operationName = MassTransitConstants.ConsumeOperationName;
 
                 scope = tracer.StartActiveInternal(
                     operationName,

@@ -45,9 +45,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
                 var resolvedMessagingSystem = messagingSystem ?? DetermineMessagingSystem(destinationName);
                 tags.MessagingSystem = resolvedMessagingSystem;
 
-                // MT8 OTEL-style operation name: {messaging_system}.{operation}
-                // e.g., "in_memory.send", "rabbitmq.send"
-                var operationName = $"{resolvedMessagingSystem.Replace("-", "_")}.{operation}";
+                // Use constant operation name for all producer operations
+                var operationName = MassTransitConstants.ProduceOperationName;
 
                 // Don't specify serviceName to use the default tracer service name (like Hangfire)
                 scope = tracer.StartActiveInternal(
@@ -122,9 +121,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
                 var resolvedMessagingSystem = messagingSystem ?? DetermineMessagingSystem(destinationName) ?? "in-memory";
                 tags.MessagingSystem = resolvedMessagingSystem;
 
-                // MT8 OTEL-style operation name for consumer: "consumer"
-                // This matches the MT8 OTEL instrumentation which uses "consumer" for all consumer operations
-                var operationName = MassTransitConstants.ConsumerOperationName;
+                // Use constant operation name for all consumer operations
+                var operationName = MassTransitConstants.ConsumeOperationName;
 
                 // Don't specify serviceName to use the default tracer service name (like Hangfire)
                 scope = tracer.StartActiveInternal(

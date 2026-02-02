@@ -2,7 +2,7 @@
   {
     TraceId: Id_1,
     SpanId: Id_2,
-    Name: consumer,
+    Name: masstransit.consume,
     Resource: GettingStarted process,
     Service: Samples.MassTransit7,
     Type: queue,
@@ -32,7 +32,7 @@
   {
     TraceId: Id_4,
     SpanId: Id_5,
-    Name: consumer,
+    Name: masstransit.consume,
     Resource: GettingStarted process,
     Service: Samples.MassTransit7,
     Type: queue,
@@ -62,7 +62,7 @@
   {
     TraceId: Id_1,
     SpanId: Id_3,
-    Name: amazonsqs.send,
+    Name: masstransit.produce,
     Resource: Samples_MassTransit7_Contracts-GettingStartedMessage send,
     Service: Samples.MassTransit7,
     Type: queue,
@@ -91,7 +91,7 @@
   {
     TraceId: Id_4,
     SpanId: Id_6,
-    Name: amazonsqs.send,
+    Name: masstransit.produce,
     Resource: GettingStarted send,
     Service: Samples.MassTransit7,
     Type: queue,
@@ -120,7 +120,7 @@
   {
     TraceId: Id_7,
     SpanId: Id_8,
-    Name: consumer,
+    Name: masstransit.consume,
     Resource: GettingStarted process,
     Service: Samples.MassTransit7,
     Type: queue,
@@ -150,7 +150,7 @@
   {
     TraceId: Id_10,
     SpanId: Id_11,
-    Name: consumer,
+    Name: masstransit.consume,
     Resource: GettingStarted process,
     Service: Samples.MassTransit7,
     Type: queue,
@@ -180,7 +180,7 @@
   {
     TraceId: Id_13,
     SpanId: Id_14,
-    Name: consumer,
+    Name: masstransit.consume,
     Resource: OrderState process,
     Service: Samples.MassTransit7,
     Type: queue,
@@ -211,7 +211,7 @@
   {
     TraceId: Id_13,
     SpanId: Id_16,
-    Name: consumer,
+    Name: masstransit.consume,
     Resource: OrderState process,
     Service: Samples.MassTransit7,
     Type: queue,
@@ -242,7 +242,7 @@
   {
     TraceId: Id_17,
     SpanId: Id_18,
-    Name: consumer,
+    Name: masstransit.consume,
     Resource: OrderState process,
     Service: Samples.MassTransit7,
     Type: queue,
@@ -273,7 +273,7 @@
   {
     TraceId: Id_17,
     SpanId: Id_20,
-    Name: consumer,
+    Name: masstransit.consume,
     Resource: OrderState process,
     Service: Samples.MassTransit7,
     Type: queue,
@@ -304,7 +304,7 @@
   {
     TraceId: Id_21,
     SpanId: Id_22,
-    Name: consumer,
+    Name: masstransit.consume,
     Resource: OrderState process,
     Service: Samples.MassTransit7,
     Type: queue,
@@ -335,7 +335,7 @@
   {
     TraceId: Id_21,
     SpanId: Id_24,
-    Name: consumer,
+    Name: masstransit.consume,
     Resource: OrderState process,
     Service: Samples.MassTransit7,
     Type: queue,
@@ -366,7 +366,7 @@
   {
     TraceId: Id_25,
     SpanId: Id_26,
-    Name: consumer,
+    Name: masstransit.consume,
     Resource: Failing process,
     Service: Samples.MassTransit7,
     Type: queue,
@@ -402,7 +402,7 @@ at Samples.MassTransit7.Consumers.FailingConsumer.Consume(ConsumeContext`1 conte
   {
     TraceId: Id_28,
     SpanId: Id_29,
-    Name: consumer,
+    Name: masstransit.consume,
     Resource: handler-failing process,
     Service: Samples.MassTransit7,
     Type: queue,
@@ -439,7 +439,7 @@ at MassTransit.Pipeline.Filters.HandlerMessageFilter`1.GreenPipes.IFilter<MassTr
   {
     TraceId: Id_31,
     SpanId: Id_32,
-    Name: consumer,
+    Name: masstransit.consume,
     Resource: OrderState process,
     Service: Samples.MassTransit7,
     Type: queue,
@@ -470,7 +470,7 @@ at MassTransit.Pipeline.Filters.HandlerMessageFilter`1.GreenPipes.IFilter<MassTr
   {
     TraceId: Id_31,
     SpanId: Id_34,
-    Name: consumer,
+    Name: masstransit.consume,
     Resource: OrderState process,
     Service: Samples.MassTransit7,
     Type: queue,
@@ -501,7 +501,7 @@ at MassTransit.Pipeline.Filters.HandlerMessageFilter`1.GreenPipes.IFilter<MassTr
   {
     TraceId: Id_35,
     SpanId: Id_36,
-    Name: consumer,
+    Name: masstransit.consume,
     Resource: OrderState process,
     Service: Samples.MassTransit7,
     Type: queue,
@@ -538,7 +538,7 @@ at Samples.MassTransit7.Sagas.OrderStateMachine.<>c.<.ctor>b__0_11(BehaviorConte
   {
     TraceId: Id_35,
     SpanId: Id_38,
-    Name: consumer,
+    Name: masstransit.consume,
     Resource: OrderState process,
     Service: Samples.MassTransit7,
     Type: queue,
@@ -569,7 +569,7 @@ at Samples.MassTransit7.Sagas.OrderStateMachine.<>c.<.ctor>b__0_11(BehaviorConte
   {
     TraceId: Id_7,
     SpanId: Id_9,
-    Name: in_memory.send,
+    Name: masstransit.produce,
     Resource: urn:message:Samples.MassTransit7.Contracts:GettingStartedMessage send,
     Service: Samples.MassTransit7,
     Type: queue,
@@ -598,7 +598,7 @@ at Samples.MassTransit7.Sagas.OrderStateMachine.<>c.<.ctor>b__0_11(BehaviorConte
   {
     TraceId: Id_10,
     SpanId: Id_12,
-    Name: in_memory.send,
+    Name: masstransit.produce,
     Resource: GettingStarted send,
     Service: Samples.MassTransit7,
     Type: queue,
@@ -627,7 +627,7 @@ at Samples.MassTransit7.Sagas.OrderStateMachine.<>c.<.ctor>b__0_11(BehaviorConte
   {
     TraceId: Id_13,
     SpanId: Id_15,
-    Name: in_memory.send,
+    Name: masstransit.produce,
     Resource: urn:message:Samples.MassTransit7.Contracts:OrderSubmitted send,
     Service: Samples.MassTransit7,
     Type: queue,
@@ -656,7 +656,7 @@ at Samples.MassTransit7.Sagas.OrderStateMachine.<>c.<.ctor>b__0_11(BehaviorConte
   {
     TraceId: Id_17,
     SpanId: Id_19,
-    Name: in_memory.send,
+    Name: masstransit.produce,
     Resource: urn:message:Samples.MassTransit7.Contracts:OrderAccepted send,
     Service: Samples.MassTransit7,
     Type: queue,
@@ -685,7 +685,7 @@ at Samples.MassTransit7.Sagas.OrderStateMachine.<>c.<.ctor>b__0_11(BehaviorConte
   {
     TraceId: Id_21,
     SpanId: Id_23,
-    Name: in_memory.send,
+    Name: masstransit.produce,
     Resource: urn:message:Samples.MassTransit7.Contracts:OrderCompleted send,
     Service: Samples.MassTransit7,
     Type: queue,
@@ -714,7 +714,7 @@ at Samples.MassTransit7.Sagas.OrderStateMachine.<>c.<.ctor>b__0_11(BehaviorConte
   {
     TraceId: Id_25,
     SpanId: Id_27,
-    Name: in_memory.send,
+    Name: masstransit.produce,
     Resource: urn:message:Samples.MassTransit7.Contracts:FailingMessage send,
     Service: Samples.MassTransit7,
     Type: queue,
@@ -743,7 +743,7 @@ at Samples.MassTransit7.Sagas.OrderStateMachine.<>c.<.ctor>b__0_11(BehaviorConte
   {
     TraceId: Id_25,
     SpanId: Id_39,
-    Name: in_memory.send,
+    Name: masstransit.produce,
     Resource: urn:message:MassTransit:Fault[[Samples.MassTransit7.Contracts:FailingMessage]] send,
     Service: Samples.MassTransit7,
     Type: queue,
@@ -766,7 +766,7 @@ at Samples.MassTransit7.Sagas.OrderStateMachine.<>c.<.ctor>b__0_11(BehaviorConte
   {
     TraceId: Id_28,
     SpanId: Id_30,
-    Name: in_memory.send,
+    Name: masstransit.produce,
     Resource: handler-failing send,
     Service: Samples.MassTransit7,
     Type: queue,
@@ -795,7 +795,7 @@ at Samples.MassTransit7.Sagas.OrderStateMachine.<>c.<.ctor>b__0_11(BehaviorConte
   {
     TraceId: Id_28,
     SpanId: Id_40,
-    Name: in_memory.send,
+    Name: masstransit.produce,
     Resource: urn:message:MassTransit:Fault[[Samples.MassTransit7.Contracts:HandlerFailingMessage]] send,
     Service: Samples.MassTransit7,
     Type: queue,
@@ -818,7 +818,7 @@ at Samples.MassTransit7.Sagas.OrderStateMachine.<>c.<.ctor>b__0_11(BehaviorConte
   {
     TraceId: Id_31,
     SpanId: Id_33,
-    Name: in_memory.send,
+    Name: masstransit.produce,
     Resource: urn:message:Samples.MassTransit7.Contracts:OrderSubmitted send,
     Service: Samples.MassTransit7,
     Type: queue,
@@ -847,7 +847,7 @@ at Samples.MassTransit7.Sagas.OrderStateMachine.<>c.<.ctor>b__0_11(BehaviorConte
   {
     TraceId: Id_35,
     SpanId: Id_37,
-    Name: in_memory.send,
+    Name: masstransit.produce,
     Resource: urn:message:Samples.MassTransit7.Contracts:OrderFailed send,
     Service: Samples.MassTransit7,
     Type: queue,
@@ -876,7 +876,7 @@ at Samples.MassTransit7.Sagas.OrderStateMachine.<>c.<.ctor>b__0_11(BehaviorConte
   {
     TraceId: Id_35,
     SpanId: Id_41,
-    Name: in_memory.send,
+    Name: masstransit.produce,
     Resource: urn:message:MassTransit:Fault[[Samples.MassTransit7.Contracts:OrderFailed]] send,
     Service: Samples.MassTransit7,
     Type: queue,
@@ -900,7 +900,7 @@ at Samples.MassTransit7.Sagas.OrderStateMachine.<>c.<.ctor>b__0_11(BehaviorConte
   {
     TraceId: Id_42,
     SpanId: Id_43,
-    Name: consumer,
+    Name: masstransit.consume,
     Resource: GettingStarted process,
     Service: Samples.MassTransit7,
     Type: queue,
@@ -930,7 +930,7 @@ at Samples.MassTransit7.Sagas.OrderStateMachine.<>c.<.ctor>b__0_11(BehaviorConte
   {
     TraceId: Id_45,
     SpanId: Id_46,
-    Name: consumer,
+    Name: masstransit.consume,
     Resource: GettingStarted process,
     Service: Samples.MassTransit7,
     Type: queue,
@@ -960,7 +960,7 @@ at Samples.MassTransit7.Sagas.OrderStateMachine.<>c.<.ctor>b__0_11(BehaviorConte
   {
     TraceId: Id_42,
     SpanId: Id_44,
-    Name: rabbitmq.send,
+    Name: masstransit.produce,
     Resource: Samples.MassTransit7.Contracts:GettingStartedMessage send,
     Service: Samples.MassTransit7,
     Type: queue,
@@ -989,7 +989,7 @@ at Samples.MassTransit7.Sagas.OrderStateMachine.<>c.<.ctor>b__0_11(BehaviorConte
   {
     TraceId: Id_45,
     SpanId: Id_47,
-    Name: rabbitmq.send,
+    Name: masstransit.produce,
     Resource: GettingStarted send,
     Service: Samples.MassTransit7,
     Type: queue,
