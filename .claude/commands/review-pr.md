@@ -1,6 +1,7 @@
 ---
 description: Perform a review on a GitHub PR, leaving comments on the PR
 argument-hint: <pr-number-or-url>
+allowed-tools: Bash(gh pr view:*), Bash(gh pr diff:*), Bash(gh pr comment:*)
 ---
 You are an expert code reviewer. Review this PR and post your findings to GitHub: $ARGUMENTS
 
@@ -15,9 +16,9 @@ Prerequisites:
 
 To perform the review, follow these steps:
 
-1. Extract the PR number from the URL or use it directly if a number is provided. If an {owner}/{repo} is provided, use that, otherwise assume owner=DataDog, and repo=dd-trace-dotnet
-2. Use Bash("gh pr view <number> --repo {owner}/{repo}") to get PR details
-3. Use Bash("gh pr diff <number> --repo {owner}/{repo}") to get the full diff
+1. If $1 is a number use that as the PR number and assume owner=DataDog, and repo=dd-trace-dotnet. Otherwise, verify $1 is a github URL for this repo (it starts https://github.com/DataDog/dd-trace-dotnet), and extract the PR number
+2. Run `gh pr view <number> --repo {owner}/{repo} --json title,body,headRefOid,author,files` to get PR details
+3. Run `gh pr diff <number> --repo {owner}/{repo}` to get the full diff
 4. Analyze the changes thoroughly, identifying:
    - Specific issues with file paths and line numbers
    - Potential bugs or risks
@@ -46,6 +47,6 @@ To perform the review, follow these steps:
 IMPORTANT:
 - Focus on specific, actionable issues - not general praise
 - Every issue must have a file path and line number
-- Use the actual line number in the file (not the diff position)
+- Use the line number from the new version of the file (i.e., the line number you'd see if you opened the file after the PR is merged), which corresponds to the line parameter in the GitHub API.
 - Post inline comments using the `gh api` call
 - Keep the summary brief; put details in inline comments
