@@ -8,6 +8,8 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.DuckTypes;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 
@@ -22,19 +24,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ContextPropagation));
 
-        private readonly object? _headers;
-        private readonly MethodInfo? _getAllMethod;
+        private readonly IHeaders? _headersProxy;
 
         public ContextPropagation(object? headers)
         {
-            _headers = headers;
-            _getAllMethod = null;
+            _headersProxy = headers?.DuckCast<IHeaders>();
 
-            if (headers != null)
+            if (_headersProxy != null)
             {
-                // Find the GetAll method that returns IEnumerable<HeaderValue>
-                var headersType = headers.GetType();
-                _getAllMethod = headersType.GetMethod("GetAll", BindingFlags.Public | BindingFlags.Instance, null, Type.EmptyTypes, null);
+                Log.Debug("ContextPropagation: Successfully duck cast headers to IHeaders");
+            }
+            else
+            {
+                Log.Debug("ContextPropagation: Headers is null or duck typing failed");
             }
         }
 
@@ -42,45 +44,35 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
         {
             string? result = null;
 
-            if (_headers != null && _getAllMethod != null)
+            if (_headersProxy != null)
             {
                 try
                 {
-                    // GetAll returns IEnumerable<HeaderValue> where HeaderValue has Key and Value properties
-                    var allHeaders = _getAllMethod.Invoke(_headers, null);
-                    if (allHeaders is System.Collections.IEnumerable enumerable)
+                    Log.Debug("ContextPropagation.GetValues: Using duck typing to get headers");
+                    var allHeaders = _headersProxy.GetAll();
+                    if (allHeaders != null)
                     {
-                        foreach (var headerValue in enumerable)
+                        foreach (var headerValue in allHeaders)
                         {
                             if (headerValue == null)
                             {
                                 continue;
                             }
 
-                            // HeaderValue is a struct with Key and Value properties
-                            var hvType = headerValue.GetType();
-                            var keyProp = hvType.GetProperty("Key");
-                            var valueProp = hvType.GetProperty("Value");
-
-                            if (keyProp != null && valueProp != null)
+                            // Duck cast HeaderValue struct to get Key and Value
+                            var hv = headerValue.DuckCast<IHeaderValue>();
+                            if (string.Equals(hv?.Key, name, StringComparison.OrdinalIgnoreCase))
                             {
-                                var key = keyProp.GetValue(headerValue) as string;
-                                if (string.Equals(key, name, StringComparison.OrdinalIgnoreCase))
-                                {
-                                    var value = valueProp.GetValue(headerValue);
-                                    if (value != null)
-                                    {
-                                        result = value.ToString();
-                                        break;
-                                    }
-                                }
+                                result = hv?.Value?.ToString();
+                                Log.Debug("ContextPropagation.GetValues: Found header '{Name}' via duck typing", name);
+                                break;
                             }
                         }
                     }
                 }
-                catch
+                catch (Exception ex)
                 {
-                    // Ignore errors reading headers
+                    Log.Debug(ex, "ContextPropagation.GetValues: Error reading headers for '{Name}'", name);
                 }
             }
 
