@@ -1,11 +1,12 @@
 using System;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Samples.FeatureFlags;
 class Program
 {
 
-    private static void Main(string[] args)
+    private async static Task Main(string[] args)
     {
         int configUpdates = 0;
         Evaluator.RegisterOnNewConfigEventHandler(() => Interlocked.Increment(ref configUpdates));
@@ -35,7 +36,7 @@ class Program
                     return;
                 }
                 Console.WriteLine($"Waiting for RC...");
-                System.Threading.Thread.Sleep(1000);
+                await Task.Delay(1_000);
             }
         }
 
