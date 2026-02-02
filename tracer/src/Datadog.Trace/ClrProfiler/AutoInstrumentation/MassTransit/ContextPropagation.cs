@@ -103,6 +103,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
     /// MassTransit's SendHeaders interface has:
     /// - Set(string key, string value)
     /// - Set(string key, object value, bool overwrite = true)
+    /// Note: Duck typing cannot be used here because MassTransit implements these methods
+    /// using explicit interface implementation. See WHY_DUCK_TYPING_FAILED.md for details.
     /// </summary>
     internal readonly struct SendContextHeadersAdapter : IHeadersCollection
     {

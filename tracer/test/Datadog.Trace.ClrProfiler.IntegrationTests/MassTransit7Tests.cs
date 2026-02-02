@@ -45,9 +45,7 @@ public class MassTransit7Tests : TracingIntegrationTest
 
         // Enable debug logging to investigate MassTransit DiagnosticSource
         SetEnvironmentVariable("DD_TRACE_DEBUG", "true");
-        var logDir = Path.Combine(LogDirectory, nameof(SubmitsTraces));
-        Directory.CreateDirectory(logDir);
-        SetEnvironmentVariable(ConfigurationKeys.LogDirectory, logDir);
+        // Logs will be written to /var/log/datadog (or /tmp/dd-logs on macOS)
 
         using (var telemetry = this.ConfigureTelemetry())
         using (var agent = EnvironmentHelper.GetMockAgent())
@@ -104,7 +102,7 @@ public class MassTransit7Tests : TracingIntegrationTest
         }
 
         // Print the log files for debugging
-        PrintMassTransitLogs(logDir);
+        PrintMassTransitLogs("/tmp/dd-logs");
     }
 
     private void PrintMassTransitLogs(string logDir)
