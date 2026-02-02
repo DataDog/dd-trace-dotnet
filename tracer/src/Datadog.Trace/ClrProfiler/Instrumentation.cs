@@ -478,9 +478,8 @@ namespace Datadog.Trace.ClrProfiler
                 observers.Add(GetAspNetCoreDiagnosticObserver());
             }
 
-                observers.Add(new QuartzDiagnosticObserver());
-                observers.Add(new MassTransitDiagnosticObserver());
-            }
+            observers.Add(new QuartzDiagnosticObserver());
+            observers.Add(new MassTransitDiagnosticObserver());
 
             var diagnosticManager = new DiagnosticManager(observers);
             diagnosticManager.Start();
