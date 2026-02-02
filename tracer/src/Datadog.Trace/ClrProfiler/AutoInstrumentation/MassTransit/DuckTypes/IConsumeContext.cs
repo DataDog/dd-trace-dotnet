@@ -11,15 +11,11 @@ using System.Collections.Generic;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.DuckTypes;
 
 /// <summary>
-/// Duck-typing interface for MassTransit.ConsumeContext
+/// Minimal duck-typing interface for MassTransit.ConsumeContext
+/// Only includes the properties needed by MassTransitIntegration and DiagnosticObserver
 /// </summary>
 internal interface IConsumeContext
 {
-    /// <summary>
-    /// Gets the supported message types from the message
-    /// </summary>
-    IEnumerable<string> SupportedMessageTypes { get; }
-
     /// <summary>
     /// Gets the message ID
     /// </summary>
@@ -64,11 +60,6 @@ internal interface IConsumeContext
     /// Gets the fault address
     /// </summary>
     Uri? FaultAddress { get; }
-
-    /// <summary>
-    /// Gets the message headers (returns object to allow duck-typing, should be duck-cast to IHeaders)
-    /// </summary>
-    object? Headers { get; }
 
     /// <summary>
     /// Gets the receive context which contains InputAddress

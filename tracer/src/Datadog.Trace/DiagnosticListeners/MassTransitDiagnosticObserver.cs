@@ -318,11 +318,8 @@ namespace Datadog.Trace.DiagnosticListeners
             {
                 StoreScope(operationType, activityId, scope);
 
-                // Set additional context tags using reflection
-                var messageId = MassTransitCommon.TryGetProperty<Guid?>(arg, "MessageId");
-                var conversationId = MassTransitCommon.TryGetProperty<Guid?>(arg, "ConversationId");
-                var correlationId = MassTransitCommon.TryGetProperty<Guid?>(arg, "CorrelationId");
-                MassTransitCommon.SetContextTags(scope, messageId, conversationId, correlationId);
+                // Note: MT8 OTEL instrumentation does not set messageId/conversationId/correlationId tags
+                // on consumer "process" spans, only on "receive" spans. We match that behavior.
 
                 Log.Debug(
                     "MassTransitDiagnosticObserver.OnConsumeStart: Created span TraceId={TraceId}, SpanId={SpanId}",
