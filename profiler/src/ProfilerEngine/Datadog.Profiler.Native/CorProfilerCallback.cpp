@@ -1336,6 +1336,14 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
 {
     Log::Info("CorProfilerCallback is initializing.");
 
+    #if ARM64
+    if (!_pConfiguration->UseManagedCodeCache())
+    {
+        Log::Warn("Managed code cache is required to run the profiler on ARM64. Since it is not enabled, the profiler will not run.");
+        return E_FAIL;
+    }
+    #endif
+
     ConfigureDebugLog();
 
     _pMetadataProvider = std::make_unique<MetadataProvider>();

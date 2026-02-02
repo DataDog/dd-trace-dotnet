@@ -124,7 +124,13 @@ Configuration::Configuration()
     _heapSnapshotCheckInterval = ExtractHeapSnapshotCheckInterval();
     _heapSnapshotMemoryPressureThreshold = GetEnvironmentValue(EnvironmentVariables::HeapSnapshotMemoryPressureThreshold, 85);
     _heapHandleLimit = ExtractHeapHandleLimit();
-    _useManagedCodeCache = GetEnvironmentValue(EnvironmentVariables::UseManagedCodeCache, false);
+    bool defaultUseManagedCodeCache =
+    #if ARM64
+        true;
+    #else
+        false;
+    #endif
+    _useManagedCodeCache = GetEnvironmentValue(EnvironmentVariables::UseManagedCodeCache, defaultUseManagedCodeCache);
 }
 
 fs::path Configuration::ExtractLogDirectory()
