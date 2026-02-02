@@ -1,3 +1,9 @@
+include:
+  - project: 'DataDog/benchmarking-platform-tools'
+    file: 'images/templates/gitlab/check-slo-breaches.template.yml'
+  - project: 'DataDog/benchmarking-platform-tools'
+    file: 'images/templates/gitlab/notify-slo-breaches.template.yml'
+
 .dd-octo-sts-setup:
   before_script:
     - |
@@ -17,6 +23,8 @@ stages:
   - check-azure-pipeline
   - benchmarks
   - benchmarks-win
+  - gate
+  - notify
 
 workflow:
   auto_cancel:
@@ -43,7 +51,7 @@ check-azure-pipeline:
     expire_in: 3 months
   variables:
     # Set this for quickly testing benchmarking workflows.
-    HARDCODED_BUILD_ID: "" 
+    HARDCODED_BUILD_ID: ""
   script:
     - |
       if [[ -n "$HARDCODED_BUILD_ID" ]]; then
@@ -522,22 +530,32 @@ profiler_cpu_timer_create-arm64:
     name: "artifacts"
     when: always
     paths:
-      - platform/artifacts/
+      - reports/
     expire_in: 3 months
   variables:
+    RUNNER_AFTER_SCRIPT_TIMEOUT: 1h
+
     # Allows ephemeral instances to read content from benchmarking-platform
     DDOCTOSTS_SCOPE: "DataDog/benchmarking-platform"
     DDOCTOSTS_POLICY: "gitlab.github-access.read-contents"
 
     AWS_REGION: "us-east-1"
-    
+
     # Branch containing 1. scripts to launch Windows benchmarks on ephemeral 
     # instances (to be used by GitLab CI runners) and 2. scripts to run Windows 
     # benchmarks (to be used by the ephemeral instances).
     BP_INFRA_BENCHMARKING_PLATFORM_BRANCH: "dd-trace-dotnet/macro"
 
+    # Where benchmarking results will be stored
+    BP_INFRA_ARTIFACTS_BUCKET_NAME: "windows-benchmarking-results-us-east-1"
+
+    # Whether to mock benchmark execution. Useful for testing the after_script steps
+    BP_INFRA_TEST: "false"
+
     # Whether to cleanup ephemeral instances after benchmarks are run
     CLEANUP: "true"
+
+    ARTIFACTS_DIR: "reports"
 
     # k6 configuration, similar to the one in https://grafana.com/docs/k6/latest/using-k6/scenarios/#options
     K6_OPTIONS_WARMUP_DURATION: 3m
@@ -572,6 +590,8 @@ profiler_cpu_timer_create-arm64:
       else
         echo "'CLEANUP' is set to 'false'. Will not cleanup."
       fi
+    - ./platform/steps/fetch-windows-results.sh
+    - ./platform/steps/upload-windows-results-to-bp-ui.sh
 
 baseline-win:
   extends: .benchmarks-win
@@ -689,4 +709,46 @@ profiler_cpu_timer_create-win:
     DD_PROFILING_CPU_ENABLED: 1
     COMPlus_EnableDiagnostics: 1
     ENDPOINT: "hello"
+
+# This repository is using pre-release performance quality gates.
+
+# On master or hotfix/* branch, verify that the latest CI pipeline passed the check-slo-breaches job.
+
+# If any SLO is breached, your release will be blocked.
+
+# See our thresholds file(s) at https://github.com/DataDog/dd-trace-dotnet/blob/master/.gitlab/benchmarks/bp-runner.fail-on-breach.yml
+
+# If bypassing is necessary, see
+# https://datadoghq.atlassian.net/wiki/spaces/APMINT/pages/5158175217 for more details.
+check-slo-breaches:
+  extends: .check-slo-breaches
+  stage: gate
+  needs:
+    - baseline-win
+    - calltarget_ngen-win
+    - single_span-win
+    - trace_stats-win
+    - manual_only-win
+    - manual_and_automatic-win
+    - ddtraceenabled_false-win
+    - profiler_exceptions_baseline-win
+    - profiler-win
+    - profiler_walltime-win
+    - profiler_exceptions-win
+    - profiler_cpu-win
+    - profiler_cpu_timer_create-win
+  when: always
+  allow_failure: true # Allowed to fail since we don't want it to block releases yet
+  variables:
+    ARTIFACTS_DIR: "reports"
+
+notify-slo-breaches:
+  extends: .notify-slo-breaches
+  stage: notify
+  needs: ["check-slo-breaches"]
+  when: always
+  allow_failure: true
+  variables:
+    CHANNEL: "apm-dotnet-bots"
+    ARTIFACTS_DIR: "reports"
 

@@ -34,6 +34,11 @@ namespace Samples.AspNetCoreMvc
                 app.UseDeveloperExceptionPage();
             }
 
+            if (Environment.GetEnvironmentVariable("ADD_ACTIVITY_MIDDLEWARE") == "1")
+            {
+                app.UseMiddleware<ActivityMiddleware>();
+            }
+
             app.UseMiddleware<PingMiddleware>();
             app.Map("/branch", x => x.UseMiddleware<PingMiddleware>());
 
