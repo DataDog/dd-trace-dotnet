@@ -6,21 +6,27 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Ocelot.DependencyInjection;
 using Ocelot.Middleware;
+using System.Collections.Generic;
 
 namespace Samples.Ocelot.DistributedTracing
 {
     public class Startup
     {
-        private readonly IConfiguration _configuration;
-
-        public Startup(IConfiguration configuration)
-        {
-            _configuration = configuration;
-        }
-
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddOcelot(_configuration);
+            // Create a minimal in-memory configuration for Ocelot startup
+            // The actual routes will be configured at runtime by the Worker
+            var ocelotConfig = new Dictionary<string, string>
+            {
+                { "Routes", "[]" },
+                { "GlobalConfiguration:BaseUrl", "http://localhost:5000" }
+            };
+
+            var configuration = new ConfigurationBuilder()
+                .AddInMemoryCollection(ocelotConfig)
+                .Build();
+
+            services.AddOcelot(configuration);
             services.AddHostedService<Worker>();
         }
 
