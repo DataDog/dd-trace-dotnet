@@ -74,7 +74,7 @@ internal sealed class CIVisibilityProtocolWriter : IEventWriter
     public CIVisibilityProtocolWriter(
         TestOptimizationSettings settings,
         ICIVisibilityProtocolWriterSender sender,
-        IFormatterResolver? formatterResolver = null,
+        IFormatterResolver formatterResolver,
         int? concurrency = null,
         int batchInterval = DefaultBatchInterval,
         int maxItemsInQueue = DefaultMaxItemsInQueue)
@@ -90,15 +90,15 @@ internal sealed class CIVisibilityProtocolWriter : IEventWriter
         {
             var buffers = new Buffers(
                 sender,
-                new CITestCyclePayload(settings, formatterResolver: formatterResolver),
-                new CICodeCoveragePayload(settings, formatterResolver: formatterResolver));
+                new CITestCyclePayload(settings, formatterResolver),
+                new CICodeCoveragePayload(settings, formatterResolver));
             _buffersArray[i] = buffers;
             var tskFlush = Task.Run(() => InternalFlushEventsAsync(this, buffers));
             tskFlush.ContinueWith(t => Log.Error(t.Exception, "CIVisibilityProtocolWriter: Error in sending ci visibility events"), TaskContinuationOptions.OnlyOnFaulted);
             _buffersArray[i].SetFlushTask(tskFlush);
         }
 
-        Log.Information<int>("CIVisibilityProtocolWriter Initialized with concurrency level of: {ConcurrencyLevel}", concurrencyLevel);
+        Log.Debug<int>("CIVisibilityProtocolWriter Initialized with concurrency level of: {ConcurrencyLevel}", concurrencyLevel);
     }
 
     public void WriteEvent(IEvent @event)
@@ -349,7 +349,7 @@ internal sealed class CIVisibilityProtocolWriter : IEventWriter
 
         public Task FlushCiTestCycleBufferWhenTimeElapsedAsync(int batchInterval)
         {
-            return CiTestCycleBufferWatch.ElapsedMilliseconds >= batchInterval ?
+            return CiTestCycleBufferWatch.GetElapsedMilliseconds() >= batchInterval ?
                        FlushCiTestCycleBufferAsync() : Task.CompletedTask;
         }
 
@@ -367,7 +367,7 @@ internal sealed class CIVisibilityProtocolWriter : IEventWriter
 
         public Task FlushCiCodeCoverageBufferWhenTimeElapsedAsync(int batchInterval)
         {
-            return CiCodeCoverageBufferWatch.ElapsedMilliseconds >= batchInterval ?
+            return CiCodeCoverageBufferWatch.GetElapsedMilliseconds() >= batchInterval ?
                        FlushCiCodeCoverageBufferAsync() : Task.CompletedTask;
         }
 

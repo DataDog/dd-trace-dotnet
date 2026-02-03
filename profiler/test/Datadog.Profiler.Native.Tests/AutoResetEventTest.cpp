@@ -3,7 +3,7 @@
 
 #ifdef LINUX
 
-#include "profiler/src/ProfilerEngine/Datadog.Profiler.Native.Linux/AutoResetEvent.h"
+#include "profiler/src/ProfilerEngine/Datadog.Profiler.Native/AutoResetEvent.h"
 
 #include <future>
 
