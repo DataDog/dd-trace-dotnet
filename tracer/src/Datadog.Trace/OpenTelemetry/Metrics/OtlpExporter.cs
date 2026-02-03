@@ -361,8 +361,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
                 }
                 catch (Exception ex)
                 {
-                    // Seeing network connectivity errors so skipping telemetry
-                    Log.ErrorSkipTelemetry(ex, "Error sending OTLP request (attempt {Attempt})", (attempt + 1).ToString());
+                    Log.Debug<int>(ex, "Error sending OTLP request (attempt {Attempt})", attempt + 1);
                     if (attempt < maxRetries)
                     {
                         retryDelay = TimeSpan.FromMilliseconds((long)(retryDelay.TotalMilliseconds * 2));
