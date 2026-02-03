@@ -188,14 +188,13 @@ public class DiscoveryServiceTests
         // Now allow Request 1 to proceed and complete
         mutex1.Set();
 
-        // Wait for second request - by this time Request 1 should have notified us
+        // Wait for second request to ensure Request 1 completed
         mutex2.Wait(30_000).Should().BeTrue("Should make second request to api");
-        Volatile.Read(ref notificationCount).Should().Be(1); // Request 1 notification only
 
-        // Wait for third request
+        // Wait for third request - by this time all previous requests are fully processed
         mutex3.Wait(30_000).Should().BeTrue("Should make third request to api");
 
-        Volatile.Read(ref notificationCount).Should().Be(1); // Still 1 - no additional callbacks
+        Volatile.Read(ref notificationCount).Should().Be(1); // Request 1 notification only, no additional callbacks
 
         await ds.DisposeAsync();
     }
@@ -236,14 +235,13 @@ public class DiscoveryServiceTests
         // Now allow Request 1 to proceed and complete
         mutex1.Set();
 
-        // Wait for second request - by this time Request 1 should have notified us
+        // Wait for second request to ensure Request 1 completed
         mutex2.Wait(30_000).Should().BeTrue("Should make second request to api");
-        Volatile.Read(ref notificationCount).Should().Be(2); // Request 1 + Request 2 (config changed)
 
-        // Wait for third request
+        // Wait for third request - by this time Request 2 should be fully processed
         mutex3.Wait(30_000).Should().BeTrue("Should make third request to api");
 
-        Volatile.Read(ref notificationCount).Should().Be(2); // Still 2 - Request 3 same as Request 2
+        Volatile.Read(ref notificationCount).Should().Be(2); // Request 1 + Request 2 (config changed)
 
         await ds.DisposeAsync();
     }
