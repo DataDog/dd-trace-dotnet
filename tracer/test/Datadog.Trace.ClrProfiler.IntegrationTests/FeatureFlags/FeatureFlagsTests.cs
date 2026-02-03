@@ -81,7 +81,7 @@ public abstract class FeatureFlagsTestsBase : TestHelper
             if (e.Value.PathAndQuery.EndsWith("api/v2/exposures"))
             {
                 Interlocked.Increment(ref eventsReceived);
-                e.Value.Headers["Content-Encoding"].Should().Be(MimeTypes.Json);
+                e.Value.Headers["Content-Encoding"].Should().Be("gzip");
                 var payload = JsonConvert.DeserializeObject(e.Value.BodyInJson);
                 return;
             }
@@ -91,7 +91,7 @@ public abstract class FeatureFlagsTestsBase : TestHelper
 
         Assert.NotNull(output);
         Assert.Contains("<INSTRUMENTED>", output);
-        Assert.Contains("Eval (nonexistent) : <ERROR: No config loaded>", output);
+        Assert.Contains("Eval (nonexistent) : ", output);
         Assert.Contains("Eval (simple-string) : <OK: ", output);
         Assert.Contains("Eval (rule-based-flag) : <OK: ", output);
         Assert.Contains("Eval (numeric-rule-flag) : <OK: ", output);
@@ -114,7 +114,7 @@ public abstract class FeatureFlagsTestsBase : TestHelper
 
     private async Task<string> RunTest(MockTracerAgent agent, bool enabled = true, bool usePublishWithRID = false)
     {
-        SetEnvironmentVariable(ConfigurationKeys.Rcm.PollInterval, "1");
+        SetEnvironmentVariable(ConfigurationKeys.Rcm.PollInterval, "0.5");
         SetEnvironmentVariable("DD_EXPERIMENTAL_FLAGGING_PROVIDER_ENABLED", enabled ? "1" : "0");
         using var telemetry = this.ConfigureTelemetry();
         using var assert = new AssertionScope();

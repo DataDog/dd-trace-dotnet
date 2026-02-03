@@ -23,6 +23,11 @@ internal static partial class ConfigurationKeys
         public const string IsRunningInCiVisMode = "_DD_INTERNAL_IS_RUNNING_IN_CIVISIBILITY";
 
         /// <summary>
+        /// An internal key used to share a runtime ID across all the processes started in a test session
+        /// </summary>
+        public const string TestOptimizationRunId = "_DD_INTERNAL_TOPT_RUNID";
+
+        /// <summary>
         /// AWS CodePipeline action execution ID for CI correlation.
         /// </summary>
         public const string ActionExecutionId = "DD_ACTION_EXECUTION_ID";
