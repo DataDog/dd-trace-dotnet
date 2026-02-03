@@ -240,6 +240,7 @@ namespace Datadog.Trace.TestHelpers
 
         private class CustomTestMethodRunner : XunitTestMethodRunner
         {
+            private const int _maxTestFullNameLength = 200;
             private readonly IMessageSink _diagnosticMessageSink;
             private readonly object[] _constructorArguments;
 
@@ -296,7 +297,12 @@ namespace Datadog.Trace.TestHelpers
                         }
 
                         _diagnosticMessageSink.OnMessage(new DiagnosticMessage($"RETRYING: {test} ({attemptsRemaining} attempts remaining, {retryReason})"));
-                        var testFullName = $"{TestMethod.TestClass.Class.Name}.{testCase.DisplayName}";
+                        var testFullName = (testCase.DisplayName.StartsWith(TestMethod.TestClass.Class.Name) ?
+                            testCase.DisplayName :
+                            $"{TestMethod.TestClass.Class.Name}.{testCase.DisplayName}").Trim();
+
+                        testFullName = testFullName.Substring(0, Math.Min(testFullName.Length, _maxTestFullNameLength));
+
                         await SendMetric(_diagnosticMessageSink, "dd_trace_dotnet.ci.tests.retries", testFullName, retryReason);
                     }
                 }
@@ -349,7 +355,7 @@ namespace Datadog.Trace.TestHelpers
                     var tags = $$"""
                                      "os.platform:{{SanitizeTagValue(FrameworkDescription.Instance.OSPlatform)}}",
                                      "os.architecture:{{SanitizeTagValue(EnvironmentTools.GetPlatform())}}",
-                                     "target.framework:{{SanitizeTagValue(FrameworkDescription.Instance.ProductVersion)}}",
+                                     "target.framework:{{FrameworkDescription.Instance.ProductVersion}}",
                                      "test.name:{{SanitizeTagValue(testFullName)}}",
                                      "git.branch:{{SanitizeTagValue(Environment.GetEnvironmentVariable("DD_LOGGER_BUILD_SOURCEBRANCH"))}}",
                                      "flaky_retry_reason: {{SanitizeTagValue(reason)}}"
@@ -430,9 +436,13 @@ namespace Datadog.Trace.TestHelpers
             {
                 _queue = new();
 
-                for (int i = 0; i < Environment.ProcessorCount; i++)
+                for (var i = 0; i < Environment.ProcessorCount; i++)
                 {
-                    var thread = new Thread(DoWork) { IsBackground = true };
+                    var thread = new Thread(DoWork)
+                    {
+                        IsBackground = true,
+                        Name = "ConcurrentRunner:" + i
+                    };
                     thread.Start();
                 }
             }

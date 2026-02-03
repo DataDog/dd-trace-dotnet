@@ -4,6 +4,7 @@ using BenchmarkDotNet.Attributes;
 using Datadog.Trace;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Ci.Agent;
+using Datadog.Trace.Ci.Agent.MessagePack;
 using Datadog.Trace.Ci.Agent.Payloads;
 using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Configuration;
@@ -40,7 +41,7 @@ namespace Benchmarks.Trace
             config[ConfigurationKeys.TraceEnabled] = false;
             var settings = new TestOptimizationSettings(new DictionaryObjectConfigurationSource(config), NullConfigurationTelemetry.Instance);
 
-            _eventWriter = new CIVisibilityProtocolWriter(settings, new FakeCIVisibilityProtocolWriter());
+            _eventWriter = new CIVisibilityProtocolWriter(settings, new FakeCIVisibilityProtocolWriter(), CIFormatterResolver.Instance);
 
             // Warmup to reduce noise
             WriteAndFlushEnrichedTraces().GetAwaiter().GetResult();

@@ -216,6 +216,7 @@ public abstract class TestingFrameworkImpactedTests : TestingFrameworkTest
         }
 
         // Set relevant GitHub variables
+        SetEnvironmentVariable(PlatformKeys.Ci.GitHub.Sha, baseSha);
         SetEnvironmentVariable(PlatformKeys.Ci.GitHub.Repository, repo);
         SetEnvironmentVariable(PlatformKeys.Ci.GitHub.BaseRef, branch);
         SetEnvironmentVariable(PlatformKeys.Ci.GitHub.Workspace, repositoryRoot);
