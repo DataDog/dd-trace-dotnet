@@ -39,8 +39,12 @@ SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${TEST_OUTPUT_DIR})
 
 
 add_executable(${TEST_EXECUTABLE_NAME}
+    appdomain_registry_test.cpp
+    com_iid_stub.cpp
+    module_registry_test.cpp
     pch.cpp
     integration_test.cpp
+    rejit_history_test.cpp
     version_struct_test.cpp
     iast_util_test.cpp
     string_test.cpp
@@ -58,10 +62,17 @@ target_link_libraries(${TEST_EXECUTABLE_NAME}
   Datadog.Tracer.Native.static
   coreclr
   gtest_main
-  -static-libgcc
-  -static-libstdc++
-  -lstdc++fs
   -Wc++20-extensions
 )
+
+target_compile_definitions(${TEST_EXECUTABLE_NAME} PRIVATE DD_TESTS)
+
+if (ISLINUX)
+  target_link_libraries(${TEST_EXECUTABLE_NAME}
+    -static-libgcc
+    -static-libstdc++
+    -lstdc++fs
+  )
+endif()
 
 gtest_discover_tests(${TEST_EXECUTABLE_NAME})

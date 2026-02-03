@@ -10,6 +10,8 @@
 #include <vector>
 
 #include "cor_profiler_base.h"
+#include "module_registry.h"
+#include "appdomain_registry.h"
 #include "environment_variables.h"
 #include "il_rewriter.h"
 #include "integration.h"
@@ -64,7 +66,7 @@ private:
     AppDomainID corlib_app_domain_id = 0;
     ModuleID managed_profiler_domain_neutral_module_id = 0;
     std::unordered_map<AppDomainID, ModuleID> managed_profiler_loaded_app_domains;
-    std::unordered_set<AppDomainID> first_jit_compilation_app_domains;
+    AppDomainRegistry first_jit_compilation_app_domains;
     bool is_desktop_iis = false;
 
     //
@@ -101,13 +103,14 @@ private:
     std::vector<std::string> opcodes_names;
 
     //
-    // Module helper variables and internal tokens (use internal tokens only if the module_ids lock is in place)
+    // Module helper variables and internal tokens (use internal tokens only if the module registry is in place)
     //
-    Synchronized<std::vector<ModuleID>> module_ids;
-    std::vector<ModuleID> managedInternalModules_;
+    ModuleRegistry module_registry;
     mdMethodDef getDistributedTraceMethodDef_;
     mdMethodDef getNativeTracerVersionMethodDef_;
     mdMethodDef isManualInstrumentationOnlyMethodDef_;
+
+    mutable std::atomic_bool inline_blockers_enabled_{false};
 
     //
     // Dataflow members
@@ -130,7 +133,7 @@ private:
     HRESULT RewriteForTelemetry(const ModuleMetadata& module_metadata, ModuleID module_id);
     HRESULT RewriteIsManualInstrumentationOnly(const ModuleMetadata& module_metadata, ModuleID module_id);
     HRESULT EmitDistributedTracerTargetMethod(const ModuleMetadata& module_metadata, ModuleID module_id);
-    HRESULT TryRejitModule(ModuleID module_id, std::vector<ModuleID>& modules);
+    HRESULT TryRejitModule(ModuleID module_id);
     static bool TypeNameMatchesTraceAttribute(WCHAR type_name[], DWORD type_name_len);
     static bool EnsureCallTargetBubbleUpExceptionTypeAvailable(const ModuleMetadata& module_metadata, mdTypeDef* mdTypeDefToken);
     static bool EnsureIsCallTargetBubbleUpExceptionFunctionAvailable(const ModuleMetadata& module_metadata, mdTypeDef typeDef);

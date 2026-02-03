@@ -87,9 +87,11 @@
     <ClInclude Include="test_helpers.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="appdomain_registry_test.cpp" />
     <ClCompile Include="iast_util_test.cpp" />
     <ClCompile Include="integration_test.cpp" />
     <ClCompile Include="clr_helper_test.cpp" />
+    <ClCompile Include="module_registry_test.cpp" />
     <ClCompile Include="metadata_builder_test.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
@@ -99,6 +101,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="rejit_history_test.cpp" />
     <ClCompile Include="string_test.cpp" />
     <ClCompile Include="util_test.cpp" />
     <ClCompile Include="version_struct_test.cpp" />

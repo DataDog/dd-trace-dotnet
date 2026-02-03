@@ -246,8 +246,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
 
     //
     managed_profiler_assembly_reference = AssemblyReference::GetFromCache(managed_profiler_full_assembly_version);
-    managedInternalModules_.reserve(10);
-
     const auto currentModuleFileName = shared::GetCurrentModuleFileName();
     if (currentModuleFileName == shared::EmptyWStr)
     {
@@ -270,8 +268,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
 
         if (isIastEnabled || isRaspEnabled)
         {
-            auto modules = module_ids.Get();
-            _dataflow = new iast::Dataflow(info_, rejit_handler, modules.Ref(), runtime_information_);
+            auto modules_snapshot = module_registry.Snapshot();
+            _dataflow = new iast::Dataflow(info_, rejit_handler, modules_snapshot, runtime_information_);
+            inline_blockers_enabled_.store(true, std::memory_order_relaxed);
         }
         else
         {
@@ -541,17 +540,13 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
         return S_OK;
     }
 
-    // keep this lock until we are done using the module,
-    // to prevent it from unloading while in use
-    auto modules = module_ids.Get();
-
     // double check if is_attached_ has changed to avoid possible race condition with shutdown function
     if (!is_attached_ || rejit_handler == nullptr)
     {
         return S_OK;
     }
 
-    auto hr = TryRejitModule(module_id, modules.Ref());
+    auto hr = TryRejitModule(module_id);
 
     // Push integration definitions from past modules that were unable to be added
     auto rejit_size = rejit_module_method_pairs.size();
@@ -659,7 +654,7 @@ std::string GetLibDatadogFilePath()
     return libdatadog_file_path.string();
 }
 
-HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& modules)
+HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
 {
     const auto& module_info = GetModuleInfo(this->info_, module_id);
     if (!module_info.IsValid())
@@ -672,14 +667,21 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
         " | IsNGEN = ", module_info.IsNGEN(), " | IsDynamic = ", module_info.IsDynamic(),
         " | IsResource = ", module_info.IsResource(), std::noboolalpha);
 
+    AppDomainID app_domain_id = module_info.assembly.app_domain_id;
+    bool is_internal_module = false;
+
     if (module_info.IsNGEN())
     {
         // We check if the Module contains NGEN images and added to the
         // rejit handler list to verify the inlines.
         rejit_handler->AddNGenInlinerModule(module_id);
-    }
 
-    AppDomainID app_domain_id = module_info.assembly.app_domain_id;
+        auto state = module_registry.TrackState(module_id, ModuleState(app_domain_id, false, true));
+        if (state != nullptr)
+        {
+            state->ngen_inliner_added.store(true, std::memory_order_relaxed);
+        }
+    }
 
     // Identify the AppDomain ID of mscorlib which will be the Shared Domain
     // because mscorlib is always a domain-neutral assembly
@@ -731,7 +733,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
     {
         Logger::Info("ModuleLoadFinished: Datadog.Trace.ClrProfiler.Managed.Loader loaded into AppDomain ",
                      app_domain_id, " ", module_info.assembly.app_domain_name);
-        first_jit_compilation_app_domains.insert(app_domain_id);
+        first_jit_compilation_app_domains.Add(app_domain_id);
         return S_OK;
     }
 
@@ -800,6 +802,9 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
 
     if (module_info.assembly.name == managed_profiler_name)
     {
+        is_internal_module = true;
+        module_registry.TrackState(module_id, ModuleState(app_domain_id, true, module_info.IsNGEN()));
+
         // Fix PInvoke Rewriting
         ComPtr<IUnknown> metadata_interfaces;
         auto hr = this->info_->GetModuleMetaData(module_id, ofRead | ofWrite, IID_IMetaDataImport2,
@@ -826,7 +831,6 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
         const auto& assemblyVersion = assemblyImport.version.str();
 
         Logger::Info("ModuleLoadFinished: ", managed_profiler_name, " v", assemblyVersion, " - Fix PInvoke maps");
-        managedInternalModules_.push_back(module_id);
 
         RewritingPInvokeMaps(module_metadata, nativemethods_type);
         RewritingPInvokeMaps(module_metadata, appsec_nativemethods_type);
@@ -920,6 +924,9 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
     }
     else if (module_info.assembly.name == manual_instrumentation_name)
     {
+        is_internal_module = true;
+        module_registry.TrackState(module_id, ModuleState(app_domain_id, true, module_info.IsNGEN()));
+
         // Datadog.Trace.Manual is _mostly_ treated as a third-party assembly,
         // but we do some rewriting to support manual-only scenarios
         // If/when we go with v3 part deux, we will need to update this to
@@ -951,13 +958,12 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
         const auto& assemblyVersion = assemblyImport.version.str();
 
         Logger::Info("ModuleLoadFinished: ", manual_instrumentation_name, " v", assemblyVersion, " - RewriteIsManualInstrumentationOnly");
-        managedInternalModules_.push_back(module_id);
 
         // Rewrite Instrumentation.IsManualInstrumentationOnly()
         RewriteIsManualInstrumentationOnly(module_metadata, module_id);
     }
 
-    modules.push_back(module_id);
+    module_registry.Add(module_id, ModuleState(app_domain_id, is_internal_module, module_info.IsNGEN()));
 
     bool searchForTraceAttribute = trace_annotations_enabled;
     if (searchForTraceAttribute)
@@ -977,7 +983,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
     if (searchForTraceAttribute)
     {
         mdTypeDef typeDef = mdTypeDefNil;
-        mdTypeRef typeRef = mdTypeRefNil;
+        mdToken trace_attribute_token = mdTokenNil;
         bool foundType = false;
 
         ComPtr<IUnknown> metadata_interfaces;
@@ -999,6 +1005,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
         if (SUCCEEDED(hr))
         {
             foundType = true;
+            trace_attribute_token = typeDef;
             DBG("ModuleLoadFinished found the TypeDef for ", traceattribute_typename,
                 " defined in Module ", module_info.assembly.name);
         }
@@ -1014,18 +1021,19 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
             auto enumIterator = enumTypeRefs.begin();
             while (enumIterator != enumTypeRefs.end())
             {
-                mdTypeRef typeRef = *enumIterator;
+                mdTypeRef currentTypeRef = *enumIterator;
 
                 // Check if the typeref matches
                 mdToken parent_token = mdTokenNil;
                 WCHAR type_name[kNameMaxSize]{};
                 DWORD type_name_len = 0;
 
-                hr = metadata_import->GetTypeRefProps(typeRef, &parent_token, type_name, kNameMaxSize,
+                hr = metadata_import->GetTypeRefProps(currentTypeRef, &parent_token, type_name, kNameMaxSize,
                                                       &type_name_len);
                 if (TypeNameMatchesTraceAttribute(type_name, type_name_len))
                 {
                     foundType = true;
+                    trace_attribute_token = currentTypeRef;
                     DBG("ModuleLoadFinished found the TypeRef for ", traceattribute_typename,
                         " defined in Module ", module_info.assembly.name);
                     break;
@@ -1041,12 +1049,11 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
         if (foundType)
         {
             std::vector<MethodReference> methodReferences;
-            std::vector<IntegrationDefinition> integrationDefinitions;
 
             // Now we enumerate all custom attributes in this assembly to see if the trace attribute is used
             auto enumCustomAttributes = Enumerator<mdCustomAttribute>(
-                [&metadata_import](HCORENUM* ptr, mdCustomAttribute arr[], ULONG max, ULONG* cnt) -> HRESULT {
-                    return metadata_import->EnumCustomAttributes(ptr, mdTokenNil, mdTokenNil, arr, max, cnt);
+                [&metadata_import, trace_attribute_token](HCORENUM* ptr, mdCustomAttribute arr[], ULONG max, ULONG* cnt) -> HRESULT {
+                    return metadata_import->EnumCustomAttributes(ptr, mdTokenNil, trace_attribute_token, arr, max, cnt);
                 },
                 [&metadata_import](HCORENUM ptr) -> void { metadata_import->CloseEnum(ptr); });
             auto customAttributesIterator = enumCustomAttributes.begin();
@@ -1057,100 +1064,43 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
 
                 // Check if the typeref matches
                 mdToken parent_token = mdTokenNil;
-                mdToken attribute_ctor_token = mdTokenNil;
-                const void* attribute_data = nullptr; // Pointer to receive attribute data, which is not needed for our purposes
-                DWORD data_size = 0;
-
-                hr = metadata_import->GetCustomAttributeProps(customAttribute, &parent_token, &attribute_ctor_token,
-                                                              &attribute_data, &data_size);
+                hr = metadata_import->GetCustomAttributeProps(customAttribute, &parent_token, nullptr, nullptr, nullptr);
 
                 // We are only concerned with the trace attribute on method definitions
                 if (TypeFromToken(parent_token) == mdtMethodDef)
                 {
-                    mdTypeDef attribute_type_token = mdTypeDefNil;
-                    WCHAR function_name[kNameMaxSize]{};
-                    DWORD function_name_len = 0;
+                    mdMethodDef methodDef = (mdMethodDef) parent_token;
 
-                    // Get the type name from the constructor
-                    const auto attribute_ctor_token_type = TypeFromToken(attribute_ctor_token);
-                    if (attribute_ctor_token_type == mdtMemberRef)
+                    // Matches! Let's mark the attached method for ReJIT
+                    // Extract the function info from the mdMethodDef
+                    const auto caller = GetFunctionInfo(metadata_import, methodDef);
+                    if (!caller.IsValid())
                     {
-                        hr = metadata_import->GetMemberRefProps(attribute_ctor_token, &attribute_type_token,
-                                                                function_name, kNameMaxSize, &function_name_len,
-                                                                nullptr, nullptr);
-                    }
-                    else if (attribute_ctor_token_type == mdtMethodDef)
-                    {
-                        hr = metadata_import->GetMemberProps(attribute_ctor_token, &attribute_type_token,
-                                                             function_name, kNameMaxSize, &function_name_len,
-                                                             nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
-                                                             nullptr, nullptr);
-                    }
-                    else
-                    {
-                        hr = E_FAIL;
+                        Logger::Warn("    * Skipping ", shared::TokenStr(&parent_token),
+                            ": the methoddef is not valid!");
+                        customAttributesIterator = ++customAttributesIterator;
+                        continue;
                     }
 
-                    if (SUCCEEDED(hr))
+                    // We create a new function info into the heap from the caller functionInfo in the
+                    // stack, to be used later in the ReJIT process
+                    auto functionInfo = FunctionInfo(caller);
+                    auto hr = functionInfo.method_signature.TryParse();
+                    if (FAILED(hr))
                     {
-                        mdToken resolution_token = mdTokenNil;
-                        WCHAR type_name[kNameMaxSize]{};
-                        DWORD type_name_len = 0;
-
-                        const auto token_type = TypeFromToken(attribute_type_token);
-                        if (token_type == mdtTypeDef)
-                        {
-                            DWORD type_flags;
-                            mdToken type_extends = mdTokenNil;
-                            hr = metadata_import->GetTypeDefProps(attribute_type_token, type_name, kNameMaxSize,
-                                                                  &type_name_len, &type_flags, &type_extends);
-                        }
-                        else if (token_type == mdtTypeRef)
-                        {
-                            hr = metadata_import->GetTypeRefProps(attribute_type_token, &resolution_token,
-                                                                  type_name, kNameMaxSize, &type_name_len);
-                        }
-                        else
-                        {
-                            type_name_len = 0;
-                        }
-
-                        if (TypeNameMatchesTraceAttribute(type_name, type_name_len))
-                        {
-                            mdMethodDef methodDef = (mdMethodDef) parent_token;
-
-                            // Matches! Let's mark the attached method for ReJIT
-                            // Extract the function info from the mdMethodDef
-                            const auto caller = GetFunctionInfo(metadata_import, methodDef);
-                            if (!caller.IsValid())
-                            {
-                                Logger::Warn("    * Skipping ", shared::TokenStr(&parent_token),
-                                    ": the methoddef is not valid!");
-                                customAttributesIterator = ++customAttributesIterator;
-                                continue;
-                            }
-
-                            // We create a new function info into the heap from the caller functionInfo in the
-                            // stack, to be used later in the ReJIT process
-                            auto functionInfo = FunctionInfo(caller);
-                            auto hr = functionInfo.method_signature.TryParse();
-                            if (FAILED(hr))
-                            {
-                                Logger::Warn("    * Skipping ", functionInfo.method_signature.str(),
-                                             ": the method signature cannot be parsed.");
-                                customAttributesIterator = ++customAttributesIterator;
-                                continue;
-                            }
-
-                            // As we are in the right method, we gather all information we need and stored it in to
-                            // the ReJIT handler.
-                            std::vector<shared::WSTRING> signatureTypes;
-                            methodReferences.push_back(MethodReference(
-                                tracemethodintegration_assemblyname, caller.type.name, caller.name,
-                                Version(0, 0, 0, 0), Version(USHRT_MAX, USHRT_MAX, USHRT_MAX, USHRT_MAX),
-                                signatureTypes));
-                        }
+                        Logger::Warn("    * Skipping ", functionInfo.method_signature.str(),
+                                     ": the method signature cannot be parsed.");
+                        customAttributesIterator = ++customAttributesIterator;
+                        continue;
                     }
+
+                    // As we are in the right method, we gather all information we need and stored it in to
+                    // the ReJIT handler.
+                    std::vector<shared::WSTRING> signatureTypes;
+                    methodReferences.push_back(MethodReference(
+                        tracemethodintegration_assemblyname, caller.type.name, caller.name,
+                        Version(0, 0, 0, 0), Version(USHRT_MAX, USHRT_MAX, USHRT_MAX, USHRT_MAX),
+                        signatureTypes));
                 }
 
                 customAttributesIterator = ++customAttributesIterator;
@@ -1165,6 +1115,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
 
                 if (methodReferences.size() > 0)
                 {
+                    inline_blockers_enabled_.store(true, std::memory_order_relaxed);
                     rejit_module_method_pairs.push_back(std::make_pair(module_id, methodReferences));
                 }
             }
@@ -1181,6 +1132,11 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
                 {
                     integration_definitions_.push_back(IntegrationDefinition(
                         methodReference, *trace_annotation_integration_type.get(), false, false, false));
+                }
+
+                if (!methodReferences.empty())
+                {
+                    inline_blockers_enabled_.store(true, std::memory_order_relaxed);
                 }
             }
         }
@@ -1235,11 +1191,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadStarted(ModuleID module_id)
 
     auto _ = trace::Stats::Instance()->ModuleUnloadStartedMeasure();
 
-    // take this lock so we block until the
-    // module metadata is not longer being used
-    auto scopedModules = module_ids.Get();
-    auto& modules = scopedModules.Ref();
-
     // double check if is_attached_ has changed to avoid possible race condition with shutdown function
     if (!is_attached_)
     {
@@ -1256,8 +1207,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadStarted(ModuleID module_id)
         _dataflow->ModuleUnloaded(module_id);
     }
 
-    auto new_end = std::remove(modules.begin(), modules.end(), module_id);
-    modules.erase(new_end, modules.end());
+    module_registry.Remove(module_id);
 
     const auto& moduleInfo = GetModuleInfo(this->info_, module_id);
     if (!moduleInfo.IsValid())
@@ -1292,10 +1242,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Shutdown()
 
     CorProfilerBase::Shutdown();
 
-    // keep this lock until we are done using the module,
-    // to prevent it from unloading while in use
-    auto modules = module_ids.Get();
-
     if (rejit_handler != nullptr)
     {
         rejit_handler->Shutdown();
@@ -1307,11 +1253,11 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Shutdown()
     Logger::Info("Exiting...");
     if (Logger::IsDebugEnabled())
     {
-        Logger::Debug("   ModuleIds: ", modules->size());
+        Logger::Debug("   ModuleIds: ", module_registry.Size());
         Logger::Debug("   IntegrationDefinitions: ", integration_definitions_.size());
         Logger::Debug("   DefinitionsIds: ", definitions->size());
         Logger::Debug("   ManagedProfilerLoadedAppDomains: ", managed_profiler_loaded_app_domains.size());
-        Logger::Debug("   FirstJitCompilationAppDomains: ", first_jit_compilation_app_domains.size());
+        Logger::Debug("   FirstJitCompilationAppDomains: ", first_jit_compilation_app_domains.Size());
     }
     Logger::Info("Stats: ", Stats::Instance()->ToString());
     return S_OK;
@@ -1370,10 +1316,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ProfilerDetachSucceeded()
 
     CorProfilerBase::ProfilerDetachSucceeded();
 
-    // keep this lock until we are done using the module,
-    // to prevent it from unloading while in use
-    auto modules = module_ids.Get();
-
     // double check if is_attached_ has changed to avoid possible race condition with shutdown function
     if (!is_attached_)
     {
@@ -1400,10 +1342,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
         return S_OK;
     }
 
-    // keep this lock until we are done using the module,
-    // to prevent it from unloading while in use
-    auto modules = module_ids.Get();
-
     // double check if is_attached_ has changed to avoid possible race condition with shutdown function
     if (!is_attached_)
     {
@@ -1420,9 +1358,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
         return S_OK;
     }
 
-    // we have to check if the Id is in the module_ids_ vector.
+    // we have to check if the Id is in the module registry.
     // In case is True we create a local ModuleMetadata to inject the loader.
-    if (!shared::Contains(modules.Ref(), module_id))
+    if (!module_registry.Contains(module_id))
     {
         if (debugger_instrumentation_requester != nullptr)
         {
@@ -1439,8 +1377,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
     }
 
     bool has_loader_injected_in_appdomain =
-        first_jit_compilation_app_domains.find(module_info.assembly.app_domain_id) !=
-        first_jit_compilation_app_domains.end();
+        first_jit_compilation_app_domains.Contains(module_info.assembly.app_domain_id);
 
     if (has_loader_injected_in_appdomain)
     {
@@ -1621,7 +1558,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
                      "(), assembly_name=", module_metadata->assemblyName,
                      " app_domain_id=", module_metadata->app_domain_id, " domain_neutral=", domain_neutral_assembly);
 
-        first_jit_compilation_app_domains.insert(module_metadata->app_domain_id);
+        first_jit_compilation_app_domains.Add(module_metadata->app_domain_id);
 
         hr = RunILStartupHook(module_metadata->metadata_emit, module_id, function_token, caller, *module_metadata);
         if (FAILED(hr))
@@ -1650,10 +1587,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
 
 HRESULT STDMETHODCALLTYPE CorProfiler::AppDomainShutdownFinished(AppDomainID appDomainId, HRESULT hrStatus)
 {
-    // take this lock so we block until the
-    // module metadata is not longer being used
-    auto modules = module_ids.Get();
-
     // double check if is_attached_ has changed to avoid possible race condition with shutdown function
     if (!is_attached_)
     {
@@ -1666,7 +1599,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AppDomainShutdownFinished(AppDomainID app
     }
 
     // remove appdomain metadata from map
-    const auto& count = first_jit_compilation_app_domains.erase(appDomainId);
+    const auto count = first_jit_compilation_app_domains.Remove(appDomainId);
 
     DBG("AppDomainShutdownFinished: AppDomain: ", appDomainId, ", removed ", count, " elements");
     return S_OK;
@@ -1682,6 +1615,11 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITInlining(FunctionID callerId, Function
     auto _ = trace::Stats::Instance()->JITInliningMeasure();
 
     if (rejit_handler == nullptr)
+    {
+        return S_OK;
+    }
+
+    if (!inline_blockers_enabled_.load(std::memory_order_relaxed))
     {
         return S_OK;
     }
@@ -1724,6 +1662,7 @@ void CorProfiler::InitializeProfiler(WCHAR* id, CallTargetDefinition* items, int
 
     if (size > 0)
     {
+        inline_blockers_enabled_.store(true, std::memory_order_relaxed);
         InternalAddInstrumentation(id, items, size, false, false, true);
     }
 }
@@ -1771,6 +1710,7 @@ void CorProfiler::AddDerivedInstrumentations(WCHAR* id, CallTargetDefinition* it
 
     if (size > 0)
     {
+        inline_blockers_enabled_.store(true, std::memory_order_relaxed);
         InternalAddInstrumentation(id, items, size, true, false);
     }
 }
@@ -1784,6 +1724,7 @@ void CorProfiler::AddInterfaceInstrumentations(WCHAR* id, CallTargetDefinition* 
 
     if (size > 0)
     {
+        inline_blockers_enabled_.store(true, std::memory_order_relaxed);
         InternalAddInstrumentation(id, items, size, false, true);
     }
 }
@@ -1852,7 +1793,7 @@ void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* it
             integrationDefinitions.push_back(integration);
         }
 
-        auto modules = module_ids.Get();
+        auto modules = module_registry.Snapshot();
 
         if (enable)
         {
@@ -1886,12 +1827,12 @@ void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* it
             }
         }
 
-        Logger::Info("Total number of modules to analyze: ", modules->size());
+        Logger::Info("Total number of modules to analyze: ", modules.size());
         if (rejit_handler != nullptr)
         {
             auto promise = std::make_shared<std::promise<ULONG>>();
             std::future<ULONG> future = promise->get_future();
-            tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(modules.Ref(), integrationDefinitions,
+            tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(modules, integrationDefinitions,
                                                                                  promise);
 
             // wait and get the value from the future<int>
@@ -1978,7 +1919,12 @@ long CorProfiler::RegisterCallTargetDefinitions(WCHAR* id, CallTargetDefinition3
             integrationDefinitions.push_back(integration);
         }
 
-        auto modules = module_ids.Get();
+        if (!integrationDefinitions.empty())
+        {
+            inline_blockers_enabled_.store(true, std::memory_order_relaxed);
+        }
+
+        auto modules = module_registry.Snapshot();
 
         integration_definitions_.reserve(integration_definitions_.size() + integrationDefinitions.size());
         for (const auto& integration : integrationDefinitions)
@@ -1986,12 +1932,12 @@ long CorProfiler::RegisterCallTargetDefinitions(WCHAR* id, CallTargetDefinition3
             integration_definitions_.push_back(integration);
         }
 
-        Logger::Info("Total number of modules to analyze: ", modules->size());
+        Logger::Info("Total number of modules to analyze: ", modules.size());
         if (rejit_handler != nullptr)
         {
             auto promise = std::make_shared<std::promise<ULONG>>();
             std::future<ULONG> future = promise->get_future();
-            tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(modules.Ref(), integrationDefinitions, promise);
+            tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(modules, integrationDefinitions, promise);
 
             // wait and get the value from the future<int>
             numReJITs = future.get();
@@ -2023,10 +1969,10 @@ long CorProfiler::EnableCallTargetDefinitions(UINT32 enabledCategories)
 
         if (affectedDefinitions.size() > 0)
         {
-            auto modules = module_ids.Get();
+            auto modules = module_registry.Snapshot();
             auto promise = std::make_shared<std::promise<ULONG>>();
             std::future<ULONG> future = promise->get_future();
-            tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(modules.Ref(), affectedDefinitions,
+            tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(modules, affectedDefinitions,
                                                                                  promise);
 
             // wait and get the value from the future<int>
@@ -2055,10 +2001,10 @@ long CorProfiler::DisableCallTargetDefinitions(UINT32 disabledCategories)
 
         if (affectedDefinitions.size() > 0)
         {
-            auto modules = module_ids.Get();
+            auto modules = module_registry.Snapshot();
             auto promise = std::make_shared<std::promise<ULONG>>();
             std::future<ULONG> future = promise->get_future();
-            tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(modules.Ref(), affectedDefinitions, promise);
+            tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(modules, affectedDefinitions, promise);
 
             // wait and get the value from the future<int>
             numReverts = future.get();
@@ -2077,12 +2023,14 @@ int CorProfiler::RegisterIastAspects(WCHAR** aspects, int aspectsLength, UINT32 
     if (dataflow == nullptr && IsCallSiteManagedActivationEnabled())
     {
         Logger::Debug("Creating Dataflow.");
-        auto modules = module_ids.Get();
-        dataflow = new iast::Dataflow(info_, rejit_handler, modules.Ref(), runtime_information_);
+        auto modules = module_registry.Snapshot();
+        dataflow = new iast::Dataflow(info_, rejit_handler, modules, runtime_information_);
+        inline_blockers_enabled_.store(true, std::memory_order_relaxed);
     }
 
     if (dataflow != nullptr)
     {
+        inline_blockers_enabled_.store(true, std::memory_order_relaxed);
         Logger::Info("Registering Callsite Aspects.");
         dataflow->LoadAspects(aspects, aspectsLength, enabledCategories, platform);
         _dataflow = dataflow;
@@ -2176,15 +2124,20 @@ void CorProfiler::InitializeTraceMethods(WCHAR* id, WCHAR* integration_assembly_
         {
             std::vector<IntegrationDefinition> integrationDefinitions = GetIntegrationsFromTraceMethodsConfiguration(
                 *trace_annotation_integration_type.get(), configuration_string);
-            auto modules = module_ids.Get();
+            auto modules = module_registry.Snapshot();
 
-            DBG("InitializeTraceMethods: Total number of modules to analyze: ", modules->size());
+            DBG("InitializeTraceMethods: Total number of modules to analyze: ", modules.size());
             if (rejit_handler != nullptr)
             {
+                if (!integrationDefinitions.empty())
+                {
+                    inline_blockers_enabled_.store(true, std::memory_order_relaxed);
+                }
+
                 auto promise = std::make_shared<std::promise<ULONG>>();
                 std::future<ULONG> future = promise->get_future();
                 tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(
-                    modules.Ref(), integrationDefinitions,
+                    modules, integrationDefinitions,
                     promise);
 
                 // wait and get the value from the future<int>
@@ -2208,6 +2161,11 @@ void CorProfiler::InstrumentProbes(debugger::DebuggerMethodProbeDefinition* meth
                                    debugger::DebuggerMethodSpanProbeDefinition* spanProbes, int spanProbesLength,
                                    debugger::DebuggerRemoveProbesDefinition* removeProbes, int revertProbesLength) const
 {
+    if (methodProbesLength > 0 || lineProbesLength > 0 || spanProbesLength > 0 || revertProbesLength > 0)
+    {
+        inline_blockers_enabled_.store(true, std::memory_order_relaxed);
+    }
+
     if (debugger_instrumentation_requester != nullptr)
     {
         debugger_instrumentation_requester->InstrumentProbes(methodProbes, methodProbesLength, lineProbes,
@@ -4334,24 +4292,20 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
         return S_OK;
     }
 
-    // keep this lock until we are done using the module,
-    // to prevent it from unloading while in use
-    auto modulesOpt = module_ids.TryGet();
-    if (!modulesOpt.has_value())
+    auto state = module_registry.TryGet(module_id);
+    if (state == nullptr)
     {
-        Logger::Error(
-            "JITCachedFunctionSearchStarted: Failed on exception while tried to acquire the lock for the module_ids collection for functionId ",
-            functionId);
-        return S_OK;
+        state = module_registry.TrackState(module_id, ModuleState());
     }
 
-    auto& modules = modulesOpt.value();
-
     // Call RequestRejitOrRevert for register inliners and current NGEN module.
-    if (rejit_handler != nullptr)
+    if (rejit_handler != nullptr && state != nullptr)
     {
-        // Process the current module to detect inliners.
-        rejit_handler->AddNGenInlinerModule(module_id);
+        if (!state->ngen_inliner_added.exchange(true, std::memory_order_relaxed))
+        {
+            // Process the current module to detect inliners.
+            rejit_handler->AddNGenInlinerModule(module_id);
+        }
     }
 
     // Check for Dataflow call site instrumentation
@@ -4363,46 +4317,52 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
         return S_OK;
     }
 
-    bool isAnInternalModule = false;
+    const bool is_tracked_module = module_registry.Contains(module_id);
+    const bool is_internal_module = state != nullptr && state->IsInternal();
 
     // Verify that we have the metadata for this module
-    if (!shared::Contains(modules.Ref(), module_id))
+    if (!is_tracked_module && !is_internal_module)
     {
-        isAnInternalModule = shared::Contains(managedInternalModules_, module_id);
-        if (!isAnInternalModule)
+        // we haven't stored a ModuleMetadata for this module,
+        // so there's nothing to do here, we accept the NGEN image.
+        *pbUseCachedFunction = true;
+        return S_OK;
+    }
+
+    AppDomainID app_domain_id = state != nullptr ? state->AppDomainId() : 0;
+
+    if (app_domain_id == 0)
+    {
+        // let's get the AssemblyID
+        DWORD module_path_len = 0;
+        AssemblyID assembly_id = 0;
+        hr = this->info_->GetModuleInfo(module_id, nullptr, 0, &module_path_len,
+                                                nullptr, &assembly_id);
+        if (FAILED(hr) || module_path_len == 0)
         {
-            // we haven't stored a ModuleMetadata for this module,
-            // so there's nothing to do here, we accept the NGEN image.
-            *pbUseCachedFunction = true;
+            Logger::Warn("JITCachedFunctionSearchStarted: Call to ICorProfilerInfo.GetModuleInfo() failed for ",
+                            functionId);
             return S_OK;
         }
-    }
 
-    // let's get the AssemblyID
-    DWORD module_path_len = 0;
-    AssemblyID assembly_id = 0;
-    hr = this->info_->GetModuleInfo(module_id, nullptr, 0, &module_path_len,
-                                            nullptr, &assembly_id);
-    if (FAILED(hr) || module_path_len == 0)
-    {
-        Logger::Warn("JITCachedFunctionSearchStarted: Call to ICorProfilerInfo.GetModuleInfo() failed for ",
-                        functionId);
-        return S_OK;
-    }
+        // now the assembly info
+        DWORD assembly_name_len = 0;
+        AppDomainID resolved_app_domain_id;
+        hr = this->info_->GetAssemblyInfo(assembly_id, 0, &assembly_name_len, nullptr, &resolved_app_domain_id, nullptr);
+        if (FAILED(hr) || assembly_name_len == 0)
+        {
+            Logger::Warn("JITCachedFunctionSearchStarted: Call to ICorProfilerInfo.GetAssemblyInfo() failed for ",
+                            functionId);
+            return S_OK;
+        }
 
-    // now the assembly info
-    DWORD assembly_name_len = 0;
-    AppDomainID app_domain_id;
-    hr = this->info_->GetAssemblyInfo(assembly_id, 0, &assembly_name_len, nullptr, &app_domain_id, nullptr);
-    if (FAILED(hr) || assembly_name_len == 0)
-    {
-        Logger::Warn("JITCachedFunctionSearchStarted: Call to ICorProfilerInfo.GetAssemblyInfo() failed for ",
-                        functionId);
-        return S_OK;
+        app_domain_id = resolved_app_domain_id;
+        ModuleState updated_state(app_domain_id, is_internal_module, false);
+        state = module_registry.TrackState(module_id, updated_state);
     }
 
     const bool has_loader_injected_in_appdomain =
-        first_jit_compilation_app_domains.find(app_domain_id) != first_jit_compilation_app_domains.end();
+        first_jit_compilation_app_domains.Contains(app_domain_id);
 
     if (!has_loader_injected_in_appdomain)
     {
@@ -4419,7 +4379,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
         function_token == getDistributedTraceMethodDef_ ||
             function_token == getNativeTracerVersionMethodDef_ ||
                 function_token == isManualInstrumentationOnlyMethodDef_;
-    bool hasBeenRewritten = isKnownMethodDef && isAnInternalModule;
+    bool hasBeenRewritten = isKnownMethodDef && is_internal_module;
     if (hasBeenRewritten)
     {
         // If we are in debug mode and the image is rejected because has been rewritten then let's write a couple of logs

@@ -1,11 +1,14 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
+    <ClCompile Include="appdomain_registry_test.cpp" />
     <ClCompile Include="iast_util_test.cpp" />
     <ClCompile Include="integration_test.cpp" />
     <ClCompile Include="clr_helper_test.cpp" />
+    <ClCompile Include="module_registry_test.cpp" />
     <ClCompile Include="metadata_builder_test.cpp" />
     <ClCompile Include="pch.cpp" />
+    <ClCompile Include="rejit_history_test.cpp" />
     <ClCompile Include="version_struct_test.cpp" />
     <ClCompile Include="string_test.cpp" />
     <ClCompile Include="util_test.cpp" />

@@ -5,6 +5,7 @@
 #include <shared_mutex>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include "cor.h"
@@ -92,6 +93,27 @@ public:
 
 class Rejitter;
 
+struct MethodKey
+{
+    ModuleID module_id;
+    mdMethodDef method_def;
+
+    bool operator==(const MethodKey& other) const noexcept
+    {
+        return module_id == other.module_id && method_def == other.method_def;
+    }
+};
+
+struct MethodKeyHash
+{
+    size_t operator()(const MethodKey& key) const noexcept
+    {
+        auto hash1 = std::hash<ModuleID>{}(key.module_id);
+        auto hash2 = std::hash<mdMethodDef>{}(key.method_def);
+        return hash1 ^ (hash2 + 0x9e3779b9 + (hash1 << 6) + (hash1 >> 2));
+    }
+};
+
 /// <summary>
 /// Class to control the ReJIT mechanism and to make sure all the required
 /// information is present before calling a method rewrite
@@ -117,7 +139,7 @@ private:
     size_t m_rejittersCount = 0;
 
     Lock m_rejit_history_lock;
-    std::vector<std::tuple<ModuleID, mdMethodDef>> m_rejit_history;
+    std::unordered_set<MethodKey, MethodKeyHash> m_rejit_history_set;
     bool enable_rejit_tracking = false;
 public:
     RejitHandler(ICorProfilerInfo7* pInfo, std::shared_ptr<RejitWorkOffloader> work_offloader);
@@ -151,6 +173,14 @@ public:
 
     void SetRejitTracking(bool enabled);
     bool HasBeenRejitted(ModuleID moduleId, mdMethodDef methodDef);
+
+#ifdef DD_TESTS
+    void AddRejitHistoryEntryForTest(ModuleID moduleId, mdMethodDef methodDef)
+    {
+        WriteLock wlock(m_rejit_history_lock);
+        m_rejit_history_set.insert(MethodKey{moduleId, methodDef});
+    }
+#endif
 };
 
 } // namespace trace
