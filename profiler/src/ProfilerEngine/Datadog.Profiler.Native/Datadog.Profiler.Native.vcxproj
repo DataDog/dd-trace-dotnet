@@ -424,7 +424,6 @@
     <ClCompile Include="RawSampleTransformer.cpp" />
     <ClCompile Include="ServiceBase.cpp" />
     <ClCompile Include="SkipProfileHeuristicType.h" />
-    <ClCompile Include="Source.cpp" />
     <ClCompile Include="SsiManager.cpp" />
     <ClCompile Include="Success.cpp" />
     <ClCompile Include="Exception.cpp" />

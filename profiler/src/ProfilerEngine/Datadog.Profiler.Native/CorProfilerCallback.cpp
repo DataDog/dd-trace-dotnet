@@ -69,7 +69,10 @@
 
 #include "dd_profiler_version.h"
 
+#include <algorithm>
 #include <cmath>
+#include <functional>
+#include <vector>
 
 void LogServiceStart(bool success, const char* name )
 {
@@ -1835,69 +1838,90 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Shutdown()
     // dump all threads time
     _pThreadsCpuManager->LogCpuTimes();
 
-    // Log memory breakdown for diagnostics
+    // Log memory breakdown for diagnostics (sorted by memory size, largest first)
     Log::Info("=== Profiler Memory Breakdown at Shutdown ===");
 
-    size_t totalMemory = 0;
+    // Collect all components with their memory sizes
+    struct ComponentMemory
+    {
+        const char* name;
+        size_t memorySize;
+        std::function<void()> logBreakdown;
+    };
+
+    std::vector<ComponentMemory> components;
 
     if (_pManagedThreadList != nullptr)
     {
-        _pManagedThreadList->LogMemoryBreakdown();
-        totalMemory += _pManagedThreadList->GetMemorySize();
+        components.push_back({"ManagedThreadList", _pManagedThreadList->GetMemorySize(),
+            [this]() { _pManagedThreadList->LogMemoryBreakdown(); }});
     }
 
     if (_pFrameStore != nullptr)
     {
-        _pFrameStore->LogMemoryBreakdown();
-        totalMemory += _pFrameStore->GetMemorySize();
+        components.push_back({"FrameStore", _pFrameStore->GetMemorySize(),
+            [this]() { _pFrameStore->LogMemoryBreakdown(); }});
     }
 
     if (_pDebugInfoStore != nullptr)
     {
-        _pDebugInfoStore->LogMemoryBreakdown();
-        totalMemory += _pDebugInfoStore->GetMemorySize();
+        components.push_back({"DebugInfoStore", _pDebugInfoStore->GetMemorySize(),
+            [this]() { _pDebugInfoStore->LogMemoryBreakdown(); }});
     }
 
     if (_pAppDomainStore != nullptr)
     {
-        _pAppDomainStore->LogMemoryBreakdown();
-        totalMemory += _pAppDomainStore->GetMemorySize();
+        components.push_back({"AppDomainStore", _pAppDomainStore->GetMemorySize(),
+            [this]() { _pAppDomainStore->LogMemoryBreakdown(); }});
     }
 
     if (_pApplicationStore != nullptr)
     {
-        _pApplicationStore->LogMemoryBreakdown();
-        totalMemory += _pApplicationStore->GetMemorySize();
+        components.push_back({"ApplicationStore", _pApplicationStore->GetMemorySize(),
+            [this]() { _pApplicationStore->LogMemoryBreakdown(); }});
     }
 
     if (_pRuntimeIdStore != nullptr)
     {
-        _pRuntimeIdStore->LogMemoryBreakdown();
-        totalMemory += _pRuntimeIdStore->GetMemorySize();
+        components.push_back({"RuntimeIdStore", _pRuntimeIdStore->GetMemorySize(),
+            [this]() { _pRuntimeIdStore->LogMemoryBreakdown(); }});
     }
 
     if (_pThreadsCpuManager != nullptr)
     {
-        _pThreadsCpuManager->LogMemoryBreakdown();
-        totalMemory += _pThreadsCpuManager->GetMemorySize();
+        components.push_back({"ThreadsCpuManager", _pThreadsCpuManager->GetMemorySize(),
+            [this]() { _pThreadsCpuManager->LogMemoryBreakdown(); }});
     }
 
     if (_pExceptionsProvider != nullptr)
     {
-        _pExceptionsProvider->LogMemoryBreakdown();
-        totalMemory += _pExceptionsProvider->GetMemorySize();
+        components.push_back({"ExceptionsProvider", _pExceptionsProvider->GetMemorySize(),
+            [this]() { _pExceptionsProvider->LogMemoryBreakdown(); }});
     }
 
     if (_pHeapSnapshotManager != nullptr)
     {
-        _pHeapSnapshotManager->LogMemoryBreakdown();
-        totalMemory += _pHeapSnapshotManager->GetMemorySize();
+        components.push_back({"HeapSnapshotManager", _pHeapSnapshotManager->GetMemorySize(),
+            [this]() { _pHeapSnapshotManager->LogMemoryBreakdown(); }});
     }
 
     if (_pNetworkProvider != nullptr)
     {
-        _pNetworkProvider->LogMemoryBreakdown();
-        totalMemory += _pNetworkProvider->GetMemorySize();
+        components.push_back({"NetworkProvider", _pNetworkProvider->GetMemorySize(),
+            [this]() { _pNetworkProvider->LogMemoryBreakdown(); }});
+    }
+
+    // Sort components by memory size (largest first)
+    std::sort(components.begin(), components.end(), [](const ComponentMemory& a, const ComponentMemory& b) {
+        return a.memorySize > b.memorySize;
+    });
+
+    // Log components in sorted order
+    size_t totalMemory = 0;
+    for (const auto& component : components)
+    {
+        component.logBreakdown();
+        totalMemory += component.memorySize;
     }
 
     Log::Info("Total measured profiler memory: ", totalMemory, " bytes (", (totalMemory / 1024.0 / 1024.0), " MB)");
