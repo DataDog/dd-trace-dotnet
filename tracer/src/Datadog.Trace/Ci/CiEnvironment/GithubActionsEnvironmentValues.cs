@@ -44,29 +44,25 @@ internal sealed class GithubActionsEnvironmentValues<TValueProvider>(TValueProvi
 
     private static string[] GetDiagnosticDirectories()
     {
-        var dirs = new List<string>();
-
         switch (FrameworkDescription.Instance.OSPlatform)
         {
             case OSPlatformName.Windows:
                 var programFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
-                dirs.Add(Path.Combine(programFiles, "actions-runner", "cached", "_diag"));
-                dirs.Add(Path.Combine(programFiles, "actions-runner", "_diag"));
-                dirs.Add(@"C:\actions-runner\cached\_diag");
-                dirs.Add(@"C:\actions-runner\_diag");
-                break;
+                return
+                [
+                    Path.Combine(programFiles, "actions-runner", "cached", "_diag"),
+                    Path.Combine(programFiles, "actions-runner", "_diag"),
+                    @"C:\actions-runner\cached\_diag",
+                    @"C:\actions-runner\_diag",
+                ];
 
             case OSPlatformName.MacOS:
-                dirs.AddRange(MacOSDiagnosticDirs);
-                break;
+                return MacOSDiagnosticDirs;
 
             case OSPlatformName.Linux:
             default:
-                dirs.AddRange(LinuxDiagnosticDirs);
-                break;
+                return LinuxDiagnosticDirs;
         }
-
-        return dirs.ToArray();
     }
 
     private static bool TryExtractFromJson(string content, out string? jobId)
