@@ -183,7 +183,7 @@ internal sealed class GithubActionsEnvironmentValues<TValueProvider>(TValueProvi
         {
             // We have a numeric job ID - construct the correct job-specific URL
             JobId = numericJobId;
-            JobUrl = $"{rawRepository}/actions/runs/{PipelineId}/job/{numericJobId}";
+            JobUrl = FormattableString.Invariant($"{rawRepository}/actions/runs/{PipelineId}/job/{numericJobId}");
             Log.Debug("GitHub Actions job URL constructed with numeric job ID: {JobUrl}", JobUrl);
         }
         else
