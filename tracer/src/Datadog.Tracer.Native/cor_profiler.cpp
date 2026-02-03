@@ -3,6 +3,7 @@
 #include "corhlpr.h"
 #include <corprof.h>
 #include <string>
+#include <unordered_set>
 #include <typeinfo>
 
 #include "clr_helpers.h"
@@ -983,8 +984,8 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
     if (searchForTraceAttribute)
     {
         mdTypeDef typeDef = mdTypeDefNil;
-        mdToken trace_attribute_token = mdTokenNil;
-        bool foundType = false;
+        std::unordered_set<mdToken> trace_attribute_token_set;
+        std::vector<mdToken> trace_attribute_tokens;
 
         ComPtr<IUnknown> metadata_interfaces;
         auto hr = this->info_->GetModuleMetaData(module_id, ofRead, IID_IMetaDataImport2,
@@ -1004,106 +1005,116 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
         hr = metadata_import->FindTypeDefByName(traceAttribute_typename_cstring, mdTypeDefNil, &typeDef);
         if (SUCCEEDED(hr))
         {
-            foundType = true;
-            trace_attribute_token = typeDef;
+            if (trace_attribute_token_set.insert(typeDef).second)
+            {
+                trace_attribute_tokens.push_back(typeDef);
+            }
             DBG("ModuleLoadFinished found the TypeDef for ", traceattribute_typename,
                 " defined in Module ", module_info.assembly.name);
         }
-        else
+
+        // Now we enumerate all type refs in this assembly to see if the trace attribute is referenced
+        auto enumTypeRefs = Enumerator<mdTypeRef>(
+            [&metadata_import](HCORENUM* ptr, mdTypeRef arr[], ULONG max, ULONG* cnt) -> HRESULT {
+                return metadata_import->EnumTypeRefs(ptr, arr, max, cnt);
+            },
+            [&metadata_import](HCORENUM ptr) -> void { metadata_import->CloseEnum(ptr); });
+
+        auto enumIterator = enumTypeRefs.begin();
+        while (enumIterator != enumTypeRefs.end())
         {
-            // Now we enumerate all type refs in this assembly to see if the trace attribute is referenced
-            auto enumTypeRefs = Enumerator<mdTypeRef>(
-                [&metadata_import](HCORENUM* ptr, mdTypeRef arr[], ULONG max, ULONG* cnt) -> HRESULT {
-                    return metadata_import->EnumTypeRefs(ptr, arr, max, cnt);
-                },
-                [&metadata_import](HCORENUM ptr) -> void { metadata_import->CloseEnum(ptr); });
+            mdTypeRef currentTypeRef = *enumIterator;
 
-            auto enumIterator = enumTypeRefs.begin();
-            while (enumIterator != enumTypeRefs.end())
+            // Check if the typeref matches
+            mdToken parent_token = mdTokenNil;
+            WCHAR type_name[kNameMaxSize]{};
+            DWORD type_name_len = 0;
+
+            hr = metadata_import->GetTypeRefProps(currentTypeRef, &parent_token, type_name, kNameMaxSize,
+                                                  &type_name_len);
+            if (TypeNameMatchesTraceAttribute(type_name, type_name_len))
             {
-                mdTypeRef currentTypeRef = *enumIterator;
-
-                // Check if the typeref matches
-                mdToken parent_token = mdTokenNil;
-                WCHAR type_name[kNameMaxSize]{};
-                DWORD type_name_len = 0;
-
-                hr = metadata_import->GetTypeRefProps(currentTypeRef, &parent_token, type_name, kNameMaxSize,
-                                                      &type_name_len);
-                if (TypeNameMatchesTraceAttribute(type_name, type_name_len))
+                if (trace_attribute_token_set.insert(currentTypeRef).second)
                 {
-                    foundType = true;
-                    trace_attribute_token = currentTypeRef;
-                    DBG("ModuleLoadFinished found the TypeRef for ", traceattribute_typename,
-                        " defined in Module ", module_info.assembly.name);
-                    break;
+                    trace_attribute_tokens.push_back(currentTypeRef);
                 }
-
-                enumIterator = ++enumIterator;
+                DBG("ModuleLoadFinished found the TypeRef for ", traceattribute_typename,
+                    " defined in Module ", module_info.assembly.name);
             }
+
+            enumIterator = ++enumIterator;
         }
 
         // We have a typeRef and it matches the trace attribute
         // Since it is referenced, it should be in-use somewhere in this module
         // So iterate over all methods in the module
-        if (foundType)
+        if (!trace_attribute_tokens.empty())
         {
             std::vector<MethodReference> methodReferences;
+            std::unordered_set<mdMethodDef> traced_methods;
 
             // Now we enumerate all custom attributes in this assembly to see if the trace attribute is used
-            auto enumCustomAttributes = Enumerator<mdCustomAttribute>(
-                [&metadata_import, trace_attribute_token](HCORENUM* ptr, mdCustomAttribute arr[], ULONG max, ULONG* cnt) -> HRESULT {
-                    return metadata_import->EnumCustomAttributes(ptr, mdTokenNil, trace_attribute_token, arr, max, cnt);
-                },
-                [&metadata_import](HCORENUM ptr) -> void { metadata_import->CloseEnum(ptr); });
-            auto customAttributesIterator = enumCustomAttributes.begin();
-
-            while (customAttributesIterator != enumCustomAttributes.end())
+            for (const auto& trace_attribute_token : trace_attribute_tokens)
             {
-                mdCustomAttribute customAttribute = *customAttributesIterator;
+                auto enumCustomAttributes = Enumerator<mdCustomAttribute>(
+                    [&metadata_import, trace_attribute_token](HCORENUM* ptr, mdCustomAttribute arr[], ULONG max, ULONG* cnt) -> HRESULT {
+                        return metadata_import->EnumCustomAttributes(ptr, mdTokenNil, trace_attribute_token, arr, max, cnt);
+                    },
+                    [&metadata_import](HCORENUM ptr) -> void { metadata_import->CloseEnum(ptr); });
+                auto customAttributesIterator = enumCustomAttributes.begin();
 
-                // Check if the typeref matches
-                mdToken parent_token = mdTokenNil;
-                hr = metadata_import->GetCustomAttributeProps(customAttribute, &parent_token, nullptr, nullptr, nullptr);
-
-                // We are only concerned with the trace attribute on method definitions
-                if (TypeFromToken(parent_token) == mdtMethodDef)
+                while (customAttributesIterator != enumCustomAttributes.end())
                 {
-                    mdMethodDef methodDef = (mdMethodDef) parent_token;
+                    mdCustomAttribute customAttribute = *customAttributesIterator;
 
-                    // Matches! Let's mark the attached method for ReJIT
-                    // Extract the function info from the mdMethodDef
-                    const auto caller = GetFunctionInfo(metadata_import, methodDef);
-                    if (!caller.IsValid())
+                    // Check if the typeref matches
+                    mdToken parent_token = mdTokenNil;
+                    hr = metadata_import->GetCustomAttributeProps(customAttribute, &parent_token, nullptr, nullptr, nullptr);
+
+                    // We are only concerned with the trace attribute on method definitions
+                    if (TypeFromToken(parent_token) == mdtMethodDef)
                     {
-                        Logger::Warn("    * Skipping ", shared::TokenStr(&parent_token),
-                            ": the methoddef is not valid!");
-                        customAttributesIterator = ++customAttributesIterator;
-                        continue;
+                        mdMethodDef methodDef = (mdMethodDef) parent_token;
+                        if (!traced_methods.insert(methodDef).second)
+                        {
+                            customAttributesIterator = ++customAttributesIterator;
+                            continue;
+                        }
+
+                        // Matches! Let's mark the attached method for ReJIT
+                        // Extract the function info from the mdMethodDef
+                        const auto caller = GetFunctionInfo(metadata_import, methodDef);
+                        if (!caller.IsValid())
+                        {
+                            Logger::Warn("    * Skipping ", shared::TokenStr(&parent_token),
+                                ": the methoddef is not valid!");
+                            customAttributesIterator = ++customAttributesIterator;
+                            continue;
+                        }
+
+                        // We create a new function info into the heap from the caller functionInfo in the
+                        // stack, to be used later in the ReJIT process
+                        auto functionInfo = FunctionInfo(caller);
+                        auto hr = functionInfo.method_signature.TryParse();
+                        if (FAILED(hr))
+                        {
+                            Logger::Warn("    * Skipping ", functionInfo.method_signature.str(),
+                                         ": the method signature cannot be parsed.");
+                            customAttributesIterator = ++customAttributesIterator;
+                            continue;
+                        }
+
+                        // As we are in the right method, we gather all information we need and stored it in to
+                        // the ReJIT handler.
+                        std::vector<shared::WSTRING> signatureTypes;
+                        methodReferences.push_back(MethodReference(
+                            tracemethodintegration_assemblyname, caller.type.name, caller.name,
+                            Version(0, 0, 0, 0), Version(USHRT_MAX, USHRT_MAX, USHRT_MAX, USHRT_MAX),
+                            signatureTypes));
                     }
 
-                    // We create a new function info into the heap from the caller functionInfo in the
-                    // stack, to be used later in the ReJIT process
-                    auto functionInfo = FunctionInfo(caller);
-                    auto hr = functionInfo.method_signature.TryParse();
-                    if (FAILED(hr))
-                    {
-                        Logger::Warn("    * Skipping ", functionInfo.method_signature.str(),
-                                     ": the method signature cannot be parsed.");
-                        customAttributesIterator = ++customAttributesIterator;
-                        continue;
-                    }
-
-                    // As we are in the right method, we gather all information we need and stored it in to
-                    // the ReJIT handler.
-                    std::vector<shared::WSTRING> signatureTypes;
-                    methodReferences.push_back(MethodReference(
-                        tracemethodintegration_assemblyname, caller.type.name, caller.name,
-                        Version(0, 0, 0, 0), Version(USHRT_MAX, USHRT_MAX, USHRT_MAX, USHRT_MAX),
-                        signatureTypes));
+                    customAttributesIterator = ++customAttributesIterator;
                 }
-
-                customAttributesIterator = ++customAttributesIterator;
             }
 
             if (trace_annotation_integration_type == nullptr)
