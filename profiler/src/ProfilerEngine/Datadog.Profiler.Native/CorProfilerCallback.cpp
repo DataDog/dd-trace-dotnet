@@ -37,7 +37,6 @@
 #include "IMetricsSender.h"
 #include "IMetricsSenderFactory.h"
 #include "Log.h"
-#include "ManagedCodeCache.h"
 #include "ManagedThreadList.h"
 #include "MetadataProvider.h"
 #include "NativeThreadList.h"
@@ -177,8 +176,7 @@ void CorProfilerCallback::InitializeServices()
     RegisterService<LibrariesInfoCache>(_memoryResourceManager.GetSynchronizedPool(100, 1024));
 #endif
 
-    _pFrameStore = std::make_unique<FrameStore>(
-        _pCorProfilerInfo, _pConfiguration.get(), _pDebugInfoStore.get(), _managedCodeCache.get());
+    _pFrameStore = std::make_unique<FrameStore>(_pCorProfilerInfo, _pConfiguration.get(), _pDebugInfoStore.get());
 
     // Create service instances
     _pThreadsCpuManager = RegisterService<ThreadsCpuManager>();
@@ -1336,14 +1334,6 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
 {
     Log::Info("CorProfilerCallback is initializing.");
 
-    #if ARM64
-    if (!_pConfiguration->UseManagedCodeCache())
-    {
-        Log::Warn("Managed code cache is required to run the profiler on ARM64. Since it is not enabled, the profiler will not run.");
-        return E_FAIL;
-    }
-    #endif
-
     ConfigureDebugLog();
 
     _pMetadataProvider = std::make_unique<MetadataProvider>();
@@ -1480,27 +1470,11 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
     // Init global state:
     OpSysTools::InitHighPrecisionTimer();
 
-    // Use managed code cache
-    if (_pConfiguration->UseManagedCodeCache())
-    {
-        _managedCodeCache = std::make_unique<ManagedCodeCache>(_pCorProfilerInfo);
-        if (!_managedCodeCache->Initialize())
-        {
-            Log::Error("Failed to initialize managed code cache. The profiler will not run.");
-            return E_FAIL;
-        }
-    }
-
     // create services without starting them
     InitializeServices();
 
     // Configure which profiler callbacks we want to receive by setting the event mask:
     DWORD eventMask = COR_PRF_MONITOR_THREADS | COR_PRF_ENABLE_STACK_SNAPSHOT | COR_PRF_MONITOR_APPDOMAIN_LOADS;
-
-    if (_pConfiguration->UseManagedCodeCache())
-    {
-        eventMask |= COR_PRF_MONITOR_JIT_COMPILATION | COR_PRF_ENABLE_REJIT;
-    }
 
     if (_pConfiguration->IsExceptionProfilingEnabled())
     {
@@ -1874,11 +1848,6 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ModuleLoadFinished(ModuleID modul
         _pExceptionsProvider->OnModuleLoaded(moduleId);
     }
 
-    if (_managedCodeCache != nullptr)
-    {
-        _managedCodeCache->AddModule(moduleId);
-    }
-
     return S_OK;
 }
 
@@ -1889,10 +1858,6 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ModuleUnloadStarted(ModuleID modu
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::ModuleUnloadFinished(ModuleID moduleId, HRESULT hrStatus)
 {
-    if (_managedCodeCache != nullptr)
-    {
-        _managedCodeCache->RemoveModule(moduleId);
-    }
     return S_OK;
 }
 
@@ -1933,10 +1898,6 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::JITCompilationStarted(FunctionID 
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::JITCompilationFinished(FunctionID functionId, HRESULT hrStatus, BOOL fIsSafeToBlock)
 {
-    if (_managedCodeCache != nullptr)
-    {
-        _managedCodeCache->AddFunction(functionId);
-    }
     return S_OK;
 }
 
@@ -2454,11 +2415,6 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::GetReJITParameters(ModuleID modul
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::ReJITCompilationFinished(FunctionID functionId, ReJITID rejitId, HRESULT hrStatus, BOOL fIsSafeToBlock)
 {
-    if (_managedCodeCache != nullptr)
-    {
-        _managedCodeCache->AddFunction(functionId);
-    }
-
     return S_OK;
 }
 
@@ -2499,10 +2455,6 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::DynamicMethodJITCompilationStarte
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::DynamicMethodJITCompilationFinished(FunctionID functionId, HRESULT hrStatus, BOOL fIsSafeToBlock)
 {
-    if (_managedCodeCache != nullptr)
-    {
-        _managedCodeCache->AddFunction(functionId);
-    }
     return S_OK;
 }
 

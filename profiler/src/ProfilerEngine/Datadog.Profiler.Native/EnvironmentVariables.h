@@ -84,5 +84,4 @@ public:
     inline static const shared::WSTRING CIVisibilityEnabled         = WStr("DD_CIVISIBILITY_ENABLED");
     inline static const shared::WSTRING InternalCIVisibilitySpanId  = WStr("DD_INTERNAL_CIVISIBILITY_SPANID");
     inline static const shared::WSTRING WaitHandleProfilingEnabled  = WStr("DD_INTERNAL_PROFILING_WAITHANDLE_ENABLED");
-    inline static const shared::WSTRING UseManagedCodeCache         = WStr("DD_INTERNAL_PROFILING_USE_MANAGED_CODE_CACHE");
 };

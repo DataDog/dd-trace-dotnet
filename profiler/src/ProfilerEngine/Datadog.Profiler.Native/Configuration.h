@@ -89,7 +89,6 @@ public:
     std::chrono::milliseconds GetHeapSnapshotCheckInterval() const override;
     uint32_t GetHeapSnapshotMemoryPressureThreshold() const override;
     uint32_t GetHeapHandleLimit() const override;
-    bool UseManagedCodeCache() const override;
 
 private:
     static tags ExtractUserTags();
@@ -119,6 +118,7 @@ private:
     std::chrono::milliseconds ExtractHeapSnapshotCheckInterval() const;
     std::chrono::minutes GetDefaultHeapSnapshotInterval() const;
     int32_t ExtractHeapHandleLimit() const;
+
 
 private:
     static std::string const DefaultProdSite;
@@ -203,5 +203,4 @@ private:
     std::chrono::minutes _heapSnapshotInterval;
     std::chrono::milliseconds _heapSnapshotCheckInterval;
     uint32_t _heapSnapshotMemoryPressureThreshold; // in % of used memory
-    bool _useManagedCodeCache;
 };

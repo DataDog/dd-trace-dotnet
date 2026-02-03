@@ -35,7 +35,6 @@ namespace Samples.Computer01
 
         private ManualResetEvent _stopEvent;
         private List<Task> _activeTasks;
-        private bool _stopRequested;
 
         public void Start()
         {
@@ -45,7 +44,6 @@ namespace Samples.Computer01
             }
 
             _stopEvent = new ManualResetEvent(false);
-            _stopRequested = false;
             _activeTasks = new List<Task>
             {
                 Task.Factory.StartNew(DoThreadSleep, TaskCreationOptions.LongRunning),
@@ -61,7 +59,6 @@ namespace Samples.Computer01
                 throw new InvalidOperationException("Not running...");
             }
 
-            Volatile.Write(ref _stopRequested, true);
             _stopEvent.Set();
 
             Task.WhenAll(_activeTasks).Wait();
@@ -253,7 +250,7 @@ namespace Samples.Computer01
                     Console.WriteLine("it will never happen");
                 }
 
-                if (Volatile.Read(ref _stopRequested))
+                if ((_stopEvent != null) && _stopEvent.WaitOne(0))
                 {
                     break;
                 }
