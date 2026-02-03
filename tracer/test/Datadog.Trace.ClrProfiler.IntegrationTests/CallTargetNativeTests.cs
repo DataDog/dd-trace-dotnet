@@ -68,20 +68,20 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 {
                     // On number of arguments = 0 the throw exception on integrations async continuation runs.
                     // So we have 1 more case with an exception being reported from the integration.
-                    Assert.Equal(227, beginMethodCount);
-                    Assert.Equal(227, endMethodCount);
+                    Assert.Equal(240, beginMethodCount);
+                    Assert.Equal(240, endMethodCount);
                     Assert.Equal(44, exceptionCount);
                 }
                 else if (numberOfArguments == 1)
                 {
-                    Assert.Equal(222, beginMethodCount);
-                    Assert.Equal(222, endMethodCount);
+                    Assert.Equal(235, beginMethodCount);
+                    Assert.Equal(235, endMethodCount);
                     Assert.Equal(40, exceptionCount);
                 }
                 else
                 {
-                    Assert.Equal(215, beginMethodCount);
-                    Assert.Equal(215, endMethodCount);
+                    Assert.Equal(228, beginMethodCount);
+                    Assert.Equal(228, endMethodCount);
                     Assert.Equal(40, exceptionCount);
                 }
 

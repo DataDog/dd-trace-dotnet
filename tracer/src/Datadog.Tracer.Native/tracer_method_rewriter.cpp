@@ -207,7 +207,9 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     // *** Load instance into the stack (if not static)
     if (isStatic)
     {
-        if (caller->type.valueType)
+        bool callerTypeIsValueType = caller->type.valueType;
+        mdToken callerTypeToken = tracerTokens->GetCurrentTypeRef(&caller->type, callerTypeIsValueType);
+        if (caller->type.valueType && callerTypeToken != mdTokenNil)
         {
             reWriterWrapper.LoadLocalAddress(staticValueTypeIndex);
             if (caller->type.type_spec != mdTypeSpecNil)
@@ -523,7 +525,9 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     // *** Load instance into the stack (if not static)
     if (isStatic)
     {
-        if (caller->type.valueType)
+        bool callerTypeIsValueType = caller->type.valueType;
+        mdToken callerTypeToken = tracerTokens->GetCurrentTypeRef(&caller->type, callerTypeIsValueType);
+        if (caller->type.valueType && callerTypeToken != mdTokenNil)
         {
             endMethodTryStartInstr = reWriterWrapper.LoadLocalAddress(staticValueTypeIndex);
             if (caller->type.type_spec != mdTypeSpecNil)

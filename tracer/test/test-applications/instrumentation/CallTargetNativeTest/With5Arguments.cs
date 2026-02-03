@@ -124,6 +124,26 @@ partial class Program
         RunMethod(() => With5ArgumentsStaticStruct.ReturnGenericMethod<int, string, Tuple<int, int>>("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None));
         Console.WriteLine();
         //
+        Console.WriteLine($"{typeof(With5ArgumentsGenericStaticStruct<string>).FullName}.VoidMethod");
+        RunMethod(() => With5ArgumentsGenericStaticStruct<string>.VoidMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None), checkInstrumented: false);
+        Console.WriteLine($"{typeof(With5ArgumentsGenericStaticStruct<string>).FullName}.ReturnValueMethod");
+        RunMethod(() => With5ArgumentsGenericStaticStruct<string>.ReturnValueMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None), checkInstrumented: false);
+        Console.WriteLine($"{typeof(With5ArgumentsGenericStaticStruct<string>).FullName}.ReturnReferenceMethod");
+        RunMethod(() => With5ArgumentsGenericStaticStruct<string>.ReturnReferenceMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None),checkInstrumented: false);
+        Console.WriteLine($"{typeof(With5ArgumentsGenericStaticStruct<string>).FullName}.ReturnGenericMethod");
+        RunMethod(() => With5ArgumentsGenericStaticStruct<string>.ReturnGenericMethod<string, Tuple<int, int>>("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None), checkInstrumented: false);
+        Console.WriteLine();
+        //
+        Console.WriteLine($"{typeof(With5ArgumentsGenericStaticStruct<int>).FullName}.VoidMethod");
+        RunMethod(() => With5ArgumentsGenericStaticStruct<int>.VoidMethod("Hello world", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None), checkInstrumented: false);
+        Console.WriteLine($"{typeof(With5ArgumentsGenericStaticStruct<int>).FullName}.ReturnValueMethod");
+        RunMethod(() => With5ArgumentsGenericStaticStruct<int>.ReturnValueMethod("Hello world", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None), checkInstrumented: false);
+        Console.WriteLine($"{typeof(With5ArgumentsGenericStaticStruct<int>).FullName}.ReturnReferenceMethod");
+        RunMethod(() => With5ArgumentsGenericStaticStruct<int>.ReturnReferenceMethod("Hello world", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None), checkInstrumented: false);
+        Console.WriteLine($"{typeof(With5ArgumentsGenericStaticStruct<int>).FullName}.ReturnGenericMethod");
+        RunMethod(() => With5ArgumentsGenericStaticStruct<int>.ReturnGenericMethod<int, Tuple<int, int>>(42, 99, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None), checkInstrumented: false);
+        Console.WriteLine();
+        //
         var w5TBegin = new With5ArgumentsThrowOnBegin();
         Console.WriteLine($"{typeof(With5ArgumentsThrowOnBegin).FullName}.VoidMethod");
         RunMethod(() => w5TBegin.VoidMethod("Hello world", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None));
@@ -267,6 +287,26 @@ partial class Program
         RunMethod(() => ArgumentsParentType.With5ArgumentsStaticStruct.ReturnGenericMethod<string, int, Tuple<int, int>>(42, 99, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None));
         Console.WriteLine($"{typeof(ArgumentsParentType.With5ArgumentsStaticStruct).FullName}.ReturnGenericMethod<int>");
         RunMethod(() => ArgumentsParentType.With5ArgumentsStaticStruct.ReturnGenericMethod<int, string, Tuple<int, int>>("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None));
+        Console.WriteLine();
+        //
+        Console.WriteLine($"{typeof(ArgumentsParentType.With5ArgumentsGenericStaticStruct<string>).FullName}.VoidMethod");
+        RunMethod(() => ArgumentsParentType.With5ArgumentsGenericStaticStruct<string>.VoidMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None), checkInstrumented: false);
+        Console.WriteLine($"{typeof(ArgumentsParentType.With5ArgumentsGenericStaticStruct<string>).FullName}.ReturnValueMethod");
+        RunMethod(() => ArgumentsParentType.With5ArgumentsGenericStaticStruct<string>.ReturnValueMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None), checkInstrumented: false);
+        Console.WriteLine($"{typeof(ArgumentsParentType.With5ArgumentsGenericStaticStruct<string>).FullName}.ReturnReferenceMethod");
+        RunMethod(() => ArgumentsParentType.With5ArgumentsGenericStaticStruct<string>.ReturnReferenceMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None), checkInstrumented: false);
+        Console.WriteLine($"{typeof(ArgumentsParentType.With5ArgumentsGenericStaticStruct<string>).FullName}.ReturnGenericMethod");
+        RunMethod(() => ArgumentsParentType.With5ArgumentsGenericStaticStruct<string>.ReturnGenericMethod<string, Tuple<int, int>>("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None), checkInstrumented: false);
+        Console.WriteLine();
+        //
+        Console.WriteLine($"{typeof(ArgumentsParentType.With5ArgumentsGenericStaticStruct<int>).FullName}.VoidMethod");
+        RunMethod(() => ArgumentsParentType.With5ArgumentsGenericStaticStruct<int>.VoidMethod("Hello world", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None), checkInstrumented: false);
+        Console.WriteLine($"{typeof(ArgumentsParentType.With5ArgumentsGenericStaticStruct<int>).FullName}.ReturnValueMethod");
+        RunMethod(() => ArgumentsParentType.With5ArgumentsGenericStaticStruct<int>.ReturnValueMethod("Hello world", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None), checkInstrumented: false);
+        Console.WriteLine($"{typeof(ArgumentsParentType.With5ArgumentsGenericStaticStruct<int>).FullName}.ReturnReferenceMethod");
+        RunMethod(() => ArgumentsParentType.With5ArgumentsGenericStaticStruct<int>.ReturnReferenceMethod("Hello world", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None), checkInstrumented: false);
+        Console.WriteLine($"{typeof(ArgumentsParentType.With5ArgumentsGenericStaticStruct<int>).FullName}.ReturnGenericMethod");
+        RunMethod(() => ArgumentsParentType.With5ArgumentsGenericStaticStruct<int>.ReturnGenericMethod<int, Tuple<int, int>>(42, 99, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None), checkInstrumented: false);
         Console.WriteLine();
         //
         var w5TBegin = new ArgumentsParentType.With5ArgumentsThrowOnBegin();
@@ -414,6 +454,26 @@ partial class Program
         RunMethod(() => ArgumentsStructParentType.With5ArgumentsStaticStruct.ReturnGenericMethod<int, string, Tuple<int, int>>("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None));
         Console.WriteLine();
         //
+        Console.WriteLine($"{typeof(ArgumentsStructParentType.With5ArgumentsGenericStaticStruct<string>).FullName}.VoidMethod");
+        RunMethod(() => ArgumentsStructParentType.With5ArgumentsGenericStaticStruct<string>.VoidMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None), checkInstrumented: false);
+        Console.WriteLine($"{typeof(ArgumentsStructParentType.With5ArgumentsGenericStaticStruct<string>).FullName}.ReturnValueMethod");
+        RunMethod(() => ArgumentsStructParentType.With5ArgumentsGenericStaticStruct<string>.ReturnValueMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None), checkInstrumented: false);
+        Console.WriteLine($"{typeof(ArgumentsStructParentType.With5ArgumentsGenericStaticStruct<string>).FullName}.ReturnReferenceMethod");
+        RunMethod(() => ArgumentsStructParentType.With5ArgumentsGenericStaticStruct<string>.ReturnReferenceMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None), checkInstrumented: false);
+        Console.WriteLine($"{typeof(ArgumentsStructParentType.With5ArgumentsGenericStaticStruct<string>).FullName}.ReturnGenericMethod");
+        RunMethod(() => ArgumentsStructParentType.With5ArgumentsGenericStaticStruct<string>.ReturnGenericMethod<string, Tuple<int, int>>("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None), checkInstrumented: false);
+        Console.WriteLine();
+        //
+        Console.WriteLine($"{typeof(ArgumentsStructParentType.With5ArgumentsGenericStaticStruct<int>).FullName}.VoidMethod");
+        RunMethod(() => ArgumentsStructParentType.With5ArgumentsGenericStaticStruct<int>.VoidMethod("Hello world", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None), checkInstrumented: false);
+        Console.WriteLine($"{typeof(ArgumentsStructParentType.With5ArgumentsGenericStaticStruct<int>).FullName}.ReturnValueMethod");
+        RunMethod(() => ArgumentsStructParentType.With5ArgumentsGenericStaticStruct<int>.ReturnValueMethod("Hello world", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None), checkInstrumented: false);
+        Console.WriteLine($"{typeof(ArgumentsStructParentType.With5ArgumentsGenericStaticStruct<int>).FullName}.ReturnReferenceMethod");
+        RunMethod(() => ArgumentsStructParentType.With5ArgumentsGenericStaticStruct<int>.ReturnReferenceMethod("Hello world", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None), checkInstrumented: false);
+        Console.WriteLine($"{typeof(ArgumentsStructParentType.With5ArgumentsGenericStaticStruct<int>).FullName}.ReturnGenericMethod");
+        RunMethod(() => ArgumentsStructParentType.With5ArgumentsGenericStaticStruct<int>.ReturnGenericMethod<int, Tuple<int, int>>(42, 99, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None), checkInstrumented: false);
+        Console.WriteLine();
+        //
         var w5TBegin = new ArgumentsStructParentType.With5ArgumentsThrowOnBegin();
         Console.WriteLine($"{typeof(ArgumentsStructParentType.With5ArgumentsThrowOnBegin).FullName}.VoidMethod");
         RunMethod(() => w5TBegin.VoidMethod("Hello world", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None));
@@ -547,6 +607,38 @@ partial class Program
         RunMethod(() => ArgumentsGenericParentType<object>.With5ArgumentsStatic.ReturnGenericMethod<int, string, Tuple<int, int>>("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None));
         Console.WriteLine();
         //
+        Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.With5ArgumentsStaticStruct).FullName}.VoidMethod");
+        RunMethod(() => ArgumentsGenericParentType<object>.With5ArgumentsStaticStruct.VoidMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None));
+        Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.With5ArgumentsStaticStruct).FullName}.ReturnValueMethod");
+        RunMethod(() => ArgumentsGenericParentType<object>.With5ArgumentsStaticStruct.ReturnValueMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None));
+        Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.With5ArgumentsStaticStruct).FullName}.ReturnReferenceMethod");
+        RunMethod(() => ArgumentsGenericParentType<object>.With5ArgumentsStaticStruct.ReturnReferenceMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None));
+        Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.With5ArgumentsStaticStruct).FullName}.ReturnGenericMethod<string>");
+        RunMethod(() => ArgumentsGenericParentType<object>.With5ArgumentsStaticStruct.ReturnGenericMethod<string, int, Tuple<int, int>>(42, 99, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None));
+        Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.With5ArgumentsStaticStruct).FullName}.ReturnGenericMethod<int>");
+        RunMethod(() => ArgumentsGenericParentType<object>.With5ArgumentsStaticStruct.ReturnGenericMethod<int, string, Tuple<int, int>>("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None));
+        Console.WriteLine();
+        //
+        Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.With5ArgumentsGenericStaticStruct<string>).FullName}.VoidMethod");
+        RunMethod(() => ArgumentsGenericParentType<object>.With5ArgumentsGenericStaticStruct<string>.VoidMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None));
+        Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.With5ArgumentsGenericStaticStruct<string>).FullName}.ReturnValueMethod");
+        RunMethod(() => ArgumentsGenericParentType<object>.With5ArgumentsGenericStaticStruct<string>.ReturnValueMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None));
+        Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.With5ArgumentsGenericStaticStruct<string>).FullName}.ReturnReferenceMethod");
+        RunMethod(() => ArgumentsGenericParentType<object>.With5ArgumentsGenericStaticStruct<string>.ReturnReferenceMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None));
+        Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.With5ArgumentsGenericStaticStruct<string>).FullName}.ReturnGenericMethod");
+        RunMethod(() => ArgumentsGenericParentType<object>.With5ArgumentsGenericStaticStruct<string>.ReturnGenericMethod<string, Tuple<int, int>>("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None));
+        Console.WriteLine();
+        //
+        Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.With5ArgumentsGenericStaticStruct<int>).FullName}.VoidMethod");
+        RunMethod(() => ArgumentsGenericParentType<object>.With5ArgumentsGenericStaticStruct<int>.VoidMethod("Hello world", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None));
+        Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.With5ArgumentsGenericStaticStruct<int>).FullName}.ReturnValueMethod");
+        RunMethod(() => ArgumentsGenericParentType<object>.With5ArgumentsGenericStaticStruct<int>.ReturnValueMethod("Hello world", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None));
+        Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.With5ArgumentsGenericStaticStruct<int>).FullName}.ReturnReferenceMethod");
+        RunMethod(() => ArgumentsGenericParentType<object>.With5ArgumentsGenericStaticStruct<int>.ReturnReferenceMethod("Hello world", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None));
+        Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.With5ArgumentsGenericStaticStruct<int>).FullName}.ReturnGenericMethod");
+        RunMethod(() => ArgumentsGenericParentType<object>.With5ArgumentsGenericStaticStruct<int>.ReturnGenericMethod<int, Tuple<int, int>>(42, 99, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None));
+        Console.WriteLine();
+        //
         var w5TBegin = new ArgumentsGenericParentType<object>.With5ArgumentsThrowOnBegin();
         Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.With5ArgumentsThrowOnBegin).FullName}.VoidMethod");
         RunMethod(() => w5TBegin.VoidMethod("Hello world", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None));
@@ -619,7 +711,7 @@ struct With5ArgumentsStaticStruct
     public static string ReturnReferenceMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5) => "Hello World";
     public static T ReturnGenericMethod<T, TArg1, TArg3>(TArg1 arg1, int arg2, TArg3 arg3, Task arg4, CancellationToken arg5) => default;
 }
-struct With5ArgumentsGenericStaticStruct<T> // Note: This type cannot be instrumented because it is a generic struct.
+struct With5ArgumentsGenericStaticStruct<T>
 {
     public static void VoidMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5) { }
     public static int ReturnValueMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5) => 42;
@@ -675,7 +767,7 @@ partial class ArgumentsParentType
         public static string ReturnReferenceMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5) => "Hello World";
         public static T ReturnGenericMethod<T, TArg1, TArg3>(TArg1 arg1, int arg2, TArg3 arg3, Task arg4, CancellationToken arg5) => default;
     }
-    public struct With5ArgumentsGenericStaticStruct<T> // Note: This type cannot be instrumented because it is a generic struct.
+    public struct With5ArgumentsGenericStaticStruct<T>
     {
         public static void VoidMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5) { }
         public static int ReturnValueMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5) => 42;
@@ -732,7 +824,7 @@ partial struct ArgumentsStructParentType
         public static string ReturnReferenceMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5) => "Hello World";
         public static T ReturnGenericMethod<T, TArg1, TArg3>(TArg1 arg1, int arg2, TArg3 arg3, Task arg4, CancellationToken arg5) => default;
     }
-    public struct With5ArgumentsGenericStaticStruct<T> // Note: This type cannot be instrumented because it is a generic struct.
+    public struct With5ArgumentsGenericStaticStruct<T>
     {
         public static void VoidMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5) { }
         public static int ReturnValueMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5) => 42;
@@ -782,14 +874,14 @@ partial class ArgumentsGenericParentType<PType>
         public static string ReturnReferenceMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5) => "Hello World";
         public static T ReturnGenericMethod<T, TArg1, TArg3>(TArg1 arg1, int arg2, TArg3 arg3, Task arg4, CancellationToken arg5) => default;
     }
-    public struct With5ArgumentsStaticStruct // Note: This type cannot be instrumented because it is a struct and we are unable to get the type when the parent type is generic.
+    public struct With5ArgumentsStaticStruct
     {
         public static void VoidMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5) { }
         public static int ReturnValueMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5) => 42;
         public static string ReturnReferenceMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5) => "Hello World";
         public static T ReturnGenericMethod<T, TArg1, TArg3>(TArg1 arg1, int arg2, TArg3 arg3, Task arg4, CancellationToken arg5) => default;
     }
-    public struct With5ArgumentsGenericStaticStruct<T> // Note: This type cannot be instrumented because it is a generic struct.
+    public struct With5ArgumentsGenericStaticStruct<T>
     {
         public static void VoidMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5) { }
         public static int ReturnValueMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5) => 42;

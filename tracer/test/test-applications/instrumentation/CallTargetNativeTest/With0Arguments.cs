@@ -123,6 +123,26 @@ partial class Program
         RunMethod(() => With0ArgumentsStaticStruct.ReturnGenericMethod<int>());
         Console.WriteLine();
         //
+        Console.WriteLine($"{typeof(With0ArgumentsGenericStaticStruct<string>).FullName}.VoidMethod");
+        RunMethod(() => With0ArgumentsGenericStaticStruct<string>.VoidMethod(), checkInstrumented: false);
+        Console.WriteLine($"{typeof(With0ArgumentsGenericStaticStruct<string>).FullName}.ReturnValueMethod");
+        RunMethod(() => With0ArgumentsGenericStaticStruct<string>.ReturnValueMethod(),checkInstrumented: false);
+        Console.WriteLine($"{typeof(With0ArgumentsGenericStaticStruct<string>).FullName}.ReturnReferenceMethod");
+        RunMethod(() => With0ArgumentsGenericStaticStruct<string>.ReturnReferenceMethod(),checkInstrumented: false);
+        Console.WriteLine($"{typeof(With0ArgumentsGenericStaticStruct<string>).FullName}.ReturnGenericMethod");
+        RunMethod(() => With0ArgumentsGenericStaticStruct<string>.ReturnGenericMethod(),checkInstrumented: false);
+        Console.WriteLine();
+        //
+        Console.WriteLine($"{typeof(With0ArgumentsGenericStaticStruct<int>).FullName}.VoidMethod");
+        RunMethod(() => With0ArgumentsGenericStaticStruct<int>.VoidMethod(),checkInstrumented: false);
+        Console.WriteLine($"{typeof(With0ArgumentsGenericStaticStruct<int>).FullName}.ReturnValueMethod");
+        RunMethod(() => With0ArgumentsGenericStaticStruct<int>.ReturnValueMethod(),checkInstrumented: false);
+        Console.WriteLine($"{typeof(With0ArgumentsGenericStaticStruct<int>).FullName}.ReturnReferenceMethod");
+        RunMethod(() => With0ArgumentsGenericStaticStruct<int>.ReturnReferenceMethod(),checkInstrumented: false);
+        Console.WriteLine($"{typeof(With0ArgumentsGenericStaticStruct<int>).FullName}.ReturnGenericMethod");
+        RunMethod(() => With0ArgumentsGenericStaticStruct<int>.ReturnGenericMethod(),checkInstrumented: false);
+        Console.WriteLine();
+        //
         var w0TBegin = new With0ArgumentsThrowOnBegin();
         Console.WriteLine($"{typeof(With0ArgumentsThrowOnBegin).FullName}.VoidMethod");
         RunMethod(() => w0TBegin.VoidMethod());
@@ -297,6 +317,26 @@ partial class Program
         RunMethod(() => ArgumentsParentType.With0ArgumentsStaticStruct.ReturnGenericMethod<int>());
         Console.WriteLine();
         //
+        Console.WriteLine($"{typeof(ArgumentsParentType.With0ArgumentsGenericStaticStruct<string>).FullName}.VoidMethod");
+        RunMethod(() => ArgumentsParentType.With0ArgumentsGenericStaticStruct<string>.VoidMethod(), checkInstrumented: false);
+        Console.WriteLine($"{typeof(ArgumentsParentType.With0ArgumentsGenericStaticStruct<string>).FullName}.ReturnValueMethod");
+        RunMethod(() => ArgumentsParentType.With0ArgumentsGenericStaticStruct<string>.ReturnValueMethod(), checkInstrumented: false);
+        Console.WriteLine($"{typeof(ArgumentsParentType.With0ArgumentsGenericStaticStruct<string>).FullName}.ReturnReferenceMethod");
+        RunMethod(() => ArgumentsParentType.With0ArgumentsGenericStaticStruct<string>.ReturnReferenceMethod(), checkInstrumented: false);
+        Console.WriteLine($"{typeof(ArgumentsParentType.With0ArgumentsGenericStaticStruct<string>).FullName}.ReturnGenericMethod");
+        RunMethod(() => ArgumentsParentType.With0ArgumentsGenericStaticStruct<string>.ReturnGenericMethod(), checkInstrumented: false);
+        Console.WriteLine();
+        //
+        Console.WriteLine($"{typeof(ArgumentsParentType.With0ArgumentsGenericStaticStruct<int>).FullName}.VoidMethod");
+        RunMethod(() => ArgumentsParentType.With0ArgumentsGenericStaticStruct<int>.VoidMethod(), checkInstrumented: false);
+        Console.WriteLine($"{typeof(ArgumentsParentType.With0ArgumentsGenericStaticStruct<int>).FullName}.ReturnValueMethod");
+        RunMethod(() => ArgumentsParentType.With0ArgumentsGenericStaticStruct<int>.ReturnValueMethod(), checkInstrumented: false);
+        Console.WriteLine($"{typeof(ArgumentsParentType.With0ArgumentsGenericStaticStruct<int>).FullName}.ReturnReferenceMethod");
+        RunMethod(() => ArgumentsParentType.With0ArgumentsGenericStaticStruct<int>.ReturnReferenceMethod(), checkInstrumented: false);
+        Console.WriteLine($"{typeof(ArgumentsParentType.With0ArgumentsGenericStaticStruct<int>).FullName}.ReturnGenericMethod");
+        RunMethod(() => ArgumentsParentType.With0ArgumentsGenericStaticStruct<int>.ReturnGenericMethod(), checkInstrumented: false);
+        Console.WriteLine();
+        //
         var w0TBegin = new ArgumentsParentType.With0ArgumentsThrowOnBegin();
         Console.WriteLine($"{typeof(ArgumentsParentType.With0ArgumentsThrowOnBegin).FullName}.VoidMethod");
         RunMethod(() => w0TBegin.VoidMethod());
@@ -447,6 +487,26 @@ partial class Program
         RunMethod(() => ArgumentsStructParentType.With0ArgumentsStaticStruct.ReturnGenericMethod<int>());
         Console.WriteLine();
         //
+        Console.WriteLine($"{typeof(ArgumentsStructParentType.With0ArgumentsGenericStaticStruct<string>).FullName}.VoidMethod");
+        RunMethod(() => ArgumentsStructParentType.With0ArgumentsGenericStaticStruct<string>.VoidMethod(), checkInstrumented: false);
+        Console.WriteLine($"{typeof(ArgumentsStructParentType.With0ArgumentsGenericStaticStruct<string>).FullName}.ReturnValueMethod");
+        RunMethod(() => ArgumentsStructParentType.With0ArgumentsGenericStaticStruct<string>.ReturnValueMethod(), checkInstrumented: false);
+        Console.WriteLine($"{typeof(ArgumentsStructParentType.With0ArgumentsGenericStaticStruct<string>).FullName}.ReturnReferenceMethod");
+        RunMethod(() => ArgumentsStructParentType.With0ArgumentsGenericStaticStruct<string>.ReturnReferenceMethod(), checkInstrumented: false);
+        Console.WriteLine($"{typeof(ArgumentsStructParentType.With0ArgumentsGenericStaticStruct<string>).FullName}.ReturnGenericMethod");
+        RunMethod(() => ArgumentsStructParentType.With0ArgumentsGenericStaticStruct<string>.ReturnGenericMethod(), checkInstrumented: false);
+        Console.WriteLine();
+        //
+        Console.WriteLine($"{typeof(ArgumentsStructParentType.With0ArgumentsGenericStaticStruct<int>).FullName}.VoidMethod");
+        RunMethod(() => ArgumentsStructParentType.With0ArgumentsGenericStaticStruct<int>.VoidMethod(), checkInstrumented: false);
+        Console.WriteLine($"{typeof(ArgumentsStructParentType.With0ArgumentsGenericStaticStruct<int>).FullName}.ReturnValueMethod");
+        RunMethod(() => ArgumentsStructParentType.With0ArgumentsGenericStaticStruct<int>.ReturnValueMethod(), checkInstrumented: false);
+        Console.WriteLine($"{typeof(ArgumentsStructParentType.With0ArgumentsGenericStaticStruct<int>).FullName}.ReturnReferenceMethod");
+        RunMethod(() => ArgumentsStructParentType.With0ArgumentsGenericStaticStruct<int>.ReturnReferenceMethod(), checkInstrumented: false);
+        Console.WriteLine($"{typeof(ArgumentsStructParentType.With0ArgumentsGenericStaticStruct<int>).FullName}.ReturnGenericMethod");
+        RunMethod(() => ArgumentsStructParentType.With0ArgumentsGenericStaticStruct<int>.ReturnGenericMethod(), checkInstrumented: false);
+        Console.WriteLine();
+        //
         var w0TBegin = new ArgumentsStructParentType.With0ArgumentsThrowOnBegin();
         Console.WriteLine($"{typeof(ArgumentsStructParentType.With0ArgumentsThrowOnBegin).FullName}.VoidMethod");
         RunMethod(() => w0TBegin.VoidMethod());
@@ -585,6 +645,38 @@ partial class Program
         RunMethod(() => ArgumentsGenericParentType<object>.With0ArgumentsStatic.ReturnGenericMethod<int>());
         Console.WriteLine();
         //
+        Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.With0ArgumentsStaticStruct).FullName}.VoidMethod");
+        RunMethod(() => ArgumentsGenericParentType<object>.With0ArgumentsStaticStruct.VoidMethod());
+        Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.With0ArgumentsStaticStruct).FullName}.ReturnValueMethod");
+        RunMethod(() => ArgumentsGenericParentType<object>.With0ArgumentsStaticStruct.ReturnValueMethod());
+        Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.With0ArgumentsStaticStruct).FullName}.ReturnReferenceMethod");
+        RunMethod(() => ArgumentsGenericParentType<object>.With0ArgumentsStaticStruct.ReturnReferenceMethod());
+        Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.With0ArgumentsStaticStruct).FullName}.ReturnGenericMethod<string>");
+        RunMethod(() => ArgumentsGenericParentType<object>.With0ArgumentsStaticStruct.ReturnGenericMethod<string>());
+        Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.With0ArgumentsStaticStruct).FullName}.ReturnGenericMethod<int>");
+        RunMethod(() => ArgumentsGenericParentType<object>.With0ArgumentsStaticStruct.ReturnGenericMethod<int>());
+        Console.WriteLine();
+        //
+        Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.With0ArgumentsGenericStaticStruct<string>).FullName}.VoidMethod");
+        RunMethod(() => ArgumentsGenericParentType<object>.With0ArgumentsGenericStaticStruct<string>.VoidMethod());
+        Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.With0ArgumentsGenericStaticStruct<string>).FullName}.ReturnValueMethod");
+        RunMethod(() => ArgumentsGenericParentType<object>.With0ArgumentsGenericStaticStruct<string>.ReturnValueMethod());
+        Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.With0ArgumentsGenericStaticStruct<string>).FullName}.ReturnReferenceMethod");
+        RunMethod(() => ArgumentsGenericParentType<object>.With0ArgumentsGenericStaticStruct<string>.ReturnReferenceMethod());
+        Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.With0ArgumentsGenericStaticStruct<string>).FullName}.ReturnGenericMethod");
+        RunMethod(() => ArgumentsGenericParentType<object>.With0ArgumentsGenericStaticStruct<string>.ReturnGenericMethod());
+        Console.WriteLine();
+        //
+        Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.With0ArgumentsGenericStaticStruct<int>).FullName}.VoidMethod");
+        RunMethod(() => ArgumentsGenericParentType<object>.With0ArgumentsGenericStaticStruct<int>.VoidMethod());
+        Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.With0ArgumentsGenericStaticStruct<int>).FullName}.ReturnValueMethod");
+        RunMethod(() => ArgumentsGenericParentType<object>.With0ArgumentsGenericStaticStruct<int>.ReturnValueMethod());
+        Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.With0ArgumentsGenericStaticStruct<int>).FullName}.ReturnReferenceMethod");
+        RunMethod(() => ArgumentsGenericParentType<object>.With0ArgumentsGenericStaticStruct<int>.ReturnReferenceMethod());
+        Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.With0ArgumentsGenericStaticStruct<int>).FullName}.ReturnGenericMethod");
+        RunMethod(() => ArgumentsGenericParentType<object>.With0ArgumentsGenericStaticStruct<int>.ReturnGenericMethod());
+        Console.WriteLine();
+        //
         var w0TBegin = new ArgumentsGenericParentType<object>.With0ArgumentsThrowOnBegin();
         Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.With0ArgumentsThrowOnBegin).FullName}.VoidMethod");
         RunMethod(() => w0TBegin.VoidMethod());
@@ -662,7 +754,7 @@ struct With0ArgumentsStaticStruct
     public static string ReturnReferenceMethod() => "Hello World";
     public static T ReturnGenericMethod<T>() => default;
 }
-struct With0ArgumentsGenericStaticStruct<T> // Note: This type cannot be instrumented because it is a generic struct.
+struct With0ArgumentsGenericStaticStruct<T>
 {
     public static void VoidMethod() { }
     public static int ReturnValueMethod() => 42;
@@ -746,7 +838,7 @@ partial class ArgumentsParentType
         public static string ReturnReferenceMethod() => "Hello World";
         public static T ReturnGenericMethod<T>() => default;
     }
-    public struct With0ArgumentsGenericStaticStruct<T> // Note: This type cannot be instrumented because it is a generic struct.
+    public struct With0ArgumentsGenericStaticStruct<T>
     {
         public static void VoidMethod() { }
         public static int ReturnValueMethod() => 42;
@@ -808,7 +900,7 @@ partial struct ArgumentsStructParentType
         public static string ReturnReferenceMethod() => "Hello World";
         public static T ReturnGenericMethod<T>() => default;
     }
-    public struct With0ArgumentsGenericStaticStruct<T> // Note: This type cannot be instrumented because it is a generic struct.
+    public struct With0ArgumentsGenericStaticStruct<T>
     {
         public static void VoidMethod() { }
         public static int ReturnValueMethod() => 42;
@@ -863,14 +955,14 @@ partial class ArgumentsGenericParentType<PType>
         public static string ReturnReferenceMethod() => "Hello World";
         public static T ReturnGenericMethod<T>() => default;
     }
-    public struct With0ArgumentsStaticStruct // Note: This type cannot be instrumented because it is a struct and we are unable to get the type when the parent type is generic.
+    public struct With0ArgumentsStaticStruct
     {
         public static void VoidMethod() { }
         public static int ReturnValueMethod() => 42;
         public static string ReturnReferenceMethod() => "Hello World";
         public static T ReturnGenericMethod<T>() => default;
     }
-    public struct With0ArgumentsGenericStaticStruct<T> // Note: This type cannot be instrumented because it is a generic struct.
+    public struct With0ArgumentsGenericStaticStruct<T>
     {
         public static void VoidMethod() { }
         public static int ReturnValueMethod() => 42;
