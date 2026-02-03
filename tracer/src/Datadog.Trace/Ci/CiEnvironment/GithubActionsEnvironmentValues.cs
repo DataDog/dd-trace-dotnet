@@ -12,6 +12,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.VendoredMicrosoftCode.System.Diagnostics.CodeAnalysis;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.Ci.CiEnvironment;
@@ -65,7 +66,7 @@ internal sealed class GithubActionsEnvironmentValues<TValueProvider>(TValueProvi
         }
     }
 
-    private static bool TryExtractFromJson(string content, out string? jobId)
+    private static bool TryExtractFromJson(string content, [NotNullWhen(true)] out string? jobId)
     {
         jobId = null;
 
@@ -100,13 +101,13 @@ internal sealed class GithubActionsEnvironmentValues<TValueProvider>(TValueProvi
         return false;
     }
 
-    private static bool TryExtractFromRegex(string content, out string? jobId)
+    private static bool TryExtractFromRegex(string content, [NotNullWhen(true)] out string? jobId)
     {
         jobId = null;
 
         // Regex handles multi-line JSON and log files with embedded JSON fragments
         var match = CheckRunIdRegex.Match(content);
-        if (match.Success && match.Groups.Count > 1)
+        if (match is { Success: true, Groups.Count: > 1 })
         {
             var value = match.Groups[1].Value;
             if (!string.IsNullOrWhiteSpace(value))
@@ -226,7 +227,7 @@ internal sealed class GithubActionsEnvironmentValues<TValueProvider>(TValueProvi
     /// </summary>
     /// <param name="jobId">The numeric job ID if found.</param>
     /// <returns>True if the job ID was successfully extracted, false otherwise.</returns>
-    private bool TryGetJobIdFromDiagnosticsFile(out string? jobId)
+    private bool TryGetJobIdFromDiagnosticsFile([NotNullWhen(true)] out string? jobId)
     {
         jobId = null;
         var diagnosticDirs = GetDiagnosticDirectories();
@@ -265,7 +266,7 @@ internal sealed class GithubActionsEnvironmentValues<TValueProvider>(TValueProvi
         return false;
     }
 
-    private bool TryExtractJobIdFromFile(string logFilePath, out string? jobId)
+    private bool TryExtractJobIdFromFile(string logFilePath, [NotNullWhen(true)] out string? jobId)
     {
         jobId = null;
 
