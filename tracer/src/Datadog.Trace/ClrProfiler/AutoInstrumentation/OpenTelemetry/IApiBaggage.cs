@@ -6,6 +6,7 @@
 #nullable enable
 
 using System.Collections.Generic;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
 {
@@ -14,10 +15,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
     /// </summary>
     internal interface IApiBaggage
     {
-        object Create(Dictionary<string, string?>? baggageItems);
+        IApiBaggage Create(Dictionary<string, string?>? baggageItems);
 
         IReadOnlyDictionary<string, string?> GetBaggage();
 
         string? GetBaggage(string name);
+
+        IBaggageHolder EnsureBaggageHolder();
+    }
+
+    internal interface IBaggageHolder
+    {
+        [DuckField(Name = "Baggage")]
+        IApiBaggage Baggage { get; set; }
     }
 }

@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using Datadog.Trace;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
@@ -33,6 +34,31 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
     {
         internal const string IntegrationName = nameof(Configuration.IntegrationId.OpenTelemetry);
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.OpenTelemetry;
+
+        /// <summary>
+        /// OnMethodBegin callback
+        /// </summary>
+        /// <typeparam name="TInstance">Type of the instance (null for this static method)</typeparam>
+        /// <typeparam name="TBaggage">Type of the baggage</typeparam>
+        /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
+        /// <param name="baggageItems">Key/value pairs to be added to baggage..</param>
+        /// <param name="baggage">Optional baggage, or default if not specified.</param>
+        /// <returns>Calltarget state value</returns>
+        internal static CallTargetState OnMethodBegin<TInstance, TBaggage>(TInstance instance, IEnumerable<KeyValuePair<string, string?>> baggageItems, TBaggage baggage)
+            where TBaggage : IApiBaggage
+        {
+            if (Tracer.Instance.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId)
+                && baggage.TryDuckCast<IApiBaggage>(out var apiBaggage))
+            {
+                // Update the underlying OpenTelemetry.Baggage.Current store to the latest Datadog.Trace.Baggage.Current items, which will be used if the user does not provide a custom baggage instance.
+                // If the user does provide, a custom baggage instance, then this operation will have been useless as it will be overridden.
+                // TODO: Once the behavior is validated to be correct, optimize this away.
+                var baggageHolder = apiBaggage.EnsureBaggageHolder();
+                baggageHolder.Baggage = apiBaggage.Create(Baggage.Current.ToDictionary(kvp => kvp.Key, kvp => kvp.Value));
+            }
+
+            return CallTargetState.GetDefault();
+        }
 
         /// <summary>
         /// OnMethodEnd callback
