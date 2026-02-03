@@ -16,10 +16,4 @@
     <PackageReference Include="Ocelot" Version="$(ApiVersion)" />
   </ItemGroup>
 
-  <ItemGroup>
-    <None Update="ocelot.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-
 </Project>
