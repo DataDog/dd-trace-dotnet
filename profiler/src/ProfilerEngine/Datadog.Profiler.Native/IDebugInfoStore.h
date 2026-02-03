@@ -8,6 +8,8 @@
 #include "corprof.h"
 // end
 
+#include "IMemoryFootprintProvider.h"
+
 #include <string_view>
 #include <cstdint>
 
@@ -18,7 +20,7 @@ public:
     std::uint32_t StartLine = 0;
 };
 
-class IDebugInfoStore
+class IDebugInfoStore : public IMemoryFootprintProvider
 {
 public:
     virtual ~IDebugInfoStore() = default;

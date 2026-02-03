@@ -181,6 +181,10 @@ void CorProfilerCallback::InitializeServices()
     // Create service instances
     _pThreadsCpuManager = RegisterService<ThreadsCpuManager>();
 
+    _metricsRegistry.GetOrRegister<ProxyMetric>("dotnet_memory_footprint_threads_cpu_manager", [this]() {
+        return static_cast<double>(_pThreadsCpuManager->GetMemorySize());
+    });
+
     _pManagedThreadList = RegisterService<ManagedThreadList>(_pCorProfilerInfo);
     _managedThreadsMetric = _metricsRegistry.GetOrRegister<ProxyMetric>("dotnet_managed_threads", [this]() {
         return _pManagedThreadList->Count();
@@ -201,6 +205,32 @@ void CorProfilerCallback::InitializeServices()
 
     _pNativeThreadList = RegisterService<NativeThreadList>();
     _pRuntimeIdStore = RegisterService<RuntimeIdStore>();
+
+        // Register memory footprint metrics for ApplicationStore and RuntimeIdStore
+    _metricsRegistry.GetOrRegister<ProxyMetric>("dotnet_memory_footprint_application_store", [this]() {
+        return static_cast<double>(_pApplicationStore->GetMemorySize());
+    });
+
+    _metricsRegistry.GetOrRegister<ProxyMetric>("dotnet_memory_footprint_runtime_id_store", [this]() {
+        return static_cast<double>(_pRuntimeIdStore->GetMemorySize());
+    });
+
+    // Register memory footprint metrics
+    _metricsRegistry.GetOrRegister<ProxyMetric>("dotnet_memory_footprint_managed_threads", [this]() {
+        return static_cast<double>(_pManagedThreadList->GetMemorySize());
+    });
+
+    _metricsRegistry.GetOrRegister<ProxyMetric>("dotnet_memory_footprint_frame_store", [this]() {
+        return static_cast<double>(_pFrameStore->GetMemorySize());
+    });
+
+    _metricsRegistry.GetOrRegister<ProxyMetric>("dotnet_memory_footprint_debug_info", [this]() {
+        return static_cast<double>(_pDebugInfoStore->GetMemorySize());
+    });
+
+    _metricsRegistry.GetOrRegister<ProxyMetric>("dotnet_memory_footprint_app_domain_store", [this]() {
+        return static_cast<double>(_pAppDomainStore->GetMemorySize());
+    });
 
     auto valueTypeProvider = SampleValueTypeProvider();
 
@@ -269,6 +299,10 @@ void CorProfilerCallback::InitializeServices()
             _metricsRegistry,
             CallstackProvider(_memoryResourceManager.GetDefault()),
             MemoryResourceManager::GetDefault());
+
+        _metricsRegistry.GetOrRegister<ProxyMetric>("dotnet_memory_footprint_exceptions_provider", [this]() {
+            return static_cast<double>(_pExceptionsProvider->GetMemorySize());
+        });
     }
 
     // _pCorProfilerInfoEvents must have been set for any .NET 5+ CLR events-based profiler to work
@@ -355,6 +389,10 @@ void CorProfilerCallback::InitializeServices()
                 _metricsRegistry,
                 _pNativeThreadList
                 );
+
+            _metricsRegistry.GetOrRegister<ProxyMetric>("dotnet_memory_footprint_heap_snapshot_manager", [this]() {
+                return static_cast<double>(_pHeapSnapshotManager->GetMemorySize());
+            });
         }
 
         // GC profiling is needed for both GC provider and heap snapshots
@@ -393,6 +431,10 @@ void CorProfilerCallback::InitializeServices()
                     CallstackProvider(_memoryResourceManager.GetDefault()),
                     MemoryResourceManager::GetDefault()
                 );
+
+                _metricsRegistry.GetOrRegister<ProxyMetric>("dotnet_memory_footprint_network_provider", [this]() {
+                    return static_cast<double>(_pNetworkProvider->GetMemorySize());
+                });
             }
             else
             {
@@ -1767,6 +1809,74 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Shutdown()
     // dump all threads time
     _pThreadsCpuManager->LogCpuTimes();
 
+    // Log memory breakdown for diagnostics
+    Log::Info("=== Profiler Memory Breakdown at Shutdown ===");
+
+    size_t totalMemory = 0;
+
+    if (_pManagedThreadList != nullptr)
+    {
+        _pManagedThreadList->LogMemoryBreakdown();
+        totalMemory += _pManagedThreadList->GetMemorySize();
+    }
+
+    if (_pFrameStore != nullptr)
+    {
+        _pFrameStore->LogMemoryBreakdown();
+        totalMemory += _pFrameStore->GetMemorySize();
+    }
+
+    if (_pDebugInfoStore != nullptr)
+    {
+        _pDebugInfoStore->LogMemoryBreakdown();
+        totalMemory += _pDebugInfoStore->GetMemorySize();
+    }
+
+    if (_pAppDomainStore != nullptr)
+    {
+        _pAppDomainStore->LogMemoryBreakdown();
+        totalMemory += _pAppDomainStore->GetMemorySize();
+    }
+
+    if (_pApplicationStore != nullptr)
+    {
+        _pApplicationStore->LogMemoryBreakdown();
+        totalMemory += _pApplicationStore->GetMemorySize();
+    }
+
+    if (_pRuntimeIdStore != nullptr)
+    {
+        _pRuntimeIdStore->LogMemoryBreakdown();
+        totalMemory += _pRuntimeIdStore->GetMemorySize();
+    }
+
+    if (_pThreadsCpuManager != nullptr)
+    {
+        _pThreadsCpuManager->LogMemoryBreakdown();
+        totalMemory += _pThreadsCpuManager->GetMemorySize();
+    }
+
+    if (_pExceptionsProvider != nullptr)
+    {
+        _pExceptionsProvider->LogMemoryBreakdown();
+        totalMemory += _pExceptionsProvider->GetMemorySize();
+    }
+
+    if (_pHeapSnapshotManager != nullptr)
+    {
+        _pHeapSnapshotManager->LogMemoryBreakdown();
+        totalMemory += _pHeapSnapshotManager->GetMemorySize();
+    }
+
+    if (_pNetworkProvider != nullptr)
+    {
+        _pNetworkProvider->LogMemoryBreakdown();
+        totalMemory += _pNetworkProvider->GetMemorySize();
+    }
+
+    Log::Info("Total measured profiler memory: ", totalMemory, " bytes (", (totalMemory / 1024.0 / 1024.0), " MB)");
+    Log::Info("==============================================");
+
     // DisposeInternal() already respects the _isInitialized flag.
     // If any code is added directly here, remember to respect _isInitialized as required.
     DisposeInternal();
@@ -2091,7 +2201,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadAssignedToOSThread(ThreadID
     }
 
     // TL;DR prevent the profiler from deadlocking application thread on malloc
-    // Backtrace2Unwinder relies on libunwind. We need to call it to make sure 
+    // Backtrace2Unwinder relies on libunwind. We need to call it to make sure
     // libunwind allocates and initializes TLS (Thread Local Storage) data structures for the current
     // thread.
     // Initialization of TLS object does call malloc. Unfortunately, if those calls to malloc

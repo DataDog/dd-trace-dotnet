@@ -5,7 +5,9 @@
 
 #include <string>
 
-class IHeapSnapshotManager
+#include "IMemoryFootprintProvider.h"
+
+class IHeapSnapshotManager : public IMemoryFootprintProvider
 {
 public:
     virtual ~IHeapSnapshotManager() = default;

@@ -340,6 +340,7 @@
     <ClInclude Include="IClrLifetime.h" />
     <ClInclude Include="IGCSuspensionsListener.h" />
     <ClInclude Include="IManagedThreadList.h" />
+    <ClInclude Include="IMemoryFootprintProvider.h" />
     <ClInclude Include="IMetricsSender.h" />
     <ClInclude Include="IMetricsSenderFactory.h" />
     <ClInclude Include="IRuntimeIdStore.h" />
@@ -423,6 +424,7 @@
     <ClCompile Include="RawSampleTransformer.cpp" />
     <ClCompile Include="ServiceBase.cpp" />
     <ClCompile Include="SkipProfileHeuristicType.h" />
+    <ClCompile Include="Source.cpp" />
     <ClCompile Include="SsiManager.cpp" />
     <ClCompile Include="Success.cpp" />
     <ClCompile Include="Exception.cpp" />

@@ -488,3 +488,40 @@ void HeapSnapshotManager::CleanupSession()
         }
     }
 }
+
+HeapSnapshotManager::MemoryStats HeapSnapshotManager::ComputeMemoryStats() const
+{
+    std::lock_guard<std::recursive_mutex> lock(_histogramLock);
+
+    MemoryStats stats{};
+    stats.baseSize = sizeof(HeapSnapshotManager);
+    stats.histogramBuckets = _classHistogram.bucket_count();
+    stats.histogramCount = _classHistogram.size();
+    stats.histogramMapSize = stats.histogramBuckets * (sizeof(ClassID) + sizeof(ClassHistogramEntry) + sizeof(void*));
+
+    // Calculate memory for each ClassHistogramEntry
+    for (const auto& [classId, entry] : _classHistogram)
+    {
+        stats.histogramEntriesSize += sizeof(ClassHistogramEntry);
+        // Add the capacity of the ClassName string
+        stats.histogramEntriesSize += entry.ClassName.capacity();
+    }
+
+    return stats;
+}
+
+size_t HeapSnapshotManager::GetMemorySize() const
+{
+    return ComputeMemoryStats().GetTotal();
+}
+
+void HeapSnapshotManager::LogMemoryBreakdown() const
+{
+    auto stats = ComputeMemoryStats();
+
+    Log::Debug("HeapSnapshotManager Memory Breakdown:");
+    Log::Debug("  Base object size:        ", stats.baseSize, " bytes");
+    Log::Debug("  Histogram map storage:   ", stats.histogramMapSize, " bytes (", stats.histogramCount, " entries, ", stats.histogramBuckets, " buckets)");
+    Log::Debug("  ClassHistogramEntry:     ", stats.histogramEntriesSize, " bytes");
+    Log::Debug("  Total memory:            ", stats.GetTotal(), " bytes (", (stats.GetTotal() / 1024.0), " KB)");
+}

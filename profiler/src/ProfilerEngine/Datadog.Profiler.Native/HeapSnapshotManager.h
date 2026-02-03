@@ -68,6 +68,10 @@ public:
 
     ~HeapSnapshotManager();
 
+    // IMemoryFootprintProvider
+    size_t GetMemorySize() const override;
+    void LogMemoryBreakdown() const override;
+
 protected:
     // inherited via IService
     const char* GetName() override
@@ -109,6 +113,23 @@ protected:
     // Inherited via ServiceBase
     bool StartImpl() override;
     bool StopImpl() override;
+
+private:
+    struct MemoryStats
+    {
+        size_t baseSize;
+        size_t histogramMapSize;
+        size_t histogramCount;
+        size_t histogramBuckets;
+        size_t histogramEntriesSize;
+
+        size_t GetTotal() const
+        {
+            return baseSize + histogramMapSize + histogramEntriesSize;
+        }
+    };
+
+    MemoryStats ComputeMemoryStats() const;
 
 private:
     void MainLoop();
@@ -168,7 +189,8 @@ private:
 
     // keep track of each type instances count and size during heap snapshot
     std::unordered_map<ClassID, ClassHistogramEntry> _classHistogram;
-    std::recursive_mutex _histogramLock;
+    // mutable to allow locking in const methods (e.g., GetMemorySize, LogMemoryBreakdown)
+    mutable std::recursive_mutex _histogramLock;
 
     std::chrono::nanoseconds _startTimestamp;
 

@@ -256,3 +256,45 @@ bool ExceptionsProvider::LoadExceptionMetadata()
 
     return false;
 }
+
+ExceptionsProvider::MemoryStats ExceptionsProvider::ComputeMemoryStats() const
+{
+    std::lock_guard<std::mutex> lock(_exceptionTypesLock);
+
+    MemoryStats stats{};
+    stats.baseSize = sizeof(ExceptionsProvider);
+    stats.exceptionTypesBuckets = _exceptionTypes.bucket_count();
+    stats.exceptionTypesCount = _exceptionTypes.size();
+    stats.exceptionTypesMapSize = stats.exceptionTypesBuckets * (sizeof(ClassID) + sizeof(std::string) + sizeof(void*));
+
+    // Calculate memory for exception type strings
+    for (const auto& [classId, typeName] : _exceptionTypes)
+    {
+        stats.exceptionTypesStringsSize += typeName.capacity();
+    }
+
+    // Estimate GroupSampler memory (contains two unordered_map/set)
+    // This is an approximation since GroupSampler is a template and we can't easily access its internals
+    stats.samplerSize = sizeof(GroupSampler<std::string>);
+    // Add estimated overhead for the internal maps (rough estimate)
+    stats.samplerSize += stats.exceptionTypesCount * (sizeof(std::string) + sizeof(GroupSampler<std::string>::GroupInfo) + sizeof(void*) * 2);
+
+    return stats;
+}
+
+size_t ExceptionsProvider::GetMemorySize() const
+{
+    return ComputeMemoryStats().GetTotal();
+}
+
+void ExceptionsProvider::LogMemoryBreakdown() const
+{
+    auto stats = ComputeMemoryStats();
+
+    Log::Debug("ExceptionsProvider Memory Breakdown:");
+    Log::Debug("  Base object size:        ", stats.baseSize, " bytes");
+    Log::Debug("  Exception types map:     ", stats.exceptionTypesMapSize, " bytes (", stats.exceptionTypesCount, " entries, ", stats.exceptionTypesBuckets, " buckets)");
+    Log::Debug("  Exception type strings:  ", stats.exceptionTypesStringsSize, " bytes");
+    Log::Debug("  GroupSampler (estimate): ", stats.samplerSize, " bytes");
+    Log::Debug("  Total memory:            ", stats.GetTotal(), " bytes (", (stats.GetTotal() / 1024.0), " KB)");
+}

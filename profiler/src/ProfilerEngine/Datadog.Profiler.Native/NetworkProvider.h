@@ -41,6 +41,10 @@ public:
         shared::pmr::memory_resource* memoryResource);
 
 public:
+    // Memory measurement
+    size_t GetMemorySize() const;
+    void LogMemoryBreakdown() const;
+
     // Inherited via INetworkListener
     void OnRequestStart(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, std::string url) override;
     void OnRequestStop(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, uint32_t statusCode) override;
@@ -60,6 +64,22 @@ public:
     void OnResponseContentStop(std::chrono::nanoseconds timestamp, LPCGUID pActivityId) override;
 
 private:
+    struct MemoryStats
+    {
+        size_t baseSize;
+        size_t requestsMapSize;
+        size_t requestsCount;
+        size_t requestsBuckets;
+        size_t requestInfosSize;
+
+        size_t GetTotal() const
+        {
+            return baseSize + requestsMapSize + requestInfosSize;
+        }
+    };
+
+    MemoryStats ComputeMemoryStats() const;
+
     bool MonitorRequest(NetworkRequestInfo*& info, LPCGUID pActivityId, bool isRoot = true);
     bool CaptureThreadInfo(NetworkRequestInfo& info);
     void FillRawSample(RawNetworkSample& sample, NetworkRequestInfo& info, std::chrono::nanoseconds timestamp);
@@ -78,7 +98,8 @@ private:
     MetricsRegistry& _metricsRegistry;
     std::chrono::nanoseconds _requestDurationThreshold;
 
-    std::mutex _requestsLock;
+    // mutable to allow locking in const methods (e.g., GetMemorySize, LogMemoryBreakdown)
+    mutable std::mutex _requestsLock;
     std::unordered_map<NetworkActivity, NetworkRequestInfo> _requests;
 
     // count ALL requests (success or failure)

@@ -181,12 +181,20 @@ public:
     MOCK_METHOD(ApplicationInfo, GetApplicationInfo, (const std::string& runtimeId), (override));
     MOCK_METHOD(void, SetApplicationInfo, (const std::string&, const std::string&, const std::string&, const std::string&, const std::string&), (override));
     MOCK_METHOD(void, SetGitMetadata, (std::string, std::string, std::string), (override));
+
+    // IMemoryFootprintProvider
+    MOCK_METHOD(size_t, GetMemorySize, (), (const override));
+    MOCK_METHOD(void, LogMemoryBreakdown, (), (const override));
 };
 
 class MockRuntimeIdStore : public IRuntimeIdStore
 {
 public:
     MOCK_METHOD(const char*, GetId, (AppDomainID appDomainId), (override));
+
+    // IMemoryFootprintProvider
+    MOCK_METHOD(size_t, GetMemorySize, (), (const override));
+    MOCK_METHOD(void, LogMemoryBreakdown, (), (const override));
 };
 
 class MockProcessSamplesProvider : public ISamplesProvider

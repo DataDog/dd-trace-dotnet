@@ -343,3 +343,59 @@ void ManagedThreadList::ForEach(std::function<void (ManagedThreadInfo*)> callbac
         callback(thread.get());
     }
 }
+
+ManagedThreadList::MemoryStats ManagedThreadList::ComputeMemoryStats() const
+{
+    std::lock_guard<std::recursive_mutex> lock(_mutex);
+
+    MemoryStats stats{};
+    stats.baseSize = sizeof(ManagedThreadList);
+    stats.vectorCapacity = _threads.capacity();
+    stats.threadCount = _threads.size();
+    stats.clrLookupBuckets = _lookupByClrThreadId.bucket_count();
+    stats.osLookupBuckets = _lookupByOsThreadId.bucket_count();
+    stats.iteratorsCount = _iterators.size();
+
+    // Size of the vector storage
+    stats.vectorStorageSize = stats.vectorCapacity * sizeof(std::shared_ptr<ManagedThreadInfo>);
+
+    // Size of each ManagedThreadInfo object (not double-counted since shared_ptr only stores pointer)
+    for (const auto& thread : _threads)
+    {
+        if (thread)
+        {
+            stats.threadInfosSize += thread->GetMemorySize();
+        }
+    }
+
+    // Size of the hash maps
+    // Each unordered_map has overhead + bucket storage + elements
+    // Approximation: load_factor * bucket_count * sizeof(entry)
+    stats.clrLookupSize = stats.clrLookupBuckets * (sizeof(ThreadID) + sizeof(std::shared_ptr<ManagedThreadInfo>) + sizeof(void*));
+    stats.osLookupSize = stats.osLookupBuckets * (sizeof(uint32_t) + sizeof(std::shared_ptr<ManagedThreadInfo>) + sizeof(void*));
+
+    // Size of iterators vector
+    stats.iteratorsSize = _iterators.capacity() * sizeof(uint32_t);
+
+    return stats;
+}
+
+size_t ManagedThreadList::GetMemorySize() const
+{
+    return ComputeMemoryStats().GetTotal();
+}
+
+void ManagedThreadList::LogMemoryBreakdown() const
+{
+    auto stats = ComputeMemoryStats();
+
+    Log::Debug("ManagedThreadList Memory Breakdown:");
+    Log::Debug("  Base object size:           ", stats.baseSize, " bytes");
+    Log::Debug("  Vector storage (capacity=", stats.vectorCapacity, "): ", stats.vectorStorageSize, " bytes");
+    Log::Debug("  Thread count:               ", stats.threadCount);
+    Log::Debug("  ManagedThreadInfo objects:  ", stats.threadInfosSize, " bytes");
+    Log::Debug("  CLR ThreadID lookup map:    ", stats.clrLookupSize, " bytes (", stats.clrLookupBuckets, " buckets)");
+    Log::Debug("  OS ThreadID lookup map:     ", stats.osLookupSize, " bytes (", stats.osLookupBuckets, " buckets)");
+    Log::Debug("  Iterators vector:           ", stats.iteratorsSize, " bytes (", stats.iteratorsCount, " iterators)");
+    Log::Debug("  Total memory:               ", stats.GetTotal(), " bytes (", (stats.GetTotal() / 1024.0), " KB)");
+}

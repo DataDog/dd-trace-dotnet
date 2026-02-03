@@ -157,3 +157,50 @@ fs::path DebugInfoStore::GetModuleFilePath(ModuleID moduleId) const
 
     return buffer.get();
 }
+
+DebugInfoStore::MemoryStats DebugInfoStore::ComputeMemoryStats() const
+{
+    std::unique_lock lock(_modulesMutex);
+
+    MemoryStats stats{};
+    stats.baseSize = sizeof(DebugInfoStore);
+    stats.modulesMapBuckets = _modulesInfo.bucket_count();
+    stats.moduleCount = _modulesInfo.size();
+    stats.modulesMapSize = stats.modulesMapBuckets * (sizeof(ModuleID) + sizeof(ModuleDebugInfo) + sizeof(void*));
+
+    // Calculate memory for each ModuleDebugInfo
+    for (const auto& [moduleId, moduleInfo] : _modulesInfo)
+    {
+        // ModulePath string
+        stats.moduleInfosSize += moduleInfo.ModulePath.capacity();
+
+        // Files vector
+        stats.moduleInfosSize += moduleInfo.Files.capacity() * sizeof(std::string);
+        for (const auto& file : moduleInfo.Files)
+        {
+            stats.moduleInfosSize += file.capacity();
+        }
+
+        // SymbolsDebugInfo vector
+        stats.moduleInfosSize += moduleInfo.SymbolsDebugInfo.capacity() * sizeof(SymbolDebugInfo);
+        // SymbolDebugInfo contains string_view, which doesn't own the data, so no additional memory
+    }
+
+    return stats;
+}
+
+size_t DebugInfoStore::GetMemorySize() const
+{
+    return ComputeMemoryStats().GetTotal();
+}
+
+void DebugInfoStore::LogMemoryBreakdown() const
+{
+    auto stats = ComputeMemoryStats();
+
+    Log::Debug("DebugInfoStore Memory Breakdown:");
+    Log::Debug("  Base object size:        ", stats.baseSize, " bytes");
+    Log::Debug("  Modules map:             ", stats.modulesMapSize, " bytes (", stats.moduleCount, " entries, ", stats.modulesMapBuckets, " buckets)");
+    Log::Debug("  Module infos content:    ", stats.moduleInfosSize, " bytes");
+    Log::Debug("  Total memory:            ", stats.GetTotal(), " bytes (", (stats.GetTotal() / 1024.0), " KB)");
+}
