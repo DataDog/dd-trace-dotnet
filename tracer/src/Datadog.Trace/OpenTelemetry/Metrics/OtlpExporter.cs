@@ -117,8 +117,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
             }
             catch (Exception ex)
             {
-                // Seeing network connectivity errors so skipping telemetry
-                Log.ErrorSkipTelemetry(ex, "Error exporting OTLP metrics.");
+                Log.Error(ex, "Error exporting OTLP metrics.");
                 TelemetryFactory.Metrics.RecordCountMetricsExportFailures(_protocolTag, _encodingTag);
                 return ExportResult.Failure;
             }
