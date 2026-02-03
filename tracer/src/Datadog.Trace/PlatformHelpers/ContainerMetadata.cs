@@ -54,6 +54,7 @@ namespace Datadog.Trace.PlatformHelpers
         }
 
         // For use in tests only
+        [TestingOnly]
         public ContainerMetadata(string? containerId, string? entityId)
         {
             _containerId = new Lazy<string?>(() => containerId);
