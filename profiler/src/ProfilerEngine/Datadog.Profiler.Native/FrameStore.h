@@ -45,7 +45,7 @@ public:
 
 public:
     FrameStore(
-        ICorProfilerInfo4* pCorProfilerInfo, 
+        ICorProfilerInfo4* pCorProfilerInfo,
         IConfiguration* pConfiguration,
         IDebugInfoStore* pDebugInfoStore,
         ManagedCodeCache* pManagedCodeCache);
@@ -159,6 +159,10 @@ private:
     };
 
     MemoryStats ComputeMemoryStats() const;
+
+    // Incremental memory tracking: track sum of all item sizes across all caches
+    // Container overhead is calculated on-demand in GetMemorySize()
+    mutable std::atomic<size_t> _cachedItemsSize;
 
 private:
     struct FrameInfo

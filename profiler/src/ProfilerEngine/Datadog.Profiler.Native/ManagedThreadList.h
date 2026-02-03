@@ -75,6 +75,10 @@ private:
     const char* _serviceName = "ManagedThreadList";
     static const std::uint32_t DefaultThreadListSize;
 
+    // Incremental memory tracking: track sum of item sizes as they're added/removed
+    // Container overhead is calculated on-demand in GetMemorySize()
+    mutable std::atomic<size_t> _cachedItemsSize;
+
 private:
     bool StartImpl() override;
     bool StopImpl() override;

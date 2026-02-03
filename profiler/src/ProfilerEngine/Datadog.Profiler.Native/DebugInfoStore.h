@@ -89,6 +89,9 @@ private:
 
     MemoryStats ComputeMemoryStats() const;
 
+    // Incremental memory tracking: track sum of item sizes
+    mutable std::atomic<size_t> _cachedItemsSize;
+
     std::unordered_map<ModuleID, ModuleDebugInfo> _modulesInfo;
     ICorProfilerInfo4* _profilerInfo;
     bool _isEnabled;

@@ -10,7 +10,8 @@ const std::uint32_t ManagedThreadList::DefaultThreadListSize = 50;
 
 
 ManagedThreadList::ManagedThreadList(ICorProfilerInfo4* pCorProfilerInfo) :
-    _pCorProfilerInfo{pCorProfilerInfo}
+    _pCorProfilerInfo{pCorProfilerInfo},
+    _cachedItemsSize(0)
 {
     _threads.reserve(DefaultThreadListSize);
     _lookupByClrThreadId.reserve(DefaultThreadListSize);
@@ -70,6 +71,9 @@ std::shared_ptr<ManagedThreadInfo> ManagedThreadList::GetOrCreate(ThreadID clrTh
         _threads.push_back(pInfo);
 
         _lookupByClrThreadId[clrThreadId] = pInfo;
+
+        // Incrementally track item size
+        _cachedItemsSize.fetch_add(pInfo->GetMemorySize(), std::memory_order_relaxed);
 
         auto currentCount = _threads.size();
         if (_highCount <= currentCount)
@@ -137,6 +141,9 @@ bool ManagedThreadList::UnregisterThread(ThreadID clrThreadId, std::shared_ptr<M
         std::shared_ptr<ManagedThreadInfo> pInfo = *i; // make a copy so it can be moved later
         if (pInfo->GetClrThreadId() == clrThreadId)
         {
+            // Incrementally track item size (do this BEFORE erasing)
+            _cachedItemsSize.fetch_sub(pInfo->GetMemorySize(), std::memory_order_relaxed);
+
             // remove it from the storage and index
             _threads.erase(i);
             _lookupByClrThreadId.erase(pInfo->GetClrThreadId());
@@ -328,6 +335,9 @@ bool ManagedThreadList::RegisterThread(std::shared_ptr<ManagedThreadInfo>& pThre
         // not registered yet
         _threads.push_back(pThreadInfo);
 
+        // Incrementally track item size
+        _cachedItemsSize.fetch_add(pThreadInfo->GetMemorySize(), std::memory_order_relaxed);
+
         return true;
     }
 
@@ -382,7 +392,22 @@ ManagedThreadList::MemoryStats ManagedThreadList::ComputeMemoryStats() const
 
 size_t ManagedThreadList::GetMemorySize() const
 {
-    return ComputeMemoryStats().GetTotal();
+    std::lock_guard<std::recursive_mutex> lock(_mutex);
+
+    size_t totalSize = sizeof(ManagedThreadList);
+
+    // Container overhead (calculated on-demand, not cached)
+    totalSize += _threads.capacity() * sizeof(std::shared_ptr<ManagedThreadInfo>);
+    totalSize += _lookupByClrThreadId.bucket_count() *
+                 (sizeof(ThreadID) + sizeof(std::shared_ptr<ManagedThreadInfo>) + sizeof(void*));
+    totalSize += _lookupByOsThreadId.bucket_count() *
+                 (sizeof(uint32_t) + sizeof(std::shared_ptr<ManagedThreadInfo>) + sizeof(void*));
+    totalSize += _iterators.capacity() * sizeof(uint32_t);
+
+    // Add cached items size (updated incrementally at add/remove time)
+    totalSize += _cachedItemsSize.load(std::memory_order_relaxed);
+
+    return totalSize;
 }
 
 void ManagedThreadList::LogMemoryBreakdown() const

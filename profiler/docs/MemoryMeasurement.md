@@ -231,6 +231,106 @@ void MyComponent::LogMemoryBreakdown() const {
 - **Performance** - Single lock acquisition per call
 
 
+### 5. Performance Optimization: Incremental Memory Tracking (Optional)
+
+For components with large internal structures, calling `GetMemorySize()` can be expensive if it needs to traverse all items. An optimization is to **track item sizes incrementally** as they're added/removed, and only calculate container overhead on-demand.
+
+**Optimized components:** `ManagedThreadList`, `FrameStore`, `DebugInfoStore`, `HeapSnapshotManager`
+
+#### Pattern
+
+**Key insight:** Modifications should be O(1), not O(n). Add/subtract item sizes incrementally; calculate container overhead only in `GetMemorySize()`.
+
+1. **Add cached items size field:**
+```cpp
+// In header file
+private:
+    // Track sum of item sizes (strings, nested objects, etc.)
+    mutable std::atomic<size_t> _cachedItemsSize;
+```
+
+2. **Initialize in constructor:**
+```cpp
+MyComponent::MyComponent() : _cachedItemsSize(0) {
+    // No need to calculate anything - starts at zero
+}
+```
+
+3. **Implement GetMemorySize() to calculate container overhead + cached items:**
+```cpp
+size_t MyComponent::GetMemorySize() const {
+    std::lock_guard<std::mutex> lock(_mutex);
+
+    size_t totalSize = sizeof(MyComponent);
+
+    // Calculate container overhead on-demand (cheap, no iteration)
+    totalSize += _items.bucket_count() * (sizeof(Key) + sizeof(Value) + sizeof(void*));
+
+    // Add cached items size (updated incrementally at add/remove time)
+    totalSize += _cachedItemsSize.load(std::memory_order_relaxed);
+
+    return totalSize;
+}
+```
+
+4. **Increment size when adding items (O(1)):**
+```cpp
+void MyComponent::AddItem(Item item) {
+    std::lock_guard<std::mutex> lock(_mutex);
+    _items.push_back(item);
+
+    // Calculate THIS item's size and add it
+    size_t itemSize = item.name.capacity() + item.data.capacity();
+    _cachedItemsSize.fetch_add(itemSize, std::memory_order_relaxed);
+}
+```
+
+5. **Decrement size when removing items (O(1)):**
+```cpp
+void MyComponent::RemoveItem(ItemId id) {
+    std::lock_guard<std::mutex> lock(_mutex);
+    auto it = _items.find(id);
+    if (it != _items.end()) {
+        // Calculate THIS item's size and subtract it BEFORE erasing
+        size_t itemSize = it->second.name.capacity() + it->second.data.capacity();
+        _cachedItemsSize.fetch_sub(itemSize, std::memory_order_relaxed);
+
+        _items.erase(it);
+    }
+}
+```
+
+6. **Reset to zero when clearing:**
+```cpp
+void MyComponent::Clear() {
+    std::lock_guard<std::mutex> lock(_mutex);
+    _items.clear();
+    _cachedItemsSize.store(0, std::memory_order_relaxed);
+}
+```
+
+#### Trade-offs
+
+**Pros:**
+- **O(1) modifications** - just add/subtract a single size value
+- **Fast GetMemorySize()** - only calculates container overhead, no item iteration
+- **Safe for frequent metric emission**
+- **No performance impact on hot paths**
+
+**Cons:**
+- Must remember to update `_cachedItemsSize` at every modification point
+- Slightly more complex than naive traversal
+
+**When to use:**
+- Components with large collections (>100 items)
+- Components where `GetMemorySize()` is called frequently (metrics)
+- Components with frequent additions/removals
+
+**When NOT to use:**
+- Small collections (<50 items) where traversal is cheap
+- Rarely modified AND rarely queried structures
+
+
 ### 6. Register Metrics and Add Shutdown Logging
 
 In `CorProfilerCallback::InitializeServices()`, register the memory footprint metric:
@@ -298,6 +398,11 @@ ManagedThreadList Memory Breakdown:
 - Hash map bucket estimates
 - Iterator vector capacity
 
+**Performance Optimization:**
+- Uses incremental memory tracking (`_cachedItemsSize` tracks sum of all ManagedThreadInfo sizes)
+- `GetMemorySize()` calculates container overhead + cached items size (no iteration through items)
+- `_cachedItemsSize` updated at O(1) cost when threads are added/removed
+
 
 ### FrameStore
 
@@ -337,6 +442,11 @@ FrameStore Memory Breakdown:
 - Shows both entry counts and bucket counts for each map
 - Helps identify which caches are growing
 
+**Performance Optimization:**
+- Uses incremental memory tracking (`_cachedItemsSize` tracks sum of all string capacities across all caches)
+- `GetMemorySize()` calculates container overhead + cached items size (no iteration through items)
+- `_cachedItemsSize` updated at O(1) cost when methods/types/frames are added
+
 
 ### DebugInfoStore
 
@@ -359,6 +469,21 @@ DebugInfoStore Memory Breakdown:
   Module infos content:    125000 bytes
   Total memory:            128264 bytes (125.26 KB)
 ```
+
+#### Implementation Details
+
+**DebugInfoStore::GetMemorySize()**
+- Base object size
+- Modules map bucket count and entries
+- For each ModuleDebugInfo:
+  - Module path string capacity
+  - Files vector capacity and string capacities
+  - SymbolsDebugInfo vector capacity
+
+**Performance Optimization:**
+- Uses incremental memory tracking (`_cachedItemsSize` tracks sum of module info sizes)
+- `GetMemorySize()` calculates container overhead + cached items size (no iteration through items)
+- `_cachedItemsSize` updated at O(1) cost when modules are parsed
 
 
 ### AppDomainStore
@@ -501,9 +626,15 @@ HeapSnapshotManager Memory Breakdown:
 
 #### Implementation Details
 
+**HeapSnapshotManager::GetMemorySize()**
 - Base object size
 - Histogram map storage with bucket estimates
 - Sum of all `ClassHistogramEntry` objects including string capacities for class names
+
+**Performance Optimization:**
+- Uses incremental memory tracking (`_cachedItemsSize` tracks sum of all ClassName string capacities)
+- `GetMemorySize()` calculates container overhead + cached items size (no iteration through items)
+- `_cachedItemsSize` updated at O(1) cost when class types are added or histogram is cleared
 
 
 ### NetworkProvider

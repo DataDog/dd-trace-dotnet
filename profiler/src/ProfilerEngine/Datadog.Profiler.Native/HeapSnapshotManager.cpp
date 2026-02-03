@@ -36,7 +36,8 @@ HeapSnapshotManager::HeapSnapshotManager(
     _loopThreadOsId(0),
     _objectCount(0),
     _totalSize(0),
-    _duration(0)
+    _duration(0),
+    _cachedItemsSize(0)
 {
     _isHeapDumpInProgress.store(false),
     _inducedGCNumber.store(-1);
@@ -168,6 +169,7 @@ std::string HeapSnapshotManager::GetAndClearHeapSnapshotText()
 
     std::string heapSnapshotText = GetHeapSnapshotText();
     _classHistogram.clear();
+    _cachedItemsSize.store(0, std::memory_order_relaxed);
 
     return heapSnapshotText;
 }
@@ -235,6 +237,9 @@ void HeapSnapshotManager::OnBulkNodes(
                 histogramEntry.InstanceCount = 1;
                 histogramEntry.TotalSize = size;
                 _classHistogram.emplace(pNodes[i].TypeID, histogramEntry);
+
+                // Incrementally track item size
+                _cachedItemsSize.fetch_add(histogramEntry.ClassName.capacity(), std::memory_order_relaxed);
             }
             else // should never happen  :^(
             {
@@ -402,6 +407,8 @@ void HeapSnapshotManager::StartGCDump()
     {
         std::lock_guard lock(_histogramLock);
         _classHistogram.clear();
+
+        _cachedItemsSize.store(0, std::memory_order_relaxed);
     }
 
     // creating an EventPipe session with the right keywords/verbosity on the .NET profider triggers a GC heap dump
@@ -512,7 +519,17 @@ HeapSnapshotManager::MemoryStats HeapSnapshotManager::ComputeMemoryStats() const
 
 size_t HeapSnapshotManager::GetMemorySize() const
 {
-    return ComputeMemoryStats().GetTotal();
+    std::lock_guard<std::recursive_mutex> lock(_histogramLock);
+
+    size_t totalSize = sizeof(HeapSnapshotManager);
+
+    // Calculate container overhead on-demand
+    totalSize += _classHistogram.bucket_count() * (sizeof(ClassID) + sizeof(ClassHistogramEntry) + sizeof(void*));
+
+    // Add cached items size (updated incrementally)
+    totalSize += _cachedItemsSize.load(std::memory_order_relaxed);
+
+    return totalSize;
 }
 
 void HeapSnapshotManager::LogMemoryBreakdown() const

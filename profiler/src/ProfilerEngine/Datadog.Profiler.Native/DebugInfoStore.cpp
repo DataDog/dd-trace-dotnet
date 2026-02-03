@@ -20,7 +20,8 @@ const std::uint32_t DebugInfoStore::NoStartLine = 0;
 
 DebugInfoStore::DebugInfoStore(ICorProfilerInfo4* profilerInfo, IConfiguration* _configuration) noexcept :
     _profilerInfo{profilerInfo},
-    _isEnabled{_configuration->IsDebugInfoEnabled()}
+    _isEnabled{_configuration->IsDebugInfoEnabled()},
+    _cachedItemsSize(0)
 {
 }
 
@@ -134,6 +135,16 @@ void DebugInfoStore::ParseModuleDebugInfo(ModuleID moduleId)
     {
         Log::Warn("Unexpected error happened while parsing the pdb file (Module: ", filePath, "): ", pdbFile);
     }
+
+    // Incrementally track item size
+    size_t itemSize = moduleInfo.ModulePath.capacity();
+    itemSize += moduleInfo.Files.capacity() * sizeof(std::string);
+    for (const auto& file : moduleInfo.Files)
+    {
+        itemSize += file.capacity();
+    }
+    itemSize += moduleInfo.SymbolsDebugInfo.capacity() * sizeof(SymbolDebugInfo);
+    _cachedItemsSize.fetch_add(itemSize, std::memory_order_relaxed);
 }
 
 fs::path DebugInfoStore::GetModuleFilePath(ModuleID moduleId) const
@@ -191,7 +202,17 @@ DebugInfoStore::MemoryStats DebugInfoStore::ComputeMemoryStats() const
 
 size_t DebugInfoStore::GetMemorySize() const
 {
-    return ComputeMemoryStats().GetTotal();
+    std::lock_guard<std::mutex> lock(_modulesMutex);
+
+    size_t totalSize = sizeof(DebugInfoStore);
+
+    // Calculate container overhead on-demand
+    totalSize += _modulesInfo.bucket_count() * (sizeof(ModuleID) + sizeof(ModuleDebugInfo) + sizeof(void*));
+
+    // Add cached items size (updated incrementally)
+    totalSize += _cachedItemsSize.load(std::memory_order_relaxed);
+
+    return totalSize;
 }
 
 void DebugInfoStore::LogMemoryBreakdown() const
