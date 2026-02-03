@@ -37,7 +37,9 @@ internal sealed class GithubActionsEnvironmentValues<TValueProvider>(TValueProvi
     // Regex fallback for log files with embedded JSON (handles multi-line)
     // Matches: "k": "check_run_id" ... "v": 55411116365
     private static readonly Regex CheckRunIdRegex = new(
-        @"""k""\s*:\s*""check_run_id""\s*,\s*""v""\s*:\s*(\d+)",
+        """
+        "k"\s*:\s*"check_run_id"\s*,\s*"v"\s*:\s*(\d+)
+        """,
         RegexOptions.Compiled | RegexOptions.Singleline);
 
     private static string[] GetDiagnosticDirectories()
