@@ -17,6 +17,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.SocketsH
 /// <summary>
 /// System.Net.Http.SocketsHttpHandler Ocelot.Requester.MessageInvokerPool::CreateHandler(Ocelot.Configuration.DownstreamRoute) calltarget instrumentation
 /// </summary>
+/// <remarks>
+/// Target method: <see href="https://github.com/ThreeMammals/Ocelot/blob/24.1.0/src/Ocelot/Requester/MessageInvokerPool.cs#L88">MessageInvokerPool.CreateHandler</see>
+/// </remarks>
 [InstrumentMethod(
     AssemblyName = "Ocelot",
     TypeName = "Ocelot.Requester.MessageInvokerPool",
