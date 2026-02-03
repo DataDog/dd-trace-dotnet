@@ -308,6 +308,37 @@ The tracer runs in-process with customer applications and must have minimal perf
   - Example: `EnvironmentVariableProvider` in managed loader
 - **Avoid Allocation in Logging**: Use format strings (`Log("value: {0}", x)`) instead of interpolation (`Log($"value: {x}")`)
 - **Avoid params Array Allocations**: Provide overloads for common cases (0, 1, 2 args)
+- **Never use ToString() in log arguments**: Use generic log methods instead
+
+## Logging Best Practices
+
+### Log Levels for Retry Operations
+
+When implementing retry logic, use appropriate log levels:
+
+- **Debug**: Intermediate retry attempts (transient errors are expected)
+- **Error**: Final failure after all retries exhausted
+- **Error**: Non-retryable errors (e.g., 400 Bad Request indicates a bug)
+
+### ErrorSkipTelemetry Usage
+
+`Log.ErrorSkipTelemetry` logs locally but does NOT send to Datadog telemetry. Use it for:
+- **Expected environmental errors**: Network connectivity issues, endpoint unavailability
+- **Transient failures**: Errors that are expected in production and self-resolve
+
+**Do NOT use ErrorSkipTelemetry for:**
+- Errors in outer catch blocks that would only catch unexpected exceptions
+- HTTP 400 Bad Request (indicates a bug in our payload)
+- Errors that indicate bugs in the tracer code
+
+**Understanding code flow is critical**: If inner methods already handle expected errors, outer catch blocks should use `Log.Error` since they would only catch unexpected exceptions (bugs).
+
+### Error Messages for Network Failures
+
+When logging final failures for network operations, include:
+1. The endpoint that failed
+2. Number of attempts made
+3. Link to troubleshooting documentation
 
 ## Testing
 
