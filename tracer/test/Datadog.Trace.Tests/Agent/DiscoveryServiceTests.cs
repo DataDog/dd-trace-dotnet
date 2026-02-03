@@ -402,7 +402,7 @@ public class DiscoveryServiceTests
             responseContent: GetConfig(),
             responseHeaders: new Dictionary<string, string> { { AgentHttpHeaderNames.ContainerTagsHash, expectedTagsHash } }));
 
-        var containerMetadata = NullContainerMetadata;
+        var containerMetadata = new ContainerMetadata(containerId: null, entityId: null);
 
         var ds = new DiscoveryService(factory, containerMetadata, InitialRetryDelayMs, MaxRetryDelayMs, RecheckIntervalMs);
         ds.SubscribeToChanges(x => mutex.Set());
