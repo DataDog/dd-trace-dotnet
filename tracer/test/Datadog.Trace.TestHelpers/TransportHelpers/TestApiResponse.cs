@@ -21,9 +21,8 @@ internal class TestApiResponse : IApiResponse
     {
         StatusCode = statusCode;
         _body = body;
-        _headers = headers;
+        _headers = headers ?? new();
         ContentTypeHeader = contentType;
-        _headers = headers ?? new Dictionary<string, string>();
     }
 
     public string ContentTypeHeader { get; }
