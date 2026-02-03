@@ -365,6 +365,28 @@ namespace Datadog.Trace.Agent
                             Log.Debug<int, int>("Flushing {Spans} spans across {Traces} traces. CanComputeStats is disabled.", buffer.SpanCount, buffer.TraceCount);
                         }
 
+                        if (buffer is { SpanCount: > 0, Data.Count: > 0 })
+                        {
+                            var bufferData = buffer.Data;
+
+                            // compute file names and create directory
+                            const string traceOutputPath = @"D:\temp\azfunc-traces\";
+                            var now = DateTimeOffset.UtcNow;
+                            var jsonFileName = System.IO.Path.Combine(traceOutputPath, $"trace_payload_{now:yyyy-MM-dd_HH-mm-ss-fffffff}_{Guid.NewGuid():N}.json");
+                            var msgPackFileName = System.IO.Path.Combine(traceOutputPath, $"trace_payload_{now:yyyy-MM-dd_HH-mm-ss-fffffff}_{Guid.NewGuid():N}.msgpack");
+                            System.IO.Directory.CreateDirectory(traceOutputPath);
+
+                            // save MessagePack to file
+                            using var msgPackFileStream = System.IO.File.Open(msgPackFileName, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.Read);
+                            msgPackFileStream.Write(bufferData.Array!, bufferData.Offset, bufferData.Count);
+
+                            // copy MessagePack bytes into a byte[], convert to JSON, and save to file
+                            var bytes = new byte[bufferData.Count];
+                            Buffer.BlockCopy(bufferData.Array!, bufferData.Offset, bytes, 0, bufferData.Count);
+                            var json = Vendors.MessagePack.MessagePackSerializer.ToJson(bytes);
+                            System.IO.File.WriteAllText(jsonFileName, json, Vendors.MessagePack.StringEncoding.UTF8);
+                        }
+
                         var success = await _api.SendTracesAsync(buffer.Data, buffer.TraceCount, CanComputeStats, droppedP0Traces, droppedP0Spans, _apmTracingEnabled).ConfigureAwait(false);
 
                         TelemetryFactory.Metrics.RecordCountTraceChunkSent(buffer.TraceCount);
