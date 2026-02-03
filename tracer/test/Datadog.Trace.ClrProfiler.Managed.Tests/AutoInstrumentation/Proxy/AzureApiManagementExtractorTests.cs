@@ -39,6 +39,7 @@ public class AzureApiManagementExtractorTests
         data.HttpMethod.Should().Be("POST");
         data.Path.Should().Be("/api/v1/users");
         data.Stage.Should().BeNull(); // Azure doesn't use stage
+        data.Region.Should().Be("canada central");
     }
 
     [Fact]
@@ -62,6 +63,7 @@ public class AzureApiManagementExtractorTests
         data.HttpMethod.Should().BeNull();
         data.Path.Should().BeNull();
         data.Stage.Should().BeNull();
+        data.Region.Should().BeNull();
     }
 
     [Theory]

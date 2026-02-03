@@ -61,7 +61,7 @@ public class InferredProxyCoordinatorTests
     {
         // header values not important
         var headers = ProxyTestHelpers.CreateValidHeaders();
-        var proxyData = new InferredProxyData("aws-apigateway", DateTimeOffset.UtcNow, "test.api.com", "GET", "/api/test", "prod");
+        var proxyData = new InferredProxyData("aws-apigateway", DateTimeOffset.UtcNow, "test.api.com", "GET", "/api/test", "prod", null);
 
         _extractor.Setup(e => e.TryExtract(
                       It.IsAny<NameValueHeadersCollection>(),
@@ -88,7 +88,8 @@ public class InferredProxyCoordinatorTests
             "test.api.com",
             "GET",
             "/api/test",
-            "prod");
+            "prod",
+            null);
 
         _extractor.Setup(e => e.TryExtract(
                       It.IsAny<NameValueHeadersCollection>(),
