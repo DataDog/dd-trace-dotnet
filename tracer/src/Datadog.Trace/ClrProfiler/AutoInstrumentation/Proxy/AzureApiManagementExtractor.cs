@@ -18,8 +18,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
 internal sealed class AzureApiManagementExtractor : IInferredProxyExtractor
 {
     // This is the expected value of the x-dd-proxy header
-    private const string AzureApim = InferredProxySpanHelper.AzureProxyHeaderValue;
-
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AzureApiManagementExtractor>();
 
     public bool TryExtract<TCarrier, TCarrierGetter>(TCarrier carrier, TCarrierGetter carrierGetter, out InferredProxyData data)
@@ -42,12 +40,12 @@ internal sealed class AzureApiManagementExtractor : IInferredProxyExtractor
             var httpMethod = ParseUtility.ParseString(carrier, carrierGetter, InferredProxyHeaders.HttpMethod);
             var path = ParseUtility.ParseString(carrier, carrierGetter, InferredProxyHeaders.Path);
             var region = ParseUtility.ParseString(carrier, carrierGetter, InferredProxyHeaders.Region);
-            data = new InferredProxyData(AzureApim, startTime, domainName, httpMethod, path, null);
+            data = new InferredProxyData(InferredProxySpanHelper.AzureProxyHeaderValue, startTime, domainName, httpMethod, path, null, region);
 
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
                 Log.Debug(
-                    "Successfully extracted proxy data: StartTime={StartTime}, Domain={Domain}, Method={Method}, Path={Path}, Stage={Stage}",
+                    "Successfully extracted proxy data: StartTime={StartTime}, Domain={Domain}, Method={Method}, Path={Path}, Region={Region}",
                     [startTimeHeaderValue, domainName, httpMethod, path, region]);
             }
 
@@ -55,7 +53,7 @@ internal sealed class AzureApiManagementExtractor : IInferredProxyExtractor
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error extracting proxy data from {Proxy} headers", AzureApim);
+            Log.Error(ex, "Error extracting proxy data from {Proxy} headers", InferredProxySpanHelper.AzureProxyHeaderValue);
             return false;
         }
     }

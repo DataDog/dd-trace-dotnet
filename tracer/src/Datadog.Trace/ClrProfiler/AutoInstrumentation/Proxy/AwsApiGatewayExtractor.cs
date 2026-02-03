@@ -18,8 +18,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
 internal sealed class AwsApiGatewayExtractor : IInferredProxyExtractor
 {
     // This is the expected value of the x-dd-proxy header
-    private const string ProxyName = "aws-apigateway";
-
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AwsApiGatewayExtractor>();
 
     public bool TryExtract<TCarrier, TCarrierGetter>(TCarrier carrier, TCarrierGetter carrierGetter, out InferredProxyData data)
@@ -43,7 +41,7 @@ internal sealed class AwsApiGatewayExtractor : IInferredProxyExtractor
             var path = ParseUtility.ParseString(carrier, carrierGetter, InferredProxyHeaders.Path);
             var stage = ParseUtility.ParseString(carrier, carrierGetter, InferredProxyHeaders.Stage);
 
-            data = new InferredProxyData(ProxyName, startTime, domainName, httpMethod, path, stage);
+            data = new InferredProxyData(InferredProxySpanHelper.AwsProxyHeaderValue, startTime, domainName, httpMethod, path, stage, null);
 
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
@@ -56,7 +54,7 @@ internal sealed class AwsApiGatewayExtractor : IInferredProxyExtractor
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error extracting proxy data from {Proxy} headers", ProxyName);
+            Log.Error(ex, "Error extracting proxy data from {Proxy} headers", InferredProxySpanHelper.AwsProxyHeaderValue);
             return false;
         }
     }

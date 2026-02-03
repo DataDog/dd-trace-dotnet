@@ -122,7 +122,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 var functionName = instanceParam.FunctionDescriptor.ShortName;
                 var rootSpanName = tracer.InternalActiveScope?.Root.Span.OperationName;
                 // Check if there's an inferred proxy span (e.g., azure.apim) that we shouldn't overwrite
-                var isProxySpan = rootSpanName?.Contains(AzureApim) == true;
+                var isProxySpan = rootSpanName?.Equals(AzureApim) == true;
                 // Ignoring null because guaranteed running in AAS
                 if (tracer.Settings.AzureAppServiceMetadata is { IsIsolatedFunctionsApp: true }
                  && tracer.InternalActiveScope is { } activeScope)
@@ -257,9 +257,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     switch (triggerType)
                     {
                         case "Http":
-                            var (httpContext, extractedHeaders) = ExtractPropagatedContextandHeadersFromHttp(functionContext, entry.Key as string);
-                            extractedContext = httpContext;
-                            Log.Debug("These are the extracted headers {Headers}", extractedHeaders);
+                            (extractedContext, var extractedHeaders) = ExtractPropagatedContextAndHeadersFromHttp(functionContext, entry.Key as string);
                             InferredProxyScopePropagationContext? proxyContext = null;
 
                             // Check if there's an active AspNetCore span
@@ -275,6 +273,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                                 }
                             }
 
+                            extractedContext = extractedContext.MergeBaggageInto(Baggage.Current);
                             break;
 
                         case "ServiceBus" when tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus):
@@ -293,7 +292,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 
                 // Check if there's an APIM proxy span that we shouldn't overwrite
                 var spanRootName = tracer.InternalActiveScope?.Root.Span.OperationName;
-                var isProxySpan = spanRootName?.Contains(AzureApim) == true;
+                var isProxySpan = spanRootName?.Equals(AzureApim) == true;
 
                 if (tracer.InternalActiveScope == null)
                 {
@@ -344,7 +343,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             return scope;
         }
 
-        private static (PropagationContext Context, Dictionary<string, object>? Headers) ExtractPropagatedContextandHeadersFromHttp<T>(T context, string? bindingName)
+        private static (PropagationContext Context, Dictionary<string, object>? Headers) ExtractPropagatedContextAndHeadersFromHttp<T>(T context, string? bindingName)
             where T : IFunctionContext
         {
             // Need to try and grab the headers from the context

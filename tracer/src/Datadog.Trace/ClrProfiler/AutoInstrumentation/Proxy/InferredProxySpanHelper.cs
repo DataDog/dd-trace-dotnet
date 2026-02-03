@@ -20,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
 internal static class InferredProxySpanHelper
 {
     public const string AzureProxyHeaderValue = "azure-apim";
-    private const string AwsProxyHeaderValue = "aws-apigateway";
+    public const string AwsProxyHeaderValue = "aws-apigateway";
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(InferredProxySpanHelper));
     private static InferredProxyCoordinator? _awsCoordinator;
     private static InferredProxyCoordinator? _azureCoordinator;
