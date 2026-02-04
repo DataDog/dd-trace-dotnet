@@ -281,33 +281,25 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     FullName = functionContext.FunctionDefinition.EntryPoint,
                 };
 
-                // If active scope didn't flow via AsyncLocal, try to get it from HttpContext.Items (for HTTP triggers using ASP.NET Core integration).
-                // This happens in Azure Functions isolated worker where middleware breaks AsyncLocal flow.
+                // Try to get parent span context from (in order):
+                // - existing local span
+                // - HttpContext.Items, for HTTP triggers using ASP.NET Core integration. Set in AspNetCoreHttpRequestHandler.StartAspNetCorePipelineScope().
+                // - extracted from propagation headers
                 var parentSpanContext = tracer.InternalActiveScope?.Span.Context ??
                                         GetAspNetCoreScope(functionContext)?.Span.Context ??
                                         extractedContext.SpanContext;
 
-                if (parentSpanContext == null)
-                {
-                    // no local parent available, create a local root span
-                    tags.SetAnalyticsSampleRate(IntegrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: false);
-                    scope = tracer.StartActiveInternal(OperationName, parent: extractedContext.SpanContext, tags: tags);
+                scope = tracer.StartActiveInternal(OperationName, parent: parentSpanContext, tags: tags);
+                var rootSpan = scope.Root.Span;
 
-                    if (extractedContext.SpanContext is { } extractedSpanContext)
-                    {
-                        Log.Debug("Azure Functions span creation: Parented to extracted context. parent_id: {ParentId}, trace_id: {TraceId}", extractedSpanContext.SpanId, extractedSpanContext.TraceId);
-                    }
-                    else
-                    {
-                        Log.Debug("Azure Functions span creation: Created as root span (no parent available)");
-                    }
+                if (scope.Span == rootSpan)
+                {
+                    // this is the local root span
+                    tags.SetAnalyticsSampleRate(IntegrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: false);
                 }
                 else
                 {
-                    scope = tracer.StartActiveInternal(OperationName, parent: parentScope.Span.Context, tags: tags);
-                    var rootSpan = scope.Root.Span;
-
-                    // copy some tags to the root span
+                    // this is NOT the local root span, copy some tags to the root span
                     AzureFunctionsTags.SetRootSpanTags(
                         rootSpan,
                         shortName: tags.ShortName,
