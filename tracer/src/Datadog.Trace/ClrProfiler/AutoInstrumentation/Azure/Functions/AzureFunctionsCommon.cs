@@ -30,14 +30,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 {
     internal static class AzureFunctionsCommon
     {
-        public const string IntegrationName = nameof(Configuration.IntegrationId.AzureFunctions);
-
-        public const string OperationName = AzureFunctionsConstants.AzureFunctionName;
-        public const string SpanType = SpanTypes.Serverless;
-        public const string AzureApim = AzureFunctionsConstants.AzureApimName;
-        public const IntegrationId IntegrationId = Configuration.IntegrationId.AzureFunctions;
+        private const string HttpRequestContextKey = "HttpRequestContext";
+        private const string SpanType = SpanTypes.Serverless;
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AzureFunctionsCommon));
+
+        public const string IntegrationName = nameof(Configuration.IntegrationId.AzureFunctions);
+        public const string OperationName = AzureFunctionsConstants.AzureFunctionName;
+        public const string AzureApim = AzureFunctionsConstants.AzureApimName;
+        public const IntegrationId IntegrationId = Configuration.IntegrationId.AzureFunctions;
 
         public static CallTargetState OnFunctionExecutionBegin<TTarget, TFunction>(TTarget instance, TFunction instanceParam)
             where TFunction : IFunctionInstance
@@ -256,11 +257,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     {
                         case "Http":
                         {
-                            // Detect ASP.NET Core integration by checking for HttpContext in FunctionContext.Items
-                            // In ASP.NET Core mode, HTTP requests are proxied directly (not via gRPC)
-                            // The headers in the gRPC message are STALE (contain host's root span context)
+                            // Detect ASP.NET Core integration by checking for HttpContext in FunctionContext.Items.
+                            // In ASP.NET Core mode, HTTP requests are proxied directly (not via gRPC).
+                            // The headers in the gRPC message are STALE (contain host's root span context).
                             // The key "HttpRequestContext" is set by FunctionsHttpProxyingMiddleware in the worker
-                            var isAspNetCoreIntegration = functionContext.Items?.ContainsKey("HttpRequestContext") == true;
+                            var isAspNetCoreIntegration = functionContext.Items?.ContainsKey(HttpRequestContextKey) == true;
 
                             if (isAspNetCoreIntegration)
                             {
@@ -358,7 +359,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             try
             {
                 if (functionContext.Items != null &&
-                    functionContext.Items.TryGetValue("HttpRequestContext", out var httpContextObj) &&
+                    functionContext.Items.TryGetValue(HttpRequestContextKey, out var httpContextObj) &&
                     httpContextObj is Microsoft.AspNetCore.Http.HttpContext httpContext &&
                     httpContext.Items.TryGetValue(AspNetCoreHttpRequestHandler.HttpContextActiveScopeKey, out var scopeObj) &&
                     scopeObj is Scope aspNetCoreScope)
