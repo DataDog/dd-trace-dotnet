@@ -28,7 +28,7 @@ internal static class AgentTransportStrategy
     /// Used in logging only </param>
     /// <param name="tcpTimeout">The timeout to use in TCP/IP requests</param>
     /// <param name="defaultAgentHeaders">The default headers to add to HttpClient requests</param>
-    /// <param name="getHttpHeaderHelper">A func that returns an <see cref="HttpHeaderHelperBase"/> for use
+    /// <param name="httpHeaderHelper">A func that returns an <see cref="HttpHeaderHelperBase"/> for use
     /// with <see cref="DatadogHttpClient"/></param>
     /// <param name="getBaseEndpoint">A func that returns the endpoint to send requests to for a given "base" endpoint.
     /// The base endpoint will be <see cref="ExporterSettings.AgentUri" /> for TCP requests and
@@ -38,7 +38,7 @@ internal static class AgentTransportStrategy
         string productName,
         TimeSpan? tcpTimeout,
         KeyValuePair<string, string>[] defaultAgentHeaders,
-        Func<HttpHeaderHelperBase> getHttpHeaderHelper,
+        HttpHeaderHelperBase httpHeaderHelper,
         Func<Uri, Uri> getBaseEndpoint)
     {
         var strategy = settings.TracesTransport;
@@ -49,7 +49,7 @@ internal static class AgentTransportStrategy
                 Log.Information<string, string?, int>("Using " + nameof(NamedPipeClientStreamFactory) + " for {ProductName} transport, with pipe name {TracesPipeName} and timeout {TracesPipeTimeoutMs}ms.", productName, settings.TracesPipeName, settings.TracesPipeTimeoutMs);
                 return new HttpStreamRequestFactory(
                     new NamedPipeClientStreamFactory(settings.TracesPipeName, settings.TracesPipeTimeoutMs),
-                    new DatadogHttpClient(getHttpHeaderHelper()),
+                    new DatadogHttpClient(httpHeaderHelper),
                     getBaseEndpoint(Localhost));
 
             case TracesTransportType.UnixDomainSocket:
@@ -64,7 +64,7 @@ internal static class AgentTransportStrategy
                 Log.Information<string, string?, int>("Using " + nameof(UnixDomainSocketStreamFactory) + " for {ProductName} transport, with Unix Domain Sockets path {TracesUnixDomainSocketPath} and timeout {TracesPipeTimeoutMs}ms.", productName, settings.TracesUnixDomainSocketPath, settings.TracesPipeTimeoutMs);
                 return new HttpStreamRequestFactory(
                     new UnixDomainSocketStreamFactory(settings.TracesUnixDomainSocketPath),
-                    new DatadogHttpClient(getHttpHeaderHelper()),
+                    new DatadogHttpClient(httpHeaderHelper),
                     getBaseEndpoint(Localhost));
 #else
                 Log.Error("Using Unix Domain Sockets for {ProductName} transport is only supported on .NET Core 3.1 and greater. Falling back to default transport.", productName);

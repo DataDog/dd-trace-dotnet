@@ -166,9 +166,9 @@ internal sealed class TestOptimizationTracerManagement : ITestOptimizationTracer
                 exporterSettings,
                 productName: "CI Visibility",
                 tcpTimeout: null,
-                AgentHttpHeaderNames.DefaultHeaders,
-                () => new TraceAgentHttpHeaderHelper(),
-                uri => uri);
+                defaultAgentHeaders: AgentHttpHeaderNames.DefaultHeaders,
+                httpHeaderHelper: new TraceAgentHttpHeaderHelper(),
+                getBaseEndpoint: uri => uri);
         }
         else
         {

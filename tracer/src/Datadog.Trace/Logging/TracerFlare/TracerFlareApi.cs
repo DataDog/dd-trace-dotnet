@@ -100,9 +100,9 @@ internal sealed class TracerFlareApi
             exporterSettings,
             productName: "tracer_flare",
             tcpTimeout: TimeSpan.FromSeconds(30),
-            AgentHttpHeaderNames.MinimalHeaders,
-            () => new MinimalAgentHeaderHelper(),
-            uri => uri);
+            defaultAgentHeaders: AgentHttpHeaderNames.MinimalHeaders,
+            httpHeaderHelper: new MinimalAgentHeaderHelper(),
+            getBaseEndpoint: uri => uri);
         return requestFactory;
     }
 
