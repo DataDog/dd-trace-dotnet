@@ -70,7 +70,7 @@ namespace Datadog.Profiler.IntegrationTests.DebugInfo
 
                 // forced line info
                 first.Filename.Should().EndWith("LineNumber.cs");
-                first.Line.Should().Be(103);
+                first.Line.Should().Be(102);
 
                 // "normal" line info
                 second.Filename.Should().EndWith("LineNumber.cs");

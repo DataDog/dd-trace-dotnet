@@ -45,22 +45,22 @@ namespace
     }
 
     // Helper function to build path to a sample PDB based on process location
-    // Returns the PDB path and module path (via out parameter)
-    fs::path GetSamplePdbPath(const std::string& sampleName, const std::string& targetFramework, fs::path& outModulePath)
+    // Returns a pair of (pdbPath, modulePath)
+    std::pair<fs::path, fs::path> GetSamplePdbPath(const std::string& sampleName, const std::string& targetFramework)
     {
         std::string processPath;
         if (!GetCurrentProcessPath(processPath))
         {
-            return fs::path();
+            return {};
         }
 
         // Build path relative to the process location: ../../src/Demos/{sampleName}/{targetFramework}/{sampleName}.pdb
         fs::path pdbPath = fs::path(processPath).parent_path() / ".." / ".." / "src" / "Demos" / sampleName / targetFramework / (sampleName + ".pdb");
 
         // Module is in the same directory with .exe extension
-        outModulePath = pdbPath.parent_path() / (sampleName + ".exe");
+        fs::path modulePath = pdbPath.parent_path() / (sampleName + ".exe");
 
-        return pdbPath;
+        return {pdbPath, modulePath};
     }
 } // anonymous namespace
 
@@ -71,8 +71,7 @@ namespace
 TEST(DebugInfoStoreTest, ParseModuleDebugInfo_NetFramework)
 {
     // Get paths to the sample PDB and module
-    fs::path modulePath;
-    fs::path pdbPath = GetSamplePdbPath("Samples.Computer01", "net48", modulePath);
+    auto [pdbPath, modulePath] = GetSamplePdbPath("Samples.Computer01", "net48");
 
     if (pdbPath.empty())
     {
@@ -121,8 +120,8 @@ TEST(DebugInfoStoreTest, ParseModuleDebugInfo_NetFramework)
 
     // Parse the PDB
     ModuleDebugInfo moduleInfo;
-    SymParser parser(pMetaDataImport, &moduleInfo);
-    bool success = parser.LoadPdbFile(pdbPath.string(), modulePath.string());
+    SymParser parser;
+    bool success = parser.LoadPdbFile(pMetaDataImport, &moduleInfo, pdbPath.string(), modulePath.string());
 
     // COM cleanup is automatic via CComPtr
     if (comInitialized)
@@ -180,8 +179,7 @@ TEST(DebugInfoStoreTest, ParseModuleDebugInfo_NetFramework)
 TEST(DebugInfoStoreTest, ParseModuleDebugInfo_NetCorePortable)
 {
     // Get paths to the sample PDB and module
-    fs::path modulePath;
-    fs::path pdbPath = GetSamplePdbPath("Samples.BuggyBits", "net10.0", modulePath);
+    auto [pdbPath, modulePath] = GetSamplePdbPath("Samples.BuggyBits", "net10.0");
     if (pdbPath.empty())
     {
         GTEST_SKIP() << "Failed to get current process path";
