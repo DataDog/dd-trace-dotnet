@@ -57,7 +57,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             return new CallTargetState(scope);
         }
 
-        internal static Scope? CreateScope<TFunction>(Tracer tracer, TFunction instanceParam)
+        private static Scope? CreateScope<TFunction>(Tracer tracer, TFunction instanceParam)
             where TFunction : IFunctionInstance
         {
             Scope? scope = null;
