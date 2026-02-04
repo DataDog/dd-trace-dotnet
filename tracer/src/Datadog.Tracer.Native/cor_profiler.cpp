@@ -271,7 +271,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         if (isIastEnabled || isRaspEnabled)
         {
             auto modules = module_ids.Get();
-            _dataflow = new iast::Dataflow(info_, rejit_handler, modules.Ref(), runtime_information_);
+            _dataflow = new iast::Dataflow(info_, rejit_handler, modules.Ref().list, runtime_information_);
         }
         else
         {
@@ -659,7 +659,7 @@ std::string GetLibDatadogFilePath()
     return libdatadog_file_path.string();
 }
 
-HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& modules)
+HRESULT CorProfiler::TryRejitModule(ModuleID module_id, ModuleIdCollection& modules)
 {
     const auto& module_info = GetModuleInfo(this->info_, module_id);
     if (!module_info.IsValid())
@@ -957,7 +957,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
         RewriteIsManualInstrumentationOnly(module_metadata, module_id);
     }
 
-    modules.push_back(module_id);
+    modules.Add(module_id);
 
     bool searchForTraceAttribute = trace_annotations_enabled;
     if (searchForTraceAttribute)
@@ -1256,8 +1256,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadStarted(ModuleID module_id)
         _dataflow->ModuleUnloaded(module_id);
     }
 
-    auto new_end = std::remove(modules.begin(), modules.end(), module_id);
-    modules.erase(new_end, modules.end());
+    modules.Remove(module_id);
 
     const auto& moduleInfo = GetModuleInfo(this->info_, module_id);
     if (!moduleInfo.IsValid())
@@ -1307,7 +1306,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Shutdown()
     Logger::Info("Exiting...");
     if (Logger::IsDebugEnabled())
     {
-        Logger::Debug("   ModuleIds: ", modules->size());
+        Logger::Debug("   ModuleIds: ", modules->list.size());
         Logger::Debug("   IntegrationDefinitions: ", integration_definitions_.size());
         Logger::Debug("   DefinitionsIds: ", definitions->size());
         Logger::Debug("   ManagedProfilerLoadedAppDomains: ", managed_profiler_loaded_app_domains.size());
@@ -1422,7 +1421,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
 
     // we have to check if the Id is in the module_ids_ vector.
     // In case is True we create a local ModuleMetadata to inject the loader.
-    if (!shared::Contains(modules.Ref(), module_id))
+    if (!modules.Ref().Contains(module_id))
     {
         if (debugger_instrumentation_requester != nullptr)
         {
@@ -1886,12 +1885,12 @@ void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* it
             }
         }
 
-        Logger::Info("Total number of modules to analyze: ", modules->size());
+        Logger::Info("Total number of modules to analyze: ", modules->list.size());
         if (rejit_handler != nullptr)
         {
             auto promise = std::make_shared<std::promise<ULONG>>();
             std::future<ULONG> future = promise->get_future();
-            tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(modules.Ref(), integrationDefinitions,
+            tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(modules.Ref().list, integrationDefinitions,
                                                                                  promise);
 
             // wait and get the value from the future<int>
@@ -1986,12 +1985,12 @@ long CorProfiler::RegisterCallTargetDefinitions(WCHAR* id, CallTargetDefinition3
             integration_definitions_.push_back(integration);
         }
 
-        Logger::Info("Total number of modules to analyze: ", modules->size());
+        Logger::Info("Total number of modules to analyze: ", modules->list.size());
         if (rejit_handler != nullptr)
         {
             auto promise = std::make_shared<std::promise<ULONG>>();
             std::future<ULONG> future = promise->get_future();
-            tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(modules.Ref(), integrationDefinitions, promise);
+            tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(modules.Ref().list, integrationDefinitions, promise);
 
             // wait and get the value from the future<int>
             numReJITs = future.get();
@@ -2026,7 +2025,7 @@ long CorProfiler::EnableCallTargetDefinitions(UINT32 enabledCategories)
             auto modules = module_ids.Get();
             auto promise = std::make_shared<std::promise<ULONG>>();
             std::future<ULONG> future = promise->get_future();
-            tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(modules.Ref(), affectedDefinitions,
+            tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(modules.Ref().list, affectedDefinitions,
                                                                                  promise);
 
             // wait and get the value from the future<int>
@@ -2058,7 +2057,7 @@ long CorProfiler::DisableCallTargetDefinitions(UINT32 disabledCategories)
             auto modules = module_ids.Get();
             auto promise = std::make_shared<std::promise<ULONG>>();
             std::future<ULONG> future = promise->get_future();
-            tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(modules.Ref(), affectedDefinitions, promise);
+            tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(modules.Ref().list, affectedDefinitions, promise);
 
             // wait and get the value from the future<int>
             numReverts = future.get();
@@ -2078,7 +2077,7 @@ int CorProfiler::RegisterIastAspects(WCHAR** aspects, int aspectsLength, UINT32 
     {
         Logger::Debug("Creating Dataflow.");
         auto modules = module_ids.Get();
-        dataflow = new iast::Dataflow(info_, rejit_handler, modules.Ref(), runtime_information_);
+        dataflow = new iast::Dataflow(info_, rejit_handler, modules.Ref().list, runtime_information_);
     }
 
     if (dataflow != nullptr)
@@ -2178,13 +2177,13 @@ void CorProfiler::InitializeTraceMethods(WCHAR* id, WCHAR* integration_assembly_
                 *trace_annotation_integration_type.get(), configuration_string);
             auto modules = module_ids.Get();
 
-            DBG("InitializeTraceMethods: Total number of modules to analyze: ", modules->size());
+            DBG("InitializeTraceMethods: Total number of modules to analyze: ", modules->list.size());
             if (rejit_handler != nullptr)
             {
                 auto promise = std::make_shared<std::promise<ULONG>>();
                 std::future<ULONG> future = promise->get_future();
                 tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(
-                    modules.Ref(), integrationDefinitions,
+                    modules.Ref().list, integrationDefinitions,
                     promise);
 
                 // wait and get the value from the future<int>
@@ -4366,7 +4365,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
     bool isAnInternalModule = false;
 
     // Verify that we have the metadata for this module
-    if (!shared::Contains(modules.Ref(), module_id))
+    if (!modules.Ref().Contains(module_id))
     {
         isAnInternalModule = shared::Contains(managedInternalModules_, module_id);
         if (!isAnInternalModule)
