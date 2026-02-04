@@ -21,6 +21,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
+using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Tools.Runner.Gac;
 using Datadog.Trace.Util;
 using Spectre.Console;
@@ -420,6 +421,7 @@ namespace Datadog.Trace.Tools.Runner
             Log.Debug("Creating DiscoveryService for: {AgentUri}", settings.Manager.InitialExporterSettings.AgentUri);
             var discoveryService = DiscoveryService.CreateUnmanaged(
                 settings.Manager.InitialExporterSettings,
+                ContainerMetadata.Instance,
                 tcpTimeout: TimeSpan.FromSeconds(5),
                 initialRetryDelayMs: 200,
                 maxRetryDelayMs: 1000,
