@@ -33,28 +33,31 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
     {
         internal const string IntegrationName = nameof(Configuration.IntegrationId.OpenTelemetry);
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.OpenTelemetry;
+        private static readonly Type? OTelBaggageType = Type.GetType("OpenTelemetry.Baggage, OpenTelemetry.Api", throwOnError: false);
 
         /// <summary>
-        /// OnMethodEnd callback
+        /// OnMethodBegin callback
         /// </summary>
-        /// <typeparam name="TTarget">Type of the target</typeparam>
-        /// <typeparam name="TReturn">Type of the return value</typeparam>
+        /// <typeparam name="TInstance">Type of the instance (null for this static method)</typeparam>
         /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
-        /// <param name="returnValue">Return value</param>
-        /// <param name="exception">Exception instance in case the original code threw an exception.</param>
-        /// <param name="state">Calltarget state value</param>
-        /// <returns>A response value, in an async scenario will be T of Task of T</returns>
-        internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
+        /// <returns>Calltarget state value</returns>
+        internal static CallTargetState OnMethodBegin<TInstance>(TInstance instance)
         {
             if (Tracer.Instance.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId)
-                && returnValue.TryDuckCast<IApiBaggage>(out var apiBaggage))
+                && OTelBaggageType is not null)
             {
-                // We treat Datadog.Trace.Baggage.Current as the single source of truth for the baggage API interopability, so we return a new OpenTelemetry.Baggage
-                // instance that is a copy of the current Datadog.Trace.Baggage.Current.
-                return new CallTargetReturn<TReturn>((TReturn)apiBaggage.Create(Baggage.Current.ToDictionary(kvp => kvp.Key, kvp => kvp.Value))!);
+                DuckType.CreateTypeResult proxyResult = DuckType.GetOrCreateProxyType(typeof(IApiBaggage), OTelBaggageType);
+                if (proxyResult.Success)
+                {
+                    var apiBaggage = proxyResult.CreateInstance<IApiBaggage>(Activator.CreateInstance(OTelBaggageType));
+
+                    // Update the underlying OpenTelemetry.Baggage.Current store to the latest Datadog.Trace.Baggage.Current items.
+                    var baggageHolder = apiBaggage.EnsureBaggageHolder();
+                    baggageHolder.Baggage = apiBaggage.Create(Baggage.Current.ToDictionary(kvp => kvp.Key, kvp => kvp.Value));
+                }
             }
 
-            return new CallTargetReturn<TReturn>(returnValue);
+            return CallTargetState.GetDefault();
         }
     }
 }
