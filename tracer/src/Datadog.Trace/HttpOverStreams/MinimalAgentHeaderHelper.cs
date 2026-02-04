@@ -10,6 +10,12 @@ namespace Datadog.Trace.HttpOverStreams;
 
 internal sealed class MinimalAgentHeaderHelper : HttpHeaderHelperBase
 {
+    public static readonly MinimalAgentHeaderHelper Instance = new();
+
+    private MinimalAgentHeaderHelper()
+    {
+    }
+
     public override KeyValuePair<string, string>[] DefaultHeaders => AgentHttpHeaderNames.MinimalHeaders;
 
     protected override string MetadataHeaders => AgentHttpHeaderNames.HttpSerializedMinimalHeaders;

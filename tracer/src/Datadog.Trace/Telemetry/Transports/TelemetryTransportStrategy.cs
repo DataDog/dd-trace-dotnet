@@ -34,6 +34,6 @@ internal static class TelemetryTransportStrategy
             settings,
             productName: "telemetry",
             tcpTimeout: Timeout,
-            httpHeaderHelper: new TelemetryAgentHttpHeaderHelper(),
+            httpHeaderHelper: TelemetryAgentHttpHeaderHelper.Instance,
             getBaseEndpoint: uri => UriHelpers.Combine(uri, TelemetryConstants.AgentTelemetryEndpoint));
 }

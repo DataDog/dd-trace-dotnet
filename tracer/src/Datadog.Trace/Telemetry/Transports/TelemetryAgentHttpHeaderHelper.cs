@@ -12,6 +12,12 @@ namespace Datadog.Trace.Telemetry.Transports
 {
     internal sealed class TelemetryAgentHttpHeaderHelper : HttpHeaderHelperBase
     {
+        public static readonly TelemetryAgentHttpHeaderHelper Instance = new();
+
+        private TelemetryAgentHttpHeaderHelper()
+        {
+        }
+
         public override KeyValuePair<string, string>[] DefaultHeaders => TelemetryHttpHeaderNames.GetDefaultAgentHeaders();
 
         protected override string MetadataHeaders => TelemetryHttpHeaderNames.HttpSerializedDefaultAgentHeaders;

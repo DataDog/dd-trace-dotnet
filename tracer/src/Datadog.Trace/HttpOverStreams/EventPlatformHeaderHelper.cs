@@ -11,7 +11,9 @@ namespace Datadog.Trace.HttpOverStreams;
 
 internal sealed class EventPlatformHeaderHelper : HttpHeaderHelperBase
 {
-    public EventPlatformHeaderHelper()
+    public static readonly EventPlatformHeaderHelper Instance = new();
+
+    private EventPlatformHeaderHelper()
     {
         const string evpHeaderKey = "X-Datadog-EVP-Subdomain";
         const string evpHeaderValue = "event-platform-intake";
