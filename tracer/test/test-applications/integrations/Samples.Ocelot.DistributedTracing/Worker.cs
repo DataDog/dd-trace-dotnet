@@ -63,7 +63,7 @@ namespace Samples.Ocelot.DistributedTracing
                 await UpdateOcelotInternalConfig(serviceScope.ServiceProvider, address);
 
                 // Send a request through the proxy
-                var client = new HttpClient();
+                using var client = new HttpClient();
 
                 _logger.LogInformation("Sending request to self via Ocelot proxy");
                 var response = await client.GetAsync($"{address}/proxy", stoppingToken);
