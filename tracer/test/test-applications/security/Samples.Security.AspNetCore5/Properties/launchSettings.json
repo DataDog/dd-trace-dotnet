@@ -28,7 +28,6 @@
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
         "DD_APPSEC_ENABLED": "true",
-        "DD_API_SECURITY_ENABLED": "true",
         "DD_APM_TRACING_ENABLED": "false",
         "DD_APPSEC_BLOCKING_ENABLED": "true",
         "DD_APPSEC_RASP_ENABLED": "true",
@@ -49,6 +48,7 @@
         "DD_IAST_REQUEST_SAMPLING": "100",
         "DD_IAST_MAX_CONCURRENT_REQUESTS": "1",
         "DD_WRITE_INSTRUMENTATION_TO_DISK": "false",
+        "DD_API_SECURITY_ENABLED": "true",
         "DD_API_SECURITY_MAX_CONCURRENT_REQUESTS": "100"
       },
       "Logging": {
