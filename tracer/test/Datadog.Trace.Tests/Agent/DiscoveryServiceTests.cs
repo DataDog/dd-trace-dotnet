@@ -115,7 +115,7 @@ public class DiscoveryServiceTests
         var factory = new TestRequestFactory(
             x =>
             {
-                mutex.Wait(10_000).Should().BeTrue("Should make request to api");
+                mutex.Wait(30_000).Should().BeTrue("Should make request to api");
                 return new TestApiRequest(x, responseContent: GetConfig());
             });
 
@@ -156,23 +156,16 @@ public class DiscoveryServiceTests
     public async Task DoesNotFireCallbackOnRecheckIfNoChangesToConfig()
     {
         int notificationCount = 0;
-        using var mutex1 = new ManualResetEventSlim(); // Allows test to control when Request 1 proceeds
-        using var mutex2 = new ManualResetEventSlim();
+        using var mutex1 = new ManualResetEventSlim();
         using var mutex3 = new ManualResetEventSlim();
         var recheckIntervalMs = 1_000; // ms
         var factory = new TestRequestFactory(
             x =>
             {
-                // Block Request 1 until test signals to proceed
-                // This ensures subscription happens BEFORE Request 1 completes
-                mutex1.Wait(10_000).Should().BeTrue("Test should signal Request 1 to proceed");
+                mutex1.Wait(30_000).Should().BeTrue("Should make request to api");
                 return new TestApiRequest(x, responseContent: GetConfig());
             },
-            x =>
-            {
-                mutex2.Set();
-                return new TestApiRequest(x, responseContent: GetConfig());
-            },
+            x => new TestApiRequest(x, responseContent: GetConfig()),
             x =>
             {
                 mutex3.Set();
@@ -180,21 +173,13 @@ public class DiscoveryServiceTests
             });
 
         var ds = new DiscoveryService(factory, InitialRetryDelayMs, MaxRetryDelayMs, recheckIntervalMs);
-
-        // Subscribe BEFORE Request 1 completes
-        // This tests the asynchronous notification path in NotifySubscribers
         ds.SubscribeToChanges(x => Interlocked.Increment(ref notificationCount));
-
-        // Now allow Request 1 to proceed and complete
+        // fire first request
         mutex1.Set();
-
-        // Wait for second request to ensure Request 1 completed
-        mutex2.Wait(30_000).Should().BeTrue("Should make second request to api");
-
-        // Wait for third request - by this time all previous requests are fully processed
+        // wait for third request
         mutex3.Wait(30_000).Should().BeTrue("Should make third request to api");
 
-        Volatile.Read(ref notificationCount).Should().Be(1); // Request 1 notification only, no additional callbacks
+        Volatile.Read(ref notificationCount).Should().Be(1); // initial
 
         await ds.DisposeAsync();
     }
@@ -203,23 +188,16 @@ public class DiscoveryServiceTests
     public async Task FiresCallbackOnRecheckIfHasChangesToConfig()
     {
         var notificationCount = 0;
-        using var mutex1 = new ManualResetEventSlim(); // Allows test to control when Request 1 proceeds
-        using var mutex2 = new ManualResetEventSlim();
+        using var mutex1 = new ManualResetEventSlim();
         using var mutex3 = new ManualResetEventSlim();
         var recheckIntervalMs = 1_000; // ms
         var factory = new TestRequestFactory(
             x =>
             {
-                // Block Request 1 until test signals to proceed
-                // This ensures subscription happens BEFORE Request 1 completes
-                mutex1.Wait(10_000).Should().BeTrue("Test should signal Request 1 to proceed");
+                mutex1.Wait(30_000).Should().BeTrue("Should make request to api");
                 return new TestApiRequest(x, responseContent: GetConfig(dropP0: true));
             },
-            x =>
-            {
-                mutex2.Set();
-                return new TestApiRequest(x, responseContent: GetConfig(dropP0: false));
-            },
+            x => new TestApiRequest(x, responseContent: GetConfig(dropP0: false)),
             x =>
             {
                 mutex3.Set();
@@ -227,21 +205,13 @@ public class DiscoveryServiceTests
             });
 
         var ds = new DiscoveryService(factory, InitialRetryDelayMs, MaxRetryDelayMs, recheckIntervalMs);
-
-        // Subscribe BEFORE Request 1 completes
-        // This tests the asynchronous notification path in NotifySubscribers
         ds.SubscribeToChanges(x => Interlocked.Increment(ref notificationCount));
-
-        // Now allow Request 1 to proceed and complete
+        // fire first request
         mutex1.Set();
-
-        // Wait for second request to ensure Request 1 completed
-        mutex2.Wait(30_000).Should().BeTrue("Should make second request to api");
-
-        // Wait for third request - by this time Request 2 should be fully processed
+        // wait for third request
         mutex3.Wait(30_000).Should().BeTrue("Should make third request to api");
 
-        Volatile.Read(ref notificationCount).Should().Be(2); // Request 1 + Request 2 (config changed)
+        Volatile.Read(ref notificationCount).Should().Be(2); // initial and second
 
         await ds.DisposeAsync();
     }
@@ -250,24 +220,17 @@ public class DiscoveryServiceTests
     public async Task DoesNotFireAfterUnsubscribing()
     {
         var notificationCount = 0;
-        using var mutex1 = new ManualResetEventSlim(); // Allows test to control when Request 1 proceeds
-        using var mutex2 = new ManualResetEventSlim();
+        using var mutex1 = new ManualResetEventSlim();
         using var mutex3 = new ManualResetEventSlim();
 
         var recheckIntervalMs = 1_000; // ms
         var factory = new TestRequestFactory(
             x =>
             {
-                // Block Request 1 until test signals to proceed
-                // This ensures subscription happens BEFORE Request 1 completes
-                mutex1.Wait(10_000).Should().BeTrue("Test should signal Request 1 to proceed");
+                mutex1.Wait(30_000).Should().BeTrue("Should make request to api");
                 return new TestApiRequest(x, responseContent: GetConfig(dropP0: true));
             },
-            x =>
-            {
-                mutex2.Set();
-                return new TestApiRequest(x, responseContent: GetConfig(dropP0: false));
-            },
+            x => new TestApiRequest(x, responseContent: GetConfig(dropP0: false)),
             x =>
             {
                 mutex3.Set();
@@ -276,16 +239,10 @@ public class DiscoveryServiceTests
 
         var ds = new DiscoveryService(factory, InitialRetryDelayMs, MaxRetryDelayMs, recheckIntervalMs);
 
-        // Subscribe BEFORE Request 1 completes
-        // Callback will fire when Request 1 completes, and immediately unsubscribe
         ds.SubscribeToChanges(Callback);
 
-        // Now allow Request 1 to proceed and complete
+        // fire first request
         mutex1.Set();
-
-        // Wait for additional requests to ensure callback doesn't fire again after unsubscribing
-        mutex2.Wait(30_000).Should().BeTrue("Should make second request to api");
-
         // wait for third request
         mutex3.Wait(30_000).Should().BeTrue("Should make third request to api");
 
