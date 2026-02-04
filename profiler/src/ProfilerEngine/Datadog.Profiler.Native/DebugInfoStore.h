@@ -74,7 +74,10 @@ public:
     SymbolDebugInfo Get(ModuleID moduleId, mdMethodDef methodDef);
 
     // for tests
-    void ParseModuleDebugInfo(ModuleID moduleId, std::string pdbFilename, std::string moduleFilename, ModuleDebugInfo& moduleInfo);
+    void ParseModuleDebugInfo(ModuleID moduleId, const std::string& pdbFilename, const std::string& moduleFilename, ModuleDebugInfo& moduleInfo);
+
+private:
+    size_t DEFAULT_RESERVE_SIZE = 1024;
 
 private:
     void ParseModuleDebugInfo(ModuleID moduleID);
@@ -113,10 +116,10 @@ private:
         return SymbolDebugInfo{NoFileFound, NoStartLine};
     }
 
-    bool TryLoadSymbolsWithPortable(std::string pdbFilename, std::string moduleFilename, ModuleDebugInfo& moduleInfo);
+    bool TryLoadSymbolsWithPortable(const std::string& pdbFilename, const std::string& moduleFilename, ModuleDebugInfo& moduleInfo);
 #ifdef _WINDOWS
-    bool TryLoadSymbolsWithDbgHelp(std::string pdbFile, ModuleDebugInfo& moduleInfo);
-    bool TryLoadSymbolsWithSym(ModuleID moduleId, std::string& pdbFile, std::string& moduleFile, ModuleDebugInfo& moduleInfo);
+    bool TryLoadSymbolsWithDbgHelp(const std::string& pdbFile, ModuleDebugInfo& moduleInfo);
+    bool TryLoadSymbolsWithSym(ModuleID moduleId, const std::string& pdbFile, const std::string& moduleFile, ModuleDebugInfo& moduleInfo);
 #endif
 
     // we need to support both Portable PDB (Windows and Linux) and Windows PDB (Windows only for old .NET Framework scenarios)

@@ -41,29 +41,7 @@ public:
 private:
     static BOOL CALLBACK EnumMethodSymbolsCallback(PSYMBOL_INFO pSymInfo, ULONG SymbolSize, PVOID UserContext);
     bool ComputeMethodsInfo();
-    std::string& FindOrAddSourceFile(const char* filePath);
-
-private:
-    // Hash functor for string_view to use as key in unordered_map
-    struct StringViewHash
-    {
-        size_t operator()(std::string_view sv) const noexcept
-        {
-            // Use std::hash<std::string_view> if available (C++17)
-            // For C++14, use a simple hash combination
-            std::hash<std::string_view> hasher;
-            return hasher(sv);
-        }
-    };
-
-    // Equality functor for string_view
-    struct StringViewEqual
-    {
-        bool operator()(std::string_view lhs, std::string_view rhs) const noexcept
-        {
-            return lhs == rhs;
-        }
-    };
+    std::string_view FindOrAddSourceFile(const char* filePath);
 
 private:
     ModuleDebugInfo* _pModuleInfo;
@@ -76,7 +54,7 @@ private:
 
     // strings corresponding to source file paths are stored in the given ModuleDebugInfo
     // but we use this map to avoid duplications
-    std::unordered_map<std::string_view, std::string*, StringViewHash, StringViewEqual> _sourceFileMap;
+    std::unordered_map<std::string_view, std::string*> _sourceFileMap;
 
     // this stores all the managed methods found in the PDB with string views to the source file paths
     // stored in the given ModuleDebugInfo

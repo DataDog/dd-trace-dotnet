@@ -5,6 +5,7 @@
 
 #nullable enable
 using System;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
@@ -39,11 +40,14 @@ internal sealed class TestOptimization : ITestOptimization
     private ITestOptimizationFlakyRetryFeature? _flakyRetryFeature;
     private ITestOptimizationDynamicInstrumentationFeature? _dynamicInstrumentationFeature;
     private ITestOptimizationTestManagementFeature? _testManagementFeature;
+    private string? _runId;
 
     public TestOptimization()
     {
-        _ciVariablesLazy = new(() => CIEnvironmentValues.Instance);
+        using var cd = CodeDurationRef.Create();
         Log = DatadogLogging.GetLoggerFor<TestOptimization>();
+        Log.Debug("TestOptimization: .ctor [CommandLine: {CommandLine}]", Environment.CommandLine);
+        _ciVariablesLazy = new(() => CIEnvironmentValues.Instance);
         _enablement = InternalEnabled(Log);
     }
 
@@ -72,6 +76,8 @@ internal sealed class TestOptimization : ITestOptimization
         }
     }
 
+    public string RunId => EnsureRunId();
+
     public bool Enabled => _enablement.IsEnabled;
 
     public TestOptimizationSettings Settings
@@ -95,21 +101,13 @@ internal sealed class TestOptimization : ITestOptimization
 
     public ITestOptimizationClient Client
     {
-        get => LazyInitializer.EnsureInitialized(ref _client, () => TestOptimizationClient.CreateCached(Environment.CurrentDirectory, this))!;
+        get => LazyInitializer.EnsureInitialized(ref _client, () => TestOptimizationClient.CreateCached(CIValues.WorkspacePath ?? Environment.CurrentDirectory, this))!;
         private set => _client = value;
     }
 
     public ITestOptimizationHostInfo HostInfo
     {
-        get
-        {
-            if (_hostInfo is null)
-            {
-                _additionalFeaturesTask?.SafeWait();
-            }
-
-            return _hostInfo ??= new TestOptimizationHostInfo();
-        }
+        get => _hostInfo ??= new TestOptimizationHostInfo();
         private set => _hostInfo = value;
     }
 
@@ -229,6 +227,7 @@ internal sealed class TestOptimization : ITestOptimization
 
     public void Initialize()
     {
+        using var cd = CodeDurationRef.Create();
         if (Interlocked.Exchange(ref _firstInitialization, 0) != 1)
         {
             // Initialize() or InitializeFromRunner() or InitializeFromManualInstrumentation() was already called before
@@ -240,7 +239,8 @@ internal sealed class TestOptimization : ITestOptimization
             PropagateCiVisibilityEnvironmentVariable();
         }
 
-        Log.Information("TestOptimization: Initializing CI Visibility");
+        Log.Information("TestOptimization: Initializing CI Visibility with RunId: {RunId}", RunId);
+
         var settings = Settings;
 
         // In case we are running using the agent, check if the event platform proxy is supported.
@@ -254,6 +254,8 @@ internal sealed class TestOptimization : ITestOptimization
                 recheckIntervalMs: int.MaxValue),
             useLockedTracerManager: DefaultUseLockedTracerManager);
 
+        cd.Debug("TracerManagement created");
+
         var eventPlatformProxyEnabled = TracerManagement.EventPlatformProxySupport != EventPlatformProxySupport.None;
         if (eventPlatformProxyEnabled)
         {
@@ -261,6 +263,7 @@ internal sealed class TestOptimization : ITestOptimization
         }
 
         LifetimeManager.Instance.AddAsyncShutdownTask(ShutdownAsync);
+        cd.Debug("Added shutdown task");
 
         var tracerSettings = settings.TracerSettings;
         Log.Debug("TestOptimization: Setting up the test session name to: {TestSessionName}", settings.TestSessionName);
@@ -274,16 +277,20 @@ internal sealed class TestOptimization : ITestOptimization
                 settings: settings,
                 testOptimizationTracerManagement: TracerManagement,
                 enabledEventPlatformProxy: eventPlatformProxyEnabled));
+        cd.Debug("Replace Global Manager");
+
         _ = Tracer.Instance;
+        cd.Debug("Tracer initialization");
 
         // Initialize FrameworkDescription
         _ = FrameworkDescription.Instance;
+        cd.Debug("FrameworkDescription initialization");
 
         // If we are running in agentless mode or the agent support the event platform proxy endpoint.
         // We can use the intelligent test runner
         if (settings.Agentless || eventPlatformProxyEnabled)
         {
-            var additionalFeaturesTask = InitializeAdditionalFeaturesAsync();
+            var additionalFeaturesTask = Task.Run(() => InitializeAdditionalFeaturesAsync());
             _additionalFeaturesTask = additionalFeaturesTask;
             LifetimeManager.Instance.AddAsyncShutdownTask(_ => additionalFeaturesTask);
         }
@@ -299,6 +306,8 @@ internal sealed class TestOptimization : ITestOptimization
             Client = new NoopTestOptimizationClient();
             InitializeDefaultFeatures(settings, TracerManagement, Client, CIValues);
         }
+
+        cd.Debug("Additional features initialization");
 
         static void PropagateCiVisibilityEnvironmentVariable()
         {
@@ -316,13 +325,15 @@ internal sealed class TestOptimization : ITestOptimization
 
     public void InitializeFromRunner(TestOptimizationSettings settings, IDiscoveryService discoveryService, bool eventPlatformProxyEnabled, bool? useLockedTracerManager = null)
     {
+        using var cd = CodeDurationRef.Create();
         if (Interlocked.Exchange(ref _firstInitialization, 0) != 1)
         {
             // Initialize() or InitializeFromRunner() was already called before
             return;
         }
 
-        Log.Information("TestOptimization: Initializing CI Visibility from dd-trace / runner");
+        Log.Information("TestOptimization: Initializing CI Visibility from dd-trace / runner with RunId: {RunId}", RunId);
+
         Settings = settings;
         LifetimeManager.Instance.AddAsyncShutdownTask(ShutdownAsync);
 
@@ -365,6 +376,7 @@ internal sealed class TestOptimization : ITestOptimization
 
     public void Flush()
     {
+        using var cd = CodeDurationRef.Create();
         TaskExtensions.SafeWait(funcTask: FlushAsync, millisecondsTimeout: 30_000);
     }
 
@@ -407,6 +419,7 @@ internal sealed class TestOptimization : ITestOptimization
     /// </summary>
     public void Close()
     {
+        using var cd = CodeDurationRef.Create();
         if (!IsRunning)
         {
             return;
@@ -450,8 +463,56 @@ internal sealed class TestOptimization : ITestOptimization
     private static TestOptimizationDetection.Enablement InternalEnabled(IDatadogLogger log)
         => TestOptimizationDetection.IsEnabled(GlobalConfigurationSource.Instance, TelemetryFactory.Config, log);
 
+    internal string EnsureRunId(string? baseDirectory = null)
+    {
+        if (_runId is not null)
+        {
+            return _runId;
+        }
+
+        if (EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestOptimizationRunId) is not { } runId)
+        {
+            runId = Guid.NewGuid().ToString("n");
+            EnvironmentHelpers.SetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestOptimizationRunId, runId);
+
+            try
+            {
+                var cacheFolder = Path.Combine(baseDirectory ?? CIValues.WorkspacePath ?? Environment.CurrentDirectory, ".dd", runId);
+                Log.Debug("TestOptimization: Creating cache folder: {Folder}", cacheFolder);
+                if (!Directory.Exists(cacheFolder))
+                {
+                    Directory.CreateDirectory(cacheFolder);
+                }
+
+                LifetimeManager.Instance.AddShutdownTask(_ =>
+                {
+                    try
+                    {
+                        Log.Debug("TestOptimization: Removing cache folder: {Folder}", cacheFolder);
+                        if (Directory.Exists(cacheFolder))
+                        {
+                            Directory.Delete(cacheFolder, true);
+                        }
+                    }
+                    catch (Exception exInner)
+                    {
+                        Log.Warning(exInner, "TestOptimization: Error deleting cache folder.");
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "TestOptimization: Error creating cache folder.");
+            }
+        }
+
+        return _runId = runId;
+    }
+
     private async Task ShutdownAsync(Exception? exception)
     {
+        using var cd = CodeDuration.Create();
+
         // Let's close any opened test, suite, modules and sessions before shutting down to avoid losing any data.
         // But marking them as failed.
 
@@ -501,6 +562,7 @@ internal sealed class TestOptimization : ITestOptimization
 
     private async Task InitializeAdditionalFeaturesAsync()
     {
+        using var cd = CodeDuration.Create();
         try
         {
             Log.Information("TestOptimization: Initializing additional features.");
@@ -549,10 +611,10 @@ internal sealed class TestOptimization : ITestOptimization
                     remoteSettings = await client.GetSettingsAsync(skipFrameworkInfo: true).ConfigureAwait(false);
                 }
 
-                FlakyRetryFeature = TestOptimizationFlakyRetryFeature.Create(settings, remoteSettings, client);
+                FlakyRetryFeature = TestOptimizationFlakyRetryFeature.Create(settings, remoteSettings);
                 DynamicInstrumentationFeature = TestOptimizationDynamicInstrumentationFeature.Create(settings, remoteSettings);
                 KnownTestsFeature = TestOptimizationKnownTestsFeature.Create(settings, remoteSettings, client);
-                EarlyFlakeDetectionFeature = TestOptimizationEarlyFlakeDetectionFeature.Create(settings, remoteSettings, client);
+                EarlyFlakeDetectionFeature = TestOptimizationEarlyFlakeDetectionFeature.Create(settings, remoteSettings);
                 ImpactedTestsDetectionFeature = TestOptimizationImpactedTestsDetectionFeature.Create(settings, remoteSettings, CIValues);
                 SkippableFeature = TestOptimizationSkippableFeature.Create(settings, remoteSettings, client);
                 TestManagementFeature = TestOptimizationTestManagementFeature.Create(settings, remoteSettings, client);
@@ -586,6 +648,7 @@ internal sealed class TestOptimization : ITestOptimization
 
     private async Task TryUploadRepositoryChangesAsync()
     {
+        using var cd = CodeDuration.Create();
         try
         {
             await Client.UploadRepositoryChangesAsync().ConfigureAwait(false);
@@ -598,11 +661,12 @@ internal sealed class TestOptimization : ITestOptimization
 
     private void InitializeDefaultFeatures(TestOptimizationSettings settings, ITestOptimizationTracerManagement? tracerManagement, ITestOptimizationClient client, CIEnvironmentValues environmentValues)
     {
+        using var cd = CodeDurationRef.Create();
         var remoteSettings = TestOptimizationClient.CreateSettingsResponseFromTestOptimizationSettings(settings, tracerManagement);
-        FlakyRetryFeature = TestOptimizationFlakyRetryFeature.Create(settings, remoteSettings, client);
+        FlakyRetryFeature = TestOptimizationFlakyRetryFeature.Create(settings, remoteSettings);
         DynamicInstrumentationFeature = TestOptimizationDynamicInstrumentationFeature.Create(settings, remoteSettings);
         KnownTestsFeature = TestOptimizationKnownTestsFeature.Create(settings, remoteSettings, client);
-        EarlyFlakeDetectionFeature = TestOptimizationEarlyFlakeDetectionFeature.Create(settings, remoteSettings, client);
+        EarlyFlakeDetectionFeature = TestOptimizationEarlyFlakeDetectionFeature.Create(settings, remoteSettings);
         ImpactedTestsDetectionFeature = TestOptimizationImpactedTestsDetectionFeature.Create(settings, remoteSettings, environmentValues);
         SkippableFeature = TestOptimizationSkippableFeature.Create(settings, remoteSettings, client);
         TestManagementFeature = TestOptimizationTestManagementFeature.Create(settings, remoteSettings, client);

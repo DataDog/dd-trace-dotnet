@@ -1,3 +1,6 @@
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
+
 #include "DbgHelpParser.h"
 
 #include <algorithm>
@@ -169,8 +172,7 @@ BOOL CALLBACK DbgHelpParser::EnumMethodSymbolsCallback(PSYMBOL_INFO pSymInfo, UL
         if (SymGetLineFromAddr64(parser->_hProcess, pSymInfo->Address, &displacement, &line))
         {
             auto strSourceFile = line.FileName ? line.FileName : "";
-            std::string& sourceFile = parser->FindOrAddSourceFile(strSourceFile);
-            info.sourceFile = sourceFile;
+            info.sourceFile = parser->FindOrAddSourceFile(strSourceFile);
             info.lineNumber = line.LineNumber;
         }
         else
@@ -207,7 +209,7 @@ bool DbgHelpParser::ComputeMethodsInfo()
     return true;
 }
 
-std::string& DbgHelpParser::FindOrAddSourceFile(const char* filePath)
+std::string_view DbgHelpParser::FindOrAddSourceFile(const char* filePath)
 {
     // Use string_view as key to avoid creating std::string for lookup
     std::string_view key(filePath);
@@ -216,7 +218,7 @@ std::string& DbgHelpParser::FindOrAddSourceFile(const char* filePath)
     auto map_it = _sourceFileMap.find(key);
     if (map_it != _sourceFileMap.end())
     {
-        // Return reference to existing string
+        // Return view to existing string
         return *map_it->second;
     }
 

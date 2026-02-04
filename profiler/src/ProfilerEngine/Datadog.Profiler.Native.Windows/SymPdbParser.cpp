@@ -26,38 +26,7 @@ DEFINE_GUID(IID_ISymUnmanagedBinder,
 
 const std::string NoFileFoundString = "";
 
-SymParser::SymParser(IMetaDataImport* pMetaDataImport, ModuleDebugInfo* pModuleInfo)
-    :
-    _pModuleInfo(pModuleInfo),
-    _pReader(nullptr),
-    _pMetaDataImport(pMetaDataImport)
-{
-    if (_pMetaDataImport != nullptr)
-    {
-        _pMetaDataImport->AddRef();
-    }
-    _sourceFileMap.reserve(1024);
-    _methods.reserve(1024);
-
-    // NOTE: don't forget to add the empty string in the map for files
-    FindOrAddSourceFile("");
-}
-
-SymParser::~SymParser()
-{
-    if (_pReader != nullptr)
-    {
-        _pReader->Release();
-        _pReader = nullptr;
-    }
-    if (_pMetaDataImport != nullptr)
-    {
-        _pMetaDataImport->Release();
-        _pMetaDataImport = nullptr;
-    }
-}
-
-bool SymParser::LoadPdbFile(const std::string& pdbFilePath, const std::string& moduleFilePath)
+bool SymParser::LoadPdbFile(IMetaDataImport* pMetaDataImport, ModuleDebugInfo* pModuleInfo, const std::string& pdbFilePath, const std::string& moduleFilePath)
 {
     if (GetFileAttributesA(pdbFilePath.c_str()) == INVALID_FILE_ATTRIBUTES)
     {
@@ -69,51 +38,60 @@ bool SymParser::LoadPdbFile(const std::string& pdbFilePath, const std::string& m
         return false;
     }
 
-    if (!GetSymReader(moduleFilePath))
+    CComPtr<ISymUnmanagedReader> pReader;
+    if (!GetSymReader(pMetaDataImport, moduleFilePath, pReader))
     {
         return false;
     }
 
-    if (!ComputeMethodsInfo())
+    // Create temporary parsing context
+    SymParsingContext context;
+    context.sourceFileMap.reserve(DEFAULT_RESERVE_SIZE);
+    context.methods.reserve(DEFAULT_RESERVE_SIZE);
+
+    // NOTE: don't forget to add the empty string in the map for files
+    FindOrAddSourceFile("", pModuleInfo, context);
+
+    if (!ComputeMethodsInfo(pMetaDataImport, pReader, pModuleInfo, context))
     {
         return false;
     }
 
-        // if no symbol was found, consider the pdb loading failed
-    if (_sourceFileMap.empty())
+    // if no symbol was found, consider the pdb loading failed
+    if (context.sourceFileMap.empty())
     {
         return false;
     }
 
     // fill up the methods vector
-    _pModuleInfo->RidToDebugInfo.reserve(_methods.size() + 1);
+    pModuleInfo->RidToDebugInfo.reserve(context.methods.size() + 1);
 
     // first element is for RID 0 which is not used
-    _pModuleInfo->RidToDebugInfo.push_back({NoFileFoundString, 0});
+    pModuleInfo->RidToDebugInfo.push_back({NoFileFoundString, 0});
 
     // then insert all methods found in the .pdb
-    for (const SymMethodInfo& sym : _methods)
+    for (const SymMethodInfo& sym : context.methods)
     {
-        _pModuleInfo->RidToDebugInfo.push_back({sym.sourceFile, sym.lineNumber});
+        pModuleInfo->RidToDebugInfo.push_back({sym.sourceFile, sym.lineNumber});
     }
 
-
-    _pModuleInfo->LoadingState = SymbolLoadingState::Windows;
+    pModuleInfo->LoadingState = SymbolLoadingState::Windows;
 
     // Log memory size of loaded symbols
-    auto memorySize = _pModuleInfo->GetMemorySize();
+    auto memorySize = pModuleInfo->GetMemorySize();
     Log::Info("Loaded symbols from Windows PDB (Sym) for module ", moduleFilePath,
               ". Memory size: ", memorySize, " bytes (",
-              _pModuleInfo->Files.size(), " files, ",
-              _pModuleInfo->RidToDebugInfo.size(), " methods)");
+              pModuleInfo->Files.size(), " files, ",
+              pModuleInfo->RidToDebugInfo.size(), " methods)");
 
     return true;
 }
 
-const uint32_t LAST_METHODDEF_RID = 0x00010000;
-bool SymParser::ComputeMethodsInfo()
+bool SymParser::ComputeMethodsInfo(IMetaDataImport* pMetaDataImport, ISymUnmanagedReader* pReader, ModuleDebugInfo* pModuleInfo, SymParsingContext& context)
 {
-    if (_pReader == nullptr)
+    const uint32_t LAST_METHODDEF_RID = 0x00010000;
+
+    if (pReader == nullptr)
     {
         return false;
     }
@@ -128,7 +106,7 @@ bool SymParser::ComputeMethodsInfo()
 
     // Get IMetaDataTables interface to query the MethodDef table
     CComPtr<IMetaDataTables> pTables;
-    hr = _pMetaDataImport->QueryInterface(IID_IMetaDataTables, (void**)&pTables);
+    hr = pMetaDataImport->QueryInterface(IID_IMetaDataTables, (void**)&pTables);
     if (FAILED(hr) || pTables == nullptr)
     {
         cRows = LAST_METHODDEF_RID;
@@ -155,14 +133,14 @@ bool SymParser::ComputeMethodsInfo()
     {
         mdMethodDef token = TokenFromRid(rid, mdtMethodDef);
 
-        ISymUnmanagedMethod* pMethod = nullptr;
-        hr = _pReader->GetMethod(token, &pMethod);
+        CComPtr<ISymUnmanagedMethod> pMethod;
+        hr = pReader->GetMethod(token, &pMethod);
         if (SUCCEEDED(hr))
         {
             SymMethodInfo info;
-            if (GetMethodInfoFromSymbol(pMethod, info))
+            if (GetMethodInfoFromSymbol(pMethod, pModuleInfo, context, info))
             {
-                _methods.push_back(info);
+                context.methods.push_back(info);
             }
             else
             {
@@ -172,9 +150,8 @@ bool SymParser::ComputeMethodsInfo()
                 info.rid = rid;
                 info.lineNumber = 0;
                 info.sourceFile = NoFileFoundString;
-                _methods.push_back(info);
+                context.methods.push_back(info);
             }
-            pMethod->Release();
         }
         else
         {
@@ -183,7 +160,7 @@ bool SymParser::ComputeMethodsInfo()
             info.rid = rid;
             info.lineNumber = 0;
             info.sourceFile = NoFileFoundString;
-            _methods.push_back(info);
+            context.methods.push_back(info);
 
             // TODO: in case of hardcoded ranges, we could try to use
             //       the metatada API to check if the method exists
@@ -196,7 +173,7 @@ bool SymParser::ComputeMethodsInfo()
     return true;
 }
 
-bool SymParser::GetMethodInfoFromSymbol(ISymUnmanagedMethod* pMethod, SymMethodInfo& info)
+bool SymParser::GetMethodInfoFromSymbol(ISymUnmanagedMethod* pMethod, ModuleDebugInfo* pModuleInfo, SymParsingContext& context, SymMethodInfo& info)
 {
     if (pMethod == nullptr)
     {
@@ -240,7 +217,7 @@ bool SymParser::GetMethodInfoFromSymbol(ISymUnmanagedMethod* pMethod, SymMethodI
         if (SUCCEEDED(hr) && (actualCount > 0))
         {
             // Get the first sequence point's document and line
-            ISymUnmanagedDocument* pDoc = documents[0];
+            CComPtr<ISymUnmanagedDocument> pDoc(documents[0]);
             if (pDoc != nullptr)
             {
                 // Get document URL (file path)
@@ -257,7 +234,7 @@ bool SymParser::GetMethodInfoFromSymbol(ISymUnmanagedMethod* pMethod, SymMethodI
                         std::string utf8Url(len, '\0');
                         WideCharToMultiByte(CP_UTF8, 0, &url[0], urlLen, &utf8Url[0], len, NULL, NULL);
 
-                        std::string_view sourceFile = FindOrAddSourceFile(utf8Url.c_str());
+                        std::string_view sourceFile = FindOrAddSourceFile(utf8Url.c_str(), pModuleInfo, context);
                         info.sourceFile = sourceFile;
                     }
                 }
@@ -268,8 +245,6 @@ bool SymParser::GetMethodInfoFromSymbol(ISymUnmanagedMethod* pMethod, SymMethodI
                 {
                     info.lineNumber = 0;
                 }
-
-                pDoc->Release();
             }
         }
     }
@@ -284,7 +259,7 @@ bool SymParser::GetMethodInfoFromSymbol(ISymUnmanagedMethod* pMethod, SymMethodI
 }
 
 
-bool SymParser::GetSymReader(const std::string& moduleFilePath)
+bool SymParser::GetSymReader(IMetaDataImport* pMetaDataImport, const std::string& moduleFilePath, CComPtr<ISymUnmanagedReader>& pReader)
 {
     // Create the symbol binder
     CComPtr<ISymUnmanagedBinder> pBinder;
@@ -307,7 +282,7 @@ bool SymParser::GetSymReader(const std::string& moduleFilePath)
 
     // Get symbol reader from the module file (not PDB) with metadata import
     // GetReaderForFile expects the module path and will automatically find the PDB
-    hr = pBinder->GetReaderForFile(_pMetaDataImport, wModulePath.c_str(), nullptr, &_pReader);
+    hr = pBinder->GetReaderForFile(pMetaDataImport, wModulePath.c_str(), nullptr, &pReader);
     if (FAILED(hr))
     {
         Log::Debug("GetReaderForFile() failed with HRESULT = ", HResultConverter::ToStringWithCode(hr));
@@ -318,19 +293,14 @@ bool SymParser::GetSymReader(const std::string& moduleFilePath)
 }
 
 
-std::vector<SymMethodInfo> SymParser::GetMethods()
-{
-    return _methods;
-}
-
-std::string_view SymParser::FindOrAddSourceFile(const char* filePath)
+std::string_view SymParser::FindOrAddSourceFile(const char* filePath, ModuleDebugInfo* pModuleInfo, SymParsingContext& context)
 {
     // Use string_view as key to avoid creating std::string for lookup
     std::string_view key(filePath);
 
     // Try to find in the map
-    auto map_it = _sourceFileMap.find(key);
-    if (map_it != _sourceFileMap.end())
+    auto map_it = context.sourceFileMap.find(key);
+    if (map_it != context.sourceFileMap.end())
     {
         // Return reference to existing string
         return map_it->second;
@@ -338,11 +308,11 @@ std::string_view SymParser::FindOrAddSourceFile(const char* filePath)
 
     // Not found - create new string and add to both containers
     // Using std::string's move constructor with emplace_back
-    _pModuleInfo->Files.emplace_back(filePath);
-    std::string& new_str = _pModuleInfo->Files.back();
+    pModuleInfo->Files.emplace_back(filePath);
+    std::string& new_str = pModuleInfo->Files.back();
 
     // Store pointer to the string in the map using string_view as key
-    _sourceFileMap.emplace(new_str, new_str);
+    context.sourceFileMap.emplace(new_str, new_str);
 
     return new_str;
 }

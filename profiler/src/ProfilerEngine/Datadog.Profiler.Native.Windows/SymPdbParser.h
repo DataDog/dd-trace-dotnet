@@ -5,9 +5,11 @@
 
 #include "DebugInfoStore.h"
 
+#include <atlbase.h>
 #include <corsym.h>
 #include <string>
-#include<vector>
+#include <unordered_map>
+#include <vector>
 #include <windows.h>
 
 
@@ -18,57 +20,27 @@ struct SymMethodInfo
     uint32_t lineNumber;
 };
 
+// Helper struct to hold temporary parsing state
+struct SymParsingContext
+{
+    std::unordered_map<std::string_view, std::string_view> sourceFileMap;
+    std::vector<SymMethodInfo> methods;
+};
+
 class SymParser
 {
 public:
-    SymParser(IMetaDataImport* pMetaDataImport, ModuleDebugInfo* pModuleInfo);
-    ~SymParser();
+    SymParser() = default;
+    ~SymParser() = default;
 
-    bool LoadPdbFile(const std::string& pdbFilePath, const std::string& moduleFilePath);
-    std::vector<SymMethodInfo> GetMethods();
-
-private:
-    bool GetSymReader(const std::string& moduleFilePath);
-    bool ComputeMethodsInfo();
-    bool GetMethodInfoFromSymbol(ISymUnmanagedMethod* pMethod, SymMethodInfo& info);
-    std::string_view FindOrAddSourceFile(const char* filePath);
+    bool LoadPdbFile(IMetaDataImport* pMetaDataImport, ModuleDebugInfo* pModuleInfo, const std::string& pdbFilePath, const std::string& moduleFilePath);
 
 private:
-    // Hash functor for string_view to use as key in unordered_map
-    struct StringViewHash
-    {
-        size_t operator()(std::string_view sv) const noexcept
-        {
-            // Use std::hash<std::string_view> if available (C++17)
-            // For C++14, use a simple hash combination
-            std::hash<std::string_view> hasher;
-            return hasher(sv);
-        }
-    };
-
-    // Equality functor for string_view
-    struct StringViewEqual
-    {
-        bool operator()(std::string_view lhs, std::string_view rhs) const noexcept
-        {
-            return lhs == rhs;
-        }
-    };
+    size_t DEFAULT_RESERVE_SIZE = 1024;
 
 private:
-    ModuleDebugInfo* _pModuleInfo;
-
-    ISymUnmanagedReader* _pReader;
-    IMetaDataImport* _pMetaDataImport;
-
-    // strings corresponding to source file paths are stored in the given ModuleDebugInfo
-    // but we use this map to avoid duplications
-    std::unordered_map<std::string_view, std::string_view, StringViewHash, StringViewEqual> _sourceFileMap;
-
-    // this stores all the managed methods found in the PDB with string views to the source file paths
-    // stored in the given ModuleDebugInfo
-    std::vector<SymMethodInfo> _methods;
-
-    std::string _guid;
-    DWORD _age;
+    bool GetSymReader(IMetaDataImport* pMetaDataImport, const std::string& moduleFilePath, CComPtr<ISymUnmanagedReader>& pReader);
+    bool ComputeMethodsInfo(IMetaDataImport* pMetaDataImport, ISymUnmanagedReader* pReader, ModuleDebugInfo* pModuleInfo, SymParsingContext& context);
+    bool GetMethodInfoFromSymbol(ISymUnmanagedMethod* pMethod, ModuleDebugInfo* pModuleInfo, SymParsingContext& context, SymMethodInfo& info);
+    std::string_view FindOrAddSourceFile(const char* filePath, ModuleDebugInfo* pModuleInfo, SymParsingContext& context);
 };

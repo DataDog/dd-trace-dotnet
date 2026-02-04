@@ -16,6 +16,7 @@
 #undef GUID_DEFINED
 
 #ifdef _WINDOWS
+#include <atlbase.h>
 #include "..\Datadog.Profiler.Native.Windows\DbgHelpParser.h"
 #include "..\Datadog.Profiler.Native.Windows\SymPdbParser.h"
 #include "HResultConverter.h"
@@ -55,10 +56,8 @@ SymbolDebugInfo DebugInfoStore::Get(ModuleID moduleId, mdMethodDef methodDef)
         auto rid = RidFromToken(methodDef);
         return GetFromRID(info, moduleId, rid);
     }
-    else
-    {
-        return {NoFileFound, NoStartLine};
-    }
+
+    return {NoFileFound, NoStartLine};
 }
 
 void DebugInfoStore::ParseModuleDebugInfo(ModuleID moduleId)
@@ -92,7 +91,7 @@ void DebugInfoStore::ParseModuleDebugInfo(ModuleID moduleId)
     ParseModuleDebugInfo(moduleId, pdbFile.string(), filePath.string(), moduleInfo);
 }
 
-void DebugInfoStore::ParseModuleDebugInfo(ModuleID moduleId, std::string pdbFilename, std::string moduleFilename, ModuleDebugInfo& moduleInfo)
+void DebugInfoStore::ParseModuleDebugInfo(ModuleID moduleId, const std::string& pdbFilename, const std::string& moduleFilename, ModuleDebugInfo& moduleInfo)
 {
     // first, try to load the symbols via Portable PDB
     if (TryLoadSymbolsWithPortable(pdbFilename, moduleFilename, moduleInfo))
@@ -125,7 +124,7 @@ void DebugInfoStore::ParseModuleDebugInfo(ModuleID moduleId, std::string pdbFile
 #endif
 }
 
-bool DebugInfoStore::TryLoadSymbolsWithPortable(std::string pdbFilename, std::string moduleFilename, ModuleDebugInfo& moduleInfo)
+bool DebugInfoStore::TryLoadSymbolsWithPortable(const std::string& pdbFilename, const std::string& moduleFilename, ModuleDebugInfo& moduleInfo)
 {
     try
     {
@@ -202,18 +201,18 @@ bool DebugInfoStore::TryLoadSymbolsWithPortable(std::string pdbFilename, std::st
 
 
 #ifdef _WINDOWS
-bool DebugInfoStore::TryLoadSymbolsWithSym(ModuleID moduleId, std::string& pdbFile, std::string& moduleFile, ModuleDebugInfo& moduleInfo)
+bool DebugInfoStore::TryLoadSymbolsWithSym(ModuleID moduleId, const std::string& pdbFile, const std::string& moduleFile, ModuleDebugInfo& moduleInfo)
 {
     // clear the module info in case some partial data was loaded
     moduleInfo.RidToDebugInfo.clear();
 
     moduleInfo.Files.clear();
-    moduleInfo.Files.reserve(1024);
+    moduleInfo.Files.reserve(DEFAULT_RESERVE_SIZE);
     // still need to have the first file as empty string
     moduleInfo.Files.push_back(NoFileFound);
 
     // Get the IMetaDataImport from the ModuleID
-    IMetaDataImport* pMetaDataImport = nullptr;
+    CComPtr<IMetaDataImport> pMetaDataImport;
     HRESULT hr = _profilerInfo->GetModuleMetaData(moduleId, CorOpenFlags::ofRead, IID_IMetaDataImport, reinterpret_cast<IUnknown**>(&pMetaDataImport));
     if (FAILED(hr))
     {
@@ -222,25 +221,19 @@ bool DebugInfoStore::TryLoadSymbolsWithSym(ModuleID moduleId, std::string& pdbFi
     }
 
     // the module LoadingState is set by the parser in case of success
-    SymParser parser(pMetaDataImport, &moduleInfo);
-    bool success = parser.LoadPdbFile(pdbFile, moduleFile);
-
-    // Release the IMetaDataImport as SymParser has already AddRef'd it if needed
-    if (pMetaDataImport != nullptr)
-    {
-        pMetaDataImport->Release();
-    }
+    SymParser parser;
+    bool success = parser.LoadPdbFile(pMetaDataImport, &moduleInfo, pdbFile, moduleFile);
 
     return success;
 }
 
-bool DebugInfoStore::TryLoadSymbolsWithDbgHelp(std::string pdbFile, ModuleDebugInfo& moduleInfo)
+bool DebugInfoStore::TryLoadSymbolsWithDbgHelp(const std::string& pdbFile, ModuleDebugInfo& moduleInfo)
 {
     // clear the module info in case some partial data was loaded
     moduleInfo.RidToDebugInfo.clear();
 
     moduleInfo.Files.clear();
-    moduleInfo.Files.reserve(1024);
+    moduleInfo.Files.reserve(DEFAULT_RESERVE_SIZE);
     // still need to have the first file as empty string
     moduleInfo.Files.push_back(NoFileFound);
 
