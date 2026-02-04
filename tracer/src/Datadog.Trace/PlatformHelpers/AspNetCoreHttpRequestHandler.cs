@@ -5,10 +5,8 @@
 
 #if !NETFRAMEWORK
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using Datadog.Trace.Activity;
 using Datadog.Trace.Activity.DuckTypes;
 using Datadog.Trace.Activity.Helpers;
@@ -18,9 +16,7 @@ using Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.DuckTyping;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
-using Datadog.Trace.Iast;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
