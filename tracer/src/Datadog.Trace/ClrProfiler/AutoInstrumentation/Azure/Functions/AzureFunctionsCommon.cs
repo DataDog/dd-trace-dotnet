@@ -358,7 +358,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 
             try
             {
-                var bindingFeature = GetFeatureFromContext<T, GrpcBindingsFeatureStruct>(context, "Microsoft.Azure.Functions.Worker.Context.Features.IFunctionBindingsFeature");
+                var bindingFeature = GetFeatureFromContext<T, FunctionBindingsFeatureStruct>(context, "Microsoft.Azure.Functions.Worker.Context.Features.IFunctionBindingsFeature");
 
                 if (bindingFeature?.InputData is null
                  || !bindingFeature.Value.InputData.TryGetValue(bindingName!, out var requestDataObject)
@@ -399,7 +399,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
         {
             try
             {
-                var bindingsFeature = GetFeatureFromContext<T, GrpcBindingsFeatureStruct>(context, "Microsoft.Azure.Functions.Worker.Context.Features.IFunctionBindingsFeature");
+                var bindingsFeature = GetFeatureFromContext<T, FunctionBindingsFeatureStruct>(context, "Microsoft.Azure.Functions.Worker.Context.Features.IFunctionBindingsFeature");
                 if (bindingsFeature == null)
                 {
                     return default;
