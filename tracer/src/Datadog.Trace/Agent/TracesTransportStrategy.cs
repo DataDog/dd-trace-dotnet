@@ -16,7 +16,6 @@ namespace Datadog.Trace.Agent
                 settings,
                 productName: "trace",
                 tcpTimeout: null,
-                httpHeaderHelper: TraceAgentHttpHeaderHelper.Instance,
-                getBaseEndpoint: uri => uri);
+                httpHeaderHelper: TraceAgentHttpHeaderHelper.Instance);
     }
 }

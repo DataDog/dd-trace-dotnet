@@ -20,8 +20,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Transport
                 exporterSettings,
                 productName: "rcm",
                 tcpTimeout: TimeSpan.FromSeconds(15),
-                httpHeaderHelper: MinimalAgentHeaderHelper.Instance,
-                getBaseEndpoint: uri => uri);
+                httpHeaderHelper: MinimalAgentHeaderHelper.Instance);
 
             return RemoteConfigurationApi.Create(apiRequestFactory, discoveryService);
         }

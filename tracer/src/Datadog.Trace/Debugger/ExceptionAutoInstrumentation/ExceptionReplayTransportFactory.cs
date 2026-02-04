@@ -55,8 +55,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 tracerSettings.Manager.InitialExporterSettings,
                 productName: "exception-replay",
                 tcpTimeout: TimeSpan.FromSeconds(15),
-                httpHeaderHelper: MinimalAgentHeaderHelper.Instance,
-                getBaseEndpoint: uri => uri);
+                httpHeaderHelper: MinimalAgentHeaderHelper.Instance);
 
             return new ExceptionReplayTransportInfo(apiFactory, discoveryService, staticEndpoint: null, isAgentless: false);
         }
