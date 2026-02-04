@@ -17,8 +17,8 @@ namespace Datadog.Trace.Security.IntegrationTests
 {
     public abstract class AspNetCoreBase : AspNetBase, IClassFixture<AspNetCoreTestFixture>
     {
-        public AspNetCoreBase(string sampleName, AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, string shutdownPath, bool enableSecurity = true, string testName = null, bool clearMetaStruct = false)
-            : base(sampleName, outputHelper, shutdownPath ?? "/shutdown", testName: testName, clearMetaStruct: clearMetaStruct)
+        public AspNetCoreBase(string sampleName, AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, string shutdownPath, bool enableSecurity = true, string testName = null)
+            : base(sampleName, outputHelper, shutdownPath ?? "/shutdown", testName: testName)
         {
             EnableSecurity = enableSecurity;
             Fixture = fixture;

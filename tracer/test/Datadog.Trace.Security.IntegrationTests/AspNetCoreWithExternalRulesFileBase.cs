@@ -28,7 +28,7 @@ namespace Datadog.Trace.Security.IntegrationTests
     public abstract class AspNetCoreSecurityEnabledWithExternalRulesFileIIS : AspNetCoreWithExternalRulesFileBaseIIS
     {
         public AspNetCoreSecurityEnabledWithExternalRulesFileIIS(string sampleName, IisFixture fixture, ITestOutputHelper outputHelper, string shutdownPath, IisAppType appType, string ruleFile = null, string testName = null)
-            : base(sampleName, fixture, outputHelper, shutdownPath, appType, enableSecurity: true, ruleFile: ruleFile, testName: testName, clearMetaStruct: true)
+            : base(sampleName, fixture, outputHelper, shutdownPath, appType, enableSecurity: true, ruleFile: ruleFile, testName: testName)
         {
         }
 
@@ -49,7 +49,7 @@ namespace Datadog.Trace.Security.IntegrationTests
     public abstract class AspNetCoreSecurityEnabledWithExternalRulesFile : AspNetCoreWithExternalRulesFileBase
     {
         public AspNetCoreSecurityEnabledWithExternalRulesFile(string sampleName, AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, string shutdownPath, string ruleFile = null, string testName = null)
-            : base(sampleName, fixture, outputHelper, shutdownPath, enableSecurity: true, ruleFile: ruleFile, testName: testName, clearMetaStruct: true)
+            : base(sampleName, fixture, outputHelper, shutdownPath, enableSecurity: true, ruleFile: ruleFile, testName: testName)
         {
         }
 
@@ -103,14 +103,12 @@ namespace Datadog.Trace.Security.IntegrationTests
             string ruleFile = null,
             string blockingJsonTemplate = null,
             string blockingHtmlTemplate = null,
-            string testName = null,
-            bool clearMetaStruct = false)
+            string testName = null)
             : base(
                 sampleName,
                 outputHelper,
                 shutdownPath ?? "/shutdown",
-                testName: testName,
-                clearMetaStruct: clearMetaStruct)
+                testName: testName)
         {
             EnableSecurity = enableSecurity;
             Fixture = fixture;
@@ -154,8 +152,8 @@ namespace Datadog.Trace.Security.IntegrationTests
 
     public abstract class AspNetCoreWithExternalRulesFileBaseIIS : AspNetBase, IClassFixture<IisFixture>
     {
-        public AspNetCoreWithExternalRulesFileBaseIIS(string sampleName, IisFixture fixture, ITestOutputHelper outputHelper, string shutdownPath, IisAppType appType, bool enableSecurity = true, string ruleFile = null, string testName = null, bool clearMetaStruct = false)
-            : base(sampleName, outputHelper, shutdownPath ?? "/shutdown", testName: testName, samplesDir: "test\\test-applications\\security", clearMetaStruct: clearMetaStruct)
+        public AspNetCoreWithExternalRulesFileBaseIIS(string sampleName, IisFixture fixture, ITestOutputHelper outputHelper, string shutdownPath, IisAppType appType, bool enableSecurity = true, string ruleFile = null, string testName = null)
+            : base(sampleName, outputHelper, shutdownPath ?? "/shutdown", testName: testName, samplesDir: "test\\test-applications\\security")
         {
             EnableSecurity = enableSecurity;
             Fixture = fixture;
