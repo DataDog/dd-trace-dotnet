@@ -242,7 +242,7 @@ Otherwise, treat the error as NEW and actionable.
 - Include helpful context (endpoint, troubleshooting URL)
 
 **If intermediate retry logging should be Debug:**
-- Change from `Log.Error` to `Log.Debug<int>` for intermediate attempts
+- Change from `Log.Error` to `Log.Debug` for intermediate attempts
 - Only log Error/ErrorSkipTelemetry for final failures
 
 **Reason**: {Explain why this error is not actionable and the recommended approach}
