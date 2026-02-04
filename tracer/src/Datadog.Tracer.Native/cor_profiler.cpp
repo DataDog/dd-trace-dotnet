@@ -1069,7 +1069,42 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
 
                     // Check if the typeref matches
                     mdToken parent_token = mdTokenNil;
-                    hr = metadata_import->GetCustomAttributeProps(customAttribute, &parent_token, nullptr, nullptr, nullptr);
+                    mdToken attribute_ctor_token = mdTokenNil;
+                    hr = metadata_import->GetCustomAttributeProps(customAttribute, &parent_token, &attribute_ctor_token, nullptr, nullptr);
+                    if (FAILED(hr))
+                    {
+                        customAttributesIterator = ++customAttributesIterator;
+                        continue;
+                    }
+
+                    mdToken attribute_type_token = mdTypeDefNil;
+                    WCHAR type_name[kNameMaxSize]{};
+                    DWORD type_name_len = 0;
+
+                    const auto attribute_ctor_token_type = TypeFromToken(attribute_ctor_token);
+                    if (attribute_ctor_token_type == mdtMemberRef)
+                    {
+                        hr = metadata_import->GetMemberRefProps(attribute_ctor_token, &attribute_type_token,
+                                                                type_name, kNameMaxSize, &type_name_len,
+                                                                nullptr, nullptr);
+                    }
+                    else if (attribute_ctor_token_type == mdtMethodDef)
+                    {
+                        hr = metadata_import->GetMemberProps(attribute_ctor_token, &attribute_type_token,
+                                                             type_name, kNameMaxSize, &type_name_len,
+                                                             nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
+                                                             nullptr, nullptr);
+                    }
+                    else
+                    {
+                        type_name_len = 0;
+                    }
+
+                    if (!TypeNameMatchesTraceAttribute(type_name, type_name_len))
+                    {
+                        customAttributesIterator = ++customAttributesIterator;
+                        continue;
+                    }
 
                     // We are only concerned with the trace attribute on method definitions
                     if (TypeFromToken(parent_token) == mdtMethodDef)
