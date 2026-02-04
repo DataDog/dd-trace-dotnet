@@ -77,25 +77,72 @@ internal sealed class GithubActionsEnvironmentValues<TValueProvider>(TValueProvi
         {
             using var fr = File.OpenRead(filepath);
             using var sr = new StreamReader(fr, Encoding.UTF8);
-            using var jr = new JsonTextReader(sr);
-            var jsonObject = JObject.Load(jr);
+            using var reader = new JsonTextReader(sr);
 
             // Navigate: job.d[] where k == "check_run_id", get v
             // Structure: { "job": { "d": [ { "k": "check_run_id", "v": 55411116365.0 } ] } }
-            var jobData = jsonObject["job"]?["d"] as JArray;
-            if (jobData != null)
+
+            var inJob = false;
+            var inD = false;
+            var objectDepth = 0;
+            var dArrayObjectDepth = -1;
+            string? currentKey = null;
+            while (reader.Read())
             {
-                foreach (var item in jobData)
+                switch (reader.TokenType)
                 {
-                    if (item["k"]?.Value<string>() == "check_run_id")
-                    {
-                        var value = item["v"]?.Value<long>();
-                        if (value.HasValue && value.Value > 0)
+                    case JsonToken.PropertyName:
+                        var prop = (string?)reader.Value;
+
+                        if (prop == "job")
                         {
-                            jobId = value.Value.ToString(CultureInfo.InvariantCulture);
+                            inJob = true;
+                        }
+                        else if (inJob && prop == "d")
+                        {
+                            inD = true;
+                        }
+                        else if (inD && prop == "k")
+                        {
+                            reader.Read();
+                            currentKey = reader.Value?.ToString();
+                        }
+                        else if (inD && prop == "v" && currentKey == "check_run_id")
+                        {
+                            reader.Read();
+                            jobId = Convert.ToDouble(reader.Value).ToString(CultureInfo.InvariantCulture);
                             return true;
                         }
-                    }
+
+                        break;
+
+                    case JsonToken.StartObject:
+                        objectDepth++;
+                        if (inD && dArrayObjectDepth == -1)
+                        {
+                            dArrayObjectDepth = objectDepth;
+                        }
+
+                        break;
+
+                    case JsonToken.EndObject:
+                        // Reset key when we close the object where k/v is
+                        if (objectDepth == dArrayObjectDepth)
+                        {
+                            currentKey = null;
+                        }
+
+                        objectDepth--;
+                        break;
+
+                    case JsonToken.EndArray:
+                        if (inD)
+                        {
+                            inD = false;
+                            dArrayObjectDepth = -1;
+                        }
+
+                        break;
                 }
             }
         }
