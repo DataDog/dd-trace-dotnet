@@ -8,6 +8,7 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
@@ -70,14 +71,10 @@ internal static class ApplicationNameHelpers
 #if NETFRAMEWORK
         try
         {
-            // System.Web.dll is only available on .NET Framework
-            if (System.Web.Hosting.HostingEnvironment.IsHosted)
-            {
-                // if this app is an ASP.NET application, return "SiteName/ApplicationVirtualPath".
-                // note that ApplicationVirtualPath includes a leading slash.
-                siteName = (System.Web.Hosting.HostingEnvironment.SiteName + System.Web.Hosting.HostingEnvironment.ApplicationVirtualPath).TrimEnd('/');
-                return true;
-            }
+            // Call into a separate method to avoid TypeLoadException being thrown
+            // during JIT compilation of this method when System.Web types are unavailable.
+            // The NoInlining attribute ensures the JIT defers compilation until the call site.
+            return TryGetHostingEnvironmentSiteName(out siteName);
         }
         catch (TypeLoadException ex)
         {
@@ -87,4 +84,28 @@ internal static class ApplicationNameHelpers
         siteName = null;
         return false;
     }
+
+#if NETFRAMEWORK
+    /// <summary>
+    /// This method must be called from within a try-catch block.
+    /// The TypeLoadException will be thrown at the CALLSITE when System.Web types are unavailable,
+    /// not inside this method, due to JIT compilation behavior.
+    /// The NoInlining attribute is critical to ensure this behavior.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static bool TryGetHostingEnvironmentSiteName([NotNullWhen(true)] out string? siteName)
+    {
+        // System.Web.dll is only available on .NET Framework
+        if (System.Web.Hosting.HostingEnvironment.IsHosted)
+        {
+            // if this app is an ASP.NET application, return "SiteName/ApplicationVirtualPath".
+            // note that ApplicationVirtualPath includes a leading slash.
+            siteName = (System.Web.Hosting.HostingEnvironment.SiteName + System.Web.Hosting.HostingEnvironment.ApplicationVirtualPath).TrimEnd('/');
+            return true;
+        }
+
+        siteName = null;
+        return false;
+    }
+#endif
 }
