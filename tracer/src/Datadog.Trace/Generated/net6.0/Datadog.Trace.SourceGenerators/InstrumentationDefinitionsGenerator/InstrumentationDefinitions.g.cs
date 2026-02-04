@@ -420,6 +420,7 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate.ExecuteAsyncIntegrationV14"
                     => Datadog.Trace.Configuration.IntegrationId.HotChocolate,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.SocketsHttpHandler.OcelotMessageInvokerPoolIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.SocketsHttpHandler.OcelotMessageInvokerPoolIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.CurlHandler.CurlHandlerIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.HttpClientHandler.HttpClientHandlerSyncIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.HttpClientHandler.HttpClientHandlerIntegration"
