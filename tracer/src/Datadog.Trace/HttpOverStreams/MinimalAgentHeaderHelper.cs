@@ -18,5 +18,5 @@ internal sealed class MinimalAgentHeaderHelper : HttpHeaderHelperBase
 
     public override KeyValuePair<string, string>[] DefaultHeaders => AgentHttpHeaderNames.MinimalHeaders;
 
-    protected override string MetadataHeaders => AgentHttpHeaderNames.HttpSerializedMinimalHeaders;
+    protected override string HttpSerializedDefaultHeaders => AgentHttpHeaderNames.HttpSerializedMinimalHeaders;
 }

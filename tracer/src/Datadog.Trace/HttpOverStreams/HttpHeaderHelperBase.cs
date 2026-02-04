@@ -13,7 +13,7 @@ namespace Datadog.Trace.HttpOverStreams
     {
         public abstract KeyValuePair<string, string>[] DefaultHeaders { get; }
 
-        protected abstract string MetadataHeaders { get; }
+        protected abstract string HttpSerializedDefaultHeaders { get; }
 
         public Task WriteLeadingHeaders(HttpRequest request, TextWriter writer)
         {
@@ -21,7 +21,7 @@ namespace Datadog.Trace.HttpOverStreams
                                     ? $"Content-Length: {contentLength}{DatadogHttpValues.CrLf}"
                                     : string.Empty;
 
-            var leadingHeaders = $"{request.Verb} {request.Path} HTTP/1.1{DatadogHttpValues.CrLf}Host: {request.Host}{DatadogHttpValues.CrLf}Accept-Encoding: identity{DatadogHttpValues.CrLf}{contentLengthHeader}{MetadataHeaders}";
+            var leadingHeaders = $"{request.Verb} {request.Path} HTTP/1.1{DatadogHttpValues.CrLf}Host: {request.Host}{DatadogHttpValues.CrLf}Accept-Encoding: identity{DatadogHttpValues.CrLf}{contentLengthHeader}{HttpSerializedDefaultHeaders}";
             return writer.WriteAsync(leadingHeaders);
         }
 

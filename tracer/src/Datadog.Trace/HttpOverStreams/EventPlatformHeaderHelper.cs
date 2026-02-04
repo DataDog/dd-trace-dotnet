@@ -22,10 +22,10 @@ internal sealed class EventPlatformHeaderHelper : HttpHeaderHelperBase
             ..AgentHttpHeaderNames.MinimalHeaders,
             new(evpHeaderKey, evpHeaderValue),
         ];
-        MetadataHeaders = $"{AgentHttpHeaderNames.HttpSerializedMinimalHeaders}{evpHeaderKey}: {evpHeaderValue}{DatadogHttpValues.CrLf}";
+        HttpSerializedDefaultHeaders = $"{AgentHttpHeaderNames.HttpSerializedMinimalHeaders}{evpHeaderKey}: {evpHeaderValue}{DatadogHttpValues.CrLf}";
     }
 
     public override KeyValuePair<string, string>[] DefaultHeaders { get; }
 
-    protected override string MetadataHeaders { get; }
+    protected override string HttpSerializedDefaultHeaders { get; }
 }

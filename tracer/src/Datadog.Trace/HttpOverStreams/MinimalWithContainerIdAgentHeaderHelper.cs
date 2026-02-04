@@ -12,7 +12,7 @@ namespace Datadog.Trace.HttpOverStreams;
 
 internal sealed class MinimalWithContainerIdAgentHeaderHelper : HttpHeaderHelperBase
 {
-    private readonly Lazy<string> _metadataHeaders;
+    private readonly Lazy<string> _serializedHeaders;
 
     public MinimalWithContainerIdAgentHeaderHelper(string containerId)
     {
@@ -21,10 +21,10 @@ internal sealed class MinimalWithContainerIdAgentHeaderHelper : HttpHeaderHelper
             ..AgentHttpHeaderNames.MinimalHeaders,
             new(AgentHttpHeaderNames.ContainerId, containerId),
         ];
-        _metadataHeaders = new(() => $"{AgentHttpHeaderNames.HttpSerializedMinimalHeaders}{AgentHttpHeaderNames.ContainerId}: {containerId}{DatadogHttpValues.CrLf}");
+        _serializedHeaders = new(() => $"{AgentHttpHeaderNames.HttpSerializedMinimalHeaders}{AgentHttpHeaderNames.ContainerId}: {containerId}{DatadogHttpValues.CrLf}");
     }
 
     public override KeyValuePair<string, string>[] DefaultHeaders { get; }
 
-    protected override string MetadataHeaders => _metadataHeaders.Value;
+    protected override string HttpSerializedDefaultHeaders => _serializedHeaders.Value;
 }

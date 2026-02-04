@@ -20,6 +20,6 @@ namespace Datadog.Trace.Telemetry.Transports
 
         public override KeyValuePair<string, string>[] DefaultHeaders => TelemetryHttpHeaderNames.GetDefaultAgentHeaders();
 
-        protected override string MetadataHeaders => TelemetryHttpHeaderNames.HttpSerializedDefaultAgentHeaders;
+        protected override string HttpSerializedDefaultHeaders => TelemetryHttpHeaderNames.HttpSerializedDefaultAgentHeaders;
     }
 }

@@ -14,11 +14,11 @@ namespace Datadog.Trace.DataStreamsMonitoring.Transport;
 internal sealed class DataStreamsHttpHeaderHelper : HttpHeaderHelperBase
 {
     public static readonly DataStreamsHttpHeaderHelper Instance = new();
-    private readonly Lazy<string> _metadataHeaders;
+    private readonly Lazy<string> _serializedHeaders;
 
     private DataStreamsHttpHeaderHelper()
     {
-        _metadataHeaders = new(static () =>
+        _serializedHeaders = new(static () =>
         {
             var sb = StringBuilderCache.Acquire();
             foreach (var kvp in DataStreamsHttpHeaderNames.GetDefaultAgentHeaders())
@@ -35,5 +35,5 @@ internal sealed class DataStreamsHttpHeaderHelper : HttpHeaderHelperBase
 
     public override KeyValuePair<string, string>[] DefaultHeaders => DataStreamsHttpHeaderNames.GetDefaultAgentHeaders();
 
-    protected override string MetadataHeaders => _metadataHeaders.Value;
+    protected override string HttpSerializedDefaultHeaders => _serializedHeaders.Value;
 }

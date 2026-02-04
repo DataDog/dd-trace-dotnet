@@ -14,11 +14,11 @@ namespace Datadog.Trace.HttpOverStreams
     internal sealed class TraceAgentHttpHeaderHelper : HttpHeaderHelperBase
     {
         public static readonly TraceAgentHttpHeaderHelper Instance = new();
-        private readonly Lazy<string> _metadataHeaders;
+        private readonly Lazy<string> _serializedHeaders;
 
         private TraceAgentHttpHeaderHelper()
         {
-            _metadataHeaders = new(static () =>
+            _serializedHeaders = new(static () =>
             {
                 var sb = StringBuilderCache.Acquire();
                 foreach (var kvp in AgentHttpHeaderNames.DefaultHeaders)
@@ -35,6 +35,6 @@ namespace Datadog.Trace.HttpOverStreams
 
         public override KeyValuePair<string, string>[] DefaultHeaders => AgentHttpHeaderNames.DefaultHeaders;
 
-        protected override string MetadataHeaders => _metadataHeaders.Value;
+        protected override string HttpSerializedDefaultHeaders => _serializedHeaders.Value;
     }
 }
