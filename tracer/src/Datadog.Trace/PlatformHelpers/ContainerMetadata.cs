@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
 #if !NETFRAMEWORK
 
 using System;
@@ -43,20 +44,31 @@ namespace Datadog.Trace.PlatformHelpers
 
         public static readonly ContainerMetadata Instance = new();
 
-        private readonly Lazy<string> _containerId;
-        private readonly Lazy<string> _entityId;
+        private readonly Lazy<string?> _containerId;
+        private readonly Lazy<string?> _entityId;
 
         private ContainerMetadata()
         {
-            _containerId = new Lazy<string>(GetContainerIdInternal, LazyThreadSafetyMode.ExecutionAndPublication);
-            _entityId = new Lazy<string>(() => GetEntityIdInternal(_containerId), LazyThreadSafetyMode.ExecutionAndPublication);
+            _containerId = new Lazy<string?>(GetContainerIdInternal, LazyThreadSafetyMode.ExecutionAndPublication);
+            _entityId = new Lazy<string?>(() => GetEntityIdInternal(_containerId), LazyThreadSafetyMode.ExecutionAndPublication);
         }
 
         // For use in tests only
-        public ContainerMetadata(string containerId, string entityId)
+        [TestingOnly]
+        public ContainerMetadata(string? containerId, string? entityId)
         {
-            _containerId = new Lazy<string>(() => containerId);
-            _entityId = new Lazy<string>(() => entityId);
+            _containerId = new Lazy<string?>(() => containerId);
+            _entityId = new Lazy<string?>(() => entityId);
+        }
+
+        /// <summary>
+        /// Gets or sets the container tags hash received from the agent, used by DBM/DSM
+        /// This is set when we receive a value for it in an http response from the agent
+        /// </summary>
+        public string? ContainerTagsHash
+        {
+            get => Volatile.Read(ref field);
+            set => Volatile.Write(ref field, value);
         }
 
         /// <summary>
@@ -78,7 +90,7 @@ namespace Datadog.Trace.PlatformHelpers
         /// Return <c>null</c> if code is not executing inside a supported container.
         /// </summary>
         /// <value>The container id or <c>null</c>.</value>
-        public string ContainerId
+        public string? ContainerId
         {
             get => _containerId.Value;
         }
@@ -94,7 +106,7 @@ namespace Datadog.Trace.PlatformHelpers
         /// </list>
         /// </summary>
         /// <value>The entity id or <c>null</c>.</value>
-        public string EntityId
+        public string? EntityId
         {
             get => _entityId.Value;
         }
@@ -104,7 +116,7 @@ namespace Datadog.Trace.PlatformHelpers
         /// </summary>
         /// <param name="lines">Lines of text from a cgroup file.</param>
         /// <returns>The container id if found; otherwise, <c>null</c>.</returns>
-        public static string ParseContainerIdFromCgroupLines(IEnumerable<string> lines)
+        public static string? ParseContainerIdFromCgroupLines(IEnumerable<string> lines)
         {
             return lines.Select(ParseContainerIdFromCgroupLine)
                         .FirstOrDefault(id => !string.IsNullOrWhiteSpace(id));
@@ -115,7 +127,7 @@ namespace Datadog.Trace.PlatformHelpers
         /// </summary>
         /// <param name="line">A single line from a cgroup file.</param>
         /// <returns>The container id if found; otherwise, <c>null</c>.</returns>
-        public static string ParseContainerIdFromCgroupLine(string line)
+        public static string? ParseContainerIdFromCgroupLine(string line)
         {
             var lineMatch = Regex.Match(line, ContainerIdRegex);
 
@@ -133,7 +145,7 @@ namespace Datadog.Trace.PlatformHelpers
         /// <param name="controlGroupsMountPath">Path to the cgroup mount point.</param>
         /// <param name="lines">Lines of text from a cgroup file.</param>
         /// <returns>The cgroup node controller's inode if found; otherwise, <c>null</c>.</returns>
-        public static string ExtractInodeFromCgroupLines(string controlGroupsMountPath, IEnumerable<string> lines)
+        public static string? ExtractInodeFromCgroupLines(string controlGroupsMountPath, IEnumerable<string> lines)
         {
             foreach (var line in lines)
             {
@@ -161,7 +173,7 @@ namespace Datadog.Trace.PlatformHelpers
         /// </summary>
         /// <param name="line">A single line from a cgroup file.</param>
         /// <returns>The controller/cgroup-node-path pair if found; otherwise, <c>null</c>.</returns>
-        public static Tuple<string, string> ParseControllerAndPathFromCgroupLine(string line)
+        public static Tuple<string, string>? ParseControllerAndPathFromCgroupLine(string line)
         {
             var lineMatch = Regex.Match(line, CgroupRegex);
 
@@ -195,7 +207,7 @@ namespace Datadog.Trace.PlatformHelpers
                 return false;
             }
 
-            static void LogError(Exception ex, string message)
+            static void LogError(Exception? ex, string message)
             {
 #pragma warning disable DDLOG004 // Must use constant strings - disabled as it's an integer only, and only called twice in the app lifetime
                 if (EnvironmentHelpersNoLogging.IsClrProfilerAttachedSafe())
@@ -229,7 +241,7 @@ namespace Datadog.Trace.PlatformHelpers
             }
         }
 
-        private static string GetContainerIdInternal()
+        private static string? GetContainerIdInternal()
         {
             try
             {
@@ -250,7 +262,7 @@ namespace Datadog.Trace.PlatformHelpers
             return null;
         }
 
-        private static string GetEntityIdInternal(Lazy<string> lazyContainerId)
+        private static string? GetEntityIdInternal(Lazy<string?> lazyContainerId)
         {
             if (lazyContainerId.Value is string containerId)
             {
@@ -266,7 +278,7 @@ namespace Datadog.Trace.PlatformHelpers
             }
         }
 
-        private static string GetCgroupInode()
+        private static string? GetCgroupInode()
         {
             try
             {

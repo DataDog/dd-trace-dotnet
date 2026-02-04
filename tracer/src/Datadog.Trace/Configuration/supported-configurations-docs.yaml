@@ -139,6 +139,10 @@ DD_CIVISIBILITY_AGENTLESS_ENABLED: |
 DD_CIVISIBILITY_AGENTLESS_URL: |
   Configuration key for setting the agentless url endpoint
 
+DD_CIVISIBILITY_AUTO_INSTRUMENTATION_PROVIDER: |
+  Configuration key for identifying the auto instrumentation provider for CI Visibility.
+  This is used to track which instrumentation method was used (e.g., single-step, manual, etc.).
+
 DD_CIVISIBILITY_CODE_COVERAGE_COLLECTORPATH: |
   Configuration key for setting the code coverage collector path
 
@@ -217,6 +221,9 @@ DD_CODE_ORIGIN_FOR_SPANS_MAX_USER_FRAMES: |
   Configuration key for setting the number of frames to be tagged in exit span code origin.
   Default value is <c>8</c>.
 
+DD_CUSTOM_TRACE_ID: |
+  Jenkins CI environment variable for custom trace ID correlation.
+
 DD_DATA_STREAMS_ENABLED: |
   Enables data streams monitoring support
   <see cref="Datadog.Trace.Configuration.TracerSettings.IsDataStreamsMonitoringEnabled"/>
@@ -271,6 +278,11 @@ DD_DOGSTATSD_URL: |
   Configuration key for the location where the Tracer can send DogStatsD metrics.
   Default value is "udp://127.0.0.1:8125".
   <seealso cref="Datadog.Trace.Configuration.ExporterSettings.AgentUri"/>
+
+DD_DOTNET_TRACER_HOME: |
+  It indicates the home directory of the Datadog tracer.
+  On Windows, it is often set to the installation path, such as C:\Program Files\Datadog\.NET Tracer.
+  On Linux/Docker, it is typically set to /opt/datadog.
 
 DD_DYNAMIC_INSTRUMENTATION_DIAGNOSTICS_INTERVAL: |
   Configuration key for the interval (in seconds) between sending probe statuses.
@@ -347,9 +359,42 @@ DD_GIT_COMMIT_SHA: |
   Configuration key for the application's git commit hash. Sets the "_dd.git.commit.sha" tag on every <see cref="Span"/>.
   <seealso cref="Datadog.Trace.Configuration.MutableSettings.GitCommitSha"/>
 
+DD_GIT_BRANCH: |
+  CI Visibility environment variable for git branch name.
+
+DD_GIT_COMMIT_AUTHOR_DATE: |
+  CI Visibility environment variable for git commit author date.
+
+DD_GIT_COMMIT_AUTHOR_EMAIL: |
+  CI Visibility environment variable for git commit author email.
+
+DD_GIT_COMMIT_AUTHOR_NAME: |
+  CI Visibility environment variable for git commit author name.
+
+DD_GIT_COMMIT_COMMITTER_DATE: |
+  CI Visibility environment variable for git commit committer date.
+
+DD_GIT_COMMIT_COMMITTER_EMAIL: |
+  CI Visibility environment variable for git commit committer email.
+
+DD_GIT_COMMIT_COMMITTER_NAME: |
+  CI Visibility environment variable for git commit committer name.
+
+DD_GIT_COMMIT_MESSAGE: |
+  CI Visibility environment variable for git commit message.
+
+DD_GIT_PULL_REQUEST_BASE_BRANCH: |
+  CI Visibility environment variable for pull request base branch.
+
+DD_GIT_PULL_REQUEST_BASE_BRANCH_SHA: |
+  CI Visibility environment variable for pull request base branch SHA.
+
 DD_GIT_REPOSITORY_URL: |
   Configuration key for the application's git repo URL. Sets the "_dd.git.repository_url" tag on every <see cref="Span"/>.
   <seealso cref="Datadog.Trace.Configuration.MutableSettings.GitRepositoryUrl"/>
+
+DD_GIT_TAG: |
+  CI Visibility environment variable for git tag.
 
 DD_HTTP_CLIENT_ERROR_STATUSES: |
   Configuration key for the application's client http statuses to set spans as errors by.
@@ -435,6 +480,22 @@ DD_IAST_WEAK_HASH_ALGORITHMS: |
 DD_INJECTION_ENABLED: |
   Configuration key for enabling or disabling the injection of products via single step instrumentation.
 
+DD_INJECT_FORCE: |
+  SSI variable that allows unsupported runtimes to be instrumented.
+  Used for correlation purposes in telemetry.
+
+DD_INSTRUMENTATION_INSTALL_ID: |
+  SSI variable that provides a unique identifier for the instrumentation installation.
+  Used for tracking and correlation purposes in telemetry.
+
+DD_INSTRUMENTATION_INSTALL_TIME: |
+  SSI variable that indicates when the instrumentation was installed.
+  Used for tracking installation timeline in telemetry.
+
+DD_INSTRUMENTATION_INSTALL_TYPE: |
+  SSI variable that indicates the installation type (e.g., dd_dotnet_launcher, dd_trace_tool, dotnet_msi, windows_fleet_installer).
+  Used to determine the instrumentation source for telemetry.
+
 DD_INSTRUMENTATION_TELEMETRY_AGENTLESS_ENABLED: |
   Configuration key for sending telemetry direct to telemetry intake. If enabled, and
   <see cref="ConfigurationKeys.ApiKey"/> is set, sends telemetry direct to intake if agent is not
@@ -457,6 +518,11 @@ DD_INSTRUMENTATION_TELEMETRY_URL: |
   Configuration key for the telemetry URL where the Tracer sends telemetry. Only applies when agentless
   telemetry is in use (otherwise telemetry is sent to the agent using
   <see cref="Datadog.Trace.Configuration.ExporterSettings.AgentUri"/> instead)
+
+DD_INTERNAL_PROFILING_NATIVE_ENGINE_PATH: |
+  This variable is set by the native loader after trying to load the profiler.
+  It means the profiler is _there_ though it may not be _loaded_. This only works
+  on Windows at the moment. We assume that the CLR profiler must be attached in this scenario.
 
 DD_INTERNAL_TELEMETRY_DEBUG_ENABLED: |
   Configuration key for whether to enable debug mode of telemetry.
@@ -538,6 +604,12 @@ DD_METRICS_OTEL_ENABLED: |
 
 DD_METRICS_OTEL_METER_NAMES: |
   List of meters to add to the metrics exporter for the experimental OpenTelemetry Metrics API support.
+
+DD_ACTION_EXECUTION_ID: |
+  AWS CodePipeline action execution ID for CI correlation.
+
+DD_PIPELINE_EXECUTION_ID: |
+  AWS CodePipeline pipeline execution ID for CI correlation.
 
 DD_PROXY_HTTPS: |
   Configuration key to set a proxy server for https requests.
@@ -657,6 +729,14 @@ DD_TEST_MANAGEMENT_ENABLED: |
 
 DD_TEST_SESSION_NAME: |
   Configuration key for set the test session name
+
+DD_TESTSESSION_COMMAND: |
+  Configuration key for the test session command that was executed.
+  This is used to track the command line that initiated the test session.
+
+DD_TESTSESSION_WORKINGDIRECTORY: |
+  Configuration key for the test session working directory.
+  This is used to track the working directory where the test session was executed.
 
 DD_THIRD_PARTY_DETECTION_EXCLUDES: |
   Configuration key for a separated comma list of libraries to exclude for the 3rd party detection
@@ -1222,6 +1302,9 @@ OTEL_TRACES_SAMPLER_ARG: |
 
 _DD_INTERNAL_IS_RUNNING_IN_CIVISIBILITY: |
   An internal key used to "tell" tracer settings that we're running in CI Visibility mode
+
+_DD_INTERNAL_TOPT_RUNID: |
+  An internal key used to share a runtime ID across all the processes started in a test session
 
 _DD_TRACE_STATS_COMPUTATION_INTERVAL: |
   Configuration key for configuring the interval (in seconds) for sending stats (aka trace metrics)

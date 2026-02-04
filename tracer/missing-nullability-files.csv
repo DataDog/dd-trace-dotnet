@@ -123,7 +123,6 @@ src/Datadog.Trace/HttpOverStreams/IHttpContent.cs
 src/Datadog.Trace/Iast/ITaintedMap.cs
 src/Datadog.Trace/Iast/SourceType.cs
 src/Datadog.Trace/PlatformHelpers/AspNetCoreHttpRequestHandler.cs
-src/Datadog.Trace/PlatformHelpers/ContainerMetadata.cs
 src/Datadog.Trace/PlatformHelpers/ServiceFabric.cs
 src/Datadog.Trace/Processors/ITagProcessor.cs
 src/Datadog.Trace/Processors/NormalizerTraceProcessor.cs

@@ -54,8 +54,8 @@ namespace Datadog.Trace.Tools.Runner
             // Propagate original test command and working directory
             if (initResults.ProfilerEnvironmentVariables is { } profilerEnvironmentVariables)
             {
-                profilerEnvironmentVariables[TestSuiteVisibilityTags.TestSessionCommandEnvironmentVariable] = Environment.CommandLine;
-                profilerEnvironmentVariables[TestSuiteVisibilityTags.TestSessionWorkingDirectoryEnvironmentVariable] = Environment.CurrentDirectory;
+                profilerEnvironmentVariables[ConfigurationKeys.CIVisibility.TestSessionCommand] = Environment.CommandLine;
+                profilerEnvironmentVariables[ConfigurationKeys.CIVisibility.TestSessionWorkingDirectory] = Environment.CurrentDirectory;
             }
 
             // Run child process
@@ -84,8 +84,11 @@ namespace Datadog.Trace.Tools.Runner
                 processInfo.ArgumentList.Add(arg);
             }
 
+            Log.Debug("RunCiCommand.FileName: '{FileName}'", processInfo.FileName);
+            Log.Debug("RunCiCommand.Arguments: '{Arguments}'", string.Join(" ", processInfo.ArgumentList));
+            Log.Debug("RunCiCommand.WorkingDirectory: '{WorkingDirectory}'", processInfo.WorkingDirectory);
             var exitCode = Utils.RunProcess(processInfo, _applicationContext.TokenSource.Token);
-            Log.Debug<int>("RunCiCommand: Finished with exit code: {Value}", exitCode);
+            Log.Debug<int>("RunCiCommand.ExitCode: {Value}", exitCode);
 
             if (!initResults.TestSkippingEnabled)
             {

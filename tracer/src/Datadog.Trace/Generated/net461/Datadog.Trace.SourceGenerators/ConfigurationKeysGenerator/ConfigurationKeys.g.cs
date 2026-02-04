@@ -138,24 +138,19 @@ internal static partial class ConfigurationKeys
     public const string MetricsUri = "DD_DOGSTATSD_URL";
 
     /// <summary>
+    /// It indicates the home directory of the Datadog tracer.
+    /// On Windows, it is often set to the installation path, such as C:\Program Files\Datadog\.NET Tracer.
+    /// On Linux/Docker, it is typically set to /opt/datadog.
+    /// </summary>
+    public const string DotNetTracerHome = "DD_DOTNET_TRACER_HOME";
+
+    /// <summary>
     /// Configuration key for the application's environment. Sets the "env" tag on every <see cref="Span"/>.
     /// </summary>
     /// <seealso cref="Datadog.Trace.Configuration.MutableSettings.Environment"/>
     public const string Environment = "DD_ENV";
 
     public const string PropagateProcessTags = "DD_EXPERIMENTAL_PROPAGATE_PROCESS_TAGS_ENABLED";
-
-    /// <summary>
-    /// Configuration key for the application's git commit hash. Sets the "_dd.git.commit.sha" tag on every <see cref="Span"/>.
-    /// </summary>
-    /// <seealso cref="Datadog.Trace.Configuration.MutableSettings.GitCommitSha"/>
-    public const string GitCommitSha = "DD_GIT_COMMIT_SHA";
-
-    /// <summary>
-    /// Configuration key for the application's git repo URL. Sets the "_dd.git.repository_url" tag on every <see cref="Span"/>.
-    /// </summary>
-    /// <seealso cref="Datadog.Trace.Configuration.MutableSettings.GitRepositoryUrl"/>
-    public const string GitRepositoryUrl = "DD_GIT_REPOSITORY_URL";
 
     /// <summary>
     /// Configuration key for the application's client http statuses to set spans as errors by.
@@ -184,9 +179,17 @@ internal static partial class ConfigurationKeys
     public const string QueryStringReportingSize = "DD_HTTP_SERVER_TAG_QUERY_STRING_SIZE";
 
     /// <summary>
+    /// SSI variable that allows unsupported runtimes to be instrumented.
+    /// Used for correlation purposes in telemetry.
+    /// </summary>
+    public const string InjectForce = "DD_INJECT_FORCE";
+
+    /// <summary>
     /// Configuration key for enabling or disabling the injection of products via single step instrumentation.
     /// </summary>
     public const string SsiDeployed = "DD_INJECTION_ENABLED";
+
+    public const string InternalTraceNativeEnginePath = "DD_INTERNAL_TRACE_NATIVE_ENGINE_PATH";
 
     /// <summary>
     /// Configuration key for enabling or disabling the Tracer's debugger mode.

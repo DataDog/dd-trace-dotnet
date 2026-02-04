@@ -1,17 +1,17 @@
 using System;
-using System.Diagnostics;
 using System.Threading;
-using Datadog.Trace.FeatureFlags;
+using System.Threading.Tasks;
 
 namespace Samples.FeatureFlags;
 class Program
 {
 
-    private static void Main(string[] args)
+    private async static Task Main(string[] args)
     {
-        Evaluator.Init();
+        int configUpdates = 0;
+        Evaluator.RegisterOnNewConfigEventHandler(() => Interlocked.Increment(ref configUpdates));
 
-        if (!Datadog.Trace.FeatureFlags.FeatureFlagsSdk.IsAvailable())
+        if (!Evaluator.Init())
         {
             Console.WriteLine($"<NOT INSTRUMENTED>");
             return;
@@ -25,20 +25,19 @@ class Program
             return;
         }
 
-
-        int configUpdates = 0;
-        Datadog.Trace.FeatureFlags.FeatureFlagsSdk.RegisterOnNewConfigEventHandler(() => Interlocked.Increment(ref configUpdates));
-
-        int attempts = 5;
-        while (configUpdates == 0)
+        if (ev is { Error: "No config loaded" })
         {
-            if (attempts-- == 0)
+            int attempts = 180;
+            while (configUpdates == 0)
             {
-                Console.WriteLine($"No RC received");
-                return;
+                if (attempts-- == 0)
+                {
+                    Console.WriteLine($"No RC received");
+                    return;
+                }
+                Console.WriteLine($"Waiting for RC...");
+                await Task.Delay(1_000);
             }
-            Console.WriteLine($"Waiting for RC...");
-            System.Threading.Thread.Sleep(1000);
         }
 
         Evaluator.Evaluate("exposure-flag");
@@ -46,7 +45,9 @@ class Program
         Evaluator.Evaluate("rule-based-flag");
         Evaluator.Evaluate("numeric-rule-flag");
         Evaluator.Evaluate("time-based-flag");
+
+        Console.WriteLine("Extra checks...");
+        Evaluator.ExtraChecks();
+        Console.WriteLine("Exit. OK");
     }
-
-
 }

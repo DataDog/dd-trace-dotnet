@@ -1,5 +1,5 @@
 using System;
-using System.Threading;
+using System.Diagnostics;
 using OpenFeature.Model;
 
 namespace Samples.FeatureFlags;
@@ -7,13 +7,27 @@ namespace Samples.FeatureFlags;
 class Evaluator
 {
     static global::OpenFeature.FeatureClient client;
+    static Action? _onNewConfig = null;
 
-    public static void Init()
+    public static bool Init()
     {
         Console.WriteLine("OpenFeature FeatureFlags SDK Sample");
+        if (Datadog.FeatureFlags.OpenFeature.DatadogProvider.IsAvailable)
+        {
 
-        global::OpenFeature.Api.Instance.SetProviderAsync(new Datadog.FeatureFlags.OpenFeature.DatadogProvider()).Wait();
-        client = global::OpenFeature.Api.Instance.GetClient();
+            global::OpenFeature.Api.Instance.SetProviderAsync(new Datadog.FeatureFlags.OpenFeature.DatadogProvider()).Wait();
+            client = global::OpenFeature.Api.Instance.GetClient();
+            Datadog.FeatureFlags.OpenFeature.DatadogProvider.RegisterOnNewConfigEventHandler(() => _onNewConfig?.Invoke());
+            return true;
+        }
+
+        return false;
+
+    }
+
+    public static void RegisterOnNewConfigEventHandler(Action onNewConfig)
+    {
+        _onNewConfig = onNewConfig;
     }
 
     public static (string? Value, string? Error)? Evaluate(string key)
@@ -37,5 +51,31 @@ class Evaluator
         }
 
         return (evaluation.Value, evaluation.ErrorMessage);
+    }
+
+    public static void ExtraChecks()
+    {
+        var key = "simple-json";
+        var context = EvaluationContext.Builder().Set("targetingKey", key).Build();
+
+        var defaultValue = new Value("Not found");
+        var evaluation = client.GetObjectDetailsAsync(key, defaultValue, context).Result;
+
+        Assert(evaluation is not null, "Null eval");
+        Assert(evaluation.ErrorMessage is null, $"Non Null error ({evaluation.ErrorMessage})");
+        Assert(evaluation.Value != defaultValue, "Default value");
+        Assert(evaluation.Value.IsStructure, "No structure value");
+        Assert(evaluation.Value.AsStructure.ContainsKey("integer"), "Integer value not found");
+        Assert(evaluation.Value.AsStructure.GetValue("integer").AsInteger == 1, "Wrong Integer value");
+
+        static void Assert(bool condition, string message = "")
+        {
+            if (!condition)
+            {
+                var error = $"ERROR: Assertion failed. {message}";
+                Console.WriteLine(error);
+                throw new Exception(error);
+            }
+        }
     }
 }

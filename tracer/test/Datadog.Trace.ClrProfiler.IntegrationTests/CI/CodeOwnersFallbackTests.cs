@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Datadog.Trace.Ci.CiEnvironment;
+using Datadog.Trace.Configuration;
 using Xunit;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
@@ -30,9 +31,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
             var env = new Dictionary<string, string>
             {
-                [CIEnvironmentValues.Constants.GitHubSha] = CommitSha,
-                [CIEnvironmentValues.Constants.GitHubWorkspace] = Path.Combine(repoRoot, "other"),
-                [CIEnvironmentValues.Constants.GitHubRepository] = "DataDog/dd-trace-dotnet",
+                [PlatformKeys.Ci.GitHub.Sha] = CommitSha,
+                [PlatformKeys.Ci.GitHub.Workspace] = Path.Combine(repoRoot, "other"),
+                [PlatformKeys.Ci.GitHub.Repository] = "DataDog/dd-trace-dotnet",
             };
 
             var ciValues = CIEnvironmentValues.Create(env);
@@ -57,9 +58,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
             var env = new Dictionary<string, string>
             {
-                [CIEnvironmentValues.Constants.GitHubSha] = CommitSha,
-                [CIEnvironmentValues.Constants.GitHubWorkspace] = srcDir,
-                [CIEnvironmentValues.Constants.GitHubRepository] = "DataDog/dd-trace-dotnet",
+                [PlatformKeys.Ci.GitHub.Sha] = CommitSha,
+                [PlatformKeys.Ci.GitHub.Workspace] = srcDir,
+                [PlatformKeys.Ci.GitHub.Repository] = "DataDog/dd-trace-dotnet",
             };
 
             var ciValues = CIEnvironmentValues.Create(env);
@@ -84,8 +85,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
             var env = new Dictionary<string, string>
             {
-                [CIEnvironmentValues.Constants.GitHubSha] = CommitSha,
-                [CIEnvironmentValues.Constants.GitHubRepository] = "DataDog/dd-trace-dotnet",
+                [PlatformKeys.Ci.GitHub.Sha] = CommitSha,
+                [PlatformKeys.Ci.GitHub.Repository] = "DataDog/dd-trace-dotnet",
             };
 
             var originalDirectory = Environment.CurrentDirectory;
@@ -125,9 +126,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
             var env = new Dictionary<string, string>
             {
-                [CIEnvironmentValues.Constants.GitHubSha] = CommitSha,
-                [CIEnvironmentValues.Constants.GitHubWorkspace] = otherRoot,
-                [CIEnvironmentValues.Constants.GitHubRepository] = "DataDog/dd-trace-dotnet",
+                [PlatformKeys.Ci.GitHub.Sha] = CommitSha,
+                [PlatformKeys.Ci.GitHub.Workspace] = otherRoot,
+                [PlatformKeys.Ci.GitHub.Repository] = "DataDog/dd-trace-dotnet",
             };
 
             var ciValues = CIEnvironmentValues.Create(env);
@@ -160,9 +161,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
             var env = new Dictionary<string, string>
             {
-                [CIEnvironmentValues.Constants.GitHubSha] = CommitSha,
-                [CIEnvironmentValues.Constants.GitHubWorkspace] = repoRoot,
-                [CIEnvironmentValues.Constants.GitHubRepository] = "DataDog/dd-trace-dotnet",
+                [PlatformKeys.Ci.GitHub.Sha] = CommitSha,
+                [PlatformKeys.Ci.GitHub.Workspace] = repoRoot,
+                [PlatformKeys.Ci.GitHub.Repository] = "DataDog/dd-trace-dotnet",
             };
 
             var ciValues = CIEnvironmentValues.Create(env);
@@ -180,9 +181,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
             var env = new Dictionary<string, string>
             {
-                [CIEnvironmentValues.Constants.GitHubSha] = CommitSha,
-                [CIEnvironmentValues.Constants.GitHubWorkspace] = repoRoot,
-                [CIEnvironmentValues.Constants.GitHubRepository] = "DataDog/dd-trace-dotnet",
+                [PlatformKeys.Ci.GitHub.Sha] = CommitSha,
+                [PlatformKeys.Ci.GitHub.Workspace] = repoRoot,
+                [PlatformKeys.Ci.GitHub.Repository] = "DataDog/dd-trace-dotnet",
             };
 
             var ciValues = CIEnvironmentValues.Create(env);
@@ -239,9 +240,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
             var env = new Dictionary<string, string>
             {
-                [CIEnvironmentValues.Constants.GitHubSha] = CommitSha,
-                [CIEnvironmentValues.Constants.GitHubWorkspace] = repoRoot,
-                [CIEnvironmentValues.Constants.GitHubRepository] = "DataDog/dd-trace-dotnet",
+                [PlatformKeys.Ci.GitHub.Sha] = CommitSha,
+                [PlatformKeys.Ci.GitHub.Workspace] = repoRoot,
+                [PlatformKeys.Ci.GitHub.Repository] = "DataDog/dd-trace-dotnet",
             };
 
             var ciValues = CIEnvironmentValues.Create(env);

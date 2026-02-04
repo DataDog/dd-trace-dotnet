@@ -104,11 +104,6 @@ public class MetricTests
                 implementation.TagPermutations.Should().NotBeEmpty($"{implementation.Metric} should only use expected prefixes ({string.Join(",", expectedMetric.TagPrefixes)})");
             }
 
-            // if (IgnoreTagsPermutationValidation.IndexOf(implementation.Metric) != -1)
-            // {
-            //     continue;
-            // }
-
             // Check all our permutation are valid
             foreach (var permutation in implementation.TagPermutations)
             {

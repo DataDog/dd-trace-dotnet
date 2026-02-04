@@ -8,6 +8,7 @@ using System.Globalization;
 using System.Net;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Util;
 #pragma warning disable CS0618 // WebRequest, HttpWebRequest, ServicePoint, and WebClient are obsolete. Use HttpClient instead.
 
@@ -18,11 +19,10 @@ internal sealed class LambdaRequestBuilder : ILambdaExtensionRequest
     private const string EndInvocationPath = "/lambda/end-invocation";
     private const string StartInvocationPath = "/lambda/start-invocation";
     private const string ExtensionUri = "http://127.0.0.1:8124";
-    private const string ExtensionUriEnvName = "_DD_EXTENSION_ENDPOINT";
 
     internal LambdaRequestBuilder()
     {
-        Uri = EnvironmentHelpers.GetEnvironmentVariable(ExtensionUriEnvName) ?? ExtensionUri;
+        Uri = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.Aws.ExtensionEndpoint) ?? ExtensionUri;
     }
 
     internal string Uri { get; }

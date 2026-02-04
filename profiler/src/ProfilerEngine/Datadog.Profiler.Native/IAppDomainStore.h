@@ -11,5 +11,6 @@ class IAppDomainStore
 public:
     virtual ~IAppDomainStore() = default;
 
-    virtual bool GetInfo(AppDomainID appDomainId, ProcessID& pid, std::string& appDomainName) = 0;
+    virtual std::string_view GetName(AppDomainID appDomainId) = 0;
+    virtual void Register(AppDomainID appDomainId) = 0;
 };

@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.IO;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Processors;
+using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace;
 
@@ -20,8 +21,9 @@ internal static class ProcessTags
     public const string EntrypointWorkdir = "entrypoint.workdir";
 
     // two views on the same data
-    public static readonly List<string> TagsList = GetTagsList();
-    public static readonly string SerializedTags = GetSerializedTagsFromList(TagsList); // don't forget to refresh the base hash on write if this value becomes mutable
+    public static IReadOnlyCollection<string> TagsList => field ??= GetTagsList();
+
+    public static string SerializedTags => field ??= string.Join(",", TagsList); // don't forget to refresh the base hash on write if this value becomes mutable
 
     private static List<string> GetTagsList()
     {
@@ -52,19 +54,21 @@ internal static class ProcessTags
         tags.Add($"{key}:{normalizedValue}");
     }
 
-    private static string GetSerializedTagsFromList(List<string> tags)
-    {
-        return string.Join(",", tags);
-    }
-
     /// <summary>
     /// From the full path of a directory, get the name of the leaf directory.
     /// </summary>
-    private static string GetLastPathSegment(string directoryPath)
+    [TestingAndPrivateOnly]
+    internal static string GetLastPathSegment(string directoryPath)
     {
-        // Path.GetFileName returns an empty string if the path ends with a '/'.
-        // We could use Path.TrimEndingDirectorySeparator instead of the trim here, but it's not available on .NET Framework
-        return Path.GetFileName(directoryPath.TrimEnd('\\').TrimEnd('/'));
+        // See https://learn.microsoft.com/en-us/dotnet/standard/io/file-path-formats
+        // Use DirectoryInfo.Name because it correctly handles
+        // - "/" and "\" separators
+        // - paths with or without trailing separators
+        // - root paths like "/" or "C:\"
+        // - other edge cases on Windows like device paths ("\\?\.\" etc) or "\\server\share" UNC paths
+        return StringUtil.IsNullOrEmpty(directoryPath) ?
+                   string.Empty :
+                   new DirectoryInfo(directoryPath).Name;
     }
 
     private static string? GetEntryPointName()

@@ -69,7 +69,7 @@
                   "symbols": [
                     {
                       "name": "this",
-                      "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.MultipleHoistedLocalsInStateMachine+<DoAsyncWork>d__0",
+                      "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.MultipleHoistedLocalsInStateMachine",
                       "symbol_type": "arg",
                       "line": 0
                     }

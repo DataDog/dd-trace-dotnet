@@ -32,11 +32,6 @@ internal static partial class PlatformKeys
         internal const string CountersKey = "WEBSITE_COUNTERS_CLR";
 
         /// <summary>
-        /// The instance name in Azure where the traced application is running.
-        /// </summary>
-        internal const string InstanceNameKey = "COMPUTERNAME";
-
-        /// <summary>
         /// The instance ID in Azure where the traced application is running.
         /// </summary>
         internal const string InstanceIdKey = "WEBSITE_INSTANCE_ID";
@@ -51,5 +46,20 @@ internal static partial class PlatformKeys
         /// or will have a value of "dynamic".
         /// </summary>
         public const string WebsiteSku = "WEBSITE_SKU";
+
+        /// <summary>
+        /// The name of the Azure Container App instance. Related to Container Apps
+        /// </summary>
+        internal const string ContainerAppName = "CONTAINER_APP_NAME";
+
+        /// <summary>
+        /// Used to detect if running in Azure App Service (presence of this variable).
+        /// </summary>
+        internal const string RunFromZipKey = "APPSVC_RUN_ZIP";
+
+        /// <summary>
+        /// Used to detect if running in Azure App Service (presence of this variable).
+        /// </summary>
+        internal const string AppServiceApplogsTraceEnabledKey = "WEBSITE_APPSERVICEAPPLOGS_TRACE_ENABLED";
     }
 }

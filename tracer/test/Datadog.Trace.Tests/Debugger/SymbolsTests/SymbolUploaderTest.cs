@@ -91,6 +91,26 @@ public class SymbolUploaderTest
         }
     }
 
+    [Fact]
+    public async Task DoesNotSendTrailingNullBytesWhenReusingPayloadBuffer()
+    {
+        // Force the uploader to allocate a large internal payload buffer first
+        var (bigRoot, bigClasses) = GenerateSymbolString(2000);
+        Assert.True(await UploadClasses(bigRoot, bigClasses));
+
+        // Then send a smaller payload which would reuse the same buffer
+        _api.Segments.Clear();
+        var (smallRoot, smallClasses) = GenerateSymbolString(1);
+        Assert.True(await UploadClasses(smallRoot, smallClasses));
+
+        Assert.NotEmpty(_api.Segments);
+        foreach (var segment in _api.Segments)
+        {
+            var json = Encoding.UTF8.GetString(segment);
+            Assert.DoesNotContain('\0', json);
+        }
+    }
+
     private void WaitForDiscoveryService()
     {
         _discoveryService.TriggerChange(symbolDbEndpoint: "1");
