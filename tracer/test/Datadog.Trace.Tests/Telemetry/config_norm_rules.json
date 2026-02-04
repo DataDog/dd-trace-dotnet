@@ -372,6 +372,7 @@
   "DD_HTTP_SERVER_TAG_QUERY_STRING_SIZE": "trace_http_server_tag_query_string_size",
   "DD_HTTP_SERVER_TAG_QUERY_STRING": "trace_http_server_tag_query_string_enabled",
   "DD_DBM_PROPAGATION_MODE": "dbm_propagation_mode",
+  "DD_DBM_INJECT_SQL_BASEHASH": "dbm_inject_sql_basehash",
   "DD_TRACE_SPAN_ATTRIBUTE_SCHEMA": "trace_span_attribute_schema",
   "DD_TRACE_PEER_SERVICE_DEFAULTS_ENABLED": "trace_peer_service_defaults_enabled",
   "DD_TRACE_REMOVE_INTEGRATION_SERVICE_NAMES_ENABLED": "trace_remove_integration_service_names_enabled",
