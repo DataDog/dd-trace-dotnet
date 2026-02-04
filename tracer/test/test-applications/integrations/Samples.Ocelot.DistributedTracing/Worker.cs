@@ -112,7 +112,7 @@ namespace Samples.Ocelot.DistributedTracing
                             }
                         },
                         UpstreamPathTemplate = "/proxy",
-                        UpstreamHttpMethod = new List<string> { "Get" }
+                        UpstreamHttpMethod = ["Get"]
                     }
                 },
                 GlobalConfiguration = new FileGlobalConfiguration
