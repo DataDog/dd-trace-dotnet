@@ -177,9 +177,6 @@ public class DiscoveryServiceTests
             });
 
         var ds = new DiscoveryService(factory, NullContainerMetadata, InitialRetryDelayMs, MaxRetryDelayMs, recheckIntervalMs);
-
-        // Subscribe BEFORE Request 1 completes
-        // This tests the asynchronous notification path in NotifySubscribers
         ds.SubscribeToChanges(x => Interlocked.Increment(ref notificationCount));
         // fire first request
         mutex1.Set();
@@ -212,9 +209,6 @@ public class DiscoveryServiceTests
             });
 
         var ds = new DiscoveryService(factory, NullContainerMetadata, InitialRetryDelayMs, MaxRetryDelayMs, recheckIntervalMs);
-
-        // Subscribe BEFORE Request 1 completes
-        // This tests the asynchronous notification path in NotifySubscribers
         ds.SubscribeToChanges(x => Interlocked.Increment(ref notificationCount));
         // fire first request
         mutex1.Set();
