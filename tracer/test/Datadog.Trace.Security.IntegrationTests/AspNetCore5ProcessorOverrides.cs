@@ -6,24 +6,16 @@
 #if NETCOREAPP3_0_OR_GREATER
 
 using System;
-using System.Linq;
-using System.Net;
 using System.Threading.Tasks;
-using Datadog.Trace.AppSec;
 using Datadog.Trace.TestHelpers;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
-using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
-using static Google.Protobuf.Compiler.CodeGeneratorResponse.Types;
 
 namespace Datadog.Trace.Security.IntegrationTests;
 
 public class AspNetCore5ProcessorOverrides : AspNetBase, IClassFixture<AspNetCoreTestFixture>
 {
     private const string Pattern = "CUSTOM_TEST_PATTERN_12345";
-    private const string RuleId = "custom-scanner-detection-rule";
     private const string CustomRulesPath = "processor-overrides.json";
 
     private readonly AspNetCoreTestFixture _fixture;
@@ -55,7 +47,6 @@ public class AspNetCore5ProcessorOverrides : AspNetBase, IClassFixture<AspNetCor
         await TryStartApp();
         var agent = _fixture.Agent;
         var url = "/datarazorpage";
-        // var body = $"property={Pattern}";
 
         var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
         var settings = VerifyHelper.GetSpanVerifierSettings(testCase, "-");
