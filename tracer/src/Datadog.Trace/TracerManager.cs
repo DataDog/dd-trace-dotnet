@@ -446,6 +446,12 @@ namespace Datadog.Trace
                     writer.WritePropertyName("runtime_metrics_enabled");
                     writer.WriteValue(instanceSettings.RuntimeMetricsEnabled);
 
+                    if (instanceSettings.RuntimeMetricsDiagnosticsMetricsApiEnabled)
+                    {
+                        writer.WritePropertyName("runtime_metrics_diagnostics_metrics_api_enabled");
+                        writer.WriteValue(instanceSettings.RuntimeMetricsDiagnosticsMetricsApiEnabled);
+                    }
+
                     writer.WritePropertyName("disabled_integrations");
                     writer.WriteStartArray();
 
