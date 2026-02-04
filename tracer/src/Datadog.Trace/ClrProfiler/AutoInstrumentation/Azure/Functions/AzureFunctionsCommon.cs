@@ -290,23 +290,22 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     break;
                 }
 
-                var functionName = functionContext.FunctionDefinition.Name;
-
                 var tags = new AzureFunctionsTags
                 {
                     TriggerType = triggerType,
-                    ShortName = functionName,
+                    ShortName = functionContext.FunctionDefinition.Name,
                     FullName = functionContext.FunctionDefinition.EntryPoint,
                 };
 
-                // If active scope didn't flow via AsyncLocal, try to get it from HttpContext.Items
-                // (for HTTP triggers using ASP.NET Core integration).
+                // If active scope didn't flow via AsyncLocal, try to get it from HttpContext.Items (for HTTP triggers using ASP.NET Core integration).
                 // This happens in Azure Functions isolated worker where middleware breaks AsyncLocal flow.
-                var parentScope = tracer.InternalActiveScope ?? GetAspNetCoreScope(functionContext);
+                var parentSpanContext = tracer.InternalActiveScope?.Span.Context ??
+                                        GetAspNetCoreScope(functionContext)?.Span.Context ??
+                                        extractedContext.SpanContext;
 
-                if (parentScope == null)
+                if (parentSpanContext == null)
                 {
-                    // no local parent available, we are creating a local root span
+                    // no local parent available, create a local root span
                     tags.SetAnalyticsSampleRate(IntegrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: false);
                     scope = tracer.StartActiveInternal(OperationName, parent: extractedContext.SpanContext, tags: tags);
 
@@ -321,20 +320,21 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 }
                 else
                 {
-                    scope = tracer.StartActiveInternal(OperationName, parent: parentScope.Span.Context, tags: tags);
+                    scope = tracer.StartActiveInternal(OperationName, parent: parentSpanContext, tags: tags);
+                    var rootSpan = scope.Root.Span;
 
                     // copy some tags to the root span
-                    var rootSpan = scope.Root.Span;
                     AzureFunctionsTags.SetRootSpanTags(
                         rootSpan,
-                        shortName: functionName,
-                        fullName: functionContext.FunctionDefinition.EntryPoint,
+                        shortName: tags.ShortName,
+                        fullName: tags.FullName,
                         bindingSource: rootSpan.Tags is AzureFunctionsTags t ? t.BindingSource : null,
-                        triggerType: triggerType);
+                        triggerType: tags.TriggerType);
                 }
 
                 scope.Root.Span.Type = SpanType;
-                scope.Span.ResourceName = $"{triggerType} {functionName}";
+
+                scope.Span.ResourceName = $"{tags.TriggerType} {tags.ShortName}";
                 scope.Span.Type = SpanType;
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
             }
@@ -356,6 +356,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             // AsyncLocal context didn't flow - try to get parent scope from HttpContext.Items
             // This happens in Azure Functions isolated worker where middleware breaks AsyncLocal flow
             Scope? parentScope = null;
+
             try
             {
                 if (functionContext.Items != null &&
