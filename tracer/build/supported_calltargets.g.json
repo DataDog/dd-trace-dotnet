@@ -8785,6 +8785,30 @@
     "AssemblyName": "Ocelot",
     "TargetTypeName": "Ocelot.Requester.MessageInvokerPool",
     "TargetMethodName": "CreateHandler",
+    "TargetReturnType": "System.Net.Http.HttpMessageHandler",
+    "TargetParameterTypes": [
+      "Ocelot.Configuration.DownstreamRoute"
+    ],
+    "MinimumVersion": {
+      "Item1": 23,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 24,
+      "Item2": 0,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.SocketsHttpHandler.OcelotMessageInvokerPoolIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "HttpMessageHandler",
+    "AssemblyName": "Ocelot",
+    "TargetTypeName": "Ocelot.Requester.MessageInvokerPool",
+    "TargetMethodName": "CreateHandler",
     "TargetReturnType": "System.Net.Http.SocketsHttpHandler",
     "TargetParameterTypes": [
       "Ocelot.Configuration.DownstreamRoute"

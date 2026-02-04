@@ -3,7 +3,7 @@
   <PropertyGroup>
     <ApiVersion Condition="'$(ApiVersion)' == ''">24.1.0</ApiVersion>
 
-    <!-- Ocelot 24.x only supports net8.0+ -->
+    <!-- Ocelot 23.x supports net6.0-8.0, 24.x supports net8.0+. Tests use net8.0+ for simplicity. -->
     <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
     <LangVersion>latest</LangVersion>
 

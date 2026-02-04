@@ -15,11 +15,28 @@ using Datadog.Trace.Configuration;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.SocketsHttpHandler;
 
 /// <summary>
-/// System.Net.Http.SocketsHttpHandler Ocelot.Requester.MessageInvokerPool::CreateHandler(Ocelot.Configuration.DownstreamRoute) calltarget instrumentation
+/// Ocelot.Requester.MessageInvokerPool::CreateHandler calltarget instrumentation.
+/// Disables Activity header propagation on the SocketsHttpHandler to prevent Ocelot
+/// from overwriting Datadog trace context headers.
 /// </summary>
 /// <remarks>
-/// Target method: <see href="https://github.com/ThreeMammals/Ocelot/blob/24.1.0/src/Ocelot/Requester/MessageInvokerPool.cs#L88">MessageInvokerPool.CreateHandler</see>
+/// <para>
+/// v23.0.0 introduced SocketsHttpHandler (previously HttpClientHandler was used).
+/// v24.1.0 changed the return type from HttpMessageHandler to SocketsHttpHandler.
+/// </para>
+/// <para>
+/// Target method: <see href="https://github.com/ThreeMammals/Ocelot/blob/23.0.0/src/Ocelot/Requester/MessageInvokerPool.cs">MessageInvokerPool.CreateHandler</see>
+/// </para>
 /// </remarks>
+[InstrumentMethod(
+    AssemblyName = "Ocelot",
+    TypeName = "Ocelot.Requester.MessageInvokerPool",
+    MethodName = "CreateHandler",
+    ReturnTypeName = "System.Net.Http.HttpMessageHandler",
+    ParameterTypeNames = ["Ocelot.Configuration.DownstreamRoute"],
+    MinimumVersion = "23.0.0",
+    MaximumVersion = "24.0.*",
+    IntegrationName = IntegrationName)]
 [InstrumentMethod(
     AssemblyName = "Ocelot",
     TypeName = "Ocelot.Requester.MessageInvokerPool",
@@ -56,11 +73,9 @@ public sealed class OcelotMessageInvokerPoolIntegration
             return new CallTargetReturn<TReturn>(returnValue);
         }
 
-        // On net6.0+, the proxy will inject the current Activity into the request headers, using the propagator
-        // stored in the SocketsHttpHandler.ActivityHeadersPropagator field. This will overwrite the propagation
-        // headers that have already been set by our Datadog tracer's HttpClient instrumentation.
-        // To ensure that distributed tracing works properly, unset the ActivityHeadersPropagator so the
-        // trace context is not updated by Ocelot.
+        // On net6.0+, SocketsHttpHandler injects the current Activity into request headers using the
+        // ActivityHeadersPropagator. This overwrites propagation headers already set by our HttpClient
+        // instrumentation. Disable this by setting a no-output propagator to preserve Datadog trace context.
         if (returnValue is System.Net.Http.SocketsHttpHandler handler)
         {
             handler.ActivityHeadersPropagator = DistributedContextPropagator.CreateNoOutputPropagator();
