@@ -4,27 +4,11 @@
 // </copyright>
 #nullable enable
 
-using System.Linq;
-
 namespace Datadog.Trace.HttpOverStreams
 {
-    internal sealed class MultipartAgentHeaderHelper : MinimalAgentHeaderHelper
+    internal sealed class MultipartAgentHeaderHelper : HttpHeaderHelperBase
     {
-        private static string? _metadataHeaders = null;
-
-        protected override string MetadataHeaders
-        {
-            get
-            {
-                if (_metadataHeaders == null)
-                {
-                    var headers = AgentHttpHeaderNames.MinimalHeaders.Select(kvp => $"{kvp.Key}: {kvp.Value}{DatadogHttpValues.CrLf}");
-                    _metadataHeaders = string.Concat(headers);
-                }
-
-                return _metadataHeaders;
-            }
-        }
+        protected override string MetadataHeaders => AgentHttpHeaderNames.HttpSerializedMinimalHeaders;
 
         protected override string ContentType => "multipart/form-data; boundary=--";
     }

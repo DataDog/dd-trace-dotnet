@@ -4,29 +4,33 @@
 // </copyright>
 
 #nullable enable
-using System.Linq;
+using System;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.HttpOverStreams;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.DataStreamsMonitoring.Transport;
 
 internal sealed class DataStreamsHttpHeaderHelper : HttpHeaderHelperBase
 {
-    private static string? _metadataHeaders = null;
-
-    protected override string MetadataHeaders
+    private readonly Lazy<string> _metadataHeaders = new(() =>
     {
-        get
+        var sb = StringBuilderCache.Acquire();
+        foreach (var kvp in DataStreamsHttpHeaderNames.GetDefaultAgentHeaders())
         {
-            if (_metadataHeaders is null)
-            {
-                var headers = DataStreamsHttpHeaderNames.GetDefaultAgentHeaders().Select(kvp => $"{kvp.Key}: {kvp.Value}{DatadogHttpValues.CrLf}");
-                _metadataHeaders = string.Concat(headers);
-            }
-
-            return _metadataHeaders;
+            sb.Append(kvp.Key);
+            sb.Append(": ");
+            sb.Append(kvp.Value);
+            sb.Append(DatadogHttpValues.CrLf);
         }
-    }
+
+        // remove last char
+        sb.Remove(sb.Length - 1, 1);
+
+        return StringBuilderCache.GetStringAndRelease(sb);
+    });
+
+    protected override string MetadataHeaders => _metadataHeaders.Value;
 
     protected override string ContentType => MimeTypes.MsgPack;
 }
