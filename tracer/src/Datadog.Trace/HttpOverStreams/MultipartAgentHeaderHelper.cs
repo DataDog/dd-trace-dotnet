@@ -4,10 +4,14 @@
 // </copyright>
 #nullable enable
 
+using System.Collections.Generic;
+
 namespace Datadog.Trace.HttpOverStreams
 {
     internal sealed class MultipartAgentHeaderHelper : HttpHeaderHelperBase
     {
+        public override KeyValuePair<string, string>[] DefaultHeaders => AgentHttpHeaderNames.MinimalHeaders;
+
         protected override string MetadataHeaders => AgentHttpHeaderNames.HttpSerializedMinimalHeaders;
 
         protected override string ContentType => "multipart/form-data; boundary=--";

@@ -456,32 +456,12 @@ namespace Datadog.Trace.Agent.DiscoveryService
             return _discoveryTask;
         }
 
-        /// <summary>
-        /// Builds the headers array for the discovery service, including the container ID if available.
-        /// Internal for testing purposes.
-        /// </summary>
-        internal static KeyValuePair<string, string>[] BuildHeaders(string? containerId)
-        {
-            if (containerId != null)
-            {
-                // if container ID is available, add it to headers
-                return
-                [
-                    ..AgentHttpHeaderNames.MinimalHeaders,
-                    new(AgentHttpHeaderNames.ContainerId, containerId),
-                ];
-            }
-
-            return AgentHttpHeaderNames.MinimalHeaders;
-        }
-
         private static IApiRequestFactory CreateApiRequestFactory(ExporterSettings exporterSettings, string? containerId, TimeSpan tcpTimeout)
         {
             return AgentTransportStrategy.Get(
                 exporterSettings,
                 productName: "discovery",
                 tcpTimeout: tcpTimeout,
-                defaultAgentHeaders: BuildHeaders(containerId),
                 httpHeaderHelper: containerId is null ? new MinimalAgentHeaderHelper() : new MinimalWithContainerIdAgentHeaderHelper(containerId),
                 getBaseEndpoint: uri => uri);
         }

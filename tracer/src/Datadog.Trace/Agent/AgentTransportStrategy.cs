@@ -27,9 +27,7 @@ internal static class AgentTransportStrategy
     /// <param name="productName">The product this is transport for e.g. 'traces', 'telemetry'.
     /// Used in logging only </param>
     /// <param name="tcpTimeout">The timeout to use in TCP/IP requests</param>
-    /// <param name="defaultAgentHeaders">The default headers to add to HttpClient requests</param>
-    /// <param name="httpHeaderHelper">A func that returns an <see cref="HttpHeaderHelperBase"/> for use
-    /// with <see cref="DatadogHttpClient"/></param>
+    /// <param name="httpHeaderHelper">An <see cref="HttpHeaderHelperBase"/> instance for use with <see cref="DatadogHttpClient"/></param>
     /// <param name="getBaseEndpoint">A func that returns the endpoint to send requests to for a given "base" endpoint.
     /// The base endpoint will be <see cref="ExporterSettings.AgentUri" /> for TCP requests and
     /// http://localhost/ for named pipes/UDS</param>
@@ -37,7 +35,6 @@ internal static class AgentTransportStrategy
         ExporterSettings settings,
         string productName,
         TimeSpan? tcpTimeout,
-        KeyValuePair<string, string>[] defaultAgentHeaders,
         HttpHeaderHelperBase httpHeaderHelper,
         Func<Uri, Uri> getBaseEndpoint)
     {
@@ -58,7 +55,7 @@ internal static class AgentTransportStrategy
                 // use http://localhost as base endpoint
                 return new SocketHandlerRequestFactory(
                     new UnixDomainSocketStreamFactory(settings.TracesUnixDomainSocketPath),
-                    defaultAgentHeaders,
+                    httpHeaderHelper.DefaultHeaders,
                     getBaseEndpoint(Localhost));
 #elif NETCOREAPP3_1_OR_GREATER
                 Log.Information<string, string?, int>("Using " + nameof(UnixDomainSocketStreamFactory) + " for {ProductName} transport, with Unix Domain Sockets path {TracesUnixDomainSocketPath} and timeout {TracesPipeTimeoutMs}ms.", productName, settings.TracesUnixDomainSocketPath, settings.TracesPipeTimeoutMs);
@@ -74,10 +71,10 @@ internal static class AgentTransportStrategy
             default:
 #if NETCOREAPP
                 Log.Information("Using " + nameof(HttpClientRequestFactory) + " for {ProductName} transport.", productName);
-                return new HttpClientRequestFactory(getBaseEndpoint(settings.AgentUri), defaultAgentHeaders, timeout: tcpTimeout);
+                return new HttpClientRequestFactory(getBaseEndpoint(settings.AgentUri), httpHeaderHelper.DefaultHeaders, timeout: tcpTimeout);
 #else
                 Log.Information("Using " + nameof(ApiWebRequestFactory) + " for {ProductName} transport.", productName);
-                return new ApiWebRequestFactory(getBaseEndpoint(settings.AgentUri), defaultAgentHeaders, timeout: tcpTimeout);
+                return new ApiWebRequestFactory(getBaseEndpoint(settings.AgentUri), httpHeaderHelper.DefaultHeaders, timeout: tcpTimeout);
 #endif
         }
     }

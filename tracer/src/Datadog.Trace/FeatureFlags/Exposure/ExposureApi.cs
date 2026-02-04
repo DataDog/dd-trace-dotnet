@@ -41,20 +41,13 @@ internal sealed class ExposureApi : IDisposable
     private readonly TimeSpan _sendInterval = TimeSpan.FromSeconds(10);
     private readonly Queue<ExposureEvent> _exposures = new Queue<ExposureEvent>();
 
-    private ExposureCache _exposureCache = new ExposureCache(DefaultCapacity);
-    private KeyValuePair<string, string>[] _apiRequestHeaders;
+    private readonly ExposureCache _exposureCache = new ExposureCache(DefaultCapacity);
     private IApiRequestFactory _apiRequestFactory;
     private Dictionary<string, string> _context;
     private int _started = 0;
 
     internal ExposureApi(TracerSettings tracerSettings)
     {
-        _apiRequestHeaders =
-        [
-            new("X-Datadog-EVP-Subdomain", "event-platform-intake"),
-            .. AgentHttpHeaderNames.MinimalHeaders
-        ];
-
         UpdateApi(tracerSettings.Manager.InitialExporterSettings);
         UpdateContext(tracerSettings.Manager.InitialMutableSettings);
 
@@ -79,8 +72,7 @@ internal sealed class ExposureApi : IDisposable
                 exporterSettings,
                 productName: "FeatureFlags exposure",
                 tcpTimeout: TimeSpan.FromSeconds(5),
-                defaultAgentHeaders: _apiRequestHeaders,
-                httpHeaderHelper: new MinimalAgentHeaderHelper(),
+                httpHeaderHelper: new EventPlatformHeaderHelper(),
                 getBaseEndpoint: uri => uri);
             Interlocked.Exchange(ref _apiRequestFactory!, apiRequestFactory);
         }

@@ -20,7 +20,6 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Transport
                 exporterSettings,
                 productName: "rcm",
                 tcpTimeout: TimeSpan.FromSeconds(15),
-                defaultAgentHeaders: AgentHttpHeaderNames.MinimalHeaders,
                 httpHeaderHelper: new MinimalAgentHeaderHelper(),
                 getBaseEndpoint: uri => uri);
 

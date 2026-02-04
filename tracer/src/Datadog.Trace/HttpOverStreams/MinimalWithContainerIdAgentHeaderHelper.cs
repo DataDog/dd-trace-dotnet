@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 
 namespace Datadog.Trace.HttpOverStreams;
 
@@ -15,8 +16,15 @@ internal sealed class MinimalWithContainerIdAgentHeaderHelper : HttpHeaderHelper
 
     public MinimalWithContainerIdAgentHeaderHelper(string containerId)
     {
+        DefaultHeaders =
+        [
+            ..AgentHttpHeaderNames.MinimalHeaders,
+            new(AgentHttpHeaderNames.ContainerId, containerId),
+        ];
         _metadataHeaders = new(() => $"{AgentHttpHeaderNames.HttpSerializedMinimalHeaders}{AgentHttpHeaderNames.ContainerId}: {containerId}{DatadogHttpValues.CrLf}");
     }
+
+    public override KeyValuePair<string, string>[] DefaultHeaders { get; }
 
     protected override string MetadataHeaders => _metadataHeaders.Value;
 

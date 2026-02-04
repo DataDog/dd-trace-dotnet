@@ -5,6 +5,7 @@
 
 #nullable enable
 using System;
+using System.Collections.Generic;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Util;
@@ -29,6 +30,8 @@ internal sealed class DataStreamsHttpHeaderHelper : HttpHeaderHelperBase
 
         return StringBuilderCache.GetStringAndRelease(sb);
     });
+
+    public override KeyValuePair<string, string>[] DefaultHeaders => DataStreamsHttpHeaderNames.GetDefaultAgentHeaders();
 
     protected override string MetadataHeaders => _metadataHeaders.Value;
 

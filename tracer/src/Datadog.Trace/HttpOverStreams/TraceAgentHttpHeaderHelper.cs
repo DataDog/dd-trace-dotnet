@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.HttpOverStreams
@@ -28,6 +29,8 @@ namespace Datadog.Trace.HttpOverStreams
 
             return StringBuilderCache.GetStringAndRelease(sb);
         });
+
+        public override KeyValuePair<string, string>[] DefaultHeaders => AgentHttpHeaderNames.DefaultHeaders;
 
         protected override string MetadataHeaders => _metadataHeaders.Value;
 

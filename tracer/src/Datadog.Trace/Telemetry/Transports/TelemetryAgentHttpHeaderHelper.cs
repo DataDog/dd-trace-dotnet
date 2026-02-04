@@ -5,12 +5,15 @@
 
 #nullable enable
 
+using System.Collections.Generic;
 using Datadog.Trace.HttpOverStreams;
 
 namespace Datadog.Trace.Telemetry.Transports
 {
     internal sealed class TelemetryAgentHttpHeaderHelper : HttpHeaderHelperBase
     {
+        public override KeyValuePair<string, string>[] DefaultHeaders => TelemetryHttpHeaderNames.GetDefaultAgentHeaders();
+
         protected override string MetadataHeaders => TelemetryHttpHeaderNames.HttpSerializedDefaultAgentHeaders;
 
         protected override string ContentType => "application/json";

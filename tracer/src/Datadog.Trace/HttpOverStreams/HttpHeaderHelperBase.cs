@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 
@@ -10,6 +11,8 @@ namespace Datadog.Trace.HttpOverStreams
 {
     internal abstract class HttpHeaderHelperBase
     {
+        public abstract KeyValuePair<string, string>[] DefaultHeaders { get; }
+
         protected abstract string MetadataHeaders { get; }
 
         protected abstract string ContentType { get; }
