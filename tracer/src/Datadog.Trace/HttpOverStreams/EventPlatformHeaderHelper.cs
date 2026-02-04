@@ -26,6 +26,4 @@ internal sealed class EventPlatformHeaderHelper : HttpHeaderHelperBase
     public override KeyValuePair<string, string>[] DefaultHeaders { get; }
 
     protected override string MetadataHeaders { get; }
-
-    protected override string ContentType => "application/json";
 }

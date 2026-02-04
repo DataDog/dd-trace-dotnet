@@ -15,8 +15,6 @@ namespace Datadog.Trace.HttpOverStreams
 
         protected abstract string MetadataHeaders { get; }
 
-        protected abstract string ContentType { get; }
-
         public Task WriteLeadingHeaders(HttpRequest request, TextWriter writer)
         {
             var contentLengthHeader = request.Content?.Length is { } contentLength

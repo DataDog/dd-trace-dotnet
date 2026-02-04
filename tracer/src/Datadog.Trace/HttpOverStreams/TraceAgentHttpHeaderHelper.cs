@@ -33,7 +33,5 @@ namespace Datadog.Trace.HttpOverStreams
         public override KeyValuePair<string, string>[] DefaultHeaders => AgentHttpHeaderNames.DefaultHeaders;
 
         protected override string MetadataHeaders => _metadataHeaders.Value;
-
-        protected override string ContentType => "application/msgpack";
     }
 }

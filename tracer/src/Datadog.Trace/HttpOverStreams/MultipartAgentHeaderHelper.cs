@@ -13,7 +13,5 @@ namespace Datadog.Trace.HttpOverStreams
         public override KeyValuePair<string, string>[] DefaultHeaders => AgentHttpHeaderNames.MinimalHeaders;
 
         protected override string MetadataHeaders => AgentHttpHeaderNames.HttpSerializedMinimalHeaders;
-
-        protected override string ContentType => "multipart/form-data; boundary=--";
     }
 }

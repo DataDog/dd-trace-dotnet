@@ -27,6 +27,4 @@ internal sealed class MinimalWithContainerIdAgentHeaderHelper : HttpHeaderHelper
     public override KeyValuePair<string, string>[] DefaultHeaders { get; }
 
     protected override string MetadataHeaders => _metadataHeaders.Value;
-
-    protected override string ContentType => "application/json";
 }
