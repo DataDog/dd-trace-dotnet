@@ -1,0 +1,52 @@
+{
+  "version": "2.2",
+  "metadata": { "rules_version": "1.0.0" },
+  "rules": [
+    {
+      "id": "custom-scanner-detection-rule",
+      "name": "Custom Scanner Detection Test Rule",
+      "tags": {
+        "type": "security_scanner",
+        "category": "attack_attempt"
+      },
+      "conditions": [
+        {
+          "operator": "match_regex",
+          "parameters": {
+            "inputs": [ { "address": "server.request.body" } ],
+            "regex": "CUSTOM_TEST_PATTERN_12345"
+          }
+        }
+      ],
+      "transformers": [],
+      "on_match": []
+    }
+  ],
+  "scanners": [
+    {
+      "id": "custom-test-scanner",
+      "name": "Custom Test Scanner",
+      "key": {
+        "operator": "match_regex",
+        "parameters": { "regex": ".*" }
+      },
+      "value": {
+        "operator": "match_regex",
+        "parameters": { "regex": "CUSTOM_TEST_PATTERN_12345" }
+      },
+      "tags": {
+        "type": "custom_pattern",
+        "category": "test"
+      }
+    }
+  ],
+  "processor_overrides": [
+    {
+      "target": [ { "id": "extract-schema" } ],
+      "scanners": {
+        "include": [ { "id": "custom-test-scanner" } ],
+        "exclude": []
+      }
+    }
+  ]
+}
