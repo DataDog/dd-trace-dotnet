@@ -51,8 +51,10 @@ public abstract class TestingFrameworkRetriesTests : TestingFrameworkEvpTest
             out var sessionWorkingDirectory,
             out var gitRepositoryUrl,
             out var gitBranch,
-            out var gitCommitSha);
+            out var gitCommitSha,
+            out var runId);
 
+        Output.WriteLine("RunId: {0}", runId);
         try
         {
             var retryCount = 5;

@@ -1,12 +1,16 @@
 using System;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Samples.FeatureFlags;
 class Program
 {
 
-    private static void Main(string[] args)
+    private async static Task Main(string[] args)
     {
+        int configUpdates = 0;
+        Evaluator.RegisterOnNewConfigEventHandler(() => Interlocked.Increment(ref configUpdates));
+
         if (!Evaluator.Init())
         {
             Console.WriteLine($"<NOT INSTRUMENTED>");
@@ -21,20 +25,19 @@ class Program
             return;
         }
 
-
-        int configUpdates = 0;
-        Evaluator.RegisterOnNewConfigEventHandler(() => Interlocked.Increment(ref configUpdates));
-
-        int attempts = 50;
-        while (configUpdates == 0)
+        if (ev is { Error: "No config loaded" })
         {
-            if (attempts-- == 0)
+            int attempts = 180;
+            while (configUpdates == 0)
             {
-                Console.WriteLine($"No RC received");
-                return;
+                if (attempts-- == 0)
+                {
+                    Console.WriteLine($"No RC received");
+                    return;
+                }
+                Console.WriteLine($"Waiting for RC...");
+                await Task.Delay(1_000);
             }
-            Console.WriteLine($"Waiting for RC...");
-            System.Threading.Thread.Sleep(1000);
         }
 
         Evaluator.Evaluate("exposure-flag");
@@ -47,6 +50,4 @@ class Program
         Evaluator.ExtraChecks();
         Console.WriteLine("Exit. OK");
     }
-
-
 }

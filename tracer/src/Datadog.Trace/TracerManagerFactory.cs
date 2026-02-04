@@ -20,6 +20,7 @@ using Datadog.Trace.LibDatadog.HandsOffConfiguration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.TracerFlare;
+using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.RemoteConfigurationManagement.Transport;
 using Datadog.Trace.RuntimeMetrics;
@@ -30,7 +31,6 @@ using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.StatsdClient;
 using NativeInterop = Datadog.Trace.ContinuousProfiler.NativeInterop;
-using Stopwatch = System.Diagnostics.Stopwatch;
 
 namespace Datadog.Trace
 {
@@ -165,7 +165,7 @@ namespace Datadog.Trace
             {
                 if (remoteConfigurationManager == null)
                 {
-                    var sw = Stopwatch.StartNew();
+                    var sw = RefStopwatch.Create();
 
                     remoteConfigurationManager =
                         RemoteConfigurationManager.Create(
@@ -298,8 +298,8 @@ namespace Datadog.Trace
         }
 
         internal virtual IDiscoveryService GetDiscoveryService(TracerSettings settings)
-            => settings.AgentFeaturePollingEnabled ?
-                   DiscoveryService.CreateManaged(settings) :
+            => settings.AgentFeaturePollingEnabled ? DiscoveryService.CreateManaged(settings, ContainerMetadata.Instance)
+                   :
                    NullDiscoveryService.Instance;
     }
 }

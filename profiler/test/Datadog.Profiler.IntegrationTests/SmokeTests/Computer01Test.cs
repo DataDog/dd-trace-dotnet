@@ -3,7 +3,11 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
 
+using System.IO;
+using System.Linq;
+using System.Text;
 using Datadog.Profiler.IntegrationTests.Helpers;
+using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -116,6 +120,26 @@ namespace Datadog.Profiler.SmokeTests
             runner.EnvironmentHelper.SetVariable(EnvironmentVariables.CpuProfilerType, "TimerCreate");
             runner.EnvironmentHelper.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "1");
             runner.RunAndCheck();
+        }
+
+        [TestAppFact("Samples.Computer01")]
+        public void CheckCustomGetFunctionFromIP(string appName, string framework, string appAssembly)
+        {
+            var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 0", output: _output);
+            runner.EnvironmentHelper.SetVariable(EnvironmentVariables.UseManagedCodeCache, "1");
+            if (framework == "net48")
+            {
+                runner.EnvironmentHelper.SetVariable(EnvironmentVariables.EtwEnabled, "0");
+            }
+
+            // First, check for no error  
+            runner.RunAndCheck();
+
+            // Then check for custom get function from IP enabled
+            var logFile = Directory.GetFiles(runner.EnvironmentHelper.LogDir)
+                .Single(f => Path.GetFileName(f).StartsWith("DD-DotNet-Profiler-Native-"));
+            File.ReadLines(logFile).Should()
+                .Contain(l => l.Contains("ManagedCodeCache initialized successfully"));
         }
     }
 }

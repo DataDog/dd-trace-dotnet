@@ -17,6 +17,7 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Agent;
+using Datadog.Trace.Ci.Agent.MessagePack;
 using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Ci.Coverage.Models.Tests;
 using Datadog.Trace.Ci.EventModel;
@@ -40,13 +41,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
         {
             var settings = new TestOptimizationSettings(NullConfigurationSource.Instance, NullConfigurationTelemetry.Instance);
             var sender = new Mock<ICIVisibilityProtocolWriterSender>();
-            var agentlessWriter = new CIVisibilityProtocolWriter(settings, sender.Object);
+            var formatter = CIFormatterResolver.Instance;
+            var agentlessWriter = new CIVisibilityProtocolWriter(settings, sender.Object, formatter);
 
             var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow, new TestSpanTags());
             span.Type = SpanTypes.Test;
             span.SetTag(TestTags.Type, TestTags.TypeTest);
 
-            var expectedPayload = new Ci.Agent.Payloads.CITestCyclePayload(settings);
+            var expectedPayload = new Ci.Agent.Payloads.CITestCyclePayload(settings, formatter);
             expectedPayload.TryProcessEvent(new TestEvent(span));
             var expectedBytes = expectedPayload.ToArray();
 
@@ -70,13 +72,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
         {
             var settings = new TestOptimizationSettings(NullConfigurationSource.Instance, NullConfigurationTelemetry.Instance);
             var sender = new Mock<ICIVisibilityProtocolWriterSender>();
-            var agentlessWriter = new CIVisibilityProtocolWriter(settings, sender.Object);
+            var formatter = CIFormatterResolver.Instance;
+            var agentlessWriter = new CIVisibilityProtocolWriter(settings, sender.Object, formatter);
 
             var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow, new TestSpanTags());
             span.Type = SpanTypes.Test;
             span.SetTag(TestTags.Type, TestTags.TypeTest);
 
-            var expectedPayload = new Ci.Agent.Payloads.CITestCyclePayload(settings);
+            var expectedPayload = new Ci.Agent.Payloads.CITestCyclePayload(settings, formatter);
             expectedPayload.TryProcessEvent(new TestEvent(span));
             var mStreamExpected = new MemoryStream();
             expectedPayload.WriteTo(mStreamExpected);
@@ -102,7 +105,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
         {
             var settings = new TestOptimizationSettings(NullConfigurationSource.Instance, NullConfigurationTelemetry.Instance);
             var sender = new Mock<ICIVisibilityProtocolWriterSender>();
-            var agentlessWriter = new CIVisibilityProtocolWriter(settings, sender.Object);
+            var formatter = CIFormatterResolver.Instance;
+            var agentlessWriter = new CIVisibilityProtocolWriter(settings, sender.Object, formatter);
             var coveragePayload = new TestCoverage
             {
                 SessionId = 42,
@@ -118,7 +122,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
                 ]
             };
 
-            var expectedPayload = new Ci.Agent.Payloads.CICodeCoveragePayload(settings);
+            var expectedPayload = new Ci.Agent.Payloads.CICodeCoveragePayload(settings, formatter);
             expectedPayload.TryProcessEvent(coveragePayload);
             var expectedFormItems = expectedPayload.ToArray();
 
@@ -177,7 +181,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
             var flushTcs = new TaskCompletionSource<bool>();
 
             var sender = new Mock<ICIVisibilityProtocolWriterSender>();
-            var agentlessWriter = new CIVisibilityProtocolWriter(settings, sender.Object, concurrency: 1);
+            var formatter = CIFormatterResolver.Instance;
+            var agentlessWriter = new CIVisibilityProtocolWriter(settings, sender.Object, formatter, concurrency: 1);
             var lstPayloads = new List<byte[]>();
 
             sender.Setup(x => x.SendPayloadAsync(It.IsAny<Ci.Agent.Payloads.CIVisibilityProtocolPayload>()))
@@ -189,7 +194,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
                        });
 
             var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow);
-            var expectedPayload = new Ci.Agent.Payloads.CITestCyclePayload(settings);
+            var expectedPayload = new Ci.Agent.Payloads.CITestCyclePayload(settings, formatter);
             expectedPayload.TryProcessEvent(new Ci.EventModel.SpanEvent(span));
             expectedPayload.TryProcessEvent(new Ci.EventModel.SpanEvent(span));
             expectedPayload.TryProcessEvent(new Ci.EventModel.SpanEvent(span));
@@ -230,8 +235,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
         {
             var settings = new TestOptimizationSettings(NullConfigurationSource.Instance, NullConfigurationTelemetry.Instance);
             var sender = new Mock<ICIVisibilityProtocolWriterSender>();
+            var formatter = CIFormatterResolver.Instance;
             // We set 8 threads of concurrency and a batch interval of 10 seconds to avoid the autoflush.
-            var agentlessWriter = new CIVisibilityProtocolWriter(settings, sender.Object, concurrency: 8, batchInterval: 10_000);
+            var agentlessWriter = new CIVisibilityProtocolWriter(settings, sender.Object, formatter, concurrency: 8, batchInterval: 10_000);
             var lstPayloads = new List<byte[]>();
 
             const int numSpans = 2_000;
@@ -286,18 +292,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
         [Fact]
         public void EventsBufferTest()
         {
+            var formatter = CIFormatterResolver.Instance;
             int headerSize = Ci.Agent.Payloads.EventsBuffer<Ci.IEvent>.HeaderSize;
 
             var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow);
             var spanEvent = new Ci.EventModel.SpanEvent(span);
-            var individualType = MessagePackSerializer.Serialize<Ci.IEvent>(spanEvent, Ci.Agent.MessagePack.CIFormatterResolver.Instance);
+            var individualType = MessagePackSerializer.Serialize<Ci.IEvent>(spanEvent, formatter);
 
             int bufferSize = 256;
             int maxBufferSize = (int)(4.5 * 1024 * 1024);
 
             while (bufferSize < maxBufferSize)
             {
-                var eventBuffer = new Ci.Agent.Payloads.EventsBuffer<Ci.IEvent>(bufferSize, Ci.Agent.MessagePack.CIFormatterResolver.Instance);
+                var eventBuffer = new Ci.Agent.Payloads.EventsBuffer<Ci.IEvent>(bufferSize, formatter);
                 while (eventBuffer.TryWrite(spanEvent))
                 {
                     // .
@@ -336,11 +343,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
                 ]
             };
 
-            var coveragePayloadInBytes = MessagePackSerializer.Serialize<Ci.IEvent>(coveragePayload, Ci.Agent.MessagePack.CIFormatterResolver.Instance);
+            var formatter = CIFormatterResolver.Instance;
+            var coveragePayloadInBytes = MessagePackSerializer.Serialize<IEvent>(coveragePayload, formatter);
 
             while (bufferSize < maxBufferSize)
             {
-                var payloadBuffer = new Ci.Agent.Payloads.CICodeCoveragePayload(settings, maxItemsPerPayload: int.MaxValue, maxBytesPerPayload: bufferSize);
+                var payloadBuffer = new Ci.Agent.Payloads.CICodeCoveragePayload(settings, formatter, maxItemsPerPayload: int.MaxValue, maxBytesPerPayload: bufferSize);
                 while (payloadBuffer.TryProcessEvent(coveragePayload))
                 {
                     // .
