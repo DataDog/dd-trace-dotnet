@@ -11,7 +11,7 @@ global using ThrowHelper = Datadog.Trace.Util.ThrowHelper;
 #if NET5_0_OR_GREATER
 global using Unsafe = System.Runtime.CompilerServices.Unsafe;
 #else
-// we use some methods from Unsafe that were added in .NET 5
+// we use Unsafe.IsNullRef() that was added in .NET 5
 global using Unsafe = Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe;
 #endif
 
