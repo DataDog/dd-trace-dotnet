@@ -9,10 +9,13 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.VendoredMicrosoftCode.System.Diagnostics.CodeAnalysis;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.Ci.CiEnvironment;
@@ -66,13 +69,16 @@ internal sealed class GithubActionsEnvironmentValues<TValueProvider>(TValueProvi
         }
     }
 
-    private static bool TryExtractFromJson(string content, [NotNullWhen(true)] out string? jobId)
+    private static bool TryExtractFromJson(string filepath, [NotNullWhen(true)] out string? jobId)
     {
         jobId = null;
 
         try
         {
-            var jsonObject = JObject.Parse(content);
+            using var fr = File.OpenRead(filepath);
+            using var sr = new StreamReader(fr, Encoding.UTF8);
+            using var jr = new JsonTextReader(sr);
+            var jsonObject = JObject.Load(jr);
 
             // Navigate: job.d[] where k == "check_run_id", get v
             // Structure: { "job": { "d": [ { "k": "check_run_id", "v": 55411116365.0 } ] } }
@@ -93,9 +99,9 @@ internal sealed class GithubActionsEnvironmentValues<TValueProvider>(TValueProvi
                 }
             }
         }
-        catch
+        catch (Exception ex)
         {
-            // Not valid JSON - fall back to regex
+            Log.Warning(ex, "Error extracting the job id using the json parser");
         }
 
         return false;
@@ -281,16 +287,15 @@ internal sealed class GithubActionsEnvironmentValues<TValueProvider>(TValueProvi
                 return false;
             }
 
-            var content = File.ReadAllText(logFilePath);
-
             // Strategy 1: Try parsing as pure JSON first (handles well-formed JSON files)
-            if (TryExtractFromJson(content, out jobId))
+            if (TryExtractFromJson(logFilePath, out jobId))
             {
                 Log.Debug("GitHub Actions check_run_id extracted via JSON parse: {JobId} from {FilePath}", jobId, logFilePath);
                 return true;
             }
 
             // Strategy 2: Fall back to regex (handles log files with embedded JSON, multi-line content)
+            var content = File.ReadAllText(logFilePath);
             if (TryExtractFromRegex(content, out jobId))
             {
                 Log.Debug("GitHub Actions check_run_id extracted via regex: {JobId} from {FilePath}", jobId, logFilePath);
@@ -348,5 +353,11 @@ internal sealed class GithubActionsEnvironmentValues<TValueProvider>(TValueProvi
         {
             TestOptimization.Instance.Log.Warning(ex, "Error loading the github-event.json");
         }
+    }
+
+    [TestingOnly]
+    internal bool TryExtractJobIdFromFileTest(string logFilePath, [NotNullWhen(true)] out string? jobId)
+    {
+        return TryExtractJobIdFromFile(logFilePath, out jobId);
     }
 }

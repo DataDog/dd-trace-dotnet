@@ -231,31 +231,28 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             var githubEnvVars = new GithubActionsEnvironmentValues<DictionaryValuesProvider>(
                 new DictionaryValuesProvider(new Dictionary<string, string>()));
 
-            var tryExtractJobIdFromFile = typeof(GithubActionsEnvironmentValues<DictionaryValuesProvider>)
-                .GetMethod("TryExtractJobIdFromFile", BindingFlags.Instance | BindingFlags.NonPublic);
-
             // Create a temp file with valid JSON content matching the GitHub Actions diagnostics format
             var tempFile = Path.GetTempFileName();
             try
             {
-                var validJsonContent = @"{
-                    ""inputs"": { ""t"": 2 },
-                    ""job"": {
-                        ""t"": 2,
-                        ""d"": [
-                            { ""k"": ""check_run_id"", ""v"": 55411116365.0 }
-                        ]
-                    },
-                    ""matrix"": null
-                }";
+                var validJsonContent =
+                    """
+                    {
+                        "inputs": { "t": 2 },
+                        "job": {
+                            "t": 2,
+                            "d": [
+                                { "k": "check_run_id", "v": 55411116365.0 }
+                            ]
+                        },
+                        "matrix": null
+                    }
+                    """;
                 File.WriteAllText(tempFile, validJsonContent);
 
-                // Invoke the private method using reflection
-                var parameters = new object[] { tempFile, null };
-                var result = (bool)tryExtractJobIdFromFile?.Invoke(githubEnvVars, parameters);
-
+                var result = githubEnvVars.TryExtractJobIdFromFileTest(tempFile, out var jobId);
                 result.Should().BeTrue("the file contains valid check_run_id");
-                parameters[1].Should().Be("55411116365", "the extracted job ID should match");
+                jobId.Should().Be("55411116365", "the extracted job ID should match");
             }
             finally
             {
