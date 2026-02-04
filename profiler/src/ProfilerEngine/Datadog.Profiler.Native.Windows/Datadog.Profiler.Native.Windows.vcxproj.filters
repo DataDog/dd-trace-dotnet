@@ -71,6 +71,12 @@
     <ClInclude Include="chrono_helper.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\Datadog.Profiler.Native\AutoResetEvent.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Datadog.Profiler.Native\ManagedCodeCache.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Windows32BitStackFramesCollector.cpp">
@@ -113,6 +119,12 @@
       <Filter>ETW</Filter>
     </ClCompile>
     <ClCompile Include="CrashReportingWindows.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="AutoResetEvent.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Datadog.Profiler.Native\ManagedCodeCache.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
