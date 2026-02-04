@@ -1097,6 +1097,10 @@
       "const_name": "IsRunningInCiVisMode"
     },
     {
+      "env_var": "_DD_INTERNAL_TOPT_RUNID",
+      "const_name": "TestOptimizationRunId"
+    },
+    {
       "env_var": "_DD_TRACE_STATS_COMPUTATION_INTERVAL",
       "const_name": "StatsComputationInterval"
     }
