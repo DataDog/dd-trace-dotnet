@@ -1070,6 +1070,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
                     // Check if the typeref matches
                     mdToken parent_token = mdTokenNil;
                     mdToken attribute_ctor_token = mdTokenNil;
+                    mdToken attribute_type_token = mdTokenNil;
                     hr = metadata_import->GetCustomAttributeProps(customAttribute, &parent_token, &attribute_ctor_token, nullptr, nullptr);
                     if (FAILED(hr))
                     {
@@ -1077,27 +1078,50 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
                         continue;
                     }
 
-                    mdToken attribute_type_token = mdTypeDefNil;
-                    WCHAR type_name[kNameMaxSize]{};
-                    DWORD type_name_len = 0;
-
                     const auto attribute_ctor_token_type = TypeFromToken(attribute_ctor_token);
                     if (attribute_ctor_token_type == mdtMemberRef)
                     {
                         hr = metadata_import->GetMemberRefProps(attribute_ctor_token, &attribute_type_token,
-                                                                type_name, kNameMaxSize, &type_name_len,
-                                                                nullptr, nullptr);
+                                                                nullptr, 0, nullptr, nullptr, nullptr);
                     }
                     else if (attribute_ctor_token_type == mdtMethodDef)
                     {
                         hr = metadata_import->GetMemberProps(attribute_ctor_token, &attribute_type_token,
-                                                             type_name, kNameMaxSize, &type_name_len,
+                                                             nullptr, 0, nullptr,
                                                              nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
                                                              nullptr, nullptr);
                     }
+                    if (FAILED(hr))
+                    {
+                        customAttributesIterator = ++customAttributesIterator;
+                        continue;
+                    }
+
+                    WCHAR type_name[kNameMaxSize]{};
+                    DWORD type_name_len = 0;
+                    const auto attribute_type_token_type = TypeFromToken(attribute_type_token);
+                    if (attribute_type_token_type == mdtTypeDef)
+                    {
+                        DWORD type_flags = 0;
+                        mdToken type_extends = mdTokenNil;
+                        hr = metadata_import->GetTypeDefProps(attribute_type_token, type_name, kNameMaxSize,
+                                                              &type_name_len, &type_flags, &type_extends);
+                    }
+                    else if (attribute_type_token_type == mdtTypeRef)
+                    {
+                        mdToken parent_token_unused = mdTokenNil;
+                        hr = metadata_import->GetTypeRefProps(attribute_type_token, &parent_token_unused, type_name,
+                                                              kNameMaxSize, &type_name_len);
+                    }
                     else
                     {
-                        type_name_len = 0;
+                        hr = E_FAIL;
+                    }
+
+                    if (FAILED(hr))
+                    {
+                        customAttributesIterator = ++customAttributesIterator;
+                        continue;
                     }
 
                     if (!TypeNameMatchesTraceAttribute(type_name, type_name_len))
@@ -1118,17 +1142,23 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
 
                         // Matches! Let's mark the attached method for ReJIT
                         // Extract the function info from the mdMethodDef
-                        const auto caller = GetFunctionInfo(metadata_import, methodDef);
-                        if (!caller.IsValid())
-                        {
-                            Logger::Warn("    * Skipping ", shared::TokenStr(&parent_token),
-                                ": the methoddef is not valid!");
-                            customAttributesIterator = ++customAttributesIterator;
-                            continue;
-                        }
+                    const auto caller = GetFunctionInfo(metadata_import, methodDef);
+                    if (!caller.IsValid())
+                    {
+                        Logger::Warn("    * Skipping ", shared::TokenStr(&parent_token),
+                            ": the methoddef is not valid!");
+                        customAttributesIterator = ++customAttributesIterator;
+                        continue;
+                    }
 
-                        // We create a new function info into the heap from the caller functionInfo in the
-                        // stack, to be used later in the ReJIT process
+                    if (attribute_type_token_type == mdtTypeDef && caller.type.id == attribute_type_token)
+                    {
+                        customAttributesIterator = ++customAttributesIterator;
+                        continue;
+                    }
+
+                    // We create a new function info into the heap from the caller functionInfo in the
+                    // stack, to be used later in the ReJIT process
                         auto functionInfo = FunctionInfo(caller);
                         auto hr = functionInfo.method_signature.TryParse();
                         if (FAILED(hr))
