@@ -247,6 +247,7 @@ public abstract class AzureFunctionsTests : TestHelper
             {
                 const int expectedSpanCount = 26;
                 var spans = await agent.WaitForSpansAsync(expectedSpanCount);
+                spans.Count.Should().Be(expectedSpanCount);
 
                 var filteredSpans = FilterOutSocketsHttpHandler(spans);
 
@@ -254,7 +255,6 @@ public abstract class AzureFunctionsTests : TestHelper
 
                 await AssertIsolatedSpans(filteredSpans.ToImmutableList(), $"{nameof(AzureFunctionsTests)}.Isolated.V4.AspNetCore1");
 
-                filteredSpans.Count.Should().Be(expectedSpanCount);
             }
         }
     }
@@ -378,6 +378,7 @@ public abstract class AzureFunctionsTests : TestHelper
             {
                 const int expectedSpanCount = 26;
                 var spans = await agent.WaitForSpansAsync(expectedSpanCount);
+                spans.Should().HaveCount(expectedSpanCount);
 
                 // There are _additional_ spans created for these compared to the non-AspNetCore version
                 // These are http-client-handler-type: System.Net.Http.SocketsHttpHandler that come in around
@@ -392,8 +393,6 @@ public abstract class AzureFunctionsTests : TestHelper
                 using var s = new AssertionScope();
 
                 await AssertIsolatedSpans(filteredSpans.ToImmutableList(), $"{nameof(AzureFunctionsTests)}.Isolated.V4.AspNetCore");
-
-                filteredSpans.Count.Should().Be(expectedSpanCount);
             }
         }
     }
