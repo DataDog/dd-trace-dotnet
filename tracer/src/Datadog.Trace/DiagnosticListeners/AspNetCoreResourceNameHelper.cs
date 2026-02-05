@@ -10,6 +10,8 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
+using System.Text;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Util;
 using Microsoft.AspNetCore.Routing;
@@ -255,12 +257,63 @@ internal static class AspNetCoreResourceNameHelper
                     + (string.IsNullOrEmpty(actionName) ? 0 : Math.Max(actionName!.Length - 6, 0)) // "action".Length
                     + 1; // '/' prefix
 
+#if NETCOREAPP
         var sb = maxSize < 512
                      ? new ValueStringBuilder(stackalloc char[512])
                      : new ValueStringBuilder(); // too big to use stackallocation, so use array builder
+#else
+        // In .NET Core 2.1, the ValueStringBuilder doesn't actually improve anything
+        var sb = StringBuilderCache.Acquire(maxSize);
+#endif
 
-        // TODO: remove the boxing in a "safe" way
-        foreach (var pathSegment in (List<TemplateSegment>)routePattern.Segments)
+        // Remove the boxing of the enumerator
+        if (routePattern.Segments is List<TemplateSegment> segments)
+        {
+            foreach (var pathSegment in segments)
+            {
+                InnerLoop(
+                    ref sb,
+                    pathSegment,
+                    routeValueDictionary,
+                    areaName,
+                    controllerName,
+                    actionName,
+                    expandRouteParameters);
+            }
+        }
+        else
+        {
+            foreach (var pathSegment in routePattern.Segments)
+            {
+                InnerLoop(
+                    ref sb,
+                    pathSegment,
+                    routeValueDictionary,
+                    areaName,
+                    controllerName,
+                    actionName,
+                    expandRouteParameters);
+            }
+        }
+
+        // We never added anything, or we just added the first `/`, no need for explicit ToString()
+        if (sb.Length <= 1)
+        {
+            sb.Dispose();
+            return "/";
+        }
+
+        return sb.ToString();
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static void InnerLoop(
+            ref ValueStringBuilder sb,
+            TemplateSegment pathSegment,
+            RouteValueDictionary routeValueDictionary,
+            string? areaName,
+            string? controllerName,
+            string? actionName,
+            bool expandRouteParameters)
         {
             var addedPart = false;
             foreach (var part in pathSegment.Parts)
@@ -350,15 +403,6 @@ internal static class AspNetCoreResourceNameHelper
                 }
             }
         }
-
-        // We never added anything, or we just added the first `/`, no need for explicit ToString()
-        if (sb.Length <= 1)
-        {
-            sb.Dispose();
-            return "/";
-        }
-
-        return sb.ToString();
     }
 
     private static bool IsIdentifierSegment(object? value, [NotNullWhen(true)] out string? valueAsString)
@@ -371,5 +415,10 @@ internal static class AspNetCoreResourceNameHelper
 
         return UriHelpers.IsIdentifierSegment(valueAsString, 0, valueAsString.Length);
     }
+
+#if !NETCOREAPP
+    // .NET Core 2.1 helper which doesn't _actually_ append as lower invariant, and just does it all at the end instead
+    private static void AppendAsLowerInvariant(this StringBuilder sb, string? value) => sb.Append(value);
+#endif
 }
 #endif
