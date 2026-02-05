@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <!-- NuGet -->
@@ -11,7 +11,7 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <IsTrimmable>false</IsTrimmable>
-    <NoWarn>NU1510;SYSLIB0014</NoWarn>
+    <NoWarn>NU1510</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup>
