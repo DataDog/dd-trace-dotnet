@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Logging;
+using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
@@ -46,6 +47,7 @@ namespace Datadog.Trace.Agent.DiscoveryService
         private readonly object _lock = new();
         private readonly Task _discoveryTask;
         private readonly IDisposable? _settingSubscription;
+        private readonly ContainerMetadata _containerMetadata;
         private IApiRequestFactory _apiRequestFactory;
         private AgentConfiguration? _configuration;
         private string? _configurationHash;
@@ -54,18 +56,19 @@ namespace Datadog.Trace.Agent.DiscoveryService
 
         public DiscoveryService(
             TracerSettings.SettingsManager settings,
+            ContainerMetadata containerMetadata,
             TimeSpan tcpTimeout,
             int initialRetryDelayMs,
             int maxRetryDelayMs,
             int recheckIntervalMs)
-            : this(CreateApiRequestFactory(settings.InitialExporterSettings, tcpTimeout), initialRetryDelayMs, maxRetryDelayMs, recheckIntervalMs)
+            : this(CreateApiRequestFactory(settings.InitialExporterSettings, containerMetadata.ContainerId, tcpTimeout), containerMetadata, initialRetryDelayMs, maxRetryDelayMs, recheckIntervalMs)
         {
             // Create as a "managed" service that can update the request factory
             _settingSubscription = settings.SubscribeToChanges(changes =>
             {
                 if (changes.UpdatedExporter is { } exporter)
                 {
-                    var newFactory = CreateApiRequestFactory(exporter, tcpTimeout);
+                    var newFactory = CreateApiRequestFactory(exporter, containerMetadata.ContainerId, tcpTimeout);
                     Interlocked.Exchange(ref _apiRequestFactory!, newFactory);
                 }
             });
@@ -77,11 +80,13 @@ namespace Datadog.Trace.Agent.DiscoveryService
         /// </summary>
         public DiscoveryService(
             IApiRequestFactory apiRequestFactory,
+            ContainerMetadata containerMetadata,
             int initialRetryDelayMs,
             int maxRetryDelayMs,
             int recheckIntervalMs)
         {
             _apiRequestFactory = apiRequestFactory;
+            _containerMetadata = containerMetadata;
             _initialRetryDelayMs = initialRetryDelayMs;
             _maxRetryDelayMs = maxRetryDelayMs;
             _recheckIntervalMs = recheckIntervalMs;
@@ -114,9 +119,10 @@ namespace Datadog.Trace.Agent.DiscoveryService
         /// <summary>
         /// Create a <see cref="DiscoveryService"/> instance that responds to runtime changes in settings
         /// </summary>
-        public static DiscoveryService CreateManaged(TracerSettings settings)
+        public static DiscoveryService CreateManaged(TracerSettings settings, ContainerMetadata containerMetadata)
             => new(
                 settings.Manager,
+                containerMetadata,
                 tcpTimeout: TimeSpan.FromSeconds(15),
                 initialRetryDelayMs: 500,
                 maxRetryDelayMs: 5_000,
@@ -125,9 +131,10 @@ namespace Datadog.Trace.Agent.DiscoveryService
         /// <summary>
         /// Create a <see cref="DiscoveryService"/> instance that does _not_ respond to runtime changes in settings
         /// </summary>
-        public static DiscoveryService CreateUnmanaged(ExporterSettings exporterSettings)
+        public static DiscoveryService CreateUnmanaged(ExporterSettings exporterSettings, ContainerMetadata containerMetadata)
             => CreateUnmanaged(
                 exporterSettings,
+                containerMetadata,
                 tcpTimeout: TimeSpan.FromSeconds(15),
                 initialRetryDelayMs: 500,
                 maxRetryDelayMs: 5_000,
@@ -138,12 +145,14 @@ namespace Datadog.Trace.Agent.DiscoveryService
         /// </summary>
         public static DiscoveryService CreateUnmanaged(
             ExporterSettings exporterSettings,
+            ContainerMetadata containerMetadata,
             TimeSpan tcpTimeout,
             int initialRetryDelayMs,
             int maxRetryDelayMs,
             int recheckIntervalMs)
             => new(
-                CreateApiRequestFactory(exporterSettings, tcpTimeout),
+                CreateApiRequestFactory(exporterSettings, containerMetadata.ContainerId, tcpTimeout),
+                containerMetadata,
                 initialRetryDelayMs,
                 maxRetryDelayMs,
                 recheckIntervalMs);
@@ -297,6 +306,13 @@ namespace Datadog.Trace.Agent.DiscoveryService
 
         private async Task ProcessDiscoveryResponse(IApiResponse response)
         {
+            // Extract and store container tags hash from response headers
+            var containerTagsHash = response.GetHeader(AgentHttpHeaderNames.ContainerTagsHash);
+            if (containerTagsHash != null)
+            {
+                _containerMetadata.ContainerTagsHash = containerTagsHash;
+            }
+
             // Grab the original stream
             var stream = await response.GetStreamAsync().ConfigureAwait(false);
 
@@ -440,13 +456,34 @@ namespace Datadog.Trace.Agent.DiscoveryService
             return _discoveryTask;
         }
 
-        private static IApiRequestFactory CreateApiRequestFactory(ExporterSettings exporterSettings, TimeSpan tcpTimeout)
-            => AgentTransportStrategy.Get(
+        /// <summary>
+        /// Builds the headers array for the discovery service, including the container ID if available.
+        /// Internal for testing purposes.
+        /// </summary>
+        internal static KeyValuePair<string, string>[] BuildHeaders(string? containerId)
+        {
+            if (containerId != null)
+            {
+                // if container ID is available, add it to headers
+                return
+                [
+                    ..AgentHttpHeaderNames.MinimalHeaders,
+                    new(AgentHttpHeaderNames.ContainerId, containerId),
+                ];
+            }
+
+            return AgentHttpHeaderNames.MinimalHeaders;
+        }
+
+        private static IApiRequestFactory CreateApiRequestFactory(ExporterSettings exporterSettings, string? containerId, TimeSpan tcpTimeout)
+        {
+            return AgentTransportStrategy.Get(
                 exporterSettings,
                 productName: "discovery",
                 tcpTimeout: tcpTimeout,
-                AgentHttpHeaderNames.MinimalHeaders,
-                () => new MinimalAgentHeaderHelper(),
+                BuildHeaders(containerId),
+                () => new MinimalAgentHeaderHelper(containerId),
                 uri => uri);
+        }
     }
 }
