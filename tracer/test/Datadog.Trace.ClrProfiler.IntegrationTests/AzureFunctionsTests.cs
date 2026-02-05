@@ -145,15 +145,15 @@ public abstract class AzureFunctionsTests : TestHelper
         public async Task SubmitsTraces()
         {
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
+
             using (await RunAzureFunctionAndWaitForExit(agent))
             {
                 const int expectedSpanCount = 21;
                 var spans = await agent.WaitForSpansAsync(expectedSpanCount);
                 var filteredSpans = spans.Where(s => !s.Resource.Equals("Timer ExitApp", StringComparison.OrdinalIgnoreCase)).ToImmutableList();
+                filteredSpans.Should().HaveCount(expectedSpanCount);
 
                 using var s = new AssertionScope();
-                filteredSpans.Count.Should().Be(expectedSpanCount);
-
                 await AssertInProcessSpans(filteredSpans);
             }
         }
@@ -179,14 +179,15 @@ public abstract class AzureFunctionsTests : TestHelper
         public async Task SubmitsTraces()
         {
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true, useStatsD: true);
+
             using (await RunAzureFunctionAndWaitForExit(agent, framework: "net6.0"))
             {
                 const int expectedSpanCount = 21;
                 var spans = await agent.WaitForSpansAsync(expectedSpanCount);
                 var filteredSpans = spans.Where(s => !s.Resource.Equals("Timer ExitApp", StringComparison.OrdinalIgnoreCase)).ToImmutableList();
+                filteredSpans.Should().HaveCount(expectedSpanCount);
 
                 using var s = new AssertionScope();
-
                 await AssertInProcessSpans(filteredSpans);
             }
         }
@@ -213,13 +214,15 @@ public abstract class AzureFunctionsTests : TestHelper
         public async Task SubmitsTraces()
         {
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
+
             using (await RunAzureFunctionAndWaitForExit(agent, expectedExitCode: -1))
             {
                 const int expectedSpanCount = 21;
                 var spans = await agent.WaitForSpansAsync(expectedSpanCount);
                 var filteredSpans = spans.Where(s => !s.Resource.Equals("Timer ExitApp", StringComparison.OrdinalIgnoreCase)).ToImmutableList();
-                using var s = new AssertionScope();
+                filteredSpans.Should().HaveCount(expectedSpanCount);
 
+                using var s = new AssertionScope();
                 await AssertIsolatedSpans(filteredSpans, $"{nameof(AzureFunctionsTests)}.Isolated.V4.Sdk1");
             }
         }
@@ -247,14 +250,12 @@ public abstract class AzureFunctionsTests : TestHelper
             {
                 const int expectedSpanCount = 26;
                 var spans = await agent.WaitForSpansAsync(expectedSpanCount);
-                spans.Count.Should().Be(expectedSpanCount);
+                spans.Should().HaveCount(expectedSpanCount);
 
                 var filteredSpans = FilterOutSocketsHttpHandler(spans);
 
                 using var s = new AssertionScope();
-
                 await AssertIsolatedSpans(filteredSpans.ToImmutableList(), $"{nameof(AzureFunctionsTests)}.Isolated.V4.AspNetCore1");
-
             }
         }
     }
@@ -283,20 +284,22 @@ public abstract class AzureFunctionsTests : TestHelper
             // so we will enable them with a lot of logging
             SetEnvironmentVariable("DD_LOGS_DIRECT_SUBMISSION_AZURE_FUNCTIONS_HOST_ENABLED", "true");
             SetEnvironmentVariable("DD_LOGS_DIRECT_SUBMISSION_MINIMUM_LEVEL", "VERBOSE");
-            var hostName = "integration_ilogger_az_tests";
+            const string hostName = "integration_ilogger_az_tests";
+
             using var logsIntake = new MockLogsIntake();
             EnableDirectLogSubmission(logsIntake.Port, nameof(IntegrationId.ILogger), hostName);
+
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
+
             using (await RunAzureFunctionAndWaitForExit(agent, expectedExitCode: -1))
             {
                 const int expectedSpanCount = 21;
                 var spans = await agent.WaitForSpansAsync(expectedSpanCount);
                 var filteredSpans = spans.Where(s => !s.Resource.Equals("Timer ExitApp", StringComparison.OrdinalIgnoreCase)).ToImmutableList();
+                filteredSpans.Should().HaveCount(expectedSpanCount);
 
                 using var s = new AssertionScope();
                 await AssertIsolatedSpans(filteredSpans);
-
-                filteredSpans.Count.Should().Be(expectedSpanCount);
 
                 var logs = logsIntake.Logs;
 
@@ -331,20 +334,23 @@ public abstract class AzureFunctionsTests : TestHelper
         {
             SetEnvironmentVariable("DD_LOGS_DIRECT_SUBMISSION_AZURE_FUNCTIONS_HOST_ENABLED", "false");
             SetEnvironmentVariable("DD_LOGS_DIRECT_SUBMISSION_MINIMUM_LEVEL", "VERBOSE");
-            var hostName = "integration_ilogger_az_tests";
+            const string hostName = "integration_ilogger_az_tests";
+
             using var logsIntake = new MockLogsIntake();
             EnableDirectLogSubmission(logsIntake.Port, nameof(IntegrationId.ILogger), hostName);
 
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
+
             using (await RunAzureFunctionAndWaitForExit(agent, expectedExitCode: -1))
             {
                 const int expectedSpanCount = 21;
                 var spans = await agent.WaitForSpansAsync(expectedSpanCount);
 
                 var filteredSpans = spans.Where(s => !s.Resource.Equals("Timer ExitApp", StringComparison.OrdinalIgnoreCase)).ToImmutableList();
+                filteredSpans.Should().HaveCount(expectedSpanCount);
 
+                using var s = new AssertionScope();
                 await AssertIsolatedSpans(filteredSpans, filename: $"{nameof(AzureFunctionsTests)}.Isolated.V4.HostLogsDisabled");
-                filteredSpans.Count.Should().Be(expectedSpanCount);
 
                 var logs = logsIntake.Logs;
                 // we expect some logs still from the worker process
@@ -374,6 +380,7 @@ public abstract class AzureFunctionsTests : TestHelper
         public async Task SubmitsTraces()
         {
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
+
             using (await RunAzureFunctionAndWaitForExit(agent, expectedExitCode: -1))
             {
                 const int expectedSpanCount = 26;
@@ -386,13 +393,12 @@ public abstract class AzureFunctionsTests : TestHelper
                 // because of this they cause a lot of flake in the snapshots where they shift places
                 // opting to just scrub them from the snapshots - we also don't think that the spans provide much
                 // value so they may be removed from being traced.
-                var filteredSpans = FilterOutSocketsHttpHandler(spans);
-
-                filteredSpans = filteredSpans.Where(s => !s.Resource.Equals("Timer ExitApp", StringComparison.OrdinalIgnoreCase)).ToImmutableList();
+                var filteredSpans = FilterOutSocketsHttpHandler(spans)
+                                   .Where(s => !s.Resource.Equals("Timer ExitApp", StringComparison.OrdinalIgnoreCase))
+                                   .ToImmutableList();
 
                 using var s = new AssertionScope();
-
-                await AssertIsolatedSpans(filteredSpans.ToImmutableList(), $"{nameof(AzureFunctionsTests)}.Isolated.V4.AspNetCore");
+                await AssertIsolatedSpans(filteredSpans, $"{nameof(AzureFunctionsTests)}.Isolated.V4.AspNetCore");
             }
         }
     }
