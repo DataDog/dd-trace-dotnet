@@ -55,7 +55,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Serverless
             {
                 // Get the tracer's pre-generated pipe name from ExporterSettings
                 var tracerInstance = Tracer.Instance;
-                var exporterSettings = tracerInstance?.Settings?.Exporter;
+
+                if (tracerInstance == null)
+                {
+                    Log.Debug(
+                        "ServerlessCompat integration: Tracer.Instance is null. " +
+                        "Using compat layer's calculated value: {CompatPipeName}",
+                        returnValue);
+                    return new CallTargetReturn<string>(returnValue);
+                }
+
+                var exporterSettings = tracerInstance.Settings?.Exporter;
                 var tracerPipeName = exporterSettings?.MetricsPipeName;
 
                 if (!string.IsNullOrEmpty(tracerPipeName))
