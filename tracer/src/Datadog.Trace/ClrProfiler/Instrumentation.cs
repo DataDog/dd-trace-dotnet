@@ -537,7 +537,7 @@ namespace Datadog.Trace.ClrProfiler
 
             if (!AzureInfo.Instance.IsAzureFunction)
             {
-                // we only need to skip in some Azure Functions
+                // we only ever skip AspNetCoreDiagnosticObserver in Azure Functions
                 return false;
             }
 
@@ -548,6 +548,7 @@ namespace Datadog.Trace.ClrProfiler
                 return true;
             }
 
+            // FUNCTIONS_WORKER_RUNTIME == "dotnet-isolated"
             if (!AzureInfo.Instance.IsIsolatedFunction)
             {
                 // Skip AspNetCoreDiagnosticObserver in in-process Azure Functions
