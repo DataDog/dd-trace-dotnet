@@ -30,15 +30,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Serverless
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class CompatibilityLayer_CalculateTracePipeName_Integration
     {
+        private static string? _cachedTracePipeName;
+        private static readonly object _lock = new object();
+
         /// <summary>
-        /// OnMethodEnd callback - intercepts the return value and overrides it with the tracer's pipe name
+        /// OnMethodEnd callback - intercepts the return value and overrides it with a lazily-generated unique pipe name
         /// </summary>
         /// <typeparam name="TTarget">Type of the target</typeparam>
         /// <param name="instance">Instance value, aka `this` of the instrumented method (null for static methods)</param>
         /// <param name="returnValue">The pipe name calculated by the compat layer</param>
         /// <param name="exception">Exception instance in case the original code threw an exception</param>
         /// <param name="state">Calltarget state value</param>
-        /// <returns>The tracer's pre-generated pipe name, overriding the compat layer's calculation</returns>
+        /// <returns>A unique pipe name for coordination between tracer and compat layer</returns>
         internal static CallTargetReturn<string> OnMethodEnd<TTarget>(
             TTarget instance,
             string returnValue,
@@ -53,43 +56,32 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Serverless
 
             try
             {
-                // Get the tracer's pre-generated pipe name from ExporterSettings
-                var tracerInstance = Tracer.Instance;
-
-                if (tracerInstance == null)
+                // Lazy generation: generate unique pipe name once when compat layer first calls this method
+                if (_cachedTracePipeName == null)
                 {
-                    Log.Debug(
-                        "ServerlessCompat integration: Tracer.Instance is null. " +
-                        "Using compat layer's calculated value: {CompatPipeName}",
-                        returnValue);
-                    return new CallTargetReturn<string>(returnValue);
+                    lock (_lock)
+                    {
+                        if (_cachedTracePipeName == null)
+                        {
+                            _cachedTracePipeName = ServerlessCompatPipeNameHelper.GenerateUniquePipeName(
+                                returnValue,
+                                "dd_trace",
+                                "trace");
+                        }
+                    }
                 }
 
-                var exporterSettings = tracerInstance.Settings?.Exporter;
-                var tracerPipeName = exporterSettings?.TracesPipeName;
+                Log.Debug(
+                    "ServerlessCompat integration: Overriding compat layer trace pipe name. " +
+                    "Compat layer calculated: {CompatPipeName}, Tracer using: {TracerPipeName}",
+                    returnValue,
+                    _cachedTracePipeName);
 
-                if (!string.IsNullOrEmpty(tracerPipeName))
-                {
-                    Log.Debug(
-                        "ServerlessCompat integration: Overriding compat layer trace pipe name. " +
-                        "Compat layer calculated: {CompatPipeName}, Tracer using: {TracerPipeName}",
-                        returnValue,
-                        tracerPipeName);
-
-                    // Override with tracer's value
-                    return new CallTargetReturn<string>(tracerPipeName);
-                }
-                else
-                {
-                    Log.Warning(
-                        "ServerlessCompat integration: Tracer pipe name is null or empty. " +
-                        "Using compat layer's calculated value: {CompatPipeName}",
-                        returnValue);
-                }
+                return new CallTargetReturn<string>(_cachedTracePipeName);
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "ServerlessCompat integration: Error overriding trace pipe name");
+                Log.Error(ex, "ServerlessCompat integration: Error generating trace pipe name");
             }
 
             // Fallback to compat layer's original value
