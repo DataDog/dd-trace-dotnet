@@ -51,9 +51,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
                 //
                 // The typical use case is:
                 // - Datadog web server instrumentations populate Datadog.Trace.Baggage.Current with baggage items from the current request headers.
-                // - The user modifies the current baggage by calling OpenTelemetry.Baggage.get_Current() and calling other OpenTelemetry.Baggage APIs as needed.
+                // - The user modifies the current baggage by calling OpenTelemetry.Baggage.get_Current() and calling other OpenTelemetry.Baggage APIs as needed -
+                //   our instrumentation updates OpenTelemetry.Baggage.Current so its items match the latest Datadog.Trace.Baggage.Current.
                 // - The user sets their completed baggage as OpenTelemetry.Baggage.Current either by using this OpenTelemetry.Baggage.set_Current() API or calling
-                //   one of the static OpenTelemetry.Baggage APIs, which automatically updates OpenTelemetry.Baggage.Current with the returned Baggage object.
+                //   one of the static OpenTelemetry.Baggage APIs, and our instrumentation will replace the contents of Datadog.Trace.Baggage.Current with the specified baggage items.
                 Baggage.Current.Clear();
                 var newBaggage = new Baggage(value.GetBaggage());
                 newBaggage.MergeInto(Baggage.Current);
