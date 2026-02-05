@@ -98,13 +98,15 @@ namespace Datadog.Trace.Configuration
                 if (string.IsNullOrEmpty(tracesPipeName))
                 {
                     tracesPipeName = GenerateUniquePipeName("dd_trace");
-                    Log.Information("Azure Functions environment detected with no explicit trace pipe name. Generated unique pipe name: {TracesPipeName}", tracesPipeName);
+                    AzureFunctionsGeneratedTracesPipeName = tracesPipeName;
+                    Logging.Log.Information("Azure Functions environment detected with no explicit trace pipe name. Generated unique pipe name: {TracesPipeName}", tracesPipeName);
                 }
 
                 if (string.IsNullOrEmpty(metricsPipeName))
                 {
                     metricsPipeName = GenerateUniquePipeName("dd_dogstatsd");
-                    Log.Information("Azure Functions environment detected with no explicit metrics pipe name. Generated unique pipe name: {MetricsPipeName}", metricsPipeName);
+                    AzureFunctionsGeneratedMetricsPipeName = metricsPipeName;
+                    Logging.Log.Information("Azure Functions environment detected with no explicit metrics pipe name. Generated unique pipe name: {MetricsPipeName}", metricsPipeName);
                 }
             }
 
@@ -138,6 +140,20 @@ namespace Datadog.Trace.Configuration
 
             TracesPipeTimeoutMs = rawSettings.TracesPipeTimeoutMs;
         }
+
+        /// <summary>
+        /// Gets the generated trace pipe name for Azure Functions coordination.
+        /// This is set when running in Azure Functions without explicit pipe name configuration.
+        /// Used by ServerlessCompat instrumentation to coordinate pipe names with compat layer.
+        /// </summary>
+        internal static string? AzureFunctionsGeneratedTracesPipeName { get; private set; }
+
+        /// <summary>
+        /// Gets the generated metrics pipe name for Azure Functions coordination.
+        /// This is set when running in Azure Functions without explicit pipe name configuration.
+        /// Used by ServerlessCompat instrumentation to coordinate pipe names with compat layer.
+        /// </summary>
+        internal static string? AzureFunctionsGeneratedMetricsPipeName { get; private set; }
 
         /// <summary>
         /// Gets the Uri where the Tracer can connect to the Agent.
@@ -444,6 +460,31 @@ namespace Datadog.Trace.Configuration
         private readonly record struct MetricsTransportSettings(MetricsTransportType Transport, string Hostname = DefaultDogstatsdHostname, int DogStatsdPort = 0, string? UdsPath = null, string? PipeName = null);
 
         /// <summary>
+        /// Generates a unique pipe name by appending a GUID to the base name.
+        /// Used in Azure Functions to avoid conflicts when multiple functions run in the same hosting plan.
+        /// </summary>
+        /// <param name="baseName">The base name for the pipe</param>
+        /// <returns>A unique pipe name in the format {base}_{guid}</returns>
+        private static string GenerateUniquePipeName(string baseName)
+        {
+            // Validate base pipe name length before appending GUID
+            // Windows pipe path format: \\.\pipe\{base}_{guid}
+            // Max total: 256 - 9 (\\.\pipe\) - 1 (underscore) - 32 (GUID) = 214
+            const int maxBaseLength = 214;
+
+            if (baseName.Length > maxBaseLength)
+            {
+                Logging.Log.Warning("Pipe base name exceeds {MaxLength} characters ({ActualLength}). Truncating to allow for GUID suffix.", maxBaseLength, baseName.Length);
+                baseName = baseName.Substring(0, maxBaseLength);
+            }
+
+            var guid = Guid.NewGuid().ToString("N"); // "N" format removes hyphens (32 chars)
+            var uniqueName = $"{baseName}_{guid}";
+
+            return uniqueName;
+        }
+
+        /// <summary>
         /// These contain the "raw" settings loaded from config. If these don't change, the exporter settings also won't change
         /// </summary>
         internal sealed record Raw
@@ -582,31 +623,6 @@ namespace Datadog.Trace.Configuration
                     return fallback;
                 }
             }
-        }
-
-        /// <summary>
-        /// Generates a unique pipe name by appending a GUID to the base name.
-        /// Used in Azure Functions to avoid conflicts when multiple functions run in the same hosting plan.
-        /// </summary>
-        /// <param name="baseName">The base name for the pipe</param>
-        /// <returns>A unique pipe name in the format {base}_{guid}</returns>
-        private static string GenerateUniquePipeName(string baseName)
-        {
-            // Validate base pipe name length before appending GUID
-            // Windows pipe path format: \\.\pipe\{base}_{guid}
-            // Max total: 256 - 9 (\\.\pipe\) - 1 (underscore) - 32 (GUID) = 214
-            const int maxBaseLength = 214;
-
-            if (baseName.Length > maxBaseLength)
-            {
-                Log.Warning("Pipe base name exceeds {MaxLength} characters ({ActualLength}). Truncating to allow for GUID suffix.", maxBaseLength, baseName.Length);
-                baseName = baseName.Substring(0, maxBaseLength);
-            }
-
-            var guid = Guid.NewGuid().ToString("N"); // "N" format removes hyphens (32 chars)
-            var uniqueName = $"{baseName}_{guid}";
-
-            return uniqueName;
         }
     }
 }
