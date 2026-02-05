@@ -13,7 +13,6 @@
     <NoWin32Manifest>true</NoWin32Manifest>
     <SignAssembly>True</SignAssembly>
     <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)..\..\..\Datadog.Trace.snk</AssemblyOriginatorKeyFile>
-    <NoWarn>NU1510</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -24,7 +23,6 @@
     <PackageReference Include="dnlib" Version="3.3.5" />
     <PackageReference Include="ICSharpCode.Decompiler" Version="7.1.0.6543" />
     <PackageReference Include="StrongNamer" Version="0.2.5" />
-    <PackageReference Include="System.ValueTuple" Version="4.5.0" />
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.0" PrivateAssets="all" />
   </ItemGroup>
 
