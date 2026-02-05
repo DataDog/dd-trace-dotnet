@@ -87,9 +87,30 @@ namespace Datadog.Trace.Configuration
 
             ValidationWarnings = new List<string>();
 
+            // Generate unique pipe names for Azure Functions (when not using AAS Site Extension) if not explicitly configured
+            // This ensures multi-function scenarios don't conflict when using the compat layer
+            // If names are explicitly configured, use them as-is
+            var tracesPipeName = rawSettings.TracesPipeName;
+            var metricsPipeName = rawSettings.MetricsPipeName;
+
+            if (Util.EnvironmentHelpers.IsAzureFunctions() && !Util.EnvironmentHelpers.IsUsingAzureAppServicesSiteExtension())
+            {
+                if (string.IsNullOrEmpty(tracesPipeName))
+                {
+                    tracesPipeName = GenerateUniquePipeName("dd_trace");
+                    Log.Information("Azure Functions environment detected with no explicit trace pipe name. Generated unique pipe name: {TracesPipeName}", tracesPipeName);
+                }
+
+                if (string.IsNullOrEmpty(metricsPipeName))
+                {
+                    metricsPipeName = GenerateUniquePipeName("dd_dogstatsd");
+                    Log.Information("Azure Functions environment detected with no explicit metrics pipe name. Generated unique pipe name: {MetricsPipeName}", metricsPipeName);
+                }
+            }
+
             var traceSettings = GetTraceTransport(
                 agentUri: rawSettings.TraceAgentUri,
-                tracesPipeName: rawSettings.TracesPipeName,
+                tracesPipeName: tracesPipeName,
                 agentHost: rawSettings.TraceAgentHost,
                 agentPort: rawSettings.TraceAgentPort,
                 tracesUnixDomainSocketPath: rawSettings.TracesUnixDomainSocketPath);
@@ -104,7 +125,7 @@ namespace Datadog.Trace.Configuration
                 traceAgentUrl: rawSettings.TraceAgentUri,
                 agentHost: rawSettings.TraceAgentHost,
                 dogStatsdPort: rawSettings.DogStatsdPort,
-                metricsPipeName: rawSettings.MetricsPipeName,
+                metricsPipeName: metricsPipeName,
                 metricsUnixDomainSocketPath: rawSettings.MetricsUnixDomainSocketPath);
 
             MetricsHostname = metricsSettings.Hostname;
@@ -561,6 +582,31 @@ namespace Datadog.Trace.Configuration
                     return fallback;
                 }
             }
+        }
+
+        /// <summary>
+        /// Generates a unique pipe name by appending a GUID to the base name.
+        /// Used in Azure Functions to avoid conflicts when multiple functions run in the same hosting plan.
+        /// </summary>
+        /// <param name="baseName">The base name for the pipe</param>
+        /// <returns>A unique pipe name in the format {base}_{guid}</returns>
+        private static string GenerateUniquePipeName(string baseName)
+        {
+            // Validate base pipe name length before appending GUID
+            // Windows pipe path format: \\.\pipe\{base}_{guid}
+            // Max total: 256 - 9 (\\.\pipe\) - 1 (underscore) - 32 (GUID) = 214
+            const int maxBaseLength = 214;
+
+            if (baseName.Length > maxBaseLength)
+            {
+                Log.Warning("Pipe base name exceeds {MaxLength} characters ({ActualLength}). Truncating to allow for GUID suffix.", maxBaseLength, baseName.Length);
+                baseName = baseName.Substring(0, maxBaseLength);
+            }
+
+            var guid = Guid.NewGuid().ToString("N"); // "N" format removes hyphens (32 chars)
+            var uniqueName = $"{baseName}_{guid}";
+
+            return uniqueName;
         }
     }
 }
