@@ -467,6 +467,9 @@ src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Process/EnvironmentVariablesSc
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Process/ProcessStartIntegration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Process/ProcessStartTags.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/RabbitMQ/RabbitMQConstants.cs
+src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Serverless/CompatibilityLayer_CalculateDogStatsDPipeName_Integration.cs
+src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Serverless/CompatibilityLayer_CalculateTracePipeName_Integration.cs
+src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Serverless/ServerlessCompatPipeNameHelper.cs
 src/Datadog.Trace/Debugger/Configurations/Models/Capture.cs
 src/Datadog.Trace/Debugger/Configurations/Models/DebuggerExpression.cs
 src/Datadog.Trace/Debugger/Configurations/Models/EvaluateAt.cs

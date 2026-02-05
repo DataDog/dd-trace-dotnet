@@ -33,14 +33,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Serverless
 
             if (baseName.Length > maxBaseLength)
             {
-                Log.Warning("{PipeType} pipe base name exceeds {MaxLength} characters ({ActualLength}). Truncating to allow for GUID suffix.", pipeType, maxBaseLength, baseName.Length);
+                Logging.Log.Warning("{PipeType} pipe base name exceeds {MaxLength} characters ({ActualLength}). Truncating to allow for GUID suffix.", pipeType, maxBaseLength, baseName.Length);
                 baseName = baseName.Substring(0, maxBaseLength);
             }
 
             var guid = Guid.NewGuid().ToString("N"); // "N" format removes hyphens (32 chars)
             var uniqueName = $"{baseName}_{guid}";
 
-            Log.Information("ServerlessCompat integration: Generated unique {PipeType} pipe name: {PipeName}", pipeType, uniqueName);
+            Logging.Log.Information("ServerlessCompat integration: Generated unique {PipeType} pipe name: {PipeName}", pipeType, uniqueName);
             return uniqueName;
         }
     }
