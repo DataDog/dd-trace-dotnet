@@ -87,27 +87,9 @@ namespace Datadog.Trace.Configuration
 
             ValidationWarnings = new List<string>();
 
-            // Check if serverless compat layer is loaded
-            // Only generate unique pipe names if compat layer is present (Azure Functions)
-            // Otherwise, use configured pipe names for regular Windows with Datadog Agent
-            var isCompatLayerLoaded = IsServerlessCompatLayerLoaded();
-
-            var tracesPipeName = rawSettings.TracesPipeName;
-            var metricsPipeName = rawSettings.MetricsPipeName;
-
-            if (isCompatLayerLoaded)
-            {
-                // Generate unique pipe names for Azure Functions multifunction scenario
-                // These will be used to override compat layer's calculations via instrumentation
-                tracesPipeName = GenerateUniquePipeName(tracesPipeName, "dd_trace");
-                metricsPipeName = GenerateUniquePipeName(metricsPipeName, "dd_dogstatsd");
-
-                Log.Information("Serverless compat layer detected. Generated unique pipe names for multi-function scenario - Traces: {TracesPipe}, Metrics: {MetricsPipe}", tracesPipeName, metricsPipeName);
-            }
-
             var traceSettings = GetTraceTransport(
                 agentUri: rawSettings.TraceAgentUri,
-                tracesPipeName: tracesPipeName,
+                tracesPipeName: rawSettings.TracesPipeName,
                 agentHost: rawSettings.TraceAgentHost,
                 agentPort: rawSettings.TraceAgentPort,
                 tracesUnixDomainSocketPath: rawSettings.TracesUnixDomainSocketPath);
@@ -122,7 +104,7 @@ namespace Datadog.Trace.Configuration
                 traceAgentUrl: rawSettings.TraceAgentUri,
                 agentHost: rawSettings.TraceAgentHost,
                 dogStatsdPort: rawSettings.DogStatsdPort,
-                metricsPipeName: metricsPipeName,
+                metricsPipeName: rawSettings.MetricsPipeName,
                 metricsUnixDomainSocketPath: rawSettings.MetricsUnixDomainSocketPath);
 
             MetricsHostname = metricsSettings.Hostname;
@@ -581,55 +563,5 @@ namespace Datadog.Trace.Configuration
             }
         }
 
-        /// <summary>
-        /// Checks if the Datadog Serverless Compatibility Layer is loaded in the current process.
-        /// The compat layer is used in Azure Functions for multi-function deployments.
-        /// </summary>
-        /// <returns>True if the compat layer assembly is loaded, false otherwise.</returns>
-        private static bool IsServerlessCompatLayerLoaded()
-        {
-            try
-            {
-                var compatAssembly = AppDomain.CurrentDomain.GetAssemblies()
-                    .FirstOrDefault(a => a.GetName().Name == "Datadog.Serverless.Compat");
-
-                return compatAssembly != null;
-            }
-            catch (Exception ex)
-            {
-                Log.Debug(ex, "Error checking if serverless compat layer is loaded");
-                return false;
-            }
-        }
-
-        /// <summary>
-        /// Generates a unique pipe name by appending a GUID to the base name.
-        /// Used in Azure Functions to avoid conflicts when multiple functions run in the same namespace.
-        /// Validates and truncates the base name if necessary to ensure the full pipe path stays within Windows limits.
-        /// </summary>
-        /// <param name="configuredName">The configured pipe name from environment variables, or null</param>
-        /// <param name="defaultBaseName">The default base name to use if no configuration provided</param>
-        /// <returns>A unique pipe name in the format {base}_{guid}</returns>
-        private static string GenerateUniquePipeName(string? configuredName, string defaultBaseName)
-        {
-            var baseName = configuredName ?? defaultBaseName;
-
-            // Validate base pipe name length before appending GUID
-            // Windows pipe path format: \\.\pipe\{base}_{guid}
-            // Max total: 256 - 9 (\\.\pipe\) - 1 (underscore) - 32 (GUID) = 214
-            const int maxBaseLength = 214;
-
-            if (baseName.Length > maxBaseLength)
-            {
-                Log.Warning("Pipe base name exceeds {MaxLength} characters ({ActualLength}). Truncating to allow for GUID suffix.", maxBaseLength, baseName.Length);
-                baseName = baseName.Substring(0, maxBaseLength);
-            }
-
-            var guid = Guid.NewGuid().ToString("N"); // "N" format removes hyphens (32 chars)
-            var uniqueName = $"{baseName}_{guid}";
-
-            Log.Debug("Generated unique pipe name: {PipeName} (base: {BaseName})", uniqueName, baseName);
-            return uniqueName;
-        }
     }
 }
