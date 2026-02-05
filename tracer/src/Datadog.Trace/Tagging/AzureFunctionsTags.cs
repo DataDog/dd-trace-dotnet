@@ -34,14 +34,13 @@ namespace Datadog.Trace.Tagging
         public string TriggerType { get; set; } = "Unknown";
 
         internal static void SetRootSpanTags(
-            Span span,
+            ITags tags,
             string shortName,
             string fullName,
             string bindingSource,
             string triggerType)
         {
-            var tags = span.Tags;
-            if (span.Tags is AspNetCoreTags aspNetTags)
+            if (tags is AspNetCoreTags aspNetTags)
             {
                 aspNetTags.InstrumentationName = ComponentName;
             }
@@ -51,10 +50,20 @@ namespace Datadog.Trace.Tagging
                 tags.SetTag(Tags.InstrumentationName, ComponentName);
             }
 
-            tags.SetTag(ShortNameTagName, shortName);
-            tags.SetTag(FullNameTagName, fullName);
-            tags.SetTag(BindingSourceTagName, bindingSource);
-            tags.SetTag(TriggerTypeTagName, triggerType);
+            if (tags is AzureFunctionsTags azureFunctionsTags)
+            {
+                azureFunctionsTags.ShortName = shortName;
+                azureFunctionsTags.FullName = fullName;
+                azureFunctionsTags.BindingSource = bindingSource;
+                azureFunctionsTags.TriggerType = triggerType;
+            }
+            else
+            {
+                tags.SetTag(ShortNameTagName, shortName);
+                tags.SetTag(FullNameTagName, fullName);
+                tags.SetTag(BindingSourceTagName, bindingSource);
+                tags.SetTag(TriggerTypeTagName, triggerType);
+            }
         }
     }
 }
