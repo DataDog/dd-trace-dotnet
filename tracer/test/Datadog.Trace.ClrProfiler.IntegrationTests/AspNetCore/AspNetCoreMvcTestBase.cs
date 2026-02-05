@@ -61,6 +61,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled, (flags == AspNetCoreFeatureFlags.RouteTemplateResourceNames).ToString());
             SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.SingleSpanAspNetCoreEnabled, (flags == AspNetCoreFeatureFlags.SingleSpan).ToString());
 
+            // Enable OpenTelemetry interop to test that the OTel Baggage API integration works correctly.
+            SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
+
             Fixture = fixture;
             Fixture.SetOutput(output);
         }
