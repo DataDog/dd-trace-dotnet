@@ -15,6 +15,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
     /// </summary>
     internal interface IApiBaggage
     {
+        [DuckField(Name = "baggage")]
+        Dictionary<string, string> Baggage { get; }
+
         IApiBaggage Create(Dictionary<string, string?>? baggageItems);
 
         IReadOnlyDictionary<string, string?> GetBaggage();

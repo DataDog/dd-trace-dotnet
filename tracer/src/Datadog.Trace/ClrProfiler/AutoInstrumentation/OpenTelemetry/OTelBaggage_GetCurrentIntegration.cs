@@ -51,7 +51,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
                 {
                     var apiBaggage = proxyResult.CreateInstance<IApiBaggage>(Activator.CreateInstance(OTelBaggageType));
 
-                    // Update the underlying OpenTelemetry.Baggage.Current store to the latest Datadog.Trace.Baggage.Current items.
+                    // Since Datadog.Trace.Baggage.Current may have been updated since the last time OpenTelemetry.Baggage.Current was accessed,
+                    // we must update the underlying OpenTelemetry.Baggage.Current store with the latest Datadog.Trace.Baggage.Current items.
+                    // Note: When the user sets OpenTelemetry.Baggage.Current, those changes will override the contents of Datadog.Trace.Baggage.Current,
+                    // so we can always consider Datadog.Trace.Baggage.Current as being up-to-date.
                     var baggageHolder = apiBaggage.EnsureBaggageHolder();
                     baggageHolder.Baggage = apiBaggage.Create(Baggage.Current.ToDictionary(kvp => kvp.Key, kvp => kvp.Value));
                 }

@@ -45,14 +45,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
         /// <param name="baggage">Optional baggage, or default if not specified.</param>
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TInstance, TBaggage>(TInstance instance, string key, string value, TBaggage baggage)
-            where TBaggage : IApiBaggage
         {
+            // If the user provides the default baggage instance, then OpenTelemetry.Baggage.Current will be used as the baggage source,
+            // so we must update the underlying OpenTelemetry.Baggage.Current store to the latest Datadog.Trace.Baggage.Current items.
             if (Tracer.Instance.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId)
-                && baggage.TryDuckCast<IApiBaggage>(out var apiBaggage))
+                && baggage.TryDuckCast<IApiBaggage>(out var apiBaggage)
+                && apiBaggage.Baggage is null)
             {
-                // Update the underlying OpenTelemetry.Baggage.Current store to the latest Datadog.Trace.Baggage.Current items, which will be used if the user does not provide a custom baggage instance.
-                // If the user does provide, a custom baggage instance, then this operation will have been useless as it will be overridden.
-                // TODO: Once the behavior is validated to be correct, optimize this away.
+                // Since Datadog.Trace.Baggage.Current may have been updated since the last time OpenTelemetry.Baggage.Current was accessed,
+                // we must update the underlying OpenTelemetry.Baggage.Current store with the latest Datadog.Trace.Baggage.Current items.
+                // Note: When the user sets OpenTelemetry.Baggage.Current, those changes will override the contents of Datadog.Trace.Baggage.Current,
+                // so we can always consider Datadog.Trace.Baggage.Current as being up-to-date.
                 var baggageHolder = apiBaggage.EnsureBaggageHolder();
                 baggageHolder.Baggage = apiBaggage.Create(Baggage.Current.ToDictionary(kvp => kvp.Key, kvp => kvp.Value));
             }
