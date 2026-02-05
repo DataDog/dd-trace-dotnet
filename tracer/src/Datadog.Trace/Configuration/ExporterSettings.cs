@@ -780,6 +780,5 @@ namespace Datadog.Trace.Configuration
                 }
             }
         }
-
     }
 }
