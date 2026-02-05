@@ -56,17 +56,32 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Serverless
 
             try
             {
-                // Lazy generation: generate unique pipe name once when compat layer first calls this method
+                // Get the tracer's pipe name (generated in ExporterSettings if on Windows with no explicit config)
+                // Use lazy caching to avoid repeated lookups
                 if (_cachedDogStatsDPipeName == null)
                 {
                     lock (_lock)
                     {
                         if (_cachedDogStatsDPipeName == null)
                         {
-                            _cachedDogStatsDPipeName = ServerlessCompatPipeNameHelper.GenerateUniquePipeName(
-                                returnValue,
-                                "dd_dogstatsd",
-                                "DogStatsD");
+                            var tracerInstance = Tracer.Instance;
+                            var exporterSettings = tracerInstance?.Settings?.Exporter;
+                            _cachedDogStatsDPipeName = exporterSettings?.MetricsPipeName;
+
+                            if (string.IsNullOrEmpty(_cachedDogStatsDPipeName))
+                            {
+                                // Fallback: if tracer doesn't have a pipe name, generate one here
+                                // This shouldn't happen in normal flow, but provides safety
+                                _cachedDogStatsDPipeName = ServerlessCompatPipeNameHelper.GenerateUniquePipeName(
+                                    returnValue,
+                                    "dd_dogstatsd",
+                                    "DogStatsD");
+                                Log.Warning("ServerlessCompat integration: Tracer DogStatsD pipe name not available, generated fallback: {PipeName}", _cachedDogStatsDPipeName);
+                            }
+                            else
+                            {
+                                Log.Information("ServerlessCompat integration: Using tracer's DogStatsD pipe name: {TracerPipeName}", _cachedDogStatsDPipeName);
+                            }
                         }
                     }
                 }
@@ -81,7 +96,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Serverless
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "ServerlessCompat integration: Error generating DogStatsD pipe name");
+                Log.Error(ex, "ServerlessCompat integration: Error overriding DogStatsD pipe name");
             }
 
             // Fallback to compat layer's original value
