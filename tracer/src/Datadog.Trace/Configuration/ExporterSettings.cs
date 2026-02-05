@@ -562,6 +562,5 @@ namespace Datadog.Trace.Configuration
                 }
             }
         }
-
     }
 }

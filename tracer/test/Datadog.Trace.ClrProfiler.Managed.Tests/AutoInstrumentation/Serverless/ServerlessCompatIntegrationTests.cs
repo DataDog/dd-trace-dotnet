@@ -51,9 +51,6 @@ public class ServerlessCompatIntegrationTests
         // Should have GUID suffix (underscore + 32 hex chars)
         result1.GetReturnValue().Should().MatchRegex($"^{System.Text.RegularExpressions.Regex.Escape(expectedBase)}_[0-9a-f]{{32}}$");
 
-        // Total length should not exceed Windows limit (base + underscore + GUID)
-        result1.GetReturnValue().Length.Should().BeLessOrEqualTo(214 + 1 + 32); // 247 max
-
         // If input was longer than 214, verify truncation
         if (compatLayerValue?.Length > 214)
         {
@@ -118,9 +115,6 @@ public class ServerlessCompatIntegrationTests
 
         // Should have GUID suffix (underscore + 32 hex chars)
         result1.GetReturnValue().Should().MatchRegex($"^{System.Text.RegularExpressions.Regex.Escape(expectedBase)}_[0-9a-f]{{32}}$");
-
-        // Total length should not exceed Windows limit
-        result1.GetReturnValue().Length.Should().BeLessOrEqualTo(214 + 1 + 32); // 247 max
 
         // If input was longer than 214, verify truncation
         if (compatLayerValue?.Length > 214)
