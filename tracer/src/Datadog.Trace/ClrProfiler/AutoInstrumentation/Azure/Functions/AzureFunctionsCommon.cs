@@ -125,7 +125,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 {
                     // We don't want to create a new scope here when running isolated functions,
                     // otherwise it is essentially a duplicate of the span created inside the
-                    // isolated app, but we _do_ want to populate the "root" span here with the appropriate names
+                    // isolated app. We _do_ want to populate the "root" span here with the appropriate names
                     // and update it to be a "serverless" span.
                     var rootSpan = activeScope.Root.Span;
 
@@ -135,7 +135,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                                                  : functionName;
 
                     AzureFunctionsTags.SetRootSpanTags(
-                        rootSpan,
+                        rootSpan.Tags,
                         shortName: remoteFunctionName,
                         fullName: rootSpan.Tags is AzureFunctionsTags t ? t.FullName : null, // can't get anything meaningful here, so leave it as-is
                         bindingSource: bindingSourceType.FullName,
@@ -162,7 +162,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 {
                     scope = tracer.StartActiveInternal(OperationName);
                     AzureFunctionsTags.SetRootSpanTags(
-                        scope.Root.Span,
+                        scope.Root.Span.Tags,
                         shortName: functionName,
                         fullName: instanceParam.FunctionDescriptor.FullName,
                         bindingSource: bindingSourceType.FullName,
@@ -290,9 +290,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                                         extractedContext.SpanContext;
 
                 scope = tracer.StartActiveInternal(OperationName, parent: parentSpanContext, tags: tags);
+                var span = scope.Span;
                 var rootSpan = scope.Root.Span;
 
-                if (scope.Span == rootSpan)
+                if (span == rootSpan)
                 {
                     // this is the local root span
                     tags.SetAnalyticsSampleRate(IntegrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: false);
@@ -301,18 +302,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 {
                     // this is NOT the local root span, copy some tags to the root span
                     AzureFunctionsTags.SetRootSpanTags(
-                        rootSpan,
+                        rootSpan.Tags,
                         shortName: tags.ShortName,
                         fullName: tags.FullName,
                         bindingSource: rootSpan.Tags is AzureFunctionsTags t ? t.BindingSource : null,
                         triggerType: tags.TriggerType);
+
+                    rootSpan.Type = SpanType; // "serverless"
                 }
 
-                // change root span's type to "serverless"
-                scope.Root.Span.Type = SpanType;
-
-                scope.Span.ResourceName = $"{tags.TriggerType} {tags.ShortName}";
-                scope.Span.Type = SpanType;
+                span.ResourceName = $"{tags.TriggerType} {tags.ShortName}";
+                span.Type = SpanType;
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
             }
             catch (Exception ex)
