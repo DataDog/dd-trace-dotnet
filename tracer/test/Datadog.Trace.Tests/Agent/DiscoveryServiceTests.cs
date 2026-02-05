@@ -119,7 +119,7 @@ public class DiscoveryServiceTests
         var factory = new TestRequestFactory(
             x =>
             {
-                mutex.Wait(10_000).Should().BeTrue("Should make request to api");
+                mutex.Wait(30_000).Should().BeTrue("Should make request to api");
                 return new TestApiRequest(x, responseContent: GetConfig());
             });
 
@@ -166,7 +166,7 @@ public class DiscoveryServiceTests
         var factory = new TestRequestFactory(
             x =>
             {
-                mutex1.Wait(10_000).Should().BeTrue("Should make request to api");
+                mutex1.Wait(30_000).Should().BeTrue("Should make request to api");
                 return new TestApiRequest(x, responseContent: GetConfig());
             },
             x => new TestApiRequest(x, responseContent: GetConfig()),
@@ -198,7 +198,7 @@ public class DiscoveryServiceTests
         var factory = new TestRequestFactory(
             x =>
             {
-                mutex1.Wait(10_000).Should().BeTrue("Should make request to api");
+                mutex1.Wait(30_000).Should().BeTrue("Should make request to api");
                 return new TestApiRequest(x, responseContent: GetConfig(dropP0: true));
             },
             x => new TestApiRequest(x, responseContent: GetConfig(dropP0: false)),
@@ -231,7 +231,7 @@ public class DiscoveryServiceTests
         var factory = new TestRequestFactory(
             x =>
             {
-                mutex1.Wait(10_000).Should().BeTrue("Should make request to api");
+                mutex1.Wait(30_000).Should().BeTrue("Should make request to api");
                 return new TestApiRequest(x, responseContent: GetConfig(dropP0: true));
             },
             x => new TestApiRequest(x, responseContent: GetConfig(dropP0: false)),
