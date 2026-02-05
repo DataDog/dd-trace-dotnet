@@ -3,11 +3,14 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 #if NETCOREAPP
 using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Serverless
 {
@@ -30,6 +33,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Serverless
     [EditorBrowsable(EditorBrowsableState.Never)]
     public sealed class CompatibilityLayer_CalculateDogStatsDPipeName_Integration
     {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(CompatibilityLayer_CalculateDogStatsDPipeName_Integration));
         private static readonly object _lock = new object();
         private static string? _cachedDogStatsDPipeName;
 
@@ -75,7 +79,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Serverless
                     }
                 }
 
-                Logging.Log.Debug(
+                Log.Debug(
                     "ServerlessCompat integration: Overriding compat layer DogStatsD pipe name. " +
                     "Compat layer calculated: {CompatPipeName}, Tracer using: {TracerPipeName}",
                     returnValue,
@@ -85,7 +89,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Serverless
             }
             catch (Exception ex)
             {
-                Logging.Log.Error(ex, "ServerlessCompat integration: Error overriding DogStatsD pipe name");
+                Log.Error(ex, "ServerlessCompat integration: Error overriding DogStatsD pipe name");
             }
 
             // Fallback to compat layer's original value
