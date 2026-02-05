@@ -30,6 +30,7 @@
    <assembly fullname="Hangfire.Core" />
    <assembly fullname="HotChocolate.Execution" />
    <assembly fullname="log4net" />
+   <assembly fullname="MassTransit" />
    <assembly fullname="Microsoft.AspNetCore.Authentication.Abstractions" />
    <assembly fullname="Microsoft.AspNetCore.Diagnostics" />
    <assembly fullname="Microsoft.AspNetCore.Html.Abstractions" />
@@ -732,6 +733,7 @@
       <type fullname="System.Reflection.FieldInfo" />
       <type fullname="System.Reflection.GenericParameterAttributes" />
       <type fullname="System.Reflection.ICustomAttributeProvider" />
+      <type fullname="System.Reflection.InterfaceMapping" />
       <type fullname="System.Reflection.IntrospectionExtensions" />
       <type fullname="System.Reflection.LocalVariableInfo" />
       <type fullname="System.Reflection.MemberInfo" />

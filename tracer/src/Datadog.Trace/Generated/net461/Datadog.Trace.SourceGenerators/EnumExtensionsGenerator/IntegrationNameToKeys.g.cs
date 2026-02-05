@@ -259,6 +259,9 @@ namespace Datadog.Trace.Configuration
             "DD_TRACE_OPENFEATURE_ENABLED", "DD_TRACE_OpenFeature_ENABLED", "DD_OpenFeature_ENABLED",
             "DD_TRACE_OPENFEATURE_ANALYTICS_ENABLED", "DD_TRACE_OpenFeature_ANALYTICS_ENABLED", "DD_OpenFeature_ANALYTICS_ENABLED",
             "DD_TRACE_OPENFEATURE_ANALYTICS_SAMPLE_RATE", "DD_TRACE_OpenFeature_ANALYTICS_SAMPLE_RATE", "DD_OpenFeature_ANALYTICS_SAMPLE_RATE", 
+            "DD_TRACE_MASSTRANSIT_ENABLED", "DD_TRACE_MassTransit_ENABLED", "DD_MassTransit_ENABLED",
+            "DD_TRACE_MASSTRANSIT_ANALYTICS_ENABLED", "DD_TRACE_MassTransit_ANALYTICS_ENABLED", "DD_MassTransit_ANALYTICS_ENABLED",
+            "DD_TRACE_MASSTRANSIT_ANALYTICS_SAMPLE_RATE", "DD_TRACE_MassTransit_ANALYTICS_SAMPLE_RATE", "DD_MassTransit_ANALYTICS_SAMPLE_RATE", 
         ];
         /// <summary>
         /// Gets the configuration keys for the specified integration name.
@@ -348,6 +351,7 @@ namespace Datadog.Trace.Configuration
                 "DatadogTraceVersionConflict" => new("DD_TRACE_DATADOGTRACEVERSIONCONFLICT_ENABLED", ["DD_TRACE_DatadogTraceVersionConflict_ENABLED", "DD_DatadogTraceVersionConflict_ENABLED"]),
                 "Hangfire" => new("DD_TRACE_HANGFIRE_ENABLED", ["DD_TRACE_Hangfire_ENABLED", "DD_Hangfire_ENABLED"]),
                 "OpenFeature" => new("DD_TRACE_OPENFEATURE_ENABLED", ["DD_TRACE_OpenFeature_ENABLED", "DD_OpenFeature_ENABLED"]),
+                "MassTransit" => new("DD_TRACE_MASSTRANSIT_ENABLED", ["DD_TRACE_MassTransit_ENABLED", "DD_MassTransit_ENABLED"]),
                 _ => GetIntegrationEnabledKeysFallback(integrationName) // we should never get here
             };
         /// <summary>
@@ -439,6 +443,7 @@ namespace Datadog.Trace.Configuration
                 "DatadogTraceVersionConflict" => new("DD_TRACE_DATADOGTRACEVERSIONCONFLICT_ANALYTICS_ENABLED", ["DD_TRACE_DatadogTraceVersionConflict_ANALYTICS_ENABLED", "DD_DatadogTraceVersionConflict_ANALYTICS_ENABLED"]),
                 "Hangfire" => new("DD_TRACE_HANGFIRE_ANALYTICS_ENABLED", ["DD_TRACE_Hangfire_ANALYTICS_ENABLED", "DD_Hangfire_ANALYTICS_ENABLED"]),
                 "OpenFeature" => new("DD_TRACE_OPENFEATURE_ANALYTICS_ENABLED", ["DD_TRACE_OpenFeature_ANALYTICS_ENABLED", "DD_OpenFeature_ANALYTICS_ENABLED"]),
+                "MassTransit" => new("DD_TRACE_MASSTRANSIT_ANALYTICS_ENABLED", ["DD_TRACE_MassTransit_ANALYTICS_ENABLED", "DD_MassTransit_ANALYTICS_ENABLED"]),
                 _ => GetIntegrationAnalyticsEnabledKeysFallback(integrationName) // we should never get here
             };
         /// <summary>
@@ -530,6 +535,7 @@ namespace Datadog.Trace.Configuration
                 "DatadogTraceVersionConflict" => new("DD_TRACE_DATADOGTRACEVERSIONCONFLICT_ANALYTICS_SAMPLE_RATE", ["DD_TRACE_DatadogTraceVersionConflict_ANALYTICS_SAMPLE_RATE", "DD_DatadogTraceVersionConflict_ANALYTICS_SAMPLE_RATE"]),
                 "Hangfire" => new("DD_TRACE_HANGFIRE_ANALYTICS_SAMPLE_RATE", ["DD_TRACE_Hangfire_ANALYTICS_SAMPLE_RATE", "DD_Hangfire_ANALYTICS_SAMPLE_RATE"]),
                 "OpenFeature" => new("DD_TRACE_OPENFEATURE_ANALYTICS_SAMPLE_RATE", ["DD_TRACE_OpenFeature_ANALYTICS_SAMPLE_RATE", "DD_OpenFeature_ANALYTICS_SAMPLE_RATE"]),
+                "MassTransit" => new("DD_TRACE_MASSTRANSIT_ANALYTICS_SAMPLE_RATE", ["DD_TRACE_MassTransit_ANALYTICS_SAMPLE_RATE", "DD_MassTransit_ANALYTICS_SAMPLE_RATE"]),
                 _ => GetIntegrationAnalyticsSampleRateKeysFallback(integrationName) // we should never get here
             };
 

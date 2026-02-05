@@ -92,6 +92,7 @@ internal static class IntegrationIdExtensions
             IntegrationId.Hangfire => MetricTags.IntegrationName.Hangfire,
             IntegrationId.DatadogTraceVersionConflict => MetricTags.IntegrationName.VersionConflict,
             IntegrationId.OpenFeature => MetricTags.IntegrationName.OpenFeature,
+            IntegrationId.MassTransit => MetricTags.IntegrationName.MassTransit,
             _ => throw new InvalidOperationException($"Unknown IntegrationID {integrationId}"), // dangerous, but we test it will never be called
         };
 }

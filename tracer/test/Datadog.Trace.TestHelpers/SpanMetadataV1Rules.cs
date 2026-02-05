@@ -454,6 +454,31 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("job.createdat")
                 .IsPresent("job.id"));
 
+        public static Result IsMassTransitV1(this MockSpan span) => Result.FromSpan(span)
+            .Properties(s => s
+                .MatchesOneOf(Name, "masstransit.produce", "masstransit.consume")
+                .Matches(Type, "queue"))
+            .Tags(s => s
+                .Matches("component", "MassTransit")
+                .MatchesOneOf("span.kind", "consumer", "producer")
+                .IsPresent("messaging.operation")
+                .IsPresent("messaging.system")
+                .IsPresent("messaging.destination.name")
+                .IsOptional("messaging.masstransit.message_id")
+                .IsOptional("messaging.masstransit.message_types")
+                .IsOptional("messaging.masstransit.destination_address")
+                .IsOptional("messaging.masstransit.source_address")
+                .IsOptional("messaging.masstransit.input_address")
+                .IsOptional("messaging.masstransit.consumer_type")
+                .IsOptional("messaging.masstransit.saga_type")
+                .IsOptional("messaging.masstransit.saga_id")
+                .IsOptional("messaging.masstransit.correlation_id")
+                .IsOptional("messaging.masstransit.begin_state")
+                .IsOptional("messaging.masstransit.end_state")
+                .IsOptional("messaging.message.conversation_id")
+                .IsOptional("peer.address")
+                .IsOptional("_dd.base_service"));
+
         public static Result IsHotChocolateV1(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
                 .MatchesOneOf(Name, "graphql.execute", "graphql.validate")
