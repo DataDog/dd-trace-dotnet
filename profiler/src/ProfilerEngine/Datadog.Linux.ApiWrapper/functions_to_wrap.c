@@ -557,6 +557,33 @@ int execve(const char* pathname, char* const argv[], char* const envp[])
     return result;
 }
 
+static int (*__real_sigaction)(int signum, const struct sigaction* act, struct sigaction* oldact) = NULL;
+static int (*__real_pthread_sigmask)(int how, const sigset_t *set, sigset_t *oldset) = NULL;
+
+int sigaction(int signum, const struct sigaction* act, struct sigaction* oldact)
+{
+    check_init();
+    if (signum == SIGSEGV && act != NULL)
+    {
+        struct sigaction new_act = *act;
+        sigaddset(&new_act.sa_mask, SIGPROF);
+        return __real_sigaction(signum, &new_act, oldact);
+    }
+    return __real_sigaction(signum, act, oldact);
+}
+
+int pthread_sigmask(int how, const sigset_t *set, sigset_t *oldset)
+{
+    check_init();
+    if (how == SIG_UNBLOCK && set != NULL && 1 == sigismember(set, SIGSEGV))
+    {
+        sigset_t new_set = *set;
+        sigaddset(&new_set, SIGPROF);
+        return __real_pthread_sigmask(how, &new_set, oldset);
+    }
+    return __real_pthread_sigmask(how, set, oldset);
+}
+
 #ifdef DD_ALPINE
 
 struct pthread_wrapped_arg
@@ -682,6 +709,8 @@ static void init()
     __real_dlclose = __dd_dlsym(RTLD_NEXT, "dlclose");
     __real_dladdr = __dd_dlsym(RTLD_NEXT, "dladdr");
     __real_execve = __dd_dlsym(RTLD_NEXT, "execve");
+    __real_sigaction = __dd_dlsym(RTLD_NEXT, "sigaction");
+    __real_pthread_sigmask = __dd_dlsym(RTLD_NEXT, "pthread_sigmask");
 #ifdef DD_ALPINE
     __real_pthread_create = __dd_dlsym(RTLD_NEXT, "pthread_create");
     __real_pthread_attr_init = __dd_dlsym(RTLD_NEXT, "pthread_attr_init");
