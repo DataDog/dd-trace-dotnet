@@ -16314,6 +16314,50 @@
     "InstrumentationCategory": 1
   },
   {
+    "IntegrationName": "ServerlessCompat",
+    "AssemblyName": "Datadog.Serverless.Compat",
+    "TargetTypeName": "Datadog.Serverless.CompatibilityLayer",
+    "TargetMethodName": "CalculateDogStatsDPipeName",
+    "TargetReturnType": "System.String",
+    "TargetParameterTypes": [],
+    "MinimumVersion": {
+      "Item1": 1,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 2,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Serverless.CompatibilityLayer_CalculateDogStatsDPipeName_Integration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "ServerlessCompat",
+    "AssemblyName": "Datadog.Serverless.Compat",
+    "TargetTypeName": "Datadog.Serverless.CompatibilityLayer",
+    "TargetMethodName": "CalculateTracePipeName",
+    "TargetReturnType": "System.String",
+    "TargetParameterTypes": [],
+    "MinimumVersion": {
+      "Item1": 1,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 2,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Serverless.CompatibilityLayer_CalculateTracePipeName_Integration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
     "IntegrationName": "ServiceStackRedis",
     "AssemblyName": "ServiceStack.Redis",
     "TargetTypeName": "ServiceStack.Redis.RedisNativeClient",
