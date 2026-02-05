@@ -28,12 +28,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
     {
         private const string HttpRequestContextKey = "HttpRequestContext";
         private const string SpanType = SpanTypes.Serverless;
-
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AzureFunctionsCommon));
-
         public const string IntegrationName = nameof(IntegrationId.AzureFunctions);
         public const IntegrationId IntegrationId = Configuration.IntegrationId.AzureFunctions;
         public const string OperationName = "azure_functions.invoke";
+
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AzureFunctionsCommon));
 
         public static CallTargetState OnFunctionExecutionBegin<TTarget, TFunction>(TTarget instance, TFunction instanceParam)
             where TFunction : IFunctionInstance
