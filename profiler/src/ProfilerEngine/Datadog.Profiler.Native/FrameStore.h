@@ -2,6 +2,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
 #pragma once
+
+#include <atomic>
 #include <memory>
 #include <mutex>
 #include <optional>
