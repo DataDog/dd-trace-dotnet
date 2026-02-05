@@ -278,8 +278,36 @@ internal static class AspNetCoreResourceNameHelper
                 else
                 {
                     var parameterName = part.Name;
-                    // just do the lookup again
-                    var haveParameter = routeValueDictionary.TryGetValue(parameterName, out var value);
+
+                    // Avoiding the dictionary lookup as we already did it
+                    var shouldExpand = expandRouteParameters;
+                    var haveParameter = true;
+                    object? value;
+                    if (parameterName.Equals("area", StringComparison.OrdinalIgnoreCase))
+                    {
+                        shouldExpand = true;
+                        value = areaName;
+                    }
+                    else if (parameterName.Equals("controller", StringComparison.OrdinalIgnoreCase))
+                    {
+                        shouldExpand = true;
+                        value = controllerName;
+                    }
+                    else if (parameterName.Equals("action", StringComparison.OrdinalIgnoreCase))
+                    {
+                        shouldExpand = true;
+                        value = actionName;
+                    }
+                    else if (routeValueDictionary.TryGetValue(parameterName, out value))
+                    {
+                        haveParameter = true;
+                    }
+                    else
+                    {
+                        haveParameter = false;
+                        value = null;
+                    }
+
                     if (!part.IsOptional || haveParameter)
                     {
                         if (!addedPart)
@@ -293,10 +321,7 @@ internal static class AspNetCoreResourceNameHelper
                     // so never expand them. This avoids an allocating ToString() call, but means that
                     // some parameters which maybe _should_ be expanded (e.g. Enum)s currently are not
                     if (haveParameter
-                     && (expandRouteParameters
-                      || parameterName.Equals("area", StringComparison.OrdinalIgnoreCase)
-                      || parameterName.Equals("controller", StringComparison.OrdinalIgnoreCase)
-                      || parameterName.Equals("action", StringComparison.OrdinalIgnoreCase))
+                     && shouldExpand
                      && (value is null ||
                          (value is string valueAsString
                        && !UriHelpers.IsIdentifierSegment(valueAsString, 0, valueAsString.Length))))
