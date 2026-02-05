@@ -1,3 +1,12 @@
+---
+name: analyze-error
+description: Error Stack Trace Analysis for dd-trace-dotnet
+argument-hint: <paste-error-stack-trace>
+disable-model-invocation: true
+context: fork
+agent: general-purpose
+---
+
 # Error Stack Trace Analysis for dd-trace-dotnet
 
 You are analyzing an error stack trace from the dd-trace-dotnet library. These errors originated from customer applications but are caused by dd-trace-dotnet. Your goal is to understand the error, determine if it provides enough information to identify the root cause, and recommend a fix ONLY if the error is actionable within dd-trace-dotnet.
