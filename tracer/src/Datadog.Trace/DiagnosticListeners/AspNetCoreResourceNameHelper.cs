@@ -248,116 +248,92 @@ internal static class AspNetCoreResourceNameHelper
         string? actionName,
         bool expandRouteParameters)
     {
+        // note that this is not accurate if expandRouteParameters=true, but we don't have a good fallback for that
         var maxSize = (routePattern.TemplateText?.Length ?? 0)
                     + (string.IsNullOrEmpty(areaName) ? 0 : Math.Max(areaName!.Length - 4, 0)) // "area".Length
                     + (string.IsNullOrEmpty(controllerName) ? 0 : Math.Max(controllerName!.Length - 10, 0)) // "controller".Length
                     + (string.IsNullOrEmpty(actionName) ? 0 : Math.Max(actionName!.Length - 6, 0)) // "action".Length
                     + 1; // '/' prefix
 
-        var sb = StringBuilderCache.Acquire(maxSize);
+        var sb = maxSize < 512
+                     ? new ValueStringBuilder(stackalloc char[512])
+                     : new ValueStringBuilder(); // too big to use stackallocation, so use array builder
 
-        foreach (var pathSegment in routePattern.Segments)
+        // TODO: remove the boxing in a "safe" way
+        foreach (var pathSegment in (List<TemplateSegment>)routePattern.Segments)
         {
-            var parts = 0;
+            var addedPart = false;
             foreach (var part in pathSegment.Parts)
             {
-                parts++;
-                var partName = part.Name;
-
                 if (!part.IsParameter)
                 {
-                    if (parts == 1)
+                    if (!addedPart)
                     {
                         sb.Append('/');
+                        addedPart = true;
                     }
 
-                    sb.Append(part.Text);
-                }
-                else if (partName.Equals("area", StringComparison.OrdinalIgnoreCase))
-                {
-                    if (areaName is null && part.IsOptional)
-                    {
-                        // don't append optional suffixes when no value is provided
-                        continue;
-                    }
-
-                    if (parts == 1)
-                    {
-                        sb.Append('/');
-                    }
-
-                    sb.Append(areaName ?? "{area}");
-                }
-                else if (partName.Equals("controller", StringComparison.OrdinalIgnoreCase))
-                {
-                    if (controllerName is null && part.IsOptional)
-                    {
-                        // don't append optional suffixes when no value is provided
-                        continue;
-                    }
-
-                    if (parts == 1)
-                    {
-                        sb.Append('/');
-                    }
-
-                    sb.Append(controllerName ?? "{controller}");
-                }
-                else if (partName.Equals("action", StringComparison.OrdinalIgnoreCase))
-                {
-                    if (actionName is null && part.IsOptional)
-                    {
-                        // don't append optional suffixes when no value is provided
-                        continue;
-                    }
-
-                    if (parts == 1)
-                    {
-                        sb.Append('/');
-                    }
-
-                    sb.Append(actionName ?? "{action}");
+                    sb.AppendAsLowerInvariant(part.Text);
                 }
                 else
                 {
-                    var haveParameter = routeValueDictionary.TryGetValue(partName, out var value);
+                    var parameterName = part.Name;
+                    // just do the lookup again
+                    var haveParameter = routeValueDictionary.TryGetValue(parameterName, out var value);
                     if (!part.IsOptional || haveParameter)
                     {
-                        if (parts == 1)
+                        if (!addedPart)
                         {
                             sb.Append('/');
+                            addedPart = true;
                         }
+                    }
 
-                        if (expandRouteParameters && haveParameter && !IsIdentifierSegment(value, out var valueAsString))
+                    // Is this parameter an identifier segment? we assume non-strings _are_ identifiers
+                    // so never expand them. This avoids an allocating ToString() call, but means that
+                    // some parameters which maybe _should_ be expanded (e.g. Enum)s currently are not
+                    if (haveParameter
+                     && (expandRouteParameters
+                      || parameterName.Equals("area", StringComparison.OrdinalIgnoreCase)
+                      || parameterName.Equals("controller", StringComparison.OrdinalIgnoreCase)
+                      || parameterName.Equals("action", StringComparison.OrdinalIgnoreCase))
+                     && (value is null ||
+                         (value is string valueAsString
+                       && !UriHelpers.IsIdentifierSegment(valueAsString, 0, valueAsString.Length))))
+                    {
+                        // write the expanded parameter value
+                        sb.AppendAsLowerInvariant(value as string);
+                    }
+                    else
+                    {
+                        // write the route template value
+                        sb.Append('{');
+
+                        if (part.IsCatchAll)
                         {
-                            // write the expanded parameter value
-                            sb.Append(valueAsString);
+                            sb.Append('*');
                         }
-                        else
+
+                        sb.AppendAsLowerInvariant(parameterName);
+                        if (part.IsOptional)
                         {
-                            // write the route template value
-                            sb.Append('{');
-                            if (part.IsCatchAll)
-                            {
-                                sb.Append('*');
-                            }
-
-                            sb.Append(partName);
-                            if (part.IsOptional)
-                            {
-                                sb.Append('?');
-                            }
-
-                            sb.Append('}');
+                            sb.Append('?');
                         }
+
+                        sb.Append('}');
                     }
                 }
             }
         }
 
-        var simplifiedRoute = StringBuilderCache.GetStringAndRelease(sb);
+        // We never added anything, or we just added the first `/`, no need for explicit ToString()
+        if (sb.Length <= 1)
+        {
+            sb.Dispose();
+            return "/";
+        }
 
-        return string.IsNullOrEmpty(simplifiedRoute) ? "/" : simplifiedRoute.ToLowerInvariant();
+        return sb.ToString();
     }
 
     private static bool IsIdentifierSegment(object? value, [NotNullWhen(true)] out string? valueAsString)
