@@ -41,8 +41,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             TracerSettings settings,
             TimeSpan pollInterval,
             IGitMetadataTagsProvider gitMetadataTagsProvider,
-            IRcmSubscriptionManager subscriptionManager,
-            IReadOnlyCollection<string>? processTags)
+            IRcmSubscriptionManager subscriptionManager)
         {
             _discoveryService = discoveryService;
             _pollInterval = pollInterval;
@@ -76,7 +75,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                     env: TraceUtil.NormalizeTag(mutable.Environment),
                     appVersion: mutable.ServiceVersion,
                     globalTags: mutable.GlobalTags,
-                    processTags: processTags);
+                    processTags: mutable.ProcessTags?.TagsList);
                 Interlocked.Exchange(ref _rcmTracer!, rcmTracer);
             }
 
@@ -101,8 +100,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                     tracerSettings,
                     pollInterval: settings.PollInterval,
                     gitMetadataTagsProvider,
-                    subscriptionManager,
-                    tracerSettings.PropagateProcessTags ? tracerSettings.Manager.InitialMutableSettings.ProcessTags?.TagsList : null);
+                    subscriptionManager);
         }
 
         public void Start()

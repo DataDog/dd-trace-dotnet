@@ -22,24 +22,46 @@ internal sealed class ProcessTags
     public const string ServiceSetByUser = "svc.user";
     public const string ServiceAuto = "svc.auto";
 
+    private readonly bool _serviceNameUserDefined;
+    private readonly string _autoServiceName;
+    private List<string>? _tagsList;
+    private string? _serializedTags;
+
+    // ProcessTags captures EntryAssemblyLocator.GetEntryAssembly() and Environment.CurrentDirectory
+    // If initialization happens before the entry assembly is available (common in ASP.NET/IIS or some test hosts),
+    // entrypoint.name/entrypoint.workdir will be empty
+    // We intentionally do not compute tags at construction and init them on first access only
     public ProcessTags(bool serviceNameUserDefined, string autoServiceName)
     {
-        // Build the complete tags list with svc.user and svc.auto
-        TagsList = GetTagsList(serviceNameUserDefined, autoServiceName);
-
-        // Build the serialized version with svc.user and svc.auto
-        SerializedTags = GetSerializedTagsFromList(TagsList);
+        _serviceNameUserDefined = serviceNameUserDefined;
+        _autoServiceName = autoServiceName;
     }
 
     // two views on the same data
     public List<string> TagsList
     {
-        get;
+        get
+        {
+            if (_tagsList is null)
+            {
+                InitTags();
+            }
+
+            return _tagsList!;
+        }
     }
 
     public string SerializedTags
     {
-        get;
+        get
+        {
+            if (_tagsList is null)
+            {
+                InitTags();
+            }
+
+            return _serializedTags!;
+        }
     }
 
     private static List<string> GetTagsList(bool serviceNameUserDefined, string autoServiceName)
@@ -48,26 +70,23 @@ internal sealed class ProcessTags
         var tags = new List<string>(4); // Update if you add more entries below
         AddNormalizedTag(tags, EntrypointBasedir, GetLastPathSegment(AppContext.BaseDirectory));
         AddNormalizedTag(tags, EntrypointName, GetEntryPointName());
+
         // workdir can be changed by the code, but we consider that capturing the value when this is called is good enough
         AddNormalizedTag(tags, EntrypointWorkdir, GetLastPathSegment(Environment.CurrentDirectory));
+
         // Either svc.user or svc.auto, never both
+        // svc.user is only added when the user explicitly set the service name
+        // svc.auto contains the automatically determined service name when user didn't set it
         if (serviceNameUserDefined)
         {
-            // svc.user is only added when the user explicitly set the service name
-            tags.Add($"{ServiceSetByUser}:1");
+            tags.Add($"{ServiceSetByUser}:true");
         }
         else
         {
-            // svc.auto contains the automatically determined service name when user didn't set it
             AddNormalizedTag(tags, ServiceAuto, autoServiceName);
         }
 
         return tags;
-    }
-
-    private static string GetSerializedTagsFromList(IEnumerable<string> tags)
-    {
-        return string.Join(",", tags);
     }
 
     /// <summary>
@@ -107,5 +126,11 @@ internal sealed class ProcessTags
     private static string? GetEntryPointName()
     {
         return EntryAssemblyLocator.GetEntryAssembly()?.EntryPoint?.DeclaringType?.FullName;
+    }
+
+    private void InitTags()
+    {
+        _tagsList = GetTagsList(_serviceNameUserDefined, _autoServiceName);
+        _serializedTags = string.Join(",", _tagsList);
     }
 }

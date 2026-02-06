@@ -66,9 +66,7 @@ internal readonly struct TraceChunkModel
 
     public readonly ImmutableAzureAppServiceSettings? AzureAppServiceSettings = null;
 
-    public readonly bool ShouldPropagateProcessTags = false;
-
-    public readonly string? ProcessTags = null;
+    public readonly ProcessTags? ProcessTags = null;
 
     public readonly bool IsApmEnabled = true;
 
@@ -117,9 +115,12 @@ internal readonly struct TraceChunkModel
                 {
                     IsRunningInAzureAppService = settings.IsRunningInAzureAppService;
                     AzureAppServiceSettings = settings.AzureAppServiceMetadata;
-                    ShouldPropagateProcessTags = settings.PropagateProcessTags;
                     IsApmEnabled = settings.ApmTracingEnabled;
-                    ProcessTags = settings.Manager.InitialMutableSettings.ProcessTags?.SerializedTags;
+                }
+
+                if (tracer.PerTraceSettings is { } perTraceSettings)
+                {
+                    ProcessTags = perTraceSettings.Settings.ProcessTags;
                 }
 
                 if (tracer.GitMetadataTagsProvider?.TryExtractGitMetadata(out var gitMetadata) == true &&
