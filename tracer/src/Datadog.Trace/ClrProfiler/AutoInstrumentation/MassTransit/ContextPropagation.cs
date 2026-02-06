@@ -3,6 +3,11 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+// SA1649: File name should match first type name
+// Justification: This file contains both ContextPropagationExtractAdapter and ContextPropagationInjectAdapter.
+// Both types share the ContextPropagation prefix matching the file name.
+#pragma warning disable SA1649
+
 #nullable enable
 
 using System;
@@ -16,28 +21,20 @@ using Datadog.Trace.Logging;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
 {
     /// <summary>
-    /// Adapter for extracting trace context from MassTransit Headers (consume side).
-    /// JsonTransportHeaders has: GetAll() which returns IEnumerable[HeaderValue]
-    /// The Get method has a constraint (T : struct) so we use GetAll instead.
+    /// Adapter for EXTRACTING (reading) trace context headers from incoming MassTransit messages (consumer side).
+    /// Scenario: When a consumer receives a message, extract distributed tracing headers to continue the trace.
+    /// Uses duck typing to read headers via IHeaders.GetAll() which returns IEnumerable[HeaderValue].
+    /// Used by: MassTransitCommon.ExtractTraceContext() for distributed tracing propagation.
     /// </summary>
-    internal readonly struct ContextPropagation : IHeadersCollection
+    internal readonly struct ContextPropagationExtractAdapter : IHeadersCollection
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ContextPropagation));
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ContextPropagationExtractAdapter));
 
         private readonly IHeaders? _headersProxy;
 
-        public ContextPropagation(object? headers)
+        public ContextPropagationExtractAdapter(object? headers)
         {
             _headersProxy = headers?.DuckCast<IHeaders>();
-
-            if (_headersProxy != null)
-            {
-                Log.Debug("ContextPropagation: Successfully duck cast headers to IHeaders");
-            }
-            else
-            {
-                Log.Debug("ContextPropagation: Headers is null or duck typing failed");
-            }
         }
 
         public IEnumerable<string> GetValues(string name)
@@ -48,7 +45,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
             {
                 try
                 {
-                    Log.Debug("ContextPropagation.GetValues: Using duck typing to get headers");
                     var allHeaders = _headersProxy.GetAll();
                     if (allHeaders != null)
                     {
@@ -64,7 +60,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
                             if (string.Equals(hv?.Key, name, StringComparison.OrdinalIgnoreCase))
                             {
                                 result = hv?.Value?.ToString();
-                                Log.Debug("ContextPropagation.GetValues: Found header '{Name}' via duck typing", name);
                                 break;
                             }
                         }
@@ -72,7 +67,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
                 }
                 catch (Exception ex)
                 {
-                    Log.Debug(ex, "ContextPropagation.GetValues: Error reading headers for '{Name}'", name);
+                    Log.Debug(ex, "ContextPropagationExtractAdapter.GetValues: Error reading headers for '{Name}'", name);
                 }
             }
 
@@ -84,37 +79,37 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
 
         public void Set(string name, string value)
         {
-            // Headers on consume side are read-only
+            // NOT USED - This adapter only EXTRACTS (reads) headers via GetValues(), never INJECTS (writes) them.
+            // Incoming message headers are read-only.
         }
 
         public void Add(string name, string value)
         {
-            // Headers on consume side are read-only
+            // NOT USED - Incoming message headers are read-only.
         }
 
         public void Remove(string name)
         {
-            // Headers on consume side are read-only
+            // NOT USED - Incoming message headers are read-only.
         }
     }
 
     /// <summary>
-    /// Adapter for injecting trace context into MassTransit SendContext Headers (producer side).
-    /// MassTransit's SendHeaders interface has:
-    /// - Set(string key, string value)
-    /// - Set(string key, object value, bool overwrite = true)
-    /// Note: Duck typing cannot be used here because MassTransit implements these methods
-    /// using explicit interface implementation. See WHY_DUCK_TYPING_FAILED.md for details.
+    /// Adapter for INJECTING (writing) trace context headers into outgoing MassTransit messages (producer side).
+    /// Scenario: When a producer sends a message, inject distributed tracing headers to propagate the trace.
+    /// Uses reflection to invoke SendHeaders.Set() methods because MassTransit uses explicit interface implementation.
+    /// Duck typing cannot be used here - see WHY_DUCK_TYPING_FAILED.md for details.
+    /// Used by: MassTransitCommon.InjectTraceContext() for distributed tracing propagation.
     /// </summary>
-    internal readonly struct SendContextHeadersAdapter : IHeadersCollection
+    internal readonly struct ContextPropagationInjectAdapter : IHeadersCollection
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SendContextHeadersAdapter));
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ContextPropagationInjectAdapter));
 
         private readonly object? _headers;
         private readonly MethodInfo? _setStringMethod;
         private readonly MethodInfo? _setObjectMethod;
 
-        public SendContextHeadersAdapter(object? headers)
+        public ContextPropagationInjectAdapter(object? headers)
         {
             _headers = headers;
             _setStringMethod = null;
@@ -258,7 +253,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
 
         public IEnumerable<string> GetValues(string name)
         {
-            // Not used for injection
+            // NOT USED - This adapter only INJECTS (writes) headers via Set(), never EXTRACTS (reads) them.
+            // The SpanContextPropagator.Inject() method only calls Set(), not GetValues().
             yield break;
         }
 
@@ -274,7 +270,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
                 if (_setStringMethod != null)
                 {
                     _setStringMethod.Invoke(_headers, new object[] { name, value });
-                    Log.Debug("SendContextHeadersAdapter: Set header (string) {Name}={Value}", name, value);
                 }
                 else if (_setObjectMethod != null)
                 {
@@ -288,24 +283,24 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
                     {
                         _setObjectMethod.Invoke(_headers, new object[] { name, value });
                     }
-
-                    Log.Debug("SendContextHeadersAdapter: Set header (object) {Name}={Value}", name, value);
                 }
             }
             catch (Exception ex)
             {
-                Log.Debug(ex, "SendContextHeadersAdapter: Failed to set header {Name}", name);
+                Log.Debug(ex, "ContextPropagationInjectAdapter.Set: Failed to set header {Name}", name);
             }
         }
 
         public void Add(string name, string value)
         {
+            // Delegates to Set() - both are used for injecting headers
             Set(name, value);
         }
 
         public void Remove(string name)
         {
-            // Not typically needed for injection
+            // NOT USED - Header removal is not needed for trace context injection.
+            // We only add/set headers, never remove them.
         }
     }
 }

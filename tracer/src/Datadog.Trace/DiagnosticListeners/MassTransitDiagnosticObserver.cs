@@ -197,30 +197,6 @@ namespace Datadog.Trace.DiagnosticListeners
         /// Extracts the trace ID from an Activity. Handles both W3C format (00-{traceId}-{spanId}-{flags})
         /// and hierarchical format (uses RootId).
         /// </summary>
-        private static string? ExtractTraceId(System.Diagnostics.Activity? activity)
-        {
-            if (activity == null)
-            {
-                return null;
-            }
-
-            var activityId = activity.Id;
-            if (string.IsNullOrEmpty(activityId))
-            {
-                return null;
-            }
-
-            // W3C format: 00-{traceId}-{spanId}-{flags}
-            // Example: 00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01
-            if (activityId.Length >= 55 && activityId[2] == '-')
-            {
-                return activityId.Substring(3, 32);
-            }
-
-            // Hierarchical format: use RootId
-            return activity.RootId;
-        }
-
         private void OnSendStart(object? arg)
         {
             if (arg == null)
@@ -334,7 +310,7 @@ namespace Datadog.Trace.DiagnosticListeners
         {
             var activity = System.Diagnostics.Activity.Current;
             var activityId = activity?.Id;
-            var traceId = ExtractTraceId(activity);
+            var traceId = MassTransitCommon.ExtractTraceIdFromActivity(activity);
 
             if (string.IsNullOrEmpty(activityId))
             {
