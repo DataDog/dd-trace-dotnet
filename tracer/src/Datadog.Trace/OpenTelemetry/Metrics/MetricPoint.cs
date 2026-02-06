@@ -1,4 +1,4 @@
-﻿// <copyright file="MetricPoint.cs" company="Datadog">
+// <copyright file="MetricPoint.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -13,10 +13,11 @@ using System.Threading;
 
 namespace Datadog.Trace.OpenTelemetry.Metrics;
 
-internal sealed class MetricPoint(string instrumentName, string meterName, string meterVersion, KeyValuePair<string, object?>[] meterTags, InstrumentType instrumentType, AggregationTemporality? temporality, Dictionary<string, object?> tags, string unit = "", string description = "", bool isLongType = false)
+internal sealed class MetricPoint(string instrumentName, string meterName, string meterVersion, KeyValuePair<string, object?>[] meterTags, InstrumentType instrumentType, AggregationTemporality? temporality, Dictionary<string, object?> tags, string unit = "", string description = "", bool isLongType = false, double[]? explicitBounds = null)
 {
     internal static readonly double[] DefaultHistogramBounds = [0, 5, 10, 25, 50, 75, 100, 250, 500, 750, 1000, 2500, 5000, 7500, 10000];
     private readonly long[] _runningBucketCounts = instrumentType == InstrumentType.Histogram ? new long[DefaultHistogramBounds.Length + 1] : [];
+    private readonly double[] _runningBucketBounds = instrumentType == InstrumentType.Histogram ? (explicitBounds ?? DefaultHistogramBounds) : [];
     private readonly object _histogramLock = new();
     private long _runningCountValue;
     private double _runningDoubleValue;
@@ -55,21 +56,25 @@ internal sealed class MetricPoint(string instrumentName, string meterName, strin
 
     internal long[] RunningBucketCounts => _runningBucketCounts;
 
-    public DateTimeOffset StartTime { get; private set; } = DateTimeOffset.UtcNow;
+    internal double[] RunningBucketBounds => _runningBucketBounds;
 
-    public DateTimeOffset EndTime { get; private set; } = DateTimeOffset.UtcNow;
+    public DateTimeOffset StartTime { get; internal set; } = DateTimeOffset.UtcNow;
 
-    public long SnapshotCount { get; private set; }
+    public DateTimeOffset EndTime { get; internal set; } = DateTimeOffset.UtcNow;
 
-    public double SnapshotSum { get; private set; }
+    public long SnapshotCount { get; internal set; }
 
-    public double SnapshotGaugeValue { get; private set; }
+    public double SnapshotSum { get; internal set; }
 
-    public double SnapshotMin { get; private set; }
+    public double SnapshotGaugeValue { get; internal set; }
 
-    public double SnapshotMax { get; private set; }
+    public double SnapshotMin { get; internal set; }
 
-    public long[] SnapshotBucketCounts { get; private set; } = [];
+    public double SnapshotMax { get; internal set; }
+
+    public long[] SnapshotBucketCounts { get; internal set; } = [];
+
+    public double[] SnapshotBucketBounds { get; internal set; } = [];
 
     internal void UpdateCounter(double value)
     {
@@ -127,17 +132,17 @@ internal sealed class MetricPoint(string instrumentName, string meterName, strin
 
     public bool HasDataToExport() => _hasMeasurements;
 
-    private static int FindBucketIndex(double value)
+    private int FindBucketIndex(double value)
     {
-        for (var i = 0; i < DefaultHistogramBounds.Length; i++)
+        for (var i = 0; i < _runningBucketBounds.Length; i++)
         {
-            if (value <= DefaultHistogramBounds[i])
+            if (value <= _runningBucketBounds[i])
             {
                 return i;
             }
         }
 
-        return DefaultHistogramBounds.Length;
+        return _runningBucketBounds.Length;
     }
 
     /// <summary>
@@ -182,6 +187,12 @@ internal sealed class MetricPoint(string instrumentName, string meterName, strin
             {
                 snapshot.SnapshotBucketCounts = new long[_runningBucketCounts.Length];
                 Array.Copy(_runningBucketCounts, snapshot.SnapshotBucketCounts, _runningBucketCounts.Length);
+            }
+
+            if (_runningBucketBounds.Length > 0)
+            {
+                snapshot.SnapshotBucketBounds = new double[_runningBucketBounds.Length];
+                Array.Copy(_runningBucketBounds, snapshot.SnapshotBucketBounds, _runningBucketBounds.Length);
             }
 
             if (AggregationTemporality == Metrics.AggregationTemporality.Delta)
