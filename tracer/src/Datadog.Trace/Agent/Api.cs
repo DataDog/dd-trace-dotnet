@@ -86,6 +86,8 @@ namespace Datadog.Trace.Agent
             Failed_DontRetry,
         }
 
+        public TracesEncoding TracesEncoding => TracesEncoding.DatadogV0;
+
         [MemberNotNull(nameof(_statsd))]
         public void ToggleTracerHealthMetrics(bool enabled)
         {

@@ -63,6 +63,8 @@ internal sealed class ManagedTraceExporter : IApi, IDisposable
         });
     }
 
+    public TracesEncoding TracesEncoding => Volatile.Read(ref _current)?.TracesEncoding ?? TracesEncoding.DatadogV0;
+
     public void Dispose()
     {
         _settingSubscription.Dispose();

@@ -55,6 +55,8 @@ internal sealed class ManagedApi : IApi
         }
     }
 
+    public TracesEncoding TracesEncoding => Volatile.Read(ref _api).TracesEncoding;
+
     public Task<bool> Ping() => Volatile.Read(ref _api).Ping();
 
     public Task<bool> SendTracesAsync(ArraySegment<byte> traces, int numberOfTraces, bool statsComputationEnabled, long numberOfDroppedP0Traces, long numberOfDroppedP0Spans, bool apmTracingEnabled = true)

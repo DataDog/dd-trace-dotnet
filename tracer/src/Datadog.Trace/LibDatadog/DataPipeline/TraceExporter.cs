@@ -41,6 +41,8 @@ internal sealed class TraceExporter : SafeHandle, IApi
 
     public override bool IsInvalid => handle == IntPtr.Zero;
 
+    public TracesEncoding TracesEncoding => TracesEncoding.DatadogV0;
+
     public Task<bool> Ping() => SendTracesAsync(EmptyPayload, 0, false, 0, 0, true);
 
     public Task<bool> SendTracesAsync(ArraySegment<byte> traces, int numberOfTraces, bool statsComputationEnabled, long numberOfDroppedP0Traces, long numberOfDroppedP0Spans, bool apmTracingEnabled)

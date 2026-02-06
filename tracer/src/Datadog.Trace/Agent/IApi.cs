@@ -10,6 +10,8 @@ namespace Datadog.Trace.Agent
 {
     internal interface IApi
     {
+        TracesEncoding TracesEncoding { get; }
+
         Task<bool> Ping();
 
         Task<bool> SendTracesAsync(ArraySegment<byte> traces, int numberOfTraces, bool statsComputationEnabled, long numberOfDroppedP0Traces, long numberOfDroppedP0Spans, bool apmTracingEnabled = true);
