@@ -267,53 +267,18 @@ internal static class AspNetCoreResourceNameHelper
 #endif
 
         // Remove the boxing of the enumerator
-        if (routePattern.Segments is List<TemplateSegment> segments)
-        {
-            foreach (var pathSegment in segments)
-            {
-                InnerLoop(
-                    ref sb,
-                    pathSegment,
-                    routeValueDictionary,
-                    areaName,
-                    controllerName,
-                    actionName,
-                    expandRouteParameters);
-            }
-        }
-        else
-        {
-            foreach (var pathSegment in routePattern.Segments)
-            {
-                InnerLoop(
-                    ref sb,
-                    pathSegment,
-                    routeValueDictionary,
-                    areaName,
-                    controllerName,
-                    actionName,
-                    expandRouteParameters);
-            }
-        }
-
-        // We never added anything, or we just added the first `/`, no need for explicit ToString()
-        if (sb.Length <= 1)
-        {
-            sb.Dispose();
-            return "/";
-        }
-
-        return sb.ToString();
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static void InnerLoop(
-            ref ValueStringBuilder sb,
-            TemplateSegment pathSegment,
-            RouteValueDictionary routeValueDictionary,
-            string? areaName,
-            string? controllerName,
-            string? actionName,
-            bool expandRouteParameters)
+        // In all versions of .NET, this is implemented as a List<TemplateSegment>
+        // https://github.com/aspnet/Routing/blob/release/2.1/src/Microsoft.AspNetCore.Routing/Template/RouteTemplate.cs
+        // https://github.com/aspnet/Routing/blob/release/2.2/src/Microsoft.AspNetCore.Routing/Template/RouteTemplate.cs
+        // https://github.com/dotnet/aspnetcore/blob/v3.0.0/src/Http/Routing/src/Template/RouteTemplate.cs
+        // https://github.com/dotnet/aspnetcore/blob/v3.1.0/src/Http/Routing/src/Template/RouteTemplate.cs
+        // https://github.com/dotnet/aspnetcore/blob/v5.0.0/src/Http/Routing/src/Template/RouteTemplate.cs
+        // https://github.com/dotnet/aspnetcore/blob/v6.0.0/src/Http/Routing/src/Template/RouteTemplate.cs
+        // https://github.com/dotnet/aspnetcore/blob/v7.0.0/src/Http/Routing/src/Template/RouteTemplate.cs
+        // https://github.com/dotnet/aspnetcore/blob/v8.0.0/src/Http/Routing/src/Template/RouteTemplate.cs
+        // https://github.com/dotnet/aspnetcore/blob/v9.0.0/src/Http/Routing/src/Template/RouteTemplate.cs
+        // https://github.com/dotnet/aspnetcore/blob/main/src/Http/Routing/src/Template/RouteTemplate.cs
+        foreach (var pathSegment in (List<TemplateSegment>)routePattern.Segments)
         {
             var addedPart = false;
             foreach (var part in pathSegment.Parts)
@@ -403,6 +368,19 @@ internal static class AspNetCoreResourceNameHelper
                 }
             }
         }
+
+        // We never added anything, or we just added the first `/`, no need for explicit ToString()
+#if NETCOREAPP
+        if (sb.Length <= 1)
+        {
+            sb.Dispose();
+            return "/";
+        }
+
+        return sb.ToString();
+#else
+        return StringBuilderCache.GetStringAndRelease(sb).ToLowerInvariant();
+#endif
     }
 
     private static bool IsIdentifierSegment(object? value, [NotNullWhen(true)] out string? valueAsString)
