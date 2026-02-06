@@ -265,6 +265,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
 
     /// <summary>
     /// Gets the process tags instance including the service_name.user_defined tag.
+    /// Will be null if propagateProcessTags is null
     /// </summary>
     internal ProcessTags? ProcessTags { get; }
 

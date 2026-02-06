@@ -35,7 +35,7 @@ public class ProcessTagsTests
 
         if (isServiceNameUserDefined)
         {
-            tags.Should().Contain("svc.user:1");
+            tags.Should().Contain("svc.user:true");
             tags.Should().NotContain("svc.auto");
         }
         else
