@@ -1,4 +1,4 @@
-﻿// <copyright file="OtlpMetricsSerializer.cs" company="Datadog">
+// <copyright file="OtlpMetricsSerializer.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -496,20 +496,19 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
                 writer.Write((ulong)metric.SnapshotBucketCounts[i]);
             }
 
-            var bounds = MetricPoint.DefaultHistogramBounds;
-            for (int i = 0; i < bounds.Length; i++)
+            for (int i = 0; i < metric.SnapshotBucketBounds.Length; i++)
             {
                 WriteTag(writer, FieldNumbers.HistogramDataPointExplicitBounds, Fixed64);
-                writer.Write(bounds[i]);
+                writer.Write(metric.SnapshotBucketBounds[i]);
             }
 
-            if (metric.SnapshotCount > 0)
+            if (metric.SnapshotCount > 0 & metric.SnapshotMin != double.NaN)
             {
                 WriteTag(writer, FieldNumbers.HistogramDataPointMin, Fixed64);
                 writer.Write(metric.SnapshotMin);
             }
 
-            if (metric.SnapshotCount > 0)
+            if (metric.SnapshotCount > 0 & metric.SnapshotMax != double.NaN)
             {
                 WriteTag(writer, FieldNumbers.HistogramDataPointMax, Fixed64);
                 writer.Write(metric.SnapshotMax);
