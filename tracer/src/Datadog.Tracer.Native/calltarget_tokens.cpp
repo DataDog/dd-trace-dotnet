@@ -403,7 +403,7 @@ HRESULT CallTargetTokens::ModifyLocalSig(ILRewriter* reWriter, TypeSignature* me
     // For instrumenting static methods in value types, see if we can get the TypeRef for the type.
     // If so, include add a local variable with the value type in the signature.
     bool isValueType = caller->type.valueType;
-    bool isStaticValueType = !(caller->method_signature.CallingConvention() & IMAGE_CEE_CS_CALLCONV_HASTHIS) && caller->type.valueType && GetCurrentTypeRef(&caller->type, isValueType) != mdTokenNil;
+    bool isStaticValueType = isValueType && !(caller->method_signature.CallingConvention() & IMAGE_CEE_CS_CALLCONV_HASTHIS) && GetCurrentTypeRef(&caller->type, isValueType) != mdTokenNil;
 
     ULONG newLocalsCount = variableNumber + additionalLocalsCount + (isStaticValueType ? 1 : 0);
 
