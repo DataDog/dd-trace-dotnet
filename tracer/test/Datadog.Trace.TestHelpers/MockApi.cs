@@ -48,6 +48,8 @@ namespace Datadog.Trace.TestHelpers
             return objects;
         }
 
+        public Task<bool> Ping() => Task.FromResult(true);
+
         public Task<bool> SendTracesAsync(ArraySegment<byte> traces, int numberOfTraces, bool statsComputationEnabled, long numberOfDroppedP0Traces, long numberOfDroppedP0Spans, bool appsecStandaloneEnabled)
         {
             TraceCount += numberOfTraces;
