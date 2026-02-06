@@ -1,4 +1,4 @@
-﻿// <copyright file="SpanBuffer.cs" company="Datadog">
+// <copyright file="SpanBuffer.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -17,8 +17,7 @@ namespace Datadog.Trace.Agent
         internal const int HeaderSize = 5;
         internal const int InitialBufferSize = 64 * 1024;
 
-        private readonly IMessagePackFormatter<TraceChunkModel> _formatter;
-        private readonly IFormatterResolver _formatterResolver;
+        private readonly ISpanBufferSerializer _serializer;
         private readonly object _syncRoot = new();
         private readonly int _maxBufferSize;
 
@@ -26,7 +25,7 @@ namespace Datadog.Trace.Agent
         private bool _locked;
         private int _offset;
 
-        public SpanBuffer(int maxBufferSize, IFormatterResolver formatterResolver)
+        public SpanBuffer(int maxBufferSize, ISpanBufferSerializer serializer)
         {
             if (maxBufferSize < HeaderSize)
             {
@@ -36,8 +35,7 @@ namespace Datadog.Trace.Agent
             _maxBufferSize = maxBufferSize;
             _offset = HeaderSize;
             _buffer = new byte[Math.Min(InitialBufferSize, maxBufferSize)];
-            _formatterResolver = formatterResolver;
-            _formatter = _formatterResolver.GetFormatter<TraceChunkModel>();
+            _serializer = serializer;
         }
 
         public enum WriteStatus
@@ -95,16 +93,7 @@ namespace Datadog.Trace.Agent
 
                 // We don't know what the serialized size of the payload will be,
                 // so we need to write to a temporary buffer first
-                int size;
-
-                if (_formatter is SpanMessagePackFormatter spanFormatter)
-                {
-                    size = spanFormatter.Serialize(ref temporaryBuffer, 0, in traceChunk, _formatterResolver, maxSize: _maxBufferSize);
-                }
-                else
-                {
-                    size = _formatter.Serialize(ref temporaryBuffer, 0, traceChunk, _formatterResolver);
-                }
+                int size = _serializer.Serialize(ref temporaryBuffer, 0, traceChunk, maxSize: _maxBufferSize);
 
                 if (size == 0)
                 {
