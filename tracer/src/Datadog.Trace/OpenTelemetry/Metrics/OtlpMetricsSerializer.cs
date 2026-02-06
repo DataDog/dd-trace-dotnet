@@ -164,7 +164,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
             {
                 foreach (var tag in settings.GlobalTags)
                 {
-                    if (IsHandledResourceAttribute(tag.Key))
+                    if (OtlpMapper.IsHandledResourceAttribute(tag.Key))
                     {
                         continue;
                     }
@@ -177,20 +177,6 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
             }
 
             return buffer.ToArray();
-        }
-
-        /// <summary>
-        /// Checks if a tag key represents a resource attribute that has already been handled
-        /// </summary>
-        private bool IsHandledResourceAttribute(string tagKey)
-        {
-            return tagKey.Equals("service", StringComparison.OrdinalIgnoreCase) ||
-                   tagKey.Equals("env", StringComparison.OrdinalIgnoreCase) ||
-                   tagKey.Equals("version", StringComparison.OrdinalIgnoreCase) ||
-                   tagKey.Equals("service.name", StringComparison.OrdinalIgnoreCase) ||
-                   tagKey.Equals("deployment.environment.name", StringComparison.OrdinalIgnoreCase) ||
-                   tagKey.Equals("deployment.environment", StringComparison.OrdinalIgnoreCase) ||
-                   tagKey.Equals("service.version", StringComparison.OrdinalIgnoreCase);
         }
 
         private byte[] SerializeScopeMetrics(IReadOnlyList<MetricPoint> metrics)

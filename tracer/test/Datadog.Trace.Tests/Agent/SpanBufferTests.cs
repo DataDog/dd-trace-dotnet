@@ -68,7 +68,7 @@ namespace Datadog.Trace.Tests.Agent
             buffer.Lock();
             var innerBuffer = buffer.Data;
 
-            innerBuffer.Array!.Skip(SpanBuffer.HeaderSize).All(b => b == 0x0).Should().BeTrue("No data should have been written to the buffer");
+            innerBuffer.Array!.Skip(SpanBufferMessagePackSerializer.HeaderSizeConst).All(b => b == 0x0).Should().BeTrue("No data should have been written to the buffer");
 
             buffer.Clear();
 
@@ -105,7 +105,7 @@ namespace Datadog.Trace.Tests.Agent
 
             buffer.Lock();
 
-            buffer.Data.Count.Should().Be(SpanBuffer.HeaderSize);
+            buffer.Data.Count.Should().Be(SpanBufferMessagePackSerializer.HeaderSizeConst);
         }
 
         [Fact]
