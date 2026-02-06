@@ -30,6 +30,16 @@ namespace Datadog.Trace.Configuration
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ExporterSettings));
 
         /// <summary>
+        /// Backing field for AzureFunctionsGeneratedTracesPipeName.
+        /// </summary>
+        private static string? _azureFunctionsGeneratedTracesPipeName;
+
+        /// <summary>
+        /// Backing field for AzureFunctionsGeneratedMetricsPipeName.
+        /// </summary>
+        private static string? _azureFunctionsGeneratedMetricsPipeName;
+
+        /// <summary>
         /// Allows overriding of file system access for tests.
         /// </summary>
         private readonly Func<string, bool> _fileExists;
@@ -101,14 +111,14 @@ namespace Datadog.Trace.Configuration
                 if (string.IsNullOrEmpty(tracesPipeName))
                 {
                     tracesPipeName = GenerateUniquePipeName("dd_trace");
-                    AzureFunctionsGeneratedTracesPipeName = tracesPipeName;
+                    _azureFunctionsGeneratedTracesPipeName = tracesPipeName;
                     Log.Information("Azure Functions environment detected with no explicit trace pipe name. Generated unique pipe name: {TracesPipeName}", tracesPipeName);
                 }
 
                 if (string.IsNullOrEmpty(metricsPipeName))
                 {
                     metricsPipeName = GenerateUniquePipeName("dd_dogstatsd");
-                    AzureFunctionsGeneratedMetricsPipeName = metricsPipeName;
+                    _azureFunctionsGeneratedMetricsPipeName = metricsPipeName;
                     Log.Information("Azure Functions environment detected with no explicit metrics pipe name. Generated unique pipe name: {MetricsPipeName}", metricsPipeName);
                 }
             }
@@ -149,14 +159,14 @@ namespace Datadog.Trace.Configuration
         /// This is set when running in Azure Functions without explicit pipe name configuration.
         /// Used by ServerlessCompat instrumentation to coordinate pipe names with compat layer.
         /// </summary>
-        internal static string? AzureFunctionsGeneratedTracesPipeName { get; private set; }
+        internal static string? AzureFunctionsGeneratedTracesPipeName => _azureFunctionsGeneratedTracesPipeName;
 
         /// <summary>
         /// Gets the generated metrics pipe name for Azure Functions coordination.
         /// This is set when running in Azure Functions without explicit pipe name configuration.
         /// Used by ServerlessCompat instrumentation to coordinate pipe names with compat layer.
         /// </summary>
-        internal static string? AzureFunctionsGeneratedMetricsPipeName { get; private set; }
+        internal static string? AzureFunctionsGeneratedMetricsPipeName => _azureFunctionsGeneratedMetricsPipeName;
 
         /// <summary>
         /// Gets the Uri where the Tracer can connect to the Agent.
