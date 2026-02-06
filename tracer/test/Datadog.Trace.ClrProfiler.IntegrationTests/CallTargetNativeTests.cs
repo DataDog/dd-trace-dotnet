@@ -20,9 +20,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             : base(new EnvironmentHelper("CallTargetNativeTest", typeof(TestHelper), output, samplesDirectory: Path.Combine("test", "test-applications", "instrumentation"), prependSamplesToAppName: false), output)
         {
             SetServiceVersion("1.0.0");
-#pragma warning disable CS0618 // Type or member is obsolete
-            EnableDebugMode();
-#pragma warning restore CS0618 // Type or member is obsolete
         }
 
         public static IEnumerable<object[]> MethodArgumentsData()
