@@ -209,7 +209,7 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     {
         bool callerTypeIsValueType = caller->type.valueType;
         mdToken callerTypeToken = tracerTokens->GetCurrentTypeRef(&caller->type, callerTypeIsValueType);
-        if (caller->type.valueType && callerTypeToken != mdTokenNil)
+        if (callerTypeIsValueType && callerTypeToken != mdTokenNil)
         {
             reWriterWrapper.LoadLocalAddress(staticValueTypeIndex);
             if (caller->type.type_spec != mdTypeSpecNil)
