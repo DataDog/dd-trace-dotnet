@@ -5,7 +5,7 @@
 
 #nullable enable
 
-#if NETCOREAPP
+#if !NETFRAMEWORK
 using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
