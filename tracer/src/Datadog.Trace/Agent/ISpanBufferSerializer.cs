@@ -11,6 +11,10 @@ namespace Datadog.Trace.Agent
 {
     internal interface ISpanBufferSerializer
     {
+        int HeaderSize { get; }
+
         int Serialize(ref byte[] bytes, int offset, TraceChunkModel traceChunk, int maxSize);
+
+        void WriteHeader(ref byte[] bytes, int offset, int traceCount);
     }
 }

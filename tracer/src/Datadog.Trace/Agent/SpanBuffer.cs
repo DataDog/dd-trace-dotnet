@@ -14,7 +14,6 @@ namespace Datadog.Trace.Agent
 {
     internal sealed class SpanBuffer
     {
-        internal const int HeaderSize = 5;
         internal const int InitialBufferSize = 64 * 1024;
 
         private readonly ISpanBufferSerializer _serializer;
@@ -27,13 +26,13 @@ namespace Datadog.Trace.Agent
 
         public SpanBuffer(int maxBufferSize, ISpanBufferSerializer serializer)
         {
-            if (maxBufferSize < HeaderSize)
+            if (maxBufferSize < serializer.HeaderSize)
             {
-                ThrowHelper.ThrowArgumentException($"Buffer size should be at least {HeaderSize}", nameof(maxBufferSize));
+                ThrowHelper.ThrowArgumentException($"Buffer size should be at least {serializer.HeaderSize}", nameof(maxBufferSize));
             }
 
             _maxBufferSize = maxBufferSize;
-            _offset = HeaderSize;
+            _offset = serializer.HeaderSize;
             _buffer = new byte[Math.Min(InitialBufferSize, maxBufferSize)];
             _serializer = serializer;
         }
@@ -69,7 +68,7 @@ namespace Datadog.Trace.Agent
         internal bool IsLocked => _locked;
 
         // For tests only
-        internal bool IsEmpty => !_locked && !IsFull && TraceCount == 0 && SpanCount == 0 && _offset == HeaderSize;
+        internal bool IsEmpty => !_locked && !IsFull && TraceCount == 0 && SpanCount == 0 && _offset == _serializer.HeaderSize;
 
         public WriteStatus TryWrite(in SpanCollection spans, ref byte[] temporaryBuffer, int? samplingPriority = null)
         {
@@ -134,7 +133,7 @@ namespace Datadog.Trace.Agent
                 }
 
                 // Use a fixed-size header
-                MessagePackBinary.WriteArrayHeaderForceArray32Block(ref _buffer, 0, (uint)TraceCount);
+                _serializer.WriteHeader(ref _buffer, 0, TraceCount);
                 _locked = true;
 
                 return true;
@@ -145,7 +144,7 @@ namespace Datadog.Trace.Agent
         {
             lock (_syncRoot)
             {
-                _offset = HeaderSize;
+                _offset = _serializer.HeaderSize;
                 TraceCount = 0;
                 SpanCount = 0;
                 IsFull = false;
