@@ -298,7 +298,7 @@ namespace Datadog.Trace.Tests.Agent
             var sizeOfTrace = ComputeSize(CreateTraceChunk(1));
 
             // Make the buffer size big enough for a single trace
-            var agent = new AgentWriter(api.Object, statsAggregator: null, statsd: TestStatsdManager.NoOp, automaticFlush: false, maxBufferSize: (sizeOfTrace * 2) + SpanBuffer.HeaderSize - 1);
+            var agent = new AgentWriter(api.Object, statsAggregator: null, statsd: TestStatsdManager.NoOp, automaticFlush: false, maxBufferSize: (sizeOfTrace * 2) + SpanBufferMessagePackSerializer.HeaderSizeConst - 1);
 
             agent.WriteTrace(CreateTraceChunk(1));
             agent.WriteTrace(CreateTraceChunk(1));
@@ -328,7 +328,7 @@ namespace Datadog.Trace.Tests.Agent
             var sizeOfTrace = ComputeSize(CreateTraceChunk(1));
 
             // Make the buffer size big enough for a single trace
-            var agent = new AgentWriter(Mock.Of<IApi>(), statsAggregator: null, new TestStatsdManager(statsd.Object), automaticFlush: false, (sizeOfTrace * 2) + SpanBuffer.HeaderSize - 1, initialTracerMetricsEnabled: true);
+            var agent = new AgentWriter(Mock.Of<IApi>(), statsAggregator: null, new TestStatsdManager(statsd.Object), automaticFlush: false, (sizeOfTrace * 2) + SpanBufferMessagePackSerializer.HeaderSizeConst - 1, initialTracerMetricsEnabled: true);
 
             // Fill the two buffers
             agent.WriteTrace(CreateTraceChunk(1));
@@ -419,7 +419,7 @@ namespace Datadog.Trace.Tests.Agent
 
             // Make the buffer size big enough for a single trace
             var api = new MockApi();
-            var agent = new AgentWriter(api, statsAggregator: null, statsd: TestStatsdManager.NoOp, calculator, automaticFlush: false, (sizeOfTrace * 2) + SpanBuffer.HeaderSize - 1, batchInterval: 100, apmTracingEnabled: true, initialTracerMetricsEnabled: false);
+            var agent = new AgentWriter(api, statsAggregator: null, statsd: TestStatsdManager.NoOp, calculator, automaticFlush: false, (sizeOfTrace * 2) + SpanBufferMessagePackSerializer.HeaderSizeConst - 1, batchInterval: 100, apmTracingEnabled: true, initialTracerMetricsEnabled: false);
 
             // Fill both buffers
             agent.WriteTrace(spans);
@@ -502,7 +502,7 @@ namespace Datadog.Trace.Tests.Agent
 
         private static bool Equals(ArraySegment<byte> data, byte[] expectedData)
         {
-            var equals = data.Array!.Skip(data.Offset).Take(data.Count).Skip(SpanBuffer.HeaderSize).SequenceEqual(expectedData);
+            var equals = data.Array!.Skip(data.Offset).Take(data.Count).Skip(SpanBufferMessagePackSerializer.HeaderSizeConst).SequenceEqual(expectedData);
             return equals;
         }
 

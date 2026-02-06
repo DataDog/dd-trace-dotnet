@@ -14,6 +14,7 @@ using Datadog.Trace.Agent.MessagePack;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
+using Datadog.Trace.OpenTelemetry.Traces;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 
@@ -97,6 +98,7 @@ namespace Datadog.Trace.Agent
 
             ISpanBufferSerializer spanBufferSerializer = api.TracesEncoding switch
             {
+                TracesEncoding.OtlpJson => new OtlpTracesJsonSerializer(),
                 _ => new SpanBufferMessagePackSerializer(SpanFormatterResolver.Instance),
             };
 

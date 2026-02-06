@@ -19,6 +19,8 @@ namespace Datadog.Trace.Agent
 {
     internal sealed class SpanBufferMessagePackSerializer : ISpanBufferSerializer
     {
+        public const int HeaderSizeConst = 5;
+
         private readonly IMessagePackFormatter<TraceChunkModel> _formatter;
         private readonly IFormatterResolver _formatterResolver;
 
@@ -28,7 +30,9 @@ namespace Datadog.Trace.Agent
             _formatter = _formatterResolver.GetFormatter<TraceChunkModel>();
         }
 
-        public int Serialize(ref byte[] bytes, int offset, TraceChunkModel traceChunk, int maxSize)
+        public int HeaderSize => HeaderSizeConst;
+
+        public int SerializeSpans(ref byte[] bytes, int offset, TraceChunkModel traceChunk, int spanBufferOffset, int maxSize)
         {
             if (_formatter is SpanMessagePackFormatter spanFormatter)
             {
@@ -38,6 +42,17 @@ namespace Datadog.Trace.Agent
             {
                 return _formatter.Serialize(ref bytes, 0, traceChunk, _formatterResolver);
             }
+        }
+
+        public void WriteHeader(ref byte[] bytes, int offset, int traceCount)
+        {
+            MessagePackBinary.WriteArrayHeaderForceArray32Block(ref bytes, offset, (uint)traceCount);
+        }
+
+        public int FinishBody(ref byte[] bytes, int offset, int maxSize)
+        {
+            // No-op for MessagePack serialization
+            return 0;
         }
     }
 }
