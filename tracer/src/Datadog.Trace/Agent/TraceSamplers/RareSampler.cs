@@ -1,4 +1,4 @@
-﻿// <copyright file="RareSampler.cs" company="Datadog">
+// <copyright file="RareSampler.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -21,9 +21,12 @@ namespace Datadog.Trace.Agent.TraceSamplers
         public RareSampler(TracerSettings settings)
         {
             IsEnabled = settings.IsRareSamplerEnabled;
+            IsOtlp = false; // TODO: Hook up to configuration
         }
 
         public bool IsEnabled { get; }
+
+        public bool IsOtlp { get; }
 
         /// <summary>
         /// Samples the trace chunk with the following rules:
@@ -89,7 +92,7 @@ namespace Datadog.Trace.Agent.TraceSamplers
 
         private bool SampleSpan(Span span)
         {
-            var key = StatsAggregator.BuildKey(span);
+            var key = StatsAggregator.BuildKey(span, IsOtlp);
             var isNewKey = _keys.Add(key);
 
             if (isNewKey)
@@ -103,7 +106,7 @@ namespace Datadog.Trace.Agent.TraceSamplers
 
         private void UpdateSpan(Span span)
         {
-            var key = StatsAggregator.BuildKey(span);
+            var key = StatsAggregator.BuildKey(span, IsOtlp);
             var isNewKey = _keys.Add(key);
 
             if (isNewKey)

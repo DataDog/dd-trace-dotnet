@@ -15,7 +15,11 @@ namespace Datadog.Trace.Agent
         public readonly string Type;
         public readonly int HttpStatusCode;
         public readonly bool IsSyntheticsRequest;
+        public readonly bool IsError;
+        public readonly bool IsTopLevel;
 
+        // Constructs a StatsAgregationKey that represents the aggregation key used by Datadog,
+        // which does not include IsError and IsTopLevel, since these should be part of the same timeseries
         public StatsAggregationKey(
             string resource,
             string service,
@@ -30,6 +34,30 @@ namespace Datadog.Trace.Agent
             Type = type;
             HttpStatusCode = httpStatusCode;
             IsSyntheticsRequest = isSyntheticsRequest;
+            IsError = false;
+            IsTopLevel = false;
+        }
+
+        // Constructs a StatsAgregationKey that represents the aggregation key used by OpenTelemetry,
+        // which considers IsError and IsTopLevel since these should be considered as unique timeseries
+        public StatsAggregationKey(
+            string resource,
+            string service,
+            string operationName,
+            string type,
+            int httpStatusCode,
+            bool isSyntheticsRequest,
+            bool isError,
+            bool isTopLevel)
+        {
+            Resource = resource;
+            Service = service;
+            OperationName = operationName;
+            Type = type;
+            HttpStatusCode = httpStatusCode;
+            IsSyntheticsRequest = isSyntheticsRequest;
+            IsError = isError;
+            IsTopLevel = isTopLevel;
         }
 
         public bool Equals(StatsAggregationKey other)
@@ -40,7 +68,9 @@ namespace Datadog.Trace.Agent
                 && OperationName == other.OperationName
                 && Type == other.Type
                 && HttpStatusCode == other.HttpStatusCode
-                && IsSyntheticsRequest == other.IsSyntheticsRequest;
+                && IsSyntheticsRequest == other.IsSyntheticsRequest
+                && IsError == other.IsError
+                && IsTopLevel == other.IsTopLevel;
         }
 
         public override bool Equals(object obj)
@@ -58,6 +88,8 @@ namespace Datadog.Trace.Agent
                 hashCode = (hashCode * 397) ^ (Type != null ? Type.GetHashCode() : 0);
                 hashCode = (hashCode * 397) ^ HttpStatusCode;
                 hashCode = (hashCode * 397) ^ IsSyntheticsRequest.GetHashCode();
+                hashCode = (hashCode * 397) ^ IsError.GetHashCode();
+                hashCode = (hashCode * 397) ^ IsTopLevel.GetHashCode();
                 return hashCode;
             }
         }
