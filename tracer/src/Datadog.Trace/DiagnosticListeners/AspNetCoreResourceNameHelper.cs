@@ -298,7 +298,6 @@ internal static class AspNetCoreResourceNameHelper
                     var parameterName = part.Name;
 
                     var mustExpand = false;
-                    var haveParameter = true;
                     object? value;
                     if (parameterName.Equals("area", StringComparison.OrdinalIgnoreCase))
                     {
@@ -317,17 +316,20 @@ internal static class AspNetCoreResourceNameHelper
                     }
                     else if (!routeValueDictionary.TryGetValue(parameterName, out value))
                     {
-                        haveParameter = false;
                         value = null;
                     }
 
-                    if (!part.IsOptional || haveParameter)
+                    var haveParameter = value is not null;
+
+                    if (part.IsOptional && !haveParameter)
                     {
-                        if (!addedPart)
-                        {
-                            sb.Append('/');
-                            addedPart = true;
-                        }
+                        continue;
+                    }
+
+                    if (!addedPart)
+                    {
+                        sb.Append('/');
+                        addedPart = true;
                     }
 
                     // Is this parameter an identifier segment?
