@@ -297,30 +297,25 @@ internal static class AspNetCoreResourceNameHelper
                 {
                     var parameterName = part.Name;
 
-                    // Avoiding the dictionary lookup as we already did it
-                    var shouldExpand = expandRouteParameters;
+                    var mustExpand = false;
                     var haveParameter = true;
                     object? value;
                     if (parameterName.Equals("area", StringComparison.OrdinalIgnoreCase))
                     {
-                        shouldExpand = true;
+                        mustExpand = true;
                         value = areaName;
                     }
                     else if (parameterName.Equals("controller", StringComparison.OrdinalIgnoreCase))
                     {
-                        shouldExpand = true;
+                        mustExpand = true;
                         value = controllerName;
                     }
                     else if (parameterName.Equals("action", StringComparison.OrdinalIgnoreCase))
                     {
-                        shouldExpand = true;
+                        mustExpand = true;
                         value = actionName;
                     }
-                    else if (routeValueDictionary.TryGetValue(parameterName, out value))
-                    {
-                        haveParameter = true;
-                    }
-                    else
+                    else if (!routeValueDictionary.TryGetValue(parameterName, out value))
                     {
                         haveParameter = false;
                         value = null;
@@ -335,17 +330,13 @@ internal static class AspNetCoreResourceNameHelper
                         }
                     }
 
-                    // Is this parameter an identifier segment? we assume non-strings _are_ identifiers
-                    // so never expand them. This avoids an allocating ToString() call, but means that
-                    // some parameters which maybe _should_ be expanded (e.g. Enum)s currently are not
+                    // Is this parameter an identifier segment?
+                    var valueAsString = value as string;
                     if (haveParameter
-                     && shouldExpand
-                     && (value is null ||
-                         (value is string valueAsString
-                       && !UriHelpers.IsIdentifierSegment(valueAsString, 0, valueAsString.Length))))
+                     && (mustExpand || (expandRouteParameters && !IsIdentifierSegment(value, out valueAsString))))
                     {
                         // write the expanded parameter value
-                        sb.AppendAsLowerInvariant(value as string);
+                        sb.AppendAsLowerInvariant(valueAsString);
                     }
                     else
                     {
@@ -383,8 +374,16 @@ internal static class AspNetCoreResourceNameHelper
 #endif
     }
 
-    private static bool IsIdentifierSegment(object? value, [NotNullWhen(true)] out string? valueAsString)
+    private static bool IsIdentifierSegment(object? value, out string? valueAsString)
     {
+        // avoid allocating a string for cases we know are going to be flagged as identifiers and therefore
+        if (value is short or ushort or int or uint or long or ulong or float or double or decimal or Guid)
+        {
+            valueAsString = null;
+            return true;
+        }
+
+        // This may allocate for e.g. enums and other types etc, but we were going to have to do that anyway at some point
         valueAsString = value as string ?? value?.ToString();
         if (valueAsString is null)
         {
