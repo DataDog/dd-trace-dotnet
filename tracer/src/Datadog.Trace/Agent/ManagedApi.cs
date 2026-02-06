@@ -1,4 +1,4 @@
-﻿// <copyright file="ManagedApi.cs" company="Datadog">
+// <copyright file="ManagedApi.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -54,6 +54,8 @@ internal sealed class ManagedApi : IApi
             Interlocked.Exchange(ref _api!, api);
         }
     }
+
+    public Task<bool> Ping() => Volatile.Read(ref _api).Ping();
 
     public Task<bool> SendTracesAsync(ArraySegment<byte> traces, int numberOfTraces, bool statsComputationEnabled, long numberOfDroppedP0Traces, long numberOfDroppedP0Spans, bool apmTracingEnabled = true)
         => Volatile.Read(ref _api).SendTracesAsync(traces, numberOfTraces, statsComputationEnabled, numberOfDroppedP0Traces, numberOfDroppedP0Spans, apmTracingEnabled);

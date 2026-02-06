@@ -218,6 +218,13 @@ namespace Benchmarks.Trace
 
             private class NullApi : IApi
             {
+                public TracesEncoding TracesEncoding => TracesEncoding.DatadogV0;
+
+                public Task<bool> Ping()
+                {
+                    return Task.FromResult(true);
+                }
+
                 public Task<bool> SendTracesAsync(ArraySegment<byte> traces, int numberOfTraces, bool statsComputationEnabled, long numberOfDroppedP0Traces, long numberOfDroppedP0Spans, bool apmTracingEnabled = true)
                 {
                     return Task.FromResult(true);
