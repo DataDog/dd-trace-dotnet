@@ -1,4 +1,4 @@
-﻿// <copyright file="StatsAggregator.cs" company="Datadog">
+// <copyright file="StatsAggregator.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -30,6 +30,7 @@ namespace Datadog.Trace.Agent
         private readonly StatsBuffer[] _buffers;
 
         private readonly IApi _api;
+        private readonly bool _isOtlp;
         private readonly ITraceProcessor[] _traceProcessors;
 
         private readonly TaskCompletionSource<bool> _processExit;
@@ -51,6 +52,7 @@ namespace Datadog.Trace.Agent
         internal StatsAggregator(IApi api, TracerSettings settings, IDiscoveryService discoveryService)
         {
             _api = api;
+            _isOtlp = false; // TODO: Grab from settings like settings.Manager.InitialExporterSettings.TracesExporter == TracesExporterType.Otlp;
             _processExit = new TaskCompletionSource<bool>();
             _bucketDuration = TimeSpan.FromSeconds(settings.StatsComputationInterval);
             _buffers = new StatsBuffer[BufferCount];
@@ -166,7 +168,7 @@ namespace Datadog.Trace.Agent
             return spans;
         }
 
-        internal static StatsAggregationKey BuildKey(Span span)
+        internal static StatsAggregationKey BuildKey(Span span, bool isOtlp = false)
         {
             var rawHttpStatusCode = span.GetTag(Tags.HttpStatusCode);
 
@@ -175,13 +177,19 @@ namespace Datadog.Trace.Agent
                 httpStatusCode = 0;
             }
 
+            // When submitting trace metrics over OTLP, we must create inidividual timeseries
+            // timeseries for each unique set of attributes, including the Error and IsTopLevel attributes.
+            // As a result, we must create distinct Aggregation keys (and consequently, unique stats) by these attributes.
+            // Outside of OTLP, we make no distinction between these attributes for histograms, so we can set a constant 'false' value for each.
             return new StatsAggregationKey(
                 span.ResourceName,
                 span.ServiceName,
                 span.OperationName,
                 span.Type,
                 httpStatusCode,
-                span.Context.Origin == "synthetics");
+                span.Context.Origin == "synthetics",
+                isOtlp ? span.Error : false,
+                isOtlp ? span.IsTopLevel : false);
         }
 
         internal async Task Flush()
@@ -246,12 +254,13 @@ namespace Datadog.Trace.Agent
 
         private void AddToBuffer(Span span)
         {
-            if ((!span.IsTopLevel && span.GetMetric(Tags.Measured) != 1.0) || span.GetMetric(Tags.PartialSnapshot) > 0)
+            if (!_isOtlp // If we are using OTLP, we include both top-level and non-top-level spans
+                && ((!span.IsTopLevel && span.GetMetric(Tags.Measured) != 1.0) || span.GetMetric(Tags.PartialSnapshot) > 0))
             {
                 return;
             }
 
-            var key = BuildKey(span);
+            var key = BuildKey(span, _isOtlp);
 
             var buffer = CurrentBuffer;
 
@@ -272,7 +281,9 @@ namespace Datadog.Trace.Agent
 
             bucket.Duration += duration;
 
-            if (span.Error)
+            // If we are using OTLP, the errors are tracked as a separate aggregation entirely (different AggregationKey)
+            // As a result, if using OTLP we always add to the OkSummary sketch.
+            if (span.Error && !_isOtlp)
             {
                 bucket.Errors++;
                 bucket.ErrorSummary.Add(ConvertTimestamp(duration));
