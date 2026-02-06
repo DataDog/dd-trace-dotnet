@@ -33,6 +33,7 @@ internal static class MessagePackStringCache
     private static CachedBytes _service;
 
     // Today, process tags may change only when the service name isn't the default one anymore
+    [ThreadStatic]
     private static CachedBytes _processTags;
 
     // NOTE: all of these can be cached in SpanMessagePackFormatter as static byte[]

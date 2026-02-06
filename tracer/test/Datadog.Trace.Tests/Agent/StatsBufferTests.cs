@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.Collections.Specialized;
 using System.IO;
 using System.Linq;
 using Datadog.Trace.Agent;
@@ -25,22 +26,29 @@ namespace Datadog.Trace.Tests.Agent
             key1.Should().Be(key2);
         }
 
-        [Fact]
-        public void Serialization()
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void Serialization(bool propagateProcessTags)
         {
             const long expectedDuration = 42;
+            var collection = new NameValueCollection
+            {
+                { ConfigurationKeys.PropagateProcessTags, propagateProcessTags.ToString() },
+            };
+            IConfigurationSource source = new NameValueConfigurationSource(collection);
 
             var settings = MutableSettings.CreateForTesting(
-                new(),
+                new(source),
                 new()
                 {
                     { ConfigurationKeys.Environment, "Env" },
                     { ConfigurationKeys.ServiceVersion, "v99.99" },
                 });
+
             var payload = new ClientStatsPayload(settings)
             {
                 HostName = "Hostname",
-                ProcessTags = "a.b:c_d,x.y:z",
             };
 
             var buffer = new StatsBuffer(payload);
@@ -64,7 +72,6 @@ namespace Datadog.Trace.Tests.Agent
             result.Hostname.Should().Be(payload.HostName);
             result.Env.Should().Be(payload.Details.Environment);
             result.Version.Should().Be(payload.Details.Version);
-            result.ProcessTags.Should().Be(payload.ProcessTags);
             result.Lang.Should().Be(TracerConstants.Language);
             result.TracerVersion.Should().Be(TracerConstants.AssemblyVersion);
             result.RuntimeId.Should().Be(Tracer.RuntimeId);
@@ -72,6 +79,15 @@ namespace Datadog.Trace.Tests.Agent
             result.AgentAggregation.Should().BeNull();
             result.Service.Should().BeNull();
             result.Stats.Should().HaveCount(1);
+
+            if (propagateProcessTags)
+            {
+                result.ProcessTags.Should().Contain("svc.auto");
+            }
+            else
+            {
+                result.ProcessTags.Should().BeNull();
+            }
 
             var bucket = result.Stats[0];
 

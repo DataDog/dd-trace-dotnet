@@ -552,7 +552,7 @@ public class SpanMessagePackFormatterTests
             processTagsValue.Should().NotBeNullOrEmpty("process tags should be in the first span when enabled");
             processTagsValue.Should().Contain(ProcessTags.EntrypointBasedir);
             processTagsValue.Should().Contain(ProcessTags.EntrypointWorkdir);
-            processTagsValue.Should().Contain("svc.user:1");
+            processTagsValue.Should().Contain("svc.user:true");
 
             // Should not be in subsequent spans
             secondSpan.GetTag(Tags.ProcessTags).Should().BeNull("process tags should only be in the first span");

@@ -22,11 +22,11 @@ internal static class StatsdFactory
         MutableSettings settings,
         ExporterSettings exporter,
         bool includeDefaultTags,
-        IReadOnlyCollection<string> processTags,
         string? prefix = null)
     {
         var customTagCount = settings.GlobalTags.Count;
-        var tagsCount = (includeDefaultTags ? 5 + customTagCount : 0) + processTags.Count;
+        var processTags = settings.ProcessTags?.TagsList;
+        var tagsCount = (includeDefaultTags ? 5 + customTagCount : 0) + processTags?.Count ?? 0;
         var constantTags = new List<string>(tagsCount);
         if (includeDefaultTags)
         {
@@ -50,7 +50,7 @@ internal static class StatsdFactory
             }
         }
 
-        if (processTags.Count > 0)
+        if (processTags?.Count > 0)
         {
             constantTags.AddRange(processTags);
         }
