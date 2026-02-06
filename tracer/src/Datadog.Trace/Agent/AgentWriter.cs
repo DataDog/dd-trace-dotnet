@@ -95,7 +95,10 @@ namespace Datadog.Trace.Agent
             _batchInterval = batchInterval;
             _traceKeepRateCalculator = traceKeepRateCalculator;
 
-            var spanBufferSerializer = new SpanBufferMessagePackSerializer(SpanFormatterResolver.Instance);
+            ISpanBufferSerializer spanBufferSerializer = api.TracesEncoding switch
+            {
+                _ => new SpanBufferMessagePackSerializer(SpanFormatterResolver.Instance),
+            };
 
             _forceFlush = new TaskCompletionSource<bool>(TaskOptions);
 
