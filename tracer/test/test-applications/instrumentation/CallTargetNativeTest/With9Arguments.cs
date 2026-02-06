@@ -125,6 +125,7 @@ partial class Program
         RunMethod(() => With9ArgumentsStaticStruct.ReturnGenericMethod<int, string, Tuple<int, int>, ulong>("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly(), null));
         Console.WriteLine();
         //
+        // Note: We skip instrumentation today for generic value types.
         Console.WriteLine($"{typeof(With9ArgumentsGenericStaticStruct<string>).FullName}.VoidMethod");
         RunMethod(() => With9ArgumentsGenericStaticStruct<string>.VoidMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly(), null), checkInstrumented: false);
         Console.WriteLine($"{typeof(With9ArgumentsGenericStaticStruct<string>).FullName}.ReturnValueMethod");
@@ -135,6 +136,7 @@ partial class Program
         RunMethod(() => With9ArgumentsGenericStaticStruct<string>.ReturnGenericMethod<string, Tuple<int, int>, ulong>("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly(), null), checkInstrumented: false);
         Console.WriteLine();
         //
+        // Note: We skip instrumentation today for generic value types.
         Console.WriteLine($"{typeof(With9ArgumentsGenericStaticStruct<int>).FullName}.VoidMethod");
         RunMethod(() => With9ArgumentsGenericStaticStruct<int>.VoidMethod("Hello world", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly(), null), checkInstrumented: false);
         Console.WriteLine($"{typeof(With9ArgumentsGenericStaticStruct<int>).FullName}.ReturnValueMethod");
@@ -290,6 +292,7 @@ partial class Program
         RunMethod(() => ArgumentsParentType.With9ArgumentsStaticStruct.ReturnGenericMethod<int, string, Tuple<int, int>, ulong>("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly(), null));
         Console.WriteLine();
         //
+        // Note: We skip instrumentation today for generic value types.
         Console.WriteLine($"{typeof(ArgumentsParentType.With9ArgumentsGenericStaticStruct<string>).FullName}.VoidMethod");
         RunMethod(() => ArgumentsParentType.With9ArgumentsGenericStaticStruct<string>.VoidMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly(), null), checkInstrumented: false);
         Console.WriteLine($"{typeof(ArgumentsParentType.With9ArgumentsGenericStaticStruct<string>).FullName}.ReturnValueMethod");
@@ -300,6 +303,7 @@ partial class Program
         RunMethod(() => ArgumentsParentType.With9ArgumentsGenericStaticStruct<string>.ReturnGenericMethod<string, Tuple<int, int>, ulong>("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly(), null), checkInstrumented: false);
         Console.WriteLine();
         //
+        // Note: We skip instrumentation today for generic value types.
         Console.WriteLine($"{typeof(ArgumentsParentType.With9ArgumentsGenericStaticStruct<int>).FullName}.VoidMethod");
         RunMethod(() => ArgumentsParentType.With9ArgumentsGenericStaticStruct<int>.VoidMethod("Hello world", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly(), null), checkInstrumented: false);
         Console.WriteLine($"{typeof(ArgumentsParentType.With9ArgumentsGenericStaticStruct<int>).FullName}.ReturnValueMethod");
@@ -455,6 +459,7 @@ partial class Program
         RunMethod(() => ArgumentsStructParentType.With9ArgumentsStaticStruct.ReturnGenericMethod<int, string, Tuple<int, int>, ulong>("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly(), null));
         Console.WriteLine();
         //
+        // Note: We skip instrumentation today for generic value types.
         Console.WriteLine($"{typeof(ArgumentsStructParentType.With9ArgumentsGenericStaticStruct<string>).FullName}.VoidMethod");
         RunMethod(() => ArgumentsStructParentType.With9ArgumentsGenericStaticStruct<string>.VoidMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly(), null), checkInstrumented: false);
         Console.WriteLine($"{typeof(ArgumentsStructParentType.With9ArgumentsGenericStaticStruct<string>).FullName}.ReturnValueMethod");
@@ -465,6 +470,7 @@ partial class Program
         RunMethod(() => ArgumentsStructParentType.With9ArgumentsGenericStaticStruct<string>.ReturnGenericMethod<string, Tuple<int, int>, ulong>("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly(), null), checkInstrumented: false);
         Console.WriteLine();
         //
+        // Note: We skip instrumentation today for generic value types.
         Console.WriteLine($"{typeof(ArgumentsStructParentType.With9ArgumentsGenericStaticStruct<int>).FullName}.VoidMethod");
         RunMethod(() => ArgumentsStructParentType.With9ArgumentsGenericStaticStruct<int>.VoidMethod("Hello world", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly(), null), checkInstrumented: false);
         Console.WriteLine($"{typeof(ArgumentsStructParentType.With9ArgumentsGenericStaticStruct<int>).FullName}.ReturnValueMethod");

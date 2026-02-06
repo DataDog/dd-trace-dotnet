@@ -122,6 +122,7 @@ partial class Program
         RunMethod(() => With3ArgumentsStaticStruct.ReturnGenericMethod<int, string, Tuple<int, int>>("Hello World", 42, Tuple.Create(1, 2)));
         Console.WriteLine();
         //
+        // Note: We skip instrumentation today for generic value types.
         Console.WriteLine($"{typeof(With3ArgumentsGenericStaticStruct<string>).FullName}.VoidMethod");
         RunMethod(() => With3ArgumentsGenericStaticStruct<string>.VoidMethod("Hello World", 42, Tuple.Create(1, 2)), checkInstrumented: false);
         Console.WriteLine($"{typeof(With3ArgumentsGenericStaticStruct<string>).FullName}.ReturnValueMethod");
@@ -132,6 +133,7 @@ partial class Program
         RunMethod(() => With3ArgumentsGenericStaticStruct<string>.ReturnGenericMethod<string, Tuple<int, int>>("Hello World", 42, Tuple.Create(1, 2)), checkInstrumented: false);
         Console.WriteLine();
         //
+        // Note: We skip instrumentation today for generic value types.
         Console.WriteLine($"{typeof(With3ArgumentsGenericStaticStruct<int>).FullName}.VoidMethod");
         RunMethod(() => With3ArgumentsGenericStaticStruct<int>.VoidMethod("Hello world", 42, Tuple.Create(1, 2)), checkInstrumented: false);
         Console.WriteLine($"{typeof(With3ArgumentsGenericStaticStruct<int>).FullName}.ReturnValueMethod");
@@ -287,6 +289,7 @@ partial class Program
         RunMethod(() => ArgumentsParentType.With3ArgumentsStaticStruct.ReturnGenericMethod<int, string, Tuple<int, int>>("Hello World", 42, Tuple.Create(1, 2)));
         Console.WriteLine();
         //
+        // Note: We skip instrumentation today for generic value types.
         Console.WriteLine($"{typeof(ArgumentsParentType.With3ArgumentsGenericStaticStruct<string>).FullName}.VoidMethod");
         RunMethod(() => ArgumentsParentType.With3ArgumentsGenericStaticStruct<string>.VoidMethod("Hello World", 42, Tuple.Create(1, 2)), checkInstrumented: false);
         Console.WriteLine($"{typeof(ArgumentsParentType.With3ArgumentsGenericStaticStruct<string>).FullName}.ReturnValueMethod");
@@ -297,6 +300,7 @@ partial class Program
         RunMethod(() => ArgumentsParentType.With3ArgumentsGenericStaticStruct<string>.ReturnGenericMethod<string, Tuple<int, int>>("Hello World", 42, Tuple.Create(1, 2)), checkInstrumented: false);
         Console.WriteLine();
         //
+        // Note: We skip instrumentation today for generic value types.
         Console.WriteLine($"{typeof(ArgumentsParentType.With3ArgumentsGenericStaticStruct<int>).FullName}.VoidMethod");
         RunMethod(() => ArgumentsParentType.With3ArgumentsGenericStaticStruct<int>.VoidMethod("Hello world", 42, Tuple.Create(1, 2)), checkInstrumented: false);
         Console.WriteLine($"{typeof(ArgumentsParentType.With3ArgumentsGenericStaticStruct<int>).FullName}.ReturnValueMethod");
@@ -453,6 +457,7 @@ partial class Program
         RunMethod(() => ArgumentsStructParentType.With3ArgumentsStaticStruct.ReturnGenericMethod<int, string, Tuple<int, int>>("Hello World", 42, Tuple.Create(1, 2)));
         Console.WriteLine();
         //
+        // Note: We skip instrumentation today for generic value types.
         Console.WriteLine($"{typeof(ArgumentsStructParentType.With3ArgumentsGenericStaticStruct<string>).FullName}.VoidMethod");
         RunMethod(() => ArgumentsStructParentType.With3ArgumentsGenericStaticStruct<string>.VoidMethod("Hello World", 42, Tuple.Create(1, 2)), checkInstrumented: false);
         Console.WriteLine($"{typeof(ArgumentsStructParentType.With3ArgumentsGenericStaticStruct<string>).FullName}.ReturnValueMethod");
@@ -463,6 +468,7 @@ partial class Program
         RunMethod(() => ArgumentsStructParentType.With3ArgumentsGenericStaticStruct<string>.ReturnGenericMethod<string, Tuple<int, int>>("Hello World", 42, Tuple.Create(1, 2)), checkInstrumented: false);
         Console.WriteLine();
         //
+        // Note: We skip instrumentation today for generic value types.
         Console.WriteLine($"{typeof(ArgumentsStructParentType.With3ArgumentsGenericStaticStruct<int>).FullName}.VoidMethod");
         RunMethod(() => ArgumentsStructParentType.With3ArgumentsGenericStaticStruct<int>.VoidMethod("Hello world", 42, Tuple.Create(1, 2)), checkInstrumented: false);
         Console.WriteLine($"{typeof(ArgumentsStructParentType.With3ArgumentsGenericStaticStruct<int>).FullName}.ReturnValueMethod");

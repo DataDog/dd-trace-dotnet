@@ -137,6 +137,7 @@ partial class Program
         RunMethod(() => With1ArgumentsStaticStruct.ReturnGenericMethod<int, string>("Hello World"));
         Console.WriteLine();
         //
+        // Note: We skip instrumentation today for generic value types.
         Console.WriteLine($"{typeof(With1ArgumentsGenericStaticStruct<string>).FullName}.VoidMethod");
         RunMethod(() => With1ArgumentsGenericStaticStruct<string>.VoidMethod("Hello World"), checkInstrumented: false);
         Console.WriteLine($"{typeof(With1ArgumentsGenericStaticStruct<string>).FullName}.ReturnValueMethod");
@@ -147,6 +148,7 @@ partial class Program
         RunMethod(() => With1ArgumentsGenericStaticStruct<string>.ReturnGenericMethod<string>("Hello World"),checkInstrumented: false);
         Console.WriteLine();
         //
+        // Note: We skip instrumentation today for generic value types.
         Console.WriteLine($"{typeof(With1ArgumentsGenericStaticStruct<int>).FullName}.VoidMethod");
         RunMethod(() => With1ArgumentsGenericStaticStruct<int>.VoidMethod("Hello world"),checkInstrumented: false);
         Console.WriteLine($"{typeof(With1ArgumentsGenericStaticStruct<int>).FullName}.ReturnValueMethod");
@@ -302,6 +304,7 @@ partial class Program
         RunMethod(() => ArgumentsParentType.With1ArgumentsStaticStruct.ReturnGenericMethod<int, string>("Hello World"));
         Console.WriteLine();
         //
+        // Note: We skip instrumentation today for generic value types.
         Console.WriteLine($"{typeof(ArgumentsParentType.With1ArgumentsGenericStaticStruct<string>).FullName}.VoidMethod");
         RunMethod(() => ArgumentsParentType.With1ArgumentsGenericStaticStruct<string>.VoidMethod("Hello World"), checkInstrumented: false);
         Console.WriteLine($"{typeof(ArgumentsParentType.With1ArgumentsGenericStaticStruct<string>).FullName}.ReturnValueMethod");
@@ -312,6 +315,7 @@ partial class Program
         RunMethod(() => ArgumentsParentType.With1ArgumentsGenericStaticStruct<string>.ReturnGenericMethod<string>("Hello World"), checkInstrumented: false);
         Console.WriteLine();
         //
+        // Note: We skip instrumentation today for generic value types.
         Console.WriteLine($"{typeof(ArgumentsParentType.With1ArgumentsGenericStaticStruct<int>).FullName}.VoidMethod");
         RunMethod(() => ArgumentsParentType.With1ArgumentsGenericStaticStruct<int>.VoidMethod("Hello world"), checkInstrumented: false);
         Console.WriteLine($"{typeof(ArgumentsParentType.With1ArgumentsGenericStaticStruct<int>).FullName}.ReturnValueMethod");
@@ -468,6 +472,7 @@ partial class Program
         RunMethod(() => ArgumentsStructParentType.With1ArgumentsStaticStruct.ReturnGenericMethod<int, string>("Hello World"));
         Console.WriteLine();
         //
+        // Note: We skip instrumentation today for generic value types.
         Console.WriteLine($"{typeof(ArgumentsStructParentType.With1ArgumentsGenericStaticStruct<string>).FullName}.VoidMethod");
         RunMethod(() => ArgumentsStructParentType.With1ArgumentsGenericStaticStruct<string>.VoidMethod("Hello World"), checkInstrumented: false);
         Console.WriteLine($"{typeof(ArgumentsStructParentType.With1ArgumentsGenericStaticStruct<string>).FullName}.ReturnValueMethod");
@@ -478,6 +483,7 @@ partial class Program
         RunMethod(() => ArgumentsStructParentType.With1ArgumentsGenericStaticStruct<string>.ReturnGenericMethod<string>("Hello World"), checkInstrumented: false);
         Console.WriteLine();
         //
+        // Note: We skip instrumentation today for generic value types.
         Console.WriteLine($"{typeof(ArgumentsStructParentType.With1ArgumentsGenericStaticStruct<int>).FullName}.VoidMethod");
         RunMethod(() => ArgumentsStructParentType.With1ArgumentsGenericStaticStruct<int>.VoidMethod("Hello world"), checkInstrumented: false);
         Console.WriteLine($"{typeof(ArgumentsStructParentType.With1ArgumentsGenericStaticStruct<int>).FullName}.ReturnValueMethod");
