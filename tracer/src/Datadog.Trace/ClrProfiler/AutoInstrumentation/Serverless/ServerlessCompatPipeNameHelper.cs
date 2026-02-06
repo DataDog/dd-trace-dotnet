@@ -23,14 +23,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Serverless
         /// Generates a unique pipe name by appending a GUID to the base name.
         /// Validates and truncates the base name if necessary to ensure the full pipe path stays within Windows limits.
         /// </summary>
-        /// <param name="compatLayerBaseName">The base name calculated by the compat layer, or null</param>
-        /// <param name="defaultBaseName">The default base name to use if compat layer returns null</param>
+        /// <param name="baseName">The base name for the pipe</param>
         /// <param name="pipeType">The type of pipe for logging (e.g., "trace" or "DogStatsD")</param>
         /// <returns>A unique pipe name in the format {base}_{guid}</returns>
-        internal static string GenerateUniquePipeName(string? compatLayerBaseName, string defaultBaseName, string pipeType)
+        internal static string GenerateUniquePipeName(string baseName, string pipeType)
         {
-            var baseName = compatLayerBaseName ?? defaultBaseName;
-
             // Validate base pipe name length before appending GUID
             // Windows pipe path format: \\.\pipe\{base}_{guid}
             // Max total: 256 - 9 (\\.\pipe\) - 1 (underscore) - 32 (GUID) = 214
