@@ -14,7 +14,7 @@
       "name": "Profiler_walltime",
       "environmentVariables": {
         "DD_CLR_ENABLE_NGEN": "true",
-        "DD_PROFILING_ENABLED": "1",
+        "DD_PROFILING_ENABLED": "0",
 
         "DD_PROFILING_CPU_ENABLED": "0",
         "DD_PROFILING_EXCEPTION_ENABLED": "0",
@@ -23,7 +23,7 @@
         "DD_GC_THREADS_CPUTIME_ENABLED": "0",
         "DD_THREAD_LIFETIME_ENABLED": "0",
 
-        "DD_TRACE_ENABLED" : "0"
+        "DD_TRACE_ENABLED" : "1"
       }
     },
     {
@@ -40,7 +40,7 @@
         "DD_INTERNAL_USE_BACKTRACE2": "1",
         "DD_INTERNAL_CPU_PROFILER_TYPE": "TimerCreate",
 
-        "DD_TRACE_ENABLED" : "0"
+        "DD_TRACE_ENABLED" : "1"
       }
     },
     {
@@ -57,7 +57,7 @@
 
         "DD_INTERNAL_CPU_PROFILER_TYPE": "TimerCreate",
         "DD_INTERNAL_USE_BACKTRACE2": "0",
-        "DD_TRACE_ENABLED" : "0",
+        "DD_TRACE_ENABLED" : "1",
         "DD_PROFILING_MANAGED_ACTIVATION_ENABLED" : "0"
       }
     },
@@ -75,7 +75,7 @@
 
         "DD_INTERNAL_USE_BACKTRACE2": "1",
         "DD_INTERNAL_CPU_PROFILER_TYPE": "ManualCpuTime",
-        "DD_TRACE_ENABLED" : "0",
+        "DD_TRACE_ENABLED" : "1",
         "DD_PROFILING_MANAGED_ACTIVATION_ENABLED" : "0"
       }
     }
