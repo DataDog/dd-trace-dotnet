@@ -275,8 +275,10 @@ namespace Datadog.Trace.DiagnosticListeners
             // MT8 OTEL uses InputAddress (the queue name) for consumer spans, not DestinationAddress
             // The InputAddress gives clean queue names like "GettingStarted", "OrderState"
             // while DestinationAddress might be a URN like "loopback://localhost/urn:message:..."
-            // Note: We use reflection here instead of duck typing because ConsumeContext properties
-            // vary across different context implementations (MessageConsumeContext, etc.)
+
+            // Note: We use reflection here because the most common context type (MessageConsumeContext<T>)
+            // uses explicit interface implementation for all properties, which duck typing cannot handle.
+            // Duck typing only works for some proxy types like CorrelationIdConsumeContextProxy<T>.
             string? inputAddress = null;
             var receiveContext = MassTransitCommon.TryGetProperty<object>(arg, "ReceiveContext");
             if (receiveContext != null)

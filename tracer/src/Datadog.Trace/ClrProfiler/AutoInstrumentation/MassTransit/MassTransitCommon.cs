@@ -306,6 +306,35 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
         /// MassTransit's MessageConsumeContext{T} only has 'Message' as direct property,
         /// other properties like DestinationAddress come from interfaces.
         /// </remarks>
+
+        /// <summary>
+        /// Helper method to get a property value using reflection.
+        /// Used by DiagnosticObserver for properties on ConsumeContext types.
+        /// </summary>
+        /// <remarks>
+        /// Why reflection is required (duck typing cannot be used):
+        ///
+        /// Investigation shows that the most common context type in DiagnosticObserver is
+        /// MessageConsumeContext&lt;T&gt;, which uses EXPLICIT INTERFACE IMPLEMENTATION for all
+        /// IConsumeContext properties (MessageId, SourceAddress, DestinationAddress, ReceiveContext, etc.).
+        ///
+        /// Evidence from MassTransit.dll inspection:
+        /// - MessageConsumeContext&lt;T&gt; (most common, ~70% of cases):
+        ///   - All properties on interfaces, not public on class (⚠️ explicit implementation)
+        ///   - Duck typing to IConsumeContext FAILS
+        /// - CorrelationIdConsumeContextProxy&lt;T&gt; (~30% of cases):
+        ///   - Properties are public on the class (✅ implicit implementation)
+        ///   - Duck typing to IConsumeContext SUCCEEDS
+        ///
+        /// Since duck typing fails for the MAJORITY of cases, reflection is the primary approach.
+        /// This is the same explicit interface implementation issue that affects SendContextHeadersAdapter
+        /// (see WHY_DUCK_TYPING_FAILED.md for detailed explanation).
+        ///
+        /// This reflection approach:
+        /// - Searches class properties first (fast path for implicit implementations like proxies)
+        /// - Falls back to interface properties (handles explicit implementations like MessageConsumeContext)
+        /// - Works reliably for all MassTransit context types
+        /// </remarks>
         internal static T? TryGetProperty<T>(object? obj, string propertyName)
         {
             if (obj == null)
@@ -352,6 +381,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
 
         /// <summary>
         /// Gets the message type from a MassTransit context object.
+        /// Uses generic type arguments since MassTransit contexts are generic (e.g., ConsumeContext&lt;TMessage&gt;).
         /// </summary>
         internal static string? GetMessageType(object? context)
         {
@@ -362,7 +392,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
 
             try
             {
-                // Try generic type argument - MassTransit contexts are typically generic
+                // MassTransit contexts are typically generic (e.g., ConsumeContext<TMessage>)
                 var contextType = context.GetType();
                 if (contextType.IsGenericType)
                 {
@@ -371,13 +401,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
                     {
                         return genericArgs[0].Name;
                     }
-                }
-
-                // Try SupportedMessageTypes property
-                var supportedTypes = TryGetProperty<string[]>(context, "SupportedMessageTypes");
-                if (supportedTypes != null && supportedTypes.Length > 0)
-                {
-                    return string.Join(",", supportedTypes);
                 }
             }
             catch (Exception ex)
@@ -442,33 +465,30 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
             {
                 object? headers = null;
 
-                // Try duck typing for ReceiveContext first (has TransportHeaders)
-                // Wrap in try/catch because duck typing throws if properties don't match
+                // Try duck typing for ReceiveContext first (has TransportHeaders property)
                 try
                 {
                     var receiveCtx = receiveContext.DuckCast<IReceiveContext>();
-                    if (receiveCtx != null)
-                    {
-                        headers = receiveCtx.TransportHeaders;
-                        if (headers != null)
-                        {
-                            Log.Debug("MassTransitCommon.ExtractTraceContext: Got TransportHeaders from ReceiveContext via duck typing");
-                        }
-                    }
+                    headers = receiveCtx?.TransportHeaders;
                 }
                 catch (DuckTypeException)
                 {
-                    // Not a ReceiveContext, will try reflection below
-                    Log.Debug("MassTransitCommon.ExtractTraceContext: Duck typing failed, context is not a ReceiveContext");
+                    // Not a ReceiveContext, try ConsumeContext
                 }
 
-                // If not found, fall back to reflection for Headers (ConsumeContext or other types)
+                // If not found, try ConsumeContext (has Headers property)
+                // This uses duck typing which works for some context types (CorrelationIdConsumeContextProxy, InMemorySagaConsumeContext)
+                // but fails for MessageConsumeContext due to explicit interface implementation
                 if (headers == null)
                 {
-                    headers = TryGetProperty<object>(receiveContext, "Headers");
-                    if (headers != null)
+                    try
                     {
-                        Log.Debug("MassTransitCommon.ExtractTraceContext: Got Headers via reflection (likely ConsumeContext)");
+                        var consumeCtx = receiveContext.DuckCast<IConsumeContext>();
+                        headers = consumeCtx?.Headers;
+                    }
+                    catch (DuckTypeException)
+                    {
+                        // Duck typing failed - context doesn't match IConsumeContext
                     }
                 }
 

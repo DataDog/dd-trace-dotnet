@@ -66,4 +66,11 @@ internal interface IConsumeContext
     /// Returns object to allow duck-typing to IReceiveContext
     /// </summary>
     object? ReceiveContext { get; }
+
+    /// <summary>
+    /// Gets the headers collection for extracting trace context
+    /// Returns object to allow duck-typing to IHeaders
+    /// Used when ReceiveContext.TransportHeaders is not available (e.g., saga contexts)
+    /// </summary>
+    object? Headers { get; }
 }
