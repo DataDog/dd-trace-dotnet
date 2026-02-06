@@ -3,7 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if NETCOREAPP
+#if !NETFRAMEWORK
 using System;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Serverless;
 using Datadog.Trace.ClrProfiler.CallTarget;

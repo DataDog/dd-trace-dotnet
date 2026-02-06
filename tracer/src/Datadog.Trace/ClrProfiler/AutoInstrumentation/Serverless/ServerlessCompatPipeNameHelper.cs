@@ -5,7 +5,7 @@
 
 #nullable enable
 
-#if NETCOREAPP
+#if !NETFRAMEWORK
 using System;
 using Datadog.Trace.Logging;
 
