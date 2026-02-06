@@ -151,9 +151,9 @@ public abstract class AzureFunctionsTests : TestHelper
                 const int expectedSpanCount = 21;
                 var spans = await agent.WaitForSpansAsync(expectedSpanCount);
                 var filteredSpans = spans.Where(s => !s.Resource.Equals("Timer ExitApp", StringComparison.OrdinalIgnoreCase)).ToImmutableList();
-                filteredSpans.Should().HaveCount(expectedSpanCount);
 
                 using var s = new AssertionScope();
+                filteredSpans.Should().HaveCount(expectedSpanCount);
                 await AssertInProcessSpans(filteredSpans);
             }
         }
@@ -185,9 +185,9 @@ public abstract class AzureFunctionsTests : TestHelper
                 const int expectedSpanCount = 21;
                 var spans = await agent.WaitForSpansAsync(expectedSpanCount);
                 var filteredSpans = spans.Where(s => !s.Resource.Equals("Timer ExitApp", StringComparison.OrdinalIgnoreCase)).ToImmutableList();
-                filteredSpans.Should().HaveCount(expectedSpanCount);
 
                 using var s = new AssertionScope();
+                filteredSpans.Should().HaveCount(expectedSpanCount);
                 await AssertInProcessSpans(filteredSpans);
             }
         }
@@ -220,9 +220,9 @@ public abstract class AzureFunctionsTests : TestHelper
                 const int expectedSpanCount = 21;
                 var spans = await agent.WaitForSpansAsync(expectedSpanCount);
                 var filteredSpans = spans.Where(s => !s.Resource.Equals("Timer ExitApp", StringComparison.OrdinalIgnoreCase)).ToImmutableList();
-                filteredSpans.Should().HaveCount(expectedSpanCount);
 
                 using var s = new AssertionScope();
+                filteredSpans.Should().HaveCount(expectedSpanCount);
                 await AssertIsolatedSpans(filteredSpans, $"{nameof(AzureFunctionsTests)}.Isolated.V4.Sdk1");
             }
         }
@@ -250,11 +250,11 @@ public abstract class AzureFunctionsTests : TestHelper
             {
                 const int expectedSpanCount = 26;
                 var spans = await agent.WaitForSpansAsync(expectedSpanCount);
-                spans.Should().HaveCount(expectedSpanCount);
 
                 var filteredSpans = FilterOutSocketsHttpHandler(spans);
 
                 using var s = new AssertionScope();
+                spans.Should().HaveCount(expectedSpanCount);
                 await AssertIsolatedSpans(filteredSpans.ToImmutableList(), $"{nameof(AzureFunctionsTests)}.Isolated.V4.AspNetCore1");
             }
         }
@@ -296,17 +296,15 @@ public abstract class AzureFunctionsTests : TestHelper
                 const int expectedSpanCount = 21;
                 var spans = await agent.WaitForSpansAsync(expectedSpanCount);
                 var filteredSpans = spans.Where(s => !s.Resource.Equals("Timer ExitApp", StringComparison.OrdinalIgnoreCase)).ToImmutableList();
-                filteredSpans.Should().HaveCount(expectedSpanCount);
 
                 using var s = new AssertionScope();
+                filteredSpans.Should().HaveCount(expectedSpanCount);
                 await AssertIsolatedSpans(filteredSpans);
-
-                var logs = logsIntake.Logs;
 
                 // ~327 (ish) logs but we kill func.exe so some logs are lost
                 // and since sometimes the batch of logs can be 100+ it can be a LOT of logs that we lose
                 // so just check that we have much more than when we have host logs disabled
-                logs.Should().HaveCountGreaterThanOrEqualTo(200);
+                logsIntake.Logs.Should().HaveCountGreaterThanOrEqualTo(200);
             }
         }
     }
@@ -345,17 +343,16 @@ public abstract class AzureFunctionsTests : TestHelper
             {
                 const int expectedSpanCount = 21;
                 var spans = await agent.WaitForSpansAsync(expectedSpanCount);
-
                 var filteredSpans = spans.Where(s => !s.Resource.Equals("Timer ExitApp", StringComparison.OrdinalIgnoreCase)).ToImmutableList();
-                filteredSpans.Should().HaveCount(expectedSpanCount);
 
                 using var s = new AssertionScope();
+                filteredSpans.Should().HaveCount(expectedSpanCount);
                 await AssertIsolatedSpans(filteredSpans, filename: $"{nameof(AzureFunctionsTests)}.Isolated.V4.HostLogsDisabled");
 
-                var logs = logsIntake.Logs;
                 // we expect some logs still from the worker process
                 // this just seems flaky I THINK because of killing the func.exe process (even though we aren't using the host logs)
                 // commonly see 13, 14, 15, 16 logs, but IF we were logging the host logs we'd see 300+
+                var logs = logsIntake.Logs;
                 logs.Should().HaveCountGreaterThan(10);
                 logs.Should().HaveCountLessThanOrEqualTo(20);
             }
@@ -385,7 +382,6 @@ public abstract class AzureFunctionsTests : TestHelper
             {
                 const int expectedSpanCount = 26;
                 var spans = await agent.WaitForSpansAsync(expectedSpanCount);
-                spans.Should().HaveCount(expectedSpanCount);
 
                 // There are _additional_ spans created for these compared to the non-AspNetCore version
                 // These are http-client-handler-type: System.Net.Http.SocketsHttpHandler that come in around
@@ -398,6 +394,7 @@ public abstract class AzureFunctionsTests : TestHelper
                                    .ToImmutableList();
 
                 using var s = new AssertionScope();
+                spans.Should().HaveCount(expectedSpanCount);
                 await AssertIsolatedSpans(filteredSpans, $"{nameof(AzureFunctionsTests)}.Isolated.V4.AspNetCore");
             }
         }
