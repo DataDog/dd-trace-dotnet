@@ -13,6 +13,7 @@
     <RootNamespace>Datadog.Trace</RootNamespace>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <NoWarn>NU1510</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
