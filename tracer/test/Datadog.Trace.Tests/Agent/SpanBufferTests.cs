@@ -26,7 +26,7 @@ namespace Datadog.Trace.Tests.Agent
         [InlineData(50, 50, true)]
         public void SerializeSpans(int traceCount, int spanCount, bool resizeExpected)
         {
-            var buffer = new SpanBuffer(10 * 1024 * 1024, SpanFormatterResolver.Instance);
+            var buffer = new SpanBuffer(10 * 1024 * 1024, new SpanBufferMessagePackSerializer(SpanFormatterResolver.Instance));
 
             for (int i = 0; i < traceCount; i++)
             {
@@ -54,7 +54,7 @@ namespace Datadog.Trace.Tests.Agent
         [Fact]
         public void Overflow()
         {
-            var buffer = new SpanBuffer(10, SpanFormatterResolver.Instance);
+            var buffer = new SpanBuffer(10, new SpanBufferMessagePackSerializer(SpanFormatterResolver.Instance));
 
             buffer.IsFull.Should().BeFalse();
 
@@ -78,7 +78,7 @@ namespace Datadog.Trace.Tests.Agent
         [Fact]
         public void LockingBuffer()
         {
-            var buffer = new SpanBuffer(10 * 1024 * 1024, SpanFormatterResolver.Instance);
+            var buffer = new SpanBuffer(10 * 1024 * 1024, new SpanBufferMessagePackSerializer(SpanFormatterResolver.Instance));
             var spans = CreateTraceChunk(1);
 
             buffer.TryWrite(spans, ref _temporaryBuffer).Should().Be(SpanBuffer.WriteStatus.Success);
@@ -91,7 +91,7 @@ namespace Datadog.Trace.Tests.Agent
         [Fact]
         public void ClearingBuffer()
         {
-            var buffer = new SpanBuffer(10 * 1024 * 1024, SpanFormatterResolver.Instance);
+            var buffer = new SpanBuffer(10 * 1024 * 1024, new SpanBufferMessagePackSerializer(SpanFormatterResolver.Instance));
             var spans = CreateTraceChunk(3);
 
             buffer.TryWrite(spans, ref _temporaryBuffer).Should().Be(SpanBuffer.WriteStatus.Success);
@@ -111,13 +111,13 @@ namespace Datadog.Trace.Tests.Agent
         [Fact]
         public void InvalidSize()
         {
-            Assert.Throws<ArgumentException>(() => new SpanBuffer(4, SpanFormatterResolver.Instance));
+            Assert.Throws<ArgumentException>(() => new SpanBuffer(4, new SpanBufferMessagePackSerializer(SpanFormatterResolver.Instance)));
         }
 
         [Fact]
         public void TemporaryBufferSizeLimit()
         {
-            var buffer = new SpanBuffer(256, SpanFormatterResolver.Instance);
+            var buffer = new SpanBuffer(256, new SpanBufferMessagePackSerializer(SpanFormatterResolver.Instance));
             var temporaryBuffer = new byte[256];
             var spans = CreateTraceChunk(10);
 
@@ -137,7 +137,7 @@ namespace Datadog.Trace.Tests.Agent
             var mockResolver = new Mock<Vendors.MessagePack.IFormatterResolver>();
             mockResolver.Setup(r => r.GetFormatter<TraceChunkModel>()).Returns(interceptingFormatter);
 
-            var buffer = new SpanBuffer(maxBufferSize: 256, mockResolver.Object);
+            var buffer = new SpanBuffer(maxBufferSize: 256, new SpanBufferMessagePackSerializer(mockResolver.Object));
             var temporaryBuffer = new byte[256];
 
             var firstSpanArray = CreateTraceChunk(2);

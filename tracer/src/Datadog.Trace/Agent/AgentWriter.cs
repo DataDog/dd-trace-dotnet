@@ -95,12 +95,12 @@ namespace Datadog.Trace.Agent
             _batchInterval = batchInterval;
             _traceKeepRateCalculator = traceKeepRateCalculator;
 
-            var formatterResolver = SpanFormatterResolver.Instance;
+            var spanBufferSerializer = new SpanBufferMessagePackSerializer(SpanFormatterResolver.Instance);
 
             _forceFlush = new TaskCompletionSource<bool>(TaskOptions);
 
-            _frontBuffer = new SpanBuffer(maxBufferSize, formatterResolver);
-            _backBuffer = new SpanBuffer(maxBufferSize, formatterResolver);
+            _frontBuffer = new SpanBuffer(maxBufferSize, spanBufferSerializer);
+            _backBuffer = new SpanBuffer(maxBufferSize, spanBufferSerializer);
             _activeBuffer = _frontBuffer;
 
             _apmTracingEnabled = apmTracingEnabled;
