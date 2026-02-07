@@ -18,6 +18,7 @@ using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.PlatformHelpers;
 using Datadog.Trace.TestHelpers.Stats;
 using Datadog.Trace.TestHelpers.TestTracer;
 using Datadog.Trace.Tests.Util;
@@ -565,6 +566,120 @@ public class SpanMessagePackFormatterTests
             secondSpan.GetTag(Tags.ProcessTags).Should().BeNull("process tags should not be present when disabled");
             thirdSpan.GetTag(Tags.ProcessTags).Should().BeNull("process tags should not be present when disabled");
         }
+    }
+
+    [Fact]
+    public async Task AllCachedValues_AreCorrectlySerialized()
+    {
+        // This test verifies that all cached values in SpanMessagePackFormatter are correctly
+        // initialized and serialized. This includes:
+        // - 11 AAS tag values (moved from MessagePackStringCache in optimization)
+        // - 2 git tag values (moved from MessagePackStringCache in optimization)
+        // - Constant tag names and values (language, runtime-id, etc.)
+
+        var mockApi = new MockApi();
+
+        // Use AzureAppServiceHelper to get proper AAS configuration
+        var aasConfig = AzureAppServiceHelper.GetRequiredAasConfigurationValues(
+            subscriptionId: "test-sub-id",
+            deploymentId: "test-site",
+            planResourceGroup: "test-plan-rg",
+            siteResourceGroup: "test-rg");
+
+        // Add git metadata and other configuration values
+        var configValues = new Dictionary<string, string>
+        {
+            { "DD_GIT_COMMIT_SHA", "abc123def456" },
+            { "DD_GIT_REPOSITORY_URL", "https://github.com/test/repo" },
+            { ConfigurationKeys.Environment, "test-env" },
+            { ConfigurationKeys.ServiceVersion, "1.2.3" }
+        };
+
+        // Combine AAS config with additional config values
+        var compositeSource = new CompositeConfigurationSource
+        {
+            aasConfig,
+            new DictionaryConfigurationSource(configValues)
+        };
+
+        var settings = new TracerSettings(compositeSource);
+        var agentWriter = new AgentWriter(mockApi, statsAggregator: null, statsd: TestStatsdManager.NoOp, automaticFlush: false);
+        await using var tracer = TracerHelper.Create(settings, agentWriter, sampler: null, scopeManager: null, statsd: null, NullTelemetryController.Instance, NullDiscoveryService.Instance);
+
+        using (_ = tracer.StartActive("test-operation"))
+        {
+        }
+
+        await tracer.FlushAsync();
+        var traceChunks = mockApi.Wait(TimeSpan.FromSeconds(1));
+
+        traceChunks.Should().HaveCount(1);
+        var spans = traceChunks[0];
+        spans.Should().HaveCount(1);
+        var span = spans[0];
+
+        // ===== Verify all 11 AAS tag VALUES (optimized to use cached bytes) =====
+        // These were moved from MessagePackStringCache to SpanMessagePackFormatter fields
+        span.GetTag(Tags.AzureAppServicesSiteName).Should().Be("test-site", "aas.site.name value should be cached");
+        span.GetTag(Tags.AzureAppServicesSiteKind).Should().Be("app", "aas.site.kind value should be cached");
+        span.GetTag(Tags.AzureAppServicesSiteType).Should().Be("app", "aas.site.type value should be cached");
+        span.GetTag(Tags.AzureAppServicesResourceGroup).Should().Be("test-rg", "aas.resource.group value should be cached");
+        span.GetTag(Tags.AzureAppServicesSubscriptionId).Should().Be("test-sub-id", "aas.subscription.id value should be cached");
+        span.GetTag(Tags.AzureAppServicesResourceId).Should().NotBeNullOrEmpty("aas.resource.id value should be cached");
+        span.GetTag(Tags.AzureAppServicesResourceId).Should().Contain("test-sub-id").And.Contain("test-rg");
+        // AzureAppServiceHelper hardcodes these values (see AzureAppServiceHelper.GetRequiredAasConfigurationValues)
+        span.GetTag(Tags.AzureAppServicesInstanceId).Should().Be("instance_id", "aas.instance.id value should be cached");
+        span.GetTag(Tags.AzureAppServicesInstanceName).Should().Be("instance_name", "aas.instance.name value should be cached");
+        span.GetTag(Tags.AzureAppServicesOperatingSystem).Should().NotBeNullOrEmpty("aas.environment.os value should be cached");
+        span.GetTag(Tags.AzureAppServicesRuntime).Should().NotBeNullOrEmpty("aas.environment.runtime value should be cached");
+        span.GetTag(Tags.AzureAppServicesExtensionVersion).Should().Be("3.0.0", "aas.environment.extension_version value should be cached");
+
+        // ===== Verify git tag VALUES (optimized to use cached bytes) =====
+        // These were moved from MessagePackStringCache to SpanMessagePackFormatter fields
+        span.GetTag(Tags.GitCommitSha).Should().Be("abc123def456", "git.commit.sha value should be cached");
+        span.GetTag(Tags.GitRepositoryUrl).Should().Be("https://github.com/test/repo", "git.repository_url value should be cached");
+
+        // ===== Verify exact tag NAMES match the constants =====
+        // These tag names are cached as MessagePack-encoded bytes in SpanMessagePackFormatter
+        span.Tags.Keys.Should().Contain(Tags.AzureAppServicesSiteName, "tag name should be 'aas.site.name'");
+        span.Tags.Keys.Should().Contain(Tags.AzureAppServicesSiteKind, "tag name should be 'aas.site.kind'");
+        span.Tags.Keys.Should().Contain(Tags.AzureAppServicesSiteType, "tag name should be 'aas.site.type'");
+        span.Tags.Keys.Should().Contain(Tags.AzureAppServicesResourceGroup, "tag name should be 'aas.resource.group'");
+        span.Tags.Keys.Should().Contain(Tags.AzureAppServicesSubscriptionId, "tag name should be 'aas.subscription.id'");
+        span.Tags.Keys.Should().Contain(Tags.AzureAppServicesResourceId, "tag name should be 'aas.resource.id'");
+        span.Tags.Keys.Should().Contain(Tags.AzureAppServicesInstanceId, "tag name should be 'aas.instance.id'");
+        span.Tags.Keys.Should().Contain(Tags.AzureAppServicesInstanceName, "tag name should be 'aas.instance.name'");
+        span.Tags.Keys.Should().Contain(Tags.AzureAppServicesOperatingSystem, "tag name should be 'aas.environment.os'");
+        span.Tags.Keys.Should().Contain(Tags.AzureAppServicesRuntime, "tag name should be 'aas.environment.runtime'");
+        span.Tags.Keys.Should().Contain(Tags.AzureAppServicesExtensionVersion, "tag name should be 'aas.environment.extension_version'");
+        span.Tags.Keys.Should().Contain(Tags.GitCommitSha, "tag name should be 'git.commit.sha'");
+        span.Tags.Keys.Should().Contain(Tags.GitRepositoryUrl, "tag name should be 'git.repository_url'");
+
+        // ===== Verify other constant cached values =====
+        // These are also cached as MessagePack-encoded bytes in SpanMessagePackFormatter
+        span.GetTag(Tags.Language).Should().Be(TracerConstants.Language, "language tag should be 'dotnet'");
+        span.GetTag(Tags.RuntimeId).Should().NotBeNullOrEmpty("runtime-id should be present and cached");
+        span.GetTag(Tags.Env).Should().Be("test-env", "env tag should match configured value");
+        span.GetTag(Tags.Version).Should().Be("1.2.3", "version tag should match configured value");
+
+        // ===== Verify metrics (numeric tags) that use cached names =====
+        span.Metrics.Should().ContainKey(Datadog.Trace.Metrics.ProcessId, "process_id metric should be present with cached name");
+        span.Metrics[Datadog.Trace.Metrics.ProcessId].Should().BeGreaterThan(0, "process_id should be valid");
+
+        // For root spans (no parent), _dd.top_level should be 1.0
+        span.Metrics.Should().ContainKey(Datadog.Trace.Metrics.TopLevelSpan, "_dd.top_level metric should be present for root span");
+        span.Metrics[Datadog.Trace.Metrics.TopLevelSpan].Should().Be(1.0, "root span should have _dd.top_level=1.0");
+
+        // ===== Verify span fields that use cached names =====
+        span.Service.Should().NotBeNullOrEmpty("service name should be present");
+        span.Name.Should().Be("test-operation", "operation name should match");
+        span.Resource.Should().Be("test-operation", "resource should match operation name");
+        span.TraceId.Should().BeGreaterThan(0, "trace_id should be valid");
+        span.SpanId.Should().BeGreaterThan(0, "span_id should be valid");
+        span.Start.Should().BeGreaterThan(0, "start timestamp should be valid");
+        span.Duration.Should().BeGreaterThan(0, "duration should be valid");
+        span.ParentId.Should().BeNull("root span should have no parent_id");
+        span.Error.Should().Be(0, "error flag should be 0 for successful span");
     }
 
     private readonly struct TagsProcessor<T> : IItemProcessor<T>
