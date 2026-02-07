@@ -13,6 +13,7 @@
 #include <mutex>
 #include <set>
 #include <algorithm>
+#include <forward_list>
 
 
 #include "cor.h"
@@ -138,8 +139,8 @@ private:
     
     // Append new ranges to the cache (accumulative - never removes old ranges)
     // This preserves old tier code that might still be on the stack
-    void AppendRangesToCache(std::vector<CodeRange> newRanges);
-    void AppendModuleRangeToCache(std::vector<ModuleCodeRange> moduleCodeRanges);
+    void AddFunctionRangesToCache(std::vector<CodeRange> newRanges);
+    void AddModuleRangesToCache(std::vector<ModuleCodeRange> moduleCodeRanges);
     void AddModuleCodeRangesAsync(std::vector<ModuleCodeRange> moduleCodeRanges);
     void AddFunctionCodeRangesAsync(std::vector<CodeRange> ranges);
     std::vector<ModuleCodeRange> GetModuleCodeRanges(ModuleID moduleId);
@@ -166,11 +167,9 @@ private:
     std::thread _worker;
     std::atomic<bool> _requestStop;
     
-    struct QueueNode;
-    std::atomic<QueueNode*> _workerQueueHead;
+    std::forward_list<std::function<void()>> _workerQueue;
+    std::mutex _queueMutex;
 
-
-    std::unique_ptr<QueueNode> DequeueWorkItem();
 
     template<typename WorkType>
     void EnqueueWork(WorkType work);

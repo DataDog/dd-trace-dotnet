@@ -384,7 +384,7 @@ std::vector<CodeRange> ManagedCodeCache::QueryCodeRanges(FunctionID functionId)
 }
 
 // This function must be called by the worker thread only
-void ManagedCodeCache::AppendRangesToCache(std::vector<CodeRange> newRanges)
+void ManagedCodeCache::AddFunctionRangesToCache(std::vector<CodeRange> newRanges)
 {    
     // Step 1: Compute affected pages
     std::set<uint64_t> affectedPages;
@@ -435,7 +435,7 @@ void ManagedCodeCache::AppendRangesToCache(std::vector<CodeRange> newRanges)
     }
 }
 
-void ManagedCodeCache::AppendModuleRangeToCache(std::vector<ModuleCodeRange> moduleCodeRanges)
+void ManagedCodeCache::AddModuleRangesToCache(std::vector<ModuleCodeRange> moduleCodeRanges)
 {
     std::unique_lock<std::shared_mutex> moduleLock(m_moduleMapLock);
     for (const auto& moduleCodeRange : moduleCodeRanges)
@@ -486,56 +486,12 @@ struct AppendRangesWork
 using AppendCodeRangesWork = AppendRangesWork<CodeRange>;
 using AppendModuleRangesWork = AppendRangesWork<ModuleCodeRange>;
 
-// Work item is a variant of different types
-using WorkItem = std::variant<AppendCodeRangesWork, AppendModuleRangesWork>;
-
-struct ManagedCodeCache::QueueNode
-{
-    WorkItem work;
-    QueueNode* next;
-    explicit QueueNode(WorkItem w) 
-        : work(std::move(w)), next(nullptr) {}
-};
-
-std::unique_ptr<ManagedCodeCache::QueueNode> ManagedCodeCache::DequeueWorkItem()
-{
-    auto* currentHead = _workerQueueHead.load(std::memory_order_acquire);
-    while (currentHead != nullptr)
-    {
-        auto* next = currentHead->next;
-        if (_workerQueueHead.compare_exchange_weak(
-            currentHead,
-            next,
-            std::memory_order_release,
-            std::memory_order_acquire))
-        {
-            return std::unique_ptr<ManagedCodeCache::QueueNode>(currentHead);
-        }
-    }
-    return nullptr;
-}
-
 void ManagedCodeCache::WorkerThread(std::promise<void> startPromise)
 {
-    auto visitWork = [this](auto&& work)
-    {
-        using T = std::decay_t<decltype(work)>;
-        
-        if constexpr (std::is_same_v<T, AppendCodeRangesWork>) {
-            // Handle code ranges
-            AppendRangesToCache(std::move(work.ranges));
-        }
-        else if constexpr (std::is_same_v<T, AppendModuleRangesWork>) {
-            // Handle module ranges
-            AppendModuleRangeToCache(std::move(work.ranges));
-        }
-    };
-
     startPromise.set_value();
 
     while (!_requestStop)
     {
-
         _workerQueueEvent.Wait();
 
         if (_requestStop)
@@ -543,16 +499,15 @@ void ManagedCodeCache::WorkerThread(std::promise<void> startPromise)
             break;
         }
 
-        while (true)
+        std::forward_list<std::function<void()>> workItems;
         {
-            auto node = DequeueWorkItem();
+            std::unique_lock<std::mutex> lock(_queueMutex);
+            std::swap(_workerQueue, workItems);
+        }
 
-            if (node == nullptr)
-            {
-                break;
-            }
-            // Use std::visit to handle different work item types
-            std::visit(visitWork, node->work);
+        for (auto& workItem : workItems)
+        {
+            workItem();
         }
     }
 }
@@ -561,21 +516,21 @@ void ManagedCodeCache::WorkerThread(std::promise<void> startPromise)
 template<typename WorkType>
 void ManagedCodeCache::EnqueueWork(WorkType work)
 {
-    auto node = std::make_unique<QueueNode>(std::move(work));
-    auto* rawNode = node.get();
-    auto* currentHead = _workerQueueHead.load(std::memory_order_acquire);
-    
-    do
+    auto workFunction = [this, work = std::move(work)]() mutable{
+        using T = std::decay_t<WorkType>;
+
+        if constexpr (std::is_same_v<T, AppendCodeRangesWork>) {
+            AddFunctionRangesToCache(std::move(work.ranges));
+        }
+        else if constexpr (std::is_same_v<T, AppendModuleRangesWork>) {
+            AddModuleRangesToCache(std::move(work.ranges));
+        }
+    };
+
     {
-        rawNode->next = currentHead;
-    } while (!_workerQueueHead.compare_exchange_weak(
-        currentHead,
-        rawNode,
-        std::memory_order_release,
-        std::memory_order_acquire));
-    
-    // Succeeded, we transferred ownership to the atomic pointer
-    node.release();
+        std::unique_lock<std::mutex> lock(_queueMutex);
+        _workerQueue.push_front(std::move(workFunction));
+    }
     
     _workerQueueEvent.Set();
 }
