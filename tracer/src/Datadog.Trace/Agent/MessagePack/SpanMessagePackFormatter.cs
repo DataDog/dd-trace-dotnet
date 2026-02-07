@@ -126,11 +126,6 @@ namespace Datadog.Trace.Agent.MessagePack
         {
         }
 
-        private static byte[] SerializeIfNotNullOrWhiteSpace(string value)
-        {
-            return string.IsNullOrWhiteSpace(value) ? null : MessagePackSerializer.Serialize(value);
-        }
-
         int IMessagePackFormatter<TraceChunkModel>.Serialize(ref byte[] bytes, int offset, TraceChunkModel traceChunk, IFormatterResolver formatterResolver)
         {
             return Serialize(ref bytes, offset, traceChunk, formatterResolver);
@@ -505,7 +500,7 @@ namespace Datadog.Trace.Agent.MessagePack
 
         private void WriteMetaStruct(ref byte[] bytes, ref int offset, string key, byte[] value)
         {
-            offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackSerializer.Serialize(key));
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, StringEncoding.UTF8.GetBytes(key));
             offset += MessagePackBinary.WriteBytes(ref bytes, offset, value);
         }
 
@@ -665,7 +660,7 @@ namespace Datadog.Trace.Agent.MessagePack
 
                 count++;
                 offset += MessagePackBinary.WriteRaw(ref bytes, offset, _wafRuleFileVersionBytes);
-                offset += MessagePackBinary.WriteRaw(ref bytes, offset, GetAppSecRulesetVersion(Security.Instance.WafRuleFileVersion));
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, GetAppSecRulesetVersion(Security.Instance.WafRuleFileVersion));
             }
 
             // AAS tags need to be set on any span for the backend to properly handle the billing.
@@ -950,6 +945,11 @@ namespace Datadog.Trace.Agent.MessagePack
             throw new NotSupportedException($"{nameof(SpanMessagePackFormatter)} does not support deserialization. For testing purposes, deserialize using the MessagePack NuGet package.");
         }
 
+        private static byte[] SerializeIfNotNullOrWhiteSpace(string value)
+        {
+            return string.IsNullOrWhiteSpace(value) ? null : MessagePackSerializer.Serialize(value);
+        }
+
         private byte[] GetAppSecRulesetVersion(string version)
         {
             if (_wafRuleFileVersionValues.TryGetValue(version, out byte[] bytes))
@@ -958,7 +958,7 @@ namespace Datadog.Trace.Agent.MessagePack
             }
             else
             {
-                bytes = MessagePackSerializer.Serialize(version);
+                bytes = StringEncoding.UTF8.GetBytes(version);
                 _wafRuleFileVersionValues.Add(version, bytes);
                 return bytes;
             }
