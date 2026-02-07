@@ -1,4 +1,8 @@
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
+
 #pragma once
+
 #include "ServiceBase.h"
 #include "AutoResetEvent.h"
 
@@ -14,18 +18,11 @@
 #include <set>
 #include <algorithm>
 #include <forward_list>
+#include <functional>
 
 
 #include "cor.h"
 #include "corprof.h"
-
-// Managed code information for a specific address range
-struct ManagedCodeInfo {
-    FunctionID functionId;
-    
-    // Future: Add unwind info here
-    // UnwindInfo unwindInfo;
-};
 
 // Represents a single contiguous code range
 struct CodeRange {
@@ -79,7 +76,8 @@ class IConfiguration;
 // - Is simpler than querying with Info9
 //
 // See: dotnet-runtime/docs/design/features/code-versioning-profiler-breaking-changes.md
-class ManagedCodeCache : public ServiceBase {
+class ManagedCodeCache
+{
 public:
     explicit ManagedCodeCache(ICorProfilerInfo4* pProfilerInfo, IConfiguration* pConfiguration);
     ~ManagedCodeCache();
@@ -94,9 +92,7 @@ public:
     void AddModule(ModuleID moduleId);
     void RemoveModule(ModuleID moduleId);
 
-    bool StartImpl() override;
-    bool StopImpl() override;
-    const char* GetName() override;
+    bool Initialize();
 
 private:
     // Each page has its own data + lock for fine-grained concurrency
@@ -175,11 +171,11 @@ private:
     
     AutoResetEvent _workerQueueEvent;
 
-    bool _useCustomGetFunctionFromIP;
+    bool _useManagedCodeCache;
 };
 
 // Compile-time checks for signal-safety
-static_assert(std::is_trivially_copyable_v<ManagedCodeInfo>,
+static_assert(std::is_trivially_copyable_v<CodeRange>,
               "ManagedCodeInfo must be trivially copyable for signal-safe access");
 static_assert(std::is_trivially_copyable_v<FunctionID>,
               "FunctionID must be trivially copyable");

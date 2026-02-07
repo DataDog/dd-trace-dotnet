@@ -204,7 +204,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
             EnvironmentHelper.DisableDefaultProfilers(runner);
             runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.ExceptionSampleLimit, "10000");
-            runner.Environment.SetVariable(EnvironmentVariables.UseCustomGetFunctionFromIP, "1");
+            runner.Environment.SetVariable(EnvironmentVariables.UseManagedCodeCache, "1");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
 

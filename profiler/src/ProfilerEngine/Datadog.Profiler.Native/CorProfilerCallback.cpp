@@ -164,7 +164,6 @@ void CorProfilerCallback::InitializeServices()
     _pDebugInfoStore = std::make_unique<DebugInfoStore>(_pCorProfilerInfo, _pConfiguration.get());
 
     _managedCodeCache = std::make_unique<ManagedCodeCache>(_pCorProfilerInfo, _pConfiguration.get());
-    _managedCodeCache->Start();
     
 #ifdef LINUX
     if (_pConfiguration->IsSystemCallsShieldEnabled())
@@ -1339,6 +1338,14 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
 {
     Log::Info("CorProfilerCallback is initializing.");
 
+    #if ARM64
+    if (!_pConfiguration->UseManagedCodeCache())
+    {
+        Log::Warn("Managed code cache is required to run the profiler on ARM64. Since it is not enabled, the profiler will not run.");
+        return E_FAIL;
+    }
+    #endif
+
     ConfigureDebugLog();
 
     _pMetadataProvider = std::make_unique<MetadataProvider>();
@@ -1483,7 +1490,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
 
     // TODO rename IsNGENProfilingEnabled into something more tailored for
     // our new feature
-    if (_pConfiguration->UseCustomGetFunctionFromIP())
+    if (_pConfiguration->UseManagedCodeCache())
     {
         eventMask |= COR_PRF_MONITOR_JIT_COMPILATION | COR_PRF_ENABLE_REJIT;
     }

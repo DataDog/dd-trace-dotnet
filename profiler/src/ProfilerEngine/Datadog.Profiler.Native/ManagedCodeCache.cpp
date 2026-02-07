@@ -44,36 +44,33 @@ std::optional<typename Container::value_type> FindRange(Container const& contain
 ManagedCodeCache::ManagedCodeCache(ICorProfilerInfo4* pProfilerInfo, IConfiguration* pConfiguration)
     : _profilerInfo(pProfilerInfo),
       _workerQueueEvent(false),
-      _useCustomGetFunctionFromIP{pConfiguration->UseCustomGetFunctionFromIP()}
+      _useManagedCodeCache{pConfiguration->UseManagedCodeCache()}
 {
-    Log::Info("ManagedCodeCache initialized with useCustomGetFunctionFromIP: ", std::boolalpha, _useCustomGetFunctionFromIP);
 }
 
 ManagedCodeCache::~ManagedCodeCache()
 {
-    // clean up the work queue
+    if (_worker.joinable())
+    {
+        _requestStop = true;
+        _workerQueueEvent.Set();
+        _worker.join();
+    }
 }
 
-bool ManagedCodeCache::StartImpl()
+
+bool ManagedCodeCache::Initialize()
 {
     std::promise<void> startPromise;
     auto future = startPromise.get_future();
     _worker = std::thread(&ManagedCodeCache::WorkerThread, this, std::move(startPromise));
-    return future.wait_for(2s) == std::future_status::ready;
-}
-
-bool ManagedCodeCache::StopImpl()
-{
-    _requestStop = true;
-    _workerQueueEvent.Set();
-    _worker.join();
-    // clean up the work queue
-    return true;
-}
-
-const char* ManagedCodeCache::GetName()
-{
-    return "ManagedCodeCache";
+    if (future.wait_for(2s) == std::future_status::ready)
+    {
+        Log::Info("ManagedCodeCache initialized successfully");
+        return true;
+    }
+    Log::Error("Failed to initialize ManagedCodeCache");
+    return false;
 }
 
 bool ManagedCodeCache::IsCodeInR2RModule(std::uintptr_t ip) const noexcept
@@ -100,7 +97,7 @@ bool ManagedCodeCache::IsCodeInR2RModule(std::uintptr_t ip) const noexcept
 // nor by a managed thread (is that really a valid constraint?)
 std::optional<FunctionID> ManagedCodeCache::GetFunctionId(std::uintptr_t ip) noexcept
 {
-    if (!_useCustomGetFunctionFromIP)
+    if (!_useManagedCodeCache)
     {
         return GetFunctionIdFromIPOriginal(ip);
     }
