@@ -128,11 +128,6 @@ private:
         return address >> PAGE_SHIFT;
     }
     
-    // Helper: Find range in sorted vector using binary search (signal-safe)
-    static const CodeRange* FindRangeInVector(
-        const std::vector<CodeRange>& ranges,
-        UINT_PTR ip) noexcept;
-    
     // Query the runtime for code ranges for a specific version
     // This is called when a new tier is compiled
     std::vector<CodeRange> QueryCodeRanges(FunctionID functionId);

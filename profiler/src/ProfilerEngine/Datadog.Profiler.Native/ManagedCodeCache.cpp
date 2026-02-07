@@ -24,6 +24,22 @@ struct IMAGE_NT_HEADERS_GENERIC
     IMAGE_FILE_HEADER FileHeader;
     WORD    Magic;
 };
+template <typename Container, typename Value>
+std::optional<typename Container::value_type> FindRange(Container const& container, Value const& value)
+{
+    auto it = std::lower_bound(container.begin(), container.end(), value,
+    [](const typename Container::value_type& range, const Value& value) -> bool {
+        return range.startAddress <= value;
+    });
+
+    if (it == container.cbegin())
+    {
+        return std::nullopt;
+    }
+
+    --it;
+    return it->contains(value) ? std::optional{*it} : std::nullopt;
+}
 
 ManagedCodeCache::ManagedCodeCache(ICorProfilerInfo4* pProfilerInfo, IConfiguration* pConfiguration)
     : _profilerInfo(pProfilerInfo),
@@ -64,35 +80,20 @@ bool ManagedCodeCache::IsCodeInR2RModule(std::uintptr_t ip) const noexcept
 {
     std::shared_lock<std::shared_mutex> moduleLock(m_moduleMapLock);
     
-    // Use lower_bound to find the first range where startAddress > ip
-    // The range we're looking for (if it exists) must be the PREVIOUS range
-    auto moduleIt = std::lower_bound(
-        m_moduleCodeRanges.begin(),
-        m_moduleCodeRanges.end(),
-        ip,
-        [](const ModuleCodeRange& range, std::uintptr_t ip)
-        {
-            // Return true if range comes before ip
-            return range.startAddress <= ip;
-        });
-    
-    // lower_bound returns first range where startAddress > ip
-    // By definition, that range cannot contain ip
-    // So we only need to check the PREVIOUS range
-    if (moduleIt == m_moduleCodeRanges.begin())
+    auto moduleCodeRange = FindRange(m_moduleCodeRanges, ip);
+
+    if (!moduleCodeRange.has_value())
     {
-        return false;
-    }
-    
-    --moduleIt;
-    
-    if (moduleIt->isRemoved)
-    {
-        LogOnce(Debug, "ManagedCodeCache::IsCodeInR2RModule: Module code range is removed for ip: 0x", std::hex, ip);
         return false;
     }
 
-    return moduleIt->contains(ip);
+    if (moduleCodeRange->isRemoved)
+    {
+        LogOnce(Debug, "ManagedCodeCache::IsCodeInR2RModule: Module code range was removed for ip: 0x", std::hex, ip);
+        return false;
+    }
+
+    return moduleCodeRange->contains(ip);
 }
 
 // must not be called in a signal handler (GetFunctionFromIP is not signal-safe)
@@ -190,8 +191,8 @@ std::optional<FunctionID> ManagedCodeCache::GetCodeInfo(std::uintptr_t ip) const
     
     // Level 2: Binary search within the page's ranges (shared lock on page)
     std::shared_lock<std::shared_mutex> pageLock(pageIt->second.lock);
-    const CodeRange* range = FindRangeInVector(pageIt->second.ranges, static_cast<UINT_PTR>(ip));
-    if (range != nullptr)
+    auto range = FindRange(pageIt->second.ranges, static_cast<UINT_PTR>(ip));
+    if (range.has_value())
     {
         return range->functionId;
     }
@@ -216,8 +217,8 @@ bool ManagedCodeCache::IsManaged(std::uintptr_t ip) const noexcept
         // Level 2: Binary search within the page's ranges (shared lock on page)
    
         std::shared_lock<std::shared_mutex> pageLock(pageIt->second.lock);
-        const CodeRange* range = FindRangeInVector(pageIt->second.ranges, static_cast<UINT_PTR>(ip));
-        if (range != nullptr)
+        auto range = FindRange(pageIt->second.ranges, static_cast<UINT_PTR>(ip));
+        if (range.has_value())
         {
             return true;
         }
@@ -225,41 +226,6 @@ bool ManagedCodeCache::IsManaged(std::uintptr_t ip) const noexcept
 
     // Check if the IP is within a module code range
     return IsCodeInR2RModule(ip);
-}
-
-// Binary search helper (signal-safe, no allocation)
-const CodeRange* ManagedCodeCache::FindRangeInVector(
-    const std::vector<CodeRange>& ranges,
-    UINT_PTR ip) noexcept
-{
-    if (ranges.empty()) return nullptr;
-    
-    // Use lower_bound to find the first range where startAddress > ip
-    // The range we're looking for (if it exists) must be the PREVIOUS range
-    auto it = std::lower_bound(
-        ranges.begin(),
-        ranges.end(),
-        ip,
-        [](const CodeRange& range, UINT_PTR ip)
-        {
-            // Return true if range comes before ip
-            // This means range.startAddress <= ip
-            return range.startAddress <= ip;
-        });
-    
-    // lower_bound returns first range where startAddress > ip
-    // By definition, that range cannot contain ip
-    // So we only need to check the PREVIOUS range
-    if (it != ranges.begin())
-    {
-        --it;
-        if (it->contains(ip))
-        {
-            return &(*it);
-        }
-    }
-    
-    return nullptr;
 }
 
 // Maybe rename this into OnJitCompilation
