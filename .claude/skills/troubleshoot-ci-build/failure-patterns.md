@@ -400,7 +400,7 @@ Is the failure in this PR only (not in master)?
 - **New failures** introduced in the PR (not in master)
 - Compilation errors
 - Segmentation faults / access violations
-- Consistent failures across retries
+- Consistent failures after 2 retries
 
 ### Monitor
 - Pre-existing failures also in master (may need separate fix)
