@@ -70,9 +70,8 @@ $globalPackagesPath = & dotnet nuget locals global-packages --list | ForEach-Obj
 }
 Write-Verbose "NuGet global packages path: $globalPackagesPath"
 
-# Remove package Datadog.AzureFunctions from NuGet cache
-$packageId = 'Datadog.AzureFunctions'
-Write-Verbose "Removing $packageId from NuGet cache."
+# Remove packages from NuGet cache
+$packagesToRemove = @('Datadog.AzureFunctions', 'Datadog.Serverless.Compat')
 
 if (-not $globalPackagesPath)
 {
@@ -80,17 +79,21 @@ if (-not $globalPackagesPath)
 }
 else
 {
-    $packagePath = Join-Path -Path $globalPackagesPath -ChildPath $packageId
+    foreach ($packageId in $packagesToRemove)
+    {
+        Write-Verbose "Removing $packageId from NuGet cache."
+        $packagePath = Join-Path -Path $globalPackagesPath -ChildPath $packageId
 
-    if (Test-Path $packagePath)
-    {
-        Write-Verbose "Deleting `"$packagePath`" from NuGet cache."
-        Remove-Item -Path $packagePath -Recurse -Force # -ErrorAction SilentlyContinue
-        Write-Host "Deleted `"$packagePath`" from NuGet cache." -ForegroundColor Green
-    }
-    else
-    {
-        Write-Verbose "Package `"$packagePath`" not found in the NuGet cache."
+        if (Test-Path $packagePath)
+        {
+            Write-Verbose "Deleting `"$packagePath`" from NuGet cache."
+            Remove-Item -Path $packagePath -Recurse -Force # -ErrorAction SilentlyContinue
+            Write-Host "Deleted `"$packagePath`" from NuGet cache." -ForegroundColor Green
+        }
+        else
+        {
+            Write-Verbose "Package `"$packagePath`" not found in the NuGet cache."
+        }
     }
 }
 
