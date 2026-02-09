@@ -115,9 +115,17 @@ Ask for details on a specific failure to get:
 
 ## Requirements
 
-- **GitHub CLI** (`gh`) authenticated
-- **Azure DevOps access** (public API, no auth needed for dd-trace-dotnet)
+- **GitHub CLI** (`gh`) authenticated (for PR analysis)
+- **Azure CLI** (`az`) authenticated to DataDog organization
 - **Internet connection** to fetch build data
+
+## Related Scripts (tracer/tools/)
+
+This skill uses the following standalone scripts that can also be run manually:
+
+- **`Get-AzureDevOpsBuildAnalysis.ps1`** - Fetch and analyze Azure DevOps build failures, compare with baselines, download logs
+
+See [scripts-reference.md](./scripts-reference.md) for detailed documentation on using these scripts directly.
 
 ## Tips
 

@@ -4,7 +4,7 @@ description: Troubleshoot CI failures in dd-trace-dotnet Azure DevOps pipeline. 
 argument-hint: <pr NUMBER | build BUILD_ID | compare BUILD_ID BASELINE_ID>
 disable-model-invocation: true
 user-invocable: true
-allowed-tools: WebFetch, Bash(az devops invoke:*), Bash(az pipelines build list:*), Bash(az pipelines build show:*), Bash(az pipelines runs artifact list:*), Bash(az pipelines runs list:*), Bash(az pipelines runs show:*)
+allowed-tools: WebFetch, Bash(gh pr checks:*), Bash(az devops invoke:*), Bash(az pipelines build list:*), Bash(az pipelines build show:*), Bash(az pipelines runs artifact list:*), Bash(az pipelines runs list:*), Bash(az pipelines runs show:*)
 ---
 
 # Troubleshoot Azure DevOps Builds for dd-trace-dotnet
@@ -15,6 +15,7 @@ Troubleshoot Azure DevOps pipeline failures with automated analysis and comparis
 
 - **[failure-patterns.md](failure-patterns.md)** - Reference guide with known CI failure patterns, categorization rules, and decision trees. Load when you need to categorize a failure type or compare against historical patterns.
 - **[README.md](README.md)** - User-facing documentation with usage examples. Reference when explaining skill capabilities to users.
+- **[scripts-reference.md](scripts-reference.md)** - Documentation for `Get-AzureDevOpsBuildAnalysis.ps1` script (parameters, usage, output structure).
 
 ## Task
 
@@ -48,109 +49,29 @@ Arguments are available as: `$ARGUMENTS`
 
 Perform these steps quickly to give user an overview, then ask what they want to investigate.
 
-#### Step 1: Identify the Build
+#### Step 1-4: Run Quick Analysis Script
+
+Use the `Get-AzureDevOpsBuildAnalysis.ps1` script for quick analysis:
 
 **For PR analysis** (`pr <NUMBER>`):
 ```bash
-gh pr checks $0 --repo DataDog/dd-trace-dotnet --json name,state,link,completedAt
+pwsh -NoProfile -Command ".\tracer\tools\Get-AzureDevOpsBuildAnalysis.ps1 -PullRequest $PR_NUMBER -Verbose"
 ```
 
-Extract the Azure DevOps build ID from `link`. The URL format is:
-```
-https://dev.azure.com/datadoghq/dd-trace-dotnet/_build/results?buildId=<BUILD_ID>
-```
-
-Note: The `state` field contains values like "SUCCESS", "FAILURE", "PENDING", "SKIPPED".
+The script automatically resolves the build ID via `gh pr checks`.
 
 **For direct build analysis** (`build <BUILD_ID>`):
-Use the provided build ID directly.
-
-#### Step 2: Fetch Build Details
-
-Get basic build information:
-
 ```bash
-# Use scratchpad directory from system prompt for temporary files
-
-az devops invoke \
-  --area build \
-  --resource builds \
-  --route-parameters project=dd-trace-dotnet buildId=$BUILD_ID \
-  --org https://dev.azure.com/datadoghq \
-  --api-version 6.0 \
-  --output json > "<scratchpad-path>/build-$BUILD_ID-details.json"
-
-cat "<scratchpad-path>/build-$BUILD_ID-details.json" | \
-  jq '{id, buildNumber, status, result, sourceBranch, sourceVersion, finishTime}'
+pwsh -NoProfile -Command ".\tracer\tools\Get-AzureDevOpsBuildAnalysis.ps1 -BuildId $BUILD_ID -Verbose"
 ```
 
-#### Step 3: Fetch Build Timeline
+The script outputs:
+- Build summary (ID, number, status, result, branch, commit)
+- Failed stages, jobs, and tasks
+- Extracted failed test names (via regex patterns)
+- Saved artifacts (JSON files in temp directory)
 
-Save timeline to file for analysis:
-
-```bash
-# Use scratchpad directory from system prompt for temporary files
-
-az devops invoke \
-  --area build \
-  --resource timeline \
-  --route-parameters project=dd-trace-dotnet buildId=$BUILD_ID \
-  --org https://dev.azure.com/datadoghq \
-  --api-version 6.0 \
-  --output json > "<scratchpad-path>/build-$BUILD_ID-timeline.json"
-```
-
-#### Step 4: Extract Failed Tasks (Quick Summary Only)
-
-Get a quick count and list of failures:
-
-```bash
-# Count failed tasks
-cat "<scratchpad-path>/build-$BUILD_ID-timeline.json" | \
-  jq '[.records[] | select(.result == "failed" and .type == "Task")] | length'
-
-# Get unique failed task names
-cat "<scratchpad-path>/build-$BUILD_ID-timeline.json" | \
-  jq -r '.records[] | select(.result == "failed" and .type == "Task") | .name' | \
-  sort | uniq
-
-# Get failed jobs (shows platforms/variants affected)
-cat "<scratchpad-path>/build-$BUILD_ID-timeline.json" | \
-  jq -r '.records[] | select(.result == "failed" and .type == "Job") | .name'
-```
-
-#### Step 4.5: Extract Specific Failed Tests (If Test Failures)
-
-If the failed tasks are test-related (names containing "test", "IntegrationTests", etc.), extract specific test names from error messages:
-
-```bash
-# Check if failures are test-related (inspect task names)
-cat "<scratchpad-path>/build-$BUILD_ID-timeline.json" | \
-  jq -r '.records[] | select(.result == "failed" and .type == "Task") | .name' | \
-  grep -iE "(test|integration)" && echo "Test failures detected"
-
-# Extract error messages from failed task issues
-cat "<scratchpad-path>/build-$BUILD_ID-timeline.json" | \
-  jq -r '.records[] | select(.result == "failed" and .type == "Task") | .issues[]? | .message' \
-  > "<scratchpad-path>/build-$BUILD_ID-error-messages.txt"
-
-# Parse test names from error messages
-# Look for patterns like:
-# - [FAIL] TestName
-# - Failed TestNamespace.TestClass.TestMethod
-# - Assert.* Failure in TestName
-grep -oE '\[FAIL\] [A-Za-z0-9_.]+\.[A-Za-z0-9_]+' "<scratchpad-path>/build-$BUILD_ID-error-messages.txt" | \
-  sed 's/\[FAIL\] //' | sort | uniq > "<scratchpad-path>/build-$BUILD_ID-failed-tests.txt"
-
-# Alternative pattern: "Failed TestNamespace.TestClass.TestMethod"
-grep -oE 'Failed [A-Za-z0-9_.]+\.[A-Za-z0-9_]+' "<scratchpad-path>/build-$BUILD_ID-error-messages.txt" | \
-  sed 's/Failed //' | sort | uniq >> "<scratchpad-path>/build-$BUILD_ID-failed-tests.txt"
-
-# Deduplicate and display
-sort -u "<scratchpad-path>/build-$BUILD_ID-failed-tests.txt"
-```
-
-**Note**: Error message parsing is best-effort. If patterns don't match, show the raw error messages instead.
+**Note**: The script uses the scratchpad/temp directory automatically for saved artifacts.
 
 #### Step 5: Present Quick Summary & Ask User
 
@@ -169,68 +90,28 @@ Present a concise summary and ask what they want to investigate next.
 **Compare with Master** (if requested):
 
 ```bash
-# Find recent master builds
-az devops invoke \
-  --area build \
-  --resource builds \
-  --route-parameters project=dd-trace-dotnet \
-  --org https://dev.azure.com/datadoghq \
-  --api-version 6.0 \
-  --query-parameters branchName=refs/heads/master '$top=10' \
-  --output json > "$SCRATCHPAD/master-builds.json"
-
-# Get most recent succeeded build
-cat "$SCRATCHPAD/master-builds.json" | \
-  jq -r '.value[] | select(.result == "succeeded") | {id, buildNumber, finishTime}' | head -1
-
-# Fetch master timeline
-az devops invoke \
-  --area build \
-  --resource timeline \
-  --route-parameters project=dd-trace-dotnet buildId=$MASTER_BUILD_ID \
-  --org https://dev.azure.com/datadoghq \
-  --api-version 6.0 \
-  --output json > "$SCRATCHPAD/build-$MASTER_BUILD_ID-timeline.json"
-
-# Compare failures
-cat "$SCRATCHPAD/build-$MASTER_BUILD_ID-timeline.json" | \
-  jq -r '.records[] | select(.result == "failed" and .type == "Task") | .name' | \
-  sort | uniq > "$SCRATCHPAD/master-failures.txt"
-
-cat "$SCRATCHPAD/build-$BUILD_ID-timeline.json" | \
-  jq -r '.records[] | select(.result == "failed" and .type == "Task") | .name' | \
-  sort | uniq > "$SCRATCHPAD/pr-failures.txt"
-
-# New failures (in PR but not in master)
-comm -13 "$SCRATCHPAD/master-failures.txt" "$SCRATCHPAD/pr-failures.txt"
+pwsh -NoProfile -Command ".\tracer\tools\Get-AzureDevOpsBuildAnalysis.ps1 -BuildId $BUILD_ID -CompareWithMaster -Verbose"
 ```
+
+The script automatically:
+- Finds the most recent successful master build
+- Fetches its timeline
+- Compares failed tests
+- Reports new failures, pre-existing failures, and fixed tests
 
 **Download Logs** (if requested):
 
-The timeline data includes direct URLs to logs. Use these URLs instead of the Azure DevOps logs API (which returns HTTP 500):
-
 ```bash
-# Extract log URLs for failed tasks
-cat "$SCRATCHPAD/build-$BUILD_ID-timeline.json" | \
-  jq -r '.records[] | select(.result == "failed" and .type == "Task") | {name, log_id: .log.id, log_url: .log.url}'
-
-# Download a specific log by URL (using curl or WebFetch)
-LOG_URL=$(cat "$SCRATCHPAD/build-$BUILD_ID-timeline.json" | \
-  jq -r '.records[] | select(.result == "failed" and .type == "Task") | .log.url' | head -1)
-
-curl -s "$LOG_URL" > "$SCRATCHPAD/build-$BUILD_ID-log.txt"
-
-# Or download all failed task logs
-cat "$SCRATCHPAD/build-$BUILD_ID-timeline.json" | \
-  jq -r '.records[] | select(.result == "failed" and .type == "Task") | .log.url' | \
-  while read -r url; do
-    log_id=$(basename "$url")
-    curl -s "$url" > "$SCRATCHPAD/build-$BUILD_ID-log-$log_id.txt"
-    echo "Downloaded log $log_id"
-  done
+pwsh -NoProfile -Command ".\tracer\tools\Get-AzureDevOpsBuildAnalysis.ps1 -BuildId $BUILD_ID -IncludeLogs -Verbose"
 ```
 
-**Note**: The log URLs from the timeline work reliably, unlike `az devops invoke --resource logs` which frequently returns HTTP 500.
+The script automatically:
+- Extracts log URLs from timeline records (not the broken logs API)
+- Downloads all failed task logs via `Invoke-RestMethod`
+- Handles failures gracefully (non-fatal warnings)
+- Reports downloaded log file paths
+
+**Note**: Log downloads use timeline URLs directly, not `az devops invoke --resource logs` which returns HTTP 500.
 
 ## Output Format
 
