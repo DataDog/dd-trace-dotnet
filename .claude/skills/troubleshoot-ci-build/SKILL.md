@@ -4,7 +4,7 @@ description: Troubleshoot CI failures in dd-trace-dotnet Azure DevOps pipeline. 
 argument-hint: <pr NUMBER | build BUILD_ID | compare BUILD_ID BASELINE_ID>
 disable-model-invocation: true
 user-invocable: true
-allowed-tools: Bash, WebFetch, Write, Bash(az devops invoke *), Bash(az pipelines build list *), Bash(az pipelines build show *), Bash(az pipelines runs artifact list *), Bash(az pipelines runs list *), Bash(az pipelines runs show *)
+allowed-tools: WebFetch, Bash(az devops invoke:*), Bash(az pipelines build list:*), Bash(az pipelines build show:*), Bash(az pipelines runs artifact list:*), Bash(az pipelines runs list:*), Bash(az pipelines runs show:*)
 ---
 
 # Troubleshoot Azure DevOps Builds for dd-trace-dotnet
