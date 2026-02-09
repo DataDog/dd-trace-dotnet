@@ -740,7 +740,9 @@ check-slo-breaches:
   when: always
   allow_failure: true # Allowed to fail since we don't want it to block releases yet
   variables:
+    DDOCTOSTS_POLICY: "gitlab.github-access.read-contents"
     ARTIFACTS_DIR: "reports"
+    SLO_FILE: ".gitlab/benchmarks/bp-runner.fail-on-breach.yml"
 
 notify-slo-breaches:
   extends: .notify-slo-breaches
