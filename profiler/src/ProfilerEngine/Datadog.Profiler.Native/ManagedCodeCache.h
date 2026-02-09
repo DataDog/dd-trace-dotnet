@@ -53,7 +53,7 @@ struct ModuleCodeRange {
     
     // Check if IP is within this range
     bool contains(std::uintptr_t ip) const {
-        return ip >= startAddress && ip < endAddress;
+        return ip >= startAddress && ip <= endAddress;
     }
 };
 
