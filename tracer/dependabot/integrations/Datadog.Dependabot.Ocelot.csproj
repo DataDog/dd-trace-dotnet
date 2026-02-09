@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFrameworks>net8.0</TargetFrameworks>
-    <RootNamespace>Datadog.Dependabot.Honeypot</RootNamespace>
+    <RootNamespace>Datadog.Dependabot.Ocelot</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
