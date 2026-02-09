@@ -3,42 +3,7 @@ name: azure-functions
 description: Build, deploy, and test Azure Functions instrumented with Datadog.AzureFunctions NuGet package. Use when working on Azure Functions integration, deploying to test environments, analyzing traces, or troubleshooting instrumentation issues.
 argument-hint: [build|deploy|test|logs|trace]
 disable-model-invocation: true
-allowed-tools:
-  - Bash(az functionapp show *)
-  - Bash(az functionapp list *)
-  - Bash(az functionapp list-functions *)
-  - Bash(az functionapp function list *)
-  - Bash(az functionapp function show *)
-  - Bash(az functionapp config appsettings list *)
-  - Bash(az functionapp config show *)
-  - Bash(az functionapp deployment list *)
-  - Bash(az functionapp deployment show *)
-  - Bash(az functionapp deployment source show *)
-  - Bash(az functionapp plan list *)
-  - Bash(az functionapp plan show *)
-  - Bash(az functionapp log download *)
-  - Bash(az webapp log tail *)
-  - Bash(az group list *)
-  - Bash(az group show *)
-  - Bash(curl *)
-  - Bash(func azure functionapp logstream *)
-  - Bash(func azure functionapp list-functions *)
-  - Bash(func azure functionapp fetch-app-settings *)
-  - Bash(func azure functionapp fetch *)
-  - Bash(dotnet restore)
-  - Bash(dotnet clean)
-  - Bash(dotnet build *)
-  - Bash(unzip *)
-  - Bash(date *)
-  - Bash(grep *)
-  - Bash(find *)
-  - Bash(ls *)
-  - Bash(cat *)
-  - Bash(head *)
-  - Bash(tail *)
-  - Bash(wc *)
-  - Bash(sort *)
-  - Bash(jq *)
+allowed-tools: Bash(az:functionapp:show:*) Bash(az:functionapp:list:*) Bash(az:functionapp:list-functions:*) Bash(az:functionapp:function:list:*) Bash(az:functionapp:function:show:*) Bash(az:functionapp:config:appsettings:list:*) Bash(az:functionapp:config:show:*) Bash(az:functionapp:deployment:list:*) Bash(az:functionapp:deployment:show:*) Bash(az:functionapp:deployment:source:show:*) Bash(az:functionapp:plan:list:*) Bash(az:functionapp:plan:show:*) Bash(az:functionapp:log:download:*) Bash(az:webapp:log:tail:*) Bash(az:group:list:*) Bash(az:group:show:*) Bash(curl:*) Bash(func:azure:functionapp:logstream:*) Bash(func:azure:functionapp:list-functions:*) Bash(func:azure:functionapp:fetch-app-settings:*) Bash(func:azure:functionapp:fetch:*) Bash(dotnet:restore) Bash(dotnet:clean) Bash(dotnet:build:*) Bash(unzip:*) Bash(date:*) Bash(grep:*) Bash(find:*) Bash(ls:*) Bash(cat:*) Bash(head:*) Bash(tail:*) Bash(wc:*) Bash(sort:*) Bash(jq:*) Read
 ---
 
 # Azure Functions Development Workflow
