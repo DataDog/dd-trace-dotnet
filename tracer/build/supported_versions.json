@@ -51,8 +51,8 @@
         "minVersionAvailableInclusive": "3.1.0",
         "minVersionSupportedInclusive": "4.0.0",
         "minVersionTestedInclusive": "4.0.3",
-        "maxVersionSupportedInclusive": "8.2.0",
-        "maxVersionAvailableInclusive": "8.2.0",
+        "maxVersionSupportedInclusive": "8.3.0",
+        "maxVersionAvailableInclusive": "8.3.0",
         "maxVersionTestedInclusive": "8.2.0"
       }
     ]
@@ -259,8 +259,8 @@
         "minVersionAvailableInclusive": "3.1.0",
         "minVersionSupportedInclusive": "3.1.0",
         "minVersionTestedInclusive": "3.1.5.3",
-        "maxVersionSupportedInclusive": "4.0.13",
-        "maxVersionAvailableInclusive": "4.0.13",
+        "maxVersionSupportedInclusive": "4.0.14",
+        "maxVersionAvailableInclusive": "4.0.14",
         "maxVersionTestedInclusive": "4.0.13"
       }
     ]
@@ -293,8 +293,8 @@
         "minVersionAvailableInclusive": "3.1.0",
         "minVersionSupportedInclusive": "3.1.0",
         "minVersionTestedInclusive": "3.1.3.5",
-        "maxVersionSupportedInclusive": "4.0.7.14",
-        "maxVersionAvailableInclusive": "4.0.7.14",
+        "maxVersionSupportedInclusive": "4.0.8",
+        "maxVersionAvailableInclusive": "4.0.8",
         "maxVersionTestedInclusive": "4.0.7.14"
       }
     ]
@@ -310,8 +310,8 @@
         "minVersionAvailableInclusive": "1.0.0",
         "minVersionSupportedInclusive": "1.4.0",
         "minVersionTestedInclusive": "1.14.1",
-        "maxVersionSupportedInclusive": "1.14.1",
-        "maxVersionAvailableInclusive": "1.14.1",
+        "maxVersionSupportedInclusive": "1.14.2",
+        "maxVersionAvailableInclusive": "1.14.2",
         "maxVersionTestedInclusive": "1.14.1"
       }
     ]
@@ -327,8 +327,8 @@
         "minVersionAvailableInclusive": "3.1.0",
         "minVersionSupportedInclusive": "3.3.0",
         "minVersionTestedInclusive": "3.3.113.2",
-        "maxVersionSupportedInclusive": "4.0.18.1",
-        "maxVersionAvailableInclusive": "4.0.18.1",
+        "maxVersionSupportedInclusive": "4.0.18.3",
+        "maxVersionAvailableInclusive": "4.0.18.3",
         "maxVersionTestedInclusive": "4.0.18.1"
       }
     ]
@@ -703,8 +703,8 @@
         "minVersionAvailableInclusive": "0.1.0",
         "minVersionSupportedInclusive": "1.7.0",
         "minVersionTestedInclusive": null,
-        "maxVersionSupportedInclusive": "1.8.22",
-        "maxVersionAvailableInclusive": "1.8.22",
+        "maxVersionSupportedInclusive": "1.8.23",
+        "maxVersionAvailableInclusive": "1.8.23",
         "maxVersionTestedInclusive": null
       }
     ]
@@ -737,6 +737,23 @@
         "maxVersionSupportedInclusive": "15.1.12",
         "maxVersionAvailableInclusive": "15.1.12",
         "maxVersionTestedInclusive": "15.1.12"
+      }
+    ]
+  },
+  {
+    "integrationName": "HttpMessageHandler",
+    "assemblyName": "Ocelot",
+    "minAssemblyVersionInclusive": "23.0.0",
+    "maxAssemblyVersionInclusive": "24.65535.65535",
+    "packages": [
+      {
+        "name": "Ocelot",
+        "minVersionAvailableInclusive": "0.0.1",
+        "minVersionSupportedInclusive": "23.0.0",
+        "minVersionTestedInclusive": "23.0.0",
+        "maxVersionSupportedInclusive": "24.1.0",
+        "maxVersionAvailableInclusive": "24.1.0",
+        "maxVersionTestedInclusive": "24.1.0"
       }
     ]
   },
@@ -802,8 +819,8 @@
         "minVersionAvailableInclusive": "9.1.4",
         "minVersionSupportedInclusive": "9.1.4",
         "minVersionTestedInclusive": null,
-        "maxVersionSupportedInclusive": "9.4.4.1",
-        "maxVersionAvailableInclusive": "9.4.4.1",
+        "maxVersionSupportedInclusive": "9.4.5",
+        "maxVersionAvailableInclusive": "9.4.5",
         "maxVersionTestedInclusive": null
       }
     ]
@@ -961,8 +978,8 @@
         "minVersionAvailableInclusive": "1.1.11",
         "minVersionSupportedInclusive": "1.1.11",
         "minVersionTestedInclusive": null,
-        "maxVersionSupportedInclusive": "4.0.2",
-        "maxVersionAvailableInclusive": "4.0.2",
+        "maxVersionSupportedInclusive": "4.1.0",
+        "maxVersionAvailableInclusive": "4.1.0",
         "maxVersionTestedInclusive": null
       }
     ]
@@ -978,8 +995,8 @@
         "minVersionAvailableInclusive": "1.1.11",
         "minVersionSupportedInclusive": "1.1.11",
         "minVersionTestedInclusive": null,
-        "maxVersionSupportedInclusive": "4.0.2",
-        "maxVersionAvailableInclusive": "4.0.2",
+        "maxVersionSupportedInclusive": "4.1.0",
+        "maxVersionAvailableInclusive": "4.1.0",
         "maxVersionTestedInclusive": null
       }
     ]
@@ -1097,23 +1114,6 @@
         "maxVersionSupportedInclusive": "4.4.0",
         "maxVersionAvailableInclusive": "4.4.0",
         "maxVersionTestedInclusive": "4.4.0"
-      }
-    ]
-  },
-  {
-    "integrationName": "HttpMessageHandler",
-    "assemblyName": "Ocelot",
-    "minAssemblyVersionInclusive": "23.0.0",
-    "maxAssemblyVersionInclusive": "24.65535.65535",
-    "packages": [
-      {
-        "name": "Ocelot",
-        "minVersionAvailableInclusive": "0.0.1",
-        "minVersionSupportedInclusive": "23.0.0",
-        "minVersionTestedInclusive": "23.0.0",
-        "maxVersionSupportedInclusive": "24.1.0",
-        "maxVersionAvailableInclusive": "24.1.0",
-        "maxVersionTestedInclusive": "24.1.0"
       }
     ]
   },
@@ -1265,8 +1265,8 @@
         "minVersionAvailableInclusive": "2.9.0",
         "minVersionSupportedInclusive": "4.0.2",
         "minVersionTestedInclusive": "4.5.14",
-        "maxVersionSupportedInclusive": "10.0.4",
-        "maxVersionAvailableInclusive": "10.0.4",
+        "maxVersionSupportedInclusive": "10.0.6",
+        "maxVersionAvailableInclusive": "10.0.6",
         "maxVersionTestedInclusive": "10.0.4"
       }
     ]
@@ -1357,8 +1357,8 @@
         "minVersionAvailableInclusive": "1.0.187",
         "minVersionSupportedInclusive": "1.0.187",
         "minVersionTestedInclusive": "1.0.488",
-        "maxVersionSupportedInclusive": "2.10.1",
-        "maxVersionAvailableInclusive": "2.10.1",
+        "maxVersionSupportedInclusive": "2.10.14",
+        "maxVersionAvailableInclusive": "2.10.14",
         "maxVersionTestedInclusive": "2.10.1"
       }
     ]

@@ -8,7 +8,7 @@
   <ItemGroup>
     <!-- Integration: AWSSDK.Kinesis -->
     <!--    Assembly: AWSSDK.Kinesis -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Kinesis/4.0.7.14 -->
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Kinesis/4.0.8 -->
     <PackageReference Include="AWSSDK.Kinesis" Version="4.0.7.14" />
   </ItemGroup>
 
