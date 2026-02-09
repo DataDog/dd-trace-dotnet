@@ -55,6 +55,18 @@ Invoke the skill with `/azure-functions` followed by an optional command:
 - **scripts-reference.md** - Reusable bash/PowerShell scripts for common tasks
 - **README.md** - This file
 
+## Related Scripts (tracer/tools/)
+
+Standalone PowerShell scripts for Azure Functions workflows:
+
+- **Deploy-AzureFunction.ps1** - Automate deployment, wait, trigger, and timestamp capture
+- **Get-AzureFunctionLogs.ps1** - Download, extract, and analyze logs with tracer version, span count, and parenting checks
+- **Build-AzureFunctionsNuget.ps1** - Build Datadog.AzureFunctions NuGet package
+- **Download-TracePayload.ps1** - Download trace payloads from Azure DevOps builds
+- **Prepare-ServerlessTestingEnvironment.ps1** - Set up local testing environment
+
+See [scripts-reference.md](scripts-reference.md) for detailed usage examples and pipeline patterns.
+
 ## Interactive Mode
 
 When invoked without arguments (`/azure-functions`), the skill guides you through:
