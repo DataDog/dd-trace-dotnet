@@ -71,97 +71,91 @@ Build the `Datadog.AzureFunctions` NuGet package with your changes:
 .\tracer\tools\Build-AzureFunctionsNuget.ps1 -BuildId 12345 -CopyTo D:\temp\nuget -Verbose
 ```
 
-### 2. Deploy to Azure
+### 2. Deploy and Test Function
 
-Navigate to sample app and deploy:
+Use the `Deploy-AzureFunction.ps1` script to automate deployment, wait, and trigger:
 
-```bash
-cd D:/source/datadog/serverless-dev-apps/azure/functions/dotnet/isolated-dotnet8-aspnetcore
-dotnet restore
-func azure functionapp publish lucasp-premium-linux-isolated-aspnet
+```powershell
+.\tracer\tools\Deploy-AzureFunction.ps1 `
+  -AppName "lucasp-premium-linux-isolated-aspnet" `
+  -ResourceGroup "lucas.pimentel" `
+  -SampleAppPath "D:\source\datadog\serverless-dev-apps\azure\functions\dotnet\isolated-dotnet8-aspnetcore" `
+  -Verbose
 ```
 
-**IMPORTANT**: Wait 1-2 minutes after deployment for the worker process to restart before testing.
+**What this does**:
+1. Runs `dotnet restore` in the sample app directory
+2. Publishes to Azure with `func azure functionapp publish`
+3. Waits 2 minutes for worker process to restart
+4. Triggers the HTTP endpoint and captures execution timestamp
+5. Outputs a result object for pipeline usage
+
+**Options**:
+- `-SkipBuild` - Skip `dotnet restore`
+- `-SkipWait` - Skip 2-minute wait (not recommended)
+- `-WaitSeconds 60` - Custom wait duration
+- `-SkipTrigger` - Skip HTTP trigger
+- `-TriggerUrl "https://..."` - Custom trigger URL
 
 **Default app**: If no app name specified, use `lucasp-premium-linux-isolated-aspnet`
 
-### 3. Test Function
-
-Trigger the HTTP test endpoint:
-
-```bash
-curl https://lucasp-premium-linux-isolated-aspnet.azurewebsites.net/api/HttpTest
+**Pipeline usage** (save output for log analysis):
+```powershell
+$deploy = .\tracer\tools\Deploy-AzureFunction.ps1 `
+  -AppName "lucasp-premium-linux-isolated-aspnet" `
+  -ResourceGroup "lucas.pimentel" `
+  -SampleAppPath "D:\source\datadog\serverless-dev-apps\azure\functions\dotnet\isolated-dotnet8-aspnetcore"
 ```
 
-**Note**: Azure URL pattern uses base name without `-aspnet` suffix for this specific app.
+### 3. Download and Analyze Logs
 
-**Capture timestamp** when triggering (for log analysis):
-```bash
-echo "Triggered at $(date -u +%Y-%m-%d\ %H:%M:%S) UTC"
+Use the `Get-AzureFunctionLogs.ps1` script to download, extract, and analyze logs:
+
+```powershell
+.\tracer\tools\Get-AzureFunctionLogs.ps1 `
+  -AppName "lucasp-premium-linux-isolated-aspnet" `
+  -ResourceGroup "lucas.pimentel" `
+  -ExecutionTimestamp "2026-01-23 17:53:00" `
+  -All `
+  -Verbose
 ```
 
-### 4. Download and Analyze Logs
+**What this does**:
+1. Downloads logs from Azure to a timestamped zip file
+2. Extracts the archive
+3. Identifies host and worker log files
+4. Analyzes tracer version, span count, and trace parenting
 
-**Download logs**:
-```bash
-az functionapp log download \
-  --name lucasp-premium-linux-isolated-aspnet \
-  --resource-group lucas.pimentel \
-  --log-path D:/temp/logs-$(date +%H%M%S).zip
-```
+**Analysis options**:
+- `-ShowVersion` - Display Datadog tracer version from worker logs
+- `-ShowSpans` - Count spans at execution timestamp (split by host/worker)
+- `-CheckParenting` - Validate trace parenting (detect root span duplication)
+- `-All` - Enable all analysis (recommended)
 
-**Extract logs**:
-```bash
-cd D:/temp
-unzip -q -o logs-*.zip
-ls -la LogFiles/datadog/
+**Pipeline usage** (with Deploy script):
+```powershell
+$deploy = .\tracer\tools\Deploy-AzureFunction.ps1 `
+  -AppName "lucasp-premium-linux-isolated-aspnet" `
+  -ResourceGroup "lucas.pimentel" `
+  -SampleAppPath "D:\source\datadog\serverless-dev-apps\azure\functions\dotnet\isolated-dotnet8-aspnetcore"
+
+.\tracer\tools\Get-AzureFunctionLogs.ps1 `
+  -AppName $deploy.AppName `
+  -ResourceGroup "lucas.pimentel" `
+  -ExecutionTimestamp $deploy.ExecutionTimestamp `
+  -All
 ```
 
 **Log file patterns**:
 - **Host process**: `dotnet-tracer-managed-Microsoft.Azure.WebJobs.Script.WebHost-{pid}.log`
 - **Worker process**: `dotnet-tracer-managed-dotnet-{pid}.log`
 
-**CRITICAL**: Always filter logs by timestamp - never use head/tail on downloaded files:
+**CRITICAL**: The script automatically filters logs by execution timestamp. Raw log files are append-only and contain entries from multiple deployments/restarts.
 
-```bash
-# Replace with actual execution timestamp
-grep "2026-01-23 17:53:" LogFiles/datadog/dotnet-tracer-managed-dotnet-*.log
-```
-
-**Why**: Log files are append-only and contain entries from multiple deployments/restarts.
-
-### 5. Verify Tracer Version
-
-Check the worker loaded the expected version:
-
-```bash
-# Find most recent initialization
-grep "Assembly metadata" LogFiles/datadog/dotnet-tracer-managed-dotnet-*.log | tail -1
-
-# Verify version in recent logs
-grep "2026-01-23 17:53:" LogFiles/datadog/dotnet-tracer-managed-dotnet-*.log | grep "TracerVersion" | head -1
-```
-
-### 6. Analyze Trace Context Flow
-
-**Find host trace ID**:
-```bash
-grep "2026-01-23 17:53:39" LogFiles/datadog/dotnet-tracer-managed-Microsoft.Azure.WebJobs.Script.WebHost-*.log | grep "Span started"
-```
-
-**Check worker spans use same trace ID**:
-```bash
-# Replace with actual trace ID from above
-grep "68e948220000000047fef7bad8bb854e" LogFiles/datadog/dotnet-tracer-managed-dotnet-*.log
-```
-
-**Span fields**:
-- **s_id** (span ID): Unique identifier for this span
-- **p_id** (parent ID): Span ID of parent span (`null` = root span)
-- **t_id** (trace ID): Trace this span belongs to
-
-**Healthy trace**: Worker spans have same `t_id` as host and `p_id` matching host span IDs
-**Broken trace**: Worker spans have different `t_id` or `p_id: null` (orphaned root)
+**Parenting analysis**:
+- **Span fields**: `s_id` (span ID), `p_id` (parent ID), `t_id` (trace ID)
+- **Healthy trace**: Worker spans have same `t_id` as host, `p_id` matching host span IDs
+- **Broken trace**: Worker spans have different `t_id` or `p_id: null` (orphaned root)
 
 ## Verification Checklist
 

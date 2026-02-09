@@ -2,6 +2,91 @@
 
 Quick reference scripts and commands for Azure Functions development workflow.
 
+## PowerShell Scripts (tracer/tools/)
+
+### Deploy-AzureFunction.ps1
+
+Automates deployment, wait, and HTTP trigger with timestamp capture.
+
+**Basic usage**:
+```powershell
+.\tracer\tools\Deploy-AzureFunction.ps1 `
+  -AppName "lucasp-premium-linux-isolated-aspnet" `
+  -ResourceGroup "lucas.pimentel" `
+  -SampleAppPath "D:\source\datadog\serverless-dev-apps\azure\functions\dotnet\isolated-dotnet8-aspnetcore" `
+  -Verbose
+```
+
+**Pipeline usage** (save output for log analysis):
+```powershell
+$deploy = .\tracer\tools\Deploy-AzureFunction.ps1 `
+  -AppName "lucasp-premium-linux-isolated-aspnet" `
+  -ResourceGroup "lucas.pimentel" `
+  -SampleAppPath "D:\source\datadog\serverless-dev-apps\azure\functions\dotnet\isolated-dotnet8-aspnetcore"
+
+# Use $deploy.ExecutionTimestamp and $deploy.AppName for log analysis
+```
+
+**Options**:
+- `-SkipBuild` - Skip `dotnet restore`
+- `-SkipWait` - Skip 2-minute wait
+- `-WaitSeconds 60` - Custom wait duration
+- `-SkipTrigger` - Skip HTTP trigger
+- `-TriggerUrl "https://..."` - Custom trigger URL
+
+**Output**: PSCustomObject with `AppName`, `ExecutionTimestamp`, `TriggerUrl`, `HttpStatus`
+
+### Get-AzureFunctionLogs.ps1
+
+Downloads, extracts, and analyzes Azure Function logs.
+
+**Basic usage**:
+```powershell
+.\tracer\tools\Get-AzureFunctionLogs.ps1 `
+  -AppName "lucasp-premium-linux-isolated-aspnet" `
+  -ResourceGroup "lucas.pimentel" `
+  -ExecutionTimestamp "2026-01-23 17:53:00" `
+  -All `
+  -Verbose
+```
+
+**Full pipeline** (deploy + analyze):
+```powershell
+$deploy = .\tracer\tools\Deploy-AzureFunction.ps1 `
+  -AppName "lucasp-premium-linux-isolated-aspnet" `
+  -ResourceGroup "lucas.pimentel" `
+  -SampleAppPath "D:\source\datadog\serverless-dev-apps\azure\functions\dotnet\isolated-dotnet8-aspnetcore"
+
+.\tracer\tools\Get-AzureFunctionLogs.ps1 `
+  -AppName $deploy.AppName `
+  -ResourceGroup "lucas.pimentel" `
+  -ExecutionTimestamp $deploy.ExecutionTimestamp `
+  -All
+```
+
+**Analysis options**:
+- `-ShowVersion` - Display Datadog tracer version
+- `-ShowSpans` - Count spans at execution timestamp
+- `-CheckParenting` - Validate trace parenting
+- `-All` - Enable all analysis
+- `-OutputPath "D:\temp"` - Custom output directory
+
+**Output**: PSCustomObject with `LogZipPath`, `ExtractDir`, `DatadogLogDir`, `TracerVersion`, `SpanCount`, `ParentingAnalysis`
+
+### Build-AzureFunctionsNuget.ps1
+
+Build the Datadog.AzureFunctions NuGet package.
+
+**Usage**:
+```powershell
+.\tracer\tools\Build-AzureFunctionsNuget.ps1 -CopyTo D:\temp\nuget -Verbose
+```
+
+**Options**:
+- `-BuildId 12345` - Download bundle from Azure DevOps build instead of building locally
+- `-CopyTo D:\temp\nuget` - Copy package to directory
+- `-Verbose` - Show detailed build output
+
 ## Build Scripts
 
 ### Build NuGet Package (Standard)
