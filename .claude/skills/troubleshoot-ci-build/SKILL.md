@@ -379,6 +379,8 @@ Connection reset by peer
 Build failed in XX:XX:XX (timeout)
 ```
 
+**Recommendation**: Retry the build once. If the failure persists after 2 consecutive runs, reach out in the **#apm-dotnet** Slack channel for assistance.
+
 ## API Reference
 
 ### Azure DevOps REST API
