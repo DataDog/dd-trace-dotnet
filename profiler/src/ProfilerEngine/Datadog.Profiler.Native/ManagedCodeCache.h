@@ -27,7 +27,7 @@
 // Represents a single contiguous code range
 struct CodeRange {
     UINT_PTR startAddress;
-    UINT_PTR endAddress;  // Exclusive
+    UINT_PTR endAddress;  // Inclusive
     FunctionID functionId;
     
     // For binary search
@@ -37,14 +37,14 @@ struct CodeRange {
     
     // Check if IP is within this range
     bool contains(UINT_PTR ip) const {
-        return ip >= startAddress && ip < endAddress;
+        return ip >= startAddress && ip <= endAddress;
     }
 };
 
 
 struct ModuleCodeRange {
     UINT_PTR startAddress;
-    UINT_PTR endAddress;
+    UINT_PTR endAddress; // Inclusive
     bool isRemoved = false;
     // For binary search
     bool operator<(const ModuleCodeRange& other) const {
