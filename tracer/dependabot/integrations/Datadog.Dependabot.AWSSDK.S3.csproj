@@ -8,7 +8,7 @@
   <ItemGroup>
     <!-- Integration: AWSSDK.S3 -->
     <!--    Assembly: AWSSDK.S3 -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.S3/4.0.18.1 -->
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.S3/4.0.18.3 -->
     <PackageReference Include="AWSSDK.S3" Version="4.0.18.1" />
   </ItemGroup>
 
