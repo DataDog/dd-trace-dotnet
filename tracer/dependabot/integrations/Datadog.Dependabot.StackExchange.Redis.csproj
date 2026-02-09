@@ -8,8 +8,8 @@
   <ItemGroup>
     <!-- Integration: StackExchange.Redis -->
     <!--    Assembly: StackExchange.Redis -->
-    <!-- Latest package https://www.nuget.org/packages/StackExchange.Redis/2.10.14 -->
-    <PackageReference Include="StackExchange.Redis" Version="2.10.14" />
+    <!-- Latest package https://www.nuget.org/packages/StackExchange.Redis/2.10.1 -->
+    <PackageReference Include="StackExchange.Redis" Version="2.10.1" />
   </ItemGroup>
 
 </Project>
