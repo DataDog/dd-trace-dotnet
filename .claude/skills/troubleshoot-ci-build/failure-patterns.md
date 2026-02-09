@@ -72,7 +72,7 @@ out of disk space
 
 **Solution**:
 - Retry (agents are cleaned between builds)
-- Report to infrastructure team if frequent
+- Post in #apm-dotnet if frequent
 
 ---
 
