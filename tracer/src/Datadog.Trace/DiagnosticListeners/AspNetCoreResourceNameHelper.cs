@@ -13,6 +13,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Text;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Util;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.Routing.Template;
@@ -376,16 +377,24 @@ internal static class AspNetCoreResourceNameHelper
 #endif
     }
 
-    private static bool IsIdentifierSegment(object? value, out string? valueAsString)
+    [TestingAndPrivateOnly]
+    internal static bool IsIdentifierSegment(object? value, out string? valueAsString)
     {
-        // avoid allocating a string for cases we know are going to be flagged as identifiers and therefore
-        if (value is short or ushort or int or uint or long or ulong or float or double or decimal or Guid)
+        // Avoid allocating a string for cases we know are going to be flagged as identifiers and therefore
+        // If we have "whole number float/double/decimal", then we technically don't need to call ToString()
+        // but if they're not whole numbers, we need to do the allocation, due to differences in culture
+        // Rather than increase complexity here, we just ignore double/float/decimal
+        if (value is short or ushort or int or uint or long or ulong or Guid)
         {
             valueAsString = null;
             return true;
         }
 
         // This may allocate for e.g. enums and other types etc, but we were going to have to do that anyway at some point
+        // NOTE: that this is doing a culture _sensitive_ serialization. Depending on the culture,
+        // this could lead to differences in behaviour as to whether a segment is considered an identifier.
+        // For example, 1.23 serialized using en-us, is _not_ counted as an identifier, but in fr-FR it _would_ be
+        // counted as an identifier.
         valueAsString = value as string ?? value?.ToString();
         if (valueAsString is null)
         {

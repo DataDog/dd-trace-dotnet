@@ -120,5 +120,62 @@ namespace Datadog.Trace.Tests.Util
         {
             Trace.Util.UriHelpers.Combine(new Uri(baseUri).AbsolutePath, relativePath).Should().Be("/some/path");
         }
+
+        [Theory]
+        // Empty and edge cases
+        [InlineData("", 0, 0, false)] // Empty segment
+        [InlineData("abc", 0, 0, false)] // Zero length
+        [InlineData("abc", 5, 1, false)] // Start index beyond string (handled by loop bounds)
+        // Pure numbers - should be identifiers
+        [InlineData("123", 0, 3, true)]
+        [InlineData("0", 0, 1, true)]
+        [InlineData("999999999999999999999999999999", 0, 30, true)]
+        [InlineData("2024", 0, 4, true)]
+        // Numbers with hyphens - should be identifiers
+        [InlineData("123-456", 0, 7, true)]
+        [InlineData("123-456-789", 0, 11, true)]
+        [InlineData("1-2-3-4-5", 0, 9, true)]
+        // Pure hex letters (no numbers) - not identifiers
+        [InlineData("abcdef", 0, 6, false)]
+        [InlineData("ABCDEF", 0, 6, false)]
+        [InlineData("abcdefabcdefabcdef", 0, 18, false)] // Long but no numbers
+        // Short hex with numbers (< 16 chars) - not identifiers (too aggressive)
+        [InlineData("abc123", 0, 6, false)]
+        [InlineData("12ab34", 0, 6, false)]
+        [InlineData("0123456789ABCDE", 0, 15, false)] // 15 chars - just under threshold
+        // Long hex with numbers (>= 16 chars) - should be identifiers
+        [InlineData("0123456789ABCDEF", 0, 16, true)] // Exactly 16 chars
+        [InlineData("0123456789abcdef", 0, 16, true)] // Lowercase
+        [InlineData("a1b2c3d4e5f6a1b2c3d4", 0, 20, true)]
+        [InlineData("b37855d4bae34bd3b3357fc554ad334e", 0, 32, true)] // 32-char hex (MD5-like)
+        // GUIDs - should be identifiers
+        [InlineData("14bb2eed-34f0-4aa2-b2c3-09c0e2166d4d", 0, 36, true)]
+        [InlineData("00000000-0000-0000-0000-000000000000", 0, 36, true)]
+        [InlineData("FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF", 0, 36, false)] // All hex, no digits, we'd _like_ to catch this, but we don't currently
+        // Contains non-identifier characters - not identifiers
+        [InlineData("123_456", 0, 7, false)] // Underscore
+        [InlineData("123.456", 0, 7, false)] // Period
+        [InlineData("123/456", 0, 7, false)] // Slash
+        [InlineData("abc123xyz", 0, 9, false)] // Non-hex letters
+        [InlineData("123G456", 0, 7, false)] // G is not hex
+        [InlineData("hello", 0, 5, false)] // Regular word
+        [InlineData("controller", 0, 10, false)]
+        // Comma cases
+        [InlineData("1,2,3", 0, 5, true)] // Comma with numbers only
+        [InlineData("123,456,789", 0, 11, true)]
+        [InlineData(",,,", 0, 3, false)] // Only commas, no numbers
+        [InlineData("a,b,c,1", 0, 7, false)] // Comma with hex - not allowed
+        [InlineData("abc,123,def", 0, 11, false)] // Comma with hex letters
+        // Pure hyphens - not identifiers (no numbers)
+        [InlineData("---", 0, 3, false)]
+        [InlineData("-", 0, 1, false)]
+        // Substring tests (startIndex > 0)
+        [InlineData("/123/456", 1, 3, true)] // "123"
+        [InlineData("/abc/123", 5, 3, true)] // "123"
+        [InlineData("prefix12345suffix", 6, 5, true)] // "12345"
+        public void IsIdentifierSegment_ShouldIdentifyCorrectly(string path, int startIndex, int length, bool expected)
+        {
+            Trace.Util.UriHelpers.IsIdentifierSegment(path, startIndex, length).Should().Be(expected);
+        }
     }
 }
