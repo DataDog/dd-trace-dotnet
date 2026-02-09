@@ -1,0 +1,61 @@
+﻿[
+  {
+    TraceId: Id_1,
+    SpanId: Id_2,
+    Name: aspnet-mvc.request,
+    Resource: GET /home/index,
+    Service: sample,
+    Type: web,
+    ParentId: Id_3,
+    Tags: {
+      aspnet.action: index,
+      aspnet.controller: home,
+      aspnet.route: {controller}/{action}/{id},
+      component: aspnet,
+      env: integration_tests,
+      http.method: GET,
+      http.request.headers.host: localhost:00000,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Home/Index,
+      http.useragent: testhelper,
+      language: dotnet,
+      span.kind: server,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_3,
+    Name: aspnet.request,
+    Resource: GET /home/index,
+    Service: sample,
+    Type: web,
+    Tags: {
+      component: aspnet,
+      env: integration_tests,
+      http.method: GET,
+      http.request.headers.host: localhost:00000,
+      http.route: {controller}/{action}/{id},
+      http.status_code: 200,
+      http.url: http://localhost:00000/Home/Index,
+      http.useragent: testhelper,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: server,
+      version: 1.0.0,
+      _dd.code_origin.frames.0.column: 0,
+      _dd.code_origin.frames.0.file: <scrubbed>
+      _dd.code_origin.frames.0.index: 0,
+      _dd.code_origin.frames.0.line: 0,
+      _dd.code_origin.frames.0.method: Index,
+      _dd.code_origin.frames.0.type: Samples.AspNetMvc5.Controllers.HomeController,
+      _dd.code_origin.type: entry
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  }
+]
