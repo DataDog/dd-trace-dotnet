@@ -429,7 +429,8 @@ partial class Build : NukeBuild
                 .EnableNoDependencies()
                 .SetConfiguration(BuildConfiguration)
                 .SetNoWarnDotNetCore3()
-                .SetProperty("PackageOutputPath", ArtifactsDirectory / "nuget" / "azure-functions"));
+                .SetProperty("PackageOutputPath", ArtifactsDirectory / "nuget" / "azure-functions")
+                .SetVersion(Version));
         });
 
     Target BuildBenchmarkNuget => _ => _
