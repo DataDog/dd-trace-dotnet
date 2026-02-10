@@ -27,7 +27,7 @@
 
 .PARAMETER TriggerUrl
     Custom HTTP trigger URL. If not specified, defaults to:
-    https://<AppName-without-aspnet-suffix>.azurewebsites.net/api/HttpTest
+    https://<AppName>.azurewebsites.net/api/HttpTest
 
 .PARAMETER SkipTrigger
     Skip triggering the HTTP endpoint after deployment.
@@ -141,8 +141,7 @@ try {
     if (-not $SkipTrigger) {
         # Derive trigger URL if not provided
         if (-not $TriggerUrl) {
-            $baseAppName = $AppName -replace '-aspnet$', ''
-            $TriggerUrl = "https://$baseAppName.azurewebsites.net/api/HttpTest"
+            $TriggerUrl = "https://$AppName.azurewebsites.net/api/HttpTest"
         }
 
         Write-Host "Triggering function at: $TriggerUrl" -ForegroundColor Cyan
