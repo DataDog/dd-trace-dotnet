@@ -11,8 +11,8 @@ Automates deployment, wait, and HTTP trigger with timestamp capture.
 **Basic usage**:
 ```powershell
 .\tracer\tools\Deploy-AzureFunction.ps1 `
-  -AppName "lucasp-premium-linux-isolated-aspnet" `
-  -ResourceGroup "lucas.pimentel" `
+  -AppName "<app-name>" `
+  -ResourceGroup "<resource-group>" `
   -SampleAppPath "<path-to-your-azure-functions-app>" `
   -Verbose
 ```
@@ -20,8 +20,8 @@ Automates deployment, wait, and HTTP trigger with timestamp capture.
 **Pipeline usage** (save output for log analysis):
 ```powershell
 $deploy = .\tracer\tools\Deploy-AzureFunction.ps1 `
-  -AppName "lucasp-premium-linux-isolated-aspnet" `
-  -ResourceGroup "lucas.pimentel" `
+  -AppName "<app-name>" `
+  -ResourceGroup "<resource-group>" `
   -SampleAppPath "<path-to-your-azure-functions-app>"
 
 # Use $deploy.ExecutionTimestamp and $deploy.AppName for log analysis
@@ -43,8 +43,8 @@ Downloads, extracts, and analyzes Azure Function logs.
 **Basic usage**:
 ```powershell
 .\tracer\tools\Get-AzureFunctionLogs.ps1 `
-  -AppName "lucasp-premium-linux-isolated-aspnet" `
-  -ResourceGroup "lucas.pimentel" `
+  -AppName "<app-name>" `
+  -ResourceGroup "<resource-group>" `
   -ExecutionTimestamp "2026-01-23 17:53:00" `
   -All `
   -Verbose
@@ -53,13 +53,13 @@ Downloads, extracts, and analyzes Azure Function logs.
 **Full pipeline** (deploy + analyze):
 ```powershell
 $deploy = .\tracer\tools\Deploy-AzureFunction.ps1 `
-  -AppName "lucasp-premium-linux-isolated-aspnet" `
-  -ResourceGroup "lucas.pimentel" `
+  -AppName "<app-name>" `
+  -ResourceGroup "<resource-group>" `
   -SampleAppPath "<path-to-your-azure-functions-app>"
 
 .\tracer\tools\Get-AzureFunctionLogs.ps1 `
   -AppName $deploy.AppName `
-  -ResourceGroup "lucas.pimentel" `
+  -ResourceGroup "<resource-group>" `
   -ExecutionTimestamp $deploy.ExecutionTimestamp `
   -All
 ```
@@ -114,12 +114,12 @@ dotnet nuget locals all --clear
 ```bash
 cd <path-to-your-azure-functions-app>
 dotnet restore
-func azure functionapp publish lucasp-premium-linux-isolated-aspnet
+func azure functionapp publish <app-name>
 ```
 
 ### Deploy to Specific App
 ```bash
-APP_NAME="lucasp-premium-linux-isolated"
+APP_NAME="<app-name>"
 cd <path-to-your-azure-functions-app>
 dotnet restore
 func azure functionapp publish $APP_NAME
@@ -127,7 +127,7 @@ func azure functionapp publish $APP_NAME
 
 ### Full Clean Deploy
 ```bash
-APP_NAME="lucasp-premium-linux-isolated-aspnet"
+APP_NAME="<app-name>"
 cd <path-to-your-azure-functions-app>
 
 # Clean build artifacts
@@ -146,7 +146,7 @@ sleep 120
 
 ### Trigger and Capture Timestamp
 ```bash
-APP_NAME="lucasp-premium-linux-isolated-aspnet"
+APP_NAME="<app-name>"
 
 # Trigger with timestamp
 echo "=== Triggering at $(date -u +%Y-%m-%d\ %H:%M:%S) UTC ==="
@@ -160,7 +160,7 @@ echo "Use this timestamp for log filtering: grep \"$TIMESTAMP\" worker.log"
 
 ### Multiple Test Executions
 ```bash
-APP_NAME="lucasp-premium-linux-isolated-aspnet"
+APP_NAME="<app-name>"
 
 for i in {1..5}; do
   echo "=== Execution $i at $(date -u +%Y-%m-%d\ %H:%M:%S) UTC ==="
@@ -172,7 +172,7 @@ done
 
 ### Test with Different Endpoints
 ```bash
-APP_NAME="lucasp-premium-linux-isolated-aspnet"
+APP_NAME="<app-name>"
 BASE_URL="https://${APP_NAME}.azurewebsites.net"
 
 # Test multiple functions
@@ -187,8 +187,8 @@ done
 
 ### Download and Extract Logs
 ```bash
-APP_NAME="lucasp-premium-linux-isolated-aspnet"
-RESOURCE_GROUP="lucas.pimentel"
+APP_NAME="<app-name>"
+RESOURCE_GROUP="<resource-group>"
 TIMESTAMP=$(date +%H%M%S)
 LOG_FILE="<output-dir>/logs-${TIMESTAMP}.zip"
 
@@ -206,11 +206,11 @@ echo "Logs extracted to: <output-dir>/LogFiles-${TIMESTAMP}/LogFiles/datadog/"
 
 ### Download Logs from All Test Apps
 ```bash
-RESOURCE_GROUP="lucas.pimentel"
+RESOURCE_GROUP="<resource-group>"
 APPS=(
-  "lucasp-premium-linux-isolated-aspnet"
-  "lucasp-premium-linux-isolated"
-  "lucasp-premium-linux-inproc"
+  "<app-name>"
+  "<app-name-2>"
+  "<app-name-3>"
 )
 
 for APP in "${APPS[@]}"; do
@@ -227,8 +227,8 @@ done
 #!/bin/bash
 # test-and-download.sh - Trigger function and download logs
 
-APP_NAME="${1:-lucasp-premium-linux-isolated-aspnet}"
-RESOURCE_GROUP="lucas.pimentel"
+APP_NAME="${1:-<app-name>}"
+RESOURCE_GROUP="<resource-group>"
 
 # Trigger
 EXEC_TIME=$(date -u +%Y-%m-%d\ %H:%M:%S)
@@ -351,8 +351,8 @@ grep "$EXEC_TIME" dotnet-tracer-managed-*.log \
 
 ### App Settings Management
 ```bash
-APP_NAME="lucasp-premium-linux-isolated-aspnet"
-RESOURCE_GROUP="lucas.pimentel"
+APP_NAME="<app-name>"
+RESOURCE_GROUP="<resource-group>"
 
 # List all settings
 az functionapp config appsettings list \
@@ -380,8 +380,8 @@ az functionapp config appsettings set \
 
 ### App Lifecycle Management
 ```bash
-APP_NAME="lucasp-premium-linux-isolated-aspnet"
-RESOURCE_GROUP="lucas.pimentel"
+APP_NAME="<app-name>"
+RESOURCE_GROUP="<resource-group>"
 
 # Show app info
 az functionapp show \
@@ -406,8 +406,8 @@ az functionapp start \
 
 ### Deployment History
 ```bash
-APP_NAME="lucasp-premium-linux-isolated-aspnet"
-RESOURCE_GROUP="lucas.pimentel"
+APP_NAME="<app-name>"
+RESOURCE_GROUP="<resource-group>"
 
 # List recent deployments
 az functionapp deployment list \
@@ -425,7 +425,7 @@ az functionapp deployment list \
 
 ### Stream Live Logs
 ```bash
-APP_NAME="lucasp-premium-linux-isolated-aspnet"
+APP_NAME="<app-name>"
 
 # Stream application logs
 func azure functionapp logstream $APP_NAME
@@ -433,7 +433,7 @@ func azure functionapp logstream $APP_NAME
 # Stream with Azure CLI (alternative)
 az webapp log tail \
   --name $APP_NAME \
-  --resource-group lucas.pimentel
+  --resource-group <resource-group>
 ```
 
 ## Datadog API Scripts
@@ -443,7 +443,7 @@ az webapp log tail \
 #!/bin/bash
 # query-spans.sh - Query spans from Datadog
 
-SERVICE="${1:-lucasp-premium-linux-isolated}"
+SERVICE="${1}"  # Azure Function App name (used as Datadog service name)
 PROCESS="${2:-worker}"  # host or worker
 
 curl -s -X POST https://api.datadoghq.com/api/v2/spans/events/search \
@@ -498,8 +498,8 @@ curl -s -X POST https://api.datadoghq.com/api/v2/spans/events/search \
 
 set -e  # Exit on error
 
-APP_NAME="${1:-lucasp-premium-linux-isolated-aspnet}"
-RESOURCE_GROUP="lucas.pimentel"
+APP_NAME="${1:-<app-name>}"
+RESOURCE_GROUP="<resource-group>"
 
 echo "=== 1. Building NuGet Package ==="
 # Run from the dd-trace-dotnet repo root
@@ -564,8 +564,8 @@ echo "  grep \"$EXEC_TIME\" dotnet-tracer-managed-dotnet-*.log"
 #!/bin/bash
 # compare-versions.sh - Test before and after changes
 
-APP_NAME="${1:-lucasp-premium-linux-isolated-aspnet}"
-RESOURCE_GROUP="lucas.pimentel"
+APP_NAME="${1:-<app-name>}"
+RESOURCE_GROUP="<resource-group>"
 
 echo "=== Testing BEFORE changes ==="
 BEFORE_TIME=$(date -u +%Y-%m-%d\ %H:%M:%S)
@@ -622,13 +622,13 @@ echo "  diff before.txt after.txt"
 # Deploy (from your Azure Functions app directory)
 Set-Location <path-to-your-azure-functions-app>
 dotnet restore
-func azure functionapp publish lucasp-premium-linux-isolated-aspnet
+func azure functionapp publish <app-name>
 ```
 
 ### Download Logs (PowerShell)
 ```powershell
-$AppName = "lucasp-premium-linux-isolated-aspnet"
-$ResourceGroup = "lucas.pimentel"
+$AppName = "<app-name>"
+$ResourceGroup = "<resource-group>"
 $Timestamp = Get-Date -Format "HHmmss"
 $OutputDir = "$env:TEMP"  # or any preferred directory
 $LogFile = "$OutputDir\logs-$Timestamp.zip"
