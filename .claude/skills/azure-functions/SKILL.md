@@ -48,7 +48,7 @@ If no argument is provided, guide the user through the full workflow interactive
 Build the `Datadog.AzureFunctions` NuGet package with your changes:
 
 ```powershell
-.\tracer\tools\Build-AzureFunctionsNuget.ps1 -CopyTo <output-dir> -Verbose
+.\tracer\tools\Build-AzureFunctionsNuget.ps1 -CopyTo <output-dir>
 ```
 
 **What this does**:
@@ -80,8 +80,7 @@ Use the `Deploy-AzureFunction.ps1` script to automate deployment, wait, and trig
 .\tracer\tools\Deploy-AzureFunction.ps1 `
   -AppName "<app-name>" `
   -ResourceGroup "<resource-group>" `
-  -SampleAppPath "<path-to-sample-app>" `
-  -Verbose
+  -SampleAppPath "<path-to-sample-app>"
 ```
 
 **What this does**:
@@ -117,8 +116,7 @@ Use the `Get-AzureFunctionLogs.ps1` script to download, extract, and analyze log
   -AppName "<app-name>" `
   -ResourceGroup "<resource-group>" `
   -ExecutionTimestamp "2026-01-23 17:53:00" `
-  -All `
-  -Verbose
+  -All
 ```
 
 **What this does**:
