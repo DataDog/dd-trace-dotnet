@@ -13,7 +13,7 @@ Automates deployment, wait, and HTTP trigger with timestamp capture.
 .\tracer\tools\Deploy-AzureFunction.ps1 `
   -AppName "lucasp-premium-linux-isolated-aspnet" `
   -ResourceGroup "lucas.pimentel" `
-  -SampleAppPath "D:\source\datadog\serverless-dev-apps\azure\functions\dotnet\isolated-dotnet8-aspnetcore" `
+  -SampleAppPath "<path-to-your-azure-functions-app>" `
   -Verbose
 ```
 
@@ -22,7 +22,7 @@ Automates deployment, wait, and HTTP trigger with timestamp capture.
 $deploy = .\tracer\tools\Deploy-AzureFunction.ps1 `
   -AppName "lucasp-premium-linux-isolated-aspnet" `
   -ResourceGroup "lucas.pimentel" `
-  -SampleAppPath "D:\source\datadog\serverless-dev-apps\azure\functions\dotnet\isolated-dotnet8-aspnetcore"
+  -SampleAppPath "<path-to-your-azure-functions-app>"
 
 # Use $deploy.ExecutionTimestamp and $deploy.AppName for log analysis
 ```
@@ -55,7 +55,7 @@ Downloads, extracts, and analyzes Azure Function logs.
 $deploy = .\tracer\tools\Deploy-AzureFunction.ps1 `
   -AppName "lucasp-premium-linux-isolated-aspnet" `
   -ResourceGroup "lucas.pimentel" `
-  -SampleAppPath "D:\source\datadog\serverless-dev-apps\azure\functions\dotnet\isolated-dotnet8-aspnetcore"
+  -SampleAppPath "<path-to-your-azure-functions-app>"
 
 .\tracer\tools\Get-AzureFunctionLogs.ps1 `
   -AppName $deploy.AppName `
@@ -69,7 +69,7 @@ $deploy = .\tracer\tools\Deploy-AzureFunction.ps1 `
 - `-ShowSpans` - Count spans at execution timestamp
 - `-CheckParenting` - Validate trace parenting
 - `-All` - Enable all analysis
-- `-OutputPath "D:\temp"` - Custom output directory
+- `-OutputPath "<output-dir>"` - Custom output directory
 
 **Output**: PSCustomObject with `LogZipPath`, `ExtractDir`, `DatadogLogDir`, `TracerVersion`, `SpanCount`, `ParentingAnalysis`
 
@@ -79,12 +79,12 @@ Build the Datadog.AzureFunctions NuGet package.
 
 **Usage**:
 ```powershell
-.\tracer\tools\Build-AzureFunctionsNuget.ps1 -CopyTo D:\temp\nuget -Verbose
+.\tracer\tools\Build-AzureFunctionsNuget.ps1 -CopyTo <output-dir> -Verbose
 ```
 
 **Options**:
 - `-BuildId 12345` - Download bundle from Azure DevOps build instead of building locally
-- `-CopyTo D:\temp\nuget` - Copy package to directory
+- `-CopyTo <output-dir>` - Copy package to directory
 - `-Verbose` - Show detailed build output
 
 ## Build Scripts
@@ -92,27 +92,27 @@ Build the Datadog.AzureFunctions NuGet package.
 ### Build NuGet Package (Standard)
 ```powershell
 # Build with verbose output
-.\tracer\tools\Build-AzureFunctionsNuget.ps1 -CopyTo D:\temp\nuget -Verbose
+.\tracer\tools\Build-AzureFunctionsNuget.ps1 -CopyTo <output-dir> -Verbose
 
 # Build without copying
 .\tracer\tools\Build-AzureFunctionsNuget.ps1 -Verbose
 
 # Build from specific Azure DevOps build
-.\tracer\tools\Build-AzureFunctionsNuget.ps1 -BuildId 12345 -CopyTo D:\temp\nuget -Verbose
+.\tracer\tools\Build-AzureFunctionsNuget.ps1 -BuildId 12345 -CopyTo <output-dir> -Verbose
 ```
 
 ### Clean and Rebuild
 ```powershell
 # Clear NuGet caches and rebuild
 dotnet nuget locals all --clear
-.\tracer\tools\Build-AzureFunctionsNuget.ps1 -CopyTo D:\temp\nuget -Verbose
+.\tracer\tools\Build-AzureFunctionsNuget.ps1 -CopyTo <output-dir> -Verbose
 ```
 
 ## Deployment Scripts
 
 ### Deploy to Primary Test App
 ```bash
-cd D:/source/datadog/serverless-dev-apps/azure/functions/dotnet/isolated-dotnet8-aspnetcore
+cd <path-to-your-azure-functions-app>
 dotnet restore
 func azure functionapp publish lucasp-premium-linux-isolated-aspnet
 ```
@@ -120,7 +120,7 @@ func azure functionapp publish lucasp-premium-linux-isolated-aspnet
 ### Deploy to Specific App
 ```bash
 APP_NAME="lucasp-premium-linux-isolated"
-cd D:/source/datadog/serverless-dev-apps/azure/functions/dotnet/isolated-dotnet8-aspnetcore
+cd <path-to-your-azure-functions-app>
 dotnet restore
 func azure functionapp publish $APP_NAME
 ```
@@ -128,7 +128,7 @@ func azure functionapp publish $APP_NAME
 ### Full Clean Deploy
 ```bash
 APP_NAME="lucasp-premium-linux-isolated-aspnet"
-cd D:/source/datadog/serverless-dev-apps/azure/functions/dotnet/isolated-dotnet8-aspnetcore
+cd <path-to-your-azure-functions-app>
 
 # Clean build artifacts
 dotnet clean
@@ -190,7 +190,7 @@ done
 APP_NAME="lucasp-premium-linux-isolated-aspnet"
 RESOURCE_GROUP="lucas.pimentel"
 TIMESTAMP=$(date +%H%M%S)
-LOG_FILE="D:/temp/logs-${TIMESTAMP}.zip"
+LOG_FILE="<output-dir>/logs-${TIMESTAMP}.zip"
 
 # Download
 az webapp log download \
@@ -199,9 +199,9 @@ az webapp log download \
   --log-file $LOG_FILE
 
 # Extract
-unzip -q -o $LOG_FILE -d D:/temp/LogFiles-${TIMESTAMP}
+unzip -q -o $LOG_FILE -d <output-dir>/LogFiles-${TIMESTAMP}
 
-echo "Logs extracted to: D:/temp/LogFiles-${TIMESTAMP}/LogFiles/datadog/"
+echo "Logs extracted to: <output-dir>/LogFiles-${TIMESTAMP}/LogFiles/datadog/"
 ```
 
 ### Download Logs from All Test Apps
@@ -218,7 +218,7 @@ for APP in "${APPS[@]}"; do
   az webapp log download \
     --name $APP \
     --resource-group $RESOURCE_GROUP \
-    --log-file "D:/temp/logs-${APP}.zip"
+    --log-file "<output-dir>/logs-${APP}.zip"
 done
 ```
 
@@ -241,22 +241,22 @@ sleep 10
 
 # Download
 TIMESTAMP=$(date +%H%M%S)
-LOG_FILE="D:/temp/logs-${TIMESTAMP}.zip"
+LOG_FILE="<output-dir>/logs-${TIMESTAMP}.zip"
 az webapp log download \
   --name $APP_NAME \
   --resource-group $RESOURCE_GROUP \
   --log-file $LOG_FILE
 
 # Extract
-unzip -q -o $LOG_FILE -d D:/temp/LogFiles-${TIMESTAMP}
+unzip -q -o $LOG_FILE -d <output-dir>/LogFiles-${TIMESTAMP}
 
 echo ""
 echo "=== Summary ==="
 echo "Execution time: $EXEC_TIME UTC"
-echo "Logs location: D:/temp/LogFiles-${TIMESTAMP}/LogFiles/datadog/"
+echo "Logs location: <output-dir>/LogFiles-${TIMESTAMP}/LogFiles/datadog/"
 echo ""
 echo "Next steps:"
-echo "  cd D:/temp/LogFiles-${TIMESTAMP}/LogFiles/datadog"
+echo "  cd <output-dir>/LogFiles-${TIMESTAMP}/LogFiles/datadog"
 echo "  grep \"$EXEC_TIME\" dotnet-tracer-managed-dotnet-*.log"
 ```
 
@@ -267,7 +267,7 @@ echo "  grep \"$EXEC_TIME\" dotnet-tracer-managed-dotnet-*.log"
 #!/bin/bash
 # analyze-trace.sh - Quick trace analysis
 
-LOG_DIR="${1:-D:/temp/LogFiles/LogFiles/datadog}"
+LOG_DIR="${1:-<output-dir>/LogFiles/LogFiles/datadog}"
 EXEC_TIME="${2:-$(date -u +%Y-%m-%d\ %H:%M)}"
 
 cd "$LOG_DIR"
@@ -300,7 +300,7 @@ grep "$TRACE_ID" dotnet-tracer-managed-*.log | grep "Span started"
 #!/bin/bash
 # verify-version.sh - Check worker tracer version
 
-LOG_DIR="${1:-D:/temp/LogFiles/LogFiles/datadog}"
+LOG_DIR="${1:-<output-dir>/LogFiles/LogFiles/datadog}"
 
 cd "$LOG_DIR"
 
@@ -318,7 +318,7 @@ grep "$RECENT_TIME" dotnet-tracer-managed-dotnet-*.log | grep "TracerVersion" | 
 #!/bin/bash
 # check-parenting.sh - Find orphaned spans
 
-LOG_DIR="${1:-D:/temp/LogFiles/LogFiles/datadog}"
+LOG_DIR="${1:-<output-dir>/LogFiles/LogFiles/datadog}"
 EXEC_TIME="${2}"
 
 cd "$LOG_DIR"
@@ -486,7 +486,7 @@ curl -s -X POST https://api.datadoghq.com/api/v2/spans/events/search \
       },
       \"type\": \"search_request\"
     }
-  }" | jq '.data[] | {span_id, parent_id, operation_name, process: .attributes.tags."aas.function.process"}' | tee "D:/temp/trace_${TRACE_ID}.json"
+  }" | jq '.data[] | {span_id, parent_id, operation_name, process: .attributes.tags."aas.function.process"}' | tee "<output-dir>/trace_${TRACE_ID}.json"
 ```
 
 ## Complete Workflow Scripts
@@ -502,12 +502,12 @@ APP_NAME="${1:-lucasp-premium-linux-isolated-aspnet}"
 RESOURCE_GROUP="lucas.pimentel"
 
 echo "=== 1. Building NuGet Package ==="
-cd D:/source/datadog/dd-trace-dotnet
-pwsh -NoProfile -Command ".\tracer\tools\Build-AzureFunctionsNuget.ps1 -CopyTo D:\temp\nuget -Verbose"
+# Run from the dd-trace-dotnet repo root
+pwsh -NoProfile -Command ".\tracer\tools\Build-AzureFunctionsNuget.ps1 -CopyTo <output-dir> -Verbose"
 
 echo ""
 echo "=== 2. Deploying to $APP_NAME ==="
-cd D:/source/datadog/serverless-dev-apps/azure/functions/dotnet/isolated-dotnet8-aspnetcore
+cd <path-to-your-azure-functions-app>
 dotnet restore
 func azure functionapp publish $APP_NAME
 
@@ -529,17 +529,17 @@ sleep 10
 echo ""
 echo "=== 6. Downloading logs ==="
 TIMESTAMP=$(date +%H%M%S)
-LOG_FILE="D:/temp/logs-${TIMESTAMP}.zip"
+LOG_FILE="<output-dir>/logs-${TIMESTAMP}.zip"
 az webapp log download \
   --name $APP_NAME \
   --resource-group $RESOURCE_GROUP \
   --log-file $LOG_FILE
 
-unzip -q -o $LOG_FILE -d D:/temp/LogFiles-${TIMESTAMP}
+unzip -q -o $LOG_FILE -d <output-dir>/LogFiles-${TIMESTAMP}
 
 echo ""
 echo "=== 7. Analyzing logs ==="
-LOG_DIR="D:/temp/LogFiles-${TIMESTAMP}/LogFiles/datadog"
+LOG_DIR="<output-dir>/LogFiles-${TIMESTAMP}/LogFiles/datadog"
 cd "$LOG_DIR"
 
 echo "Worker version:"
@@ -572,16 +572,16 @@ BEFORE_TIME=$(date -u +%Y-%m-%d\ %H:%M:%S)
 curl https://${APP_NAME}.azurewebsites.net/api/HttpTest
 sleep 10
 
-BEFORE_LOG="D:/temp/logs-before.zip"
+BEFORE_LOG="<output-dir>/logs-before.zip"
 az webapp log download --name $APP_NAME --resource-group $RESOURCE_GROUP --log-file $BEFORE_LOG
-unzip -q -o $BEFORE_LOG -d D:/temp/before
+unzip -q -o $BEFORE_LOG -d <output-dir>/before
 
 echo ""
 echo "=== Deploying changes ==="
-cd D:/source/datadog/dd-trace-dotnet
-pwsh -NoProfile -Command ".\tracer\tools\Build-AzureFunctionsNuget.ps1 -CopyTo D:\temp\nuget -Verbose"
+# Run from the dd-trace-dotnet repo root
+pwsh -NoProfile -Command ".\tracer\tools\Build-AzureFunctionsNuget.ps1 -CopyTo <output-dir> -Verbose"
 
-cd D:/source/datadog/serverless-dev-apps/azure/functions/dotnet/isolated-dotnet8-aspnetcore
+cd <path-to-your-azure-functions-app>
 dotnet restore
 func azure functionapp publish $APP_NAME
 
@@ -594,21 +594,21 @@ AFTER_TIME=$(date -u +%Y-%m-%d\ %H:%M:%S)
 curl https://${APP_NAME}.azurewebsites.net/api/HttpTest
 sleep 10
 
-AFTER_LOG="D:/temp/logs-after.zip"
+AFTER_LOG="<output-dir>/logs-after.zip"
 az webapp log download --name $APP_NAME --resource-group $RESOURCE_GROUP --log-file $AFTER_LOG
-unzip -q -o $AFTER_LOG -d D:/temp/after
+unzip -q -o $AFTER_LOG -d <output-dir>/after
 
 echo ""
 echo "=== Comparison ==="
 echo "Before execution: $BEFORE_TIME UTC"
 echo "After execution: $AFTER_TIME UTC"
 echo ""
-echo "Before logs: D:/temp/before/LogFiles/datadog/"
-echo "After logs: D:/temp/after/LogFiles/datadog/"
+echo "Before logs: <output-dir>/before/LogFiles/datadog/"
+echo "After logs: <output-dir>/after/LogFiles/datadog/"
 echo ""
 echo "Compare with:"
-echo "  grep \"$BEFORE_TIME\" D:/temp/before/LogFiles/datadog/dotnet-tracer-managed-dotnet-*.log > before.txt"
-echo "  grep \"$AFTER_TIME\" D:/temp/after/LogFiles/datadog/dotnet-tracer-managed-dotnet-*.log > after.txt"
+echo "  grep \"$BEFORE_TIME\" <output-dir>/before/LogFiles/datadog/dotnet-tracer-managed-dotnet-*.log > before.txt"
+echo "  grep \"$AFTER_TIME\" <output-dir>/after/LogFiles/datadog/dotnet-tracer-managed-dotnet-*.log > after.txt"
 echo "  diff before.txt after.txt"
 ```
 
@@ -616,12 +616,11 @@ echo "  diff before.txt after.txt"
 
 ### Build and Deploy (PowerShell)
 ```powershell
-# Build NuGet package
-Set-Location D:\source\datadog\dd-trace-dotnet
-.\tracer\tools\Build-AzureFunctionsNuget.ps1 -CopyTo D:\temp\nuget -Verbose
+# Build NuGet package (from the dd-trace-dotnet repo root)
+.\tracer\tools\Build-AzureFunctionsNuget.ps1 -CopyTo <output-dir> -Verbose
 
-# Deploy
-Set-Location D:\source\datadog\serverless-dev-apps\azure\functions\dotnet\isolated-dotnet8-aspnetcore
+# Deploy (from your Azure Functions app directory)
+Set-Location <path-to-your-azure-functions-app>
 dotnet restore
 func azure functionapp publish lucasp-premium-linux-isolated-aspnet
 ```
@@ -631,13 +630,14 @@ func azure functionapp publish lucasp-premium-linux-isolated-aspnet
 $AppName = "lucasp-premium-linux-isolated-aspnet"
 $ResourceGroup = "lucas.pimentel"
 $Timestamp = Get-Date -Format "HHmmss"
-$LogFile = "D:\temp\logs-$Timestamp.zip"
+$OutputDir = "$env:TEMP"  # or any preferred directory
+$LogFile = "$OutputDir\logs-$Timestamp.zip"
 
 # Download
 az webapp log download --name $AppName --resource-group $ResourceGroup --log-file $LogFile
 
 # Extract
-Expand-Archive -Path $LogFile -DestinationPath "D:\temp\LogFiles-$Timestamp" -Force
+Expand-Archive -Path $LogFile -DestinationPath "$OutputDir\LogFiles-$Timestamp" -Force
 
-Write-Host "Logs extracted to: D:\temp\LogFiles-$Timestamp\LogFiles\datadog\"
+Write-Host "Logs extracted to: $OutputDir\LogFiles-$Timestamp\LogFiles\datadog\"
 ```
