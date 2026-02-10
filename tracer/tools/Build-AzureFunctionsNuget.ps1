@@ -45,7 +45,8 @@ $ProgressPreference = 'SilentlyContinue'
 # Set dotnet and nuke verbosity based on PowerShell verbose mode
 $verbose = $VerbosePreference -eq 'Continue' # Continue (verbose) or SilentlyContinue (not verbose)
 $dotnetVerbosity = if ($verbose) { 'detailed' } else { 'quiet' }
-$nukeVerbosity = if ($verbose) { 'normal' } else { 'quiet' }
+$nukeVerbosityDownload = if ($verbose) { 'verbose' } else { 'quiet' }
+$nukeVerbosityBuild = if ($verbose) { 'verbose' } else { 'normal' }
 
 # Detect OS and determine build script
 if ($PSVersionTable.PSVersion.Major -ge 6) {
@@ -101,7 +102,7 @@ else
 if ($BuildId)
 {
     Write-Verbose "Downloading Datadog.Trace.Bundle from build: $BuildId"
-    & "$tracerDir/$buildScript" DownloadBundleNugetFromBuild --build-id $BuildId --verbosity $nukeVerbosity
+    & "$tracerDir/$buildScript" DownloadBundleNugetFromBuild --build-id $BuildId --verbosity $nukeVerbosityDownload
     Write-Host "Datadog.Trace.Bundle NuGet package downloaded from build $BuildId" -ForegroundColor Green
 }
 else
@@ -122,7 +123,7 @@ dotnet restore "$tracerDir/src/Datadog.AzureFunctions" -v $dotnetVerbosity
 
 # Build Datadog.AzureFunctions NuGet package
 Write-Verbose "Building Datadog.AzureFunctions NuGet package."
-& "$tracerDir/$buildScript" BuildAzureFunctionsNuget --verbosity $nukeVerbosity
+& "$tracerDir/$buildScript" BuildAzureFunctionsNuget --verbosity $nukeVerbosityBuild
 
 # Copy package to destination if specified
 if ($CopyTo)
