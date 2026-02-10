@@ -255,3 +255,4 @@ validate_supported_configurations_local_file:
   extends: .validate_supported_configurations_local_file
   variables:
     LOCAL_JSON_PATH: "tracer/src/Datadog.Trace/Configuration/supported-configurations.json"
+    BACKFILLED: true
