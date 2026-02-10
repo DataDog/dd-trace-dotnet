@@ -12,13 +12,13 @@ namespace Datadog.Trace.Tools.dd_dotnet.Tests;
 public class CreatedumpTests
 {
     [SkippableTheory]
-    [InlineData("invalid", false, 0, null, null)]
-    [InlineData("--crashthread 5 --blabla 100 --signal 3 --aaaaaa", true, 100, 3, 5)]
-    [InlineData("--crashthread 5 --blabla 99999 --signal 3 --aaaaaa 99998", false, 0, 3, 5)] // Two potential PIDs, that probably don't exist
-    [InlineData("10", true, 10, null, null)]
-    public void ParseCommandLine(string commandLine, bool expectedResult, int expectedPid, int? expectedSignal, int? expectedCrashThread)
+    [InlineData("invalid", false, 0, null, null, null, null)]
+    [InlineData("--crashthread 5 --blabla 100 --signal 3 --aaaaaa", true, 100, 3, 4, 5, 0xC0000005)]
+    [InlineData("--crashthread 5 --blabla 99999 --signal 3 --aaaaaa 99998", false, 0, 3, 4, 5, 0xC0000005)] // Two potential PIDs, that probably don't exist
+    [InlineData("10", true, 10, null, null, null, null)]
+    public void ParseCommandLine(string commandLine, bool expectedResult, int expectedPid, int? expectedSignal, int? expectedSignalCode, int? expectedCrashThread, int? expectedExceptionCode)
     {
-        var result = CreatedumpCommand.ParseArguments(commandLine.Split(' '), out var pid, out var signal, out var crashThread);
+        var result = CreatedumpCommand.ParseArguments(commandLine.Split(' '), out var pid, out var signal, out var signalCode, out var crashThread, out var exceptionCode);
 
         result.Should().Be(expectedResult);
 
@@ -26,7 +26,9 @@ public class CreatedumpTests
         {
             pid.Should().Be(expectedPid);
             signal.Should().Be(expectedSignal);
+            signalCode.Should().Be(expectedSignalCode);
             crashThread.Should().Be(expectedCrashThread);
+            exceptionCode.Should().Be(expectedExceptionCode);
         }
     }
 
@@ -37,11 +39,13 @@ public class CreatedumpTests
         var currentPid = Process.GetCurrentProcess().Id;
         var commandLine = $"999999 999998 {currentPid} 999997";
 
-        var result = CreatedumpCommand.ParseArguments(commandLine.Split(' '), out var pid, out var signal, out var crashThread);
+        var result = CreatedumpCommand.ParseArguments(commandLine.Split(' '), out var pid, out var signal, out var signalCode, out var crashThread, out var exceptionCode);
 
         result.Should().Be(true);
         pid.Should().Be(currentPid);
         signal.Should().BeNull();
+        signalCode.Should().BeNull();
         crashThread.Should().BeNull();
+        exceptionCode.Should().BeNull();
     }
 }

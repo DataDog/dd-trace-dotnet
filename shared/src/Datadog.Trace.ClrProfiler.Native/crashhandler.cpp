@@ -378,7 +378,7 @@ namespace datadog::shared::nativeloader
             }
 
             std::wstringstream ss;
-            ss << ddDotnetPath << " createdump " << pid << " --crashthread " << tid;
+            ss << ddDotnetPath << " createdump " << pid << " --crashthread " << tid << " --native-exception-code " << pExceptionInformation->exceptionRecord.ExceptionCode;
             auto commandLine = ss.str();
 
             // Spawn dd-dotnet

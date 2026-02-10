@@ -293,6 +293,8 @@ public class CreatedumpTests : ConsoleTestHelper
         {
             report["sig_info"]!["si_signo"]!.Value<string>().Should().Be("6");
         }
+
+        report["error"]!["message"].Value<string>().Should().Be("Process was terminated due to an unhandled exception of type 'System.BadImageFormatException'. Message: Expected.");
     }
 
 #if !NETFRAMEWORK
@@ -376,6 +378,16 @@ public class CreatedumpTests : ConsoleTestHelper
         }
 
         File.Exists(reportFile.Path).Should().BeTrue();
+        assertionScope.AddReportable("Report", reportFile.GetContent());
+        var report = JObject.Parse(reportFile.GetContent());
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            report["error"]!["message"].Value<string>().Should().Be("Process was terminated with SIGSEGV (SEGV_MAPERR)");
+        }
+        else
+        {
+            report["error"]!["message"].Value<string>().Should().Be("OOpps");
+        }
     }
 
     [SkippableFact]
