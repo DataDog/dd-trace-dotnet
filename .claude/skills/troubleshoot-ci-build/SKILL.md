@@ -144,6 +144,18 @@ The script automatically:
 - integration_tests_windows
 ...
 
+**Timed Out Jobs** (<count>, canceled after ~60 min):
+- `DockerTest alpine_netcoreapp3.0_group1 (60.3 min)`
+- `IntegrationTests Windows x64 net8.0 (58.7 min)`
+...
+_(Note: These are jobs with result="canceled" and duration >= 55 minutes)_
+
+**Collateral Cancellations** (<count>, < 5 min):
+- `Dependent Job 1`
+- `Dependent Job 2`
+...
+_(Note: Jobs canceled quickly, likely due to parent stage failure)_
+
 **Failed Tests** (<count>, if applicable):
 - `TestNamespace.TestClass.TestMethod1`
 - `TestNamespace.TestClass.TestMethod2`
@@ -249,6 +261,7 @@ Timeout waiting for spans
 - Docker rate limiting: `toomanyrequests`, `pull rate limit exceeded`
 - Network timeouts: `TLS handshake timeout`, `Connection reset by peer`, `ECONNRESET`
 - Execution timeouts: `maximum execution time exceeded`, `Test timeout`
+- Timeout via cancellation: Job canceled with duration >= 55 minutes
 - Disk space: `No space left on device`, `ENOSPC`
 - Container failures: `docker: Error response from daemon`
 
@@ -411,6 +424,23 @@ jq '[.records[] | select(.result == "failed")] | .[0:10]'
 --query-parameters branchName=refs/heads/master '$top=10'
 ```
 
+### 5. jq Pitfalls with Nullable Fields
+
+**Problem**: Using `startswith()`, `contains()`, or `test()` on nullable fields causes errors when the field is null
+
+**Solution**: Guard with `!= null` or use `// ""` default value
+
+```bash
+# ❌ BAD - Fails if .name is null
+jq '.records[] | select(.name | startswith("Test"))'
+
+# ✅ GOOD - Guard with null check
+jq '.records[] | select(.name != null and (.name | startswith("Test")))'
+
+# ✅ GOOD - Use default value
+jq '.records[] | select((.name // "") | startswith("Test"))'
+```
+
 ## Error Handling
 
 ### Build Not Found
@@ -521,6 +551,21 @@ The Azure DevOps timeline contains a hierarchy:
 - Filter by `type` field: `"Stage"`, `"Phase"`, `"Job"`, or `"Task"`
 - Failed stages/jobs cascade down - focus on Task-level failures for specifics
 - Job `identifier` field reveals platform/variant info (e.g., `integration_tests_linux.Test.Job23`)
+
+### Canceled Jobs and Timeout Detection
+
+**Result values**: `"succeeded"`, `"failed"`, `"canceled"`, `"abandoned"`
+
+**Canceled vs Failed**: Jobs canceled due to timeout have `result == "canceled"`, NOT `"failed"`.
+
+**Duration-based Classification**:
+- **Timeout** (>= 55 min): Job likely hit Azure DevOps 60-minute timeout
+- **Collateral** (< 5 min): Job canceled quickly due to parent stage failure
+- **Unknown** (5-55 min): Could be manual cancellation or other cause
+
+**Key Rule**: If a stage shows `result == "failed"` but no jobs have `result == "failed"`, check for canceled jobs with duration >= 55 minutes. These are likely timeouts that caused the stage failure.
+
+**Example**: Build 195486 - `integration_tests_linux` stage failed with no failed jobs, but `DockerTest alpine_netcoreapp3.0_group1` was canceled after 60.3 minutes (timeout).
 
 ### Understanding Test Results
 

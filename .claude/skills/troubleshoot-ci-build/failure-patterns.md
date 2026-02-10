@@ -57,6 +57,32 @@ Test run timed out after 600000 ms
 - Retry the build
 - If persistent, investigate test performance
 
+#### Timeout via Cancellation
+
+**Detection**: Jobs with `result == "canceled"` and duration >= 55 minutes
+
+**Why not "failed"?**: Azure DevOps marks timed-out jobs as "canceled" rather than "failed".
+
+**Differentiation**:
+| Duration | Classification | Likely Cause |
+|----------|---------------|--------------|
+| >= 55 min | Timeout | Azure DevOps 60-min limit exceeded |
+| < 5 min | Collateral | Parent stage failure triggered cascade cancellation |
+| 5-55 min | Unknown | Could be manual cancellation or other cause |
+
+**Example**: Build 195486
+- Stage: `integration_tests_linux` - result: "failed"
+- Job: `DockerTest alpine_netcoreapp3.0_group1` - result: "canceled", duration: 60.3 min
+- Diagnosis: Job timed out, causing stage to fail
+- Action: Retry once; investigate if persistent (check test performance, resource contention)
+
+**Solution**:
+- Retry the build (may be transient infrastructure slowness)
+- If persistent after 2 runs, investigate:
+  - Check job logs for stuck tests or infinite loops
+  - Look for resource contention (CPU, memory, I/O)
+  - Compare with successful runs to identify anomalies
+
 ---
 
 ### Disk Space
@@ -359,15 +385,22 @@ Expected tracer log but found none
 ## Categorization Decision Tree
 
 ```
-Is the failure in this PR only (not in master)?
-├─ Yes → **Real Failure** (investigate)
-└─ No → Is it an infrastructure issue?
-    ├─ Yes → **Infrastructure** (retry)
-    └─ No → Does it have previousAttempts > 0?
-        ├─ Yes → **Flaky** (retry, monitor)
-        └─ No → Is it a known flaky test?
+Are there canceled jobs?
+├─ Yes → Check duration:
+│   ├─ >= 55 min → **Timeout** (infrastructure, retry)
+│   ├─ < 5 min → **Collateral Cancellation** (check parent failure)
+│   └─ 5-55 min → **Unknown** (review manually, could be manual cancellation)
+│
+└─ No canceled jobs or after classifying them →
+    Is the failure in this PR only (not in master)?
+    ├─ Yes → **Real Failure** (investigate)
+    └─ No → Is it an infrastructure issue?
+        ├─ Yes → **Infrastructure** (retry)
+        └─ No → Does it have previousAttempts > 0?
             ├─ Yes → **Flaky** (retry, monitor)
-            └─ No → **Pre-existing Real Failure** (investigate, may be blocking)
+            └─ No → Is it a known flaky test?
+                ├─ Yes → **Flaky** (retry, monitor)
+                └─ No → **Pre-existing Real Failure** (investigate, may be blocking)
 ```
 
 ---
@@ -379,6 +412,8 @@ Is the failure in this PR only (not in master)?
 | `toomanyrequests`, `rate limit` | Infrastructure | Retry | Low |
 | `TLS handshake`, `Connection reset` | Infrastructure | Retry | Low |
 | `maximum execution time` | Infrastructure | Retry | Medium |
+| Canceled job, duration >= 55 min | Infrastructure (Timeout) | Retry, investigate if persistent | Medium |
+| Canceled job, duration < 5 min | Collateral | Check parent failure cause | None |
 | `Failed to walk N stacks` | Flaky | Retry, monitor | Low |
 | `previousAttempts > 0` | Flaky | Retry | Low |
 | `Expected X but got Y` (new) | Real | Investigate | **High** |
