@@ -42,6 +42,11 @@ param(
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
 
+# Set dotnet and nuke verbosity based on PowerShell verbose mode
+$verbose = $VerbosePreference -eq 'Continue' # Continue (verbose) or SilentlyContinue (not verbose)
+$dotnetVerbosity = if ($verbose) { 'detailed' } else { 'quiet' }
+$nukeVerbosity = if ($verbose) { 'normal' } else { 'quiet' }
+
 # Detect OS and determine build script
 if ($PSVersionTable.PSVersion.Major -ge 6) {
     $buildScript = if ($IsWindows) { 'build.ps1' } else { 'build.sh' }
@@ -59,13 +64,14 @@ Write-Verbose "Tracer directory: $tracerDir"
 Write-Verbose "Cleaning up previous builds from: $tracerDir/bin/artifacts/nuget/azure-functions/"
 Remove-Item -Path "$tracerDir/bin/artifacts/nuget/azure-functions/*" -Force -Recurse -ErrorAction SilentlyContinue
 
-# Remove package Datadog.AzureFunctions from NuGet cache
-Write-Verbose "Removing $packageId from NuGet cache..."
-$packageId = 'Datadog.AzureFunctions'
+# Get NuGet cache path
 $globalPackagesPath = & dotnet nuget locals global-packages --list | ForEach-Object {
     if ($_ -match "global-packages:\s*(.+)$") { $matches[1] }
 }
-Write-Verbose "Global packages path: $globalPackagesPath"
+Write-Verbose "NuGet global packages path: $globalPackagesPath"
+
+# Remove packages from NuGet cache
+$packagesToRemove = @('Datadog.AzureFunctions', 'Datadog.Serverless.Compat')
 
 if (-not $globalPackagesPath)
 {
@@ -73,16 +79,21 @@ if (-not $globalPackagesPath)
 }
 else
 {
-    $packagePath = Join-Path -Path $globalPackagesPath -ChildPath $packageId
+    foreach ($packageId in $packagesToRemove)
+    {
+        Write-Verbose "Removing $packageId from NuGet cache."
+        $packagePath = Join-Path -Path $globalPackagesPath -ChildPath $packageId
 
-    if (Test-Path $packagePath)
-    {
-        Write-Host "Deleting `"$packagePath`"."
-        Remove-Item -Path $packagePath -Recurse -Force -ErrorAction SilentlyContinue
-    }
-    else
-    {
-        Write-Verbose "Package `"$packagePath`" not found in the NuGet cache."
+        if (Test-Path $packagePath)
+        {
+            Write-Verbose "Deleting `"$packagePath`" from NuGet cache."
+            Remove-Item -Path $packagePath -Recurse -Force # -ErrorAction SilentlyContinue
+            Write-Host "Deleted `"$packagePath`" from NuGet cache." -ForegroundColor Green
+        }
+        else
+        {
+            Write-Verbose "Package `"$packagePath`" not found in the NuGet cache."
+        }
     }
 }
 
@@ -90,7 +101,8 @@ else
 if ($BuildId)
 {
     Write-Verbose "Downloading Datadog.Trace.Bundle from build: $BuildId"
-    & "$tracerDir/$buildScript" DownloadBundleNugetFromBuild --build-id $BuildId
+    & "$tracerDir/$buildScript" DownloadBundleNugetFromBuild --build-id $BuildId --verbosity $nukeVerbosity
+    Write-Host "Datadog.Trace.Bundle NuGet package downloaded from build $BuildId" -ForegroundColor Green
 }
 else
 {
@@ -98,22 +110,36 @@ else
 }
 
 # Build Datadog.Trace and publish to bundle folder, replacing the files from the NuGet package
-Write-Verbose "Publishing Datadog.Trace (net6.0) to bundle folder..."
-dotnet publish "$tracerDir/src/Datadog.Trace" -c Release -o "$tracerDir/src/Datadog.Trace.Bundle/home/net6.0" -f 'net6.0'
+Write-Verbose "Publishing Datadog.Trace (net6.0) to bundle folder."
+dotnet publish "$tracerDir/src/Datadog.Trace" -c Release -o "$tracerDir/src/Datadog.Trace.Bundle/home/net6.0" -f 'net6.0' -v $dotnetVerbosity
 
-Write-Verbose "Publishing Datadog.Trace (net461) to bundle folder..."
-dotnet publish "$tracerDir/src/Datadog.Trace" -c Release -o "$tracerDir/src/Datadog.Trace.Bundle/home/net461" -f 'net461'
+Write-Verbose "Publishing Datadog.Trace (net461) to bundle folder."
+dotnet publish "$tracerDir/src/Datadog.Trace" -c Release -o "$tracerDir/src/Datadog.Trace.Bundle/home/net461" -f 'net461' -v $dotnetVerbosity
 
-# Build Azure Functions NuGet package
-Write-Verbose "Building Datadog.AzureFunctions NuGet package..."
-dotnet restore "$tracerDir/src/Datadog.AzureFunctions"
-& "$tracerDir/$buildScript" BuildAzureFunctionsNuget
+# Restore Datadog.AzureFunctions project
+Write-Verbose "Restoring Datadog.AzureFunctions project."
+dotnet restore "$tracerDir/src/Datadog.AzureFunctions" -v $dotnetVerbosity
+
+# Build Datadog.AzureFunctions NuGet package
+Write-Verbose "Building Datadog.AzureFunctions NuGet package."
+& "$tracerDir/$buildScript" BuildAzureFunctionsNuget --verbosity $nukeVerbosity
 
 # Copy package to destination if specified
 if ($CopyTo)
 {
     Write-Verbose "Copying package to: $CopyTo"
-    Copy-Item "$tracerDir/bin/artifacts/nuget/azure-functions/Datadog.AzureFunctions.*.nupkg" $CopyTo -Force
+    $nupkgPath = "$tracerDir/bin/artifacts/nuget/azure-functions/Datadog.AzureFunctions.*.nupkg"
+    $nupkgFiles = Get-Item $nupkgPath -ErrorAction SilentlyContinue
+
+    if ($nupkgFiles)
+    {
+        Copy-Item $nupkgPath $CopyTo -Force
+        Write-Host "`nNuGet package copied to $CopyTo" -ForegroundColor Green
+    }
+    else
+    {
+        Write-Warning "Failed to copy NuGet package. Package not found at: $nupkgPath"
+    }
 }
 
 Write-Verbose "Build complete!"

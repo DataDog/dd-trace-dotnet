@@ -122,7 +122,7 @@ namespace Datadog.Trace.Sampling
             }
             catch (Exception e)
             {
-                Log.Error(e, "Unable to parse the span sampling rules.");
+                Log.ErrorSkipTelemetry(e, "Unable to parse the span sampling rules.");
             }
 
             return [];
