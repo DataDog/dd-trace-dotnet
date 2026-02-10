@@ -21,7 +21,7 @@ Invoke the skill with `/azure-functions` followed by an optional command:
 - Builds `Datadog.AzureFunctions` NuGet package with your changes
 - Clears NuGet cache
 - Publishes to bundle folder
-- Copies to `D:\temp\nuget`
+- Copies to user-specified output directory
 
 ### Deploy
 - Deploys sample app to Azure Function App
@@ -36,7 +36,7 @@ Invoke the skill with `/azure-functions` followed by an optional command:
 
 ### Logs
 - Downloads logs from Azure
-- Extracts to `D:\temp\logs-{timestamp}.zip`
+- Extracts to a timestamped directory
 - Provides timestamp-based filtering commands
 - Identifies host vs worker processes
 - Verifies tracer version
@@ -98,20 +98,13 @@ All apps in resource group `lucas.pimentel`, Canada Central:
 
 ### Sample Applications
 
-- Primary: `D:\source\datadog\serverless-dev-apps\azure\functions\dotnet\isolated-dotnet8-aspnetcore`
-- All: `D:\source\datadog\serverless-dev-apps\azure\functions\dotnet`
-
-### Temporary Directories
-
-- NuGet packages: `D:\temp\nuget`
-- Log downloads: `D:\temp\logs-*.zip`
-- Trace payloads: `D:\temp\trace_payload_*.json`
+Users provide their own Azure Functions app path via the `-SampleAppPath` parameter.
+The app must reference the `Datadog.AzureFunctions` NuGet package.
 
 ## Documentation References
 
 - `docs/development/AzureFunctions.md` - Complete Azure Functions integration guide
 - `docs/development/for-ai/AzureFunctions-Architecture.md` - Architecture deep dive
-- `D:\source\datadog\CLAUDE.md` - Azure Functions testing workflow
 
 ## Examples
 
