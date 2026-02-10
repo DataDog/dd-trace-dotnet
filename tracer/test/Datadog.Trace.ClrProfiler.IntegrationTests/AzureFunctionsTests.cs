@@ -6,8 +6,10 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
@@ -394,6 +396,91 @@ public abstract class AzureFunctionsTests : TestHelper
                 await AssertIsolatedSpans(filteredSpans.ToImmutableList(), $"{nameof(AzureFunctionsTests)}.Isolated.V4.AspNetCore");
 
                 spans.Count.Should().Be(expectedSpanCount);
+            }
+        }
+    }
+
+    [UsesVerify]
+    [Collection(nameof(AzureFunctionsTestsCollection))]
+    public class IsolatedRuntimeV4InferredProxySpans : AzureFunctionsTests
+    {
+        public IsolatedRuntimeV4InferredProxySpans(ITestOutputHelper output)
+            : base("AzureFunctions.V4Isolated", output)
+        {
+            SetEnvironmentVariable("FUNCTIONS_WORKER_RUNTIME", "dotnet-isolated");
+            SetEnvironmentVariable("FUNCTIONS_EXTENSION_VERSION", "~4");
+            SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.InferredProxySpansEnabled, "true");
+        }
+
+        [SkippableFact]
+        [Trait("Category", "EndToEnd")]
+        [Trait("Category", "AzureFunctions")]
+        [Trait("RunOnWindows", "True")]
+        public async Task SubmitsTracesWithProxySpan()
+        {
+            using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
+
+            // Start the Azure Function
+            var binFolder = EnvironmentHelper.GetSampleApplicationOutputDirectory(packageVersion: string.Empty, framework: null);
+            Output.WriteLine("Using binFolder: " + binFolder);
+            var process = await ProfilerHelper.StartProcessWithProfiler(
+                executable: "func",
+                EnvironmentHelper,
+                agent,
+                "start --verbose",
+                aspNetCorePort: 7071,
+                processToProfile: null,
+                workingDirectory: binFolder);
+
+            using var helper = new ProcessHelper(process);
+
+            try
+            {
+                // Wait for the function to be ready (longer wait to ensure it's fully started)
+                await Task.Delay(TimeSpan.FromSeconds(15));
+
+                // Create HTTP client and request with Azure APIM proxy headers
+                using var httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
+                var request = new HttpRequestMessage(HttpMethod.Get, "http://localhost:7071/api/simple");
+
+                var startTime = DateTimeOffset.UtcNow;
+                request.Headers.Add("x-dd-proxy", "azure-apim");
+                request.Headers.Add("x-dd-proxy-request-time-ms", startTime.ToUnixTimeMilliseconds().ToString(CultureInfo.InvariantCulture));
+                request.Headers.Add("x-dd-proxy-domain-name", "test-apim.azure-api.net");
+                request.Headers.Add("x-dd-proxy-httpmethod", "GET");
+                request.Headers.Add("x-dd-proxy-path", "/api/test");
+
+                // Send the request
+                var response = await httpClient.SendAsync(request);
+                response.EnsureSuccessStatusCode();
+
+                // Get all spans and filter to those from our request
+                var allSpans = agent.Spans.ToImmutableList();
+
+                // Find spans that include the proxy span - they should be recent
+                var recentSpans = allSpans.Where(s => s.Start >= startTime.ToUnixTimeMilliseconds() * 1000).ToList();
+
+                using var assertionScope = new AssertionScope();
+
+                // Verify proxy span exists
+                var proxySpan = recentSpans.FirstOrDefault(span => span.Name == "azure-apim.request");
+                proxySpan.Should().NotBeNull("proxy span should be created when proxy headers are present");
+
+                if (proxySpan is not null)
+                {
+                    proxySpan.Tags.Should().ContainKey("span.kind").WhoseValue.Should().Be("proxy");
+                    proxySpan.Tags.Should().ContainKey("http.url").WhoseValue.Should().Contain("test-apim.azure-api.net");
+
+                    // Verify azure functions span exists and is a child of proxy span
+                    var azureFunctionSpan = recentSpans.FirstOrDefault(span =>
+                        span.Name == "azure_functions.invoke" &&
+                        span.ParentId == proxySpan.SpanId);
+                    azureFunctionSpan.Should().NotBeNull("azure functions span should be a child of the proxy span");
+                }
+            }
+            finally
+            {
+                helper.Process?.Kill();
             }
         }
     }
