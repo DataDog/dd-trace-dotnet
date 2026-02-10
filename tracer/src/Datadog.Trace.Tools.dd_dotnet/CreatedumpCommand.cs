@@ -123,7 +123,7 @@ internal class CreatedumpCommand : Command
             { "--errno", true },
             { "--address", true },
             // Datadog-specific argument. Will be discarded by createdump.
-            { "--native-exception-code", true }
+            { "--dd-native-exception-code", true }
         };
 
         const string pidRegex = "[0-9]+";
@@ -207,7 +207,7 @@ internal class CreatedumpCommand : Command
             crashThread = crashThreadValue;
         }
 
-        if (parsedArguments.TryGetValue("--native-exception-code", out var rawNativeExceptionCode) && int.TryParse(rawNativeExceptionCode, out var nativeExceptionCodeValue))
+        if (parsedArguments.TryGetValue("--dd-native-exception-code", out var rawNativeExceptionCode) && int.TryParse(rawNativeExceptionCode, out var nativeExceptionCodeValue))
         {
             nativeExceptionCode = nativeExceptionCodeValue;
         }
@@ -457,6 +457,32 @@ internal class CreatedumpCommand : Command
         }
 
         return (name, codeName);
+    }
+
+    private static string GetCrashMessage(ClrException? exception, int? nativeExceptionCode, int? signal, int? signalCode)
+    {
+        if (exception != null)
+        {
+            var msgPart = string.IsNullOrEmpty(exception.Message)
+                ? string.Empty
+                : $" Message: {exception.Message}.";
+            return $"Process was terminated due to an unhandled exception of type '{exception.Type.Name}'.{msgPart}";
+        }
+
+        if (nativeExceptionCode != null)
+        {
+            var exceptionCode = nativeExceptionCode.Value;
+            return $"Process was terminated due to an unknown unhandled exception of type {GetExceptionFromNativeCode(exceptionCode)} (0x{exceptionCode:X})";
+        }
+
+        if (signal != null)
+        {
+            var sig = signal.Value;
+            var (name, codeName) = GetSignalInfo(sig, signalCode);
+            return $"Process was terminated with {name} ({codeName})";
+        }
+
+        return "Process was terminated due to an unknown reason";
     }
 
     private static bool ShouldRedactFrame(string? assemblyName)
@@ -736,33 +762,13 @@ internal class CreatedumpCommand : Command
 
         ClrException? exception = null;
 
-        string crashMessage = "Process was terminated due to an unknown reason";
-
         // Check if there's an exception on the crash thread
         if (crashThread != null)
         {
             exception = _runtime.Threads.FirstOrDefault(t => t.OSThreadId == crashThread.Value)?.CurrentException;
         }
 
-        if (exception != null)
-        {
-            var msgPart = string.IsNullOrEmpty(exception.Message)
-                ? string.Empty
-                : $" Message: {exception.Message}.";
-            crashMessage = $"Process was terminated due to an unhandled exception of type '{exception.Type.Name}'.{msgPart}";
-        }
-        else if (nativeExceptionCode != null)
-        {
-            var exceptionCode = nativeExceptionCode.Value;
-            crashMessage = $"Process was terminated due to an unknown unhandled exception of type {GetExceptionFromNativeCode(exceptionCode)} (0x{exceptionCode:X})";
-        }
-        else if (signal != null)
-        {
-            var sig = signal.Value;
-            var (name, codeName) = GetSignalInfo(sig, signalCode);
-            crashMessage = $"Process was terminated with {name} ({codeName})";
-        }
-
+        var crashMessage = GetCrashMessage(exception, nativeExceptionCode, signal, signalCode);
         SetCrashMessage(crashReport, crashMessage);
 
         bool isSuspicious;
