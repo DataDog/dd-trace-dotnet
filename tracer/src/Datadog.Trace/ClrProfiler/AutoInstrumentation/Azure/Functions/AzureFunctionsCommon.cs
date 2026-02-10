@@ -257,23 +257,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     switch (triggerType)
                     {
                         case "Http":
-                            (extractedContext, var extractedHeaders) = ExtractPropagatedContextAndHeadersFromHttp(functionContext, entry.Key as string);
-                            InferredProxyScopePropagationContext? proxyContext = null;
-
-                            // Check if there's an active AspNetCore span
-                            var hasAspNetCoreSpan = tracer.InternalActiveScope is { } activeScope &&
-                                                    activeScope.Span.OperationName?.StartsWith("aspnet_core", StringComparison.OrdinalIgnoreCase) == true;
-
-                            if (!hasAspNetCoreSpan && tracer.Settings.InferredProxySpansEnabled && EnvironmentHelpers.IsRunningInAzureFunctionsHost() && extractedHeaders is { } headers)
-                            {
-                                proxyContext = InferredProxySpanHelper.ExtractAndCreateInferredProxyScope(tracer, new AzureHeadersCollectionAdapter(headers), extractedContext);
-                                if (proxyContext != null)
-                                {
-                                    extractedContext = proxyContext.Value.Context;
-                                }
-                            }
-
-                            extractedContext = extractedContext.MergeBaggageInto(Baggage.Current);
+                            extractedContext = ExtractPropagatedContextFromHttp(functionContext, entry.Key as string).MergeBaggageInto(Baggage.Current);
                             break;
 
                         case "ServiceBus" when tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus):
@@ -343,7 +327,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             return scope;
         }
 
-        private static (PropagationContext Context, Dictionary<string, object>? Headers) ExtractPropagatedContextAndHeadersFromHttp<T>(T context, string? bindingName)
+        private static PropagationContext ExtractPropagatedContextFromHttp<T>(T context, string? bindingName)
             where T : IFunctionContext
         {
             // Need to try and grab the headers from the context
@@ -358,10 +342,23 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 
             try
             {
-                var bindingFeature = GetFeatureFromContext<T, FunctionBindingsFeatureStruct>(context, "Microsoft.Azure.Functions.Worker.Context.Features.IFunctionBindingsFeature");
+                object? feature = null;
+                foreach (var keyValuePair in context.Features)
+                {
+                    if (keyValuePair.Key.FullName?.Equals("Microsoft.Azure.Functions.Worker.Context.Features.IFunctionBindingsFeature") == true)
+                    {
+                        feature = keyValuePair.Value;
+                        break;
+                    }
+                }
 
-                if (bindingFeature?.InputData is null
-                 || !bindingFeature.Value.InputData.TryGetValue(bindingName!, out var requestDataObject)
+                if (feature is null || !feature.TryDuckCast<FunctionBindingsFeatureStruct>(out var bindingFeature))
+                {
+                    return default;
+                }
+
+                if (bindingFeature.InputData is null
+                 || !bindingFeature.InputData.TryGetValue(bindingName!, out var requestDataObject)
                  || requestDataObject is null)
                 {
                     return default;
@@ -372,20 +369,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     return default;
                 }
 
-                var triggerMetadata = bindingFeature.Value.TriggerMetadata;
-
-                // Extract headers from trigger metadata
-                Dictionary<string, object>? headers = null;
-                if (triggerMetadata?.TryGetValue("Headers", out var headersObj) == true &&
-                    TryParseJson<Dictionary<string, object>>(headersObj, out var parsedHeaders) && parsedHeaders != null)
-                {
-                    headers = parsedHeaders;
-                }
-
-                // Extract propagation context from httpRequest headers
-                var propagationContext = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(new HttpHeadersCollection(httpRequest.Headers));
-
-                return (propagationContext, headers);
+                return Tracer.Instance.TracerManager.SpanContextPropagator.Extract(new HttpHeadersCollection(httpRequest.Headers));
             }
             catch (Exception ex)
             {
