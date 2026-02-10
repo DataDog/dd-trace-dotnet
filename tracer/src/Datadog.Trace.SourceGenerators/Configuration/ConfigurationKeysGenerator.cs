@@ -268,18 +268,30 @@ public class ConfigurationKeysGenerator : IIncrementalGenerator
             var key = property.Name;
             var value = property.Value;
 
-            // Validate that the value is an object
-            if (value.ValueKind != JsonValueKind.Object)
+            // v2 schema: each entry is an array of implementation objects
+            if (value.ValueKind != JsonValueKind.Array)
             {
-                throw new InvalidOperationException($"Configuration entry '{key}' must be an object");
+                throw new InvalidOperationException($"Configuration entry '{key}' must be an array");
             }
 
-            // Extract the product field if it exists
+            // Extract the product field (first non-empty product in the implementations, if any)
             var product = string.Empty;
-            if (value.TryGetProperty("product", out var productElement) &&
-                productElement.ValueKind == JsonValueKind.String)
+            foreach (var implementation in value.EnumerateArray())
             {
-                product = productElement.GetString() ?? string.Empty;
+                if (implementation.ValueKind != JsonValueKind.Object)
+                {
+                    continue;
+                }
+
+                if (implementation.TryGetProperty("product", out var productElement) &&
+                    productElement.ValueKind == JsonValueKind.String)
+                {
+                    product = productElement.GetString() ?? string.Empty;
+                    if (!string.IsNullOrEmpty(product))
+                    {
+                        break;
+                    }
+                }
             }
 
             configurations[key] = new ConfigEntry(key, string.Empty, product);

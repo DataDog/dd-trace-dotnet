@@ -29,25 +29,13 @@ public class ConfigKeyAliasesSwitcherGenerator : IIncrementalGenerator
     /// <inheritdoc />
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        // Get the supported-configurations.json file and parse only the aliases section
-        // We only track changes to the aliases section since that's what affects the generated code
         var additionalText = context.AdditionalTextsProvider
                                     .Where(static file => Path.GetFileName(file.Path).Equals(SupportedConfigurationsFileName, StringComparison.OrdinalIgnoreCase))
                                     .WithTrackingName(TrackingNames.ConfigurationKeysAdditionalText);
 
-        var aliasSection = additionalText.Select(static (file, ct) => ExtractAliasesSection(file, ct));
-
-        var aliasesContent = aliasSection.Select(static (extractResult, ct) =>
-                                          {
-                                              if (extractResult.Errors.Count > 0)
-                                              {
-                                                  // Return the errors from extraction
-                                                  return new Result<ConfigurationAliases>(null!, extractResult.Errors);
-                                              }
-
-                                              return ParseAliasesContent(extractResult.Value, ct);
-                                          })
-                                         .WithTrackingName(TrackingNames.ConfigurationKeysParseConfiguration);
+        var aliasesContent = additionalText
+                            .Select(static (file, ct) => ParseAliasesFromV2File(file, ct))
+                            .WithTrackingName(TrackingNames.ConfigurationKeysParseConfiguration);
 
         // Always generate source code, even when there are errors
         // This ensures compilation doesn't fail due to missing generated types
@@ -70,15 +58,15 @@ public class ConfigKeyAliasesSwitcherGenerator : IIncrementalGenerator
         context.AddSource($"{ClassName}.g.cs", SourceText.From(generatedSource, Encoding.UTF8));
     }
 
-    private static Result<string> ExtractAliasesSection(AdditionalText file, CancellationToken cancellationToken)
+    private static Result<ConfigurationAliases> ParseAliasesFromV2File(AdditionalText file, CancellationToken cancellationToken)
     {
         try
         {
             var sourceText = file.GetText(cancellationToken);
             if (sourceText is null)
             {
-                return new Result<string>(
-                    string.Empty,
+                return new Result<ConfigurationAliases>(
+                    null!,
                     new EquatableArray<DiagnosticInfo>(
                     [
                         CreateDiagnosticInfo("DDSG0003", "Configuration file not found", $"The file '{file.Path}' could not be read. Make sure the supported-configurations.json file exists and is included as an AdditionalFile.", DiagnosticSeverity.Error)
@@ -87,50 +75,22 @@ public class ConfigKeyAliasesSwitcherGenerator : IIncrementalGenerator
 
             var jsonContent = sourceText.ToString();
 
-            // Extract only the aliases section from the JSON using System.Text.Json
             using var document = JsonDocument.Parse(jsonContent);
             var root = document.RootElement;
 
-            if (root.TryGetProperty("aliases", out var aliasesElement))
+            if (!root.TryGetProperty("supportedConfigurations", out var supportedConfigurationsElement) ||
+                supportedConfigurationsElement.ValueKind != JsonValueKind.Object)
             {
-                // Return the raw JSON string of the aliases section
-                return new Result<string>(aliasesElement.GetRawText(), default);
+                return new Result<ConfigurationAliases>(
+                    null!,
+                    new EquatableArray<DiagnosticInfo>(
+                    [
+                        CreateDiagnosticInfo("DDSG0002", "Aliases parsing error", "Missing or invalid 'supportedConfigurations' section", DiagnosticSeverity.Error)
+                    ]));
             }
 
-            return new Result<string>(string.Empty, default);
-        }
-        catch (Exception ex)
-        {
-            return new Result<string>(
-                string.Empty,
-                new EquatableArray<DiagnosticInfo>(
-                [
-                    CreateDiagnosticInfo("DDSG0004", "Configuration file read error", $"Failed to read configuration file '{file.Path}': {ex.Message}", DiagnosticSeverity.Error)
-                ]));
-        }
-    }
-
-    private static Result<ConfigurationAliases> ParseAliasesContent(string aliasesContent, CancellationToken cancellationToken)
-    {
-        try
-        {
-            if (string.IsNullOrEmpty(aliasesContent))
-            {
-                // Empty aliases section is valid - just return empty configuration
-                return new Result<ConfigurationAliases>(new ConfigurationAliases(new Dictionary<string, string[]>()), default);
-            }
-
-            cancellationToken.ThrowIfCancellationRequested();
-
-            // Parse the aliases section using System.Text.Json
-            var aliases = ParseAliasesFromJson(aliasesContent);
-            var configurationData = new ConfigurationAliases(aliases);
-
-            return new Result<ConfigurationAliases>(configurationData, default);
-        }
-        catch (OperationCanceledException)
-        {
-            throw;
+            var aliases = ParseAliasesFromV2SupportedConfigurations(supportedConfigurationsElement);
+            return new Result<ConfigurationAliases>(new ConfigurationAliases(aliases), default);
         }
         catch (Exception ex)
         {
@@ -138,42 +98,68 @@ public class ConfigKeyAliasesSwitcherGenerator : IIncrementalGenerator
                 null!,
                 new EquatableArray<DiagnosticInfo>(
                 [
-                    CreateDiagnosticInfo("DDSG0002", "Aliases parsing error", $"Failed to parse aliases section: {ex.Message}")
+                    CreateDiagnosticInfo("DDSG0004", "Configuration file read error", $"Failed to read configuration file '{file.Path}': {ex.Message}", DiagnosticSeverity.Error)
                 ]));
         }
     }
 
-    private static Dictionary<string, string[]> ParseAliasesFromJson(string aliasesJson)
+    private static Dictionary<string, string[]> ParseAliasesFromV2SupportedConfigurations(JsonElement supportedConfigurationsElement)
     {
         var aliases = new Dictionary<string, string[]>();
 
-        using var document = JsonDocument.Parse(aliasesJson);
-        var root = document.RootElement;
-
-        foreach (var property in root.EnumerateObject())
+        foreach (var setting in supportedConfigurationsElement.EnumerateObject())
         {
-            var mainKey = property.Name;
-            var aliasArray = property.Value;
+            var mainKey = setting.Name;
+            var definitions = setting.Value;
 
-            if (aliasArray.ValueKind == JsonValueKind.Array)
+            if (definitions.ValueKind != JsonValueKind.Array)
             {
-                var aliasList = new List<string>();
-                foreach (var aliasElement in aliasArray.EnumerateArray())
+                // v2 schema: each entry is an array of implementation objects
+                continue;
+            }
+
+            List<string>? aliasList = null;
+            HashSet<string>? seen = null;
+
+            foreach (var implementation in definitions.EnumerateArray())
+            {
+                if (implementation.ValueKind != JsonValueKind.Object)
                 {
-                    if (aliasElement.ValueKind == JsonValueKind.String)
+                    continue;
+                }
+
+                if (!implementation.TryGetProperty("aliases", out var aliasesElement) ||
+                    aliasesElement.ValueKind != JsonValueKind.Array)
+                {
+                    continue;
+                }
+
+                foreach (var aliasElement in aliasesElement.EnumerateArray())
+                {
+                    if (aliasElement.ValueKind != JsonValueKind.String)
                     {
-                        var alias = aliasElement.GetString();
-                        if (!string.IsNullOrEmpty(alias))
-                        {
-                            aliasList.Add(alias!);
-                        }
+                        continue;
+                    }
+
+                    var alias = aliasElement.GetString();
+                    if (string.IsNullOrEmpty(alias))
+                    {
+                        continue;
+                    }
+
+                    aliasList ??= new List<string>();
+                    seen ??= new HashSet<string>(StringComparer.Ordinal);
+
+                    if (seen.Add(alias!))
+                    {
+                        aliasList.Add(alias!);
                     }
                 }
+            }
 
-                if (aliasList.Count > 0)
-                {
-                    aliases[mainKey] = aliasList.ToArray();
-                }
+            if (aliasList is { Count: > 0 })
+            {
+                aliases[mainKey] = aliasList.ToArray();
             }
         }
 
