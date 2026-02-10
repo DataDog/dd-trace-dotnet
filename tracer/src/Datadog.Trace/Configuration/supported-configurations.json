@@ -27,7 +27,7 @@
     ],
     "DD_AGENT_HOST": [
       {
-        "implementation": "A",
+        "implementation": "D",
         "type": "string",
         "default": "localhost",
         "aliases": [
@@ -89,7 +89,7 @@
       {
         "implementation": "A",
         "type": "decimal",
-        "default": "30.0",
+        "default": "30",
         "product": "AppSec"
       }
     ],
@@ -130,7 +130,7 @@
     ],
     "DD_APPSEC_AUTOMATED_USER_EVENTS_TRACKING": [
       {
-        "implementation": "A",
+        "implementation": "D",
         "type": "string",
         "default": "identification",
         "product": "AppSec"
@@ -138,7 +138,7 @@
     ],
     "DD_APPSEC_AUTO_USER_INSTRUMENTATION_MODE": [
       {
-        "implementation": "A",
+        "implementation": "B",
         "type": "string",
         "default": "identification",
         "product": "AppSec"
@@ -162,7 +162,7 @@
     ],
     "DD_APPSEC_HTTP_BLOCKED_TEMPLATE_HTML": [
       {
-        "implementation": "A",
+        "implementation": "B",
         "type": "string",
         "default": null,
         "product": "AppSec"
@@ -170,7 +170,7 @@
     ],
     "DD_APPSEC_HTTP_BLOCKED_TEMPLATE_JSON": [
       {
-        "implementation": "A",
+        "implementation": "B",
         "type": "string",
         "default": null,
         "product": "AppSec"
@@ -218,7 +218,7 @@
     ],
     "DD_APPSEC_OBFUSCATION_PARAMETER_KEY_REGEXP": [
       {
-        "implementation": "A",
+        "implementation": "E",
         "type": "string",
         "default": "(?i)(?:p(?:ass)?w(?:or)?d|pass(?:_?phrase)?|secret|(?:api_?|private_?|public_?)key)|token|consumer_?(?:id|key|secret)|sign(?:ed|ature)|bearer|authorization",
         "product": "AppSec"
@@ -226,9 +226,9 @@
     ],
     "DD_APPSEC_OBFUSCATION_PARAMETER_VALUE_REGEXP": [
       {
-        "implementation": "A",
+        "implementation": "E",
         "type": "string",
-        "default": "(?i)(?:p(?:ass)?w(?:or)?d|pass(?:[_-]?phrase)?|secret(?:[_-]?key)?|(?:(?:api|private|public|access)[_-]?)key(?:[_-]?id)?|(?:(?:auth|access|id|refresh)[_-]?)?token|consumer[_-]?(?:id|key|secret)|sign(?:ed|ature)?|auth(?:entication|orization)?|jsessionid|phpsessid|asp\\.net(?:[_-]|-)sessionid|sid|jwt)(?:\\s*=([^;&]+)|\"\\s*:\\s*(\"[^\"]+\"|\\d+))|bearer\\s+([a-z0-9\\._\\-]+)|token\\s*:\\s*([a-z0-9]{13})|gh[opsu]_([0-9a-zA-Z]{36})|ey[I-L][\\w=-]+\\.(ey[I-L][\\w=-]+(?:\\.[\\w.+\\/=-]+)?)|[\\-]{5}BEGIN[a-z\\s]+PRIVATE\\sKEY[\\-]{5}([^\\-]+)[\\-]{5}END[a-z\\s]+PRIVATE\\sKEY|ssh-rsa\\s*([a-z0-9\\/\\.+]{100,})",
+        "default": "(?i)(?:p(?:ass)?w(?:or)?d|pass(?:[_-]?phrase)?|secret(?:[_-]?key)?|(?:(?:api|private|public|access)[_-]?)key(?:[_-]?id)?|(?:(?:auth|access|id|refresh)[_-]?)?token|consumer[_-]?(?:id|key|secret)|sign(?:ed|ature)?|auth(?:entication|orization)?|jsessionid|phpsessid|asp\\\\.net(?:[_-]|-)sessionid|sid|jwt)(?:\\\\s*=([^;&]+)|\\\"\\\\s*:\\\\s*(\\\"[^\\\"]+\\\"|\\\\d+))|bearer\\\\s+([a-z0-9\\\\._\\\\-]+)|token\\\\s*:\\\\s*([a-z0-9]{13})|gh[opsu]_([0-9a-zA-Z]{36})|ey[I-L][\\\\w=-]+\\\\.(ey[I-L][\\\\w=-]+(?:\\\\.[\\\\w.+\\\\/=-]+)?)|[\\\\-]{5}BEGIN[a-z\\\\s]+PRIVATE\\\\sKEY[\\\\-]{5}([^\\\\-]+)[\\\\-]{5}END[a-z\\\\s]+PRIVATE\\\\sKEY|ssh-rsa\\\\s*([a-z0-9\\\\/\\\\.+]{100,})",
         "product": "AppSec"
       }
     ],
@@ -242,7 +242,7 @@
     ],
     "DD_APPSEC_RULES": [
       {
-        "implementation": "A",
+        "implementation": "B",
         "type": "string",
         "default": null,
         "product": "AppSec"
@@ -250,7 +250,7 @@
     ],
     "DD_APPSEC_SCA_ENABLED": [
       {
-        "implementation": "A",
+        "implementation": "B",
         "type": "boolean",
         "default": null,
         "product": "AppSec"
@@ -282,7 +282,7 @@
     ],
     "DD_APPSEC_WAF_TIMEOUT": [
       {
-        "implementation": "A",
+        "implementation": "B",
         "type": "int",
         "default": "100000",
         "product": "AppSec"
@@ -290,7 +290,7 @@
     ],
     "DD_AZURE_APP_SERVICES": [
       {
-        "implementation": "A",
+        "implementation": "C",
         "type": "string",
         "default": null,
         "product": "AzureAppService"
@@ -314,7 +314,7 @@
     ],
     "DD_CIVISIBILITY_AUTO_INSTRUMENTATION_PROVIDER": [
       {
-        "implementation": "A",
+        "implementation": "B",
         "type": "boolean",
         "default": "false",
         "product": "CIVisibility"
@@ -330,7 +330,7 @@
     ],
     "DD_CIVISIBILITY_CODE_COVERAGE_ENABLED": [
       {
-        "implementation": "A",
+        "implementation": "B",
         "type": "boolean",
         "default": null,
         "product": "CIVisibility"
@@ -378,7 +378,7 @@
     ],
     "DD_CIVISIBILITY_EARLY_FLAKE_DETECTION_ENABLED": [
       {
-        "implementation": "A",
+        "implementation": "C",
         "type": "boolean",
         "default": null,
         "product": "CIVisibility"
@@ -386,7 +386,7 @@
     ],
     "DD_CIVISIBILITY_ENABLED": [
       {
-        "implementation": "A",
+        "implementation": "B",
         "type": "boolean",
         "default": null,
         "product": "CIVisibility"
@@ -410,7 +410,7 @@
     ],
     "DD_CIVISIBILITY_FLAKY_RETRY_ENABLED": [
       {
-        "implementation": "A",
+        "implementation": "B",
         "type": "boolean",
         "default": null,
         "product": "CIVisibility"
@@ -434,7 +434,7 @@
     ],
     "DD_CIVISIBILITY_GIT_UPLOAD_ENABLED": [
       {
-        "implementation": "A",
+        "implementation": "B",
         "type": "boolean",
         "default": null,
         "product": "CIVisibility"
@@ -442,7 +442,7 @@
     ],
     "DD_CIVISIBILITY_IMPACTED_TESTS_DETECTION_ENABLED": [
       {
-        "implementation": "A",
+        "implementation": "B",
         "type": "boolean",
         "default": null,
         "product": "CIVisibility"
@@ -498,7 +498,7 @@
     ],
     "DD_CODE_ORIGIN_FOR_SPANS_ENABLED": [
       {
-        "implementation": "A",
+        "implementation": "B",
         "type": "boolean",
         "default": "false",
         "product": "Debugger"
@@ -522,7 +522,7 @@
     ],
     "DD_DATA_STREAMS_ENABLED": [
       {
-        "implementation": "A",
+        "implementation": "B",
         "type": "boolean",
         "default": "true",
         "product": "DataStreamsMonitoring"
@@ -594,7 +594,7 @@
     ],
     "DD_DOGSTATSD_URL": [
       {
-        "implementation": "A",
+        "implementation": "B",
         "type": "string",
         "default": "udp://127.0.0.1:8125"
       }
@@ -649,22 +649,22 @@
     "DD_DYNAMIC_INSTRUMENTATION_REDACTED_IDENTIFIERS": [
       {
         "implementation": "A",
-        "type": "string",
-        "default": null,
+        "type": "array",
+        "default": "",
         "product": "Debugger"
       }
     ],
     "DD_DYNAMIC_INSTRUMENTATION_REDACTED_TYPES": [
       {
         "implementation": "A",
-        "type": "string",
-        "default": null,
+        "type": "array",
+        "default": "",
         "product": "Debugger"
       }
     ],
     "DD_DYNAMIC_INSTRUMENTATION_REDACTION_EXCLUDED_IDENTIFIERS": [
       {
-        "implementation": "A",
+        "implementation": "B",
         "type": "string",
         "default": null,
         "product": "Debugger"
@@ -688,7 +688,7 @@
     ],
     "DD_ENV": [
       {
-        "implementation": "A",
+        "implementation": "B",
         "type": "string",
         "default": null
       }
@@ -703,7 +703,7 @@
     ],
     "DD_EXCEPTION_REPLAY_CAPTURE_MAX_FRAMES": [
       {
-        "implementation": "A",
+        "implementation": "B",
         "type": "int",
         "default": "4",
         "product": "Debugger"
@@ -711,7 +711,7 @@
     ],
     "DD_EXCEPTION_REPLAY_ENABLED": [
       {
-        "implementation": "A",
+        "implementation": "B",
         "type": "boolean",
         "default": "false",
         "product": "Debugger",
@@ -925,7 +925,7 @@
     ],
     "DD_IAST_ENABLED": [
       {
-        "implementation": "A",
+        "implementation": "B",
         "type": "boolean",
         "default": "false",
         "product": "Iast"
@@ -957,7 +957,7 @@
     ],
     "DD_IAST_REDACTION_NAME_PATTERN": [
       {
-        "implementation": "A",
+        "implementation": "C",
         "type": "string",
         "default": "(?i)(?:p(?:ass)?w(?:or)?d|pass(?:_?phrase)?|secret|(?:api_?|private_?|public_?|access_?|secret_?)key(?:_?id)?|token|consumer_?(?:id|key|secret)|sign(?:ed|ature)?|auth(?:entication|orization)?|(?:sur|last)name|user(?:name)?|address|e?mail)",
         "product": "Iast"
@@ -965,9 +965,9 @@
     ],
     "DD_IAST_REDACTION_VALUE_PATTERN": [
       {
-        "implementation": "A",
+        "implementation": "C",
         "type": "string",
-        "default": "(?i)(?:bearer\\s+[a-z0-9\\._\\-]+|glpat-[\\w\\-]{20}|gh[opsu]_[0-9a-zA-Z]{36}|ey[I-L][\\w=\\-]+\\.ey[I-L][\\w=\\-]+(?:\\.[\\w.+/=\\-]+)?|(?:[\\-]{5}BEGIN[a-z\\s]+PRIVATE\\sKEY[\\-]{5}[^\\-]+[\\-]{5}END[a-z\\s]+PRIVATE\\sKEY[\\-]{5}|ssh-rsa\\s*[a-z0-9/\\.+]{100,})|[\\w\\.-]+@[a-zA-Z\\d\\.-]+\\.[a-zA-Z]{2,})",
+        "default": "(?i)(?:bearer\\\\s+[a-z0-9\\\\._\\\\-]+|glpat-[\\\\w\\\\-]{20}|gh[opsu]_[0-9a-zA-Z]{36}|ey[I-L][\\\\w=\\\\-]+\\\\.ey[I-L][\\\\w=\\\\-]+(?:\\\\.[\\\\w.+/=\\\\-]+)?|(?:[\\\\-]{5}BEGIN[a-z\\\\s]+PRIVATE\\\\sKEY[\\\\-]{5}[^\\\\-]+[\\\\-]{5}END[a-z\\\\s]+PRIVATE\\\\sKEY[\\\\-]{5}|ssh-rsa\\\\s*[a-z0-9/\\\\.+]{100,})|[\\\\w\\\\.-]+@[a-zA-Z\\\\d\\\\.-]+\\\\.[a-zA-Z]{2,})",
         "product": "Iast"
       }
     ],
@@ -1013,7 +1013,7 @@
     ],
     "DD_IAST_WEAK_CIPHER_ALGORITHMS": [
       {
-        "implementation": "A",
+        "implementation": "B",
         "type": "string",
         "default": "DES,TRIPLEDES,RC2",
         "product": "Iast"
@@ -1021,7 +1021,7 @@
     ],
     "DD_IAST_WEAK_HASH_ALGORITHMS": [
       {
-        "implementation": "A",
+        "implementation": "C",
         "type": "string",
         "default": "HMACMD5,MD5,HMACSHA1,SHA1",
         "product": "Iast"
@@ -1029,14 +1029,14 @@
     ],
     "DD_INJECTION_ENABLED": [
       {
-        "implementation": "A",
+        "implementation": "C",
         "type": "string",
         "default": null
       }
     ],
     "DD_INJECT_FORCE": [
       {
-        "implementation": "A",
+        "implementation": "B",
         "type": "string",
         "default": null
       }
@@ -1232,14 +1232,14 @@
     ],
     "DD_LOGS_INJECTION": [
       {
-        "implementation": "A",
+        "implementation": "B",
         "type": "boolean",
         "default": "true"
       }
     ],
     "DD_LOG_LEVEL": [
       {
-        "implementation": "A",
+        "implementation": "B",
         "type": "string",
         "default": null,
         "product": "Agent"
@@ -1317,7 +1317,7 @@
     ],
     "DD_PROFILING_ENABLED": [
       {
-        "implementation": "A",
+        "implementation": "B",
         "type": "string",
         "default": "false",
         "product": "Profiler"
@@ -1349,7 +1349,7 @@
     ],
     "DD_REMOTE_CONFIG_POLL_INTERVAL_SECONDS": [
       {
-        "implementation": "A",
+        "implementation": "B",
         "type": "decimal",
         "default": "5.0",
         "product": "Rcm",
@@ -1374,7 +1374,7 @@
     ],
     "DD_SERVICE": [
       {
-        "implementation": "A",
+        "implementation": "D",
         "type": "string",
         "default": null,
         "aliases": [
@@ -1384,14 +1384,14 @@
     ],
     "DD_SITE": [
       {
-        "implementation": "A",
+        "implementation": "C",
         "type": "string",
         "default": "datadoghq.com"
       }
     ],
     "DD_SPAN_SAMPLING_RULES": [
       {
-        "implementation": "A",
+        "implementation": "B",
         "type": "string",
         "default": null
       }
@@ -1438,8 +1438,8 @@
     ],
     "DD_TAGS": [
       {
-        "implementation": "A",
-        "type": "string",
+        "implementation": "C",
+        "type": "map",
         "default": null,
         "aliases": [
           "DD_TRACE_GLOBAL_TAGS"
@@ -1456,9 +1456,9 @@
     ],
     "DD_TELEMETRY_HEARTBEAT_INTERVAL": [
       {
-        "implementation": "A",
+        "implementation": "B",
         "type": "decimal",
-        "default": "60",
+        "default": "60.0",
         "product": "Telemetry"
       }
     ],
@@ -1488,7 +1488,7 @@
     ],
     "DD_TEST_MANAGEMENT_ENABLED": [
       {
-        "implementation": "A",
+        "implementation": "B",
         "type": "boolean",
         "default": null,
         "product": "CIVisibility"
@@ -1521,16 +1521,16 @@
     "DD_THIRD_PARTY_DETECTION_EXCLUDES": [
       {
         "implementation": "A",
-        "type": "string",
-        "default": null,
+        "type": "array",
+        "default": "[]",
         "product": "Debugger"
       }
     ],
     "DD_THIRD_PARTY_DETECTION_INCLUDES": [
       {
         "implementation": "A",
-        "type": "string",
-        "default": null,
+        "type": "array",
+        "default": "[]",
         "product": "Debugger"
       }
     ],
@@ -1574,7 +1574,7 @@
     ],
     "DD_TRACE_AGENT_PORT": [
       {
-        "implementation": "A",
+        "implementation": "C",
         "type": "int",
         "default": "8126",
         "aliases": [
@@ -1584,14 +1584,14 @@
     ],
     "DD_TRACE_AGENT_URL": [
       {
-        "implementation": "A",
+        "implementation": "C",
         "type": "string",
         "default": "http://localhost:8126"
       }
     ],
     "DD_TRACE_ANALYTICS_ENABLED": [
       {
-        "implementation": "A",
+        "implementation": "B",
         "type": "boolean",
         "default": "false"
       }
@@ -1634,8 +1634,8 @@
     "DD_TRACE_BAGGAGE_TAG_KEYS": [
       {
         "implementation": "A",
-        "type": "string",
-        "default": "user.id,session.id,account.id"
+        "type": "array",
+        "default": "user.id, session.id, account.id"
       }
     ],
     "DD_TRACE_BATCH_INTERVAL": [
@@ -1669,7 +1669,7 @@
     ],
     "DD_TRACE_CLIENT_IP_HEADER": [
       {
-        "implementation": "A",
+        "implementation": "C",
         "type": "string",
         "default": null,
         "aliases": [
@@ -1704,7 +1704,7 @@
     ],
     "DD_TRACE_DEBUG": [
       {
-        "implementation": "A",
+        "implementation": "B",
         "type": "boolean",
         "default": "false"
       }
@@ -1763,7 +1763,7 @@
     ],
     "DD_TRACE_EXPERIMENTAL_FEATURES_ENABLED": [
       {
-        "implementation": "A",
+        "implementation": "B",
         "type": "string",
         "default": null
       }
@@ -1778,8 +1778,8 @@
     "DD_TRACE_GRAPHQL_ERROR_EXTENSIONS": [
       {
         "implementation": "A",
-        "type": "string",
-        "default": null
+        "type": "array",
+        "default": ""
       }
     ],
     "DD_TRACE_GRPC_TAGS": [
@@ -1800,8 +1800,8 @@
     "DD_TRACE_HEADER_TAGS": [
       {
         "implementation": "A",
-        "type": "string",
-        "default": null
+        "type": "array",
+        "default": ""
       }
     ],
     "DD_TRACE_HTTP_CLIENT_ERROR_STATUSES": [
@@ -1818,7 +1818,7 @@
       {
         "implementation": "A",
         "type": "string",
-        "default": ""
+        "default": null
       }
     ],
     "DD_TRACE_HTTP_SERVER_ERROR_STATUSES": [
@@ -1864,7 +1864,7 @@
     ],
     "DD_TRACE_LOG_DIRECTORY": [
       {
-        "implementation": "A",
+        "implementation": "B",
         "type": "string",
         "default": "/var/log/datadog/dotnet"
       }
@@ -1899,7 +1899,7 @@
     ],
     "DD_TRACE_METHODS": [
       {
-        "implementation": "A",
+        "implementation": "B",
         "type": "string",
         "default": ""
       }
@@ -1913,9 +1913,9 @@
     ],
     "DD_TRACE_OBFUSCATION_QUERY_STRING_REGEXP": [
       {
-        "implementation": "A",
+        "implementation": "D",
         "type": "string",
-        "default": "(?:(?:\"|%22)?)(?:(?:old[-_]?|new[-_]?)?p(?:ass)?w(?:or)?d(?:1|2)?|pass(?:[-_]?phrase)?|secret|(?:api[-_]?|private[-_]?|public[-_]?|access[-_]?|secret[-_]?|app(?:lication)?[-_]?)key(?:[-_]?id)?|token|consumer[-_]?(?:id|key|secret)|sign(?:ed|ature)?|auth(?:entication|orization)?)(?:(?:\\s|%20)*(?:=|%3D)[^&]+|(?:\"|%22)(?:\\s|%20)*(?::|%3A)(?:\\s|%20)*(?:\"|%22)(?:%2[^2]|%[^2]|[^\"%])+(?:\"|%22))|(?:bearer(?:\\s|%20)+[a-z0-9._\\-]+|token(?::|%3A)[a-z0-9]{13}|gh[opsu]_[0-9a-zA-Z]{36}|ey[I-L](?:[\\w=-]|%3D)+\\.ey[I-L](?:[\\w=-]|%3D)+(?:\\.(?:[\\w.+/=-]|%3D|%2F|%2B)+)?|-{5}BEGIN(?:[a-z\\s]|%20)+PRIVATE(?:\\s|%20)KEY-{5}[^\\-]+-{5}END(?:[a-z\\s]|%20)+PRIVATE(?:\\s|%20)KEY(?:-{5})?(?:\\n|%0A)?|(?:ssh-(?:rsa|dss)|ecdsa-[a-z0-9]+-[a-z0-9]+)(?:\\s|%20|%09)+(?:[a-z0-9/.+]|%2F|%5C|%2B){100,}(?:=|%3D)*(?:(?:\\s|%20|%09)+[a-z0-9._-]+)?)"
+        "default": "(?:(?:\\\"|%22)?)(?:(?:old[-_]?|new[-_]?)?p(?:ass)?w(?:or)?d(?:1|2)?|pass(?:[-_]?phrase)?|secret|(?:api[-_]?|private[-_]?|public[-_]?|access[-_]?|secret[-_]?|app(?:lication)?[-_]?)key(?:[-_]?id)?|token|consumer[-_]?(?:id|key|secret)|sign(?:ed|ature)?|auth(?:entication|orization)?)(?:(?:\\\\s|%20)*(?:=|%3D)[^&]+|(?:\\\"|%22)(?:\\\\s|%20)*(?::|%3A)(?:\\\\s|%20)*(?:\\\"|%22)(?:%2[^2]|%[^2]|[^\\\"%])+(?:\\\"|%22))|(?:bearer(?:\\\\s|%20)+[a-z0-9._\\\\-]+|token(?::|%3A)[a-z0-9]{13}|gh[opsu]_[0-9a-zA-Z]{36}|ey[I-L](?:[\\\\w=-]|%3D)+\\\\.ey[I-L](?:[\\\\w=-]|%3D)+(?:\\\\.(?:[\\\\w.+/=-]|%3D|%2F|%2B)+)?|-{5}BEGIN(?:[a-z\\\\s]|%20)+PRIVATE(?:\\\\s|%20)KEY-{5}[^\\\\-]+-{5}END(?:[a-z\\\\s]|%20)+PRIVATE(?:\\\\s|%20)KEY(?:-{5})?(?:\\\\n|%0A)?|(?:ssh-(?:rsa|dss)|ecdsa-[a-z0-9]+-[a-z0-9]+)(?:\\\\s|%20|%09)+(?:[a-z0-9/.+]|%2F|%5C|%2B){100,}(?:=|%3D)*(?:(?:\\\\s|%20|%09)+[a-z0-9._-]+)?)"
       }
     ],
     "DD_TRACE_OBFUSCATION_QUERY_STRING_REGEXP_TIMEOUT": [
@@ -1927,7 +1927,7 @@
     ],
     "DD_TRACE_OTEL_ENABLED": [
       {
-        "implementation": "A",
+        "implementation": "B",
         "type": "boolean",
         "default": "false",
         "product": "FeatureFlags",
@@ -1945,7 +1945,7 @@
     ],
     "DD_TRACE_PARTIAL_FLUSH_MIN_SPANS": [
       {
-        "implementation": "A",
+        "implementation": "C",
         "type": "int",
         "default": "500"
       }
@@ -1960,8 +1960,8 @@
     "DD_TRACE_PEER_SERVICE_MAPPING": [
       {
         "implementation": "A",
-        "type": "string",
-        "default": null
+        "type": "map",
+        "default": ""
       }
     ],
     "DD_TRACE_PIPE_NAME": [
@@ -1980,7 +1980,7 @@
     ],
     "DD_TRACE_PROPAGATION_BEHAVIOR_EXTRACT": [
       {
-        "implementation": "A",
+        "implementation": "B",
         "type": "string",
         "default": "continue"
       }
@@ -1994,8 +1994,8 @@
     ],
     "DD_TRACE_PROPAGATION_STYLE_EXTRACT": [
       {
-        "implementation": "A",
-        "type": "string",
+        "implementation": "D",
+        "type": "array",
         "default": "datadog,tracecontext,baggage",
         "aliases": [
           "DD_PROPAGATION_STYLE_EXTRACT",
@@ -2005,8 +2005,8 @@
     ],
     "DD_TRACE_PROPAGATION_STYLE_INJECT": [
       {
-        "implementation": "A",
-        "type": "string",
+        "implementation": "D",
+        "type": "array",
         "default": "datadog,tracecontext,baggage",
         "aliases": [
           "DD_PROPAGATION_STYLE_INJECT",
@@ -2016,7 +2016,7 @@
     ],
     "DD_TRACE_RATE_LIMIT": [
       {
-        "implementation": "A",
+        "implementation": "B",
         "type": "int",
         "default": "100",
         "aliases": [
@@ -2041,14 +2041,14 @@
     ],
     "DD_TRACE_SAMPLE_RATE": [
       {
-        "implementation": "A",
+        "implementation": "B",
         "type": "decimal",
         "default": null
       }
     ],
     "DD_TRACE_SAMPLING_RULES": [
       {
-        "implementation": "A",
+        "implementation": "B",
         "type": "string",
         "default": null
       }
@@ -2077,14 +2077,14 @@
     ],
     "DD_TRACE_SPAN_ATTRIBUTE_SCHEMA": [
       {
-        "implementation": "A",
+        "implementation": "B",
         "type": "string",
-        "default": "V0"
+        "default": "v0"
       }
     ],
     "DD_TRACE_STARTUP_LOGS": [
       {
-        "implementation": "A",
+        "implementation": "C",
         "type": "boolean",
         "default": "true"
       }
@@ -2122,7 +2122,7 @@
     ],
     "DD_VERSION": [
       {
-        "implementation": "A",
+        "implementation": "B",
         "type": "string",
         "default": null
       }
@@ -2137,7 +2137,7 @@
     ],
     "OTEL_EXPORTER_OTLP_ENDPOINT": [
       {
-        "implementation": "A",
+        "implementation": "C",
         "type": "string",
         "default": "http://localhost:4317/",
         "product": "OpenTelemetry"
@@ -2145,7 +2145,7 @@
     ],
     "OTEL_LOGS_EXPORTER": [
       {
-        "implementation": "A",
+        "implementation": "B",
         "type": "string",
         "default": "otlp",
         "product": "OpenTelemetry"
@@ -2154,14 +2154,14 @@
     "OTEL_EXPORTER_OTLP_HEADERS": [
       {
         "implementation": "A",
-        "type": "string",
-        "default": null,
+        "type": "map",
+        "default": "",
         "product": "OpenTelemetry"
       }
     ],
     "OTEL_EXPORTER_OTLP_LOGS_ENDPOINT": [
       {
-        "implementation": "A",
+        "implementation": "B",
         "type": "string",
         "default": "http://localhost:4317/",
         "product": "OpenTelemetry"
@@ -2169,7 +2169,7 @@
     ],
     "OTEL_EXPORTER_OTLP_LOGS_PROTOCOL": [
       {
-        "implementation": "A",
+        "implementation": "C",
         "type": "string",
         "default": "grpc",
         "product": "OpenTelemetry",
@@ -2180,7 +2180,7 @@
     ],
     "OTEL_EXPORTER_OTLP_LOGS_TIMEOUT": [
       {
-        "implementation": "A",
+        "implementation": "B",
         "type": "int",
         "default": "10000",
         "product": "OpenTelemetry",
@@ -2191,7 +2191,7 @@
     ],
     "OTEL_EXPORTER_OTLP_METRICS_ENDPOINT": [
       {
-        "implementation": "A",
+        "implementation": "C",
         "type": "string",
         "default": "http://localhost:4317/",
         "product": "OpenTelemetry"
@@ -2199,8 +2199,8 @@
     ],
     "OTEL_EXPORTER_OTLP_METRICS_HEADERS": [
       {
-        "implementation": "A",
-        "type": "string",
+        "implementation": "C",
+        "type": "map",
         "default": null,
         "product": "OpenTelemetry",
         "aliases": [
@@ -2210,8 +2210,8 @@
     ],
     "OTEL_EXPORTER_OTLP_LOGS_HEADERS": [
       {
-        "implementation": "A",
-        "type": "string",
+        "implementation": "B",
+        "type": "map",
         "default": null,
         "product": "OpenTelemetry",
         "aliases": [
@@ -2221,7 +2221,7 @@
     ],
     "OTEL_EXPORTER_OTLP_METRICS_PROTOCOL": [
       {
-        "implementation": "A",
+        "implementation": "C",
         "type": "string",
         "default": "grpc",
         "product": "OpenTelemetry",
@@ -2240,7 +2240,7 @@
     ],
     "OTEL_EXPORTER_OTLP_METRICS_TIMEOUT": [
       {
-        "implementation": "A",
+        "implementation": "C",
         "type": "int",
         "default": "10000",
         "product": "OpenTelemetry",
@@ -2251,7 +2251,7 @@
     ],
     "OTEL_EXPORTER_OTLP_PROTOCOL": [
       {
-        "implementation": "A",
+        "implementation": "C",
         "type": "string",
         "default": "grpc",
         "product": "OpenTelemetry"
@@ -2267,7 +2267,7 @@
     ],
     "OTEL_LOG_LEVEL": [
       {
-        "implementation": "A",
+        "implementation": "C",
         "type": "string",
         "default": null,
         "product": "OpenTelemetry"
@@ -2300,22 +2300,22 @@
     "OTEL_PROPAGATORS": [
       {
         "implementation": "A",
-        "type": "string",
-        "default": null,
+        "type": "array",
+        "default": "",
         "product": "OpenTelemetry"
       }
     ],
     "OTEL_RESOURCE_ATTRIBUTES": [
       {
         "implementation": "A",
-        "type": "string",
-        "default": null,
+        "type": "map",
+        "default": "",
         "product": "OpenTelemetry"
       }
     ],
     "OTEL_SDK_DISABLED": [
       {
-        "implementation": "A",
+        "implementation": "B",
         "type": "boolean",
         "default": null,
         "product": "OpenTelemetry"
@@ -2323,7 +2323,7 @@
     ],
     "OTEL_SERVICE_NAME": [
       {
-        "implementation": "A",
+        "implementation": "B",
         "type": "string",
         "default": null,
         "product": "OpenTelemetry"
@@ -2331,7 +2331,7 @@
     ],
     "OTEL_TRACES_EXPORTER": [
       {
-        "implementation": "A",
+        "implementation": "C",
         "type": "string",
         "default": null,
         "product": "OpenTelemetry"
@@ -2339,7 +2339,7 @@
     ],
     "OTEL_TRACES_SAMPLER": [
       {
-        "implementation": "A",
+        "implementation": "C",
         "type": "string",
         "default": null,
         "product": "OpenTelemetry"
@@ -2347,7 +2347,7 @@
     ],
     "OTEL_TRACES_SAMPLER_ARG": [
       {
-        "implementation": "A",
+        "implementation": "D",
         "type": "decimal",
         "default": null,
         "product": "OpenTelemetry"
