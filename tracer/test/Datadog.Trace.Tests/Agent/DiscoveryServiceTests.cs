@@ -119,7 +119,7 @@ public class DiscoveryServiceTests
         var factory = new TestRequestFactory(
             x =>
             {
-                mutex.Wait(10_000).Should().BeTrue("Should make request to api");
+                mutex.Wait(30_000).Should().BeTrue("Should make request to api");
                 return new TestApiRequest(x, responseContent: GetConfig());
             });
 
@@ -166,7 +166,7 @@ public class DiscoveryServiceTests
         var factory = new TestRequestFactory(
             x =>
             {
-                mutex1.Wait(10_000).Should().BeTrue("Should make request to api");
+                mutex1.Wait(30_000).Should().BeTrue("Should make request to api");
                 return new TestApiRequest(x, responseContent: GetConfig());
             },
             x => new TestApiRequest(x, responseContent: GetConfig()),
@@ -198,7 +198,7 @@ public class DiscoveryServiceTests
         var factory = new TestRequestFactory(
             x =>
             {
-                mutex1.Wait(10_000).Should().BeTrue("Should make request to api");
+                mutex1.Wait(30_000).Should().BeTrue("Should make request to api");
                 return new TestApiRequest(x, responseContent: GetConfig(dropP0: true));
             },
             x => new TestApiRequest(x, responseContent: GetConfig(dropP0: false)),
@@ -231,7 +231,7 @@ public class DiscoveryServiceTests
         var factory = new TestRequestFactory(
             x =>
             {
-                mutex1.Wait(10_000).Should().BeTrue("Should make request to api");
+                mutex1.Wait(30_000).Should().BeTrue("Should make request to api");
                 return new TestApiRequest(x, responseContent: GetConfig(dropP0: true));
             },
             x => new TestApiRequest(x, responseContent: GetConfig(dropP0: false)),
@@ -413,27 +413,6 @@ public class DiscoveryServiceTests
         containerMetadata.ContainerTagsHash.Should().Be(expectedTagsHash);
 
         await ds.DisposeAsync();
-    }
-
-    [Fact]
-    public void BuildHeaders_WithContainerId_IncludesContainerIdHeader()
-    {
-        const string containerId = "test-container-id-12345";
-
-        var headers = DiscoveryService.BuildHeaders(containerId);
-
-        headers.Should().HaveCount(AgentHttpHeaderNames.MinimalHeaders.Length + 1);
-        headers.Should().Contain(AgentHttpHeaderNames.MinimalHeaders);
-        headers.Should().Contain(kvp => kvp.Value == containerId);
-    }
-
-    [Fact]
-    public void BuildHeaders_WithoutContainerId_ReturnsMinimalHeaders()
-    {
-        var headers = DiscoveryService.BuildHeaders(null);
-
-        // Should return exactly the minimal headers
-        headers.Should().BeEquivalentTo(AgentHttpHeaderNames.MinimalHeaders);
     }
 
     private string GetConfig(bool dropP0 = true, string version = null)

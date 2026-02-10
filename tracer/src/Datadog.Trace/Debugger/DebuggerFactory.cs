@@ -123,8 +123,6 @@ internal sealed class DebuggerFactory
             tracerSettings.Manager.InitialExporterSettings,
             productName: "debugger",
             tcpTimeout: TimeSpan.FromSeconds(15),
-            AgentHttpHeaderNames.MinimalHeaders,
-            isMultipart ? () => new MultipartAgentHeaderHelper() : () => new MinimalAgentHeaderHelper(),
-            uri => uri);
+            httpHeaderHelper: MinimalAgentHeaderHelper.Instance);
     }
 }

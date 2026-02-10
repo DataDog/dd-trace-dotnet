@@ -1,3 +1,12 @@
+---
+name: analyze-crash
+description: Stack Trace Crash Analysis for dd-trace-dotnet
+argument-hint: <paste-stack-trace>
+disable-model-invocation: true
+context: fork
+agent: general-purpose
+---
+
 # Stack Trace Crash Analysis for dd-trace-dotnet
 
 You are analyzing a crash stack trace for the dd-trace-dotnet repository. Perform a comprehensive investigation to help engineers understand and triage the crash. Focus on de-mystifying the crashing thread and explaining how the crash occurred.

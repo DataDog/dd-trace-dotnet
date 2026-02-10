@@ -20,7 +20,7 @@ namespace Datadog.Trace.Security.IntegrationTests
     public class AspNetCore2TestsSecurityDisabled : AspNetCoreBase
     {
         public AspNetCore2TestsSecurityDisabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-            : base("AspNetCore2", fixture, outputHelper, "/shutdown", enableSecurity: false, testName: "AspNetCore2.SecurityDisabled", clearMetaStruct: true)
+            : base("AspNetCore2", fixture, outputHelper, "/shutdown", enableSecurity: false, testName: "AspNetCore2.SecurityDisabled")
         {
         }
     }
@@ -28,7 +28,7 @@ namespace Datadog.Trace.Security.IntegrationTests
     public class AspNetCore2TestsSecurityEnabled : AspNetCoreBase
     {
         public AspNetCore2TestsSecurityEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-            : base("AspNetCore2", fixture, outputHelper, "/shutdown", enableSecurity: true, testName: "AspNetCore2.SecurityEnabled", clearMetaStruct: true)
+            : base("AspNetCore2", fixture, outputHelper, "/shutdown", enableSecurity: true, testName: "AspNetCore2.SecurityEnabled")
         {
         }
     }
