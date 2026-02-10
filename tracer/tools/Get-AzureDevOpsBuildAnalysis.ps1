@@ -189,6 +189,48 @@ function Get-FailedRecords {
     }
 }
 
+function Get-CanceledRecords {
+    param(
+        [object]$Timeline,
+        [string]$Type
+    )
+
+    $canceledRecords = $Timeline.records | Where-Object {
+        $_.result -eq 'canceled' -and $_.type -eq $Type
+    }
+
+    $results = @()
+    foreach ($record in $canceledRecords) {
+        $durationMinutes = 0
+        $classification = 'unknown'
+
+        if ($record.startTime -and $record.finishTime) {
+            $startTime = [datetime]::Parse($record.startTime)
+            $finishTime = [datetime]::Parse($record.finishTime)
+            $durationMinutes = ($finishTime - $startTime).TotalMinutes
+        }
+
+        # Classify based on duration
+        # >= 55 min: likely timeout (Azure DevOps has 60 min default)
+        # < 5 min: likely collateral damage from parent cancellation
+        # 5-55 min: unknown (could be manual cancellation or other)
+        if ($durationMinutes -ge 55) {
+            $classification = 'timeout'
+        }
+        elseif ($durationMinutes -lt 5) {
+            $classification = 'collateral'
+        }
+
+        $results += [PSCustomObject]@{
+            Name             = $record.name
+            DurationMinutes  = [math]::Round($durationMinutes, 1)
+            Classification   = $classification
+        }
+    }
+
+    return $results
+}
+
 #endregion
 
 try {
@@ -232,6 +274,10 @@ try {
     $failedJobs = @(Get-FailedRecords -Timeline $timeline -Type 'Job')
     $failedStages = @(Get-FailedRecords -Timeline $timeline -Type 'Stage')
 
+    $canceledJobs = @(Get-CanceledRecords -Timeline $timeline -Type 'Job')
+    $timedOutJobs = @($canceledJobs | Where-Object { $_.Classification -eq 'timeout' })
+    $collateralCanceledJobs = @($canceledJobs | Where-Object { $_.Classification -eq 'collateral' })
+
     $errorMessages = @($failedTasks | ForEach-Object {
         $_.issues | Where-Object { $_.type -eq 'error' } | ForEach-Object { $_.message }
     })
@@ -251,6 +297,9 @@ try {
         FailedTasks     = @($failedTasks | ForEach-Object { $_.name })
         FailedJobs      = @($failedJobs | ForEach-Object { $_.name })
         FailedStages    = @($failedStages | ForEach-Object { $_.name })
+        CanceledJobs         = @($canceledJobs | ForEach-Object { $_.Name })
+        TimedOutJobs         = @($timedOutJobs | ForEach-Object { "$($_.Name) ($($_.DurationMinutes) min)" })
+        CollateralCanceled   = @($collateralCanceledJobs | ForEach-Object { $_.Name })
         FailedTests     = $failedTests
         ErrorMessages   = $errorMessages
         Comparison      = $null
@@ -364,6 +413,8 @@ try {
         Write-Host "  Failed Jobs:   " -NoNewline; Write-Host $result.FailedJobs.Count -ForegroundColor Green
         Write-Host "  Failed Tasks:  " -NoNewline; Write-Host $result.FailedTasks.Count -ForegroundColor Green
         Write-Host "  Failed Tests:  " -NoNewline; Write-Host $result.FailedTests.Count -ForegroundColor Green
+        Write-Host "  Timed Out:     " -NoNewline; Write-Host $result.TimedOutJobs.Count -ForegroundColor Yellow
+        Write-Host "  Canceled:      " -NoNewline; Write-Host $result.CanceledJobs.Count -ForegroundColor DarkGray
 
         if ($result.FailedStages.Count -gt 0) {
             Write-Host "`nFailed Stages:" -ForegroundColor Red
@@ -378,6 +429,16 @@ try {
         if ($result.FailedTasks.Count -gt 0) {
             Write-Host "`nFailed Tasks:" -ForegroundColor Red
             $result.FailedTasks | ForEach-Object { Write-Host "  - $_" -ForegroundColor DarkGray }
+        }
+
+        if ($result.TimedOutJobs.Count -gt 0) {
+            Write-Host "`nTimed Out Jobs (canceled after ~60 min):" -ForegroundColor Yellow
+            $result.TimedOutJobs | ForEach-Object { Write-Host "  - $_" -ForegroundColor DarkGray }
+        }
+
+        if ($result.CollateralCanceled.Count -gt 0) {
+            Write-Host "`nCollateral Cancellations (< 5 min, likely parent failure):" -ForegroundColor DarkGray
+            $result.CollateralCanceled | ForEach-Object { Write-Host "  - $_" -ForegroundColor DarkGray }
         }
 
         if ($result.FailedTests.Count -gt 0) {
