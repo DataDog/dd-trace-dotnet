@@ -24,7 +24,7 @@ If no argument is provided, guide the user through the full workflow interactive
 
 ## Context
 
-**Current repository**: D:\source\datadog\dd-trace-dotnet
+**Current repository**: This skill assumes you are working from the root of the `dd-trace-dotnet` repository.
 
 **Test Function Apps** (in resource group `lucas.pimentel`, Canada Central):
 
@@ -39,14 +39,7 @@ If no argument is provided, guide the user through the full workflow interactive
 | lucasp-consumption-windows-isolated | Windows consumption | .NET 8 Isolated | Consumption |
 | lucasp-flex-consumption-isolated | Flex consumption | .NET 8 Isolated | Flex Consumption |
 
-**Sample Applications**:
-- Primary: `D:\source\datadog\serverless-dev-apps\azure\functions\dotnet\isolated-dotnet8-aspnetcore`
-- All samples: `D:\source\datadog\serverless-dev-apps\azure\functions\dotnet`
-
-**Temporary Directories**:
-- NuGet packages: `D:\temp\nuget`
-- Log downloads: `D:\temp\logs-*.zip`
-- Trace payloads: `D:\temp\trace_payload_*.json`
+**Sample Applications**: Users provide their own Azure Functions app path via the `-SampleAppPath` parameter. The app must reference the `Datadog.AzureFunctions` NuGet package.
 
 ## Workflow Steps
 
@@ -55,7 +48,7 @@ If no argument is provided, guide the user through the full workflow interactive
 Build the `Datadog.AzureFunctions` NuGet package with your changes:
 
 ```powershell
-.\tracer\tools\Build-AzureFunctionsNuget.ps1 -CopyTo D:\temp\nuget -Verbose
+.\tracer\tools\Build-AzureFunctionsNuget.ps1 -CopyTo <output-dir> -Verbose
 ```
 
 **What this does**:
@@ -64,7 +57,7 @@ Build the `Datadog.AzureFunctions` NuGet package with your changes:
 3. Builds `Datadog.Trace` (net6.0 and net461)
 4. Publishes to bundle folder
 5. Packages `Datadog.AzureFunctions.nupkg` with the generated version
-6. Copies to `D:\temp\nuget`
+6. Copies to the directory specified by `-CopyTo`
 
 **Versioning**: Each build gets a unique version, so NuGet caching is never an issue.
 The sample app in `serverless-dev-apps` uses a floating version `3.38.0-dev.*` in
@@ -76,7 +69,7 @@ The sample app in `serverless-dev-apps` uses a floating version `3.38.0-dev.*` i
 
 **Alternative**: Download bundle from Azure DevOps build:
 ```powershell
-.\tracer\tools\Build-AzureFunctionsNuget.ps1 -BuildId 12345 -CopyTo D:\temp\nuget -Verbose
+.\tracer\tools\Build-AzureFunctionsNuget.ps1 -BuildId 12345 -CopyTo <output-dir> -Verbose
 ```
 
 ### 2. Deploy and Test Function
@@ -87,7 +80,7 @@ Use the `Deploy-AzureFunction.ps1` script to automate deployment, wait, and trig
 .\tracer\tools\Deploy-AzureFunction.ps1 `
   -AppName "lucasp-premium-linux-isolated-aspnet" `
   -ResourceGroup "lucas.pimentel" `
-  -SampleAppPath "D:\source\datadog\serverless-dev-apps\azure\functions\dotnet\isolated-dotnet8-aspnetcore" `
+  -SampleAppPath "<path-to-sample-app>" `
   -Verbose
 ```
 
@@ -112,7 +105,7 @@ Use the `Deploy-AzureFunction.ps1` script to automate deployment, wait, and trig
 $deploy = .\tracer\tools\Deploy-AzureFunction.ps1 `
   -AppName "lucasp-premium-linux-isolated-aspnet" `
   -ResourceGroup "lucas.pimentel" `
-  -SampleAppPath "D:\source\datadog\serverless-dev-apps\azure\functions\dotnet\isolated-dotnet8-aspnetcore"
+  -SampleAppPath "<path-to-sample-app>"
 ```
 
 ### 3. Download and Analyze Logs
@@ -145,7 +138,7 @@ Use the `Get-AzureFunctionLogs.ps1` script to download, extract, and analyze log
 $deploy = .\tracer\tools\Deploy-AzureFunction.ps1 `
   -AppName "lucasp-premium-linux-isolated-aspnet" `
   -ResourceGroup "lucas.pimentel" `
-  -SampleAppPath "D:\source\datadog\serverless-dev-apps\azure\functions\dotnet\isolated-dotnet8-aspnetcore"
+  -SampleAppPath "<path-to-sample-app>"
 
 .\tracer\tools\Get-AzureFunctionLogs.ps1 `
   -AppName $deploy.AppName `
@@ -193,9 +186,8 @@ az functionapp restart --name lucasp-premium-linux-isolated-aspnet --resource-gr
 # Check all worker initializations
 grep "Assembly metadata" LogFiles/datadog/dotnet-tracer-managed-dotnet-*.log
 
-# If old version, rebuild (each build gets a unique version, no cache issues)
-cd D:/source/datadog/dd-trace-dotnet
-.\tracer\tools\Build-AzureFunctionsNuget.ps1 -CopyTo D:\temp\nuget -Verbose
+# If old version, rebuild from the dd-trace-dotnet repo root (each build gets a unique version, no cache issues)
+.\tracer\tools\Build-AzureFunctionsNuget.ps1 -CopyTo <output-dir> -Verbose
 # Then restore and redeploy the sample app
 ```
 
@@ -264,4 +256,3 @@ For reusable bash/PowerShell scripts and one-liners, see [scripts-reference.md](
 
 - Detailed docs: `docs/development/AzureFunctions.md`
 - Architecture deep dive: `docs/development/for-ai/AzureFunctions-Architecture.md`
-- Parent CLAUDE.md: `D:\source\datadog\CLAUDE.md` (Azure Functions Testing Workflow section)
