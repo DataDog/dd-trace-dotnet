@@ -11,6 +11,7 @@
 
 #ifdef _WINDOWS
 #include "..\Datadog.Profiler.Native.Windows\SymPdbParser.h"
+#include "..\Datadog.Profiler.Native.Windows\DbgHelpParser.h"
 #include <metahost.h>
 #include <atlbase.h>
 #endif
@@ -68,7 +69,7 @@ namespace
 
 // This test validates that SymPdbParser can parse symbols from a .NET Framework PDB (Windows PDB format).
 // .NET Framework (net48) produces Windows PDB files that cannot be parsed as Portable PDBs.
-TEST(DebugInfoStoreTest, ParseModuleDebugInfo_NetFramework)
+TEST(DebugInfoStoreTest, ParseModuleDebugInfo_SymPdbParser)
 {
     // Get paths to the sample PDB and module
     auto [pdbPath, modulePath] = GetSamplePdbPath("Samples.Computer01", "net48");
@@ -170,6 +171,76 @@ TEST(DebugInfoStoreTest, ParseModuleDebugInfo_NetFramework)
         }
     }
     ASSERT_TRUE(foundValidLineNumber) << "Expected at least one RVA with valid line number and source file";
+}
+
+// This test validates that DbgHelpParser can parse symbols from a .NET Framework PDB (Windows PDB format).
+// DbgHelpParser uses the Windows DbgHelp API and doesn't require IMetaDataImport.
+TEST(DebugInfoStoreTest, ParseModuleDebugInfo_DbgHelp)
+{
+    // Get paths to the sample PDB and module
+    auto [pdbPath, modulePath] = GetSamplePdbPath("Samples.Computer01", "net48");
+
+    if (pdbPath.empty())
+    {
+        GTEST_SKIP() << "Failed to get current process path";
+        return;
+    }
+
+    std::error_code ec;
+    if (!fs::exists(pdbPath, ec) || !fs::exists(modulePath, ec))
+    {
+        GTEST_SKIP() << "Samples.Computer01.pdb (net48) not found. Build the Samples.Computer01 project for net48 first.";
+        return;
+    }
+
+    // Parse the PDB using DbgHelpParser
+    ModuleDebugInfo moduleInfo;
+    DbgHelpParser parser;
+    bool success = parser.LoadPdbFile(&moduleInfo, pdbPath.string());
+
+    ASSERT_TRUE(success) << "Failed to load PDB file with DbgHelpParser";
+
+    // Validate that symbols were loaded
+    // For .NET Framework PDB (Windows PDB format), the LoadingState should be Windows
+    ASSERT_EQ(moduleInfo.LoadingState, SymbolLoadingState::Windows)
+        << "Expected Windows PDB format for .NET Framework compilation (net48)";
+
+    // Validate that debug info was populated
+    ASSERT_FALSE(moduleInfo.Files.empty()) << "Expected at least one source file in debug info";
+    ASSERT_FALSE(moduleInfo.RidToDebugInfo.empty()) << "Expected RID to debug info mapping for Windows PDB";
+
+    // The first entry should be the empty string placeholder
+    ASSERT_EQ(moduleInfo.Files[0], DebugInfoStore::NoFileFound);
+
+    // Validate that we have actual source files loaded
+    ASSERT_GT(moduleInfo.Files.size(), 1) << "Expected more than just the placeholder entry";
+
+    // At least one file should reference a .cs source file
+    bool foundCsFile = false;
+    for (const auto& file : moduleInfo.Files)
+    {
+        if (file.find(".cs") != std::string::npos)
+        {
+            foundCsFile = true;
+            break;
+        }
+    }
+    ASSERT_TRUE(foundCsFile) << "Expected at least one .cs source file in debug info";
+
+    // Validate that we have RID mappings
+    ASSERT_GT(moduleInfo.RidToDebugInfo.size(), 1) << "Expected RID to debug info mappings";
+
+    // Validate that at least some entries have valid line numbers
+    bool foundValidLineNumber = false;
+    for (const auto& debugInfo : moduleInfo.RidToDebugInfo)
+    {
+        if (debugInfo.StartLine > 0 && debugInfo.File != DebugInfoStore::NoFileFound)
+        {
+            foundValidLineNumber = true;
+            break;
+        }
+    }
+    ASSERT_TRUE(foundValidLineNumber) << "Expected at least one RID with valid line number and source file";
 }
 
 #endif // _WINDOWS

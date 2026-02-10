@@ -13,19 +13,23 @@
 
 const std::string NoFileFoundString = "";
 
-
-DbgHelpParser::DbgHelpParser(ModuleDebugInfo* pModuleInfo)
-    :
-    _pModuleInfo(pModuleInfo),
-    _baseAddress(0),
-    _age(0)
+// Helper struct to pass context to the static callback
+struct CallbackContext
 {
-    _sourceFileMap.reserve(1024);
-    _methods.reserve(1024);
+    DbgHelpParsingContext* context;
+    ModuleDebugInfo* pModuleInfo;
+    DbgHelpParser* parser;
+};
 
-    // NOTE: don't forget to add the empty string in the map for files
-    FindOrAddSourceFile("");
+bool DbgHelpParser::LoadPdbFile(ModuleDebugInfo* pModuleInfo, const std::string& pdbFilePath)
+{
+    // BUG? : dbghelp does not fail if the .pdb file does not exist...
+    if (GetFileAttributesA(pdbFilePath.c_str()) == INVALID_FILE_ATTRIBUTES)
+    {
+        return false;
+    }
 
+    // Set up DbgHelp options
     DWORD options = SymGetOptions();
     //options |= SYMOPT_DEBUG;
     options |= SYMOPT_LOAD_LINES;           // Load line number information
@@ -34,43 +38,26 @@ DbgHelpParser::DbgHelpParser(ModuleDebugInfo* pModuleInfo)
     options |= SYMOPT_FAIL_CRITICAL_ERRORS; // Don't show error dialogs
     SymSetOptions(options);
 
-    _hProcess = GetCurrentProcess();
-    if (!SymInitialize(_hProcess, NULL, FALSE))
-    {
-        _hProcess = NULL;
-    }
-}
-
-DbgHelpParser::~DbgHelpParser()
-{
-    if (_hProcess != NULL)
-    {
-        if (_baseAddress != 0)
-        {
-            SymUnloadModule64(_hProcess, _baseAddress);
-            _baseAddress = 0;
-        }
-
-        SymCleanup(_hProcess);
-        _hProcess = NULL;
-    }
-}
-
-bool DbgHelpParser::LoadPdbFile(const std::string& pdbFilePath)
-{
-    if (_hProcess == NULL)
+    HANDLE hProcess = GetCurrentProcess();
+    if (!SymInitialize(hProcess, NULL, FALSE))
     {
         return false;
     }
 
-    // BUG? : dbghelp does not fail if the .pdb file does not exist...
-    if (GetFileAttributesA(pdbFilePath.c_str()) == INVALID_FILE_ATTRIBUTES)
-    {
-        return false;
-    }
+    // Create temporary parsing context
+    DbgHelpParsingContext context;
+    context.hProcess = hProcess;
+    context.baseAddress = 0;
+    context.currentRID = 0;
+    context.sourceFileMap.reserve(DEFAULT_RESERVE_SIZE);
+    context.methods.reserve(DEFAULT_RESERVE_SIZE);
 
-    _baseAddress = SymLoadModuleEx(
-        _hProcess,
+    // NOTE: don't forget to add the empty string in the map for files
+    FindOrAddSourceFile("", pModuleInfo, context);
+
+    // Load the PDB module
+    context.baseAddress = SymLoadModuleEx(
+        hProcess,
         NULL,
         pdbFilePath.c_str(),
         NULL,
@@ -80,61 +67,64 @@ bool DbgHelpParser::LoadPdbFile(const std::string& pdbFilePath)
         0
     );
 
-    if (_baseAddress == 0)
+    if (context.baseAddress == 0)
     {
+        SymCleanup(hProcess);
         return false;
     }
 
     IMAGEHLP_MODULE64 moduleInfo = { 0 };
     moduleInfo.SizeOfStruct = sizeof(IMAGEHLP_MODULE64);
-    if (!SymGetModuleInfo64(_hProcess, _baseAddress, &moduleInfo))
+    if (!SymGetModuleInfo64(hProcess, context.baseAddress, &moduleInfo))
     {
+        SymUnloadModule64(hProcess, context.baseAddress);
+        SymCleanup(hProcess);
         return false;
     }
 
-    // TODO: remove if not needed
-    _age = moduleInfo.PdbAge;
-    GUID guid = moduleInfo.PdbSig70;
-    char strGUID[80];
-    sprintf_s(strGUID, 80, "%08x%04x%04x%02x%02x%02x%02x%02x%02x%02x%02x",
-        guid.Data1, guid.Data2, guid.Data3,
-        guid.Data4[0], guid.Data4[1], guid.Data4[2], guid.Data4[3],
-        guid.Data4[4], guid.Data4[5], guid.Data4[6], guid.Data4[7]
-        );
-    _guid = strGUID;
-
     // Compute method info
-    if (!ComputeMethodsInfo())
+    if (!ComputeMethodsInfo(hProcess, context.baseAddress, pModuleInfo, context))
     {
+        SymUnloadModule64(hProcess, context.baseAddress);
+        SymCleanup(hProcess);
         return false;
     }
 
     // if no symbol was found, consider the pdb loading failed
-    if (_sourceFileMap.empty())
+    if (context.sourceFileMap.empty())
     {
+        SymUnloadModule64(hProcess, context.baseAddress);
+        SymCleanup(hProcess);
         return false;
     }
 
     // fill up the ModuleDebugInfo methods vector
-    _pModuleInfo->RidToDebugInfo.reserve(_methods.size() + 1);
+    pModuleInfo->RidToDebugInfo.reserve(context.methods.size() + 1);
 
     // first element is for RID 0 which is not used
-    _pModuleInfo->RidToDebugInfo.push_back({NoFileFoundString, 0});
+    pModuleInfo->RidToDebugInfo.push_back({NoFileFoundString, 0});
 
     // then insert all methods found in the .pdb
-    for (const MethodInfo& sym : _methods)
+    for (const MethodInfo& sym : context.methods)
     {
-        _pModuleInfo->RidToDebugInfo.push_back({sym.sourceFile, sym.lineNumber});
+        pModuleInfo->RidToDebugInfo.push_back({sym.sourceFile, sym.lineNumber});
     }
 
-    _pModuleInfo->LoadingState = SymbolLoadingState::Windows;
+    pModuleInfo->LoadingState = SymbolLoadingState::Windows;
 
     // Log memory size of loaded symbols
-    auto memorySize = _pModuleInfo->GetMemorySize();
-    Log::Info("Loaded symbols from Windows PDB (DbgHelp) for ", pdbFilePath,
-              ". Memory size: ", memorySize, " bytes (",
-              _pModuleInfo->Files.size(), " files, ",
-              _pModuleInfo->RidToDebugInfo.size(), " methods)");
+    if (Log::IsDebugEnabled())
+    {
+        auto memorySize = pModuleInfo->GetMemorySize();
+        Log::Debug("Loaded symbols from Windows PDB (DbgHelp) for ", pdbFilePath,
+                  ". Memory size: ", memorySize, " bytes (",
+                  pModuleInfo->Files.size(), " files, ",
+                  pModuleInfo->RidToDebugInfo.size(), " methods)");
+    }
+
+    // Cleanup
+    SymUnloadModule64(hProcess, context.baseAddress);
+    SymCleanup(hProcess);
 
     return true;
 }
@@ -153,7 +143,7 @@ uint32_t ExtractRID(const char* methodName)
 
 BOOL CALLBACK DbgHelpParser::EnumMethodSymbolsCallback(PSYMBOL_INFO pSymInfo, ULONG SymbolSize, PVOID UserContext)
 {
-    DbgHelpParser* parser = reinterpret_cast<DbgHelpParser*>(UserContext);
+    CallbackContext* cbContext = reinterpret_cast<CallbackContext*>(UserContext);
 
     if (
         (pSymInfo->Tag == SymTagFunction)
@@ -163,16 +153,16 @@ BOOL CALLBACK DbgHelpParser::EnumMethodSymbolsCallback(PSYMBOL_INFO pSymInfo, UL
         MethodInfo info;
         info.address = pSymInfo->Address;
         info.size = pSymInfo->Size;
-        info.rid = parser->_currentRID++;
+        info.rid = cbContext->context->currentRID++;
 
         // Try to get source file and line information
         IMAGEHLP_LINE64 line = { 0 };
         line.SizeOfStruct = sizeof(IMAGEHLP_LINE64);
         DWORD displacement = 0;
-        if (SymGetLineFromAddr64(parser->_hProcess, pSymInfo->Address, &displacement, &line))
+        if (SymGetLineFromAddr64(cbContext->context->hProcess, pSymInfo->Address, &displacement, &line))
         {
             auto strSourceFile = line.FileName ? line.FileName : "";
-            info.sourceFile = parser->FindOrAddSourceFile(strSourceFile);
+            info.sourceFile = cbContext->parser->FindOrAddSourceFile(strSourceFile, cbContext->pModuleInfo, *cbContext->context);
             info.lineNumber = line.LineNumber;
         }
         else
@@ -181,26 +171,28 @@ BOOL CALLBACK DbgHelpParser::EnumMethodSymbolsCallback(PSYMBOL_INFO pSymInfo, UL
             info.lineNumber = 0;
         }
 
-        parser->_methods.push_back(info);
+        cbContext->context->methods.push_back(info);
     }
 
     return TRUE; // Continue enumeration
 }
 
-bool DbgHelpParser::ComputeMethodsInfo()
+bool DbgHelpParser::ComputeMethodsInfo(HANDLE hProcess, uint64_t baseAddress, ModuleDebugInfo* pModuleInfo, DbgHelpParsingContext& context)
 {
     // first RID is 1
-    _currentRID = 1;
+    context.currentRID = 1;
 
     // the method symbols are enumerated in an implicit "RID" order corresponding
     // to the same order as in the metadata methodDef table
     // --> the rid will be the index in the enumeration
+    CallbackContext cbContext = { &context, pModuleInfo, this };
+
     if (!SymEnumSymbols(
-            _hProcess,
-            _baseAddress,
+            hProcess,
+            baseAddress,
             "*!*",  // Mask (all symbols)
             EnumMethodSymbolsCallback,
-            this    // User context to store the methods in _methods instance field
+            &cbContext    // User context to pass to callback
     ))
     {
         return false;
@@ -209,14 +201,14 @@ bool DbgHelpParser::ComputeMethodsInfo()
     return true;
 }
 
-std::string_view DbgHelpParser::FindOrAddSourceFile(const char* filePath)
+std::string_view DbgHelpParser::FindOrAddSourceFile(const char* filePath, ModuleDebugInfo* pModuleInfo, DbgHelpParsingContext& context)
 {
     // Use string_view as key to avoid creating std::string for lookup
     std::string_view key(filePath);
 
     // Try to find in the map
-    auto map_it = _sourceFileMap.find(key);
-    if (map_it != _sourceFileMap.end())
+    auto map_it = context.sourceFileMap.find(key);
+    if (map_it != context.sourceFileMap.end())
     {
         // Return view to existing string
         return *map_it->second;
@@ -224,18 +216,11 @@ std::string_view DbgHelpParser::FindOrAddSourceFile(const char* filePath)
 
     // Not found - create new string and add to both containers
     // Using std::string's move constructor with emplace_back
-    _pModuleInfo->Files.emplace_back(filePath);
-    std::string& new_str = _pModuleInfo->Files.back();
+    pModuleInfo->Files.emplace_back(filePath);
+    std::string& new_str = pModuleInfo->Files.back();
 
     // Store pointer to the string in the map using string_view as key
-    _sourceFileMap.emplace(new_str, &new_str);
+    context.sourceFileMap.emplace(new_str, &new_str);
 
     return new_str;
-}
-
-
-// TODO: remove the code used to keep track of the methods
-std::vector<MethodInfo> DbgHelpParser::GetMethods()
-{
-    return _methods;
 }

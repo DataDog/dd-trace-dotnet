@@ -178,11 +178,14 @@ bool DebugInfoStore::TryLoadSymbolsWithPortable(const std::string& pdbFilename, 
         moduleInfo.LoadingState = SymbolLoadingState::Portable;
 
         // Log memory size of loaded symbols
-        auto memorySize = moduleInfo.GetMemorySize();
-        Log::Info("Loaded symbols from Portable PDB for module ", moduleFilename,
-                  ". Memory size: ", memorySize, " bytes (",
-                  moduleInfo.Files.size(), " files, ",
-                  moduleInfo.RidToDebugInfo.size(), " methods)");
+        if (Log::IsDebugEnabled())
+        {
+            auto memorySize = moduleInfo.GetMemorySize();
+            Log::Debug("Loaded symbols from Portable PDB for module ", moduleFilename,
+                       ". Memory size: ", memorySize, " bytes (",
+                       moduleInfo.Files.size(), " files, ",
+                       moduleInfo.RidToDebugInfo.size(), " methods)");
+        }
 
         return true;
     }
@@ -238,8 +241,8 @@ bool DebugInfoStore::TryLoadSymbolsWithDbgHelp(const std::string& pdbFile, Modul
     moduleInfo.Files.push_back(NoFileFound);
 
     // the module LoadingState is set by the parser in case of success
-    DbgHelpParser parser(&moduleInfo);
-    bool success = parser.LoadPdbFile(pdbFile);
+    DbgHelpParser parser;
+    bool success = parser.LoadPdbFile(&moduleInfo, pdbFile);
 
     return success;
 }

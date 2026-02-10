@@ -78,12 +78,14 @@ bool SymParser::LoadPdbFile(IMetaDataImport* pMetaDataImport, ModuleDebugInfo* p
     pModuleInfo->LoadingState = SymbolLoadingState::Windows;
 
     // Log memory size of loaded symbols
-    auto memorySize = pModuleInfo->GetMemorySize();
-    Log::Info("Loaded symbols from Windows PDB (Sym) for module ", moduleFilePath,
-              ". Memory size: ", memorySize, " bytes (",
-              pModuleInfo->Files.size(), " files, ",
-              pModuleInfo->RidToDebugInfo.size(), " methods)");
-
+    if (Log::IsDebugEnabled())
+    {
+        auto memorySize = pModuleInfo->GetMemorySize();
+        Log::Debug("Loaded symbols from Windows PDB (Sym) for module ", moduleFilePath,
+                  ". Memory size: ", memorySize, " bytes (",
+                  pModuleInfo->Files.size(), " files, ",
+                  pModuleInfo->RidToDebugInfo.size(), " methods)");
+    }
     return true;
 }
 
