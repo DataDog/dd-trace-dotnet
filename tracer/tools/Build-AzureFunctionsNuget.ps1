@@ -113,8 +113,8 @@ else
 Write-Verbose "Publishing Datadog.Trace (net6.0) to bundle folder."
 dotnet publish "$tracerDir/src/Datadog.Trace" -c Release -o "$tracerDir/src/Datadog.Trace.Bundle/home/net6.0" -f 'net6.0' -v $dotnetVerbosity
 
-Write-Verbose "Publishing Datadog.Trace (net461) to bundle folder."
-dotnet publish "$tracerDir/src/Datadog.Trace" -c Release -o "$tracerDir/src/Datadog.Trace.Bundle/home/net461" -f 'net461' -v $dotnetVerbosity
+# Write-Verbose "Publishing Datadog.Trace (net461) to bundle folder."
+# dotnet publish "$tracerDir/src/Datadog.Trace" -c Release -o "$tracerDir/src/Datadog.Trace.Bundle/home/net461" -f 'net461' -v $dotnetVerbosity
 
 # Restore Datadog.AzureFunctions project
 Write-Verbose "Restoring Datadog.AzureFunctions project."
