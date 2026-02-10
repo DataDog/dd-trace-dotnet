@@ -26,20 +26,7 @@ If no argument is provided, guide the user through the full workflow interactive
 
 **Current repository**: This skill assumes you are working from the root of the `dd-trace-dotnet` repository.
 
-**Test Function Apps** (in resource group `lucas.pimentel`, Canada Central):
-
-| Name | Purpose | Runtime | Plan |
-|------|---------|---------|------|
-| **lucasp-premium-linux-isolated-aspnet** | **Primary** - Isolated .NET 8 with ASP.NET Core | .NET 8 Isolated | Premium |
-| lucasp-premium-linux-isolated | Isolated .NET 8 (no ASP.NET Core) | .NET 8 Isolated | Premium |
-| lucasp-premium-linux-inproc | In-process .NET 6 | .NET 6 In-Process | Premium |
-| lucasp-premium-windows-isolated-aspnet | Windows isolated with ASP.NET Core | .NET 8 Isolated | Premium |
-| lucasp-premium-windows-isolated | Windows isolated (no ASP.NET Core) | .NET 8 Isolated | Premium |
-| lucasp-premium-windows-inproc | Windows in-process | .NET 6 In-Process | Premium |
-| lucasp-consumption-windows-isolated | Windows consumption | .NET 8 Isolated | Consumption |
-| lucasp-flex-consumption-isolated | Flex consumption | .NET 8 Isolated | Flex Consumption |
-
-**Sample Applications**: Users provide their own Azure Functions app path via the `-SampleAppPath` parameter. The app must reference the `Datadog.AzureFunctions` NuGet package.
+**Prerequisites**: Users provide their own Azure Function App name (`-AppName`), resource group (`-ResourceGroup`), and sample app path (`-SampleAppPath`). The app must reference the `Datadog.AzureFunctions` NuGet package.
 
 ## Workflow Steps
 
@@ -78,8 +65,8 @@ Use the `Deploy-AzureFunction.ps1` script to automate deployment, wait, and trig
 
 ```powershell
 .\tracer\tools\Deploy-AzureFunction.ps1 `
-  -AppName "lucasp-premium-linux-isolated-aspnet" `
-  -ResourceGroup "lucas.pimentel" `
+  -AppName "<app-name>" `
+  -ResourceGroup "<resource-group>" `
   -SampleAppPath "<path-to-sample-app>" `
   -Verbose
 ```
@@ -98,13 +85,13 @@ Use the `Deploy-AzureFunction.ps1` script to automate deployment, wait, and trig
 - `-SkipTrigger` - Skip HTTP trigger
 - `-TriggerUrl "https://..."` - Custom trigger URL
 
-**Default app**: If no app name specified, use `lucasp-premium-linux-isolated-aspnet`
+**Note**: `-AppName` and `-ResourceGroup` are required parameters.
 
 **Pipeline usage** (save output for log analysis):
 ```powershell
 $deploy = .\tracer\tools\Deploy-AzureFunction.ps1 `
-  -AppName "lucasp-premium-linux-isolated-aspnet" `
-  -ResourceGroup "lucas.pimentel" `
+  -AppName "<app-name>" `
+  -ResourceGroup "<resource-group>" `
   -SampleAppPath "<path-to-sample-app>"
 ```
 
@@ -114,8 +101,8 @@ Use the `Get-AzureFunctionLogs.ps1` script to download, extract, and analyze log
 
 ```powershell
 .\tracer\tools\Get-AzureFunctionLogs.ps1 `
-  -AppName "lucasp-premium-linux-isolated-aspnet" `
-  -ResourceGroup "lucas.pimentel" `
+  -AppName "<app-name>" `
+  -ResourceGroup "<resource-group>" `
   -ExecutionTimestamp "2026-01-23 17:53:00" `
   -All `
   -Verbose
@@ -136,13 +123,13 @@ Use the `Get-AzureFunctionLogs.ps1` script to download, extract, and analyze log
 **Pipeline usage** (with Deploy script):
 ```powershell
 $deploy = .\tracer\tools\Deploy-AzureFunction.ps1 `
-  -AppName "lucasp-premium-linux-isolated-aspnet" `
-  -ResourceGroup "lucas.pimentel" `
+  -AppName "<app-name>" `
+  -ResourceGroup "<resource-group>" `
   -SampleAppPath "<path-to-sample-app>"
 
 .\tracer\tools\Get-AzureFunctionLogs.ps1 `
   -AppName $deploy.AppName `
-  -ResourceGroup "lucas.pimentel" `
+  -ResourceGroup "<resource-group>" `
   -ExecutionTimestamp $deploy.ExecutionTimestamp `
   -All
 ```
@@ -175,10 +162,10 @@ After deployment and testing:
 ### Function Not Responding
 ```bash
 # Check deployment status
-az functionapp show --name lucasp-premium-linux-isolated-aspnet --resource-group lucas.pimentel
+az functionapp show --name <app-name> --resource-group <resource-group>
 
 # Restart function app
-az functionapp restart --name lucasp-premium-linux-isolated-aspnet --resource-group lucas.pimentel
+az functionapp restart --name <app-name> --resource-group <resource-group>
 ```
 
 ### Wrong Tracer Version After Deployment
@@ -195,8 +182,8 @@ grep "Assembly metadata" LogFiles/datadog/dotnet-tracer-managed-dotnet-*.log
 ```bash
 # Verify DD_API_KEY is set
 az functionapp config appsettings list \
-  --name lucasp-premium-linux-isolated-aspnet \
-  --resource-group lucas.pimentel | grep DD_API_KEY
+  --name <app-name> \
+  --resource-group <resource-group> | grep DD_API_KEY
 
 # Check worker initialization in logs
 grep "Datadog Tracer initialized" LogFiles/datadog/dotnet-tracer-managed-dotnet-*.log
@@ -207,7 +194,7 @@ grep "Datadog Tracer initialized" LogFiles/datadog/dotnet-tracer-managed-dotnet-
 2. Search worker logs for same trace ID
 3. If not found → worker created separate trace
 4. Look for worker spans with `p_id: null` instead of parent IDs matching host spans
-5. Enable debug logging: `az functionapp config appsettings set --name <app> --resource-group lucas.pimentel --settings DD_TRACE_DEBUG=1`
+5. Enable debug logging: `az functionapp config appsettings set --name <app> --resource-group <resource-group> --settings DD_TRACE_DEBUG=1`
 6. Re-test and analyze debug messages about AsyncLocal context flow
 
 ## Query Datadog API (Advanced)
@@ -222,7 +209,7 @@ curl -X POST https://api.datadoghq.com/api/v2/spans/events/search \
     "data": {
       "attributes": {
         "filter": {
-          "query": "service:lucasp-premium-linux-isolated @aas.function.process:worker",
+          "query": "service:<app-name> @aas.function.process:worker",
           "from": "now-10m",
           "to": "now"
         }
@@ -238,7 +225,7 @@ If invoked without arguments (`/azure-functions`), guide the user through:
 
 1. **Understand the goal**: What are they testing? (New feature, bug fix, trace verification)
 2. **Build**: Run Build-AzureFunctionsNuget.ps1
-3. **Select app**: Which test app to deploy to? (default: lucasp-premium-linux-isolated-aspnet)
+3. **Select app**: Which test app to deploy to?
 4. **Deploy**: Navigate to sample app and publish
 5. **Wait**: Remind to wait 1-2 minutes for worker restart
 6. **Test**: Trigger function and capture timestamp

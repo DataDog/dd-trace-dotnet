@@ -25,8 +25,7 @@ Invoke the skill with `/azure-functions` followed by an optional command:
 
 ### Deploy
 - Deploys sample app to Azure Function App
-- Supports all test apps in resource group `lucas.pimentel`
-- Default: `lucasp-premium-linux-isolated-aspnet`
+- User provides app name and resource group
 - Reminds to wait for worker restart
 
 ### Test
@@ -83,23 +82,12 @@ When invoked without arguments (`/azure-functions`), the skill guides you throug
 
 ## Quick Reference
 
-### Test Function Apps
+### Prerequisites
 
-All apps in resource group `lucas.pimentel`, Canada Central:
-
-- **lucasp-premium-linux-isolated-aspnet** (primary) - .NET 8 Isolated + ASP.NET Core
-- lucasp-premium-linux-isolated - .NET 8 Isolated (no ASP.NET Core)
-- lucasp-premium-linux-inproc - .NET 6 In-Process
-- lucasp-premium-windows-isolated-aspnet - Windows + ASP.NET Core
-- lucasp-premium-windows-isolated - Windows (no ASP.NET Core)
-- lucasp-premium-windows-inproc - Windows In-Process
-- lucasp-consumption-windows-isolated - Windows Consumption
-- lucasp-flex-consumption-isolated - Flex Consumption
-
-### Sample Applications
-
-Users provide their own Azure Functions app path via the `-SampleAppPath` parameter.
-The app must reference the `Datadog.AzureFunctions` NuGet package.
+Users provide their own:
+- **App name** (`-AppName`): The Azure Function App to deploy to
+- **Resource group** (`-ResourceGroup`): The Azure resource group containing the app
+- **Sample app path** (`-SampleAppPath`): Local path to an Azure Functions app that references the `Datadog.AzureFunctions` NuGet package
 
 ## Documentation References
 
@@ -116,8 +104,8 @@ The app must reference the `Datadog.AzureFunctions` NuGet package.
 
 ### Test specific app and download logs
 ```
-/azure-functions test lucasp-premium-linux-isolated
-/azure-functions logs lucasp-premium-linux-isolated
+/azure-functions test my-function-app
+/azure-functions logs my-function-app
 ```
 
 ### Analyze specific trace
