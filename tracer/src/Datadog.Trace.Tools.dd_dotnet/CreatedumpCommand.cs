@@ -31,6 +31,31 @@ internal class CreatedumpCommand : Command
     private const string EnvironmentFilteringEnabled = "DD_CRASHTRACKING_FILTERING_ENABLED";
     private const string EnvironmentLogToConsole = "DD_CRASHTRACKING_INTERNAL_LOG_TO_CONSOLE";
 
+    private static readonly Dictionary<int, string> WindowsExceptionCodeNames = new()
+    {
+        [unchecked((int)0x80000003)] = "EXCEPTION_BREAKPOINT",
+        [unchecked((int)0x80000004)] = "EXCEPTION_SINGLE_STEP",
+        [unchecked((int)0xC0000005)] = "EXCEPTION_ACCESS_VIOLATION",
+        [unchecked((int)0xC0000006)] = "EXCEPTION_IN_PAGE_ERROR",
+        [unchecked((int)0xC000001D)] = "EXCEPTION_ILLEGAL_INSTRUCTION",
+        [unchecked((int)0xC0000025)] = "EXCEPTION_NONCONTINUABLE_EXCEPTION",
+        [unchecked((int)0xC000008C)] = "EXCEPTION_ARRAY_BOUNDS_EXCEEDED",
+        [unchecked((int)0xC000008D)] = "EXCEPTION_FLT_DENORMAL_OPERAND",
+        [unchecked((int)0xC000008E)] = "EXCEPTION_FLT_DIVIDE_BY_ZERO",
+        [unchecked((int)0xC000008F)] = "EXCEPTION_FLT_INEXACT_RESULT",
+        [unchecked((int)0xC0000090)] = "EXCEPTION_FLT_INVALID_OPERATION",
+        [unchecked((int)0xC0000091)] = "EXCEPTION_FLT_OVERFLOW",
+        [unchecked((int)0xC0000092)] = "EXCEPTION_FLT_STACK_CHECK",
+        [unchecked((int)0xC0000093)] = "EXCEPTION_FLT_UNDERFLOW",
+        [unchecked((int)0xC0000094)] = "EXCEPTION_INT_DIVIDE_BY_ZERO",
+        [unchecked((int)0xC0000095)] = "EXCEPTION_INT_OVERFLOW",
+        [unchecked((int)0xC0000096)] = "EXCEPTION_PRIV_INSTRUCTION",
+        [unchecked((int)0xC00000FD)] = "EXCEPTION_STACK_OVERFLOW",
+        [unchecked((int)0xC0000409)] = "STATUS_STACK_BUFFER_OVERRUN",
+        [unchecked((int)0xE06D7363)] = "Microsoft C++ exception",
+        [unchecked((int)0xE0434352)] = "CLR exception",
+    };
+
     private static readonly List<string> Errors = new();
     private static ClrRuntime? _runtime;
     private static DataTarget? _dataTarget;
@@ -51,11 +76,13 @@ internal class CreatedumpCommand : Command
         this.SetHandler(Execute);
     }
 
-    internal static bool ParseArguments(string[] arguments, out int pid, out int? signal, out int? crashThread)
+    internal static bool ParseArguments(string[] arguments, out int pid, out int? signal, out int? signalCode, out int? crashThread, out int? nativeExceptionCode)
     {
         pid = default;
         signal = default;
+        signalCode = default;
         crashThread = default;
+        nativeExceptionCode = default;
 
         // Parse the createdump command-line
         // Unfortunately, the pid is not necessarily at the beginning or the end, it can be between other arguments.
@@ -94,7 +121,9 @@ internal class CreatedumpCommand : Command
             { "--nativeaot", false },
             { "--code", true },
             { "--errno", true },
-            { "--address", true }
+            { "--address", true },
+            // Datadog-specific argument. Will be discarded by createdump.
+            { "--native-exception-code", true }
         };
 
         const string pidRegex = "[0-9]+";
@@ -168,9 +197,19 @@ internal class CreatedumpCommand : Command
             signal = signalValue;
         }
 
+        if (parsedArguments.TryGetValue("--code", out var rawCode) && int.TryParse(rawCode, out var signalCodeValue))
+        {
+            signalCode = signalCodeValue;
+        }
+
         if (parsedArguments.TryGetValue("--crashthread", out var rawCrashthread) && int.TryParse(rawCrashthread, out var crashThreadValue))
         {
             crashThread = crashThreadValue;
+        }
+
+        if (parsedArguments.TryGetValue("--native-exception-code", out var rawNativeExceptionCode) && int.TryParse(rawNativeExceptionCode, out var nativeExceptionCodeValue))
+        {
+            nativeExceptionCode = nativeExceptionCodeValue;
         }
 
         // Have we found the pid?
@@ -338,6 +377,88 @@ internal class CreatedumpCommand : Command
     [DllImport("kernel32.dll", SetLastError = true)]
     private static extern IntPtr SetUnhandledExceptionFilter(IntPtr lpTopLevelExceptionFilter);
 
+    /// <summary>
+    /// Maps a Windows native exception code (from EXCEPTION_RECORD.ExceptionCode / WER) to a human-readable name.
+    /// </summary>
+    private static string GetExceptionFromNativeCode(int code) =>
+        WindowsExceptionCodeNames.TryGetValue(code, out var name) ? name : "Unknown";
+
+    /// <summary>
+    /// Returns the Linux signal name and optional siginfo si_code name (x86/ARM).
+    /// Name is always set (e.g. SIGSEGV or "signal N"); codeName is null when signalCode is missing or unknown.
+    /// </summary>
+    private static (string Name, string CodeName) GetSignalInfo(int signal, int? signalCode)
+    {
+        var name = signal switch
+        {
+            1 => "SIGHUP",
+            2 => "SIGINT",
+            3 => "SIGQUIT",
+            4 => "SIGILL",
+            5 => "SIGTRAP",
+            6 => "SIGABRT",
+            7 => "SIGBUS",
+            8 => "SIGFPE",
+            9 => "SIGKILL",
+            10 => "SIGUSR1",
+            11 => "SIGSEGV",
+            12 => "SIGUSR2",
+            13 => "SIGPIPE",
+            14 => "SIGALRM",
+            15 => "SIGTERM",
+            16 => "SIGSTKFLT",
+            17 => "SIGCHLD",
+            18 => "SIGCONT",
+            19 => "SIGSTOP",
+            20 => "SIGTSTP",
+            21 => "SIGTTIN",
+            22 => "SIGTTOU",
+            23 => "SIGURG",
+            24 => "SIGXCPU",
+            25 => "SIGXFSZ",
+            26 => "SIGVTALRM",
+            27 => "SIGPROF",
+            28 => "SIGWINCH",
+            29 => "SIGIO",
+            30 => "SIGPWR",
+            31 => "SIGSYS",
+            _ => $"signal {signal}"
+        };
+
+        string codeName = "UNKNOWN";
+        if (signalCode.HasValue)
+        {
+            var code = signalCode.Value;
+            switch (code)
+            {
+                case 0: codeName = "SI_USER"; break;
+                case 0x80: codeName = "SI_KERNEL"; break;
+                case -1: codeName = "SI_QUEUE"; break;
+                case -2: codeName = "SI_TIMER"; break;
+                case -3: codeName = "SI_MESGQ"; break;
+                case -4: codeName = "SI_ASYNCIO"; break;
+                case -5: codeName = "SI_SIGIO"; break;
+                case -6: codeName = "SI_TKILL"; break;
+                case -7: codeName = "SI_DETHREAD"; break;
+                default:
+                    codeName = signal switch
+                    {
+                        4 => code switch { 1 => "ILL_ILLOPC", 2 => "ILL_ILLOPN", 3 => "ILL_ILLADR", 4 => "ILL_ILLTRP", 5 => "ILL_PRVOPC", 6 => "ILL_PRVREG", 7 => "ILL_COPROC", 8 => "ILL_BADSTK", _ => "UNKNOWN" },
+                        7 => code switch { 1 => "BUS_ADRALN", 2 => "BUS_ADRERR", 3 => "BUS_OBJERR", 4 => "BUS_MCEERR_AR", 5 => "BUS_MCEERR_AO", _ => "UNKNOWN" },
+                        8 => code switch { 1 => "FPE_INTDIV", 2 => "FPE_INTOVF", 3 => "FPE_FLTDIV", 4 => "FPE_FLTOVF", 5 => "FPE_FLTUND", 6 => "FPE_FLTRES", 7 => "FPE_FLTINV", 8 => "FPE_FLTSUB", _ => "UNKNOWN" },
+                        11 => code switch { 1 => "SEGV_MAPERR", 2 => "SEGV_ACCERR", 3 => "SEGV_BNDERR", 4 => "SEGV_PKUERR", _ => "UNKNOWN" },
+                        5 => code switch { 1 => "TRAP_BRKPT", 2 => "TRAP_TRACE", 3 => "TRAP_BRANCH", 4 => "TRAP_HWBKPT", _ => "UNKNOWN" },
+                        17 => code switch { 1 => "CLD_EXITED", 2 => "CLD_KILLED", 3 => "CLD_DUMPED", 4 => "CLD_TRAPPED", 5 => "CLD_STOPPED", 6 => "CLD_CONTINUED", _ => "UNKNOWN" },
+                        29 => code switch { 1 => "POLL_IN", 2 => "POLL_OUT", 3 => "POLL_MSG", 4 => "POLL_ERR", 5 => "POLL_PRI", 6 => "POLL_HUP", _ => "UNKNOWN" },
+                        _ => "UNKNOWN"
+                    };
+                    break;
+            }
+        }
+
+        return (name, codeName);
+    }
+
     private static bool ShouldRedactFrame(string? assemblyName)
     {
         if (assemblyName == null)
@@ -452,9 +573,9 @@ internal class CreatedumpCommand : Command
         {
             if (IsTelemetryEnabled())
             {
-                if (ParseArguments(allArguments, out var pid, out var signal, out var crashThread))
+                if (ParseArguments(allArguments, out var pid, out var signal, out var signalCode, out var crashThread, out var nativeExceptionCode))
                 {
-                    GenerateCrashReport(pid, signal, crashThread);
+                    GenerateCrashReport(pid, signal, signalCode, crashThread, nativeExceptionCode);
                 }
                 else
                 {
@@ -509,9 +630,9 @@ internal class CreatedumpCommand : Command
         DebugPrint("dd-dotnet exited normally");
     }
 
-    private unsafe void GenerateCrashReport(int pid, int? signal, int? crashThread)
+    private unsafe void GenerateCrashReport(int pid, int? signal, int? signalCode, int? crashThread, int? nativeExceptionCode)
     {
-        DebugPrint($"Generating crash report for pid {pid} (signal: {signal}, crashing thread id: {crashThread})");
+        DebugPrint($"Generating crash report for pid {pid} (signal: {signal}, signal code: {signalCode}, crashing thread id: {crashThread}, native exception code: {(nativeExceptionCode.HasValue ? $"0x{nativeExceptionCode.Value:X}" : "null")})");
 
         var extension = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "dll" : "so";
         var profilerLibrary = $"Datadog.Profiler.Native.{extension}";
@@ -615,11 +736,34 @@ internal class CreatedumpCommand : Command
 
         ClrException? exception = null;
 
+        string crashMessage = "Process was terminated due to an unknown reason";
+
         // Check if there's an exception on the crash thread
         if (crashThread != null)
         {
             exception = _runtime.Threads.FirstOrDefault(t => t.OSThreadId == crashThread.Value)?.CurrentException;
         }
+
+        if (exception != null)
+        {
+            var msgPart = string.IsNullOrEmpty(exception.Message)
+                ? string.Empty
+                : $" Message: {exception.Message}.";
+            crashMessage = $"Process was terminated due to an unhandled exception of type '{exception.Type.Name}'.{msgPart}";
+        }
+        else if (nativeExceptionCode != null)
+        {
+            var exceptionCode = nativeExceptionCode.Value;
+            crashMessage = $"Process was terminated due to an unknown unhandled exception of type {GetExceptionFromNativeCode(exceptionCode)} (0x{exceptionCode:X})";
+        }
+        else if (signal != null)
+        {
+            var sig = signal.Value;
+            var (name, codeName) = GetSignalInfo(sig, signalCode);
+            crashMessage = $"Process was terminated with {name} ({codeName})";
+        }
+
+        SetCrashMessage(crashReport, crashMessage);
 
         bool isSuspicious;
 
@@ -808,6 +952,30 @@ internal class CreatedumpCommand : Command
         }
 
         return true;
+    }
+
+    private bool SetCrashMessage(ICrashReport crashReport, string message)
+    {
+        var ptr = Marshal.StringToHGlobalAnsi(message);
+
+        try
+        {
+            crashReport.SetCrashMessage(ptr);
+            return true;
+        }
+        catch (Win32Exception ex)
+        {
+            AddError($"Failed to set crash message: {GetLastError(crashReport, ex)}");
+        }
+        finally
+        {
+            if (ptr != IntPtr.Zero)
+            {
+                Marshal.FreeHGlobal(ptr);
+            }
+        }
+
+        return false;
     }
 
     private unsafe bool SetMetadata(ICrashReport crashReport, ClrRuntime runtime, ClrException? exception, bool isSuspicious)
