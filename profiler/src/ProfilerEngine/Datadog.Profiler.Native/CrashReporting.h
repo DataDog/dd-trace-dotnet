@@ -111,6 +111,7 @@ public:
     virtual int32_t STDMETHODCALLTYPE Send() = 0;
     virtual int32_t STDMETHODCALLTYPE WriteToFile(const char* url) = 0;
     virtual int32_t STDMETHODCALLTYPE CrashProcess() = 0;
+    virtual int32_t STDMETHODCALLTYPE SetCrashMessage(const char* message) = 0;
 };
 
 class CrashReporting : public ICrashReporting 
@@ -133,6 +134,7 @@ public:
     int32_t STDMETHODCALLTYPE Send() override;
     int32_t STDMETHODCALLTYPE WriteToFile(const char* url) override;
     int32_t STDMETHODCALLTYPE CrashProcess() override;
+    int32_t STDMETHODCALLTYPE SetCrashMessage(const char* message) override;
 
 protected:
     uint32_t _pid;
