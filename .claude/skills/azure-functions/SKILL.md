@@ -59,12 +59,20 @@ Build the `Datadog.AzureFunctions` NuGet package with your changes:
 ```
 
 **What this does**:
-1. Cleans previous builds
-2. Removes cached NuGet packages
+1. Generates a unique prerelease version from a timestamp (e.g. `3.38.0-dev.20260209.143022`)
+2. Cleans previous builds
 3. Builds `Datadog.Trace` (net6.0 and net461)
 4. Publishes to bundle folder
-5. Packages `Datadog.AzureFunctions.nupkg`
+5. Packages `Datadog.AzureFunctions.nupkg` with the generated version
 6. Copies to `D:\temp\nuget`
+
+**Versioning**: Each build gets a unique version, so NuGet caching is never an issue.
+The sample app in `serverless-dev-apps` uses a floating version `3.38.0-dev.*` in
+`Directory.Packages.props` to always resolve the latest local dev build.
+
+**Options**:
+- `-Version '3.38.0-dev.custom'` - Use a specific version instead of auto-generating
+- `-BuildId 12345` - Download bundle from Azure DevOps build first
 
 **Alternative**: Download bundle from Azure DevOps build:
 ```powershell
@@ -185,10 +193,10 @@ az functionapp restart --name lucasp-premium-linux-isolated-aspnet --resource-gr
 # Check all worker initializations
 grep "Assembly metadata" LogFiles/datadog/dotnet-tracer-managed-dotnet-*.log
 
-# If old version, clear NuGet cache and rebuild
-dotnet nuget locals all --clear
+# If old version, rebuild (each build gets a unique version, no cache issues)
 cd D:/source/datadog/dd-trace-dotnet
 .\tracer\tools\Build-AzureFunctionsNuget.ps1 -CopyTo D:\temp\nuget -Verbose
+# Then restore and redeploy the sample app
 ```
 
 ### Traces Not Appearing in Datadog
