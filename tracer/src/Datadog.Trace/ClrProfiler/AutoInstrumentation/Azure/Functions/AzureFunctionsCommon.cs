@@ -281,12 +281,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 };
 
                 // Try to get parent span context from (in order):
-                // - existing local span
-                // - HttpContext.Items, for HTTP triggers using ASP.NET Core integration. Set in AspNetCoreHttpRequestHandler.StartAspNetCorePipelineScope().
-                // - extracted from propagation headers
-                var parentSpanContext = tracer.InternalActiveScope?.Span.Context ??
+                // 1. Extracted from propagation headers (gRPC message from the host process).
+                //    This is the most reliable source of the host's trace context for non-ASP.NET Core apps.
+                // 2. HttpContext.Items bridge, for HTTP triggers using ASP.NET Core integration.
+                //    In ASP.NET Core mode, gRPC headers are stale so we skip extraction above and
+                //    retrieve the scope stored by AspNetCoreHttpRequestHandler instead.
+                // 3. Existing local span (fallback).
+                //    Note: InternalActiveScope may be an unrelated aspnet_core.request span from the
+                //    gRPC listener, so it should only be used as a last resort.
+                var parentSpanContext = extractedContext.SpanContext ??
                                         GetAspNetCoreScope(functionContext)?.Span.Context ??
-                                        extractedContext.SpanContext;
+                                        tracer.InternalActiveScope?.Span.Context;
 
                 scope = tracer.StartActiveInternal(OperationName, parent: parentSpanContext, tags: tags);
                 var span = scope.Span;
