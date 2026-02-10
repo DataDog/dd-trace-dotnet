@@ -26,7 +26,20 @@ If no argument is provided, guide the user through the full workflow interactive
 
 **Current repository**: This skill assumes you are working from the root of the `dd-trace-dotnet` repository.
 
-**Prerequisites**: Users provide their own Azure Function App name (`-AppName`), resource group (`-ResourceGroup`), and sample app path (`-SampleAppPath`). The app must reference the `Datadog.AzureFunctions` NuGet package.
+**Prerequisites**: Users provide their own Azure Function App name (`-AppName`), resource group (`-ResourceGroup`), and sample app path (`-SampleAppPath`). The sample app must:
+1. Reference the `Datadog.AzureFunctions` NuGet package
+2. Have a `nuget.config` file (in the app directory or a parent directory) that defines a local NuGet feed pointing to a directory on disk, for example:
+   ```xml
+   <?xml version="1.0" encoding="utf-8"?>
+   <configuration>
+     <packageSources>
+       <clear />
+       <add key="local" value="nuget/local-source" />
+       <add key="nuget" value="https://api.nuget.org/v3/index.json" />
+     </packageSources>
+   </configuration>
+   ```
+   The `-CopyTo` parameter of `Build-AzureFunctionsNuget.ps1` must point to the same directory as the local feed (e.g. if the feed `value` is `nuget/local-source` relative to the `nuget.config` location, then `-CopyTo` should be the absolute path to that directory).
 
 ## Workflow Steps
 
@@ -47,8 +60,8 @@ Build the `Datadog.AzureFunctions` NuGet package with your changes:
 6. Copies to the directory specified by `-CopyTo`
 
 **Versioning**: Each build gets a unique version, so NuGet caching is never an issue.
-The sample app in `serverless-dev-apps` uses a floating version `3.38.0-dev.*` in
-`Directory.Packages.props` to always resolve the latest local dev build.
+The sample app should use a floating version like `3.38.0-dev.*` in its package reference
+(or `Directory.Packages.props`) to always resolve the latest local dev build.
 
 **Options**:
 - `-Version '3.38.0-dev.custom'` - Use a specific version instead of auto-generating
