@@ -52,9 +52,13 @@ namespace Datadog.Profiler.IntegrationTests.Bugs
                             return;
                         }
                     }
-                    else if (threadName.Contains(".NET Long Running Task ["))
+                    else if (threadName.StartsWith(".NET "))
                     {
-                        // expected task that is waiting for nameless threads to join
+                        // .NET ThreadPool IO, .NET TP Worker, .NET Long Running Task, .NET Timer, .NET TP Wait, etc...
+                    }
+                    else if (threadName == "CLR thread (garbage collector)")
+                    {
+                        // hard coded name for GC threads
                     }
                     else
                     {
