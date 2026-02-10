@@ -112,7 +112,7 @@ namespace Datadog.Trace.Tests
             using var agent = MockTracerAgent.Create(_output, new UnixDomainSocketConfig(Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()), null));
             var factory = new HttpStreamRequestFactory(
                 new UnixDomainSocketStreamFactory(agent.TracesUdsPath),
-                new DatadogHttpClient(new TraceAgentHttpHeaderHelper()),
+                new DatadogHttpClient(TraceAgentHttpHeaderHelper.Instance),
                 Localhost);
             await RunTest(agent, () => factory.Create(Localhost), useStream, useGzip, nameof(ApiWebRequest_MultipartTest));
         }
@@ -124,7 +124,7 @@ namespace Datadog.Trace.Tests
             using var agent = MockTracerAgent.Create(_output, new UnixDomainSocketConfig(Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()), null));
             var factory = new HttpStreamRequestFactory(
                 new UnixDomainSocketStreamFactory(agent.TracesUdsPath),
-                new DatadogHttpClient(new TraceAgentHttpHeaderHelper()),
+                new DatadogHttpClient(TraceAgentHttpHeaderHelper.Instance),
                 Localhost);
             await RunValidationTest(agent, () => factory.Create(Localhost), useStream, useGzip, nameof(ApiWebRequest_ValidationTest));
         }
@@ -162,7 +162,7 @@ namespace Datadog.Trace.Tests
                 using var agent = MockTracerAgent.Create(_output, new WindowsPipesConfig($"trace-{Guid.NewGuid()}", null));
                 var factory = new HttpStreamRequestFactory(
                     new NamedPipeClientStreamFactory(agent.TracesWindowsPipeName, timeoutMs: 100),
-                    new DatadogHttpClient(new TraceAgentHttpHeaderHelper()),
+                    new DatadogHttpClient(TraceAgentHttpHeaderHelper.Instance),
                     Localhost);
                 await RunTest(agent, () => factory.Create(Localhost), useStream, useGzip, nameof(ApiWebRequest_MultipartTest));
             }
@@ -199,7 +199,7 @@ namespace Datadog.Trace.Tests
                 using var agent = MockTracerAgent.Create(_output, new WindowsPipesConfig($"trace-{Guid.NewGuid()}", null));
                 var factory = new HttpStreamRequestFactory(
                     new NamedPipeClientStreamFactory(agent.TracesWindowsPipeName, timeoutMs: 100),
-                    new DatadogHttpClient(new TraceAgentHttpHeaderHelper()),
+                    new DatadogHttpClient(TraceAgentHttpHeaderHelper.Instance),
                     Localhost);
                 await RunValidationTest(agent, () => factory.Create(Localhost), useStream, useGzip, nameof(ApiWebRequest_ValidationTest));
             }

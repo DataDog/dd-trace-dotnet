@@ -5,29 +5,21 @@
 
 #nullable enable
 
-using System.Linq;
+using System.Collections.Generic;
 using Datadog.Trace.HttpOverStreams;
 
 namespace Datadog.Trace.Telemetry.Transports
 {
     internal sealed class TelemetryAgentHttpHeaderHelper : HttpHeaderHelperBase
     {
-        private static string? _metadataHeaders = null;
+        public static readonly TelemetryAgentHttpHeaderHelper Instance = new();
 
-        protected override string MetadataHeaders
+        private TelemetryAgentHttpHeaderHelper()
         {
-            get
-            {
-                if (_metadataHeaders == null)
-                {
-                    var headers = TelemetryHttpHeaderNames.GetDefaultAgentHeaders().Select(kvp => $"{kvp.Key}: {kvp.Value}{DatadogHttpValues.CrLf}");
-                    _metadataHeaders = string.Concat(headers);
-                }
-
-                return _metadataHeaders;
-            }
         }
 
-        protected override string ContentType => "application/json";
+        public override KeyValuePair<string, string>[] DefaultHeaders => TelemetryHttpHeaderNames.GetDefaultAgentHeaders();
+
+        protected override string HttpSerializedDefaultHeaders => TelemetryHttpHeaderNames.HttpSerializedDefaultAgentHeaders;
     }
 }

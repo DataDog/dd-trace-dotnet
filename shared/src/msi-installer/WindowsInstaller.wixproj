@@ -17,9 +17,9 @@
     <IntermediateOutputPath>obj\$(Configuration)\$(Platform)\</IntermediateOutputPath>
     <SuppressPdbOutput>True</SuppressPdbOutput>
     <DefineSolutionProperties>false</DefineSolutionProperties>
-    <OutputName>datadog-dotnet-apm-3.37.0-$(Platform)</OutputName> <!-- -The regex recognizes this line -->
+    <OutputName>datadog-dotnet-apm-3.38.0-$(Platform)</OutputName> <!-- -The regex recognizes this line -->
     <MonitoringHomeDirectory Condition="'$(MonitoringHomeDirectory)' == ''">$(MSBuildThisFileDirectory)..\..\bin\monitoring-home</MonitoringHomeDirectory>
-    <DefineConstants>InstallerVersion=3.37.0;MonitoringHomeDirectory=$(MonitoringHomeDirectory);</DefineConstants>
+    <DefineConstants>InstallerVersion=3.38.0;MonitoringHomeDirectory=$(MonitoringHomeDirectory);</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
     <DefineConstants>$(DefineConstants);Debug</DefineConstants>
