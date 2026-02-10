@@ -108,6 +108,9 @@ When using `-OutputFormat json` or capturing the returned object, the following 
 | `FailedTasks` | string[] | Array of failed task names |
 | `FailedJobs` | string[] | Array of failed job names |
 | `FailedStages` | string[] | Array of failed stage names |
+| `CanceledJobs` | string[] | Canceled job names |
+| `TimedOutJobs` | string[] | Jobs canceled after ~60 min (format: "name (XX.X min)") |
+| `CollateralCanceled` | string[] | Jobs canceled in < 5 min |
 | `FailedTests` | string[] | Extracted test names (via regex patterns) |
 | `ErrorMessages` | string[] | Raw error messages from failed tasks |
 | `Comparison` | object | Comparison data (see below) or `null` |
@@ -165,6 +168,16 @@ Comparison uses PowerShell's `Where-Object` with `-notin` operator:
 
 Replaces bash `comm -13` for Windows compatibility.
 
+#### Canceled Job Detection
+
+Jobs with `result == "canceled"` are classified by duration:
+
+- **Timeout** (>= 55 min): Job likely hit Azure DevOps 60-minute timeout. Threshold is 55 minutes (not 60) to account for Azure DevOps timing variance and early cancellation.
+- **Collateral** (< 5 min): Job canceled quickly, likely due to parent stage failure triggering cascade cancellation.
+- **Unknown** (5-55 min): Could be manual cancellation or other causes.
+
+Duration is calculated from `startTime` and `finishTime` fields in the timeline record.
+
 ### Exit Codes
 
 - **0:** Success (build analyzed, data returned)
@@ -186,6 +199,7 @@ Use `-Verbose` to see:
 2. **Log URL Availability:** Some tasks may not have `.log.url` populated
 3. **Master Build Lookup:** Checks only last 10 builds; may fail if no successful build in range
 4. **Performance:** Downloads full timeline JSON (can be large for multi-stage pipelines)
+5. **Canceled Job Classification:** Duration-based heuristic may misclassify manual cancellations that occur between 5-55 minutes. In practice, most manual cancellations happen quickly (< 5 min) or timeouts occur at ~60 min, so this range is rare.
 
 ### Related Documentation
 
