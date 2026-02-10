@@ -89,6 +89,8 @@ Users provide their own:
 - **Resource group** (`-ResourceGroup`): The Azure resource group containing the app
 - **Sample app path** (`-SampleAppPath`): Local path to an Azure Functions app that references the `Datadog.AzureFunctions` NuGet package
 
+The sample app must have a `nuget.config` (in the app directory or a parent directory) that defines a local NuGet feed. The `-CopyTo` parameter of `Build-AzureFunctionsNuget.ps1` should point to the same directory as that local feed so `dotnet restore` picks up the freshly built package.
+
 ## Documentation References
 
 - `docs/development/AzureFunctions.md` - Complete Azure Functions integration guide
