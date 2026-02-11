@@ -8,10 +8,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using Datadog.Trace.Logging;
-using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 #nullable enable
+
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation.ThirdParty
 {
     internal sealed class ThirdPartyConfigurationReader
