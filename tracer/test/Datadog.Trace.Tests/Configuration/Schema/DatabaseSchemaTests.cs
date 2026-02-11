@@ -3,7 +3,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis;
@@ -24,49 +26,49 @@ namespace Datadog.Trace.Tests.Configuration.Schema
             { "mongodb", "my-mongo" },
         };
 
-        public static IEnumerable<(int SchemaVersion, string DatabaseType, string ExpectedOperationName)> GetOperationNameData()
+        public static IEnumerable<(int SchemaVersion, int DatabaseType, string ExpectedOperationName)> GetOperationNameData()
         {
-            yield return (0, "mongodb", "mongodb.query");
-            yield return (0, "elasticsearch", "elasticsearch.query");
-            yield return (1, "mongodb", "mongodb.query");
-            yield return (1, "elasticsearch", "elasticsearch.query");
+            yield return (0, (int)DatabaseSchema.OperationType.MongoDb, "mongodb.query");
+            yield return (0, (int)DatabaseSchema.OperationType.Elasticsearch, "elasticsearch.query");
+            yield return (1, (int)DatabaseSchema.OperationType.MongoDb, "mongodb.query");
+            yield return (1, (int)DatabaseSchema.OperationType.Elasticsearch, "elasticsearch.query");
         }
 
-        public static IEnumerable<(int SchemaVersion, string DatabaseType, string ExpectedValue, bool RemoveClientServiceNamesEnabled)> GetServiceNameData()
+        public static IEnumerable<(int SchemaVersion, int DatabaseType, string ExpectedValue, bool RemoveClientServiceNamesEnabled)> GetServiceNameData()
         {
             // Mapped service names (always return mapped value)
-            yield return (0, "mongodb", "my-mongo", true);
-            yield return (0, "mongodb", "my-mongo", false);
-            yield return (1, "mongodb", "my-mongo", true);
-            yield return (1, "mongodb", "my-mongo", false);
+            yield return (0, (int)DatabaseSchema.ServiceType.MongoDb, "my-mongo", true);
+            yield return (0, (int)DatabaseSchema.ServiceType.MongoDb, "my-mongo", false);
+            yield return (1, (int)DatabaseSchema.ServiceType.MongoDb, "my-mongo", true);
+            yield return (1, (int)DatabaseSchema.ServiceType.MongoDb, "my-mongo", false);
             // Unmapped service names
-            yield return (0, "elasticsearch", DefaultServiceName, true);
-            yield return (0, "elasticsearch", $"{DefaultServiceName}-elasticsearch", false);
-            yield return (1, "elasticsearch", DefaultServiceName, true);
-            yield return (1, "elasticsearch", DefaultServiceName, false);
+            yield return (0, (int)DatabaseSchema.ServiceType.Elasticsearch, DefaultServiceName, true);
+            yield return (0, (int)DatabaseSchema.ServiceType.Elasticsearch, $"{DefaultServiceName}-elasticsearch", false);
+            yield return (1, (int)DatabaseSchema.ServiceType.Elasticsearch, DefaultServiceName, true);
+            yield return (1, (int)DatabaseSchema.ServiceType.Elasticsearch, DefaultServiceName, false);
         }
 
         [Theory]
         [CombinatorialData]
         public void GetOperationNameIsCorrect(
-            [CombinatorialMemberData(nameof(GetOperationNameData))] (int SchemaVersion, string DatabaseType, string ExpectedOperationName) values,
+            [CombinatorialMemberData(nameof(GetOperationNameData))] (int SchemaVersion, int DatabaseType, string ExpectedOperationName) values,
             bool peerServiceTagsEnabled,
             bool removeClientServiceNamesEnabled)
         {
             var schemaVersion = (SchemaVersion)values.SchemaVersion;
             var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings, new Dictionary<string, string>());
-            namingSchema.Database.GetOperationName(values.DatabaseType).Should().Be(values.ExpectedOperationName);
+            namingSchema.Database.GetOperationName((DatabaseSchema.OperationType)values.DatabaseType).Should().Be(values.ExpectedOperationName);
         }
 
         [Theory]
         [CombinatorialData]
         public void GetServiceNameIsCorrect(
-            [CombinatorialMemberData(nameof(GetServiceNameData))] (int SchemaVersion, string DatabaseType, string ExpectedValue, bool RemoveClientServiceNamesEnabled) values,
+            [CombinatorialMemberData(nameof(GetServiceNameData))] (int SchemaVersion, int DatabaseType, string ExpectedValue, bool RemoveClientServiceNamesEnabled) values,
             bool peerServiceTagsEnabled)
         {
             var schemaVersion = (SchemaVersion)values.SchemaVersion;
             var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, values.RemoveClientServiceNamesEnabled, DefaultServiceName, _mappings, new Dictionary<string, string>());
-            namingSchema.Database.GetServiceName(values.DatabaseType).Should().Be(values.ExpectedValue);
+            namingSchema.Database.GetServiceName((DatabaseSchema.ServiceType)values.DatabaseType).Should().Be(values.ExpectedValue);
         }
 
         [Theory]
@@ -172,6 +174,28 @@ namespace Datadog.Trace.Tests.Configuration.Schema
 
             var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings, peerServiceNameMappings: new Dictionary<string, string>());
             namingSchema.Database.CreateAerospikeTags().Should().BeOfType(expectedType);
+        }
+
+        [Theory]
+        [CombinatorialData]
+        public void GetOperationName_SupportsAllEnumValues([CombinatorialValues(0, 1)]int schemaVersion, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
+        {
+            var namingSchema = new NamingSchema((SchemaVersion)schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings, new Dictionary<string, string>());
+            foreach (var value in Enum.GetValues(typeof(DatabaseSchema.OperationType)).Cast<DatabaseSchema.OperationType>())
+            {
+                namingSchema.Database.GetOperationName(value).Should().NotBeNull();
+            }
+        }
+
+        [Theory]
+        [CombinatorialData]
+        public void GetServiceName_SupportsAllEnumValues([CombinatorialValues(0, 1)]int schemaVersion, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
+        {
+            var namingSchema = new NamingSchema((SchemaVersion)schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings, new Dictionary<string, string>());
+            foreach (var value in Enum.GetValues(typeof(DatabaseSchema.ServiceType)).Cast<DatabaseSchema.ServiceType>())
+            {
+                namingSchema.Database.GetServiceName(value).Should().NotBeNull();
+            }
         }
     }
 }
