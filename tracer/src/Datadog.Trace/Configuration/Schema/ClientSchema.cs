@@ -18,6 +18,7 @@ namespace Datadog.Trace.Configuration.Schema
         private readonly bool _removeClientServiceNamesEnabled;
         private readonly string _defaultServiceName;
         private readonly IReadOnlyDictionary<string, string>? _serviceNameMappings;
+        private readonly string[] _protocols;
 
         public ClientSchema(SchemaVersion version, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled, string defaultServiceName, IReadOnlyDictionary<string, string>? serviceNameMappings)
         {
@@ -26,14 +27,23 @@ namespace Datadog.Trace.Configuration.Schema
             _removeClientServiceNamesEnabled = removeClientServiceNamesEnabled;
             _defaultServiceName = defaultServiceName;
             _serviceNameMappings = serviceNameMappings;
+            _protocols = version switch
+            {
+                SchemaVersion.V0 => V0Values.ProtocolOperationNames,
+                _ => V1Values.ProtocolOperationNames,
+            };
         }
 
-        public string GetOperationNameForProtocol(string protocol) =>
-            _version switch
-            {
-                SchemaVersion.V0 => $"{protocol}.request",
-                _ => $"{protocol}.client.request",
-            };
+        /// <summary>
+        /// WARNING: when adding new values, you _must_ update the corresponding arrays in <see cref="V0Values"/> and <see cref="V1Values"/>
+        /// </summary>
+        public enum Protocol
+        {
+            Http,
+            Grpc
+        }
+
+        public string GetOperationNameForProtocol(Protocol protocol) => _protocols[(int)protocol];
 
         public string GetOperationNameForRequestType(string requestType) =>
             _version switch
@@ -90,5 +100,23 @@ namespace Datadog.Trace.Configuration.Schema
                 SchemaVersion.V0 when !_peerServiceTagsEnabled => new AzureServiceBusTags(),
                 _ => new AzureServiceBusV1Tags(),
             };
+
+        private static class V0Values
+        {
+            public static readonly string[] ProtocolOperationNames =
+            [
+                "http.request",
+                "grpc.request",
+            ];
+        }
+
+        private static class V1Values
+        {
+            public static readonly string[] ProtocolOperationNames =
+            [
+                "http.client.request",
+                "grpc.client.request",
+            ];
+        }
     }
 }

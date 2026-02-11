@@ -24,12 +24,12 @@ namespace Datadog.Trace.Tests.Configuration.Schema
             { "mongodb", "my-mongo" },
         };
 
-        public static IEnumerable<(int SchemaVersion, string Protocol, string ExpectedValue)> GetOperationNameForProtocolData()
+        public static IEnumerable<(int SchemaVersion, int Protocol, string ExpectedValue)> GetOperationNameForProtocolData()
         {
-            yield return (0, "http", "http.request");         // SchemaVersion.V0
-            yield return (0, "grpc", "grpc.request");
-            yield return (1, "http", "http.client.request");  // SchemaVersion.V1
-            yield return (1, "grpc", "grpc.client.request");
+            yield return (0, (int)ClientSchema.Protocol.Http, "http.request");         // SchemaVersion.V0
+            yield return (0, (int)ClientSchema.Protocol.Grpc, "grpc.request");
+            yield return (1, (int)ClientSchema.Protocol.Http, "http.client.request");  // SchemaVersion.V1
+            yield return (1, (int)ClientSchema.Protocol.Grpc, "grpc.client.request");
         }
 
         public static IEnumerable<(int SchemaVersion, string Component, string ExpectedValue, bool RemoveClientServiceNamesEnabled)> GetServiceNameData()
@@ -55,13 +55,13 @@ namespace Datadog.Trace.Tests.Configuration.Schema
         [Theory]
         [CombinatorialData]
         public void GetOperationNameForProtocolIsCorrect(
-            [CombinatorialMemberData(nameof(GetOperationNameForProtocolData))] (int SchemaVersion, string Protocol, string ExpectedValue) values,
+            [CombinatorialMemberData(nameof(GetOperationNameForProtocolData))] (int SchemaVersion, int Protocol, string ExpectedValue) values,
             bool peerServiceTagsEnabled,
             bool removeClientServiceNamesEnabled)
         {
             var schemaVersion = (SchemaVersion)values.SchemaVersion;
             var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings, new Dictionary<string, string>());
-            namingSchema.Client.GetOperationNameForProtocol(values.Protocol).Should().Be(values.ExpectedValue);
+            namingSchema.Client.GetOperationNameForProtocol((ClientSchema.Protocol)values.Protocol).Should().Be(values.ExpectedValue);
         }
 
         [Theory]
