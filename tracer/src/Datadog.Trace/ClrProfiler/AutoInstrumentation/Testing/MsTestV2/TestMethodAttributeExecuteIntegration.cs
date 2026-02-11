@@ -201,17 +201,18 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
                         allowRetries = allowRetries || resultStatus != TestStatus.Skip;
 
                         // Track if initial execution passed/failed (for final_status) - both aggregate and per-row
-                        var displayName = testResult.DisplayName ?? test.Name ?? string.Empty;
-                        var cacheKey = GetCacheKey(displayName);
+                        var displayName = testResult.DisplayName ?? test.Name;
                         if (resultStatus == TestStatus.Pass)
                         {
                             initialExecutionPassed = true;
+                            var cacheKey = GetCacheKey(displayName);
                             // Cache per-row initial execution result for parameterized tests
                             SetInitialExecutionPassed(testMethodState.TestMethod, cacheKey, true);
                         }
                         else if (resultStatus == TestStatus.Fail)
                         {
                             initialExecutionFailed = true;
+                            var cacheKey = GetCacheKey(displayName);
                             // Cache per-row initial execution failure for ATF tracking
                             SetInitialExecutionFailed(testMethodState.TestMethod, cacheKey, true);
                         }
@@ -417,7 +418,7 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
         }
 
         // Get display name for per-row caching - must be before exception branch
-        var displayName = testResult.DisplayName ?? test.Name ?? string.Empty;
+        var displayName = testResult.DisplayName ?? test.Name;
         var cacheKey = GetCacheKey(displayName);
 
         var shouldMaskOutcome = false;
@@ -465,37 +466,37 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
                     retryState.AllRetriesFailed = false;
                 }
 
-                if (testStatus == TestStatus.Pass)
+                if (testStatus == TestStatus.Pass && testMethod is not null)
                 {
                     retryState.AnyRetryPassed = true;
 
                     // Cache per-row retry pass result for parameterized tests
-                    SetAnyRetryPassed(testMethod!, cacheKey, true);
+                    SetAnyRetryPassed(testMethod, cacheKey, true);
                 }
-                else if (retryState.IsAttemptToFix && testStatus == TestStatus.Fail)
+                else if (retryState.IsAttemptToFix && testStatus == TestStatus.Fail && testMethod is not null)
                 {
                     retryState.AllAttemptsPassed = false;
 
                     // Cache per-row ATF failure for parameterized tests
-                    SetAllAttemptsPassed(testMethod!, cacheKey, false);
+                    SetAllAttemptsPassed(testMethod, cacheKey, false);
                 }
             }
             else
             {
                 // Initial execution
-                if (testStatus == TestStatus.Pass)
+                if (testStatus == TestStatus.Pass && testMethod is not null)
                 {
                     retryState.InitialExecutionPassed = true;
 
                     // Cache per-row initial pass result for parameterized tests
-                    SetInitialExecutionPassed(testMethod!, cacheKey, true);
+                    SetInitialExecutionPassed(testMethod, cacheKey, true);
                 }
-                else if (testStatus == TestStatus.Fail)
+                else if (testStatus == TestStatus.Fail && testMethod is not null)
                 {
                     retryState.InitialExecutionFailed = true;
 
                     // Cache per-row initial execution failure for ATF tracking
-                    SetInitialExecutionFailed(testMethod!, cacheKey, true);
+                    SetInitialExecutionFailed(testMethod, cacheKey, true);
                 }
             }
 
@@ -787,7 +788,7 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
     private static void SetAnyRetryPassed(object testMethodKey, string cacheKey, bool passed)
     {
         var cache = AnyRetryPassedCache.GetOrCreateValue(testMethodKey);
-        cache[cacheKey] = passed;
+        cache.AddOrUpdate(cacheKey, passed, (k, v) => passed || v);
     }
 
     /// <summary>

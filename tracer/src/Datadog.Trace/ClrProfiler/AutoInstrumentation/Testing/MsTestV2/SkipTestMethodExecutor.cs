@@ -42,11 +42,7 @@ internal abstract class SkipTestMethodExecutor
             if (test is not null)
             {
                 // Set final_status = skip for pre-execution skipped tests (ITR/attribute-based skips)
-                if (test.GetTags() is { } testTags)
-                {
-                    testTags.FinalStatus = TestTags.StatusSkip;
-                }
-
+                test.GetTags().FinalStatus = TestTags.StatusSkip;
                 test.Close(TestStatus.Skip, TimeSpan.Zero, _skipReason);
             }
         }

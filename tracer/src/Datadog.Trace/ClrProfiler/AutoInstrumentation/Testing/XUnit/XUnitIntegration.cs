@@ -338,13 +338,11 @@ internal static class XUnitIntegration
         var isAtrRetry = testCaseMetadata.IsRetry &&
                          tags.TestRetryReason == TestTags.TestRetryReasonAtr;
         var isAtrEarlyExit = isAtrRetry &&
-                             !testCaseMetadata.HasAnException &&
-                             !testCaseMetadata.Skipped &&
-                             !testCaseMetadata.IsLastRetry;
+                             testCaseMetadata is { HasAnException: false, Skipped: false, IsLastRetry: false };
 
         // ATR budget exhaustion detection (Edge Case 23)
         var isAtrBudgetExhausted = false;
-        if (isAtrRetry && testCaseMetadata.HasAnException && !testCaseMetadata.IsLastRetry)
+        if (isAtrRetry && testCaseMetadata is { HasAnException: true, IsLastRetry: false })
         {
             var remainingBudget = GetRemainingAtrBudget();
             isAtrBudgetExhausted = remainingBudget <= 1;
@@ -372,13 +370,13 @@ internal static class XUnitIntegration
         // Calculate final_status
         // For single-execution tests, use HasAnException to determine pass/fail
         var anyExecutionPassed = testCaseMetadata.TotalExecutions == 1
-            ? !testCaseMetadata.HasAnException && !testCaseMetadata.Skipped // Single: no exception and not skipped = passed
+            ? testCaseMetadata is { HasAnException: false, Skipped: false } // Single: no exception and not skipped = passed
             : testCaseMetadata.InitialExecutionPassed || testCaseMetadata.AnyRetryPassed; // Retry: tracked values
 
         // For ATF: any actual failure (initial or retry) means the fix didn't work (test is still flaky)
         // Note: skip does NOT count as failure per ATF semantics
         var anyExecutionFailed = testCaseMetadata.TotalExecutions == 1
-            ? testCaseMetadata.HasAnException && !testCaseMetadata.Skipped // Single: exception and not skip = failed
+            ? testCaseMetadata is { HasAnException: true, Skipped: false } // Single: exception and not skip = failed
             : testCaseMetadata.InitialExecutionFailed || !testCaseMetadata.AllAttemptsPassed; // Retry: initial failed OR any retry failed
 
         var isSkippedOrInconclusive = isSkip || testCaseMetadata.Skipped;
@@ -386,7 +384,7 @@ internal static class XUnitIntegration
 
         // ATF: AttemptToFixPassed should be consistent with final_status
         // If any execution failed, the fix didn't work
-        if (testCaseMetadata.TotalExecutions > 1 && testCaseMetadata.IsAttemptToFix)
+        if (testCaseMetadata is { TotalExecutions: > 1, IsAttemptToFix: true })
         {
             tags.AttemptToFixPassed = anyExecutionFailed ? "false" : "true";
         }
