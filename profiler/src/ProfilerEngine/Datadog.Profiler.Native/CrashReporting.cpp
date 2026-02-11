@@ -11,6 +11,7 @@
 
 #include <algorithm>
 #include <thread>
+#include <utility>
 
 #ifdef _WIN32
 #include "Windows.h"
@@ -179,37 +180,111 @@ int32_t CrashReporting::Panic()
     return 1;
 }
 
-ddog_crasht_SignalNames GetSignal(int signal){
+// TODO: have libdatadog providing this mapping or computing it by itself using the signal and the code.
+std::pair<ddog_crasht_SignalNames, ddog_crasht_SiCodes> GetSignalInfo(int32_t signal, int32_t code)
+{
+    // Linux signal numbers -> ddog_crasht_SignalNames (see man 7 signal, CreatedumpCommand.cs GetSignalInfo)
+    ddog_crasht_SignalNames signo = DDOG_CRASHT_SIGNAL_NAMES_UNKNOWN;
     switch (signal) {
-        case 6: return DDOG_CRASHT_SIGNAL_NAMES_SIGABRT;
-        case 7: return DDOG_CRASHT_SIGNAL_NAMES_SIGBUS;
-        case 11: return DDOG_CRASHT_SIGNAL_NAMES_SIGSEGV;
-        case 31: return DDOG_CRASHT_SIGNAL_NAMES_SIGSYS;
-        default:
-            return DDOG_CRASHT_SIGNAL_NAMES_UNKNOWN;
+        case 1: signo = DDOG_CRASHT_SIGNAL_NAMES_SIGHUP; break;
+        case 2: signo = DDOG_CRASHT_SIGNAL_NAMES_SIGINT; break;
+        case 3: signo = DDOG_CRASHT_SIGNAL_NAMES_SIGQUIT; break;
+        case 4: signo = DDOG_CRASHT_SIGNAL_NAMES_SIGILL; break;
+        case 5: signo = DDOG_CRASHT_SIGNAL_NAMES_SIGTRAP; break;
+        case 6: signo = DDOG_CRASHT_SIGNAL_NAMES_SIGABRT; break;
+        case 7: signo = DDOG_CRASHT_SIGNAL_NAMES_SIGBUS; break;
+        case 8: signo = DDOG_CRASHT_SIGNAL_NAMES_SIGFPE; break;
+        case 9: signo = DDOG_CRASHT_SIGNAL_NAMES_SIGKILL; break;
+        case 10: signo = DDOG_CRASHT_SIGNAL_NAMES_SIGUSR1; break;
+        case 11: signo = DDOG_CRASHT_SIGNAL_NAMES_SIGSEGV; break;
+        case 12: signo = DDOG_CRASHT_SIGNAL_NAMES_SIGUSR2; break;
+        case 13: signo = DDOG_CRASHT_SIGNAL_NAMES_SIGPIPE; break;
+        case 14: signo = DDOG_CRASHT_SIGNAL_NAMES_SIGALRM; break;
+        case 15: signo = DDOG_CRASHT_SIGNAL_NAMES_SIGTERM; break;
+        case 16: break; /* SIGSTKFLT - not in enum */
+        case 17: signo = DDOG_CRASHT_SIGNAL_NAMES_SIGCHLD; break;
+        case 18: signo = DDOG_CRASHT_SIGNAL_NAMES_SIGCONT; break;
+        case 19: signo = DDOG_CRASHT_SIGNAL_NAMES_SIGSTOP; break;
+        case 20: signo = DDOG_CRASHT_SIGNAL_NAMES_SIGTSTP; break;
+        case 21: signo = DDOG_CRASHT_SIGNAL_NAMES_SIGTTIN; break;
+        case 22: signo = DDOG_CRASHT_SIGNAL_NAMES_SIGTTOU; break;
+        case 23: signo = DDOG_CRASHT_SIGNAL_NAMES_SIGURG; break;
+        case 24: signo = DDOG_CRASHT_SIGNAL_NAMES_SIGXCPU; break;
+        case 25: signo = DDOG_CRASHT_SIGNAL_NAMES_SIGXFSZ; break;
+        case 26: signo = DDOG_CRASHT_SIGNAL_NAMES_SIGVTALRM; break;
+        case 27: signo = DDOG_CRASHT_SIGNAL_NAMES_SIGPROF; break;
+        case 28: signo = DDOG_CRASHT_SIGNAL_NAMES_SIGWINCH; break;
+        case 29: signo = DDOG_CRASHT_SIGNAL_NAMES_SIGIO; break;
+        case 30: break; /* SIGPWR - not in enum */
+        case 31: signo = DDOG_CRASHT_SIGNAL_NAMES_SIGSYS; break;
+        default: break;
     }
+
+    ddog_crasht_SiCodes si_code = DDOG_CRASHT_SI_CODES_UNKNOWN;
+    // Generic si_codes (see man 2 sigaction, CreatedumpCommand.cs)
+    switch (code) {
+        case 0: si_code = DDOG_CRASHT_SI_CODES_SI_USER; break;
+        case 0x80: si_code = DDOG_CRASHT_SI_CODES_SI_KERNEL; break;
+        case -1: si_code = DDOG_CRASHT_SI_CODES_SI_QUEUE; break;
+        case -2: si_code = DDOG_CRASHT_SI_CODES_SI_TIMER; break;
+        case -3: si_code = DDOG_CRASHT_SI_CODES_SI_MESGQ; break;
+        case -4: si_code = DDOG_CRASHT_SI_CODES_SI_ASYNCIO; break;
+        case -5: si_code = DDOG_CRASHT_SI_CODES_SI_SIGIO; break;
+        case -6: si_code = DDOG_CRASHT_SI_CODES_SI_TKILL; break;
+        case -7: break; /* SI_DETHREAD - not in enum */
+        default:
+            // Signal-specific si_codes (ILL, BUS, SEGV have enum entries; FPE/TRAP/CLD/POLL do not)
+            switch (signal) {
+                case 4: /* SIGILL */
+                    switch (code) {
+                        case 1: si_code = DDOG_CRASHT_SI_CODES_ILL_ILLOPC; break;
+                        case 2: si_code = DDOG_CRASHT_SI_CODES_ILL_ILLOPN; break;
+                        case 3: si_code = DDOG_CRASHT_SI_CODES_ILL_ILLADR; break;
+                        case 4: si_code = DDOG_CRASHT_SI_CODES_ILL_ILLTRP; break;
+                        case 5: si_code = DDOG_CRASHT_SI_CODES_ILL_PRVOPC; break;
+                        case 6: si_code = DDOG_CRASHT_SI_CODES_ILL_PRVREG; break;
+                        case 7: si_code = DDOG_CRASHT_SI_CODES_ILL_COPROC; break;
+                        case 8: si_code = DDOG_CRASHT_SI_CODES_ILL_BADSTK; break;
+                        default: break;
+                    }
+                    break;
+                case 7: /* SIGBUS */
+                    switch (code) {
+                        case 1: si_code = DDOG_CRASHT_SI_CODES_BUS_ADRALN; break;
+                        case 2: si_code = DDOG_CRASHT_SI_CODES_BUS_ADRERR; break;
+                        case 3: si_code = DDOG_CRASHT_SI_CODES_BUS_OBJERR; break;
+                        case 4: si_code = DDOG_CRASHT_SI_CODES_BUS_MCEERR_AR; break;
+                        case 5: si_code = DDOG_CRASHT_SI_CODES_BUS_MCEERR_AO; break;
+                        default: break;
+                    }
+                    break;
+                case 11: /* SIGSEGV */
+                    switch (code) {
+                        case 1: si_code = DDOG_CRASHT_SI_CODES_SEGV_MAPERR; break;
+                        case 2: si_code = DDOG_CRASHT_SI_CODES_SEGV_ACCERR; break;
+                        case 3: si_code = DDOG_CRASHT_SI_CODES_SEGV_BNDERR; break;
+                        case 4: si_code = DDOG_CRASHT_SI_CODES_SEGV_PKUERR; break;
+                        default: break;
+                    }
+                    break;
+                default: break;
+            }
+            break;
+    }
+
+    return {signo, si_code};
 }
 
-int32_t CrashReporting::SetSignalInfo(int32_t signal, const char* description)
+
+int32_t CrashReporting::SetSignalInfo(int32_t signal, int32_t code)
 {
-    std::string signalInfo;
-
-    if (description == nullptr)
-    {
-        // If no signal description is provided, try to populate it
-        signalInfo = GetSignalInfo(signal);
-    }
-    else
-    {
-        signalInfo = std::string(description);
-    }
-
+    auto [signo_human_readable, code_human_readable] = GetSignalInfo(signal, code);
     auto siginfo = ddog_crasht_SigInfo {
         .addr = {nullptr, 0},
-        .code = 0,
-        .code_human_readable = DDOG_CRASHT_SI_CODES_UNKNOWN,
+        .code = code,
+        .code_human_readable = code_human_readable,
         .signo = signal,
-        .signo_human_readable = GetSignal(signal),
+        .signo_human_readable = signo_human_readable,
     };
     CHECK_RESULT(ddog_crasht_CrashInfoBuilder_with_sig_info(&_builder, siginfo));
 
@@ -418,7 +493,6 @@ int32_t CrashReporting::CrashProcess()
     crashThread.join();
     return 0; // If we get there, somehow we failed to crash. Are we even able to do *anything* properly? ;_;
 }
-
 int32_t CrashReporting::SetCrashMessage(const char* message)
 {
     CHECK_RESULT(ddog_crasht_CrashInfoBuilder_with_message(&_builder, libdatadog::to_char_slice(message)));
