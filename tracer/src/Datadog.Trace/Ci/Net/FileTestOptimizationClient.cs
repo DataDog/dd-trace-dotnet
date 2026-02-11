@@ -5,13 +5,13 @@
 
 #nullable enable
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
-using Datadog.Trace.VendoredMicrosoftCode.System.Diagnostics.CodeAnalysis;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Ci.Net;
@@ -159,7 +159,7 @@ internal sealed class FileTestOptimizationClient : ITestOptimizationClient
                 var value = File.ReadAllText(file);
                 payload = JsonConvert.DeserializeObject<T>(value);
                 Log.Debug("FileTestOptimizationClient: Loaded from: {File}", file);
-                return true;
+                return payload is not null;
             }
         }
         catch (Exception ex)

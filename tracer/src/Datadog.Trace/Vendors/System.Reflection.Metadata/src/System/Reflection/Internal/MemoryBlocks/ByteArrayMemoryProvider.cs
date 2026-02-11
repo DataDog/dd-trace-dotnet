@@ -11,7 +11,6 @@
 
 using System.IO;
 using System.Threading;
-using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
 #pragma warning disable CS8625
 
 #nullable enable

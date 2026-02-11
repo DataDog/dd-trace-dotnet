@@ -208,7 +208,6 @@ src/Datadog.Trace/Util/System.Diagnostics.CodeAnalysis.Attributes.cs
 src/Datadog.Trace/Util/System.Runtime.CompilerServices.Attributes.cs
 src/Datadog.Trace/Util/ThrowHelper.cs
 src/Datadog.Trace/Util/TimeHelpers.cs
-src/Datadog.Trace/Util/UriHelpers.cs
 src/Datadog.Trace/Activity/Handlers/ActivityMappingExtensions.cs
 src/Datadog.Trace/Agent/MessagePack/SpanFormatterResolver.cs
 src/Datadog.Trace/Agent/MessagePack/SpanMessagePackFormatter.cs
