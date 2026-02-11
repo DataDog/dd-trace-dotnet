@@ -86,6 +86,24 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
+# Verify PowerShell version (requires 5.1+ for ConvertTo-Json -Depth and -notin operator)
+if ($PSVersionTable.PSVersion.Major -lt 5 -or
+    ($PSVersionTable.PSVersion.Major -eq 5 -and $PSVersionTable.PSVersion.Minor -lt 1)) {
+    Write-Error @"
+This script requires PowerShell 5.1 or higher.
+Current version: $($PSVersionTable.PSVersion)
+
+Install PowerShell 7+ (recommended for cross-platform support):
+- Windows: winget install Microsoft.PowerShell
+- macOS: brew install powershell/tap/powershell
+- Linux: https://learn.microsoft.com/en-us/powershell/scripting/install/installing-powershell-on-linux
+
+Or use PowerShell 5.1 (Windows only):
+- Included with Windows 10/11 - run with: powershell.exe (not powershell.exe -Version 2)
+"@
+    exit 1
+}
+
 #region Helper Functions
 
 function Invoke-AzDevOpsApi {
