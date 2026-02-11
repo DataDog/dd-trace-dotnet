@@ -1,8 +1,15 @@
 ---
+name: review-pr
 description: Perform a review on a GitHub PR, leaving comments on the PR
 argument-hint: <pr-number-or-url>
-allowed-tools: Bash(gh pr view:*), Bash(gh pr diff:*), Bash(gh pr comment:*)
+disable-model-invocation: true
+allowed-tools: Bash(gh pr view:*), Bash(gh pr diff:*), Bash(gh pr comment:*), Bash(gh --version), Bash(gh auth status)
+context: fork
+agent: general-purpose
 ---
+
+# Review GitHub PR
+
 You are an expert code reviewer. Review this PR and post your findings to GitHub: $ARGUMENTS
 
 Prerequisites:

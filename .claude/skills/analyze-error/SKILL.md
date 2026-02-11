@@ -1,3 +1,12 @@
+---
+name: analyze-error
+description: Error Stack Trace Analysis for dd-trace-dotnet
+argument-hint: <paste-error-stack-trace>
+disable-model-invocation: true
+context: fork
+agent: general-purpose
+---
+
 # Error Stack Trace Analysis for dd-trace-dotnet
 
 You are analyzing an error stack trace from the dd-trace-dotnet library. These errors originated from customer applications but are caused by dd-trace-dotnet. Your goal is to understand the error, determine if it provides enough information to identify the root cause, and recommend a fix ONLY if the error is actionable within dd-trace-dotnet.
@@ -227,11 +236,25 @@ Otherwise, treat the error as NEW and actionable.
 
 **Recommended Action**: Mark this error as **Ignored** in Error Tracking
 
-**Code Change**: Update the log statement to use `Log.ErrorSkipTelemetry` instead of `Log.Error`
+**Code Change Analysis**: Before recommending `ErrorSkipTelemetry`, analyze the error handling flow:
 
-**Reason**: {Explain why this error is not actionable and should not be tracked}
+1. **Identify where the error actually originates** - Look at the full call stack
+2. **Check if inner methods already handle expected errors** - If they do, outer catch blocks only catch unexpected exceptions (bugs)
+3. **Determine the appropriate log level**:
+   - Intermediate retry attempts → `Log.Debug` (not Error at all)
+   - Final failure after retries → `Log.ErrorSkipTelemetry` with helpful context
+   - Outer catch blocks that shouldn't normally be hit → Keep `Log.Error`
 
-**File to Update**: [{file}](GitHub link to the file containing the Log.Error call)
+**If changing to ErrorSkipTelemetry is appropriate:**
+- File to Update: [{file}](GitHub link)
+- Use generic log methods: `Log.ErrorSkipTelemetry<T>(...)` not `.ToString()`
+- Include helpful context (endpoint, troubleshooting URL)
+
+**If intermediate retry logging should be Debug:**
+- Change from `Log.Error` to `Log.Debug` for intermediate attempts
+- Only log Error/ErrorSkipTelemetry for final failures
+
+**Reason**: {Explain why this error is not actionable and the recommended approach}
 
 ## Additional Context
 
@@ -259,6 +282,29 @@ Otherwise, treat the error as NEW and actionable.
 - **Application code changes**: We don't control customer applications
 - **Application environment variable changes**: We can't modify customer environments
 - **Suppressing errors indiscriminately**: Only use ErrorSkipTelemetry when genuinely not actionable
+- **ToString() in log arguments**: Never use `.ToString()` on numeric types in log calls - use generic log methods instead
+
+### Code Quality Requirements
+When recommending logging changes, follow these patterns:
+
+**Never use ToString() for log arguments:**
+```csharp
+// BAD - allocates a string unnecessarily
+Log.Error(ex, "Error (attempt {Attempt})", (attempt + 1).ToString());
+
+// GOOD - uses generic method, no allocation
+Log.Debug<int>(ex, "Error (attempt {Attempt})", attempt + 1);
+```
+
+**Understand code flow before applying ErrorSkipTelemetry:**
+- If inner methods already catch and handle expected errors (network issues, timeouts), outer catch blocks would only catch UNEXPECTED exceptions
+- Outer catch blocks should typically remain `Log.Error` since they indicate bugs
+- Only apply `ErrorSkipTelemetry` at the point where expected errors actually occur
+
+**Use appropriate log levels for retry operations:**
+- `Log.Debug`: Intermediate retry attempts (transient errors are expected)
+- `Log.Error` or `Log.ErrorSkipTelemetry`: Final failure after all retries
+- `Log.Error`: Non-retryable errors like HTTP 400 (indicates a bug)
 
 ### DO Recommend (When Actionable)
 - **Null checks**: If dereferencing could fail
@@ -270,8 +316,10 @@ Otherwise, treat the error as NEW and actionable.
 
 ### DO Recommend (When NOT Actionable)
 - **Mark as Ignored** in Error Tracking
-- **Change Log.Error to Log.ErrorSkipTelemetry** in the specific file
+- **Change Log.Error to Log.ErrorSkipTelemetry** ONLY at the specific location where expected errors occur
+- **Change intermediate retry logs to Debug level** if transient errors are expected
 - Clear explanation of why it's not actionable
+- **Understand the full error handling flow** before recommending changes to any catch block
 
 ### Analysis Constraints
 - **REDACTED frames are black boxes**: Don't speculate about their behavior
