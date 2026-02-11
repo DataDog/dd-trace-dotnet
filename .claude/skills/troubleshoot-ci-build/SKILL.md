@@ -11,10 +11,35 @@ allowed-tools: WebFetch, Bash(gh pr checks:*), Bash(az devops invoke:*), Bash(az
 
 Troubleshoot Azure DevOps pipeline failures with automated analysis and comparison against master builds.
 
+## Prerequisites
+
+**CRITICAL**: This skill requires PowerShell to run the build analysis script.
+
+**PowerShell version requirements**:
+- **Recommended**: PowerShell 7+ (`pwsh`) - cross-platform, modern features
+- **Minimum**: PowerShell 5.1 (`powershell.exe` on Windows only)
+
+**Installation**:
+- Windows: `winget install Microsoft.PowerShell` (or use built-in PowerShell 5.1)
+- macOS: `brew install powershell/tap/powershell`
+- Linux: https://learn.microsoft.com/en-us/powershell/scripting/install/installing-powershell-on-linux
+
+**If the user does not have PowerShell installed**:
+1. Check for `pwsh` first: `pwsh -Version`
+2. If not found and on Windows, check for PowerShell 5.1: `powershell -NoProfile -Command '$PSVersionTable.PSVersion'`
+3. If neither found or version is too old, provide installation instructions from [README.md](README.md#installing-powershell)
+4. Do NOT attempt to replicate the script functionality using bash/jq - the logic is too complex
+
+**Always prefer `pwsh` over `powershell.exe`** when both are available (better cross-platform compatibility and modern features).
+
+**Other requirements**:
+- GitHub CLI (`gh`) authenticated (for PR analysis)
+- Azure CLI (`az`) configured
+
 ## Additional Resources
 
 - **[failure-patterns.md](failure-patterns.md)** - Reference guide with known CI failure patterns, categorization rules, and decision trees. Load when you need to categorize a failure type or compare against historical patterns.
-- **[README.md](README.md)** - User-facing documentation with usage examples. Reference when explaining skill capabilities to users.
+- **[README.md](README.md)** - User-facing documentation with usage examples and installation instructions. Reference when explaining skill capabilities to users.
 - **[scripts-reference.md](scripts-reference.md)** - Documentation for `Get-AzureDevOpsBuildAnalysis.ps1` script (parameters, usage, output structure).
 
 ## Task

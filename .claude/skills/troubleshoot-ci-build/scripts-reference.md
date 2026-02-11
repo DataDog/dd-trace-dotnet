@@ -12,8 +12,15 @@ This document describes reusable PowerShell scripts for Azure DevOps CI troubles
 
 ### Prerequisites
 
-- Azure CLI (`az`) authenticated to DataDog organization
-- GitHub CLI (`gh`) authenticated (only if using `-PullRequest` parameter)
+- **PowerShell 5.1+** - Required to run this script
+  - **Recommended**: PowerShell 7+ (`pwsh`) for cross-platform support
+  - **Minimum**: PowerShell 5.1 (`powershell.exe` on Windows)
+  - Installation: https://learn.microsoft.com/en-us/powershell/scripting/install/installing-powershell
+  - Verify: `pwsh -Version` or `powershell -NoProfile -Command '$PSVersionTable.PSVersion'`
+- **Azure CLI** (`az`) authenticated to DataDog organization
+- **GitHub CLI** (`gh`) authenticated (only if using `-PullRequest` parameter)
+
+**Note**: This script uses PowerShell-specific features (e.g., `-notin` operator, `HashSet<T>`, `Invoke-RestMethod`) that cannot be easily replicated in bash. Always prefer `pwsh` over `powershell.exe` when both are available.
 
 ### Parameters
 
