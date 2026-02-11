@@ -6,6 +6,7 @@
 using System;
 using Datadog.Trace.ClrProfiler.Helpers;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
@@ -110,7 +111,7 @@ namespace Datadog.Trace.ClrProfiler
 
                 string resourceUrl = requestUri != null ? UriHelpers.CleanUri(requestUri, removeScheme: true, tryRemoveIds: true) : null;
 
-                var operationName = tracer.CurrentTraceSettings.Schema.Client.GetOperationNameForProtocol("http");
+                var operationName = tracer.CurrentTraceSettings.Schema.Client.GetOperationNameForProtocol(ClientSchema.Protocol.Http);
                 var serviceName = tracer.CurrentTraceSettings.Schema.Client.GetServiceName(component: "http-client");
                 tags = tracer.CurrentTraceSettings.Schema.Client.CreateHttpTags();
 
