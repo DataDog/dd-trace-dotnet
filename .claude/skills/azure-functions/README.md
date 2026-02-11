@@ -84,12 +84,58 @@ When invoked without arguments (`/azure-functions`), the skill guides you throug
 
 ### Prerequisites
 
-Users provide their own:
+**PowerShell**:
+- **Recommended**: PowerShell 7+ (`pwsh`) - cross-platform, modern features
+- **Minimum**: PowerShell 5.1 (`powershell.exe` on Windows only)
+- [Installation instructions](#installing-powershell)
+
+**Azure resources** (users provide their own):
 - **App name** (`-AppName`): The Azure Function App to deploy to
 - **Resource group** (`-ResourceGroup`): The Azure resource group containing the app
 - **Sample app path** (`-SampleAppPath`): Local path to an Azure Functions app that references the `Datadog.AzureFunctions` NuGet package
 
 The sample app must have a `nuget.config` (in the app directory or a parent directory) that defines a local NuGet feed. The `-CopyTo` parameter of `Build-AzureFunctionsNuget.ps1` should point to the same directory as that local feed so `dotnet restore` picks up the freshly built package.
+
+### Installing PowerShell
+
+PowerShell 5.1+ is required to run the Azure Functions automation scripts.
+
+**Windows users**: PowerShell 5.1 is already included with Windows 10/11. You can use the built-in `powershell.exe` or install PowerShell 7+ for the latest features.
+
+**macOS/Linux users**: PowerShell 7+ is required (cross-platform version).
+
+#### PowerShell 7+ (Recommended)
+
+**Windows**:
+```powershell
+winget install Microsoft.PowerShell
+```
+
+**macOS**:
+```bash
+brew install powershell/tap/powershell
+```
+
+**Linux (Ubuntu/Debian)**:
+```bash
+# Download the Microsoft repository GPG keys
+wget -q https://packages.microsoft.com/config/ubuntu/$(lsb_release -rs)/packages-microsoft-prod.deb
+
+# Register the Microsoft repository GPG keys
+sudo dpkg -i packages-microsoft-prod.deb
+
+# Update apt and install PowerShell
+sudo apt-get update
+sudo apt-get install -y powershell
+```
+
+**Linux (Other distributions)**: https://learn.microsoft.com/en-us/powershell/scripting/install/installing-powershell
+
+**Verify installation**:
+```bash
+pwsh -Version
+# Should output: PowerShell 7.x.x or higher
+```
 
 ## Documentation References
 

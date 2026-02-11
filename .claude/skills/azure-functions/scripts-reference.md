@@ -4,6 +4,13 @@ Quick reference scripts and commands for Azure Functions development workflow.
 
 ## PowerShell Scripts (tracer/tools/)
 
+**Prerequisites**: PowerShell 5.1+ is required for all scripts in this section.
+- **Recommended**: PowerShell 7+ (`pwsh`) for cross-platform support
+- **Minimum**: PowerShell 5.1 (`powershell.exe` on Windows)
+- Verify: `pwsh -Version` or `powershell -NoProfile -Command '$PSVersionTable.PSVersion'`
+
+**Note**: These scripts use PowerShell-specific cmdlets (e.g., `Expand-Archive`, `Invoke-RestMethod`) that cannot be easily replicated in bash. Always prefer `pwsh` over `powershell.exe` when both are available.
+
 ### Deploy-AzureFunction.ps1
 
 Automates deployment, wait, and HTTP trigger with timestamp capture.
