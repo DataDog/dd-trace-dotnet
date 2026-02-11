@@ -210,23 +210,23 @@ public class ServerlessCompatIntegrationTests
         traceCacheField?.SetValue(null, null);
         dogstatsdCacheField?.SetValue(null, null);
 
-        // Also clear ExporterSettings generated names
+        // Also clear ExporterSettings generated names (backing fields)
         var exporterSettingsType = typeof(ExporterSettings);
-        var tracesPipeNameProp = exporterSettingsType.GetProperty("AzureFunctionsGeneratedTracesPipeName", BindingFlags.NonPublic | BindingFlags.Static);
-        var metricsPipeNameProp = exporterSettingsType.GetProperty("AzureFunctionsGeneratedMetricsPipeName", BindingFlags.NonPublic | BindingFlags.Static);
+        var tracesPipeNameField = exporterSettingsType.GetField("_azureFunctionsGeneratedTracesPipeName", BindingFlags.NonPublic | BindingFlags.Static);
+        var metricsPipeNameField = exporterSettingsType.GetField("_azureFunctionsGeneratedMetricsPipeName", BindingFlags.NonPublic | BindingFlags.Static);
 
-        tracesPipeNameProp?.SetValue(null, null);
-        metricsPipeNameProp?.SetValue(null, null);
+        tracesPipeNameField?.SetValue(null, null);
+        metricsPipeNameField?.SetValue(null, null);
     }
 
     private static void SetExporterSettingsGeneratedNames(string? tracePipeName, string? metricsPipeName)
     {
         var exporterSettingsType = typeof(ExporterSettings);
-        var tracesPipeNameProp = exporterSettingsType.GetProperty("AzureFunctionsGeneratedTracesPipeName", BindingFlags.NonPublic | BindingFlags.Static);
-        var metricsPipeNameProp = exporterSettingsType.GetProperty("AzureFunctionsGeneratedMetricsPipeName", BindingFlags.NonPublic | BindingFlags.Static);
+        var tracesPipeNameField = exporterSettingsType.GetField("_azureFunctionsGeneratedTracesPipeName", BindingFlags.NonPublic | BindingFlags.Static);
+        var metricsPipeNameField = exporterSettingsType.GetField("_azureFunctionsGeneratedMetricsPipeName", BindingFlags.NonPublic | BindingFlags.Static);
 
-        tracesPipeNameProp?.SetValue(null, tracePipeName);
-        metricsPipeNameProp?.SetValue(null, metricsPipeName);
+        tracesPipeNameField?.SetValue(null, tracePipeName);
+        metricsPipeNameField?.SetValue(null, metricsPipeName);
     }
 }
 #endif
