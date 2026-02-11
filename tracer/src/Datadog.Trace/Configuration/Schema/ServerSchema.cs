@@ -13,10 +13,16 @@ namespace Datadog.Trace.Configuration.Schema
     internal sealed class ServerSchema
     {
         private readonly SchemaVersion _version;
+        private readonly string _operationNameSuffix;
 
         public ServerSchema(SchemaVersion version)
         {
             _version = version;
+            _operationNameSuffix = version switch
+            {
+                SchemaVersion.V0 => string.Empty,
+                _ => ".request",
+            };
         }
 
         public string GetOperationNameForProtocol(string protocol) =>
@@ -33,11 +39,6 @@ namespace Datadog.Trace.Configuration.Schema
                 _ => "http.server.request",
             };
 
-        public string GetOperationNameForRequestType(string requestType) =>
-            _version switch
-            {
-                SchemaVersion.V0 => $"{requestType}",
-                _ => $"{requestType}.request",
-            };
+        public string GetOperationNameSuffixForRequest() => _operationNameSuffix;
     }
 }

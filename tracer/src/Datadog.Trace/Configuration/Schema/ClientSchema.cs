@@ -19,6 +19,7 @@ namespace Datadog.Trace.Configuration.Schema
         private readonly bool _peerServiceTagsEnabled;
         private readonly string[] _protocols;
         private readonly string[] _serviceNames;
+        private readonly string _operationNameSuffix;
 
         public ClientSchema(SchemaVersion version, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled, string defaultServiceName, IReadOnlyDictionary<string, string>? serviceNameMappings)
         {
@@ -28,6 +29,11 @@ namespace Datadog.Trace.Configuration.Schema
             {
                 SchemaVersion.V0 => V0Values.ProtocolOperationNames,
                 _ => V1Values.ProtocolOperationNames,
+            };
+            _operationNameSuffix = version switch
+            {
+                SchemaVersion.V0 => string.Empty,
+                _ => ".request",
             };
 
             // Calculate service names once, to avoid allocations with every call
@@ -68,12 +74,7 @@ namespace Datadog.Trace.Configuration.Schema
 
         public string GetOperationNameForProtocol(Protocol protocol) => _protocols[(int)protocol];
 
-        public string GetOperationNameForRequestType(string requestType) =>
-            _version switch
-            {
-                SchemaVersion.V0 => $"{requestType}",
-                _ => $"{requestType}.request",
-            };
+        public string GetOperationNameSuffixForRequest() => _operationNameSuffix;
 
         public string GetServiceName(Component component) => _serviceNames[(int)component];
 
