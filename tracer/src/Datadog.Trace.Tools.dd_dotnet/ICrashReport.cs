@@ -23,7 +23,7 @@ internal unsafe interface ICrashReport : IUnknown
 
     void Panic();
 
-    int SetSignalInfo(int signal, IntPtr description);
+    int SetSignalInfo(int signal, int code);
 
     int ResolveStacks(int crashingThreadId, IntPtr resolveCallback, IntPtr context, out bool isSuspicious);
 

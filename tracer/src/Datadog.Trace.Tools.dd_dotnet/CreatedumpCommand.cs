@@ -31,6 +31,8 @@ internal class CreatedumpCommand : Command
     private const string EnvironmentFilteringEnabled = "DD_CRASHTRACKING_FILTERING_ENABLED";
     private const string EnvironmentLogToConsole = "DD_CRASHTRACKING_INTERNAL_LOG_TO_CONSOLE";
 
+    private const int InvalidSignalCode = int.MaxValue;
+
     private static readonly Dictionary<uint, string> WindowsExceptionCodeNames = new()
     {
         [0x80000003] = "EXCEPTION_BREAKPOINT",
@@ -479,7 +481,7 @@ internal class CreatedumpCommand : Command
         {
             var sig = signal.Value;
             var (name, codeName) = GetSignalInfo(sig, signalCode);
-            return $"Process was terminated with {name} ({codeName})";
+            return $"Process was terminated with {codeName} ({name})";
         }
 
         return "Process was terminated due to an unknown reason";
@@ -860,7 +862,7 @@ internal class CreatedumpCommand : Command
         if (signal.HasValue)
         {
             DebugPrint("Adding signal information to the crash report");
-            _ = SetSignal(crashReport, signal.Value);
+            _ = SetSignal(crashReport, signal.Value, signalCode);
         }
 
         DebugPrint("Setting crash report metadata");
@@ -945,11 +947,12 @@ internal class CreatedumpCommand : Command
         return $"unspecified error: {exception.NativeErrorCode}";
     }
 
-    private bool SetSignal(ICrashReport crashReport, int signal)
+    private unsafe bool SetSignal(ICrashReport crashReport, int signal, int? signalCode)
     {
         try
         {
-            crashReport.SetSignalInfo(signal, IntPtr.Zero);
+            int code = signalCode ?? InvalidSignalCode;
+            crashReport.SetSignalInfo(signal, code);
         }
         catch (Win32Exception ex)
         {
@@ -962,10 +965,12 @@ internal class CreatedumpCommand : Command
 
     private bool SetCrashMessage(ICrashReport crashReport, string message)
     {
-        var ptr = Marshal.StringToHGlobalAnsi(message);
+        var ptr = IntPtr.Zero;
 
         try
         {
+            DebugPrint($"Setting crash message: {message}");
+            ptr = Marshal.StringToHGlobalAnsi(message);
             crashReport.SetCrashMessage(ptr);
             return true;
         }
