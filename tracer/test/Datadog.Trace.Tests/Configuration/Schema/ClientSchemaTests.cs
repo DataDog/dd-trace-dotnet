@@ -32,16 +32,16 @@ namespace Datadog.Trace.Tests.Configuration.Schema
             yield return (1, (int)ClientSchema.Protocol.Grpc, "grpc.client.request");
         }
 
-        public static IEnumerable<(int SchemaVersion, string Component, string ExpectedValue, bool RemoveClientServiceNamesEnabled)> GetServiceNameData()
+        public static IEnumerable<(int SchemaVersion, int Component, string ExpectedValue, bool RemoveClientServiceNamesEnabled)> GetServiceNameData()
         {
-            yield return (0, "http-client", "some-service", true);   // V0, mapped
-            yield return (0, "http-client", "some-service", false);
-            yield return (1, "http-client", "some-service", true);   // V1, mapped
-            yield return (1, "http-client", "some-service", false);
-            yield return (0, "grpc-client", DefaultServiceName, true);   // V0, unmapped
-            yield return (0, "grpc-client", $"{DefaultServiceName}-grpc-client", false);
-            yield return (1, "grpc-client", DefaultServiceName, true);   // V1, unmapped
-            yield return (1, "grpc-client", DefaultServiceName, false);
+            yield return (0, (int)ClientSchema.Component.Http, "some-service", true);   // V0, mapped
+            yield return (0, (int)ClientSchema.Component.Http, "some-service", false);
+            yield return (1, (int)ClientSchema.Component.Http, "some-service", true);   // V1, mapped
+            yield return (1, (int)ClientSchema.Component.Http, "some-service", false);
+            yield return (0, (int)ClientSchema.Component.Grpc, DefaultServiceName, true);   // V0, unmapped
+            yield return (0, (int)ClientSchema.Component.Grpc, $"{DefaultServiceName}-grpc-client", false);
+            yield return (1, (int)ClientSchema.Component.Grpc, DefaultServiceName, true);   // V1, unmapped
+            yield return (1, (int)ClientSchema.Component.Grpc, DefaultServiceName, false);
         }
 
         public static IEnumerable<(int SchemaVersion, string RequestType, string ExpectedValue)> GetOperationNameForRequestTypeData()
@@ -79,12 +79,12 @@ namespace Datadog.Trace.Tests.Configuration.Schema
         [Theory]
         [CombinatorialData]
         public void GetServiceNameIsCorrect(
-            [CombinatorialMemberData(nameof(GetServiceNameData))] (int SchemaVersion, string Component, string ExpectedValue, bool RemoveClientServiceNamesEnabled) values,
+            [CombinatorialMemberData(nameof(GetServiceNameData))] (int SchemaVersion, int Component, string ExpectedValue, bool RemoveClientServiceNamesEnabled) values,
             bool peerServiceTagsEnabled)
         {
             var schemaVersion = (SchemaVersion)values.SchemaVersion;
             var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, values.RemoveClientServiceNamesEnabled, DefaultServiceName, _mappings, new Dictionary<string, string>());
-            namingSchema.Client.GetServiceName(values.Component).Should().Be(values.ExpectedValue);
+            namingSchema.Client.GetServiceName((ClientSchema.Component)values.Component).Should().Be(values.ExpectedValue);
         }
 
         [Theory]

@@ -13,25 +13,42 @@ namespace Datadog.Trace.Configuration.Schema
 {
     internal sealed class ClientSchema
     {
+        private const string HttpClientComponent = "http-client";
+        private const string GrpcClientComponent = "grpc-client";
         private readonly SchemaVersion _version;
         private readonly bool _peerServiceTagsEnabled;
-        private readonly bool _removeClientServiceNamesEnabled;
-        private readonly string _defaultServiceName;
-        private readonly IReadOnlyDictionary<string, string>? _serviceNameMappings;
         private readonly string[] _protocols;
+        private readonly string[] _serviceNames;
 
         public ClientSchema(SchemaVersion version, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled, string defaultServiceName, IReadOnlyDictionary<string, string>? serviceNameMappings)
         {
             _version = version;
             _peerServiceTagsEnabled = peerServiceTagsEnabled;
-            _removeClientServiceNamesEnabled = removeClientServiceNamesEnabled;
-            _defaultServiceName = defaultServiceName;
-            _serviceNameMappings = serviceNameMappings;
             _protocols = version switch
             {
                 SchemaVersion.V0 => V0Values.ProtocolOperationNames,
                 _ => V1Values.ProtocolOperationNames,
             };
+
+            // Calculate service names once, to avoid allocations with every call
+            var useSuffix = version == SchemaVersion.V0 && !removeClientServiceNamesEnabled;
+            _serviceNames =
+            [
+                useSuffix ? $"{defaultServiceName}-{HttpClientComponent}" : defaultServiceName,
+                useSuffix ? $"{defaultServiceName}-grpc-client" : defaultServiceName,
+            ];
+            if (serviceNameMappings is not null)
+            {
+                if (serviceNameMappings.TryGetValue(HttpClientComponent, out var httpName))
+                {
+                    _serviceNames[(int)Component.Http] = httpName;
+                }
+
+                if (serviceNameMappings.TryGetValue(GrpcClientComponent, out var grpcName))
+                {
+                    _serviceNames[(int)Component.Grpc] = grpcName;
+                }
+            }
         }
 
         /// <summary>
@@ -43,6 +60,12 @@ namespace Datadog.Trace.Configuration.Schema
             Grpc
         }
 
+        public enum Component
+        {
+            Http, // http-client
+            Grpc // grpc-client
+        }
+
         public string GetOperationNameForProtocol(Protocol protocol) => _protocols[(int)protocol];
 
         public string GetOperationNameForRequestType(string requestType) =>
@@ -52,19 +75,7 @@ namespace Datadog.Trace.Configuration.Schema
                 _ => $"{requestType}.request",
             };
 
-        public string GetServiceName(string component)
-        {
-            if (_serviceNameMappings is not null && _serviceNameMappings.TryGetValue(component, out var mappedServiceName))
-            {
-                return mappedServiceName;
-            }
-
-            return _version switch
-            {
-                SchemaVersion.V0 when !_removeClientServiceNamesEnabled => $"{_defaultServiceName}-{component}",
-                _ => _defaultServiceName,
-            };
-        }
+        public string GetServiceName(Component component) => _serviceNames[(int)component];
 
         public HttpTags CreateHttpTags()
             => _version switch

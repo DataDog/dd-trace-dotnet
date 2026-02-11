@@ -58,7 +58,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
 
                 var clientSchema = tracer.CurrentTraceSettings.Schema.Client;
                 var operationName = clientSchema.GetOperationNameForProtocol(ClientSchema.Protocol.Grpc);
-                var serviceName = clientSchema.GetServiceName(component: "grpc-client");
+                var serviceName = clientSchema.GetServiceName(ClientSchema.Component.Grpc);
                 var tags = clientSchema.CreateGrpcClientTags();
                 var methodFullName = callInvocationDetails.Method;
 
@@ -245,7 +245,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
         {
             var perTraceSettings = tracer.CurrentTraceSettings;
             var operationName = perTraceSettings.Schema.Client.GetOperationNameForProtocol(ClientSchema.Protocol.Grpc);
-            var serviceName = perTraceSettings.Schema.Client.GetServiceName(component: "grpc-client");
+            var serviceName = perTraceSettings.Schema.Client.GetServiceName(ClientSchema.Component.Grpc);
             var tags = perTraceSettings.Schema.Client.CreateGrpcClientTags();
             tags.SetAnalyticsSampleRate(IntegrationId.Grpc, perTraceSettings.Settings, enabledWithGlobalSetting: false);
             perTraceSettings.Schema.RemapPeerService(tags);
