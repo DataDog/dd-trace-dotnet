@@ -345,6 +345,8 @@ internal static class XUnitIntegration
         if (isAtrRetry && testCaseMetadata is { HasAnException: true, IsLastRetry: false })
         {
             var remainingBudget = GetRemainingAtrBudget();
+            // This pre-close check runs before the retry scheduler decrements budget.
+            // If budget is 1 now, the next decrement reaches 0, so no further retry will run.
             isAtrBudgetExhausted = remainingBudget <= 1;
         }
 
@@ -429,9 +431,11 @@ internal static class XUnitIntegration
     }
 
     /// <summary>
-    /// Unified read-only check of remaining ATR budget for pre-check before span closes.
-    /// Uses Math.Max to handle both v2 and v3 scenarios (they have separate budgets).
-    /// Returns -1 if budget is uninitialized, 0 if exhausted, or a positive number if available.
+    /// Unified read-only snapshot of remaining ATR budget for pre-close checks.
+    /// Uses Math.Max to handle both v2 and v3 scenarios (they have separate counters).
+    /// Value meanings: -1 = uninitialized, 0 = exhausted, positive = nominally available.
+    /// This value is observed before retry scheduling decrements the budget, so values of 1 or 0 mean
+    /// the current failed execution is the last one before exhaustion.
     /// </summary>
     internal static int GetRemainingAtrBudget()
     {

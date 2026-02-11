@@ -589,6 +589,8 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
             var isAtrEarlyExit = isAtrRetry && testStatus == TestStatus.Pass;
 
             // ATR budget exhaustion: test failed and budget is about to run out
+            // This check runs before retry scheduling decrements the shared ATR budget.
+            // <= 1 means this failure is effectively final because the next decrement exhausts budget.
             var isAtrBudgetExhausted = isAtrRetry && testStatus == TestStatus.Fail && GetRemainingAtrBudget() <= 1;
 
             isFinalExecution = retryState.IsLastRetry || isAtrEarlyExit || isAtrBudgetExhausted;
@@ -726,7 +728,10 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
     }
 
     /// <summary>
-    /// Returns the remaining ATR budget. -1 means uninitialized, 0 means exhausted.
+    /// Read-only snapshot of remaining ATR budget for pre-close checks.
+    /// Value meanings: -1 = uninitialized, 0 = exhausted, positive = nominally available.
+    /// This value is read before retry scheduling decrements budget, so values of 1 or 0 mean no
+    /// further retry can run after the current failed execution.
     /// </summary>
     internal static int GetRemainingAtrBudget()
         => Interlocked.CompareExchange(ref _totalRetries, 0, 0);

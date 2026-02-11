@@ -1,4 +1,4 @@
-﻿// <copyright file="TestOptimizationTestCommand.cs" company="Datadog">
+// <copyright file="TestOptimizationTestCommand.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -255,6 +255,8 @@ internal sealed class TestOptimizationTestCommand
             if (isAtrBehavior && resultStatus == TestStatus.Failed && !retryState.IsLastRetry)
             {
                 var remainingBudget = FlakyRetryBehavior.GetRemainingBudget();
+                // This pre-close check runs before ShouldRetry() decrements the ATR budget.
+                // If budget is 1 now, the next decrement reaches 0, so no further retry will run.
                 isAtrBudgetExhausted = remainingBudget <= 1;
             }
 
