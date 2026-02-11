@@ -115,9 +115,47 @@ Ask for details on a specific failure to get:
 
 ## Requirements
 
+- **PowerShell** - [Installation instructions](#installing-powershell)
+  - **Recommended**: PowerShell 7+ (`pwsh`) - cross-platform, modern features
+  - **Minimum**: PowerShell 5.1 (`powershell.exe` on Windows only)
 - **GitHub CLI** (`gh`) authenticated (for PR analysis)
 - **Azure CLI** (`az`) authenticated to DataDog organization
 - **Internet connection** to fetch build data
+
+### Installing PowerShell
+
+**Recommended**: Install PowerShell 7+ for the best experience and cross-platform support.
+
+**Windows**:
+```powershell
+winget install Microsoft.PowerShell
+```
+
+**macOS**:
+```bash
+brew install powershell/tap/powershell
+```
+
+**Linux (Ubuntu/Debian)**:
+```bash
+# Download the Microsoft repository GPG keys
+wget -q https://packages.microsoft.com/config/ubuntu/$(lsb_release -rs)/packages-microsoft-prod.deb
+
+# Register the Microsoft repository GPG keys
+sudo dpkg -i packages-microsoft-prod.deb
+
+# Update apt and install PowerShell
+sudo apt-get update
+sudo apt-get install -y powershell
+```
+
+**Linux (Other distributions)** and more details: https://learn.microsoft.com/en-us/powershell/scripting/install/installing-powershell
+
+**Verify installation**:
+```bash
+pwsh -Version
+# Should output: PowerShell 7.x.x or higher
+```
 
 ## Related Scripts (tracer/tools/)
 
