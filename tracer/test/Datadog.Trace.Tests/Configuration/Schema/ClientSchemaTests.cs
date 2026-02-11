@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Configuration;
@@ -44,12 +45,12 @@ namespace Datadog.Trace.Tests.Configuration.Schema
             yield return (1, (int)ClientSchema.Component.Grpc, DefaultServiceName, false);
         }
 
-        public static IEnumerable<(int SchemaVersion, string RequestType, string ExpectedValue)> GetOperationNameForRequestTypeData()
+        public static IEnumerable<(int SchemaVersion, string ExpectedSuffix)> GetOperationNameSuffixForRequestData()
         {
-            yield return (0, "some-remoting.client", "some-remoting.client");           // SchemaVersion.V0
-            yield return (0, "wcf.client", "wcf.client");
-            yield return (1, "some-remoting.client", "some-remoting.client.request");   // SchemaVersion.V1
-            yield return (1, "wcf.client", "wcf.client.request");
+            yield return (0, string.Empty);           // SchemaVersion.V0
+            yield return (0,  string.Empty);
+            yield return (1, ".request");   // SchemaVersion.V1
+            yield return (1, ".request");
         }
 
         [Theory]
@@ -66,14 +67,14 @@ namespace Datadog.Trace.Tests.Configuration.Schema
 
         [Theory]
         [CombinatorialData]
-        public void GetOperationNameForRequestTypeIsCorrect(
-            [CombinatorialMemberData(nameof(GetOperationNameForRequestTypeData))] (int SchemaVersion, string RequestType, string ExpectedValue) values,
+        public void GetOperationNameSuffixForRequestIsCorrect(
+            [CombinatorialMemberData(nameof(GetOperationNameSuffixForRequestData))] (int SchemaVersion, string ExpectedSuffix) values,
             bool peerServiceTagsEnabled,
             bool removeClientServiceNamesEnabled)
         {
             var schemaVersion = (SchemaVersion)values.SchemaVersion;
             var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, new Dictionary<string, string>(), new Dictionary<string, string>());
-            namingSchema.Client.GetOperationNameForRequestType(values.RequestType).Should().Be(values.ExpectedValue);
+            namingSchema.Client.GetOperationNameSuffixForRequest().Should().Be(values.ExpectedSuffix);
         }
 
         [Theory]
@@ -145,6 +146,28 @@ namespace Datadog.Trace.Tests.Configuration.Schema
 
             var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings, new Dictionary<string, string>());
             namingSchema.Client.CreateAzureServiceBusTags().Should().BeOfType(expectedType);
+        }
+
+        [Theory]
+        [CombinatorialData]
+        public void GetOperationNameForProtocol_SupportsAllEnumValues([CombinatorialValues(0, 1)]int schemaVersion, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
+        {
+            var namingSchema = new NamingSchema((SchemaVersion)schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings, new Dictionary<string, string>());
+            foreach (var value in Enum.GetValues(typeof(ClientSchema.Protocol)).Cast<ClientSchema.Protocol>())
+            {
+                namingSchema.Client.GetOperationNameForProtocol(value).Should().NotBeNull();
+            }
+        }
+
+        [Theory]
+        [CombinatorialData]
+        public void GetServiceName_SupportsAllEnumValues([CombinatorialValues(0, 1)]int schemaVersion, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
+        {
+            var namingSchema = new NamingSchema((SchemaVersion)schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings, new Dictionary<string, string>());
+            foreach (var value in Enum.GetValues(typeof(ClientSchema.Component)).Cast<ClientSchema.Component>())
+            {
+                namingSchema.Client.GetServiceName(value).Should().NotBeNull();
+            }
         }
     }
 }

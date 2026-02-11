@@ -23,6 +23,14 @@ namespace Datadog.Trace.Tests.Configuration.Schema
                from removeClientServiceNamesEnabled in new[] { true, false }
                select new[] { schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled };
 
+        public static IEnumerable<(int SchemaVersion, string ExpectedSuffix)> GetOperationNameSuffixForRequestData()
+        {
+            yield return (0, string.Empty);           // SchemaVersion.V0
+            yield return (0,  string.Empty);
+            yield return (1, ".request");   // SchemaVersion.V1
+            yield return (1, ".request");
+        }
+
         [Theory]
         [MemberData(nameof(GetAllConfigs))]
         public void GetOperationNameForProtocolIsCorrect(object schemaVersionObject, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
@@ -56,19 +64,15 @@ namespace Datadog.Trace.Tests.Configuration.Schema
         }
 
         [Theory]
-        [MemberData(nameof(GetAllConfigs))]
-        public void GetOperationNameForRequestTypeIsCorrect(object schemaVersionObject, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
+        [CombinatorialData]
+        public void GetOperationNameSuffixForRequestIsCorrect(
+            [CombinatorialMemberData(nameof(GetOperationNameSuffixForRequestData))] (int SchemaVersion, string ExpectedSuffix) values,
+            bool peerServiceTagsEnabled,
+            bool removeClientServiceNamesEnabled)
         {
-            var schemaVersion = (SchemaVersion)schemaVersionObject; // Unbox SchemaVersion, which is only defined internally
-            var requestType = "some-remoting.server";
-            var expectedValue = schemaVersion switch
-            {
-                SchemaVersion.V0 => requestType,
-                _ => $"{requestType}.request",
-            };
-
+            var schemaVersion = (SchemaVersion)values.SchemaVersion;
             var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, new Dictionary<string, string>(), new Dictionary<string, string>());
-            namingSchema.Server.GetOperationNameForRequestType(requestType).Should().Be(expectedValue);
+            namingSchema.Client.GetOperationNameSuffixForRequest().Should().Be(values.ExpectedSuffix);
         }
     }
 }
