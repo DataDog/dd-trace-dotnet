@@ -4,10 +4,8 @@
 // </copyright>
 
 using System.Collections.Generic;
-using System.Linq;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Schema;
-using Datadog.Trace.Tagging;
 using FluentAssertions;
 using Xunit;
 
@@ -17,50 +15,46 @@ namespace Datadog.Trace.Tests.Configuration.Schema
     {
         private const string DefaultServiceName = "MyApplication";
 
-        public static IEnumerable<object[]> GetAllConfigs()
-            => from schemaVersion in new object[] { SchemaVersion.V0, SchemaVersion.V1 }
-               from peerServiceTagsEnabled in new[] { true, false }
-               from removeClientServiceNamesEnabled in new[] { true, false }
-               select new[] { schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled };
+        public static IEnumerable<(int SchemaVersion, string Protocol, string ExpectedOperationName)> GetProtocolOperationNameData()
+        {
+            yield return (0, "grpc", "grpc.request");
+            yield return (1, "grpc", "grpc.server.request");
+        }
+
+        public static IEnumerable<(int SchemaVersion, string Component, string ExpectedOperationName)> GetComponentOperationNameData()
+        {
+            yield return (0, "wcf", "wcf.request");
+            yield return (1, "wcf", "http.server.request");
+        }
 
         public static IEnumerable<(int SchemaVersion, string ExpectedSuffix)> GetOperationNameSuffixForRequestData()
         {
-            yield return (0, string.Empty);           // SchemaVersion.V0
-            yield return (0,  string.Empty);
-            yield return (1, ".request");   // SchemaVersion.V1
+            yield return (0, string.Empty);
             yield return (1, ".request");
         }
 
         [Theory]
-        [MemberData(nameof(GetAllConfigs))]
-        public void GetOperationNameForProtocolIsCorrect(object schemaVersionObject, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
+        [CombinatorialData]
+        public void GetOperationNameForProtocolIsCorrect(
+            [CombinatorialMemberData(nameof(GetProtocolOperationNameData))] (int SchemaVersion, string Protocol, string ExpectedOperationName) values,
+            bool peerServiceTagsEnabled,
+            bool removeClientServiceNamesEnabled)
         {
-            var schemaVersion = (SchemaVersion)schemaVersionObject; // Unbox SchemaVersion, which is only defined internally
-            var protocol = "some-rpc";
-            var expectedValue = schemaVersion switch
-            {
-                SchemaVersion.V0 => $"{protocol}.request",
-                _ => $"{protocol}.server.request",
-            };
-
+            var schemaVersion = (SchemaVersion)values.SchemaVersion;
             var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, new Dictionary<string, string>(), new Dictionary<string, string>());
-            namingSchema.Server.GetOperationNameForProtocol(protocol).Should().Be(expectedValue);
+            namingSchema.Server.GetOperationNameForProtocol(values.Protocol).Should().Be(values.ExpectedOperationName);
         }
 
         [Theory]
-        [MemberData(nameof(GetAllConfigs))]
-        public void GetOperationNameForComponentIsCorrect(object schemaVersionObject, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
+        [CombinatorialData]
+        public void GetOperationNameForComponentIsCorrect(
+            [CombinatorialMemberData(nameof(GetComponentOperationNameData))] (int SchemaVersion, string Component, string ExpectedOperationName) values,
+            bool peerServiceTagsEnabled,
+            bool removeClientServiceNamesEnabled)
         {
-            var schemaVersion = (SchemaVersion)schemaVersionObject; // Unbox SchemaVersion, which is only defined internally
-            var component = "some-http-server";
-            var expectedValue = schemaVersion switch
-            {
-                SchemaVersion.V0 => $"{component}.request",
-                _ => "http.server.request",
-            };
-
+            var schemaVersion = (SchemaVersion)values.SchemaVersion;
             var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, new Dictionary<string, string>(), new Dictionary<string, string>());
-            namingSchema.Server.GetOperationNameForComponent(component).Should().Be(expectedValue);
+            namingSchema.Server.GetOperationNameForComponent(values.Component).Should().Be(values.ExpectedOperationName);
         }
 
         [Theory]
@@ -72,7 +66,7 @@ namespace Datadog.Trace.Tests.Configuration.Schema
         {
             var schemaVersion = (SchemaVersion)values.SchemaVersion;
             var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, new Dictionary<string, string>(), new Dictionary<string, string>());
-            namingSchema.Client.GetOperationNameSuffixForRequest().Should().Be(values.ExpectedSuffix);
+            namingSchema.Server.GetOperationNameSuffixForRequest().Should().Be(values.ExpectedSuffix);
         }
     }
 }
