@@ -1,4 +1,4 @@
-﻿// <copyright file="CIEventMessagePackFormatter.cs" company="Datadog">
+// <copyright file="CIEventMessagePackFormatter.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -22,6 +22,8 @@ internal sealed class CIEventMessagePackFormatter : EventMessagePackFormatter<CI
     private readonly byte[] _runtimeIdValueBytes = StringEncoding.UTF8.GetBytes(Tracer.RuntimeId);
     private readonly byte[] _languageNameBytes = StringEncoding.UTF8.GetBytes("language");
     private readonly byte[] _languageNameValueBytes = StringEncoding.UTF8.GetBytes("dotnet");
+    private readonly byte[] _sdkVersionNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.SdkVersion);
+    private readonly byte[] _sdkVersionValueBytes = StringEncoding.UTF8.GetBytes(TracerConstants.ThreePartVersion);
     private readonly byte[] _libraryVersionBytes = StringEncoding.UTF8.GetBytes(CommonTags.LibraryVersion);
     private readonly byte[] _libraryVersionValueBytes = StringEncoding.UTF8.GetBytes(TracerConstants.AssemblyVersion);
     private readonly byte[] _environmentBytes = StringEncoding.UTF8.GetBytes("env");
@@ -115,8 +117,8 @@ internal sealed class CIEventMessagePackFormatter : EventMessagePackFormatter<CI
         // Key
         offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _asteriskBytes);
 
-        // Value (RuntimeId, Language, library_version, Env?)
-        int valuesCount = 3;
+        // Value (RuntimeId, Language, sdk.version, library_version, Env?)
+        int valuesCount = 4;
         if (_environmentValueBytes is not null)
         {
             valuesCount++;
@@ -129,6 +131,9 @@ internal sealed class CIEventMessagePackFormatter : EventMessagePackFormatter<CI
 
         offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _languageNameBytes);
         offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _languageNameValueBytes);
+
+        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _sdkVersionNameBytes);
+        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _sdkVersionValueBytes);
 
         offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _libraryVersionBytes);
         offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _libraryVersionValueBytes);

@@ -90,23 +90,23 @@ public class SpanMessagePackFormatterTests
             var tagsProcessor = new TagsProcessor<string>(actual.Tags);
             expected.Tags.EnumerateTags(ref tagsProcessor);
 
-            // runtime-id and language are added during serialization
+            // runtime-id, language, and sdk.version are added during serialization
             if (actual.ParentId == null)
             {
                 tagsProcessor.Remaining.Should()
-                    .HaveCount(2).And.Contain(new KeyValuePair<string, string>("runtime-id", RuntimeId.Get()), new KeyValuePair<string, string>("language", "dotnet"));
+                    .HaveCount(3).And.Contain(new KeyValuePair<string, string>("runtime-id", RuntimeId.Get()), new KeyValuePair<string, string>("language", "dotnet"), new KeyValuePair<string, string>("sdk.version", TracerConstants.ThreePartVersion));
             }
             else
             {
                 if (!string.IsNullOrEmpty(expected.Context.LastParentId))
                 {
                     tagsProcessor.Remaining.Should()
-                                 .HaveCount(2).And.Contain(new KeyValuePair<string, string>("language", "dotnet"), new KeyValuePair<string, string>("_dd.parent_id", "0123456789abcdef"));
+                                 .HaveCount(3).And.Contain(new KeyValuePair<string, string>("language", "dotnet"), new KeyValuePair<string, string>("sdk.version", TracerConstants.ThreePartVersion), new KeyValuePair<string, string>("_dd.parent_id", "0123456789abcdef"));
                 }
                 else
                 {
                     tagsProcessor.Remaining.Should()
-                                 .HaveCount(1).And.Contain(new KeyValuePair<string, string>("language", "dotnet"));
+                                 .HaveCount(2).And.Contain(new KeyValuePair<string, string>("language", "dotnet"), new KeyValuePair<string, string>("sdk.version", TracerConstants.ThreePartVersion));
                 }
             }
 

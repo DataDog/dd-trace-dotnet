@@ -1,4 +1,4 @@
-﻿// <copyright file="SpanMessagePackFormatter.cs" company="Datadog">
+// <copyright file="SpanMessagePackFormatter.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -64,6 +64,9 @@ namespace Datadog.Trace.Agent.MessagePack
 
         private readonly byte[] _languageNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Language);
         private readonly byte[] _languageValueBytes = StringEncoding.UTF8.GetBytes(TracerConstants.Language);
+
+        private readonly byte[] _sdkVersionNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.SdkVersion);
+        private readonly byte[] _sdkVersionValueBytes = StringEncoding.UTF8.GetBytes(TracerConstants.ThreePartVersion);
 
         private readonly byte[] _runtimeIdNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.RuntimeId);
         private readonly byte[] _runtimeIdValueBytes = StringEncoding.UTF8.GetBytes(Tracer.RuntimeId);
@@ -581,6 +584,11 @@ namespace Datadog.Trace.Agent.MessagePack
             count++;
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _languageNameBytes);
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _languageValueBytes);
+
+            // add "sdk.version" tag to all spans
+            count++;
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _sdkVersionNameBytes);
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _sdkVersionValueBytes);
 
             // add "version" tags to all spans whose service name is the default service name
             var serviceNameEqualsDefault = string.Equals(span.Context.ServiceName, model.TraceChunk.DefaultServiceName, StringComparison.OrdinalIgnoreCase);

@@ -177,6 +177,12 @@ namespace Datadog.Trace
         public const string Language = "language";
 
         /// <summary>
+        /// SDK version tag, applied to all spans during MessagePack serialization.
+        /// Its value is the three-part version of the Datadog.Trace assembly (e.g. "3.37.0").
+        /// </summary>
+        public const string SdkVersion = "sdk.version";
+
+        /// <summary>
         /// Pseudo-tag used to expose the complete trace id as a hex string.
         /// The string will have length 16 for 64-bit trace ids and length 32 for 128-bit trace ids.
         /// </summary>
