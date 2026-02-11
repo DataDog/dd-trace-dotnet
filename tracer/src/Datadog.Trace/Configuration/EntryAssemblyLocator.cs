@@ -57,6 +57,7 @@ internal static class EntryAssemblyLocator
                 try
                 {
                     if (IsMicrosoftAssembly(assembly!) == false &&
+                        assembly.FullName?.StartsWith("Datadog.Trace") != true &&
                         assembly.CustomAttributes.Any(x => x.AttributeType.FullName == "Microsoft.Owin.OwinStartupAttribute"))
                     {
                         return assembly;
