@@ -10,6 +10,32 @@ allowed-tools: Bash(az:functionapp:show:*) Bash(az:functionapp:list:*) Bash(az:f
 
 This skill guides you through building, deploying, and testing Azure Functions with Datadog instrumentation.
 
+## Prerequisites
+
+**CRITICAL**: This skill requires PowerShell to run the Azure Functions automation scripts.
+
+**PowerShell version requirements**:
+- **Recommended**: PowerShell 7+ (`pwsh`) - cross-platform, modern features
+- **Minimum**: PowerShell 5.1 (`powershell.exe` on Windows only)
+
+**Installation**:
+- Windows: `winget install Microsoft.PowerShell` (or use built-in PowerShell 5.1)
+- macOS: `brew install powershell/tap/powershell`
+- Linux: https://learn.microsoft.com/en-us/powershell/scripting/install/installing-powershell-on-linux
+
+**If the user does not have PowerShell installed**:
+1. Check for `pwsh` first: `pwsh -Version`
+2. If not found and on Windows, check for PowerShell 5.1: `powershell -NoProfile -Command '$PSVersionTable.PSVersion'`
+3. If neither found or version is too old, provide installation instructions from [README.md](README.md#installing-powershell)
+4. Do NOT attempt to replicate the script functionality using bash - the scripts use PowerShell-specific cmdlets like `Expand-Archive`
+
+**Always prefer `pwsh` over `powershell.exe`** when both are available (better cross-platform compatibility and modern features).
+
+**Other requirements**:
+- Azure CLI (`az`) authenticated
+- Azure Functions Core Tools (`func`)
+- .NET SDK (matching target framework of sample app)
+
 ## Commands
 
 When invoked with an argument, perform the corresponding workflow:
