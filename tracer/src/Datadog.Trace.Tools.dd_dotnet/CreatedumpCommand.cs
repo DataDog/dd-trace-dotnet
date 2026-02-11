@@ -31,29 +31,29 @@ internal class CreatedumpCommand : Command
     private const string EnvironmentFilteringEnabled = "DD_CRASHTRACKING_FILTERING_ENABLED";
     private const string EnvironmentLogToConsole = "DD_CRASHTRACKING_INTERNAL_LOG_TO_CONSOLE";
 
-    private static readonly Dictionary<int, string> WindowsExceptionCodeNames = new()
+    private static readonly Dictionary<uint, string> WindowsExceptionCodeNames = new()
     {
-        [unchecked((int)0x80000003)] = "EXCEPTION_BREAKPOINT",
-        [unchecked((int)0x80000004)] = "EXCEPTION_SINGLE_STEP",
-        [unchecked((int)0xC0000005)] = "EXCEPTION_ACCESS_VIOLATION",
-        [unchecked((int)0xC0000006)] = "EXCEPTION_IN_PAGE_ERROR",
-        [unchecked((int)0xC000001D)] = "EXCEPTION_ILLEGAL_INSTRUCTION",
-        [unchecked((int)0xC0000025)] = "EXCEPTION_NONCONTINUABLE_EXCEPTION",
-        [unchecked((int)0xC000008C)] = "EXCEPTION_ARRAY_BOUNDS_EXCEEDED",
-        [unchecked((int)0xC000008D)] = "EXCEPTION_FLT_DENORMAL_OPERAND",
-        [unchecked((int)0xC000008E)] = "EXCEPTION_FLT_DIVIDE_BY_ZERO",
-        [unchecked((int)0xC000008F)] = "EXCEPTION_FLT_INEXACT_RESULT",
-        [unchecked((int)0xC0000090)] = "EXCEPTION_FLT_INVALID_OPERATION",
-        [unchecked((int)0xC0000091)] = "EXCEPTION_FLT_OVERFLOW",
-        [unchecked((int)0xC0000092)] = "EXCEPTION_FLT_STACK_CHECK",
-        [unchecked((int)0xC0000093)] = "EXCEPTION_FLT_UNDERFLOW",
-        [unchecked((int)0xC0000094)] = "EXCEPTION_INT_DIVIDE_BY_ZERO",
-        [unchecked((int)0xC0000095)] = "EXCEPTION_INT_OVERFLOW",
-        [unchecked((int)0xC0000096)] = "EXCEPTION_PRIV_INSTRUCTION",
-        [unchecked((int)0xC00000FD)] = "EXCEPTION_STACK_OVERFLOW",
-        [unchecked((int)0xC0000409)] = "STATUS_STACK_BUFFER_OVERRUN",
-        [unchecked((int)0xE06D7363)] = "Microsoft C++ exception",
-        [unchecked((int)0xE0434352)] = "CLR exception",
+        [0x80000003] = "EXCEPTION_BREAKPOINT",
+        [0x80000004] = "EXCEPTION_SINGLE_STEP",
+        [0xC0000005] = "EXCEPTION_ACCESS_VIOLATION",
+        [0xC0000006] = "EXCEPTION_IN_PAGE_ERROR",
+        [0xC000001D] = "EXCEPTION_ILLEGAL_INSTRUCTION",
+        [0xC0000025] = "EXCEPTION_NONCONTINUABLE_EXCEPTION",
+        [0xC000008C] = "EXCEPTION_ARRAY_BOUNDS_EXCEEDED",
+        [0xC000008D] = "EXCEPTION_FLT_DENORMAL_OPERAND",
+        [0xC000008E] = "EXCEPTION_FLT_DIVIDE_BY_ZERO",
+        [0xC000008F] = "EXCEPTION_FLT_INEXACT_RESULT",
+        [0xC0000090] = "EXCEPTION_FLT_INVALID_OPERATION",
+        [0xC0000091] = "EXCEPTION_FLT_OVERFLOW",
+        [0xC0000092] = "EXCEPTION_FLT_STACK_CHECK",
+        [0xC0000093] = "EXCEPTION_FLT_UNDERFLOW",
+        [0xC0000094] = "EXCEPTION_INT_DIVIDE_BY_ZERO",
+        [0xC0000095] = "EXCEPTION_INT_OVERFLOW",
+        [0xC0000096] = "EXCEPTION_PRIV_INSTRUCTION",
+        [0xC00000FD] = "EXCEPTION_STACK_OVERFLOW",
+        [0xC0000409] = "STATUS_STACK_BUFFER_OVERRUN",
+        [0xE06D7363] = "Microsoft C++ exception",
+        [0xE0434352] = "CLR exception",
     };
 
     private static readonly List<string> Errors = new();
@@ -76,7 +76,7 @@ internal class CreatedumpCommand : Command
         this.SetHandler(Execute);
     }
 
-    internal static bool ParseArguments(string[] arguments, out int pid, out int? signal, out int? signalCode, out int? crashThread, out int? nativeExceptionCode)
+    internal static bool ParseArguments(string[] arguments, out int pid, out int? signal, out int? signalCode, out int? crashThread, out uint? nativeExceptionCode)
     {
         pid = default;
         signal = default;
@@ -207,7 +207,7 @@ internal class CreatedumpCommand : Command
             crashThread = crashThreadValue;
         }
 
-        if (parsedArguments.TryGetValue("--dd-native-exception-code", out var rawNativeExceptionCode) && int.TryParse(rawNativeExceptionCode, out var nativeExceptionCodeValue))
+        if (parsedArguments.TryGetValue("--dd-native-exception-code", out var rawNativeExceptionCode) && uint.TryParse(rawNativeExceptionCode, out var nativeExceptionCodeValue))
         {
             nativeExceptionCode = nativeExceptionCodeValue;
         }
@@ -380,7 +380,7 @@ internal class CreatedumpCommand : Command
     /// <summary>
     /// Maps a Windows native exception code (from EXCEPTION_RECORD.ExceptionCode / WER) to a human-readable name.
     /// </summary>
-    private static string GetExceptionFromNativeCode(int code) =>
+    private static string GetExceptionFromNativeCode(uint code) =>
         WindowsExceptionCodeNames.TryGetValue(code, out var name) ? name : "Unknown";
 
     /// <summary>
@@ -459,7 +459,7 @@ internal class CreatedumpCommand : Command
         return (name, codeName);
     }
 
-    private static string GetCrashMessage(ClrException? exception, int? nativeExceptionCode, int? signal, int? signalCode)
+    private static string GetCrashMessage(ClrException? exception, uint? nativeExceptionCode, int? signal, int? signalCode)
     {
         if (exception != null)
         {
@@ -656,7 +656,7 @@ internal class CreatedumpCommand : Command
         DebugPrint("dd-dotnet exited normally");
     }
 
-    private unsafe void GenerateCrashReport(int pid, int? signal, int? signalCode, int? crashThread, int? nativeExceptionCode)
+    private unsafe void GenerateCrashReport(int pid, int? signal, int? signalCode, int? crashThread, uint? nativeExceptionCode)
     {
         DebugPrint($"Generating crash report for pid {pid} (signal: {signal}, signal code: {signalCode}, crashing thread id: {crashThread}, native exception code: {(nativeExceptionCode.HasValue ? $"0x{nativeExceptionCode.Value:X}" : "null")})");
 
