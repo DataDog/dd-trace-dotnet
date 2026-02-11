@@ -201,12 +201,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
                 return action;
             }
 
-            if (Tracer.Instance.Settings.WcfObfuscationEnabled)
+            var absolutePath = requestHeaders?.To?.LocalPath;
+            if (absolutePath is null)
             {
-                return UriHelpers.GetCleanUriPath(requestHeaders?.To?.LocalPath);
+                return null;
             }
 
-            return requestHeaders?.To?.LocalPath;
+            if (Tracer.Instance.Settings.WcfObfuscationEnabled)
+            {
+                return UriHelpers.GetCleanUriPath(absolutePath);
+            }
+
+            return absolutePath;
         }
 
         private static Func<object>? CreateGetCurrentOperationContextDelegate()
