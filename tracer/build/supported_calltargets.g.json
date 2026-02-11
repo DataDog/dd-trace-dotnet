@@ -1569,7 +1569,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.ControllerActionInvoker_InvokeAction_Integration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
-    "InstrumentationCategory": 6
+    "InstrumentationCategory": 7
   },
   {
     "IntegrationName": "AspNetWebApi2",
@@ -1620,7 +1620,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.ReflectedHttpActionDescriptor_ExecuteAsync_Integration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
-    "InstrumentationCategory": 6
+    "InstrumentationCategory": 7
   },
   {
     "IntegrationName": "AspNetWebApi2",
