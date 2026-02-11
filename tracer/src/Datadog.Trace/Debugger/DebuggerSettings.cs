@@ -1,4 +1,4 @@
-﻿// <copyright file="DebuggerSettings.cs" company="Datadog">
+// <copyright file="DebuggerSettings.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -25,7 +25,7 @@ namespace Datadog.Trace.Debugger
         public const int DefaultMaxStringLength = 1000;
 
         private const int DefaultUploadBatchSize = 100;
-        public const int DefaultSymbolBatchSizeInBytes = 100000;
+        public const int DefaultSymbolBatchSizeInBytes = 1 * 1024 * 1024; // 1 MB
         private const int DefaultDiagnosticsIntervalSeconds = 60 * 60; // 1 hour
         private const int DefaultUploadFlushIntervalMilliseconds = 0;
         public const int DefaultCodeOriginExitSpanFrames = 8;
