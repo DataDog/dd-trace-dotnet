@@ -8,8 +8,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Datadog.Trace.Debugger.Symbols;
-using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
-using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
 using Datadog.Trace.Vendors.dnlib.DotNet;
 using Datadog.Trace.Vendors.dnlib.DotNet.Pdb;
 using Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Dss;
@@ -18,6 +16,7 @@ using Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Portable;
 using Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Symbols;
 
 #nullable enable
+
 namespace Datadog.Trace.Pdb
 {
     internal sealed partial class DatadogMetadataReader : IDisposable
@@ -119,7 +118,7 @@ namespace Datadog.Trace.Pdb
             return DnlibPdbReader?.GetMethod(breakpointMethod.Value.BreakpointMethod, version: 1);
         }
 
-        private ImmutableArray<LocalScope>? GetLocalSymbolsDnlib(int methodToken, VendoredMicrosoftCode.System.ReadOnlySpan<DatadogSequencePoint> sequencePoints, bool searchMoveNext)
+        private ImmutableArray<LocalScope>? GetLocalSymbolsDnlib(int methodToken, ReadOnlySpan<DatadogSequencePoint> sequencePoints, bool searchMoveNext)
         {
             ImmutableArray<LocalScope>.Builder? localScopes = null;
             var method = GetMethodDefDnlib(methodToken);
@@ -135,12 +134,12 @@ namespace Datadog.Trace.Pdb
                 return null;
             }
 
-            localScopes = new ImmutableArray<LocalScope>.Builder();
+            localScopes = ImmutableArray.CreateBuilder<LocalScope>();
 
             for (var k = 0; k < allMethodScopes.Count; k++)
             {
                 var datadogScop = new LocalScope();
-                var scopeLocals = new ImmutableArray<DatadogLocal>.Builder();
+                var scopeLocals = ImmutableArray.CreateBuilder<DatadogLocal>();
                 var currentScope = allMethodScopes[k];
                 DatadogSequencePoint sequencePointForScope = default;
                 for (var l = 0; l < currentScope.Locals.Count; l++)
@@ -253,7 +252,7 @@ namespace Datadog.Trace.Pdb
                 return null;
             }
 
-            var memory = ArrayMemoryPool<DatadogSequencePoint>.Shared.Rent(symbolMethod.SequencePoints.Count);
+            var memory = MemoryPool<DatadogSequencePoint>.Shared.Rent(symbolMethod.SequencePoints.Count);
             var sequencePoints = memory.Memory.Span;
 
             for (int i = 0; i < symbolMethod.SequencePoints.Count; i++)
