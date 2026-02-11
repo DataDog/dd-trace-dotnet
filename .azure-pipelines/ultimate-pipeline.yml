@@ -72,7 +72,7 @@ variables:
   linuxTasksPool: azure-managed-linux-tasks
   linuxX64SmokePool: azure-managed-linux-smoke
   linuxX64Pool: azure-managed-linux-x64-1
-  linuxArm64Pool: azure-managed-linux-arm64-1
+  linuxArm64Pool: azure-managed-linux-arm64-test
   windowsX64Pool: azure-managed-windows-x64-2
 
   relativeArtifacts: /tracer/src/bin/artifacts
