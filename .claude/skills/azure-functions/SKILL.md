@@ -100,6 +100,8 @@ The sample app should use a floating version like `3.38.0-dev.*` in its package 
 
 ### 2. Deploy and Test Function
 
+**IMPORTANT**: Before deploying, verify that a `nuget.config` file exists in the sample app directory or a parent directory. This file is required for `dotnet restore` to resolve the locally-built `Datadog.AzureFunctions` package from the local NuGet feed.
+
 Use the `Deploy-AzureFunction.ps1` script to automate deployment, wait, and trigger:
 
 ```powershell
@@ -263,12 +265,13 @@ If invoked without arguments (`/azure-functions`), guide the user through:
 1. **Understand the goal**: What are they testing? (New feature, bug fix, trace verification)
 2. **Build**: Run Build-AzureFunctionsNuget.ps1
 3. **Select app**: Which test app to deploy to?
-4. **Deploy**: Navigate to sample app and publish
-5. **Wait**: Remind to wait 1-2 minutes for worker restart
-6. **Test**: Trigger function and capture timestamp
-7. **Download logs**: Pull logs from Azure
-8. **Analyze**: Guide through log analysis based on their goal
-9. **Verify**: Run through verification checklist
+4. **Verify prerequisites**: Check that the sample app has a `nuget.config` file configured with the local NuGet feed
+5. **Deploy**: Navigate to sample app and publish
+6. **Wait**: Remind to wait 1-2 minutes for worker restart
+7. **Test**: Trigger function and capture timestamp
+8. **Download logs**: Pull logs from Azure
+9. **Analyze**: Guide through log analysis based on their goal
+10. **Verify**: Run through verification checklist
 
 ## Additional Resources
 
