@@ -84,7 +84,7 @@ namespace Datadog.Trace.DiagnosticListeners
             Log.Debug(
                 "MassTransitDiagnosticObserver.OnNext: Event='{EventName}', ArgType={ArgType}",
                 eventName,
-                arg?.GetType().FullName ?? "null");
+                arg.GetType().FullName ?? "null");
 
             try
             {
@@ -92,7 +92,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 {
                     // Send events (producer spans)
                     case "MassTransit.Transport.Send.Start":
-                        OnSendStart(arg);
+                        OnProduceStart(arg);
                         break;
                     case "MassTransit.Transport.Send.Stop":
                         OnStop("Send");
@@ -187,31 +187,31 @@ namespace Datadog.Trace.DiagnosticListeners
             }
         }
 
-        private static string GetCurrentActivityId()
+        private static string GetCurrentSpanId()
         {
-            var activity = System.Diagnostics.Activity.Current;
-            return activity?.Id ?? string.Empty;
+            var scope = Tracer.Instance.ActiveScope;
+            return scope.Span.SpanId.ToString();
         }
 
         /// <summary>
         /// Extracts the trace ID from an Activity. Handles both W3C format (00-{traceId}-{spanId}-{flags})
         /// and hierarchical format (uses RootId).
         /// </summary>
-        private void OnSendStart(object? arg)
+        private void OnProduceStart(object? arg)
         {
             if (arg == null)
             {
                 return;
             }
 
-            var activityId = GetCurrentActivityId();
+            var currentSpanId = GetCurrentSpanId();
 
             // Extract metadata from SendContext using duck typing
             MassTransitCommon.ExtractSendContextMetadata(arg, out var destinationAddress, out var messageId, out var conversationId, out var correlationId);
             var messageType = MassTransitCommon.GetMessageType(arg);
 
             Log.Debug(
-                "MassTransitDiagnosticObserver.OnSendStart: Destination={Destination}, MessageType={MessageType}",
+                "MassTransitDiagnosticObserver.OnProduceStart: Destination={Destination}, MessageType={MessageType}",
                 destinationAddress,
                 messageType);
 
@@ -221,9 +221,9 @@ namespace Datadog.Trace.DiagnosticListeners
                 destinationAddress,
                 messageType);
 
-            if (scope != null && !string.IsNullOrEmpty(activityId))
+            if (scope != null && !string.IsNullOrEmpty(currentSpanId))
             {
-                StoreScope("Send", activityId, scope);
+                StoreScope("Send", currentSpanId, scope);
 
                 // Set additional context tags
                 MassTransitCommon.SetContextTags(scope, messageId, conversationId, correlationId);
@@ -232,9 +232,9 @@ namespace Datadog.Trace.DiagnosticListeners
                 MassTransitCommon.InjectTraceContext(Tracer.Instance, arg, scope);
 
                 Log.Debug(
-                    "MassTransitDiagnosticObserver.OnSendStart: Created span TraceId={TraceId}, SpanId={SpanId}",
-                    scope.Span?.TraceId,
-                    scope.Span?.SpanId);
+                    "MassTransitDiagnosticObserver.OnProduceStart: Created span TraceId={TraceId}, SpanId={SpanId}",
+                    scope.Span.TraceId,
+                    scope.Span.SpanId);
             }
         }
 
@@ -245,7 +245,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 return;
             }
 
-            var activityId = GetCurrentActivityId();
+            var activityId = GetCurrentSpanId();
 
             // For consume, we get a ConsumeContext
             // MT8 OTEL uses InputAddress (the queue name) for consumer spans, not DestinationAddress
@@ -301,8 +301,8 @@ namespace Datadog.Trace.DiagnosticListeners
 
                 Log.Debug(
                     "MassTransitDiagnosticObserver.OnConsumeStart: Created span TraceId={TraceId}, SpanId={SpanId}",
-                    scope.Span?.TraceId,
-                    scope.Span?.SpanId);
+                    scope.Span.TraceId,
+                    scope.Span.SpanId);
             }
         }
 

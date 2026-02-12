@@ -233,7 +233,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
         /// </summary>
         internal static void SetException(Scope scope, Exception? exception)
         {
-            if (scope?.Span == null || exception == null)
+            if (scope.Span is null || exception is null)
             {
                 return;
             }
@@ -282,7 +282,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
             out Guid? conversationId,
             out Guid? correlationId)
         {
-            if (sendContext == null)
+            if (sendContext is null)
             {
                 destinationAddress = null;
                 messageId = null;
@@ -292,8 +292,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
             }
 
             var context = sendContext.DuckCast<ISendContext>();
-            destinationAddress = context?.DestinationAddress?.ToString();
-            messageId = context?.MessageId;
+            destinationAddress = context.DestinationAddress?.ToString();
+            messageId = context.MessageId;
             conversationId = context?.ConversationId;
             correlationId = context?.CorrelationId;
         }
@@ -337,7 +337,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
         /// </remarks>
         internal static T? TryGetProperty<T>(object? obj, string propertyName)
         {
-            if (obj == null)
+            if (obj is null)
             {
                 return default;
             }
@@ -386,7 +386,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
         /// </summary>
         internal static string? ExtractTraceIdFromActivity(object? activity)
         {
-            if (activity == null)
+            if (activity is null)
             {
                 return null;
             }
@@ -413,7 +413,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
         /// </summary>
         internal static string? GetMessageType(object? context)
         {
-            if (context == null)
+            if (context is null)
             {
                 return null;
             }
@@ -444,7 +444,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
         /// </summary>
         internal static void InjectTraceContext(Tracer tracer, object? sendContext, Scope scope)
         {
-            if (sendContext == null || scope.Span == null)
+            if (sendContext is null || scope.Span is null)
             {
                 Log.Debug("MassTransitCommon.InjectTraceContext: sendContext or span is null");
                 return;
@@ -454,8 +454,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
             {
                 // Use duck typing to get Headers property from SendContext
                 var context = sendContext.DuckCast<ISendContext>();
-                var headers = context?.Headers;
-                if (headers == null)
+                var headers = context.Headers;
+                if (headers is null)
                 {
                     Log.Debug("MassTransitCommon.InjectTraceContext: No Headers property found in SendContext");
                     return;
@@ -483,7 +483,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
         /// </summary>
         internal static PropagationContext ExtractTraceContext(Tracer tracer, object? receiveContext)
         {
-            if (receiveContext == null)
+            if (receiveContext is null)
             {
                 Log.Debug("MassTransitCommon.ExtractTraceContext: receiveContext is null");
                 return default;
@@ -495,7 +495,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
                 // Duck typing fails for MessageConsumeContext (most common type) due to explicit interface implementation
                 var headers = TryGetProperty<object>(receiveContext, "Headers");
 
-                if (headers == null)
+                if (headers is null)
                 {
                     return default;
                 }
@@ -518,7 +518,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
         /// </summary>
         internal static void CloseScope(Scope? scope, string operationType)
         {
-            if (scope == null)
+            if (scope is null)
             {
                 Log.Debug("MassTransitCommon.CloseScope: No scope to close for {OperationType}", operationType);
                 return;
