@@ -78,8 +78,8 @@ DD_TRACE_LOG_SINKS=file,console-experimental           # Log to both file and co
 ```
 
 **Log file locations:**
-- Worker: `/home/LogFiles/datadog/dotnet-tracer-worker-*.log`
-- Host: `/home/LogFiles/datadog/dotnet-tracer-host-*.log`
+- Worker: `/home/LogFiles/datadog/dotnet-tracer-managed-dotnet-*.log`
+- Host: `/home/LogFiles/datadog/dotnet-tracer-managed-Microsoft.Azure.WebJobs.Script.WebHost-*.log`
 
 ### Agent Debug Logging
 
@@ -125,34 +125,6 @@ DOTNET_STARTUP_HOOKS=C:\home\site\wwwroot\Datadog.Serverless.Compat.dll
 - **Linux**: Uses single `CORECLR_PROFILER_PATH` variable pointing to `linux-x64/Datadog.Trace.ClrProfiler.Native.so`
 
 **Note**: Azure Functions only supports .NET 6+ (no .NET Framework), so always use `CORECLR_*` prefix on both Windows and Linux.
-
-## Advanced Configuration
-
-### Performance Tuning
-
-```bash
-DD_TRACE_BUFFER_SIZE=4096                              # Trace buffer size (default: 1024)
-DD_TRACE_AGENT_MAX_CONNECTIONS=10                      # Max concurrent connections to agent
-DD_TRACE_PARTIAL_FLUSH_ENABLED=true                    # Flush traces before buffer is full
-```
-
-### Agent Configuration
-
-```bash
-DD_AGENT_HOST=localhost                                # Agent hostname (default: localhost)
-DD_TRACE_AGENT_PORT=8126                               # Trace agent port (default: 8126)
-DD_DOGSTATSD_PORT=8125                                 # DogStatsD port (default: 8125)
-```
-
-**Note**: In Azure Functions, the agent runs as a child process and uses the default localhost/ports.
-
-### Integration-Specific
-
-```bash
-DD_TRACE_HTTP_CLIENT_ENABLED=true                      # Trace HttpClient calls
-DD_TRACE_ASPNETCORE_ENABLED=true                       # Trace ASP.NET Core middleware
-DD_TRACE_LOGS_INJECTION_ENABLED=true                   # Inject trace IDs into logs
-```
 
 ## Verification Commands
 
@@ -201,8 +173,8 @@ grep "TracerSettings" worker.log
 
 **Check:**
 - `CORECLR_ENABLE_PROFILING=1` is set
-- `CORECLR_PROFILER_PATH` points to correct .so file
-- Profiler DLL exists at specified path
+- `CORECLR_PROFILER_PATH` points to correct native profiler library (`.so` on Linux, `.dll` on Windows)
+- Native profiler library exists at specified path
 
 **Verify in logs:**
 ```bash
@@ -268,15 +240,13 @@ az functionapp config appsettings delete \
   --setting-names "DD_TRACE_DEBUG"
 ```
 
-## Best Practices
+## Tips for Dev/Test
 
-1. **Keep debug logging off in production** - Only enable when actively troubleshooting
-2. **Use sampling rules** - Reduce trace volume for high-traffic functions
-3. **Set DD_ENV consistently** - Match your deployment environment
-4. **Disable unused features** - Explicitly set AppSec/CI Visibility/RCM to false
-5. **Monitor log file sizes** - Debug logging can generate large files quickly
-6. **Use direct log submission selectively** - Only enable when needed for correlation
-7. **Version your configuration** - Document env var changes alongside code deployments
+1. **Always enable debug logging** - Set `DD_TRACE_DEBUG=true` and `DD_TRACE_LOG_SINKS=file,console-experimental` on test apps so logs contain full span details
+2. **Disable unused features** - Explicitly set AppSec/CI Visibility/RCM/Agent Feature Polling to false to reduce noise in logs
+3. **Use `-All` analysis** - When running `Get-AzureFunctionLogs.ps1`, always pass `-All` to get version, span count, and parenting checks in one shot
+4. **Set DD_ENV** - Use a recognizable value (e.g., `dev-lucas`) so your traces are easy to filter in the Datadog UI
+5. **Enable direct log submission** - Useful for correlating ILogger output with traces in the Datadog UI
 
 ## Reference
 

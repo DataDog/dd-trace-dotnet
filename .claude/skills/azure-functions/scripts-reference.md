@@ -75,6 +75,7 @@ Downloads, extracts, and analyzes Azure Function logs.
 .\tracer\tools\Get-AzureFunctionLogs.ps1 `
   -AppName "<app-name>" `
   -ResourceGroup "<resource-group>" `
+  -OutputPath $env:TEMP `
   -ExecutionTimestamp "2026-01-23 17:53:00" `
   -All `
   -Verbose
@@ -137,40 +138,6 @@ Build the Datadog.AzureFunctions NuGet package.
 # Clear NuGet caches and rebuild
 dotnet nuget locals all --clear
 .\tracer\tools\Build-AzureFunctionsNuget.ps1 -CopyTo <output-dir> -Verbose
-```
-
-## Deployment Scripts
-
-### Deploy to Primary Test App
-```bash
-cd <path-to-your-azure-functions-app>
-dotnet restore
-func azure functionapp publish <app-name>
-```
-
-### Deploy to Specific App
-```bash
-APP_NAME="<app-name>"
-cd <path-to-your-azure-functions-app>
-dotnet restore
-func azure functionapp publish $APP_NAME
-```
-
-### Full Clean Deploy
-```bash
-APP_NAME="<app-name>"
-cd <path-to-your-azure-functions-app>
-
-# Clean build artifacts
-dotnet clean
-rm -rf bin/ obj/
-
-# Restore and deploy
-dotnet restore
-func azure functionapp publish $APP_NAME
-
-echo "Waiting 2 minutes for worker restart..."
-sleep 120
 ```
 
 ## Testing Scripts
@@ -469,206 +436,52 @@ az webapp log tail \
 
 ## Datadog API Scripts
 
-### Query Spans
-```bash
-#!/bin/bash
-# query-spans.sh - Query spans from Datadog
+### Get-DatadogTrace.ps1
 
-SERVICE="${1}"  # Azure Function App name (used as Datadog service name)
-PROCESS="${2:-worker}"  # host or worker
+Retrieves all spans for a trace ID from the Datadog API. Requires `DD_API_KEY` and `DD_APPLICATION_KEY` environment variables.
 
-curl -s -X POST https://api.datadoghq.com/api/v2/spans/events/search \
-  -H "DD-API-KEY: ${DD_API_KEY}" \
-  -H "DD-APPLICATION-KEY: ${DD_APPLICATION_KEY}" \
-  -H "Content-Type: application/json" \
-  -d "{
-    \"data\": {
-      \"attributes\": {
-        \"filter\": {
-          \"query\": \"service:${SERVICE} @aas.function.process:${PROCESS}\",
-          \"from\": \"now-10m\",
-          \"to\": \"now\"
-        }
-      },
-      \"type\": \"search_request\"
-    }
-  }" | jq '.data[] | {span_id: .attributes.attributes.span_id, operation: .attributes.attributes.operation_name, process: .attributes.tags."aas.function.process"}'
-```
+**Location**: `tracer/tools/Get-DatadogTrace.ps1`
 
-### Query Trace
-```bash
-#!/bin/bash
-# query-trace.sh - Get full trace by ID
+**Parameters**:
+- `-TraceId` (required) - 128-bit trace ID (hex string, e.g., `"690507fc00000000b882bcd2bdac6b9e"`)
+- `-TimeRange` (default: `"2h"`) - How far back to search (e.g., `"15m"`, `"1h"`, `"1d"`)
+- `-OutputFormat` (default: `"table"`) - Output format: `table`, `json`, or `hierarchy`
 
-TRACE_ID="${1}"
-
-curl -s -X POST https://api.datadoghq.com/api/v2/spans/events/search \
-  -H "DD-API-KEY: ${DD_API_KEY}" \
-  -H "DD-APPLICATION-KEY: ${DD_APPLICATION_KEY}" \
-  -H "Content-Type: application/json" \
-  -d "{
-    \"data\": {
-      \"attributes\": {
-        \"filter\": {
-          \"query\": \"@trace_id:${TRACE_ID}\",
-          \"from\": \"now-30m\",
-          \"to\": \"now\"
-        }
-      },
-      \"type\": \"search_request\"
-    }
-  }" | jq '.data[] | {span_id, parent_id, operation_name, process: .attributes.tags."aas.function.process"}' | tee "<output-dir>/trace_${TRACE_ID}.json"
-```
-
-## Complete Workflow Scripts
-
-### Full Test Cycle
-```bash
-#!/bin/bash
-# full-test-cycle.sh - Complete build, deploy, test, analyze workflow
-
-set -e  # Exit on error
-
-APP_NAME="${1:-<app-name>}"
-RESOURCE_GROUP="<resource-group>"
-
-echo "=== 1. Building NuGet Package ==="
-# Run from the dd-trace-dotnet repo root
-pwsh -NoProfile -Command ".\tracer\tools\Build-AzureFunctionsNuget.ps1 -CopyTo <output-dir> -Verbose"
-
-echo ""
-echo "=== 2. Deploying to $APP_NAME ==="
-cd <path-to-your-azure-functions-app>
-dotnet restore
-func azure functionapp publish $APP_NAME
-
-echo ""
-echo "=== 3. Waiting for worker restart (2 minutes) ==="
-sleep 120
-
-echo ""
-echo "=== 4. Triggering function ==="
-EXEC_TIME=$(date -u +%Y-%m-%d\ %H:%M:%S)
-echo "Execution time: $EXEC_TIME UTC"
-curl https://${APP_NAME}.azurewebsites.net/api/HttpTest
-echo ""
-
-echo ""
-echo "=== 5. Waiting for logs (10 seconds) ==="
-sleep 10
-
-echo ""
-echo "=== 6. Downloading logs ==="
-TIMESTAMP=$(date +%H%M%S)
-LOG_FILE="<output-dir>/logs-${TIMESTAMP}.zip"
-az webapp log download \
-  --name $APP_NAME \
-  --resource-group $RESOURCE_GROUP \
-  --log-file $LOG_FILE
-
-unzip -q -o $LOG_FILE -d <output-dir>/LogFiles-${TIMESTAMP}
-
-echo ""
-echo "=== 7. Analyzing logs ==="
-LOG_DIR="<output-dir>/LogFiles-${TIMESTAMP}/LogFiles/datadog"
-cd "$LOG_DIR"
-
-echo "Worker version:"
-grep "Assembly metadata" dotnet-tracer-managed-dotnet-*.log | tail -1
-
-echo ""
-echo "Spans at execution time:"
-grep "$EXEC_TIME" dotnet-tracer-managed-*.log | grep "Span started" | wc -l
-
-echo ""
-echo "=== Complete! ==="
-echo "Execution time: $EXEC_TIME UTC"
-echo "Logs location: $LOG_DIR"
-echo ""
-echo "Next: Analyze logs with:"
-echo "  cd $LOG_DIR"
-echo "  grep \"$EXEC_TIME\" dotnet-tracer-managed-dotnet-*.log"
-```
-
-### Compare Before/After
-```bash
-#!/bin/bash
-# compare-versions.sh - Test before and after changes
-
-APP_NAME="${1:-<app-name>}"
-RESOURCE_GROUP="<resource-group>"
-
-echo "=== Testing BEFORE changes ==="
-BEFORE_TIME=$(date -u +%Y-%m-%d\ %H:%M:%S)
-curl https://${APP_NAME}.azurewebsites.net/api/HttpTest
-sleep 10
-
-BEFORE_LOG="<output-dir>/logs-before.zip"
-az webapp log download --name $APP_NAME --resource-group $RESOURCE_GROUP --log-file $BEFORE_LOG
-unzip -q -o $BEFORE_LOG -d <output-dir>/before
-
-echo ""
-echo "=== Deploying changes ==="
-# Run from the dd-trace-dotnet repo root
-pwsh -NoProfile -Command ".\tracer\tools\Build-AzureFunctionsNuget.ps1 -CopyTo <output-dir> -Verbose"
-
-cd <path-to-your-azure-functions-app>
-dotnet restore
-func azure functionapp publish $APP_NAME
-
-echo "Waiting 2 minutes for restart..."
-sleep 120
-
-echo ""
-echo "=== Testing AFTER changes ==="
-AFTER_TIME=$(date -u +%Y-%m-%d\ %H:%M:%S)
-curl https://${APP_NAME}.azurewebsites.net/api/HttpTest
-sleep 10
-
-AFTER_LOG="<output-dir>/logs-after.zip"
-az webapp log download --name $APP_NAME --resource-group $RESOURCE_GROUP --log-file $AFTER_LOG
-unzip -q -o $AFTER_LOG -d <output-dir>/after
-
-echo ""
-echo "=== Comparison ==="
-echo "Before execution: $BEFORE_TIME UTC"
-echo "After execution: $AFTER_TIME UTC"
-echo ""
-echo "Before logs: <output-dir>/before/LogFiles/datadog/"
-echo "After logs: <output-dir>/after/LogFiles/datadog/"
-echo ""
-echo "Compare with:"
-echo "  grep \"$BEFORE_TIME\" <output-dir>/before/LogFiles/datadog/dotnet-tracer-managed-dotnet-*.log > before.txt"
-echo "  grep \"$AFTER_TIME\" <output-dir>/after/LogFiles/datadog/dotnet-tracer-managed-dotnet-*.log > after.txt"
-echo "  diff before.txt after.txt"
-```
-
-## PowerShell Equivalents
-
-### Build and Deploy (PowerShell)
+**Examples**:
 ```powershell
-# Build NuGet package (from the dd-trace-dotnet repo root)
-.\tracer\tools\Build-AzureFunctionsNuget.ps1 -CopyTo <output-dir> -Verbose
+# Table view (default) — columns: operation, resource, span ID, parent ID, process, duration
+.\tracer\tools\Get-DatadogTrace.ps1 -TraceId "690507fc00000000b882bcd2bdac6b9e"
 
-# Deploy (from your Azure Functions app directory)
-Set-Location <path-to-your-azure-functions-app>
-dotnet restore
-func azure functionapp publish <app-name>
+# Hierarchy view — shows span parent-child tree with process tags
+.\tracer\tools\Get-DatadogTrace.ps1 -TraceId "690507fc00000000b882bcd2bdac6b9e" -OutputFormat hierarchy
+
+# JSON output for further processing
+.\tracer\tools\Get-DatadogTrace.ps1 -TraceId "690507fc00000000b882bcd2bdac6b9e" -OutputFormat json
+
+# Search further back in time
+.\tracer\tools\Get-DatadogTrace.ps1 -TraceId "690507fc00000000b882bcd2bdac6b9e" -TimeRange "1d"
 ```
 
-### Download Logs (PowerShell)
+### Get-DatadogLogs.ps1
+
+Queries logs from the Datadog Logs API. Requires `DD_API_KEY` and `DD_APPLICATION_KEY` environment variables.
+
+**Location**: `tracer/tools/Get-DatadogLogs.ps1`
+
+**Parameters**:
+- `-Query` (required) - Log query (e.g., `"service:my-service error"`)
+- `-TimeRange` (default: `"1h"`) - How far back to search (e.g., `"15m"`, `"2h"`, `"1d"`)
+- `-Limit` (default: `50`, max: `1000`) - Maximum number of log entries to return
+- `-OutputFormat` (default: `"table"`) - Output format: `table`, `json`, or `raw`
+
+**Examples**:
 ```powershell
-$AppName = "<app-name>"
-$ResourceGroup = "<resource-group>"
-$Timestamp = Get-Date -Format "HHmmss"
-$OutputDir = "$env:TEMP"  # or any preferred directory
-$LogFile = "$OutputDir\logs-$Timestamp.zip"
+# Search logs for a specific service
+.\tracer\tools\Get-DatadogLogs.ps1 -Query "service:lucasp-premium-linux-isolated"
 
-# Download
-az webapp log download --name $AppName --resource-group $ResourceGroup --log-file $LogFile
+# Search for errors with time range
+.\tracer\tools\Get-DatadogLogs.ps1 -Query "service:my-app error" -TimeRange "2h" -Limit 100
 
-# Extract
-Expand-Archive -Path $LogFile -DestinationPath "$OutputDir\LogFiles-$Timestamp" -Force
-
-Write-Host "Logs extracted to: $OutputDir\LogFiles-$Timestamp\LogFiles\datadog\"
+# Raw output (one line per log entry, good for piping)
+.\tracer\tools\Get-DatadogLogs.ps1 -Query "service:my-app" -OutputFormat raw
 ```

@@ -1,6 +1,6 @@
 # Azure Functions Log Analysis Guide
 
-This guide provides detailed patterns for analyzing Azure Functions tracer logs.
+This guide provides grep patterns and techniques for manual log investigation. Start with `Get-AzureFunctionLogs.ps1 -All` for automated analysis (version check, span counts, parenting validation). Use these patterns when you need to dig deeper than the automated analysis provides.
 
 ## Log File Behavior
 
