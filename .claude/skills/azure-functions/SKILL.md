@@ -84,7 +84,7 @@ Build the `Datadog.AzureFunctions` NuGet package with your changes:
 
 **What this does**:
 1. (If `-BuildId` specified and files not already downloaded) Downloads bundle from Azure DevOps build once
-2. Generates a unique prerelease version from a timestamp (e.g. `3.38.0-dev.20260209.143022`)
+2. Generates a unique prerelease version from a timestamp (e.g. `3.38.0-dev20260209143022`)
 3. Cleans previous builds
 4. Builds `Datadog.Trace` (net6.0 and net461)
 5. Publishes to bundle folder
