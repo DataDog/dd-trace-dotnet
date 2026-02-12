@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Text;
 
 namespace Datadog.Trace.Util
 {
@@ -19,20 +20,7 @@ namespace Datadog.Trace.Util
         /// <param name="removeScheme">Should the scheme be removed?</param>
         /// <param name="tryRemoveIds">Should IDs be replaced with <c>?</c></param>
         public static string CleanUri(Uri uri, bool removeScheme, bool tryRemoveIds)
-        {
-            var path = tryRemoveIds ? GetCleanUriPath(uri.AbsolutePath) : uri.AbsolutePath;
-
-            if (removeScheme)
-            {
-                // keep only host and path.
-                // remove scheme, userinfo, query, and fragment.
-                return $"{uri.Authority}{path}";
-            }
-
-            // keep only scheme, authority, and path.
-            // remove userinfo, query, and fragment.
-            return $"{uri.Scheme}{Uri.SchemeDelimiter}{uri.Authority}{path}";
-        }
+            => tryRemoveIds ? CleanUriAndRemoveIds(uri, removeScheme) : CleanUriLeaveIds(uri, removeScheme);
 
         public static string GetCleanUriPath(Uri uri)
             => GetCleanUriPath(uri.AbsolutePath);
@@ -77,6 +65,51 @@ namespace Datadog.Trace.Util
             var maxLength = absolutePath.Length - prefixLength;
             var sb = StringBuilderCache.Acquire(maxLength);
 
+            AppendCleanedUriPath(sb, absolutePath, prefixLength);
+
+            return StringBuilderCache.GetStringAndRelease(sb);
+        }
+
+        private static string CleanUriAndRemoveIds(Uri uri, bool removeScheme)
+        {
+            var sb = StringBuilderCache.Acquire();
+
+            // if removeScheme:
+            //   keep only host and path. Remove scheme, userinfo, query, and fragment.
+            // otherwise:
+            //   keep only scheme, authority, and path. Remove userinfo, query, and fragment.
+            if (!removeScheme)
+            {
+                sb.Append(uri.Scheme).Append(Uri.SchemeDelimiter);
+            }
+
+            sb.Append(uri.Authority);
+
+            var absolutePath = uri.AbsolutePath;
+            if (StringUtil.IsNullOrWhiteSpace(absolutePath) || (absolutePath.Length == 1 && absolutePath[0] == '/'))
+            {
+                sb.Append('/');
+            }
+            else
+            {
+                // We don't have a virtual path we're trying to remove
+                AppendCleanedUriPath(sb, absolutePath, prefixLength: 0);
+            }
+
+            return StringBuilderCache.GetStringAndRelease(sb);
+        }
+
+        private static string CleanUriLeaveIds(Uri uri, bool removeScheme) =>
+            removeScheme
+                // keep only host and path.
+                // remove scheme, userinfo, query, and fragment.
+                ? $"{uri.Authority}{uri.AbsolutePath}"
+                // keep only scheme, authority, and path.
+                // remove userinfo, query, and fragment.
+                : $"{uri.Scheme}{Uri.SchemeDelimiter}{uri.Authority}{uri.AbsolutePath}";
+
+        private static void AppendCleanedUriPath(StringBuilder sb, string absolutePath, int prefixLength)
+        {
             int previousIndex = prefixLength;
             int index;
             int segmentLength;
@@ -132,8 +165,6 @@ namespace Datadog.Trace.Util
                 previousIndex = index + 1;
             }
             while (index != -1);
-
-            return StringBuilderCache.GetStringAndRelease(sb);
         }
 
         public static bool IsIdentifierSegment(string absolutePath, int startIndex, int segmentLength)
