@@ -52,7 +52,7 @@ namespace Datadog.Trace.Agent
         internal StatsAggregator(IApi api, TracerSettings settings, IDiscoveryService discoveryService)
         {
             _api = api;
-            _isOtlp = false; // TODO: Grab from settings like settings.Manager.InitialExporterSettings.TracesExporter == TracesExporterType.Otlp;
+            _isOtlp = settings.Manager.InitialExporterSettings.TracesEncoding is TracesEncoding.OtlpProtobuf or TracesEncoding.OtlpJson;
             _processExit = new TaskCompletionSource<bool>();
             _bucketDuration = TimeSpan.FromSeconds(settings.StatsComputationInterval);
             _buffers = new StatsBuffer[BufferCount];
