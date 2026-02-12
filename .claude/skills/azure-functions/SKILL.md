@@ -1,14 +1,14 @@
 ---
 name: azure-functions
-description: Build, deploy, and test Azure Functions instrumented with Datadog.AzureFunctions NuGet package. Use when working on Azure Functions integration, deploying to test environments, analyzing traces, or troubleshooting instrumentation issues.
+description: Dev/test workflow for tracer engineers — build a local Datadog.AzureFunctions NuGet package, deploy to a test Azure Function App, trigger it, and analyze traces/logs to verify instrumentation behavior.
 argument-hint: [build-nuget|deploy|test|logs|trace|configure]
 disable-model-invocation: true
 allowed-tools: Bash(az:functionapp:show:*) Bash(az:functionapp:list:*) Bash(az:functionapp:list-functions:*) Bash(az:functionapp:function:list:*) Bash(az:functionapp:function:show:*) Bash(az:functionapp:config:appsettings:list:*) Bash(az:functionapp:config:appsettings:set:*) Bash(az:functionapp:config:appsettings:delete:*) Bash(az:functionapp:config:show:*) Bash(az:functionapp:deployment:list:*) Bash(az:functionapp:deployment:show:*) Bash(az:functionapp:deployment:source:show:*) Bash(az:functionapp:plan:list:*) Bash(az:functionapp:plan:show:*) Bash(az:functionapp:restart:*) Bash(az:functionapp:stop:*) Bash(az:functionapp:start:*) Bash(az:webapp:log:download:*) Bash(az:webapp:log:tail:*) Bash(az:group:list:*) Bash(az:group:show:*) Bash(curl:*) Bash(pwsh:*) Bash(func:azure:functionapp:publish:*) Bash(func:azure:functionapp:logstream:*) Bash(func:azure:functionapp:list-functions:*) Bash(func:azure:functionapp:fetch-app-settings:*) Bash(func:azure:functionapp:fetch:*) Bash(dotnet:restore) Bash(dotnet:clean) Bash(dotnet:build:*) Bash(unzip:*) Bash(date:*) Bash(grep:*) Bash(find:*) Bash(ls:*) Bash(cat:*) Bash(head:*) Bash(tail:*) Bash(wc:*) Bash(sort:*) Bash(jq:*) Bash(uname:*) Read
 ---
 
-# Azure Functions Development Workflow
+# Azure Functions Dev/Test Workflow
 
-This skill guides you through building, deploying, and testing Azure Functions with Datadog instrumentation.
+This skill helps tracer engineers test changes to the `Datadog.AzureFunctions` package: build a local dev version, deploy it to a test Azure Function App, trigger the function, and analyze traces/logs to verify instrumentation behavior.
 
 ## Prerequisites
 
@@ -113,7 +113,7 @@ The sample app should use a floating version like `3.38.0-dev.*` in its package 
 .\tracer\tools\Build-AzureFunctionsNuget.ps1 -BuildId 12345 -CopyTo <output-dir>
 ```
 
-### 2. Deploy and Test Function
+### 2. Deploy Function
 
 **IMPORTANT**: Before deploying, verify that a `nuget.config` file exists in the sample app directory or a parent directory. This file is required for `dotnet restore` to resolve the locally-built `Datadog.AzureFunctions` package from the local NuGet feed.
 
@@ -160,7 +160,34 @@ $deploy = .\tracer\tools\Deploy-AzureFunction.ps1 `
   -SampleAppPath "<path-to-sample-app>"
 ```
 
-### 3. Configure Environment Variables
+### 3. Test Function
+
+Trigger an already-deployed function and capture the execution timestamp. Useful for re-testing after a deploy, or testing an app that was deployed earlier.
+
+**Discover available triggers**:
+```bash
+# List HTTP-triggered functions and their URLs
+func azure functionapp list-functions <app-name> --show-keys
+```
+
+Or via Azure CLI:
+```bash
+az functionapp function list --name <app-name> --resource-group <resource-group> --query "[].{name:name, href:invokeUrlTemplate}" -o table
+```
+
+**Trigger and capture timestamp**:
+```powershell
+$timestamp = (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss")
+$response = Invoke-WebRequest -Uri "<trigger-url>" -UseBasicParsing
+Write-Host "HTTP Status: $($response.StatusCode)"
+Write-Host "Execution timestamp (UTC): $timestamp"
+```
+
+Save the timestamp — you'll need it for log filtering in the next step.
+
+**Note**: The Deploy script (step 2) already triggers and captures a timestamp. Use this step when you want to re-test without redeploying.
+
+### 4. Configure Environment Variables
 
 Configure Datadog instrumentation environment variables for an Azure Function App:
 
@@ -214,10 +241,8 @@ az functionapp config appsettings set \
 - Recommended feature disables (AppSec, CI Visibility, RCM, Agent Feature Polling)
 - Debug logging configuration
 - Direct log submission
-- Performance tuning
-- Integration-specific settings
 
-### 4. Download and Analyze Logs
+### 5. Download and Analyze Logs
 
 Use the `Get-AzureFunctionLogs.ps1` script to download, extract, and analyze logs:
 
@@ -326,26 +351,43 @@ grep "Datadog Tracer initialized" LogFiles/datadog/dotnet-tracer-managed-dotnet-
 5. Enable debug logging: `az functionapp config appsettings set --name <app> --resource-group <resource-group> --settings DD_TRACE_DEBUG=1`
 6. Re-test and analyze debug messages about AsyncLocal context flow
 
-## Query Datadog API (Advanced)
+## Query Datadog API (Trace Analysis)
 
-**Search for spans by service and process type**:
-```bash
-curl -X POST https://api.datadoghq.com/api/v2/spans/events/search \
-  -H "DD-API-KEY: ${DD_API_KEY}" \
-  -H "DD-APPLICATION-KEY: ${DD_APPLICATION_KEY}" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "data": {
-      "attributes": {
-        "filter": {
-          "query": "service:<app-name> @aas.function.process:worker",
-          "from": "now-10m",
-          "to": "now"
-        }
-      },
-      "type": "search_request"
-    }
-  }'
+Use the PowerShell scripts to query traces and logs from the Datadog API. Requires `DD_API_KEY` and `DD_APPLICATION_KEY` environment variables.
+
+### Get-DatadogTrace.ps1
+
+Retrieve all spans for a trace ID with table, JSON, or hierarchy output:
+
+```powershell
+# Table view (default)
+.\tracer\tools\Get-DatadogTrace.ps1 -TraceId "<trace-id>"
+
+# Hierarchy view — shows span parent-child tree with process tags
+.\tracer\tools\Get-DatadogTrace.ps1 -TraceId "<trace-id>" -OutputFormat hierarchy
+
+# JSON output for further processing
+.\tracer\tools\Get-DatadogTrace.ps1 -TraceId "<trace-id>" -OutputFormat json
+
+# Search further back in time (default: 2h)
+.\tracer\tools\Get-DatadogTrace.ps1 -TraceId "<trace-id>" -TimeRange "1d"
+```
+
+**Output includes**: operation name, resource name, span ID, parent ID, process tag (host/worker), duration.
+
+### Get-DatadogLogs.ps1
+
+Query logs from Datadog to correlate with traces:
+
+```powershell
+# Search logs for a specific service
+.\tracer\tools\Get-DatadogLogs.ps1 -Query "service:<app-name>"
+
+# Search with time range and limit
+.\tracer\tools\Get-DatadogLogs.ps1 -Query "service:<app-name> error" -TimeRange "2h" -Limit 100
+
+# Raw output (one line per log entry)
+.\tracer\tools\Get-DatadogLogs.ps1 -Query "service:<app-name>" -OutputFormat raw
 ```
 
 ## Configure Command Implementation
@@ -422,8 +464,8 @@ If invoked without arguments (`/azure-functions`), guide the user through:
 
 ## Additional Resources
 
-- **Log analysis**: [log-analysis-guide.md](log-analysis-guide.md) - Detailed log analysis patterns and grep examples
-- **Scripts**: [scripts-reference.md](scripts-reference.md) - Reusable bash/PowerShell scripts and one-liners
+- **Log analysis**: [log-analysis-guide.md](log-analysis-guide.md) - Manual log investigation patterns (when the automated `-All` analysis isn't sufficient)
+- **Scripts**: [scripts-reference.md](scripts-reference.md) - Reusable PowerShell scripts and one-liners
 - **Environment variables**: [environment-variables.md](environment-variables.md) - Complete reference for Azure Functions configuration
 
 ## References
