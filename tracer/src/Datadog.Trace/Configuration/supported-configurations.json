@@ -1624,6 +1624,30 @@
       ],
       "product": "OpenTelemetry"
     },
+    "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT": {
+      "version": [
+        "A"
+      ],
+      "product": "OpenTelemetry"
+    },
+    "OTEL_EXPORTER_OTLP_TRACES_HEADERS": {
+      "version": [
+        "A"
+      ],
+      "product": "OpenTelemetry"
+    },
+    "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL": {
+      "version": [
+        "A"
+      ],
+      "product": "OpenTelemetry"
+    },
+    "OTEL_EXPORTER_OTLP_TRACES_TIMEOUT": {
+      "version": [
+        "A"
+      ],
+      "product": "OpenTelemetry"
+    },
     "OTEL_LOG_LEVEL": {
       "version": [
         "A"
@@ -1775,10 +1799,22 @@
     "DD_TRACE_OTEL_ENABLED": [
       "DD_TRACE_ACTIVITY_LISTENER_ENABLED"
     ],
+    "OTEL_EXPORTER_OTLP_METRICS_ENDPOINT": [
+      "OTEL_EXPORTER_OTLP_ENDPOINT"
+    ],
+    "OTEL_EXPORTER_OTLP_LOGS_ENDPOINT": [
+      "OTEL_EXPORTER_OTLP_ENDPOINT"
+    ],
+    "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT": [
+      "OTEL_EXPORTER_OTLP_ENDPOINT"
+    ],
     "OTEL_EXPORTER_OTLP_METRICS_PROTOCOL": [
       "OTEL_EXPORTER_OTLP_PROTOCOL"
     ],
     "OTEL_EXPORTER_OTLP_LOGS_PROTOCOL": [
+      "OTEL_EXPORTER_OTLP_PROTOCOL"
+    ],
+    "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL": [
       "OTEL_EXPORTER_OTLP_PROTOCOL"
     ],
     "OTEL_EXPORTER_OTLP_LOGS_HEADERS": [
@@ -1787,11 +1823,17 @@
     "OTEL_EXPORTER_OTLP_METRICS_HEADERS": [
       "OTEL_EXPORTER_OTLP_HEADERS"
     ],
+    "OTEL_EXPORTER_OTLP_TRACES_HEADERS": [
+      "OTEL_EXPORTER_OTLP_HEADERS"
+    ],
     "OTEL_EXPORTER_OTLP_METRICS_TIMEOUT": [
       "OTEL_EXPORTER_OTLP_TIMEOUT"
     ],
     "OTEL_EXPORTER_OTLP_LOGS_TIMEOUT": [
       "OTEL_EXPORTER_OTLP_TIMEOUT" 
+    ],
+    "OTEL_EXPORTER_OTLP_TRACES_TIMEOUT": [
+      "OTEL_EXPORTER_OTLP_TIMEOUT"
     ]
   },
   "deprecations": {
