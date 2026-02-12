@@ -9,7 +9,7 @@ using System.Drawing;
 using System.IO;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.MessagePack;
-using Datadog.Trace.OpenTelemetry;
+using Datadog.Trace.OpenTelemetry.Common;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.MessagePack;
@@ -488,6 +488,8 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
         writer.WriteEndObject();
     }
 
+    // TODO: Emit an instrumentation scope
+    /*
     internal static void WriteInstrumentationScope(JsonTextWriter writer, InstrumentationScope scope)
     {
         writer.WriteStartObject();
@@ -519,6 +521,7 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
 
         writer.WriteEndObject();
     }
+    */
 
     internal static void WriteKeyValueArray(JsonTextWriter writer, IReadOnlyList<KeyValue> keyValues)
     {

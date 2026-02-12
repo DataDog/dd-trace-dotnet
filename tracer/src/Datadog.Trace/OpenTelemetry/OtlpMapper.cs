@@ -9,7 +9,7 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.MessagePack;
-using Datadog.Trace.OpenTelemetry.Traces;
+using Datadog.Trace.OpenTelemetry.Common;
 using Datadog.Trace.Processors;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Telemetry.Metrics;
