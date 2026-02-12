@@ -349,7 +349,7 @@ namespace Datadog.Trace.Tagging
         /// </summary>
         internal readonly struct TagBatch : IDisposable
         {
-            private readonly List<KeyValuePair<string, string>> _tags;
+            private readonly List<KeyValuePair<string, string>>? _tags;
 
             internal TagBatch(List<KeyValuePair<string, string>> tags)
             {
@@ -362,9 +362,15 @@ namespace Datadog.Trace.Tagging
             /// </summary>
             public bool ContainsKey(string key)
             {
-                for (var i = 0; i < _tags.Count; i++)
+                var tags = _tags;
+                if (tags is null)
                 {
-                    if (_tags[i].Key == key)
+                    ThrowHelper.ThrowInvalidOperationException("TagBatch is not initialized. It must be created via TagsList.BeginTagBatch().");
+                }
+
+                for (var i = 0; i < tags.Count; i++)
+                {
+                    if (tags[i].Key == key)
                     {
                         return true;
                     }
@@ -379,12 +385,23 @@ namespace Datadog.Trace.Tagging
             /// </summary>
             public void Add(string key, string value)
             {
-                _tags.Add(new KeyValuePair<string, string>(key, value));
+                var tags = _tags;
+                if (tags is null)
+                {
+                    ThrowHelper.ThrowInvalidOperationException("TagBatch is not initialized. It must be created via TagsList.BeginTagBatch().");
+                }
+
+                tags.Add(new KeyValuePair<string, string>(key, value));
             }
 
             public void Dispose()
             {
-                Monitor.Exit(_tags);
+                // Make default(TagBatch).Dispose() a no-op.
+                // Misuse cases like double-dispose or disposing on the wrong thread should still throw.
+                if (_tags is { } tags)
+                {
+                    Monitor.Exit(tags);
+                }
             }
         }
     }
