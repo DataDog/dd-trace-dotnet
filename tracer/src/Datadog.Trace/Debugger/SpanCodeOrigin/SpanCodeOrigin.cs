@@ -15,6 +15,7 @@ using Datadog.Trace.Debugger.Symbols;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Pdb;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Debugger.SpanCodeOrigin
 {
@@ -112,27 +113,37 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
                 // Add code origin tags to entry span
                 // Adds 4 tags always (type, index, method, typename) + 3 tags if PDB available (file, line, column)
                 // Size: ~210-300 bytes without PDB, ~250-500 bytes with PDB
-                if (span.Tags is TagsList tagsList)
+                if (span.Tags is WebTags webTags)
                 {
-                    // Batch add avoids repeated list growth, repeated lock acquisitions and a key lookup for each tag.
-                    // Note: unlike SetTag(), this is append-only (no replace), so we must guard against duplicates under the tag-list lock.
-                    using var batch = tagsList.BeginTagBatch(additionalTagCount: sp is null ? 4 : 7);
-                    if (batch.ContainsKey(_tags.Type))
-                    {
-                        // Another thread added code origin tags after our pre-check, preserve old behavior.
-                        return;
-                    }
-
-                    batch.Add(_tags.Type, "entry");
-                    batch.Add(_tags.Index[0], "0");
-                    batch.Add(_tags.Method[0], methodName);
-                    batch.Add(_tags.TypeName[0], typeFullName);
+                    // This is only valid for entry spans (frame 0).
+                    webTags.CodeOriginType = "entry";
+                    webTags.CodeOriginFrames0Index = "0";
+                    webTags.CodeOriginFrames0Method = methodName;
+                    webTags.CodeOriginFrames0Type = typeFullName;
 
                     if (sp is { } cached)
                     {
-                        batch.Add(_tags.File[0], cached.Url);
-                        batch.Add(_tags.Line[0], cached.Line);
-                        batch.Add(_tags.Column[0], cached.Column);
+                        // PDB tags are only written when present
+                        using var batch = webTags.BeginTagBatch(additionalTagCount: 3);
+                        batch.SetTag(_tags.File[0], cached.Url);
+                        batch.SetTag(_tags.Line[0], cached.Line);
+                        batch.SetTag(_tags.Column[0], cached.Column);
+                    }
+                }
+                else if (span.Tags is TagsList tagsList)
+                {
+                    // fallback
+                    using var batch = tagsList.BeginTagBatch(additionalTagCount: sp is null ? 4 : 7);
+                    batch.SetTag(_tags.Type, "entry");
+                    batch.SetTag(_tags.Index[0], "0");
+                    batch.SetTag(_tags.Method[0], methodName);
+                    batch.SetTag(_tags.TypeName[0], typeFullName);
+
+                    if (sp is { } cached)
+                    {
+                        batch.SetTag(_tags.File[0], cached.Url);
+                        batch.SetTag(_tags.Line[0], cached.Line);
+                        batch.SetTag(_tags.Column[0], cached.Column);
                     }
                 }
                 else
