@@ -41,7 +41,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion, aspNetCorePort: 0))
             {
-                var spans = await agent.WaitForSpansAsync(expectedSpans, 1_000);
+                var spans = await agent.WaitForSpansAsync(expectedSpans);
                 spans.Count.Should().Be(expectedSpans);
 
                 // All Datadog spans should be in the same trace
