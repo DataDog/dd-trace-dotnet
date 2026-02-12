@@ -3,30 +3,23 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Agent.Transports;
-using Datadog.Trace.AppSec.Rcm.Models.AsmFeatures;
-using Datadog.Trace.Ci;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.TestHelpers;
-using Datadog.Trace.TestHelpers.Ci;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using FluentAssertions.Execution;
-using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
 
 #pragma warning disable SA1402 // File may only contain a single type
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.FeatureFlags;
+
+#if !NETCOREAPP2_1
 
 #if NETFRAMEWORK
 // The .NET Framework tests use NGEN which is a global thing, so make sure we don't parallelize
@@ -125,3 +118,5 @@ public abstract class FeatureFlagsTestsBase : TestHelper
 }
 
 #pragma warning restore SA1402 // File may only contain a single type
+
+#endif

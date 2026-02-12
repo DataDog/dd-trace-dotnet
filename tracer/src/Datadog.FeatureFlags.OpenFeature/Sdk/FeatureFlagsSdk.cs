@@ -10,7 +10,6 @@ using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.FeatureFlags;
-using Newtonsoft.Json.Linq;
 using OpenFeature.Constant;
 using OpenFeature.Model;
 
@@ -82,7 +81,7 @@ internal static class FeatureFlagsSdk
                         null);
         }
 
-        var value = typeof(T) == typeof(Value) ? JsonToValue(evaluation.Value as string) : evaluation.Value!;
+        var value = typeof(T) == typeof(Value) ? JsonToValue(evaluation.Value) : evaluation.Value!;
         var res = new ResolutionDetails<T>(
             evaluation.FlagKey,
             (T)value,
@@ -116,17 +115,16 @@ internal static class FeatureFlagsSdk
         return new ImmutableMetadata(dic);
     }
 
-    public static Value JsonToValue(string? json)
+    public static Value JsonToValue(object? obj)
     {
         try
         {
-            if (json is null)
+            if (obj is null)
             {
                 return new Value();
             }
 
-            var token = JToken.Parse(json);
-            return ConvertToken(token);
+            return ConvertObject(obj);
         }
         catch
         {
@@ -134,42 +132,46 @@ internal static class FeatureFlagsSdk
         }
     }
 
-    private static Value ConvertToken(JToken token)
+    private static Value ConvertObject(object? obj)
     {
-        switch (token.Type)
+        if (obj is Dictionary<string, object?> dic)
         {
-            case JTokenType.Object:
-                return new Value(ConvertObject((JObject)token));
-            case JTokenType.Array:
-                return new Value(ConvertArray((JArray)token));
-            case JTokenType.Integer:
-                return new Value((long)token);
-            case JTokenType.Float:
-                return new Value((double)token);
-            case JTokenType.String:
-                return new Value((string)token);
-            case JTokenType.Boolean:
-                return new Value((bool)token);
-            case JTokenType.Null:
-                return new Value();
-            default:
-                return new Value();
+            return ConvertStructure(dic);
+        }
+        else if (obj is object?[] arr)
+        {
+            return ConvertArray(arr);
+        }
+        else if (obj is long intVal)
+        {
+            return new Value(intVal);
+        }
+        else if (obj is double doubleVal)
+        {
+            return new Value(doubleVal);
+        }
+        else if (obj is string strVal)
+        {
+            return new Value(strVal);
+        }
+        else if (obj is bool boolVal)
+        {
+            return new Value(boolVal);
+        }
+        else
+        {
+            return new Value();
         }
     }
 
-    private static Structure ConvertObject(JObject obj)
+    private static Value ConvertStructure(Dictionary<string, object?> structure)
     {
-        var dict = new Dictionary<string, Value>();
-        foreach (var property in obj.Properties())
-        {
-            dict.Add(property.Name, ConvertToken(property.Value));
-        }
-
-        return new Structure(dict);
+        var dic = structure.ToDictionary(p => p.Key, p => ConvertObject(p.Value));
+        return new Value(new Structure(dic));
     }
 
-    private static List<Value> ConvertArray(JArray array)
+    private static Value ConvertArray(object?[] array)
     {
-        return array.Select(ConvertToken).ToList();
+        return new Value(array.Select(ConvertObject).ToList());
     }
 }

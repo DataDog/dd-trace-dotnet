@@ -9,6 +9,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -472,18 +473,60 @@ namespace Datadog.Trace.FeatureFlags
                 return (double)number;
             }
 
+            // We return a BCL based representation of the object (basic types, object[] for JTokenType.Array and Dictionary<string, object> for JTokenType.Object
             if (target == ValueType.Json)
             {
-                if (value is JObject)
+                if (value is JObject json)
                 {
-                    return value.ToString();
+                    return ConvertToken(json);
                 }
 
-                var json = JsonConvert.SerializeObject(value);
-                return json;
+                return value;
             }
 
             throw new ArgumentException($"Type not supported: {target}");
+
+            static object? ConvertToken(JToken token)
+            {
+                switch (token.Type)
+                {
+                    case JTokenType.Object:
+                        return ConvertObject((JObject)token);
+                    case JTokenType.Array:
+                        return ConvertArray((JArray)token);
+                    case JTokenType.Integer:
+                        return (long)token;
+                    case JTokenType.Float:
+                        return (double)token;
+                    case JTokenType.String:
+                        return token.ToString();
+                    case JTokenType.Boolean:
+                        return (bool)token;
+                    case JTokenType.Null:
+                        return null;
+                    default:
+                        return ConvertObject(null);
+                }
+            }
+
+            static Dictionary<string, object?> ConvertObject(JObject? obj)
+            {
+                var dict = new Dictionary<string, object?>();
+                if (obj is not null)
+                {
+                    foreach (var property in obj.Properties())
+                    {
+                        dict.Add(property.Name, ConvertToken(property.Value));
+                    }
+                }
+
+                return dict;
+            }
+
+            static object?[] ConvertArray(JArray array)
+            {
+                return array.Select(ConvertToken).ToArray();
+            }
         }
 
         private static double ParseDouble(object value)
