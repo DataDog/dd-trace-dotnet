@@ -55,9 +55,11 @@
 
   <ItemGroup>
     <Compile Include="..\Datadog.Trace\TracerConstants.cs" Link="TracerConstants.cs" />
+    <Compile Include="..\Datadog.Trace\Agent\TracesEncoding.cs" Link="TracesEncoding.cs" />
     <Compile Include="..\Datadog.Trace\Agent\TracesTransportType.cs" Link="TracesTransportType.cs" />
     <Compile Include="..\Datadog.Trace\Configuration\DeprecationMessages.cs" Link="DeprecationMessages.cs" />
     <Compile Include="..\Datadog.Trace\Configuration\ExporterSettings.Shared.cs" Link="ExporterSettings.Shared.cs" />
+    <Compile Include="..\Datadog.Trace\Configuration\OtlpProtocol.cs" Link="OtlpProtocol.cs" />
     <!-- Link to generated ConfigurationKeys from Datadog.Trace project -->
     <Compile Include="..\Datadog.Trace\Generated\netstandard2.0\Datadog.Trace.SourceGenerators\ConfigurationKeysGenerator\ConfigurationKeys*.g.cs" LinkBase="Configuration" />
   </ItemGroup>

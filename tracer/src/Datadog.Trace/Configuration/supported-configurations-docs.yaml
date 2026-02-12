@@ -1225,6 +1225,28 @@ OTEL_EXPORTER_OTLP_TIMEOUT: |
   Used when <see cref="ExporterOtlpMetricsTimeoutMs"/> is not set.
   Default value is 10000ms.
 
+OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: |
+  Configuration key to set the OTLP endpoint URL for traces.
+  Takes precedence over <see cref="ExporterOtlpEndpoint"/>.
+  This value typically ends with v1/traces when using OTLP/HTTP.
+  Expects values like `unix:///path/to/socket.sock` for UDS, `\\.\pipename\` for Windows Named Pipes.
+  Default values: gRPC: http://localhost:4317, HTTP: http://localhost:4318/v1/traces
+
+OTEL_EXPORTER_OTLP_TRACES_HEADERS: |
+  Configuration key to set custom headers for OTLP traces export.
+  Takes precedence over <see cref="ExporterOtlpHeaders"/>.
+  Format: api-key=key,other=value.
+
+OTEL_EXPORTER_OTLP_TRACES_PROTOCOL: |
+  Configuration key to set the OTLP protocol for traces export.
+  Takes precedence over <see cref="ExporterOtlpProtocol"/>.
+  Valid values: http/json, defaults to http/json.
+
+OTEL_EXPORTER_OTLP_TRACES_TIMEOUT: |
+  Configuration key to set the request timeout for OTLP traces export in milliseconds.
+  Takes precedence over <see cref="ExporterOtlpTimeoutMs"/>.
+  Default value is 10000ms.
+
 OTEL_LOG_LEVEL: |
   Configuration key to set the log level.
 
