@@ -4,9 +4,7 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
 using System.Collections.Specialized;
-using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
@@ -14,11 +12,13 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.SpanCodeOrigin;
+using Datadog.Trace.Tagging;
 using FluentAssertions;
 #if !NETFRAMEWORK
 using Microsoft.AspNetCore.Mvc;
 #endif
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Datadog.Trace.Tests.Debugger
 {
@@ -345,4 +345,118 @@ namespace Datadog.Trace.Tests.Debugger
         }
 #endif
     }
+
+#if NET6_0_OR_GREATER
+#pragma warning disable SA1402 // File may only contain a single type
+    public class SpanCodeOriginAllocationTests
+#pragma warning restore SA1402 // File may only contain a single type
+    {
+        private const string CodeOriginTypeKey = "_dd.code_origin.type";
+        private const string CodeOriginFrames0IndexKey = "_dd.code_origin.frames.0.index";
+        private const string CodeOriginFrames0MethodKey = "_dd.code_origin.frames.0.method";
+        private const string CodeOriginFrames0TypeKey = "_dd.code_origin.frames.0.type";
+        private const string CodeOriginFrames0FileKey = "_dd.code_origin.frames.0.file";
+        private const string CodeOriginFrames0LineKey = "_dd.code_origin.frames.0.line";
+        private const string CodeOriginFrames0ColumnKey = "_dd.code_origin.frames.0.column";
+
+        private const string EntryValue = "entry";
+        private const string IndexValue = "0";
+        private const string MethodValue = "TestMethod";
+        private const string TypeValue = "MyCompany.MyService.Controllers.ValuesController";
+
+        private const string FileValue = "src/repos/my-repo/MyCompany.MyService/Controllers/ValuesController.cs";
+        private const string LineValue = "1001";
+        private const string ColumnValue = "101";
+
+        private readonly ITestOutputHelper _output;
+
+        public SpanCodeOriginAllocationTests(ITestOutputHelper output)
+        {
+            _output = output;
+        }
+
+        [Fact]
+        public void EntryCodeOriginTagging_ShouldReduceAllocations()
+        {
+            // 1) the optimized approach allocates less than the baseline
+            // 2) the optimized approach stays below a fixed budget to catch regressions
+            //
+            // This test focuses on allocations only (not CPU).
+            const int iterations = 10_000;
+            const int rounds = 3;
+            const double maxOptimizedRatio = 0.90;
+            const long maxOptimizedBytesPerOp = 300;
+
+            var baselineBytes = MeasurePerOperationAllocatedBytesMedian(iterations, rounds, Baseline_TagsListSetTagSevenTimes);
+            var webTagsBytes = MeasurePerOperationAllocatedBytesMedian(iterations, rounds, WebTagsPropertiesPlusBatchPdbTags);
+
+            _output.WriteLine($"Allocated bytes/op (baseline SetTag x7) [median of {rounds}]: {baselineBytes}");
+            _output.WriteLine($"Allocated bytes/op (WebTags props + batch PDB) [median of {rounds}]: {webTagsBytes}");
+
+            baselineBytes.Should().BeGreaterThan(webTagsBytes);
+            webTagsBytes.Should().BeLessOrEqualTo((long)(baselineBytes * maxOptimizedRatio));
+            webTagsBytes.Should().BeLessOrEqualTo(maxOptimizedBytesPerOp);
+        }
+
+        private static long MeasurePerOperationAllocatedBytesMedian(int iterations, int rounds, Action operation)
+        {
+            // Warmup
+            for (var i = 0; i < 200; i++)
+            {
+                operation();
+            }
+
+            var results = new long[rounds];
+
+            for (var round = 0; round < rounds; round++)
+            {
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+                GC.Collect();
+
+                var before = GC.GetAllocatedBytesForCurrentThread();
+                for (var i = 0; i < iterations; i++)
+                {
+                    operation();
+                }
+
+                var after = GC.GetAllocatedBytesForCurrentThread();
+                results[round] = (after - before) / iterations;
+            }
+
+            Array.Sort(results);
+            return results[results.Length / 2];
+        }
+
+        // Baseline: use SetTag repeatedly for _dd.code_origin.* keys (causes tag list allocation/growth).
+        private static void Baseline_TagsListSetTagSevenTimes()
+        {
+            var tags = new TagsList();
+            tags.SetTag(CodeOriginTypeKey, EntryValue);
+            tags.SetTag(CodeOriginFrames0IndexKey, IndexValue);
+            tags.SetTag(CodeOriginFrames0MethodKey, MethodValue);
+            tags.SetTag(CodeOriginFrames0TypeKey, TypeValue);
+            tags.SetTag(CodeOriginFrames0FileKey, FileValue);
+            tags.SetTag(CodeOriginFrames0LineKey, LineValue);
+            tags.SetTag(CodeOriginFrames0ColumnKey, ColumnValue);
+        }
+
+        // Uses WebTags property-backed base tags, and only allocates the tag list for PDB tags.
+        private static void WebTagsPropertiesPlusBatchPdbTags()
+        {
+            var tags = new WebTags
+            {
+                CodeOriginType = EntryValue,
+                CodeOriginFrames0Index = IndexValue,
+                CodeOriginFrames0Method = MethodValue,
+                CodeOriginFrames0Type = TypeValue,
+            };
+
+            using var batch = tags.BeginTagBatch(additionalTagCount: 3);
+            batch.SetTag(CodeOriginFrames0FileKey, FileValue);
+            batch.SetTag(CodeOriginFrames0LineKey, LineValue);
+            batch.SetTag(CodeOriginFrames0ColumnKey, ColumnValue);
+        }
+    }
+#endif
 }
