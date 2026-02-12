@@ -37,16 +37,16 @@ namespace Datadog.Trace.Tagging
         // Exit span code origin can include multiple frames and requires dynamic tag keys.
         // PDB-enriched tags (file/line/column) are not stored as properties to avoid adding extra fields to every
         // WebTags instance. When available, those tags are added via the tag list instead.
-        [Tag("_dd.code_origin.type")]
+        [Tag(Trace.Tags.CodeOriginType)]
         public string CodeOriginType { get; set; }
 
-        [Tag("_dd.code_origin.frames.0.index")]
+        [Tag(Trace.Tags.CodeOriginFrameIndex)]
         public string CodeOriginFrames0Index { get; set; }
 
-        [Tag("_dd.code_origin.frames.0.method")]
+        [Tag(Trace.Tags.CodeOriginFrameMethod)]
         public string CodeOriginFrames0Method { get; set; }
 
-        [Tag("_dd.code_origin.frames.0.type")]
+        [Tag(Trace.Tags.CodeOriginFrameType)]
         public string CodeOriginFrames0Type { get; set; }
     }
 }
