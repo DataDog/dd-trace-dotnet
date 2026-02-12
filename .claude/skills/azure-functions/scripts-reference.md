@@ -11,6 +11,29 @@ Quick reference scripts and commands for Azure Functions development workflow.
 
 **Note**: These scripts use PowerShell-specific cmdlets (e.g., `Expand-Archive`, `Invoke-RestMethod`) that cannot be easily replicated in bash. Always prefer `pwsh` over `powershell.exe` when both are available.
 
+### Find-NuGetConfig.ps1
+
+Searches for `nuget.config` file by walking up the directory hierarchy from a starting path.
+
+**Location**: `.claude/skills/azure-functions/Find-NuGetConfig.ps1`
+
+**Basic usage**:
+```powershell
+$nugetConfig = .\.claude\skills\azure-functions\Find-NuGetConfig.ps1 -StartPath "<path-to-sample-app>"
+if (-not $nugetConfig) {
+    Write-Error "nuget.config not found in sample app directory or parent directories"
+    exit 1
+}
+Write-Host "Found nuget.config at: $nugetConfig"
+```
+
+**Parameters**:
+- `-StartPath` - Directory to start searching from (defaults to current directory)
+
+**Output**: Returns the full path to `nuget.config` if found, otherwise returns `$null`
+
+**Use case**: Verify that a sample app has access to a `nuget.config` before deploying. The `nuget.config` file defines the local NuGet feed where the locally-built `Datadog.AzureFunctions` package is stored.
+
 ### Deploy-AzureFunction.ps1
 
 Automates deployment, wait, and HTTP trigger with timestamp capture.
