@@ -62,6 +62,20 @@ If no argument is provided, guide the user through the full workflow interactive
 
 ### 1. Build NuGet Package
 
+**CRITICAL**: Before building, temporarily modify `tracer/src/Datadog.AzureFunctions/Datadog.AzureFunctions.csproj` to use package references instead of project references. This ensures the locally-built package references the latest releases from nuget.org:
+
+```xml
+<!-- Replace these ProjectReference lines: -->
+<ProjectReference Include="$(MSBuildThisFileDirectory)..\Datadog.Trace.Manual\Datadog.Trace.Manual.csproj" />
+<ProjectReference Include="$(MSBuildThisFileDirectory)..\Datadog.Trace.Annotations\Datadog.Trace.Annotations.csproj" />
+
+<!-- With these PackageReference lines: -->
+<PackageReference Include="Datadog.Trace" Version="*"/>
+<PackageReference Include="Datadog.Trace.Annotations" Version="*" />
+```
+
+**IMPORTANT**: This is a temporary change for local testing only. Do NOT commit this change.
+
 Build the `Datadog.AzureFunctions` NuGet package with your changes:
 
 ```powershell
@@ -73,7 +87,7 @@ Build the `Datadog.AzureFunctions` NuGet package with your changes:
 2. Cleans previous builds
 3. Builds `Datadog.Trace` (net6.0 and net461)
 4. Publishes to bundle folder
-5. Packages `Datadog.AzureFunctions.nupkg` with the generated version
+5. Packages `Datadog.AzureFunctions.nupkg` with the generated version (referencing latest nuget.org releases)
 6. Copies to the directory specified by `-CopyTo`
 
 **Versioning**: Each build gets a unique version, so NuGet caching is never an issue.
@@ -254,15 +268,17 @@ curl -X POST https://api.datadoghq.com/api/v2/spans/events/search \
 If invoked without arguments (`/azure-functions`), guide the user through:
 
 1. **Understand the goal**: What are they testing? (New feature, bug fix, trace verification)
-2. **Build**: Run Build-AzureFunctionsNuget.ps1
-3. **Select app**: Which test app to deploy to?
-4. **Verify prerequisites**: Check that the sample app has a `nuget.config` file configured with the local NuGet feed
-5. **Deploy**: Navigate to sample app and publish
-6. **Wait**: Remind to wait 1-2 minutes for worker restart
-7. **Test**: Trigger function and capture timestamp
-8. **Download logs**: Pull logs from Azure
-9. **Analyze**: Guide through log analysis based on their goal
-10. **Verify**: Run through verification checklist
+2. **Modify .csproj**: Temporarily change `Datadog.AzureFunctions.csproj` to use PackageReference instead of ProjectReference (see step 1 above)
+3. **Build**: Run Build-AzureFunctionsNuget.ps1
+4. **Select app**: Which test app to deploy to?
+5. **Verify prerequisites**: Check that the sample app has a `nuget.config` file configured with the local NuGet feed
+6. **Deploy**: Navigate to sample app and publish
+7. **Wait**: Remind to wait 1-2 minutes for worker restart
+8. **Test**: Trigger function and capture timestamp
+9. **Download logs**: Pull logs from Azure
+10. **Analyze**: Guide through log analysis based on their goal
+11. **Verify**: Run through verification checklist
+12. **Revert .csproj**: Remind to revert the temporary change to `Datadog.AzureFunctions.csproj` (DO NOT commit)
 
 ## Additional Resources
 
