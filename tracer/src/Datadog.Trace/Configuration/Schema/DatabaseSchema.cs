@@ -24,14 +24,12 @@ namespace Datadog.Trace.Configuration.Schema
             "mongodb.query",
         ];
 
-        private readonly SchemaVersion _version;
-        private readonly bool _peerServiceTagsEnabled;
+        private readonly bool _useV0Tags;
         private readonly string[] _serviceNames;
 
         public DatabaseSchema(SchemaVersion version, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled, string defaultServiceName, IReadOnlyDictionary<string, string>? serviceNameMappings)
         {
-            _version = version;
-            _peerServiceTagsEnabled = peerServiceTagsEnabled;
+            _useV0Tags = version == SchemaVersion.V0 && !peerServiceTagsEnabled;
 
             // Calculate service names once, to avoid allocations with every call
             var useSuffix = version == SchemaVersion.V0 && !removeClientServiceNamesEnabled;
@@ -96,54 +94,26 @@ namespace Datadog.Trace.Configuration.Schema
         public string GetServiceName(ServiceType databaseType) => _serviceNames[(int)databaseType];
 
         public CouchbaseTags CreateCouchbaseTags()
-            => _version switch
-            {
-                SchemaVersion.V0 when !_peerServiceTagsEnabled => new CouchbaseTags(),
-                _ => new CouchbaseV1Tags(),
-            };
+            => _useV0Tags ? new CouchbaseTags() : new CouchbaseV1Tags();
 
         public ElasticsearchTags CreateElasticsearchTags()
-            => _version switch
-            {
-                SchemaVersion.V0 when !_peerServiceTagsEnabled => new ElasticsearchTags(),
-                _ => new ElasticsearchV1Tags(),
-            };
+            => _useV0Tags ? new ElasticsearchTags() : new ElasticsearchV1Tags();
 
         public MongoDbTags CreateMongoDbTags()
-            => _version switch
-            {
-                SchemaVersion.V0 when !_peerServiceTagsEnabled => new MongoDbTags(),
-                _ => new MongoDbV1Tags(),
-            };
+            => _useV0Tags ? new MongoDbTags() : new MongoDbV1Tags();
 
         public SqlTags CreateSqlTags()
-            => _version switch
-            {
-                SchemaVersion.V0 when !_peerServiceTagsEnabled => new SqlTags(),
-                _ => new SqlV1Tags(),
-            };
+            => _useV0Tags ? new SqlTags() : new SqlV1Tags();
 
         public RedisTags CreateRedisTags()
-            => _version switch
-            {
-                SchemaVersion.V0 when !_peerServiceTagsEnabled => new RedisTags(),
-                _ => new RedisV1Tags(),
-            };
+            => _useV0Tags ? new RedisTags() : new RedisV1Tags();
 
         public CosmosDbTags CreateCosmosDbTags()
-            => _version switch
-            {
-                SchemaVersion.V0 when !_peerServiceTagsEnabled => new CosmosDbTags(),
-                _ => new CosmosDbV1Tags(),
-            };
+            => _useV0Tags ? new CosmosDbTags() : new CosmosDbV1Tags();
 
         public AerospikeTags CreateAerospikeTags()
-            => _version switch
-            {
-                SchemaVersion.V0 when !_peerServiceTagsEnabled => new AerospikeTags(),
-                _ => new AerospikeV1Tags(),
-            };
+            => _useV0Tags ? new AerospikeTags() : new AerospikeV1Tags();
 
-        public AwsDynamoDbTags CreateAwsDynamoDbTags() => new AwsDynamoDbTags();
+        public AwsDynamoDbTags CreateAwsDynamoDbTags() => new();
     }
 }

@@ -15,16 +15,14 @@ namespace Datadog.Trace.Configuration.Schema
     {
         private const string HttpClientComponent = "http-client";
         private const string GrpcClientComponent = "grpc-client";
-        private readonly SchemaVersion _version;
-        private readonly bool _peerServiceTagsEnabled;
+        private readonly bool _useV0Tags;
         private readonly string[] _protocols;
         private readonly string[] _serviceNames;
         private readonly string _operationNameSuffix;
 
         public ClientSchema(SchemaVersion version, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled, string defaultServiceName, IReadOnlyDictionary<string, string>? serviceNameMappings)
         {
-            _version = version;
-            _peerServiceTagsEnabled = peerServiceTagsEnabled;
+            _useV0Tags = version == SchemaVersion.V0 && !peerServiceTagsEnabled;
             _protocols = version switch
             {
                 SchemaVersion.V0 => V0Values.ProtocolOperationNames,
@@ -79,39 +77,19 @@ namespace Datadog.Trace.Configuration.Schema
         public string GetServiceName(Component component) => _serviceNames[(int)component];
 
         public HttpTags CreateHttpTags()
-            => _version switch
-            {
-                SchemaVersion.V0 when !_peerServiceTagsEnabled => new HttpTags(),
-                _ => new HttpV1Tags(),
-            };
+            => _useV0Tags ? new HttpTags() : new HttpV1Tags();
 
         public GrpcClientTags CreateGrpcClientTags()
-            => _version switch
-            {
-                SchemaVersion.V0 when !_peerServiceTagsEnabled => new GrpcClientTags(),
-                _ => new GrpcClientV1Tags(),
-            };
+            => _useV0Tags ? new GrpcClientTags() : new GrpcClientV1Tags();
 
         public RemotingClientTags CreateRemotingClientTags()
-            => _version switch
-            {
-                SchemaVersion.V0 when !_peerServiceTagsEnabled => new RemotingClientTags(),
-                _ => new RemotingClientV1Tags(),
-            };
+            => _useV0Tags ? new RemotingClientTags() : new RemotingClientV1Tags();
 
         public ServiceRemotingClientTags CreateServiceRemotingClientTags()
-            => _version switch
-            {
-                SchemaVersion.V0 when !_peerServiceTagsEnabled => new ServiceRemotingClientTags(),
-                _ => new ServiceRemotingClientV1Tags(),
-            };
+            => _useV0Tags ? new ServiceRemotingClientTags() : new ServiceRemotingClientV1Tags();
 
         public AzureServiceBusTags CreateAzureServiceBusTags()
-            => _version switch
-            {
-                SchemaVersion.V0 when !_peerServiceTagsEnabled => new AzureServiceBusTags(),
-                _ => new AzureServiceBusV1Tags(),
-            };
+            => _useV0Tags ? new AzureServiceBusTags() : new AzureServiceBusV1Tags();
 
         private static class V0Values
         {
