@@ -52,6 +52,7 @@ Invoke the skill with `/azure-functions` followed by an optional command:
 - **SKILL.md** - Main skill definition with workflow steps
 - **log-analysis-guide.md** - Detailed log analysis patterns and grep examples
 - **scripts-reference.md** - Reusable bash/PowerShell scripts for common tasks
+- **environment-variables.md** - Complete reference for Azure Functions environment variable configuration
 - **README.md** - This file
 
 ## Related Scripts (tracer/tools/)
@@ -188,6 +189,7 @@ The skill provides guidance for:
 - Separate traces (span parenting issues)
 - Missing debug logs
 - AsyncLocal context flow issues
+- Environment variable configuration (see [environment-variables.md](environment-variables.md))
 
 ## Tips
 
