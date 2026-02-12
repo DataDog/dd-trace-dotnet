@@ -12,29 +12,20 @@ This skill guides you through building, deploying, and testing Azure Functions w
 
 ## Prerequisites
 
-**CRITICAL**: This skill requires PowerShell to run the Azure Functions automation scripts.
+This skill requires the following tools (assume they are installed and only troubleshoot if errors occur):
 
-**PowerShell version requirements**:
-- **Recommended**: PowerShell 7+ (`pwsh`) - cross-platform, modern features
-- **Minimum**: PowerShell 5.1 (`powershell.exe` on Windows only)
+- **PowerShell**: `pwsh` (PowerShell 7+) preferred, or `powershell.exe` (PowerShell 5.1+ on Windows)
+  - Always prefer `pwsh` over `powershell.exe` when available
+  - Scripts use PowerShell-specific cmdlets like `Expand-Archive`
+- **Azure CLI**: `az` (must be authenticated)
+- **Azure Functions Core Tools**: `func`
+- **.NET SDK**: Matching target framework of sample app
 
-**Installation**:
-- Windows: `winget install Microsoft.PowerShell` (or use built-in PowerShell 5.1)
-- macOS: `brew install powershell/tap/powershell`
-- Linux: https://learn.microsoft.com/en-us/powershell/scripting/install/installing-powershell-on-linux
-
-**If the user does not have PowerShell installed**:
-1. Check for `pwsh` first: `pwsh -Version`
-2. If not found and on Windows, check for PowerShell 5.1: `powershell -NoProfile -Command '$PSVersionTable.PSVersion'`
-3. If neither found or version is too old, provide installation instructions from [README.md](README.md#installing-powershell)
-4. Do NOT attempt to replicate the script functionality using bash - the scripts use PowerShell-specific cmdlets like `Expand-Archive`
-
-**Always prefer `pwsh` over `powershell.exe`** when both are available (better cross-platform compatibility and modern features).
-
-**Other requirements**:
-- Azure CLI (`az`) authenticated
-- Azure Functions Core Tools (`func`)
-- .NET SDK (matching target framework of sample app)
+**Only if a tool fails, provide installation links**:
+- **PowerShell**: See [README.md](README.md#installing-powershell)
+- **Azure CLI**: https://learn.microsoft.com/en-us/cli/azure/install-azure-cli
+- **Azure Functions Core Tools**: https://learn.microsoft.com/en-us/azure/azure-functions/functions-run-local
+- **.NET SDK**: https://dotnet.microsoft.com/download
 
 ## Commands
 
