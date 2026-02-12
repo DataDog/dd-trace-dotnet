@@ -166,8 +166,8 @@ Write-Verbose "Datadog logs found at: $datadogLogDir"
 $hostLogPattern = "dotnet-tracer-managed-Microsoft.Azure.WebJobs.Script.WebHost-*.log"
 $workerLogPattern = "dotnet-tracer-managed-dotnet-*.log"
 
-$hostLogs = Get-ChildItem -Path $datadogLogDir -Filter $hostLogPattern
-$workerLogs = Get-ChildItem -Path $datadogLogDir -Filter $workerLogPattern
+$hostLogs = @(Get-ChildItem -Path $datadogLogDir -Filter $hostLogPattern)
+$workerLogs = @(Get-ChildItem -Path $datadogLogDir -Filter $workerLogPattern)
 
 Write-Host "`nLog Files Found:" -ForegroundColor Cyan
 Write-Host "  Host logs:   $($hostLogs.Count) files"
@@ -187,7 +187,7 @@ $result = [PSCustomObject]@{
 if ($ShowVersion) {
     Write-Host "`nDetecting tracer version..." -ForegroundColor Cyan
 
-    if ($workerLogs.Count -eq 0) {
+    if (-not $workerLogs -or $workerLogs.Count -eq 0) {
         Write-Warning "No worker logs found to extract version"
     } else {
         # Search for "Assembly metadata" in worker logs (most recent file first)
@@ -200,8 +200,13 @@ if ($ShowVersion) {
         }
 
         if ($versionLine) {
-            # Extract version from line like: "Assembly metadata: Datadog.Trace.ClrProfiler.Managed.Loader, Version=3.7.0.0, ..."
-            if ($versionLine -match "Version=([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)") {
+            # Extract version from log line formats:
+            #   TracerVersion: "3.38.0.0"    (structured logging format)
+            #   Version=3.38.0.0             (assembly metadata format)
+            if ($versionLine -match 'TracerVersion:\s*"([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)"') {
+                $result.TracerVersion = $matches[1]
+                Write-Host "  Tracer version: $($result.TracerVersion)" -ForegroundColor Green
+            } elseif ($versionLine -match "Version=([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)") {
                 $result.TracerVersion = $matches[1]
                 Write-Host "  Tracer version: $($result.TracerVersion)" -ForegroundColor Green
             } else {
@@ -233,7 +238,7 @@ if ($ShowSpans) {
         if ($timeFilter) {
             $lines = $lines | Where-Object { $_ -match [regex]::Escape($timeFilter) }
         }
-        $spanLines = $lines | Select-String "span_id:"
+        $spanLines = @($lines | Select-String "span_id:")
         $hostSpanCount += $spanLines.Count
     }
 
@@ -243,7 +248,7 @@ if ($ShowSpans) {
         if ($timeFilter) {
             $lines = $lines | Where-Object { $_ -match [regex]::Escape($timeFilter) }
         }
-        $spanLines = $lines | Select-String "span_id:"
+        $spanLines = @($lines | Select-String "span_id:")
         $workerSpanCount += $spanLines.Count
     }
 
