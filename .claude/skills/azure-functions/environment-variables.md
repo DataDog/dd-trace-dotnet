@@ -43,7 +43,10 @@ DD_APPSEC_ENABLED=false
 DD_CIVISIBILITY_ENABLED=false
 DD_REMOTE_CONFIGURATION_ENABLED=false
 DD_AGENT_FEATURE_POLLING_ENABLED=false
+DD_TRACE_Process_ENABLED=false
 ```
+
+- **`DD_TRACE_Process_ENABLED`**: Disables Process.Start() instrumentation, which generates noisy `command_execution` spans from internal Azure Functions host operations
 
 ### Environment and Service Identification
 
