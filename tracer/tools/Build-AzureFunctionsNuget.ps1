@@ -182,7 +182,7 @@ dotnet restore "$tracerDir/src/Datadog.AzureFunctions" -v $dotnetVerbosity
 
 # Build Datadog.AzureFunctions NuGet package with the generated version
 Write-Verbose "Building Datadog.AzureFunctions NuGet package (version $Version)."
-& "$tracerDir/$buildScript" BuildAzureFunctionsNuget --Version $Version --verbosity $nukeVerbosity
+& "$tracerDir/$buildScript" BuildAzureFunctionsNuget --Version $Version --verbosity $nukeVerbosityBuild
 
 # Copy package to destination if specified
 if ($CopyTo)
