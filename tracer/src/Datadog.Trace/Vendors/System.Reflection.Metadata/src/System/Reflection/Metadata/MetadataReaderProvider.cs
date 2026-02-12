@@ -13,10 +13,8 @@ using System;
 using System.IO;
 using System.Threading;
 using System.Reflection;
-using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
 using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Internal;
 #pragma warning disable CS8625
-
 
 #nullable enable
 namespace Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata

@@ -4,9 +4,9 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
 
 #nullable enable
+
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation.ThirdParty
 {
     internal sealed class ThirdPartyModules
