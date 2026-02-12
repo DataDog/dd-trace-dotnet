@@ -114,6 +114,16 @@ The sample app should use a floating version like `3.38.0-dev.*` in its package 
 
 **IMPORTANT**: Before deploying, verify that a `nuget.config` file exists in the sample app directory or a parent directory. This file is required for `dotnet restore` to resolve the locally-built `Datadog.AzureFunctions` package from the local NuGet feed.
 
+**Verify nuget.config exists**:
+```powershell
+$nugetConfig = .\.claude\skills\azure-functions\Find-NuGetConfig.ps1 -StartPath "<path-to-sample-app>"
+if (-not $nugetConfig) {
+    Write-Error "nuget.config not found in sample app directory or parent directories"
+    exit 1
+}
+Write-Host "Found nuget.config at: $nugetConfig"
+```
+
 Use the `Deploy-AzureFunction.ps1` script to automate deployment, wait, and trigger:
 
 ```powershell
@@ -398,7 +408,7 @@ If invoked without arguments (`/azure-functions`), guide the user through:
 3. **Modify .csproj**: Temporarily change `Datadog.AzureFunctions.csproj` to use PackageReference instead of ProjectReference (see step 1 above)
 4. **Build**: Run Build-AzureFunctionsNuget.ps1
 5. **Select app**: Which test app to deploy to?
-6. **Verify prerequisites**: Check that the sample app has a `nuget.config` file configured with the local NuGet feed
+6. **Verify prerequisites**: Use `Find-NuGetConfig.ps1` to check that the sample app has a `nuget.config` file configured with the local NuGet feed
 7. **Deploy**: Navigate to sample app and publish
 8. **Wait**: Remind to wait 1-2 minutes for worker restart
 9. **Test**: Trigger function and capture timestamp
