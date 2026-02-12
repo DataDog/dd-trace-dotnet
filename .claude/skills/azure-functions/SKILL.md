@@ -1,9 +1,9 @@
 ---
 name: azure-functions
 description: Build, deploy, and test Azure Functions instrumented with Datadog.AzureFunctions NuGet package. Use when working on Azure Functions integration, deploying to test environments, analyzing traces, or troubleshooting instrumentation issues.
-argument-hint: [build|deploy|test|logs|trace|configure]
+argument-hint: [build-nuget|deploy|test|logs|trace|configure]
 disable-model-invocation: true
-allowed-tools: Bash(az:functionapp:show:*) Bash(az:functionapp:list:*) Bash(az:functionapp:list-functions:*) Bash(az:functionapp:function:list:*) Bash(az:functionapp:function:show:*) Bash(az:functionapp:config:appsettings:list:*) Bash(az:functionapp:config:appsettings:set:*) Bash(az:functionapp:config:show:*) Bash(az:functionapp:deployment:list:*) Bash(az:functionapp:deployment:show:*) Bash(az:functionapp:deployment:source:show:*) Bash(az:functionapp:plan:list:*) Bash(az:functionapp:plan:show:*) Bash(az:functionapp:log:download:*) Bash(az:webapp:log:tail:*) Bash(az:group:list:*) Bash(az:group:show:*) Bash(curl:*) Bash(func:azure:functionapp:logstream:*) Bash(func:azure:functionapp:list-functions:*) Bash(func:azure:functionapp:fetch-app-settings:*) Bash(func:azure:functionapp:fetch:*) Bash(dotnet:restore) Bash(dotnet:clean) Bash(dotnet:build:*) Bash(unzip:*) Bash(date:*) Bash(grep:*) Bash(find:*) Bash(ls:*) Bash(cat:*) Bash(head:*) Bash(tail:*) Bash(wc:*) Bash(sort:*) Bash(jq:*) Bash(uname:*) Read
+allowed-tools: Bash(az:functionapp:show:*) Bash(az:functionapp:list:*) Bash(az:functionapp:list-functions:*) Bash(az:functionapp:function:list:*) Bash(az:functionapp:function:show:*) Bash(az:functionapp:config:appsettings:list:*) Bash(az:functionapp:config:appsettings:set:*) Bash(az:functionapp:config:appsettings:delete:*) Bash(az:functionapp:config:show:*) Bash(az:functionapp:deployment:list:*) Bash(az:functionapp:deployment:show:*) Bash(az:functionapp:deployment:source:show:*) Bash(az:functionapp:plan:list:*) Bash(az:functionapp:plan:show:*) Bash(az:functionapp:restart:*) Bash(az:functionapp:stop:*) Bash(az:functionapp:start:*) Bash(az:webapp:log:download:*) Bash(az:webapp:log:tail:*) Bash(az:group:list:*) Bash(az:group:show:*) Bash(curl:*) Bash(pwsh:*) Bash(func:azure:functionapp:publish:*) Bash(func:azure:functionapp:logstream:*) Bash(func:azure:functionapp:list-functions:*) Bash(func:azure:functionapp:fetch-app-settings:*) Bash(func:azure:functionapp:fetch:*) Bash(dotnet:restore) Bash(dotnet:clean) Bash(dotnet:build:*) Bash(unzip:*) Bash(date:*) Bash(grep:*) Bash(find:*) Bash(ls:*) Bash(cat:*) Bash(head:*) Bash(tail:*) Bash(wc:*) Bash(sort:*) Bash(jq:*) Bash(uname:*) Read
 ---
 
 # Azure Functions Development Workflow
@@ -63,19 +63,22 @@ If no argument is provided, guide the user through the full workflow interactive
 
 ### 1. Build NuGet Package
 
-**CRITICAL**: Before building, temporarily modify `tracer/src/Datadog.AzureFunctions/Datadog.AzureFunctions.csproj` to use package references instead of project references. This ensures the locally-built package references the latest releases from nuget.org:
+**CRITICAL**: Before building, verify that `tracer/src/Datadog.AzureFunctions/Datadog.AzureFunctions.csproj` uses **PackageReference** (not ProjectReference) for `Datadog.Trace` and `Datadog.Trace.Annotations`. This ensures the locally-built package references the latest releases from nuget.org instead of building them from source.
 
+**Check the .csproj** — it should contain:
 ```xml
-<!-- Replace these ProjectReference lines: -->
-<ProjectReference Include="$(MSBuildThisFileDirectory)..\Datadog.Trace.Manual\Datadog.Trace.Manual.csproj" />
-<ProjectReference Include="$(MSBuildThisFileDirectory)..\Datadog.Trace.Annotations\Datadog.Trace.Annotations.csproj" />
-
-<!-- With these PackageReference lines: -->
 <PackageReference Include="Datadog.Trace" Version="*"/>
 <PackageReference Include="Datadog.Trace.Annotations" Version="*" />
 ```
 
-**IMPORTANT**: This is a temporary change for local testing only. Do NOT commit this change.
+If instead it contains **ProjectReference** lines like these, replace them with the PackageReference lines above:
+```xml
+<!-- These are the production references — replace for local testing: -->
+<ProjectReference Include="$(MSBuildThisFileDirectory)..\Datadog.Trace.Manual\Datadog.Trace.Manual.csproj" />
+<ProjectReference Include="$(MSBuildThisFileDirectory)..\Datadog.Trace.Annotations\Datadog.Trace.Annotations.csproj" />
+```
+
+**IMPORTANT**: The PackageReference change is for local testing only. Do NOT commit it. If it's already using PackageReference, no change is needed.
 
 Build the `Datadog.AzureFunctions` NuGet package with your changes:
 
@@ -87,7 +90,7 @@ Build the `Datadog.AzureFunctions` NuGet package with your changes:
 1. (If `-BuildId` specified and files not already downloaded) Downloads bundle from Azure DevOps build once
 2. Generates a unique prerelease version from a timestamp (e.g. `3.38.0-dev20260209143022`)
 3. Cleans previous builds
-4. Builds `Datadog.Trace` (net6.0 and net461)
+4. Builds `Datadog.Trace` (net6.0)
 5. Publishes to bundle folder
 6. Packages `Datadog.AzureFunctions.nupkg` with the generated version (referencing latest nuget.org releases)
 7. Copies to the directory specified by `-CopyTo`
@@ -405,7 +408,7 @@ If invoked without arguments (`/azure-functions`), guide the user through:
 
 1. **Understand the goal**: What are they testing? (New feature, bug fix, trace verification, initial setup)
 2. **Check configuration**: Ask if environment variables are configured (offer to run `/azure-functions configure`)
-3. **Modify .csproj**: Temporarily change `Datadog.AzureFunctions.csproj` to use PackageReference instead of ProjectReference (see step 1 above)
+3. **Verify .csproj**: Check that `Datadog.AzureFunctions.csproj` uses PackageReference (not ProjectReference) for local testing (see step 1 above)
 4. **Build**: Run Build-AzureFunctionsNuget.ps1
 5. **Select app**: Which test app to deploy to?
 6. **Verify prerequisites**: Use `Find-NuGetConfig.ps1` to check that the sample app has a `nuget.config` file configured with the local NuGet feed
@@ -415,7 +418,7 @@ If invoked without arguments (`/azure-functions`), guide the user through:
 10. **Download logs**: Pull logs from Azure
 11. **Analyze**: Guide through log analysis based on their goal
 12. **Verify**: Run through verification checklist
-13. **Revert .csproj**: Remind to revert the temporary change to `Datadog.AzureFunctions.csproj` (DO NOT commit)
+13. **Check .csproj**: Remind that the PackageReference in `Datadog.AzureFunctions.csproj` is for local testing only — DO NOT commit
 
 ## Additional Resources
 
