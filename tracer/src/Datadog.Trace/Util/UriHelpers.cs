@@ -78,12 +78,11 @@ namespace Datadog.Trace.Util
             //   keep only host and path. Remove scheme, userinfo, query, and fragment.
             // otherwise:
             //   keep only scheme, authority, and path. Remove userinfo, query, and fragment.
-            if (!removeScheme)
-            {
-                sb.Append(uri.Scheme).Append(Uri.SchemeDelimiter);
-            }
+            var valuesToAppend = removeScheme
+                                     ? UriComponents.Host | UriComponents.Port
+                                     : UriComponents.Scheme | UriComponents.Host | UriComponents.Port;
 
-            sb.Append(uri.Authority);
+            sb.Append(uri.GetComponents(valuesToAppend, UriFormat.UriEscaped));
 
             var absolutePath = uri.AbsolutePath;
             if (StringUtil.IsNullOrWhiteSpace(absolutePath) || (absolutePath.Length == 1 && absolutePath[0] == '/'))
@@ -101,12 +100,12 @@ namespace Datadog.Trace.Util
 
         private static string CleanUriLeaveIds(Uri uri, bool removeScheme) =>
             removeScheme
-                // keep only host and path.
+                // keep only authority (host, port), and path.
                 // remove scheme, userinfo, query, and fragment.
-                ? $"{uri.Authority}{uri.AbsolutePath}"
-                // keep only scheme, authority, and path.
+                ? uri.GetComponents(UriComponents.Host | UriComponents.Port | UriComponents.Path, UriFormat.UriEscaped)
+                // keep only scheme, authority (host, port), and path.
                 // remove userinfo, query, and fragment.
-                : $"{uri.Scheme}{Uri.SchemeDelimiter}{uri.Authority}{uri.AbsolutePath}";
+                : uri.GetComponents(UriComponents.Scheme | UriComponents.Host | UriComponents.Port | UriComponents.Path, UriFormat.UriEscaped);
 
         private static void AppendCleanedUriPath(StringBuilder sb, string absolutePath, int prefixLength)
         {
