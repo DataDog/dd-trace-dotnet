@@ -34,4 +34,3 @@ public class SymbolUploadApiTests
         Assert.Equal("symdb", dict["debugger.type"]);
     }
 }
-

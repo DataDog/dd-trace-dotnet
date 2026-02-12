@@ -69,10 +69,13 @@ namespace Datadog.Trace.Debugger.Upload
 
         internal static ArraySegment<byte> CreateEventMetadata(string serviceName, string runtimeId)
         {
-            using var stream = new MemoryStream(capacity: 256);
-            using (var streamWriter = new StreamWriter(stream, EncodingHelpers.Utf8NoBom, bufferSize: 256, leaveOpen: true))
-            using (var jsonWriter = new JsonTextWriter(streamWriter) { CloseOutput = false, Formatting = Formatting.None })
+            const int bufferSize = 256;
+            using var stream = new MemoryStream(capacity: bufferSize);
+            using (var streamWriter = new StreamWriter(stream, EncodingHelpers.Utf8NoBom, bufferSize: bufferSize, leaveOpen: true))
+            using (var jsonWriter = new JsonTextWriter(streamWriter))
             {
+                jsonWriter.CloseOutput = false;
+                jsonWriter.Formatting = Formatting.None;
                 jsonWriter.WriteStartObject();
 
                 jsonWriter.WritePropertyName("ddsource");
