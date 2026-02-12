@@ -114,8 +114,7 @@ public class ConfigKeyAliasesSwitcherGenerator : IIncrementalGenerator
 
             if (definitions.ValueKind != JsonValueKind.Array)
             {
-                // v2 schema: each entry is an array of implementation objects
-                continue;
+                throw new InvalidOperationException($"Configuration entry '{mainKey}' must be an array of implementation objects");
             }
 
             List<string>? aliasList = null;
@@ -125,7 +124,7 @@ public class ConfigKeyAliasesSwitcherGenerator : IIncrementalGenerator
             {
                 if (implementation.ValueKind != JsonValueKind.Object)
                 {
-                    continue;
+                    throw new InvalidOperationException($"Configuration entry '{mainKey}' must be an object");
                 }
 
                 if (!implementation.TryGetProperty("aliases", out var aliasesElement) ||
@@ -147,7 +146,7 @@ public class ConfigKeyAliasesSwitcherGenerator : IIncrementalGenerator
                         continue;
                     }
 
-                    aliasList ??= new List<string>();
+                    aliasList ??= [];
                     seen ??= new HashSet<string>(StringComparer.Ordinal);
 
                     if (seen.Add(alias!))

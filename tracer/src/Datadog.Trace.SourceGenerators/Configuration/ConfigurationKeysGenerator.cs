@@ -271,7 +271,7 @@ public class ConfigurationKeysGenerator : IIncrementalGenerator
             // v2 schema: each entry is an array of implementation objects
             if (value.ValueKind != JsonValueKind.Array)
             {
-                throw new InvalidOperationException($"Configuration entry '{key}' must be an array");
+                throw new InvalidOperationException($"Configuration entry '{key}' must be an array of implementation objects");
             }
 
             // Extract the product field (first non-empty product in the implementations, if any)
@@ -280,17 +280,24 @@ public class ConfigurationKeysGenerator : IIncrementalGenerator
             {
                 if (implementation.ValueKind != JsonValueKind.Object)
                 {
-                    continue;
+                    throw new InvalidOperationException($"Configuration entry '{key}' has an implementation object that is not an object");
                 }
 
-                if (implementation.TryGetProperty("product", out var productElement) &&
-                    productElement.ValueKind == JsonValueKind.String)
+                if (implementation.TryGetProperty("product", out var productElement))
                 {
-                    product = productElement.GetString() ?? string.Empty;
-                    if (!string.IsNullOrEmpty(product))
+                    if (productElement.ValueKind != JsonValueKind.String)
                     {
-                        break;
+                        throw new InvalidOperationException($"Configuration entry '{key}' has a 'product' field that is not a string");
                     }
+
+                    var productValue = productElement.GetString();
+                    if (productValue is null || productValue.Length == 0)
+                    {
+                        throw new InvalidOperationException($"Configuration entry '{key}' has an empty 'product' field, if present, it must be a non-empty string");
+                    }
+
+                    product = productValue;
+                    break;
                 }
             }
 
