@@ -22,12 +22,11 @@ namespace Datadog.Trace.Tagging
         private List<KeyValuePair<string, byte[]>>? _metaStruct;
 
         /// <summary>
-        /// Begin a batch add operation for tags.
-        /// This is intended for internal hot paths that add multiple tags at once.
+        /// Begin a batch set operation for tags.
+        /// This is intended for internal hot paths that add/update multiple tags at once.
         /// The returned <see cref="TagBatch"/> holds the underlying tag list lock and MUST be disposed (use <c>using</c>).
         /// Callers should keep the critical section small: do not perform any slow/allocating work while holding the batch.
-        /// The batch is append-only: it does not perform key lookups and will not replace existing keys.
-        /// Callers are responsible for ensuring keys are not already present (or guarding under the same lock).
+        /// The batch uses the same semantics as <see cref="SetTag"/> (replace/remove existing keys).
         /// </summary>
         internal TagBatch BeginTagBatch(int additionalTagCount)
         {
@@ -344,7 +343,7 @@ namespace Datadog.Trace.Tagging
         }
 
         /// <summary>
-        /// A lock-holding batch helper for appending tags.
+        /// A lock-holding batch helper for setting tags.
         /// Note: this is a <see langword="struct"/> that contains a reference. Do not copy it, and dispose exactly once.
         /// </summary>
         internal readonly struct TagBatch : IDisposable
@@ -357,41 +356,37 @@ namespace Datadog.Trace.Tagging
             }
 
             /// <summary>
-            /// Checks if the tag list already contains the specified key.
-            /// This is intended for internal race-avoidance while the batch lock is held.
+            /// Sets a tag using the same semantics as <see cref="TagsList.SetTag"/>.
             /// </summary>
-            public bool ContainsKey(string key)
+            public void SetTag(string key, string? value)
             {
                 var tags = _tags;
                 if (tags is null)
                 {
-                    ThrowHelper.ThrowInvalidOperationException("TagBatch is not initialized. It must be created via TagsList.BeginTagBatch().");
+                    return;
                 }
 
                 for (var i = 0; i < tags.Count; i++)
                 {
                     if (tags[i].Key == key)
                     {
-                        return true;
+                        if (value is null)
+                        {
+                            tags.RemoveAt(i);
+                        }
+                        else
+                        {
+                            tags[i] = new KeyValuePair<string, string>(key, value);
+                        }
+
+                        return;
                     }
                 }
 
-                return false;
-            }
-
-            /// <summary>
-            /// Adds a tag without performing a key lookup.
-            /// Callers must ensure the key is not already present (or handle duplicates explicitly).
-            /// </summary>
-            public void Add(string key, string value)
-            {
-                var tags = _tags;
-                if (tags is null)
+                if (value is not null)
                 {
-                    ThrowHelper.ThrowInvalidOperationException("TagBatch is not initialized. It must be created via TagsList.BeginTagBatch().");
+                    tags.Add(new KeyValuePair<string, string>(key, value));
                 }
-
-                tags.Add(new KeyValuePair<string, string>(key, value));
             }
 
             public void Dispose()
