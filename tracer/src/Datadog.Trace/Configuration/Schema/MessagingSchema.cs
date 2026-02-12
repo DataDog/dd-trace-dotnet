@@ -12,17 +12,14 @@ namespace Datadog.Trace.Configuration.Schema
 {
     internal sealed class MessagingSchema
     {
-        private readonly SchemaVersion _version;
-        private readonly bool _peerServiceTagsEnabled;
+        private readonly bool _useV0Tags;
         private readonly string[] _inboundOperationNames;
         private readonly string[] _outboundOperationNames;
         private readonly string[] _serviceNames;
 
         public MessagingSchema(SchemaVersion version, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled, string defaultServiceName, IReadOnlyDictionary<string, string>? serviceNameMappings)
         {
-            _version = version;
-            _peerServiceTagsEnabled = peerServiceTagsEnabled;
-
+            _useV0Tags = version == SchemaVersion.V0 && !peerServiceTagsEnabled;
             _inboundOperationNames = version switch
             {
                 SchemaVersion.V0 => V0Values.InboundOperationNames,
@@ -117,20 +114,12 @@ namespace Datadog.Trace.Configuration.Schema
         public string GetServiceName(ServiceType messagingSystem) => _serviceNames[(int)messagingSystem];
 
         public KafkaTags CreateKafkaTags(string spanKind)
-            => _version switch
-            {
-                SchemaVersion.V0 when !_peerServiceTagsEnabled => new KafkaTags(spanKind),
-                _ => new KafkaV1Tags(spanKind),
-            };
+            => _useV0Tags ? new KafkaTags(spanKind) : new KafkaV1Tags(spanKind);
 
         public IbmMqTags CreateIbmMqTags(string spanKind) => new(spanKind);
 
         public MsmqTags CreateMsmqTags(string spanKind)
-            => _version switch
-            {
-                SchemaVersion.V0 when !_peerServiceTagsEnabled => new MsmqTags(spanKind),
-                _ => new MsmqV1Tags(spanKind),
-            };
+            => _useV0Tags ? new MsmqTags(spanKind) : new MsmqV1Tags(spanKind);
 
         public AwsS3Tags CreateAwsS3Tags(string spanKind) => new AwsS3Tags(spanKind);
 
@@ -145,30 +134,18 @@ namespace Datadog.Trace.Configuration.Schema
         public AwsStepFunctionsTags CreateAwsStepFunctionsTags(string spanKind) => new AwsStepFunctionsTags(spanKind);
 
         public RabbitMQTags CreateRabbitMqTags(string spanKind)
-            => _version switch
-            {
-                SchemaVersion.V0 when !_peerServiceTagsEnabled => new RabbitMQTags(spanKind),
-                _ => new RabbitMQV1Tags(spanKind),
-            };
+            => _useV0Tags ? new RabbitMQTags(spanKind) : new RabbitMQV1Tags(spanKind);
 
         public AzureServiceBusTags CreateAzureServiceBusTags(string spanKind)
         {
-            var tags = _version switch
-            {
-                SchemaVersion.V0 when !_peerServiceTagsEnabled => new AzureServiceBusTags(),
-                _ => new AzureServiceBusV1Tags(),
-            };
+            var tags = _useV0Tags ? new AzureServiceBusTags() : new AzureServiceBusV1Tags();
             tags.SpanKind = spanKind;
             return tags;
         }
 
         public AzureEventHubsTags CreateAzureEventHubsTags(string spanKind)
         {
-            var tags = _version switch
-            {
-                SchemaVersion.V0 when !_peerServiceTagsEnabled => new AzureEventHubsTags(spanKind),
-                _ => new AzureEventHubsV1Tags(spanKind),
-            };
+            var tags = _useV0Tags ? new AzureEventHubsTags(spanKind) : new AzureEventHubsV1Tags(spanKind);
             return tags;
         }
 
