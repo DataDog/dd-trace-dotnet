@@ -186,10 +186,6 @@ void CorProfilerCallback::InitializeServices()
     // Create service instances
     _pThreadsCpuManager = RegisterService<ThreadsCpuManager>();
 
-    _metricsRegistry.GetOrRegister<ProxyMetric>("dotnet_memory_footprint_threads_cpu_manager", [this]() {
-        return static_cast<double>(_pThreadsCpuManager->GetMemorySize());
-    });
-
     _pManagedThreadList = RegisterService<ManagedThreadList>(_pCorProfilerInfo);
     _managedThreadsMetric = _metricsRegistry.GetOrRegister<ProxyMetric>("dotnet_managed_threads", [this]() {
         return _pManagedThreadList->Count();
@@ -211,31 +207,36 @@ void CorProfilerCallback::InitializeServices()
     _pNativeThreadList = RegisterService<NativeThreadList>();
     _pRuntimeIdStore = RegisterService<RuntimeIdStore>();
 
-        // Register memory footprint metrics for ApplicationStore and RuntimeIdStore
-    _metricsRegistry.GetOrRegister<ProxyMetric>("dotnet_memory_footprint_application_store", [this]() {
-        return static_cast<double>(_pApplicationStore->GetMemorySize());
-    });
+    if (_pConfiguration->IsMemoryFootprintEnabled())
+    {
+        _metricsRegistry.GetOrRegister<ProxyMetric>("dotnet_memory_footprint_threads_cpu_manager", [this]() {
+            return static_cast<double>(_pThreadsCpuManager->GetMemorySize());
+        });
 
-    _metricsRegistry.GetOrRegister<ProxyMetric>("dotnet_memory_footprint_runtime_id_store", [this]() {
-        return static_cast<double>(_pRuntimeIdStore->GetMemorySize());
-    });
+        _metricsRegistry.GetOrRegister<ProxyMetric>("dotnet_memory_footprint_application_store", [this]() {
+            return static_cast<double>(_pApplicationStore->GetMemorySize());
+        });
 
-    // Register memory footprint metrics
-    _metricsRegistry.GetOrRegister<ProxyMetric>("dotnet_memory_footprint_managed_threads", [this]() {
-        return static_cast<double>(_pManagedThreadList->GetMemorySize());
-    });
+        _metricsRegistry.GetOrRegister<ProxyMetric>("dotnet_memory_footprint_runtime_id_store", [this]() {
+            return static_cast<double>(_pRuntimeIdStore->GetMemorySize());
+        });
 
-    _metricsRegistry.GetOrRegister<ProxyMetric>("dotnet_memory_footprint_frame_store", [this]() {
-        return static_cast<double>(_pFrameStore->GetMemorySize());
-    });
+        _metricsRegistry.GetOrRegister<ProxyMetric>("dotnet_memory_footprint_managed_threads", [this]() {
+            return static_cast<double>(_pManagedThreadList->GetMemorySize());
+        });
 
-    _metricsRegistry.GetOrRegister<ProxyMetric>("dotnet_memory_footprint_debug_info", [this]() {
-        return static_cast<double>(_pDebugInfoStore->GetMemorySize());
-    });
+        _metricsRegistry.GetOrRegister<ProxyMetric>("dotnet_memory_footprint_frame_store", [this]() {
+            return static_cast<double>(_pFrameStore->GetMemorySize());
+        });
 
-    _metricsRegistry.GetOrRegister<ProxyMetric>("dotnet_memory_footprint_app_domain_store", [this]() {
-        return static_cast<double>(_pAppDomainStore->GetMemorySize());
-    });
+        _metricsRegistry.GetOrRegister<ProxyMetric>("dotnet_memory_footprint_debug_info", [this]() {
+            return static_cast<double>(_pDebugInfoStore->GetMemorySize());
+        });
+
+        _metricsRegistry.GetOrRegister<ProxyMetric>("dotnet_memory_footprint_app_domain_store", [this]() {
+            return static_cast<double>(_pAppDomainStore->GetMemorySize());
+        });
+    }
 
     auto valueTypeProvider = SampleValueTypeProvider();
 
@@ -305,9 +306,12 @@ void CorProfilerCallback::InitializeServices()
             CallstackProvider(_memoryResourceManager.GetDefault()),
             MemoryResourceManager::GetDefault());
 
-        _metricsRegistry.GetOrRegister<ProxyMetric>("dotnet_memory_footprint_exceptions_provider", [this]() {
-            return static_cast<double>(_pExceptionsProvider->GetMemorySize());
-        });
+        if (_pConfiguration->IsMemoryFootprintEnabled())
+        {
+            _metricsRegistry.GetOrRegister<ProxyMetric>("dotnet_memory_footprint_exceptions_provider", [this]() {
+                return static_cast<double>(_pExceptionsProvider->GetMemorySize());
+            });
+        }
     }
 
     // _pCorProfilerInfoEvents must have been set for any .NET 5+ CLR events-based profiler to work
@@ -395,9 +399,12 @@ void CorProfilerCallback::InitializeServices()
                 _pNativeThreadList
                 );
 
-            _metricsRegistry.GetOrRegister<ProxyMetric>("dotnet_memory_footprint_heap_snapshot_manager", [this]() {
-                return static_cast<double>(_pHeapSnapshotManager->GetMemorySize());
-            });
+            if (_pConfiguration->IsMemoryFootprintEnabled())
+            {
+                _metricsRegistry.GetOrRegister<ProxyMetric>("dotnet_memory_footprint_heap_snapshot_manager", [this]() {
+                    return static_cast<double>(_pHeapSnapshotManager->GetMemorySize());
+                });
+            }
         }
 
         // GC profiling is needed for both GC provider and heap snapshots
@@ -437,9 +444,12 @@ void CorProfilerCallback::InitializeServices()
                     MemoryResourceManager::GetDefault()
                 );
 
-                _metricsRegistry.GetOrRegister<ProxyMetric>("dotnet_memory_footprint_network_provider", [this]() {
-                    return static_cast<double>(_pNetworkProvider->GetMemorySize());
-                });
+                if (_pConfiguration->IsMemoryFootprintEnabled())
+                {
+                    _metricsRegistry.GetOrRegister<ProxyMetric>("dotnet_memory_footprint_network_provider", [this]() {
+                        return static_cast<double>(_pNetworkProvider->GetMemorySize());
+                    });
+                }
             }
             else
             {
@@ -1838,94 +1848,97 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Shutdown()
     // dump all threads time
     _pThreadsCpuManager->LogCpuTimes();
 
-    // Log memory breakdown for diagnostics (sorted by memory size, largest first)
-    Log::Info("=== Profiler Memory Breakdown at Shutdown ===");
-
-    // Collect all components with their memory sizes
-    struct ComponentMemory
+    if (_pConfiguration->IsMemoryFootprintEnabled())
     {
-        const char* name;
-        size_t memorySize;
-        std::function<void()> logBreakdown;
-    };
+        // Log memory breakdown for diagnostics (sorted by memory size, largest first)
+        Log::Info("=== Profiler Memory Breakdown at Shutdown ===");
 
-    std::vector<ComponentMemory> components;
+        // Collect all components with their memory sizes
+        struct ComponentMemory
+        {
+            const char* name;
+            size_t memorySize;
+            std::function<void()> logBreakdown;
+        };
 
-    if (_pManagedThreadList != nullptr)
-    {
-        components.push_back({"ManagedThreadList", _pManagedThreadList->GetMemorySize(),
-            [this]() { _pManagedThreadList->LogMemoryBreakdown(); }});
-    }
+        std::vector<ComponentMemory> components;
 
-    if (_pFrameStore != nullptr)
-    {
-        components.push_back({"FrameStore", _pFrameStore->GetMemorySize(),
-            [this]() { _pFrameStore->LogMemoryBreakdown(); }});
-    }
+        if (_pManagedThreadList != nullptr)
+        {
+            components.push_back({"ManagedThreadList", _pManagedThreadList->GetMemorySize(),
+                [this]() { _pManagedThreadList->LogMemoryBreakdown(); }});
+        }
 
-    if (_pDebugInfoStore != nullptr)
-    {
-        components.push_back({"DebugInfoStore", _pDebugInfoStore->GetMemorySize(),
-            [this]() { _pDebugInfoStore->LogMemoryBreakdown(); }});
-    }
+        if (_pFrameStore != nullptr)
+        {
+            components.push_back({"FrameStore", _pFrameStore->GetMemorySize(),
+                [this]() { _pFrameStore->LogMemoryBreakdown(); }});
+        }
 
-    if (_pAppDomainStore != nullptr)
-    {
-        components.push_back({"AppDomainStore", _pAppDomainStore->GetMemorySize(),
-            [this]() { _pAppDomainStore->LogMemoryBreakdown(); }});
-    }
+        if (_pDebugInfoStore != nullptr)
+        {
+            components.push_back({"DebugInfoStore", _pDebugInfoStore->GetMemorySize(),
+                [this]() { _pDebugInfoStore->LogMemoryBreakdown(); }});
+        }
 
-    if (_pApplicationStore != nullptr)
-    {
-        components.push_back({"ApplicationStore", _pApplicationStore->GetMemorySize(),
-            [this]() { _pApplicationStore->LogMemoryBreakdown(); }});
-    }
+        if (_pAppDomainStore != nullptr)
+        {
+            components.push_back({"AppDomainStore", _pAppDomainStore->GetMemorySize(),
+                [this]() { _pAppDomainStore->LogMemoryBreakdown(); }});
+        }
 
-    if (_pRuntimeIdStore != nullptr)
-    {
-        components.push_back({"RuntimeIdStore", _pRuntimeIdStore->GetMemorySize(),
-            [this]() { _pRuntimeIdStore->LogMemoryBreakdown(); }});
-    }
+        if (_pApplicationStore != nullptr)
+        {
+            components.push_back({"ApplicationStore", _pApplicationStore->GetMemorySize(),
+                [this]() { _pApplicationStore->LogMemoryBreakdown(); }});
+        }
 
-    if (_pThreadsCpuManager != nullptr)
-    {
-        components.push_back({"ThreadsCpuManager", _pThreadsCpuManager->GetMemorySize(),
-            [this]() { _pThreadsCpuManager->LogMemoryBreakdown(); }});
-    }
+        if (_pRuntimeIdStore != nullptr)
+        {
+            components.push_back({"RuntimeIdStore", _pRuntimeIdStore->GetMemorySize(),
+                [this]() { _pRuntimeIdStore->LogMemoryBreakdown(); }});
+        }
 
-    if (_pExceptionsProvider != nullptr)
-    {
-        components.push_back({"ExceptionsProvider", _pExceptionsProvider->GetMemorySize(),
-            [this]() { _pExceptionsProvider->LogMemoryBreakdown(); }});
-    }
+        if (_pThreadsCpuManager != nullptr)
+        {
+            components.push_back({"ThreadsCpuManager", _pThreadsCpuManager->GetMemorySize(),
+                [this]() { _pThreadsCpuManager->LogMemoryBreakdown(); }});
+        }
 
-    if (_pHeapSnapshotManager != nullptr)
-    {
-        components.push_back({"HeapSnapshotManager", _pHeapSnapshotManager->GetMemorySize(),
-            [this]() { _pHeapSnapshotManager->LogMemoryBreakdown(); }});
-    }
+        if (_pExceptionsProvider != nullptr)
+        {
+            components.push_back({"ExceptionsProvider", _pExceptionsProvider->GetMemorySize(),
+                [this]() { _pExceptionsProvider->LogMemoryBreakdown(); }});
+        }
 
-    if (_pNetworkProvider != nullptr)
-    {
-        components.push_back({"NetworkProvider", _pNetworkProvider->GetMemorySize(),
-            [this]() { _pNetworkProvider->LogMemoryBreakdown(); }});
-    }
+        if (_pHeapSnapshotManager != nullptr)
+        {
+            components.push_back({"HeapSnapshotManager", _pHeapSnapshotManager->GetMemorySize(),
+                [this]() { _pHeapSnapshotManager->LogMemoryBreakdown(); }});
+        }
 
-    // Sort components by memory size (largest first)
-    std::sort(components.begin(), components.end(), [](const ComponentMemory& a, const ComponentMemory& b) {
-        return a.memorySize > b.memorySize;
-    });
+        if (_pNetworkProvider != nullptr)
+        {
+            components.push_back({"NetworkProvider", _pNetworkProvider->GetMemorySize(),
+                [this]() { _pNetworkProvider->LogMemoryBreakdown(); }});
+        }
 
-    // Log components in sorted order
-    size_t totalMemory = 0;
-    for (const auto& component : components)
-    {
-        component.logBreakdown();
-        totalMemory += component.memorySize;
-    }
+        // Sort components by memory size (largest first)
+        std::sort(components.begin(), components.end(), [](const ComponentMemory& a, const ComponentMemory& b) {
+            return a.memorySize > b.memorySize;
+        });
 
-    Log::Info("Total measured profiler memory: ", totalMemory, " bytes (", (totalMemory / 1024.0 / 1024.0), " MB)");
-    Log::Info("==============================================");
+        // Log components in sorted order
+        size_t totalMemory = 0;
+        for (const auto& component : components)
+        {
+            component.logBreakdown();
+            totalMemory += component.memorySize;
+        }
+
+        Log::Info("Total measured profiler memory: ", totalMemory, " bytes (", (totalMemory / 1024.0 / 1024.0), " MB)");
+        Log::Info("==============================================");
+    } // IsMemoryFootprintEnabled
 
     // DisposeInternal() already respects the _isInitialized flag.
     // If any code is added directly here, remember to respect _isInitialized as required.

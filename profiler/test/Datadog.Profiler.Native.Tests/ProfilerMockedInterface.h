@@ -100,6 +100,7 @@ public:
     MOCK_METHOD(uint32_t, GetHeapSnapshotMemoryPressureThreshold, (), (const override));
     MOCK_METHOD(uint32_t, GetHeapHandleLimit, (), (const override));
     MOCK_METHOD(bool, UseManagedCodeCache, (), (const override));
+    MOCK_METHOD(bool, IsMemoryFootprintEnabled, (), (const override));
 };
 
 class MockExporter : public IExporter
