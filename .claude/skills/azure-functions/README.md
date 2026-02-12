@@ -55,6 +55,12 @@ Invoke the skill with `/azure-functions` followed by an optional command:
 - **environment-variables.md** - Complete reference for Azure Functions environment variable configuration
 - **README.md** - This file
 
+## Skill Scripts
+
+Utility scripts included with this skill:
+
+- **Find-NuGetConfig.ps1** - Search for `nuget.config` file by walking up directory hierarchy. Used to verify sample apps have access to local NuGet feed before deployment.
+
 ## Related Scripts (tracer/tools/)
 
 Standalone PowerShell scripts for Azure Functions workflows:
