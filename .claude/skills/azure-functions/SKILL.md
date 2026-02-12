@@ -83,24 +83,30 @@ Build the `Datadog.AzureFunctions` NuGet package with your changes:
 ```
 
 **What this does**:
-1. Generates a unique prerelease version from a timestamp (e.g. `3.38.0-dev.20260209.143022`)
-2. Cleans previous builds
-3. Builds `Datadog.Trace` (net6.0 and net461)
-4. Publishes to bundle folder
-5. Packages `Datadog.AzureFunctions.nupkg` with the generated version (referencing latest nuget.org releases)
-6. Copies to the directory specified by `-CopyTo`
+1. (If `-BuildId` specified and files not already downloaded) Downloads bundle from Azure DevOps build once
+2. Generates a unique prerelease version from a timestamp (e.g. `3.38.0-dev.20260209.143022`)
+3. Cleans previous builds
+4. Builds `Datadog.Trace` (net6.0 and net461)
+5. Publishes to bundle folder
+6. Packages `Datadog.AzureFunctions.nupkg` with the generated version (referencing latest nuget.org releases)
+7. Copies to the directory specified by `-CopyTo`
 
 **Versioning**: Each build gets a unique version, so NuGet caching is never an issue.
 The sample app should use a floating version like `3.38.0-dev.*` in its package reference
 (or `Directory.Packages.props`) to always resolve the latest local dev build.
 
 **Options**:
+- `-CopyTo <output-dir>` - Copy the built package to the specified directory (typically your local NuGet feed)
 - `-Version '3.38.0-dev.custom'` - Use a specific version instead of auto-generating
-- `-BuildId 12345` - Download bundle from Azure DevOps build first
+- `-BuildId 12345` - One-time download of bundle files from Azure DevOps build (only needed once per dd-trace-dotnet release, then reused for subsequent local builds)
 
-**Alternative**: Download bundle from Azure DevOps build:
+**Examples**:
 ```powershell
-.\tracer\tools\Build-AzureFunctionsNuget.ps1 -BuildId 12345 -CopyTo <output-dir> -Verbose
+# Typical local build (after bundle files already downloaded)
+.\tracer\tools\Build-AzureFunctionsNuget.ps1 -CopyTo <output-dir>
+
+# First build after new dd-trace-dotnet release (download bundle files once)
+.\tracer\tools\Build-AzureFunctionsNuget.ps1 -BuildId 12345 -CopyTo <output-dir>
 ```
 
 ### 2. Deploy and Test Function
