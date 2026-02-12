@@ -22,13 +22,11 @@ namespace Samples.Ocelot.DistributedTracing
         private readonly ILogger<Worker> _logger;
         private readonly IServiceProvider _serviceProvider;
 
-#pragma warning disable 618 // ignore obsolete IApplicationLifetime
-        private readonly IApplicationLifetime _lifetime;
+        private readonly IHostApplicationLifetime _lifetime;
 
         private volatile bool _appListening;
 
-        public Worker(ILogger<Worker> logger, IServiceProvider serviceProvider, IApplicationLifetime lifetime)
-#pragma warning restore 618
+        public Worker(ILogger<Worker> logger, IServiceProvider serviceProvider, IHostApplicationLifetime lifetime)
         {
             _logger = logger;
             _serviceProvider = serviceProvider;
@@ -79,7 +77,7 @@ namespace Samples.Ocelot.DistributedTracing
                 _logger.LogInformation("Request sent successfully");
                 _logger.LogInformation("Response: {Body}", responseContent);
 
-                // Wait for 500ms to see if it helps with the CI testing
+                // Allow time for spans to be flushed to the agent before the process exits
                 await Task.Delay(500, stoppingToken);
             }
             catch (Exception ex)
