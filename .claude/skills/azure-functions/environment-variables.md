@@ -78,8 +78,8 @@ DD_TRACE_LOG_SINKS=file,console-experimental           # Log to both file and co
 ```
 
 **Log file locations:**
-- Worker: `/home/LogFiles/Datadog/dotnet-tracer-worker-*.log`
-- Host: `/home/LogFiles/Datadog/dotnet-tracer-host-*.log`
+- Worker: `/home/LogFiles/datadog/dotnet-tracer-worker-*.log`
+- Host: `/home/LogFiles/datadog/dotnet-tracer-host-*.log`
 
 ### Agent Debug Logging
 
@@ -186,7 +186,7 @@ After triggering a function, check worker logs for configuration values:
 
 ```bash
 # Download logs
-az functionapp logs download \
+az webapp log download \
   --name <app-name> \
   --resource-group <resource-group>
 
@@ -227,11 +227,11 @@ grep "Failed to send" worker.log
 **Check:**
 - `DD_TRACE_DEBUG=true` is set
 - `DD_TRACE_LOG_SINKS` includes `file` or `console-experimental`
-- Log files exist in `/home/LogFiles/Datadog/`
+- Log files exist in `/home/LogFiles/datadog/`
 
 **Verify:**
 ```bash
-ls -la /home/LogFiles/Datadog/
+ls -la /home/LogFiles/datadog/
 ```
 
 ## Setting Variables via Azure CLI

@@ -90,6 +90,7 @@ $deploy = .\tracer\tools\Deploy-AzureFunction.ps1 `
 .\tracer\tools\Get-AzureFunctionLogs.ps1 `
   -AppName $deploy.AppName `
   -ResourceGroup "<resource-group>" `
+  -OutputPath $env:TEMP `
   -ExecutionTimestamp $deploy.ExecutionTimestamp `
   -All
 ```

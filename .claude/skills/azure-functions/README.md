@@ -7,12 +7,13 @@ A Claude Code skill for working with Azure Functions instrumented with Datadog.A
 Invoke the skill with `/azure-functions` followed by an optional command:
 
 ```
-/azure-functions                    # Interactive mode - guided workflow
-/azure-functions build              # Build Datadog.AzureFunctions NuGet package
-/azure-functions deploy [app-name]  # Deploy to Azure Function App
-/azure-functions test [app-name]    # Trigger and verify function
-/azure-functions logs [app-name]    # Download and analyze logs
-/azure-functions trace [trace-id]   # Analyze specific trace in Datadog
+/azure-functions                          # Interactive mode - guided workflow
+/azure-functions build-nuget              # Build Datadog.AzureFunctions NuGet package
+/azure-functions deploy [app-name]        # Deploy to Azure Function App
+/azure-functions test [app-name]          # Trigger and verify function
+/azure-functions logs [app-name]          # Download and analyze logs
+/azure-functions trace [trace-id]         # Analyze specific trace in Datadog
+/azure-functions configure [app-name]     # Configure environment variables
 ```
 
 ## Features
@@ -65,11 +66,9 @@ Utility scripts included with this skill:
 
 Standalone PowerShell scripts for Azure Functions workflows:
 
+- **Build-AzureFunctionsNuget.ps1** - Build Datadog.AzureFunctions NuGet package
 - **Deploy-AzureFunction.ps1** - Automate deployment, wait, trigger, and timestamp capture
 - **Get-AzureFunctionLogs.ps1** - Download, extract, and analyze logs with tracer version, span count, and parenting checks
-- **Build-AzureFunctionsNuget.ps1** - Build Datadog.AzureFunctions NuGet package
-- **Download-TracePayload.ps1** - Download trace payloads from Azure DevOps builds
-- **Prepare-ServerlessTestingEnvironment.ps1** - Set up local testing environment
 
 See [scripts-reference.md](scripts-reference.md) for detailed usage examples and pipeline patterns.
 
@@ -153,7 +152,7 @@ pwsh -Version
 
 ### Build and deploy to primary app
 ```
-/azure-functions build
+/azure-functions build-nuget
 /azure-functions deploy
 ```
 
