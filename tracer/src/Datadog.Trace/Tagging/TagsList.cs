@@ -21,6 +21,49 @@ namespace Datadog.Trace.Tagging
         private List<KeyValuePair<string, double>>? _metrics;
         private List<KeyValuePair<string, byte[]>>? _metaStruct;
 
+        /// <summary>
+        /// Begin a batch add operation for tags.
+        /// This is intended for internal hot paths that add multiple tags at once.
+        /// The returned <see cref="TagBatch"/> holds the underlying tag list lock and MUST be disposed (use <c>using</c>).
+        /// Callers should keep the critical section small: do not perform any slow/allocating work while holding the batch.
+        /// The batch is append-only: it does not perform key lookups and will not replace existing keys.
+        /// Callers are responsible for ensuring keys are not already present (or guarding under the same lock).
+        /// </summary>
+        internal TagBatch BeginTagBatch(int additionalTagCount)
+        {
+            if (additionalTagCount < 0)
+            {
+                additionalTagCount = 0;
+            }
+
+            var tags = Volatile.Read(ref _tags);
+
+            if (tags == null)
+            {
+                // Use a capacity that matches what the caller expects to add to avoid internal growth allocations when adding multiple tags.
+                var newTags = new List<KeyValuePair<string, string>>(additionalTagCount);
+                tags = Interlocked.CompareExchange(ref _tags, newTags, null) ?? newTags;
+            }
+
+            Monitor.Enter(tags);
+
+            try
+            {
+                var requiredCapacity = tags.Count + additionalTagCount;
+                if (tags.Capacity < requiredCapacity)
+                {
+                    tags.Capacity = requiredCapacity;
+                }
+
+                return new TagBatch(tags);
+            }
+            catch
+            {
+                Monitor.Exit(tags);
+                throw;
+            }
+        }
+
         public virtual string? GetTag(string key)
         {
             var tags = Volatile.Read(ref _tags);
@@ -298,6 +341,51 @@ namespace Datadog.Trace.Tagging
 
         protected virtual void WriteAdditionalMetrics(StringBuilder builder)
         {
+        }
+
+        /// <summary>
+        /// A lock-holding batch helper for appending tags.
+        /// Note: this is a <see langword="struct"/> that contains a reference. Do not copy it, and dispose exactly once.
+        /// </summary>
+        internal readonly struct TagBatch : IDisposable
+        {
+            private readonly List<KeyValuePair<string, string>> _tags;
+
+            internal TagBatch(List<KeyValuePair<string, string>> tags)
+            {
+                _tags = tags;
+            }
+
+            /// <summary>
+            /// Checks if the tag list already contains the specified key.
+            /// This is intended for internal race-avoidance while the batch lock is held.
+            /// </summary>
+            public bool ContainsKey(string key)
+            {
+                for (var i = 0; i < _tags.Count; i++)
+                {
+                    if (_tags[i].Key == key)
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+
+            /// <summary>
+            /// Adds a tag without performing a key lookup.
+            /// Callers must ensure the key is not already present (or handle duplicates explicitly).
+            /// </summary>
+            public void Add(string key, string value)
+            {
+                _tags.Add(new KeyValuePair<string, string>(key, value));
+            }
+
+            public void Dispose()
+            {
+                Monitor.Exit(_tags);
+            }
         }
     }
 }
