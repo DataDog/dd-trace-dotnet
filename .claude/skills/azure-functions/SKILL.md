@@ -154,9 +154,12 @@ Use the `Get-AzureFunctionLogs.ps1` script to download, extract, and analyze log
 .\tracer\tools\Get-AzureFunctionLogs.ps1 `
   -AppName "<app-name>" `
   -ResourceGroup "<resource-group>" `
+  -OutputPath $env:TEMP `
   -ExecutionTimestamp "2026-01-23 17:53:00" `
   -All
 ```
+
+**IMPORTANT**: Always specify `-OutputPath $env:TEMP` to save logs to the system temp folder instead of cluttering the repository directory.
 
 **What this does**:
 1. Downloads logs from Azure to a timestamped zip file
@@ -180,6 +183,7 @@ $deploy = .\tracer\tools\Deploy-AzureFunction.ps1 `
 .\tracer\tools\Get-AzureFunctionLogs.ps1 `
   -AppName $deploy.AppName `
   -ResourceGroup "<resource-group>" `
+  -OutputPath $env:TEMP `
   -ExecutionTimestamp $deploy.ExecutionTimestamp `
   -All
 ```
