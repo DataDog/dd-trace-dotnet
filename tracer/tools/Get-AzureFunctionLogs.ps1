@@ -232,13 +232,16 @@ if ($ShowSpans) {
         Write-Verbose "Filtering spans to timestamp: $timeFilter"
     }
 
-    # Count spans in host logs
+    # Count spans in host logs (excluding noisy infrastructure spans)
     foreach ($logFile in $hostLogs) {
         $lines = Get-Content $logFile.FullName
         if ($timeFilter) {
             $lines = $lines | Where-Object { $_ -match [regex]::Escape($timeFilter) }
         }
-        $spanLines = @($lines | Select-String "span_id:")
+        $spanLines = @($lines | Select-String "span_id:" |
+            Where-Object { $_ -notmatch "Operation: command_execution" } |
+            Where-Object { $_ -notmatch "Resource: GET /admin/" } |
+            Where-Object { $_ -notmatch "Resource: GET /robots.*\.txt" })
         $hostSpanCount += $spanLines.Count
     }
 
@@ -278,7 +281,7 @@ if ($CheckParenting) {
         Write-Verbose "Filtering parenting analysis to timestamp: $timeFilter"
     }
 
-    # Analyze host logs
+    # Analyze host logs (excluding noisy infrastructure spans)
     foreach ($logFile in $hostLogs) {
         $lines = Get-Content $logFile.FullName
         if ($timeFilter) {
@@ -286,6 +289,11 @@ if ($CheckParenting) {
         }
 
         foreach ($line in $lines) {
+            # Skip noisy infrastructure spans in host process
+            if ($line -match "Operation: command_execution") { continue }
+            if ($line -match "Resource: GET /admin/") { continue }
+            if ($line -match "Resource: GET /robots.*\.txt") { continue }
+
             # Look for spans with p_id: null (root spans)
             if ($line -match "p_id:\s*null") {
                 $hostRootSpans++
