@@ -1,9 +1,9 @@
 ---
 name: azure-functions
 description: Build, deploy, and test Azure Functions instrumented with Datadog.AzureFunctions NuGet package. Use when working on Azure Functions integration, deploying to test environments, analyzing traces, or troubleshooting instrumentation issues.
-argument-hint: [build|deploy|test|logs|trace]
+argument-hint: [build|deploy|test|logs|trace|configure]
 disable-model-invocation: true
-allowed-tools: Bash(az:functionapp:show:*) Bash(az:functionapp:list:*) Bash(az:functionapp:list-functions:*) Bash(az:functionapp:function:list:*) Bash(az:functionapp:function:show:*) Bash(az:functionapp:config:appsettings:list:*) Bash(az:functionapp:config:show:*) Bash(az:functionapp:deployment:list:*) Bash(az:functionapp:deployment:show:*) Bash(az:functionapp:deployment:source:show:*) Bash(az:functionapp:plan:list:*) Bash(az:functionapp:plan:show:*) Bash(az:functionapp:log:download:*) Bash(az:webapp:log:tail:*) Bash(az:group:list:*) Bash(az:group:show:*) Bash(curl:*) Bash(func:azure:functionapp:logstream:*) Bash(func:azure:functionapp:list-functions:*) Bash(func:azure:functionapp:fetch-app-settings:*) Bash(func:azure:functionapp:fetch:*) Bash(dotnet:restore) Bash(dotnet:clean) Bash(dotnet:build:*) Bash(unzip:*) Bash(date:*) Bash(grep:*) Bash(find:*) Bash(ls:*) Bash(cat:*) Bash(head:*) Bash(tail:*) Bash(wc:*) Bash(sort:*) Bash(jq:*) Read
+allowed-tools: Bash(az:functionapp:show:*) Bash(az:functionapp:list:*) Bash(az:functionapp:list-functions:*) Bash(az:functionapp:function:list:*) Bash(az:functionapp:function:show:*) Bash(az:functionapp:config:appsettings:list:*) Bash(az:functionapp:config:appsettings:set:*) Bash(az:functionapp:config:show:*) Bash(az:functionapp:deployment:list:*) Bash(az:functionapp:deployment:show:*) Bash(az:functionapp:deployment:source:show:*) Bash(az:functionapp:plan:list:*) Bash(az:functionapp:plan:show:*) Bash(az:functionapp:log:download:*) Bash(az:webapp:log:tail:*) Bash(az:group:list:*) Bash(az:group:show:*) Bash(curl:*) Bash(func:azure:functionapp:logstream:*) Bash(func:azure:functionapp:list-functions:*) Bash(func:azure:functionapp:fetch-app-settings:*) Bash(func:azure:functionapp:fetch:*) Bash(dotnet:restore) Bash(dotnet:clean) Bash(dotnet:build:*) Bash(unzip:*) Bash(date:*) Bash(grep:*) Bash(find:*) Bash(ls:*) Bash(cat:*) Bash(head:*) Bash(tail:*) Bash(wc:*) Bash(sort:*) Bash(jq:*) Bash(uname:*) Read
 ---
 
 # Azure Functions Development Workflow
@@ -36,6 +36,7 @@ When invoked with an argument, perform the corresponding workflow:
 - `/azure-functions test [app-name]` - Trigger and verify function execution
 - `/azure-functions logs [app-name]` - Download and analyze logs
 - `/azure-functions trace [trace-id]` - Analyze specific trace in Datadog
+- `/azure-functions configure [app-name]` - Configure environment variables for Datadog instrumentation
 
 If no argument is provided, guide the user through the full workflow interactively.
 
@@ -146,7 +147,64 @@ $deploy = .\tracer\tools\Deploy-AzureFunction.ps1 `
   -SampleAppPath "<path-to-sample-app>"
 ```
 
-### 3. Download and Analyze Logs
+### 3. Configure Environment Variables
+
+Configure Datadog instrumentation environment variables for an Azure Function App:
+
+**Interactive mode** (recommended):
+```bash
+/azure-functions configure <app-name>
+```
+
+This will:
+1. Detect the OS/platform (Linux or Windows)
+2. Show current environment variable configuration
+3. Ask which variables to configure:
+   - **Required only** - Minimum variables needed for instrumentation
+   - **Required + Recommended** - Add feature disables and sampling rules
+   - **Required + Recommended + Debug** - Add debug logging (for troubleshooting)
+   - **Custom** - User selects specific variables
+4. Prompt for required values (DD_API_KEY, DD_ENV, etc.)
+5. Set the variables using Azure CLI
+
+**Required variables** (must be set):
+```bash
+CORECLR_ENABLE_PROFILING=1
+CORECLR_PROFILER={846F5F1C-F9AE-4B07-969E-05C26BC060D8}
+DD_API_KEY=<your-api-key>
+DOTNET_STARTUP_HOOKS=<path-to-compat-dll>
+```
+
+**Platform-specific paths**:
+- **Linux**:
+  - `CORECLR_PROFILER_PATH=/home/site/wwwroot/datadog/linux-x64/Datadog.Trace.ClrProfiler.Native.so`
+- **Windows** (requires both 32-bit and 64-bit paths):
+  - `CORECLR_PROFILER_PATH_32=C:\home\site\wwwroot\datadog\win-x86\Datadog.Trace.ClrProfiler.Native.dll`
+  - `CORECLR_PROFILER_PATH_64=C:\home\site\wwwroot\datadog\win-x64\Datadog.Trace.ClrProfiler.Native.dll`
+
+**Manual configuration**:
+```bash
+# Set multiple variables at once
+az functionapp config appsettings set \
+  --name <app-name> \
+  --resource-group <resource-group> \
+  --settings \
+    "CORECLR_ENABLE_PROFILING=1" \
+    "CORECLR_PROFILER={846F5F1C-F9AE-4B07-969E-05C26BC060D8}" \
+    "CORECLR_PROFILER_PATH=/home/site/wwwroot/datadog/linux-x64/Datadog.Trace.ClrProfiler.Native.so" \
+    "DD_DOTNET_TRACER_HOME=/home/site/wwwroot/datadog" \
+    "DD_API_KEY=<your-api-key>" \
+    "DOTNET_STARTUP_HOOKS=/home/site/wwwroot/Datadog.Serverless.Compat.dll"
+```
+
+**Complete reference**: See [environment-variables.md](environment-variables.md) for all available variables, including:
+- Recommended feature disables (AppSec, CI Visibility, RCM, Agent Feature Polling)
+- Debug logging configuration
+- Direct log submission
+- Performance tuning
+- Integration-specific settings
+
+### 4. Download and Analyze Logs
 
 Use the `Get-AzureFunctionLogs.ps1` script to download, extract, and analyze logs:
 
@@ -213,6 +271,8 @@ After deployment and testing:
 
 ## Common Troubleshooting
 
+**General guidance**: For environment variable configuration issues, see [environment-variables.md](environment-variables.md) for complete reference on required, recommended, and debugging variables.
+
 ### Function Not Responding
 ```bash
 # Check deployment status
@@ -242,6 +302,8 @@ az functionapp config appsettings list \
 # Check worker initialization in logs
 grep "Datadog Tracer initialized" LogFiles/datadog/dotnet-tracer-managed-dotnet-*.log
 ```
+
+**Environment variables**: Verify all required environment variables are configured correctly. See [environment-variables.md](environment-variables.md) for complete reference.
 
 ### Separate Traces (Parenting Issue)
 1. Get trace ID from host logs at execution timestamp
@@ -273,28 +335,83 @@ curl -X POST https://api.datadoghq.com/api/v2/spans/events/search \
   }'
 ```
 
+## Configure Command Implementation
+
+When invoked with `/azure-functions configure [app-name]`:
+
+1. **Prompt for app name and resource group** (if not provided)
+2. **Detect shell environment** (to handle Git Bash path conversion):
+   - Check if running in Git Bash on Windows: `uname -s` contains "MINGW" or "MSYS"
+   - If Git Bash: Prefix Azure CLI commands with `MSYS_NO_PATHCONV=1`
+   - Otherwise: Use commands without prefix
+3. **Detect platform**:
+   ```bash
+   az functionapp show --name <app-name> --resource-group <resource-group> --query "kind" -o tsv
+   ```
+   - Look for "linux" or "windows" in the kind string
+4. **Show current configuration**:
+   ```bash
+   az functionapp config appsettings list --name <app-name> --resource-group <resource-group>
+   ```
+   - Filter for DD_* and CORECLR_* variables
+5. **Ask configuration level**:
+   - **Required only**: CORECLR_*, DD_DOTNET_TRACER_HOME, DD_API_KEY, DOTNET_STARTUP_HOOKS
+   - **Required + Recommended**: Add DD_APPSEC_ENABLED=false, DD_CIVISIBILITY_ENABLED=false, DD_REMOTE_CONFIGURATION_ENABLED=false, DD_AGENT_FEATURE_POLLING_ENABLED=false, DD_ENV, DD_TRACE_SAMPLING_RULES
+   - **Required + Recommended + Debug**: Add DD_TRACE_DEBUG=true, DD_TRACE_LOG_SINKS=file,console-experimental, DD_LOG_LEVEL=debug, DD_LOGS_DIRECT_SUBMISSION_*
+   - **Custom**: User selects specific variables
+6. **Prompt for values**:
+   - DD_API_KEY (required, never show existing value)
+   - DD_ENV (optional, show current value if exists)
+   - DD_TRACE_SAMPLING_RULES (optional, suggest default)
+7. **Set platform-specific paths** based on detected OS:
+   - **Linux**: Single `CORECLR_PROFILER_PATH=/home/site/wwwroot/datadog/linux-x64/Datadog.Trace.ClrProfiler.Native.so`
+   - **Windows**: Separate 32/64-bit paths:
+     - `CORECLR_PROFILER_PATH_32=C:\home\site\wwwroot\datadog\win-x86\Datadog.Trace.ClrProfiler.Native.dll`
+     - `CORECLR_PROFILER_PATH_64=C:\home\site\wwwroot\datadog\win-x64\Datadog.Trace.ClrProfiler.Native.dll`
+8. **Apply settings**:
+   - **CRITICAL**: When using Git Bash on Windows, prefix the command with `MSYS_NO_PATHCONV=1` to prevent automatic path conversion (Linux paths like `/home/site/...` would otherwise be converted to `C:/Program Files/Git/home/site/...`)
+   - **PowerShell/CMD**: No prefix needed, use command as-is
+   ```bash
+   # Git Bash (Windows)
+   MSYS_NO_PATHCONV=1 az functionapp config appsettings set \
+     --name <app-name> \
+     --resource-group <resource-group> \
+     --settings "KEY1=value1" "KEY2=value2" ...
+
+   # PowerShell/CMD/Linux/macOS
+   az functionapp config appsettings set \
+     --name <app-name> \
+     --resource-group <resource-group> \
+     --settings "KEY1=value1" "KEY2=value2" ...
+   ```
+9. **Confirm success** and remind to restart if needed:
+   ```bash
+   az functionapp restart --name <app-name> --resource-group <resource-group>
+   ```
+
 ## Interactive Mode
 
 If invoked without arguments (`/azure-functions`), guide the user through:
 
-1. **Understand the goal**: What are they testing? (New feature, bug fix, trace verification)
-2. **Modify .csproj**: Temporarily change `Datadog.AzureFunctions.csproj` to use PackageReference instead of ProjectReference (see step 1 above)
-3. **Build**: Run Build-AzureFunctionsNuget.ps1
-4. **Select app**: Which test app to deploy to?
-5. **Verify prerequisites**: Check that the sample app has a `nuget.config` file configured with the local NuGet feed
-6. **Deploy**: Navigate to sample app and publish
-7. **Wait**: Remind to wait 1-2 minutes for worker restart
-8. **Test**: Trigger function and capture timestamp
-9. **Download logs**: Pull logs from Azure
-10. **Analyze**: Guide through log analysis based on their goal
-11. **Verify**: Run through verification checklist
-12. **Revert .csproj**: Remind to revert the temporary change to `Datadog.AzureFunctions.csproj` (DO NOT commit)
+1. **Understand the goal**: What are they testing? (New feature, bug fix, trace verification, initial setup)
+2. **Check configuration**: Ask if environment variables are configured (offer to run `/azure-functions configure`)
+3. **Modify .csproj**: Temporarily change `Datadog.AzureFunctions.csproj` to use PackageReference instead of ProjectReference (see step 1 above)
+4. **Build**: Run Build-AzureFunctionsNuget.ps1
+5. **Select app**: Which test app to deploy to?
+6. **Verify prerequisites**: Check that the sample app has a `nuget.config` file configured with the local NuGet feed
+7. **Deploy**: Navigate to sample app and publish
+8. **Wait**: Remind to wait 1-2 minutes for worker restart
+9. **Test**: Trigger function and capture timestamp
+10. **Download logs**: Pull logs from Azure
+11. **Analyze**: Guide through log analysis based on their goal
+12. **Verify**: Run through verification checklist
+13. **Revert .csproj**: Remind to revert the temporary change to `Datadog.AzureFunctions.csproj` (DO NOT commit)
 
 ## Additional Resources
 
-For detailed log analysis patterns and grep examples, see [log-analysis-guide.md](log-analysis-guide.md).
-
-For reusable bash/PowerShell scripts and one-liners, see [scripts-reference.md](scripts-reference.md).
+- **Log analysis**: [log-analysis-guide.md](log-analysis-guide.md) - Detailed log analysis patterns and grep examples
+- **Scripts**: [scripts-reference.md](scripts-reference.md) - Reusable bash/PowerShell scripts and one-liners
+- **Environment variables**: [environment-variables.md](environment-variables.md) - Complete reference for Azure Functions configuration
 
 ## References
 
