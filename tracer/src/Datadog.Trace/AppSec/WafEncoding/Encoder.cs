@@ -515,7 +515,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
             for (var i = 0; i < maxChildrenCount; i++)
             {
                 var originalElement = dic.ElementAt(i);
-                var element = VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<KeyValuePair<TKey, TValue>, KeyValuePair<TKey, TValue>>(ref originalElement);
+                var element = Unsafe.As<KeyValuePair<TKey, TValue>, KeyValuePair<TKey, TValue>>(ref originalElement);
                 var elementKey = getKey(element);
                 if (string.IsNullOrEmpty(elementKey))
                 {

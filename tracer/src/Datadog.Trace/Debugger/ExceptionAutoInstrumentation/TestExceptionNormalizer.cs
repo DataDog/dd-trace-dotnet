@@ -4,12 +4,10 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 #nullable enable
+
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 {
     /// <summary>
@@ -31,7 +29,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             return hash;
         }
 
-        protected override int HashLine(VendoredMicrosoftCode.System.ReadOnlySpan<char> line, int fnvHashCode)
+        protected override int HashLine(ReadOnlySpan<char> line, int fnvHashCode)
         {
             _debug?.AppendLine(line.ToString());
             return base.HashLine(line, fnvHashCode);
