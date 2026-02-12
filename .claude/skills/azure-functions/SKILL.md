@@ -366,7 +366,7 @@ When invoked with `/azure-functions configure [app-name]`:
    - Filter for DD_* and CORECLR_* variables
 5. **Ask configuration level**:
    - **Required only**: CORECLR_*, DD_DOTNET_TRACER_HOME, DD_API_KEY, DOTNET_STARTUP_HOOKS
-   - **Required + Recommended**: Add DD_APPSEC_ENABLED=false, DD_CIVISIBILITY_ENABLED=false, DD_REMOTE_CONFIGURATION_ENABLED=false, DD_AGENT_FEATURE_POLLING_ENABLED=false, DD_ENV, DD_TRACE_SAMPLING_RULES
+   - **Required + Recommended**: Add DD_APPSEC_ENABLED=false, DD_CIVISIBILITY_ENABLED=false, DD_REMOTE_CONFIGURATION_ENABLED=false, DD_AGENT_FEATURE_POLLING_ENABLED=false, DD_TRACE_Process_ENABLED=false, DD_ENV, DD_TRACE_SAMPLING_RULES
    - **Required + Recommended + Debug**: Add DD_TRACE_DEBUG=true, DD_TRACE_LOG_SINKS=file,console-experimental, DD_LOG_LEVEL=debug, DD_LOGS_DIRECT_SUBMISSION_*
    - **Custom**: User selects specific variables
 6. **Prompt for values**:
