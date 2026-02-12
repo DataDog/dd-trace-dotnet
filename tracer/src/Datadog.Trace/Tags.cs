@@ -814,6 +814,12 @@ namespace Datadog.Trace
         // inferred proxy tags
         internal const string ProxyStage = "stage";
 
+        // code origin
+        internal const string CodeOriginType = "_dd.code_origin.type";
+        internal const string CodeOriginFrameIndex = "_dd.code_origin.frames.0.index";
+        internal const string CodeOriginFrameMethod = "_dd.code_origin.frames.0.method";
+        internal const string CodeOriginFrameType = "_dd.code_origin.frames.0.type";
+
         internal static class User
         {
             internal const string Email = "usr.email";
