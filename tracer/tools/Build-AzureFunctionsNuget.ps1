@@ -8,7 +8,7 @@
     package from a specific build, then replaces the managed tracer files with a locally
     built version before packaging Datadog.AzureFunctions.
 
-    Each build produces a unique prerelease version (e.g. 3.38.0-dev.20260209.143022) based
+    Each build produces a unique prerelease version (e.g. 3.38.0-dev20260209143022) based
     on a timestamp, so NuGet caching is never an issue. Use a floating version like
     3.38.0-dev.* in your sample app to always resolve the latest local build.
 
@@ -22,7 +22,7 @@
 .PARAMETER Version
     Optional explicit package version. If not provided, a unique prerelease version is
     generated from the base version in Directory.Build.props with a timestamp suffix
-    (e.g. 3.38.0-dev.20260209.143022).
+    (e.g. 3.38.0-dev20260209143022).
 
 .EXAMPLE
     .\Build-AzureFunctionsNuget.ps1
@@ -37,7 +37,7 @@
     Build and copy package to specified path
 
 .EXAMPLE
-    .\Build-AzureFunctionsNuget.ps1 -Version '3.38.0-dev.custom'
+    .\Build-AzureFunctionsNuget.ps1 -Version '3.38.0-devcustom'
     Build with a specific version
 #>
 
@@ -108,8 +108,8 @@ if (-not $Version)
         throw "Could not read Version from $propsPath"
     }
 
-    $timestamp = (Get-Date).ToUniversalTime().ToString('yyyyMMdd.HHmmss')
-    $Version = "$baseVersion-dev.$timestamp"
+    $timestamp = (Get-Date).ToUniversalTime().ToString('yyyyMMddHHmmss')
+    $Version = "$baseVersion-dev$timestamp"
 }
 
 Write-Host "Package version: $Version"
