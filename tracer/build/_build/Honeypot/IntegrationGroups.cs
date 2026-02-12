@@ -109,6 +109,7 @@ namespace Honeypot
             NugetPackages.Add("Azure.Messaging.EventHubs", new string[] { "Azure.Messaging.EventHubs" });
             NugetPackages.Add("amqmdnetstd", new [] { "IBMMQDotnetClient" });
             NugetPackages.Add("Yarp.ReverseProxy", new [] { "Yarp.ReverseProxy" });
+            NugetPackages.Add("Ocelot", new [] { "Ocelot" });
             NugetPackages.Add("Microsoft.AspNetCore.Html.Abstractions", new [] { "Microsoft.AspNetCore.Html.Abstractions" });
             NugetPackages.Add("dotnet", Array.Empty<string>());
             NugetPackages.Add("vstest.console", Array.Empty<string>());
