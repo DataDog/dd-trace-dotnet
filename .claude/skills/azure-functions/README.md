@@ -1,6 +1,6 @@
 # Azure Functions Skill
 
-A Claude Code skill for working with Azure Functions instrumented with Datadog.AzureFunctions.
+A Claude Code skill for tracer engineers to build, deploy, and test dev versions of the `Datadog.AzureFunctions` NuGet package against Azure Function Apps.
 
 ## Usage
 
@@ -20,7 +20,7 @@ Invoke the skill with `/azure-functions` followed by an optional command:
 
 ### Build
 - Builds `Datadog.AzureFunctions` NuGet package with your changes
-- Clears NuGet cache
+- Generates unique prerelease version (avoids NuGet cache issues)
 - Publishes to bundle folder
 - Copies to user-specified output directory
 
@@ -69,6 +69,8 @@ Standalone PowerShell scripts for Azure Functions workflows:
 - **Build-AzureFunctionsNuget.ps1** - Build Datadog.AzureFunctions NuGet package
 - **Deploy-AzureFunction.ps1** - Automate deployment, wait, trigger, and timestamp capture
 - **Get-AzureFunctionLogs.ps1** - Download, extract, and analyze logs with tracer version, span count, and parenting checks
+- **Get-DatadogTrace.ps1** - Retrieve all spans for a trace ID from the Datadog API (table, JSON, or hierarchy output)
+- **Get-DatadogLogs.ps1** - Query logs from the Datadog Logs API (table, JSON, or raw output)
 
 See [scripts-reference.md](scripts-reference.md) for detailed usage examples and pipeline patterns.
 
@@ -104,44 +106,11 @@ The sample app must have a `nuget.config` (in the app directory or a parent dire
 
 ### Installing PowerShell
 
-PowerShell 5.1+ is required to run the Azure Functions automation scripts.
+PowerShell 5.1+ is required. Windows 10/11 includes PowerShell 5.1 (`powershell.exe`). For PowerShell 7+ (`pwsh`, recommended):
 
-**Windows users**: PowerShell 5.1 is already included with Windows 10/11. You can use the built-in `powershell.exe` or install PowerShell 7+ for the latest features.
-
-**macOS/Linux users**: PowerShell 7+ is required (cross-platform version).
-
-#### PowerShell 7+ (Recommended)
-
-**Windows**:
-```powershell
-winget install Microsoft.PowerShell
-```
-
-**macOS**:
-```bash
-brew install powershell/tap/powershell
-```
-
-**Linux (Ubuntu/Debian)**:
-```bash
-# Download the Microsoft repository GPG keys
-wget -q https://packages.microsoft.com/config/ubuntu/$(lsb_release -rs)/packages-microsoft-prod.deb
-
-# Register the Microsoft repository GPG keys
-sudo dpkg -i packages-microsoft-prod.deb
-
-# Update apt and install PowerShell
-sudo apt-get update
-sudo apt-get install -y powershell
-```
-
-**Linux (Other distributions)**: https://learn.microsoft.com/en-us/powershell/scripting/install/installing-powershell
-
-**Verify installation**:
-```bash
-pwsh -Version
-# Should output: PowerShell 7.x.x or higher
-```
+- **Windows**: `winget install Microsoft.PowerShell`
+- **macOS**: `brew install powershell/tap/powershell`
+- **Linux**: See [Microsoft docs](https://learn.microsoft.com/en-us/powershell/scripting/install/installing-powershell)
 
 ## Documentation References
 
