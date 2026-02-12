@@ -237,7 +237,18 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
                     }
                 });
 
-            return pdbInfo?.MethodSequencePoints.GetValueOrDefault<CachedSequencePoint?>(method.MetadataToken);
+            int metadataToken;
+            try
+            {
+                metadataToken = method.MetadataToken;
+            }
+            catch
+            {
+                // Some MethodInfo implementations do not support MetadataToken.
+                return null;
+            }
+
+            return pdbInfo?.MethodSequencePoints.GetValueOrDefault<CachedSequencePoint?>(metadataToken);
         }
 
         private void AddExitSpanTags(Span span)
