@@ -127,7 +127,46 @@ if ($BuildId)
 }
 else
 {
-    Write-Verbose "Skipping bundle download (no BuildId provided)"
+    # Check for required bundle files (based on Datadog.AzureFunctions.csproj)
+    $bundleHome = "$tracerDir/src/Datadog.Trace.Bundle/home"
+    $requiredFiles = @(
+        "$bundleHome/net6.0/Datadog.Trace.dll",
+        "$bundleHome/win-x64/Datadog.Trace.ClrProfiler.Native.dll",
+        "$bundleHome/win-x64/Datadog.Tracer.Native.dll",
+        "$bundleHome/win-x64/loader.conf",
+        "$bundleHome/win-x86/Datadog.Trace.ClrProfiler.Native.dll",
+        "$bundleHome/win-x86/Datadog.Tracer.Native.dll",
+        "$bundleHome/win-x86/loader.conf",
+        "$bundleHome/linux-x64/Datadog.Trace.ClrProfiler.Native.so",
+        "$bundleHome/linux-x64/Datadog.Tracer.Native.so",
+        "$bundleHome/linux-x64/loader.conf"
+    )
+
+    $missingFiles = @()
+    foreach ($file in $requiredFiles)
+    {
+        if (-not (Test-Path $file))
+        {
+            $missingFiles += $file
+        }
+    }
+
+    if ($missingFiles.Count -gt 0)
+    {
+        Write-Error @"
+Required bundle files are missing. The following files do not exist:
+$($missingFiles -join "`n")
+
+Please provide a -BuildId parameter to download the bundle from Azure DevOps, for example:
+  .\Build-AzureFunctionsNuget.ps1 -BuildId 12345 -CopyTo <output-dir>
+
+You can find recent build IDs at:
+  https://dev.azure.com/datadoghq/dd-trace-dotnet/_build?definitionId=54
+"@
+        exit 1
+    }
+
+    Write-Verbose "Bundle files exist. Skipping download (no BuildId provided)"
 }
 
 # Build Datadog.Trace and publish to bundle folder, replacing the files from the NuGet package
