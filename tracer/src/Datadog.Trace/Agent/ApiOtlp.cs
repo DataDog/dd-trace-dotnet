@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#if NET6_0_OR_GREATER
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -34,19 +36,9 @@ namespace Datadog.Trace.Agent
         private readonly Uri _statsEndpoint; // This endpoint is passed for the _sendStats callback, but otherwise unused
         private readonly SendCallback<SendStatsState> _sendStats;
         private readonly SendCallback<SendTracesState> _sendTraces;
-#if NET6_0_OR_GREATER
         private readonly Datadog.Trace.OpenTelemetry.Metrics.OtlpExporter _metricsExporter;
-#endif
 
-        public ApiOtlp(
-            IApiRequestFactory apiRequestFactory,
-            Uri tracesEndpoint,
-            TracesEncoding tracesEncoding,
-            OtlpProtocol statsProtocol,
-            Uri statsEndpoint,
-            KeyValuePair<string, string>[] statsHeaders,
-            int statsTimeoutMs,
-            IDatadogLogger log = null)
+        public ApiOtlp(IApiRequestFactory apiRequestFactory, TracerSettings settings, ExporterSettings exporterSettings, IDatadogLogger log = null)
         {
             // optionally injecting a log instance in here for testing purposes
             _log = log ?? StaticLog;
@@ -55,14 +47,12 @@ namespace Datadog.Trace.Agent
             _sendTraces = SendTracesAsyncImpl;
 
             _apiRequestFactory = apiRequestFactory;
-            _tracesEncoding = tracesEncoding;
-            _tracesEndpoint = tracesEndpoint;
-            _statsEndpoint = statsEndpoint;
+            _tracesEncoding = exporterSettings.TracesEncoding;
+            _tracesEndpoint = exporterSettings.OtlpTracesEndpoint;
+            _statsEndpoint = exporterSettings.OtlpMetricsEndpoint;
             _log.Debug("Using traces endpoint {TracesEndpoint}", _tracesEndpoint.ToString());
 
-#if NET6_0_OR_GREATER
-            _metricsExporter = new Datadog.Trace.OpenTelemetry.Metrics.OtlpExporter(Tracer.Instance.Settings, statsProtocol, statsEndpoint, statsHeaders, statsTimeoutMs);
-#endif
+            _metricsExporter = new Datadog.Trace.OpenTelemetry.Metrics.OtlpExporter(settings, exporterSettings);
         }
 
         private delegate Task<SendResult> SendCallback<T>(IApiRequest request, bool isFinalTry, T state);
@@ -349,3 +339,4 @@ namespace Datadog.Trace.Agent
         }
     }
 }
+#endif

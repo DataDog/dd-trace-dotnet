@@ -28,12 +28,13 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
         private const int Fixed64 = 1;
         private const int LengthDelimited = 2;
 
-        private readonly TracerSettings _settings;
+        private readonly OtlpTemporalityPreference _otlpMetricsTemporalityPreference;
         private byte[] _cachedResourceData;
 
-        public OtlpMetricsSerializer(TracerSettings settings)
+        public OtlpMetricsSerializer(TracerSettings settings, OtlpTemporalityPreference otlpMetricsTemporalityPreference)
         {
-            _settings = settings;
+            _otlpMetricsTemporalityPreference = otlpMetricsTemporalityPreference;
+
             UpdateCachedResourceData(settings.Manager.InitialMutableSettings);
             settings.Manager.SubscribeToChanges(changes =>
             {
@@ -346,7 +347,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
             }
             else
             {
-                temporality = _settings.OtlpMetricsTemporalityPreference switch
+                temporality = _otlpMetricsTemporalityPreference switch
                 {
                     OtlpTemporalityPreference.Delta => AggregationTemporality.Delta,
                     OtlpTemporalityPreference.LowMemory => AggregationTemporality.Delta,
@@ -394,7 +395,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
                 writer.Write(dataPointData);
             }
 
-            var temporality = _settings.OtlpMetricsTemporalityPreference switch
+            var temporality = _otlpMetricsTemporalityPreference switch
             {
                 OtlpTemporalityPreference.Delta => AggregationTemporality.Delta,
                 OtlpTemporalityPreference.LowMemory => AggregationTemporality.Delta,
