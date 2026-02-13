@@ -10,10 +10,7 @@ using System.Reflection;
 using Datadog.Trace.Debugger.Symbols.Model;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Pdb;
-using Datadog.Trace.VendoredMicrosoftCode.System;
-using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
-using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
-using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata;
+using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata; // keep vendored versions for now because we access internal members
 using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata.Ecma335;
 
 namespace Datadog.Trace.Debugger.Symbols
@@ -168,7 +165,7 @@ namespace Datadog.Trace.Debugger.Symbols
                     return false;
                 }
 
-                if (DatadogMetadataReader.IsCompilerGeneratedAttributeDefinedOnType(MetadataTokens.GetToken(typeDefinitionHandle)))
+                if (DatadogMetadataReader.IsCompilerGeneratedAttributeDefinedOnType(typeDefinitionHandle.RowId))
                 {
                     return false;
                 }
@@ -353,7 +350,7 @@ namespace Datadog.Trace.Debugger.Symbols
                         continue;
                     }
 
-                    if (DatadogMetadataReader.IsCompilerGeneratedAttributeDefinedOnType(MetadataTokens.GetToken(typeHandle)))
+                    if (DatadogMetadataReader.IsCompilerGeneratedAttributeDefinedOnType(typeHandle.RowId))
                     {
                         continue;
                     }
@@ -408,7 +405,7 @@ namespace Datadog.Trace.Debugger.Symbols
                     continue;
                 }
 
-                var fieldName = Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(MetadataReader.GetString(fieldDef.Name));
+                var fieldName = MetadataReader.GetString(fieldDef.Name).AsSpan();
                 if (fieldName.IsEmpty)
                 {
                     continue;
