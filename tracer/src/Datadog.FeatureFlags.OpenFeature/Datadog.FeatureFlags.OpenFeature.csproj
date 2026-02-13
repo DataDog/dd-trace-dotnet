@@ -11,7 +11,7 @@
     <PackageOutputPath Condition="'$(PackageOutputPath)' == '' ">bin\$(Configuration)\packages</PackageOutputPath>
     <SignAssembly>False</SignAssembly>
     <Version>2.0.1</Version>
-    <AssemblyVersion>2.0.1</AssemblyVersion>
+    <!-- These target frameworks should match the values exposed in the OpenFeature package referenced below-->
     <TargetFrameworks>net462;netstandard2.0;net6.0;net8.0</TargetFrameworks>
   </PropertyGroup>
 
