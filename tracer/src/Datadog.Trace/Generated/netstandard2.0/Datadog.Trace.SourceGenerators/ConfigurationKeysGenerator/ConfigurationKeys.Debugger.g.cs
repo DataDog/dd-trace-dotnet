@@ -151,7 +151,7 @@ internal static partial class ConfigurationKeys
         public const string SymDbThirdPartyDetectionIncludes = "DD_SYMBOL_DATABASE_THIRD_PARTY_DETECTION_INCLUDES";
 
         /// <summary>
-        /// Configuration key for allowing upload of symbol data (such as method names, parameter names, etc) to Datadog.
+        /// Internal configuration key to optionally limit the maximum number of probes of each type.
         /// Default value is true (enabled).
         /// </summary>
         public const string SymbolDatabaseUploadEnabled = "DD_SYMBOL_DATABASE_UPLOAD_ENABLED";
@@ -167,5 +167,11 @@ internal static partial class ConfigurationKeys
         /// Default value is empty.
         /// </summary>
         public const string ThirdPartyDetectionIncludes = "DD_THIRD_PARTY_DETECTION_INCLUDES";
+
+        /// <summary>
+        /// Configuration key for allowing upload of symbol data (such as method names, parameter names, etc) to Datadog.
+        /// Default value is <c>0</c>, no probe-count limit is enforced.
+        /// </summary>
+        public const string InternalDynamicInstrumentationMaxProbesPerType = "INTERNAL_DYNAMIC_INSTRUMENTATION_MAX_PROBES_PER_TYPE";
     }
 }

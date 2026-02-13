@@ -1436,6 +1436,12 @@
         "product": "Debugger"
       }
     ],
+    "INTERNAL_DYNAMIC_INSTRUMENTATION_MAX_PROBES_PER_TYPE": {
+      "version": [
+        "A"
+      ],
+      "product": "Debugger"
+    },
     "DD_TAGS": [
       {
         "implementation": "C",

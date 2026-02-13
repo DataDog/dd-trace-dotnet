@@ -17,6 +17,10 @@ namespace Datadog.Trace.Debugger.Instrumentation.Collections
     /// </summary>
     internal abstract class EverGrowingCollection<TPayload>
     {
+        private static readonly int[] CapacityRiskThresholds = [1024, 4096, 16384, 65536];
+
+        private int _highestReportedRiskThreshold = -1;
+
         protected IDatadogLogger Log { get; } = DatadogLogging.GetLoggerFor(typeof(EverGrowingCollection<TPayload>));
 
         protected object ItemsLocker { get; } = new object();
@@ -44,10 +48,12 @@ namespace Datadog.Trace.Debugger.Instrumentation.Collections
         {
             // Enlarge the _items array as needed. Note that there is an implicit by-design memory-leak here,
             // in the sense that this unbounded collection can only grow and is never shrunk.
-            // This is fine, for the time being, because we are limited to 100 simultaneous probes anyhow, so it is extremely unlikely
-            // we will ever reach any substantial memory usage here.
+            // After removing the default 100 probes cap, a long-running process with high probe churn can
+            // retain large backing arrays. We keep this implementation for now and emit warning logs as
+            // capacity crosses risk thresholds so we can monitor and decide if additional safeguards are needed.
             if (Items.Length < min)
             {
+                var previousCapacity = Items.Length;
                 var newCapacity = Items.Length * 2;
                 if (newCapacity < min)
                 {
@@ -55,6 +61,28 @@ namespace Datadog.Trace.Debugger.Instrumentation.Collections
                 }
 
                 Capacity = newCapacity;
+                ReportCapacityRiskIfNeeded(previousCapacity, newCapacity);
+            }
+        }
+
+        private void ReportCapacityRiskIfNeeded(int previousCapacity, int newCapacity)
+        {
+            for (var i = _highestReportedRiskThreshold + 1; i < CapacityRiskThresholds.Length; i++)
+            {
+                var threshold = CapacityRiskThresholds[i];
+                if (newCapacity >= threshold)
+                {
+                    Log.Warning<int, int, int>(
+                        "Collection capacity increased from {PreviousCapacity} to {NewCapacity} and reached risk threshold {Threshold} for retained memory.",
+                        previousCapacity,
+                        newCapacity,
+                        threshold);
+                    _highestReportedRiskThreshold = i;
+                }
+                else
+                {
+                    break;
+                }
             }
         }
 
