@@ -6,7 +6,6 @@ Automated CI failure analysis for the dd-trace-dotnet Azure DevOps pipeline.
 
 This skill helps quickly identify, categorize, and prioritize CI failures by:
 - Fetching build and test results from Azure DevOps
-- Comparing against recent master builds to identify new vs pre-existing failures
 - Categorizing failures (infrastructure, flaky, real)
 - Providing actionable recommendations
 
@@ -23,7 +22,7 @@ This skill helps quickly identify, categorize, and prioritize CI failures by:
 /troubleshoot-ci-build pr 7628
 ```
 
-Automatically fetches the PR's CI build, identifies failures, compares with master, and provides a summary.
+Automatically fetches the PR's CI build, identifies failures, and provides a summary.
 
 ### Analyze Specific Build
 
@@ -36,20 +35,7 @@ Automatically fetches the PR's CI build, identifies failures, compares with mast
 /troubleshoot-ci-build build 195137
 ```
 
-Useful when you have a build ID directly or want to analyze a master/branch build.
-
-### Manual Build Comparison
-
-```bash
-/troubleshoot-ci-build compare <BUILD_ID> <BASELINE_BUILD_ID>
-```
-
-**Example**:
-```bash
-/troubleshoot-ci-build compare 195137 195120
-```
-
-Compare two specific builds to see what changed.
+Useful when you have a build ID directly or want to analyze a specific build.
 
 ## Output
 
@@ -65,17 +51,16 @@ The skill provides a summary-first view:
 ### Quick Stats
 - Failed jobs: 4
 - Failed tests: 3 unique tests
-- New failures: 1 (not in master)
 
 ### Failed Tests
-| Test | Platforms | New? | Category |
-|------|-----------|------|----------|
-| AzureFunctionsTests+IsolatedRuntimeV4.SubmitsTraces | Windows net6-10 | ✅ New | Real |
-| AspNetCore5AsmInitializationSecurityEnabled.TestSecurityInitialization | Linux, Windows | ❌ In master | Flaky? |
+| Test | Platforms | Category |
+|------|-----------|----------|
+| AzureFunctionsTests+IsolatedRuntimeV4.SubmitsTraces | Windows net6-10 | Real |
+| AspNetCore5AsmInitializationSecurityEnabled.TestSecurityInitialization | Linux, Windows | Flaky? |
 
 ### Recommendations
-1. **Investigate**: Azure Functions test (new failure)
-2. **Consider retry**: ASM test (also in master)
+1. **Investigate**: Azure Functions test (fails across multiple runtimes)
+2. **Consider retry**: ASM test (known intermittent failure)
 ```
 
 ### Detailed View (On Request)
@@ -91,9 +76,8 @@ Ask for details on a specific failure to get:
 
 1. **Fetch Build Info**: Uses GitHub CLI and Azure DevOps API to get build details
 2. **Parse Logs**: Downloads task logs and extracts test failures
-3. **Compare with Master**: Automatically fetches recent master build for comparison
-4. **Categorize**: Applies pattern matching to categorize failures
-5. **Prioritize**: Highlights new failures that need immediate attention
+3. **Categorize**: Applies pattern matching to categorize failures
+4. **Prioritize**: Highlights failures that need immediate attention
 
 ## Failure Categories
 
@@ -109,20 +93,64 @@ Ask for details on a specific failure to get:
 
 ### Real (Recommend: Investigate)
 - Test assertions
-- New failures not in master
 - Compilation errors
 - Segmentation faults
 
 ## Requirements
 
-- **GitHub CLI** (`gh`) authenticated
-- **Azure DevOps access** (public API, no auth needed for dd-trace-dotnet)
+- **PowerShell** - [Installation instructions](#installing-powershell)
+  - **Recommended**: PowerShell 7+ (`pwsh`) - cross-platform, modern features
+  - **Minimum**: PowerShell 5.1 (`powershell.exe` on Windows only)
+- **GitHub CLI** (`gh`) authenticated (for PR analysis)
+- **Azure CLI** (`az`) authenticated to DataDog organization
 - **Internet connection** to fetch build data
+
+### Installing PowerShell
+
+**Recommended**: Install PowerShell 7+ for the best experience and cross-platform support.
+
+**Windows**:
+```powershell
+winget install Microsoft.PowerShell
+```
+
+**macOS**:
+```bash
+brew install powershell/tap/powershell
+```
+
+**Linux (Ubuntu/Debian)**:
+```bash
+# Download the Microsoft repository GPG keys
+wget -q https://packages.microsoft.com/config/ubuntu/$(lsb_release -rs)/packages-microsoft-prod.deb
+
+# Register the Microsoft repository GPG keys
+sudo dpkg -i packages-microsoft-prod.deb
+
+# Update apt and install PowerShell
+sudo apt-get update
+sudo apt-get install -y powershell
+```
+
+**Linux (Other distributions)** and more details: https://learn.microsoft.com/en-us/powershell/scripting/install/installing-powershell
+
+**Verify installation**:
+```bash
+pwsh -Version
+# Should output: PowerShell 7.x.x or higher
+```
+
+## Related Scripts (tracer/tools/)
+
+This skill uses the following standalone scripts that can also be run manually:
+
+- **`Get-AzureDevOpsBuildAnalysis.ps1`** - Fetch and analyze Azure DevOps build failures, download logs
+
+See [scripts-reference.md](./scripts-reference.md) for detailed documentation on using these scripts directly.
 
 ## Tips
 
-- **New vs Pre-existing**: Focus on "New" failures first - these are likely caused by your PR changes
-- **Flaky Tests**: If a test is also failing in master, consider retrying before investigating
+- **Flaky Tests**: If a test fails on only one runtime but passes on others, it's likely flaky — retry first
 - **Infrastructure**: Network/rate limiting issues usually resolve with a retry
 - **Log Context**: When investigating, ask for detailed view to see log excerpts
 
@@ -134,7 +162,7 @@ Ask for details on a specific failure to get:
 /troubleshoot-ci-build pr 7628
 ```
 
-**Result**: Shows 1 new Azure Functions test failure that needs investigation, 2 ASM tests also failing in master (retry recommended).
+**Result**: Shows Azure Functions test failures that need investigation and ASM tests that are likely flaky (retry recommended).
 
 ### Example 2: Deep Dive on Failure
 
@@ -146,14 +174,6 @@ Ask for details on a specific failure to get:
 
 **Result**: Full error message, log excerpt, related files, and recommended actions.
 
-### Example 3: Compare Builds
-
-```bash
-/troubleshoot-ci-build compare 195137 195120
-```
-
-**Result**: Shows what tests changed between builds (new failures, new passes, still failing).
-
 ## Related Documentation
 
 - [Troubleshooting CI Failures](../../../docs/development/CI/TroubleshootingCIFailures.md) - Manual troubleshooting guide
@@ -163,7 +183,6 @@ Ask for details on a specific failure to get:
 ## Limitations
 
 - Only works for Azure DevOps builds (not AppVeyor or other CI systems)
-- Comparison with master requires recent master build (within last 5 builds)
 - Large logs may be truncated (last 1000 lines)
 - API rate limiting may require retry delays
 
