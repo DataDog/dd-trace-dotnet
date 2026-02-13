@@ -127,6 +127,12 @@ internal static partial class ConfigurationKeys
         public const string RateLimitSeconds = "DD_EXCEPTION_REPLAY_RATE_LIMIT_SECONDS";
 
         /// <summary>
+        /// Internal configuration key to optionally limit the maximum number of probes of each type.
+        /// Default value is <c>0</c>, no probe-count limit is enforced.
+        /// </summary>
+        public const string InternalDynamicInstrumentationMaxProbesPerType = "DD_INTERNAL_DYNAMIC_INSTRUMENTATION_MAX_PROBES_PER_TYPE";
+
+        /// <summary>
         /// Configuration key for the maximum symbol size to upload (in bytes).
         /// Default value is 1 mb.
         /// </summary>
@@ -167,11 +173,5 @@ internal static partial class ConfigurationKeys
         /// Default value is empty.
         /// </summary>
         public const string ThirdPartyDetectionIncludes = "DD_THIRD_PARTY_DETECTION_INCLUDES";
-
-        /// <summary>
-        /// Internal configuration key to optionally limit the maximum number of probes of each type.
-        /// Default value is <c>0</c>, no probe-count limit is enforced.
-        /// </summary>
-        public const string InternalDynamicInstrumentationMaxProbesPerType = "INTERNAL_DYNAMIC_INSTRUMENTATION_MAX_PROBES_PER_TYPE";
     }
 }
