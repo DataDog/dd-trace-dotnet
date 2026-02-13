@@ -258,9 +258,6 @@ validate_supported_configurations_v2_local_file:
     BACKFILLED: true
   
 update_central_configurations_version_range_v2:
-  stage: build
-  rules:
-    - when: on_success
   extends: .update_central_configurations_version_range_v2
   variables:
     LOCAL_JSON_PATH: "tracer/src/Datadog.Trace/Configuration/supported-configurations.json"
