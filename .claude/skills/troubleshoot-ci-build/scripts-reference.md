@@ -8,7 +8,7 @@ This document describes reusable PowerShell scripts for Azure DevOps CI troubles
 
 **Location:** `tracer/tools/Get-AzureDevOpsBuildAnalysis.ps1`
 
-**Purpose:** Fetches and analyzes Azure DevOps build failures, including timeline data, error messages, failed test extraction, comparison with baseline builds, and optional log downloads.
+**Purpose:** Fetches and analyzes Azure DevOps build failures, including timeline data, error messages, failed test extraction, and optional log downloads.
 
 ### Prerequisites
 
@@ -28,8 +28,6 @@ This document describes reusable PowerShell scripts for Azure DevOps CI troubles
 |-----------|------|----------|---------|-------------|
 | `BuildId` | int | Yes (set 1) | - | Azure DevOps build ID to analyze |
 | `PullRequest` | int | Yes (set 2) | - | GitHub PR number (resolves build ID via `gh pr checks`) |
-| `CompareWithMaster` | switch | No | - | Compare failures with most recent successful master build |
-| `CompareWithBuild` | int | No | - | Compare failures with specific baseline build ID |
 | `IncludeLogs` | switch | No | - | Download task logs for failed tasks |
 | `OutputPath` | string | No | `$env:TEMP` | Directory for JSON artifacts and logs |
 | `OutputFormat` | string | No | `table` | Output format: `table` or `json` |
@@ -54,22 +52,6 @@ Outputs human-readable table summary to console.
 
 Resolves build ID from PR checks, then analyzes.
 
-#### Compare with Master
-
-```powershell
-.\tracer\tools\Get-AzureDevOpsBuildAnalysis.ps1 -BuildId 12345 -CompareWithMaster -Verbose
-```
-
-Finds most recent successful master build, compares failed tests, reports new/pre-existing/fixed failures.
-
-#### Compare with Specific Build
-
-```powershell
-.\tracer\tools\Get-AzureDevOpsBuildAnalysis.ps1 -BuildId 12345 -CompareWithBuild 12300
-```
-
-Compares against specific baseline build.
-
 #### Download Logs
 
 ```powershell
@@ -92,7 +74,6 @@ Outputs structured JSON, parseable for automation.
 ```powershell
 .\tracer\tools\Get-AzureDevOpsBuildAnalysis.ps1 `
     -PullRequest 8172 `
-    -CompareWithMaster `
     -IncludeLogs `
     -OutputPath D:\temp\pr-8172-analysis `
     -Verbose
@@ -120,22 +101,9 @@ When using `-OutputFormat json` or capturing the returned object, the following 
 | `CollateralCanceled` | string[] | Jobs canceled in < 5 min |
 | `FailedTests` | string[] | Extracted test names (via regex patterns) |
 | `ErrorMessages` | string[] | Raw error messages from failed tasks |
-| `Comparison` | object | Comparison data (see below) or `null` |
 | `LogFiles` | string[] | Paths to downloaded log files |
 | `ArtifactPath` | string | Directory containing saved JSON files |
 | `BuildUrl` | string | Azure DevOps web URL for build |
-
-### Comparison Object Shape
-
-When using `-CompareWithMaster` or `-CompareWithBuild`, the `Comparison` field contains:
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `BaselineBuildId` | int | Build ID used for comparison |
-| `BaselineResult` | string | "succeeded" (if `-CompareWithMaster`), else `null` |
-| `NewFailures` | string[] | Tests that failed in target build but not baseline |
-| `PreExistingFailures` | string[] | Tests that failed in both builds |
-| `FixedInPR` | string[] | Tests that failed in baseline but passed in target |
 
 ### Saved Artifacts
 
@@ -143,7 +111,6 @@ The script saves the following files to `OutputPath`:
 
 - `build-{BuildId}-details.json` — Build details from Azure DevOps API
 - `build-{BuildId}-timeline.json` — Build timeline records (tasks/jobs/stages)
-- `build-{BaselineBuildId}-timeline.json` — Baseline timeline (if comparison requested)
 - `build-{BuildId}-task-{TaskId}-{TaskName}.log` — Task logs (if `-IncludeLogs` used)
 
 ### Internal Implementation Details
@@ -164,16 +131,6 @@ Logs are downloaded directly from `timeline.records[].log.url` (not via the brok
 Uses `Invoke-RestMethod -OutFile` for native PowerShell downloads.
 
 Non-fatal: Individual download failures emit warnings but don't stop execution.
-
-#### Comparison Algorithm
-
-Comparison uses PowerShell's `Where-Object` with `-notin` operator:
-
-- **New Failures:** `$target | Where-Object { $_ -notin $baseline }`
-- **Pre-existing:** `$target | Where-Object { $_ -in $baseline }`
-- **Fixed:** `$baseline | Where-Object { $_ -notin $target }`
-
-Replaces bash `comm -13` for Windows compatibility.
 
 #### Canceled Job Detection
 
@@ -197,16 +154,14 @@ Use `-Verbose` to see:
 - Azure CLI command invocations
 - API call details
 - File save locations
-- Comparison build resolution
 - Log download progress
 
 ### Known Limitations
 
 1. **Test Name Extraction:** Regex-based; may miss tests with unusual formatting
 2. **Log URL Availability:** Some tasks may not have `.log.url` populated
-3. **Master Build Lookup:** Checks only last 10 builds; may fail if no successful build in range
-4. **Performance:** Downloads full timeline JSON (can be large for multi-stage pipelines)
-5. **Canceled Job Classification:** Duration-based heuristic may misclassify manual cancellations that occur between 5-55 minutes. In practice, most manual cancellations happen quickly (< 5 min) or timeouts occur at ~60 min, so this range is rare.
+3. **Performance:** Downloads full timeline JSON (can be large for multi-stage pipelines)
+4. **Canceled Job Classification:** Duration-based heuristic may misclassify manual cancellations that occur between 5-55 minutes. In practice, most manual cancellations happen quickly (< 5 min) or timeouts occur at ~60 min, so this range is rare.
 
 ### Related Documentation
 
