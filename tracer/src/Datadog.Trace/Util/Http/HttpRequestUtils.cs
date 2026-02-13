@@ -4,8 +4,6 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Util.Http.QueryStringObfuscation;
 
 #nullable enable
 
@@ -15,22 +13,37 @@ namespace Datadog.Trace.Util.Http
     {
         private const string NoHostSpecified = "UNKNOWN_HOST";
 
+        // In .NET 6+, we can bypass a bunch of allocations by using the GetComponents() method which is heavily
+        // optimized. Unfortunately, in .NET FX and < .NET 6, this approach allocates a _lot_ more, so we
+        // keep two distinct implementations
+#if NET6_0_OR_GREATER
         internal static string GetUrl(Uri uri, QueryStringManager? queryStringManager = null)
         {
             var queryString = queryStringManager?.TruncateAndObfuscate(uri.Query);
-            // we can avoid an extra allocation by letting Uri format itself
-            // when the TruncateAndObfuscate call didn't change the querystring or if it completely removed it
+
+            // We can avoid an extra allocation by letting Uri format the final result with GetComponents()
+            // We can do that when:
+            // 1. There's no querystring
+            // 2. The QueryStringManager removed the querystring entirely
+            // 3. The QueryStringManager did not change the string (nothing to redact/truncate)
+            //
+            // If the querystring _does_ change, then we have to manually append it to our initial segment
             var needToManuallyAppendQuery = false;
+
             UriComponents components;
             if (string.IsNullOrEmpty(queryString))
             {
+                // No querystring, or no QueryStringManager
                 components =
                     UriComponents.Scheme | UriComponents.Host | UriComponents.Port | UriComponents.Path;
             }
             else
             {
+                // We have a QueryStringManager, did it change the value?
                 needToManuallyAppendQuery = queryString != uri.Query;
-                // if the query is unchanged, we can just use the original, otherwise we need to append it later
+
+                // if the query is unchanged, we can just use the original
+                // otherwise we need to append the new value ourselves
                 components = needToManuallyAppendQuery
                                  ? UriComponents.Scheme | UriComponents.Host | UriComponents.Port | UriComponents.Path
                                  : UriComponents.Scheme | UriComponents.Host | UriComponents.Port | UriComponents.Path | UriComponents.Query;
@@ -42,6 +55,17 @@ namespace Datadog.Trace.Util.Http
                        ? $"{formatted}{queryString}"
                        : formatted;
         }
+#else
+        internal static string GetUrl(Uri uri, QueryStringManager? queryStringManager = null)
+        {
+            // We know that we have to have a host (because otherwise uri.Scheme would throw), so we don't have to worry about normalizing etc
+            var queryString = queryStringManager?.TruncateAndObfuscate(uri.Query) ?? string.Empty;
+
+            return uri.IsDefaultPort
+                       ? $"{uri.Scheme}://{uri.Host}{uri.AbsolutePath}{queryString}"
+                       : FormattableString.Invariant($"{uri.Scheme}://{uri.Host}:{uri.Port}{uri.AbsolutePath}{queryString}");
+        }
+#endif
 
         internal static string GetUrl(string scheme, string host, int? port, string pathBase, string path, string queryString, QueryStringManager? queryStringManager = null)
         {
