@@ -9,12 +9,15 @@ using System.Collections.Generic;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis;
+using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.Configuration.Schema
 {
     internal sealed class DatabaseSchema
     {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DatabaseSchema>();
+
         private readonly SchemaVersion _version;
         private readonly bool _peerServiceTagsEnabled;
         private readonly bool _removeClientServiceNamesEnabled;
@@ -36,14 +39,23 @@ namespace Datadog.Trace.Configuration.Schema
         {
             if (_serviceNameMappings is not null && _serviceNameMappings.TryGetValue(databaseType, out var mappedServiceName))
             {
+                Log.Debug("DBM: Service name resolved via mapping. MappingPresent: true");
                 return mappedServiceName;
             }
 
-            return _version switch
+            var result = _version switch
             {
                 SchemaVersion.V0 when !_removeClientServiceNamesEnabled => $"{_defaultServiceName}-{databaseType}",
                 _ => _defaultServiceName,
             };
+
+            Log.Information(
+                "DBM: Service name resolved via schema. SchemaVersion: '{Version}', RemoveClientServiceNames: {RemoveClientServiceNames}, ServiceNamePresent: {ServiceNamePresent}",
+                _version,
+                _removeClientServiceNamesEnabled,
+                !string.IsNullOrEmpty(result));
+
+            return result;
         }
 
         public CouchbaseTags CreateCouchbaseTags()
@@ -68,11 +80,24 @@ namespace Datadog.Trace.Configuration.Schema
             };
 
         public SqlTags CreateSqlTags()
-            => _version switch
+        {
+            Log.Information(
+                "DBM: CreateSqlTags called. SchemaVersion: '{Version}', PeerServiceTagsEnabled: {PeerServiceTagsEnabled}",
+                _version,
+                _peerServiceTagsEnabled);
+
+            var result = _version switch
             {
                 SchemaVersion.V0 when !_peerServiceTagsEnabled => new SqlTags(),
                 _ => new SqlV1Tags(),
             };
+
+            Log.Information(
+                "DBM: CreateSqlTags result. TagsType: '{TagsType}'",
+                result.GetType().Name);
+
+            return result;
+        }
 
         public RedisTags CreateRedisTags()
             => _version switch

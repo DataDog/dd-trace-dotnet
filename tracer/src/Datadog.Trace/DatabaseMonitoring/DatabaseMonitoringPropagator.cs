@@ -43,14 +43,18 @@ namespace Datadog.Trace.DatabaseMonitoring
 
         internal static bool PropagateDataViaComment(DbmPropagationLevel propagationLevel, IntegrationId integrationId, IDbCommand command, string configuredServiceName, string? dbName, string? outhost, Span span, bool injectStoredProcedure)
         {
+            Log.Debug("DBM: PropagateDataViaComment called. Integration: '{IntegrationId}', PropagationLevel: '{PropagationLevel}', CommandType: '{CommandType}'", integrationId, propagationLevel, command.CommandType);
+
             if (integrationId is not (IntegrationId.MySql or IntegrationId.Npgsql or IntegrationId.SqlClient or IntegrationId.Oracle) ||
                 propagationLevel is not (DbmPropagationLevel.Service or DbmPropagationLevel.Full))
             {
+                Log.Debug("DBM: PropagateDataViaComment skipped - unsupported integration or propagation level disabled. Integration: '{IntegrationId}', PropagationLevel: '{PropagationLevel}'", integrationId, propagationLevel);
                 return false;
             }
 
             if (command.CommandType == CommandType.StoredProcedure && (!injectStoredProcedure || integrationId != IntegrationId.SqlClient))
             {
+                Log.Debug("DBM: PropagateDataViaComment skipped for StoredProcedure. InjectStoredProcedure: {InjectStoredProcedure}, Integration: '{IntegrationId}'", injectStoredProcedure, integrationId);
                 // We don't inject into StoredProcedures unless enabled as we change the commands
                 // We don't inject into StoredProcedures unless we are in SqlClient
                 return false;
@@ -79,6 +83,11 @@ namespace Datadog.Trace.DatabaseMonitoring
             if (ddprs != null)
             {
                 propagatorStringBuilder.Append(',').Append(SqlCommentPeerService).Append("='").Append(Uri.EscapeDataString(ddprs)).Append('\'');
+                Log.Information("DBM: Injecting ddprs (peer service) into SQL comment. Value: '{PeerService}'", ddprs);
+            }
+            else
+            {
+                Log.Information("DBM: NOT injecting ddprs. PeerServiceSource: '{Source}'", (span.Tags is SqlV1Tags st) ? st.PeerServiceSource : "N/A");
             }
 
             if (span.Context.TraceContext?.Environment is { } envTag)
@@ -87,6 +96,10 @@ namespace Datadog.Trace.DatabaseMonitoring
             }
 
             propagatorStringBuilder.Append(',').Append(SqlCommentRootService).Append("='").Append(Uri.EscapeDataString(configuredServiceName)).Append('\'');
+
+            Log.Information(
+                "DBM: SQL comment fields - dddbs (span service): '{SpanService}', ddps (root service): '{RootService}', dddb: '{DbName}', ddh: '{OutHost}'",
+                new object[] { dddbs, configuredServiceName, dbName ?? "null", outhost ?? "null" });
 
             if (!string.IsNullOrEmpty(dbName))
             {
@@ -110,6 +123,15 @@ namespace Datadog.Trace.DatabaseMonitoring
             {
                 traceParentInjected = true;
                 propagatorStringBuilder.Append(',').Append(W3CTraceContextPropagator.TraceParentHeaderName).Append("='").Append(W3CTraceContextPropagator.CreateTraceParentHeader(span.Context)).Append('\'');
+                Log.Debug("DBM: Injecting traceparent in SQL comment (Full mode). Integration: '{IntegrationId}', TraceId: {TraceId}, SpanId: {SpanId}", integrationId, span.Context.RawTraceId, span.Context.RawSpanId);
+            }
+            else if (propagationLevel == DbmPropagationLevel.Full && integrationId is (IntegrationId.SqlClient or IntegrationId.Oracle))
+            {
+                Log.Debug("DBM: Skipping traceparent injection in SQL comment for SqlClient/Oracle (Full mode) to avoid query plan cache invalidation. Will attempt context injection instead. Integration: '{IntegrationId}'", integrationId);
+            }
+            else
+            {
+                Log.Debug("DBM: Service-level propagation only (no traceparent in comment). PropagationLevel: '{PropagationLevel}', Integration: '{IntegrationId}'", propagationLevel, integrationId);
             }
 
             propagatorStringBuilder.Append("*/");
@@ -117,6 +139,8 @@ namespace Datadog.Trace.DatabaseMonitoring
             // modify the command to add the comment
             var commandText = command.CommandText ?? string.Empty;
             var propagationComment = StringBuilderCache.GetStringAndRelease(propagatorStringBuilder);
+            Log.Information("DBM: Generated SQL comment for injection: '{SqlComment}'", propagationComment);
+            Log.Information("DBM: Original command text (first 100 chars): '{CommandText}'", commandText.Length > 100 ? commandText.Substring(0, 100) : commandText);
 
             if (command.CommandType == CommandType.StoredProcedure && integrationId == IntegrationId.SqlClient)
             {
@@ -264,14 +288,21 @@ namespace Datadog.Trace.DatabaseMonitoring
             }
             else if (ShouldAppend(integrationId, commandText))
             {
+                Log.Information("DBM: Appending SQL comment (pg_hint_plan detected). Integration: '{IntegrationId}'", integrationId);
                 command.CommandText = $"{commandText} {propagationComment}";
             }
             else
             {
+                Log.Information("DBM: Prepending SQL comment. Integration: '{IntegrationId}'", integrationId);
                 // prepending the propagation comment is the preferred way,
                 // as this protects it from being truncated by the character limit if the command is very long.
                 command.CommandText = $"{propagationComment} {commandText}";
             }
+
+            Log.Information("DBM: Successfully injected SQL comment with DBM metadata. Integration: '{IntegrationId}', TraceParentInjected: {TraceParentInjected}", integrationId, traceParentInjected);
+            Log.Information(
+                "DBM: Final command text (first 200 chars): '{FinalCommandText}'",
+                command.CommandText.Length > 200 ? command.CommandText.Substring(0, 200) : command.CommandText);
 
             return traceParentInjected;
         }
@@ -301,8 +332,11 @@ namespace Datadog.Trace.DatabaseMonitoring
         /// <returns>True if the traceparent information was set</returns>
         internal static bool PropagateDataViaContext(DbmPropagationLevel propagationLevel, IntegrationId integrationId, IDbCommand command, Span span)
         {
+            Log.Debug("DBM: PropagateDataViaContext called. Integration: '{IntegrationId}', PropagationLevel: '{PropagationLevel}'", integrationId, propagationLevel);
+
             if (propagationLevel != DbmPropagationLevel.Full || integrationId != IntegrationId.SqlClient)
             {
+                Log.Debug("DBM: PropagateDataViaContext skipped - only supported for SqlClient in Full mode. Integration: '{IntegrationId}', PropagationLevel: '{PropagationLevel}'", integrationId, propagationLevel);
                 return false;
             }
 
@@ -310,6 +344,7 @@ namespace Datadog.Trace.DatabaseMonitoring
             //       Since the feature isn't available for Npgsql we avoid this due to the integrationId check above
             if (command.Connection == null)
             {
+                Log.Debug("DBM: PropagateDataViaContext skipped - command.Connection is null");
                 return false;
             }
 
@@ -320,11 +355,14 @@ namespace Datadog.Trace.DatabaseMonitoring
                 return false;
             }
 
+            Log.Debug("DBM: Starting context injection via SET CONTEXT_INFO for SQL Server. TraceId: {TraceId}, SpanId: {SpanId}", span.Context.RawTraceId, span.Context.RawSpanId);
+
             var stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
             const byte version = 0; // version can have a maximum value of 15 in the current format
             var sampled = SamplingPriorityValues.IsKeep(span.Context.TraceContext.GetOrMakeSamplingDecision());
             var contextValue = BuildContextValue(version, sampled, span.SpanId, span.TraceId128);
+            Log.Debug("DBM: Built CONTEXT_INFO binary value with trace/span information");
 
             using (var injectionCommand = command.Connection.CreateCommand())
             {
@@ -340,7 +378,9 @@ namespace Datadog.Trace.DatabaseMonitoring
 
                 try
                 {
+                    Log.Debug("DBM: Executing SET CONTEXT_INFO command on SQL Server connection");
                     injectionCommand.ExecuteNonQuery();
+                    Log.Debug("DBM: SET CONTEXT_INFO executed successfully");
                 }
                 catch (Exception e)
                 {
@@ -358,10 +398,12 @@ namespace Datadog.Trace.DatabaseMonitoring
                 }
             }
 
+            stopwatch.Stop();
             // Since sending the query to the DB can be a bit long, we register the time it took for transparency.
             // Not using _dd because we want the customers to be able to see that tag.
             span.SetMetric("dd.instrumentation.time_ms", stopwatch.Elapsed.TotalMilliseconds);
 
+            Log.Information("DBM: Successfully injected traceparent via CONTEXT_INFO for SQL Server. Elapsed: {ElapsedMs}ms, TraceId: {TraceId}, SpanId: {SpanId}", stopwatch.Elapsed.TotalMilliseconds, span.Context.RawTraceId, span.Context.RawSpanId);
             return true;
         }
 
