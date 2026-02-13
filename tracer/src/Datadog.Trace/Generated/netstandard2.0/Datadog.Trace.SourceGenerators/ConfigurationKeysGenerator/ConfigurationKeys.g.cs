@@ -72,6 +72,13 @@ internal static partial class ConfigurationKeys
     public const string ApplicationMonitoringConfigFileEnabled = "DD_APPLICATION_MONITORING_CONFIG_FILE_ENABLED";
 
     /// <summary>
+    /// Configuration key for enabling or disabling the injection of Base Hash in SQL Comments.
+    /// Default value is false (disabled).
+    /// </summary>
+    /// <seealso cref="Datadog.Trace.Configuration.TracerSettings.DbmInjectSqlBasehash"/>
+    public const string DbmInjectSqlBasehash = "DD_DBM_INJECT_SQL_BASEHASH";
+
+    /// <summary>
     /// Configuration key for setting DBM propagation mode
     /// Default value is disabled, expected values are either: disabled, service or full
     /// </summary>

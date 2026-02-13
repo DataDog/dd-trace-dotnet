@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
+using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
@@ -28,6 +29,7 @@ namespace Datadog.Trace.DatabaseMonitoring
         private const string SqlCommentOuthost = "ddh";
         private const string SqlCommentVersion = "ddpv";
         private const string SqlCommentEnv = "dde";
+        private const string SqlCommentBaseHash = "ddsh";
         internal const string DbmPrefix = $"/*{SqlCommentSpanService}='";
         private const string ContextInfoParameterName = "@dd_trace_context";
         internal const string SetContextCommand = $"set context_info {ContextInfoParameterName}";
@@ -41,7 +43,8 @@ namespace Datadog.Trace.DatabaseMonitoring
         private static int _remainingDirectionErrorLogs = 100;
         private static int _remainingQuoteErrorLogs = 100;
 
-        internal static bool PropagateDataViaComment(DbmPropagationLevel propagationLevel, IntegrationId integrationId, IDbCommand command, string configuredServiceName, string? dbName, string? outhost, Span span, bool injectStoredProcedure)
+        // baseHash should be null if hash injection is disabled, config is not checked in this method
+        internal static bool PropagateDataViaComment(DbmPropagationLevel propagationLevel, IntegrationId integrationId, IDbCommand command, string configuredServiceName, string? dbName, string? outhost, Span span, bool injectStoredProcedure, string? baseHash)
         {
             if (integrationId is not (IntegrationId.MySql or IntegrationId.Npgsql or IntegrationId.SqlClient or IntegrationId.Oracle) ||
                 propagationLevel is not (DbmPropagationLevel.Service or DbmPropagationLevel.Full))
@@ -101,6 +104,11 @@ namespace Datadog.Trace.DatabaseMonitoring
             if (span.Context.TraceContext?.ServiceVersion is { } versionTag)
             {
                 propagatorStringBuilder.Append(',').Append(SqlCommentVersion).Append("='").Append(Uri.EscapeDataString(versionTag)).Append('\'');
+            }
+
+            if (!string.IsNullOrEmpty(baseHash))
+            {
+                propagatorStringBuilder.Append(',').Append(SqlCommentBaseHash).Append("='").Append(Uri.EscapeDataString(baseHash)).Append('\'');
             }
 
             var traceParentInjected = false;

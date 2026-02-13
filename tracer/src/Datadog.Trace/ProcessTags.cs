@@ -23,7 +23,7 @@ internal static class ProcessTags
     // two views on the same data
     public static IReadOnlyCollection<string> TagsList => field ??= GetTagsList();
 
-    public static string SerializedTags => field ??= string.Join(",", TagsList);
+    public static string SerializedTags => field ??= string.Join(",", TagsList); // don't forget to refresh the base hash on write if this value becomes mutable
 
     private static List<string> GetTagsList()
     {
