@@ -23,7 +23,6 @@
 
     <!-- reenable warnings that are disabled in tracer/src/Directory.Build.props -->
     <NugetAudit>true</NugetAudit>
-    <CheckEolTargetFramework>true</CheckEolTargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
