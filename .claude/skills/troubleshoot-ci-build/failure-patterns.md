@@ -139,6 +139,26 @@ Failed to walk N stacks for sampled exception: E_FAIL
 
 ---
 
+### Single-Runtime Failures
+
+**Pattern**: Same test passes on most .NET runtimes but fails on only one (especially net6 and above).
+
+**Example**:
+| Runtime | Result |
+|---------|--------|
+| net6.0 | Pass |
+| net8.0 | Pass |
+| net10.0 | **Fail** |
+
+**Cause**: Timing-sensitive behavior, runtime-specific quirks, or transient environment issues affecting a single runtime variant.
+
+**Solution**:
+- Likely flaky — retry the build
+- If persistent on the same runtime after 2 retries, investigate runtime-specific behavior and alert **#apm-dotnet** on Slack
+- A real regression would typically fail across all runtimes, not just one
+
+---
+
 ### ASM Initialization Tests
 
 **Pattern**:
@@ -392,15 +412,13 @@ Are there canceled jobs?
 │   └─ 5-55 min → **Unknown** (review manually, could be manual cancellation)
 │
 └─ No canceled jobs or after classifying them →
-    Is the failure in this PR only (not in master)?
-    ├─ Yes → **Real Failure** (investigate)
-    └─ No → Is it an infrastructure issue?
-        ├─ Yes → **Infrastructure** (retry)
-        └─ No → Does it have previousAttempts > 0?
+    Is it an infrastructure issue (network, rate limit, disk)?
+    ├─ Yes → **Infrastructure** (retry)
+    └─ No → Does the test fail on only one runtime but pass on others?
+        ├─ Yes → **Flaky** (retry, alert #apm-dotnet if persistent)
+        └─ No → Does it have previousAttempts > 0 or is it a known flaky test?
             ├─ Yes → **Flaky** (retry, monitor)
-            └─ No → Is it a known flaky test?
-                ├─ Yes → **Flaky** (retry, monitor)
-                └─ No → **Pre-existing Real Failure** (investigate, may be blocking)
+            └─ No → **Real Failure** (investigate)
 ```
 
 ---
@@ -416,10 +434,10 @@ Are there canceled jobs?
 | Canceled job, duration < 5 min | Collateral | Check parent failure cause | None |
 | `Failed to walk N stacks` | Flaky | Retry, monitor | Low |
 | `previousAttempts > 0` | Flaky | Retry | Low |
-| `Expected X but got Y` (new) | Real | Investigate | **High** |
+| Fails on 1 runtime, passes on others | Flaky | Retry, alert #apm-dotnet if persistent | Low |
+| `Expected X but got Y` | Real | Investigate | **High** |
 | `error CS`, `MSB` | Real | Fix code | **High** |
 | `SIGSEGV`, `Access Violation` | Real | Investigate urgently | **Critical** |
-| `Expected X but got Y` (also in master) | Pre-existing | Investigate if blocking | Medium |
 
 ---
 
@@ -429,27 +447,21 @@ Are there canceled jobs?
 - Infrastructure failures (network, rate limiting, disk)
 - Tests with `previousAttempts > 0`
 - Known flaky tests (Alpine stack walking)
-- Failures also present in recent master builds
+- Tests failing on only one runtime but passing on others
 
 ### Investigate Immediately
-- **New failures** introduced in the PR (not in master)
 - Compilation errors
 - Segmentation faults / access violations
+- Tests failing consistently across all runtimes
 - Consistent failures after 2 retries
 
 ### Monitor
-- Pre-existing failures also in master (may need separate fix)
 - Flaky tests that are becoming more frequent
 - Platform-specific issues that don't block all platforms
 
 ---
 
 ## Useful Commands for Investigation
-
-### Get Recent Master Builds
-```bash
-curl -s "https://dev.azure.com/datadoghq/a51c4863-3eb4-4c5d-878a-58b41a049e4e/_apis/build/builds?branchName=refs/heads/master&\$top=5" | jq '.value[] | {id, result, finishTime}'
-```
 
 ### Download Specific Test Logs
 ```bash

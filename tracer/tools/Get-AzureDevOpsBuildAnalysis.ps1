@@ -4,20 +4,14 @@
 
 .DESCRIPTION
     Fetches build details, timeline, and failure information from Azure DevOps.
-    Can compare failures against master or another build, extract test names,
-    and download task logs. Provides structured output for manual or automated analysis.
+    Can compare failures against another build, extract test names, and download
+    task logs. Provides structured output for manual or automated analysis.
 
 .PARAMETER BuildId
     Azure DevOps build ID to analyze.
 
 .PARAMETER PullRequest
     GitHub PR number. Extracts build ID via 'gh pr checks'.
-
-.PARAMETER CompareWithMaster
-    Compare failed tests with most recent successful master build.
-
-.PARAMETER CompareWithBuild
-    Compare failed tests with specific baseline build ID.
 
 .PARAMETER IncludeLogs
     Download task logs for failed tasks.
@@ -39,11 +33,6 @@
     Analyzes the Azure DevOps build for PR #8172.
 
 .EXAMPLE
-    .\Get-AzureDevOpsBuildAnalysis.ps1 -BuildId 12345 -CompareWithMaster -Verbose
-
-    Compares build 12345 failures with most recent successful master build.
-
-.EXAMPLE
     .\Get-AzureDevOpsBuildAnalysis.ps1 -BuildId 12345 -IncludeLogs -OutputPath D:\temp\ci-logs
 
     Analyzes build and downloads failed task logs to specified directory.
@@ -61,14 +50,6 @@ param(
 
     [Parameter(Mandatory = $true, ParameterSetName = 'ByPullRequest')]
     [int]$PullRequest,
-
-    [Parameter(ParameterSetName = 'ByBuildId')]
-    [Parameter(ParameterSetName = 'ByPullRequest')]
-    [switch]$CompareWithMaster,
-
-    [Parameter(ParameterSetName = 'ByBuildId')]
-    [Parameter(ParameterSetName = 'ByPullRequest')]
-    [int]$CompareWithBuild,
 
     [Parameter(ParameterSetName = 'ByBuildId')]
     [Parameter(ParameterSetName = 'ByPullRequest')]
@@ -320,65 +301,9 @@ try {
         CollateralCanceled   = @($collateralCanceledJobs | ForEach-Object { $_.Name })
         FailedTests     = $failedTests
         ErrorMessages   = $errorMessages
-        Comparison      = $null
         LogFiles        = @()
         ArtifactPath    = $OutputPath
         BuildUrl        = $buildDetails._links.web.href
-    }
-
-    # Comparison logic
-    if ($CompareWithMaster -or $CompareWithBuild) {
-        Write-Verbose "Performing comparison..."
-
-        $baselineBuildId = $CompareWithBuild
-        if ($CompareWithMaster) {
-            Write-Verbose "Finding most recent successful master build..."
-            $masterBuilds = Invoke-AzDevOpsApi `
-                -Area 'build' `
-                -Resource 'builds' `
-                -RouteParameters 'project=dd-trace-dotnet' `
-                -QueryParameters @{
-                    branchName = 'refs/heads/master'
-                    '$top'     = '10'
-                }
-
-            $successfulBuild = $masterBuilds.value | Where-Object { $_.result -eq 'succeeded' } | Select-Object -First 1
-            if (-not $successfulBuild) {
-                Write-Warning "No successful master build found in last 10 builds"
-            }
-            else {
-                $baselineBuildId = $successfulBuild.id
-            }
-        }
-
-        if ($baselineBuildId) {
-            Write-Verbose "Comparing with baseline build $baselineBuildId..."
-
-            $baselineTimelineFile = Join-Path $OutputPath "build-$baselineBuildId-timeline.json"
-            $baselineTimeline = Invoke-AzDevOpsApi `
-                -Area 'build' `
-                -Resource 'timeline' `
-                -RouteParameters "project=dd-trace-dotnet buildId=$baselineBuildId" `
-                -SaveToFile $baselineTimelineFile
-
-            $baselineFailedTasks = @(Get-FailedRecords -Timeline $baselineTimeline -Type 'Task')
-            $baselineErrorMessages = @($baselineFailedTasks | ForEach-Object {
-                $_.issues | Where-Object { $_.type -eq 'error' } | ForEach-Object { $_.message }
-            })
-            $baselineFailedTests = @(Extract-FailedTests -Messages $baselineErrorMessages)
-
-            $newFailures = @($failedTests | Where-Object { $_ -notin $baselineFailedTests })
-            $preExistingFailures = @($failedTests | Where-Object { $_ -in $baselineFailedTests })
-            $fixedInPR = @($baselineFailedTests | Where-Object { $_ -notin $failedTests })
-
-            $result.Comparison = [PSCustomObject]@{
-                BaselineBuildId       = $baselineBuildId
-                BaselineResult        = if ($CompareWithMaster) { 'succeeded' } else { $null }
-                NewFailures           = $newFailures
-                PreExistingFailures   = $preExistingFailures
-                FixedInPR             = $fixedInPR
-            }
-        }
     }
 
     # Download logs
@@ -462,23 +387,6 @@ try {
         if ($result.FailedTests.Count -gt 0) {
             Write-Host "`nFailed Tests:" -ForegroundColor Red
             $result.FailedTests | ForEach-Object { Write-Host "  - $_" -ForegroundColor DarkGray }
-        }
-
-        if ($result.Comparison) {
-            Write-Host "`nComparison with Build $($result.Comparison.BaselineBuildId)" -ForegroundColor Cyan
-            Write-Host "  New Failures:        " -NoNewline; Write-Host $result.Comparison.NewFailures.Count -ForegroundColor Red
-            Write-Host "  Pre-existing:        " -NoNewline; Write-Host $result.Comparison.PreExistingFailures.Count -ForegroundColor Yellow
-            Write-Host "  Fixed in this build: " -NoNewline; Write-Host $result.Comparison.FixedInPR.Count -ForegroundColor Green
-
-            if ($result.Comparison.NewFailures.Count -gt 0) {
-                Write-Host "`n  New Failures:" -ForegroundColor Red
-                $result.Comparison.NewFailures | ForEach-Object { Write-Host "    - $_" -ForegroundColor DarkGray }
-            }
-
-            if ($result.Comparison.FixedInPR.Count -gt 0) {
-                Write-Host "`n  Fixed:" -ForegroundColor Green
-                $result.Comparison.FixedInPR | ForEach-Object { Write-Host "    - $_" -ForegroundColor DarkGray }
-            }
         }
 
         if ($result.LogFiles.Count -gt 0) {
