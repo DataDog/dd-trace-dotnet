@@ -690,11 +690,11 @@ DD_SYMBOL_DATABASE_THIRD_PARTY_DETECTION_INCLUDES: |
   Default value is empty.
 
 DD_SYMBOL_DATABASE_UPLOAD_ENABLED: |
-  Internal configuration key to optionally limit the maximum number of probes of each type.
+  Configuration key for allowing upload of symbol data (such as method names, parameter names, etc) to Datadog.
   Default value is true (enabled).
 
 INTERNAL_DYNAMIC_INSTRUMENTATION_MAX_PROBES_PER_TYPE: |
-  Configuration key for allowing upload of symbol data (such as method names, parameter names, etc) to Datadog.
+  Internal configuration key to optionally limit the maximum number of probes of each type.
   Default value is <c>0</c>, no probe-count limit is enforced.
 
 DD_TAGS: |
