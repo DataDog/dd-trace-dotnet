@@ -44,7 +44,7 @@ public class ConfigKeyAliasesSwitcherGenerator : IIncrementalGenerator
             static (spc, result) => Execute(spc, result));
     }
 
-    private static void Execute(SourceProductionContext context, Result<ConfigurationAliases> result)
+    private static void Execute(SourceProductionContext context, Result<ConfigurationAliases?> result)
     {
         // Report any diagnostics first
         foreach (var diagnostic in result.Errors)
@@ -52,21 +52,22 @@ public class ConfigKeyAliasesSwitcherGenerator : IIncrementalGenerator
             context.ReportDiagnostic(Diagnostic.Create(diagnostic.Descriptor, diagnostic.Location?.ToLocation()));
         }
 
-        // Generate source code even if there are errors (use empty configuration as fallback)
+        // Generate source code even if there are errors (use empty configuration as fallback).
+        // `result.Value` can be null when parsing failed; treat that as "no aliases" and generate an empty switch.
         var configurationAliases = result.Value ?? new ConfigurationAliases(new Dictionary<string, string[]>());
         var generatedSource = GenerateConfigurationKeyMatcher(configurationAliases);
         context.AddSource($"{ClassName}.g.cs", SourceText.From(generatedSource, Encoding.UTF8));
     }
 
-    private static Result<ConfigurationAliases> ParseAliasesFromV2File(AdditionalText file, CancellationToken cancellationToken)
+    private static Result<ConfigurationAliases?> ParseAliasesFromV2File(AdditionalText file, CancellationToken cancellationToken)
     {
         try
         {
             var sourceText = file.GetText(cancellationToken);
             if (sourceText is null)
             {
-                return new Result<ConfigurationAliases>(
-                    null!,
+                return new Result<ConfigurationAliases?>(
+                    null,
                     new EquatableArray<DiagnosticInfo>(
                     [
                         CreateDiagnosticInfo("DDSG0003", "Configuration file not found", $"The file '{file.Path}' could not be read. Make sure the supported-configurations.json file exists and is included as an AdditionalFile.", DiagnosticSeverity.Error)
@@ -81,8 +82,8 @@ public class ConfigKeyAliasesSwitcherGenerator : IIncrementalGenerator
             if (!root.TryGetProperty("supportedConfigurations", out var supportedConfigurationsElement) ||
                 supportedConfigurationsElement.ValueKind != JsonValueKind.Object)
             {
-                return new Result<ConfigurationAliases>(
-                    null!,
+                return new Result<ConfigurationAliases?>(
+                    null,
                     new EquatableArray<DiagnosticInfo>(
                     [
                         CreateDiagnosticInfo("DDSG0002", "Aliases parsing error", "Missing or invalid 'supportedConfigurations' section", DiagnosticSeverity.Error)
@@ -90,12 +91,12 @@ public class ConfigKeyAliasesSwitcherGenerator : IIncrementalGenerator
             }
 
             var aliases = ParseAliasesFromV2SupportedConfigurations(supportedConfigurationsElement);
-            return new Result<ConfigurationAliases>(new ConfigurationAliases(aliases), default);
+            return new Result<ConfigurationAliases?>(new ConfigurationAliases(aliases), default);
         }
         catch (Exception ex)
         {
-            return new Result<ConfigurationAliases>(
-                null!,
+            return new Result<ConfigurationAliases?>(
+                null,
                 new EquatableArray<DiagnosticInfo>(
                 [
                     CreateDiagnosticInfo("DDSG0004", "Configuration file read error", $"Failed to read configuration file '{file.Path}': {ex.Message}", DiagnosticSeverity.Error)
@@ -255,7 +256,7 @@ public class ConfigKeyAliasesSwitcherGenerator : IIncrementalGenerator
         return sb.ToString();
     }
 
-    private sealed class ConfigurationAliases(Dictionary<string, string[]> aliases) : IEquatable<ConfigurationAliases>
+    private sealed class ConfigurationAliases(Dictionary<string, string[]> aliases) : IEquatable<ConfigurationAliases?>
     {
         public Dictionary<string, string[]> Aliases { get; } = aliases;
 
