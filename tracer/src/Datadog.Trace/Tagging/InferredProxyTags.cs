@@ -12,7 +12,7 @@ namespace Datadog.Trace.Tagging;
 internal sealed partial class InferredProxyTags : InstrumentationTags, IHasStatusCode
 {
     [Tag(Trace.Tags.SpanKind)]
-    public override string SpanKind => SpanKinds.Internal;
+    public override string SpanKind => SpanKinds.Server;
 
     [Tag(Trace.Tags.InstrumentationName)]
     public string? InstrumentationName { get; set; }

@@ -63,7 +63,7 @@ Write-Verbose "Tracer directory: $tracerDir"
 
 # Clean up previous builds
 Write-Verbose "Cleaning up previous builds from: $tracerDir/bin/artifacts/nuget/azure-functions/"
-Remove-Item -Path "$tracerDir/bin/artifacts/nuget/azure-functions/*" -Force -ErrorAction SilentlyContinue
+Remove-Item -Path "$tracerDir/bin/artifacts/nuget/azure-functions/*" -Force -Recurse -ErrorAction SilentlyContinue
 
 # Get NuGet cache path
 $globalPackagesPath = & dotnet nuget locals global-packages --list | ForEach-Object {

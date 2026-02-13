@@ -17,7 +17,7 @@ using Xunit;
 
 namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Proxy;
 
-public class InferredProxyCoordinatorTests : IAsyncLifetime
+public class InferredProxyCoordinatorTests
 {
     private readonly Mock<IInferredProxyExtractor> _extractor;
     private readonly Mock<IInferredSpanFactory> _factory;
@@ -32,9 +32,10 @@ public class InferredProxyCoordinatorTests : IAsyncLifetime
         _coordinator = new InferredProxyCoordinator(_extractor.Object, _factory.Object);
     }
 
-    public Task InitializeAsync() => Task.CompletedTask;
-
-    public async Task DisposeAsync() => await _tracer.DisposeAsync();
+    private delegate void TryExtractCallback(
+        NameValueHeadersCollection carrier,
+        HeadersCollectionAccesor<NameValueHeadersCollection> carrierGetter,
+        out InferredProxyData data);
 
     [Fact]
     public void ExtractAndCreateScope_WhenExtractorReturnsFalse_ShouldReturnNull()
@@ -43,7 +44,6 @@ public class InferredProxyCoordinatorTests : IAsyncLifetime
         _extractor.Setup(e => e.TryExtract(
                       It.IsAny<NameValueHeadersCollection>(),
                       It.IsAny<HeadersCollectionAccesor<NameValueHeadersCollection>>(),
-                      It.IsAny<Tracer>(),
                       out It.Ref<InferredProxyData>.IsAny))
                   .Returns(false);
 
@@ -61,12 +61,11 @@ public class InferredProxyCoordinatorTests : IAsyncLifetime
     {
         // header values not important
         var headers = ProxyTestHelpers.CreateValidHeaders();
-        var proxyData = new InferredProxyData("aws-apigateway", DateTimeOffset.UtcNow, "test.api.com", "GET", "/api/test", "prod");
+        var proxyData = new InferredProxyData("aws-apigateway", DateTimeOffset.UtcNow, "test.api.com", "GET", "/api/test", "prod", null);
 
         _extractor.Setup(e => e.TryExtract(
                       It.IsAny<NameValueHeadersCollection>(),
                       It.IsAny<HeadersCollectionAccesor<NameValueHeadersCollection>>(),
-                      It.IsAny<Tracer>(),
                       out proxyData))
                   .Returns(true); // we successfully extract headers
 
@@ -89,22 +88,21 @@ public class InferredProxyCoordinatorTests : IAsyncLifetime
             "test.api.com",
             "GET",
             "/api/test",
-            "prod");
+            "prod",
+            null);
 
         _extractor.Setup(e => e.TryExtract(
                       It.IsAny<NameValueHeadersCollection>(),
                       It.IsAny<HeadersCollectionAccesor<NameValueHeadersCollection>>(),
-                      It.IsAny<Tracer>(),
                       out It.Ref<InferredProxyData>.IsAny))
                   .Returns(true)
-                  .Callback((
+                  .Callback(new TryExtractCallback((
                       NameValueHeadersCollection _,
                       HeadersCollectionAccesor<NameValueHeadersCollection> _,
-                      Tracer _,
                       out InferredProxyData data) =>
                   {
                       data = proxyData;
-                  });
+                  }));
 
         // using an actual scope that the factor will return
         using var realScope = _tracer.StartActiveInternal("test.operation");

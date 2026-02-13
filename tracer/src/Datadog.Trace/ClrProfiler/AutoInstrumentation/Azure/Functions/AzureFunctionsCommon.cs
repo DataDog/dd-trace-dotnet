@@ -10,6 +10,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Shared;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
@@ -17,6 +19,7 @@ using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 #nullable enable
@@ -29,6 +32,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 
         public const string OperationName = "azure_functions.invoke";
         public const string SpanType = SpanTypes.Serverless;
+        public const string AzureApim = "azure.apim";
         public const IntegrationId IntegrationId = Configuration.IntegrationId.AzureFunctions;
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AzureFunctionsCommon));
@@ -116,7 +120,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 }
 
                 var functionName = instanceParam.FunctionDescriptor.ShortName;
-
+                var rootSpanName = tracer.InternalActiveScope?.Root.Span.OperationName;
+                // Check if there's an inferred proxy span (e.g., azure.apim) that we shouldn't overwrite
+                var isProxySpan = rootSpanName?.Equals(AzureApim) == true;
                 // Ignoring null because guaranteed running in AAS
                 if (tracer.Settings.AzureAppServiceMetadata is { IsIsolatedFunctionsApp: true }
                  && tracer.InternalActiveScope is { } activeScope)
@@ -127,18 +133,21 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     // and update it to be a "serverless" span.
                     var rootSpan = activeScope.Root.Span;
 
-                    // The shortname is prefixed with "Functions.", so strip that off
-                    var remoteFunctionName = functionName?.StartsWith("Functions.") == true
-                                                 ? functionName.Substring(10)
-                                                 : functionName;
+                    if (!isProxySpan)
+                    {
+                        // The shortname is prefixed with "Functions.", so strip that off
+                        var remoteFunctionName = functionName?.StartsWith("Functions.") == true
+                                                     ? functionName.Substring(10)
+                                                     : functionName;
+                        AzureFunctionsTags.SetRootSpanTags(
+                            rootSpan,
+                            shortName: remoteFunctionName,
+                            fullName: rootSpan.Tags is AzureFunctionsTags t ? t.FullName : null, // can't get anything meaningful here, so leave it as-is
+                            bindingSource: bindingSourceType.FullName,
+                            triggerType: triggerType);
+                        rootSpan.Type = SpanType;
+                    }
 
-                    AzureFunctionsTags.SetRootSpanTags(
-                        rootSpan,
-                        shortName: remoteFunctionName,
-                        fullName: rootSpan.Tags is AzureFunctionsTags t ? t.FullName : null, // can't get anything meaningful here, so leave it as-is
-                        bindingSource: bindingSourceType.FullName,
-                        triggerType: triggerType);
-                    rootSpan.Type = SpanType;
                     return null;
                 }
 
@@ -159,17 +168,25 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 else
                 {
                     scope = tracer.StartActiveInternal(OperationName);
-                    AzureFunctionsTags.SetRootSpanTags(
-                        scope.Root.Span,
-                        shortName: functionName,
-                        fullName: instanceParam.FunctionDescriptor.FullName,
-                        bindingSource: bindingSourceType.FullName,
-                        triggerType: triggerType);
+
+                    if (!isProxySpan)
+                    {
+                        AzureFunctionsTags.SetRootSpanTags(
+                            scope.Root.Span,
+                            shortName: functionName,
+                            fullName: instanceParam.FunctionDescriptor.FullName,
+                            bindingSource: bindingSourceType.FullName,
+                            triggerType: triggerType);
+                    }
                 }
 
-                scope.Root.Span.Type = SpanType;
-                scope.Span.ResourceName = $"{triggerType} {functionName}";
-                scope.Span.Type = SpanType;
+                if (!isProxySpan)
+                {
+                    scope.Root.Span.Type = SpanType;
+                    scope.Span.ResourceName = $"{triggerType} {functionName}";
+                    scope.Span.Type = SpanType;
+                }
+
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
             }
             catch (Exception ex)
@@ -234,7 +251,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                         _ when type.StartsWith("eventGrid", StringComparison.OrdinalIgnoreCase) => "EventGrid",      // Microsoft.Azure.Functions.Worker.Extensions.EventGrid.CosmosDB
                         _ => "Automatic",                                                                            // Automatic is the catch all for any triggers we don't explicitly handle
                     };
-
+                    // need to extract the headers from the context.
+                    // We currently only support httpTrigger, but other triggers may also propagate context,
+                    // e.g. Cosmos + ServiceBus, so we should handle those too
                     switch (triggerType)
                     {
                         case "Http":
@@ -255,16 +274,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 
                 var functionName = functionContext.FunctionDefinition.Name;
 
-                var tags = new AzureFunctionsTags
-                {
-                    TriggerType = triggerType,
-                    ShortName = functionName,
-                    FullName = functionContext.FunctionDefinition.EntryPoint,
-                };
+                // Check if there's an APIM proxy span that we shouldn't overwrite
+                var spanRootName = tracer.InternalActiveScope?.Root.Span.OperationName;
+                var isProxySpan = spanRootName?.Equals(AzureApim) == true;
 
                 if (tracer.InternalActiveScope == null)
                 {
                     // This is the root scope
+                    var tags = new AzureFunctionsTags
+                    {
+                        TriggerType = triggerType,
+                        ShortName = functionName,
+                        FullName = functionContext.FunctionDefinition.EntryPoint,
+                    };
                     tags.SetAnalyticsSampleRate(IntegrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: false);
                     scope = tracer.StartActiveInternal(OperationName, tags: tags, parent: extractedContext.SpanContext);
                 }
@@ -272,20 +294,27 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 {
                     // shouldn't be hit, but better safe than sorry
                     scope = tracer.StartActiveInternal(OperationName);
-                    var rootSpan = scope.Root.Span;
-                    AzureFunctionsTags.SetRootSpanTags(
-                        rootSpan,
-                        shortName: functionName,
-                        fullName: functionContext.FunctionDefinition.EntryPoint,
-                        bindingSource: rootSpan.Tags is AzureFunctionsTags t ? t.BindingSource : null,
-                        triggerType: triggerType);
+
+                    if (!isProxySpan)
+                    {
+                        var rootSpan = scope.Root.Span;
+                        AzureFunctionsTags.SetRootSpanTags(
+                            rootSpan,
+                            shortName: functionName,
+                            fullName: functionContext.FunctionDefinition.EntryPoint,
+                            bindingSource: rootSpan.Tags is AzureFunctionsTags t ? t.BindingSource : null,
+                            triggerType: triggerType);
+                    }
                 }
 
-                // change root span's type to "serverless"
-                scope.Root.Span.Type = SpanType;
+                if (!isProxySpan)
+                {
+                    // change root span's type to "serverless"
+                    scope.Root.Span.Type = SpanType;
+                    scope.Span.ResourceName = $"{triggerType} {functionName}";
+                    scope.Span.Type = SpanType;
+                }
 
-                scope.Span.ResourceName = $"{triggerType} {functionName}";
-                scope.Span.Type = SpanType;
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
             }
             catch (Exception ex)
@@ -354,21 +383,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
         {
             try
             {
-                if (context.Features == null)
-                {
-                    return default;
-                }
-
-                GrpcBindingsFeatureStruct? bindingsFeature = null;
-                foreach (var kvp in context.Features)
-                {
-                    if (kvp.Key.FullName?.Equals("Microsoft.Azure.Functions.Worker.Context.Features.IFunctionBindingsFeature") == true)
-                    {
-                        bindingsFeature = kvp.Value?.TryDuckCast<GrpcBindingsFeatureStruct>(out var feature) == true ? feature : null;
-                        break;
-                    }
-                }
-
+                var bindingsFeature = GetFeatureFromContext<T, FunctionBindingsFeatureStruct>(context, "Microsoft.Azure.Functions.Worker.Context.Features.IFunctionBindingsFeature");
                 if (bindingsFeature == null)
                 {
                     return default;
@@ -458,6 +473,26 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 ctx.SpanContext != null &&
                 ctx.SpanContext.TraceId128 == first!.TraceId128 &&
                 ctx.SpanContext.SpanId == first.SpanId);
+        }
+
+        private static TFeature? GetFeatureFromContext<T, TFeature>(T context, string featureTypeName)
+            where T : IFunctionContext
+            where TFeature : struct
+        {
+            if (context.Features == null)
+            {
+                return null;
+            }
+
+            foreach (var kvp in context.Features)
+            {
+                if (kvp.Key.FullName == featureTypeName)
+                {
+                    return kvp.Value?.TryDuckCast<TFeature>(out var feature) == true ? feature : null;
+                }
+            }
+
+            return null;
         }
     }
 }
