@@ -126,9 +126,6 @@ src/Datadog.Trace/PlatformHelpers/AspNetCoreHttpRequestHandler.cs
 src/Datadog.Trace/PlatformHelpers/ServiceFabric.cs
 src/Datadog.Trace/Processors/ITagProcessor.cs
 src/Datadog.Trace/Processors/NormalizerTraceProcessor.cs
-src/Datadog.Trace/Processors/ObfuscatorTagsProcessor.cs
-src/Datadog.Trace/Processors/ObfuscatorTraceProcessor.cs
-src/Datadog.Trace/Processors/RedisObfuscationUtil.cs
 src/Datadog.Trace/Processors/TraceUtil.cs
 src/Datadog.Trace/Processors/TruncatorTagsProcessor.cs
 src/Datadog.Trace/Processors/TruncatorTraceProcessor.cs
