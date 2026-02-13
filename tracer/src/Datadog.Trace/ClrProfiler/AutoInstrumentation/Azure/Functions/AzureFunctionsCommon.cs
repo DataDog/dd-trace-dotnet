@@ -280,31 +280,22 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     FullName = functionContext.FunctionDefinition.EntryPoint,
                 };
 
-                // Try to get parent span context from (in order):
-                // 1. Extracted from propagation headers (gRPC message from the host process).
-                //    This is the most reliable source of the host's trace context for non-ASP.NET Core apps.
-                // 2. HttpContext.Items bridge, for HTTP triggers using ASP.NET Core integration.
-                //    In ASP.NET Core mode, gRPC headers are stale so we skip extraction above and
-                //    retrieve the scope stored by AspNetCoreHttpRequestHandler instead.
-                // 3. Existing local span (fallback).
-                //    Note: InternalActiveScope may be an unrelated aspnet_core.request span from the
-                //    gRPC listener, so it should only be used as a last resort.
-                var parentSpanContext = extractedContext.SpanContext ??
-                                        GetAspNetCoreScope(functionContext)?.Span.Context ??
-                                        tracer.InternalActiveScope?.Span.Context;
+                // Try to get parent scope from (in order):
+                // 1. HttpContext.Items bridge, for HTTP triggers using ASP.NET Core integration.
+                // 2. Existing local span (fallback).
+                var aspNetCoreScope = GetAspNetCoreScope(functionContext);
+                var activeScope = tracer.InternalActiveScope;
 
-                scope = tracer.StartActiveInternal(OperationName, parent: parentSpanContext, tags: tags);
-                var span = scope.Span;
-                var rootSpan = scope.Root.Span;
+                // Check if the ASP.NET Core scope is already active
+                if (aspNetCoreScope != null && activeScope == aspNetCoreScope)
+                {
+                    // The ASP.NET Core span is already active - don't create a new span,
+                    // just update the existing root span's tags to make it a "serverless" span.
+                    // This matches the behavior for isolated worker scenario where we detect
+                    // an existing scope and update it rather than creating a duplicate.
+                    scope = activeScope;
+                    var rootSpan = scope.Root.Span;
 
-                if (span == rootSpan)
-                {
-                    // this is the local root span
-                    tags.SetAnalyticsSampleRate(IntegrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: false);
-                }
-                else
-                {
-                    // this is NOT the local root span, copy some tags to the root span
                     AzureFunctionsTags.SetRootSpanTags(
                         rootSpan.Tags,
                         shortName: tags.ShortName,
@@ -313,10 +304,44 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                         triggerType: tags.TriggerType);
 
                     rootSpan.Type = SpanType; // "serverless"
+                    rootSpan.ResourceName = $"{tags.TriggerType} {tags.ShortName}";
+                }
+                else
+                {
+                    // Create a new span with the appropriate parent context from:
+                    // 1. Extracted from propagation headers (gRPC message from the host process).
+                    // 2. ASP.NET Core scope (if available but not active - shouldn't happen).
+                    // 3. Existing local span (fallback).
+                    var parentSpanContext = extractedContext.SpanContext ??
+                                            aspNetCoreScope?.Span.Context ??
+                                            activeScope?.Span.Context;
+
+                    scope = tracer.StartActiveInternal(OperationName, parent: parentSpanContext, tags: tags);
+                    var span = scope.Span;
+                    var rootSpan = scope.Root.Span;
+
+                    if (span == rootSpan)
+                    {
+                        // this is the local root span
+                        tags.SetAnalyticsSampleRate(IntegrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: false);
+                    }
+                    else
+                    {
+                        // this is NOT the local root span, copy some tags to the root span
+                        AzureFunctionsTags.SetRootSpanTags(
+                            rootSpan.Tags,
+                            shortName: tags.ShortName,
+                            fullName: tags.FullName,
+                            bindingSource: rootSpan.Tags is AzureFunctionsTags t ? t.BindingSource : null,
+                            triggerType: tags.TriggerType);
+
+                        rootSpan.Type = SpanType; // "serverless"
+                    }
+
+                    span.ResourceName = $"{tags.TriggerType} {tags.ShortName}";
+                    span.Type = SpanType;
                 }
 
-                span.ResourceName = $"{tags.TriggerType} {tags.ShortName}";
-                span.Type = SpanType;
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
             }
             catch (Exception ex)
