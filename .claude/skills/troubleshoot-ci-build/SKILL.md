@@ -1,7 +1,7 @@
 ---
 name: troubleshoot-ci-build
-description: Troubleshoot CI failures in dd-trace-dotnet Azure DevOps pipeline. Analyzes build failures, compares with master builds, categorizes failures (infrastructure/flaky/real), and provides actionable recommendations. Use for PR failures or specific build IDs.
-argument-hint: <pr NUMBER | build BUILD_ID | compare BUILD_ID BASELINE_ID>
+description: Troubleshoot CI failures in dd-trace-dotnet Azure DevOps pipeline. Analyzes build failures, categorizes failures (infrastructure/flaky/real), and provides actionable recommendations. Use for PR failures or specific build IDs.
+argument-hint: <pr NUMBER | build BUILD_ID>
 disable-model-invocation: true
 user-invocable: true
 allowed-tools: WebFetch, Bash(gh pr checks:*), Bash(az devops invoke:*), Bash(az pipelines build list:*), Bash(az pipelines build show:*), Bash(az pipelines runs artifact list:*), Bash(az pipelines runs list:*), Bash(az pipelines runs show:*)
@@ -9,7 +9,7 @@ allowed-tools: WebFetch, Bash(gh pr checks:*), Bash(az devops invoke:*), Bash(az
 
 # Troubleshoot Azure DevOps Builds for dd-trace-dotnet
 
-Troubleshoot Azure DevOps pipeline failures with automated analysis and comparison against master builds.
+Troubleshoot Azure DevOps pipeline failures with automated analysis.
 
 ## Prerequisites
 
@@ -52,19 +52,19 @@ You are analyzing CI failures for the dd-trace-dotnet repository.
 3. **Show quick summary** - Present overview to user
 4. **Ask user what to investigate** - Prompt for next steps
 
+**Assumption**: All tests pass in master. If a test were consistently failing, it wouldn't have been merged.
+
 **Phase 2 - Deep Analysis (ONLY IF USER REQUESTS)**:
-- Compare with master builds
 - Download and analyze logs (if available)
 - Categorize failures (infrastructure/flaky/real)
 - Provide detailed recommendations
 
 ## Arguments
 
-The skill accepts three invocation patterns:
+The skill accepts two invocation patterns:
 
 - **`pr <NUMBER>`** - Analyze failures for a GitHub PR
 - **`build <BUILD_ID>`** - Analyze a specific Azure DevOps build
-- **`compare <BUILD_ID> <BASELINE_ID>`** - Compare two builds directly
 
 Arguments are available as: `$ARGUMENTS`
 
@@ -105,24 +105,11 @@ Present a concise summary and ask what they want to investigate next.
 ### PHASE 2: Deep Analysis (Only If Requested)
 
 **DO NOT perform these steps automatically**. Only do them if the user asks for:
-- Comparison with master
 - Log analysis
 - Detailed categorization
 - Specific failure investigation
 
 #### Deep Analysis Steps
-
-**Compare with Master** (if requested):
-
-```bash
-pwsh -NoProfile -Command ".\tracer\tools\Get-AzureDevOpsBuildAnalysis.ps1 -BuildId $BUILD_ID -CompareWithMaster -Verbose"
-```
-
-The script automatically:
-- Finds the most recent successful master build
-- Fetches its timeline
-- Compares failed tests
-- Reports new failures, pre-existing failures, and fixed tests
 
 **Download Logs** (if requested):
 
@@ -192,32 +179,14 @@ _(Note: List specific test names extracted from error messages, if test failures
 
 ## 🔍 What would you like to investigate?
 
-1. **Compare with master** - Check if these failures exist in recent master builds
-2. **View specific logs** - Attempt to download logs for failed tasks (may fail due to API limits)
-3. **Categorize failures** - Analyze failure types (infrastructure/flaky/real)
-4. **Show full analysis** - Run complete analysis with all details
+1. **Categorize failures** - Analyze failure types (infrastructure/flaky/real)
+2. **View specific logs** - Download logs for failed tasks
+3. **Show full analysis** - Run complete analysis with all details
 
 [View build in Azure DevOps](https://dev.azure.com/datadoghq/dd-trace-dotnet/_build/results?buildId=<BUILD_ID>&view=logs)
 ```
 
 ### Phase 2: Detailed Output (Only If User Requests)
-
-**If user requests comparison with master**:
-```markdown
-## Comparison with Master
-
-**Baseline**: Build <MASTER_BUILD_ID> on `master` (finished <TIME_AGO>) - Status: ✅ Succeeded
-
-**New Failures** (in PR but not in master):
-- `<task_1>`
-- `<task_2>`
-
-**Pre-existing Failures** (also in master):
-- `<task_3>`
-- `<task_4>`
-
-**Analysis**: <brief summary of findings>
-```
 
 **If user requests log analysis**:
 ```markdown
@@ -253,7 +222,6 @@ Attempted to download logs for failed tasks:
 ### 🔴 Real Failures (Action: Investigate)
 **Indicators**:
 - Test assertions: `Expected X but got Y`, `Assert.*failed`
-- New failures not in master baseline
 - Compilation errors: `error CS\d+`, `MSB\d+`
 - Segmentation faults: `SIGSEGV`, `Access Violation`
 - Missing spans: `Expected N spans but got M`
@@ -273,6 +241,7 @@ Actual:   False
 - Stack walking failures: `Failed to walk N stacks for sampled exception: E_FAIL`
 - Known intermittent tests (reference `failure-patterns.md`)
 - Tests that pass/fail inconsistently across platforms
+- **Single-runtime failures**: Same test fails on only one .NET runtime but passes on others (especially net6+). Example: net6 pass, net8 pass, net10 fail → likely flaky, not a real regression.
 
 **Pattern examples**:
 ```
@@ -331,13 +300,6 @@ az devops invoke --area build --resource builds \
 ```bash
 az devops invoke --area build --resource timeline \
   --route-parameters project=dd-trace-dotnet buildId=$BUILD_ID
-```
-
-**List Builds** (with query parameters):
-```bash
-az devops invoke --area build --resource builds \
-  --route-parameters project=dd-trace-dotnet \
-  --query-parameters branchName=refs/heads/master \$top=5
 ```
 
 **Get Build Logs** (may fail with HTTP 500):
@@ -473,11 +435,6 @@ jq '.records[] | select((.name // "") | startswith("Test"))'
 - Verify build ID is correct
 - Check if build is still queued (not completed)
 
-### Master Comparison Unavailable
-- Show PR results only
-- Warn that comparison could not be performed
-- Suggest manual comparison using web UI
-
 ### Logs Too Large or Unavailable
 - **Preferred method**: Extract log URLs from timeline (`.log.url` field) and use `curl` or `WebFetch` to download
 - The `az devops invoke --resource logs` API returns HTTP 500, so avoid it
@@ -532,20 +489,9 @@ Reference these files when categorizing failures or looking for known issues.
   (and 8 more...)
 
 What would you like to investigate?
-1. Compare with master
+1. Categorize failures
 2. View specific logs
-3. Categorize failures
-4. Show full analysis
-```
-
-**User**: "Compare with master"
-
-**Phase 2 Output** (after user request):
-```
-Comparing with master build 195277 (succeeded)...
-
-All 8 failed tasks are NEW failures (not in master).
-This indicates PR #7806 introduced breaking changes.
+3. Show full analysis
 ```
 
 ### Example 2: PR Analysis
@@ -556,9 +502,12 @@ This indicates PR #7806 introduced breaking changes.
 ```
 Found Azure DevOps build 195272 for PR #7806
 
-[Quick summary as above]
+[Quick summary as in Example 1]
 
 What would you like to investigate?
+1. Categorize failures
+2. View specific logs
+3. Show full analysis
 ```
 
 ## Related Documentation
@@ -599,12 +548,7 @@ The Azure DevOps timeline contains a hierarchy:
    - Check `.result == "failed"` for actual failures
    - Don't confuse build warnings with test failures
 
-2. **Identifying the baseline**:
-   - Most recent **succeeded** master build is best baseline
-   - If master has recent failures, note them separately
-   - Use build timestamps to ensure chronological order
-
-3. **Log download failures**:
+2. **Log download failures**:
    - Azure DevOps logs API frequently returns HTTP 500
    - This is a known limitation, not a user error
    - Always provide web UI links as fallback
