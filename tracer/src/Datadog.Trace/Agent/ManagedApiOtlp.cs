@@ -3,11 +3,14 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#if NET6_0_OR_GREATER
+
 #nullable enable
 
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
@@ -22,24 +25,17 @@ internal sealed class ManagedApiOtlp : IApi
 {
     private IApi _api;
 
-    public ManagedApiOtlp(TracerSettings.SettingsManager settings)
+    public ManagedApiOtlp(TracerSettings settings)
     {
-        UpdateApi(settings.InitialExporterSettings);
-        // ManagedApi lifetime matches application lifetime, so we don't bother to dispose the subscription
-        settings.SubscribeToChanges(changes =>
-        {
-            if (changes.UpdatedExporter is { } exporter)
-            {
-                var mutable = changes.UpdatedMutable ?? changes.PreviousMutable;
-                UpdateApi(exporter);
-            }
-        });
+        // For now, do not subscribe to any changes
+        // OTLP export settings will be fixed from startup
+        UpdateApi(settings, settings.Manager.InitialExporterSettings);
 
         [MemberNotNull(nameof(_api))]
-        void UpdateApi(ExporterSettings exporterSettings)
+        void UpdateApi(TracerSettings settings, ExporterSettings exporterSettings)
         {
             var apiRequestFactory = TracesTransportStrategy.Get(exporterSettings);
-            var api = new ApiOtlp(apiRequestFactory, exporterSettings.OtlpTracesEndpoint ?? new Uri("http://localhost:4318/v1/traces"), exporterSettings.TracesEncoding, exporterSettings.OtlpMetricsProtocol ?? OtlpProtocol.HttpProtobuf, exporterSettings.OtlpMetricsEndpoint, exporterSettings.OtlpMetricsHeaders, exporterSettings.OtlpMetricsTimeoutMs);
+            var api = new ApiOtlp(apiRequestFactory, settings, exporterSettings);
             Interlocked.Exchange(ref _api!, api);
         }
     }
@@ -54,3 +50,5 @@ internal sealed class ManagedApiOtlp : IApi
     public Task<bool> SendStatsAsync(StatsBuffer stats, long bucketDuration)
         => Volatile.Read(ref _api).SendStatsAsync(stats, bucketDuration);
 }
+
+#endif
