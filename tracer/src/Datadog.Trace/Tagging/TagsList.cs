@@ -21,48 +21,6 @@ namespace Datadog.Trace.Tagging
         private List<KeyValuePair<string, double>>? _metrics;
         private List<KeyValuePair<string, byte[]>>? _metaStruct;
 
-        /// <summary>
-        /// Begin a batch set operation for tags.
-        /// This is intended for internal hot paths that add/update multiple tags at once.
-        /// The returned <see cref="TagBatch"/> holds the underlying tag list lock and MUST be disposed (use <c>using</c>).
-        /// Callers should keep the critical section small: do not perform any slow/allocating work while holding the batch.
-        /// The batch uses the same semantics as <see cref="SetTag"/> (replace/remove existing keys).
-        /// </summary>
-        internal TagBatch BeginTagBatch(int additionalTagCount)
-        {
-            if (additionalTagCount < 0)
-            {
-                additionalTagCount = 0;
-            }
-
-            var tags = Volatile.Read(ref _tags);
-
-            if (tags == null)
-            {
-                // Use a capacity that matches what the caller expects to add to avoid internal growth allocations when adding multiple tags.
-                var newTags = new List<KeyValuePair<string, string>>(additionalTagCount);
-                tags = Interlocked.CompareExchange(ref _tags, newTags, null) ?? newTags;
-            }
-
-            Monitor.Enter(tags);
-
-            try
-            {
-                var requiredCapacity = tags.Count + additionalTagCount;
-                if (tags.Capacity < requiredCapacity)
-                {
-                    tags.Capacity = requiredCapacity;
-                }
-
-                return new TagBatch(tags);
-            }
-            catch
-            {
-                Monitor.Exit(tags);
-                throw;
-            }
-        }
-
         public virtual string? GetTag(string key)
         {
             var tags = Volatile.Read(ref _tags);
@@ -95,28 +53,169 @@ namespace Datadog.Trace.Tagging
 
             lock (tags)
             {
-                for (int i = 0; i < tags.Count; i++)
+                SetTagNoLock(tags, key, value);
+            }
+        }
+
+        /// <summary>
+        /// Sets multiple tags.
+        /// Uses the same semantics as <see cref="SetTag"/> for each tag (replace/remove existing keys).
+        /// </summary>
+        public virtual void SetTags(
+            string key1,
+            string? value1,
+            string key2,
+            string? value2,
+            string key3,
+            string? value3)
+        {
+            var tags = Volatile.Read(ref _tags);
+
+            var additionalCountUpperBound =
+                (value1 is null ? 0 : 1) +
+                (value2 is null ? 0 : 1) +
+                (value3 is null ? 0 : 1);
+
+            if (tags == null)
+            {
+                var newTags = new List<KeyValuePair<string, string>>(additionalCountUpperBound);
+                tags = Interlocked.CompareExchange(ref _tags, newTags, null) ?? newTags;
+            }
+
+            lock (tags)
+            {
+                var requiredCapacity = tags.Count + additionalCountUpperBound;
+                if (tags.Capacity < requiredCapacity)
                 {
-                    if (tags[i].Key == key)
+                    tags.Capacity = requiredCapacity;
+                }
+
+                SetTagNoLock(tags, key1, value1);
+                SetTagNoLock(tags, key2, value2);
+                SetTagNoLock(tags, key3, value3);
+            }
+        }
+
+        /// <summary>
+        /// Sets multiple tags.
+        /// Uses the same semantics as <see cref="SetTag"/> for each tag (replace/remove existing keys).
+        /// </summary>
+        public virtual void SetTags(
+            string key1,
+            string? value1,
+            string key2,
+            string? value2,
+            string key3,
+            string? value3,
+            string key4,
+            string? value4)
+        {
+            var tags = Volatile.Read(ref _tags);
+
+            var additionalCountUpperBound =
+                (value1 is null ? 0 : 1) +
+                (value2 is null ? 0 : 1) +
+                (value3 is null ? 0 : 1) +
+                (value4 is null ? 0 : 1);
+
+            if (tags == null)
+            {
+                var newTags = new List<KeyValuePair<string, string>>(additionalCountUpperBound);
+                tags = Interlocked.CompareExchange(ref _tags, newTags, null) ?? newTags;
+            }
+
+            lock (tags)
+            {
+                var requiredCapacity = tags.Count + additionalCountUpperBound;
+                if (tags.Capacity < requiredCapacity)
+                {
+                    tags.Capacity = requiredCapacity;
+                }
+
+                SetTagNoLock(tags, key1, value1);
+                SetTagNoLock(tags, key2, value2);
+                SetTagNoLock(tags, key3, value3);
+                SetTagNoLock(tags, key4, value4);
+            }
+        }
+
+        /// <summary>
+        /// Sets multiple tags.
+        /// Uses the same semantics as <see cref="SetTag"/> for each tag (replace/remove existing keys).
+        /// </summary>
+        public virtual void SetTags(
+            string key1,
+            string? value1,
+            string key2,
+            string? value2,
+            string key3,
+            string? value3,
+            string key4,
+            string? value4,
+            string key5,
+            string? value5,
+            string key6,
+            string? value6,
+            string key7,
+            string? value7)
+        {
+            var tags = Volatile.Read(ref _tags);
+
+            var additionalCountUpperBound =
+                (value1 is null ? 0 : 1) +
+                (value2 is null ? 0 : 1) +
+                (value3 is null ? 0 : 1) +
+                (value4 is null ? 0 : 1) +
+                (value5 is null ? 0 : 1) +
+                (value6 is null ? 0 : 1) +
+                (value7 is null ? 0 : 1);
+
+            if (tags == null)
+            {
+                var newTags = new List<KeyValuePair<string, string>>(additionalCountUpperBound);
+                tags = Interlocked.CompareExchange(ref _tags, newTags, null) ?? newTags;
+            }
+
+            lock (tags)
+            {
+                var requiredCapacity = tags.Count + additionalCountUpperBound;
+                if (tags.Capacity < requiredCapacity)
+                {
+                    tags.Capacity = requiredCapacity;
+                }
+
+                SetTagNoLock(tags, key1, value1);
+                SetTagNoLock(tags, key2, value2);
+                SetTagNoLock(tags, key3, value3);
+                SetTagNoLock(tags, key4, value4);
+                SetTagNoLock(tags, key5, value5);
+                SetTagNoLock(tags, key6, value6);
+                SetTagNoLock(tags, key7, value7);
+            }
+        }
+
+        private static void SetTagNoLock(List<KeyValuePair<string, string>> tags, string key, string? value)
+        {
+            for (var i = 0; i < tags.Count; i++)
+            {
+                if (tags[i].Key == key)
+                {
+                    if (value is null)
                     {
-                        if (value == null)
-                        {
-                            tags.RemoveAt(i);
-                        }
-                        else
-                        {
-                            tags[i] = new KeyValuePair<string, string>(key, value);
-                        }
-
-                        return;
+                        tags.RemoveAt(i);
                     }
-                }
+                    else
+                    {
+                        tags[i] = new KeyValuePair<string, string>(key, value);
+                    }
 
-                // If we get there, the tag wasn't in the collection
-                if (value != null)
-                {
-                    tags.Add(new KeyValuePair<string, string>(key, value));
+                    return;
                 }
+            }
+
+            if (value is not null)
+            {
+                tags.Add(new KeyValuePair<string, string>(key, value));
             }
         }
 
@@ -340,64 +439,6 @@ namespace Datadog.Trace.Tagging
 
         protected virtual void WriteAdditionalMetrics(StringBuilder builder)
         {
-        }
-
-        /// <summary>
-        /// A lock-holding batch helper for setting tags.
-        /// Note: this is a <see langword="struct"/> that contains a reference. Do not copy it, and dispose exactly once.
-        /// </summary>
-        internal readonly struct TagBatch : IDisposable
-        {
-            private readonly List<KeyValuePair<string, string>>? _tags;
-
-            internal TagBatch(List<KeyValuePair<string, string>> tags)
-            {
-                _tags = tags;
-            }
-
-            /// <summary>
-            /// Sets a tag using the same semantics as <see cref="TagsList.SetTag"/>.
-            /// </summary>
-            public void SetTag(string key, string? value)
-            {
-                var tags = _tags;
-                if (tags is null)
-                {
-                    return;
-                }
-
-                for (var i = 0; i < tags.Count; i++)
-                {
-                    if (tags[i].Key == key)
-                    {
-                        if (value is null)
-                        {
-                            tags.RemoveAt(i);
-                        }
-                        else
-                        {
-                            tags[i] = new KeyValuePair<string, string>(key, value);
-                        }
-
-                        return;
-                    }
-                }
-
-                if (value is not null)
-                {
-                    tags.Add(new KeyValuePair<string, string>(key, value));
-                }
-            }
-
-            public void Dispose()
-            {
-                // Make default(TagBatch).Dispose() a no-op.
-                // Misuse cases like double-dispose or disposing on the wrong thread should still throw.
-                if (_tags is { } tags)
-                {
-                    Monitor.Exit(tags);
-                }
-            }
         }
     }
 }

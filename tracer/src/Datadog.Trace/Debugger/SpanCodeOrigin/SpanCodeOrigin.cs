@@ -124,26 +124,47 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
                     if (sp is { } cached)
                     {
                         // PDB tags are only written when present
-                        using var batch = webTags.BeginTagBatch(additionalTagCount: 3);
-                        batch.SetTag(_tags.File[0], cached.Url);
-                        batch.SetTag(_tags.Line[0], cached.Line);
-                        batch.SetTag(_tags.Column[0], cached.Column);
+                        webTags.SetTags(
+                            _tags.File[0],
+                            cached.Url,
+                            _tags.Line[0],
+                            cached.Line,
+                            _tags.Column[0],
+                            cached.Column);
                     }
                 }
                 else if (span.Tags is TagsList tagsList)
                 {
                     // fallback
-                    using var batch = tagsList.BeginTagBatch(additionalTagCount: sp is null ? 4 : 7);
-                    batch.SetTag(_tags.Type, "entry");
-                    batch.SetTag(_tags.Index[0], "0");
-                    batch.SetTag(_tags.Method[0], methodName);
-                    batch.SetTag(_tags.TypeName[0], typeFullName);
-
                     if (sp is { } cached)
                     {
-                        batch.SetTag(_tags.File[0], cached.Url);
-                        batch.SetTag(_tags.Line[0], cached.Line);
-                        batch.SetTag(_tags.Column[0], cached.Column);
+                        tagsList.SetTags(
+                            _tags.Type,
+                            "entry",
+                            _tags.Index[0],
+                            "0",
+                            _tags.Method[0],
+                            methodName,
+                            _tags.TypeName[0],
+                            typeFullName,
+                            _tags.File[0],
+                            cached.Url,
+                            _tags.Line[0],
+                            cached.Line,
+                            _tags.Column[0],
+                            cached.Column);
+                    }
+                    else
+                    {
+                        tagsList.SetTags(
+                            _tags.Type,
+                            "entry",
+                            _tags.Index[0],
+                            "0",
+                            _tags.Method[0],
+                            methodName,
+                            _tags.TypeName[0],
+                            typeFullName);
                     }
                 }
                 else

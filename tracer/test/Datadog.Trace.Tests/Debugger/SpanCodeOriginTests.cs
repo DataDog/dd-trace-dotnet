@@ -388,7 +388,7 @@ namespace Datadog.Trace.Tests.Debugger
             const long maxOptimizedBytesPerOp = 300;
 
             var baselineBytes = MeasurePerOperationAllocatedBytesMedian(iterations, rounds, Baseline_TagsListSetTagSevenTimes);
-            var webTagsBytes = MeasurePerOperationAllocatedBytesMedian(iterations, rounds, WebTagsPropertiesPlusBatchPdbTags);
+            var webTagsBytes = MeasurePerOperationAllocatedBytesMedian(iterations, rounds, WebTagsPropertiesPlusSetTagsPdbTags);
 
             _output.WriteLine($"Allocated bytes/op (baseline SetTag x7) [median of {rounds}]: {baselineBytes}");
             _output.WriteLine($"Allocated bytes/op (WebTags props + batch PDB) [median of {rounds}]: {webTagsBytes}");
@@ -442,7 +442,7 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         // Uses WebTags property-backed base tags, and only allocates the tag list for PDB tags.
-        private static void WebTagsPropertiesPlusBatchPdbTags()
+        private static void WebTagsPropertiesPlusSetTagsPdbTags()
         {
             var tags = new WebTags
             {
@@ -452,10 +452,10 @@ namespace Datadog.Trace.Tests.Debugger
                 CodeOriginFrames0Type = TypeValue,
             };
 
-            using var batch = tags.BeginTagBatch(additionalTagCount: 3);
-            batch.SetTag(CodeOriginFrames0FileKey, FileValue);
-            batch.SetTag(CodeOriginFrames0LineKey, LineValue);
-            batch.SetTag(CodeOriginFrames0ColumnKey, ColumnValue);
+            tags.SetTags(
+                CodeOriginFrames0FileKey, FileValue,
+                CodeOriginFrames0LineKey, LineValue,
+                CodeOriginFrames0ColumnKey, ColumnValue);
         }
     }
 #endif
