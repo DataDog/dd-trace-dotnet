@@ -102,11 +102,7 @@
   <!-- we don't need the vendored .NET runtime code when targetting .NET Core 3.1+ -->
   <!-- but keep Vendors/System.Reflection.Metadata/** for now because we use it to access internal members -->
   <PropertyGroup>
-    <DotNetRuntimeFiles>
-      Vendors/System.Collections.Immutable/**;
-      Vendors/System.Memory/**;
-      Vendors/System.Runtime.CompilerServices.Unsafe/**;
-    </DotNetRuntimeFiles>
+    <DotNetRuntimeFiles>Vendors/System.Collections.Immutable/**;Vendors/System.Memory/**;Vendors/System.Runtime.CompilerServices.Unsafe/**</DotNetRuntimeFiles>
   </PropertyGroup>
 
     <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible($(TargetFramework), 'netcoreapp3.1'))">
