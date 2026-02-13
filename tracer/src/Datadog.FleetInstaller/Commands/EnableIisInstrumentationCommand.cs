@@ -46,7 +46,7 @@ internal sealed class EnableIisInstrumentationCommand : CommandBase
     }
 
     internal static ReturnCode Execute(ILogger log, TracerValues tracerInstallValues)
-        => ExecuteIIs(log, tracerInstallValues);
+        => ExecuteGlobal(log, tracerInstallValues);
 
     internal static ReturnCode ExecuteGlobal(ILogger log, TracerValues tracerInstallValues)
     {
