@@ -53,13 +53,14 @@ namespace Datadog.Trace.Configuration
         {
             var origin = ConfigurationOrigins.Default; // default because only called from constructor
             var encoding = TracesEncoding.DatadogV0;
+            var otlpProtocol = OtlpProtocol.HttpProtobuf; // default value that is unused when transmitting Datadog-encoded traces
 
             // Check the parameters in order of precedence
             // For some cases, we allow falling back on another configuration (eg invalid url as the application will need to be restarted to fix it anyway).
             // For other cases (eg a configured unix domain socket path not found), we don't fallback as the problem could be fixed outside the application.
             if (!string.IsNullOrEmpty(agentUri))
             {
-                if (TryGetAgentUriAndTransport(agentUri!, origin, encoding, out var settings))
+                if (TryGetAgentUriAndTransport(agentUri!, origin, encoding, otlpProtocol, out var settings))
                 {
                     return settings;
                 }
@@ -87,7 +88,7 @@ namespace Datadog.Trace.Configuration
             if (!string.IsNullOrEmpty(tracesUnixDomainSocketPath))
             {
 #if NETCOREAPP3_1_OR_GREATER
-                if (TryGetAgentUriAndTransport(UnixDomainSocketPrefix + tracesUnixDomainSocketPath, origin, encoding, out var settings))
+                if (TryGetAgentUriAndTransport(UnixDomainSocketPrefix + tracesUnixDomainSocketPath, origin, encoding, otlpProtocol, out var settings))
                 {
                     return settings;
                 }
@@ -109,7 +110,7 @@ namespace Datadog.Trace.Configuration
                 // The agent will fail to start if it can not bind a port, so we need to override 8126 to prevent port conflict
                 // Port 0 means it will pick some random available port
 
-                if (TryGetAgentUriAndTransport(agentHost ?? DefaultAgentHost, agentPort ?? DefaultAgentPort, encoding, out var settings))
+                if (TryGetAgentUriAndTransport(agentHost ?? DefaultAgentHost, agentPort ?? DefaultAgentPort, encoding, otlpProtocol, out var settings))
                 {
                     return settings;
                 }
@@ -122,14 +123,14 @@ namespace Datadog.Trace.Configuration
                 // setting the urls as well for retro compatibility in the almost impossible case where someone
                 // used this config and accessed the AgentUri property as well (to avoid a potential null ref)
                 // Using Get not TryGet because we know this is a valid Uri and ensures _agentUri is always non-null
-                return GetAgentUriAndTransport(new Uri(UnixDomainSocketPrefix + DefaultTracesUnixDomainSocket), origin, TracesEncoding.DatadogV0);
+                return GetAgentUriAndTransport(new Uri(UnixDomainSocketPrefix + DefaultTracesUnixDomainSocket), origin, encoding, otlpProtocol);
             }
 #endif
 
             ValidationWarnings.Add("No transport configuration found, using default values");
 
             // we know this URL is valid so don't use TrySet, otherwise can't guarantee _agentUri is non null
-            return GetAgentUriAndTransport(CreateDefaultUri(), origin, encoding);
+            return GetAgentUriAndTransport(CreateDefaultUri(), origin, encoding, otlpProtocol);
         }
 
         private TraceTransportSettings GetOtlpTracesTransport(string? signalEndpoint, string? generalEndpoint, string? signalProtocol, string? generalProtocol)
@@ -158,7 +159,7 @@ namespace Datadog.Trace.Configuration
 
             if (!string.IsNullOrEmpty(signalEndpoint))
             {
-                if (TryGetAgentUriAndTransport(signalEndpoint!, origin, encoding, out var settings))
+                if (TryGetAgentUriAndTransport(signalEndpoint!, origin, encoding, protocol, out var settings))
                 {
                     return settings;
                 }
@@ -166,17 +167,17 @@ namespace Datadog.Trace.Configuration
 
             if (!string.IsNullOrEmpty(generalEndpoint))
             {
-                if (protocol == OtlpProtocol.Grpc && TryGetAgentUriAndTransport(generalEndpoint!, origin, encoding, out var grpcSettings))
+                if (protocol == OtlpProtocol.Grpc && TryGetAgentUriAndTransport(generalEndpoint!, origin, encoding, protocol, out var grpcSettings))
                 {
                     return grpcSettings;
                 }
                 else if (protocol != OtlpProtocol.Grpc)
                 {
-                    if (signalEndpoint!.EndsWith("/") && TryGetAgentUriAndTransport($"{generalEndpoint!}{defaultHttpRelativePath}", origin, encoding, out var httpSettings))
+                    if (signalEndpoint!.EndsWith("/") && TryGetAgentUriAndTransport($"{generalEndpoint!}{defaultHttpRelativePath}", origin, encoding, protocol, out var httpSettings))
                     {
                         return httpSettings;
                     }
-                    else if (!signalEndpoint!.EndsWith("/") && TryGetAgentUriAndTransport($"{generalEndpoint!}/{defaultHttpRelativePath}", origin, encoding, out var httpAdditionalSlashSettings))
+                    else if (!signalEndpoint!.EndsWith("/") && TryGetAgentUriAndTransport($"{generalEndpoint!}/{defaultHttpRelativePath}", origin, encoding, protocol, out var httpAdditionalSlashSettings))
                     {
                         return httpAdditionalSlashSettings;
                     }
@@ -186,15 +187,15 @@ namespace Datadog.Trace.Configuration
             ValidationWarnings.Add("No transport configuration found, using default values");
 
             // we know this URL is valid so don't use TrySet, otherwise can't guarantee _agentUri is non null
-            return GetAgentUriAndTransport(CreateDefaultOtlpUri(protocol, defaultHttpRelativePath), origin, encoding);
+            return GetAgentUriAndTransport(CreateDefaultOtlpUri(protocol, defaultHttpRelativePath), origin, encoding, protocol);
         }
 
-        private bool TryGetAgentUriAndTransport(string host, int port, TracesEncoding encoding, out TraceTransportSettings settings)
+        private bool TryGetAgentUriAndTransport(string host, int port, TracesEncoding encoding, OtlpProtocol otlpProtocol, out TraceTransportSettings settings)
         {
-            return TryGetAgentUriAndTransport($"http://{host}:{port}", ConfigurationOrigins.Default, encoding, out settings); // default because only called from constructor
+            return TryGetAgentUriAndTransport($"http://{host}:{port}", ConfigurationOrigins.Default, encoding, otlpProtocol, out settings); // default because only called from constructor
         }
 
-        private bool TryGetAgentUriAndTransport(string url, ConfigurationOrigins origin, TracesEncoding encoding, out TraceTransportSettings settings)
+        private bool TryGetAgentUriAndTransport(string url, ConfigurationOrigins origin, TracesEncoding encoding, OtlpProtocol otlpProtocol, out TraceTransportSettings settings)
         {
             if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
             {
@@ -203,11 +204,11 @@ namespace Datadog.Trace.Configuration
                 return false;
             }
 
-            settings = GetAgentUriAndTransport(uri, ConfigurationOrigins.Default, encoding); // default because only called from constructor
+            settings = GetAgentUriAndTransport(uri, ConfigurationOrigins.Default, encoding, otlpProtocol); // default because only called from constructor
             return true;
         }
 
-        private TraceTransportSettings GetAgentUriAndTransport(Uri uri, ConfigurationOrigins origin, TracesEncoding encoding)
+        private TraceTransportSettings GetAgentUriAndTransport(Uri uri, ConfigurationOrigins origin, TracesEncoding encoding, OtlpProtocol otlpProtocol)
         {
             TracesTransportType transport;
             string? udsPath;
@@ -250,7 +251,7 @@ namespace Datadog.Trace.Configuration
                     recordValue: true,
                     origin,
                     TelemetryErrorCode.UdsOnUnsupportedPlatform);
-                return GetAgentUriAndTransport(CreateDefaultUri(), ConfigurationOrigins.Calculated, encoding);
+                return GetAgentUriAndTransport(CreateDefaultUri(), ConfigurationOrigins.Calculated, encoding, otlpProtocol);
 #endif
             }
             else
@@ -261,7 +262,7 @@ namespace Datadog.Trace.Configuration
             }
 
             var agentUri = GetAgentUriReplacingLocalhost(uri, origin);
-            return new(transport, agentUri, UdsPath: udsPath, Encoding: encoding);
+            return new(transport, agentUri, UdsPath: udsPath, Encoding: encoding, OtlpProtocol: otlpProtocol);
         }
 
         private Uri GetAgentUriReplacingLocalhost(Uri uri, ConfigurationOrigins origin)
@@ -290,11 +291,10 @@ namespace Datadog.Trace.Configuration
         private Uri CreateDefaultOtlpUri(OtlpProtocol protocol, string defaultHttpRelativePath) => protocol switch
         {
             OtlpProtocol.Grpc => new Uri($"http://{DefaultAgentHost}:{DefaultOtlpGrpcPort}"),
-            OtlpProtocol.HttpProtobuf => new Uri($"http://{DefaultAgentHost}:{DefaultOtlpHttpPort}/{defaultHttpRelativePath}"),
-            OtlpProtocol.HttpJson => new Uri($"http://{DefaultAgentHost}:{DefaultOtlpHttpPort}/{defaultHttpRelativePath}"),
+            OtlpProtocol.HttpProtobuf or OtlpProtocol.HttpJson => new Uri($"http://{DefaultAgentHost}:{DefaultOtlpHttpPort}/{defaultHttpRelativePath}"),
             _ => throw new ArgumentException($"Invalid protocol: {protocol}"),
         };
 
-        private readonly record struct TraceTransportSettings(TracesTransportType Transport, Uri AgentUri, string? UdsPath = null, string? PipeName = null, TracesEncoding Encoding = TracesEncoding.DatadogV0, OtlpProtocol? OtlpProtocol = null);
+        private readonly record struct TraceTransportSettings(TracesTransportType Transport, Uri AgentUri, string? UdsPath = null, string? PipeName = null, TracesEncoding Encoding = TracesEncoding.DatadogV0, OtlpProtocol OtlpProtocol = OtlpProtocol.HttpProtobuf);
     }
 }

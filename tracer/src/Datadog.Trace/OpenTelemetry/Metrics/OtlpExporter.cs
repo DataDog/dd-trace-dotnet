@@ -14,6 +14,7 @@ using System.Net.Http.Headers;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Vendors.OpenTelemetry.Exporter.OpenTelemetryProtocol;
@@ -40,17 +41,12 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
         private readonly int _timeoutMs;
         private readonly Configuration.OtlpProtocol _protocol;
 
-        public OtlpExporter(Configuration.TracerSettings settings)
-            : this(settings, settings.OtlpMetricsProtocol, settings.OtlpMetricsEndpoint, settings.OtlpMetricsHeaders.ToArray(), settings.OtlpMetricsTimeoutMs)
+        public OtlpExporter(Configuration.TracerSettings settings, ExporterSettings exporterSettings)
         {
-        }
-
-        public OtlpExporter(Configuration.TracerSettings settings, Configuration.OtlpProtocol protocol, Uri endpoint, KeyValuePair<string, string>[] headers, int timeoutMs)
-        {
-            _endpoint = endpoint;
-            _headers = headers;
-            _timeoutMs = timeoutMs;
-            _protocol = protocol;
+            _endpoint = exporterSettings.OtlpMetricsEndpoint;
+            _headers = exporterSettings.OtlpMetricsHeaders.ToArray();
+            _timeoutMs = exporterSettings.OtlpMetricsTimeoutMs;
+            _protocol = exporterSettings.OtlpMetricsProtocol;
 
             _protocolTag = _protocol switch
             {
@@ -66,7 +62,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
                 _ => Telemetry.Metrics.MetricTags.MetricEncoding.Protobuf
             };
 
-            _serializer = new OtlpMetricsSerializer(settings);
+            _serializer = new OtlpMetricsSerializer(settings, settings.OtlpMetricsTemporalityPreference);
             _httpClient = CreateHttpClient(_endpoint);
 
             if (_protocol == Configuration.OtlpProtocol.Grpc)
