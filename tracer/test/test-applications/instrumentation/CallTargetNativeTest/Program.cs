@@ -55,23 +55,35 @@ namespace CallTargetNativeTest
                 {
                     $"CallTargetNativeTest.With{i}Arguments",
                     $"CallTargetNativeTest.With{i}ArgumentsGeneric`1",
+                    $"CallTargetNativeTest.With{i}ArgumentsGenericStatic`1",
                     $"CallTargetNativeTest.With{i}ArgumentsStruct",
                     $"CallTargetNativeTest.With{i}ArgumentsStatic",
+                    $"CallTargetNativeTest.With{i}ArgumentsStaticStruct",
+                    $"CallTargetNativeTest.With{i}ArgumentsGenericStaticStruct`1",
 
                     $"CallTargetNativeTest.ArgumentsParentType+With{i}Arguments",
                     $"CallTargetNativeTest.ArgumentsParentType+With{i}ArgumentsGeneric`1",
+                    $"CallTargetNativeTest.ArgumentsParentType+With{i}ArgumentsGenericStatic`1",
                     $"CallTargetNativeTest.ArgumentsParentType+With{i}ArgumentsStruct",
                     $"CallTargetNativeTest.ArgumentsParentType+With{i}ArgumentsStatic",
+                    $"CallTargetNativeTest.ArgumentsParentType+With{i}ArgumentsStaticStruct",
+                    $"CallTargetNativeTest.ArgumentsParentType+With{i}ArgumentsGenericStaticStruct`1",
 
                     $"CallTargetNativeTest.ArgumentsStructParentType+With{i}Arguments",
                     $"CallTargetNativeTest.ArgumentsStructParentType+With{i}ArgumentsGeneric`1",
+                    $"CallTargetNativeTest.ArgumentsStructParentType+With{i}ArgumentsGenericStatic`1",
                     $"CallTargetNativeTest.ArgumentsStructParentType+With{i}ArgumentsStruct",
                     $"CallTargetNativeTest.ArgumentsStructParentType+With{i}ArgumentsStatic",
+                    $"CallTargetNativeTest.ArgumentsStructParentType+With{i}ArgumentsStaticStruct",
+                    $"CallTargetNativeTest.ArgumentsStructParentType+With{i}ArgumentsGenericStaticStruct`1",
 
                     $"CallTargetNativeTest.ArgumentsGenericParentType`1+With{i}Arguments",
                     $"CallTargetNativeTest.ArgumentsGenericParentType`1+With{i}ArgumentsGeneric`1",
+                    $"CallTargetNativeTest.ArgumentsGenericParentType`1+With{i}ArgumentsGenericStatic`1",
                     $"CallTargetNativeTest.ArgumentsGenericParentType`1+With{i}ArgumentsStruct",
                     $"CallTargetNativeTest.ArgumentsGenericParentType`1+With{i}ArgumentsStatic",
+                    $"CallTargetNativeTest.ArgumentsGenericParentType`1+With{i}ArgumentsStaticStruct",
+                    $"CallTargetNativeTest.ArgumentsGenericParentType`1+With{i}ArgumentsGenericStaticStruct`1",
                 };
 
                 var wrapperTypeVoid = $"CallTargetNativeTest.NoOp.Noop{i}ArgumentsVoidIntegration";
