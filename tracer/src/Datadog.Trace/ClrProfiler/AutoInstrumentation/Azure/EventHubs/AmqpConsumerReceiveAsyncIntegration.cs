@@ -12,6 +12,7 @@ using System.Threading;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Shared;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
@@ -117,7 +118,7 @@ public sealed class AmqpConsumerReceiveAsyncIntegration
         var tags = Tracer.Instance.CurrentTraceSettings.Schema.Messaging.CreateAzureEventHubsTags(SpanKinds.Consumer);
         tags.MessagingOperation = OperationName;
 
-        string serviceName = tracer.CurrentTraceSettings.Schema.Messaging.GetServiceName("azureeventhubs");
+        string serviceName = tracer.CurrentTraceSettings.Schema.Messaging.GetServiceName(MessagingSchema.ServiceType.AzureEventHubs);
         var scope = tracer.StartActiveInternal(SpanOperationName, tags: tags, serviceName: serviceName, links: spanLinks);
         var span = scope.Span;
 

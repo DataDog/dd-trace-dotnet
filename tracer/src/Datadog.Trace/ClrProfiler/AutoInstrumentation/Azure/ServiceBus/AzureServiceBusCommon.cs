@@ -13,6 +13,7 @@ using System.Text;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.DataStreamsMonitoring.Utils;
 using Datadog.Trace.DuckTyping;
 
@@ -127,7 +128,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
             tags.MessagingOperation = operationName;
             tags.MessagingSystem = "servicebus";
 
-            string serviceName = perTraceSettings.Schema.Messaging.GetServiceName("azureservicebus");
+            string serviceName = perTraceSettings.Schema.Messaging.GetServiceName(MessagingSchema.ServiceType.AzureServiceBus);
             var scope = tracer.StartActiveInternal(
                 "azure_servicebus." + operationName,
                 tags: tags,
