@@ -69,8 +69,8 @@ namespace Datadog.Trace.Agent
             var header = new ClientStatsPayload(settings.Manager.InitialMutableSettings)
             {
                 HostName = HostMetadata.Instance.Hostname,
-                ProcessTags = settings.PropagateProcessTags ? ProcessTags.SerializedTags : null
             };
+
             _settingSubscription = settings.Manager.SubscribeToChanges(changes =>
             {
                 if (changes.UpdatedMutable is { } mutable)

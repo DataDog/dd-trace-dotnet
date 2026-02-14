@@ -36,13 +36,12 @@ internal sealed class StatsdManager : IStatsdManager
     // Internal for testing
     internal StatsdManager(
         TracerSettings tracerSettings,
-        Func<MutableSettings, ExporterSettings, IReadOnlyCollection<string>, StatsdClientHolder> statsdFactory)
+        Func<MutableSettings, ExporterSettings, StatsdClientHolder> statsdFactory)
     {
         // The initial factory, assuming there are no updates
         _factory = () => statsdFactory(
             tracerSettings.Manager.InitialMutableSettings,
-            tracerSettings.Manager.InitialExporterSettings,
-            tracerSettings.PropagateProcessTags ? ProcessTags.TagsList : []);
+            tracerSettings.Manager.InitialExporterSettings);
 
         // We don't create a new client unless we need one, and we rely on consumers of the manager to tell us when it's needed
         _current = null;
@@ -64,8 +63,7 @@ internal sealed class StatsdManager : IStatsdManager
                 ref _factory,
                 () => statsdFactory(
                     c.UpdatedMutable ?? c.PreviousMutable,
-                    c.UpdatedExporter ?? c.PreviousExporter,
-                    tracerSettings.PropagateProcessTags ? ProcessTags.TagsList : []));
+                    c.UpdatedExporter ?? c.PreviousExporter));
 
             // check if we actually need to do an update or if noone is using the client yet
             if (Volatile.Read(ref _isRequiredMask) != 0)
@@ -180,10 +178,9 @@ internal sealed class StatsdManager : IStatsdManager
 
     private static StatsdClientHolder CreateClient(
         MutableSettings settings,
-        ExporterSettings exporter,
-        IReadOnlyCollection<string> processTags)
+        ExporterSettings exporter)
     {
-        var client = StatsdFactory.CreateDogStatsdClient(settings, exporter, includeDefaultTags: true, processTags);
+        var client = StatsdFactory.CreateDogStatsdClient(settings, exporter, includeDefaultTags: true);
         return new StatsdClientHolder(client);
     }
 
