@@ -21,6 +21,27 @@ public:
 
     const char* GetId(AppDomainID appDomainId) override;
 
+    // Memory measurement (IMemoryFootprintProvider)
+    size_t GetMemorySize() const override;
+    void LogMemoryBreakdown() const override;
+
+private:
+    struct MemoryStats
+    {
+        size_t baseSize;
+        size_t cacheMapSize;
+        size_t entryCount;
+        size_t cacheMapBuckets;
+        size_t runtimeIdsSize;
+
+        size_t GetTotal() const
+        {
+            return baseSize + cacheMapSize + runtimeIdsSize;
+        }
+    };
+
+    MemoryStats ComputeMemoryStats() const;
+
 private:
     static const char* const ServiceName;
     static const char* const NativeLoaderFilename;
@@ -36,7 +57,8 @@ private:
     void* _instance = nullptr;
     std::function<const char*(AppDomainID)> _getIdFn;
 
-    std::mutex _cacheLock;
+    // mutable to allow locking in const methods (e.g., GetMemorySize, LogMemoryBreakdown)
+    mutable std::mutex _cacheLock;
     // This is a fallback case when the profiler runs without the native loader
     // This can still happen for linux.
     // Once the profiler/tracer/... are started using the native loader

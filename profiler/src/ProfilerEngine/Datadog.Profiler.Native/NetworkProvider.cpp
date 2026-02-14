@@ -576,3 +576,51 @@ bool NetworkProvider::MonitorRequest(NetworkRequestInfo*& pInfo, LPCGUID pActivi
     return true;
 }
 
+NetworkProvider::MemoryStats NetworkProvider::ComputeMemoryStats() const
+{
+    std::lock_guard<std::mutex> lock(_requestsLock);
+
+    MemoryStats stats{};
+    stats.baseSize = sizeof(NetworkProvider);
+    stats.requestsBuckets = _requests.bucket_count();
+    stats.requestsCount = _requests.size();
+    stats.requestsMapSize = stats.requestsBuckets * (sizeof(NetworkActivity) + sizeof(NetworkRequestInfo) + sizeof(void*));
+
+    // Calculate memory for each NetworkRequestInfo
+    for (const auto& [activity, info] : _requests)
+    {
+        stats.requestInfosSize += sizeof(NetworkRequestInfo);
+        // Add string capacities
+        stats.requestInfosSize += info.Url.capacity();
+        stats.requestInfosSize += info.HandshakeError.capacity();
+        stats.requestInfosSize += info.Error.capacity();
+
+        // Add Redirect if present
+        if (info.Redirect)
+        {
+            stats.requestInfosSize += sizeof(NetworkRequestCommon);
+            stats.requestInfosSize += info.Redirect->Url.capacity();
+        }
+
+        // Add StartCallStack size (approximate)
+        stats.requestInfosSize += info.StartCallStack.Size() * sizeof(uintptr_t);
+    }
+
+    return stats;
+}
+
+size_t NetworkProvider::GetMemorySize() const
+{
+    return ComputeMemoryStats().GetTotal();
+}
+
+void NetworkProvider::LogMemoryBreakdown() const
+{
+    auto stats = ComputeMemoryStats();
+
+    Log::Debug("NetworkProvider Memory Breakdown:");
+    Log::Debug("  Base object size:        ", stats.baseSize, " bytes");
+    Log::Debug("  Requests map storage:    ", stats.requestsMapSize, " bytes (", stats.requestsCount, " entries, ", stats.requestsBuckets, " buckets)");
+    Log::Debug("  NetworkRequestInfo:      ", stats.requestInfosSize, " bytes");
+    Log::Debug("  Total memory:            ", stats.GetTotal(), " bytes (", (stats.GetTotal() / 1024.0), " KB)");
+}

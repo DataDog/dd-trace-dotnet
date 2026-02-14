@@ -64,3 +64,48 @@ void ThreadsCpuManager::Map(DWORD threadOSId, const WCHAR* name)
         pInfo->SetName(name);
     }
 }
+
+
+ThreadsCpuManager::MemoryStats ThreadsCpuManager::ComputeMemoryStats() const
+{
+    std::lock_guard<std::recursive_mutex> lock(_lockThreads);
+
+    MemoryStats stats{};
+    stats.baseSize = sizeof(ThreadsCpuManager);
+    stats.mapBuckets = _threads.bucket_count();
+    stats.threadCount = _threads.size();
+    stats.mapSize = stats.mapBuckets * (sizeof(DWORD) + sizeof(std::unique_ptr<ThreadCpuInfo>) + sizeof(void*));
+
+    // Calculate memory for each ThreadCpuInfo
+    for (const auto& [threadId, pInfo] : _threads)
+    {
+        if (pInfo)
+        {
+            stats.threadInfosSize += sizeof(ThreadCpuInfo);
+            // Add size of the name string if present
+            const shared::WSTRING* pName = pInfo->GetName();
+            if (pName != nullptr)
+            {
+                stats.threadInfosSize += pName->capacity() * sizeof(shared::WSTRING::value_type);
+            }
+        }
+    }
+
+    return stats;
+}
+
+size_t ThreadsCpuManager::GetMemorySize() const
+{
+    return ComputeMemoryStats().GetTotal();
+}
+
+void ThreadsCpuManager::LogMemoryBreakdown() const
+{
+    auto stats = ComputeMemoryStats();
+
+    Log::Debug("ThreadsCpuManager Memory Breakdown:");
+    Log::Debug("  Base object size:        ", stats.baseSize, " bytes");
+    Log::Debug("  Map storage:             ", stats.mapSize, " bytes (", stats.threadCount, " entries, ", stats.mapBuckets, " buckets)");
+    Log::Debug("  ThreadCpuInfo objects:   ", stats.threadInfosSize, " bytes");
+    Log::Debug("  Total memory:            ", stats.GetTotal(), " bytes (", (stats.GetTotal() / 1024.0), " KB)");
+}

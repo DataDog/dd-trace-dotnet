@@ -1449,3 +1449,23 @@ TEST_F(ConfigurationTest, CheckHeapHandleLimitIfCorrectValue)
     auto threshold = configuration.GetHeapHandleLimit();
     ASSERT_THAT(threshold, 8000);
 }
+
+TEST_F(ConfigurationTest, CheckMemoryFootprintIsDisabledByDefault)
+{
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsMemoryFootprintEnabled(), false);
+}
+
+TEST_F(ConfigurationTest, CheckMemoryFootprintIsEnabledIfEnvVarSetToTrue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::MemoryFootprintEnabled, WStr("1"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsMemoryFootprintEnabled(), true);
+}
+
+TEST_F(ConfigurationTest, CheckMemoryFootprintIsDisabledIfEnvVarSetToFalse)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::MemoryFootprintEnabled, WStr("0"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsMemoryFootprintEnabled(), false);
+}

@@ -25,7 +25,11 @@ class DebugInfoStore : public IDebugInfoStore
 public:
     DebugInfoStore(ICorProfilerInfo4* profilerInfo, IConfiguration* configuration) noexcept;
 
-    SymbolDebugInfo Get(ModuleID moduleId, mdMethodDef methodDef);
+    SymbolDebugInfo Get(ModuleID moduleId, mdMethodDef methodDef) override;
+
+    // Memory measurement (IMemoryFootprintProvider)
+    size_t GetMemorySize() const override;
+    void LogMemoryBreakdown() const override;
 
 private:
     struct ModuleDebugInfo
@@ -69,8 +73,28 @@ private:
     static const std::string NoFileFound;
     static const std::uint32_t NoStartLine;
 
+    struct MemoryStats
+    {
+        size_t baseSize;
+        size_t modulesMapSize;
+        size_t moduleCount;
+        size_t modulesMapBuckets;
+        size_t moduleInfosSize;
+
+        size_t GetTotal() const
+        {
+            return baseSize + modulesMapSize + moduleInfosSize;
+        }
+    };
+
+    MemoryStats ComputeMemoryStats() const;
+
+    // Incremental memory tracking: track sum of item sizes
+    mutable std::atomic<size_t> _cachedItemsSize;
+
     std::unordered_map<ModuleID, ModuleDebugInfo> _modulesInfo;
     ICorProfilerInfo4* _profilerInfo;
     bool _isEnabled;
-    std::mutex _modulesMutex;
+    // mutable to allow locking in const methods (e.g., GetMemorySize, LogMemoryBreakdown)
+    mutable std::mutex _modulesMutex;
 };

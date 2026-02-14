@@ -2,6 +2,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
 #pragma once
+
+#include <atomic>
 #include <memory>
 #include <mutex>
 #include <optional>
@@ -45,7 +47,7 @@ public:
 
 public:
     FrameStore(
-        ICorProfilerInfo4* pCorProfilerInfo, 
+        ICorProfilerInfo4* pCorProfilerInfo,
         IConfiguration* pConfiguration,
         IDebugInfoStore* pDebugInfoStore,
         ManagedCodeCache* pManagedCodeCache);
@@ -54,6 +56,10 @@ public:
     std::pair<bool, FrameInfoView> GetFrame(uintptr_t instructionPointer) override;
     bool GetTypeName(ClassID classId, std::string& name) override;
     bool GetTypeName(ClassID classId, std::string_view& name) override;
+
+    // Memory measurement (IMemoryFootprintProvider)
+    size_t GetMemorySize() const override;
+    void LogMemoryBreakdown() const override;
 
 private:
     std::optional<std::pair<HRESULT, FunctionID>> GetFunctionFromIP(uintptr_t instructionPointer);
@@ -132,6 +138,35 @@ private:  // global helpers
     static void ConcatUnknownGenericType(std::stringstream& builder);
 
 private:
+    struct MemoryStats
+    {
+        size_t baseSize;
+        size_t methodsCacheSize;
+        size_t methodsCount;
+        size_t methodsBuckets;
+        size_t typesCacheSize;
+        size_t typesCount;
+        size_t typesBuckets;
+        size_t nativeFramesCacheSize;
+        size_t nativeFramesCount;
+        size_t nativeFramesBuckets;
+        size_t fullTypeNamesCacheSize;
+        size_t fullTypeNamesCount;
+        size_t fullTypeNamesBuckets;
+
+        size_t GetTotal() const
+        {
+            return baseSize + methodsCacheSize + typesCacheSize + nativeFramesCacheSize + fullTypeNamesCacheSize;
+        }
+    };
+
+    MemoryStats ComputeMemoryStats() const;
+
+    // Incremental memory tracking: track sum of all item sizes across all caches
+    // Container overhead is calculated on-demand in GetMemorySize()
+    mutable std::atomic<size_t> _cachedItemsSize;
+
+private:
     struct FrameInfo
     {
     public:
@@ -149,17 +184,18 @@ private:
     ICorProfilerInfo4* _pCorProfilerInfo;
     IDebugInfoStore* _pDebugInfoStore;
 
-    std::mutex _methodsLock;
-    std::mutex _nativeLock;
+    // mutable to allow locking in const methods (e.g., GetMemorySize, LogMemoryBreakdown)
+    mutable std::mutex _methodsLock;
+    mutable std::mutex _nativeLock;
 
     // frame relate caches functions
     std::unordered_map<FunctionID, FrameInfo> _methods;
-    std::mutex _typesLock;
+    mutable std::mutex _typesLock;
     std::unordered_map<ClassID, TypeDesc> _types;
     std::unordered_map<std::string, std::string> _framePerNativeModule;
 
     // for allocation recorder
-    std::mutex _fullTypeNamesLock;
+    mutable std::mutex _fullTypeNamesLock;
     std::unordered_map<ClassID, std::string> _fullTypeNames;
 
     bool _resolveNativeFrames;

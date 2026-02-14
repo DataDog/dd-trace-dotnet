@@ -133,6 +133,9 @@
     <ClInclude Include="IManagedThreadList.h">
       <Filter>Profiler-Driver</Filter>
     </ClInclude>
+    <ClInclude Include="IMemoryFootprintProvider.h">
+      <Filter>Profiler-Driver</Filter>
+    </ClInclude>
     <ClInclude Include="IService.h" />
     <ClInclude Include="Configuration.h">
       <Filter>Utils</Filter>

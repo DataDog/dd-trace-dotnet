@@ -89,4 +89,5 @@ public:
     virtual uint32_t GetHeapSnapshotMemoryPressureThreshold() const = 0;
     virtual uint32_t GetHeapHandleLimit() const = 0;
     virtual bool UseManagedCodeCache() const = 0;
+    virtual bool IsMemoryFootprintEnabled() const = 0;
 };

@@ -125,6 +125,9 @@ public:
     inline void SetContentionType(ContentionType contentionType) { _contentionType = contentionType; }
     ContentionType GetContentionType() { return _contentionType; }
 
+    // Memory measurement
+    inline size_t GetMemorySize() const;
+
 private:
     inline std::string BuildProfileThreadId();
     inline std::string BuildProfileThreadName();
@@ -459,4 +462,18 @@ inline std::pair<std::uint64_t, std::uint64_t> ManagedThreadInfo::GetTracingCont
     }
 
     return {localRootSpanId, spanId};
+}
+
+inline size_t ManagedThreadInfo::GetMemorySize() const
+{
+    // Base size of the object
+    size_t size = sizeof(ManagedThreadInfo);
+
+    // Add dynamic string allocations
+    size += _threadName.capacity() * sizeof(shared::WSTRING::value_type);
+    size += _profileThreadId.capacity();
+    size += _profileThreadName.capacity();
+    size += _blockingThreadName.capacity() * sizeof(shared::WSTRING::value_type);
+
+    return size;
 }
