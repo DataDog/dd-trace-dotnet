@@ -1,1797 +1,2396 @@
 {
+  "version": "2",
   "supportedConfigurations": {
-    "DD_AAS_DOTNET_EXTENSION_VERSION": {
-      "version": [
-        "A"
-      ],
-      "product": "AzureAppService"
-    },
-    "DD_AAS_ENABLE_CUSTOM_METRICS": {
-      "version": [
-        "A"
-      ],
-      "product": "AzureAppService"
-    },
-    "DD_AAS_ENABLE_CUSTOM_TRACING": {
-      "version": [
-        "A"
-      ],
-      "product": "AzureAppService"
-    },
-    "DD_AGENT_HOST": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_AGENT_FEATURE_POLLING_ENABLED": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_API_KEY": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_API_SECURITY_ENABLED": {
-      "version": [
-        "A"
-      ],
-      "product": "AppSec"
-    },
-    "DD_API_SECURITY_ENDPOINT_COLLECTION_ENABLED": {
-      "version": [
-        "A"
-      ],
-      "product": "AppSec"
-    },
-    "DD_API_SECURITY_ENDPOINT_COLLECTION_MESSAGE_LIMIT": {
-      "version": [
-        "A"
-      ],
-      "product": "AppSec"
-    },
-    "DD_API_SECURITY_PARSE_RESPONSE_BODY": {
-      "version": [
-        "A"
-      ],
-      "product": "AppSec"
-    },
-    "DD_API_SECURITY_SAMPLE_DELAY": {
-      "version": [
-        "A"
-      ],
-      "product": "AppSec"
-    },
-    "DD_APM_ENABLE_RARE_SAMPLER": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_APM_RECEIVER_PORT": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_APM_RECEIVER_SOCKET": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_APM_TRACING_ENABLED": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_APPLICATION_MONITORING_CONFIG_FILE_ENABLED": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_APPSEC_AUTOMATED_USER_EVENTS_TRACKING": {
-      "version": [
-        "A"
-      ],
-      "product": "AppSec"
-    },
-    "DD_APPSEC_AUTO_USER_INSTRUMENTATION_MODE": {
-      "version": [
-        "A"
-      ],
-      "product": "AppSec"
-    },
-    "DD_APPSEC_ENABLED": {
-      "version": [
-        "A"
-      ],
-      "product": "AppSec"
-    },
-    "DD_APPSEC_EXTRA_HEADERS": {
-      "version": [
-        "A"
-      ],
-      "product": "AppSec"
-    },
-    "DD_APPSEC_HTTP_BLOCKED_TEMPLATE_HTML": {
-      "version": [
-        "A"
-      ],
-      "product": "AppSec"
-    },
-    "DD_APPSEC_HTTP_BLOCKED_TEMPLATE_JSON": {
-      "version": [
-        "A"
-      ],
-      "product": "AppSec"
-    },
-    "DD_APPSEC_IPHEADER": {
-      "version": [
-        "A"
-      ],
-      "product": "AppSec"
-    },
-    "DD_APPSEC_KEEP_TRACES": {
-      "version": [
-        "A"
-      ],
-      "product": "AppSec"
-    },
-    "DD_APPSEC_MAX_STACK_TRACE_DEPTH": {
-      "version": [
-        "A"
-      ],
-      "product": "AppSec"
-    },
-    "DD_APPSEC_MAX_STACK_TRACE_DEPTH_TOP_PERCENT": {
-      "version": [
-        "A"
-      ],
-      "product": "AppSec"
-    },
-    "DD_APPSEC_MAX_STACK_TRACES": {
-      "version": [
-        "A"
-      ],
-      "product": "AppSec"
-    },
-    "DD_APPSEC_OBFUSCATION_PARAMETER_KEY_REGEXP": {
-      "version": [
-        "A"
-      ],
-      "product": "AppSec"
-    },
-    "DD_APPSEC_OBFUSCATION_PARAMETER_VALUE_REGEXP": {
-      "version": [
-        "A"
-      ],
-      "product": "AppSec"
-    },
-    "DD_APPSEC_RASP_ENABLED": {
-      "version": [
-        "A"
-      ],
-      "product": "AppSec"
-    },
-    "DD_APPSEC_RULES": {
-      "version": [
-        "A"
-      ],
-      "product": "AppSec"
-    },
-    "DD_APPSEC_SCA_ENABLED": {
-      "version": [
-        "A"
-      ],
-      "product": "AppSec"
-    },
-    "DD_APPSEC_STACK_TRACE_ENABLED": {
-      "version": [
-        "A"
-      ],
-      "product": "AppSec"
-    },
-    "DD_APPSEC_TRACE_RATE_LIMIT": {
-      "version": [
-        "A"
-      ],
-      "product": "AppSec"
-    },
-    "DD_APPSEC_WAF_DEBUG": {
-      "version": [
-        "A"
-      ],
-      "product": "AppSec"
-    },
-    "DD_APPSEC_WAF_TIMEOUT": {
-      "version": [
-        "A"
-      ],
-      "product": "AppSec"
-    },
-    "DD_AZURE_APP_SERVICES": {
-      "version": [
-        "A"
-      ],
-      "product": "AzureAppService"
-    },
-    "DD_CIVISIBILITY_AGENTLESS_ENABLED": {
-      "version": [
-        "A"
-      ],
-      "product": "CIVisibility"
-    },
-    "DD_CIVISIBILITY_AGENTLESS_URL": {
-      "version": [
-        "A"
-      ],
-      "product": "CIVisibility"
-    },
-    "DD_CIVISIBILITY_AUTO_INSTRUMENTATION_PROVIDER": {
-      "version": [
-        "A"
-      ],
-      "product": "CIVisibility"
-    },
-    "DD_CIVISIBILITY_CODE_COVERAGE_COLLECTORPATH": {
-      "version": [
-        "A"
-      ],
-      "product": "CIVisibility"
-    },
-    "DD_CIVISIBILITY_CODE_COVERAGE_ENABLED": {
-      "version": [
-        "A"
-      ],
-      "product": "CIVisibility"
-    },
-    "DD_CIVISIBILITY_CODE_COVERAGE_ENABLE_JIT_OPTIMIZATIONS": {
-      "version": [
-        "A"
-      ],
-      "product": "CIVisibility"
-    },
-    "DD_CIVISIBILITY_CODE_COVERAGE_MODE": {
-      "version": [
-        "A"
-      ],
-      "product": "CIVisibility"
-    },
-    "DD_CIVISIBILITY_CODE_COVERAGE_PATH": {
-      "version": [
-        "A"
-      ],
-      "product": "CIVisibility"
-    },
-    "DD_CIVISIBILITY_CODE_COVERAGE_SNK_FILEPATH": {
-      "version": [
-        "A"
-      ],
-      "product": "CIVisibility"
-    },
-    "DD_CIVISIBILITY_DI_ENABLED": {
-      "version": [
-        "A"
-      ],
-      "product": "CIVisibility"
-    },
-    "DD_CIVISIBILITY_EARLY_FLAKE_DETECTION_ENABLED": {
-      "version": [
-        "A"
-      ],
-      "product": "CIVisibility"
-    },
-    "DD_CIVISIBILITY_ENABLED": {
-      "version": [
-        "A"
-      ],
-      "product": "CIVisibility"
-    },
-    "DD_CIVISIBILITY_EXTERNAL_CODE_COVERAGE_PATH": {
-      "version": [
-        "A"
-      ],
-      "product": "CIVisibility"
-    },
-    "DD_CIVISIBILITY_FLAKY_RETRY_COUNT": {
-      "version": [
-        "A"
-      ],
-      "product": "CIVisibility"
-    },
-    "DD_CIVISIBILITY_FLAKY_RETRY_ENABLED": {
-      "version": [
-        "A"
-      ],
-      "product": "CIVisibility"
-    },
-    "DD_CIVISIBILITY_FORCE_AGENT_EVP_PROXY": {
-      "version": [
-        "A"
-      ],
-      "product": "CIVisibility"
-    },
-    "DD_CIVISIBILITY_GAC_INSTALL_ENABLED": {
-      "version": [
-        "A"
-      ],
-      "product": "CIVisibility"
-    },
-    "DD_CIVISIBILITY_GIT_UPLOAD_ENABLED": {
-      "version": [
-        "A"
-      ],
-      "product": "CIVisibility"
-    },
-    "DD_CIVISIBILITY_IMPACTED_TESTS_DETECTION_ENABLED": {
-      "version": [
-        "A"
-      ],
-      "product": "CIVisibility"
-    },
-    "DD_CIVISIBILITY_ITR_ENABLED": {
-      "version": [
-        "A"
-      ],
-      "product": "CIVisibility"
-    },
-    "DD_CIVISIBILITY_KNOWN_TESTS_ENABLED": {
-      "version": [
-        "A"
-      ],
-      "product": "CIVisibility"
-    },
-    "DD_CIVISIBILITY_LOGS_ENABLED": {
-      "version": [
-        "A"
-      ],
-      "product": "CIVisibility"
-    },
-    "DD_CIVISIBILITY_RUM_FLUSH_WAIT_MILLIS": {
-      "version": [
-        "A"
-      ],
-      "product": "CIVisibility"
-    },
-    "DD_CIVISIBILITY_TESTSSKIPPING_ENABLED": {
-      "version": [
-        "A"
-      ],
-      "product": "CIVisibility"
-    },
-    "DD_CIVISIBILITY_TOTAL_FLAKY_RETRY_COUNT": {
-      "version": [
-        "A"
-      ],
-      "product": "CIVisibility"
-    },
-    "DD_CODE_ORIGIN_FOR_SPANS_ENABLED": {
-      "version": [
-        "A"
-      ],
-      "product": "Debugger"
-    },
-    "DD_CODE_ORIGIN_FOR_SPANS_MAX_USER_FRAMES": {
-      "version": [
-        "A"
-      ],
-      "product": "Debugger"
-    },
-    "DD_CUSTOM_TRACE_ID": {
-      "version": [
-        "A"
-      ],
-      "product": "CIVisibility"
-    },
-    "DD_DATA_STREAMS_ENABLED": {
-      "version": [
-        "A"
-      ],
-      "product": "DataStreamsMonitoring"
-    },
-    "DD_DATA_STREAMS_LEGACY_HEADERS": {
-      "version": [
-        "A"
-      ],
-      "product": "DataStreamsMonitoring"
-    },
-    "DD_DBM_PROPAGATION_MODE": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_DIAGNOSTIC_SOURCE_ENABLED": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_DISABLED_INTEGRATIONS": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_DOGSTATSD_ARGS": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_DOGSTATSD_PATH": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_DOGSTATSD_PIPE_NAME": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_DOGSTATSD_PORT": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_DOGSTATSD_SOCKET": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_DOGSTATSD_URL": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_DOTNET_TRACER_HOME": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_DYNAMIC_INSTRUMENTATION_DIAGNOSTICS_INTERVAL": {
-      "version": [
-        "A"
-      ],
-      "product": "Debugger"
-    },
-    "DD_DYNAMIC_INSTRUMENTATION_ENABLED": {
-      "version": [
-        "A"
-      ],
-      "product": "Debugger"
-    },
-    "DD_DYNAMIC_INSTRUMENTATION_MAX_DEPTH_TO_SERIALIZE": {
-      "version": [
-        "A"
-      ],
-      "product": "Debugger"
-    },
-    "DD_DYNAMIC_INSTRUMENTATION_MAX_TIME_TO_SERIALIZE": {
-      "version": [
-        "A"
-      ],
-      "product": "Debugger"
-    },
-    "DD_DYNAMIC_INSTRUMENTATION_REDACTED_EXCLUDED_IDENTIFIERS": {
-      "version": [
-        "A"
-      ],
-      "product": "Debugger"
-    },
-    "DD_DYNAMIC_INSTRUMENTATION_REDACTED_IDENTIFIERS": {
-      "version": [
-        "A"
-      ],
-      "product": "Debugger"
-    },
-    "DD_DYNAMIC_INSTRUMENTATION_REDACTED_TYPES": {
-      "version": [
-        "A"
-      ],
-      "product": "Debugger"
-    },
-    "DD_DYNAMIC_INSTRUMENTATION_REDACTION_EXCLUDED_IDENTIFIERS": {
-      "version": [
-        "A"
-      ],
-      "product": "Debugger"
-    },
-    "DD_DYNAMIC_INSTRUMENTATION_UPLOAD_BATCH_SIZE": {
-      "version": [
-        "A"
-      ],
-      "product": "Debugger"
-    },
-    "DD_DYNAMIC_INSTRUMENTATION_UPLOAD_FLUSH_INTERVAL": {
-      "version": [
-        "A"
-      ],
-      "product": "Debugger"
-    },
-    "DD_ENV": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_EXCEPTION_REPLAY_CAPTURE_FULL_CALLSTACK_ENABLED": {
-      "version": [
-        "A"
-      ],
-      "product": "Debugger"
-    },
-    "DD_EXCEPTION_REPLAY_CAPTURE_MAX_FRAMES": {
-      "version": [
-        "A"
-      ],
-      "product": "Debugger"
-    },
-    "DD_EXCEPTION_REPLAY_ENABLED": {
-      "version": [
-        "A"
-      ],
-      "product": "Debugger"
-    },
-    "DD_EXCEPTION_REPLAY_AGENTLESS_ENABLED": {
-      "version": [
-        "A"
-      ],
-      "product": "Debugger"
-    },
-    "DD_EXCEPTION_REPLAY_AGENTLESS_URL": {
-      "version": [
-        "A"
-      ],
-      "product": "Debugger"
-    },
-    "DD_EXCEPTION_REPLAY_MAX_EXCEPTION_ANALYSIS_LIMIT": {
-      "version": [
-        "A"
-      ],
-      "product": "Debugger"
-    },
-    "DD_EXCEPTION_REPLAY_RATE_LIMIT_SECONDS": {
-      "version": [
-        "A"
-      ],
-      "product": "Debugger"
-    },
-    "DD_EXPERIMENTAL_APPSEC_USE_UNSAFE_ENCODER": {
-      "version": [
-        "A"
-      ],
-      "product": "AppSec"
-    },
-    "DD_EXPERIMENTAL_PROPAGATE_PROCESS_TAGS_ENABLED": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_GIT_BRANCH": {
-      "version": [
-        "A"
-      ],
-      "product": "CIVisibility"
-    },
-    "DD_GIT_COMMIT_AUTHOR_DATE": {
-      "version": [
-        "A"
-      ],
-      "product": "CIVisibility"
-    },
-    "DD_GIT_COMMIT_AUTHOR_EMAIL": {
-      "version": [
-        "A"
-      ],
-      "product": "CIVisibility"
-    },
-    "DD_GIT_COMMIT_AUTHOR_NAME": {
-      "version": [
-        "A"
-      ],
-      "product": "CIVisibility"
-    },
-    "DD_GIT_COMMIT_COMMITTER_DATE": {
-      "version": [
-        "A"
-      ],
-      "product": "CIVisibility"
-    },
-    "DD_GIT_COMMIT_COMMITTER_EMAIL": {
-      "version": [
-        "A"
-      ],
-      "product": "CIVisibility"
-    },
-    "DD_GIT_COMMIT_COMMITTER_NAME": {
-      "version": [
-        "A"
-      ],
-      "product": "CIVisibility"
-    },
-    "DD_GIT_COMMIT_MESSAGE": {
-      "version": [
-        "A"
-      ],
-      "product": "CIVisibility"
-    },
-    "DD_GIT_COMMIT_SHA": {
-      "version": [
-        "A"
-      ],
-      "product": "CIVisibility"
-    },
-    "DD_GIT_PULL_REQUEST_BASE_BRANCH": {
-      "version": [
-        "A"
-      ],
-      "product": "CIVisibility"
-    },
-    "DD_GIT_PULL_REQUEST_BASE_BRANCH_SHA": {
-      "version": [
-        "A"
-      ],
-      "product": "CIVisibility"
-    },
-    "DD_GIT_REPOSITORY_URL": {
-      "version": [
-        "A"
-      ],
-      "product": "CIVisibility"
-    },
-    "DD_GIT_TAG": {
-      "version": [
-        "A"
-      ],
-      "product": "CIVisibility"
-    },
-    "DD_HTTP_CLIENT_ERROR_STATUSES": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_HTTP_SERVER_ERROR_STATUSES": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_HTTP_SERVER_TAG_QUERY_STRING": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_HTTP_SERVER_TAG_QUERY_STRING_SIZE": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_IAST_COOKIE_FILTER_PATTERN": {
-      "version": [
-        "A"
-      ],
-      "product": "Iast"
-    },
-    "DD_IAST_DB_ROWS_TO_TAINT": {
-      "version": [
-        "A"
-      ],
-      "product": "Iast"
-    },
-    "DD_IAST_DEDUPLICATION_ENABLED": {
-      "version": [
-        "A"
-      ],
-      "product": "Iast"
-    },
-    "DD_IAST_ENABLED": {
-      "version": [
-        "A"
-      ],
-      "product": "Iast"
-    },
-    "DD_IAST_MAX_CONCURRENT_REQUESTS": {
-      "version": [
-        "A"
-      ],
-      "product": "Iast"
-    },
-    "DD_IAST_MAX_RANGE_COUNT": {
-      "version": [
-        "A"
-      ],
-      "product": "Iast"
-    },
-    "DD_IAST_REDACTION_ENABLED": {
-      "version": [
-        "A"
-      ],
-      "product": "Iast"
-    },
-    "DD_IAST_REDACTION_NAME_PATTERN": {
-      "version": [
-        "A"
-      ],
-      "product": "Iast"
-    },
-    "DD_IAST_REDACTION_VALUE_PATTERN": {
-      "version": [
-        "A"
-      ],
-      "product": "Iast"
-    },
-    "DD_IAST_REGEXP_TIMEOUT": {
-      "version": [
-        "A"
-      ],
-      "product": "Iast"
-    },
-    "DD_IAST_REQUEST_SAMPLING": {
-      "version": [
-        "A"
-      ],
-      "product": "Iast"
-    },
-    "DD_IAST_TELEMETRY_VERBOSITY": {
-      "version": [
-        "A"
-      ],
-      "product": "Iast"
-    },
-    "DD_IAST_TRUNCATION_MAX_VALUE_LENGTH": {
-      "version": [
-        "A"
-      ],
-      "product": "Iast"
-    },
-    "DD_IAST_VULNERABILITIES_PER_REQUEST": {
-      "version": [
-        "A"
-      ],
-      "product": "Iast"
-    },
-    "DD_IAST_WEAK_CIPHER_ALGORITHMS": {
-      "version": [
-        "A"
-      ],
-      "product": "Iast"
-    },
-    "DD_IAST_WEAK_HASH_ALGORITHMS": {
-      "version": [
-        "A"
-      ],
-      "product": "Iast"
-    },
-    "DD_INJECTION_ENABLED": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_INJECT_FORCE": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_INSTRUMENTATION_INSTALL_ID": {
-      "version": [
-        "A"
-      ],
-      "product": "Telemetry"
-    },
-    "DD_INSTRUMENTATION_INSTALL_TIME": {
-      "version": [
-        "A"
-      ],
-      "product": "Telemetry"
-    },
-    "DD_INSTRUMENTATION_INSTALL_TYPE": {
-      "version": [
-        "A"
-      ],
-      "product": "Telemetry"
-    },
-    "DD_INSTRUMENTATION_TELEMETRY_AGENTLESS_ENABLED": {
-      "version": [
-        "A"
-      ],
-      "product": "Telemetry"
-    },
-    "DD_INSTRUMENTATION_TELEMETRY_AGENT_PROXY_ENABLED": {
-      "version": [
-        "A"
-      ],
-      "product": "Telemetry"
-    },
-    "DD_INSTRUMENTATION_TELEMETRY_COMPRESSION_METHOD": {
-      "version": [
-        "A"
-      ],
-      "product": "Telemetry"
-    },
-    "DD_INSTRUMENTATION_TELEMETRY_ENABLED": {
-      "version": [
-        "A"
-      ],
-      "product": "Telemetry"
-    },
-    "DD_INSTRUMENTATION_TELEMETRY_URL": {
-      "version": [
-        "A"
-      ],
-      "product": "Telemetry"
-    },
-    "DD_INTERNAL_RCM_POLL_INTERVAL": {
-      "version": [
-        "A"
-      ],
-      "product": "Rcm"
-    },
-    "DD_INTERNAL_PROFILING_NATIVE_ENGINE_PATH": {
-      "version": [
-        "A"
-      ],
-      "product": "ContinuousProfiler"
-    },
-    "DD_INTERNAL_TELEMETRY_DEBUG_ENABLED": {
-      "version": [
-        "A"
-      ],
-      "product": "Telemetry"
-    },
-    "DD_INTERNAL_TRACE_NATIVE_ENGINE_PATH": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_INTERNAL_WAIT_FOR_DEBUGGER_ATTACH": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_INTERNAL_WAIT_FOR_NATIVE_DEBUGGER_ATTACH": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_LOGS_DIRECT_SUBMISSION_AZURE_FUNCTIONS_HOST_ENABLED": {
-      "version": [
-        "A"
-      ],
-      "product": "DirectLogSubmission"
-    },
-    "DD_LOGS_DIRECT_SUBMISSION_BATCH_PERIOD_SECONDS": {
-      "version": [
-        "A"
-      ],
-      "product": "DirectLogSubmission"
-    },
-    "DD_LOGS_DIRECT_SUBMISSION_HOST": {
-      "version": [
-        "A"
-      ],
-      "product": "DirectLogSubmission"
-    },
-    "DD_LOGS_DIRECT_SUBMISSION_INTEGRATIONS": {
-      "version": [
-        "A"
-      ],
-      "product": "DirectLogSubmission"
-    },
-    "DD_LOGS_DIRECT_SUBMISSION_MAX_BATCH_SIZE": {
-      "version": [
-        "A"
-      ],
-      "product": "DirectLogSubmission"
-    },
-    "DD_LOGS_DIRECT_SUBMISSION_MAX_QUEUE_SIZE": {
-      "version": [
-        "A"
-      ],
-      "product": "DirectLogSubmission"
-    },
-    "DD_LOGS_DIRECT_SUBMISSION_MINIMUM_LEVEL": {
-      "version": [
-        "A"
-      ],
-      "product": "DirectLogSubmission"
-    },
-    "DD_LOGS_DIRECT_SUBMISSION_SOURCE": {
-      "version": [
-        "A"
-      ],
-      "product": "DirectLogSubmission"
-    },
-    "DD_LOGS_DIRECT_SUBMISSION_TAGS": {
-      "version": [
-        "A"
-      ],
-      "product": "DirectLogSubmission"
-    },
-    "DD_LOGS_DIRECT_SUBMISSION_URL": {
-      "version": [
-        "A"
-      ],
-      "product": "DirectLogSubmission"
-    },
-    "DD_LOGS_INJECTION": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_LOG_LEVEL": {
-      "version": [
-        "A"
-      ],
-      "product": "Agent"
-    },
-    "DD_MAX_LOGFILE_SIZE": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_MAX_TRACES_PER_SECOND": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_METRICS_OTEL_ENABLED": {
-      "version": [
-        "A"
-      ],
-      "product": "FeatureFlags"
-    },
-    "DD_METRICS_OTEL_METER_NAMES": {
-      "version": [
-        "A"
-      ],
-      "product": "FeatureFlags"
-    },
-    "DD_ACTION_EXECUTION_ID": {
-      "version": [
-        "A"
-      ],
-      "product": "CIVisibility"
-    },
-    "DD_PIPELINE_EXECUTION_ID": {
-      "version": [
-        "A"
-      ],
-      "product": "CIVisibility"
-    },
-    "DD_PROXY_HTTPS": {
-      "version": [
-        "A"
-      ],
-      "product": "Proxy"
-    },
-    "DD_PROXY_NO_PROXY": {
-      "version": [
-        "A"
-      ],
-      "product": "Proxy"
-    },
-    "DD_PROFILING_CODEHOTSPOTS_ENABLED": {
-      "version": [
-        "A"
-      ],
-      "product": "Profiler"
-    },
-    "DD_PROFILING_ENABLED": {
-      "version": [
-        "A"
-      ],
-      "product": "Profiler"
-    },
-    "DD_PROFILING_ENDPOINT_COLLECTION_ENABLED": {
-      "version": [
-        "A"
-      ],
-      "product": "Profiler"
-    },
-    "DD_PROFILING_MANAGED_ACTIVATION_ENABLED": {
-      "version": [
-        "A"
-      ],
-      "product": "Profiler"
-    },
-    "DD_REMOTE_CONFIGURATION_ENABLED": {
-      "version": [
-        "A"
-      ],
-      "product": "Rcm"
-    },
-    "DD_REMOTE_CONFIG_POLL_INTERVAL_SECONDS": {
-      "version": [
-        "A"
-      ],
-      "product": "Rcm"
-    },
-    "DD_RUNTIME_METRICS_ENABLED": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_RUNTIME_METRICS_DIAGNOSTICS_METRICS_API_ENABLED": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_SERVICE": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_SITE": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_SPAN_SAMPLING_RULES": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_SYMBOL_DATABASE_BATCH_SIZE_BYTES": {
-      "version": [
-        "A"
-      ],
-      "product": "Debugger"
-    },
-    "DD_SYMBOL_DATABASE_COMPRESSION_ENABLED": {
-      "version": [
-        "A"
-      ],
-      "product": "Debugger"
-    },
-    "DD_SYMBOL_DATABASE_THIRD_PARTY_DETECTION_EXCLUDES": {
-      "version": [
-        "A"
-      ],
-      "product": "Debugger"
-    },
-    "DD_SYMBOL_DATABASE_THIRD_PARTY_DETECTION_INCLUDES": {
-      "version": [
-        "A"
-      ],
-      "product": "Debugger"
-    },
-    "DD_SYMBOL_DATABASE_UPLOAD_ENABLED": {
-      "version": [
-        "A"
-      ],
-      "product": "Debugger"
-    },
-    "DD_TAGS": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_TELEMETRY_DEPENDENCY_COLLECTION_ENABLED": {
-      "version": [
-        "A"
-      ],
-      "product": "Telemetry"
-    },
-    "DD_TELEMETRY_HEARTBEAT_INTERVAL": {
-      "version": [
-        "A"
-      ],
-      "product": "Telemetry"
-    },
-    "DD_TELEMETRY_LOG_COLLECTION_ENABLED": {
-      "version": [
-        "A"
-      ],
-      "product": "Telemetry"
-    },
-    "DD_TELEMETRY_METRICS_ENABLED": {
-      "version": [
-        "A"
-      ],
-      "product": "Telemetry"
-    },
-    "DD_TEST_MANAGEMENT_ATTEMPT_TO_FIX_RETRIES": {
-      "version": [
-        "A"
-      ],
-      "product": "CIVisibility"
-    },
-    "DD_TEST_MANAGEMENT_ENABLED": {
-      "version": [
-        "A"
-      ],
-      "product": "CIVisibility"
-    },
-    "DD_TEST_SESSION_NAME": {
-      "version": [
-        "A"
-      ],
-      "product": "CIVisibility"
-    },
-    "DD_TESTSESSION_COMMAND": {
-      "version": [
-        "A"
-      ],
-      "product": "CIVisibility"
-    },
-    "DD_TESTSESSION_WORKINGDIRECTORY": {
-      "version": [
-        "A"
-      ],
-      "product": "CIVisibility"
-    },
-    "DD_THIRD_PARTY_DETECTION_EXCLUDES": {
-      "version": [
-        "A"
-      ],
-      "product": "Debugger"
-    },
-    "DD_THIRD_PARTY_DETECTION_INCLUDES": {
-      "version": [
-        "A"
-      ],
-      "product": "Debugger"
-    },
-    "DD_TRACE_128_BIT_TRACEID_GENERATION_ENABLED": {
-      "version": [
-        "A"
-      ],
-      "product": "FeatureFlags"
-    },
-    "DD_TRACE_128_BIT_TRACEID_LOGGING_ENABLED": {
-      "version": [
-        "A"
-      ],
-      "product": "FeatureFlags"
-    },
-    "DD_TRACE_ACTIVITY_LISTENER_ENABLED": {
-      "version": [
-        "A"
-      ],
-      "product": "OpenTelemetry"
-    },
-    "DD_TRACE_AGENT_ARGS": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_TRACE_AGENT_PATH": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_TRACE_AGENT_PORT": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_TRACE_AGENT_URL": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_TRACE_ANALYTICS_ENABLED": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_TRACE_AWS_ADD_SPAN_POINTERS": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_TRACE_AZURE_EVENTHUBS_BATCH_LINKS_ENABLED": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_TRACE_AZURE_SERVICEBUS_BATCH_LINKS_ENABLED": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_TRACE_BAGGAGE_MAX_BYTES": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_TRACE_BAGGAGE_MAX_ITEMS": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_TRACE_BAGGAGE_TAG_KEYS": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_TRACE_BATCH_INTERVAL": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_TRACE_BUFFER_SIZE": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_TRACE_BYPASS_HTTP_REQUEST_URL_CACHING_ENABLED": {
-      "version": [
-        "A"
-      ],
-      "product": "FeatureFlags"
-    },
-    "DD_TRACE_CLIENT_IP_ENABLED": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_TRACE_CLIENT_IP_HEADER": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_TRACE_COMMANDS_COLLECTION_ENABLED": {
-      "version": [
-        "A"
-      ],
-      "product": "FeatureFlags"
-    },
-    "DD_TRACE_CONFIG_FILE": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_TRACE_DATA_PIPELINE_ENABLED": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_TRACE_DEBUG": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_TRACE_DEBUG_LOOKUP_FALLBACK": {
-      "version": [
-        "A"
-      ],
-      "product": "Debug"
-    },
-    "DD_TRACE_DEBUG_LOOKUP_MDTOKEN": {
-      "version": [
-        "A"
-      ],
-      "product": "Debug"
-    },
-    "DD_TRACE_DELAY_WCF_INSTRUMENTATION_ENABLED": {
-      "version": [
-        "A"
-      ],
-      "product": "FeatureFlags"
-    },
-    "DD_TRACE_DISABLED_ACTIVITY_SOURCES": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_TRACE_DISABLED_ADONET_COMMAND_TYPES": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_TRACE_ENABLED": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_TRACE_EXPAND_ROUTE_TEMPLATES_ENABLED": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_TRACE_EXPERIMENTAL_FEATURES_ENABLED": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_TRACE_GIT_METADATA_ENABLED": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_TRACE_GRAPHQL_ERROR_EXTENSIONS": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_TRACE_GRPC_TAGS": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_TRACE_HEADER_TAG_NORMALIZATION_FIX_ENABLED": {
-      "version": [
-        "A"
-      ],
-      "product": "FeatureFlags"
-    },
-    "DD_TRACE_HEADER_TAGS": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_TRACE_HTTP_CLIENT_ERROR_STATUSES": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_TRACE_HTTP_CLIENT_EXCLUDED_URL_SUBSTRINGS": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_TRACE_HTTP_SERVER_ERROR_STATUSES": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_TRACE_INFERRED_PROXY_SERVICES_ENABLED": {
-      "version": [
-        "A"
-      ],
-      "product": "FeatureFlags"
-    },
-    "DD_TRACE_INJECT_CONTEXT_INTO_STORED_PROCEDURES_ENABLED": {
-      "version": [
-        "A"
-      ],
-      "product": "FeatureFlags"
-    },
-    "DD_EXPERIMENTAL_FLAGGING_PROVIDER_ENABLED": {
-      "version": [
-        "A"
-      ],
-      "product": "FeatureFlags"
-    },
-    "DD_TRACE_KAFKA_CREATE_CONSUMER_SCOPE_ENABLED": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_TRACE_LOG_DIRECTORY": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_TRACE_LOG_PATH": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_TRACE_LOG_SINKS": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_TRACE_LOGFILE_RETENTION_DAYS": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_TRACE_LOGGING_RATE": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_TRACE_METHODS": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_TRACE_METRICS_ENABLED": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_TRACE_OBFUSCATION_QUERY_STRING_REGEXP": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_TRACE_OBFUSCATION_QUERY_STRING_REGEXP_TIMEOUT": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_TRACE_OTEL_ENABLED": {
-      "version": [
-        "A"
-      ],
-      "product": "FeatureFlags"
-    },
-    "DD_TRACE_PARTIAL_FLUSH_ENABLED": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_TRACE_PARTIAL_FLUSH_MIN_SPANS": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_TRACE_PEER_SERVICE_DEFAULTS_ENABLED": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_TRACE_PEER_SERVICE_MAPPING": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_TRACE_PIPE_NAME": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_TRACE_PIPE_TIMEOUT_MS": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_TRACE_PROPAGATION_BEHAVIOR_EXTRACT": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_TRACE_PROPAGATION_EXTRACT_FIRST": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_TRACE_PROPAGATION_STYLE_EXTRACT": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_TRACE_PROPAGATION_STYLE_INJECT": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_TRACE_RATE_LIMIT": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_TRACE_REMOVE_INTEGRATION_SERVICE_NAMES_ENABLED": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_TRACE_ROUTE_TEMPLATE_RESOURCE_NAMES_ENABLED": {
-      "version": [
-        "A"
-      ],
-      "product": "FeatureFlags"
-    },
-    "DD_TRACE_SAMPLE_RATE": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_TRACE_SAMPLING_RULES": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_TRACE_SAMPLING_RULES_FORMAT": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_TRACE_SERVICE_MAPPING": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_TRACE_SINGLE_SPAN_ASPNETCORE_ENABLED": {
-      "version": [
-        "A"
-      ],
-      "product": "FeatureFlags"
-    },
-    "DD_TRACE_SPAN_ATTRIBUTE_SCHEMA": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_TRACE_STARTUP_LOGS": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_TRACE_STATS_COMPUTATION_ENABLED": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_TRACE_WCF_RESOURCE_OBFUSCATION_ENABLED": {
-      "version": [
-        "A"
-      ],
-      "product": "FeatureFlags"
-    },
-    "DD_TRACE_WCF_WEB_HTTP_RESOURCE_NAMES_ENABLED": {
-      "version": [
-        "A"
-      ],
-      "product": "FeatureFlags"
-    },
-    "DD_TRACE_X_DATADOG_TAGS_MAX_LENGTH": {
-      "version": [
-        "A"
-      ],
-      "product": "TagPropagation"
-    },
-    "DD_VERSION": {
-      "version": [
-        "A"
-      ]
-    },
-    "DD_LOGS_OTEL_ENABLED": {
-      "version": [
-        "A"
-      ],
-      "product": "FeatureFlags"
-    },
-    "OTEL_EXPORTER_OTLP_ENDPOINT": {
-      "version": [
-        "A"
-      ],
-      "product": "OpenTelemetry"
-    },
-    "OTEL_LOGS_EXPORTER": {
-      "version": [
-        "A"
-      ],
-      "product": "OpenTelemetry"
-    },
-    "OTEL_EXPORTER_OTLP_HEADERS": {
-      "version": [
-        "A"
-      ],
-      "product": "OpenTelemetry"
-    },
-    "OTEL_EXPORTER_OTLP_LOGS_ENDPOINT": {
-      "version": [
-        "A"
-      ],
-      "product": "OpenTelemetry"
-    },
-    "OTEL_EXPORTER_OTLP_LOGS_PROTOCOL": {
-      "version": [
-        "A"
-      ],
-      "product": "OpenTelemetry"
-    },
-    "OTEL_EXPORTER_OTLP_LOGS_TIMEOUT": {
-      "version": [
-        "A"
-      ],
-      "product": "OpenTelemetry"
-    },
-    "OTEL_EXPORTER_OTLP_METRICS_ENDPOINT": {
-      "version": [
-        "A"
-      ],
-      "product": "OpenTelemetry"
-    },
-    "OTEL_EXPORTER_OTLP_METRICS_HEADERS": {
-      "version": [
-        "A"
-      ],
-      "product": "OpenTelemetry"
-    },
-    "OTEL_EXPORTER_OTLP_LOGS_HEADERS": {
-      "version": [
-        "A"
-      ],
-      "product": "OpenTelemetry"
-    },
-    "OTEL_EXPORTER_OTLP_METRICS_PROTOCOL": {
-      "version": [
-        "A"
-      ],
-      "product": "OpenTelemetry"
-    },
-    "OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE": {
-      "version": [
-        "A"
-      ],
-      "product": "OpenTelemetry"
-    },
-    "OTEL_EXPORTER_OTLP_METRICS_TIMEOUT": {
-      "version": [
-        "A"
-      ],
-      "product": "OpenTelemetry"
-    },
-    "OTEL_EXPORTER_OTLP_PROTOCOL": {
-      "version": [
-        "A"
-      ],
-      "product": "OpenTelemetry"
-    },
-    "OTEL_EXPORTER_OTLP_TIMEOUT": {
-      "version": [
-        "A"
-      ],
-      "product": "OpenTelemetry"
-    },
-    "OTEL_LOG_LEVEL": {
-      "version": [
-        "A"
-      ],
-      "product": "OpenTelemetry"
-    },
-    "OTEL_METRIC_EXPORT_INTERVAL": {
-      "version": [
-        "A"
-      ],
-      "product": "OpenTelemetry"
-    },
-    "OTEL_METRIC_EXPORT_TIMEOUT": {
-      "version": [
-        "A"
-      ],
-      "product": "OpenTelemetry"
-    },
-    "OTEL_METRICS_EXPORTER": {
-      "version": [
-        "A"
-      ],
-      "product": "OpenTelemetry"
-    },
-    "OTEL_PROPAGATORS": {
-      "version": [
-        "A"
-      ],
-      "product": "OpenTelemetry"
-    },
-    "OTEL_RESOURCE_ATTRIBUTES": {
-      "version": [
-        "A"
-      ],
-      "product": "OpenTelemetry"
-    },
-    "OTEL_SDK_DISABLED": {
-      "version": [
-        "A"
-      ],
-      "product": "OpenTelemetry"
-    },
-    "OTEL_SERVICE_NAME": {
-      "version": [
-        "A"
-      ],
-      "product": "OpenTelemetry"
-    },
-    "OTEL_TRACES_EXPORTER": {
-      "version": [
-        "A"
-      ],
-      "product": "OpenTelemetry"
-    },
-    "OTEL_TRACES_SAMPLER": {
-      "version": [
-        "A"
-      ],
-      "product": "OpenTelemetry"
-    },
-    "OTEL_TRACES_SAMPLER_ARG": {
-      "version": [
-        "A"
-      ],
-      "product": "OpenTelemetry"
-    },
-    "_DD_EXTENSION_ENDPOINT": {
-      "version": [
-        "A"
-      ],
-      "product": "Aws"
-    },
-    "_DD_EXTENSION_PATH": {
-      "version": [
-        "A"
-      ],
-      "product": "Aws"
-    },
-    "_DD_EXTENSION_ENDPOINT": {
-      "version": [
-        "A"
-      ],
-      "product": "Aws"
-    },
-    "_DD_INTERNAL_IS_RUNNING_IN_CIVISIBILITY": {
-      "version": [
-        "A"
-      ],
-      "product": "CIVisibility"
-    },
-    "_DD_INTERNAL_TOPT_RUNID": {
-      "version": [
-        "A"
-      ],
-      "product": "CIVisibility"
-    },
-    "_DD_TRACE_STATS_COMPUTATION_INTERVAL": {
-      "version": [
-        "A"
-      ]
-    }
-  },
-  "aliases": {
+    "DD_AAS_DOTNET_EXTENSION_VERSION": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": "unknown",
+        "product": "AzureAppService"
+      }
+    ],
+    "DD_AAS_ENABLE_CUSTOM_METRICS": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "false",
+        "product": "AzureAppService"
+      }
+    ],
+    "DD_AAS_ENABLE_CUSTOM_TRACING": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "false",
+        "product": "AzureAppService"
+      }
+    ],
     "DD_AGENT_HOST": [
-      "DD_TRACE_AGENT_HOSTNAME",
-      "DATADOG_TRACE_AGENT_HOSTNAME"
+      {
+        "implementation": "D",
+        "type": "string",
+        "default": "localhost",
+        "aliases": [
+          "DD_TRACE_AGENT_HOSTNAME",
+          "DATADOG_TRACE_AGENT_HOSTNAME"
+        ]
+      }
+    ],
+    "DD_AGENT_FEATURE_POLLING_ENABLED": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "true"
+      }
+    ],
+    "DD_API_KEY": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": null
+      }
     ],
     "DD_API_SECURITY_ENABLED": [
-      "DD_EXPERIMENTAL_API_SECURITY_ENABLED"
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "true",
+        "product": "AppSec",
+        "aliases": [
+          "DD_EXPERIMENTAL_API_SECURITY_ENABLED"
+        ]
+      }
     ],
-    "DD_TRACE_CLIENT_IP_HEADER": [
-      "DD_APPSEC_IPHEADER"
+    "DD_API_SECURITY_ENDPOINT_COLLECTION_ENABLED": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "true",
+        "product": "AppSec"
+      }
     ],
-    "DD_SERVICE": [
-      "DD_SERVICE_NAME"
+    "DD_API_SECURITY_ENDPOINT_COLLECTION_MESSAGE_LIMIT": [
+      {
+        "implementation": "A",
+        "type": "int",
+        "default": "300",
+        "product": "AppSec"
+      }
     ],
-    "DD_TAGS": [
-      "DD_TRACE_GLOBAL_TAGS"
+    "DD_API_SECURITY_PARSE_RESPONSE_BODY": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "true",
+        "product": "AppSec"
+      }
     ],
-    "DD_TRACE_AGENT_PORT": [
-      "DATADOG_TRACE_AGENT_PORT"
+    "DD_API_SECURITY_SAMPLE_DELAY": [
+      {
+        "implementation": "A",
+        "type": "decimal",
+        "default": "30",
+        "product": "AppSec"
+      }
     ],
-    "DD_TRACE_CONFIG_FILE": [
-      "DD_DOTNET_TRACER_CONFIG_FILE"
+    "DD_APM_ENABLE_RARE_SAMPLER": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "false"
+      }
     ],
-    "DD_TRACE_PROPAGATION_STYLE_EXTRACT": [
-      "DD_PROPAGATION_STYLE_EXTRACT",
-      "DD_TRACE_PROPAGATION_STYLE"
+    "DD_APM_RECEIVER_PORT": [
+      {
+        "implementation": "A",
+        "type": "int",
+        "default": "8126"
+      }
     ],
-    "DD_TRACE_PROPAGATION_STYLE_INJECT": [
-      "DD_PROPAGATION_STYLE_INJECT",
-      "DD_TRACE_PROPAGATION_STYLE"
+    "DD_APM_RECEIVER_SOCKET": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": null
+      }
+    ],
+    "DD_APM_TRACING_ENABLED": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "true"
+      }
+    ],
+    "DD_APPLICATION_MONITORING_CONFIG_FILE_ENABLED": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "true"
+      }
+    ],
+    "DD_APPSEC_AUTOMATED_USER_EVENTS_TRACKING": [
+      {
+        "implementation": "D",
+        "type": "string",
+        "default": "identification",
+        "product": "AppSec"
+      }
+    ],
+    "DD_APPSEC_AUTO_USER_INSTRUMENTATION_MODE": [
+      {
+        "implementation": "B",
+        "type": "string",
+        "default": "identification",
+        "product": "AppSec"
+      }
+    ],
+    "DD_APPSEC_ENABLED": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "false",
+        "product": "AppSec"
+      }
+    ],
+    "DD_APPSEC_EXTRA_HEADERS": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": null,
+        "product": "AppSec"
+      }
+    ],
+    "DD_APPSEC_HTTP_BLOCKED_TEMPLATE_HTML": [
+      {
+        "implementation": "B",
+        "type": "string",
+        "default": null,
+        "product": "AppSec"
+      }
+    ],
+    "DD_APPSEC_HTTP_BLOCKED_TEMPLATE_JSON": [
+      {
+        "implementation": "B",
+        "type": "string",
+        "default": null,
+        "product": "AppSec"
+      }
+    ],
+    "DD_APPSEC_IPHEADER": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": null,
+        "product": "AppSec"
+      }
+    ],
+    "DD_APPSEC_KEEP_TRACES": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "true",
+        "product": "AppSec"
+      }
+    ],
+    "DD_APPSEC_MAX_STACK_TRACE_DEPTH": [
+      {
+        "implementation": "A",
+        "type": "int",
+        "default": "32",
+        "product": "AppSec"
+      }
+    ],
+    "DD_APPSEC_MAX_STACK_TRACE_DEPTH_TOP_PERCENT": [
+      {
+        "implementation": "A",
+        "type": "int",
+        "default": "75",
+        "product": "AppSec"
+      }
+    ],
+    "DD_APPSEC_MAX_STACK_TRACES": [
+      {
+        "implementation": "A",
+        "type": "int",
+        "default": "2",
+        "product": "AppSec"
+      }
+    ],
+    "DD_APPSEC_OBFUSCATION_PARAMETER_KEY_REGEXP": [
+      {
+        "implementation": "E",
+        "type": "string",
+        "default": "(?i)(?:p(?:ass)?w(?:or)?d|pass(?:_?phrase)?|secret|(?:api_?|private_?|public_?)key)|token|consumer_?(?:id|key|secret)|sign(?:ed|ature)|bearer|authorization",
+        "product": "AppSec"
+      }
+    ],
+    "DD_APPSEC_OBFUSCATION_PARAMETER_VALUE_REGEXP": [
+      {
+        "implementation": "F",
+        "type": "string",
+        "default": "(?i)(?:p(?:ass)?w(?:or)?d|pass(?:[_-]?phrase)?|secret(?:[_-]?key)?|(?:(?:api|private|public|access)[_-]?)key(?:[_-]?id)?|(?:(?:auth|access|id|refresh)[_-]?)?token|consumer[_-]?(?:id|key|secret)|sign(?:ed|ature)?|auth(?:entication|orization)?|jsessionid|phpsessid|asp\\\\.net(?:[_-]|-)sessionid|sid|jwt)(?:\\\\s*=([^;&]+)|\\\"\\\\s*:\\\\s*(\\\"[^\\\"]+\\\"|\\\\d+))|bearer\\\\s+([a-z0-9\\\\._\\\\-]+)|token\\\\s*:\\\\s*([a-z0-9]{13})|gh[opsu]_([0-9a-zA-Z]{36})|ey[I-L][\\\\w=-]+\\\\.(ey[I-L][\\\\w=-]+(?:\\\\.[\\\\w.+\\\\/=-]+)?)|[\\\\-]{5}BEGIN[a-z\\\\s]+PRIVATE\\\\sKEY[\\\\-]{5}([^\\\\-]+)[\\\\-]{5}END[a-z\\\\s]+PRIVATE\\\\sKEY|ssh-rsa\\\\s*([a-z0-9\\\\/\\\\.+]{100,})",
+        "product": "AppSec"
+      }
+    ],
+    "DD_APPSEC_RASP_ENABLED": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "true",
+        "product": "AppSec"
+      }
+    ],
+    "DD_APPSEC_RULES": [
+      {
+        "implementation": "B",
+        "type": "string",
+        "default": null,
+        "product": "AppSec"
+      }
+    ],
+    "DD_APPSEC_SCA_ENABLED": [
+      {
+        "implementation": "B",
+        "type": "boolean",
+        "default": null,
+        "product": "AppSec"
+      }
+    ],
+    "DD_APPSEC_STACK_TRACE_ENABLED": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "true",
+        "product": "AppSec"
+      }
+    ],
+    "DD_APPSEC_TRACE_RATE_LIMIT": [
+      {
+        "implementation": "A",
+        "type": "int",
+        "default": "100",
+        "product": "AppSec"
+      }
+    ],
+    "DD_APPSEC_WAF_DEBUG": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "false",
+        "product": "AppSec"
+      }
+    ],
+    "DD_APPSEC_WAF_TIMEOUT": [
+      {
+        "implementation": "B",
+        "type": "int",
+        "default": "100000",
+        "product": "AppSec"
+      }
+    ],
+    "DD_AZURE_APP_SERVICES": [
+      {
+        "implementation": "C",
+        "type": "string",
+        "default": null,
+        "product": "AzureAppService"
+      }
+    ],
+    "DD_CIVISIBILITY_AGENTLESS_ENABLED": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "false",
+        "product": "CIVisibility"
+      }
+    ],
+    "DD_CIVISIBILITY_AGENTLESS_URL": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": null,
+        "product": "CIVisibility"
+      }
+    ],
+    "DD_CIVISIBILITY_AUTO_INSTRUMENTATION_PROVIDER": [
+      {
+        "implementation": "B",
+        "type": "boolean",
+        "default": "false",
+        "product": "CIVisibility"
+      }
+    ],
+    "DD_CIVISIBILITY_CODE_COVERAGE_COLLECTORPATH": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": null,
+        "product": "CIVisibility"
+      }
+    ],
+    "DD_CIVISIBILITY_CODE_COVERAGE_ENABLED": [
+      {
+        "implementation": "B",
+        "type": "boolean",
+        "default": null,
+        "product": "CIVisibility"
+      }
+    ],
+    "DD_CIVISIBILITY_CODE_COVERAGE_ENABLE_JIT_OPTIMIZATIONS": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "true",
+        "product": "CIVisibility"
+      }
+    ],
+    "DD_CIVISIBILITY_CODE_COVERAGE_MODE": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": null,
+        "product": "CIVisibility"
+      }
+    ],
+    "DD_CIVISIBILITY_CODE_COVERAGE_PATH": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": null,
+        "product": "CIVisibility"
+      }
+    ],
+    "DD_CIVISIBILITY_CODE_COVERAGE_SNK_FILEPATH": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": null,
+        "product": "CIVisibility"
+      }
+    ],
+    "DD_CIVISIBILITY_DI_ENABLED": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "false",
+        "product": "CIVisibility"
+      }
+    ],
+    "DD_CIVISIBILITY_EARLY_FLAKE_DETECTION_ENABLED": [
+      {
+        "implementation": "C",
+        "type": "boolean",
+        "default": null,
+        "product": "CIVisibility"
+      }
+    ],
+    "DD_CIVISIBILITY_ENABLED": [
+      {
+        "implementation": "B",
+        "type": "boolean",
+        "default": null,
+        "product": "CIVisibility"
+      }
+    ],
+    "DD_CIVISIBILITY_EXTERNAL_CODE_COVERAGE_PATH": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": null,
+        "product": "CIVisibility"
+      }
+    ],
+    "DD_CIVISIBILITY_FLAKY_RETRY_COUNT": [
+      {
+        "implementation": "A",
+        "type": "int",
+        "default": "5",
+        "product": "CIVisibility"
+      }
+    ],
+    "DD_CIVISIBILITY_FLAKY_RETRY_ENABLED": [
+      {
+        "implementation": "B",
+        "type": "boolean",
+        "default": null,
+        "product": "CIVisibility"
+      }
+    ],
+    "DD_CIVISIBILITY_FORCE_AGENT_EVP_PROXY": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": null,
+        "product": "CIVisibility"
+      }
+    ],
+    "DD_CIVISIBILITY_GAC_INSTALL_ENABLED": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "true",
+        "product": "CIVisibility"
+      }
+    ],
+    "DD_CIVISIBILITY_GIT_UPLOAD_ENABLED": [
+      {
+        "implementation": "B",
+        "type": "boolean",
+        "default": null,
+        "product": "CIVisibility"
+      }
+    ],
+    "DD_CIVISIBILITY_IMPACTED_TESTS_DETECTION_ENABLED": [
+      {
+        "implementation": "B",
+        "type": "boolean",
+        "default": null,
+        "product": "CIVisibility"
+      }
+    ],
+    "DD_CIVISIBILITY_ITR_ENABLED": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "true",
+        "product": "CIVisibility"
+      }
+    ],
+    "DD_CIVISIBILITY_KNOWN_TESTS_ENABLED": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": null,
+        "product": "CIVisibility"
+      }
+    ],
+    "DD_CIVISIBILITY_LOGS_ENABLED": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "false",
+        "product": "CIVisibility"
+      }
+    ],
+    "DD_CIVISIBILITY_RUM_FLUSH_WAIT_MILLIS": [
+      {
+        "implementation": "A",
+        "type": "int",
+        "default": "500",
+        "product": "CIVisibility"
+      }
+    ],
+    "DD_CIVISIBILITY_TESTSSKIPPING_ENABLED": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": null,
+        "product": "CIVisibility"
+      }
+    ],
+    "DD_CIVISIBILITY_TOTAL_FLAKY_RETRY_COUNT": [
+      {
+        "implementation": "A",
+        "type": "int",
+        "default": "1000",
+        "product": "CIVisibility"
+      }
+    ],
+    "DD_CODE_ORIGIN_FOR_SPANS_ENABLED": [
+      {
+        "implementation": "B",
+        "type": "boolean",
+        "default": "false",
+        "product": "Debugger"
+      }
+    ],
+    "DD_CODE_ORIGIN_FOR_SPANS_MAX_USER_FRAMES": [
+      {
+        "implementation": "A",
+        "type": "int",
+        "default": "8",
+        "product": "Debugger"
+      }
+    ],
+    "DD_CUSTOM_TRACE_ID": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": null,
+        "product": "CIVisibility"
+      }
+    ],
+    "DD_DATA_STREAMS_ENABLED": [
+      {
+        "implementation": "B",
+        "type": "boolean",
+        "default": "true",
+        "product": "DataStreamsMonitoring"
+      }
+    ],
+    "DD_DATA_STREAMS_LEGACY_HEADERS": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "false",
+        "product": "DataStreamsMonitoring"
+      }
+    ],
+    "DD_DBM_PROPAGATION_MODE": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": "disabled"
+      }
+    ],
+    "DD_DIAGNOSTIC_SOURCE_ENABLED": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "true"
+      }
+    ],
+    "DD_DISABLED_INTEGRATIONS": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": null
+      }
+    ],
+    "DD_DOGSTATSD_ARGS": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": null
+      }
+    ],
+    "DD_DOGSTATSD_PATH": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": null
+      }
+    ],
+    "DD_DOGSTATSD_PIPE_NAME": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": null
+      }
+    ],
+    "DD_DOGSTATSD_PORT": [
+      {
+        "implementation": "A",
+        "type": "int",
+        "default": "8125"
+      }
+    ],
+    "DD_DOGSTATSD_SOCKET": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": null
+      }
+    ],
+    "DD_DOGSTATSD_URL": [
+      {
+        "implementation": "B",
+        "type": "string",
+        "default": "udp://127.0.0.1:8125"
+      }
+    ],
+    "DD_DOTNET_TRACER_HOME": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": null
+      }
+    ],
+    "DD_DYNAMIC_INSTRUMENTATION_DIAGNOSTICS_INTERVAL": [
+      {
+        "implementation": "A",
+        "type": "int",
+        "default": "3600",
+        "product": "Debugger"
+      }
+    ],
+    "DD_DYNAMIC_INSTRUMENTATION_ENABLED": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "false",
+        "product": "Debugger"
+      }
+    ],
+    "DD_DYNAMIC_INSTRUMENTATION_MAX_DEPTH_TO_SERIALIZE": [
+      {
+        "implementation": "A",
+        "type": "int",
+        "default": "3",
+        "product": "Debugger"
+      }
+    ],
+    "DD_DYNAMIC_INSTRUMENTATION_MAX_TIME_TO_SERIALIZE": [
+      {
+        "implementation": "A",
+        "type": "int",
+        "default": "200",
+        "product": "Debugger"
+      }
+    ],
+    "DD_DYNAMIC_INSTRUMENTATION_REDACTED_EXCLUDED_IDENTIFIERS": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": null,
+        "product": "Debugger"
+      }
+    ],
+    "DD_DYNAMIC_INSTRUMENTATION_REDACTED_IDENTIFIERS": [
+      {
+        "implementation": "A",
+        "type": "array",
+        "default": "",
+        "product": "Debugger"
+      }
+    ],
+    "DD_DYNAMIC_INSTRUMENTATION_REDACTED_TYPES": [
+      {
+        "implementation": "A",
+        "type": "array",
+        "default": "",
+        "product": "Debugger"
+      }
+    ],
+    "DD_DYNAMIC_INSTRUMENTATION_REDACTION_EXCLUDED_IDENTIFIERS": [
+      {
+        "implementation": "B",
+        "type": "string",
+        "default": null,
+        "product": "Debugger"
+      }
+    ],
+    "DD_DYNAMIC_INSTRUMENTATION_UPLOAD_BATCH_SIZE": [
+      {
+        "implementation": "A",
+        "type": "int",
+        "default": "100",
+        "product": "Debugger"
+      }
+    ],
+    "DD_DYNAMIC_INSTRUMENTATION_UPLOAD_FLUSH_INTERVAL": [
+      {
+        "implementation": "A",
+        "type": "int",
+        "default": "0",
+        "product": "Debugger"
+      }
+    ],
+    "DD_ENV": [
+      {
+        "implementation": "B",
+        "type": "string",
+        "default": null
+      }
+    ],
+    "DD_EXCEPTION_REPLAY_CAPTURE_FULL_CALLSTACK_ENABLED": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "false",
+        "product": "Debugger"
+      }
+    ],
+    "DD_EXCEPTION_REPLAY_CAPTURE_MAX_FRAMES": [
+      {
+        "implementation": "B",
+        "type": "int",
+        "default": "4",
+        "product": "Debugger"
+      }
     ],
     "DD_EXCEPTION_REPLAY_ENABLED": [
-      "DD_EXCEPTION_DEBUGGING_ENABLED"
+      {
+        "implementation": "B",
+        "type": "boolean",
+        "default": "false",
+        "product": "Debugger",
+        "aliases": [
+          "DD_EXCEPTION_DEBUGGING_ENABLED"
+        ]
+      }
     ],
-    "DD_TRACE_HTTP_CLIENT_ERROR_STATUSES": [
-      "DD_HTTP_CLIENT_ERROR_STATUSES"
+    "DD_EXCEPTION_REPLAY_AGENTLESS_ENABLED": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "false",
+        "product": "Debugger"
+      }
     ],
-    "DD_TRACE_HTTP_SERVER_ERROR_STATUSES": [
-      "DD_HTTP_SERVER_ERROR_STATUSES"
+    "DD_EXCEPTION_REPLAY_AGENTLESS_URL": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": null,
+        "product": "Debugger"
+      }
+    ],
+    "DD_EXCEPTION_REPLAY_MAX_EXCEPTION_ANALYSIS_LIMIT": [
+      {
+        "implementation": "A",
+        "type": "int",
+        "default": "100",
+        "product": "Debugger"
+      }
+    ],
+    "DD_EXCEPTION_REPLAY_RATE_LIMIT_SECONDS": [
+      {
+        "implementation": "A",
+        "type": "int",
+        "default": "3600",
+        "product": "Debugger"
+      }
+    ],
+    "DD_EXPERIMENTAL_APPSEC_USE_UNSAFE_ENCODER": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "false",
+        "product": "AppSec"
+      }
+    ],
+    "DD_EXPERIMENTAL_PROPAGATE_PROCESS_TAGS_ENABLED": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "false"
+      }
+    ],
+    "DD_GIT_BRANCH": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": null,
+        "product": "CIVisibility"
+      }
+    ],
+    "DD_GIT_COMMIT_AUTHOR_DATE": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": null,
+        "product": "CIVisibility"
+      }
+    ],
+    "DD_GIT_COMMIT_AUTHOR_EMAIL": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": null,
+        "product": "CIVisibility"
+      }
+    ],
+    "DD_GIT_COMMIT_AUTHOR_NAME": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": null,
+        "product": "CIVisibility"
+      }
+    ],
+    "DD_GIT_COMMIT_COMMITTER_DATE": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": null,
+        "product": "CIVisibility"
+      }
+    ],
+    "DD_GIT_COMMIT_COMMITTER_EMAIL": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": null,
+        "product": "CIVisibility"
+      }
+    ],
+    "DD_GIT_COMMIT_COMMITTER_NAME": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": null,
+        "product": "CIVisibility"
+      }
+    ],
+    "DD_GIT_COMMIT_MESSAGE": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": null,
+        "product": "CIVisibility"
+      }
+    ],
+    "DD_GIT_COMMIT_SHA": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": null,
+        "product": "CIVisibility"
+      }
+    ],
+    "DD_GIT_PULL_REQUEST_BASE_BRANCH": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": null,
+        "product": "CIVisibility"
+      }
+    ],
+    "DD_GIT_PULL_REQUEST_BASE_BRANCH_SHA": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": null,
+        "product": "CIVisibility"
+      }
+    ],
+    "DD_GIT_REPOSITORY_URL": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": null,
+        "product": "CIVisibility"
+      }
+    ],
+    "DD_GIT_TAG": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": null,
+        "product": "CIVisibility"
+      }
+    ],
+    "DD_HTTP_CLIENT_ERROR_STATUSES": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": "400-499"
+      }
+    ],
+    "DD_HTTP_SERVER_ERROR_STATUSES": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": "500-599"
+      }
+    ],
+    "DD_HTTP_SERVER_TAG_QUERY_STRING": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "true"
+      }
+    ],
+    "DD_HTTP_SERVER_TAG_QUERY_STRING_SIZE": [
+      {
+        "implementation": "A",
+        "type": "int",
+        "default": "5000"
+      }
+    ],
+    "DD_IAST_COOKIE_FILTER_PATTERN": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": ".*",
+        "product": "Iast"
+      }
+    ],
+    "DD_IAST_DB_ROWS_TO_TAINT": [
+      {
+        "implementation": "A",
+        "type": "int",
+        "default": "1",
+        "product": "Iast"
+      }
+    ],
+    "DD_IAST_DEDUPLICATION_ENABLED": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "true",
+        "product": "Iast"
+      }
+    ],
+    "DD_IAST_ENABLED": [
+      {
+        "implementation": "B",
+        "type": "boolean",
+        "default": "false",
+        "product": "Iast"
+      }
+    ],
+    "DD_IAST_MAX_CONCURRENT_REQUESTS": [
+      {
+        "implementation": "A",
+        "type": "int",
+        "default": "2",
+        "product": "Iast"
+      }
+    ],
+    "DD_IAST_MAX_RANGE_COUNT": [
+      {
+        "implementation": "A",
+        "type": "int",
+        "default": "10",
+        "product": "Iast"
+      }
+    ],
+    "DD_IAST_REDACTION_ENABLED": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "true",
+        "product": "Iast"
+      }
+    ],
+    "DD_IAST_REDACTION_NAME_PATTERN": [
+      {
+        "implementation": "C",
+        "type": "string",
+        "default": "(?i)(?:p(?:ass)?w(?:or)?d|pass(?:_?phrase)?|secret|(?:api_?|private_?|public_?|access_?|secret_?)key(?:_?id)?|token|consumer_?(?:id|key|secret)|sign(?:ed|ature)?|auth(?:entication|orization)?|(?:sur|last)name|user(?:name)?|address|e?mail)",
+        "product": "Iast"
+      }
+    ],
+    "DD_IAST_REDACTION_VALUE_PATTERN": [
+      {
+        "implementation": "C",
+        "type": "string",
+        "default": "(?i)(?:bearer\\\\s+[a-z0-9\\\\._\\\\-]+|glpat-[\\\\w\\\\-]{20}|gh[opsu]_[0-9a-zA-Z]{36}|ey[I-L][\\\\w=\\\\-]+\\\\.ey[I-L][\\\\w=\\\\-]+(?:\\\\.[\\\\w.+/=\\\\-]+)?|(?:[\\\\-]{5}BEGIN[a-z\\\\s]+PRIVATE\\\\sKEY[\\\\-]{5}[^\\\\-]+[\\\\-]{5}END[a-z\\\\s]+PRIVATE\\\\sKEY[\\\\-]{5}|ssh-rsa\\\\s*[a-z0-9/\\\\.+]{100,})|[\\\\w\\\\.-]+@[a-zA-Z\\\\d\\\\.-]+\\\\.[a-zA-Z]{2,})",
+        "product": "Iast"
+      }
+    ],
+    "DD_IAST_REGEXP_TIMEOUT": [
+      {
+        "implementation": "A",
+        "type": "decimal",
+        "default": "200.0",
+        "product": "Iast"
+      }
+    ],
+    "DD_IAST_REQUEST_SAMPLING": [
+      {
+        "implementation": "A",
+        "type": "int",
+        "default": "30",
+        "product": "Iast"
+      }
+    ],
+    "DD_IAST_TELEMETRY_VERBOSITY": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": "information",
+        "product": "Iast"
+      }
+    ],
+    "DD_IAST_TRUNCATION_MAX_VALUE_LENGTH": [
+      {
+        "implementation": "A",
+        "type": "int",
+        "default": "250",
+        "product": "Iast"
+      }
+    ],
+    "DD_IAST_VULNERABILITIES_PER_REQUEST": [
+      {
+        "implementation": "A",
+        "type": "int",
+        "default": "2",
+        "product": "Iast"
+      }
+    ],
+    "DD_IAST_WEAK_CIPHER_ALGORITHMS": [
+      {
+        "implementation": "B",
+        "type": "string",
+        "default": "DES,TRIPLEDES,RC2",
+        "product": "Iast"
+      }
+    ],
+    "DD_IAST_WEAK_HASH_ALGORITHMS": [
+      {
+        "implementation": "C",
+        "type": "string",
+        "default": "HMACMD5,MD5,HMACSHA1,SHA1",
+        "product": "Iast"
+      }
+    ],
+    "DD_INJECTION_ENABLED": [
+      {
+        "implementation": "C",
+        "type": "string",
+        "default": null
+      }
+    ],
+    "DD_INJECT_FORCE": [
+      {
+        "implementation": "B",
+        "type": "string",
+        "default": null
+      }
+    ],
+    "DD_INSTRUMENTATION_INSTALL_ID": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": null,
+        "product": "Telemetry"
+      }
+    ],
+    "DD_INSTRUMENTATION_INSTALL_TIME": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": null,
+        "product": "Telemetry"
+      }
+    ],
+    "DD_INSTRUMENTATION_INSTALL_TYPE": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": null,
+        "product": "Telemetry"
+      }
+    ],
+    "DD_INSTRUMENTATION_TELEMETRY_AGENTLESS_ENABLED": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "false",
+        "product": "Telemetry"
+      }
+    ],
+    "DD_INSTRUMENTATION_TELEMETRY_AGENT_PROXY_ENABLED": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "true",
+        "product": "Telemetry"
+      }
+    ],
+    "DD_INSTRUMENTATION_TELEMETRY_COMPRESSION_METHOD": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": "gzip",
+        "product": "Telemetry"
+      }
+    ],
+    "DD_INSTRUMENTATION_TELEMETRY_ENABLED": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "true",
+        "product": "Telemetry"
+      }
+    ],
+    "DD_INSTRUMENTATION_TELEMETRY_URL": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": "https://instrumentation-telemetry-intake.datadoghq.com/",
+        "product": "Telemetry"
+      }
+    ],
+    "DD_INTERNAL_RCM_POLL_INTERVAL": [
+      {
+        "implementation": "A",
+        "type": "decimal",
+        "default": "5.0",
+        "product": "Rcm"
+      }
+    ],
+    "DD_INTERNAL_PROFILING_NATIVE_ENGINE_PATH": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": null,
+        "product": "ContinuousProfiler"
+      }
+    ],
+    "DD_INTERNAL_TELEMETRY_DEBUG_ENABLED": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "false",
+        "product": "Telemetry"
+      }
+    ],
+    "DD_INTERNAL_TRACE_NATIVE_ENGINE_PATH": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": null
+      }
+    ],
+    "DD_INTERNAL_WAIT_FOR_DEBUGGER_ATTACH": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "false"
+      }
+    ],
+    "DD_INTERNAL_WAIT_FOR_NATIVE_DEBUGGER_ATTACH": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "false"
+      }
+    ],
+    "DD_LOGS_DIRECT_SUBMISSION_AZURE_FUNCTIONS_HOST_ENABLED": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "false",
+        "product": "DirectLogSubmission"
+      }
+    ],
+    "DD_LOGS_DIRECT_SUBMISSION_BATCH_PERIOD_SECONDS": [
+      {
+        "implementation": "A",
+        "type": "int",
+        "default": "2",
+        "product": "DirectLogSubmission"
+      }
+    ],
+    "DD_LOGS_DIRECT_SUBMISSION_HOST": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": null,
+        "product": "DirectLogSubmission"
+      }
+    ],
+    "DD_LOGS_DIRECT_SUBMISSION_INTEGRATIONS": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": null,
+        "product": "DirectLogSubmission"
+      }
+    ],
+    "DD_LOGS_DIRECT_SUBMISSION_MAX_BATCH_SIZE": [
+      {
+        "implementation": "A",
+        "type": "int",
+        "default": "1000",
+        "product": "DirectLogSubmission"
+      }
+    ],
+    "DD_LOGS_DIRECT_SUBMISSION_MAX_QUEUE_SIZE": [
+      {
+        "implementation": "A",
+        "type": "int",
+        "default": "100000",
+        "product": "DirectLogSubmission"
+      }
+    ],
+    "DD_LOGS_DIRECT_SUBMISSION_MINIMUM_LEVEL": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": "Information",
+        "product": "DirectLogSubmission"
+      }
+    ],
+    "DD_LOGS_DIRECT_SUBMISSION_SOURCE": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": "csharp",
+        "product": "DirectLogSubmission"
+      }
+    ],
+    "DD_LOGS_DIRECT_SUBMISSION_TAGS": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": null,
+        "product": "DirectLogSubmission"
+      }
+    ],
+    "DD_LOGS_DIRECT_SUBMISSION_URL": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": "https://http-intake.logs.datadoghq.com:443",
+        "product": "DirectLogSubmission"
+      }
+    ],
+    "DD_LOGS_INJECTION": [
+      {
+        "implementation": "B",
+        "type": "boolean",
+        "default": "true"
+      }
+    ],
+    "DD_LOG_LEVEL": [
+      {
+        "implementation": "B",
+        "type": "string",
+        "default": null,
+        "product": "Agent"
+      }
+    ],
+    "DD_MAX_LOGFILE_SIZE": [
+      {
+        "implementation": "A",
+        "type": "int",
+        "default": "10485760"
+      }
+    ],
+    "DD_MAX_TRACES_PER_SECOND": [
+      {
+        "implementation": "A",
+        "type": "int",
+        "default": "100"
+      }
+    ],
+    "DD_METRICS_OTEL_ENABLED": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "false",
+        "product": "FeatureFlags"
+      }
+    ],
+    "DD_METRICS_OTEL_METER_NAMES": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": null,
+        "product": "FeatureFlags"
+      }
+    ],
+    "DD_ACTION_EXECUTION_ID": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": null,
+        "product": "CIVisibility"
+      }
+    ],
+    "DD_PIPELINE_EXECUTION_ID": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": null,
+        "product": "CIVisibility"
+      }
+    ],
+    "DD_PROXY_HTTPS": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": null,
+        "product": "Proxy"
+      }
+    ],
+    "DD_PROXY_NO_PROXY": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": null,
+        "product": "Proxy"
+      }
+    ],
+    "DD_PROFILING_CODEHOTSPOTS_ENABLED": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "true",
+        "product": "Profiler"
+      }
+    ],
+    "DD_PROFILING_ENABLED": [
+      {
+        "implementation": "B",
+        "type": "string",
+        "default": "false",
+        "product": "Profiler"
+      }
+    ],
+    "DD_PROFILING_ENDPOINT_COLLECTION_ENABLED": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "true",
+        "product": "Profiler"
+      }
+    ],
+    "DD_PROFILING_MANAGED_ACTIVATION_ENABLED": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "true",
+        "product": "Profiler"
+      }
+    ],
+    "DD_REMOTE_CONFIGURATION_ENABLED": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "true",
+        "product": "Rcm"
+      }
     ],
     "DD_REMOTE_CONFIG_POLL_INTERVAL_SECONDS": [
-      "DD_INTERNAL_RCM_POLL_INTERVAL"
+      {
+        "implementation": "B",
+        "type": "decimal",
+        "default": "5.0",
+        "product": "Rcm",
+        "aliases": [
+          "DD_INTERNAL_RCM_POLL_INTERVAL"
+        ]
+      }
     ],
-    "DD_TRACE_RATE_LIMIT": [
-      "DD_MAX_TRACES_PER_SECOND"
+    "DD_RUNTIME_METRICS_ENABLED": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "false"
+      }
+    ],
+    "DD_RUNTIME_METRICS_DIAGNOSTICS_METRICS_API_ENABLED": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "false"
+      }
+    ],
+    "DD_SERVICE": [
+      {
+        "implementation": "D",
+        "type": "string",
+        "default": null,
+        "aliases": [
+          "DD_SERVICE_NAME"
+        ]
+      }
+    ],
+    "DD_SITE": [
+      {
+        "implementation": "C",
+        "type": "string",
+        "default": "datadoghq.com"
+      }
+    ],
+    "DD_SPAN_SAMPLING_RULES": [
+      {
+        "implementation": "B",
+        "type": "string",
+        "default": null
+      }
+    ],
+    "DD_SYMBOL_DATABASE_BATCH_SIZE_BYTES": [
+      {
+        "implementation": "A",
+        "type": "int",
+        "default": "100000",
+        "product": "Debugger"
+      }
+    ],
+    "DD_SYMBOL_DATABASE_COMPRESSION_ENABLED": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "true",
+        "product": "Debugger"
+      }
+    ],
+    "DD_SYMBOL_DATABASE_THIRD_PARTY_DETECTION_EXCLUDES": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": null,
+        "product": "Debugger"
+      }
+    ],
+    "DD_SYMBOL_DATABASE_THIRD_PARTY_DETECTION_INCLUDES": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": null,
+        "product": "Debugger"
+      }
+    ],
+    "DD_SYMBOL_DATABASE_UPLOAD_ENABLED": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "true",
+        "product": "Debugger"
+      }
+    ],
+    "DD_TAGS": [
+      {
+        "implementation": "C",
+        "type": "map",
+        "default": null,
+        "aliases": [
+          "DD_TRACE_GLOBAL_TAGS"
+        ]
+      }
+    ],
+    "DD_TELEMETRY_DEPENDENCY_COLLECTION_ENABLED": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "true",
+        "product": "Telemetry"
+      }
+    ],
+    "DD_TELEMETRY_HEARTBEAT_INTERVAL": [
+      {
+        "implementation": "B",
+        "type": "decimal",
+        "default": "60.0",
+        "product": "Telemetry"
+      }
+    ],
+    "DD_TELEMETRY_LOG_COLLECTION_ENABLED": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "true",
+        "product": "Telemetry"
+      }
+    ],
+    "DD_TELEMETRY_METRICS_ENABLED": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "true",
+        "product": "Telemetry"
+      }
+    ],
+    "DD_TEST_MANAGEMENT_ATTEMPT_TO_FIX_RETRIES": [
+      {
+        "implementation": "A",
+        "type": "int",
+        "default": null,
+        "product": "CIVisibility"
+      }
+    ],
+    "DD_TEST_MANAGEMENT_ENABLED": [
+      {
+        "implementation": "B",
+        "type": "boolean",
+        "default": null,
+        "product": "CIVisibility"
+      }
+    ],
+    "DD_TEST_SESSION_NAME": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": null,
+        "product": "CIVisibility"
+      }
+    ],
+    "DD_TESTSESSION_COMMAND": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": null,
+        "product": "CIVisibility"
+      }
+    ],
+    "DD_TESTSESSION_WORKINGDIRECTORY": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": null,
+        "product": "CIVisibility"
+      }
+    ],
+    "DD_THIRD_PARTY_DETECTION_EXCLUDES": [
+      {
+        "implementation": "A",
+        "type": "array",
+        "default": "[]",
+        "product": "Debugger"
+      }
+    ],
+    "DD_THIRD_PARTY_DETECTION_INCLUDES": [
+      {
+        "implementation": "A",
+        "type": "array",
+        "default": "[]",
+        "product": "Debugger"
+      }
+    ],
+    "DD_TRACE_128_BIT_TRACEID_GENERATION_ENABLED": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "true",
+        "product": "FeatureFlags"
+      }
+    ],
+    "DD_TRACE_128_BIT_TRACEID_LOGGING_ENABLED": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "true",
+        "product": "FeatureFlags"
+      }
+    ],
+    "DD_TRACE_ACTIVITY_LISTENER_ENABLED": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "false",
+        "product": "OpenTelemetry"
+      }
+    ],
+    "DD_TRACE_AGENT_ARGS": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": null
+      }
+    ],
+    "DD_TRACE_AGENT_PATH": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": null
+      }
+    ],
+    "DD_TRACE_AGENT_PORT": [
+      {
+        "implementation": "C",
+        "type": "int",
+        "default": "8126",
+        "aliases": [
+          "DATADOG_TRACE_AGENT_PORT"
+        ]
+      }
+    ],
+    "DD_TRACE_AGENT_URL": [
+      {
+        "implementation": "C",
+        "type": "string",
+        "default": "http://localhost:8126"
+      }
+    ],
+    "DD_TRACE_ANALYTICS_ENABLED": [
+      {
+        "implementation": "B",
+        "type": "boolean",
+        "default": "false"
+      }
+    ],
+    "DD_TRACE_AWS_ADD_SPAN_POINTERS": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "true"
+      }
+    ],
+    "DD_TRACE_AZURE_EVENTHUBS_BATCH_LINKS_ENABLED": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "true"
+      }
+    ],
+    "DD_TRACE_AZURE_SERVICEBUS_BATCH_LINKS_ENABLED": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "true"
+      }
+    ],
+    "DD_TRACE_BAGGAGE_MAX_BYTES": [
+      {
+        "implementation": "A",
+        "type": "int",
+        "default": "8192"
+      }
+    ],
+    "DD_TRACE_BAGGAGE_MAX_ITEMS": [
+      {
+        "implementation": "A",
+        "type": "int",
+        "default": "64"
+      }
+    ],
+    "DD_TRACE_BAGGAGE_TAG_KEYS": [
+      {
+        "implementation": "A",
+        "type": "array",
+        "default": "user.id, session.id, account.id"
+      }
+    ],
+    "DD_TRACE_BATCH_INTERVAL": [
+      {
+        "implementation": "A",
+        "type": "int",
+        "default": "100"
+      }
+    ],
+    "DD_TRACE_BUFFER_SIZE": [
+      {
+        "implementation": "A",
+        "type": "int",
+        "default": "10485760"
+      }
+    ],
+    "DD_TRACE_BYPASS_HTTP_REQUEST_URL_CACHING_ENABLED": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "false",
+        "product": "FeatureFlags"
+      }
+    ],
+    "DD_TRACE_CLIENT_IP_ENABLED": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "false"
+      }
+    ],
+    "DD_TRACE_CLIENT_IP_HEADER": [
+      {
+        "implementation": "C",
+        "type": "string",
+        "default": null,
+        "aliases": [
+          "DD_APPSEC_IPHEADER"
+        ]
+      }
+    ],
+    "DD_TRACE_COMMANDS_COLLECTION_ENABLED": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "false",
+        "product": "FeatureFlags"
+      }
+    ],
+    "DD_TRACE_CONFIG_FILE": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": "datadog.json",
+        "aliases": [
+          "DD_DOTNET_TRACER_CONFIG_FILE"
+        ]
+      }
+    ],
+    "DD_TRACE_DATA_PIPELINE_ENABLED": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "false"
+      }
+    ],
+    "DD_TRACE_DEBUG": [
+      {
+        "implementation": "B",
+        "type": "boolean",
+        "default": "false"
+      }
+    ],
+    "DD_TRACE_DEBUG_LOOKUP_FALLBACK": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": null,
+        "product": "Debug"
+      }
+    ],
+    "DD_TRACE_DEBUG_LOOKUP_MDTOKEN": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": null,
+        "product": "Debug"
+      }
+    ],
+    "DD_TRACE_DELAY_WCF_INSTRUMENTATION_ENABLED": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "true",
+        "product": "FeatureFlags"
+      }
+    ],
+    "DD_TRACE_DISABLED_ACTIVITY_SOURCES": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": null
+      }
+    ],
+    "DD_TRACE_DISABLED_ADONET_COMMAND_TYPES": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": "InterceptableDbCommand,ProfiledDbCommand"
+      }
+    ],
+    "DD_TRACE_ENABLED": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "true"
+      }
+    ],
+    "DD_TRACE_EXPAND_ROUTE_TEMPLATES_ENABLED": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "false"
+      }
+    ],
+    "DD_TRACE_EXPERIMENTAL_FEATURES_ENABLED": [
+      {
+        "implementation": "B",
+        "type": "string",
+        "default": null
+      }
+    ],
+    "DD_TRACE_GIT_METADATA_ENABLED": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "true"
+      }
+    ],
+    "DD_TRACE_GRAPHQL_ERROR_EXTENSIONS": [
+      {
+        "implementation": "A",
+        "type": "array",
+        "default": ""
+      }
+    ],
+    "DD_TRACE_GRPC_TAGS": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": null
+      }
+    ],
+    "DD_TRACE_HEADER_TAG_NORMALIZATION_FIX_ENABLED": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "true",
+        "product": "FeatureFlags"
+      }
+    ],
+    "DD_TRACE_HEADER_TAGS": [
+      {
+        "implementation": "A",
+        "type": "array",
+        "default": ""
+      }
+    ],
+    "DD_TRACE_HTTP_CLIENT_ERROR_STATUSES": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": "400-499",
+        "aliases": [
+          "DD_HTTP_CLIENT_ERROR_STATUSES"
+        ]
+      }
+    ],
+    "DD_TRACE_HTTP_CLIENT_EXCLUDED_URL_SUBSTRINGS": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": null
+      }
+    ],
+    "DD_TRACE_HTTP_SERVER_ERROR_STATUSES": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": "500-599",
+        "aliases": [
+          "DD_HTTP_SERVER_ERROR_STATUSES"
+        ]
+      }
+    ],
+    "DD_TRACE_INFERRED_PROXY_SERVICES_ENABLED": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "false",
+        "product": "FeatureFlags"
+      }
+    ],
+    "DD_TRACE_INJECT_CONTEXT_INTO_STORED_PROCEDURES_ENABLED": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "false",
+        "product": "FeatureFlags"
+      }
+    ],
+    "DD_EXPERIMENTAL_FLAGGING_PROVIDER_ENABLED": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "false",
+        "product": "FeatureFlags"
+      }
+    ],
+    "DD_TRACE_KAFKA_CREATE_CONSUMER_SCOPE_ENABLED": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "true"
+      }
+    ],
+    "DD_TRACE_LOG_DIRECTORY": [
+      {
+        "implementation": "B",
+        "type": "string",
+        "default": "/var/log/datadog/dotnet"
+      }
+    ],
+    "DD_TRACE_LOG_PATH": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": null
+      }
+    ],
+    "DD_TRACE_LOG_SINKS": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": "file"
+      }
+    ],
+    "DD_TRACE_LOGFILE_RETENTION_DAYS": [
+      {
+        "implementation": "A",
+        "type": "int",
+        "default": "32"
+      }
+    ],
+    "DD_TRACE_LOGGING_RATE": [
+      {
+        "implementation": "A",
+        "type": "int",
+        "default": "0"
+      }
+    ],
+    "DD_TRACE_METHODS": [
+      {
+        "implementation": "B",
+        "type": "string",
+        "default": ""
+      }
+    ],
+    "DD_TRACE_METRICS_ENABLED": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "false"
+      }
+    ],
+    "DD_TRACE_OBFUSCATION_QUERY_STRING_REGEXP": [
+      {
+        "implementation": "D",
+        "type": "string",
+        "default": "(?:(?:\\\"|%22)?)(?:(?:old[-_]?|new[-_]?)?p(?:ass)?w(?:or)?d(?:1|2)?|pass(?:[-_]?phrase)?|secret|(?:api[-_]?|private[-_]?|public[-_]?|access[-_]?|secret[-_]?|app(?:lication)?[-_]?)key(?:[-_]?id)?|token|consumer[-_]?(?:id|key|secret)|sign(?:ed|ature)?|auth(?:entication|orization)?)(?:(?:\\\\s|%20)*(?:=|%3D)[^&]+|(?:\\\"|%22)(?:\\\\s|%20)*(?::|%3A)(?:\\\\s|%20)*(?:\\\"|%22)(?:%2[^2]|%[^2]|[^\\\"%])+(?:\\\"|%22))|(?:bearer(?:\\\\s|%20)+[a-z0-9._\\\\-]+|token(?::|%3A)[a-z0-9]{13}|gh[opsu]_[0-9a-zA-Z]{36}|ey[I-L](?:[\\\\w=-]|%3D)+\\\\.ey[I-L](?:[\\\\w=-]|%3D)+(?:\\\\.(?:[\\\\w.+/=-]|%3D|%2F|%2B)+)?|-{5}BEGIN(?:[a-z\\\\s]|%20)+PRIVATE(?:\\\\s|%20)KEY-{5}[^\\\\-]+-{5}END(?:[a-z\\\\s]|%20)+PRIVATE(?:\\\\s|%20)KEY(?:-{5})?(?:\\\\n|%0A)?|(?:ssh-(?:rsa|dss)|ecdsa-[a-z0-9]+-[a-z0-9]+)(?:\\\\s|%20|%09)+(?:[a-z0-9/.+]|%2F|%5C|%2B){100,}(?:=|%3D)*(?:(?:\\\\s|%20|%09)+[a-z0-9._-]+)?)"
+      }
+    ],
+    "DD_TRACE_OBFUSCATION_QUERY_STRING_REGEXP_TIMEOUT": [
+      {
+        "implementation": "A",
+        "type": "decimal",
+        "default": "200"
+      }
     ],
     "DD_TRACE_OTEL_ENABLED": [
-      "DD_TRACE_ACTIVITY_LISTENER_ENABLED"
+      {
+        "implementation": "B",
+        "type": "boolean",
+        "default": "false",
+        "product": "FeatureFlags",
+        "aliases": [
+          "DD_TRACE_ACTIVITY_LISTENER_ENABLED"
+        ]
+      }
     ],
-    "OTEL_EXPORTER_OTLP_METRICS_PROTOCOL": [
-      "OTEL_EXPORTER_OTLP_PROTOCOL"
+    "DD_TRACE_PARTIAL_FLUSH_ENABLED": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "false"
+      }
+    ],
+    "DD_TRACE_PARTIAL_FLUSH_MIN_SPANS": [
+      {
+        "implementation": "C",
+        "type": "int",
+        "default": "500"
+      }
+    ],
+    "DD_TRACE_PEER_SERVICE_DEFAULTS_ENABLED": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "false"
+      }
+    ],
+    "DD_TRACE_PEER_SERVICE_MAPPING": [
+      {
+        "implementation": "A",
+        "type": "map",
+        "default": ""
+      }
+    ],
+    "DD_TRACE_PIPE_NAME": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": null
+      }
+    ],
+    "DD_TRACE_PIPE_TIMEOUT_MS": [
+      {
+        "implementation": "A",
+        "type": "int",
+        "default": "500"
+      }
+    ],
+    "DD_TRACE_PROPAGATION_BEHAVIOR_EXTRACT": [
+      {
+        "implementation": "B",
+        "type": "string",
+        "default": "continue"
+      }
+    ],
+    "DD_TRACE_PROPAGATION_EXTRACT_FIRST": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "false"
+      }
+    ],
+    "DD_TRACE_PROPAGATION_STYLE_EXTRACT": [
+      {
+        "implementation": "D",
+        "type": "array",
+        "default": "datadog,tracecontext,baggage",
+        "aliases": [
+          "DD_PROPAGATION_STYLE_EXTRACT",
+          "DD_TRACE_PROPAGATION_STYLE"
+        ]
+      }
+    ],
+    "DD_TRACE_PROPAGATION_STYLE_INJECT": [
+      {
+        "implementation": "D",
+        "type": "array",
+        "default": "datadog,tracecontext,baggage",
+        "aliases": [
+          "DD_PROPAGATION_STYLE_INJECT",
+          "DD_TRACE_PROPAGATION_STYLE"
+        ]
+      }
+    ],
+    "DD_TRACE_RATE_LIMIT": [
+      {
+        "implementation": "B",
+        "type": "int",
+        "default": "100",
+        "aliases": [
+          "DD_MAX_TRACES_PER_SECOND"
+        ]
+      }
+    ],
+    "DD_TRACE_REMOVE_INTEGRATION_SERVICE_NAMES_ENABLED": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "false"
+      }
+    ],
+    "DD_TRACE_ROUTE_TEMPLATE_RESOURCE_NAMES_ENABLED": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "true",
+        "product": "FeatureFlags"
+      }
+    ],
+    "DD_TRACE_SAMPLE_RATE": [
+      {
+        "implementation": "B",
+        "type": "decimal",
+        "default": null
+      }
+    ],
+    "DD_TRACE_SAMPLING_RULES": [
+      {
+        "implementation": "B",
+        "type": "string",
+        "default": null
+      }
+    ],
+    "DD_TRACE_SAMPLING_RULES_FORMAT": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": "glob"
+      }
+    ],
+    "DD_TRACE_SERVICE_MAPPING": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": null
+      }
+    ],
+    "DD_TRACE_SINGLE_SPAN_ASPNETCORE_ENABLED": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "false",
+        "product": "FeatureFlags"
+      }
+    ],
+    "DD_TRACE_SPAN_ATTRIBUTE_SCHEMA": [
+      {
+        "implementation": "B",
+        "type": "string",
+        "default": "v0"
+      }
+    ],
+    "DD_TRACE_STARTUP_LOGS": [
+      {
+        "implementation": "C",
+        "type": "boolean",
+        "default": "true"
+      }
+    ],
+    "DD_TRACE_STATS_COMPUTATION_ENABLED": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "false"
+      }
+    ],
+    "DD_TRACE_WCF_RESOURCE_OBFUSCATION_ENABLED": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "true",
+        "product": "FeatureFlags"
+      }
+    ],
+    "DD_TRACE_WCF_WEB_HTTP_RESOURCE_NAMES_ENABLED": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "true",
+        "product": "FeatureFlags"
+      }
+    ],
+    "DD_TRACE_X_DATADOG_TAGS_MAX_LENGTH": [
+      {
+        "implementation": "A",
+        "type": "int",
+        "default": "512",
+        "product": "TagPropagation"
+      }
+    ],
+    "DD_VERSION": [
+      {
+        "implementation": "B",
+        "type": "string",
+        "default": null
+      }
+    ],
+    "DD_LOGS_OTEL_ENABLED": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "false",
+        "product": "FeatureFlags"
+      }
+    ],
+    "OTEL_EXPORTER_OTLP_ENDPOINT": [
+      {
+        "implementation": "C",
+        "type": "string",
+        "default": "http://localhost:4317/",
+        "product": "OpenTelemetry"
+      }
+    ],
+    "OTEL_LOGS_EXPORTER": [
+      {
+        "implementation": "B",
+        "type": "string",
+        "default": "otlp",
+        "product": "OpenTelemetry"
+      }
+    ],
+    "OTEL_EXPORTER_OTLP_HEADERS": [
+      {
+        "implementation": "A",
+        "type": "map",
+        "default": "",
+        "product": "OpenTelemetry"
+      }
+    ],
+    "OTEL_EXPORTER_OTLP_LOGS_ENDPOINT": [
+      {
+        "implementation": "B",
+        "type": "string",
+        "default": "http://localhost:4317/",
+        "product": "OpenTelemetry"
+      }
     ],
     "OTEL_EXPORTER_OTLP_LOGS_PROTOCOL": [
-      "OTEL_EXPORTER_OTLP_PROTOCOL"
-    ],
-    "OTEL_EXPORTER_OTLP_LOGS_HEADERS": [
-      "OTEL_EXPORTER_OTLP_HEADERS"
-    ],
-    "OTEL_EXPORTER_OTLP_METRICS_HEADERS": [
-      "OTEL_EXPORTER_OTLP_HEADERS"
-    ],
-    "OTEL_EXPORTER_OTLP_METRICS_TIMEOUT": [
-      "OTEL_EXPORTER_OTLP_TIMEOUT"
+      {
+        "implementation": "C",
+        "type": "string",
+        "default": "grpc",
+        "product": "OpenTelemetry",
+        "aliases": [
+          "OTEL_EXPORTER_OTLP_PROTOCOL"
+        ]
+      }
     ],
     "OTEL_EXPORTER_OTLP_LOGS_TIMEOUT": [
-      "OTEL_EXPORTER_OTLP_TIMEOUT" 
+      {
+        "implementation": "B",
+        "type": "int",
+        "default": "10000",
+        "product": "OpenTelemetry",
+        "aliases": [
+          "OTEL_EXPORTER_OTLP_TIMEOUT"
+        ]
+      }
+    ],
+    "OTEL_EXPORTER_OTLP_METRICS_ENDPOINT": [
+      {
+        "implementation": "C",
+        "type": "string",
+        "default": "http://localhost:4317/",
+        "product": "OpenTelemetry"
+      }
+    ],
+    "OTEL_EXPORTER_OTLP_METRICS_HEADERS": [
+      {
+        "implementation": "C",
+        "type": "map",
+        "default": null,
+        "product": "OpenTelemetry",
+        "aliases": [
+          "OTEL_EXPORTER_OTLP_HEADERS"
+        ]
+      }
+    ],
+    "OTEL_EXPORTER_OTLP_LOGS_HEADERS": [
+      {
+        "implementation": "B",
+        "type": "map",
+        "default": null,
+        "product": "OpenTelemetry",
+        "aliases": [
+          "OTEL_EXPORTER_OTLP_HEADERS"
+        ]
+      }
+    ],
+    "OTEL_EXPORTER_OTLP_METRICS_PROTOCOL": [
+      {
+        "implementation": "C",
+        "type": "string",
+        "default": "grpc",
+        "product": "OpenTelemetry",
+        "aliases": [
+          "OTEL_EXPORTER_OTLP_PROTOCOL"
+        ]
+      }
+    ],
+    "OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": "delta",
+        "product": "OpenTelemetry"
+      }
+    ],
+    "OTEL_EXPORTER_OTLP_METRICS_TIMEOUT": [
+      {
+        "implementation": "C",
+        "type": "int",
+        "default": "10000",
+        "product": "OpenTelemetry",
+        "aliases": [
+          "OTEL_EXPORTER_OTLP_TIMEOUT"
+        ]
+      }
+    ],
+    "OTEL_EXPORTER_OTLP_PROTOCOL": [
+      {
+        "implementation": "C",
+        "type": "string",
+        "default": "grpc",
+        "product": "OpenTelemetry"
+      }
+    ],
+    "OTEL_EXPORTER_OTLP_TIMEOUT": [
+      {
+        "implementation": "A",
+        "type": "int",
+        "default": "10000",
+        "product": "OpenTelemetry"
+      }
+    ],
+    "OTEL_LOG_LEVEL": [
+      {
+        "implementation": "C",
+        "type": "string",
+        "default": null,
+        "product": "OpenTelemetry"
+      }
+    ],
+    "OTEL_METRIC_EXPORT_INTERVAL": [
+      {
+        "implementation": "A",
+        "type": "int",
+        "default": "10000",
+        "product": "OpenTelemetry"
+      }
+    ],
+    "OTEL_METRIC_EXPORT_TIMEOUT": [
+      {
+        "implementation": "A",
+        "type": "int",
+        "default": "7500",
+        "product": "OpenTelemetry"
+      }
+    ],
+    "OTEL_METRICS_EXPORTER": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": "otlp",
+        "product": "OpenTelemetry"
+      }
+    ],
+    "OTEL_PROPAGATORS": [
+      {
+        "implementation": "A",
+        "type": "array",
+        "default": "",
+        "product": "OpenTelemetry"
+      }
+    ],
+    "OTEL_RESOURCE_ATTRIBUTES": [
+      {
+        "implementation": "A",
+        "type": "map",
+        "default": "",
+        "product": "OpenTelemetry"
+      }
+    ],
+    "OTEL_SDK_DISABLED": [
+      {
+        "implementation": "B",
+        "type": "boolean",
+        "default": null,
+        "product": "OpenTelemetry"
+      }
+    ],
+    "OTEL_SERVICE_NAME": [
+      {
+        "implementation": "B",
+        "type": "string",
+        "default": null,
+        "product": "OpenTelemetry"
+      }
+    ],
+    "OTEL_TRACES_EXPORTER": [
+      {
+        "implementation": "C",
+        "type": "string",
+        "default": null,
+        "product": "OpenTelemetry"
+      }
+    ],
+    "OTEL_TRACES_SAMPLER": [
+      {
+        "implementation": "C",
+        "type": "string",
+        "default": null,
+        "product": "OpenTelemetry"
+      }
+    ],
+    "OTEL_TRACES_SAMPLER_ARG": [
+      {
+        "implementation": "D",
+        "type": "decimal",
+        "default": null,
+        "product": "OpenTelemetry"
+      }
+    ],
+    "_DD_EXTENSION_ENDPOINT": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": null,
+        "product": "Aws"
+      }
+    ],
+    "_DD_EXTENSION_PATH": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": null,
+        "product": "Aws"
+      }
+    ],
+    "_DD_INTERNAL_IS_RUNNING_IN_CIVISIBILITY": [
+      {
+        "implementation": "A",
+        "type": "boolean",
+        "default": "false",
+        "product": "CIVisibility"
+      }
+    ],
+    "_DD_INTERNAL_TOPT_RUNID": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": null,
+        "product": "CIVisibility"
+      }
+    ],
+    "_DD_TRACE_STATS_COMPUTATION_INTERVAL": [
+      {
+        "implementation": "A",
+        "type": "int",
+        "default": "10"
+      }
     ]
   },
   "deprecations": {
