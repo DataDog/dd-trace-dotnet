@@ -292,7 +292,10 @@ public class CreatedumpTests : ConsoleTestHelper
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
         {
             report["sig_info"]!["si_signo"]!.Value<string>().Should().Be("6");
+            report["sig_info"]!["si_code"]!.Value<string>().Should().Be("1");
         }
+
+        report["error"]!["message"].Value<string>().Should().Be("Process was terminated due to an unhandled exception of type 'System.BadImageFormatException'. Message: Expected.");
     }
 
 #if !NETFRAMEWORK
@@ -376,6 +379,16 @@ public class CreatedumpTests : ConsoleTestHelper
         }
 
         File.Exists(reportFile.Path).Should().BeTrue();
+        assertionScope.AddReportable("Report", reportFile.GetContent());
+        var report = JObject.Parse(reportFile.GetContent());
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            report["error"]!["message"].Value<string>().Should().Be("Process was terminated with SEGV_MAPERR (SIGSEGV)");
+        }
+        else
+        {
+            report["error"]!["message"].Value<string>().Should().Be("Process was terminated due to an unknown unhandled exception of type STATUS_STACK_BUFFER_OVERRUN (0xC0000409)");
+        }
     }
 
     [SkippableFact]
