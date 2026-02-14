@@ -71,6 +71,7 @@
     <ClCompile Include="FrameStoreHelper.cpp" />
     <ClCompile Include="IMetricsSenderFactoryTest.cpp" />
     <ClCompile Include="LinkedListTest.cpp" />
+    <ClCompile Include="ManagedThreadInfoTest.cpp" />
     <ClCompile Include="ProfileExporterTest.cpp" />
     <ClCompile Include="LinuxStackFramesCollectorTest.cpp" />
     <ClCompile Include="LogTest.cpp" />
