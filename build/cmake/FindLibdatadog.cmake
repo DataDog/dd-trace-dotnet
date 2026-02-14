@@ -4,18 +4,18 @@ endif()
 
 include(FetchContent)
 
-set(LIBDATADOG_VERSION "v25.0.0" CACHE STRING "libdatadog version")
+set(LIBDATADOG_VERSION "v1.2.16" CACHE STRING "libdatadog version")
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     # For Darwin, we'll download both architectures and combine them
-    set(SHA256_LIBDATADOG_ARM64 "2292639fa885a5f126e7bdf0bbdfd9b08ef54835bfa5c1c6291db15d4ed1b807" CACHE STRING "libdatadog arm64 sha256")
-    set(SHA256_LIBDATADOG_X86_64 "e8fa9cd5ad8ec81defa2b7eeb62fea8eaca3df37c945be36434e9a080e14c7c5" CACHE STRING "libdatadog x86_64 sha256")
+    set(SHA256_LIBDATADOG_ARM64 "9e13b3cd7d824b1d90083d061656bb6b7d45d63de9df3a200825cf344d24a347" CACHE STRING "libdatadog arm64 sha256")
+    set(SHA256_LIBDATADOG_X86_64 "2af1fec16e5cd786e9ec6336cb69b52b5673fbe55a8a1a2ba0c3a73e92e70ae2" CACHE STRING "libdatadog x86_64 sha256")
     set(FILE_TO_DOWNLOAD_ARM64 libdatadog-aarch64-apple-darwin.tar.gz)
     set(FILE_TO_DOWNLOAD_X86_64 libdatadog-x86_64-apple-darwin.tar.gz)
 
     # Download ARM64 version
     FetchContent_Declare(libdatadog-install-arm64
-        URL https://github.com/DataDog/libdatadog/releases/download/${LIBDATADOG_VERSION}/${FILE_TO_DOWNLOAD_ARM64}
+        URL https://github.com/DataDog/libdatadog-dotnet/releases/download/${LIBDATADOG_VERSION}/${FILE_TO_DOWNLOAD_ARM64}
         URL_HASH SHA256=${SHA256_LIBDATADOG_ARM64}
         SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/libdatadog-install-arm64
     )
@@ -25,7 +25,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 
     # Download x86_64 version
     FetchContent_Declare(libdatadog-install-x86_64
-        URL https://github.com/DataDog/libdatadog/releases/download/${LIBDATADOG_VERSION}/${FILE_TO_DOWNLOAD_X86_64}
+        URL https://github.com/DataDog/libdatadog-dotnet/releases/download/${LIBDATADOG_VERSION}/${FILE_TO_DOWNLOAD_X86_64}
         URL_HASH SHA256=${SHA256_LIBDATADOG_X86_64}
         SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/libdatadog-install-x86_64
     )
@@ -62,24 +62,24 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 else()
     if(CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64" OR CMAKE_SYSTEM_PROCESSOR STREQUAL "arm64")
         if(DEFINED ENV{IsAlpine} AND "$ENV{IsAlpine}" MATCHES "true")
-            set(SHA256_LIBDATADOG "b5badd5d781086919596692fdeb46545bb3a7bfbc0786058ee3d38b847921a36" CACHE STRING "libdatadog sha256")
+            set(SHA256_LIBDATADOG "c78ae34d86d51561b8a48fb6823250014a7f9dcaa90e4cb44d454718868e1e73" CACHE STRING "libdatadog sha256")
             set(FILE_TO_DOWNLOAD libdatadog-aarch64-alpine-linux-musl.tar.gz)
         else()
-            set(SHA256_LIBDATADOG "6a408fab094966e6c5cd95ad00aab40885e816ed5268025365684be72cb71e5c" CACHE STRING "libdatadog sha256")
+            set(SHA256_LIBDATADOG "c18ed3896f631742c88f074884ee026f1e2810b460f43be94e58c4f178af6181" CACHE STRING "libdatadog sha256")
             set(FILE_TO_DOWNLOAD libdatadog-aarch64-unknown-linux-gnu.tar.gz)
         endif()
     else()
         if(DEFINED ENV{IsAlpine} AND "$ENV{IsAlpine}" MATCHES "true")
-            set(SHA256_LIBDATADOG "d595e65f68e5e48f8d3158ac0d5494881848d03bcded2e6c4eb68cd05fd3c0a0" CACHE STRING "libdatadog sha256")
+            set(SHA256_LIBDATADOG "905690a14d5cbd791804cecff1aa7a634662921180d7af4d9e7d63e76bc68f39" CACHE STRING "libdatadog sha256")
             set(FILE_TO_DOWNLOAD libdatadog-${CMAKE_SYSTEM_PROCESSOR}-alpine-linux-musl.tar.gz)
         else()
-            set(SHA256_LIBDATADOG "1571e52919e9c014f53a7accba003f930d1e49e51146064846b79c12110a2df2" CACHE STRING "libdatadog sha256")
+            set(SHA256_LIBDATADOG "6346a327cbf62ce0625f5b54a78877c1c366456d16aad93aedf13fc13d418543" CACHE STRING "libdatadog sha256")
             set(FILE_TO_DOWNLOAD libdatadog-${CMAKE_SYSTEM_PROCESSOR}-unknown-linux-gnu.tar.gz)
         endif()
     endif()
 
     FetchContent_Declare(libdatadog-install
-        URL https://github.com/DataDog/libdatadog/releases/download/${LIBDATADOG_VERSION}/${FILE_TO_DOWNLOAD}
+        URL https://github.com/DataDog/libdatadog-dotnet/releases/download/${LIBDATADOG_VERSION}/${FILE_TO_DOWNLOAD}
         URL_HASH SHA256=${SHA256_LIBDATADOG}
         SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/libdatadog-install
     )
