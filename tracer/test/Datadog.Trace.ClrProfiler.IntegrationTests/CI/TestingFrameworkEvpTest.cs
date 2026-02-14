@@ -534,6 +534,7 @@ public abstract class TestingFrameworkEvpTest : TestHelper
                                  .ThenBy(s => GetValueOrDefault(s.Meta, TestTags.TestIsRetry))
                                  .ThenBy(s => GetValueOrDefault(s.Meta, TestTags.TestAttemptToFixPassed))
                                  .ThenBy(s => GetValueOrDefault(s.Meta, TestTags.TestHasFailedAllRetries))
+                                 .ThenBy(s => GetValueOrDefault(s.Meta, TestTags.TestFinalStatus))
                                  .ThenBy(s => GetValueOrDefault(s.Meta, EarlyFlakeDetectionTags.AbortReason)),
                     settings);
             }

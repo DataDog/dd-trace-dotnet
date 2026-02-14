@@ -555,8 +555,8 @@ public sealed class Test
         {
             var retryReasonTag = tags.TestRetryReason switch
             {
-                "efd" => MetricTags.CIVisibilityTestingEventTypeRetryReason.EarlyFlakeDetection,
-                "atr" => MetricTags.CIVisibilityTestingEventTypeRetryReason.AutomaticTestRetry,
+                TestTags.TestRetryReasonEfd => MetricTags.CIVisibilityTestingEventTypeRetryReason.EarlyFlakeDetection,
+                TestTags.TestRetryReasonAtr => MetricTags.CIVisibilityTestingEventTypeRetryReason.AutomaticTestRetry,
                 _ => MetricTags.CIVisibilityTestingEventTypeRetryReason.None
             };
 
