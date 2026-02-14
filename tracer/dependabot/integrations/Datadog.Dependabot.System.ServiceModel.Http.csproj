@@ -9,7 +9,7 @@
     <!-- Integration: System.ServiceModel -->
     <!--    Assembly: System.ServiceModel -->
     <!-- Latest package https://www.nuget.org/packages/System.ServiceModel.Http/10.0.652802 -->
-    <PackageReference Include="System.ServiceModel.Http" Version="4.10.3" />
+    <PackageReference Include="System.ServiceModel.Http" Version="10.0.652802" />
   </ItemGroup>
 
 </Project>
