@@ -178,6 +178,9 @@
     <ClCompile Include="CrashReportingTest.cpp">
       <Filter>Tests</Filter>
     </ClCompile>
+    <ClCompile Include="DebugInfoStoreTest.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\CrashReportingWindows.cpp">
       <Filter>External Sources</Filter>
     </ClCompile>
@@ -192,6 +195,10 @@
     </ClCompile>
     <ClCompile Include="CpuSampleProviderTest.cpp">
       <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\DbgHelpParser.cpp" />
+    <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\SymPdbParser.cpp">
+      <Filter>External Sources</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -221,6 +228,7 @@
       <Filter>Helpers</Filter>
     </ClInclude>
     <ClInclude Include="resource.h" />
+    <ClInclude Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\DbgHelpParser.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resources.rc" />
