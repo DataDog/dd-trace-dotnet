@@ -200,6 +200,73 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 Assert.True(contentionRequestsCount > 0, "No contention metrics received. Metrics received: " + string.Join("\n", requests));
             }
 
+            // JIT Metrics (.NET 6+)
+            if (Environment.Version.Major >= 6)
+            {
+                var jitILBytesCount = metrics.Count(r => r.StartsWith(MetricsNames.JitCompiledILBytes));
+                var jitMethodsCount = metrics.Count(r => r.StartsWith(MetricsNames.JitCompiledMethods));
+                var jitTimeCount = metrics.Count(r => r.StartsWith(MetricsNames.JitCompilationTime));
+
+                Assert.True(jitILBytesCount > 0, "No JIT compiled IL bytes metrics received. Metrics received: " + string.Join("\n", requests));
+                Assert.True(jitMethodsCount > 0, "No JIT compiled methods metrics received. Metrics received: " + string.Join("\n", requests));
+                Assert.True(jitTimeCount > 0, "No JIT compilation time metrics received. Metrics received: " + string.Join("\n", requests));
+            }
+
+            // ThreadPool Metrics (available on all platforms)
+            var availableWorkersCount = metrics.Count(r => r.StartsWith(MetricsNames.ThreadsAvailableWorkers));
+            var availableCompletionPortsCount = metrics.Count(r => r.StartsWith(MetricsNames.ThreadsAvailableCompletionPorts));
+
+            Assert.True(availableWorkersCount > 0, "No ThreadPool available workers metrics received. Metrics received: " + string.Join("\n", requests));
+            Assert.True(availableCompletionPortsCount > 0, "No ThreadPool available completion ports metrics received. Metrics received: " + string.Join("\n", requests));
+
+            // ThreadPool queue length (.NET Core 3.0+)
+            if (EnvironmentHelper.IsCoreClr() && Environment.Version.Major >= 3)
+            {
+                var queueLengthCount = metrics.Count(r => r.StartsWith(MetricsNames.ThreadsQueueLength));
+                Assert.True(queueLengthCount > 0, "No ThreadPool queue length metrics received. Metrics received: " + string.Join("\n", requests));
+            }
+
+            // ThreadPool completed work items (.NET 5+)
+            if (Environment.Version.Major >= 5)
+            {
+                var completedItemsCount = metrics.Count(r => r.StartsWith(MetricsNames.ThreadsCompletedWorkItems));
+                Assert.True(completedItemsCount > 0, "No ThreadPool completed work items metrics received. Metrics received: " + string.Join("\n", requests));
+            }
+
+            // ThreadPool active timers (.NET 6+)
+            if (Environment.Version.Major >= 6)
+            {
+                var activeTimersCount = metrics.Count(r => r.StartsWith(MetricsNames.ThreadsActiveTimers));
+                Assert.True(activeTimersCount > 0, "No ThreadPool active timers metrics received. Metrics received: " + string.Join("\n", requests));
+            }
+
+            // GC Metrics
+            // GC allocated bytes (.NET Core 3.0+)
+            if (EnvironmentHelper.IsCoreClr() && Environment.Version.Major >= 3)
+            {
+                var allocatedBytesCount = metrics.Count(r => r.StartsWith(MetricsNames.GcAllocatedBytes));
+                Assert.True(allocatedBytesCount > 0, "No GC allocated bytes metrics received. Metrics received: " + string.Join("\n", requests));
+            }
+
+            // GC fragmentation and total available memory (available where GC.GetGCMemoryInfo() works)
+            if (EnvironmentHelper.IsCoreClr())
+            {
+                var fragmentationCount = metrics.Count(r => r.StartsWith(MetricsNames.GcFragmentationPercent));
+                var totalAvailableMemoryCount = metrics.Count(r => r.StartsWith(MetricsNames.GcTotalAvailableMemory));
+                var highMemoryLoadThresholdCount = metrics.Count(r => r.StartsWith(MetricsNames.GcHighMemoryLoadThreshold));
+
+                Assert.True(fragmentationCount > 0, "No GC fragmentation percent metrics received. Metrics received: " + string.Join("\n", requests));
+                Assert.True(totalAvailableMemoryCount > 0, "No GC total available memory metrics received. Metrics received: " + string.Join("\n", requests));
+                Assert.True(highMemoryLoadThresholdCount > 0, "No GC high memory load threshold metrics received. Metrics received: " + string.Join("\n", requests));
+            }
+
+            // POH size (.NET 5+)
+            if (Environment.Version.Major >= 5)
+            {
+                var pohSizeCount = metrics.Count(r => r.StartsWith(MetricsNames.PohSize));
+                Assert.True(pohSizeCount > 0, "No POH size metrics received. Metrics received: " + string.Join("\n", requests));
+            }
+
 // using #if so it's a different test to the one we use in RuntimeMetricsWriter
 #if NETFRAMEWORK || NETCOREAPP3_1_OR_GREATER
             var runtimeIsBuggy = false;
