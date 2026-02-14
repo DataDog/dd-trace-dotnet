@@ -12,6 +12,7 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
+using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Logging;
 using Datadog.Trace.SourceGenerators;
@@ -46,6 +47,7 @@ namespace Datadog.Trace.PlatformHelpers
 
         private readonly Lazy<string?> _containerId;
         private readonly Lazy<string?> _entityId;
+        private readonly List<Action<string?>> _subscribers = [];
 
         private ContainerMetadata()
         {
@@ -68,7 +70,17 @@ namespace Datadog.Trace.PlatformHelpers
         public string? ContainerTagsHash
         {
             get => Volatile.Read(ref field);
-            set => Volatile.Write(ref field, value);
+            set
+            {
+                Volatile.Write(ref field, value);
+                lock (_subscribers)
+                {
+                    foreach (var subscriber in _subscribers)
+                    {
+                        subscriber(value);
+                    }
+                }
+            }
         }
 
         /// <summary>
@@ -299,6 +311,19 @@ namespace Datadog.Trace.PlatformHelpers
         private static bool IsHostCgroupNamespaceInternal()
         {
             return File.Exists(ControlGroupsNamespacesFilePath) && TryGetInode(ControlGroupsNamespacesFilePath, out long output) && output == HostCgroupNamespaceInode;
+        }
+
+        /// <summary>
+        /// Get notified when the container tags hash get updated.
+        /// This is suposed to happen only once per app lifetime
+        /// (when we receive the first response from the agent in <see cref="DiscoveryService"/>)
+        /// </summary>
+        public void SubscribeToContainerTagsHashChanges(Action<string?> action)
+        {
+            lock (_subscribers)
+            {
+                _subscribers.Add(action);
+            }
         }
     }
 }

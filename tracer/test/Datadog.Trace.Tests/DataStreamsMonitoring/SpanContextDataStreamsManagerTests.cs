@@ -6,6 +6,7 @@
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DataStreamsMonitoring.Hashes;
+using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.TestHelpers.TransportHelpers;
 using Datadog.Trace.Tests.Agent;
 using FluentAssertions;
@@ -78,6 +79,6 @@ public class SpanContextDataStreamsManagerTests
                 { ConfigurationKeys.ServiceName, "service" },
                 { ConfigurationKeys.DataStreamsMonitoring.Enabled, "1" },
             });
-        return new DataStreamsManager(settings, new Mock<IDataStreamsWriter>().Object, processTags: null);
+        return new DataStreamsManager(settings, new Mock<IDataStreamsWriter>().Object, processTags: null, new ContainerMetadata(containerId: null, entityId: null));
     }
 }

@@ -16,12 +16,13 @@ namespace Datadog.Trace.Tests.DataStreamsMonitoring;
 public class HashHelperTests
 {
     [Theory]
-    [InlineData("service-1", "env-1", null, null)]
-    [InlineData("service-1", "env-1", "d:1", null)]
-    [InlineData("service-1", "env-1", "d:1", "entrypoint.name:hello")]
-    [InlineData("service-1", "env-1", "d:1", "entrypoint.name:hello", "edge-1")]
-    [InlineData("service-1", "env-1", "d:1", "entrypoint.name:hello", "edge-1", "edge-2")]
-    public void NodeHashSanityCheck(string service, string env, string primaryTag, string processTags, params string[] edgeArgs)
+    [InlineData("service-1", "env-1", null, null, null)]
+    [InlineData("service-1", "env-1", "d:1", null, null)]
+    [InlineData("service-1", "env-1", "d:1", "entrypoint.name:hello", null)]
+    [InlineData("service-1", "env-1", "d:1", "entrypoint.name:hello", "aGVsbG8gd29ybGQ=")]
+    [InlineData("service-1", "env-1", "d:1", "entrypoint.name:hello", "aGVsbG8gd29ybGQ=", "edge-1")]
+    [InlineData("service-1", "env-1", "d:1", "entrypoint.name:hello", "aGVsbG8gd29ybGQ=", "edge-1", "edge-2")]
+    public void NodeHashSanityCheck(string service, string env, string primaryTag, string processTags, string containerTagsHash, params string[] edgeArgs)
     {
         // naive implementation (similar to e.g. go/java)
         var sb = new StringBuilder()
@@ -46,7 +47,7 @@ public class HashHelperTests
         }
 
         var expectedHash = FnvHash64.GenerateHash(sb.ToString(), FnvHash64.Version.V1);
-        var baseHash = HashHelper.CalculateNodeHashBase(service, env, primaryTag, processTags);
+        var baseHash = HashHelper.CalculateNodeHashBase(service, env, primaryTag, processTags, containerTagsHash);
         var actual = HashHelper.CalculateNodeHash(baseHash, sortedArgs);
 
         actual.Value.Should().Be(expectedHash);
