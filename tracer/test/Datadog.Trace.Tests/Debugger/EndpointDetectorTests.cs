@@ -102,6 +102,16 @@ namespace Datadog.Trace.Tests.Debugger
                         isExpectedEndpoint = true;
                     }
 
+                    // .NET Framework MVC/WebApi2 controllers (convention-based)
+                    else if (type.Name == "NetFxMvcController" && method.Name == "Index")
+                    {
+                        isExpectedEndpoint = true;
+                    }
+                    else if (type.Name == "NetFxWebApiController" && method.Name == "Get")
+                    {
+                        isExpectedEndpoint = true;
+                    }
+
                     // PageModel handlers
                     else if (type.Name == "TestPageModel" &&
                             method.Name is "OnGet" or "OnGetAsync" or "OnPost" or "OnPostAsync" or "OnPut" or "OnPutAsync" or "OnDelete" or "OnDeleteAsync" or "OnHead" or "OnHeadAsync" or "OnPatch" or "OnPatchAsync" or "OnOptions" or "OnOptionsAsync" &&
@@ -187,6 +197,12 @@ namespace Datadog.Trace.Tests.Debugger
 
                     // Regular methods with no HTTP attribute
                     else if (type.Name == "ValidController" && method.Name == "RegularMethod")
+                    {
+                        shouldNotBeEndpoint = true;
+                    }
+
+                    // .NET Framework MVC/WebApi2 non-actions
+                    else if (type.Name is "NetFxMvcController" or "NetFxWebApiController" && method.Name == "Helper")
                     {
                         shouldNotBeEndpoint = true;
                     }
@@ -414,6 +430,24 @@ namespace Microsoft.AspNetCore.Builder
     }
 }
 
+namespace System.Web.Mvc
+{
+    [AttributeUsage(AttributeTargets.Method)]
+    public class NonActionAttribute : Attribute { }
+
+    public class ControllerBase { }
+
+    public class Controller : ControllerBase { }
+}
+
+namespace System.Web.Http
+{
+    [AttributeUsage(AttributeTargets.Method)]
+    public class NonActionAttribute : Attribute { }
+
+    public class ApiController { }
+}
+
 namespace EndpointDetectorTestNamespace
 {
     // Controller with ControllerAttribute
@@ -576,6 +610,28 @@ namespace EndpointDetectorTestNamespace
         {
             // This empty method ensures the delegates are used
         }
+    }
+
+    // .NET Framework MVC controller
+    public class NetFxMvcController : System.Web.Mvc.Controller
+    {
+        public object Index() => null;
+
+        [System.Web.Mvc.NonAction]
+        public object Helper() => null;
+
+        private object PrivateMethod() => null;
+
+        public static object StaticMethod() => null;
+    }
+
+    // .NET Framework Web API 2 controller
+    public class NetFxWebApiController : System.Web.Http.ApiController
+    {
+        public object Get() => null;
+
+        [System.Web.Http.NonAction]
+        public object Helper() => null;
     }
 }");
         }
