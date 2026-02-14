@@ -54,17 +54,12 @@ namespace Datadog.Trace.Processors
             return false;
         }
 
-        // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/traceutil/normalize.go#L98-L209
+        // https://github.com/DataDog/datadog-agent/blob/5e576f16449f2cc003d231ad50d54c920fdee08f/pkg/trace/traceutil/normalize/normalize.go#L152
         public static string NormalizeTag(string value)
         {
-            if (value is null)
+            if (IsNormalizedAsciiTag(value))
             {
-                return null;
-            }
-
-            if (string.IsNullOrEmpty(value) || Encoding.GetByteCount(value) == 0)
-            {
-                return string.Empty;
+                return value;
             }
 
             char[] charArray = null;
@@ -129,17 +124,13 @@ namespace Datadog.Trace.Processors
                 {
                     chars++;
                 }
-                else if (chars == 0)
-                {
-                    trim = i + jump;
-                    goto end;
-                }
                 else if (char.IsDigit(c) || c == '.' || c == '/' || c == '-')
                 {
                     chars++;
                 }
                 else
                 {
+                    chars++;
                     if (cuts is null)
                     {
                         cuts = new List<int[]>();
@@ -208,6 +199,52 @@ namespace Datadog.Trace.Processors
             }
 
             return new string(segment.Array, segment.Offset, segment.Count);
+        }
+
+        // https://github.com/DataDog/datadog-agent/blob/5e576f16449f2cc003d231ad50d54c920fdee08f/pkg/trace/traceutil/normalize/normalize.go#L366
+        private static bool IsNormalizedAsciiTag(string tagValue)
+        {
+            if (string.IsNullOrEmpty(tagValue))
+            {
+                return true;
+            }
+
+            if (tagValue.Length > MaxTagLength)
+            {
+                return false;
+            }
+
+            for (var i = 0; i < tagValue.Length; i++)
+            {
+                var b = tagValue[i];
+                if (IsValidAsciiTagChar(b))
+                {
+                    continue;
+                }
+
+                if (b == '_')
+                {
+                    // an underscore is only okay if followed by a valid non-underscore character
+                    i++;
+                    if (i == tagValue.Length || !IsValidAsciiTagChar(tagValue[i]))
+                    {
+                        return false;
+                    }
+                }
+                else
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        // https://github.com/DataDog/datadog-agent/blob/5e576f16449f2cc003d231ad50d54c920fdee08f/pkg/trace/traceutil/normalize/normalize.go#L403
+        private static bool IsValidAsciiTagChar(char c)
+        {
+            // where we use this method, the agent's code actually uses a lookup table for faster computation
+            return ('a' <= c && c <= 'z') || ('0' <= c && c <= '9') || c == ':' || c == '.' || c == '/' || c == '-';
         }
 
         // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/traceutil/normalize.go#L213-L216
