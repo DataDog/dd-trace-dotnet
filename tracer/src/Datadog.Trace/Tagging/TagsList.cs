@@ -186,7 +186,7 @@ namespace Datadog.Trace.Tagging
         /// <summary>
         /// NOTE: This method mutates the underlying list and is intentionally lock-free.
         /// Callers MUST hold the lock on the specific `tags` instance for the duration of the call.
-        /// See <see cref="SetTags()"/> overloads.
+        /// See <see cref="SetTag"/> and SetTags overloads.
         /// </summary>
         private static void SetTagNoLock(List<KeyValuePair<string, string>> tags, string key, string? value)
         {
