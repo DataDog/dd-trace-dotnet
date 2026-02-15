@@ -414,6 +414,7 @@
       <type fullname="System.Net.Http.SocketsHttpConnectionContext" />
       <type fullname="System.Net.Http.SocketsHttpHandler" />
       <type fullname="System.Net.Http.StreamContent" />
+      <type fullname="System.Net.Http.StringContent" />
    </assembly>
    <assembly fullname="System.Net.Http.WinHttpHandler" />
    <assembly fullname="System.Net.NameResolution">
