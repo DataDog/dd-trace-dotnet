@@ -453,9 +453,12 @@ namespace Datadog.Trace.Tests.Debugger
             };
 
             tags.SetTags(
-                CodeOriginFrames0FileKey, FileValue,
-                CodeOriginFrames0LineKey, LineValue,
-                CodeOriginFrames0ColumnKey, ColumnValue);
+                CodeOriginFrames0FileKey,
+                FileValue,
+                CodeOriginFrames0LineKey,
+                LineValue,
+                CodeOriginFrames0ColumnKey,
+                ColumnValue);
         }
     }
 #endif
