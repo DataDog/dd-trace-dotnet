@@ -30,28 +30,35 @@ internal sealed class TraceExporterErrorHandle : SafeHandle
 
     protected override bool ReleaseHandle()
     {
+        if (IsInvalid)
+        {
+            return true;
+        }
+
         try
         {
             NativeInterop.Exporter.FreeError(handle);
+            return true;
         }
         catch (Exception ex)
         {
             Logger.Error(ex, "An error occurred while releasing the handle for TraceExporterErrorHandle.");
+            return false;
         }
-
-        return true;
     }
 
-    public TraceExporterException ToException()
+    public Exception ToException()
     {
+        if (IsInvalid || IsClosed)
+        {
+            return new ObjectDisposedException(GetType().FullName, "Invalid error handle");
+        }
+
         return new TraceExporterException(Marshal.PtrToStructure<TraceExporterError>(handle));
     }
 
     public void ThrowIfError()
     {
-        if (!IsInvalid)
-        {
             throw ToException();
-        }
     }
 }
