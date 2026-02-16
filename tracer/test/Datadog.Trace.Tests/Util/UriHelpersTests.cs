@@ -178,174 +178,207 @@ namespace Datadog.Trace.Tests.Util
             Trace.Util.UriHelpers.IsIdentifierSegment(path, startIndex, length).Should().Be(expected);
         }
 
-        [Theory]
+        [SkippableTheory]
         // Basic common cases - no removal, no ID replacement
-        [InlineData("http://localhost/path", false, false, "http://localhost/path")]
-        [InlineData("https://example.com/api/users", false, false, "https://example.com/api/users")]
-        [InlineData("http://example.org:8080/test", false, false, "http://example.org:8080/test")]
+        [InlineData("http://localhost/path", false, false, false, "http://localhost/path")]
+        [InlineData("https://example.com/api/users", false, false, false, "https://example.com/api/users")]
+        [InlineData("http://example.org:8080/test", false, false, false, "http://example.org:8080/test")]
 
         // Common cases - remove scheme only
-        [InlineData("http://localhost/path", true, false, "localhost/path")]
-        [InlineData("https://example.com/api/users", true, false, "example.com/api/users")]
-        [InlineData("http://example.org:8080/test", true, false, "example.org:8080/test")]
+        [InlineData("http://localhost/path", true, false, false, "localhost/path")]
+        [InlineData("https://example.com/api/users", true, false, false, "example.com/api/users")]
+        [InlineData("http://example.org:8080/test", true, false, false, "example.org:8080/test")]
 
         // Common cases - remove IDs only (keep scheme)
-        [InlineData("http://localhost/api/users/123", false, true, "http://localhost/api/users/?")]
-        [InlineData("https://example.com/products/b37855d4bae34bd3b3357fc554ad334e", false, true, "https://example.com/products/?")]
-        [InlineData("http://api.test/orders/14bb2eed-34f0-4aa2-b2c3-09c0e2166d4d/items", false, true, "http://api.test/orders/?/items")]
+        [InlineData("http://localhost/api/users/123", false, true, false, "http://localhost/api/users/?")]
+        [InlineData("https://example.com/products/b37855d4bae34bd3b3357fc554ad334e", false, true, false, "https://example.com/products/?")]
+        [InlineData("http://api.test/orders/14bb2eed-34f0-4aa2-b2c3-09c0e2166d4d/items", false, true, false, "http://api.test/orders/?/items")]
 
         // Common cases - both remove scheme and remove IDs
-        [InlineData("http://localhost/api/users/123", true, true, "localhost/api/users/?")]
-        [InlineData("https://example.com/products/b37855d4bae34bd3b3357fc554ad334e", true, true, "example.com/products/?")]
-        [InlineData("http://api.test/orders/14bb2eed-34f0-4aa2-b2c3-09c0e2166d4d/items", true, true, "api.test/orders/?/items")]
+        [InlineData("http://localhost/api/users/123", true, true, false, "localhost/api/users/?")]
+        [InlineData("https://example.com/products/b37855d4bae34bd3b3357fc554ad334e", true, true, false, "example.com/products/?")]
+        [InlineData("http://api.test/orders/14bb2eed-34f0-4aa2-b2c3-09c0e2166d4d/items", true, true, false, "api.test/orders/?/items")]
 
         // Query strings are removed
-        [InlineData("http://localhost/path?key=value", false, false, "http://localhost/path")]
-        [InlineData("http://localhost/path?key=value&foo=bar", false, false, "http://localhost/path")]
-        [InlineData("http://localhost/path?key=value", true, false, "localhost/path")]
-        [InlineData("http://localhost/path?key=value", false, true, "http://localhost/path")]
-        [InlineData("http://localhost/path?key=value", true, true, "localhost/path")]
-        [InlineData("http://localhost/api/123?key=value", false, true, "http://localhost/api/?")]
-        [InlineData("http://localhost/api/123?key=value", true, true, "localhost/api/?")]
+        [InlineData("http://localhost/path?key=value", false, false, false, "http://localhost/path")]
+        [InlineData("http://localhost/path?key=value&foo=bar", false, false, false, "http://localhost/path")]
+        [InlineData("http://localhost/path?key=value", true, false, false, "localhost/path")]
+        [InlineData("http://localhost/path?key=value", false, true, false, "http://localhost/path")]
+        [InlineData("http://localhost/path?key=value", true, true, false, "localhost/path")]
+        [InlineData("http://localhost/api/123?key=value", false, true, false, "http://localhost/api/?")]
+        [InlineData("http://localhost/api/123?key=value", true, true, false, "localhost/api/?")]
 
         // Fragments are removed
-        [InlineData("http://localhost/path#section", false, false, "http://localhost/path")]
-        [InlineData("http://localhost/path#section", true, false, "localhost/path")]
-        [InlineData("http://localhost/path#section", false, true, "http://localhost/path")]
-        [InlineData("http://localhost/api/123#top", false, true, "http://localhost/api/?")]
+        [InlineData("http://localhost/path#section", false, false, false, "http://localhost/path")]
+        [InlineData("http://localhost/path#section", true, false, false, "localhost/path")]
+        [InlineData("http://localhost/path#section", false, true, false, "http://localhost/path")]
+        [InlineData("http://localhost/api/123#top", false, true, false, "http://localhost/api/?")]
+
+        // Except when doing dangerous create
+        [InlineData("http://localhost/path#section", false, false, true, "http://localhost/path#section")]
+        [InlineData("http://localhost/path#section", true, false, true, "localhost/path#section")]
+        [InlineData("http://localhost/path#section", false, true, true, "http://localhost/path#section")]
+        [InlineData("http://localhost/api/123#top", false, true, true, "http://localhost/api/123#top")]
 
         // Query strings and fragments together
-        [InlineData("http://localhost/path?key=value#section", false, false, "http://localhost/path")]
-        [InlineData("http://localhost/path?key=value#section", true, false, "localhost/path")]
-        [InlineData("http://localhost/api/123?key=value#section", true, true, "localhost/api/?")]
+        [InlineData("http://localhost/path?key=value#section", false, false, false, "http://localhost/path")]
+        [InlineData("http://localhost/path?key=value#section", true, false, false, "localhost/path")]
+        [InlineData("http://localhost/api/123?key=value#section", true, true, false, "localhost/api/?")]
+
+        [InlineData("http://localhost/path?key=value#section", false, false, true, "http://localhost/path")]
+        [InlineData("http://localhost/path?key=value#section", true, false, true, "localhost/path")]
+        [InlineData("http://localhost/api/123?key=value#section", true, true, true, "localhost/api/?")]
 
         // User information is removed (Authority includes it, but Uri.Authority strips userinfo)
-        [InlineData("http://user:pass@localhost/path", false, false, "http://localhost/path")]
-        [InlineData("http://user@localhost/path", false, false, "http://localhost/path")]
-        [InlineData("http://user:pass@localhost/path", true, false, "localhost/path")]
-        [InlineData("http://user:pass@localhost/api/123", true, true, "localhost/api/?")]
+        [InlineData("http://user:pass@localhost/path", false, false, false, "http://localhost/path")]
+        [InlineData("http://user@localhost/path", false, false, false, "http://localhost/path")]
+        [InlineData("http://user:pass@localhost/path", true, false, false, "localhost/path")]
+        [InlineData("http://user:pass@localhost/api/123", true, true, false, "localhost/api/?")]
 
         // Different schemes
-        [InlineData("https://localhost/path", false, false, "https://localhost/path")]
-        [InlineData("ftp://example.org/files", false, false, "ftp://example.org/files")]
-        [InlineData("ws://localhost:3000/socket", false, false, "ws://localhost:3000/socket")]
-        [InlineData("wss://localhost:3000/socket", false, false, "wss://localhost:3000/socket")]
-        [InlineData("https://localhost/path", true, false, "localhost/path")]
-        [InlineData("ftp://example.org/files", true, false, "example.org/files")]
+        [InlineData("https://localhost/path", false, false, false, "https://localhost/path")]
+        [InlineData("ftp://example.org/files", false, false, false, "ftp://example.org/files")]
+        [InlineData("ws://localhost:3000/socket", false, false, false, "ws://localhost:3000/socket")]
+        [InlineData("wss://localhost:3000/socket", false, false, false, "wss://localhost:3000/socket")]
+        [InlineData("https://localhost/path", true, false, false, "localhost/path")]
+        [InlineData("ftp://example.org/files", true, false, false, "example.org/files")]
 
         // Different ports (note: default ports 80/443 are normalized away by Uri class)
-        [InlineData("http://localhost:80/path", false, false, "http://localhost/path")]
-        [InlineData("http://localhost:8080/path", false, false, "http://localhost:8080/path")]
-        [InlineData("https://localhost:443/path", false, false, "https://localhost/path")]
-        [InlineData("http://localhost:8080/path", true, false, "localhost:8080/path")]
-        [InlineData("http://localhost:8080/api/123", true, true, "localhost:8080/api/?")]
+        [InlineData("http://localhost:80/path", false, false, false, "http://localhost/path")]
+        [InlineData("http://localhost:8080/path", false, false, false, "http://localhost:8080/path")]
+        [InlineData("https://localhost:443/path", false, false, false, "https://localhost/path")]
+        [InlineData("http://localhost:8080/path", true, false, false, "localhost:8080/path")]
+        [InlineData("http://localhost:8080/api/123", true, true, false, "localhost:8080/api/?")]
 
         // Empty and root paths
-        [InlineData("http://localhost", false, false, "http://localhost/")]
-        [InlineData("http://localhost/", false, false, "http://localhost/")]
-        [InlineData("http://localhost", true, false, "localhost/")]
-        [InlineData("http://localhost/", true, false, "localhost/")]
-        [InlineData("http://localhost", false, true, "http://localhost/")]
-        [InlineData("http://localhost", true, true, "localhost/")]
+        [InlineData("http://localhost", false, false, false, "http://localhost/")]
+        [InlineData("http://localhost/", false, false, false, "http://localhost/")]
+        [InlineData("http://localhost", true, false, false, "localhost/")]
+        [InlineData("http://localhost/", true, false, false, "localhost/")]
+        [InlineData("http://localhost", false, true, false, "http://localhost/")]
+        [InlineData("http://localhost", true, true, false, "localhost/")]
 
         // Paths with multiple IDs
-        [InlineData("http://localhost/api/123/items/456", false, true, "http://localhost/api/?/items/?")]
-        [InlineData("http://localhost/api/123/items/456/details/789", false, true, "http://localhost/api/?/items/?/details/?")]
-        [InlineData("http://localhost/api/123/items/456", true, true, "localhost/api/?/items/?")]
+        [InlineData("http://localhost/api/123/items/456", false, true, false, "http://localhost/api/?/items/?")]
+        [InlineData("http://localhost/api/123/items/456/details/789", false, true, false, "http://localhost/api/?/items/?/details/?")]
+        [InlineData("http://localhost/api/123/items/456", true, true, false, "localhost/api/?/items/?")]
 
         // GUIDs in paths
-        [InlineData("http://localhost/api/14bb2eed-34f0-4aa2-b2c3-09c0e2166d4d", false, true, "http://localhost/api/?")]
-        [InlineData("http://localhost/api/14bb2eed-34f0-4aa2-b2c3-09c0e2166d4d", true, true, "localhost/api/?")]
-        [InlineData("http://localhost/api/00000000-0000-0000-0000-000000000000", false, true, "http://localhost/api/?")]
+        [InlineData("http://localhost/api/14bb2eed-34f0-4aa2-b2c3-09c0e2166d4d", false, true, false, "http://localhost/api/?")]
+        [InlineData("http://localhost/api/14bb2eed-34f0-4aa2-b2c3-09c0e2166d4d", true, true, false, "localhost/api/?")]
+        [InlineData("http://localhost/api/00000000-0000-0000-0000-000000000000", false, true, false, "http://localhost/api/?")]
 
         // Long numeric IDs
-        [InlineData("http://localhost/api/12345678901234567890", false, true, "http://localhost/api/?")]
-        [InlineData("http://localhost/api/2024", false, true, "http://localhost/api/?")]
+        [InlineData("http://localhost/api/12345678901234567890", false, true, false, "http://localhost/api/?")]
+        [InlineData("http://localhost/api/2024", false, true, false, "http://localhost/api/?")]
 
         // Hex IDs (>= 16 chars)
-        [InlineData("http://localhost/api/0123456789ABCDEF", false, true, "http://localhost/api/?")]
-        [InlineData("http://localhost/api/0123456789abcdef", false, true, "http://localhost/api/?")]
-        [InlineData("http://localhost/api/b37855d4bae34bd3b3357fc554ad334e", false, true, "http://localhost/api/?")]
+        [InlineData("http://localhost/api/0123456789ABCDEF", false, true, false, "http://localhost/api/?")]
+        [InlineData("http://localhost/api/0123456789abcdef", false, true, false, "http://localhost/api/?")]
+        [InlineData("http://localhost/api/b37855d4bae34bd3b3357fc554ad334e", false, true, false, "http://localhost/api/?")]
 
         // Short hex IDs (< 16 chars) - NOT replaced
-        [InlineData("http://localhost/api/abc123", false, true, "http://localhost/api/abc123")]
-        [InlineData("http://localhost/api/0123456789ABCDE", false, true, "http://localhost/api/0123456789ABCDE")]
+        [InlineData("http://localhost/api/abc123", false, true, false, "http://localhost/api/abc123")]
+        [InlineData("http://localhost/api/0123456789ABCDE", false, true, false, "http://localhost/api/0123456789ABCDE")]
 
         // IDs in filenames
-        [InlineData("http://localhost/files/1234.png", false, true, "http://localhost/files/?.png")]
-        [InlineData("http://localhost/files/14bb2eed-34f0-4aa2-b2c3-09c0e2166d4d.jpg", false, true, "http://localhost/files/?.jpg")]
-        [InlineData("http://localhost/files/document.pdf", false, true, "http://localhost/files/document.pdf")]
-        [InlineData("http://localhost/files/1234.png", true, true, "localhost/files/?.png")]
+        [InlineData("http://localhost/files/1234.png", false, true, false, "http://localhost/files/?.png")]
+        [InlineData("http://localhost/files/14bb2eed-34f0-4aa2-b2c3-09c0e2166d4d.jpg", false, true, false, "http://localhost/files/?.jpg")]
+        [InlineData("http://localhost/files/document.pdf", false, true, false, "http://localhost/files/document.pdf")]
+        [InlineData("http://localhost/files/1234.png", true, true, false, "localhost/files/?.png")]
 
         // Paths with dashes (not IDs)
-        [InlineData("http://localhost/my-controller/my-action", false, true, "http://localhost/my-controller/my-action")]
-        [InlineData("http://localhost/my-api-v2/users", false, true, "http://localhost/my-api-v2/users")]
+        [InlineData("http://localhost/my-controller/my-action", false, true, false, "http://localhost/my-controller/my-action")]
+        [InlineData("http://localhost/my-api-v2/users", false, true, false, "http://localhost/my-api-v2/users")]
 
         // Paths with IDs containing dashes
-        [InlineData("http://localhost/api/123-456-789", false, true, "http://localhost/api/?")]
-        [InlineData("http://localhost/api/123-456-789", true, true, "localhost/api/?")]
+        [InlineData("http://localhost/api/123-456-789", false, true, false, "http://localhost/api/?")]
+        [InlineData("http://localhost/api/123-456-789", true, true, false, "localhost/api/?")]
 
         // Mixed case hosts
-        [InlineData("http://LocalHost/path", false, false, "http://localhost/path")]
-        [InlineData("http://EXAMPLE.COM/path", false, false, "http://example.com/path")]
-        [InlineData("http://LocalHost/path", true, false, "localhost/path")]
+        [InlineData("http://LocalHost/path", false, false, false, "http://localhost/path")]
+        [InlineData("http://EXAMPLE.COM/path", false, false, false, "http://example.com/path")]
+        [InlineData("http://LocalHost/path", true, false, false, "localhost/path")]
 
         // IPv4 addresses
-        [InlineData("http://127.0.0.1/path", false, false, "http://127.0.0.1/path")]
-        [InlineData("http://192.168.1.1:8080/path", false, false, "http://192.168.1.1:8080/path")]
-        [InlineData("http://127.0.0.1/path", true, false, "127.0.0.1/path")]
-        [InlineData("http://127.0.0.1/api/123", true, true, "127.0.0.1/api/?")]
+        [InlineData("http://127.0.0.1/path", false, false, false, "http://127.0.0.1/path")]
+        [InlineData("http://192.168.1.1:8080/path", false, false, false, "http://192.168.1.1:8080/path")]
+        [InlineData("http://127.0.0.1/path", true, false, false, "127.0.0.1/path")]
+        [InlineData("http://127.0.0.1/api/123", true, true, false, "127.0.0.1/api/?")]
 
         // IPv6 addresses
-        [InlineData("http://[::1]/path", false, false, "http://[::1]/path")]
-        [InlineData("http://[::1]:8080/path", false, false, "http://[::1]:8080/path")]
-        [InlineData("http://[2001:db8::1]/path", false, false, "http://[2001:db8::1]/path")]
-        [InlineData("http://[::1]/path", true, false, "[::1]/path")]
-        [InlineData("http://[::1]/api/123", true, true, "[::1]/api/?")]
+        [InlineData("http://[::1]/path", false, false, false, "http://[::1]/path")]
+        [InlineData("http://[::1]:8080/path", false, false, false, "http://[::1]:8080/path")]
+        [InlineData("http://[2001:db8::1]/path", false, false, false, "http://[2001:db8::1]/path")]
+        [InlineData("http://[::1]/path", true, false, false, "[::1]/path")]
+        [InlineData("http://[::1]/api/123", true, true, false, "[::1]/api/?")]
 
         // Trailing slashes
-        [InlineData("http://localhost/path/", false, false, "http://localhost/path/")]
-        [InlineData("http://localhost/api/users/", false, false, "http://localhost/api/users/")]
-        [InlineData("http://localhost/api/123/", false, true, "http://localhost/api/?/")]
-        [InlineData("http://localhost/api/123/", true, true, "localhost/api/?/")]
+        [InlineData("http://localhost/path/", false, false, false, "http://localhost/path/")]
+        [InlineData("http://localhost/api/users/", false, false, false, "http://localhost/api/users/")]
+        [InlineData("http://localhost/api/123/", false, true, false, "http://localhost/api/?/")]
+        [InlineData("http://localhost/api/123/", true, true, false, "localhost/api/?/")]
 
         // Complex real-world examples
-        [InlineData("https://api.github.com/repos/DataDog/dd-trace-dotnet/pulls/5678", false, true, "https://api.github.com/repos/DataDog/dd-trace-dotnet/pulls/?")]
-        [InlineData("https://api.github.com/repos/DataDog/dd-trace-dotnet/pulls/5678", true, true, "api.github.com/repos/DataDog/dd-trace-dotnet/pulls/?")]
-        [InlineData("http://localhost:5000/api/v2/products/123/reviews/456?sort=date&order=desc", true, true, "localhost:5000/api/v2/products/?/reviews/?")]
+        [InlineData("https://api.github.com/repos/DataDog/dd-trace-dotnet/pulls/5678", false, true, false, "https://api.github.com/repos/DataDog/dd-trace-dotnet/pulls/?")]
+        [InlineData("https://api.github.com/repos/DataDog/dd-trace-dotnet/pulls/5678", true, true, false, "api.github.com/repos/DataDog/dd-trace-dotnet/pulls/?")]
+        [InlineData("http://localhost:5000/api/v2/products/123/reviews/456?sort=date&order=desc", true, true, false, "localhost:5000/api/v2/products/?/reviews/?")]
 
         // URL-encoded characters (unescaped in Uri constructor)
-        [InlineData("http://localhost/path with spaces", false, false, "http://localhost/path%20with%20spaces")]
-        [InlineData("http://localhost/path with spaces", true, false, "localhost/path%20with%20spaces")]
-        [InlineData("http://localhost/api/123/path with spaces", true, true, "localhost/api/?/path%20with%20spaces")]
+        [InlineData("http://localhost/path with spaces", false, false, false, "http://localhost/path%20with%20spaces")]
+        [InlineData("http://localhost/path with spaces", true, false, false, "localhost/path%20with%20spaces")]
+        [InlineData("http://localhost/api/123/path with spaces", true, true, false, "localhost/api/?/path%20with%20spaces")]
+
+        // URL-encoded characters (not unescaped in Uri constructor, for dangerous create)
+        [InlineData("http://localhost/path with spaces", false, false, true, "http://localhost/path with spaces")]
+        [InlineData("http://localhost/path with spaces", true, false, true, "localhost/path with spaces")]
+        [InlineData("http://localhost/api/123/path with spaces", true, true, true, "localhost/api/?/path with spaces")]
 
         // Special characters in path (automatically escaped by Uri)
-        [InlineData("http://localhost/path<>", false, false, "http://localhost/path%3C%3E")]
-        [InlineData("http://localhost/path\"quotes\"", false, false, "http://localhost/path%22quotes%22")]
+        [InlineData("http://localhost/path<>", false, false, false, "http://localhost/path%3C%3E")]
+        [InlineData("http://localhost/path\"quotes\"", false, false, false, "http://localhost/path%22quotes%22")]
+
+        // Special characters in path (not automatically escaped by Uri when dangerous carete)
+        [InlineData("http://localhost/path<>", false, false, true, "http://localhost/path<>")]
+        [InlineData("http://localhost/path\"quotes\"", false, false, true, "http://localhost/path\"quotes\"")]
 
         // Multiple slashes in path (normalized by Uri)
-        [InlineData("http://localhost//double//slash", false, false, "http://localhost//double//slash")]
-        [InlineData("http://localhost//double//slash", true, false, "localhost//double//slash")]
+        [InlineData("http://localhost//double//slash", false, false, false, "http://localhost//double//slash")]
+        [InlineData("http://localhost//double//slash", true, false, false, "localhost//double//slash")]
 
         // Dot segments (normalized by Uri constructor)
-        [InlineData("http://localhost/a/./b", false, false, "http://localhost/a/b")]
-        [InlineData("http://localhost/a/../b", false, false, "http://localhost/b")]
-        [InlineData("http://localhost/a/./b", true, false, "localhost/a/b")]
+        [InlineData("http://localhost/a/./b", false, false, false, "http://localhost/a/b")]
+        [InlineData("http://localhost/a/../b", false, false, false, "http://localhost/b")]
+        [InlineData("http://localhost/a/./b", true, false, false, "localhost/a/b")]
+
+        // Dot segments (not normalized by Uri constructor when using dangerous create)
+        [InlineData("http://localhost/a/./b", false, false, true, "http://localhost/a/./b")]
+        [InlineData("http://localhost/a/../b", false, false, true, "http://localhost/a/../b")]
+        [InlineData("http://localhost/a/./b", true, false, true, "localhost/a/./b")]
 
         // Paths with commas and numbers
-        [InlineData("http://localhost/api/1,2,3", false, true, "http://localhost/api/?")]
-        [InlineData("http://localhost/api/123,456,789", false, true, "http://localhost/api/?")]
+        [InlineData("http://localhost/api/1,2,3", false, true, false, "http://localhost/api/?")]
+        [InlineData("http://localhost/api/123,456,789", false, true, false, "http://localhost/api/?")]
 
         // Edge case: Empty path segments
-        [InlineData("http://localhost/api//users", false, false, "http://localhost/api//users")]
-        [InlineData("http://localhost/api//123", false, true, "http://localhost/api//?")]
+        [InlineData("http://localhost/api//users", false, false, false, "http://localhost/api//users")]
+        [InlineData("http://localhost/api//123", false, true, false, "http://localhost/api//?")]
 
         // Edge case: Very long paths
-        [InlineData("http://localhost/very/long/path/with/many/segments/and/an/id/12345678901234567890/at/the/end", false, true, "http://localhost/very/long/path/with/many/segments/and/an/id/?/at/the/end")]
-        [InlineData("http://localhost/very/long/path/with/many/segments/and/an/id/12345678901234567890/at/the/end", true, true, "localhost/very/long/path/with/many/segments/and/an/id/?/at/the/end")]
-        public void CleanUri_ShouldCleanCorrectly(string url, bool removeScheme, bool tryRemoveIds, string expected)
+        [InlineData("http://localhost/very/long/path/with/many/segments/and/an/id/12345678901234567890/at/the/end", false, true, true, "http://localhost/very/long/path/with/many/segments/and/an/id/?/at/the/end")]
+        [InlineData("http://localhost/very/long/path/with/many/segments/and/an/id/12345678901234567890/at/the/end", true, true, true, "localhost/very/long/path/with/many/segments/and/an/id/?/at/the/end")]
+        public void CleanUri_ShouldCleanCorrectly(string url, bool removeScheme, bool tryRemoveIds, bool useDangerousCreate, string expected)
         {
+#if NET6_0_OR_GREATER
+            var uri = useDangerousCreate ? new Uri(url, new UriCreationOptions { DangerousDisablePathAndQueryCanonicalization = true }) : new Uri(url);
+#else
+            if (useDangerousCreate)
+            {
+                throw new SkipException();
+            }
+
             var uri = new Uri(url);
+#endif
             var result = Trace.Util.UriHelpers.CleanUri(uri, removeScheme, tryRemoveIds);
             result.Should().Be(expected);
         }
