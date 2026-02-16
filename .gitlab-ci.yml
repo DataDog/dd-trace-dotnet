@@ -254,5 +254,5 @@ validate_supported_configurations_v2_local_file:
     - when: on_success
   extends: .validate_supported_configurations_v2_local_file
   variables:
-    LOCAL_JSON_PATH: "tracer/src/Datadog.Trace/Configuration/supported-configurations.json"
+    LOCAL_YAML_PATH: "tracer/src/Datadog.Trace/Configuration/supported-configurations.yaml"
     BACKFILLED: true
