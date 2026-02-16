@@ -404,7 +404,6 @@ namespace Datadog.Trace.DiagnosticListeners
                 // these will already be set correctly
                 rootSpanTags.AspNetCoreRoute = aspNetRoute;
                 rootSpan.ResourceName = span.ResourceName;
-                rootSpanTags.HttpRoute = aspNetRoute;
             }
 
             return span;
@@ -575,7 +574,6 @@ namespace Datadog.Trace.DiagnosticListeners
                 {
                     rootSpan.ResourceName = resourceName;
                     tags.AspNetCoreRoute = normalizedRoute;
-                    tags.HttpRoute = normalizedRoute;
                 }
 
                 _security.CheckPathParamsAndSessionId(httpContext, rootSpan, routeValues);
