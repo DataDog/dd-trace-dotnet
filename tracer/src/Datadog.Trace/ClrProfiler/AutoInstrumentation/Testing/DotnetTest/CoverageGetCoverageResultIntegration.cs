@@ -11,7 +11,6 @@ using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Util;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Utilities;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest;
 
@@ -56,7 +55,7 @@ public sealed class CoverageGetCoverageResultIntegration
         }
 
         if (modules is not null &&
-            instance?.GetType().Assembly() is { } assembly &&
+            instance?.GetType().Assembly is { } assembly &&
             assembly.GetType("Coverlet.Core.CoverageSummary") is { } coverageSummaryType)
         {
             var coverageSummary = Activator.CreateInstance(coverageSummaryType).DuckCast<ICoverageSummaryProxy>();

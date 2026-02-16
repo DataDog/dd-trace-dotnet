@@ -14,7 +14,6 @@ using System.Threading;
 using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Utilities;
 
 namespace Datadog.Trace.Debugger.Snapshots
 {
@@ -431,11 +430,13 @@ namespace Datadog.Trace.Debugger.Snapshots
             int currentDepth,
             CaptureLimitInfo limitInfo)
         {
-            var reflectionObject = ReflectionObject.Create(current.GetType(), "Key", "Value");
+            var kvpType = current.GetType();
+            var keyProperty = kvpType.GetProperty("Key")!;
+            var valueProperty = kvpType.GetProperty("Value")!;
             jsonWriter.WriteStartArray();
 
-            bool serializedKey = SerializeInternal(reflectionObject.GetValue(current, "Key"), reflectionObject.GetType("Key"), jsonWriter, cts, currentDepth, variableName: null, fieldsOnly: false, limitInfo);
-            bool serializedValue = SerializeInternal(reflectionObject.GetValue(current, "Value"), reflectionObject.GetType("Value"), jsonWriter, cts, currentDepth, variableName: null, fieldsOnly: false, limitInfo);
+            bool serializedKey = SerializeInternal(keyProperty.GetValue(current), keyProperty.PropertyType, jsonWriter, cts, currentDepth, variableName: null, fieldsOnly: false, limitInfo);
+            bool serializedValue = SerializeInternal(valueProperty.GetValue(current), valueProperty.PropertyType, jsonWriter, cts, currentDepth, variableName: null, fieldsOnly: false, limitInfo);
 
             jsonWriter.WriteEndArray();
             return serializedKey;
