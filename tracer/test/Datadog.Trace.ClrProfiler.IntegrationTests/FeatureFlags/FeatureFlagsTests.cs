@@ -19,8 +19,6 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.FeatureFlags;
 
-#if !NETCOREAPP2_1
-
 #if NETFRAMEWORK
 // The .NET Framework tests use NGEN which is a global thing, so make sure we don't parallelize
 // Include these tests in the ManualInstrumentation batch
@@ -118,5 +116,3 @@ public abstract class FeatureFlagsTestsBase : TestHelper
 }
 
 #pragma warning restore SA1402 // File may only contain a single type
-
-#endif
