@@ -1860,11 +1860,23 @@ stages:
         SampleName: $(IntegrationTestSampleName)
 
     - script: tracer\build.cmd RunWindowsTracerIisIntegrationTests -Framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
-      displayName: RunWindowsIisTracerIntegrationTests
+      displayName: RunWindowsIisTracerIntegrationTests (Tracer)
+      condition: ne(variables['area'], 'ASM')
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
         Filter: $(IntegrationTestFilter)
         SampleName: $(IntegrationTestSampleName)
+        Area: $(area)
+
+    - script: tracer\build.cmd RunWindowsTracerIisIntegrationTests -Framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
+      displayName: RunWindowsIisTracerIntegrationTests (ASM)
+      condition: eq(variables['area'], 'ASM')
+      retryCountOnTaskFailure: 2
+      env:
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
+        Filter: $(IntegrationTestFilter)
+        SampleName: $(IntegrationTestSampleName)
+        Area: $(area)
 
     - task: PublishTestResults@2
       displayName: publish test results
