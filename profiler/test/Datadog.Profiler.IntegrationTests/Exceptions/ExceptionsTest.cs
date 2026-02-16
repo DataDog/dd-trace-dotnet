@@ -139,14 +139,6 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
         [TestAppFact("Samples.ExceptionGenerator")]
         public void ThrowExceptionsInParallelWithCustomGetFunctionFromIp(string appName, string framework, string appAssembly)
         {
-            // Test is currently failing on x86 architecture
-            // TODO: fix it
-            if (IntPtr.Size == 4)
-            {
-                // Test skipped on x86 architecture
-                return;
-            }
-
             StackTrace expectedStack;
 
             if (framework == "net48")
