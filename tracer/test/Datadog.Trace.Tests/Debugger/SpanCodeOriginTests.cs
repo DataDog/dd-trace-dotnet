@@ -441,9 +441,10 @@ namespace Datadog.Trace.Tests.Debugger
             tags.SetTag(CodeOriginFrames0ColumnKey, ColumnValue);
         }
 
-        // Optimized: set all 7 tags in a single batch call (pre-sizes underlying list once).
+        // Optimized: set all 7 tags in a single call (pre-sizes underlying list once).
         private static void Optimized_TagsListSetTagsSevenInOneCall()
         {
+            var tags = new TagsList();
             tags.SetTags(
                 CodeOriginTypeKey,
                 EntryValue,
