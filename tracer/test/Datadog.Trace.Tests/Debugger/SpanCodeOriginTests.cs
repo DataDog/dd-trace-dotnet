@@ -388,14 +388,14 @@ namespace Datadog.Trace.Tests.Debugger
             const long maxOptimizedBytesPerOp = 300;
 
             var baselineBytes = MeasurePerOperationAllocatedBytesMedian(iterations, rounds, Baseline_TagsListSetTagSevenTimes);
-            var webTagsBytes = MeasurePerOperationAllocatedBytesMedian(iterations, rounds, WebTagsPropertiesPlusSetTagsPdbTags);
+            var optimizedBytes = MeasurePerOperationAllocatedBytesMedian(iterations, rounds, Optimized_TagsListSetTagsSevenInOneCall);
 
             _output.WriteLine($"Allocated bytes/op (baseline SetTag x7) [median of {rounds}]: {baselineBytes}");
-            _output.WriteLine($"Allocated bytes/op (WebTags props + batch PDB) [median of {rounds}]: {webTagsBytes}");
+            _output.WriteLine($"Allocated bytes/op (optimized SetTags x7 in one call) [median of {rounds}]: {optimizedBytes}");
 
-            baselineBytes.Should().BeGreaterThan(webTagsBytes);
-            webTagsBytes.Should().BeLessOrEqualTo((long)(baselineBytes * maxOptimizedRatio));
-            webTagsBytes.Should().BeLessOrEqualTo(maxOptimizedBytesPerOp);
+            baselineBytes.Should().BeGreaterThan(optimizedBytes);
+            optimizedBytes.Should().BeLessOrEqualTo((long)(baselineBytes * maxOptimizedRatio));
+            optimizedBytes.Should().BeLessOrEqualTo(maxOptimizedBytesPerOp);
         }
 
         private static long MeasurePerOperationAllocatedBytesMedian(int iterations, int rounds, Action operation)
@@ -441,18 +441,18 @@ namespace Datadog.Trace.Tests.Debugger
             tags.SetTag(CodeOriginFrames0ColumnKey, ColumnValue);
         }
 
-        // Uses WebTags property-backed base tags, and only allocates the tag list for PDB tags.
-        private static void WebTagsPropertiesPlusSetTagsPdbTags()
+        // Optimized: set all 7 tags in a single batch call (pre-sizes underlying list once).
+        private static void Optimized_TagsListSetTagsSevenInOneCall()
         {
-            var tags = new WebTags
-            {
-                CodeOriginType = EntryValue,
-                CodeOriginFrames0Index = IndexValue,
-                CodeOriginFrames0Method = MethodValue,
-                CodeOriginFrames0Type = TypeValue,
-            };
-
             tags.SetTags(
+                CodeOriginTypeKey,
+                EntryValue,
+                CodeOriginFrames0IndexKey,
+                IndexValue,
+                CodeOriginFrames0MethodKey,
+                MethodValue,
+                CodeOriginFrames0TypeKey,
+                TypeValue,
                 CodeOriginFrames0FileKey,
                 FileValue,
                 CodeOriginFrames0LineKey,

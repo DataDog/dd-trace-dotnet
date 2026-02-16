@@ -32,21 +32,5 @@ namespace Datadog.Trace.Tagging
 
         [Tag(Trace.Tags.HttpClientIp)]
         public string HttpClientIp { get; set; }
-
-        // Code origin tags (entry span only, frame 0).
-        // Exit span code origin can include multiple frames and requires dynamic tag keys.
-        // PDB-enriched tags (file/line/column) are not stored as properties to avoid adding extra fields to every
-        // WebTags instance. When available, those tags are added via the tag list instead.
-        [Tag(Trace.Tags.CodeOriginType)]
-        public string CodeOriginType { get; set; }
-
-        [Tag(Trace.Tags.CodeOriginFrameIndex)]
-        public string CodeOriginFrames0Index { get; set; }
-
-        [Tag(Trace.Tags.CodeOriginFrameMethod)]
-        public string CodeOriginFrames0Method { get; set; }
-
-        [Tag(Trace.Tags.CodeOriginFrameType)]
-        public string CodeOriginFrames0Type { get; set; }
     }
 }
