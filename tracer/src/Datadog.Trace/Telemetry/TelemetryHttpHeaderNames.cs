@@ -4,21 +4,30 @@
 // </copyright>
 
 using System.Collections.Generic;
+using Datadog.Trace.HttpOverStreams;
 
 namespace Datadog.Trace.Telemetry
 {
     internal static class TelemetryHttpHeaderNames
     {
         /// <summary>
+        /// Returns <see cref="GetDefaultAgentHeaders"/>, in the format <c>Key: Value\r\n</c>. For use in HTTP headers
+        /// </summary>
+        internal const string HttpSerializedDefaultAgentHeaders =
+            $"{TelemetryConstants.ClientLibraryLanguageHeader}: {TracerConstants.Language}" + DatadogHttpValues.CrLf +
+            $"{TelemetryConstants.ClientLibraryVersionHeader}: {TracerConstants.AssemblyVersion}" + DatadogHttpValues.CrLf +
+            $"{HttpHeaderNames.TracingEnabled}: false" + DatadogHttpValues.CrLf;
+
+        /// <summary>
         /// Gets the default constant headers that should be added to any request to the agent
         /// </summary>
         internal static KeyValuePair<string, string>[] GetDefaultAgentHeaders()
-            => new[]
-            {
-                new KeyValuePair<string, string>(TelemetryConstants.ClientLibraryLanguageHeader, TracerConstants.Language),
-                new KeyValuePair<string, string>(TelemetryConstants.ClientLibraryVersionHeader, TracerConstants.AssemblyVersion),
-                new KeyValuePair<string, string>(HttpHeaderNames.TracingEnabled, "false"), // don't add automatic instrumentation to requests directed to the agent
-            };
+            =>
+            [
+                new(TelemetryConstants.ClientLibraryLanguageHeader, TracerConstants.Language),
+                new(TelemetryConstants.ClientLibraryVersionHeader, TracerConstants.AssemblyVersion),
+                new(HttpHeaderNames.TracingEnabled, "false") // don't add automatic instrumentation to requests directed to the agent
+            ];
 
         /// <summary>
         /// Gets the default constant headers that should be added to any request to the direct telemetry intake

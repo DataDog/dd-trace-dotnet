@@ -22,9 +22,9 @@ This guide explains how to add new configuration keys to the .NET Tracer. Config
 
 Configuration keys in the .NET Tracer are defined in two source files:
 
-- **`tracer/src/Datadog.Trace/Configuration/supported-configurations.json`** - Defines the configuration keys, their 
+- **`tracer/src/Datadog.Trace/Configuration/supported-configurations.json`** - Defines the configuration keys, their
   environment variable names, and optional fallbacks.
-- **`tracer/src/Datadog.Trace/Configuration/supported-configurations-docs.yaml`** - Contains XML documentation for 
+- **`tracer/src/Datadog.Trace/Configuration/supported-configurations-docs.yaml`** - Contains XML documentation for
   each key. We're using yaml here as it makes it easier for some of the long documentation summaries and formatting.
 
 Two source generators read these files at build time:
@@ -40,22 +40,39 @@ Two source generators read these files at build time:
 
 ### 1. Add the Configuration Key Definition
 
-Add your new configuration key to `tracer/src/Datadog.Trace/Configuration/supported-configurations.json`, specifying 
-an arbitrary version string (e.g. `"A"`, as shown below). and specifying the product if required. Any product name 
-is allowed, but try to reuse the existing ones (see [Common products](#common-products)) if it makes sense, as they will create another partial class, ie 
+Add your new configuration key to `tracer/src/Datadog.Trace/Configuration/supported-configurations.json`, specifying
+an implementation string (`"A"` being the default one, as shown below) and specifying the product if required. Any product name
+is allowed, but try to reuse the existing ones (see [Common products](#common-products)) if it makes sense, as they will create another partial class, ie
 ConfigurationKeys.ProductName.cs. Without a product name, the keys will go in the main class, ConfigurationKeys.cs.
+
+**Required fields (mandatory):**
+- `implementation`: The implementation identifier
+  - `"A"` being the default one, it needs to match the registry implementation with the same type and default values
+- `type`: The type of the configuration value (for example `string`, `boolean`, `int`, `decimal`)
+- `default`: The default value applied by the tracer when the env var is not set. Use `null` if there is no default.
+
+These fields are mandatory to keep the configuration registry complete and to ensure consistent behavior and documentation across products.
 
 **Example:**
 ```json
 {
+  "version": "2",
   "supportedConfigurations": {
-    "DD_TRACE_SAMPLE_RATE": {
-      "version": ["A"]
-    },
-    "OTEL_EXPORTER_OTLP_TIMEOUT": {
-      "version": ["A"],
-      "product": "OpenTelemetry"
-    }
+    "DD_TRACE_SAMPLE_RATE": [
+      {
+        "implementation": "A",
+        "type": "decimal",
+        "default": null
+      }
+    ],
+    "OTEL_EXPORTER_OTLP_TIMEOUT": [
+      {
+        "implementation": "A",
+        "type": "int",
+        "default": null,
+        "product": "OpenTelemetry"
+      }
+    ]
   }
 }
 ```
@@ -84,13 +101,22 @@ OTEL_EXPORTER_OTLP_LOGS_TIMEOUT: |
 
 ### 3. (Optional) Add Aliases
 
-Configuration keys can have **aliases** that are checked in order of appearance when the primary key is not found. Add them to the `aliases` section in `supported-configurations.json`:
+Configuration keys can have **aliases** that are checked in order of appearance when the primary key is not found. Add them to the `aliases` property of the configuration entry in `supported-configurations.json`:
 
 ```json
 {
-  "aliases": {
+  "version": "2",
+  "supportedConfigurations": {
     "OTEL_EXPORTER_OTLP_LOGS_TIMEOUT": [
-      "OTEL_EXPORTER_OTLP_TIMEOUT"
+      {
+        "implementation": "A",
+        "type": "int",
+        "default": null,
+        "product": "OpenTelemetry",
+        "aliases": [
+          "OTEL_EXPORTER_OTLP_TIMEOUT"
+        ]
+      }
     ]
   }
 }
@@ -384,7 +410,7 @@ dotnet build tracer/src/Datadog.Trace/Datadog.Trace.csproj
 
 ## Related Files
 
-- **Source generators:** 
+- **Source generators:**
   - `tracer/src/Datadog.Trace.SourceGenerators/Configuration/ConfigurationKeysGenerator.cs` - Generates configuration key constants
   - `tracer/src/Datadog.Trace.SourceGenerators/Configuration/ConfigKeyAliasesSwitcherGenerator.cs` - Generates alias resolution logic
 - **Configuration source:** `tracer/src/Datadog.Trace/Configuration/supported-configurations.json`

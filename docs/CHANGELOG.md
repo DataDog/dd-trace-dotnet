@@ -39,6 +39,75 @@
 
 
 
+
+## [Release 3.37.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.37.0)
+
+## Summary
+Performance improvements and minor fixes.
+
+## Changes
+
+### Tracer
+* Skip telemetry for span sampling rules (#8161)
+
+### CI Visibility
+* [Test Optimization] perf: logging/timing helpers (#8070)
+* [Test Optimization] ci: add run id + config keys (#8071)
+* [Test Optimization] ci: git caching + env improvements (#8072)
+* [Test Optimization] ci: client caching + feature tweaks (#8073)
+* [Test Optimization] Improve GitHub Actions `@ci.job.url` format (#8098)
+
+### ASM
+* [ASM] Added missing `appsec.waf.request` telemetry metric tags (#8113)
+* [ASM] Custom data classification (#8155)
+* [ASM] Remove unused telemetry tag from waf.request metric (#8160)
+
+### Continuous Profiler
+* [Profiler] Add managed code cache (#7956)
+* Do not mark empty frame crashes as complete (#8119)
+* [Profiler] Disable a test on x86 with Managed Code Cache (#8147)
+
+### Debugger
+* [SymDB] DEBUG-4512 Sanitize hoisted 'this' name in symbol upload (#8100)
+
+### Serverless
+* Refactor Azure Functions instrumentation before #7628 (#8079)
+* [Azure Functions] Update Datadog.Serverless.Compat version to 1.2.0 (#8108)
+
+### Fixes
+* Fix `ProcessTags.GetLastPathSegment` for some edge cases, add  tests (#8103)
+* Quick fix: write process tags as array instead of string in DSM payloads (#8114)
+* Fix TypeLoadException exception error (#8157)
+* Fix flaky test metrics tag values (#8099)
+
+### Miscellaneous
+* Read container tags hash from agent (#7893)
+* [Config Registry] 7/8 Integration names to keys  (#7937)
+* chore(ci) update one-pipeline (#8088)
+* Filter more dynamic assemblies (#8120)
+* Add a few nitpicks in `agents.md` (#8125)
+* chore(ci) update one-pipeline (#8130)
+* Update `/analyze-error` and `AGENTS.md` (#8152)
+* Convert Claude commands to skills format (#8158)
+
+### Build / Test
+* Add non-blocking SLO check jobs (#7976)
+* [Test Package Versions Bump] Updating package versions (#8032)
+* reorder `CODEOWNERS` so debugger lines override serverless (#8102)
+* Check for labels in PRs. (#8107)
+* Fix compilation issues under VS 2022 (#8111)
+* Fetch Windows macrobenchmark artifacts from S3 (#8112)
+* [Test Package Versions Bump] Updating package versions (#8116)
+* Increase timeout DiscoveryService Tests (#8118)
+* [Test Package Versions Bump] Updating package versions (#8121)
+* Bump the gh-actions-packages group across 2 directories with 7 updates (#8122)
+* Add a `review-pr` command (#8126)
+* [CI] Add CultureInvariant to a test that was failing locally (#8127)
+* [FFE] Ruggerize integration tests Remote Config retrieval (#8129)
+* [Tests] Remove empty metastruct info from snapshots (#8150)
+
+[Changes since 3.36.0](https://github.com/DataDog/dd-trace-dotnet/compare/v3.36.0...v3.37.0)
+
 ## [Release 3.36.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.36.0)
 
 ## Summary

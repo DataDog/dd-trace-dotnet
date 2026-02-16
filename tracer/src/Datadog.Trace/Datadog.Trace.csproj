@@ -99,6 +99,35 @@
     <None Remove="AppSec\Waf\ConfigFiles\apisecurity-config.json" />
   </ItemGroup>
 
+  <!-- we don't need the vendored .NET runtime code when targetting .NET Core 3.1+ -->
+  <!-- but keep Vendors/System.Reflection.Metadata/** for now because we use it to access internal members -->
+  <PropertyGroup>
+    <DotNetRuntimeFiles>Vendors/System.Collections.Immutable/**;Vendors/System.Memory/**;Vendors/System.Runtime.CompilerServices.Unsafe/**</DotNetRuntimeFiles>
+  </PropertyGroup>
+
+    <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible($(TargetFramework), 'netcoreapp3.1'))">
+    <Compile Remove="$(DotNetRuntimeFiles)" />
+    <EmbeddedResource Remove="$(DotNetRuntimeFiles)" />
+    <None Include="$(DotNetRuntimeFiles)" />
+
+    <!-- We use Unsafe.IsNullRef() which was added in .NET 5 -->
+    <Compile Include="Vendors/System.Runtime.CompilerServices.Unsafe/Unsafe.cs"
+        Condition="!$([MSBuild]::IsTargetFrameworkCompatible($(TargetFramework), 'net5.0'))" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Include="Configuration\supported-configurations.json">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </AdditionalFiles>
+    <AdditionalFiles Include="Configuration\supported-configurations-docs.yaml">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </AdditionalFiles>
+    <AdditionalFiles Include="Configuration\configuration_keys_mapping.json">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </AdditionalFiles>
+    <AdditionalFiles Include="..\..\..\BannedSymbols.txt" Link="BannedSymbols.txt" />
+  </ItemGroup>
+
   <!-- Below this point is reserved for vendor items -->
   <!--Newtonsoft.Json-->
   <!-- Modifications: Original condition was only for net45, but we include net461 here so that net45 and net461 generate the same Newtonsoft.Json -->
@@ -172,17 +201,4 @@
   <PropertyGroup>
     <DefineConstants>$(DefineConstants);ENABLE_IL2CPP</DefineConstants>
   </PropertyGroup>
-
-  <ItemGroup>
-    <AdditionalFiles Include="Configuration\supported-configurations.json">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </AdditionalFiles>
-    <AdditionalFiles Include="Configuration\supported-configurations-docs.yaml">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </AdditionalFiles>
-    <AdditionalFiles Include="Configuration\configuration_keys_mapping.json">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </AdditionalFiles>
-    <AdditionalFiles Include="..\..\..\BannedSymbols.txt" Link="BannedSymbols.txt" />
-  </ItemGroup>
 </Project>

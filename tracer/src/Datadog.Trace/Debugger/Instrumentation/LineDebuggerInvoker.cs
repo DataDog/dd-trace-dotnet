@@ -45,7 +45,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                     return;
                 }
 
-                if (Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.IsNullRef(ref arg))
+                if (Unsafe.IsNullRef(ref arg))
                 {
                     if (Log.IsEnabled(Vendors.Serilog.Events.LogEventLevel.Debug))
                     {
@@ -93,7 +93,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                     return;
                 }
 
-                if (Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.IsNullRef(ref local))
+                if (Unsafe.IsNullRef(ref local))
                 {
                     if (Log.IsEnabled(Vendors.Serilog.Events.LogEventLevel.Debug))
                     {
