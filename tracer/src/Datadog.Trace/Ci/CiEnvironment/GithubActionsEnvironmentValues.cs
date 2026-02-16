@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -14,7 +15,6 @@ using System.Text.RegularExpressions;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry.Metrics;
-using Datadog.Trace.VendoredMicrosoftCode.System.Diagnostics.CodeAnalysis;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 

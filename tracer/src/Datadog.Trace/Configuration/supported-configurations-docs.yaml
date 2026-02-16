@@ -514,6 +514,10 @@ DD_INSTRUMENTATION_TELEMETRY_URL: |
   telemetry is in use (otherwise telemetry is sent to the agent using
   <see cref="Datadog.Trace.Configuration.ExporterSettings.AgentUri"/> instead)
 
+DD_INTERNAL_DYNAMIC_INSTRUMENTATION_MAX_PROBES_PER_TYPE: |
+  Internal configuration key to optionally limit the maximum number of probes of each type.
+  Default value is <c>0</c>, no probe-count limit is enforced.
+  
 DD_INTERNAL_PROFILING_NATIVE_ENGINE_PATH: |
   This variable is set by the native loader after trying to load the profiler.
   It means the profiler is _there_ though it may not be _loaded_. This only works
