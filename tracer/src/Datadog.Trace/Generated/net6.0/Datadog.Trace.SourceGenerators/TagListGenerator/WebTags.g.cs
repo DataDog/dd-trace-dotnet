@@ -62,30 +62,6 @@ namespace Datadog.Trace.Tagging
 #else
         private static readonly byte[] HttpClientIpBytes = new byte[] { 174, 104, 116, 116, 112, 46, 99, 108, 105, 101, 110, 116, 95, 105, 112 };
 #endif
-        // CodeOriginTypeBytes = MessagePack.Serialize("_dd.code_origin.type");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> CodeOriginTypeBytes => new byte[] { 180, 95, 100, 100, 46, 99, 111, 100, 101, 95, 111, 114, 105, 103, 105, 110, 46, 116, 121, 112, 101 };
-#else
-        private static readonly byte[] CodeOriginTypeBytes = new byte[] { 180, 95, 100, 100, 46, 99, 111, 100, 101, 95, 111, 114, 105, 103, 105, 110, 46, 116, 121, 112, 101 };
-#endif
-        // CodeOriginFrames0IndexBytes = MessagePack.Serialize("_dd.code_origin.frames.0.index");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> CodeOriginFrames0IndexBytes => new byte[] { 190, 95, 100, 100, 46, 99, 111, 100, 101, 95, 111, 114, 105, 103, 105, 110, 46, 102, 114, 97, 109, 101, 115, 46, 48, 46, 105, 110, 100, 101, 120 };
-#else
-        private static readonly byte[] CodeOriginFrames0IndexBytes = new byte[] { 190, 95, 100, 100, 46, 99, 111, 100, 101, 95, 111, 114, 105, 103, 105, 110, 46, 102, 114, 97, 109, 101, 115, 46, 48, 46, 105, 110, 100, 101, 120 };
-#endif
-        // CodeOriginFrames0MethodBytes = MessagePack.Serialize("_dd.code_origin.frames.0.method");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> CodeOriginFrames0MethodBytes => new byte[] { 191, 95, 100, 100, 46, 99, 111, 100, 101, 95, 111, 114, 105, 103, 105, 110, 46, 102, 114, 97, 109, 101, 115, 46, 48, 46, 109, 101, 116, 104, 111, 100 };
-#else
-        private static readonly byte[] CodeOriginFrames0MethodBytes = new byte[] { 191, 95, 100, 100, 46, 99, 111, 100, 101, 95, 111, 114, 105, 103, 105, 110, 46, 102, 114, 97, 109, 101, 115, 46, 48, 46, 109, 101, 116, 104, 111, 100 };
-#endif
-        // CodeOriginFrames0TypeBytes = MessagePack.Serialize("_dd.code_origin.frames.0.type");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> CodeOriginFrames0TypeBytes => new byte[] { 189, 95, 100, 100, 46, 99, 111, 100, 101, 95, 111, 114, 105, 103, 105, 110, 46, 102, 114, 97, 109, 101, 115, 46, 48, 46, 116, 121, 112, 101 };
-#else
-        private static readonly byte[] CodeOriginFrames0TypeBytes = new byte[] { 189, 95, 100, 100, 46, 99, 111, 100, 101, 95, 111, 114, 105, 103, 105, 110, 46, 102, 114, 97, 109, 101, 115, 46, 48, 46, 116, 121, 112, 101 };
-#endif
 
         public override string? GetTag(string key)
         {
@@ -99,10 +75,6 @@ namespace Datadog.Trace.Tagging
                 "http.status_code" => HttpStatusCode,
                 "network.client.ip" => NetworkClientIp,
                 "http.client_ip" => HttpClientIp,
-                "_dd.code_origin.type" => CodeOriginType,
-                "_dd.code_origin.frames.0.index" => CodeOriginFrames0Index,
-                "_dd.code_origin.frames.0.method" => CodeOriginFrames0Method,
-                "_dd.code_origin.frames.0.type" => CodeOriginFrames0Type,
                 _ => base.GetTag(key),
             };
         }
@@ -131,18 +103,6 @@ namespace Datadog.Trace.Tagging
                     break;
                 case "http.client_ip": 
                     HttpClientIp = value;
-                    break;
-                case "_dd.code_origin.type": 
-                    CodeOriginType = value;
-                    break;
-                case "_dd.code_origin.frames.0.index": 
-                    CodeOriginFrames0Index = value;
-                    break;
-                case "_dd.code_origin.frames.0.method": 
-                    CodeOriginFrames0Method = value;
-                    break;
-                case "_dd.code_origin.frames.0.type": 
-                    CodeOriginFrames0Type = value;
                     break;
                 case "span.kind": 
                     Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(WebTags));
@@ -193,26 +153,6 @@ namespace Datadog.Trace.Tagging
             if (HttpClientIp is not null)
             {
                 processor.Process(new TagItem<string>("http.client_ip", HttpClientIp, HttpClientIpBytes));
-            }
-
-            if (CodeOriginType is not null)
-            {
-                processor.Process(new TagItem<string>("_dd.code_origin.type", CodeOriginType, CodeOriginTypeBytes));
-            }
-
-            if (CodeOriginFrames0Index is not null)
-            {
-                processor.Process(new TagItem<string>("_dd.code_origin.frames.0.index", CodeOriginFrames0Index, CodeOriginFrames0IndexBytes));
-            }
-
-            if (CodeOriginFrames0Method is not null)
-            {
-                processor.Process(new TagItem<string>("_dd.code_origin.frames.0.method", CodeOriginFrames0Method, CodeOriginFrames0MethodBytes));
-            }
-
-            if (CodeOriginFrames0Type is not null)
-            {
-                processor.Process(new TagItem<string>("_dd.code_origin.frames.0.type", CodeOriginFrames0Type, CodeOriginFrames0TypeBytes));
             }
 
             base.EnumerateTags(ref processor);
@@ -273,34 +213,6 @@ namespace Datadog.Trace.Tagging
             {
                 sb.Append("http.client_ip (tag):")
                   .Append(HttpClientIp)
-                  .Append(',');
-            }
-
-            if (CodeOriginType is not null)
-            {
-                sb.Append("_dd.code_origin.type (tag):")
-                  .Append(CodeOriginType)
-                  .Append(',');
-            }
-
-            if (CodeOriginFrames0Index is not null)
-            {
-                sb.Append("_dd.code_origin.frames.0.index (tag):")
-                  .Append(CodeOriginFrames0Index)
-                  .Append(',');
-            }
-
-            if (CodeOriginFrames0Method is not null)
-            {
-                sb.Append("_dd.code_origin.frames.0.method (tag):")
-                  .Append(CodeOriginFrames0Method)
-                  .Append(',');
-            }
-
-            if (CodeOriginFrames0Type is not null)
-            {
-                sb.Append("_dd.code_origin.frames.0.type (tag):")
-                  .Append(CodeOriginFrames0Type)
                   .Append(',');
             }
 
