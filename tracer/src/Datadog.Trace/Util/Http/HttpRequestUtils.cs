@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using Datadog.Trace.DuckTyping;
 
 #nullable enable
 
@@ -13,11 +14,27 @@ namespace Datadog.Trace.Util.Http
     {
         private const string NoHostSpecified = "UNKNOWN_HOST";
 
-        // In .NET 6+, we can bypass a bunch of allocations by using the GetComponents() method which is heavily
-        // optimized. Unfortunately, in .NET FX and < .NET 6, this approach allocates a _lot_ more, so we
-        // keep two distinct implementations
 #if NET6_0_OR_GREATER
+        // In .NET 6+, we could theoretically bypass a bunch of allocations by using the GetComponents() method which is heavily
+        // optimized. Unfortunately, in .NET FX and < .NET 6, this approach allocates a _lot_ more. And what's more
+        // .NET 6+ introduces 'DangerousDisablePathAndQueryCanonicalization' which means calling GetComponents() _Throws_, and
+        // we have no way to detect it
         internal static string GetUrl(Uri uri, QueryStringManager? queryStringManager = null)
+            => uri.DuckCast<UriStruct>().IsDangerousDisablePathAndQueryCanonicalization()
+                   ? GetUrlSimple(uri, queryStringManager)
+                   : GetUrlDangerous(uri, queryStringManager);
+
+        internal static string GetUrlSimple(Uri uri, QueryStringManager? queryStringManager = null)
+        {
+            var queryString = queryStringManager?.TruncateAndObfuscate(uri.Query) ?? string.Empty;
+
+            // We know that we have to have a host (because otherwise uri.Scheme would throw), so we don't have to worry about normalizing it etc
+            return uri.IsDefaultPort
+                       ? $"{uri.Scheme}://{uri.Host}{uri.AbsolutePath}{queryString}"
+                       : FormattableString.Invariant($"{uri.Scheme}://{uri.Host}:{uri.Port}{uri.AbsolutePath}{queryString}");
+        }
+
+        internal static string GetUrlDangerous(Uri uri, QueryStringManager? queryStringManager = null)
         {
             var queryString = queryStringManager?.TruncateAndObfuscate(uri.Query);
 
@@ -26,6 +43,7 @@ namespace Datadog.Trace.Util.Http
             // 1. There's no querystring
             // 2. The QueryStringManager removed the querystring entirely
             // 3. The QueryStringManager did not change the string (nothing to redact/truncate)
+            // 4. The Uri was not created with UriCreationOptions.DangerousDisablePathAndQueryCanonicalization
             //
             // If the querystring _does_ change, then we have to manually append it to our initial segment
             var needToManuallyAppendQuery = false;
@@ -55,12 +73,14 @@ namespace Datadog.Trace.Util.Http
                        ? $"{formatted}{queryString}"
                        : formatted;
         }
+
 #else
         internal static string GetUrl(Uri uri, QueryStringManager? queryStringManager = null)
         {
             // We know that we have to have a host (because otherwise uri.Scheme would throw), so we don't have to worry about normalizing etc
             var queryString = queryStringManager?.TruncateAndObfuscate(uri.Query) ?? string.Empty;
 
+            // GetComponents() in early .NET allocates a lot.
             return uri.IsDefaultPort
                        ? $"{uri.Scheme}://{uri.Host}{uri.AbsolutePath}{queryString}"
                        : FormattableString.Invariant($"{uri.Scheme}://{uri.Host}:{uri.Port}{uri.AbsolutePath}{queryString}");
@@ -79,5 +99,22 @@ namespace Datadog.Trace.Util.Http
         }
 
         internal static string GetNormalizedHost(string? host) => StringUtil.IsNullOrEmpty(host) ? NoHostSpecified : host;
+
+#if NET6_0_OR_GREATER
+        [DuckCopy]
+        internal struct UriStruct
+        {
+            // the flag changed in .NET 10
+            private static readonly ulong DisablePathAndQueryCanonicalizationFlag
+                = FrameworkDescription.Instance.RuntimeVersion.Major >= 10
+                      ? 1UL << 55
+                      : 0x200000000000;
+
+            [DuckField(Name = "_flags")]
+            public ulong Flags;
+
+            public readonly bool IsDangerousDisablePathAndQueryCanonicalization() => (Flags & DisablePathAndQueryCanonicalizationFlag) != 0;
+        }
+#endif
     }
 }
