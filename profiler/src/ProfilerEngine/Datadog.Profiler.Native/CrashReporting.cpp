@@ -493,6 +493,7 @@ int32_t CrashReporting::CrashProcess()
     crashThread.join();
     return 0; // If we get there, somehow we failed to crash. Are we even able to do *anything* properly? ;_;
 }
+
 int32_t CrashReporting::SetCrashMessage(const char* message)
 {
     CHECK_RESULT(ddog_crasht_CrashInfoBuilder_with_message(&_builder, libdatadog::to_char_slice(message)));
