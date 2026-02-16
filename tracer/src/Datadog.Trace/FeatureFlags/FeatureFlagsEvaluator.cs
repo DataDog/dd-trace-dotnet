@@ -486,28 +486,17 @@ namespace Datadog.Trace.FeatureFlags
 
             throw new ArgumentException($"Type not supported: {target}");
 
-            static object? ConvertToken(JToken token)
+            static object? ConvertToken(JToken token) => token.Type switch
             {
-                switch (token.Type)
-                {
-                    case JTokenType.Object:
-                        return ConvertObject((JObject)token);
-                    case JTokenType.Array:
-                        return ConvertArray((JArray)token);
-                    case JTokenType.Integer:
-                        return (long)token;
-                    case JTokenType.Float:
-                        return (double)token;
-                    case JTokenType.String:
-                        return token.ToString();
-                    case JTokenType.Boolean:
-                        return (bool)token;
-                    case JTokenType.Null:
-                        return null;
-                    default:
-                        return ConvertObject(null);
-                }
-            }
+                JTokenType.Object => ConvertObject((JObject)token),
+                JTokenType.Array => ConvertArray((JArray)token),
+                JTokenType.Integer => (long)token,
+                JTokenType.Float => (double)token,
+                JTokenType.String => token.ToString(),
+                JTokenType.Boolean => (bool)token,
+                JTokenType.Null => null,
+                _ => ConvertObject(null)
+            };
 
             static Dictionary<string, object?> ConvertObject(JObject? obj)
             {
