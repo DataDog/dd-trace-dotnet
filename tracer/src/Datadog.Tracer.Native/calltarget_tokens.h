@@ -46,8 +46,8 @@ private:
     mdMemberRef GetCallTargetReturnValueDefaultMemberRef(mdTypeSpec callTargetReturnTypeSpec);
     mdMethodSpec GetCallTargetDefaultValueMethodSpec(const TypeSignature* methodArgument);
 
-    HRESULT ModifyLocalSig(ILRewriter* reWriter, TypeSignature* methodReturnValue, std::vector<TypeSignature>* methodTypeArguments,
-                           ULONG* callTargetStateIndex, ULONG* exceptionIndex, ULONG* callTargetReturnIndex, ULONG* returnValueIndex,
+    HRESULT ModifyLocalSig(ILRewriter* reWriter, TypeSignature* methodReturnValue, std::vector<TypeSignature>* methodTypeArguments, FunctionInfo* caller,
+                           ULONG* callTargetStateIndex, ULONG* exceptionIndex, ULONG* callTargetReturnIndex, ULONG* staticValueTypeIndex, ULONG* returnValueIndex,
                            mdToken* callTargetStateToken, mdToken* exceptionToken, mdToken* callTargetReturnToken,
                            std::vector<ULONG>& additionalLocalIndices, bool isAsyncMethod = false);
 
@@ -97,8 +97,8 @@ public:
 
     mdMethodDef GetCallTargetStateSkipMethodBodyMemberRef();
 
-    HRESULT ModifyLocalSigAndInitialize(void* rewriterWrapperPtr, TypeSignature* methodReturnType, std::vector<TypeSignature>* methodTypeArguments,
-                                        ULONG* callTargetStateIndex, ULONG* exceptionIndex, ULONG* callTargetReturnIndex, ULONG* returnValueIndex,
+    HRESULT ModifyLocalSigAndInitialize(void* rewriterWrapperPtr, TypeSignature* methodReturnType, std::vector<TypeSignature>* methodTypeArguments, FunctionInfo* caller,
+                                        ULONG* callTargetStateIndex, ULONG* exceptionIndex, ULONG* callTargetReturnIndex, ULONG* staticValueTypeIndex, ULONG* returnValueIndex,
                                         mdToken* callTargetStateToken, mdToken* exceptionToken,
                                         mdToken* callTargetReturnToken, ILInstr** firstInstruction, std::vector<ULONG>& additionalLocalIndices, bool
                                         isAsyncMethod = false);

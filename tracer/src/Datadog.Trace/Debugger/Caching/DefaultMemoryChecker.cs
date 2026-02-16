@@ -6,11 +6,8 @@
 #nullable enable
 
 using System;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Threading;
 using Datadog.Trace.Logging;
-using Datadog.Trace.VendoredMicrosoftCode.System;
 
 namespace Datadog.Trace.Debugger.Caching;
 
@@ -106,8 +103,8 @@ internal sealed class DefaultMemoryChecker : IMemoryChecker
                 return false;
             }
 
-            var asBytes = Datadog.Trace.VendoredMicrosoftCode.System.Runtime.InteropServices.MemoryMarshal.AsBytes(memAvailable);
-            Datadog.Trace.VendoredMicrosoftCode.System.Buffers.Text.Utf8Parser.TryParse(asBytes, out long availableKb, out var bytes);
+            var asBytes = MemoryMarshal.AsBytes(memAvailable);
+            Utf8Parser.TryParse(asBytes, out long availableKb, out var bytes);
             if (bytes > 0 && availableKb > 0)
             {
                 return availableKb * 1024 < LowMemoryThreshold;
@@ -125,11 +122,11 @@ internal sealed class DefaultMemoryChecker : IMemoryChecker
         return false;
     }
 
-    private Datadog.Trace.VendoredMicrosoftCode.System.ReadOnlySpan<char> ReadMemInfo()
+    private ReadOnlySpan<char> ReadMemInfo()
     {
-        var empty = Datadog.Trace.VendoredMicrosoftCode.System.ReadOnlySpan<char>.Empty;
-        var memInfo = Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(System.IO.File.ReadAllText("/proc/meminfo"));
-        int startIndex = memInfo.IndexOf(Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.AsSpan("MemAvailable:"));
+        var empty = ReadOnlySpan<char>.Empty;
+        var memInfo = System.IO.File.ReadAllText("/proc/meminfo").AsSpan();
+        int startIndex = memInfo.IndexOf("MemAvailable:".AsSpan());
         if (startIndex == -1)
         {
             return empty;

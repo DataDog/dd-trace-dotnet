@@ -32,18 +32,24 @@ public class ConfigurationKeysGeneratorTests
         const string supportedConfigJson = """
                                            {
                                              "supportedConfigurations": {
-                                               "DD_TRACE_ENABLED": {
-                                                 "version": ["A"],
-                                                 "product": "Tracer"
-                                               },
-                                               "DD_APPSEC_ENABLED": {
-                                                 "version": ["A"],
-                                                 "product": "AppSec"
-                                               },
-                                               "OTEL_EXPORTER_OTLP_ENDPOINT": {
-                                                 "version": ["A"],
-                                                 "product": "OpenTelemetry"
-                                               }
+                                               "DD_TRACE_ENABLED": [
+                                                 {
+                                                   "implementation": "A",
+                                                   "product": "Tracer"
+                                                 }
+                                               ],
+                                               "DD_APPSEC_ENABLED": [
+                                                 {
+                                                   "implementation": "A",
+                                                   "product": "AppSec"
+                                                 }
+                                               ],
+                                               "OTEL_EXPORTER_OTLP_ENDPOINT": [
+                                                 {
+                                                   "implementation": "A",
+                                                   "product": "OpenTelemetry"
+                                                 }
+                                               ]
                                              }
                                            }
                                            """;
@@ -136,18 +142,24 @@ public class ConfigurationKeysGeneratorTests
             """
             {
               "supportedConfigurations": {
-                "DD_CIVISIBILITY_AGENTLESS_ENABLED": {
-                  "version": "A",
-                  "product": "CiVisibility"
-                },
-                "DD_APPSEC_WAF_TIMEOUT": {
-                  "version": "A",
-                  "product": "AppSec"
-                },
-                "DD_TRACE_REMOVE_INTEGRATION_SERVICE_NAMES_ENABLED": {
-                  "version": "A",
-                  "product": "Tracer"
-                }
+                "DD_CIVISIBILITY_AGENTLESS_ENABLED": [
+                  {
+                    "implementation": "A",
+                    "product": "CiVisibility"
+                  }
+                ],
+                "DD_APPSEC_WAF_TIMEOUT": [
+                  {
+                    "implementation": "A",
+                    "product": "AppSec"
+                  }
+                ],
+                "DD_TRACE_REMOVE_INTEGRATION_SERVICE_NAMES_ENABLED": [
+                  {
+                    "implementation": "A",
+                    "product": "Tracer"
+                  }
+                ]
               }
             }
             """;
@@ -203,12 +215,16 @@ public class ConfigurationKeysGeneratorTests
         const string supportedConfigJson = """
                                            {
                                              "supportedConfigurations": {
-                                               "DD_ENV": {
-                                                 "version": "A"
-                                               },
-                                               "DD_SERVICE": {
-                                                 "version": "A"
-                                               }
+                                               "DD_ENV": [
+                                                 {
+                                                   "implementation": "A"
+                                                 }
+                                               ],
+                                               "DD_SERVICE": [
+                                                 {
+                                                   "implementation": "A"
+                                                 }
+                                               ]
                                              }
                                            }
                                            """;
@@ -235,10 +251,12 @@ public class ConfigurationKeysGeneratorTests
         const string supportedConfigJson = """
                                            {
                                              "supportedConfigurations": {
-                                               "DD_TRACE_ENABLED": {
-                                                 "version": "A",
-                                                 "product": "Tracer"
-                                               }
+                                               "DD_TRACE_ENABLED": [
+                                                 {
+                                                   "implementation": "A",
+                                                   "product": "Tracer"
+                                                 }
+                                               ]
                                              }
                                            }
                                            """;
@@ -326,18 +344,24 @@ public class ConfigurationKeysGeneratorTests
         const string supportedConfigJson = """
                                            {
                                              "supportedConfigurations": {
-                                               "DD_TRACE_SAMPLE_RATE": {
-                                                 "version": "A",
-                                                 "product": "Tracer"
-                                               },
-                                               "DD_TRACE_ENABLED": {
-                                                 "version": "A",
-                                                 "product": "Tracer"
-                                               },
-                                               "DD_TRACE_DEBUG": {
-                                                 "version": "A",
-                                                 "product": "Tracer"
-                                               }
+                                               "DD_TRACE_SAMPLE_RATE": [
+                                                 {
+                                                   "implementation": "A",
+                                                   "product": "Tracer"
+                                                 }
+                                               ],
+                                               "DD_TRACE_ENABLED": [
+                                                 {
+                                                   "implementation": "A",
+                                                   "product": "Tracer"
+                                                 }
+                                               ],
+                                               "DD_TRACE_DEBUG": [
+                                                 {
+                                                   "implementation": "A",
+                                                   "product": "Tracer"
+                                                 }
+                                               ]
                                              }
                                            }
                                            """;
@@ -368,14 +392,18 @@ public class ConfigurationKeysGeneratorTests
         const string supportedConfigJson = """
                                            {
                                              "supportedConfigurations": {
-                                               "DD_TRACE_ENABLED": {
-                                                 "version": "A",
-                                                 "product": "Tracer"
-                                               },
-                                               "DD_LOGS_INJECTION": {
-                                                 "version": "A",
-                                                 "product": "Tracer"
-                                               }
+                                               "DD_TRACE_ENABLED": [
+                                                 {
+                                                   "implementation": "A",
+                                                   "product": "Tracer"
+                                                 }
+                                               ],
+                                               "DD_LOGS_INJECTION": [
+                                                 {
+                                                   "implementation": "A",
+                                                   "product": "Tracer"
+                                                 }
+                                               ]
                                              }
                                            }
                                            """;
@@ -436,12 +464,16 @@ public class ConfigurationKeysGeneratorTests
         const string supportedConfigJson = """
                                            {
                                              "supportedConfigurations": {
-                                               "DD_MAX_TRACES_PER_SECOND": {
-                                                 "version": "A"
-                                               },
-                                               "DD_TRACE_ENABLED": {
-                                                 "version": "A"
-                                               }
+                                               "DD_MAX_TRACES_PER_SECOND": [
+                                                 {
+                                                   "implementation": "A"
+                                                 }
+                                               ],
+                                               "DD_TRACE_ENABLED": [
+                                                 {
+                                                   "implementation": "A"
+                                                 }
+                                               ]
                                              },
                                              "deprecations": {
                                                "DD_MAX_TRACES_PER_SECOND": "This parameter is obsolete and should be replaced by `DD_TRACE_RATE_LIMIT`"
