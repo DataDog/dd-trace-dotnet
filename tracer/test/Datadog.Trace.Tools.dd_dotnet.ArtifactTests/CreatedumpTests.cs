@@ -292,7 +292,9 @@ public class CreatedumpTests : ConsoleTestHelper
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
         {
             report["sig_info"]!["si_signo"]!.Value<string>().Should().Be("6");
-            report["sig_info"]!["si_code"]!.Value<string>().Should().Be("1");
+            // siginfo is null in unhandled exceptions cases.
+            // This value represents the guard we use.
+            report["sig_info"]!["si_code"]!.Value<string>().Should().Be("2147483647");
         }
 
         report["error"]!["message"].Value<string>().Should().Be("Process was terminated due to an unhandled exception of type 'System.BadImageFormatException'. Message: Expected.");
