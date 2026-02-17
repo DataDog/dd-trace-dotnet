@@ -294,8 +294,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 {
                     // shouldn't be hit, but better safe than sorry
                     scope = tracer.StartActiveInternal(OperationName);
-
-                    if (!isProxySpan)
                     {
                         var rootSpan = scope.Root.Span;
                         AzureFunctionsTags.SetRootSpanTags(
@@ -307,7 +305,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     }
                 }
 
-                if (!isProxySpan)
                 {
                     // change root span's type to "serverless"
                     scope.Root.Span.Type = SpanType;
