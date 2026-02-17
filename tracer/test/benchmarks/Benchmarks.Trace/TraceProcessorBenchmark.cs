@@ -22,7 +22,7 @@ namespace Benchmarks.Trace
         {
             _normalizerTraceProcessor = new NormalizerTraceProcessor();
             _trucantorTraceProcessor = new TruncatorTraceProcessor();
-            _obfuscatorTraceProcessor = new ObfuscatorTraceProcessor(true);
+            _obfuscatorTraceProcessor = new ObfuscatorTraceProcessor();
 _tracer = TracerHelper.CreateTracer();
             var traceContext = new TraceContext(_tracer, null);
             var spanContext = new SpanContext(parent: null, traceContext, serviceName: "My Service Name", traceId: (TraceId)100, spanId: 200);

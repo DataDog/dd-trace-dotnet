@@ -126,9 +126,6 @@ src/Datadog.Trace/PlatformHelpers/AspNetCoreHttpRequestHandler.cs
 src/Datadog.Trace/PlatformHelpers/ServiceFabric.cs
 src/Datadog.Trace/Processors/ITagProcessor.cs
 src/Datadog.Trace/Processors/NormalizerTraceProcessor.cs
-src/Datadog.Trace/Processors/ObfuscatorTagsProcessor.cs
-src/Datadog.Trace/Processors/ObfuscatorTraceProcessor.cs
-src/Datadog.Trace/Processors/RedisObfuscationUtil.cs
 src/Datadog.Trace/Processors/TraceUtil.cs
 src/Datadog.Trace/Processors/TruncatorTagsProcessor.cs
 src/Datadog.Trace/Processors/TruncatorTraceProcessor.cs
@@ -208,7 +205,6 @@ src/Datadog.Trace/Util/System.Diagnostics.CodeAnalysis.Attributes.cs
 src/Datadog.Trace/Util/System.Runtime.CompilerServices.Attributes.cs
 src/Datadog.Trace/Util/ThrowHelper.cs
 src/Datadog.Trace/Util/TimeHelpers.cs
-src/Datadog.Trace/Util/UriHelpers.cs
 src/Datadog.Trace/Activity/Handlers/ActivityMappingExtensions.cs
 src/Datadog.Trace/Agent/MessagePack/SpanFormatterResolver.cs
 src/Datadog.Trace/Agent/MessagePack/SpanMessagePackFormatter.cs

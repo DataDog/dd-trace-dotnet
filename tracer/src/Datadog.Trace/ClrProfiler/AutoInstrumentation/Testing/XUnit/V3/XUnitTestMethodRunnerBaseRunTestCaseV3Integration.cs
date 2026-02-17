@@ -4,6 +4,7 @@
 // </copyright>
 
 #nullable enable
+
 using System;
 using System.ComponentModel;
 using System.Linq;
@@ -14,7 +15,6 @@ using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
-using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe;
 using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3;
@@ -324,6 +324,15 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
 
         return returnValue;
     }
+
+    /// <summary>
+    /// Read-only snapshot of remaining ATR budget for pre-close checks (XUnit v3).
+    /// Value meanings: -1 = uninitialized, 0 = exhausted, positive = nominally available.
+    /// This value is observed before retry scheduling decrements budget, so values of 1 or 0 mean no
+    /// further retry can run after the current failed execution.
+    /// </summary>
+    internal static int GetRemainingAtrBudget()
+        => Interlocked.CompareExchange(ref _totalRetries, 0, 0);
 
     private readonly struct TestRunnerState
     {
