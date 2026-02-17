@@ -61,6 +61,7 @@ Invoke the skill with `/azure-functions` followed by an optional command:
 Utility scripts included with this skill:
 
 - **Find-NuGetConfig.ps1** - Search for `nuget.config` file by walking up directory hierarchy. Used to verify sample apps have access to local NuGet feed before deployment.
+- **Test-EnvVars.ps1** - Verify Datadog instrumentation environment variables on an Azure Function App. Checks app state, detects platform, validates required/recommended vars. Never displays DD_API_KEY value.
 
 ## Related Scripts (tracer/tools/)
 
