@@ -276,7 +276,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 
                 // Check if there's an APIM proxy span that we shouldn't overwrite
                 var spanRootName = tracer.InternalActiveScope?.Root.Span.OperationName;
-                var isProxySpan = spanRootName?.Equals(AzureApim) == true;
 
                 if (tracer.InternalActiveScope == null)
                 {

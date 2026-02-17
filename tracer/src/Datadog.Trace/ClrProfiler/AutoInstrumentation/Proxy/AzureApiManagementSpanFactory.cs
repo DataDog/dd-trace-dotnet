@@ -24,6 +24,11 @@ internal sealed class AzureApiManagementSpanFactory : IInferredSpanFactory
     {
         try
         {
+            if (data.Path is null)
+            {
+                return null;
+            }
+
             var resourceUrl = UriHelpers.GetCleanUriPath(data.Path).ToLowerInvariant();
 
             if (data.DomainName is null)

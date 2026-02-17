@@ -657,7 +657,8 @@ namespace Datadog.Trace.Agent.MessagePack
             // Skip adding AAS tags to inferred proxy spans as they represent infrastructure outside the AAS environment
             if (model.TraceChunk.IsRunningInAzureAppService &&
                 model.TraceChunk.AzureAppServiceSettings is { } azureAppServiceSettings &&
-                span.Tags.GetMetric(Metrics.InferredSpan) != 1.0)
+                span.Tags is InferredProxyTags proxyTags &&
+                proxyTags.InferredSpan != 1.0)
             {
                 // Done here to avoid initializing in most cases
                 InitializeAasTags();
