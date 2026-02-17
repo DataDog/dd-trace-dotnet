@@ -78,3 +78,27 @@ internal sealed class CompilerFeatureRequiredAttribute : Attribute
     public bool IsOptional { get; init; }
 }
 #endif
+
+#if !NET9_0_OR_GREATER
+
+/// <summary>
+/// Specifies the priority of a member in overload resolution. When unspecified, the default priority is 0.
+/// </summary>
+[AttributeUsage(
+    AttributeTargets.Method |
+    AttributeTargets.Constructor |
+    AttributeTargets.Property,
+    Inherited = false)]
+internal sealed class OverloadResolutionPriorityAttribute : Attribute
+{
+    /// <summary>
+    /// Initializes a new instance of the <see cref="OverloadResolutionPriorityAttribute"/> class.
+    /// </summary>
+    public OverloadResolutionPriorityAttribute(int priority) => Priority = priority;
+
+    /// <summary>
+    /// Gets the priority of the member.
+    /// </summary>
+    public int Priority { get; }
+}
+#endif
