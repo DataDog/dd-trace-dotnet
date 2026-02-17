@@ -19,7 +19,7 @@ on:
     secrets:
       AZURE_DEVOPS_TOKEN:
         required: true
-      NUGET_API_KEY:
+      NUGET_TRUSTED_PUBLISHING_USERNAME:
         required: true
       GH_APP_ID:
         required: true
