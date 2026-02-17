@@ -132,37 +132,16 @@ internal static class FeatureFlagsSdk
         }
     }
 
-    private static Value ConvertObject(object? obj)
+    private static Value ConvertObject(object? obj) => obj switch
     {
-        if (obj is Dictionary<string, object?> dic)
-        {
-            return ConvertStructure(dic);
-        }
-        else if (obj is object?[] arr)
-        {
-            return ConvertArray(arr);
-        }
-        else if (obj is long intVal)
-        {
-            return new Value(intVal);
-        }
-        else if (obj is double doubleVal)
-        {
-            return new Value(doubleVal);
-        }
-        else if (obj is string strVal)
-        {
-            return new Value(strVal);
-        }
-        else if (obj is bool boolVal)
-        {
-            return new Value(boolVal);
-        }
-        else
-        {
-            return new Value();
-        }
-    }
+        Dictionary<string, object?> dic => ConvertStructure(dic),
+        object?[] arr => ConvertArray(arr),
+        long intVal => new Value(intVal),
+        double doubleVal => new Value(doubleVal),
+        string strVal => new Value(strVal),
+        bool boolVal => new Value(boolVal),
+        _ => new Value()
+    };
 
     private static Value ConvertStructure(Dictionary<string, object?> structure)
     {
