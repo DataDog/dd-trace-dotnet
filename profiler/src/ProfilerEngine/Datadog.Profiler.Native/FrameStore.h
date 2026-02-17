@@ -67,7 +67,7 @@ private:
         std::unique_ptr<ClassID[]>& genericParameters
         );
     bool GetMetadataApi(ModuleID moduleId, FunctionID functionId, ComPtr<IMetaDataImport2>& pMetadataImport);
-    std::tuple<std::string, std::string, mdTypeDef> GetMethodName(
+    std::tuple<ULONG, std::string, std::string, mdTypeDef> GetMethodName(
         FunctionID functionId,
         IMetaDataImport2* pMetadataImport,
         mdMethodDef mdTokenFunc,
@@ -124,7 +124,7 @@ private:  // global helpers
         ULONG* elementType,
         std::stringstream& builder,
         mdToken* typeToken);
-    static std::pair<std::string, mdTypeDef> GetMethodNameFromMetadata(
+    static std::tuple<std::string, mdTypeDef, ULONG> GetMethodNameFromMetadata(
         IMetaDataImport2* pMetadataImport,
         mdMethodDef mdTokenFunc
         );

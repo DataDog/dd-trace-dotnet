@@ -3,11 +3,6 @@
 
 #pragma once
 
-// from dotnet coreclr includes
-#include "cor.h"
-#include "corprof.h"
-// end
-
 #include "IDebugInfoStore.h"
 #include "Log.h"
 
@@ -20,56 +15,119 @@
 
 class IConfiguration;
 
+enum class SymbolLoadingState
+{
+    Unknown,
+    Failed,
+    Portable,
+    Windows
+};
+
+struct ModuleDebugInfo
+{
+public:
+    std::string ModulePath;
+
+    // for both Portable and Windows PDBs, we need to keep track of the loaded files to avoid storing them multiple times
+    std::vector<std::string> Files;
+
+    // for Portable PDBs, we can use directly the RID from the methodDef token to lookup the debug info
+    std::vector<SymbolDebugInfo> RidToDebugInfo;
+
+    SymbolLoadingState LoadingState;
+    bool ErrorLogged = false;
+
+    // Calculate the total memory size of this debug info structure
+    std::size_t GetMemorySize() const
+    {
+        std::size_t totalSize = 0;
+
+        // Size of the ModulePath string
+        totalSize += ModulePath.capacity();
+
+        // Size of all file path strings in the Files vector
+        for (const auto& file : Files)
+        {
+            totalSize += file.capacity();
+        }
+        // Add overhead for the vector container itself
+        totalSize += Files.capacity() * sizeof(std::string);
+
+        // Size of RidToDebugInfo vector
+        // Each entry contains a string_view (2 pointers typically) and a uint32_t
+        totalSize += RidToDebugInfo.capacity() * sizeof(SymbolDebugInfo);
+
+        return totalSize;
+    }
+};
+
+
 class DebugInfoStore : public IDebugInfoStore
 {
+public:
+    static const std::string NoFileFound;
+    static const std::uint32_t NoStartLine;
+
 public:
     DebugInfoStore(ICorProfilerInfo4* profilerInfo, IConfiguration* configuration) noexcept;
 
     SymbolDebugInfo Get(ModuleID moduleId, mdMethodDef methodDef);
 
-private:
-    struct ModuleDebugInfo
-    {
-    public:
-        std::string ModulePath;
-        std::vector<std::string> Files;
-        std::vector<SymbolDebugInfo> SymbolsDebugInfo;
-        bool IsValid = false;
-        bool ErrorLogged = false;
-    };
+    // for tests
+    void ParseModuleDebugInfo(ModuleID moduleId, const std::string& pdbFilename, const std::string& moduleFilename, ModuleDebugInfo& moduleInfo);
 
+private:
+    size_t DEFAULT_RESERVE_SIZE = 1024;
+
+private:
     void ParseModuleDebugInfo(ModuleID moduleID);
     fs::path GetModuleFilePath(ModuleID moduleId) const;
 
     template <typename TInfo>
-    SymbolDebugInfo Get(TInfo& info, ModuleID moduleId, RID rid)
+    SymbolDebugInfo GetFromRID(TInfo& info, ModuleID moduleId, RID rid)
     {
-        auto invalidInfo = !info.IsValid || rid >= info.SymbolsDebugInfo.size();
-
-        if (invalidInfo)
+        auto invalidInfo =
+            (info.LoadingState == SymbolLoadingState::Failed) ||
+            (info.LoadingState == SymbolLoadingState::Unknown) ||
+            (rid >= info.RidToDebugInfo.size());
+        if (!invalidInfo)
         {
-            auto alreadyLogged = std::exchange(info.ErrorLogged, true);
-            if (!alreadyLogged)
-            {
-                if (!info.IsValid)
-                {
-                    Log::Info("The debug info for the module `", info.ModulePath, "` seems to be invalid");
-                }
-                if (rid >= info.SymbolsDebugInfo.size())
-                {
-                    Log::Info("The RID is out of the symbols array bounds (RID: ", rid, "). Number of debug info: ", info.SymbolsDebugInfo.size(),
-                              ", module path: ", info.ModulePath);
-                }
-            }
-            return SymbolDebugInfo{NoFileFound, NoStartLine};
+            return info.RidToDebugInfo[rid];
         }
-        return info.SymbolsDebugInfo[rid];
+
+        // log only once per module
+        auto alreadyLogged = std::exchange(info.ErrorLogged, true);
+        if (!alreadyLogged)
+        {
+            if (
+                (info.LoadingState == SymbolLoadingState::Failed) ||
+                (info.LoadingState == SymbolLoadingState::Unknown)
+                )
+            {
+                Log::Info("The debug info for the module `", info.ModulePath, "` seems to be invalid");
+            }
+            else
+            if (rid >= info.RidToDebugInfo.size())
+            {
+                Log::Info("The RID is out of the symbols array bounds (RID: ", rid, "). Number of debug info: ", info.RidToDebugInfo.size(),
+                            ", module path: ", info.ModulePath);
+            }
+        }
+        return SymbolDebugInfo{NoFileFound, NoStartLine};
     }
 
-    static const std::string NoFileFound;
-    static const std::uint32_t NoStartLine;
+    bool TryLoadSymbolsWithPortable(const std::string& pdbFilename, const std::string& moduleFilename, ModuleDebugInfo& moduleInfo);
+#ifdef _WINDOWS
+    bool TryLoadSymbolsWithDbgHelp(const std::string& pdbFile, ModuleDebugInfo& moduleInfo);
+    bool TryLoadSymbolsWithSym(ModuleID moduleId, const std::string& pdbFile, const std::string& moduleFile, ModuleDebugInfo& moduleInfo);
+#endif
 
+    // we need to support both Portable PDB (Windows and Linux) and Windows PDB (Windows only for old .NET Framework scenarios)
+    // - portable PDB: we can use directly the RID from the methodDef token to lookup the debug info
+    // - windows PDB: we need to use the RVA to find the correct method
+    // So, the per module debug info needs to store either one or the other
     std::unordered_map<ModuleID, ModuleDebugInfo> _modulesInfo;
+
     ICorProfilerInfo4* _profilerInfo;
     bool _isEnabled;
     std::mutex _modulesMutex;
