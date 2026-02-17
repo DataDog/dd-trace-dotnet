@@ -48,7 +48,11 @@ namespace UpdateVendors
                 version: "4.3.1",
                 downloadUrl: "https://github.com/serilog/serilog/archive/v4.3.1.zip",
                 pathToSrc: new[] { "serilog-4.3.1", "src", "Serilog" },
-                transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "Serilog"));
+                transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "Serilog", AddNullableDirectiveTransform, AddSerilogGlobalUsings),
+                new []
+                {
+                    "GlobalUsings.cs" // We manually add these
+                });
 
             Add(
                 libraryName: "Serilog.Sinks.File",
@@ -511,6 +515,81 @@ namespace UpdateVendors
                 "using System.IO;\n" +
                 "using System.Linq;\n" +
                 "using System.Net.Http;\n" +
+                "using System.Threading;\n" +
+                "using System.Threading.Tasks;\n\n";
+
+            return contents.Insert(namespaceIndex, usings);
+        }
+
+        private static string AddSerilogGlobalUsings(string filePath, string contents)
+        {
+            // Find the namespace declaration
+            var namespaceIndex = contents.IndexOf("\nnamespace ", StringComparison.Ordinal);
+            if (namespaceIndex < 0)
+            {
+                return contents; // No namespace found, skip
+            }
+
+            // Move to the start of the line  
+            namespaceIndex = contents.LastIndexOf('\n', namespaceIndex) + 1;
+
+            // Add all directives included in GlobalUsings.cs
+            // Compiler ignores duplicates (CS0105 is suppressed in auto-generated header)
+            var usings =
+                "using System;\n" +
+                "using System.Collections;\n" +
+                "using System.Collections.Generic;\n" +
+                "using System.ComponentModel;\n" +
+                "using System.Diagnostics.CodeAnalysis;\n" +
+                "using System.Globalization;\n" +
+                "using System.IO;\n" +
+                "using System.Linq;\n" +
+                "using System.Reflection;\n" +
+                "using System.Runtime.CompilerServices;\n" +
+                "using System.Text;\n" +
+                "using System.Text.RegularExpressions;\n" +
+                "using System.Threading;\n" +
+                "using System.Threading.Tasks;\n" +
+                "using Serilog.Capturing;\n" +
+                "using Serilog.Configuration;\n" +
+                "using Serilog.Context;\n" +
+                "using Serilog.Core;\n" +
+                "using Serilog.Core.Enrichers;\n" +
+                "using Serilog.Core.Filters;\n" +
+                "using Serilog.Core.Pipeline;\n" +
+                "using Serilog.Core.Sinks;\n" +
+                "using Serilog.Data;\n" +
+                "using Serilog.Debugging;\n" +
+                "using Serilog.Events;\n" +
+                "using Serilog.Formatting.Json;\n" +
+                "using Serilog.Parsing;\n" +
+                "using Serilog.Policies;\n" +
+                "using Serilog.Rendering;\n" +
+                "using Serilog.Settings.KeyValuePairs;\n\n";
+
+            return contents.Insert(namespaceIndex, usings);
+        }
+
+        private static string AddSerilogSinksGlobalUsings(string filePath, string contents)
+        {
+            // Find the namespace declaration
+            var namespaceIndex = contents.IndexOf("\nnamespace ", StringComparison.Ordinal);
+            if (namespaceIndex < 0)
+            {
+                return contents; // No namespace found, skip
+            }
+
+            // Move to the start of the line
+            namespaceIndex = contents.LastIndexOf('\n', namespaceIndex) + 1;
+
+            // Add all directives included in GlobalUsings.cs
+            // Compiler ignores duplicates (CS0105 is suppressed in auto-generated header)
+            var usings =
+                "using System;\n" +
+                "using System.Collections;\n" +
+                "using System.Collections.Generic;\n" +
+                "using System.IO;\n" +
+                "using System.Linq;\n" +
                 "using System.Threading;\n" +
                 "using System.Threading.Tasks;\n\n";
 
