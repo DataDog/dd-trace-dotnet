@@ -48,7 +48,7 @@ namespace UpdateVendors
                 version: "4.3.1",
                 downloadUrl: "https://github.com/serilog/serilog/archive/v4.3.1.zip",
                 pathToSrc: new[] { "serilog-4.3.1", "src", "Serilog" },
-                transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "Serilog", AddNullableDirectiveTransform, AddSerilogGlobalUsings),
+                transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "Serilog", AddNullableDirectiveTransform, AddSerilogGlobalUsings, FixMinorBugs),
                 new []
                 {
                     "GlobalUsings.cs" // We manually add these
@@ -568,6 +568,18 @@ namespace UpdateVendors
                 "using Serilog.Settings.KeyValuePairs;\n\n";
 
             return contents.Insert(namespaceIndex, usings);
+        }
+
+        private static string FixMinorBugs(string filePath, string contents)
+        {
+            if (filePath.EndsWith("LoggerSinkConfiguration.cs"))
+            {
+                return contents
+                    .Replace("/// parameterless constructor.</param>", "/// parameterless constructor.</typeparam>")
+                    .Replace("    public LoggerConfiguration Fallible(", "/// </remarks>\n    public LoggerConfiguration Fallible(");
+            }
+
+            return contents;
         }
 
         private static string AddSerilogSinksGlobalUsings(string filePath, string contents)
