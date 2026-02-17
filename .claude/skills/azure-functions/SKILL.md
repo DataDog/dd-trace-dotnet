@@ -332,10 +332,11 @@ grep "Assembly metadata" LogFiles/datadog/dotnet-tracer-managed-dotnet-*.log
 
 ### Traces Not Appearing in Datadog
 ```bash
-# Verify DD_API_KEY is set
+# Verify DD_API_KEY is set (check existence only, never retrieve value)
 az functionapp config appsettings list \
   --name <app-name> \
-  --resource-group <resource-group> | grep DD_API_KEY
+  --resource-group <resource-group> \
+  --query "[?name=='DD_API_KEY'].name" -o tsv
 
 # Check worker initialization in logs
 grep "Datadog Tracer initialized" LogFiles/datadog/dotnet-tracer-managed-dotnet-*.log
@@ -409,6 +410,14 @@ When invoked with `/azure-functions configure [app-name]`:
    az functionapp config appsettings list --name <app-name> --resource-group <resource-group>
    ```
    - Filter for DD_* and CORECLR_* variables
+   - **CRITICAL**: When showing DD_API_KEY, ONLY check for existence, NEVER retrieve or display the actual value:
+     ```bash
+     # Check if DD_API_KEY exists (returns "DD_API_KEY" if set, empty if not)
+     az functionapp config appsettings list \
+       --name <app-name> \
+       --resource-group <resource-group> \
+       --query "[?name=='DD_API_KEY'].name" -o tsv
+     ```
 5. **Ask configuration level**:
    - **Required only**: CORECLR_*, DD_DOTNET_TRACER_HOME, DD_API_KEY, DOTNET_STARTUP_HOOKS
    - **Required + Recommended**: Add DD_APPSEC_ENABLED=false, DD_CIVISIBILITY_ENABLED=false, DD_REMOTE_CONFIGURATION_ENABLED=false, DD_AGENT_FEATURE_POLLING_ENABLED=false, DD_TRACE_Process_ENABLED=false, DD_ENV, DD_TRACE_SAMPLING_RULES

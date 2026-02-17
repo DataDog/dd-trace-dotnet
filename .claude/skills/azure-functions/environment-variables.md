@@ -133,7 +133,7 @@ After configuring environment variables, verify the setup:
 ### Using Azure CLI
 
 ```bash
-# View all app settings
+# View all app settings (CAUTION: This displays all values including DD_API_KEY)
 az functionapp config appsettings list \
   --name <app-name> \
   --resource-group <resource-group>
@@ -143,7 +143,15 @@ az functionapp config appsettings list \
   --name <app-name> \
   --resource-group <resource-group> \
   --query "[?name=='DD_TRACE_DEBUG'].value" -o tsv
+
+# Check if DD_API_KEY exists (without retrieving the value)
+az functionapp config appsettings list \
+  --name <app-name> \
+  --resource-group <resource-group> \
+  --query "[?name=='DD_API_KEY'].name" -o tsv
 ```
+
+**CRITICAL**: Never retrieve or display the actual value of `DD_API_KEY`. Use the query above to check for its existence only.
 
 ### Using Azure Portal
 

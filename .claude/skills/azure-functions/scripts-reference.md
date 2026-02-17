@@ -352,7 +352,7 @@ grep "$EXEC_TIME" dotnet-tracer-managed-*.log \
 APP_NAME="<app-name>"
 RESOURCE_GROUP="<resource-group>"
 
-# List all settings
+# List all settings (CAUTION: This displays all values including DD_API_KEY)
 az functionapp config appsettings list \
   --name $APP_NAME \
   --resource-group $RESOURCE_GROUP
@@ -362,6 +362,12 @@ az functionapp config appsettings list \
   --name $APP_NAME \
   --resource-group $RESOURCE_GROUP \
   | jq '.[] | select(.name=="DD_TRACE_DEBUG")'
+
+# Check if DD_API_KEY exists (without retrieving the value)
+az functionapp config appsettings list \
+  --name $APP_NAME \
+  --resource-group $RESOURCE_GROUP \
+  --query "[?name=='DD_API_KEY'].name" -o tsv
 
 # Enable debug logging
 az functionapp config appsettings set \
@@ -375,6 +381,8 @@ az functionapp config appsettings set \
   --resource-group $RESOURCE_GROUP \
   --settings DD_TRACE_DEBUG=0
 ```
+
+**CRITICAL**: Never retrieve or display the actual value of `DD_API_KEY`. Use the query command above to check for its existence only.
 
 ### App Lifecycle Management
 ```bash
