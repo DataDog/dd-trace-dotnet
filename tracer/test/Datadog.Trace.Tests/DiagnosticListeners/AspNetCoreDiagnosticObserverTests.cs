@@ -200,7 +200,7 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
             return tracer;
         }
 
-        private static (Security Security, Iast.Iast Iast) GetSecurity()
+        private static (Security Security, Datadog.Trace.Iast.Iast Iast) GetSecurity()
         {
             var settings = new NameValueConfigurationSource(new()
             {
@@ -211,7 +211,7 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
             var security = new Security(
                 new SecuritySettings(settings, NullConfigurationTelemetry.Instance),
                 rcmSubscriptionManager: Mock.Of<IRcmSubscriptionManager>());
-            var iast = new Iast.Iast(new IastSettings(NullConfigurationSource.Instance, NullConfigurationTelemetry.Instance), NullDiscoveryService.Instance);
+            var iast = new Datadog.Trace.Iast.Iast(new IastSettings(NullConfigurationSource.Instance, NullConfigurationTelemetry.Instance), NullDiscoveryService.Instance);
             return (security, iast);
         }
 
