@@ -300,7 +300,7 @@ Connection reset by peer
 Build failed in XX:XX:XX (timeout)
 ```
 
-**Recommendation**: Retry the build once. If the failure persists after 2 consecutive runs, reach out in the **#apm-dotnet** Slack channel for assistance.
+**Recommendation**: Retry the build once. If the failure persists after 2 consecutive runs, investigate and alert the **#apm-dotnet** Slack channel.
 
 ## API Reference
 

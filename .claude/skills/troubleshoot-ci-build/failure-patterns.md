@@ -4,7 +4,7 @@ Reference guide for categorizing and troubleshooting common CI failures in dd-tr
 
 ## Infrastructure Failures
 
-These are typically transient issues with CI infrastructure, not code problems. **Recommendation: Retry the build.**
+These are typically transient issues with CI infrastructure, not code problems. **Recommendation: Retry the build. Alert #apm-dotnet if persistent after retries.**
 
 ### Docker Rate Limiting
 
@@ -55,7 +55,7 @@ Test run timed out after 600000 ms
 
 **Solution**:
 - Retry the build
-- If persistent, investigate test performance
+- If persistent, investigate test performance and alert **#apm-dotnet** on Slack
 
 #### Timeout via Cancellation
 
@@ -74,11 +74,11 @@ Test run timed out after 600000 ms
 - Stage: `integration_tests_linux` - result: "failed"
 - Job: `DockerTest alpine_netcoreapp3.0_group1` - result: "canceled", duration: 60.3 min
 - Diagnosis: Job timed out, causing stage to fail
-- Action: Retry once; investigate if persistent (check test performance, resource contention)
+- Action: Retry once; if persistent, investigate and alert **#apm-dotnet** on Slack (check test performance, resource contention)
 
 **Solution**:
 - Retry the build (may be transient infrastructure slowness)
-- If persistent after 2 runs, investigate:
+- If persistent after 2 runs, investigate and alert **#apm-dotnet** on Slack:
   - Check job logs for stuck tests or infinite loops
   - Look for resource contention (CPU, memory, I/O)
   - Compare with successful runs to identify anomalies
@@ -104,7 +104,7 @@ out of disk space
 
 ## Flaky Tests
 
-Tests that intermittently fail, often passing on retry. **Recommendation: Retry, then investigate if persistent.**
+Tests that intermittently fail, often passing on retry. **Recommendation: Retry, then investigate and alert #apm-dotnet if persistent.**
 
 ### Stack Walking Failures (Alpine/musl)
 
@@ -135,7 +135,7 @@ Failed to walk N stacks for sampled exception: E_FAIL
 **Solution**:
 - Likely flaky test
 - Check if it passed on retry
-- If still failing after retries, investigate deeper
+- If still failing after retries, investigate deeper and alert **#apm-dotnet** on Slack
 
 ---
 
@@ -174,7 +174,7 @@ Failed to initialize security
 **Solution**:
 - Check if also failing in master
 - Retry if isolated to PR
-- If persistent across master and PR, may need investigation
+- If persistent across master and PR, investigate and alert **#apm-dotnet** on Slack
 
 **Example Build**: 195137 (failed on both PR and master)
 
@@ -461,7 +461,7 @@ Are there canceled jobs?
 | `toomanyrequests`, `rate limit` | Infrastructure | Retry | Low |
 | `TLS handshake`, `Connection reset` | Infrastructure | Retry | Low |
 | `maximum execution time` | Infrastructure | Retry | Medium |
-| Canceled job, duration >= 55 min | Infrastructure (Timeout) | Retry, investigate if persistent | Medium |
+| Canceled job, duration >= 55 min | Infrastructure (Timeout) | Retry, alert #apm-dotnet if persistent | Medium |
 | Canceled job, duration < 5 min | Collateral | Check parent failure cause | None |
 | `Failed to walk N stacks` | Flaky | Retry, monitor | Low |
 | `previousAttempts > 0` | Flaky | Retry | Low |
@@ -481,7 +481,7 @@ Are there canceled jobs?
 - Known flaky tests (Alpine stack walking)
 - Tests failing on only one runtime but passing on others
 
-### Investigate Immediately
+### Investigate Immediately (and Alert #apm-dotnet)
 - Compilation errors
 - Segmentation faults / access violations
 - Tests failing consistently across all runtimes
