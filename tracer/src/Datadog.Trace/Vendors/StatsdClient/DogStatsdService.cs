@@ -4,6 +4,7 @@
 //------------------------------------------------------------------------------
 using System;
 using System.Globalization;
+using System.Threading.Tasks;
 using Datadog.Trace.Vendors.StatsdClient.Bufferize;
 
 namespace Datadog.Trace.Vendors.StatsdClient
@@ -12,7 +13,7 @@ namespace Datadog.Trace.Vendors.StatsdClient
     /// DogStatsdService is a <a href="https://docs.datadoghq.com/developers/dogstatsd/?tab=net">DogStatsD client</a>.
     /// Dispose must be called to flush all the metrics.
     /// </summary>
-    internal class DogStatsdService : IDogStatsd, IDisposable
+    internal class DogStatsdService : IDogStatsd
     {
         private StatsdBuilder _statsdBuilder = new StatsdBuilder(new StatsBufferizeFactory());
         private MetricsSender _metricsSender;
@@ -258,10 +259,14 @@ namespace Datadog.Trace.Vendors.StatsdClient
         /// Disposes an instance of DogStatsdService.
         /// Flushes all metrics.
         /// </summary>
-        public void Dispose()
+        public async Task DisposeAsync()
         {
-            _statsdData?.Dispose();
-            _statsdData = null;
+            var statsd = _statsdData;
+            if (statsd is not null)
+            {
+                _statsdData = null;
+                await statsd.DisposeAsync().ConfigureAwait(false);
+            }
         }
     }
 }
