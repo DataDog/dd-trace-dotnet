@@ -11,6 +11,45 @@ Quick reference scripts and commands for Azure Functions development workflow.
 
 **Note**: These scripts use PowerShell-specific cmdlets (e.g., `Expand-Archive`, `Invoke-RestMethod`) that cannot be easily replicated in bash. Always prefer `pwsh` over `powershell.exe` when both are available.
 
+### Test-EnvVars.ps1
+
+Verifies Datadog instrumentation environment variables on an Azure Function App.
+
+**Location**: `.claude/skills/azure-functions/Test-EnvVars.ps1`
+
+**Basic usage**:
+```powershell
+# Check required variables only
+./.claude/skills/azure-functions/Test-EnvVars.ps1 -AppName "<app-name>" -ResourceGroup "<resource-group>"
+
+# Include recommended variables
+./.claude/skills/azure-functions/Test-EnvVars.ps1 -AppName "<app-name>" -ResourceGroup "<resource-group>" -IncludeRecommended
+```
+
+**Parameters**:
+- `-AppName` (required) - Azure Function App name
+- `-ResourceGroup` (required) - Azure resource group
+- `-IncludeRecommended` (switch) - Also validate recommended variables (feature disables, etc.)
+
+**What it checks**:
+1. Function app state (Running, Stopped, etc.)
+2. Platform detection (Linux vs Windows)
+3. Required variables: `CORECLR_ENABLE_PROFILING`, `CORECLR_PROFILER`, `DD_DOTNET_TRACER_HOME`, `DD_API_KEY`, `DOTNET_STARTUP_HOOKS`, plus platform-specific profiler path(s)
+4. Recommended variables (with `-IncludeRecommended`): `DD_APPSEC_ENABLED`, `DD_CIVISIBILITY_ENABLED`, `DD_REMOTE_CONFIGURATION_ENABLED`, `DD_AGENT_FEATURE_POLLING_ENABLED`, `DD_TRACE_Process_ENABLED`
+
+**Output**: `[PSCustomObject]` with `AppName`, `Platform`, `State`, `RequiredVars`, `RecommendedVars`, `AllRequiredPresent`, `Issues`
+
+**Security**: `DD_API_KEY` existence is checked but its value is **never** retrieved or displayed.
+
+**Pipeline usage** (pre-deployment check):
+```powershell
+$envCheck = ./.claude/skills/azure-functions/Test-EnvVars.ps1 -AppName "<app-name>" -ResourceGroup "<resource-group>"
+if (-not $envCheck.AllRequiredPresent) {
+    Write-Error "Required environment variables are missing — configure them first"
+    exit 1
+}
+```
+
 ### Find-NuGetConfig.ps1
 
 Searches for `nuget.config` file by walking up the directory hierarchy from a starting path.

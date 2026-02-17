@@ -115,7 +115,7 @@ The sample app should use a floating version like `3.38.0-dev.*` in its package 
 
 ### 2. Deploy Function
 
-**IMPORTANT**: Before deploying, verify that a `nuget.config` file exists in the sample app directory or a parent directory. This file is required for `dotnet restore` to resolve the locally-built `Datadog.AzureFunctions` package from the local NuGet feed.
+**IMPORTANT**: Before deploying, verify prerequisites:
 
 **Verify nuget.config exists**:
 ```powershell
@@ -125,6 +125,15 @@ if (-not $nugetConfig) {
     exit 1
 }
 Write-Host "Found nuget.config at: $nugetConfig"
+```
+
+**Verify environment variables are configured**:
+```powershell
+$envCheck = ./.claude/skills/azure-functions/Test-EnvVars.ps1 -AppName "<app-name>" -ResourceGroup "<resource-group>"
+if (-not $envCheck.AllRequiredPresent) {
+    Write-Error "Required environment variables are missing. Run '/azure-functions configure' first."
+    exit 1
+}
 ```
 
 Use the `Deploy-AzureFunction.ps1` script to automate deployment, wait, and trigger:
@@ -312,10 +321,18 @@ After deployment and testing:
 **General guidance**: For environment variable configuration issues, see [environment-variables.md](environment-variables.md) for complete reference on required, recommended, and debugging variables.
 
 ### Function Not Responding
-```bash
-# Check deployment status
-az functionapp show --name <app-name> --resource-group <resource-group>
 
+**First, check if the app is running**:
+```powershell
+$envCheck = ./.claude/skills/azure-functions/Test-EnvVars.ps1 -AppName "<app-name>" -ResourceGroup "<resource-group>"
+if ($envCheck.State -ne "Running") {
+    Write-Host "App is '$($envCheck.State)' — starting it..."
+    az functionapp start --name <app-name> --resource-group <resource-group>
+}
+```
+
+If the app is running but not responding:
+```bash
 # Restart function app
 az functionapp restart --name <app-name> --resource-group <resource-group>
 ```
@@ -331,18 +348,18 @@ grep "Assembly metadata" LogFiles/datadog/dotnet-tracer-managed-dotnet-*.log
 ```
 
 ### Traces Not Appearing in Datadog
-```bash
-# Verify DD_API_KEY is set (check existence only, never retrieve value)
-az functionapp config appsettings list \
-  --name <app-name> \
-  --resource-group <resource-group> \
-  --query "[?name=='DD_API_KEY'].name" -o tsv
 
-# Check worker initialization in logs
+**Verify all required environment variables** (including DD_API_KEY, profiler paths, etc.):
+```powershell
+./.claude/skills/azure-functions/Test-EnvVars.ps1 -AppName "<app-name>" -ResourceGroup "<resource-group>" -IncludeRecommended
+```
+
+If all env vars pass, check worker initialization in logs:
+```bash
 grep "Datadog Tracer initialized" LogFiles/datadog/dotnet-tracer-managed-dotnet-*.log
 ```
 
-**Environment variables**: Verify all required environment variables are configured correctly. See [environment-variables.md](environment-variables.md) for complete reference.
+**Complete reference**: See [environment-variables.md](environment-variables.md) for all available variables.
 
 ### Separate Traces (Parenting Issue)
 1. Get trace ID from host logs at execution timestamp
@@ -458,7 +475,7 @@ When invoked with `/azure-functions configure [app-name]`:
 If invoked without arguments (`/azure-functions`), guide the user through:
 
 1. **Understand the goal**: What are they testing? (New feature, bug fix, trace verification, initial setup)
-2. **Check configuration**: Ask if environment variables are configured (offer to run `/azure-functions configure`)
+2. **Check configuration**: Run `Test-EnvVars.ps1` to verify environment variables. If issues are found, offer to run `/azure-functions configure`
 3. **Verify .csproj**: Check that `Datadog.AzureFunctions.csproj` uses PackageReference (not ProjectReference) for local testing (see step 1 above)
 4. **Build**: Run Build-AzureFunctionsNuget.ps1
 5. **Select app**: Which test app to deploy to?
