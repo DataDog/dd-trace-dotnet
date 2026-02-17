@@ -208,6 +208,33 @@ Xunit.Sdk.EqualException
 
 ---
 
+### Snapshot Mismatches
+
+**Patterns**:
+```
+Received file does not match the verified file
+*.received.* vs *.verified.*
+Verify assertion failure
+```
+
+**Common test names**: `*.SubmitsTraces` and other integration tests in `Datadog.Trace.ClrProfiler.IntegrationTests` — but only when the error is a snapshot content diff, not a span count mismatch.
+
+**Important**: `SubmitsTraces` tests typically assert on span count first (`Expected N spans but got M`), then compare snapshots. A span count mismatch indicates missing/extra instrumentation and is a **Test Assertion Failure** (see above), not a snapshot problem. Updating snapshots won't help in that case.
+
+**Cause**: Code changes affected trace output (span tags, names, ordering, etc.). The actual output (`.received.txt`) no longer matches the expected snapshots (`.verified.txt` files in `tracer/test/snapshots/`).
+
+**Solution**:
+- If the changes are **intentional**, update snapshots:
+  - **Windows**: `./tracer/build.ps1 UpdateSnapshotsFromBuild --BuildId <BUILD_ID>`
+  - **Linux/macOS**: `./tracer/build.sh UpdateSnapshotsFromBuild --BuildId <BUILD_ID>`
+  - This downloads `.received.txt` artifacts from the CI build and replaces local `.verified.txt` files
+  - The build must have run far enough to produce snapshot artifacts (even if tests failed)
+- If the changes are **unintentional**, investigate the code change that caused the regression
+
+**Example**: Integration test `HttpClientTests.HttpClient_GetAsync_SubmitsTraces` fails because a new span tag was added, changing the snapshot output.
+
+---
+
 ### Compilation Errors
 
 **Patterns**:
@@ -418,7 +445,11 @@ Are there canceled jobs?
         ├─ Yes → **Flaky** (retry, alert #apm-dotnet if persistent)
         └─ No → Does it have previousAttempts > 0 or is it a known flaky test?
             ├─ Yes → **Flaky** (retry, monitor)
-            └─ No → **Real Failure** (investigate)
+            └─ No → Is the error a snapshot content diff (*.received.* vs *.verified.*)?
+                ├─ Yes → **Snapshot Mismatch** (update snapshots if intentional, investigate if not)
+                └─ No → **Real Failure** (investigate)
+                    Note: SubmitsTraces tests with span count mismatches are real failures, not snapshot issues
+
 ```
 
 ---
@@ -436,6 +467,7 @@ Are there canceled jobs?
 | `previousAttempts > 0` | Flaky | Retry | Low |
 | Fails on 1 runtime, passes on others | Flaky | Retry, alert #apm-dotnet if persistent | Low |
 | `Expected X but got Y` | Real | Investigate | **High** |
+| `Received file does not match` | Real (Snapshot) | Update snapshots or investigate | **High** |
 | `error CS`, `MSB` | Real | Fix code | **High** |
 | `SIGSEGV`, `Access Violation` | Real | Investigate urgently | **Critical** |
 

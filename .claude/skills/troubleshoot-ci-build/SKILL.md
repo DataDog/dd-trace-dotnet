@@ -102,6 +102,26 @@ The script outputs:
 
 Present a concise summary and ask what they want to investigate next.
 
+#### Snapshot Mismatch Detection
+
+After presenting the quick summary, check if any failed tests are likely snapshot verification failures. Detect these by looking for:
+
+- **Error messages** containing `Received file does not match`, `*.received.*` vs `*.verified.*` diffs, or Verify assertion failures
+- **Test names** containing `SubmitsTraces` in `Datadog.Trace.ClrProfiler.IntegrationTests.*` — but **only if** the error is a snapshot diff, not a span count mismatch
+
+**Important**: `SubmitsTraces` tests typically assert on span count first (`Expected N spans but got M`), then compare snapshots. A span count mismatch is a deeper issue (missing/extra instrumentation), not a snapshot problem — updating snapshots won't help. Only suggest snapshot updates when the error is specifically about snapshot file content differences.
+
+If snapshot failures are detected:
+
+1. Include the **"Snapshot Mismatches Detected"** block in the Phase 1 output (see Output Format below)
+2. Add the **"Update snapshots"** option to the investigation menu
+3. If the user chooses to update snapshots, run:
+   - **Windows**: `./tracer/build.ps1 UpdateSnapshotsFromBuild --BuildId <BUILD_ID>`
+   - **Linux/macOS**: `./tracer/build.sh UpdateSnapshotsFromBuild --BuildId <BUILD_ID>`
+   - This downloads `.received.txt` snapshot artifacts from the CI build and replaces local `.verified.txt` files in `tracer/test/snapshots/`
+   - **Prerequisite**: The build must have run far enough to produce snapshot artifacts (even if tests failed)
+   - If the changes are unintentional, the developer should investigate the code change instead of updating snapshots
+
 ### PHASE 2: Deep Analysis (Only If Requested)
 
 **DO NOT perform these steps automatically**. Only do them if the user asks for:
@@ -175,6 +195,18 @@ _(Note: Jobs canceled quickly, likely due to parent stage failure)_
 ...
 _(Note: List specific test names extracted from error messages, if test failures detected)_
 
+**Snapshot Mismatches Detected** _(if applicable — show only when snapshot failures are detected)_
+
+The following failed tests likely involve snapshot verification:
+- `TestClass.SubmitsTraces`
+- ...
+
+To update snapshots from this build:
+- **Windows**: `./tracer/build.ps1 UpdateSnapshotsFromBuild --BuildId <BUILD_ID>`
+- **Linux/macOS**: `./tracer/build.sh UpdateSnapshotsFromBuild --BuildId <BUILD_ID>`
+
+This downloads the `.received.txt` snapshot artifacts from CI and replaces your local `.verified.txt` files.
+
 ---
 
 ## 🔍 What would you like to investigate?
@@ -182,6 +214,7 @@ _(Note: List specific test names extracted from error messages, if test failures
 1. **Categorize failures** - Analyze failure types (infrastructure/flaky/real)
 2. **View specific logs** - Download logs for failed tasks
 3. **Show full analysis** - Run complete analysis with all details
+4. **Update snapshots** - Download and apply updated snapshots from this build _(shown only when snapshot failures detected)_
 
 [View build in Azure DevOps](https://dev.azure.com/datadoghq/dd-trace-dotnet/_build/results?buildId=<BUILD_ID>&view=logs)
 ```
