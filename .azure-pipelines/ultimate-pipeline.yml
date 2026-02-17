@@ -33,6 +33,7 @@ pr:
       - docs/
       - tracer/README.MD
       - tracer/samples/
+      - tracer/tools/Build-AzureFunctionsNuget.ps1
       - AGENTS.md
       - LICENSE
       - NOTICE

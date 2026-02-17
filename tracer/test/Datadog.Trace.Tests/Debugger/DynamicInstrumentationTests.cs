@@ -40,7 +40,7 @@ public class DynamicInstrumentationTests
         var logUploader = new LogUploaderMock();
         var diagnosticsUploader = new UploaderMock();
         var probeStatusPoller = new ProbeStatusPollerMock();
-        var updater = ConfigurationUpdater.Create("env", "version");
+        var updater = ConfigurationUpdater.Create("env", "version", 0);
 
         var debugger = new DynamicInstrumentation(settings, discoveryService, rcmSubscriptionManagerMock, lineProbeResolver, snapshotUploader, logUploader, diagnosticsUploader, probeStatusPoller, updater, NoOpStatsd.Instance);
         debugger.Initialize();
@@ -77,7 +77,7 @@ public class DynamicInstrumentationTests
         var logUploader = new LogUploaderMock();
         var diagnosticsUploader = new UploaderMock();
         var probeStatusPoller = new ProbeStatusPollerMock();
-        var updater = ConfigurationUpdater.Create(string.Empty, string.Empty);
+        var updater = ConfigurationUpdater.Create(string.Empty, string.Empty, 0);
 
         var debugger = new DynamicInstrumentation(settings, discoveryService, rcmSubscriptionManagerMock, lineProbeResolver, snapshotUploader, logUploader, diagnosticsUploader, probeStatusPoller, updater, NoOpStatsd.Instance);
         debugger.Initialize();

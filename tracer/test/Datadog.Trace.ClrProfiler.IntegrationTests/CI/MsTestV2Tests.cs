@@ -104,6 +104,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                             targetSpan.Tags.Remove(TestTags.TestIsNew);
                             targetSpan.Tags.Remove(TestTags.TestIsRetry);
 
+                            // Remove test final status
+                            targetSpan.Tags.Remove(TestTags.TestFinalStatus);
+
                             // Remove capabilities
                             targetSpan.Tags.Remove(CapabilitiesTags.LibraryCapabilitiesAutoTestRetries);
                             targetSpan.Tags.Remove(CapabilitiesTags.LibraryCapabilitiesTestManagementQuarantine);

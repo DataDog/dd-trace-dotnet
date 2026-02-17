@@ -21,7 +21,6 @@ using Datadog.Trace.Debugger.Upload;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Util;
-using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using OperationCanceledException = System.OperationCanceledException;
 

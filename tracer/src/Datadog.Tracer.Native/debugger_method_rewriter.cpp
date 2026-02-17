@@ -2239,6 +2239,7 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
     ULONG callTargetStateIndex = static_cast<ULONG>(ULONG_MAX);
     ULONG exceptionIndex = static_cast<ULONG>(ULONG_MAX);
     ULONG callTargetReturnIndex = static_cast<ULONG>(ULONG_MAX);
+    ULONG staticValueTypeIndex = static_cast<ULONG>(ULONG_MAX);
     ULONG returnValueIndex = static_cast<ULONG>(ULONG_MAX);
     mdToken callTargetStateToken = mdTokenNil;
     mdToken exceptionToken = mdTokenNil;
@@ -2275,8 +2276,8 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
         methodReturnType = caller->method_signature.GetReturnValue();
     }
     auto debuggerLocals = std::vector<ULONG>(debuggerTokens->GetAdditionalLocalsCount(methodArguments));
-    hr = debuggerTokens->ModifyLocalSigAndInitialize(&rewriterWrapper, &methodReturnType, &methodArguments, &callTargetStateIndex, &exceptionIndex,
-                                                     &callTargetReturnIndex, &returnValueIndex, &callTargetStateToken,
+    hr = debuggerTokens->ModifyLocalSigAndInitialize(&rewriterWrapper, &methodReturnType, &methodArguments, caller, &callTargetStateIndex, &exceptionIndex,
+                                                     &callTargetReturnIndex, &staticValueTypeIndex, &returnValueIndex, &callTargetStateToken,
                                                      &exceptionToken, &callTargetReturnToken, &firstInstruction, debuggerLocals, isAsyncMethod);
 
     ULONG lineProbeCallTargetStateIndex = debuggerLocals[0];

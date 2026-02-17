@@ -157,6 +157,21 @@ internal static class TestTags
     public const string TestRetryReason = "test.retry_reason";
 
     /// <summary>
+    /// Retry reason value for Early Flake Detection
+    /// </summary>
+    public const string TestRetryReasonEfd = "efd";
+
+    /// <summary>
+    /// Retry reason value for Auto Test Retries
+    /// </summary>
+    public const string TestRetryReasonAtr = "atr";
+
+    /// <summary>
+    /// Retry reason value for Attempt to Fix (Test Management)
+    /// </summary>
+    public const string TestRetryReasonAttemptToFix = "attempt_to_fix";
+
+    /// <summary>
     /// Test is quarantined flag
     /// </summary>
     public const string TestIsQuarantined = "test.test_management.is_quarantined";
@@ -185,4 +200,9 @@ internal static class TestTags
     /// Test management enabled flag
     /// </summary>
     public const string TestManagementEnabled = "test.test_management.enabled";
+
+    /// <summary>
+    /// Test final status - the adjusted test outcome for CI pipelines
+    /// </summary>
+    public const string TestFinalStatus = "test.final_status";
 }
