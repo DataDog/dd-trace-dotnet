@@ -126,6 +126,7 @@ function Invoke-AzDevOpsApi {
     if ($LASTEXITCODE -ne 0) {
         $errorMsg = @"
 Azure DevOps API call failed
+  Command: $cmdDisplay
   Area: $Area
   Resource: $Resource
   Exit Code: $LASTEXITCODE
