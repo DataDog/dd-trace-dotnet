@@ -1,4 +1,6 @@
 #!/usr/bin/env pwsh
+#Requires -Version 5.1
+
 <#
 .SYNOPSIS
     Verifies Datadog instrumentation environment variables on an Azure Function App.

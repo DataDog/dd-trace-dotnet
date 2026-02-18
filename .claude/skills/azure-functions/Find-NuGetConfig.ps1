@@ -1,4 +1,6 @@
 #!/usr/bin/env pwsh
+#Requires -Version 5.1
+
 <#
 .SYNOPSIS
     Finds nuget.config by searching up the directory hierarchy.
