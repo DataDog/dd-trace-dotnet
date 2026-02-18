@@ -61,8 +61,31 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 tags.DbUser = tagsFromConnectionString.DbUser;
                 tags.OutHost = tagsFromConnectionString.OutHost;
 
+                Log.Debug(
+                    "DBM: Span tags populated from connection string. DbName: {DbNameSet}, DbUser: {DbUserSet}, OutHost: {OutHostSet}, DbType: '{DbType}'",
+                    !string.IsNullOrEmpty(tags.DbName),
+                    !string.IsNullOrEmpty(tags.DbUser),
+                    !string.IsNullOrEmpty(tags.OutHost),
+                    tags.DbType);
+
                 tags.SetAnalyticsSampleRate(integrationId, perTraceSettings.Settings, enabledWithGlobalSetting: false);
                 perTraceSettings.Schema.RemapPeerService(tags);
+
+                // Log peer.service resolution for DBM UI compatibility
+                if (tags is SqlV1Tags sqlV1Tags)
+                {
+                    Log.Information(
+                        "DBM: Span peer.service resolved. PeerServicePresent: {PeerServicePresent}, PeerServiceSource: '{PeerServiceSource}', ServiceNamePresent: {ServiceNamePresent}",
+                        !string.IsNullOrEmpty(sqlV1Tags.PeerService),
+                        sqlV1Tags.PeerServiceSource,
+                        !string.IsNullOrEmpty(serviceName));
+                }
+                else
+                {
+                    Log.Debug(
+                        "DBM: Using legacy SqlTags (no peer.service support). ServiceNamePresent: {ServiceNamePresent}",
+                        !string.IsNullOrEmpty(serviceName));
+                }
 
                 scope = tracer.StartActiveInternal(operationName, tags: tags, serviceName: serviceName);
                 scope.Span.ResourceName = commandText;
@@ -79,11 +102,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             {
                 if (tracer.Settings.DbmPropagationMode != DbmPropagationLevel.Disabled)
                 {
+                    Log.Debug("DBM: Propagation mode is '{DbmMode}'. Checking if DBM metadata needs injection for integration '{IntegrationId}', command type '{CommandType}'", tracer.Settings.DbmPropagationMode, integrationId, command.CommandType);
+
                     var alreadyInjected = commandText.StartsWith(DatabaseMonitoringPropagator.DbmPrefix) ||
                                           // if we appended the comment, we need to look for a potential DBM comment in the whole string.
                                           (DatabaseMonitoringPropagator.ShouldAppend(integrationId, commandText) && commandText.Contains(DatabaseMonitoringPropagator.DbmPrefix));
                     if (alreadyInjected)
                     {
+                        Log.Debug("DBM: Command text already contains DBM metadata (cached command detected). Integration: '{IntegrationId}'", integrationId);
+
                         // The command text is already injected, so they're probably caching the SqlCommand
                         // that's not a problem if they're using 'service' mode, but it _is_ a problem for 'full' mode
                         // There's not a lot we can do about it (we don't want to start parsing commandText), so just
@@ -102,17 +129,35 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                     }
                     else
                     {
+                        Log.Debug("DBM: Starting DBM metadata injection. Integration: '{IntegrationId}'", integrationId);
+
                         // PropagateDataViaComment (service) - this injects varius trace information as a comment in the query
                         // PropagateDataViaContext (full)    - this makes a special set context_info for Microsoft SQL Server (nothing else supported)
+                        Log.Information(
+                            "DBM: About to call PropagateDataViaComment. Mode: '{Mode}', Integration: '{IntegrationId}', DefaultServiceName: '{ServiceName}', DbName: '{DbName}', OutHost: '{OutHost}'",
+                            new object[] { tracer.Settings.DbmPropagationMode, integrationId, tracer.DefaultServiceName, tagsFromConnectionString.DbName ?? "null", tagsFromConnectionString.OutHost ?? "null" });
+
                         var traceParentInjectedInComment = DatabaseMonitoringPropagator.PropagateDataViaComment(tracer.Settings.DbmPropagationMode, integrationId, command, tracer.DefaultServiceName, tagsFromConnectionString.DbName, tagsFromConnectionString.OutHost, scope.Span, tracer.Settings.InjectContextIntoStoredProceduresEnabled);
+                        Log.Information("DBM: PropagateDataViaComment result: traceParentInjected={TraceParentInjected}, integration='{IntegrationId}'", traceParentInjectedInComment, integrationId);
+
                         // try context injection only after comment injection, so that if it fails, we still have service level propagation
                         var traceParentInjectedInContext = DatabaseMonitoringPropagator.PropagateDataViaContext(tracer.Settings.DbmPropagationMode, integrationId, command, scope.Span);
+                        Log.Debug("DBM: PropagateDataViaContext result: traceParentInjected={TraceParentInjected}, integration='{IntegrationId}'", traceParentInjectedInContext, integrationId);
 
                         if (traceParentInjectedInComment || traceParentInjectedInContext)
                         {
+                            Log.Information("DBM: Successfully injected DBM metadata. SpanId: {SpanId}, TraceId: {TraceId}, Integration: '{IntegrationId}'", scope.Span.SpanId, scope.Span.TraceId, integrationId);
                             tags.DbmTraceInjected = "true";
                         }
+                        else
+                        {
+                            Log.Debug("DBM: No traceparent injection occurred (service-level propagation only or unsupported integration). Integration: '{IntegrationId}'", integrationId);
+                        }
                     }
+                }
+                else
+                {
+                    Log.Debug("DBM: Propagation mode is Disabled. Skipping DBM metadata injection.");
                 }
             }
             catch (Exception ex)

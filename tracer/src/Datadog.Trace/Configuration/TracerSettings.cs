@@ -587,12 +587,14 @@ namespace Datadog.Trace.Configuration
                                                   ? TrimSplitString(urlSubstringSkips.ToUpperInvariant(), commaSeparator)
                                                   : [];
 
+            Log.Debug("DBM: Reading DD_DBM_PROPAGATION_MODE configuration from environment");
             DbmPropagationMode = config
                                 .WithKeys(ConfigurationKeys.DbmPropagationMode)
                                 .GetAs(
                                      defaultValue: new(DbmPropagationLevel.Disabled, nameof(DbmPropagationLevel.Disabled)),
                                      converter: x => ToDbmPropagationInput(x) ?? ParsingResult<DbmPropagationLevel>.Failure(),
                                      validator: null);
+            Log.Information("DBM: Configuration loaded. DbmPropagationMode={DbmPropagationMode}", DbmPropagationMode);
 
             RemoteConfigurationEnabled = config.WithKeys(ConfigurationKeys.Rcm.RemoteConfigurationEnabled).AsBool(true);
 
@@ -1364,16 +1366,21 @@ namespace Datadog.Trace.Configuration
         private static DbmPropagationLevel? ToDbmPropagationInput(string inputValue)
         {
             inputValue = inputValue.Trim(); // we know inputValue isn't null (and have tests for it)
+            Log.Debug("DBM: Parsing DD_DBM_PROPAGATION_MODE environment variable, raw value: '{PropagationInput}'", inputValue);
+
             if (inputValue.Equals("disabled", StringComparison.OrdinalIgnoreCase))
             {
+                Log.Information("DBM: Propagation mode set to 'Disabled'. No DBM metadata will be injected into database queries.");
                 return DbmPropagationLevel.Disabled;
             }
             else if (inputValue.Equals("service", StringComparison.OrdinalIgnoreCase))
             {
+                Log.Information("DBM: Propagation mode set to 'Service'. Service-level tags (service name, env, version) will be injected as SQL comments.");
                 return DbmPropagationLevel.Service;
             }
             else if (inputValue.Equals("full", StringComparison.OrdinalIgnoreCase))
             {
+                Log.Information("DBM: Propagation mode set to 'Full'. Service tags + traceparent (trace ID, span ID) will be injected for full correlation.");
                 return DbmPropagationLevel.Full;
             }
             else
