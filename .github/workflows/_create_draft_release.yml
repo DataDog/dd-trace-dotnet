@@ -108,7 +108,6 @@ jobs:
            echo "  1. Create a new trusted policy using your nuget user. Follow the example in https://github.com/DataDog/dd-trace-dotnet/pull/8209" >&2
            echo "  2. Replace the NUGET_TRUSTED_PUBLISHING_USERNAME GitHub secret with your nuget.org username (not email) at https://github.com/DataDog/dd-trace-dotnet/settings/secrets/actions " >&2
            echo "  3. Try running this release again" >&2
-            echo "and then try running this release again" >&2
             exit 1
           fi
           
