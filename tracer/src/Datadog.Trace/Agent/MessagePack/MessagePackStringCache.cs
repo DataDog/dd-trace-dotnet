@@ -32,7 +32,7 @@ internal static class MessagePackStringCache
     [ThreadStatic]
     private static CachedBytes _service;
 
-    // Today, process tags may change only when the service name isn't the default one anymore
+    // Process tags can change when the service name is changed in configuration which shouldn't happen often.
     [ThreadStatic]
     private static CachedBytes _processTags;
 

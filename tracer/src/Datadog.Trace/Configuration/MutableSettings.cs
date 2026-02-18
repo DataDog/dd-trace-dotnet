@@ -62,7 +62,8 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         string? gitRepositoryUrl,
         string? gitCommitSha,
         OverrideErrorLog errorLog,
-        bool propagateProcessTags)
+        bool propagateProcessTags,
+        string fallbackServiceName)
     {
         IsInitialSettings = isInitialSettings;
         TraceEnabled = traceEnabled;
@@ -92,7 +93,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         GitRepositoryUrl = gitRepositoryUrl;
         GitCommitSha = gitCommitSha;
         ErrorLog = errorLog;
-        ProcessTags = propagateProcessTags ? new ProcessTags(!string.IsNullOrWhiteSpace(serviceName), defaultServiceName) : null;
+        ProcessTags = propagateProcessTags ? new ProcessTags(!string.IsNullOrWhiteSpace(serviceName), fallbackServiceName) : null;
     }
 
     // Settings that can be set via remote config
@@ -742,7 +743,8 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
             gitRepositoryUrl: gitRepositoryUrl,
             gitCommitSha: gitCommitSha,
             errorLog: errorLog,
-            propagateProcessTags: tracerSettings.PropagateProcessTags);
+            propagateProcessTags: tracerSettings.PropagateProcessTags,
+            fallbackServiceName: tracerSettings.FallbackApplicationName);
 
         static ReadOnlyDictionary<string, string> GetHeaderTagsResult(
             ConfigurationBuilder.ClassConfigurationResultWithKey<IDictionary<string, string>> result,
@@ -1074,7 +1076,8 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
             gitRepositoryUrl: gitRepositoryUrl,
             gitCommitSha: gitCommitSha,
             errorLog: errorLog,
-            propagateProcessTags: tracerSettings.PropagateProcessTags);
+            propagateProcessTags: tracerSettings.PropagateProcessTags,
+            fallbackServiceName: tracerSettings.FallbackApplicationName);
     }
 
     /// <summary>
