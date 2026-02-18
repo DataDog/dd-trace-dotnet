@@ -10,7 +10,10 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
+using System.Text;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Util;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.Routing.Template;
@@ -248,120 +251,156 @@ internal static class AspNetCoreResourceNameHelper
         string? actionName,
         bool expandRouteParameters)
     {
+        // note that this is not accurate if expandRouteParameters=true, but we don't have a good fallback for that
         var maxSize = (routePattern.TemplateText?.Length ?? 0)
                     + (string.IsNullOrEmpty(areaName) ? 0 : Math.Max(areaName!.Length - 4, 0)) // "area".Length
                     + (string.IsNullOrEmpty(controllerName) ? 0 : Math.Max(controllerName!.Length - 10, 0)) // "controller".Length
                     + (string.IsNullOrEmpty(actionName) ? 0 : Math.Max(actionName!.Length - 6, 0)) // "action".Length
                     + 1; // '/' prefix
 
+#if NETCOREAPP
+        var sb = maxSize < 512
+                     ? new ValueStringBuilder(stackalloc char[512])
+                     : new ValueStringBuilder(); // too big to use stackallocation, so use array builder
+#else
+        // In .NET Core 2.1, the ValueStringBuilder doesn't actually improve anything
         var sb = StringBuilderCache.Acquire(maxSize);
+#endif
 
-        foreach (var pathSegment in routePattern.Segments)
+        // Remove the boxing of the enumerator
+        // In all versions of .NET, this is implemented as a List<TemplateSegment>
+        // https://github.com/aspnet/Routing/blob/release/2.1/src/Microsoft.AspNetCore.Routing/Template/RouteTemplate.cs
+        // https://github.com/aspnet/Routing/blob/release/2.2/src/Microsoft.AspNetCore.Routing/Template/RouteTemplate.cs
+        // https://github.com/dotnet/aspnetcore/blob/v3.0.0/src/Http/Routing/src/Template/RouteTemplate.cs
+        // https://github.com/dotnet/aspnetcore/blob/v3.1.0/src/Http/Routing/src/Template/RouteTemplate.cs
+        // https://github.com/dotnet/aspnetcore/blob/v5.0.0/src/Http/Routing/src/Template/RouteTemplate.cs
+        // https://github.com/dotnet/aspnetcore/blob/v6.0.0/src/Http/Routing/src/Template/RouteTemplate.cs
+        // https://github.com/dotnet/aspnetcore/blob/v7.0.0/src/Http/Routing/src/Template/RouteTemplate.cs
+        // https://github.com/dotnet/aspnetcore/blob/v8.0.0/src/Http/Routing/src/Template/RouteTemplate.cs
+        // https://github.com/dotnet/aspnetcore/blob/v9.0.0/src/Http/Routing/src/Template/RouteTemplate.cs
+        // https://github.com/dotnet/aspnetcore/blob/main/src/Http/Routing/src/Template/RouteTemplate.cs
+        foreach (var pathSegment in (List<TemplateSegment>)routePattern.Segments)
         {
-            var parts = 0;
+            var addedPart = false;
             foreach (var part in pathSegment.Parts)
             {
-                parts++;
-                var partName = part.Name;
-
                 if (!part.IsParameter)
                 {
-                    if (parts == 1)
+                    if (!addedPart)
                     {
                         sb.Append('/');
+                        addedPart = true;
                     }
 
-                    sb.Append(part.Text);
-                }
-                else if (partName.Equals("area", StringComparison.OrdinalIgnoreCase))
-                {
-                    if (areaName is null && part.IsOptional)
-                    {
-                        // don't append optional suffixes when no value is provided
-                        continue;
-                    }
-
-                    if (parts == 1)
-                    {
-                        sb.Append('/');
-                    }
-
-                    sb.Append(areaName ?? "{area}");
-                }
-                else if (partName.Equals("controller", StringComparison.OrdinalIgnoreCase))
-                {
-                    if (controllerName is null && part.IsOptional)
-                    {
-                        // don't append optional suffixes when no value is provided
-                        continue;
-                    }
-
-                    if (parts == 1)
-                    {
-                        sb.Append('/');
-                    }
-
-                    sb.Append(controllerName ?? "{controller}");
-                }
-                else if (partName.Equals("action", StringComparison.OrdinalIgnoreCase))
-                {
-                    if (actionName is null && part.IsOptional)
-                    {
-                        // don't append optional suffixes when no value is provided
-                        continue;
-                    }
-
-                    if (parts == 1)
-                    {
-                        sb.Append('/');
-                    }
-
-                    sb.Append(actionName ?? "{action}");
+                    sb.AppendAsLowerInvariant(part.Text);
                 }
                 else
                 {
-                    var haveParameter = routeValueDictionary.TryGetValue(partName, out var value);
-                    if (!part.IsOptional || haveParameter)
+                    var parameterName = part.Name;
+
+                    var mustExpand = false;
+                    object? value;
+                    if (parameterName.Equals("area", StringComparison.OrdinalIgnoreCase))
                     {
-                        if (parts == 1)
+                        mustExpand = true;
+                        value = areaName;
+                    }
+                    else if (parameterName.Equals("controller", StringComparison.OrdinalIgnoreCase))
+                    {
+                        mustExpand = true;
+                        value = controllerName;
+                    }
+                    else if (parameterName.Equals("action", StringComparison.OrdinalIgnoreCase))
+                    {
+                        mustExpand = true;
+                        value = actionName;
+                    }
+                    else if (!routeValueDictionary.TryGetValue(parameterName, out value))
+                    {
+                        value = null;
+                    }
+
+                    var haveParameter = value is not null;
+
+                    if (part.IsOptional && !haveParameter)
+                    {
+                        continue;
+                    }
+
+                    if (!addedPart)
+                    {
+                        sb.Append('/');
+                        addedPart = true;
+                    }
+
+                    // Is this parameter an identifier segment?
+                    var valueAsString = value as string;
+                    if (haveParameter
+                     && (mustExpand || (expandRouteParameters && !IsIdentifierSegment(value, out valueAsString))))
+                    {
+                        // write the expanded parameter value
+                        sb.AppendAsLowerInvariant(valueAsString);
+                    }
+                    else
+                    {
+                        // write the route template value
+                        sb.Append('{');
+
+                        if (part.IsCatchAll)
                         {
-                            sb.Append('/');
+                            sb.Append('*');
                         }
 
-                        if (expandRouteParameters && haveParameter && !IsIdentifierSegment(value, out var valueAsString))
+                        sb.AppendAsLowerInvariant(parameterName);
+                        if (part.IsOptional)
                         {
-                            // write the expanded parameter value
-                            sb.Append(valueAsString);
+                            sb.Append('?');
                         }
-                        else
-                        {
-                            // write the route template value
-                            sb.Append('{');
-                            if (part.IsCatchAll)
-                            {
-                                sb.Append('*');
-                            }
 
-                            sb.Append(partName);
-                            if (part.IsOptional)
-                            {
-                                sb.Append('?');
-                            }
-
-                            sb.Append('}');
-                        }
+                        sb.Append('}');
                     }
                 }
             }
         }
 
-        var simplifiedRoute = StringBuilderCache.GetStringAndRelease(sb);
+        // We never added anything, or we just added the first `/`, no need for explicit ToString()
+#if NETCOREAPP
+        if (sb.Length <= 1)
+        {
+            sb.Dispose();
+            return "/";
+        }
 
-        return string.IsNullOrEmpty(simplifiedRoute) ? "/" : simplifiedRoute.ToLowerInvariant();
+        return sb.ToString();
+#else
+        if (sb.Length <= 1)
+        {
+            StringBuilderCache.Release(sb);
+            return "/";
+        }
+
+        return StringBuilderCache.GetStringAndRelease(sb).ToLowerInvariant();
+#endif
     }
 
-    private static bool IsIdentifierSegment(object? value, [NotNullWhen(true)] out string? valueAsString)
+    [TestingAndPrivateOnly]
+    internal static bool IsIdentifierSegment(object? value, out string? valueAsString)
     {
+        // Avoid allocating a string for cases we know are going to be flagged as identifiers and therefore
+        // If we have "whole number float/double/decimal", then we technically don't need to call ToString()
+        // but if they're not whole numbers, we need to do the allocation, due to differences in culture
+        // Rather than increase complexity here, we just ignore double/float/decimal
+        if (value is short or ushort or int or uint or long or ulong or Guid)
+        {
+            valueAsString = null;
+            return true;
+        }
+
+        // This may allocate for e.g. enums and other types etc, but we were going to have to do that anyway at some point
+        // NOTE: that this is doing a culture _sensitive_ serialization. Depending on the culture,
+        // this could lead to differences in behaviour as to whether a segment is considered an identifier.
+        // For example, 1.23 serialized using en-us, is _not_ counted as an identifier, but in fr-FR it _would_ be
+        // counted as an identifier.
         valueAsString = value as string ?? value?.ToString();
         if (valueAsString is null)
         {
@@ -370,5 +409,10 @@ internal static class AspNetCoreResourceNameHelper
 
         return UriHelpers.IsIdentifierSegment(valueAsString, 0, valueAsString.Length);
     }
+
+#if !NETCOREAPP
+    // .NET Core 2.1 helper which doesn't _actually_ append as lower invariant, and just does it all at the end instead
+    private static void AppendAsLowerInvariant(this StringBuilder sb, string? value) => sb.Append(value);
+#endif
 }
 #endif
