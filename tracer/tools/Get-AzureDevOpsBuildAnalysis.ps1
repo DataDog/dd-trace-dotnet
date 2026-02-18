@@ -96,20 +96,32 @@ function Invoke-AzDevOpsApi {
         [string]$SaveToFile = ''
     )
 
-    # Build command as string to avoid PowerShell splatting issues with --detect flag
-    $cmd = "az devops invoke --area $Area --resource $Resource --org https://dev.azure.com/datadoghq --api-version 6.0 --detect false"
+    # Build argument array to avoid command injection via Invoke-Expression
+    $args = @(
+        'devops', 'invoke',
+        '--area', $Area,
+        '--resource', $Resource,
+        '--org', 'https://dev.azure.com/datadoghq',
+        '--api-version', '6.0',
+        '--detect', 'false'
+    )
 
     if ($RouteParameters) {
-        $cmd += " --route-parameters $RouteParameters"
+        $args += '--route-parameters'
+        $args += $RouteParameters
     }
 
     if ($QueryParameters.Count -gt 0) {
-        $queryString = ($QueryParameters.GetEnumerator() | ForEach-Object { "$($_.Key)=$($_.Value)" }) -join ' '
-        $cmd += " --query-parameters $queryString"
+        $args += '--query-parameters'
+        foreach ($kvp in $QueryParameters.GetEnumerator()) {
+            $args += "$($kvp.Key)=$($kvp.Value)"
+        }
     }
 
-    Write-Verbose "Executing: $cmd"
-    $output = Invoke-Expression "$cmd 2>&1"
+    $cmdDisplay = "az $($args -join ' ')"
+    Write-Verbose "Executing: $cmdDisplay"
+
+    $output = & az @args 2>&1
 
     if ($LASTEXITCODE -ne 0) {
         throw "Azure DevOps API call failed: $output"
