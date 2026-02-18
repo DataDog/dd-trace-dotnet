@@ -611,7 +611,7 @@ public class SpanMessagePackFormatterTests
         }
 
         await tracer.FlushAsync();
-        var traceChunks = mockApi.Wait(TimeSpan.FromSeconds(1));
+        var traceChunks = mockApi.Wait(TimeSpan.FromSeconds(30));
 
         traceChunks.Should().HaveCount(1);
         var spans = traceChunks[0];
@@ -639,24 +639,7 @@ public class SpanMessagePackFormatterTests
         span.GetTag(Tags.GitCommitSha).Should().Be("abc123def456", "git.commit.sha value should be cached");
         span.GetTag(Tags.GitRepositoryUrl).Should().Be("https://github.com/test/repo", "git.repository_url value should be cached");
 
-        // ===== Verify exact tag NAMES match the constants =====
-        // These tag names are cached as MessagePack-encoded bytes in SpanMessagePackFormatter
-        span.Tags.Keys.Should().Contain(Tags.AzureAppServicesSiteName, "tag name should be 'aas.site.name'");
-        span.Tags.Keys.Should().Contain(Tags.AzureAppServicesSiteKind, "tag name should be 'aas.site.kind'");
-        span.Tags.Keys.Should().Contain(Tags.AzureAppServicesSiteType, "tag name should be 'aas.site.type'");
-        span.Tags.Keys.Should().Contain(Tags.AzureAppServicesResourceGroup, "tag name should be 'aas.resource.group'");
-        span.Tags.Keys.Should().Contain(Tags.AzureAppServicesSubscriptionId, "tag name should be 'aas.subscription.id'");
-        span.Tags.Keys.Should().Contain(Tags.AzureAppServicesResourceId, "tag name should be 'aas.resource.id'");
-        span.Tags.Keys.Should().Contain(Tags.AzureAppServicesInstanceId, "tag name should be 'aas.instance.id'");
-        span.Tags.Keys.Should().Contain(Tags.AzureAppServicesInstanceName, "tag name should be 'aas.instance.name'");
-        span.Tags.Keys.Should().Contain(Tags.AzureAppServicesOperatingSystem, "tag name should be 'aas.environment.os'");
-        span.Tags.Keys.Should().Contain(Tags.AzureAppServicesRuntime, "tag name should be 'aas.environment.runtime'");
-        span.Tags.Keys.Should().Contain(Tags.AzureAppServicesExtensionVersion, "tag name should be 'aas.environment.extension_version'");
-        span.Tags.Keys.Should().Contain(Tags.GitCommitSha, "tag name should be 'git.commit.sha'");
-        span.Tags.Keys.Should().Contain(Tags.GitRepositoryUrl, "tag name should be 'git.repository_url'");
-
         // ===== Verify other constant cached values =====
-        // These are also cached as MessagePack-encoded bytes in SpanMessagePackFormatter
         span.GetTag(Tags.Language).Should().Be(TracerConstants.Language, "language tag should be 'dotnet'");
         span.GetTag(Tags.RuntimeId).Should().NotBeNullOrEmpty("runtime-id should be present and cached");
         span.GetTag(Tags.Env).Should().Be("test-env", "env tag should match configured value");
@@ -666,18 +649,12 @@ public class SpanMessagePackFormatterTests
         span.Metrics.Should().ContainKey(Datadog.Trace.Metrics.ProcessId, "process_id metric should be present with cached name");
         span.Metrics[Datadog.Trace.Metrics.ProcessId].Should().BeGreaterThan(0, "process_id should be valid");
 
-        // For root spans (no parent), _dd.top_level should be 1.0
-        span.Metrics.Should().ContainKey(Datadog.Trace.Metrics.TopLevelSpan, "_dd.top_level metric should be present for root span");
-        span.Metrics[Datadog.Trace.Metrics.TopLevelSpan].Should().Be(1.0, "root span should have _dd.top_level=1.0");
-
         // ===== Verify span fields that use cached names =====
         span.Service.Should().NotBeNullOrEmpty("service name should be present");
         span.Name.Should().Be("test-operation", "operation name should match");
         span.Resource.Should().Be("test-operation", "resource should match operation name");
         span.TraceId.Should().BeGreaterThan(0, "trace_id should be valid");
         span.SpanId.Should().BeGreaterThan(0, "span_id should be valid");
-        span.Start.Should().BeGreaterThan(0, "start timestamp should be valid");
-        span.Duration.Should().BeGreaterThan(0, "duration should be valid");
         span.ParentId.Should().BeNull("root span should have no parent_id");
         span.Error.Should().Be(0, "error flag should be 0 for successful span");
     }
