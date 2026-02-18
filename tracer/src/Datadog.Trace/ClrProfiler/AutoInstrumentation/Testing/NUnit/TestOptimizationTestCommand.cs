@@ -83,21 +83,6 @@ internal sealed class TestOptimizationTestCommand
                            testOptimization.FlakyRetryFeature?.Enabled == true &&
                            atrHasBudget;
         var atfWillRetry = testManagementProperties is { AttemptToFix: true };
-        var willRetry = !isSkippedOrInconclusive && (efdWillRetry || atrWillRetry || atfWillRetry);
-
-        // We bailout if the test was skipped or inconclusive
-        // But first set final_status for the bailout path
-        if (isSkippedOrInconclusive || !willRetry)
-        {
-            // Set final_status for tests that won't retry (single-execution or skip/inconclusive bailout)
-            if (testTags is not null && testTags.FinalStatus is null)
-            {
-                // Single execution: passed if status == Pass (not skip, not fail)
-                var anyExecutionPassed = resultStatus == TestStatus.Passed;
-                var anyExecutionFailed = resultStatus == TestStatus.Failed;
-                testTags.FinalStatus = Common.CalculateFinalStatus(anyExecutionPassed, anyExecutionFailed, isSkippedOrInconclusive, testTags);
-            }
-        }
 
         // Early bailout for skip/inconclusive
         if (isSkippedOrInconclusive)
@@ -211,6 +196,16 @@ internal sealed class TestOptimizationTestCommand
 
         var attemptToFixRetryBehavior = retryState.BehaviorType == typeof(AttemptToFixRetryBehavior);
         var resultStatus = testResult.ResultState.Status;
+
+        if (!retryState.IsARetry && testTags is not null && testTags.FinalStatus is null)
+        {
+            // IMPORTANT:
+            // For non-retry paths, final_status must be set before FinishTest() closes the test span.
+            var isSkippedOrInconclusive = resultStatus is TestStatus.Skipped or TestStatus.Inconclusive;
+            var anyExecutionPassed = resultStatus == TestStatus.Passed;
+            var anyExecutionFailed = resultStatus == TestStatus.Failed;
+            testTags.FinalStatus = Common.CalculateFinalStatus(anyExecutionPassed, anyExecutionFailed, isSkippedOrInconclusive, testTags);
+        }
 
         if (retryState.IsARetry)
         {
