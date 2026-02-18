@@ -99,12 +99,14 @@ Write-Result "App State" $(if ($appState -eq "Running") { "PASS" } else { "FAIL"
 Write-Result "Platform" "INFO" "$platform (kind: $appKind)"
 Write-Host ""
 
-# --- 2. Fetch all app settings in one call ---
-# Use --query to get name/value pairs but EXCLUDE DD_API_KEY value
+# --- 2. Fetch all app settings (excluding DD_API_KEY value) ---
+# SECURITY: Query DD_API_KEY existence separately to never retrieve its value
 try {
+    # Fetch all settings EXCEPT DD_API_KEY
     $settingsJson = az functionapp config appsettings list `
         --name $AppName `
         --resource-group $ResourceGroup `
+        --query "[?name!='DD_API_KEY']" `
         -o json 2>&1
 
     if ($LASTEXITCODE -ne 0) {
@@ -113,21 +115,33 @@ try {
     }
 
     $allSettings = $settingsJson | ConvertFrom-Json
+
+    # Separately check DD_API_KEY existence (never retrieving its value)
+    $apiKeyExists = az functionapp config appsettings list `
+        --name $AppName `
+        --resource-group $ResourceGroup `
+        --query "[?name=='DD_API_KEY'].name" `
+        -o tsv 2>&1
+
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "Failed to check DD_API_KEY existence: $apiKeyExists"
+        exit 1
+    }
 }
 catch {
     Write-Error "Failed to fetch app settings: $_"
     exit 1
 }
 
-# Build a hashtable for quick lookup, but redact DD_API_KEY
+# Build a hashtable for quick lookup
 $settingsMap = @{}
 foreach ($s in $allSettings) {
-    if ($s.name -eq "DD_API_KEY") {
-        $settingsMap[$s.name] = "(set)"
-    }
-    else {
-        $settingsMap[$s.name] = $s.value
-    }
+    $settingsMap[$s.name] = $s.value
+}
+
+# Add DD_API_KEY existence check result (value never retrieved)
+if ($apiKeyExists -eq "DD_API_KEY") {
+    $settingsMap["DD_API_KEY"] = "(set)"
 }
 
 # --- 3. Define required and recommended variables ---
