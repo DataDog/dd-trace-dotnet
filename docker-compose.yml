@@ -502,7 +502,7 @@ services:
       - COSMOSDB_ENDPOINT=https://cosmosdb-emulator:8081
       - TEST_AGENT_HOST=test-agent
       - CONTAINER_HOSTNAME=http://integrationtests
-      - TESTCONTAINERS_RYUK_DISABLED=true
+      - TESTCONTAINERS_RYUK_DISABLED
       - DD_LOGGER_DD_API_KEY
       - DD_LOGGER_DD_TRACE_LOG_DIRECTORY=/project/artifacts/build_data/infra_logs
       - DD_LOGGER_DD_SERVICE
@@ -555,7 +555,7 @@ services:
       - enable_crash_dumps=${enable_crash_dumps:-true}
       - Verify_DisableClipboard=true
       - DiffEngine_Disabled=true
-      - TESTCONTAINERS_RYUK_DISABLED=true
+      - TESTCONTAINERS_RYUK_DISABLED
       - DD_LOGGER_DD_API_KEY
       - DD_LOGGER_DD_TRACE_LOG_DIRECTORY=/project/artifacts/build_data/infra_logs
       - DD_LOGGER_DD_SERVICE
@@ -611,7 +611,7 @@ services:
       - enable_crash_dumps=${enable_crash_dumps:-true}
       - Verify_DisableClipboard=true
       - DiffEngine_Disabled=true
-      - TESTCONTAINERS_RYUK_DISABLED=true
+      - TESTCONTAINERS_RYUK_DISABLED
       - CONTAINER_HOSTNAME=http://integrationtests
       - IncludeAllTestFrameworks
       - DD_LOGGER_DD_API_KEY
@@ -757,7 +757,7 @@ services:
       - enable_crash_dumps=${enable_crash_dumps:-true}
       - Verify_DisableClipboard=true
       - DiffEngine_Disabled=true
-      - TESTCONTAINERS_RYUK_DISABLED=true
+      - TESTCONTAINERS_RYUK_DISABLED
       - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-1}
       - IncludeAllTestFrameworks
       - MONGO_HOST=mongo_arm64
@@ -858,7 +858,7 @@ services:
       - enable_crash_dumps=${enable_crash_dumps:-true}
       - Verify_DisableClipboard=true
       - DiffEngine_Disabled=true
-      - TESTCONTAINERS_RYUK_DISABLED=true
+      - TESTCONTAINERS_RYUK_DISABLED
       - DD_LOGGER_DD_API_KEY
       - DD_LOGGER_DD_TRACE_LOG_DIRECTORY=/project/artifacts/build_data/infra_logs
       - DD_LOGGER_DD_SERVICE
