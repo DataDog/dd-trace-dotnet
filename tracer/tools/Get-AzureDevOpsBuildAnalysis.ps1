@@ -124,7 +124,14 @@ function Invoke-AzDevOpsApi {
     $output = & az @args 2>&1
 
     if ($LASTEXITCODE -ne 0) {
-        throw "Azure DevOps API call failed: $output"
+        $errorMsg = @"
+Azure DevOps API call failed
+  Area: $Area
+  Resource: $Resource
+  Exit Code: $LASTEXITCODE
+  Error: $output
+"@
+        throw $errorMsg
     }
 
     $json = $output | ConvertFrom-Json
