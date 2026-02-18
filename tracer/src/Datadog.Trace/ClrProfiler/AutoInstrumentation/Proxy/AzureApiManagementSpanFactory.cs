@@ -24,17 +24,7 @@ internal sealed class AzureApiManagementSpanFactory : IInferredSpanFactory
     {
         try
         {
-            if (data.Path is null)
-            {
-                return null;
-            }
-
-            var resourceUrl = UriHelpers.GetCleanUriPath(data.Path).ToLowerInvariant();
-
-            if (data.DomainName is null)
-            {
-                Log.Debug("DomainName is Null");
-            }
+            var resourceUrl = data.Path is null ? string.Empty : UriHelpers.GetCleanUriPath(data.Path).ToLowerInvariant();
 
             var tags = new InferredProxyTags
             {
@@ -43,6 +33,7 @@ internal sealed class AzureApiManagementSpanFactory : IInferredSpanFactory
                 HttpUrl = $"{data.DomainName}{data.Path}",
                 HttpRoute = resourceUrl,
                 InferredSpan = 1,
+                Region = data.Region,
             };
 
             var scope = tracer.StartActiveInternal(operationName: OperationName, parent: parent, startTime: data.StartTime, tags: tags, serviceName: data.DomainName);

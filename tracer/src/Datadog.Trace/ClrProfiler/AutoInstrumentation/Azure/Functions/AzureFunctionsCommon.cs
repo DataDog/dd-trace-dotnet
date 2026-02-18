@@ -120,9 +120,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 }
 
                 var functionName = instanceParam.FunctionDescriptor.ShortName;
-                var rootSpanName = tracer.InternalActiveScope?.Root.Span.OperationName;
                 // Check if there's an inferred proxy span (e.g., azure.apim) that we shouldn't overwrite
-                var isProxySpan = rootSpanName?.Equals(AzureApim) == true;
+                var isProxySpan = tracer.InternalActiveScope?.Root.Span.OperationName == AzureApim;
                 // Ignoring null because guaranteed running in AAS
                 if (tracer.Settings.AzureAppServiceMetadata is { IsIsolatedFunctionsApp: true }
                  && tracer.InternalActiveScope is { } activeScope)
@@ -183,10 +182,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 if (!isProxySpan)
                 {
                     scope.Root.Span.Type = SpanType;
-                    scope.Span.ResourceName = $"{triggerType} {functionName}";
-                    scope.Span.Type = SpanType;
                 }
 
+                scope.Span.ResourceName = $"{triggerType} {functionName}";
+                scope.Span.Type = SpanType;
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
             }
             catch (Exception ex)
@@ -251,9 +250,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                         _ when type.StartsWith("eventGrid", StringComparison.OrdinalIgnoreCase) => "EventGrid",      // Microsoft.Azure.Functions.Worker.Extensions.EventGrid.CosmosDB
                         _ => "Automatic",                                                                            // Automatic is the catch all for any triggers we don't explicitly handle
                     };
-                    // need to extract the headers from the context.
-                    // We currently only support httpTrigger, but other triggers may also propagate context,
-                    // e.g. Cosmos + ServiceBus, so we should handle those too
+
                     switch (triggerType)
                     {
                         case "Http":
@@ -273,8 +270,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 }
 
                 var functionName = functionContext.FunctionDefinition.Name;
-
-                // Check if there's an APIM proxy span that we shouldn't overwrite
                 var spanRootName = tracer.InternalActiveScope?.Root.Span.OperationName;
 
                 if (tracer.InternalActiveScope == null)

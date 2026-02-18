@@ -41,7 +41,7 @@ internal static class InferredProxySpanHelper
         var accessor = carrier.GetAccessor();
         var proxyName = ParseUtility.ParseString(carrier, accessor, InferredProxyHeaders.Name);
 
-        if (string.IsNullOrEmpty(proxyName))
+        if (StringUtil.IsNullOrEmpty(proxyName))
         {
             Log.Debug("Missing {HeaderName} header", InferredProxyHeaders.Name);
             return null;
@@ -67,7 +67,7 @@ internal static class InferredProxySpanHelper
     {
         start = default;
 
-        if (string.IsNullOrEmpty(startTime))
+        if (StringUtil.IsNullOrEmpty(startTime))
         {
             Log.Debug("Missing header '{HeaderName}'", InferredProxyHeaders.StartTime);
             return false;

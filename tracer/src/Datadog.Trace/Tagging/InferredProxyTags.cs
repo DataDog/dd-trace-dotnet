@@ -34,4 +34,7 @@ internal sealed partial class InferredProxyTags : InstrumentationTags, IHasStatu
 
     [Metric(Metrics.InferredSpan)]
     public double? InferredSpan { get; set; }
+
+    [Tag(Trace.Tags.Region)]
+    public string? Region { get; set; }
 }
