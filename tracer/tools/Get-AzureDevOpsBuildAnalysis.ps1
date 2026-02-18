@@ -176,9 +176,25 @@ function Extract-FailedTests {
 
     $testNames = [System.Collections.Generic.HashSet[string]]::new()
 
+    # Patterns ordered by specificity (most specific first)
     $patterns = @(
+        # xUnit format: [xUnit.net ...] TestName [FAIL]
+        '\[xUnit\.net[^\]]*\]\s+([A-Za-z0-9_.+<>]+(?:\([^\)]*\))?)\s+\[FAIL\]',
+
+        # Generic [FAIL] marker
         '\[FAIL\]\s+([^\r\n]+)',
-        'Failed\s+([^\r\n]+)'
+
+        # Generic "Failed" prefix
+        'Failed\s+([^\r\n]+)',
+
+        # Stack trace: at Namespace.Class.Method()
+        'at\s+([A-Za-z0-9_.]+\.[A-Za-z0-9_]+\([^\)]*\))',
+
+        # Span count mismatch with test name
+        'Expected\s+\d+\s+spans.*?(?:in|at)\s+([A-Za-z0-9_.]+)',
+
+        # Snapshot verification with test name
+        'Received file does not match.*?([A-Za-z0-9_.]+)\.(?:verified|received)\.txt'
     )
 
     foreach ($message in $Messages) {
