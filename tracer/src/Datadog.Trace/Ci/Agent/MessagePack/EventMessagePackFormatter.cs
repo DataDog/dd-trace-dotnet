@@ -6,6 +6,7 @@
 #pragma warning disable SA1402 // disable check to only have one class per file
 
 using System;
+using Datadog.Trace.Agent.MessagePack;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.MessagePack;
 using Datadog.Trace.Vendors.MessagePack.Formatters;
@@ -16,14 +17,17 @@ internal abstract class EventMessagePackFormatter
 {
     private readonly IDatadogLogger _log;
 
-    protected static readonly byte[] TypeBytes = StringEncoding.UTF8.GetBytes("type");
-    protected static readonly byte[] VersionBytes = StringEncoding.UTF8.GetBytes("version");
-    protected static readonly byte[] ContentBytes = StringEncoding.UTF8.GetBytes("content");
-
     protected EventMessagePackFormatter()
     {
         _log = DatadogLogging.GetLoggerFor(GetType());
     }
+
+    // Use generated MessagePack constants
+    protected static ReadOnlySpan<byte> TypeBytes => MessagePackConstants.TypeBytes;
+
+    protected static ReadOnlySpan<byte> VersionBytes => MessagePackConstants.VersionBytes;
+
+    protected static ReadOnlySpan<byte> ContentBytes => MessagePackConstants.ContentBytes;
 
     protected IDatadogLogger Log => _log;
 }

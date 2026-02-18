@@ -219,6 +219,111 @@ internal static class MessagePackConstants
     internal static readonly byte[] DotnetLanguageValueBytes = new byte[] { 166, 100, 111, 116, 110, 101, 116 };
 #endif
 
+    // ContentBytes = MessagePack.Serialize("content");
+#if NETCOREAPP
+    internal static ReadOnlySpan<byte> ContentBytes => new byte[] { 167, 99, 111, 110, 116, 101, 110, 116 };
+#else
+    internal static readonly byte[] ContentBytes = new byte[] { 167, 99, 111, 110, 116, 101, 110, 116 };
+#endif
+
+    // MetadataBytes = MessagePack.Serialize("metadata");
+#if NETCOREAPP
+    internal static ReadOnlySpan<byte> MetadataBytes => new byte[] { 168, 109, 101, 116, 97, 100, 97, 116, 97 };
+#else
+    internal static readonly byte[] MetadataBytes = new byte[] { 168, 109, 101, 116, 97, 100, 97, 116, 97 };
+#endif
+
+    // AsteriskBytes = MessagePack.Serialize("*");
+#if NETCOREAPP
+    internal static ReadOnlySpan<byte> AsteriskBytes => new byte[] { 161, 42 };
+#else
+    internal static readonly byte[] AsteriskBytes = new byte[] { 161, 42 };
+#endif
+
+    // TestSessionNameBytes = MessagePack.Serialize("test_session.name");
+#if NETCOREAPP
+    internal static ReadOnlySpan<byte> TestSessionNameBytes => new byte[] { 177, 116, 101, 115, 116, 95, 115, 101, 115, 115, 105, 111, 110, 46, 110, 97, 109, 101 };
+#else
+    internal static readonly byte[] TestSessionNameBytes = new byte[] { 177, 116, 101, 115, 116, 95, 115, 101, 115, 115, 105, 111, 110, 46, 110, 97, 109, 101 };
+#endif
+
+    // CoveragesBytes = MessagePack.Serialize("coverages");
+#if NETCOREAPP
+    internal static ReadOnlySpan<byte> CoveragesBytes => new byte[] { 169, 99, 111, 118, 101, 114, 97, 103, 101, 115 };
+#else
+    internal static readonly byte[] CoveragesBytes = new byte[] { 169, 99, 111, 118, 101, 114, 97, 103, 101, 115 };
+#endif
+
+    // ItrCorrelationIdBytes = MessagePack.Serialize("itr_correlation_id");
+#if NETCOREAPP
+    internal static ReadOnlySpan<byte> ItrCorrelationIdBytes => new byte[] { 178, 105, 116, 114, 95, 99, 111, 114, 114, 101, 108, 97, 116, 105, 111, 110, 95, 105, 100 };
+#else
+    internal static readonly byte[] ItrCorrelationIdBytes = new byte[] { 178, 105, 116, 114, 95, 99, 111, 114, 114, 101, 108, 97, 116, 105, 111, 110, 95, 105, 100 };
+#endif
+
+    // TestBytes = MessagePack.Serialize("test");
+#if NETCOREAPP
+    internal static ReadOnlySpan<byte> TestBytes => new byte[] { 164, 116, 101, 115, 116 };
+#else
+    internal static readonly byte[] TestBytes = new byte[] { 164, 116, 101, 115, 116 };
+#endif
+
+    // TestSuiteBytes = MessagePack.Serialize("test_suite_end");
+#if NETCOREAPP
+    internal static ReadOnlySpan<byte> TestSuiteBytes => new byte[] { 174, 116, 101, 115, 116, 95, 115, 117, 105, 116, 101, 95, 101, 110, 100 };
+#else
+    internal static readonly byte[] TestSuiteBytes = new byte[] { 174, 116, 101, 115, 116, 95, 115, 117, 105, 116, 101, 95, 101, 110, 100 };
+#endif
+
+    // TestModuleBytes = MessagePack.Serialize("test_module_end");
+#if NETCOREAPP
+    internal static ReadOnlySpan<byte> TestModuleBytes => new byte[] { 175, 116, 101, 115, 116, 95, 109, 111, 100, 117, 108, 101, 95, 101, 110, 100 };
+#else
+    internal static readonly byte[] TestModuleBytes = new byte[] { 175, 116, 101, 115, 116, 95, 109, 111, 100, 117, 108, 101, 95, 101, 110, 100 };
+#endif
+
+    // TestSessionBytes = MessagePack.Serialize("test_session_end");
+#if NETCOREAPP
+    internal static ReadOnlySpan<byte> TestSessionBytes => new byte[] { 176, 116, 101, 115, 116, 95, 115, 101, 115, 115, 105, 111, 110, 95, 101, 110, 100 };
+#else
+    internal static readonly byte[] TestSessionBytes = new byte[] { 176, 116, 101, 115, 116, 95, 115, 101, 115, 115, 105, 111, 110, 95, 101, 110, 100 };
+#endif
+
+    // LibraryVersionBytes = MessagePack.Serialize("library_version");
+#if NETCOREAPP
+    internal static ReadOnlySpan<byte> LibraryVersionBytes => new byte[] { 175, 108, 105, 98, 114, 97, 114, 121, 95, 118, 101, 114, 115, 105, 111, 110 };
+#else
+    internal static readonly byte[] LibraryVersionBytes = new byte[] { 175, 108, 105, 98, 114, 97, 114, 121, 95, 118, 101, 114, 115, 105, 111, 110 };
+#endif
+
+    // TestSessionIdBytes = MessagePack.Serialize("test_session_id");
+#if NETCOREAPP
+    internal static ReadOnlySpan<byte> TestSessionIdBytes => new byte[] { 175, 116, 101, 115, 116, 95, 115, 101, 115, 115, 105, 111, 110, 95, 105, 100 };
+#else
+    internal static readonly byte[] TestSessionIdBytes = new byte[] { 175, 116, 101, 115, 116, 95, 115, 101, 115, 115, 105, 111, 110, 95, 105, 100 };
+#endif
+
+    // TestModuleIdBytes = MessagePack.Serialize("test_module_id");
+#if NETCOREAPP
+    internal static ReadOnlySpan<byte> TestModuleIdBytes => new byte[] { 174, 116, 101, 115, 116, 95, 109, 111, 100, 117, 108, 101, 95, 105, 100 };
+#else
+    internal static readonly byte[] TestModuleIdBytes = new byte[] { 174, 116, 101, 115, 116, 95, 109, 111, 100, 117, 108, 101, 95, 105, 100 };
+#endif
+
+    // TestSuiteIdBytes = MessagePack.Serialize("test_suite_id");
+#if NETCOREAPP
+    internal static ReadOnlySpan<byte> TestSuiteIdBytes => new byte[] { 173, 116, 101, 115, 116, 95, 115, 117, 105, 116, 101, 95, 105, 100 };
+#else
+    internal static readonly byte[] TestSuiteIdBytes = new byte[] { 173, 116, 101, 115, 116, 95, 115, 117, 105, 116, 101, 95, 105, 100 };
+#endif
+
+    // CIAppTestOriginNameBytes = MessagePack.Serialize("ciapp-test");
+#if NETCOREAPP
+    internal static ReadOnlySpan<byte> CIAppTestOriginNameBytes => new byte[] { 170, 99, 105, 97, 112, 112, 45, 116, 101, 115, 116 };
+#else
+    internal static readonly byte[] CIAppTestOriginNameBytes = new byte[] { 170, 99, 105, 97, 112, 112, 45, 116, 101, 115, 116 };
+#endif
+
     // EnvDSMBytes = MessagePack.Serialize("Env");
 #if NETCOREAPP
     internal static ReadOnlySpan<byte> EnvDSMBytes => new byte[] { 163, 69, 110, 118 };

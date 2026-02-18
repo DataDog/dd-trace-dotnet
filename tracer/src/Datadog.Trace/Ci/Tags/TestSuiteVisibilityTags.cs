@@ -4,6 +4,8 @@
 // </copyright>
 #nullable enable
 
+using Datadog.Trace.SourceGenerators;
+
 namespace Datadog.Trace.Ci.Tags;
 
 internal static class TestSuiteVisibilityTags
@@ -11,15 +13,18 @@ internal static class TestSuiteVisibilityTags
     /// <summary>
     /// Test session id
     /// </summary>
+    [MessagePackField]
     public const string TestSessionId = "test_session_id";
 
     /// <summary>
     /// Test module id
     /// </summary>
+    [MessagePackField]
     public const string TestModuleId = "test_module_id";
 
     /// <summary>
     /// Test suite id
     /// </summary>
+    [MessagePackField]
     public const string TestSuiteId = "test_suite_id";
 }

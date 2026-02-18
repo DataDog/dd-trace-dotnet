@@ -4,6 +4,8 @@
 // </copyright>
 #nullable enable
 
+using Datadog.Trace.SourceGenerators;
+
 namespace Datadog.Trace.Ci.Tags;
 
 /// <summary>
@@ -164,6 +166,7 @@ internal static class CommonTags
     /// <summary>
     /// Library Version
     /// </summary>
+    [MessagePackField]
     public const string LibraryVersion = "library_version";
 
     /// <summary>

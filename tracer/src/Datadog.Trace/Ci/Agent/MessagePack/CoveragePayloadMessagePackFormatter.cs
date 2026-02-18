@@ -5,6 +5,7 @@
 #nullable enable
 
 using System;
+using Datadog.Trace.Agent.MessagePack;
 using Datadog.Trace.Ci.Agent.Payloads;
 using Datadog.Trace.Vendors.MessagePack;
 
@@ -12,19 +13,16 @@ namespace Datadog.Trace.Ci.Agent.MessagePack;
 
 internal sealed class CoveragePayloadMessagePackFormatter : EventMessagePackFormatter<CICodeCoveragePayload.CoveragePayload>
 {
-    private readonly byte[] _versionBytes = StringEncoding.UTF8.GetBytes("version");
-    private readonly byte[] _coveragesBytes = StringEncoding.UTF8.GetBytes("coverages");
-
     public override int Serialize(ref byte[] bytes, int offset, CICodeCoveragePayload.CoveragePayload value, IFormatterResolver formatterResolver)
     {
         var originalOffset = offset;
 
         offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, 2);
 
-        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _versionBytes);
+        offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.VersionBytes);
         offset += MessagePackBinary.WriteInt32(ref bytes, offset, 2);
 
-        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _coveragesBytes);
+        offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.CoveragesBytes);
 
         // Write events
         if (value.TestCoverageData.Lock())
