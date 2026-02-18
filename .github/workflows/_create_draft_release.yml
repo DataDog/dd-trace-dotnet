@@ -101,9 +101,13 @@ jobs:
 
           echo "Pushing package to test NuGet API key validity"
           if ! dotnet nuget push "Datadog.Trace.Annotations.1.0.0.nupkg" --api-key "${{ steps.nuget_login.outputs.NUGET_API_KEY }}" --skip-duplicate --source https://api.nuget.org/v3/index.json; then
-            echo "Push failed - the API key is likely not valid" >&2
-            echo "Create a new NuGet api key at nuget.org, with glob permissions * to push to the Datadog org and" >&2
-            echo "replace the NUGET_API_KEY GitHub secret with the new key at https://github.com/DataDog/dd-trace-dotnet/settings/secrets/actions " >&2
+           echo "Push failed - there is likely an issue with authentication." >&2
+           echo "This workflow uses Trusted Publishing: https://learn.microsoft.com/en-us/nuget/nuget-org/trusted-publishing" >&2
+           echo "The NUGET_TRUSTED_PUBLISHING_USERNAME contains the username that should have the trusted policy configured on nuget.org." >&2
+           echo "If this user is no longer part of the datadog organisation on nuget.org: create a new trusted policy using your nuget user " >&2
+           echo "  1. Create a new trusted policy using your nuget user. Follow the example in https://github.com/DataDog/dd-trace-dotnet/pull/8209" >&2
+           echo "  2. Replace the NUGET_TRUSTED_PUBLISHING_USERNAME GitHub secret with your nuget.org username (not email) at https://github.com/DataDog/dd-trace-dotnet/settings/secrets/actions " >&2
+           echo "  3. Try running this release again" >&2
             echo "and then try running this release again" >&2
             exit 1
           fi
