@@ -373,6 +373,12 @@ internal static class AspNetCoreResourceNameHelper
 
         return sb.ToString();
 #else
+        if (sb.Length <= 1)
+        {
+            StringBuilderCache.Release(sb);
+            return "/";
+        }
+
         return StringBuilderCache.GetStringAndRelease(sb).ToLowerInvariant();
 #endif
     }
