@@ -109,7 +109,7 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
     /// <summary>
     /// Called by RCM
     /// </summary>
-    private async Task<IReadOnlyList<ApplyDetails>> Update(Dictionary<string, List<RemoteConfiguration>> configByProducts, Dictionary<string, List<RemoteConfigurationPath>> removedConfigsByProduct)
+    private async Task<IReadOnlyList<ApplyDetails>> Update(Dictionary<string, List<RemoteConfiguration>>? configByProducts, Dictionary<string, List<RemoteConfigurationPath>>? removedConfigsByProduct)
     {
         List<ApplyDetails> results = new();
 
@@ -117,17 +117,18 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
 
         foreach (var subscription in subscriptions)
         {
-            var configByProduct = configByProducts.Where(c => subscription.ProductKeys.Contains(c.Key))
+            var configByProduct = configByProducts?.Where(c => subscription.ProductKeys.Contains(c.Key))
                                                   .ToDictionary(c => c.Key, c => c.Value);
 
-            if (configByProduct.Count == 0 && removedConfigsByProduct?.Count == 0)
+            var haveChanges = configByProduct?.Count > 0 || removedConfigsByProduct?.Count > 0;
+            if (!haveChanges)
             {
                 continue;
             }
 
             try
             {
-                results.AddRange(await subscription.Invoke(configByProduct, removedConfigsByProduct).ConfigureAwait(false));
+                results.AddRange(await subscription.Invoke(configByProduct ?? [], removedConfigsByProduct).ConfigureAwait(false));
             }
             catch (Exception e)
             {
@@ -263,17 +264,17 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
             Log.Debug("Received Remote Configuration response {ResponseDescription}.", description);
         }
 
-        var configByProducts = new Dictionary<string, List<RemoteConfiguration>>();
-        var receivedPaths = new List<string>();
+        var signed = response.Targets.Signed.Targets;
+        var targetFiles = response.TargetFiles.ToDictionary(f => f.Path, f => f);
+
+        Dictionary<string, List<RemoteConfiguration>>? configByProducts = null;
+        var receivedPaths = new List<string>(capacity: response.ClientConfigs.Count);
 
         // handle new configurations
         foreach (var clientConfig in response.ClientConfigs)
         {
             var remoteConfigurationPath = RemoteConfigurationPath.FromPath(clientConfig);
             receivedPaths.Add(remoteConfigurationPath.Path);
-            var signed = response.Targets.Signed.Targets;
-            var targetFiles =
-                (response.TargetFiles ?? Enumerable.Empty<RcmFile>()).ToDictionary(f => f.Path, f => f);
 
             if (!signed.TryGetValue(remoteConfigurationPath.Path, out var signedTarget))
             {
@@ -286,10 +287,8 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
                 continue;
             }
 
-            var isConfigApplied =
-                _appliedConfigurations.TryGetValue(remoteConfigurationPath.Path, out var appliedConfig) &&
-                appliedConfig.Hashes.SequenceEqual(signedTarget.Hashes);
-            if (isConfigApplied)
+            if (_appliedConfigurations.TryGetValue(remoteConfigurationPath.Path, out var appliedConfig) &&
+                IsConfigAlreadyApplied(appliedConfig, signedTarget))
             {
                 continue;
             }
@@ -303,15 +302,17 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
             _appliedConfigurations[remoteConfigurationCache.Path.Path] = remoteConfigurationCache;
 
             var remoteConfiguration = new RemoteConfiguration(remoteConfigurationPath, targetFile.Raw, signedTarget.Length, signedTarget.Hashes, signedTarget.Custom.V);
-            if (!configByProducts.ContainsKey(remoteConfigurationPath.Product))
+            configByProducts ??= [];
+            if (!configByProducts.TryGetValue(remoteConfigurationPath.Product, out var configByProduct))
             {
-                configByProducts[remoteConfigurationPath.Product] = new List<RemoteConfiguration>();
+                configByProduct ??= [];
+                configByProducts[remoteConfigurationPath.Product] = configByProduct;
             }
 
-            configByProducts[remoteConfigurationPath.Product].Add(remoteConfiguration);
+            configByProduct.Add(remoteConfiguration);
         }
 
-        Dictionary<string, List<RemoteConfigurationPath>> removedConfigsByProduct = new();
+        Dictionary<string, List<RemoteConfigurationPath>>? removedConfigsByProduct = null;
 
         // handle removed configurations
         foreach (var appliedConfiguration in _appliedConfigurations)
@@ -321,21 +322,25 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
                 continue;
             }
 
-            if (!removedConfigsByProduct.ContainsKey(appliedConfiguration.Value.Path.Product))
+            removedConfigsByProduct ??= [];
+            if (!removedConfigsByProduct.TryGetValue(appliedConfiguration.Value.Path.Product, out var removedConfig))
             {
-                removedConfigsByProduct[appliedConfiguration.Value.Path.Product] =
-                    new List<RemoteConfigurationPath>();
+                removedConfig ??= [];
+                removedConfigsByProduct[appliedConfiguration.Value.Path.Product] = removedConfig;
             }
 
-            removedConfigsByProduct[appliedConfiguration.Value.Path.Product].Add(appliedConfiguration.Value.Path);
+            removedConfig.Add(appliedConfiguration.Value.Path);
         }
 
         // update applied configurations after removal
-        foreach (var removedConfig in removedConfigsByProduct.Values)
+        if (removedConfigsByProduct is not null)
         {
-            foreach (var value in removedConfig)
+            foreach (var removedConfig in removedConfigsByProduct.Values)
             {
-                _appliedConfigurations.Remove(value.Path);
+                foreach (var value in removedConfig)
+                {
+                    _appliedConfigurations.Remove(value.Path);
+                }
             }
         }
 
@@ -362,6 +367,26 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
 
         _targetsVersion = response.Targets.Signed.Version;
         _backendClientState = response.Targets.Signed.Custom?.OpaqueBackendState;
+
+        static bool IsConfigAlreadyApplied(RemoteConfigurationCache appliedConfig, Target signedTarget)
+        {
+            var newHashes = signedTarget.Hashes;
+            if (appliedConfig.Hashes.Count != newHashes.Count)
+            {
+                return false;
+            }
+
+            foreach (var kvp in appliedConfig.Hashes)
+            {
+                if (!newHashes.TryGetValue(kvp.Key, out var newHash)
+                 || !newHash.Equals(kvp.Value, StringComparison.OrdinalIgnoreCase))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
     }
 
     private void UpdateRootVersionFromResponseRoots(List<string>? roots)
