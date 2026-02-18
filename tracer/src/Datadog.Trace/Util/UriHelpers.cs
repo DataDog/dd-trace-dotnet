@@ -7,6 +7,7 @@
 
 using System;
 using System.Text;
+using Datadog.Trace.Util.Http;
 #if NET6_0_OR_GREATER
 using Datadog.Trace.DuckTyping;
 #endif
@@ -281,22 +282,5 @@ namespace Datadog.Trace.Util
                 : (relativePath.StartsWith("/")
                     ? $"{baseUri}{relativePath}"
                     : $"{baseUri}/{relativePath}");
-
-#if NET6_0_OR_GREATER
-        [DuckCopy]
-        internal struct UriStruct
-        {
-            // the flag changed in .NET 10
-            private static readonly ulong DisablePathAndQueryCanonicalizationFlag
-                = FrameworkDescription.Instance.RuntimeVersion.Major >= 10
-                      ? 1UL << 55
-                      : 0x200000000000;
-
-            [DuckField(Name = "_flags")]
-            public ulong Flags;
-
-            public readonly bool IsDangerousDisablePathAndQueryCanonicalization() => (Flags & DisablePathAndQueryCanonicalizationFlag) != 0;
-        }
-#endif
     }
 }
