@@ -180,17 +180,19 @@ function Extract-FailedTests {
 
     # Patterns ordered by specificity (most specific first)
     $patterns = @(
-        # xUnit format: [xUnit.net ...] TestName [FAIL]
+        # xUnit format with dot-separated names:
+        #   [xUnit.net 00:00:20.31]     Namespace.Class.Method [FAIL]
         '\[xUnit\.net[^\]]*\]\s+([A-Za-z0-9_.+<>]+(?:\([^\)]*\))?)\s+\[FAIL\]',
+
+        # xUnit format with comma-separated names (profiler tests):
+        #   [xUnit.net 00:05:32.66]     Datadog, Profiler, IntegrationTests, WindowsOnly, NamedPipeTestcs, CheckProfiles(...) [FAIL]
+        '\[xUnit\.net[^\]]*\]\s+([A-Za-z0-9_, .+<>]+(?:\([^\)]*\))?)\s+\[FAIL\]',
 
         # Generic [FAIL] marker
         '\[FAIL\]\s+([^\r\n]+)',
 
         # Generic "Failed" prefix
         'Failed\s+([^\r\n]+)',
-
-        # Stack trace: at Namespace.Class.Method()
-        'at\s+([A-Za-z0-9_.]+\.[A-Za-z0-9_]+\([^\)]*\))',
 
         # Span count mismatch with test name
         'Expected\s+\d+\s+spans.*?(?:in|at)\s+([A-Za-z0-9_.]+)',
@@ -199,7 +201,30 @@ function Extract-FailedTests {
         'Received file does not match.*?([A-Za-z0-9_.]+)\.(?:verified|received)\.txt'
     )
 
+    # After a crash header, subsequent messages may be bare test names.
+    # Track when we've seen a crash header to capture the following lines.
+    $inCrashBlock = $false
+
     foreach ($message in $Messages) {
+        # Check if this message is a crash header
+        if ($message -match 'test running when the crash occurred') {
+            $inCrashBlock = $true
+            continue
+        }
+
+        # If we're in a crash block, try to capture bare fully-qualified test names
+        #   Polly.Specs.Retry.RetryTResultSpecsAsync.Should_wait_asynchronously_for_async_onretry_delegate
+        if ($inCrashBlock) {
+            $trimmed = $message.Trim()
+            if ($trimmed -match '^[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z][A-Za-z0-9_]*){2,}$') {
+                [void]$testNames.Add($trimmed)
+                continue
+            } else {
+                # Non-matching line ends the crash block
+                $inCrashBlock = $false
+            }
+        }
+
         foreach ($pattern in $patterns) {
             $matches = [regex]::Matches($message, $pattern)
             foreach ($match in $matches) {
