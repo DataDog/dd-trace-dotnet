@@ -17,6 +17,9 @@ internal sealed class TestOptimizationTestCommand
 {
     private readonly ITestCommand _innerCommand;
 
+#pragma warning disable SA1118 // Debug instrumentation favors readable payload strings
+#pragma warning disable SA1123 // Debug instrumentation uses collapsible regions
+
     public TestOptimizationTestCommand(ITestCommand innerCommand)
     {
         _innerCommand = innerCommand;
@@ -48,10 +51,18 @@ internal sealed class TestOptimizationTestCommand
             SetSkippedResult(result, "Flaky test is disabled by Datadog.");
             if (NUnitIntegration.GetOrCreateTest(context.CurrentTest, 0) is { } test)
             {
-                // Set final_status = skip for disabled tests (no execution, so direct skip)
                 if (test.GetTags() is { } disabledTestTags)
                 {
-                    disabledTestTags.FinalStatus = TestTags.StatusSkip;
+#region agent log H2
+                    Common.AgentDebugLog(
+                        "baseline",
+                        "H2",
+                        "TestOptimizationTestCommand.Execute:disabled",
+                        "Disabled path does not write final_status",
+                        "test=" + context.CurrentTest.Name +
+                        ";resultStatus=" + result.ResultState.Status +
+                        ";finalStatusCurrent=" + (disabledTestTags.FinalStatus ?? "(null)"));
+#endregion
                 }
 
                 NUnitIntegration.FinishTest(test, result);
@@ -83,6 +94,40 @@ internal sealed class TestOptimizationTestCommand
                            testOptimization.FlakyRetryFeature?.Enabled == true &&
                            atrHasBudget;
         var atfWillRetry = testManagementProperties is { AttemptToFix: true };
+        var willRetry = !isSkippedOrInconclusive && (efdWillRetry || atrWillRetry || atfWillRetry);
+
+#region agent log H1
+        Common.AgentDebugLog(
+            "baseline",
+            "H1",
+            "TestOptimizationTestCommand.Execute:post-initial",
+            "Initial execution completed and retry decision computed",
+            "test=" + context.CurrentTest.Name +
+            ";resultStatus=" + resultStatus +
+            ";willRetry=" + willRetry +
+            ";isSkippedOrInconclusive=" + isSkippedOrInconclusive +
+            ";finalStatusAfterExecuteTest=" + (testTags?.FinalStatus ?? "(null)") +
+            ";testIsRetryTag=" + (testTags?.TestIsRetry ?? "(null)"));
+#endregion
+
+        // Keep final_status retry-only: no write in non-retry bailout paths.
+        if (isSkippedOrInconclusive || !willRetry)
+        {
+            if (testTags is not null)
+            {
+#region agent log H1
+                Common.AgentDebugLog(
+                    "baseline",
+                    "H1",
+                    "TestOptimizationTestCommand.Execute:non-retry-write",
+                    "Non-retry path does not write final_status",
+                    "test=" + context.CurrentTest.Name +
+                    ";resultStatus=" + resultStatus +
+                    ";willRetry=" + willRetry +
+                    ";finalStatusCurrent=" + (testTags.FinalStatus ?? "(null)"));
+#endregion
+            }
+        }
 
         // Early bailout for skip/inconclusive
         if (isSkippedOrInconclusive)
@@ -197,14 +242,21 @@ internal sealed class TestOptimizationTestCommand
         var attemptToFixRetryBehavior = retryState.BehaviorType == typeof(AttemptToFixRetryBehavior);
         var resultStatus = testResult.ResultState.Status;
 
-        if (!retryState.IsARetry && testTags is not null && testTags.FinalStatus is null)
+        if (test is null || testTags is null)
         {
-            // IMPORTANT:
-            // For non-retry paths, final_status must be set before FinishTest() closes the test span.
-            var isSkippedOrInconclusive = resultStatus is TestStatus.Skipped or TestStatus.Inconclusive;
-            var anyExecutionPassed = resultStatus == TestStatus.Passed;
-            var anyExecutionFailed = resultStatus == TestStatus.Failed;
-            testTags.FinalStatus = Common.CalculateFinalStatus(anyExecutionPassed, anyExecutionFailed, isSkippedOrInconclusive, testTags);
+#region agent log H4
+            Common.AgentDebugLog(
+                "baseline",
+                "H4",
+                "TestOptimizationTestCommand.ExecuteTest:null-state",
+                "Test or tags are null before close path",
+                "testName=" + context.CurrentTest.Name +
+                ";executionNumber=" + executionNumber +
+                ";isRetry=" + retryState.IsARetry +
+                ";testNull=" + (test is null) +
+                ";tagsNull=" + (testTags is null) +
+                ";resultStatus=" + resultStatus);
+#endregion
         }
 
         if (retryState.IsARetry)
@@ -272,6 +324,21 @@ internal sealed class TestOptimizationTestCommand
                 var isSkippedOrInconclusive = resultStatus is TestStatus.Skipped or TestStatus.Inconclusive;
                 testTags.FinalStatus = Common.CalculateFinalStatus(anyExecutionPassed, anyExecutionFailed, isSkippedOrInconclusive, testTags);
 
+#region agent log H3
+                Common.AgentDebugLog(
+                    "baseline",
+                    "H3",
+                    "TestOptimizationTestCommand.ExecuteTest:retry-final",
+                    "Retry path writes final_status on final execution",
+                    "testName=" + context.CurrentTest.Name +
+                    ";executionNumber=" + executionNumber +
+                    ";isRetry=" + retryState.IsARetry +
+                    ";isLastRetry=" + retryState.IsLastRetry +
+                    ";isFinalExecution=" + isFinalExecution +
+                    ";resultStatus=" + resultStatus +
+                    ";finalStatusWritten=" + (testTags.FinalStatus ?? "(null)"));
+#endregion
+
                 // ATF: AttemptToFixPassed should be consistent with final_status
                 // If any execution failed, the fix didn't work
                 if (attemptToFixRetryBehavior)
@@ -280,6 +347,19 @@ internal sealed class TestOptimizationTestCommand
                 }
             }
 
+#region agent log H5
+            Common.AgentDebugLog(
+                "baseline",
+                "H5",
+                "TestOptimizationTestCommand.ExecuteTest:before-finish",
+                "About to call FinishTest (span close path)",
+                "testName=" + context.CurrentTest.Name +
+                ";executionNumber=" + executionNumber +
+                ";isRetry=" + retryState.IsARetry +
+                ";resultStatus=" + resultStatus +
+                ";finalStatusBeforeFinish=" + (testTags.FinalStatus ?? "(null)") +
+                ";testIsRetryTag=" + (testTags.TestIsRetry ?? "(null)"));
+#endregion
             NUnitIntegration.FinishTest(test, testResult);
         }
 
@@ -353,4 +433,7 @@ internal sealed class TestOptimizationTestCommand
             BehaviorType = null;
         }
     }
+
+#pragma warning restore SA1123
+#pragma warning restore SA1118
 }
