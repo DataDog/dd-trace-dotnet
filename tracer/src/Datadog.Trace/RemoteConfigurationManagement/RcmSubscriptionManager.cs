@@ -47,6 +47,18 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
     private long _targetsVersion;
     private BigInteger _capabilities;
     private string? _lastPollError;
+    private long _appliedConfigsVersion;
+
+    // Cached request and the input snapshot used to build it
+    private GetRcmRequest? _cachedRequest;
+    private RcmClientTracer? _cachedRcmTracer;
+    private long _cachedRootVersion;
+    private string? _cachedLastPollError;
+    private long _cachedAppliedConfigsVersion;
+    private long _cachedTargetsVersion;
+    private string? _cachedBackendClientState;
+    private BigInteger _cachedCapabilities;
+    private ICollection<string>? _cachedProductKeys;
 
     public bool HasAnySubscription => _subscriptions.Count > 0;
 
@@ -211,6 +223,19 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
 
     private GetRcmRequest BuildRequest(RcmClientTracer rcmTracer, string? lastPollError)
     {
+        if (_cachedRequest is not null
+            && ReferenceEquals(rcmTracer, _cachedRcmTracer)
+            && lastPollError == _cachedLastPollError
+            && _appliedConfigsVersion == _cachedAppliedConfigsVersion
+            && _rootVersion == _cachedRootVersion
+            && _targetsVersion == _cachedTargetsVersion
+            && _backendClientState == _cachedBackendClientState
+            && _capabilities == _cachedCapabilities
+            && ReferenceEquals(ProductKeys, _cachedProductKeys))
+        {
+            return _cachedRequest;
+        }
+
         var cachedTargetFiles = new List<RcmCachedTargetFile>();
         var configStates = new List<RcmConfigState>();
         var appliedConfigs = _appliedConfigurations.Values;
@@ -224,6 +249,16 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
         var rcmState = new RcmClientState(_rootVersion, _targetsVersion, configStates, lastPollError != null, lastPollError, _backendClientState);
         var rcmClient = new RcmClient(_id, ProductKeys, rcmTracer, rcmState, GetCapabilities());
         var rcmRequest = new GetRcmRequest(rcmClient, cachedTargetFiles);
+
+        _cachedRequest = rcmRequest;
+        _cachedRcmTracer = rcmTracer;
+        _cachedLastPollError = lastPollError;
+        _cachedAppliedConfigsVersion = _appliedConfigsVersion;
+        _cachedRootVersion = _rootVersion;
+        _cachedTargetsVersion = _targetsVersion;
+        _cachedBackendClientState = _backendClientState;
+        _cachedCapabilities = _capabilities;
+        _cachedProductKeys = ProductKeys;
 
         return rcmRequest;
     }
@@ -300,6 +335,7 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
 
             var remoteConfigurationCache = new RemoteConfigurationCache(remoteConfigurationPath, signedTarget.Length, signedTarget.Hashes, signedTarget.Custom.V);
             _appliedConfigurations[remoteConfigurationCache.Path.Path] = remoteConfigurationCache;
+            _appliedConfigsVersion++;
 
             var remoteConfiguration = new RemoteConfiguration(remoteConfigurationPath, targetFile.Raw, signedTarget.Length, signedTarget.Hashes, signedTarget.Custom.V);
             configByProducts ??= [];
@@ -340,6 +376,7 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
                 foreach (var value in removedConfig)
                 {
                     _appliedConfigurations.Remove(value.Path);
+                    _appliedConfigsVersion++;
                 }
             }
         }
@@ -355,9 +392,11 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
                     break;
                 case ApplyStates.ACKNOWLEDGED:
                     _appliedConfigurations[result.Filename].Applied();
+                    _appliedConfigsVersion++;
                     break;
                 case ApplyStates.ERROR:
                     _appliedConfigurations[result.Filename].ErrorOccured(result.Error);
+                    _appliedConfigsVersion++;
                     break;
                 default:
                     Log.Warning("Unexpected ApplyState: {ApplyState}", result.ApplyState);
