@@ -444,7 +444,31 @@ jq '[.records[] | select(.result == "failed")] | .[0:10]'
 --query-parameters branchName=refs/heads/master '$top=10'
 ```
 
-### 5. jq Pitfalls with Nullable Fields
+### 5. `--route-parameters` Must Be Separate Arguments
+
+**Problem**: Passing route parameters as a single space-separated string causes cryptic authentication errors (`TF400813: The user '...' is not authorized`)
+
+**Solution**: Each key=value pair must be a separate argument
+
+```bash
+# ❌ BAD - Single string, causes auth errors
+az devops invoke --route-parameters "project=dd-trace-dotnet buildId=12345"
+
+# ✅ GOOD - Separate arguments
+az devops invoke --route-parameters project=dd-trace-dotnet buildId=12345
+```
+
+In PowerShell, when building argument arrays, split them into individual elements:
+```powershell
+# ❌ BAD - Single array element
+$azArgs += "project=dd-trace-dotnet buildId=$BuildId"
+
+# ✅ GOOD - Separate array elements
+$azArgs += "project=dd-trace-dotnet"
+$azArgs += "buildId=$BuildId"
+```
+
+### 6. jq Pitfalls with Nullable Fields
 
 **Problem**: Using `startswith()`, `contains()`, or `test()` on nullable fields causes errors when the field is null
 
