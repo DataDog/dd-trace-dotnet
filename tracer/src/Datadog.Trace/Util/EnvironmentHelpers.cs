@@ -169,9 +169,9 @@ internal static class EnvironmentHelpers
     {
         var cmd = Environment.CommandLine ?? string.Empty;
 
-        // heuristic to detect the worker process
-        // the worker process would be the one to have these flags
-        // example in log output
+        // heuristic to detect the worker process.
+        // the worker process would be the one to have these flags.
+        // example in log output:
         // "CommandLine": "Samples.AzureFunctions.V4Isolated.AspNetCore.dll --workerId <GUID> --functions-worker-id <GUID>"
         return IsAzureFunctionsIsolated() &&
                cmd.IndexOf("--functions-worker-id", StringComparison.OrdinalIgnoreCase) < 0 &&
