@@ -396,7 +396,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             return parentScope;
         }
 
-        private static PropagationContext ExtractPropagatedContextFromHttp<T>(T context, string? bindingName)
+        private static PropagationContext ExtractPropagatedContextFromHttp<T>(T functionContext, string? bindingName)
             where T : IFunctionContext
         {
             // Need to try and grab the headers from the context
@@ -404,7 +404,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             // directly from the grpc call instead. This is... interesting. It
             // is effectively doing the equivalent of context.GetHttpRequestDataAsync() which is
             // the suggested approach in the docs.
-            if (context.Features is null || string.IsNullOrEmpty(bindingName))
+            if (functionContext.Features is null || string.IsNullOrEmpty(bindingName))
             {
                 return default;
             }
@@ -412,7 +412,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             try
             {
                 object? feature = null;
-                foreach (var keyValuePair in context.Features)
+                foreach (var keyValuePair in functionContext.Features)
                 {
                     if (keyValuePair.Key.FullName?.Equals("Microsoft.Azure.Functions.Worker.Context.Features.IFunctionBindingsFeature") == true)
                     {
