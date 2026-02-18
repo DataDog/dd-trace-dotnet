@@ -18,13 +18,15 @@ namespace Datadog.Trace.Util.Http
         // In .NET 6+, we could theoretically bypass a bunch of allocations by using the GetComponents() method which is heavily
         // optimized. Unfortunately, in .NET FX and < .NET 6, this approach allocates a _lot_ more. And what's more
         // .NET 6+ introduces 'DangerousDisablePathAndQueryCanonicalization' which means calling GetComponents() _Throws_, and
-        // we have no way to detect it with public APIs, so we rely on duck typing
+        // we have no way to detect it with public APIs, so we rely on duck typing to identify that, and to take the
+        // more allocate-y path in that case.
         internal static string GetUrl(Uri uri, QueryStringManager? queryStringManager = null)
         {
             return uri.DuckCast<UriStruct>().IsDangerousDisablePathAndQueryCanonicalization()
                        ? GetUrlForDangerousUri(uri, queryStringManager)
                        : GetUrlViaGetComponents(uri, queryStringManager);
 
+            // Safe to call when DangerousDisablePathAndQueryCanonicalization has been set, because it doesn't use GetComponents
             static string GetUrlForDangerousUri(Uri uri, QueryStringManager? queryStringManager = null)
             {
                 var queryString = queryStringManager?.TruncateAndObfuscate(uri.Query) ?? string.Empty;
@@ -35,6 +37,7 @@ namespace Datadog.Trace.Util.Http
                            : FormattableString.Invariant($"{uri.Scheme}://{uri.Host}:{uri.Port}{uri.AbsolutePath}{queryString}");
             }
 
+            // Less allocation than GetUrlForDangerousUri, but not safe to call when DangerousDisablePathAndQueryCanonicalization is set
             static string GetUrlViaGetComponents(Uri uri, QueryStringManager? queryStringManager = null)
             {
                 var queryString = queryStringManager?.TruncateAndObfuscate(uri.Query);
