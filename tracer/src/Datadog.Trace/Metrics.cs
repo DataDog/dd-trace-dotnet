@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using Datadog.Trace.SourceGenerators;
+
 namespace Datadog.Trace
 {
     internal static class Metrics
@@ -11,24 +13,28 @@ namespace Datadog.Trace
         /// Tag set to specify the sampling decision that was taken
         /// <seealso cref="SamplingPriorityValues"/>
         /// </summary>
+        [MessagePackField]
         public const string SamplingPriority = "_sampling_priority_v1";
 
         /// <summary>
         /// To be set when the agent determines the sampling rate for a trace
         /// Read: Agent Priority Sample Rate
         /// </summary>
+        [MessagePackField]
         public const string SamplingAgentDecision = "_dd.agent_psr";
 
         /// <summary>
         /// To be set when a sampling rule is applied to a trace
         /// Read: Sampling Rule Priority Sample Rate
         /// </summary>
+        [MessagePackField]
         public const string SamplingRuleDecision = "_dd.rule_psr";
 
         /// <summary>
         /// To be set when a rate limiter is applied to a trace.
         /// Read: Rate Limiter Priority Sample Rate
         /// </summary>
+        [MessagePackField]
         public const string SamplingLimitDecision = "_dd.limit_psr";
 
         /// <summary>
@@ -40,11 +46,13 @@ namespace Datadog.Trace
         /// Identifies top-level spans.
         /// Top-level spans have a different service name from their immediate parent or have no parent.
         /// </summary>
+        [MessagePackField]
         internal const string TopLevelSpan = "_dd.top_level";
 
         /// <summary>
         /// Records the keep rate of spans in the tracer, independent of sampling rate
         /// </summary>
+        [MessagePackField]
         internal const string TracesKeepRate = "_dd.tracer_kr";
 
         /// <summary>
@@ -55,6 +63,7 @@ namespace Datadog.Trace
         /// <summary>
         /// The process id.
         /// </summary>
+        [MessagePackField]
         internal const string ProcessId = "process_id";
 
         /// <summary>
@@ -65,11 +74,13 @@ namespace Datadog.Trace
         /// <summary>
         /// A boolean indicating whether APM tracing is disabled. When APM is disabled, this metric is set to 0.
         /// </summary>
+        [MessagePackField]
         internal const string ApmEnabled = "_dd.apm.enabled";
 
         /// <summary>
         /// Whether the libraries application security features are enabled.
         /// </summary>
+        [MessagePackField]
         public const string AppSecEnabled = "_dd.appsec.enabled";
 
         /// <summary>

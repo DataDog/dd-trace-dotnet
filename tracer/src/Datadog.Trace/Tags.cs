@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace
 {
@@ -25,6 +26,7 @@ namespace Datadog.Trace
         /// but can technically change for each trace if the user sets it manually.
         /// This tag is added during MessagePack serialization using the value from <see cref="TraceContext.Environment"/>.
         /// </summary>
+        [MessagePackField]
         public const string Env = "env";
 
         /// <summary>
@@ -32,6 +34,7 @@ namespace Datadog.Trace
         /// but can technically change for each trace if the user sets it manually.
         /// This tag is added during MessagePack serialization using the value from <see cref="TraceContext.ServiceVersion"/>.
         /// </summary>
+        [MessagePackField]
         public const string Version = "version";
 
         /// <summary>
@@ -174,6 +177,7 @@ namespace Datadog.Trace
         /// Language tag, applied to all spans that are .NET runtime (e.g. ASP.NET).
         /// This tag is added during MessagePack serialization. It's value is always "dotnet".
         /// </summary>
+        [MessagePackField]
         public const string Language = "language";
 
         /// <summary>
@@ -187,6 +191,7 @@ namespace Datadog.Trace
         /// but can technically change for each trace if the user sets it manually.
         /// This tag is added during MessagePack serialization using the value from <see cref="Datadog.Trace.Agent.MessagePack.TraceChunkModel.GitCommitSha"/>.
         /// </summary>
+        [MessagePackField]
         internal const string GitCommitSha = "_dd.git.commit.sha";
 
         /// <summary>
@@ -194,6 +199,7 @@ namespace Datadog.Trace
         /// but can technically change for each trace if the user sets it manually.
         /// This tag is added during MessagePack serialization using the value from <see cref="Datadog.Trace.Agent.MessagePack.TraceChunkModel.GitRepositoryUrl"/>.
         /// </summary>
+        [MessagePackField]
         internal const string GitRepositoryUrl = "_dd.git.repository_url";
 
         /// <summary>
@@ -504,69 +510,82 @@ namespace Datadog.Trace
         /// The runtime family tag, it will be placed on the service entry span, the first span opened for a
         /// service. For this library it will always have the value "dotnet".
         /// </summary>
+        [MessagePackField]
         internal const string RuntimeFamily = "_dd.runtime_family";
 
         /// <summary>
         /// Contains a serialized list of process tags, that can be used in the backend for service renaming.
         /// <see cref="ProcessTags"/>
         /// </summary>
+        [MessagePackField]
         internal const string ProcessTags = "_dd.tags.process";
 
         /// <summary>
         /// The resource ID of the site instance in Azure App Services where the traced application is running.
         /// </summary>
+        [MessagePackField]
         internal const string AzureAppServicesResourceId = "aas.resource.id";
 
         /// <summary>
         /// The resource group of the site instance in Azure App Services where the traced application is running.
         /// </summary>
+        [MessagePackField]
         internal const string AzureAppServicesResourceGroup = "aas.resource.group";
 
         /// <summary>
         /// The site name of the site instance in Azure where the traced application is running.
         /// </summary>
+        [MessagePackField]
         internal const string AzureAppServicesSiteName = "aas.site.name";
 
         /// <summary>
         /// The version of the extension installed where the traced application is running.
         /// </summary>
+        [MessagePackField]
         internal const string AzureAppServicesExtensionVersion = "aas.environment.extension_version";
 
         /// <summary>
         /// The instance name in Azure where the traced application is running.
         /// </summary>
+        [MessagePackField]
         internal const string AzureAppServicesInstanceName = "aas.environment.instance_name";
 
         /// <summary>
         /// The instance ID in Azure where the traced application is running.
         /// </summary>
+        [MessagePackField]
         internal const string AzureAppServicesInstanceId = "aas.environment.instance_id";
 
         /// <summary>
         /// The operating system in Azure where the traced application is running.
         /// </summary>
+        [MessagePackField]
         internal const string AzureAppServicesOperatingSystem = "aas.environment.os";
 
         /// <summary>
         /// The runtime in Azure where the traced application is running.
         /// </summary>
+        [MessagePackField]
         internal const string AzureAppServicesRuntime = "aas.environment.runtime";
 
         /// <summary>
         /// The kind of application instance running in Azure.
         /// Possible values: app, api, mobileapp, app_linux, app_linux_container, functionapp, functionapp_linux, functionapp_linux_container
         /// </summary>
+        [MessagePackField]
         internal const string AzureAppServicesSiteKind = "aas.site.kind";
 
         /// <summary>
         /// The type of application instance running in Azure.
         /// Possible values: app, function
         /// </summary>
+        [MessagePackField]
         internal const string AzureAppServicesSiteType = "aas.site.type";
 
         /// <summary>
         /// The subscription ID of the site instance in Azure App Services where the traced application is running.
         /// </summary>
+        [MessagePackField]
         internal const string AzureAppServicesSubscriptionId = "aas.subscription.id";
 
         /// <summary>
@@ -593,6 +612,7 @@ namespace Datadog.Trace
         /// Configures the origin of the trace. This tag is added during MessagePack serialization
         /// using the value from <see cref="TraceContext.Origin"/>.
         /// </summary>
+        [MessagePackField]
         internal const string Origin = "_dd.origin";
 
         /// <summary>
@@ -663,6 +683,7 @@ namespace Datadog.Trace
         /// <summary>
         /// Ruleset file version, string satisfying the regular expression: [0-9]+\.[0-9]+\.[0-9]+
         /// </summary>
+        [MessagePackField]
         internal const string AppSecRuleFileVersion = "_dd.appsec.event_rules.version";
 
         /// <summary>
@@ -733,6 +754,7 @@ namespace Datadog.Trace
 
         internal const string ElasticsearchUrl = "elasticsearch.url";
 
+        [MessagePackField]
         internal const string RuntimeId = "runtime-id";
 
         internal const string AerospikeKey = "aerospike.key";
@@ -803,12 +825,14 @@ namespace Datadog.Trace
         /// <summary>
         /// Holds the original value for Service when Service is overriden after span creation
         /// </summary>
+        [MessagePackField]
         internal const string BaseService = "_dd.base_service";
 
         /// <summary>
         /// Tag used to propagate the unsigned  64 bits last parent Id
         /// lower-case 16 characters hexadecimal string
         /// </summary>
+        [MessagePackField]
         internal const string LastParentId = "_dd.parent_id";
 
         // inferred proxy tags
