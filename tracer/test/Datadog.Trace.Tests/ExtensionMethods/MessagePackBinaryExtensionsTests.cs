@@ -6,6 +6,7 @@
 #if NETCOREAPP3_1_OR_GREATER
 using System;
 using System.Collections.Generic;
+using System.IO;
 using Datadog.Trace.Vendors.MessagePack;
 using FluentAssertions;
 using Xunit;
@@ -107,6 +108,30 @@ namespace Datadog.Trace.Tests.ExtensionMethods
 
             expectedWritten.Should().Be(actualWritten);
             resultExpected.Should().Equal(resultActual);
+        }
+
+        [SkippableTheory]
+        [MemberData(nameof(GetTestData))]
+        public void WriteRawToStreamTest(byte[] values, int offset, int count)
+        {
+            // Declare source data
+            var source = new ReadOnlySpan<byte>(values, offset, count);
+
+            // Write using byte array version (expected)
+            var resultExpected = new byte[0];
+            var expectedWritten = MessagePackBinary.WriteRaw(ref resultExpected, 0, source);
+
+            // Write using Stream version (actual)
+            using var stream = new MemoryStream();
+            var actualWritten = MessagePackBinary.WriteRaw(stream, source);
+
+            // Verify results match
+            actualWritten.Should().Be(expectedWritten);
+
+            // Compare only the written bytes (not the entire resized array)
+            var expectedBytes = new byte[expectedWritten];
+            Buffer.BlockCopy(resultExpected, 0, expectedBytes, 0, expectedWritten);
+            stream.ToArray().Should().Equal(expectedBytes);
         }
     }
 }

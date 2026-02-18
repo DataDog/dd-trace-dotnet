@@ -219,6 +219,162 @@ internal static class MessagePackConstants
     internal static readonly byte[] DotnetLanguageValueBytes = new byte[] { 166, 100, 111, 116, 110, 101, 116 };
 #endif
 
+    // EnvDSMBytes = MessagePack.Serialize("Env");
+#if NETCOREAPP
+    internal static ReadOnlySpan<byte> EnvDSMBytes => new byte[] { 163, 69, 110, 118 };
+#else
+    internal static readonly byte[] EnvDSMBytes = new byte[] { 163, 69, 110, 118 };
+#endif
+
+    // ServiceDSMBytes = MessagePack.Serialize("Service");
+#if NETCOREAPP
+    internal static ReadOnlySpan<byte> ServiceDSMBytes => new byte[] { 167, 83, 101, 114, 118, 105, 99, 101 };
+#else
+    internal static readonly byte[] ServiceDSMBytes = new byte[] { 167, 83, 101, 114, 118, 105, 99, 101 };
+#endif
+
+    // StatsBytes = MessagePack.Serialize("Stats");
+#if NETCOREAPP
+    internal static ReadOnlySpan<byte> StatsBytes => new byte[] { 165, 83, 116, 97, 116, 115 };
+#else
+    internal static readonly byte[] StatsBytes = new byte[] { 165, 83, 116, 97, 116, 115 };
+#endif
+
+    // BacklogsBytes = MessagePack.Serialize("Backlogs");
+#if NETCOREAPP
+    internal static ReadOnlySpan<byte> BacklogsBytes => new byte[] { 168, 66, 97, 99, 107, 108, 111, 103, 115 };
+#else
+    internal static readonly byte[] BacklogsBytes = new byte[] { 168, 66, 97, 99, 107, 108, 111, 103, 115 };
+#endif
+
+    // TracerVersionBytes = MessagePack.Serialize("TracerVersion");
+#if NETCOREAPP
+    internal static ReadOnlySpan<byte> TracerVersionBytes => new byte[] { 173, 84, 114, 97, 99, 101, 114, 86, 101, 114, 115, 105, 111, 110 };
+#else
+    internal static readonly byte[] TracerVersionBytes = new byte[] { 173, 84, 114, 97, 99, 101, 114, 86, 101, 114, 115, 105, 111, 110 };
+#endif
+
+    // LangBytes = MessagePack.Serialize("Lang");
+#if NETCOREAPP
+    internal static ReadOnlySpan<byte> LangBytes => new byte[] { 164, 76, 97, 110, 103 };
+#else
+    internal static readonly byte[] LangBytes = new byte[] { 164, 76, 97, 110, 103 };
+#endif
+
+    // ProductMaskBytes = MessagePack.Serialize("ProductMask");
+#if NETCOREAPP
+    internal static ReadOnlySpan<byte> ProductMaskBytes => new byte[] { 171, 80, 114, 111, 100, 117, 99, 116, 77, 97, 115, 107 };
+#else
+    internal static readonly byte[] ProductMaskBytes = new byte[] { 171, 80, 114, 111, 100, 117, 99, 116, 77, 97, 115, 107 };
+#endif
+    // Note: Multiple fields with name 'ProcessTags' found. Using first occurrence.
+
+    // ProcessTagsBytes = MessagePack.Serialize("ProcessTags");
+#if NETCOREAPP
+    internal static ReadOnlySpan<byte> ProcessTagsBytes => new byte[] { 171, 80, 114, 111, 99, 101, 115, 115, 84, 97, 103, 115 };
+#else
+    internal static readonly byte[] ProcessTagsBytes = new byte[] { 171, 80, 114, 111, 99, 101, 115, 115, 84, 97, 103, 115 };
+#endif
+
+    // IsInDefaultStateBytes = MessagePack.Serialize("IsInDefaultState");
+#if NETCOREAPP
+    internal static ReadOnlySpan<byte> IsInDefaultStateBytes => new byte[] { 176, 73, 115, 73, 110, 68, 101, 102, 97, 117, 108, 116, 83, 116, 97, 116, 101 };
+#else
+    internal static readonly byte[] IsInDefaultStateBytes = new byte[] { 176, 73, 115, 73, 110, 68, 101, 102, 97, 117, 108, 116, 83, 116, 97, 116, 101 };
+#endif
+
+    // StartDSMBytes = MessagePack.Serialize("Start");
+#if NETCOREAPP
+    internal static ReadOnlySpan<byte> StartDSMBytes => new byte[] { 165, 83, 116, 97, 114, 116 };
+#else
+    internal static readonly byte[] StartDSMBytes = new byte[] { 165, 83, 116, 97, 114, 116 };
+#endif
+
+    // DurationDSMBytes = MessagePack.Serialize("Duration");
+#if NETCOREAPP
+    internal static ReadOnlySpan<byte> DurationDSMBytes => new byte[] { 168, 68, 117, 114, 97, 116, 105, 111, 110 };
+#else
+    internal static readonly byte[] DurationDSMBytes = new byte[] { 168, 68, 117, 114, 97, 116, 105, 111, 110 };
+#endif
+
+    // HashBytes = MessagePack.Serialize("Hash");
+#if NETCOREAPP
+    internal static ReadOnlySpan<byte> HashBytes => new byte[] { 164, 72, 97, 115, 104 };
+#else
+    internal static readonly byte[] HashBytes = new byte[] { 164, 72, 97, 115, 104 };
+#endif
+
+    // ParentHashBytes = MessagePack.Serialize("ParentHash");
+#if NETCOREAPP
+    internal static ReadOnlySpan<byte> ParentHashBytes => new byte[] { 170, 80, 97, 114, 101, 110, 116, 72, 97, 115, 104 };
+#else
+    internal static readonly byte[] ParentHashBytes = new byte[] { 170, 80, 97, 114, 101, 110, 116, 72, 97, 115, 104 };
+#endif
+
+    // TimestampTypeBytes = MessagePack.Serialize("TimestampType");
+#if NETCOREAPP
+    internal static ReadOnlySpan<byte> TimestampTypeBytes => new byte[] { 173, 84, 105, 109, 101, 115, 116, 97, 109, 112, 84, 121, 112, 101 };
+#else
+    internal static readonly byte[] TimestampTypeBytes = new byte[] { 173, 84, 105, 109, 101, 115, 116, 97, 109, 112, 84, 121, 112, 101 };
+#endif
+
+    // PathwayLatencyBytes = MessagePack.Serialize("PathwayLatency");
+#if NETCOREAPP
+    internal static ReadOnlySpan<byte> PathwayLatencyBytes => new byte[] { 174, 80, 97, 116, 104, 119, 97, 121, 76, 97, 116, 101, 110, 99, 121 };
+#else
+    internal static readonly byte[] PathwayLatencyBytes = new byte[] { 174, 80, 97, 116, 104, 119, 97, 121, 76, 97, 116, 101, 110, 99, 121 };
+#endif
+
+    // EdgeLatencyBytes = MessagePack.Serialize("EdgeLatency");
+#if NETCOREAPP
+    internal static ReadOnlySpan<byte> EdgeLatencyBytes => new byte[] { 171, 69, 100, 103, 101, 76, 97, 116, 101, 110, 99, 121 };
+#else
+    internal static readonly byte[] EdgeLatencyBytes = new byte[] { 171, 69, 100, 103, 101, 76, 97, 116, 101, 110, 99, 121 };
+#endif
+
+    // PayloadSizeBytes = MessagePack.Serialize("PayloadSize");
+#if NETCOREAPP
+    internal static ReadOnlySpan<byte> PayloadSizeBytes => new byte[] { 171, 80, 97, 121, 108, 111, 97, 100, 83, 105, 122, 101 };
+#else
+    internal static readonly byte[] PayloadSizeBytes = new byte[] { 171, 80, 97, 121, 108, 111, 97, 100, 83, 105, 122, 101 };
+#endif
+
+    // EdgeTagsBytes = MessagePack.Serialize("EdgeTags");
+#if NETCOREAPP
+    internal static ReadOnlySpan<byte> EdgeTagsBytes => new byte[] { 168, 69, 100, 103, 101, 84, 97, 103, 115 };
+#else
+    internal static readonly byte[] EdgeTagsBytes = new byte[] { 168, 69, 100, 103, 101, 84, 97, 103, 115 };
+#endif
+
+    // TagsBytes = MessagePack.Serialize("Tags");
+#if NETCOREAPP
+    internal static ReadOnlySpan<byte> TagsBytes => new byte[] { 164, 84, 97, 103, 115 };
+#else
+    internal static readonly byte[] TagsBytes = new byte[] { 164, 84, 97, 103, 115 };
+#endif
+
+    // ValueBytes = MessagePack.Serialize("Value");
+#if NETCOREAPP
+    internal static ReadOnlySpan<byte> ValueBytes => new byte[] { 165, 86, 97, 108, 117, 101 };
+#else
+    internal static readonly byte[] ValueBytes = new byte[] { 165, 86, 97, 108, 117, 101 };
+#endif
+
+    // CurrentBytes = MessagePack.Serialize("current");
+#if NETCOREAPP
+    internal static ReadOnlySpan<byte> CurrentBytes => new byte[] { 167, 99, 117, 114, 114, 101, 110, 116 };
+#else
+    internal static readonly byte[] CurrentBytes = new byte[] { 167, 99, 117, 114, 114, 101, 110, 116 };
+#endif
+    // Note: Multiple fields with name 'Origin' found. Using first occurrence.
+
+    // OriginBytes = MessagePack.Serialize("origin");
+#if NETCOREAPP
+    internal static ReadOnlySpan<byte> OriginBytes => new byte[] { 166, 111, 114, 105, 103, 105, 110 };
+#else
+    internal static readonly byte[] OriginBytes = new byte[] { 166, 111, 114, 105, 103, 105, 110 };
+#endif
+
     // SamplingPriorityBytes = MessagePack.Serialize("_sampling_priority_v1");
 #if NETCOREAPP
     internal static ReadOnlySpan<byte> SamplingPriorityBytes => new byte[] { 181, 95, 115, 97, 109, 112, 108, 105, 110, 103, 95, 112, 114, 105, 111, 114, 105, 116, 121, 95, 118, 49 };
@@ -324,13 +480,6 @@ internal static class MessagePackConstants
     internal static readonly byte[] RuntimeFamilyBytes = new byte[] { 178, 95, 100, 100, 46, 114, 117, 110, 116, 105, 109, 101, 95, 102, 97, 109, 105, 108, 121 };
 #endif
 
-    // ProcessTagsBytes = MessagePack.Serialize("_dd.tags.process");
-#if NETCOREAPP
-    internal static ReadOnlySpan<byte> ProcessTagsBytes => new byte[] { 176, 95, 100, 100, 46, 116, 97, 103, 115, 46, 112, 114, 111, 99, 101, 115, 115 };
-#else
-    internal static readonly byte[] ProcessTagsBytes = new byte[] { 176, 95, 100, 100, 46, 116, 97, 103, 115, 46, 112, 114, 111, 99, 101, 115, 115 };
-#endif
-
     // AzureAppServicesResourceIdBytes = MessagePack.Serialize("aas.resource.id");
 #if NETCOREAPP
     internal static ReadOnlySpan<byte> AzureAppServicesResourceIdBytes => new byte[] { 175, 97, 97, 115, 46, 114, 101, 115, 111, 117, 114, 99, 101, 46, 105, 100 };
@@ -406,13 +555,6 @@ internal static class MessagePackConstants
     internal static ReadOnlySpan<byte> AzureAppServicesSubscriptionIdBytes => new byte[] { 179, 97, 97, 115, 46, 115, 117, 98, 115, 99, 114, 105, 112, 116, 105, 111, 110, 46, 105, 100 };
 #else
     internal static readonly byte[] AzureAppServicesSubscriptionIdBytes = new byte[] { 179, 97, 97, 115, 46, 115, 117, 98, 115, 99, 114, 105, 112, 116, 105, 111, 110, 46, 105, 100 };
-#endif
-
-    // OriginBytes = MessagePack.Serialize("_dd.origin");
-#if NETCOREAPP
-    internal static ReadOnlySpan<byte> OriginBytes => new byte[] { 170, 95, 100, 100, 46, 111, 114, 105, 103, 105, 110 };
-#else
-    internal static readonly byte[] OriginBytes = new byte[] { 170, 95, 100, 100, 46, 111, 114, 105, 103, 105, 110 };
 #endif
 
     // AppSecRuleFileVersionBytes = MessagePack.Serialize("_dd.appsec.event_rules.version");

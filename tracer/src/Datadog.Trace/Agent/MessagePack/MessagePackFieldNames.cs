@@ -13,7 +13,7 @@ namespace Datadog.Trace.Agent.MessagePack
     /// MessagePack protocol field names for span serialization.
     /// These constants are marked with [MessagePackField] to generate pre-serialized byte arrays.
     /// </summary>
-    internal static class MessagePackFieldNames
+    internal static partial class MessagePackFieldNames
     {
         // Span fields
         [MessagePackField]
