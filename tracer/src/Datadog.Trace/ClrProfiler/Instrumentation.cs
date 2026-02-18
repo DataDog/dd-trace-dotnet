@@ -85,7 +85,7 @@ namespace Datadog.Trace.ClrProfiler
             var tracerSettings = tracer.Settings;
             var mutableSettings = tracerSettings.Manager.InitialMutableSettings;
 
-            NativeInterop.SharedConfig config = new NativeInterop.SharedConfig
+            var config = new NativeInterop.SharedConfig
             {
                 ProfilingEnabled = profilerSettings.ProfilerState switch
                 {
@@ -537,15 +537,9 @@ namespace Datadog.Trace.ClrProfiler
 
             if (!AzureInfo.Instance.IsAzureFunction)
             {
-                // we only ever skip AspNetCoreDiagnosticObserver in Azure Functions
+                // We only skip AspNetCoreDiagnosticObserver in Azure Functions.
+                // Don't skip it outside Azure Functions.
                 return false;
-            }
-
-            if (AzureInfo.Instance.IsIsolatedFunctionHostProcess)
-            {
-                // Skip AspNetCoreDiagnosticObserver in Azure Functions _host_ processes
-                Log.Debug("Skipping AspNetCoreDiagnosticObserver: running in an isolated Azure Function host process.");
-                return true;
             }
 
             // FUNCTIONS_WORKER_RUNTIME == "dotnet-isolated"
@@ -556,12 +550,20 @@ namespace Datadog.Trace.ClrProfiler
                 return true;
             }
 
+            if (AzureInfo.Instance.IsIsolatedFunctionHostProcess)
+            {
+                // Skip AspNetCoreDiagnosticObserver in Azure Functions _host_ processes
+                Log.Debug("Skipping AspNetCoreDiagnosticObserver: running in an isolated Azure Function host process.");
+                return true;
+            }
+
             // FUNCTIONS_EXTENSION_VERSION
             var azureFunctionsExtensionVersion = AzureInfo.Instance.AzureFunctionsExtensionVersion;
 
             if (azureFunctionsExtensionVersion != "~4")
             {
-                // Skip AspNetCoreDiagnosticObserver in v1 functions (v2 and v3 are not supported at all)
+                // Skip AspNetCoreDiagnosticObserver in v1 isolated functions (v2 and v3 are not supported at all)
+                // to keep the previous behavior
                 Log.Debug("Skipping AspNetCoreDiagnosticObserver: running in Azure Function with extension version {AzureFunctionsExtensionVersion}.", azureFunctionsExtensionVersion);
                 return true;
             }
