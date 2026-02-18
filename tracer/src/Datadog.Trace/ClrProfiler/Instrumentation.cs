@@ -515,8 +515,16 @@ namespace Datadog.Trace.ClrProfiler
 
             if (!EnvironmentHelpers.IsAzureFunctions())
             {
-                // we only ever skip AspNetCoreDiagnosticObserver in Azure Functions
+                // We only skip AspNetCoreDiagnosticObserver in Azure Functions.
+                // Don't skip it outside Azure Functions.
                 return false;
+            }
+
+            if (!EnvironmentHelpers.IsAzureFunctionsIsolated())
+            {
+                // Skip AspNetCoreDiagnosticObserver in in-process Azure Functions
+                Log.Debug("Skipping AspNetCoreDiagnosticObserver: running in an in-process Azure Function.");
+                return true;
             }
 
             if (EnvironmentHelpers.IsRunningInAzureFunctionsHost())
@@ -526,20 +534,12 @@ namespace Datadog.Trace.ClrProfiler
                 return true;
             }
 
-            // FUNCTIONS_WORKER_RUNTIME == "dotnet-isolated"
-            if (!EnvironmentHelpers.IsAzureFunctionsIsolated())
-            {
-                // Skip AspNetCoreDiagnosticObserver in in-process Azure Functions
-                Log.Debug("Skipping AspNetCoreDiagnosticObserver: running in an in-process Azure Function.");
-                return true;
-            }
-
-            // FUNCTIONS_EXTENSION_VERSION
             var azureFunctionsExtensionVersion = EnvironmentHelpers.GetAzureFunctionsExtensionVersion();
 
             if (azureFunctionsExtensionVersion != "~4")
             {
-                // Skip AspNetCoreDiagnosticObserver in v1 functions (v2 and v3 are not supported at all)
+                // Skip AspNetCoreDiagnosticObserver in v1 isolated functions (v2 and v3 are not supported at all)
+                // to keep the previous behavior
                 Log.Debug("Skipping AspNetCoreDiagnosticObserver: running in Azure Function with extension version {AzureFunctionsExtensionVersion}.", azureFunctionsExtensionVersion);
                 return true;
             }
