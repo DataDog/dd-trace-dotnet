@@ -12,7 +12,6 @@ using Datadog.Trace.SourceGenerators.Helpers;
 using Datadog.Trace.SourceGenerators.MessagePackConstants;
 using Datadog.Trace.SourceGenerators.MessagePackConstants.Diagnostics;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 
 /// <inheritdoc />
@@ -64,7 +63,29 @@ public class MessagePackConstantsGenerator : IIncrementalGenerator
             return;
         }
 
-        var source = Sources.CreateMessagePackConstants(fields);
+        // Detect duplicate field names
+        var fieldGroups = fields.GroupBy(f => f.FieldName).ToList();
+        var duplicateGroups = fieldGroups.Where(g => g.Count() > 1).ToList();
+
+        if (duplicateGroups.Any())
+        {
+            foreach (var group in duplicateGroups)
+            {
+                var fieldName = group.Key;
+
+                // Report diagnostic for each duplicate occurrence (skip first)
+                foreach (var field in group.Skip(1))
+                {
+                    var diagnostic = DuplicateFieldNameDiagnostic.Create(fieldName);
+                    context.ReportDiagnostic(diagnostic);
+                }
+            }
+        }
+
+        // Only keep the first occurrence of each field name
+        var uniqueFields = fieldGroups.Select(g => g.First()).ToImmutableArray();
+
+        var source = Sources.CreateMessagePackConstants(uniqueFields);
         context.AddSource("MessagePackConstants.g.cs", SourceText.From(source, Encoding.UTF8));
     }
 

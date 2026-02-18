@@ -148,7 +148,7 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
 
                 var timestampTypeBytes = statsBucket.TimestampType == TimestampType.Current
                                              ? MessagePackConstants.CurrentBytes
-                                             : MessagePackConstants.OriginBytes;
+                                             : MessagePackConstants.OriginDSMBytes;
 
                 foreach (var point in statsBucket.Bucket.Values)
                 {
@@ -196,7 +196,7 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
 
             if (withProcessTags)
             {
-                bytesWritten += MessagePackBinary.WriteRaw(stream, MessagePackConstants.ProcessTagsBytes);
+                bytesWritten += MessagePackBinary.WriteRaw(stream, MessagePackConstants.ProcessTagsDSMBytes);
                 bytesWritten += MessagePackBinary.WriteArrayHeader(stream, _processTags!.TagsList.Count);
                 foreach (var tag in _processTags.TagsList)
                 {

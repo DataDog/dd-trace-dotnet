@@ -39,7 +39,7 @@ namespace Datadog.Trace.Agent.MessagePack
         public const string ProductMask = "ProductMask";
 
         [MessagePackField]
-        public const string ProcessTags = "ProcessTags";
+        public const string ProcessTagsDSM = "ProcessTags";
 
         [MessagePackField]
         public const string IsInDefaultState = "IsInDefaultState";
@@ -85,6 +85,6 @@ namespace Datadog.Trace.Agent.MessagePack
         public const string Current = "current";
 
         [MessagePackField]
-        public const string Origin = "origin";
+        public const string OriginDSM = "origin";
     }
 }
