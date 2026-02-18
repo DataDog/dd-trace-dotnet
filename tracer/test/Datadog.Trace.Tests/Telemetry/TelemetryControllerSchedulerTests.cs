@@ -15,6 +15,7 @@ namespace Datadog.Trace.Tests.Telemetry;
 public class TelemetryControllerSchedulerTests
 {
     private static readonly TimeSpan FlushInterval = TimeSpan.FromSeconds(60);
+    private static readonly TimeSpan ExtendedHeartbeatInterval = TimeSpan.FromSeconds(86400);
     private static readonly TimeSpan FiveSeconds = TimeSpan.FromSeconds(5);
     private static readonly Task NeverComplete = Task.Delay(Timeout.Infinite);
     private readonly TaskCompletionSource<bool> _processExit = new();
@@ -24,7 +25,7 @@ public class TelemetryControllerSchedulerTests
 
     public TelemetryControllerSchedulerTests()
     {
-        _scheduler = new TelemetryController.Scheduler(FlushInterval, () => NeverComplete, _processExit, _clock, _delayFactory);
+        _scheduler = new TelemetryController.Scheduler(FlushInterval, ExtendedHeartbeatInterval, () => NeverComplete, _processExit, _clock, _delayFactory);
     }
 
     [Fact]
@@ -288,7 +289,7 @@ public class TelemetryControllerSchedulerTests
     }
 
     private TelemetryController.Scheduler GetScheduler(QueueTaskGenerator queueTaskGenerator = null)
-        => new(FlushInterval, (queueTaskGenerator ?? new()).GetTask, _processExit, _clock, _delayFactory);
+        => new(FlushInterval, ExtendedHeartbeatInterval, (queueTaskGenerator ?? new()).GetTask, _processExit, _clock, _delayFactory);
 
     private class DelayFactory : TelemetryController.Scheduler.IDelayFactory
     {

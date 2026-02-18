@@ -657,6 +657,10 @@
       "const_name": "HeartbeatIntervalSeconds"
     },
     {
+      "env_var": "DD_TELEMETRY_EXTENDED_HEARTBEAT_INTERVAL",
+      "const_name": "ExtendedHeartbeatIntervalSeconds"
+    },
+    {
       "env_var": "DD_TELEMETRY_LOG_COLLECTION_ENABLED",
       "const_name": "TelemetryLogsEnabled"
     },
