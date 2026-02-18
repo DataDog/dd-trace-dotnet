@@ -386,6 +386,7 @@
     <ClInclude Include="WallTimeProvider.h" />
     <ClInclude Include="RawWallTimeSample.h" />
     <ClInclude Include="dd_profiler_version.h" />
+    <ClInclude Include="StackFramesCollectorFactory.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ActivityHelpers.cpp" />
@@ -461,6 +462,7 @@
     <ClCompile Include="SamplesCollector.cpp" />
     <ClCompile Include="ProviderBase.cpp" />
     <ClCompile Include="StackFramesCollectorBase.cpp" />
+    <ClCompile Include="StackFramesCollectorFactory.cpp" />
     <ClCompile Include="StackSamplerLoop.cpp" />
     <ClCompile Include="StackSamplerLoopManager.cpp" />
     <ClCompile Include="StackSnapshotResultBuffer.cpp" />
