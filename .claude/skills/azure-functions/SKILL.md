@@ -198,58 +198,50 @@ Save the timestamp — you'll need it for log filtering in the next step.
 
 ### 4. Configure Environment Variables
 
-Configure Datadog instrumentation environment variables for an Azure Function App:
+Configure Datadog instrumentation environment variables for an Azure Function App using `Set-EnvVars.ps1`:
 
-**Interactive mode** (recommended):
-```bash
-/azure-functions configure <app-name>
+```powershell
+./.claude/skills/azure-functions/Set-EnvVars.ps1 `
+  -AppName "<app-name>" `
+  -ResourceGroup "<resource-group>" `
+  -ApiKey "<api-key>" `
+  -Tier recommended `
+  -Env "dev-lucas"
 ```
 
-This will:
-1. Detect the OS/platform (Linux or Windows)
-2. Show current environment variable configuration
-3. Ask which variables to configure:
-   - **Required only** - Minimum variables needed for instrumentation
-   - **Required + Recommended** - Add feature disables and sampling rules
-   - **Required + Recommended + Debug** - Add debug logging (for troubleshooting)
-   - **Custom** - User selects specific variables
-4. Prompt for required values (DD_API_KEY, DD_ENV, etc.)
-5. Set the variables using Azure CLI
+**What this does**:
+1. Detects the OS/platform (Linux or Windows)
+2. Builds the correct set of variables for the chosen tier
+3. Sets platform-specific profiler paths automatically
+4. Applies all settings via Azure CLI
+5. Restarts the function app (unless `-SkipRestart`)
 
-**Required variables** (must be set):
-```bash
-CORECLR_ENABLE_PROFILING=1
-CORECLR_PROFILER={846F5F1C-F9AE-4B07-969E-05C26BC060D8}
-DD_API_KEY=<your-api-key>
-DOTNET_STARTUP_HOOKS=<path-to-compat-dll>
+**Tiers**:
+- **required** - Minimum variables for instrumentation (CORECLR_*, DD_API_KEY, DD_DOTNET_TRACER_HOME, DOTNET_STARTUP_HOOKS)
+- **recommended** - required + feature disables (AppSec, CI Visibility, RCM, Agent Feature Polling, Process)
+- **debug** - recommended + debug logging (DD_TRACE_DEBUG, DD_LOG_LEVEL, DD_TRACE_LOG_SINKS, direct log submission)
+
+**Options**:
+- `-Tier required|recommended|debug` - Configuration tier (default: required)
+- `-Env "dev-lucas"` - Set DD_ENV
+- `-Service "my-service"` - Set DD_SERVICE
+- `-Version "1.0.0"` - Set DD_VERSION
+- `-SamplingRules '<json>'` - Set DD_TRACE_SAMPLING_RULES
+- `-ExtraSettings @{"KEY"="value"}` - Set additional variables
+- `-SkipRestart` - Don't restart the app after applying
+- `-WhatIf` - Preview changes without applying
+
+**Preview before applying**:
+```powershell
+./.claude/skills/azure-functions/Set-EnvVars.ps1 `
+  -AppName "<app-name>" `
+  -ResourceGroup "<resource-group>" `
+  -ApiKey "<api-key>" `
+  -Tier debug `
+  -WhatIf
 ```
 
-**Platform-specific paths**:
-- **Linux**:
-  - `CORECLR_PROFILER_PATH=/home/site/wwwroot/datadog/linux-x64/Datadog.Trace.ClrProfiler.Native.so`
-- **Windows** (requires both 32-bit and 64-bit paths):
-  - `CORECLR_PROFILER_PATH_32=C:\home\site\wwwroot\datadog\win-x86\Datadog.Trace.ClrProfiler.Native.dll`
-  - `CORECLR_PROFILER_PATH_64=C:\home\site\wwwroot\datadog\win-x64\Datadog.Trace.ClrProfiler.Native.dll`
-
-**Manual configuration**:
-```bash
-# Set multiple variables at once
-az functionapp config appsettings set \
-  --name <app-name> \
-  --resource-group <resource-group> \
-  --settings \
-    "CORECLR_ENABLE_PROFILING=1" \
-    "CORECLR_PROFILER={846F5F1C-F9AE-4B07-969E-05C26BC060D8}" \
-    "CORECLR_PROFILER_PATH=/home/site/wwwroot/datadog/linux-x64/Datadog.Trace.ClrProfiler.Native.so" \
-    "DD_DOTNET_TRACER_HOME=/home/site/wwwroot/datadog" \
-    "DD_API_KEY=<your-api-key>" \
-    "DOTNET_STARTUP_HOOKS=/home/site/wwwroot/Datadog.Serverless.Compat.dll"
-```
-
-**Complete reference**: See [environment-variables.md](environment-variables.md) for all available variables, including:
-- Recommended feature disables (AppSec, CI Visibility, RCM, Agent Feature Polling)
-- Debug logging configuration
-- Direct log submission
+**Complete reference**: See [environment-variables.md](environment-variables.md) for all available variables.
 
 ### 5. Download and Analyze Logs
 
@@ -413,62 +405,26 @@ Query logs from Datadog to correlate with traces:
 When invoked with `/azure-functions configure [app-name]`:
 
 1. **Prompt for app name and resource group** (if not provided)
-2. **Detect shell environment** (to handle Git Bash path conversion):
-   - Check if running in Git Bash on Windows: `uname -s` contains "MINGW" or "MSYS"
-   - If Git Bash: Prefix Azure CLI commands with `MSYS_NO_PATHCONV=1`
-   - Otherwise: Use commands without prefix
-3. **Detect platform**:
-   ```bash
-   az functionapp show --name <app-name> --resource-group <resource-group> --query "kind" -o tsv
+2. **Show current configuration** using `Test-EnvVars.ps1`:
+   ```powershell
+   ./.claude/skills/azure-functions/Test-EnvVars.ps1 -AppName "<app-name>" -ResourceGroup "<resource-group>" -IncludeRecommended
    ```
-   - Look for "linux" or "windows" in the kind string
-4. **Show current configuration**:
-   ```bash
-   az functionapp config appsettings list --name <app-name> --resource-group <resource-group>
-   ```
-   - Filter for DD_* and CORECLR_* variables
-   - **CRITICAL**: When showing DD_API_KEY, ONLY check for existence, NEVER retrieve or display the actual value:
-     ```bash
-     # Check if DD_API_KEY exists (returns "DD_API_KEY" if set, empty if not)
-     az functionapp config appsettings list \
-       --name <app-name> \
-       --resource-group <resource-group> \
-       --query "[?name=='DD_API_KEY'].name" -o tsv
-     ```
-5. **Ask configuration level**:
-   - **Required only**: CORECLR_*, DD_DOTNET_TRACER_HOME, DD_API_KEY, DOTNET_STARTUP_HOOKS
-   - **Required + Recommended**: Add DD_APPSEC_ENABLED=false, DD_CIVISIBILITY_ENABLED=false, DD_REMOTE_CONFIGURATION_ENABLED=false, DD_AGENT_FEATURE_POLLING_ENABLED=false, DD_TRACE_Process_ENABLED=false, DD_ENV, DD_TRACE_SAMPLING_RULES
-   - **Required + Recommended + Debug**: Add DD_TRACE_DEBUG=true, DD_TRACE_LOG_SINKS=file,console-experimental, DD_LOG_LEVEL=debug, DD_LOGS_DIRECT_SUBMISSION_*
-   - **Custom**: User selects specific variables
-6. **Prompt for values**:
+3. **Ask configuration level**: required, recommended, or debug (see tier descriptions in step 4 above)
+4. **Prompt for values**:
    - DD_API_KEY (required, never show existing value)
    - DD_ENV (optional, show current value if exists)
    - DD_TRACE_SAMPLING_RULES (optional, suggest default)
-7. **Set platform-specific paths** based on detected OS:
-   - **Linux**: Single `CORECLR_PROFILER_PATH=/home/site/wwwroot/datadog/linux-x64/Datadog.Trace.ClrProfiler.Native.so`
-   - **Windows**: Separate 32/64-bit paths:
-     - `CORECLR_PROFILER_PATH_32=C:\home\site\wwwroot\datadog\win-x86\Datadog.Trace.ClrProfiler.Native.dll`
-     - `CORECLR_PROFILER_PATH_64=C:\home\site\wwwroot\datadog\win-x64\Datadog.Trace.ClrProfiler.Native.dll`
-8. **Apply settings**:
-   - **CRITICAL**: When using Git Bash on Windows, prefix the command with `MSYS_NO_PATHCONV=1` to prevent automatic path conversion (Linux paths like `/home/site/...` would otherwise be converted to `C:/Program Files/Git/home/site/...`)
-   - **PowerShell/CMD**: No prefix needed, use command as-is
-   ```bash
-   # Git Bash (Windows)
-   MSYS_NO_PATHCONV=1 az functionapp config appsettings set \
-     --name <app-name> \
-     --resource-group <resource-group> \
-     --settings "KEY1=value1" "KEY2=value2" ...
-
-   # PowerShell/CMD/Linux/macOS
-   az functionapp config appsettings set \
-     --name <app-name> \
-     --resource-group <resource-group> \
-     --settings "KEY1=value1" "KEY2=value2" ...
+5. **Apply settings** using `Set-EnvVars.ps1`:
+   ```powershell
+   ./.claude/skills/azure-functions/Set-EnvVars.ps1 `
+     -AppName "<app-name>" `
+     -ResourceGroup "<resource-group>" `
+     -ApiKey "<api-key>" `
+     -Tier <tier> `
+     -Env "<env-value>"
    ```
-9. **Confirm success** and remind to restart if needed:
-   ```bash
-   az functionapp restart --name <app-name> --resource-group <resource-group>
-   ```
+   The script handles platform detection, platform-specific paths, and restart automatically.
+6. **Verify** by running `Test-EnvVars.ps1` again to confirm all variables are set correctly
 
 ## Interactive Mode
 
