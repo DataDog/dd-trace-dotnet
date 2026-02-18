@@ -19,7 +19,7 @@ internal sealed class ProcessTags
     public const string EntrypointName = "entrypoint.name";
     public const string EntrypointBasedir = "entrypoint.basedir";
     public const string EntrypointWorkdir = "entrypoint.workdir";
-    public const string ServiceSetByUser = "svc.user";
+    public const string ServiceSetByUser = "svc.user:true";
     public const string ServiceAuto = "svc.auto";
 
     private readonly bool _serviceNameUserDefined;
@@ -79,7 +79,7 @@ internal sealed class ProcessTags
         // svc.auto contains the automatically determined service name when user didn't set it
         if (serviceNameUserDefined)
         {
-            tags.Add($"{ServiceSetByUser}:true");
+            tags.Add(ServiceSetByUser);
         }
         else
         {
