@@ -97,7 +97,7 @@ function Invoke-AzDevOpsApi {
     )
 
     # Build argument array to avoid command injection via Invoke-Expression
-    $args = @(
+    $azArgs = @(
         'devops', 'invoke',
         '--area', $Area,
         '--resource', $Resource,
@@ -107,21 +107,22 @@ function Invoke-AzDevOpsApi {
     )
 
     if ($RouteParameters) {
-        $args += '--route-parameters'
-        $args += $RouteParameters
+        $azArgs += '--route-parameters'
+        # Split space-separated parameters into individual arguments
+        $azArgs += $RouteParameters -split '\s+'
     }
 
     if ($QueryParameters.Count -gt 0) {
-        $args += '--query-parameters'
+        $azArgs += '--query-parameters'
         foreach ($kvp in $QueryParameters.GetEnumerator()) {
-            $args += "$($kvp.Key)=$($kvp.Value)"
+            $azArgs += "$($kvp.Key)=$($kvp.Value)"
         }
     }
 
-    $cmdDisplay = "az $($args -join ' ')"
+    $cmdDisplay = "az $($azArgs -join ' ')"
     Write-Verbose "Executing: $cmdDisplay"
 
-    $output = & az @args 2>&1
+    $output = & az @azArgs 2>&1
 
     if ($LASTEXITCODE -ne 0) {
         $errorMsg = @"
