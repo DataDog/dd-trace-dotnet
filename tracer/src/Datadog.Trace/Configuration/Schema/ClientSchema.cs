@@ -39,7 +39,7 @@ namespace Datadog.Trace.Configuration.Schema
             _serviceNames =
             [
                 useSuffix ? $"{defaultServiceName}-{HttpClientComponent}" : defaultServiceName,
-                useSuffix ? $"{defaultServiceName}-grpc-client" : defaultServiceName,
+                useSuffix ? $"{defaultServiceName}-{GrpcClientComponent}" : defaultServiceName,
             ];
             if (serviceNameMappings is not null)
             {

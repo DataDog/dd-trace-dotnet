@@ -48,9 +48,7 @@ namespace Datadog.Trace.Tests.Configuration.Schema
         public static IEnumerable<(int SchemaVersion, string ExpectedSuffix)> GetOperationNameSuffixForRequestData()
         {
             yield return (0, string.Empty);           // SchemaVersion.V0
-            yield return (0,  string.Empty);
             yield return (1, ".request");   // SchemaVersion.V1
-            yield return (1, ".request");
         }
 
         [Theory]
