@@ -50,6 +50,61 @@ if (-not $envCheck.AllRequiredPresent) {
 }
 ```
 
+### Set-EnvVars.ps1
+
+Sets Datadog instrumentation environment variables on an Azure Function App.
+
+**Location**: `.claude/skills/azure-functions/Set-EnvVars.ps1`
+
+**Basic usage**:
+```powershell
+# Set required variables only
+./.claude/skills/azure-functions/Set-EnvVars.ps1 -AppName "<app-name>" -ResourceGroup "<resource-group>" -ApiKey "<api-key>"
+
+# Set recommended tier with DD_ENV
+./.claude/skills/azure-functions/Set-EnvVars.ps1 -AppName "<app-name>" -ResourceGroup "<resource-group>" -ApiKey "<api-key>" -Tier recommended -Env "dev-lucas"
+
+# Preview debug tier without applying
+./.claude/skills/azure-functions/Set-EnvVars.ps1 -AppName "<app-name>" -ResourceGroup "<resource-group>" -ApiKey "<api-key>" -Tier debug -WhatIf
+```
+
+**Parameters**:
+- `-AppName` (required) - Azure Function App name
+- `-ResourceGroup` (required) - Azure resource group
+- `-ApiKey` (required) - Datadog API key (never logged or displayed)
+- `-Tier` - Configuration tier: `required`, `recommended`, or `debug` (default: `required`)
+- `-Env` - Value for DD_ENV
+- `-Service` - Value for DD_SERVICE
+- `-Version` - Value for DD_VERSION
+- `-SamplingRules` - Value for DD_TRACE_SAMPLING_RULES (JSON string)
+- `-ExtraSettings` - Hashtable of additional settings
+- `-SkipRestart` (switch) - Don't restart the app after applying
+- `-WhatIf` (switch) - Preview changes without applying
+
+**What it does**:
+1. Detects platform (Linux vs Windows) from Azure
+2. Builds settings based on tier and platform-specific paths
+3. Displays all settings to be applied (DD_API_KEY shown as "(hidden)")
+4. Applies settings via `az functionapp config appsettings set`
+5. Restarts the function app (unless `-SkipRestart`)
+
+**Output**: `[PSCustomObject]` with `AppName`, `Platform`, `SettingsApplied`, `Restarted`
+
+**Security**: `DD_API_KEY` is passed as a parameter and set via Azure CLI, but never logged or displayed in output.
+
+**Pipeline usage** (configure + verify):
+```powershell
+./.claude/skills/azure-functions/Set-EnvVars.ps1 `
+  -AppName "<app-name>" `
+  -ResourceGroup "<resource-group>" `
+  -ApiKey "<api-key>" `
+  -Tier recommended `
+  -Env "dev-lucas"
+
+# Verify
+./.claude/skills/azure-functions/Test-EnvVars.ps1 -AppName "<app-name>" -ResourceGroup "<resource-group>" -IncludeRecommended
+```
+
 ### Find-NuGetConfig.ps1
 
 Searches for `nuget.config` file by walking up the directory hierarchy from a starting path.
