@@ -121,9 +121,9 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
     /// <summary>
     /// Called by RCM
     /// </summary>
-    private async Task<IReadOnlyList<ApplyDetails>> Update(Dictionary<string, List<RemoteConfiguration>>? configByProducts, Dictionary<string, List<RemoteConfigurationPath>>? removedConfigsByProduct)
+    private async Task<List<ApplyDetails>?> Update(Dictionary<string, List<RemoteConfiguration>>? configByProducts, Dictionary<string, List<RemoteConfigurationPath>>? removedConfigsByProduct)
     {
-        List<ApplyDetails> results = new();
+        List<ApplyDetails>? results = null;
 
         var subscriptions = Volatile.Read(ref _subscriptions);
 
@@ -140,6 +140,7 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
 
             try
             {
+                results ??= new();
                 results.AddRange(await subscription.Invoke(configByProduct ?? [], removedConfigsByProduct).ConfigureAwait(false));
             }
             catch (Exception e)
@@ -383,24 +384,27 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
 
         var results = await Update(configByProducts, removedConfigsByProduct).ConfigureAwait(false);
 
-        foreach (var result in results)
+        if (results is not null)
         {
-            switch (result.ApplyState)
+            foreach (var result in results)
             {
-                case ApplyStates.UNACKNOWLEDGED:
-                    // Do nothing
-                    break;
-                case ApplyStates.ACKNOWLEDGED:
-                    _appliedConfigurations[result.Filename].Applied();
-                    _appliedConfigsVersion++;
-                    break;
-                case ApplyStates.ERROR:
-                    _appliedConfigurations[result.Filename].ErrorOccured(result.Error);
-                    _appliedConfigsVersion++;
-                    break;
-                default:
-                    Log.Warning("Unexpected ApplyState: {ApplyState}", result.ApplyState);
-                    break;
+                switch (result.ApplyState)
+                {
+                    case ApplyStates.UNACKNOWLEDGED:
+                        // Do nothing
+                        break;
+                    case ApplyStates.ACKNOWLEDGED:
+                        _appliedConfigurations[result.Filename].Applied();
+                        _appliedConfigsVersion++;
+                        break;
+                    case ApplyStates.ERROR:
+                        _appliedConfigurations[result.Filename].ErrorOccured(result.Error);
+                        _appliedConfigsVersion++;
+                        break;
+                    default:
+                        Log.Warning("Unexpected ApplyState: {ApplyState}", result.ApplyState);
+                        break;
+                }
             }
         }
 
