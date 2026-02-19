@@ -177,9 +177,9 @@ namespace Datadog.Trace.Configuration
                 ErrorLog.LogInvalidConfiguration(ConfigurationKeys.OpenTelemetry.MetricsExporter);
             }
 
-            RuntimeMetricsEnabled = runtimeMetricsEnabledResult.WithDefault(false);
+            RuntimeMetricsEnabled = runtimeMetricsEnabledResult.WithDefault(true);
 
-            RuntimeMetricsDiagnosticsMetricsApiEnabled = config.WithKeys(ConfigurationKeys.RuntimeMetricsDiagnosticsMetricsApiEnabled).AsBool(false);
+            RuntimeMetricsDiagnosticsMetricsApiEnabled = config.WithKeys(ConfigurationKeys.RuntimeMetricsDiagnosticsMetricsApiEnabled).AsBool(true);
 
 #if !NET6_0_OR_GREATER
             if (RuntimeMetricsEnabled && RuntimeMetricsDiagnosticsMetricsApiEnabled)
