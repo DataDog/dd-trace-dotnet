@@ -457,6 +457,7 @@ namespace Datadog.Trace.Tests.Agent
                              eventPlatformProxyEndpoint: "eventPlatformProxyEndpoint",
                              telemetryProxyEndpoint: "telemetryProxyEndpoint",
                              tracerFlareEndpoint: "tracerFlareEndpoint",
+                             containerTagsHash: "containerTagsHash",
                              clientDropP0: true,
                              spanMetaStructs: true,
                              spanEvents: true));

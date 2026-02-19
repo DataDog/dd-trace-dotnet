@@ -8,6 +8,7 @@ using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DataStreamsMonitoring.Aggregation;
@@ -16,6 +17,7 @@ using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.TestHelpers.FluentAssertionsExtensions;
 using FluentAssertions;
+using Moq;
 using Xunit;
 
 namespace Datadog.Trace.Tests.DataStreamsMonitoring;
@@ -333,7 +335,7 @@ public class DataStreamsManagerTests
                 { ConfigurationKeys.ServiceName, "bar" },
                 { ConfigurationKeys.DataStreamsMonitoring.Enabled, enabled.ToString() },
             });
-        return new DataStreamsManager(settings, writer, processTags: null, new ContainerMetadata(containerId: null, entityId: null));
+        return new DataStreamsManager(settings, writer, Mock.Of<IDiscoveryService>(), processTags: null, new ContainerMetadata(containerId: null, entityId: null));
     }
 
     internal class DataStreamsWriterMock : IDataStreamsWriter
