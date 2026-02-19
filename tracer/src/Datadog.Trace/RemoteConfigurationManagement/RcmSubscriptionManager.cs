@@ -301,7 +301,6 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
         }
 
         var signed = response.Targets.Signed.Targets;
-        var targetFiles = response.TargetFiles.ToDictionary(f => f.Path, f => f);
 
         Dictionary<string, List<RemoteConfiguration>>? configByProducts = null;
         var receivedPaths = new List<string>(capacity: response.ClientConfigs.Count);
@@ -329,7 +328,8 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
                 continue;
             }
 
-            if (!targetFiles.TryGetValue(remoteConfigurationPath.Path, out var targetFile))
+            var targetFile = response.TargetFiles.FirstOrDefault(file => file.Path == remoteConfigurationPath.Path);
+            if (targetFile is null)
             {
                 ThrowHelper.ThrowException($"Missing config {remoteConfigurationPath.Path} in target files");
             }
