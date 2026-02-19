@@ -22,9 +22,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Json
                 return null;
             }
 
-            var contentDecode = Convert.FromBase64String((string)reader.Value);
-
-            using var stream = new MemoryStream(contentDecode);
+            using var stream = new Base64DecodingStream((string)reader.Value);
             using var streamReader = new StreamReader(stream);
             using var jsonReader = new JsonTextReader(streamReader)
             {
