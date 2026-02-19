@@ -12,6 +12,9 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Protocol
 {
     internal sealed class GetRcmResponse
     {
+        [JsonProperty("roots")]
+        public List<string> Roots { get; set; } = new();
+
         [JsonConverter(typeof(TufRootBase64Converter))]
         [JsonProperty("targets")]
         public TufRoot Targets { get; set; }
