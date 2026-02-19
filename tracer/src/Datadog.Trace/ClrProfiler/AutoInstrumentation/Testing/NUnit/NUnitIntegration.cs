@@ -316,6 +316,7 @@ internal static class NUnitIntegration
         // Skip tests
         if (skipReason is not null)
         {
+            testTags.FinalStatus = TestTags.StatusSkip;
             test.Close(Ci.TestStatus.Skip, skipReason: skipReason, duration: TimeSpan.Zero);
             return test;
         }

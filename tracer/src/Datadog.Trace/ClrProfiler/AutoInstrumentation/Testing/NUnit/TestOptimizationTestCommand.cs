@@ -48,6 +48,11 @@ internal sealed class TestOptimizationTestCommand
             SetSkippedResult(result, "Flaky test is disabled by Datadog.");
             if (NUnitIntegration.GetOrCreateTest(context.CurrentTest, 0) is { } test)
             {
+                if (test.GetTags() is { } disabledTestTags)
+                {
+                    disabledTestTags.FinalStatus = TestTags.StatusSkip;
+                }
+
                 NUnitIntegration.FinishTest(test, result);
             }
 
@@ -216,10 +221,10 @@ internal sealed class TestOptimizationTestCommand
 
         if (test is not null && testTags is not null)
         {
-            // Quarantined tests are masked to skip for the testing framework.
-            // Keep retry-only semantics for ATR/EFD/ATF, but expose final_status=skip
-            // for quarantined tests when no retry will happen.
-            if (!retryState.IsARetry && testTags.IsQuarantined == "true" && testTags.FinalStatus is null)
+            // Emit final_status for any execution that won't be retried anymore:
+            // - tests with no retries
+            // - final retry execution
+            if (!retryState.IsARetry && testTags.FinalStatus is null)
             {
                 var isSkippedOrInconclusive = resultStatus is TestStatus.Skipped or TestStatus.Inconclusive;
                 var efdWillRetry = TestOptimization.Instance.EarlyFlakeDetectionFeature?.Enabled == true && testTags.TestIsNew == "true";
