@@ -38,11 +38,12 @@ internal sealed class DataStreamsManager
     public DataStreamsManager(
         TracerSettings tracerSettings,
         IDataStreamsWriter? writer,
+        IDiscoveryService discoveryService,
         string? processTags,
         ContainerMetadata containerMetadata)
     {
         // make sure we subscribe before calling it manually so that there is no gap
-        containerMetadata.SubscribeToContainerTagsHashChanges(newHash => UpdateNodeHash(tracerSettings.Manager.InitialMutableSettings, newHash));
+        discoveryService.SubscribeToChanges(conf => UpdateNodeHash(tracerSettings.Manager.InitialMutableSettings, conf.ContainerTagsHash));
         UpdateNodeHash(tracerSettings.Manager.InitialMutableSettings, containerMetadata.ContainerTagsHash);
         _isEnabled = writer is not null;
         _isLegacyDsmHeadersEnabled = tracerSettings.IsDataStreamsLegacyHeadersEnabled;
@@ -81,7 +82,7 @@ internal sealed class DataStreamsManager
                          ? DataStreamsWriter.Create(settings, profilerSettings, discoveryService)
                          : null;
 
-        return new DataStreamsManager(settings, writer, settings.PropagateProcessTags ? ProcessTags.SerializedTags : null, ContainerMetadata.Instance);
+        return new DataStreamsManager(settings, writer, discoveryService, settings.PropagateProcessTags ? ProcessTags.SerializedTags : null, ContainerMetadata.Instance);
     }
 
     public async Task DisposeAsync()
