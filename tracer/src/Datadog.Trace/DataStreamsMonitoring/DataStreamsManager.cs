@@ -30,6 +30,8 @@ internal sealed class DataStreamsManager
     private readonly ConcurrentDictionary<string, RateLimiter> _schemaRateLimiters = new();
     private readonly IDisposable _updateSubscription;
     private readonly bool _isLegacyDsmHeadersEnabled;
+    private readonly IDiscoveryService _discoveryService; // only saved to be able to unsubscribe
+    private readonly string? _processTags;
     private long _nodeHashBase; // note that this actually represents a `ulong` that we have done an unsafe cast for
     private MutableSettings _previousMutableSettings;
     private string? _previousContainerTagsHash;
@@ -47,42 +49,53 @@ internal sealed class DataStreamsManager
         _isEnabled = writer is not null;
         _isLegacyDsmHeadersEnabled = tracerSettings.IsDataStreamsLegacyHeadersEnabled;
         _writer = writer;
+        _discoveryService = discoveryService;
+        _processTags = processTags;
         _isInDefaultState = tracerSettings.IsDataStreamsMonitoringInDefaultState;
 
         _previousMutableSettings = tracerSettings.Manager.InitialMutableSettings;
         _previousContainerTagsHash = containerMetadata.ContainerTagsHash;
         UpdateNodeHash(tracerSettings.Manager.InitialMutableSettings, containerMetadata.ContainerTagsHash);
-        discoveryService.SubscribeToChanges(conf =>
-        {
-            _previousContainerTagsHash = conf.ContainerTagsHash;
-            UpdateNodeHash(_previousMutableSettings, conf.ContainerTagsHash);
-        });
-        _updateSubscription = tracerSettings.Manager.SubscribeToChanges(updates =>
-        {
-            if (updates.UpdatedMutable is { } updated)
-            {
-                _previousMutableSettings = updated;
-                UpdateNodeHash(updated, _previousContainerTagsHash);
-            }
-        });
-
-        // since we always get one or the other (but not both at the same time),
-        // the other argument should be filled with the saved "_previous..." field.
-        void UpdateNodeHash(MutableSettings settings, string? containerTagsHash)
-        {
-            // We don't yet support primary tag in .NET yet
-            var value = HashHelper.CalculateNodeHashBase(settings.DefaultServiceName, settings.Environment, primaryTag: null, processTags, containerTagsHash);
-            // Working around the fact we can't do Interlocked.Exchange with the struct
-            // and also that we can't do Interlocked.Exchange with a ulong in < .NET 5
-            Interlocked.Exchange(
-                ref _nodeHashBase,
-                unchecked((long)value.Value)); // reinterpret as a long
-        }
+        discoveryService.SubscribeToChanges(UpdateHashWithContainerTags);
+        _updateSubscription = tracerSettings.Manager.SubscribeToChanges(UpdateHashWithNewSettings);
     }
 
     public bool IsEnabled => Volatile.Read(ref _isEnabled);
 
     public bool IsInDefaultState => Volatile.Read(ref _isInDefaultState);
+
+    /// <summary> Callback for AgentConfiguration updates </summary>
+    private void UpdateHashWithContainerTags(AgentConfiguration conf)
+    {
+        if (conf.ContainerTagsHash != _previousContainerTagsHash)
+        {
+            _previousContainerTagsHash = conf.ContainerTagsHash;
+            UpdateNodeHash(_previousMutableSettings, conf.ContainerTagsHash);
+        }
+    }
+
+    /// <summary> Callback for MutableSettings updates </summary>
+    private void UpdateHashWithNewSettings(TracerSettings.SettingsManager.SettingChanges updates)
+    {
+        if (updates.UpdatedMutable is { } updated)
+        {
+            _previousMutableSettings = updated;
+            UpdateNodeHash(updated, _previousContainerTagsHash);
+        }
+    }
+
+    // since we always get one or the other (but not both at the same time),
+    // the other argument should be filled with the saved "_previous..." field.
+    private void UpdateNodeHash(MutableSettings settings, string? containerTagsHash)
+    {
+        // We don't yet support primary tag in .NET yet
+        var value = HashHelper.CalculateNodeHashBase(settings.DefaultServiceName, settings.Environment, primaryTag: null, _processTags, containerTagsHash);
+        // Working around the fact we can't do Interlocked.Exchange with the struct
+        // and also that we can't do Interlocked.Exchange with a ulong in < .NET 5
+        Interlocked.Exchange(
+            ref _nodeHashBase,
+            unchecked((long)value.Value)); // reinterpret as a long
+    }
 
     public static DataStreamsManager Create(
         TracerSettings settings,
@@ -99,6 +112,7 @@ internal sealed class DataStreamsManager
     public async Task DisposeAsync()
     {
         _updateSubscription.Dispose();
+        _discoveryService.RemoveSubscription(UpdateHashWithContainerTags);
         Volatile.Write(ref _isEnabled, false);
         var writer = Interlocked.Exchange(ref _writer, null);
 
