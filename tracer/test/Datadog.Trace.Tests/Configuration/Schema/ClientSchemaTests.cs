@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Configuration;
@@ -17,7 +18,6 @@ namespace Datadog.Trace.Tests.Configuration.Schema
     public class ClientSchemaTests
     {
         private const string DefaultServiceName = "MyApplication";
-        private readonly string[] _unmappedKeys = { "elasticsearch", "postgres", "custom-service" };
         private readonly Dictionary<string, string> _mappings = new()
         {
             { "sql-server", "custom-db" },
@@ -25,79 +25,70 @@ namespace Datadog.Trace.Tests.Configuration.Schema
             { "mongodb", "my-mongo" },
         };
 
-        public static IEnumerable<object[]> GetAllConfigs()
-            => from schemaVersion in new object[] { SchemaVersion.V0, SchemaVersion.V1 }
-               from peerServiceTagsEnabled in new[] { true, false }
-               from removeClientServiceNamesEnabled in new[] { true, false }
-               select new[] { schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled };
-
-        [Theory]
-        [MemberData(nameof(GetAllConfigs))]
-        public void GetOperationNameForProtocolIsCorrect(object schemaVersionObject, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
+        public static IEnumerable<(int SchemaVersion, int Protocol, string ExpectedValue)> GetOperationNameForProtocolData()
         {
-            var schemaVersion = (SchemaVersion)schemaVersionObject; // Unbox SchemaVersion, which is only defined internally
-            var protocol = "http";
-            var expectedValue = schemaVersion switch
-            {
-                SchemaVersion.V0 => $"{protocol}.request",
-                _ => $"{protocol}.client.request",
-            };
+            yield return (0, (int)ClientSchema.Protocol.Http, "http.request");         // SchemaVersion.V0
+            yield return (0, (int)ClientSchema.Protocol.Grpc, "grpc.request");
+            yield return (1, (int)ClientSchema.Protocol.Http, "http.client.request");  // SchemaVersion.V1
+            yield return (1, (int)ClientSchema.Protocol.Grpc, "grpc.client.request");
+        }
 
-            var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings, new Dictionary<string, string>());
-            namingSchema.Client.GetOperationNameForProtocol(protocol).Should().Be(expectedValue);
+        public static IEnumerable<(int SchemaVersion, int Component, string ExpectedValue, bool RemoveClientServiceNamesEnabled)> GetServiceNameData()
+        {
+            yield return (0, (int)ClientSchema.Component.Http, "some-service", true);   // V0, mapped
+            yield return (0, (int)ClientSchema.Component.Http, "some-service", false);
+            yield return (1, (int)ClientSchema.Component.Http, "some-service", true);   // V1, mapped
+            yield return (1, (int)ClientSchema.Component.Http, "some-service", false);
+            yield return (0, (int)ClientSchema.Component.Grpc, DefaultServiceName, true);   // V0, unmapped
+            yield return (0, (int)ClientSchema.Component.Grpc, $"{DefaultServiceName}-grpc-client", false);
+            yield return (1, (int)ClientSchema.Component.Grpc, DefaultServiceName, true);   // V1, unmapped
+            yield return (1, (int)ClientSchema.Component.Grpc, DefaultServiceName, false);
+        }
+
+        public static IEnumerable<(int SchemaVersion, string ExpectedSuffix)> GetOperationNameSuffixForRequestData()
+        {
+            yield return (0, string.Empty);           // SchemaVersion.V0
+            yield return (1, ".request");   // SchemaVersion.V1
         }
 
         [Theory]
-        [MemberData(nameof(GetAllConfigs))]
-        public void GetOperationNameForRequestTypeIsCorrect(object schemaVersionObject, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
+        [CombinatorialData]
+        public void GetOperationNameForProtocolIsCorrect(
+            [CombinatorialMemberData(nameof(GetOperationNameForProtocolData))] (int SchemaVersion, int Protocol, string ExpectedValue) values,
+            bool peerServiceTagsEnabled,
+            bool removeClientServiceNamesEnabled)
         {
-            var schemaVersion = (SchemaVersion)schemaVersionObject; // Unbox SchemaVersion, which is only defined internally
-            var requestType = "some-remoting.client";
-            var expectedValue = schemaVersion switch
-            {
-                SchemaVersion.V0 => requestType,
-                _ => $"{requestType}.request",
-            };
+            var schemaVersion = (SchemaVersion)values.SchemaVersion;
+            var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings, new Dictionary<string, string>());
+            namingSchema.Client.GetOperationNameForProtocol((ClientSchema.Protocol)values.Protocol).Should().Be(values.ExpectedValue);
+        }
 
+        [Theory]
+        [CombinatorialData]
+        public void GetOperationNameSuffixForRequestIsCorrect(
+            [CombinatorialMemberData(nameof(GetOperationNameSuffixForRequestData))] (int SchemaVersion, string ExpectedSuffix) values,
+            bool peerServiceTagsEnabled,
+            bool removeClientServiceNamesEnabled)
+        {
+            var schemaVersion = (SchemaVersion)values.SchemaVersion;
             var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, new Dictionary<string, string>(), new Dictionary<string, string>());
-            namingSchema.Server.GetOperationNameForRequestType(requestType).Should().Be(expectedValue);
+            namingSchema.Client.GetOperationNameSuffixForRequest().Should().Be(values.ExpectedSuffix);
         }
 
         [Theory]
-        [MemberData(nameof(GetAllConfigs))]
-        public void RetrievesMappedServiceNames(object schemaVersionObject, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
+        [CombinatorialData]
+        public void GetServiceNameIsCorrect(
+            [CombinatorialMemberData(nameof(GetServiceNameData))] (int SchemaVersion, int Component, string ExpectedValue, bool RemoveClientServiceNamesEnabled) values,
+            bool peerServiceTagsEnabled)
         {
-            var schemaVersion = (SchemaVersion)schemaVersionObject; // Unbox SchemaVersion, which is only defined internally
-            var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings, new Dictionary<string, string>());
-
-            foreach (var kvp in _mappings)
-            {
-                namingSchema.Client.GetServiceName(kvp.Key).Should().Be(kvp.Value);
-            }
+            var schemaVersion = (SchemaVersion)values.SchemaVersion;
+            var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, values.RemoveClientServiceNamesEnabled, DefaultServiceName, _mappings, new Dictionary<string, string>());
+            namingSchema.Client.GetServiceName((ClientSchema.Component)values.Component).Should().Be(values.ExpectedValue);
         }
 
         [Theory]
-        [MemberData(nameof(GetAllConfigs))]
-        public void RetrievesUnmappedServiceNames(object schemaVersionObject, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
-        {
-            var schemaVersion = (SchemaVersion)schemaVersionObject; // Unbox SchemaVersion, which is only defined internally
-            var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings, new Dictionary<string, string>());
-
-            foreach (var key in _unmappedKeys)
-            {
-                var expectedServiceName = schemaVersion switch
-                {
-                    SchemaVersion.V0 when removeClientServiceNamesEnabled == false => $"{DefaultServiceName}-{key}",
-                    _ => DefaultServiceName,
-                };
-
-                namingSchema.Client.GetServiceName(key).Should().Be(expectedServiceName);
-            }
-        }
-
-        [Theory]
-        [MemberData(nameof(GetAllConfigs))]
-        public void CreateHttpTagsReturnsCorrectImplementation(object schemaVersionObject, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
+        [CombinatorialData]
+        public void CreateHttpTagsReturnsCorrectImplementation([CombinatorialValues(0, 1)]int schemaVersionObject, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
         {
             var schemaVersion = (SchemaVersion)schemaVersionObject; // Unbox SchemaVersion, which is only defined internally
             var expectedType = schemaVersion switch
@@ -111,8 +102,8 @@ namespace Datadog.Trace.Tests.Configuration.Schema
         }
 
         [Theory]
-        [MemberData(nameof(GetAllConfigs))]
-        public void CreateGrpcClientTagsReturnsCorrectImplementation(object schemaVersionObject, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
+        [CombinatorialData]
+        public void CreateGrpcClientTagsReturnsCorrectImplementation([CombinatorialValues(0, 1)]int schemaVersionObject, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
         {
             var schemaVersion = (SchemaVersion)schemaVersionObject; // Unbox SchemaVersion, which is only defined internally
             var expectedType = schemaVersion switch
@@ -126,8 +117,8 @@ namespace Datadog.Trace.Tests.Configuration.Schema
         }
 
         [Theory]
-        [MemberData(nameof(GetAllConfigs))]
-        public void CreateServiceRemotingClientTagsReturnsCorrectImplementation(object schemaVersionObject, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
+        [CombinatorialData]
+        public void CreateServiceRemotingClientTagsReturnsCorrectImplementation([CombinatorialValues(0, 1)]int schemaVersionObject, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
         {
             var schemaVersion = (SchemaVersion)schemaVersionObject; // Unbox SchemaVersion, which is only defined internally
             var expectedType = schemaVersion switch
@@ -141,8 +132,8 @@ namespace Datadog.Trace.Tests.Configuration.Schema
         }
 
         [Theory]
-        [MemberData(nameof(GetAllConfigs))]
-        public void CreateAzureServiceBusTagsReturnsCorrectImplementation(object schemaVersionObject, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
+        [CombinatorialData]
+        public void CreateAzureServiceBusTagsReturnsCorrectImplementation([CombinatorialValues(0, 1)]int schemaVersionObject, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
         {
             var schemaVersion = (SchemaVersion)schemaVersionObject; // Unbox SchemaVersion, which is only defined internally
             var expectedType = schemaVersion switch
@@ -153,6 +144,28 @@ namespace Datadog.Trace.Tests.Configuration.Schema
 
             var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings, new Dictionary<string, string>());
             namingSchema.Client.CreateAzureServiceBusTags().Should().BeOfType(expectedType);
+        }
+
+        [Theory]
+        [CombinatorialData]
+        public void GetOperationNameForProtocol_SupportsAllEnumValues([CombinatorialValues(0, 1)]int schemaVersion, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
+        {
+            var namingSchema = new NamingSchema((SchemaVersion)schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings, new Dictionary<string, string>());
+            foreach (var value in Enum.GetValues(typeof(ClientSchema.Protocol)).Cast<ClientSchema.Protocol>())
+            {
+                namingSchema.Client.GetOperationNameForProtocol(value).Should().NotBeNull();
+            }
+        }
+
+        [Theory]
+        [CombinatorialData]
+        public void GetServiceName_SupportsAllEnumValues([CombinatorialValues(0, 1)]int schemaVersion, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
+        {
+            var namingSchema = new NamingSchema((SchemaVersion)schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings, new Dictionary<string, string>());
+            foreach (var value in Enum.GetValues(typeof(ClientSchema.Component)).Cast<ClientSchema.Component>())
+            {
+                namingSchema.Client.GetServiceName(value).Should().NotBeNull();
+            }
         }
     }
 }
