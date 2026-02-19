@@ -8,6 +8,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using Datadog.Trace.Telemetry;
 
@@ -16,6 +17,7 @@ namespace Datadog.Trace.Configuration.Telemetry
     // This is the "collector" implementation
     internal partial class ConfigurationTelemetry
     {
+        private readonly List<List<ConfigurationKeyValue>> _allData = new();
         private ConcurrentQueue<ConfigurationTelemetryEntry> _backBuffer = new();
 
         public bool HasChanges() => !_entries.IsEmpty || !_backBuffer.IsEmpty;
@@ -67,7 +69,21 @@ namespace Datadog.Trace.Configuration.Telemetry
 
             GetData(config, data);
 
+            // Save the configuration so we can report it all in extended heart beat
+            // and in tracer flare
+            _allData.Add(data);
             return data;
+        }
+
+        public List<ConfigurationKeyValue>? GetFullData()
+        {
+            var fullData = new List<ConfigurationKeyValue>(capacity: _allData.Sum(x => x.Count));
+            foreach (var data in _allData)
+            {
+                fullData.AddRange(data);
+            }
+
+            return fullData;
         }
 
         private static void GetData(ConcurrentQueue<ConfigurationTelemetryEntry> buffer, List<ConfigurationKeyValue> destination)
@@ -111,6 +127,9 @@ namespace Datadog.Trace.Configuration.Telemetry
             while (config.TryDequeue(out _))
             {
             }
+
+            // clears any saved data
+            _allData.Clear();
         }
     }
 }

@@ -398,6 +398,8 @@ public class CompositeConfigurationSourceTests
 
         public ICollection<ConfigurationKeyValue> GetData() => null;
 
+        public List<ConfigurationKeyValue> GetFullData() => null;
+
         public void CopyTo(IConfigurationTelemetry destination)
         {
         }

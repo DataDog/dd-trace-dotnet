@@ -82,4 +82,9 @@ public interface IConfigurationTelemetry
     /// </summary>
     /// <param name="destination">The destination for the copied data</param>
     public void CopyTo(IConfigurationTelemetry destination);
+
+    /// <summary>
+    /// Gets all the stored configuration data recorded so far
+    /// </summary>
+    List<ConfigurationKeyValue>? GetFullData();
 }
