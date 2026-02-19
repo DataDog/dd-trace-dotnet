@@ -151,6 +151,16 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData("false", "otlp", false)]
         [InlineData("false", "random", false)]
         [InlineData("false", null, false)]
+#if NET6_0_OR_GREATER
+        [InlineData("A", "none", true)]
+        [InlineData("A", "otlp", true)]
+        [InlineData("", "none", true)]
+        [InlineData("", "otlp", true)]
+        [InlineData(null, "none", true)]
+        [InlineData(null, "random", true)]
+        [InlineData(null, "otlp", true)]
+        [InlineData(null, null, true)]
+#else
         [InlineData("A", "none", false)]
         [InlineData("A", "otlp", false)]
         [InlineData("", "none", false)]
@@ -159,6 +169,7 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData(null, "random", false)]
         [InlineData(null, "otlp", false)]
         [InlineData(null, null, false)]
+#endif
         public void RuntimeMetricsEnabled(string value, string otelValue, bool expected)
         {
             var source = CreateConfigurationSource(
