@@ -361,4 +361,102 @@ namespace MyTests
         // Should not include the property (properties should be ignored, not error)
         constantsFile.Should().NotContain("InvalidPropertyBytes");
     }
+
+    [Fact]
+    public void ErrorWhenDuplicateFieldNamesExist()
+    {
+        const string input1 = @"
+using Datadog.Trace.SourceGenerators;
+
+namespace MyTests.Tags
+{
+    internal static class Tags
+    {
+        [MessagePackField]
+        public const string ProcessTags = ""_dd.tags.process"";
+    }
+}";
+
+        const string input2 = @"
+using Datadog.Trace.SourceGenerators;
+
+namespace MyTests.FieldNames
+{
+    internal static class MessagePackFieldNames
+    {
+        [MessagePackField]
+        public const string ProcessTags = ""ProcessTags"";
+    }
+}";
+
+        var (diagnostics, outputs) = TestHelpers.GetGeneratedTrees<MessagePackConstantsGenerator>(new[] { input1, input2 }, assertOutput: false);
+
+        using var scope = new AssertionScope();
+
+        // Output diagnostics for debugging
+        _output.WriteLine($"Diagnostics ({diagnostics.Length}):");
+        foreach (var diagnostic in diagnostics)
+        {
+            _output.WriteLine($"  {diagnostic.Id}: {diagnostic.GetMessage()}");
+        }
+
+        // Should produce a diagnostic about duplicate field names
+        diagnostics.Should().NotBeEmpty();
+        diagnostics.Should().Contain(d => d.Id == "DDSG005" && d.Severity == Microsoft.CodeAnalysis.DiagnosticSeverity.Error);
+        diagnostics.Should().Contain(d => d.GetMessage().Contains("ProcessTags"));
+
+        // Even with duplicates, should still generate the constants file with only the first occurrence
+        var constantsFile = outputs.FirstOrDefault(x => x.Contains("MessagePackConstants") && !x.Contains("Attribute"));
+        constantsFile.Should().NotBeNull("MessagePackConstants class should be generated even with duplicates");
+        constantsFile.Should().Contain("ProcessTagsBytes");
+
+        // Count occurrences of ProcessTagsBytes - should appear three times (comment + ReadOnlySpan + byte[])
+        var occurrences = constantsFile!.Split(new[] { "ProcessTagsBytes" }, System.StringSplitOptions.None).Length - 1;
+        occurrences.Should().Be(3, "ProcessTagsBytes should appear exactly three times (comment + ReadOnlySpan + byte[] versions)");
+    }
+
+    [Fact]
+    public void WarnsAboutDuplicatesButGeneratesFirstOccurrence()
+    {
+        const string input1 = @"
+using Datadog.Trace.SourceGenerators;
+
+namespace MyTests.First
+{
+    internal static class FirstClass
+    {
+        [MessagePackField]
+        public const string SharedName = ""first_value"";
+    }
+}";
+
+        const string input2 = @"
+using Datadog.Trace.SourceGenerators;
+
+namespace MyTests.Second
+{
+    internal static class SecondClass
+    {
+        [MessagePackField]
+        public const string SharedName = ""second_value"";
+    }
+}";
+
+        var (diagnostics, outputs) = TestHelpers.GetGeneratedTrees<MessagePackConstantsGenerator>(new[] { input1, input2 }, assertOutput: false);
+
+        using var scope = new AssertionScope();
+
+        // Should have duplicate error
+        diagnostics.Should().Contain(d => d.Id == "DDSG005");
+
+        var constantsFile = outputs.FirstOrDefault(x => x.Contains("MessagePackConstants") && !x.Contains("Attribute"));
+        constantsFile.Should().NotBeNull();
+
+        // Should contain the first value, not the second
+        // "first_value" = 11 chars -> MessagePack fixstr: 0xab (171)
+        constantsFile.Should().Contain("171");
+
+        // "second_value" = 12 chars -> MessagePack fixstr: 0xac (172)
+        constantsFile.Should().NotContain("172");
+    }
 }

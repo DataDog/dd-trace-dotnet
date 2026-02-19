@@ -4,11 +4,26 @@
 // </copyright>
 
 using System;
+using System.IO;
 
 namespace Datadog.Trace.Vendors.MessagePack
 {
     internal static partial class MessagePackBinary
     {
+#if NETCOREAPP
+        public static int WriteRaw(Stream stream, ReadOnlySpan<byte> rawMessagePackBlock)
+        {
+            stream.Write(rawMessagePackBlock);
+            return rawMessagePackBlock.Length;
+        }
+#else
+        public static int WriteRaw(Stream stream, byte[] rawMessagePackBlock)
+        {
+            stream.Write(rawMessagePackBlock, 0, rawMessagePackBlock.Length);
+            return rawMessagePackBlock.Length;
+        }
+#endif
+
         public static int WriteRaw(ref byte[] bytes, int offset, ReadOnlySpan<byte> rawMessagePackBlock)
         {
             EnsureCapacity(ref bytes, offset, rawMessagePackBlock.Length);
