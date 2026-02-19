@@ -367,7 +367,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             {
                 if (functionContext.Items != null &&
                     functionContext.Items.TryGetValue(HttpRequestContextKey, out var httpContextObj) &&
-                    httpContextObj is Microsoft.AspNetCore.Http.HttpContext httpContext &&
+                    httpContextObj.TryDuckCast<IHttpContextItems>(out var httpContext) &&
                     httpContext.Items.TryGetValue(AspNetCoreHttpRequestHandler.HttpContextActiveScopeKey, out var scopeObj) &&
                     scopeObj is Scope aspNetCoreScope)
                 {
