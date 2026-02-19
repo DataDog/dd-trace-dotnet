@@ -182,7 +182,17 @@ function Extract-FailedTests {
         'Expected\s+\d+\s+spans.*?(?:in|at)\s+([A-Za-z0-9_.]+)',
 
         # Snapshot verification with test name
-        'Received file does not match.*?([A-Za-z0-9_.]+)\.(?:verified|received)\.txt'
+        'Received file does not match.*?([A-Za-z0-9_.]+)\.(?:verified|received)\.txt',
+
+        # Test host process crash (CLR fatal error, access violation, etc.)
+        #   The active test run was aborted. Reason: Test host process crashed : Fatal error. Internal CLR error. (0x80131506)
+        #   The active test run was aborted. Reason: Test host process crashed
+        'The active test run was aborted\.\s+Reason:\s+(.+)',
+
+        # Framework-specific test failure
+        #   Error testing net10.0
+        #   Error testing netcoreapp3.1
+        'Error testing\s+(net\S+)'
     )
 
     # After a crash header, subsequent messages may be bare test names.
@@ -221,6 +231,34 @@ function Extract-FailedTests {
     }
 
     return @($testNames)
+}
+
+function Extract-BuildErrors {
+    param([string[]]$Messages)
+
+    $buildErrors = [System.Collections.Generic.HashSet[string]]::new()
+
+    foreach ($message in $Messages) {
+        # Compilation errors: error CS0103, error NU1510, error NETSDK1045, error SYSLIB0001, etc.
+        #   File.cs(81,18): error CS0103: The name 'StringUtils' does not exist in the current context [project.csproj]
+        # Normalize paths (both Windows D:\a\... and Unix /Users/runner/...) to just filename(line,col)
+        if ($message -match '(?:^|[\\/])([^\\/]+?\(\d+,\d+\)):\s+error\s+([A-Z]+\d+):\s+(.+?)(?:\s+\[|$)') {
+            $location = $matches[1]
+            $code = $matches[2]
+            $description = $matches[3].Trim()
+            [void]$buildErrors.Add("$code $location - $description")
+            continue
+        }
+
+        # Nuke target exceptions
+        #   Target "CompileManagedUnitTests" has thrown an exception
+        #   Target "RunIntegrationTests" has thrown an exception
+        if ($message -match 'Target\s+"([^"]+)"\s+has thrown an exception') {
+            [void]$buildErrors.Add("Target ""$($matches[1])"" threw an exception")
+        }
+    }
+
+    return @($buildErrors)
 }
 
 function Get-FailedRecords {
@@ -328,6 +366,7 @@ try {
     })
 
     $failedTests = @(Extract-FailedTests -Messages $errorMessages)
+    $buildErrors = @(Extract-BuildErrors -Messages $errorMessages)
 
     # Extract PR info from triggerInfo (available for PR-triggered builds)
     $prNumber = $null
@@ -360,6 +399,7 @@ try {
         TimedOutJobs         = @($timedOutJobs | ForEach-Object { "$($_.Name) ($($_.DurationMinutes) min)" })
         CollateralCanceled   = @($collateralCanceledJobs | ForEach-Object { $_.Name })
         FailedTests     = $failedTests
+        BuildErrors     = $buildErrors
         ErrorMessages   = $errorMessages
         LogFiles        = @()
         ArtifactPath    = $OutputPath
@@ -419,6 +459,7 @@ try {
         Write-Host "  Failed Jobs:   " -NoNewline; Write-Host $result.FailedJobs.Count -ForegroundColor Green
         Write-Host "  Failed Tasks:  " -NoNewline; Write-Host $result.FailedTasks.Count -ForegroundColor Green
         Write-Host "  Failed Tests:  " -NoNewline; Write-Host $result.FailedTests.Count -ForegroundColor Green
+        Write-Host "  Build Errors:  " -NoNewline; Write-Host $result.BuildErrors.Count -ForegroundColor Green
         Write-Host "  Timed Out:     " -NoNewline; Write-Host $result.TimedOutJobs.Count -ForegroundColor Yellow
         Write-Host "  Canceled:      " -NoNewline; Write-Host $result.CanceledJobs.Count -ForegroundColor DarkGray
 
@@ -435,6 +476,11 @@ try {
         if ($result.FailedTasks.Count -gt 0) {
             Write-Host "`nFailed Tasks:" -ForegroundColor Red
             $result.FailedTasks | ForEach-Object { Write-Host "  - $_" -ForegroundColor DarkGray }
+        }
+
+        if ($result.BuildErrors.Count -gt 0) {
+            Write-Host "`nBuild Errors:" -ForegroundColor Red
+            $result.BuildErrors | ForEach-Object { Write-Host "  - $_" -ForegroundColor DarkGray }
         }
 
         if ($result.TimedOutJobs.Count -gt 0) {

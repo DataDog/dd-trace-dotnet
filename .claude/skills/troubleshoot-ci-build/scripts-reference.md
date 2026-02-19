@@ -100,6 +100,7 @@ When using `-OutputFormat json` or capturing the returned object, the following 
 | `TimedOutJobs` | string[] | Jobs canceled after ~60 min (format: "name (XX.X min)") |
 | `CollateralCanceled` | string[] | Jobs canceled in < 5 min |
 | `FailedTests` | string[] | Extracted test names (via regex patterns) |
+| `BuildErrors` | string[] | Compilation errors and Nuke target exceptions |
 | `ErrorMessages` | string[] | Raw error messages from failed tasks |
 | `LogFiles` | string[] | Paths to downloaded log files |
 | `ArtifactPath` | string | Directory containing saved JSON files |
@@ -115,12 +116,28 @@ The script saves the following files to `OutputPath`:
 
 ### Internal Implementation Details
 
-#### Test Name Extraction
+#### Test Name Extraction (`Extract-FailedTests`)
 
 Failed test names are extracted via regex patterns:
 
-- `\[FAIL\]\s+([^\r\n]+)` — Matches `[FAIL] Test.Name.Here`
-- `Failed\s+([^\r\n]+)` — Matches `Failed Test.Name.Here`
+- `\[xUnit\.net...\] ... [FAIL]` — xUnit test names (dot-separated and comma-separated variants)
+- `\[FAIL\]\s+([^\r\n]+)` — Generic `[FAIL]` marker
+- `Failed\s+([^\r\n]+)` — Generic `Failed` prefix
+- `Expected N spans...in/at TestName` — Span count mismatch
+- `Received file does not match...TestName.verified.txt` — Snapshot verification
+- `The active test run was aborted. Reason: ...` — Test host crashes (CLR fatal errors, access violations)
+- `Error testing <framework>` — Framework-specific failures (e.g., `net10.0`, `netcoreapp3.1`)
+
+Crash blocks (lines following "test running when the crash occurred") are also parsed for bare fully-qualified test names.
+
+Duplicates are removed using `HashSet<string>`.
+
+#### Build Error Extraction (`Extract-BuildErrors`)
+
+Compilation errors and build infrastructure failures are extracted separately:
+
+- `error <CODE>: <description>` — Compilation errors with any prefix (CS, NU, NETSDK, SYSLIB, SA, RS, IL, etc.). Paths are normalized to `filename(line,col)`.
+- `Target "<name>" has thrown an exception` — Nuke build target failures.
 
 Duplicates are removed using `HashSet<string>`.
 
