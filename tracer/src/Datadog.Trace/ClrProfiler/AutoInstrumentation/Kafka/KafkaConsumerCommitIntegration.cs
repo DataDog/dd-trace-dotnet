@@ -37,15 +37,19 @@ public sealed class KafkaConsumerCommitIntegration
         var dataStreams = Tracer.Instance.TracerManager.DataStreamsManager;
         if (exception is null && state.State is IEnumerable<object> offsets && dataStreams.IsEnabled && instance != null)
         {
-            ConsumerCache.TryGetConsumerGroup(instance, out var groupId, out var _);
+            ConsumerCache.TryGetConsumerGroup(instance, out var groupId, out var _, out var clusterId);
 
             foreach (var offset in offsets)
             {
                 if (offset.TryDuckCast<ITopicPartitionOffset>(out var item))
                 {
-                    dataStreams.TrackBacklog(
-                        $"consumer_group:{groupId},partition:{item.Partition.Value},topic:{item.Topic},type:kafka_commit",
-                        item.Offset.Value);
+                    var backlogTags = $"consumer_group:{groupId},partition:{item.Partition.Value},topic:{item.Topic},type:kafka_commit";
+                    if (!string.IsNullOrEmpty(clusterId))
+                    {
+                        backlogTags = $"kafka_cluster_id:{clusterId},{backlogTags}";
+                    }
+
+                    dataStreams.TrackBacklog(backlogTags, item.Offset.Value);
                 }
             }
         }

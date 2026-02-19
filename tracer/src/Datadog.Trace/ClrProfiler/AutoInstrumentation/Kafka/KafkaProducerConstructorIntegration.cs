@@ -58,8 +58,11 @@ public sealed class KafkaProducerConstructorIntegration
 
             if (!string.IsNullOrEmpty(bootstrapServers))
             {
-                // Save the map between this producer and its bootstrap server config
-                ProducerCache.AddBootstrapServers(instance, bootstrapServers);
+                // Extract cluster_id using AdminClient API with bootstrap servers
+                var clusterId = KafkaHelper.GetClusterId(bootstrapServers) ?? string.Empty;
+
+                // Save the map between this producer and its metadata
+                ProducerCache.AddBootstrapServers(instance, bootstrapServers, clusterId);
                 return new CallTargetState(scope: null, state: instance);
             }
         }
