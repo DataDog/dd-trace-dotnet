@@ -6,7 +6,6 @@
 #nullable enable
 
 using System;
-using System.IO;
 using System.Reflection;
 using System.Threading;
 using Datadog.Trace.Ci;
@@ -20,8 +19,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing;
 
 internal static class Common
 {
-    private const string AgentDebugLogPath = "/Users/tony.redondo/repos/github/Datadog/dd-trace-dotnet-w1/.cursor/debug.log";
-
     internal static readonly IDatadogLogger Log = TestOptimization.Instance.Log;
 
     internal static string GetParametersValueData(object? paramValue)
@@ -276,39 +273,6 @@ internal static class Common
                 Log.Warning<long, long, int>("EFD: The number of new tests goes above the Faulty Session Threshold. Disabling early flake detection for this session. [NewCases={NewCases}/TotalCases={TotalCases} | {FaltyThreshold}%]", nTestCases, tTestCases, faultySessionThreshold);
             }
         }
-    }
-
-    internal static void AgentDebugLog(string runId, string hypothesisId, string location, string message, string? data = null)
-    {
-        try
-        {
-            var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-            var line =
-                "{\"id\":\"log_" + timestamp + "_" + Guid.NewGuid().ToString("N") +
-                "\",\"timestamp\":" + timestamp +
-                ",\"location\":\"" + EscapeJson(location) +
-                "\",\"message\":\"" + EscapeJson(message) +
-                "\",\"data\":{\"details\":\"" + EscapeJson(data ?? string.Empty) +
-                "\"},\"runId\":\"" + EscapeJson(runId) +
-                "\",\"hypothesisId\":\"" + EscapeJson(hypothesisId) +
-                "\"}" + Environment.NewLine;
-
-            File.AppendAllText(AgentDebugLogPath, line);
-        }
-        catch
-        {
-            // Never fail tests because of debug logging.
-        }
-    }
-
-    private static string EscapeJson(string value)
-    {
-        return value
-              .Replace("\\", "\\\\")
-              .Replace("\"", "\\\"")
-              .Replace("\r", "\\r")
-              .Replace("\n", "\\n")
-              .Replace("\t", "\\t");
     }
 
     /// <summary>

@@ -35,9 +35,6 @@ internal static class NUnitIntegration
     private static long _totalTestCases;
     private static long _newTestCases;
 
-#pragma warning disable SA1118 // Debug instrumentation favors readable payload strings
-#pragma warning disable SA1123 // Debug instrumentation uses collapsible regions
-
     internal static bool IsEnabled => TestOptimization.Instance.IsRunning && Tracer.Instance.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId);
 
     internal static Test? GetOrCreateTest(ITest currentTest, int repeatCount = 0)
@@ -63,19 +60,6 @@ internal static class NUnitIntegration
     internal static void FinishTest(Test test, ITestResult testResult)
     {
         GetExceptionAndMessage(testResult, out var exceptionType, out var resultMessage);
-        var finishTags = test.GetTags();
-#region agent log H5
-        Common.AgentDebugLog(
-            "baseline",
-            "H5",
-            "NUnitIntegration.FinishTest",
-            "FinishTest called, span close about to occur",
-            "status=" + testResult.ResultState.Status +
-            ";finalStatusAtFinish=" + (finishTags.FinalStatus ?? "(null)") +
-            ";testIsRetryTag=" + (finishTags.TestIsRetry ?? "(null)") +
-            ";isDisabled=" + (finishTags.IsDisabled ?? "(null)") +
-            ";isQuarantined=" + (finishTags.IsQuarantined ?? "(null)"));
-#endregion
         switch (testResult.ResultState.Status)
         {
             case TestStatus.Skipped or TestStatus.Inconclusive:
@@ -332,21 +316,6 @@ internal static class NUnitIntegration
         // Skip tests
         if (skipReason is not null)
         {
-            if (test.GetTags() is { } skipTestTags)
-            {
-#region agent log H2
-                Common.AgentDebugLog(
-                    "baseline",
-                    "H2",
-                    "NUnitIntegration.InternalCreateTest:pre-exec-skip",
-                    "Pre-execution skip path does not write final_status",
-                    "testName=" + currentTest.Name +
-                    ";skipReason=" + skipReason +
-                    ";isRetry=" + isRetry +
-                    ";finalStatusCurrent=" + (skipTestTags.FinalStatus ?? "(null)"));
-#endregion
-            }
-
             test.Close(Ci.TestStatus.Skip, skipReason: skipReason, duration: TimeSpan.Zero);
             return test;
         }
@@ -419,7 +388,4 @@ internal static class NUnitIntegration
     {
         Interlocked.Increment(ref _totalTestCases);
     }
-
-#pragma warning restore SA1123
-#pragma warning restore SA1118
 }
