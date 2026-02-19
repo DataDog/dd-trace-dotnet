@@ -329,6 +329,35 @@ public class DefaultTaintedMapTests
         }
     }
 
+    [Fact]
+    public void GivenATaintedObjectMap_WhenObjectEqualsThrowsOnNull_GetDoesNotThrow()
+    {
+        // Verifies fix for bug where customer's Equals() throws NRE on null.
+        // Old code: objectToFind.Equals(entry.Value) where entry.Value can be null from GC'd WeakReference
+        // Fix: ReferenceEquals() never calls customer code
+        DefaultTaintedMap map = new();
+
+        var gcObject = new ObjectWithProblematicEquals("gc-target");
+        var aliveObject = new ObjectWithProblematicEquals("alive");
+
+        // Force hash collision to create a chain
+        var aliveObjectHash = IastUtils.IdentityHashCode(aliveObject) & DefaultTaintedMap.PositiveMask;
+
+        var aliveTainted = new TaintedForTest(aliveObject, null);
+        map.Put(aliveTainted);
+
+        // gcObject becomes HEAD of chain, then gets GC'd (Value becomes null)
+        var gcTainted = new TaintedForTest(gcObject, null);
+        gcTainted.PositiveHashCode = aliveObjectHash;
+        map.Put(gcTainted);
+        gcTainted.SimulateGarbageCollection();
+
+        // Old code would throw NRE when walking chain encounters null Value
+        var result = map.Get(aliveObject);
+        result.Should().NotBeNull();
+        result.Value.Should().Be(aliveObject);
+    }
+
     private static void AssertNotContained(DefaultTaintedMap map, List<string> objects)
     {
         foreach (var item in objects)
@@ -357,5 +386,30 @@ public class DefaultTaintedMapTests
         }
 
         map.IsFlat.Should().BeTrue();
+    }
+
+    // Test helper class that mimics customer code with a problematic Equals() implementation
+    private class ObjectWithProblematicEquals
+    {
+        public ObjectWithProblematicEquals(string id)
+        {
+            Id = id;
+        }
+
+        public string Id { get; }
+
+        public override bool Equals(object obj)
+        {
+            // This mimics customer code that doesn't handle null properly
+            // Before the fix, this would throw NullReferenceException when
+            // DefaultTaintedMap.Get() called objectToFind.Equals(entry.Value)
+            // where entry.Value is null (from a garbage-collected WeakReference)
+            return this.Id == ((ObjectWithProblematicEquals)obj).Id;
+        }
+
+        public override int GetHashCode()
+        {
+            return Id.GetHashCode();
+        }
     }
 }
