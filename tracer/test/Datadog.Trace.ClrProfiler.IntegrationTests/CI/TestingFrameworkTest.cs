@@ -183,8 +183,9 @@ public abstract class TestingFrameworkTest : TestHelper
             if (span.GetTag(key) is { } tagValue)
             {
                 targetSpan.Tags[key].Should().Be(tagValue);
-                targetSpan.Tags.Remove(key);
             }
+
+            targetSpan.Tags.Remove(key);
         }
     }
 
