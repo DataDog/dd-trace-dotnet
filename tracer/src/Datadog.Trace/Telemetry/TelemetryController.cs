@@ -195,7 +195,7 @@ internal sealed class TelemetryController : ITelemetryController
 
             // fetch the "complete" values, and make sure to not impact real telemetry push
             var input = new TelemetryInput(
-                configuration: null, // we don't store this indefinitely, so no way of dumping full config
+                _configuration.GetFullData(),
                 _dependencies.GetFullData(),
                 _integrations.GetFullData(),
                 _appEndpoints.GetData(),
