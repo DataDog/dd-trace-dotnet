@@ -31,6 +31,8 @@ internal sealed class DataStreamsManager
     private readonly IDisposable _updateSubscription;
     private readonly bool _isLegacyDsmHeadersEnabled;
     private long _nodeHashBase; // note that this actually represents a `ulong` that we have done an unsafe cast for
+    private MutableSettings _previousMutableSettings;
+    private string? _previousContainerTagsHash;
     private bool _isEnabled;
     private bool _isInDefaultState;
     private IDataStreamsWriter? _writer;
@@ -42,21 +44,30 @@ internal sealed class DataStreamsManager
         string? processTags,
         ContainerMetadata containerMetadata)
     {
-        // make sure we subscribe before calling it manually so that there is no gap
-        discoveryService.SubscribeToChanges(conf => UpdateNodeHash(tracerSettings.Manager.InitialMutableSettings, conf.ContainerTagsHash));
-        UpdateNodeHash(tracerSettings.Manager.InitialMutableSettings, containerMetadata.ContainerTagsHash);
         _isEnabled = writer is not null;
         _isLegacyDsmHeadersEnabled = tracerSettings.IsDataStreamsLegacyHeadersEnabled;
         _writer = writer;
         _isInDefaultState = tracerSettings.IsDataStreamsMonitoringInDefaultState;
+
+        _previousMutableSettings = tracerSettings.Manager.InitialMutableSettings;
+        _previousContainerTagsHash = containerMetadata.ContainerTagsHash;
+        UpdateNodeHash(tracerSettings.Manager.InitialMutableSettings, containerMetadata.ContainerTagsHash);
+        discoveryService.SubscribeToChanges(conf =>
+        {
+            _previousContainerTagsHash = conf.ContainerTagsHash;
+            UpdateNodeHash(_previousMutableSettings, conf.ContainerTagsHash);
+        });
         _updateSubscription = tracerSettings.Manager.SubscribeToChanges(updates =>
         {
             if (updates.UpdatedMutable is { } updated)
             {
-                UpdateNodeHash(updated, containerMetadata.ContainerTagsHash);
+                _previousMutableSettings = updated;
+                UpdateNodeHash(updated, _previousContainerTagsHash);
             }
         });
 
+        // since we always get one or the other (but not both at the same time),
+        // the other argument should be filled with the saved "_previous..." field.
         void UpdateNodeHash(MutableSettings settings, string? containerTagsHash)
         {
             // We don't yet support primary tag in .NET yet
