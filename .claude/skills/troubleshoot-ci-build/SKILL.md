@@ -154,7 +154,7 @@ The script automatically:
 
 **Build**: [<BUILD_NUMBER>](https://dev.azure.com/datadoghq/dd-trace-dotnet/_build/results?buildId=<BUILD_ID>)
 **Status**: ❌ Failed
-**Branch**: `<branch_name>`
+**Branch**: `<source_branch_name>` _(use `triggerInfo["pr.sourceBranch"]` for PR builds instead of `sourceBranch`)_
 **Commit**: `<commit_sha>`
 **Finished**: <timestamp>
 
@@ -216,8 +216,14 @@ This downloads the `.received.txt` snapshot artifacts from CI and replaces your 
 3. **Show full analysis** - Run complete analysis with all details
 4. **Update snapshots** - Download and apply updated snapshots from this build _(shown only when snapshot failures detected)_
 
-[View build in Azure DevOps](https://dev.azure.com/datadoghq/dd-trace-dotnet/_build/results?buildId=<BUILD_ID>&view=logs)
+[View build in Azure DevOps](https://dev.azure.com/datadoghq/dd-trace-dotnet/_build/results?buildId=<BUILD_ID>&view=logs) | [View PR #<PR_NUMBER>](https://github.com/DataDog/dd-trace-dotnet/pull/<PR_NUMBER>) _(if PR-triggered)_
 ```
+
+**Resolving PR number**: When invoked with `build <BUILD_ID>`, extract the PR number from the build details JSON:
+- `triggerInfo["pr.number"]` — most direct
+- `sourceBranch` — parse from `refs/pull/<NUMBER>/merge` pattern
+- Only show the PR link if the build was PR-triggered (`reason == "pullRequest"`)
+
 
 ### Phase 2: Detailed Output (Only If User Requests)
 
