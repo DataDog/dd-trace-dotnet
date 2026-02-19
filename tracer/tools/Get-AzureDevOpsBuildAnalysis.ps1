@@ -329,14 +329,28 @@ try {
 
     $failedTests = @(Extract-FailedTests -Messages $errorMessages)
 
+    # Extract PR info from triggerInfo (available for PR-triggered builds)
+    $prNumber = $null
+    $prSourceBranch = $null
+    $prUrl = $null
+    if ($buildDetails.triggerInfo) {
+        $prNumber = $buildDetails.triggerInfo.'pr.number'
+        $prSourceBranch = $buildDetails.triggerInfo.'pr.sourceBranch'
+        if ($prNumber) {
+            $prUrl = "https://github.com/DataDog/dd-trace-dotnet/pull/$prNumber"
+        }
+    }
+
     # Build result object
     $result = [PSCustomObject]@{
         BuildId         = $buildDetails.id
         BuildNumber     = $buildDetails.buildNumber
         Status          = $buildDetails.status
         Result          = $buildDetails.result
-        Branch          = $buildDetails.sourceBranch
+        Branch          = if ($prSourceBranch) { $prSourceBranch } else { $buildDetails.sourceBranch }
         Commit          = $buildDetails.sourceVersion
+        PrNumber        = $prNumber
+        PrUrl           = $prUrl
         FinishTime      = $buildDetails.finishTime
         FailedTaskCount = $failedTasks.Count
         FailedTasks     = @($failedTasks | ForEach-Object { $_.name })
@@ -395,6 +409,9 @@ try {
         }
         Write-Host "  Branch:       " -NoNewline; Write-Host $result.Branch -ForegroundColor DarkGray
         Write-Host "  Commit:       " -NoNewline; Write-Host $result.Commit -ForegroundColor DarkGray
+        if ($result.PrNumber) {
+            Write-Host "  PR:           " -NoNewline; Write-Host "#$($result.PrNumber)" -ForegroundColor DarkGray -NoNewline; Write-Host " ($($result.PrUrl))" -ForegroundColor DarkGray
+        }
         Write-Host "  URL:          " -NoNewline; Write-Host $result.BuildUrl -ForegroundColor DarkGray
 
         Write-Host "`nFailure Counts" -ForegroundColor Cyan
