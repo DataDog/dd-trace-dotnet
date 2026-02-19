@@ -9,6 +9,7 @@ using System;
 using System.Net;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.BsonSerialization;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 
@@ -28,8 +29,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
         internal const string Major2Minor2 = "2.2"; // Synchronous methods added in 2.2
         internal const string MongoDbClientV2Assembly = "MongoDB.Driver.Core";
         internal const string MongoDbClientV3Assembly = "MongoDB.Driver";
-
-        private const string DatabaseType = "mongodb";
 
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.MongoDb;
 
@@ -62,8 +61,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
 
             TryGetHostAndPort(connection, out var host, out var port);
 
-            var operationName = tracer.CurrentTraceSettings.Schema.Database.GetOperationName(DatabaseType);
-            var serviceName = tracer.CurrentTraceSettings.Schema.Database.GetServiceName(DatabaseType);
+            var operationName = tracer.CurrentTraceSettings.Schema.Database.GetOperationName(DatabaseSchema.OperationType.MongoDb);
+            var serviceName = tracer.CurrentTraceSettings.Schema.Database.GetServiceName(DatabaseSchema.ServiceType.MongoDb);
             var tags = tracer.CurrentTraceSettings.Schema.Database.CreateMongoDbTags();
 
             Scope? scope = null;

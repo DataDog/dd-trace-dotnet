@@ -316,6 +316,12 @@ internal static class NUnitIntegration
         // Skip tests
         if (skipReason is not null)
         {
+            // Set final_status = skip for pre-execution skipped tests (ITR/attribute-based skips)
+            if (test.GetTags() is { } skipTestTags)
+            {
+                skipTestTags.FinalStatus = TestTags.StatusSkip;
+            }
+
             test.Close(Ci.TestStatus.Skip, skipReason: skipReason, duration: TimeSpan.Zero);
             return test;
         }

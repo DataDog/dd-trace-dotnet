@@ -10,11 +10,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.SourceGenerators;
-#if NETCOREAPP3_1_OR_GREATER
-using Unsafe = System.Runtime.CompilerServices.Unsafe;
-#else
-using Unsafe = Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe;
-#endif
 
 namespace Datadog.Trace.Agent;
 

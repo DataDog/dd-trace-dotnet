@@ -517,7 +517,7 @@
   "DD_DYNAMIC_INSTRUMENTATION_SYMBOL_DATABASE_BATCH_SIZE_BYTES": "dynamic_instrumentation_symbol_database_batch_size_bytes",
   "DD_SYMBOL_DATABASE_UPLOAD_ENABLED": "symbol_database_upload_enabled",
   "DD_DYNAMIC_INSTRUMENTATION_SYMBOL_DATABASE_UPLOAD_ENABLED": "dynamic_instrumentation_symbol_database_upload_enabled",
-  "DD_INTERAL_FORCE_SYMBOL_DATABASE_UPLOAD": "internal_force_symbol_database_upload",
+  "DD_INTERNAL_DYNAMIC_INSTRUMENTATION_MAX_PROBES_PER_TYPE": "dynamic_instrumentation_max_probes_per_type",
   "DD_THIRD_PARTY_DETECTION_INCLUDES": "third_party_detection_includes",
   "DD_THIRD_PARTY_DETECTION_EXCLUDES": "third_party_detection_excludes",
   "DD_SYMBOL_DATABASE_THIRD_PARTY_DETECTION_INCLUDES": "symbol_database_third_party_detection_includes",

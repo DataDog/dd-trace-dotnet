@@ -7,6 +7,7 @@
 
 using System;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.Logging;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Tagging;
@@ -32,7 +33,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
             try
             {
                 string operationName = GetOperationName(tracer, spanKind);
-                string serviceName = perTraceSettings.Schema.Messaging.GetServiceName(MsmqConstants.MessagingType);
+                string serviceName = perTraceSettings.Schema.Messaging.GetServiceName(MessagingSchema.ServiceType.Msmq);
                 MsmqTags tags = perTraceSettings.Schema.Messaging.CreateMsmqTags(spanKind);
 
                 tags.Command = command;
@@ -94,8 +95,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
 
             return spanKind switch
             {
-                SpanKinds.Producer => tracer.CurrentTraceSettings.Schema.Messaging.GetOutboundOperationName(MsmqConstants.MessagingType),
-                SpanKinds.Consumer => tracer.CurrentTraceSettings.Schema.Messaging.GetInboundOperationName(MsmqConstants.MessagingType),
+                SpanKinds.Producer => tracer.CurrentTraceSettings.Schema.Messaging.GetOutboundOperationName(MessagingSchema.OperationType.Msmq),
+                SpanKinds.Consumer => tracer.CurrentTraceSettings.Schema.Messaging.GetInboundOperationName(MessagingSchema.OperationType.Msmq),
                 _ => MsmqConstants.MsmqCommand
             };
         }

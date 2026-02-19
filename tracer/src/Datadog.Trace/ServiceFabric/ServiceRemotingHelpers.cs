@@ -185,23 +185,17 @@ namespace Datadog.Trace.ServiceFabric
 
         internal static string GetOperationName(Tracer tracer, string spanKind)
         {
-#if NET6_0_OR_GREATER
-            var requestType = string.Create(null, stackalloc char[128], $"{SpanNamePrefix}.{spanKind}");
-#else
-            var requestType = $"{SpanNamePrefix}.{spanKind}";
-#endif
-
-            if (tracer.CurrentTraceSettings.Schema.Version == SchemaVersion.V0)
+            var suffix = spanKind switch
             {
-                return requestType;
-            }
-
-            return spanKind switch
-            {
-                SpanKinds.Client => tracer.CurrentTraceSettings.Schema.Client.GetOperationNameForRequestType(requestType),
-                SpanKinds.Server => tracer.CurrentTraceSettings.Schema.Server.GetOperationNameForRequestType(requestType),
-                _ => requestType,
+                SpanKinds.Client => tracer.CurrentTraceSettings.Schema.Client.GetOperationNameSuffixForRequest(),
+                SpanKinds.Server => tracer.CurrentTraceSettings.Schema.Server.GetOperationNameSuffixForRequest(),
+                _ => string.Empty,
             };
+#if NET6_0_OR_GREATER
+            return string.Create(null, stackalloc char[128], $"{SpanNamePrefix}.{spanKind}{suffix}");
+#else
+            return $"{SpanNamePrefix}.{spanKind}{suffix}";
+#endif
         }
     }
 }

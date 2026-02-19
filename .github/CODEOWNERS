@@ -109,6 +109,7 @@
 /tracer/test/Datadog.Trace.ClrProfiler.Managed.Tests/HttpBypassTests.cs         @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-azure-and-gcp
 /tracer/samples/AzureFunctionsWithAgentLessLogging/                             @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-azure-and-gcp
 /docs/development/**/AzureFunctions*.md                                         @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-azure-and-gcp
+/tracer/tools/Build-AzureFunctionsNuget.ps1                                     @DataDog/apm-serverless
 
 ## Serverless (GCP)
 /tracer/src/**/*GCP*.cs                                                         @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-azure-and-gcp

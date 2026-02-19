@@ -11,7 +11,7 @@
 
 using System;
 using System.Runtime.CompilerServices;
-using Datadog.Trace.VendoredMicrosoftCode.System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.CodeAnalysis;
 using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata;
 using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata.Ecma335;
 

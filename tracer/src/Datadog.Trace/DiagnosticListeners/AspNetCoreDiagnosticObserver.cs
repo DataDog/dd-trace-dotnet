@@ -404,7 +404,6 @@ namespace Datadog.Trace.DiagnosticListeners
                 // these will already be set correctly
                 rootSpanTags.AspNetCoreRoute = aspNetRoute;
                 rootSpan.ResourceName = span.ResourceName;
-                rootSpanTags.HttpRoute = aspNetRoute;
             }
 
             return span;
@@ -569,13 +568,12 @@ namespace Datadog.Trace.DiagnosticListeners
                 // But instead we re-extract them in the MVC endpoint as these are MVC
                 // constructs. this is likely marginally less efficient, but simplifies the
                 // already complex logic in the MVC handler
-                // Overwrite the route in the parent span
                 trackingFeature.ResourceName = resourceName;
                 if (isFirstExecution)
                 {
+                    // Overwrite the route in the parent span
                     rootSpan.ResourceName = resourceName;
                     tags.AspNetCoreRoute = normalizedRoute;
-                    tags.HttpRoute = normalizedRoute;
                 }
 
                 _security.CheckPathParamsAndSessionId(httpContext, rootSpan, routeValues);
