@@ -147,6 +147,8 @@ The script automatically:
 
 ## Output Format
 
+**Important**: Use actual Unicode emoji characters (e.g., ❌, 🔴, 🟡, 🔵, 🔍, ✅) in output, NOT markdown emoji codes (e.g., `:x:`, `:red_circle:`). Markdown emoji codes are not rendered in all contexts.
+
 ### Phase 1: Quick Summary (Always Show This First)
 
 ```markdown
