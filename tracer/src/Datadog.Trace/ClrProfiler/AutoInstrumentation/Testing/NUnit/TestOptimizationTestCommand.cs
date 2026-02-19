@@ -216,6 +216,28 @@ internal sealed class TestOptimizationTestCommand
 
         if (test is not null && testTags is not null)
         {
+            // Quarantined tests are masked to skip for the testing framework.
+            // Keep retry-only semantics for ATR/EFD/ATF, but expose final_status=skip
+            // for quarantined tests when no retry will happen.
+            if (!retryState.IsARetry && testTags.IsQuarantined == "true" && testTags.FinalStatus is null)
+            {
+                var isSkippedOrInconclusive = resultStatus is TestStatus.Skipped or TestStatus.Inconclusive;
+                var efdWillRetry = TestOptimization.Instance.EarlyFlakeDetectionFeature?.Enabled == true && testTags.TestIsNew == "true";
+                var atrRemainingBudget = TestOptimization.Instance.FlakyRetryFeature?.Enabled == true ? FlakyRetryBehavior.GetRemainingBudget() : 0;
+                var atrWillRetry = resultStatus == TestStatus.Failed &&
+                                   TestOptimization.Instance.FlakyRetryFeature?.Enabled == true &&
+                                   atrRemainingBudget != 0;
+                var atfWillRetry = testTags.IsAttemptToFix == "true";
+                var willRetry = !isSkippedOrInconclusive && (efdWillRetry || atrWillRetry || atfWillRetry);
+
+                if (!willRetry)
+                {
+                    var anyExecutionPassed = resultStatus == TestStatus.Passed;
+                    var anyExecutionFailed = resultStatus == TestStatus.Failed;
+                    testTags.FinalStatus = Common.CalculateFinalStatus(anyExecutionPassed, anyExecutionFailed, isSkippedOrInconclusive, testTags);
+                }
+            }
+
             if (duration.TotalMinutes >= 5 &&
                 TestOptimization.Instance.EarlyFlakeDetectionFeature?.Enabled == true &&
                 testTags.TestIsNew == "true")
