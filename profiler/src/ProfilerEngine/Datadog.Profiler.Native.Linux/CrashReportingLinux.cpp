@@ -139,11 +139,11 @@ std::vector<ModuleInfo> CrashReportingLinux::GetModules()
     return modules;
 }
 
-std::vector<StackFrame> CrashReportingLinux::GetThreadFrames(int32_t tid, ResolveManagedCallstack resolveManagedCallstack, void* context)
+std::vector<StackFrame> CrashReportingLinux::GetThreadFrames(int32_t tid, void* threadContext, ResolveManagedCallstack resolveManagedCallstack, void* context)
 {
     std::vector<StackFrame> frames;
 
-    auto libunwindContext = _UPT_create(tid);
+    auto libunwindContext = threadContext != nullptr ? threadContext : _UPT_create(tid);
 
     unw_cursor_t cursor;
 
