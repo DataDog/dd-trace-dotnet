@@ -18,7 +18,8 @@
       "Skill(dd:render-helm *)",
       "Skill(dd:deploy-yaml-local-dev *)",
       "Skill(dd:integrate *)",
-      "Skill(dd:live-test-api *)"
+      "Skill(dd:live-test-api *)",
+      "Skill(dd:debug-ddci-request *)"
     ]
   }
 }
