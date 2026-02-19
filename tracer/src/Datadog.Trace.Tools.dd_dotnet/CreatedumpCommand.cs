@@ -33,31 +33,6 @@ internal class CreatedumpCommand : Command
 
     private const int InvalidSignalCode = int.MaxValue;
 
-    private static readonly Dictionary<uint, string> WindowsExceptionCodeNames = new()
-    {
-        [0x80000003] = "EXCEPTION_BREAKPOINT",
-        [0x80000004] = "EXCEPTION_SINGLE_STEP",
-        [0xC0000005] = "EXCEPTION_ACCESS_VIOLATION",
-        [0xC0000006] = "EXCEPTION_IN_PAGE_ERROR",
-        [0xC000001D] = "EXCEPTION_ILLEGAL_INSTRUCTION",
-        [0xC0000025] = "EXCEPTION_NONCONTINUABLE_EXCEPTION",
-        [0xC000008C] = "EXCEPTION_ARRAY_BOUNDS_EXCEEDED",
-        [0xC000008D] = "EXCEPTION_FLT_DENORMAL_OPERAND",
-        [0xC000008E] = "EXCEPTION_FLT_DIVIDE_BY_ZERO",
-        [0xC000008F] = "EXCEPTION_FLT_INEXACT_RESULT",
-        [0xC0000090] = "EXCEPTION_FLT_INVALID_OPERATION",
-        [0xC0000091] = "EXCEPTION_FLT_OVERFLOW",
-        [0xC0000092] = "EXCEPTION_FLT_STACK_CHECK",
-        [0xC0000093] = "EXCEPTION_FLT_UNDERFLOW",
-        [0xC0000094] = "EXCEPTION_INT_DIVIDE_BY_ZERO",
-        [0xC0000095] = "EXCEPTION_INT_OVERFLOW",
-        [0xC0000096] = "EXCEPTION_PRIV_INSTRUCTION",
-        [0xC00000FD] = "EXCEPTION_STACK_OVERFLOW",
-        [0xC0000409] = "STATUS_STACK_BUFFER_OVERRUN",
-        [0xE06D7363] = "Microsoft C++ exception",
-        [0xE0434352] = "CLR exception",
-    };
-
     private static readonly List<string> Errors = new();
     private static ClrRuntime? _runtime;
     private static DataTarget? _dataTarget;
@@ -382,8 +357,34 @@ internal class CreatedumpCommand : Command
     /// <summary>
     /// Maps a Windows native exception code (from EXCEPTION_RECORD.ExceptionCode / WER) to a human-readable name.
     /// </summary>
-    private static string GetExceptionFromNativeCode(uint code) =>
-        WindowsExceptionCodeNames.TryGetValue(code, out var name) ? name : "Unknown";
+    private static string GetExceptionFromNativeCode(uint code)
+    {
+        return code switch
+        {
+            0x80000003 => "EXCEPTION_BREAKPOINT",
+            0x80000004 => "EXCEPTION_SINGLE_STEP",
+            0xC0000005 => "EXCEPTION_ACCESS_VIOLATION",
+            0xC0000006 => "EXCEPTION_IN_PAGE_ERROR",
+            0xC000001D => "EXCEPTION_ILLEGAL_INSTRUCTION",
+            0xC0000025 => "EXCEPTION_NONCONTINUABLE_EXCEPTION",
+            0xC000008C => "EXCEPTION_ARRAY_BOUNDS_EXCEEDED",
+            0xC000008D => "EXCEPTION_FLT_DENORMAL_OPERAND",
+            0xC000008E => "EXCEPTION_FLT_DIVIDE_BY_ZERO",
+            0xC000008F => "EXCEPTION_FLT_INEXACT_RESULT",
+            0xC0000090 => "EXCEPTION_FLT_INVALID_OPERATION",
+            0xC0000091 => "EXCEPTION_FLT_OVERFLOW",
+            0xC0000092 => "EXCEPTION_FLT_STACK_CHECK",
+            0xC0000093 => "EXCEPTION_FLT_UNDERFLOW",
+            0xC0000094 => "EXCEPTION_INT_DIVIDE_BY_ZERO",
+            0xC0000095 => "EXCEPTION_INT_OVERFLOW",
+            0xC0000096 => "EXCEPTION_PRIV_INSTRUCTION",
+            0xC00000FD => "EXCEPTION_STACK_OVERFLOW",
+            0xC0000409 => "STATUS_STACK_BUFFER_OVERRUN",
+            0xE06D7363 => "Microsoft C++ exception",
+            0xE0434352 => "CLR exception",
+            _ => "Unknown",
+        };
+    }
 
     /// <summary>
     /// Returns the Linux signal name and optional siginfo si_code name (x86/ARM).
@@ -424,7 +425,7 @@ internal class CreatedumpCommand : Command
             29 => "SIGIO",
             30 => "SIGPWR",
             31 => "SIGSYS",
-            _ => $"signal {signal}"
+            _ => FormattableString.Invariant($"signal {signal}"),
         };
 
         string codeName = "UNKNOWN";
@@ -947,7 +948,7 @@ internal class CreatedumpCommand : Command
         return $"unspecified error: {exception.NativeErrorCode}";
     }
 
-    private unsafe bool SetSignal(ICrashReport crashReport, int signal, int? signalCode)
+    private bool SetSignal(ICrashReport crashReport, int signal, int? signalCode)
     {
         try
         {
