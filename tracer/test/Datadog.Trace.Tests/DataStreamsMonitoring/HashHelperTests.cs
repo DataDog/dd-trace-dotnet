@@ -38,6 +38,11 @@ public class HashHelperTests
             sb.Append(processTags);
         }
 
+        if (!string.IsNullOrEmpty(containerTagsHash))
+        {
+            sb.Append(containerTagsHash);
+        }
+
         var sortedArgs = new List<string>(edgeArgs);
         sortedArgs.Sort(StringComparer.Ordinal);
 
