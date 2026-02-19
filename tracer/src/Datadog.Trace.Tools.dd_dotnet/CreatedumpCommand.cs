@@ -602,6 +602,15 @@ internal class CreatedumpCommand : Command
             }
         }
 
+        // Set signal information early to include it in the ping
+        if (signal.HasValue)
+        {
+            DebugPrint("Adding signal information to the crash report");
+            _ = SetSignal(crashReport, signal.Value);
+        }
+
+        _ = SendPing(crashReport, _runtime);
+
         if (crashThread == null)
         {
             var firstThreadWithException = _runtime.Threads.FirstOrDefault(t => t.CurrentException != null);
@@ -707,12 +716,6 @@ internal class CreatedumpCommand : Command
             AnsiConsole.WriteLine("Datadog - The crash may have been caused by automatic instrumentation, sending crash report...");
         }
 
-        if (signal.HasValue)
-        {
-            DebugPrint("Adding signal information to the crash report");
-            _ = SetSignal(crashReport, signal.Value);
-        }
-
         DebugPrint("Setting crash report metadata");
         _ = SetMetadata(crashReport, _runtime, exception, isSuspicious);
 
@@ -807,6 +810,65 @@ internal class CreatedumpCommand : Command
             return false;
         }
 
+        return true;
+    }
+
+    private unsafe bool SendPing(ICrashReport crashReport, ClrRuntime runtime)
+    {
+        DebugPrint("Sending crash ping");
+        if (!SetMetadata(crashReport, runtime, null, false))
+        {
+            AddError("Failed to set metadata for ping");
+            return false;
+        }
+
+        try
+        {
+            var outputFile = Environment.GetEnvironmentVariable(EnvironmentOutput);
+
+            if (!string.IsNullOrEmpty(outputFile))
+            {
+                var path = IntPtr.Zero;
+
+                try
+                {
+                    Uri? uri;
+                    var hasScheme = Uri.TryCreate(outputFile, UriKind.Absolute, out uri);
+                    var pathToModify = hasScheme ? uri!.LocalPath : outputFile;
+
+                    var directory = Path.GetDirectoryName(pathToModify);
+                    var filename = Path.GetFileNameWithoutExtension(pathToModify);
+                    var pingPath = Path.Combine(directory ?? string.Empty, $"{filename}-ping.json");
+
+                    outputFile = hasScheme
+                        ? new UriBuilder(uri!) { Path = pingPath }.Uri.AbsoluteUri
+                        : pingPath;
+
+                    DebugPrint($"Writing crash ping to {outputFile}...");
+                    path = Marshal.StringToHGlobalAnsi(outputFile);
+                    crashReport.WritePingToFile(path);
+                }
+                finally
+                {
+                    if (path != IntPtr.Zero)
+                    {
+                        Marshal.FreeHGlobal(path);
+                    }
+                }
+            }
+            else
+            {
+                DebugPrint("Sending crash report");
+                crashReport.SendPing();
+            }
+        }
+        catch (Win32Exception ex)
+        {
+            AddError($"Failed to send ping: {GetLastError(crashReport, ex)}");
+            return false;
+        }
+
+        DebugPrint("Crash ping sent successfully");
         return true;
     }
 
