@@ -23,13 +23,13 @@ internal sealed class CIVisibilityEventMessagePackFormatter<T> : EventMessagePac
 
         offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, 3);
 
-        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, TypeBytes);
+        offset += MessagePackBinary.WriteRaw(ref bytes, offset, TypeBytes);
         offset += MessagePackBinary.WriteString(ref bytes, offset, value.Type);
 
-        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, VersionBytes);
+        offset += MessagePackBinary.WriteRaw(ref bytes, offset, VersionBytes);
         offset += MessagePackBinary.WriteInt32(ref bytes, offset, value.Version);
 
-        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, ContentBytes);
+        offset += MessagePackBinary.WriteRaw(ref bytes, offset, ContentBytes);
         offset += formatterResolver.GetFormatter<T>().Serialize(ref bytes, offset, value.Content, formatterResolver);
 
         return offset - originalOffset;

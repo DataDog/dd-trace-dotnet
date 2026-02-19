@@ -4,6 +4,8 @@
 // </copyright>
 #nullable enable
 
+using Datadog.Trace.SourceGenerators;
+
 namespace Datadog.Trace.Ci.Tags;
 
 /// <summary>
@@ -104,6 +106,7 @@ internal static class TestTags
     /// <summary>
     /// Origin value for CIApp Test
     /// </summary>
+    [MessagePackField]
     public const string CIAppTestOriginName = "ciapp-test";
 
     /// <summary>
