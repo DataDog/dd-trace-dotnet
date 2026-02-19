@@ -78,10 +78,10 @@ namespace Datadog.Trace.Agent
             MessagePackBinary.WriteString(stream, "Version");
             MessagePackBinary.WriteString(stream, details.Version ?? string.Empty);
 
-            if (!string.IsNullOrEmpty(details.ProcessTags?.SerializedTags))
+            if (!StringUtils.IsNullOrEmpty(details.ProcessTags?.SerializedTags))
             {
                 MessagePackBinary.WriteString(stream, "ProcessTags");
-                MessagePackBinary.WriteString(stream, details.ProcessTags?.SerializedTags);
+                MessagePackBinary.WriteString(stream, details.ProcessTags.SerializedTags);
             }
 
             MessagePackBinary.WriteString(stream, "Stats");
