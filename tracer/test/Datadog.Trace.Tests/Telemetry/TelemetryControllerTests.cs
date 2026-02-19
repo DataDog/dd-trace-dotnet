@@ -288,11 +288,14 @@ public class TelemetryControllerTests
     public async Task TelemetryControllerDumpsAllTelemetryToFile()
     {
         var transport = new TestTelemetryTransport(pushResult: TelemetryPushResult.Success);
-        var transportManager = new TelemetryTransportManager(new TracerSettings().Manager, new TelemetryTransportFactory(_ => transport, null), NullDiscoveryService.Instance);
 
+        // tracer settings should share telemetry instance with controller
+        var configTelemetry = new ConfigurationTelemetry();
+        var tracerSettings = new TracerSettings(source: null, configTelemetry);
+        var transportManager = new TelemetryTransportManager(tracerSettings.Manager, new TelemetryTransportFactory(_ => transport, null), NullDiscoveryService.Instance);
         var controller = new TelemetryController(
-            new TracerSettings(),
-            new ConfigurationTelemetry(),
+            tracerSettings,
+            configTelemetry,
             new DependencyTelemetryCollector(),
             new NullMetricsTelemetryCollector(),
             new RedactedErrorLogCollector(),
@@ -320,7 +323,8 @@ public class TelemetryControllerTests
         var dump1 = Deserialize(rawData);
 
         // Should contain integrations and deps, but not product (as no extra products enabled)
-        var (integrations, deps, products) = GetPayloads(dump1);
+        var (configurations, integrations, deps, products) = GetPayloads(dump1);
+        configurations.Should().NotBeNullOrEmpty();
         integrations.Should().NotBeNullOrEmpty();
         deps.Should().NotBeNullOrEmpty();
         products.Should().BeNull();
@@ -373,7 +377,8 @@ public class TelemetryControllerTests
                   });
 
         // dump3 contains product change data too
-        (integrations, deps, products) = GetPayloads(dump3);
+        (configurations, integrations, deps, products) = GetPayloads(dump3);
+        configurations.Should().NotBeNullOrEmpty();
         integrations.Should().NotBeNullOrEmpty();
         deps.Should().NotBeNullOrEmpty();
         products.Should().NotBeNull();
@@ -383,10 +388,16 @@ public class TelemetryControllerTests
         await controller.DisposeAsync();
     }
 
-    private static (ICollection<IntegrationTelemetryData> Integrations, ICollection<DependencyTelemetryData> Dependencies, ProductsData Products) GetPayloads(TelemetryData data)
+    private static (ICollection<ConfigurationKeyValue> Configurations, ICollection<IntegrationTelemetryData> Integrations, ICollection<DependencyTelemetryData> Dependencies, ProductsData Products) GetPayloads(TelemetryData data)
     {
         var messageBatch = data.Payload.Should()
                                .BeOfType<MessageBatchPayload>().Subject;
+
+        var configurations = messageBatch
+                            .Select(x => x.Payload)
+                            .OfType<AppClientConfigurationChangedPayload>()
+                            .FirstOrDefault()
+                           ?.Configuration;
 
         var integrations = messageBatch
                           .Select(x => x.Payload)
@@ -406,7 +417,7 @@ public class TelemetryControllerTests
                       .FirstOrDefault()
                      ?.Products;
 
-        return (integrations, dependencies, products);
+        return (configurations, integrations, dependencies, products);
     }
 
     private static TelemetryData Deserialize(string rawData)
