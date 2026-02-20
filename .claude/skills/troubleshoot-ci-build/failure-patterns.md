@@ -330,6 +330,7 @@ cannot execute binary file
 - Missing ARM64 native binaries
 - Emulation issues
 - Architecture-specific bugs
+- **Flaky infrastructure**: ARM64 CI agents are more prone to transient issues (slow startup, timeouts, resource contention)
 
 **Example Patterns**:
 ```
@@ -338,6 +339,29 @@ Could not load native library for ARM64
 ```
 
 **Note**: ARM64 support is newer, check if native components are built for ARM64
+
+#### ARM64 Single-Runtime Timeout (Flaky Infrastructure)
+
+**Pattern**: In a `unit_tests_arm64` (or similar ARM64 stage), one runtime job times out (~60 min) while all other runtimes complete normally (~14 min).
+
+**Example**:
+| Job | Duration | Result |
+|-----|----------|--------|
+| test glibc_net5.0 | ~60 min | ❌ Cancelled (timeout) |
+| test musl_net5.0 | ~14 min | ✅ Pass |
+| test glibc_net6.0 | ~14 min | ✅ Pass |
+| test musl_net6.0 | ~14 min | ✅ Pass |
+| ... (all others) | ~14 min | ✅ Pass |
+
+**Indicators**:
+- Only one platform/runtime failed in an ARM64 stage
+- The failed job was cancelled (not "failed") after ~60 minutes
+- All other runtimes in the same stage completed in ~14 minutes
+- The failing runtime is not consistently the same across multiple runs
+
+**Cause**: Transient ARM64 infrastructure issue — the agent likely timed out waiting for something (container startup, package download, slow I/O), not a code problem. A real regression would fail across multiple runtimes or consistently on the same runtime.
+
+**Solution**: Retry the build. This is almost certainly a flaky CI infrastructure issue, not a code regression.
 
 ---
 
@@ -441,7 +465,9 @@ Are there canceled jobs?
 └─ No canceled jobs or after classifying them →
     Is it an infrastructure issue (network, rate limit, disk)?
     ├─ Yes → **Infrastructure** (retry)
-    └─ No → Does the test fail on only one runtime but pass on others?
+    └─ No → Is it an ARM64 stage where only one runtime timed out (~60 min) while others passed (~14 min)?
+        ├─ Yes → **Flaky Infrastructure** (retry — transient ARM64 agent issue)
+        └─ No → Does the test fail on only one runtime but pass on others?
         ├─ Yes → **Flaky** (retry, alert #apm-dotnet if persistent)
         └─ No → Does it have previousAttempts > 0 or is it a known flaky test?
             ├─ Yes → **Flaky** (retry, monitor)
@@ -465,6 +491,7 @@ Are there canceled jobs?
 | Canceled job, duration < 5 min | Collateral | Check parent failure cause | None |
 | `Failed to walk N stacks` | Flaky | Retry, monitor | Low |
 | `previousAttempts > 0` | Flaky | Retry | Low |
+| ARM64 stage: 1 runtime timeout (~60 min), all others pass (~14 min) | Flaky Infrastructure | Retry | Low |
 | Fails on 1 runtime, passes on others | Flaky | Retry, alert #apm-dotnet if persistent | Low |
 | `Expected X but got Y` | Real | Investigate | **High** |
 | `Received file does not match` | Real (Snapshot) | Update snapshots or investigate | **High** |

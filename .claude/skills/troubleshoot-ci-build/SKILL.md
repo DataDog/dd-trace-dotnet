@@ -283,6 +283,7 @@ Actual:   False
 - Known intermittent tests (reference `failure-patterns.md`)
 - Tests that pass/fail inconsistently across platforms
 - **Single-runtime failures**: Same test fails on only one .NET runtime but passes on others (especially net6+). Example: net6 pass, net8 pass, net10 fail → likely flaky, not a real regression.
+- **ARM64 single-platform timeout**: In an ARM64 stage (e.g., `unit_tests_arm64`), one runtime job is cancelled after ~60 min while all other runtimes complete normally in ~14 min → almost certainly a transient ARM64 infrastructure issue, not a code regression. Retry.
 
 **Pattern examples**:
 ```
