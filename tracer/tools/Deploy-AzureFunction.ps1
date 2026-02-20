@@ -25,7 +25,7 @@
     Skip the wait period after deployment (not recommended - workers need time to restart).
 
 .PARAMETER WaitSeconds
-    Number of seconds to wait after deployment before triggering. Default: 120.
+    Number of seconds to wait after deployment before triggering. Default: 60.
 
 .PARAMETER TriggerUrl
     Custom HTTP trigger URL. If not specified, defaults to:
@@ -73,7 +73,7 @@ param(
 
     [switch]$SkipWait,
 
-    [int]$WaitSeconds = 120,
+    [int]$WaitSeconds = 60,
 
     [string]$TriggerUrl,
 
