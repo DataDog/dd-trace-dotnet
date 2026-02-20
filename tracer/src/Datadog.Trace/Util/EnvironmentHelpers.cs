@@ -8,7 +8,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Util;
@@ -100,102 +99,6 @@ internal static class EnvironmentHelpers
 
         return new Dictionary<object, object>();
     }
-
-    /// <summary>
-    /// Check if the current environment is Azure App Services
-    /// by checking for the presence of "WEBSITE_SITE_NAME".
-    /// Note that this is a superset of IsAzureFunctions().
-    /// This method reads environment variables directly and bypasses the configuration system.
-    /// </summary>
-    public static bool IsAzureAppServices() => EnvironmentVariableExists(PlatformKeys.AzureAppService.SiteNameKey);
-
-    /// <summary>
-    /// Check if the current environment is Azure Functions
-    /// by checking for the presence of "WEBSITE_SITE_NAME", "FUNCTIONS_WORKER_RUNTIME", and "FUNCTIONS_EXTENSION_VERSION".
-    /// Note that his is a subset of IsAzureAppServices().
-    /// This method reads environment variables directly and bypasses the configuration system.
-    /// </summary>
-    public static bool IsAzureFunctions() =>
-        IsAzureAppServices() &&
-        EnvironmentVariableExists(PlatformKeys.AzureFunctions.FunctionsWorkerRuntime) &&
-        EnvironmentVariableExists(PlatformKeys.AzureFunctions.FunctionsExtensionVersion);
-
-    /// <summary>
-    /// Check if the current environment is using Azure App Services Site Extension
-    /// by checking for the presence of "DD_AZURE_APP_SERVICES=1".
-    /// This method reads environment variables directly and bypasses the configuration system.
-    /// </summary>
-    public static bool IsUsingAzureAppServicesSiteExtension() =>
-        GetEnvironmentVariable(ConfigurationKeys.AzureAppService.AzureAppServicesContextKey) == "1";
-
-    /// <summary>
-    /// Check if the current environment is an Azure Functions isolated worker process
-    /// (as opposed to in-process functions) by checking that:
-    ///
-    /// - <see cref="IsAzureFunctions"/> is <c>true</c>
-    /// - "FUNCTIONS_WORKER_RUNTIME" is set to "dotnet-isolated"
-    ///
-    /// This will return true for both the host process and worker process in isolated functions.
-    /// Use <see cref="IsRunningInAzureFunctionsHost"/> to distinguish between host and worker.
-    /// This method reads environment variables directly and bypasses the configuration system.
-    /// </summary>
-    public static bool IsAzureFunctionsIsolated()
-    {
-        return IsAzureFunctions() && string.Equals(GetAzureFunctionsWorkerRuntime(), "dotnet-isolated", StringComparison.Ordinal);
-    }
-
-    public static string? GetAzureFunctionsWorkerRuntime()
-    {
-        return GetEnvironmentVariable(PlatformKeys.AzureFunctions.FunctionsWorkerRuntime, defaultValue: string.Empty);
-    }
-
-    public static string? GetAzureFunctionsExtensionVersion()
-    {
-        return GetEnvironmentVariable(PlatformKeys.AzureFunctions.FunctionsExtensionVersion, defaultValue: string.Empty);
-    }
-
-    /// <summary>
-    /// Check if the current environment is the Azure Functions host process
-    /// by checking that:
-    ///
-    /// - <see cref="IsAzureFunctions"/> is <c>true</c>
-    /// - "FUNCTIONS_WORKER_RUNTIME" is set to "dotnet-isolated"
-    /// - we DO NOT see EITHER "--functions-worker-id" or "--workerId" on the command line as flags.
-    /// The host and worker process will share the top two bullet points; however, only the worker process will have the flags
-    /// Note that his is a subset of IsAzureFunctions().
-    /// This method reads environment variables directly and bypasses the configuration system.
-    /// </summary>
-    public static bool IsRunningInAzureFunctionsHost()
-    {
-        var cmd = Environment.CommandLine ?? string.Empty;
-
-        // heuristic to detect the worker process
-        // the worker process would be the one to have these flags
-        // example in log output
-        // "CommandLine": "Samples.AzureFunctions.V4Isolated.AspNetCore.dll --workerId <GUID> --functions-worker-id <GUID>"
-        return IsAzureFunctionsIsolated() &&
-               cmd.IndexOf("--functions-worker-id", StringComparison.OrdinalIgnoreCase) < 0 &&
-               cmd.IndexOf("--workerId", StringComparison.OrdinalIgnoreCase) < 0;
-    }
-
-    /// <summary>
-    /// Check if the current environment is AWS Lambda
-    /// by checking for the presence of "AWS_LAMBDA_FUNCTION_NAME".
-    /// This method reads environment variables directly and bypasses the configuration system.
-    /// </summary>
-    public static bool IsAwsLambda() => EnvironmentVariableExists(PlatformKeys.Aws.LambdaFunctionName);
-
-    /// <summary>
-    /// Check if the current environment is Google Cloud Functions
-    /// by checking for the presence of either "K_SERVICE" and "FUNCTION_TARGET",
-    /// or "FUNCTION_NAME" and "GCP_PROJECT".
-    /// This method reads environment variables directly and bypasses the configuration system.
-    /// </summary>
-    public static bool IsGoogleCloudFunctions() =>
-        (EnvironmentVariableExists(PlatformKeys.GcpFunction.FunctionNameKey) &&
-         EnvironmentVariableExists(PlatformKeys.GcpFunction.FunctionTargetKey)) ||
-        (EnvironmentVariableExists(PlatformKeys.GcpFunction.DeprecatedFunctionNameKey) &&
-         EnvironmentVariableExists(PlatformKeys.GcpFunction.DeprecatedProjectKey));
 
     /// <summary>
     /// Checks if the specified environment variable exists in the current environment.
