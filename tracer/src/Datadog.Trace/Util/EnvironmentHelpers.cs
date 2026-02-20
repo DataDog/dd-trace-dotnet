@@ -200,7 +200,7 @@ internal static class EnvironmentHelpers
     /// <summary>
     /// Checks if the specified environment variable exists in the current environment.
     /// </summary>
-    private static bool EnvironmentVariableExists(string key)
+    internal static bool EnvironmentVariableExists(string key)
     {
 // this access is allowed here as EnvironmentVariableExists is controlled by analyzer EnvironmentGetEnvironmentVariableAnalyzer making sure it's using a key from ConfigurationKeys/PlatformKeys
 #pragma warning disable DD0012
