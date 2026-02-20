@@ -503,10 +503,50 @@ namespace Datadog.Trace.ClrProfiler
         [Pure]
         private static bool SkipAspNetCoreDiagnosticObserver()
         {
-            // this is extremely simple now, but will get more complex soon...
-            return EnvironmentHelpers.IsAzureFunctions();
-        }
+            // Enable AspNetCoreDiagnosticObserver in:
+            // - outside Azure Functions
+            // - Isolated functions worker processes with extension v4
+            //   (to create aspnet_core.request spans that azure_functions.invoke can parent to)
 
+            // Skip AspNetCoreDiagnosticObserver in Azure Functions:
+            // - In-process functions (due to AssemblyLoadContext issues)
+            // - Isolated functions host process (to avoid duplicate spans)
+            // - Isolated functions worker process with extension v1 (FUNCTIONS_EXTENSION_VERSION="~1")
+
+            if (!EnvironmentHelpers.IsAzureFunctions())
+            {
+                // We only skip AspNetCoreDiagnosticObserver in Azure Functions.
+                // Don't skip it outside Azure Functions.
+                return false;
+            }
+
+            if (!EnvironmentHelpers.IsAzureFunctionsIsolated())
+            {
+                // Skip AspNetCoreDiagnosticObserver in in-process Azure Functions
+                Log.Debug("Skipping AspNetCoreDiagnosticObserver: running in an in-process Azure Function.");
+                return true;
+            }
+
+            if (EnvironmentHelpers.IsRunningInAzureFunctionsHost())
+            {
+                // Skip AspNetCoreDiagnosticObserver in Azure Functions host processes
+                Log.Debug("Skipping AspNetCoreDiagnosticObserver: running in an isolated Azure Function host process.");
+                return true;
+            }
+
+            var azureFunctionsExtensionVersion = EnvironmentHelpers.GetAzureFunctionsExtensionVersion();
+
+            if (azureFunctionsExtensionVersion != "~4")
+            {
+                // Skip AspNetCoreDiagnosticObserver in v1 isolated functions (v2 and v3 are not supported at all)
+                // to keep the previous behavior
+                Log.Debug("Skipping AspNetCoreDiagnosticObserver: running in Azure Function with extension version {AzureFunctionsExtensionVersion}.", azureFunctionsExtensionVersion);
+                return true;
+            }
+
+            // do not skip when running in an isolated Azure Functions worker process with extension v4
+            return false;
+        }
 #endif // #if !NETFRAMEWORK
 
         private static void InitializeDebugger(TracerSettings tracerSettings)
