@@ -9,7 +9,7 @@ namespace Datadog.Trace.Agent;
 
 internal enum TracesEncoding
 {
-    DatadogV0,
+    DatadogV0_4,
     OtlpProtobuf,
     OtlpJson,
 }

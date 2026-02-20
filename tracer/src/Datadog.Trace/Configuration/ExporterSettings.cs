@@ -234,7 +234,7 @@ namespace Datadog.Trace.Configuration
 
         /// <summary>
         /// Gets the encoding used to send traces to the Agent.
-        /// Default is <c>TracesEncoding.DatadogV0</c>.
+        /// Default is <c>TracesEncoding.DatadogV0_4</c>.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.OpenTelemetry.TracesExporter"/>
         /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpProtocol"/>
