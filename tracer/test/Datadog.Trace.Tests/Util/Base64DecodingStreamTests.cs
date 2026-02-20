@@ -269,6 +269,23 @@ namespace Datadog.Trace.Tests.Util
             actual.Should().Equal(expected);
         }
 
+#if NETCOREAPP3_1_OR_GREATER
+        [Theory]
+        [InlineData(1)]
+        [InlineData(2)]
+        public void Read_BufferTooSmall_ThrowsArgumentException(int bufferSize)
+        {
+            using var stream = new Base64DecodingStream("AQID"); // decodes to [1, 2, 3]
+            var buffer = new byte[bufferSize];
+
+#pragma warning disable CA2022 // Avoid exact read (.NET 10+)
+            Action act = () => stream.Read(buffer, 0, buffer.Length);
+#pragma warning restore CA2022
+
+            act.Should().Throw<ArgumentException>();
+        }
+#endif
+
         private static byte[] CreateSequentialBytes(int count)
         {
             var bytes = new byte[count];
