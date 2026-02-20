@@ -203,13 +203,22 @@ internal sealed class Base64DecodingStream : Stream
 
         // All valid base64 characters are in the ASCII range (0–127),
         // so we can safely narrow each char to a byte for the UTF-8 decoder.
+        // OR-accumulate all chars to detect non-ASCII input without branching per character.
         var buf = _buffer;
         var str = _base64;
         var offset = _charPosition;
+        var nonAscii = 0;
 
         for (var i = 0; i < charsToProcess; i++)
         {
-            buf[i] = (byte)str[offset + i];
+            var c = str[offset + i];
+            nonAscii |= c;
+            buf[i] = (byte)c;
+        }
+
+        if (nonAscii > 127)
+        {
+            ThrowFormatException();
         }
 
         // Decode the UTF-8 base64 bytes in-place. The decoded output is always

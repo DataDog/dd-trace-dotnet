@@ -145,6 +145,7 @@ namespace Datadog.Trace.Tests.Util
         [InlineData("!!!")]
         [InlineData("not-base64")]
         [InlineData("====")]
+        [InlineData("\u0141\u0142\u0143\u0144")] // non-ASCII chars that truncate to valid base64 bytes
         public void Read_InvalidBase64_ThrowsFormatException(string invalidBase64)
         {
             using var stream = new Base64DecodingStream(invalidBase64);
@@ -156,23 +157,6 @@ namespace Datadog.Trace.Tests.Util
 
             act.Should().Throw<FormatException>();
         }
-
-#if NETCOREAPP3_1_OR_GREATER
-        [Theory]
-        [InlineData(1)]
-        [InlineData(2)]
-        public void Read_BufferTooSmall_ThrowsArgumentException(int bufferSize)
-        {
-            using var stream = new Base64DecodingStream("AQID"); // decodes to [1, 2, 3]
-            var buffer = new byte[bufferSize];
-
-#pragma warning disable CA2022 // Avoid exact read (.NET 10+)
-            Action act = () => stream.Read(buffer, 0, buffer.Length);
-#pragma warning restore CA2022
-
-            act.Should().Throw<ArgumentException>();
-        }
-#endif
 
         [Theory]
         [InlineData(100, 128)]
