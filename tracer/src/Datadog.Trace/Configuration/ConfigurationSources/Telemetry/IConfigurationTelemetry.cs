@@ -86,5 +86,5 @@ public interface IConfigurationTelemetry
     /// <summary>
     /// Gets all the stored configuration data recorded so far
     /// </summary>
-    List<ConfigurationKeyValue>? GetFullData();
+    ICollection<ConfigurationKeyValue>? GetFullData();
 }
