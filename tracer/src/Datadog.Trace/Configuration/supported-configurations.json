@@ -2172,7 +2172,10 @@
         "implementation": "B",
         "type": "string",
         "default": "http://localhost:4317/",
-        "product": "OpenTelemetry"
+        "product": "OpenTelemetry",
+        "aliases": [
+          "OTEL_EXPORTER_OTLP_ENDPOINT"
+        ]
       }
     ],
     "OTEL_EXPORTER_OTLP_LOGS_PROTOCOL": [
@@ -2202,7 +2205,10 @@
         "implementation": "C",
         "type": "string",
         "default": "http://localhost:4317/",
-        "product": "OpenTelemetry"
+        "product": "OpenTelemetry",
+        "aliases": [
+          "OTEL_EXPORTER_OTLP_ENDPOINT"
+        ]
       }
     ],
     "OTEL_EXPORTER_OTLP_METRICS_HEADERS": [
@@ -2271,6 +2277,50 @@
         "type": "int",
         "default": "10000",
         "product": "OpenTelemetry"
+      }
+    ],
+    "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": "http://localhost:4317/",
+        "product": "OpenTelemetry",
+        "aliases": [
+          "OTEL_EXPORTER_OTLP_ENDPOINT"
+        ]
+      }
+    ],
+    "OTEL_EXPORTER_OTLP_TRACES_HEADERS": [
+      {
+        "implementation": "A",
+        "type": "map",
+        "default": null,
+        "product": "OpenTelemetry",
+        "aliases": [
+          "OTEL_EXPORTER_OTLP_HEADERS"
+        ]
+      }
+    ],
+    "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL": [
+      {
+        "implementation": "A",
+        "type": "string",
+        "default": "http/json",
+        "product": "OpenTelemetry",
+        "aliases": [
+          "OTEL_EXPORTER_OTLP_PROTOCOL"
+        ]
+      }
+    ],
+    "OTEL_EXPORTER_OTLP_TRACES_TIMEOUT": [
+      {
+        "implementation": "A",
+        "type": "int",
+        "default": "10000",
+        "product": "OpenTelemetry",
+        "aliases": [
+          "OTEL_EXPORTER_OTLP_TIMEOUT"
+        ]
       }
     ],
     "OTEL_LOG_LEVEL": [
