@@ -12,6 +12,7 @@ using Datadog.Trace.Propagators;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.MessagePack;
 using Datadog.Trace.Vendors.MessagePack.Formatters;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -460,7 +461,7 @@ namespace Datadog.Trace.Agent.MessagePack
             int originalOffset = offset;
 
             var settings = new JsonSerializerSettings { Converters = new List<JsonConverter> { new SpanEventConverter() }, Formatting = Formatting.None };
-            var eventsJson = JsonConvert.SerializeObject(spanModel.Span.SpanEvents, settings);
+            var eventsJson = JsonHelper.SerializeObject(spanModel.Span.SpanEvents, settings);
 
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _eventBytes);
             offset += MessagePackBinary.WriteString(ref bytes, offset, eventsJson);
