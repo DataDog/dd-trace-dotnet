@@ -20,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge
         private const string DatadogKey = "_datadog";
         private const string StartTimeKey = "x-datadog-start-time";
         private const string ResourceNameKey = "x-datadog-resource-name";
-        private const int MaxSizeBytes = 256 * 1024; // 256 KB
+        private const int MaxSizeBytes = 1024 * 1024; // 1 MB
 
         // Loops through all entries of the EventBridge event and tries to inject Datadog context into each.
         public static void InjectContext<TPutEventsRequest>(Tracer tracer, TPutEventsRequest request, PropagationContext context)
