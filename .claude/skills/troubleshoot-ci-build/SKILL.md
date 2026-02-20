@@ -158,11 +158,12 @@ The script automatically:
 ```markdown
 # CI Failure Analysis for Build <BUILD_ID>
 
-**Build**: [<BUILD_NUMBER>](https://dev.azure.com/datadoghq/dd-trace-dotnet/_build/results?buildId=<BUILD_ID>)
 **Status**: ❌ Failed
+**Build**: [<BUILD_NUMBER>](https://dev.azure.com/datadoghq/dd-trace-dotnet/_build/results?buildId=<BUILD_ID>)
+
+**PR**: [#<PR_NUMBER>](https://github.com/DataDog/dd-trace-dotnet/pull/<PR_NUMBER>) _(if PR-triggered)_
 **Branch**: `<source_branch_name>` _(use `triggerInfo["pr.sourceBranch"]` for PR builds instead of `sourceBranch`)_
 **Commit**: `<commit_sha>`
-**Finished**: <timestamp>
 
 ## Quick Overview
 
@@ -221,9 +222,6 @@ This downloads the `.received.txt` snapshot artifacts from CI and replaces your 
 2. **View specific logs** - Download logs for failed tasks
 3. **Show full analysis** - Run complete analysis with all details
 4. **Update snapshots** - Download and apply updated snapshots from this build _(shown only when snapshot failures detected)_
-
-[View build in Azure DevOps](https://dev.azure.com/datadoghq/dd-trace-dotnet/_build/results?buildId=<BUILD_ID>&view=logs)
-[View PR #<PR_NUMBER> in GitHub](https://github.com/DataDog/dd-trace-dotnet/pull/<PR_NUMBER>) _(if PR-triggered)_
 ```
 
 **Resolving PR number**: When invoked with `build <BUILD_ID>`, extract the PR number from the build details JSON:
