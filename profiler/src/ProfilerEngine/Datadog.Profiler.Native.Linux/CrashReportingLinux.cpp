@@ -156,13 +156,14 @@ std::optional<unw_cursor_t> create_cursor_from_context(uint32_t pid, unw_addr_sp
         return std::nullopt;
     }
 
+    return {cursor};
     if (threadContext == nullptr)
     {
         return {cursor};
     }
 
     ucontext_t remoteCtx;
-    // threadContext is a pointer in the remote process's address space
+    // threadContext is a pointer in the remote process address space pointing at the thread ucontext_t
     // read it via process_vm_readv (more efficient than ptrace for bulk reads)
     struct iovec local  = { .iov_base = &remoteCtx, .iov_len = sizeof(remoteCtx) };
     struct iovec remote = { .iov_base = threadContext, .iov_len = sizeof(remoteCtx) };

@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Diagnostics;
 using FluentAssertions;
 using Xunit;
@@ -12,10 +13,10 @@ namespace Datadog.Trace.Tools.dd_dotnet.Tests;
 public class CreatedumpTests
 {
     [SkippableTheory]
-    [InlineData("invalid", false, 0, null, null, IntPtr.Zero)]
-    [InlineData("--crashthread 5 --blabla 100 --signal 3 --aaaaaa", true, 100, 3, 5, 42424242)]
-    [InlineData("--crashthread 5 --blabla 99999 --signal 3 --aaaaaa 99998", false, 0, 3, 5, IntPtr.Zero)] // Two potential PIDs, that probably don't exist
-    [InlineData("10", true, 10, null, null, IntPtr.Zero)]
+    [InlineData("invalid", false, 0, null, null, null)]
+    [InlineData("--crashthread 5 --blabla 100 --signal 3 --aaaaaa --dd-thread-context 42424242", true, 100, 3, 5, 42424242)]
+    [InlineData("--crashthread 5 --blabla 99999 --signal 3 --aaaaaa 99998", false, 0, 3, 5, null)] // Two potential PIDs, that probably don't exist
+    [InlineData("10", true, 10, null, null, null)]
     public void ParseCommandLine(string commandLine, bool expectedResult, int expectedPid, int? expectedSignal, int? expectedCrashThread, IntPtr? expectedThreadContext)
     {
         var result = CreatedumpCommand.ParseArguments(commandLine.Split(' '), out var pid, out var signal, out var crashThread, out var threadContext);
@@ -44,6 +45,6 @@ public class CreatedumpTests
         pid.Should().Be(currentPid);
         signal.Should().BeNull();
         crashThread.Should().BeNull();
-        threadContext.Should().Be(IntPtr.Zero);
+        threadContext.Should().BeNull();
     }
 }

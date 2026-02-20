@@ -51,7 +51,7 @@ internal class CreatedumpCommand : Command
         this.SetHandler(Execute);
     }
 
-    internal static bool ParseArguments(string[] arguments, out int pid, out int? signal, out int? crashThread, out IntPtr threadContext)
+    internal static bool ParseArguments(string[] arguments, out int pid, out int? signal, out int? crashThread, out IntPtr? threadContext)
     {
         pid = default;
         signal = default;
@@ -516,7 +516,7 @@ internal class CreatedumpCommand : Command
         DebugPrint("dd-dotnet exited normally");
     }
 
-    private unsafe void GenerateCrashReport(int pid, int? signal, int? crashThread, IntPtr threadContext)
+    private unsafe void GenerateCrashReport(int pid, int? signal, int? crashThread, IntPtr? threadContext)
     {
         DebugPrint($"Generating crash report for pid {pid} (signal: {signal}, crashing thread id: {crashThread})");
 
@@ -637,7 +637,7 @@ internal class CreatedumpCommand : Command
         {
             DebugPrint("Resolving callstacks");
             var callback = (delegate* unmanaged<int, IntPtr, ResolveMethodData**, int*, int>)&ResolveManagedCallstack;
-            crashReport.ResolveStacks(crashThread ?? 0, threadContext, (IntPtr)callback, GCHandle.ToIntPtr(handle), out isSuspicious);
+            crashReport.ResolveStacks(crashThread ?? 0, threadContext ?? IntPtr.Zero, (IntPtr)callback, GCHandle.ToIntPtr(handle), out isSuspicious);
         }
         catch (Win32Exception ex)
         {
