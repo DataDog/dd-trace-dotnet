@@ -33,6 +33,7 @@ namespace Datadog.Trace.Agent
         private readonly IApiRequestFactory _apiRequestFactory;
         private readonly TracesEncoding _tracesEncoding;
         private readonly Uri _tracesEndpoint;
+        private readonly KeyValuePair<string, string>[] _tracesHeaders;
         private readonly Uri _statsEndpoint; // This endpoint is passed for the _sendStats callback, but otherwise unused
         private readonly SendCallback<SendStatsState> _sendStats;
         private readonly SendCallback<SendTracesState> _sendTraces;
@@ -49,6 +50,7 @@ namespace Datadog.Trace.Agent
             _apiRequestFactory = apiRequestFactory;
             _tracesEncoding = exporterSettings.TracesEncoding;
             _tracesEndpoint = exporterSettings.OtlpTracesEndpoint;
+            _tracesHeaders = exporterSettings.OtlpTracesHeaders ?? [];
             _statsEndpoint = exporterSettings.OtlpMetricsEndpoint;
             _log.Debug("Using traces endpoint {TracesEndpoint}", _tracesEndpoint.ToString());
 
@@ -212,6 +214,11 @@ namespace Datadog.Trace.Agent
 
             var traces = state.Traces;
             var numberOfTraces = state.NumberOfTraces;
+
+            foreach (var header in _tracesHeaders)
+            {
+                request.AddHeader(header.Key, header.Value);
+            }
 
             // TODO: Determine if we need to send the following information somehow:
             // - DroppedP0Traces
