@@ -248,7 +248,7 @@ public abstract class AzureFunctionsTests : TestHelper
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
             using (await RunAzureFunctionAndWaitForExit(agent, expectedExitCode: -1))
             {
-                const int expectedSpanCount = 26;
+                const int expectedSpanCount = 31;
                 var spans = await agent.WaitForSpansAsync(expectedSpanCount);
 
                 var filteredSpans = FilterOutSocketsHttpHandler(spans);
@@ -380,7 +380,7 @@ public abstract class AzureFunctionsTests : TestHelper
 
             using (await RunAzureFunctionAndWaitForExit(agent, expectedExitCode: -1))
             {
-                const int expectedSpanCount = 26;
+                const int expectedSpanCount = 31;
                 var spans = await agent.WaitForSpansAsync(expectedSpanCount);
 
                 // There are _additional_ spans created for these compared to the non-AspNetCore version
