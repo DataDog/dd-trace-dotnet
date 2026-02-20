@@ -11,6 +11,7 @@ using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Util;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Util.Streams;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
@@ -66,7 +67,7 @@ namespace Datadog.Trace.Agent
                 bufferedStream = new InitiallyBufferedStream(responseStream);
                 // wrap the stream in an "initially buffering" stream, so that if deserialization fails completely, we can get some details
                 using var sr = GetStreamReader(apiResponse, bufferedStream);
-                using var jsonTextReader = new JsonTextReader(sr);
+                using var jsonTextReader = new JsonTextReader(sr) { ArrayPool = JsonArrayPool.Shared };
                 return JsonSerializer.Create().Deserialize<T>(jsonTextReader);
             }
             catch (JsonException ex) when (bufferedStream?.GetBufferedContent() is { } buffered)

@@ -7,6 +7,8 @@ using System;
 using System.IO;
 using System.Text;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol.Tuf;
+using Datadog.Trace.Util.Json;
+using Datadog.Trace.Util.Streams;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.RemoteConfigurationManagement.Json
@@ -24,7 +26,10 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Json
 
             using var stream = new MemoryStream(contentDecode);
             using var streamReader = new StreamReader(stream);
-            using var jsonReader = new JsonTextReader(streamReader);
+            using var jsonReader = new JsonTextReader(streamReader)
+            {
+                ArrayPool = JsonArrayPool.Shared,
+            };
             return serializer.Deserialize<TufRoot>(jsonReader);
         }
 

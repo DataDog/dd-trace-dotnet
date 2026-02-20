@@ -11,6 +11,8 @@ using Datadog.Trace.ClrProfiler.AutoInstrumentation.IbmMq;
 using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.Models;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using static Datadog.Trace.Debugger.Expressions.ProbeExpressionParserHelper;
@@ -558,7 +560,7 @@ internal partial class ProbeExpressionParser<T>
         var result = Expression.Variable(typeof(T), "$dd_el_result");
         scopeMembers.Add(result);
 
-        var reader = new JsonTextReader(new StringReader(expressionJson));
+        using var reader = new JsonTextReader(new StringReader(expressionJson)) { ArrayPool = JsonArrayPool.Shared };
         SetReaderAtExpressionStart(reader);
 
         var finalExpr = ParseRoot(reader, scopeMembers);

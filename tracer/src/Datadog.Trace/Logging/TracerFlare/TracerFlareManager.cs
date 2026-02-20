@@ -17,6 +17,7 @@ using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
@@ -419,7 +420,7 @@ internal sealed class TracerFlareManager : ITracerFlareManager
         {
             using var stream = new MemoryStream(contents);
             using var streamReader = new StreamReader(stream);
-            using var jsonReader = new JsonTextReader(streamReader);
+            using var jsonReader = new JsonTextReader(streamReader) { ArrayPool = JsonArrayPool.Shared };
             return JObject.Load(jsonReader);
         }
         catch (Exception ex)

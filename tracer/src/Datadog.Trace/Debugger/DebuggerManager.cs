@@ -17,6 +17,8 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.Processors;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Telemetry;
+using Datadog.Trace.Util;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 #nullable enable
@@ -643,7 +645,7 @@ namespace Datadog.Trace.Debugger
             {
                 var stringWriter = new StringWriter();
                 var settings = DebuggerSettings;
-                using (var writer = new JsonTextWriter(stringWriter))
+                using (var writer = new JsonTextWriter(stringWriter) { ArrayPool = JsonArrayPool.Shared })
                 {
                     writer.WriteStartObject();
                     writer.WritePropertyName("dynamic_instrumentation_enabled");
