@@ -51,11 +51,12 @@ internal class CreatedumpCommand : Command
         this.SetHandler(Execute);
     }
 
-    internal static bool ParseArguments(string[] arguments, out int pid, out int? signal, out int? crashThread)
+    internal static bool ParseArguments(string[] arguments, out int pid, out int? signal, out int? crashThread, out IntPtr? threadContext)
     {
         pid = default;
         signal = default;
         crashThread = default;
+        threadContext = default;
 
         // Parse the createdump command-line
         // Unfortunately, the pid is not necessarily at the beginning or the end, it can be between other arguments.
@@ -94,7 +95,8 @@ internal class CreatedumpCommand : Command
             { "--nativeaot", false },
             { "--code", true },
             { "--errno", true },
-            { "--address", true }
+            { "--address", true },
+            { "--dd-thread-context", true }
         };
 
         const string pidRegex = "[0-9]+";
@@ -171,6 +173,11 @@ internal class CreatedumpCommand : Command
         if (parsedArguments.TryGetValue("--crashthread", out var rawCrashthread) && int.TryParse(rawCrashthread, out var crashThreadValue))
         {
             crashThread = crashThreadValue;
+        }
+
+        if (parsedArguments.TryGetValue("--dd-thread-context", out var rawThreadContext) && ulong.TryParse(rawThreadContext, out var threadContextValue))
+        {
+            threadContext = (IntPtr)threadContextValue;
         }
 
         // Have we found the pid?
@@ -452,9 +459,9 @@ internal class CreatedumpCommand : Command
         {
             if (IsTelemetryEnabled())
             {
-                if (ParseArguments(allArguments, out var pid, out var signal, out var crashThread))
+                if (ParseArguments(allArguments, out var pid, out var signal, out var crashThread, out var threadContext))
                 {
-                    GenerateCrashReport(pid, signal, crashThread);
+                    GenerateCrashReport(pid, signal, crashThread, threadContext);
                 }
                 else
                 {
@@ -509,7 +516,7 @@ internal class CreatedumpCommand : Command
         DebugPrint("dd-dotnet exited normally");
     }
 
-    private unsafe void GenerateCrashReport(int pid, int? signal, int? crashThread)
+    private unsafe void GenerateCrashReport(int pid, int? signal, int? crashThread, IntPtr? threadContext)
     {
         DebugPrint($"Generating crash report for pid {pid} (signal: {signal}, crashing thread id: {crashThread})");
 
@@ -630,7 +637,7 @@ internal class CreatedumpCommand : Command
         {
             DebugPrint("Resolving callstacks");
             var callback = (delegate* unmanaged<int, IntPtr, ResolveMethodData**, int*, int>)&ResolveManagedCallstack;
-            crashReport.ResolveStacks(crashThread ?? 0, (IntPtr)callback, GCHandle.ToIntPtr(handle), out isSuspicious);
+            crashReport.ResolveStacks(crashThread ?? 0, threadContext ?? IntPtr.Zero, (IntPtr)callback, GCHandle.ToIntPtr(handle), out isSuspicious);
         }
         catch (Win32Exception ex)
         {

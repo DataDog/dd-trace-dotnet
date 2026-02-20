@@ -31,7 +31,7 @@ public:
 
 private:
     std::vector<std::pair<int32_t, std::string>> GetThreads() override;
-    std::vector<StackFrame> GetThreadFrames(int32_t tid, ResolveManagedCallstack resolveManagedCallstack, void* context) override;
+    std::vector<StackFrame> GetThreadFrames(int32_t tid, void* threadContext, ResolveManagedCallstack resolveManagedCallstack, void* context) override;
     const ModuleInfo* FindModule(uintptr_t ip);
     std::vector<ModuleInfo> GetModules();
     std::string GetSignalInfo(int32_t signal) override;
