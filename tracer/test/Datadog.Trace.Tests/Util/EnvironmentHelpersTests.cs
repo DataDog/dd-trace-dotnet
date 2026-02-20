@@ -1,11 +1,11 @@
-﻿// <copyright file="EnvironmentHelpersTests.cs" company="Datadog">
+// <copyright file="EnvironmentHelpersTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 using System;
+using Datadog.Trace.Serverless;
 using Datadog.Trace.TestHelpers;
-using Datadog.Trace.Util;
 using FluentAssertions;
 using Xunit;
 
@@ -25,6 +25,14 @@ namespace Datadog.Trace.Tests.Util;
     "K_SERVICE")]
 public class EnvironmentHelpersTests
 {
+    public EnvironmentHelpersTests()
+    {
+        // Reset cached values before each test since tests modify environment variables
+        AzurePlatformDetection.Reset();
+        AwsPlatformDetection.Reset();
+        GcpPlatformDetection.Reset();
+    }
+
     [Theory]
     [PairwiseData]
     public void IsAzureAppServices(bool value)
@@ -34,7 +42,7 @@ public class EnvironmentHelpersTests
             Environment.SetEnvironmentVariable("WEBSITE_SITE_NAME", "test");
         }
 
-        EnvironmentHelpers.IsAzureAppServices().Should().Be(value);
+        AzurePlatformDetection.IsAzureAppServices.Should().Be(value);
     }
 
     [Theory]
@@ -48,7 +56,7 @@ public class EnvironmentHelpersTests
             Environment.SetEnvironmentVariable("FUNCTIONS_EXTENSION_VERSION", "~4");
         }
 
-        EnvironmentHelpers.IsAzureFunctions().Should().Be(value);
+        AzurePlatformDetection.IsAzureFunctions.Should().Be(value);
     }
 
     [Theory]
@@ -61,7 +69,7 @@ public class EnvironmentHelpersTests
             Environment.SetEnvironmentVariable("DD_AAS_DOTNET_EXTENSION_VERSION", "3.20.0");
         }
 
-        EnvironmentHelpers.IsUsingAzureAppServicesSiteExtension().Should().Be(value);
+        AzurePlatformDetection.IsUsingAzureAppServicesSiteExtension.Should().Be(value);
     }
 
     [Theory]
@@ -73,7 +81,7 @@ public class EnvironmentHelpersTests
             Environment.SetEnvironmentVariable("AWS_LAMBDA_FUNCTION_NAME", "test");
         }
 
-        EnvironmentHelpers.IsAwsLambda().Should().Be(value);
+        AwsPlatformDetection.IsAwsLambda.Should().Be(value);
     }
 
     [Theory]
@@ -95,6 +103,6 @@ public class EnvironmentHelpersTests
             }
         }
 
-        EnvironmentHelpers.IsGoogleCloudFunctions().Should().Be(value);
+        GcpPlatformDetection.IsGoogleCloudFunctions.Should().Be(value);
     }
 }

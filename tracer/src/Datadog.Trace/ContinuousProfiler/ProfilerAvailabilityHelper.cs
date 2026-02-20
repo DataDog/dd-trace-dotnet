@@ -7,6 +7,7 @@
 
 using System;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Serverless;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Util;
 
@@ -51,7 +52,7 @@ internal static class ProfilerAvailabilityHelper
         // Now we're into fuzzy territory. The CP is not available in some environments
         // - AWS Lambda
         // - Azure Functions where the site extension is _not_ used (Site extension is Windows only, so that's already covered)
-        var isUnsupported = EnvironmentHelpers.IsAwsLambda() || EnvironmentHelpers.IsAzureFunctions();
+        var isUnsupported = AwsPlatformDetection.IsAwsLambda || AzurePlatformDetection.IsAzureFunctions;
 
         // As a final check, we check whether the ClrProfiler is attached - if it's not, then the P/Invokes won't
         // have been re-written, and native calls won't work.

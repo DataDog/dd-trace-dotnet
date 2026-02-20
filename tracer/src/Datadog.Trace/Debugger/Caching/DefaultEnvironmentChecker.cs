@@ -5,8 +5,7 @@
 
 #nullable enable
 
-using System;
-using Datadog.Trace.Util;
+using Datadog.Trace.Serverless;
 
 namespace Datadog.Trace.Debugger.Caching;
 
@@ -24,8 +23,8 @@ internal sealed class DefaultEnvironmentChecker : IEnvironmentChecker
     private static bool CheckServerlessEnvironment()
     {
         // Checking serverless environment based on environment variables
-        return EnvironmentHelpers.IsAwsLambda() ||
-               EnvironmentHelpers.IsAzureFunctions() ||
-               EnvironmentHelpers.IsGoogleCloudFunctions();
+        return AwsPlatformDetection.IsAwsLambda ||
+               AzurePlatformDetection.IsAzureFunctions ||
+               GcpPlatformDetection.IsGoogleCloudFunctions;
     }
 }

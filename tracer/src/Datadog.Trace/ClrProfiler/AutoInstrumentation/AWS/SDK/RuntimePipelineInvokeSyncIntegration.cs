@@ -10,6 +10,7 @@ using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Serverless;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 
@@ -54,7 +55,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
                 bool isOutbound = (tags.SpanKind == SpanKinds.Client) || (tags.SpanKind == SpanKinds.Producer);
                 if (isOutbound)
                 {
-                    PeerServiceHelpers.DerivePeerService(tags, EnvironmentHelpers.IsAwsLambda());
+                    PeerServiceHelpers.DerivePeerService(tags, AwsPlatformDetection.IsAwsLambda);
                 }
 
                 Tracer.Instance.CurrentTraceSettings.Schema.RemapPeerService(tags);
