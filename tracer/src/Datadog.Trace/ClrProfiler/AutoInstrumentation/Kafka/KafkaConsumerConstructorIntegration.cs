@@ -63,10 +63,7 @@ public sealed class KafkaConsumerConstructorIntegration
             // Only config setting "group.id" is required, so assert that the value is non-null before adding to the ConsumerGroup cache
             if (groupId is not null)
             {
-                // Extract cluster_id using AdminClient API with bootstrap servers
                 var clusterId = KafkaHelper.GetClusterId(bootstrapServers) ?? string.Empty;
-
-                // Save the map between this consumer and its metadata
                 ConsumerCache.SetConsumerGroup(instance, groupId, bootstrapServers, clusterId);
                 return new CallTargetState(scope: null, state: instance);
             }

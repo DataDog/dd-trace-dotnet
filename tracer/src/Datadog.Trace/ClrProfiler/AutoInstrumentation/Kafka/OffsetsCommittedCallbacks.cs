@@ -33,7 +33,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
             {
                 var dataStreams = Tracer.Instance.TracerManager.DataStreamsManager;
 
-                // Get cluster_id from ConsumerCache when the callback is invoked
                 string? clusterId = null;
                 if (sender != null)
                 {

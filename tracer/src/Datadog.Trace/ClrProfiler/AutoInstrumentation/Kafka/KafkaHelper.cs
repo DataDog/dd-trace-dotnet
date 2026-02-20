@@ -26,7 +26,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         private static readonly string[] DefaultProduceEdgeTags = ["direction:out", "type:kafka"];
         private static bool _headersInjectionEnabled = true;
 
-        // Thread-local flag to prevent infinite recursion when AdminClient creates internal Producer
         [ThreadStatic]
         private static bool _isGettingClusterId;
 
@@ -261,7 +260,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     string[] edgeTags;
                     if (!string.IsNullOrEmpty(consumerClusterId))
                     {
-                        // Include cluster_id in edge tags (sorted alphabetically)
                         edgeTags = string.IsNullOrEmpty(topic)
                                        ? new[] { "direction:in", $"group:{groupId}", $"kafka_cluster_id:{consumerClusterId}", "type:kafka" }
                                        : new[] { "direction:in", $"group:{groupId}", $"kafka_cluster_id:{consumerClusterId}", $"topic:{topic}", "type:kafka" };
@@ -364,7 +362,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
                 if (dataStreamsManager.IsEnabled)
                 {
-                    // Try to get cluster_id from span tags (it was set in CreateProducerScope)
                     var producerClusterId = string.Empty;
                     if (span.Tags is KafkaTags kafkaTags && !string.IsNullOrEmpty(kafkaTags.ClusterId))
                     {
@@ -374,7 +371,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     string[] edgeTags;
                     if (!string.IsNullOrEmpty(producerClusterId))
                     {
-                        // Include cluster_id in edge tags (sorted alphabetically)
                         edgeTags = string.IsNullOrEmpty(topic)
                                        ? new[] { "direction:out", $"kafka_cluster_id:{producerClusterId}", "type:kafka" }
                                        : new[] { "direction:out", $"kafka_cluster_id:{producerClusterId}", $"topic:{topic}", "type:kafka" };
@@ -410,7 +406,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
         internal static string? GetClusterId(string bootstrapServers)
         {
-            // Prevent re-entrancy: AdminClient internally creates a Producer, which would trigger our instrumentation again
             if (_isGettingClusterId)
             {
                 return null;
@@ -425,7 +420,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
             {
                 _isGettingClusterId = true;
 
-                // Create AdminClientConfig via reflection (duck typing wraps instances, can't create them)
                 var configType = Type.GetType("Confluent.Kafka.AdminClientConfig, Confluent.Kafka");
                 if (configType is null)
                 {
@@ -440,7 +434,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
                 adminConfig.BootstrapServers = bootstrapServers;
 
-                // Create AdminClientBuilder via reflection, then duck type to call Build()
                 var builderType = Type.GetType("Confluent.Kafka.AdminClientBuilder, Confluent.Kafka");
                 if (builderType is null)
                 {
@@ -453,8 +446,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     return null;
                 }
 
-                // Build the AdminClient, then duck cast to IAdminClient which includes DescribeClusterAsync.
-                // TryDuckCast will fail gracefully on older Confluent.Kafka versions that lack the method.
                 var adminClientObj = adminBuilder.Build();
                 if (adminClientObj is null)
                 {

@@ -147,7 +147,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                         if (!isError)
                         {
                             var dataStreams = Tracer.Instance.TracerManager.DataStreamsManager;
-                            // Try to get cluster_id from span tags
                             var backlogTags = $"partition:{report.Partition.Value},topic:{report.Topic},type:kafka_produce";
                             if (tags.ClusterId != null)
                             {
