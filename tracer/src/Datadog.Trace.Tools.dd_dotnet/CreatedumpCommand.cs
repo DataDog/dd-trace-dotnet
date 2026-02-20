@@ -53,7 +53,7 @@ internal class CreatedumpCommand : Command
         this.SetHandler(Execute);
     }
 
-    internal static bool ParseArguments(string[] arguments, out int pid, out int? signal, out int? signalCode, out int? crashThread, out uint? nativeExceptionCode, out IntPtr threadContext)
+    internal static bool ParseArguments(string[] arguments, out int pid, out int? signal, out int? signalCode, out int? crashThread, out uint? nativeExceptionCode, out IntPtr? threadContext)
     {
         pid = default;
         signal = default;
@@ -101,7 +101,7 @@ internal class CreatedumpCommand : Command
             { "--errno", true },
             { "--address", true },
             // Datadog-specific argument. Will be discarded by createdump.
-            { "--dd-native-exception-code", true }
+            { "--dd-native-exception-code", true },
             { "--dd-thread-context", true }
         };
 
@@ -737,7 +737,7 @@ internal class CreatedumpCommand : Command
         DebugPrint("dd-dotnet exited normally");
     }
 
-    private unsafe void GenerateCrashReport(int pid, int? signal, int? signalCode, int? crashThread, uint? nativeExceptionCode, IntPtr threadContext)
+    private unsafe void GenerateCrashReport(int pid, int? signal, int? signalCode, int? crashThread, uint? nativeExceptionCode, IntPtr? threadContext)
     {
         DebugPrint($"Generating crash report for pid {pid} (signal: {signal}, signal code: {signalCode}, crashing thread id: {crashThread}, native exception code: {(nativeExceptionCode.HasValue ? $"0x{nativeExceptionCode.Value:X}" : "null")})");
 
@@ -861,7 +861,7 @@ internal class CreatedumpCommand : Command
         {
             DebugPrint("Resolving callstacks");
             var callback = (delegate* unmanaged<int, IntPtr, ResolveMethodData**, int*, int>)&ResolveManagedCallstack;
-            crashReport.ResolveStacks(crashThread ?? 0, threadContext, (IntPtr)callback, GCHandle.ToIntPtr(handle), out isSuspicious);
+            crashReport.ResolveStacks(crashThread ?? 0, threadContext ?? IntPtr.Zero, (IntPtr)callback, GCHandle.ToIntPtr(handle), out isSuspicious);
         }
         catch (Win32Exception ex)
         {

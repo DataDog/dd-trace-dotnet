@@ -732,7 +732,7 @@ static void dd_sigsegv_handler(int signum, siginfo_t* info, void* context)
 
 static pthread_mutex_t sigaction_lock = PTHREAD_MUTEX_INITIALIZER;
 static int (*__real_sigaction)(int signum, const struct sigaction *_Nullable restrict act, struct sigaction *_Nullable restrict oldact) = NULL;
-int sigaction(int signum,
+int dd_sigaction(int signum,
     const struct sigaction *_Nullable restrict act,
     struct sigaction *_Nullable restrict oldact)
 {
@@ -747,7 +747,6 @@ int sigaction(int signum,
         void (*prev_handler)(int signum, siginfo_t* info, void* context) = sigsegv_current_handler;
         sigsegv_current_handler = act->sa_sigaction;
         int result = __real_sigaction(signum, &new_act, oldact);
-        // lock to update the current act and fixup the old one
         if (oldact != NULL &&
             ((oldact->sa_flags & SA_SIGINFO) == SA_SIGINFO) &&
             (oldact->sa_sigaction == dd_sigsegv_handler))

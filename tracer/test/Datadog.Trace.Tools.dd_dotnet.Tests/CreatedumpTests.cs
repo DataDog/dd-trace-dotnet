@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Diagnostics;
 using FluentAssertions;
 using Xunit;
@@ -12,10 +13,10 @@ namespace Datadog.Trace.Tools.dd_dotnet.Tests;
 public class CreatedumpTests
 {
     [SkippableTheory]
-    [InlineData("invalid", false, 0, null, null, null, null, IntPtr.Zero)]
-    [InlineData("--crashthread 5 --blabla 100 --signal 3 --aaaaaa --code 4 --dd-native-exception-code 3221225477", true, 100, 3, 4, 5, 0xC0000005, 42424242)]
-    [InlineData("--crashthread 5 --blabla 99999 --signal 3 --aaaaaa 99998 --code 4 --dd-native-exception-code 3221225477", false, 0, 3, 4, 5, 0xC0000005, IntPtr.Zero)] // Two potential PIDs, that probably don't exist
-    [InlineData("10", true, 10, null, null, null, null, IntPtr.Zero)]
+    [InlineData("invalid", false, 0, null, null, null, null, null)]
+    [InlineData("--crashthread 5 --blabla 100 --signal 3 --aaaaaa --code 4 --dd-native-exception-code 3221225477 --dd-thread-context 42424242", true, 100, 3, 4, 5, 0xC0000005, 42424242)]
+    [InlineData("--crashthread 5 --blabla 99999 --signal 3 --aaaaaa 99998 --code 4 --dd-native-exception-code 3221225477", false, 0, 3, 4, 5, 0xC0000005, null)] // Two potential PIDs, that probably don't exist
+    [InlineData("10", true, 10, null, null, null, null, null)]
     public void ParseCommandLine(string commandLine, bool expectedResult, int expectedPid, int? expectedSignal, int? expectedSignalCode, int? expectedCrashThread, uint? expectedExceptionCode, IntPtr? expectedThreadContext)
     {
         var result = CreatedumpCommand.ParseArguments(commandLine.Split(' '), out var pid, out var signal, out var signalCode, out var crashThread, out var exceptionCode, out var threadContext);
@@ -48,6 +49,6 @@ public class CreatedumpTests
         signalCode.Should().BeNull();
         crashThread.Should().BeNull();
         exceptionCode.Should().BeNull();
-        threadContext.Should().Be(IntPtr.Zero);
+        threadContext.Should().BeNull();
     }
 }
