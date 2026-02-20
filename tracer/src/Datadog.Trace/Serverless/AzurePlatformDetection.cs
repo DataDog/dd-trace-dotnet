@@ -53,12 +53,13 @@ internal static class AzurePlatformDetection
 
     /// <summary>
     /// Gets a value indicating whether the current environment is using Azure App Services Site Extension
-    /// by checking for the presence of "DD_AZURE_APP_SERVICES=1".
+    /// by checking for the presence of "DD_AZURE_APP_SERVICES=1" and "DD_AAS_DOTNET_EXTENSION_VERSION".
     /// The result is cached after the first evaluation.
     /// </summary>
     internal static bool IsUsingAzureAppServicesSiteExtension =>
         _isUsingAzureAppServicesSiteExtension ??=
-            EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.AzureAppService.AzureAppServicesContextKey) == "1";
+            EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.AzureAppService.AzureAppServicesContextKey) == "1" &&
+            EnvironmentHelpers.EnvironmentVariableExists(ConfigurationKeys.AzureAppService.SiteExtensionVersionKey);
 
     /// <summary>
     /// Gets a value indicating whether the current environment is an Azure Functions isolated worker process
