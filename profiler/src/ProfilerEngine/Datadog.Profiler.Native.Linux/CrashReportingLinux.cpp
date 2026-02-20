@@ -18,6 +18,7 @@
 #include <sstream>
 #include <string.h>
 #include <sys/ptrace.h>
+#include <sys/uio.h>
 #include <sys/wait.h>
 
 extern "C"
@@ -139,20 +140,86 @@ std::vector<ModuleInfo> CrashReportingLinux::GetModules()
     return modules;
 }
 
+#define SET_REG(cursor, reg, value, default) \
+do {\
+    if (unw_set_reg(&cursor, reg, value) != 0) \
+    {\
+        return {default};\
+    }\
+} while (0);
+
+std::optional<unw_cursor_t> create_cursor_from_context(uint32_t pid, unw_addr_space_t& addressSpace, void* libunwindContext, void* threadContext)
+{
+    unw_cursor_t cursor;
+    if (unw_init_remote(&cursor, addressSpace, threadContext) != 0)
+    {
+        return std::nullopt;
+    }
+
+    if (threadContext == nullptr)
+    {
+        return {cursor};
+    }
+
+    ucontext_t remoteCtx;
+    // threadContext is a pointer in the remote process's address space
+    // read it via process_vm_readv (more efficient than ptrace for bulk reads)
+    struct iovec local  = { .iov_base = &remoteCtx, .iov_len = sizeof(remoteCtx) };
+    struct iovec remote = { .iov_base = threadContext, .iov_len = sizeof(remoteCtx) };
+
+    if (process_vm_readv(pid, &local, 1, &remote, 1, 0) == sizeof(remoteCtx)) {
+        unw_cursor_t newCursor = cursor;
+
+        // Override cursor with the register state from the crash point.
+        // This skips the signal frame entirely, which is required on
+        // musl/Alpine where libunwind cannot unwind past the signal trampoline.
+#if defined(AMD64)
+        SET_REG(newCursor, UNW_REG_IP, remoteCtx.uc_mcontext.gregs[REG_RIP], cursor);
+        SET_REG(newCursor, UNW_REG_SP, remoteCtx.uc_mcontext.gregs[REG_RSP], cursor);
+        SET_REG(newCursor, UNW_X86_64_RBP, remoteCtx.uc_mcontext.gregs[REG_RBP], cursor);
+        // Callee-saved registers (DWARF unwind rules may reference these)
+        SET_REG(newCursor, UNW_X86_64_RBX, remoteCtx.uc_mcontext.gregs[REG_RBX], cursor);
+        SET_REG(newCursor, UNW_X86_64_R12, remoteCtx.uc_mcontext.gregs[REG_R12], cursor);
+        SET_REG(newCursor, UNW_X86_64_R13, remoteCtx.uc_mcontext.gregs[REG_R13], cursor);
+        SET_REG(newCursor, UNW_X86_64_R14, remoteCtx.uc_mcontext.gregs[REG_R14], cursor);
+        SET_REG(newCursor, UNW_X86_64_R15, remoteCtx.uc_mcontext.gregs[REG_R15], cursor);
+#elif defined(ARM64)
+        SET_REG(newCursor, UNW_REG_IP, remoteCtx.uc_mcontext.pc, cursor);
+        SET_REG(newCursor, UNW_REG_SP, remoteCtx.uc_mcontext.sp, cursor);
+        SET_REG(newCursor, UNW_AARCH64_X29, remoteCtx.uc_mcontext.regs[29], cursor); // FP
+        SET_REG(newCursor, UNW_AARCH64_X30, remoteCtx.uc_mcontext.regs[30], cursor); // LR
+        // Callee-saved registers (DWARF unwind rules may reference these)
+        SET_REG(newCursor, UNW_AARCH64_X19, remoteCtx.uc_mcontext.regs[19], cursor);
+        SET_REG(newCursor, UNW_AARCH64_X20, remoteCtx.uc_mcontext.regs[20], cursor);
+        SET_REG(newCursor, UNW_AARCH64_X21, remoteCtx.uc_mcontext.regs[21], cursor);
+        SET_REG(newCursor, UNW_AARCH64_X22, remoteCtx.uc_mcontext.regs[22], cursor);
+        SET_REG(newCursor, UNW_AARCH64_X23, remoteCtx.uc_mcontext.regs[23], cursor);
+        SET_REG(newCursor, UNW_AARCH64_X24, remoteCtx.uc_mcontext.regs[24], cursor);
+        SET_REG(newCursor, UNW_AARCH64_X25, remoteCtx.uc_mcontext.regs[25], cursor);
+        SET_REG(newCursor, UNW_AARCH64_X26, remoteCtx.uc_mcontext.regs[26], cursor);
+        SET_REG(newCursor, UNW_AARCH64_X27, remoteCtx.uc_mcontext.regs[27], cursor);
+        SET_REG(newCursor, UNW_AARCH64_X28, remoteCtx.uc_mcontext.regs[28], cursor);
+#else
+#error "Unsupported architecture"
+#endif
+        return {newCursor};
+    }
+    return {cursor};
+}
+
 std::vector<StackFrame> CrashReportingLinux::GetThreadFrames(int32_t tid, void* threadContext, ResolveManagedCallstack resolveManagedCallstack, void* context)
 {
     std::vector<StackFrame> frames;
 
-    auto libunwindContext = threadContext != nullptr ? threadContext : _UPT_create(tid);
+    auto libunwindContext = _UPT_create(tid);
 
-    unw_cursor_t cursor;
-
-    auto result = unw_init_remote(&cursor, _addressSpace, libunwindContext);
-
-    if (result != 0)
+    auto cursorOpt = create_cursor_from_context(_pid, _addressSpace, libunwindContext, threadContext);
+    if (!cursorOpt.has_value())
     {
         return frames;
     }
+
+    auto cursor = cursorOpt.value();
 
     // Get the managed callstack
     ResolveMethodData* managedCallstack;
@@ -205,7 +272,7 @@ std::vector<StackFrame> CrashReportingLinux::GetThreadFrames(int32_t tid, void* 
             bool hasName = false;
 
             unw_proc_info_t procInfo;
-            result = unw_get_proc_info(&cursor, &procInfo);
+            auto result = unw_get_proc_info(&cursor, &procInfo);
 
             if (result == 0)
             {

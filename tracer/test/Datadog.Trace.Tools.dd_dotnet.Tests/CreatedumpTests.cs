@@ -12,13 +12,13 @@ namespace Datadog.Trace.Tools.dd_dotnet.Tests;
 public class CreatedumpTests
 {
     [SkippableTheory]
-    [InlineData("invalid", false, 0, null, null, null, null)]
-    [InlineData("--crashthread 5 --blabla 100 --signal 3 --aaaaaa --code 4 --dd-native-exception-code 3221225477", true, 100, 3, 4, 5, 0xC0000005)]
-    [InlineData("--crashthread 5 --blabla 99999 --signal 3 --aaaaaa 99998 --code 4 --dd-native-exception-code 3221225477", false, 0, 3, 4, 5, 0xC0000005)] // Two potential PIDs, that probably don't exist
-    [InlineData("10", true, 10, null, null, null, null)]
-    public void ParseCommandLine(string commandLine, bool expectedResult, int expectedPid, int? expectedSignal, int? expectedSignalCode, int? expectedCrashThread, uint? expectedExceptionCode)
+    [InlineData("invalid", false, 0, null, null, null, null, IntPtr.Zero)]
+    [InlineData("--crashthread 5 --blabla 100 --signal 3 --aaaaaa --code 4 --dd-native-exception-code 3221225477", true, 100, 3, 4, 5, 0xC0000005, 42424242)]
+    [InlineData("--crashthread 5 --blabla 99999 --signal 3 --aaaaaa 99998 --code 4 --dd-native-exception-code 3221225477", false, 0, 3, 4, 5, 0xC0000005, IntPtr.Zero)] // Two potential PIDs, that probably don't exist
+    [InlineData("10", true, 10, null, null, null, null, IntPtr.Zero)]
+    public void ParseCommandLine(string commandLine, bool expectedResult, int expectedPid, int? expectedSignal, int? expectedSignalCode, int? expectedCrashThread, uint? expectedExceptionCode, IntPtr? expectedThreadContext)
     {
-        var result = CreatedumpCommand.ParseArguments(commandLine.Split(' '), out var pid, out var signal, out var signalCode, out var crashThread, out var exceptionCode);
+        var result = CreatedumpCommand.ParseArguments(commandLine.Split(' '), out var pid, out var signal, out var signalCode, out var crashThread, out var exceptionCode, out var threadContext);
 
         result.Should().Be(expectedResult);
 
@@ -29,6 +29,7 @@ public class CreatedumpTests
             signalCode.Should().Be(expectedSignalCode);
             crashThread.Should().Be(expectedCrashThread);
             exceptionCode.Should().Be(expectedExceptionCode);
+            threadContext.Should().Be(expectedThreadContext);
         }
     }
 
@@ -39,7 +40,7 @@ public class CreatedumpTests
         var currentPid = Process.GetCurrentProcess().Id;
         var commandLine = $"999999 999998 {currentPid} 999997";
 
-        var result = CreatedumpCommand.ParseArguments(commandLine.Split(' '), out var pid, out var signal, out var signalCode, out var crashThread, out var exceptionCode);
+        var result = CreatedumpCommand.ParseArguments(commandLine.Split(' '), out var pid, out var signal, out var signalCode, out var crashThread, out var exceptionCode, out var threadContext);
 
         result.Should().Be(true);
         pid.Should().Be(currentPid);
@@ -47,5 +48,6 @@ public class CreatedumpTests
         signalCode.Should().BeNull();
         crashThread.Should().BeNull();
         exceptionCode.Should().BeNull();
+        threadContext.Should().Be(IntPtr.Zero);
     }
 }
