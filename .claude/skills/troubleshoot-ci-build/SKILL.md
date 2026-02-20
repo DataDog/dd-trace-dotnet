@@ -218,7 +218,8 @@ This downloads the `.received.txt` snapshot artifacts from CI and replaces your 
 3. **Show full analysis** - Run complete analysis with all details
 4. **Update snapshots** - Download and apply updated snapshots from this build _(shown only when snapshot failures detected)_
 
-[View build in Azure DevOps](https://dev.azure.com/datadoghq/dd-trace-dotnet/_build/results?buildId=<BUILD_ID>&view=logs) | [View PR #<PR_NUMBER>](https://github.com/DataDog/dd-trace-dotnet/pull/<PR_NUMBER>) _(if PR-triggered)_
+[View build in Azure DevOps](https://dev.azure.com/datadoghq/dd-trace-dotnet/_build/results?buildId=<BUILD_ID>&view=logs)
+[View PR #<PR_NUMBER> in GitHub](https://github.com/DataDog/dd-trace-dotnet/pull/<PR_NUMBER>) _(if PR-triggered)_
 ```
 
 **Resolving PR number**: When invoked with `build <BUILD_ID>`, extract the PR number from the build details JSON:
