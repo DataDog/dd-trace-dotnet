@@ -18,14 +18,10 @@ internal static partial class ConfigurationKeys
     internal static class Rcm
     {
         /// <summary>
-        /// Controls how often remote configuration is polled, in seconds. Values must be greater than 0 and no more than 5
-        /// </summary>
-        public const string PollIntervalInternal = "DD_INTERNAL_RCM_POLL_INTERVAL";
-
-        /// <summary>
         /// Configuration key for RCM poll interval (in seconds).
         /// Default value is 5 s
         /// Maximum value is 5 s
+        /// Minimum value is greater than 0 s
         /// </summary>
         public const string PollInterval = "DD_REMOTE_CONFIG_POLL_INTERVAL_SECONDS";
 
