@@ -17,6 +17,7 @@ using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 #nullable enable
@@ -435,7 +436,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 
             try
             {
-                result = JsonConvert.DeserializeObject<T>(jsonString);
+                result = JsonHelper.DeserializeObject<T>(jsonString);
                 return result != null;
             }
             catch (Exception ex)

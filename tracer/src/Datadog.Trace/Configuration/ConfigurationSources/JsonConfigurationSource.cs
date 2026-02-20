@@ -15,6 +15,7 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
@@ -30,12 +31,12 @@ namespace Datadog.Trace.Configuration
         private readonly JToken? _configuration;
 
         internal JsonConfigurationSource(string json, ConfigurationOrigins origin)
-            : this(json, origin, j => (JToken?)JsonConvert.DeserializeObject(j))
+            : this(json, origin, j => (JToken?)JsonHelper.DeserializeObject(j))
         {
         }
 
         internal JsonConfigurationSource(string json, ConfigurationOrigins origin, string? filename)
-            : this(json, origin, j => (JToken?)JsonConvert.DeserializeObject(j))
+            : this(json, origin, j => (JToken?)JsonHelper.DeserializeObject(j))
         {
             JsonConfigurationFilePath = filename;
         }

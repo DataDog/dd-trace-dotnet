@@ -266,7 +266,7 @@ namespace Datadog.Trace.Debugger.Symbols
 
         private async Task UploadClasses(Root root, IEnumerable<Model.Scope> classes)
         {
-            var rootAsString = JsonConvert.SerializeObject(root);
+            var rootAsString = JsonHelper.SerializeObject(root);
             if (!TryBuildPrefixAndSuffix(rootAsString, out var prefix, out var suffix))
             {
                 // this should not happen unless Root/Scope JSON shape changes

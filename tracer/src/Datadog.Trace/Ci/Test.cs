@@ -18,6 +18,7 @@ using Datadog.Trace.Pdb;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Util.Json;
 
 namespace Datadog.Trace.Ci;
 
@@ -261,7 +262,7 @@ public sealed class Test
                 List<string>? files;
                 try
                 {
-                    files = Vendors.Newtonsoft.Json.JsonConvert.DeserializeObject<List<string>>(suiteTagValue);
+                    files = JsonHelper.DeserializeObject<List<string>>(suiteTagValue);
                 }
                 catch (Exception ex)
                 {
@@ -272,7 +273,7 @@ public sealed class Test
                 if (files is not null && !files.Contains(testTagValue, StringComparer.Ordinal))
                 {
                     files.Add(testTagValue);
-                    setSuiteTag(suiteTags, Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(files));
+                    setSuiteTag(suiteTags, JsonHelper.SerializeObject(files));
                 }
             }
             else
@@ -280,7 +281,7 @@ public sealed class Test
                 // If the source file is not an array, we create a new one with both values
                 try
                 {
-                    setSuiteTag(suiteTags, Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(new List<string> { suiteTagValue, testTagValue }));
+                    setSuiteTag(suiteTags, JsonHelper.SerializeObject(new List<string> { suiteTagValue, testTagValue }));
                 }
                 catch (Exception ex)
                 {
@@ -303,7 +304,7 @@ public sealed class Test
             List<string> suiteCodeOwners;
             try
             {
-                suiteCodeOwners = Vendors.Newtonsoft.Json.JsonConvert.DeserializeObject<List<string>>(suiteTags.CodeOwners) ?? [];
+                suiteCodeOwners = JsonHelper.DeserializeObject<List<string>>(suiteTags.CodeOwners) ?? [];
             }
             catch (Exception ex)
             {
@@ -325,7 +326,7 @@ public sealed class Test
         if (traits?.Count > 0)
         {
             var tags = (TestSpanTags)_scope.Span.Tags;
-            tags.Traits = Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(traits);
+            tags.Traits = JsonHelper.SerializeObject(traits);
         }
     }
 

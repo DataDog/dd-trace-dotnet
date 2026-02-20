@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Util.Json;
 
 namespace Datadog.Trace.Ci.CiEnvironment;
 
@@ -62,7 +63,7 @@ internal sealed class GitlabEnvironmentValues<TValueProvider>(TValueProvider val
         {
             try
             {
-                NodeLabels = Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.DeserializeObject<string[]>(runnerTags);
+                NodeLabels = JsonHelper.DeserializeObject<string[]>(runnerTags);
             }
             catch (Exception ex)
             {

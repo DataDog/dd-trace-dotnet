@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Text;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
@@ -165,7 +166,7 @@ namespace Datadog.Trace.Configuration
         {
             try
             {
-                var configDto = JsonConvert.DeserializeObject<ApmTracingConfigDto>(jsonContent);
+                var configDto = JsonHelper.DeserializeObject<ApmTracingConfigDto>(jsonContent);
 
                 if (configDto?.LibConfig == null)
                 {
