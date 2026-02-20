@@ -1124,14 +1124,6 @@ supportedConfigurations:
     documentation: |-
       Internal configuration key to optionally limit the maximum number of probes of each type.
       Default value is <c>0</c>, no probe-count limit is enforced.
-  DD_INTERNAL_RCM_POLL_INTERVAL:
-  - implementation: A
-    type: decimal
-    default: '5.0'
-    product: Rcm
-    const_name: PollIntervalInternal
-    documentation: |-
-      Controls how often remote configuration is polled, in seconds. Values must be greater than 0 and no more than 5
   DD_INTERNAL_PROFILING_NATIVE_ENGINE_PATH:
   - implementation: A
     type: string
@@ -1403,6 +1395,7 @@ supportedConfigurations:
       Configuration key for RCM poll interval (in seconds).
       Default value is 5 s
       Maximum value is 5 s
+      Minimum value is greater than 0 s
   DD_RUNTIME_METRICS_ENABLED:
   - implementation: A
     type: boolean
