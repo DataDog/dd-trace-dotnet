@@ -99,18 +99,26 @@ function Invoke-AzDevOpsApi {
     $cmdDisplay = "az $($azArgs -join ' ')"
     Write-Verbose "Executing: $cmdDisplay"
 
-    $output = & az @azArgs 2>&1
+    # Capture stderr separately so az CLI warnings don't corrupt the JSON output
+    $stderrFile = [System.IO.Path]::GetTempFileName()
+    try {
+        $output = & az @azArgs 2>$stderrFile
 
-    if ($LASTEXITCODE -ne 0) {
-        $errorMsg = @"
+        if ($LASTEXITCODE -ne 0) {
+            $stderr = Get-Content -Path $stderrFile -Raw -ErrorAction SilentlyContinue
+            $errorMsg = @"
 Azure DevOps API call failed
   Command: $cmdDisplay
   Area: $Area
   Resource: $Resource
   Exit Code: $LASTEXITCODE
-  Error: $output
+  Error: $stderr
 "@
-        throw $errorMsg
+            throw $errorMsg
+        }
+    }
+    finally {
+        Remove-Item -Path $stderrFile -Force -ErrorAction SilentlyContinue
     }
 
     $json = $output | ConvertFrom-Json
@@ -128,9 +136,16 @@ function Get-BuildIdFromPR {
 
     Write-Verbose "Resolving build ID from PR #$PRNumber..."
 
-    $checks = & gh pr checks $PRNumber --json name,link 2>&1
-    if ($LASTEXITCODE -ne 0) {
-        throw "Failed to get PR checks: $checks"
+    $stderrFile = [System.IO.Path]::GetTempFileName()
+    try {
+        $checks = & gh pr checks $PRNumber --json name,link 2>$stderrFile
+        if ($LASTEXITCODE -ne 0) {
+            $stderr = Get-Content -Path $stderrFile -Raw -ErrorAction SilentlyContinue
+            throw "Failed to get PR checks: $stderr"
+        }
+    }
+    finally {
+        Remove-Item -Path $stderrFile -Force -ErrorAction SilentlyContinue
     }
 
     $checksJson = $checks | ConvertFrom-Json
@@ -322,9 +337,15 @@ try {
 
         if ($PSCmdlet.ParameterSetName -eq 'ByCurrentBranch') {
             Write-Verbose "No arguments provided. Detecting PR for current branch..."
-            $prOutput = & gh pr view --json number -q .number 2>&1
-            if ($LASTEXITCODE -ne 0) {
-                throw "No PR found for current branch. Specify -PullRequest or -BuildId."
+            $stderrFile = [System.IO.Path]::GetTempFileName()
+            try {
+                $prOutput = & gh pr view --json number -q .number 2>$stderrFile
+                if ($LASTEXITCODE -ne 0) {
+                    throw "No PR found for current branch. Specify -PullRequest or -BuildId."
+                }
+            }
+            finally {
+                Remove-Item -Path $stderrFile -Force -ErrorAction SilentlyContinue
             }
             $PullRequest = [int]$prOutput
             Write-Verbose "Detected PR #$PullRequest for current branch."
