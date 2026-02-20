@@ -21,9 +21,6 @@
 .PARAMETER OutputPath
     Directory for saved JSON artifacts and logs. Defaults to temp directory.
 
-.PARAMETER OutputFormat
-    Output format: "table" (human-readable) or "json" (structured data).
-
 .EXAMPLE
     .\Get-AzureDevOpsBuildAnalysis.ps1 -BuildId 12345
 
@@ -40,7 +37,7 @@
     Analyzes build and downloads failed task logs to specified directory.
 
 .EXAMPLE
-    .\Get-AzureDevOpsBuildAnalysis.ps1 -BuildId 12345 -OutputFormat json | ConvertFrom-Json
+    .\Get-AzureDevOpsBuildAnalysis.ps1 -BuildId 12345 | ConvertTo-Json -Depth 10
 
     Outputs structured JSON for programmatic consumption.
 #>
@@ -59,12 +56,7 @@ param(
 
     [Parameter(ParameterSetName = 'ByBuildId')]
     [Parameter(ParameterSetName = 'ByPullRequest')]
-    [string]$OutputPath = [System.IO.Path]::GetTempPath(),
-
-    [Parameter(ParameterSetName = 'ByBuildId')]
-    [Parameter(ParameterSetName = 'ByPullRequest')]
-    [ValidateSet('table', 'json')]
-    [string]$OutputFormat = 'table'
+    [string]$OutputPath = [System.IO.Path]::GetTempPath()
 )
 
 $ErrorActionPreference = 'Stop'
@@ -430,81 +422,75 @@ try {
         $result.LogFiles = $logFiles
     }
 
-    # Output
-    if ($OutputFormat -eq 'json') {
-        $result | ConvertTo-Json -Depth 10
+    # Display summary to host
+    Write-Host "`nBuild Summary" -ForegroundColor Cyan
+    Write-Host "  Build ID:     " -NoNewline; Write-Host $result.BuildId -ForegroundColor Yellow
+    Write-Host "  Build Number: " -NoNewline; Write-Host $result.BuildNumber -ForegroundColor Yellow
+    Write-Host "  Status:       " -NoNewline; Write-Host $result.Status -ForegroundColor Yellow
+    Write-Host "  Result:       " -NoNewline
+    if ($result.Result -eq 'failed') {
+        Write-Host $result.Result -ForegroundColor Red
     }
     else {
-        # Table format
-        Write-Host "`nBuild Summary" -ForegroundColor Cyan
-        Write-Host "  Build ID:     " -NoNewline; Write-Host $result.BuildId -ForegroundColor Yellow
-        Write-Host "  Build Number: " -NoNewline; Write-Host $result.BuildNumber -ForegroundColor Yellow
-        Write-Host "  Status:       " -NoNewline; Write-Host $result.Status -ForegroundColor Yellow
-        Write-Host "  Result:       " -NoNewline
-        if ($result.Result -eq 'failed') {
-            Write-Host $result.Result -ForegroundColor Red
-        }
-        else {
-            Write-Host $result.Result -ForegroundColor Green
-        }
-        Write-Host "  Branch:       " -NoNewline; Write-Host $result.Branch -ForegroundColor DarkGray
-        Write-Host "  Commit:       " -NoNewline; Write-Host $result.Commit -ForegroundColor DarkGray
-        if ($result.PrNumber) {
-            Write-Host "  PR:           " -NoNewline; Write-Host "#$($result.PrNumber)" -ForegroundColor DarkGray -NoNewline; Write-Host " ($($result.PrUrl))" -ForegroundColor DarkGray
-        }
-        Write-Host "  URL:          " -NoNewline; Write-Host $result.BuildUrl -ForegroundColor DarkGray
-
-        Write-Host "`nFailure Counts" -ForegroundColor Cyan
-        Write-Host "  Failed Stages: " -NoNewline; Write-Host $result.FailedStages.Count -ForegroundColor Green
-        Write-Host "  Failed Jobs:   " -NoNewline; Write-Host $result.FailedJobs.Count -ForegroundColor Green
-        Write-Host "  Failed Tasks:  " -NoNewline; Write-Host $result.FailedTasks.Count -ForegroundColor Green
-        Write-Host "  Failed Tests:  " -NoNewline; Write-Host $result.FailedTests.Count -ForegroundColor Green
-        Write-Host "  Build Errors:  " -NoNewline; Write-Host $result.BuildErrors.Count -ForegroundColor Green
-        Write-Host "  Timed Out:     " -NoNewline; Write-Host $result.TimedOutJobs.Count -ForegroundColor Yellow
-        Write-Host "  Canceled:      " -NoNewline; Write-Host $result.CanceledJobs.Count -ForegroundColor DarkGray
-
-        if ($result.FailedStages.Count -gt 0) {
-            Write-Host "`nFailed Stages:" -ForegroundColor Red
-            $result.FailedStages | ForEach-Object { Write-Host "  - $_" -ForegroundColor DarkGray }
-        }
-
-        if ($result.FailedJobs.Count -gt 0) {
-            Write-Host "`nFailed Jobs:" -ForegroundColor Red
-            $result.FailedJobs | ForEach-Object { Write-Host "  - $_" -ForegroundColor DarkGray }
-        }
-
-        if ($result.FailedTasks.Count -gt 0) {
-            Write-Host "`nFailed Tasks:" -ForegroundColor Red
-            $result.FailedTasks | ForEach-Object { Write-Host "  - $_" -ForegroundColor DarkGray }
-        }
-
-        if ($result.BuildErrors.Count -gt 0) {
-            Write-Host "`nBuild Errors:" -ForegroundColor Red
-            $result.BuildErrors | ForEach-Object { Write-Host "  - $_" -ForegroundColor DarkGray }
-        }
-
-        if ($result.TimedOutJobs.Count -gt 0) {
-            Write-Host "`nTimed Out Jobs (canceled after ~60 min):" -ForegroundColor Yellow
-            $result.TimedOutJobs | ForEach-Object { Write-Host "  - $_" -ForegroundColor DarkGray }
-        }
-
-        if ($result.CollateralCanceled.Count -gt 0) {
-            Write-Host "`nCollateral Cancellations (< 5 min, likely parent failure):" -ForegroundColor DarkGray
-            $result.CollateralCanceled | ForEach-Object { Write-Host "  - $_" -ForegroundColor DarkGray }
-        }
-
-        if ($result.FailedTests.Count -gt 0) {
-            Write-Host "`nFailed Tests:" -ForegroundColor Red
-            $result.FailedTests | ForEach-Object { Write-Host "  - $_" -ForegroundColor DarkGray }
-        }
-
-        if ($result.LogFiles.Count -gt 0) {
-            Write-Host "`nDownloaded Logs:" -ForegroundColor Cyan
-            $result.LogFiles | ForEach-Object { Write-Host "  - $_" -ForegroundColor DarkGray }
-        }
-
-        Write-Host "`nArtifacts saved to: " -NoNewline; Write-Host $result.ArtifactPath -ForegroundColor DarkGray
+        Write-Host $result.Result -ForegroundColor Green
     }
+    Write-Host "  Branch:       " -NoNewline; Write-Host $result.Branch -ForegroundColor DarkGray
+    Write-Host "  Commit:       " -NoNewline; Write-Host $result.Commit -ForegroundColor DarkGray
+    if ($result.PrNumber) {
+        Write-Host "  PR:           " -NoNewline; Write-Host "#$($result.PrNumber)" -ForegroundColor DarkGray -NoNewline; Write-Host " ($($result.PrUrl))" -ForegroundColor DarkGray
+    }
+    Write-Host "  URL:          " -NoNewline; Write-Host $result.BuildUrl -ForegroundColor DarkGray
+
+    Write-Host "`nFailure Counts" -ForegroundColor Cyan
+    Write-Host "  Failed Stages: " -NoNewline; Write-Host $result.FailedStages.Count -ForegroundColor Green
+    Write-Host "  Failed Jobs:   " -NoNewline; Write-Host $result.FailedJobs.Count -ForegroundColor Green
+    Write-Host "  Failed Tasks:  " -NoNewline; Write-Host $result.FailedTasks.Count -ForegroundColor Green
+    Write-Host "  Failed Tests:  " -NoNewline; Write-Host $result.FailedTests.Count -ForegroundColor Green
+    Write-Host "  Build Errors:  " -NoNewline; Write-Host $result.BuildErrors.Count -ForegroundColor Green
+    Write-Host "  Timed Out:     " -NoNewline; Write-Host $result.TimedOutJobs.Count -ForegroundColor Yellow
+    Write-Host "  Canceled:      " -NoNewline; Write-Host $result.CanceledJobs.Count -ForegroundColor DarkGray
+
+    if ($result.FailedStages.Count -gt 0) {
+        Write-Host "`nFailed Stages:" -ForegroundColor Red
+        $result.FailedStages | ForEach-Object { Write-Host "  - $_" -ForegroundColor DarkGray }
+    }
+
+    if ($result.FailedJobs.Count -gt 0) {
+        Write-Host "`nFailed Jobs:" -ForegroundColor Red
+        $result.FailedJobs | ForEach-Object { Write-Host "  - $_" -ForegroundColor DarkGray }
+    }
+
+    if ($result.FailedTasks.Count -gt 0) {
+        Write-Host "`nFailed Tasks:" -ForegroundColor Red
+        $result.FailedTasks | ForEach-Object { Write-Host "  - $_" -ForegroundColor DarkGray }
+    }
+
+    if ($result.BuildErrors.Count -gt 0) {
+        Write-Host "`nBuild Errors:" -ForegroundColor Red
+        $result.BuildErrors | ForEach-Object { Write-Host "  - $_" -ForegroundColor DarkGray }
+    }
+
+    if ($result.TimedOutJobs.Count -gt 0) {
+        Write-Host "`nTimed Out Jobs (canceled after ~60 min):" -ForegroundColor Yellow
+        $result.TimedOutJobs | ForEach-Object { Write-Host "  - $_" -ForegroundColor DarkGray }
+    }
+
+    if ($result.CollateralCanceled.Count -gt 0) {
+        Write-Host "`nCollateral Cancellations (< 5 min, likely parent failure):" -ForegroundColor DarkGray
+        $result.CollateralCanceled | ForEach-Object { Write-Host "  - $_" -ForegroundColor DarkGray }
+    }
+
+    if ($result.FailedTests.Count -gt 0) {
+        Write-Host "`nFailed Tests:" -ForegroundColor Red
+        $result.FailedTests | ForEach-Object { Write-Host "  - $_" -ForegroundColor DarkGray }
+    }
+
+    if ($result.LogFiles.Count -gt 0) {
+        Write-Host "`nDownloaded Logs:" -ForegroundColor Cyan
+        $result.LogFiles | ForEach-Object { Write-Host "  - $_" -ForegroundColor DarkGray }
+    }
+
+    Write-Host "`nArtifacts saved to: " -NoNewline; Write-Host $result.ArtifactPath -ForegroundColor DarkGray
 
     # Return object to pipeline
     return $result
