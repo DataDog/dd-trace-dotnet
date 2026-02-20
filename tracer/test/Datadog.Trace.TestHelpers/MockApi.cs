@@ -18,7 +18,7 @@ namespace Datadog.Trace.TestHelpers
         private readonly object _lock = new();
         private List<List<MockSpan>> _objects = new();
 
-        public MockApi(ManualResetEventSlim resetEvent = null, TracesEncoding tracesEncoding = TracesEncoding.DatadogV0)
+        public MockApi(ManualResetEventSlim resetEvent = null, TracesEncoding tracesEncoding = TracesEncoding.DatadogV0_4)
         {
             _resetEvent = resetEvent ?? new();
             TracesEncoding = tracesEncoding;

@@ -218,7 +218,7 @@ namespace Benchmarks.Trace
 
             private class NullApi : IApi
             {
-                public TracesEncoding TracesEncoding => TracesEncoding.DatadogV0;
+                public TracesEncoding TracesEncoding => TracesEncoding.DatadogV0_4;
 
                 public Task<bool> Ping()
                 {

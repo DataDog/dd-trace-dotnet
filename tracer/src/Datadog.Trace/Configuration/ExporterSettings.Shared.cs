@@ -52,7 +52,7 @@ namespace Datadog.Trace.Configuration
         private TraceTransportSettings GetTraceTransport(string? agentUri, string? tracesPipeName, string? agentHost, int? agentPort, string? tracesUnixDomainSocketPath)
         {
             var origin = ConfigurationOrigins.Default; // default because only called from constructor
-            var encoding = TracesEncoding.DatadogV0;
+            var encoding = TracesEncoding.DatadogV0_4;
             var otlpProtocol = OtlpProtocol.HttpProtobuf; // default value that is unused when transmitting Datadog-encoded traces
 
             // Check the parameters in order of precedence
@@ -295,6 +295,6 @@ namespace Datadog.Trace.Configuration
             _ => throw new ArgumentException($"Invalid protocol: {protocol}"),
         };
 
-        private readonly record struct TraceTransportSettings(TracesTransportType Transport, Uri AgentUri, string? UdsPath = null, string? PipeName = null, TracesEncoding Encoding = TracesEncoding.DatadogV0, OtlpProtocol OtlpProtocol = OtlpProtocol.HttpProtobuf);
+        private readonly record struct TraceTransportSettings(TracesTransportType Transport, Uri AgentUri, string? UdsPath = null, string? PipeName = null, TracesEncoding Encoding = TracesEncoding.DatadogV0_4, OtlpProtocol OtlpProtocol = OtlpProtocol.HttpProtobuf);
     }
 }
