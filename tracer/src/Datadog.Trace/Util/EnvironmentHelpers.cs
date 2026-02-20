@@ -83,7 +83,7 @@ internal static class EnvironmentHelpers
     /// <summary>
     /// Safe wrapper around Environment.GetEnvironmentVariables
     /// </summary>
-    /// <returns>A dictionary that contains all environment variables, or en empty dictionary if an error occured</returns>
+    /// <returns>A dictionary that contains all environment variables or an empty dictionary if an error occured</returns>
     public static IDictionary GetEnvironmentVariables()
     {
         try
