@@ -28,12 +28,21 @@ This document describes reusable PowerShell scripts for Azure DevOps CI troubles
 |-----------|------|----------|---------|-------------|
 | `BuildId` | int | Yes (set 1) | - | Azure DevOps build ID to analyze |
 | `PullRequest` | int | Yes (set 2) | - | GitHub PR number (resolves build ID via `gh pr checks`) |
+| _(none)_ | - | - | - | Auto-detects PR for current git branch (default) |
 | `IncludeLogs` | switch | No | - | Download task logs for failed tasks |
 | `OutputPath` | string | No | `$env:TEMP` | Directory for JSON artifacts and logs |
 
-**Note:** `BuildId` and `PullRequest` are mutually exclusive (different parameter sets).
+**Note:** `BuildId`, `PullRequest`, and no-argument (current branch) are mutually exclusive parameter sets.
 
 ### Usage Examples
+
+#### Auto-detect PR for Current Branch
+
+```powershell
+.\tracer\tools\Get-AzureDevOpsBuildAnalysis.ps1
+```
+
+Detects the PR for the current git branch via `gh pr view`, then analyzes its build.
 
 #### Basic Analysis by Build ID
 
