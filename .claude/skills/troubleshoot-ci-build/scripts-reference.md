@@ -30,7 +30,6 @@ This document describes reusable PowerShell scripts for Azure DevOps CI troubles
 | `PullRequest` | int | Yes (set 2) | - | GitHub PR number (resolves build ID via `gh pr checks`) |
 | `IncludeLogs` | switch | No | - | Download task logs for failed tasks |
 | `OutputPath` | string | No | `$env:TEMP` | Directory for JSON artifacts and logs |
-| `OutputFormat` | string | No | `table` | Output format: `table` or `json` |
 
 **Note:** `BuildId` and `PullRequest` are mutually exclusive (different parameter sets).
 
@@ -60,14 +59,14 @@ Resolves build ID from PR checks, then analyzes.
 
 Downloads task logs for all failed tasks to specified directory.
 
-#### JSON Output for Programmatic Use
+#### Programmatic Use
 
 ```powershell
-$analysis = .\tracer\tools\Get-AzureDevOpsBuildAnalysis.ps1 -BuildId 12345 -OutputFormat json | ConvertFrom-Json
+$analysis = .\tracer\tools\Get-AzureDevOpsBuildAnalysis.ps1 -BuildId 12345
 $analysis.FailedTests | ForEach-Object { Write-Host $_ }
 ```
 
-Outputs structured JSON, parseable for automation.
+Returns a `PSCustomObject` to the pipeline. Pipe to `ConvertTo-Json -Depth 10` for JSON output.
 
 #### Full Pipeline Example
 
@@ -81,7 +80,7 @@ Outputs structured JSON, parseable for automation.
 
 ### Output Object Shape
 
-When using `-OutputFormat json` or capturing the returned object, the following structure is provided:
+When capturing the returned object, the following structure is provided:
 
 | Field | Type | Description |
 |-------|------|-------------|
