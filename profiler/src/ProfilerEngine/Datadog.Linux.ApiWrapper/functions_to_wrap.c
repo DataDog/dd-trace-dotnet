@@ -759,12 +759,11 @@ int sigaction(int signum,
         return result;
     }
 
-    if (signum == SIGSEGV && act == NULL)
+    if (signum == SIGSEGV && act == NULL && oldact != NULL)
     {
         pthread_mutex_lock(&sigaction_lock);
         int result = __real_sigaction(signum, act, oldact);
-        if (oldact != NULL &&
-            ((oldact->sa_flags & SA_SIGINFO) == SA_SIGINFO) &&
+        if (((oldact->sa_flags & SA_SIGINFO) == SA_SIGINFO) &&
             (oldact->sa_sigaction == dd_sigsegv_handler))
         {
             oldact->sa_sigaction = sigsegv_current_handler;
