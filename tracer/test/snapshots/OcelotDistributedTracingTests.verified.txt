@@ -9,7 +9,7 @@
     Tags: {
       component: HttpMessageHandler,
       env: integration_tests,
-      http-client-handler-type: System.Net.Http.HttpClientHandler,
+      http-client-handler-type: System.Net.Http.SocketsHttpHandler,
       http.method: GET,
       http.status_code: 200,
       http.url: http://localhost:00000/proxy,
@@ -39,15 +39,21 @@
       env: integration_tests,
       http.method: GET,
       http.request.headers.host: localhost:00000,
+      http.request.method: GET,
       http.status_code: 200,
       http.url: http://localhost:00000/proxy,
       language: dotnet,
+      network.protocol.version: 1.1,
       runtime-id: Guid_1,
+      server.address: 127.0.0.1,
       span.kind: server,
+      url.path: /proxy,
+      url.scheme: http,
       version: 1.0.0
     },
     Metrics: {
       process_id: 0,
+      server.port: 55635.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -93,16 +99,22 @@
       env: integration_tests,
       http.method: GET,
       http.request.headers.host: localhost:00000,
+      http.request.method: GET,
       http.route: /,
       http.status_code: 200,
       http.url: http://localhost:00000/,
       language: dotnet,
+      network.protocol.version: 1.1,
       runtime-id: Guid_1,
+      server.address: 127.0.0.1,
       span.kind: server,
+      url.path: /,
+      url.scheme: http,
       version: 1.0.0
     },
     Metrics: {
       process_id: 0,
+      server.port: 55635.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
