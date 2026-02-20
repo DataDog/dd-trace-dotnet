@@ -73,12 +73,15 @@ public sealed class OcelotMessageInvokerPoolIntegration
             return new CallTargetReturn<TReturn>(returnValue);
         }
 
-        // On net6.0+, SocketsHttpHandler injects the current Activity into request headers using the
-        // ActivityHeadersPropagator. This overwrites propagation headers already set by our HttpClient
-        // instrumentation. Disable this by setting a no-output propagator to preserve Datadog trace context.
+        // On net6.0+, SocketsHttpHandler builds an internal handler chain that includes DiagnosticsHandler
+        // when ActivityHeadersPropagator is non-null. DiagnosticsHandler creates Activities and fires
+        // DiagnosticSource events, which allows OpenTelemetry SDK (if present) to inject its own trace
+        // context headers, overwriting headers already set by our HttpClient instrumentation.
+        // Setting the propagator to null prevents DiagnosticsHandler from being added to the chain
+        // entirely, ensuring Datadog trace context is preserved.
         if (returnValue is System.Net.Http.SocketsHttpHandler handler)
         {
-            handler.ActivityHeadersPropagator = DistributedContextPropagator.CreateNoOutputPropagator();
+            handler.ActivityHeadersPropagator = null;
         }
 
         return new CallTargetReturn<TReturn>(returnValue);

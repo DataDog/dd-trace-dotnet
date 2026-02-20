@@ -60,8 +60,13 @@ namespace Samples.Ocelot.DistributedTracing
                 // Update Ocelot's internal configuration to point the downstream route back to this application
                 await UpdateOcelotInternalConfig(serviceScope.ServiceProvider, address);
 
-                // Send a request through the proxy
-                using var client = new HttpClient();
+                // Send a request through the proxy.
+                // Disable ActivityHeadersPropagator on the Worker's HttpClient to prevent the OTel SDK
+                // from overwriting Datadog's trace context on the initial request. In a real scenario,
+                // the initial request comes from an external caller (e.g. RUM, Nginx) that isn't in
+                // this process, so this propagation conflict wouldn't occur.
+                var handler = new SocketsHttpHandler { ActivityHeadersPropagator = null };
+                using var client = new HttpClient(handler);
 
                 _logger.LogInformation("Sending request to self via Ocelot proxy");
                 var response = await client.GetAsync($"{address}/proxy", stoppingToken);

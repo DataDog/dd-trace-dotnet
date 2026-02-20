@@ -24,6 +24,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             : base("Ocelot.DistributedTracing", output)
         {
             SetServiceVersion(ServiceVersion);
+            SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
         }
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => Result.DefaultSuccess;
