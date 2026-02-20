@@ -12,18 +12,22 @@ ClassLayoutCache::ClassLayoutCache(ICorProfilerInfo12* pCorProfilerInfo, IFrameS
 {
 }
 
-const ClassLayoutCache::ClassLayoutData* ClassLayoutCache::GetLayout(ClassID classID) {
-    if (classID == 0) {
+const ClassLayoutCache::ClassLayoutData* ClassLayoutCache::GetLayout(ClassID classID)
+{
+    if (classID == 0)
+    {
         return nullptr;
     }
 
     auto it = _cache.find(classID);
-    if (it != _cache.end()) {
+    if (it != _cache.end())
+    {
         return &it->second;
     }
 
     ClassLayoutData layout = BuildLayout(classID);
-    if (layout.classSize == 0 && !layout.isArray) {
+    if (layout.classSize == 0 && !layout.isArray)
+    {
         return nullptr;  // Failed to build layout
     }
 
@@ -31,7 +35,8 @@ const ClassLayoutCache::ClassLayoutData* ClassLayoutCache::GetLayout(ClassID cla
     return &_cache[classID];
 }
 
-ClassLayoutCache::ClassLayoutData ClassLayoutCache::BuildLayout(ClassID classID) {
+ClassLayoutCache::ClassLayoutData ClassLayoutCache::BuildLayout(ClassID classID)
+{
     ClassLayoutData layout;
     layout.isArray = false;
 
@@ -43,7 +48,8 @@ ClassLayoutCache::ClassLayoutData ClassLayoutCache::BuildLayout(ClassID classID)
     HRESULT hr = _pCorProfilerInfo->IsArrayClass(
         classID, &elementType, &elementClassID, &rank);
 
-    if (hr == S_OK) {
+    if (hr == S_OK)
+    {
         // It's an array
         layout.isArray = true;
         layout.arrayElementType = elementType;
@@ -56,7 +62,8 @@ ClassLayoutCache::ClassLayoutData ClassLayoutCache::BuildLayout(ClassID classID)
             elementType == ELEMENT_TYPE_STRING ||
             elementType == ELEMENT_TYPE_OBJECT ||
             elementType == ELEMENT_TYPE_SZARRAY ||
-            elementType == ELEMENT_TYPE_ARRAY) {
+            elementType == ELEMENT_TYPE_ARRAY)
+        {
             // Array of reference types - we'll handle this specially
             FieldInfo fieldInfo;
             fieldInfo.isReferenceType = true;
@@ -75,7 +82,8 @@ ClassLayoutCache::ClassLayoutData ClassLayoutCache::BuildLayout(ClassID classID)
     hr = _pCorProfilerInfo->GetClassIDInfo2(
         classID, &moduleID, &typeDef, &parentClassID, 0, nullptr, nullptr);
 
-    if (FAILED(hr)) {
+    if (FAILED(hr))
+    {
         return layout;
     }
 
@@ -84,9 +92,11 @@ ClassLayoutCache::ClassLayoutData ClassLayoutCache::BuildLayout(ClassID classID)
     hr = _pCorProfilerInfo->GetClassLayout(
         classID, nullptr, 0, &fieldCount, &layout.classSize);
 
-    if (FAILED(hr) || fieldCount == 0) {
+    if (FAILED(hr) || fieldCount == 0)
+    {
         // Get parent class fields if any
-        if (parentClassID != 0) {
+        if (parentClassID != 0)
+        {
             GetParentClassFields(parentClassID, layout.fields);
         }
         return layout;
@@ -97,7 +107,8 @@ ClassLayoutCache::ClassLayoutData ClassLayoutCache::BuildLayout(ClassID classID)
     hr = _pCorProfilerInfo->GetClassLayout(
         classID, fieldOffsets.data(), fieldCount, &fieldCount, &layout.classSize);
 
-    if (FAILED(hr)) {
+    if (FAILED(hr))
+    {
         return layout;
     }
 
@@ -107,12 +118,14 @@ ClassLayoutCache::ClassLayoutData ClassLayoutCache::BuildLayout(ClassID classID)
         moduleID, ofRead, IID_IMetaDataImport,
         reinterpret_cast<IUnknown**>(pMetadataImport.GetAddressOf()));
 
-    if (FAILED(hr) || pMetadataImport.Get() == nullptr) {
+    if (FAILED(hr) || pMetadataImport.Get() == nullptr)
+    {
         return layout;
     }
 
     // Process each field
-    for (ULONG i = 0; i < fieldCount; i++) {
+    for (ULONG i = 0; i < fieldCount; i++)
+    {
         FieldInfo fieldInfo;
         fieldInfo.offset = fieldOffsets[i].ulOffset;
         fieldInfo.fieldToken = fieldOffsets[i].ridOfField;
@@ -129,15 +142,18 @@ ClassLayoutCache::ClassLayoutData ClassLayoutCache::BuildLayout(ClassID classID)
     }
 
     // Get parent class fields
-    if (parentClassID != 0) {
+    if (parentClassID != 0)
+    {
         GetParentClassFields(parentClassID, layout.fields);
     }
 
     return layout;
 }
 
-bool ClassLayoutCache::IsFieldReferenceType(mdFieldDef fieldToken, ModuleID moduleID, IMetaDataImport* pMetadataImport) {
-    if (pMetadataImport == nullptr || fieldToken == 0) {
+bool ClassLayoutCache::IsFieldReferenceType(mdFieldDef fieldToken, ModuleID moduleID, IMetaDataImport* pMetadataImport)
+{
+    if (pMetadataImport == nullptr || fieldToken == 0)
+    {
         return false;
     }
 
@@ -150,7 +166,8 @@ bool ClassLayoutCache::IsFieldReferenceType(mdFieldDef fieldToken, ModuleID modu
         nullptr, &pSignature, &signatureSize,
         nullptr, nullptr, nullptr);
 
-    if (FAILED(hr) || pSignature == nullptr || signatureSize < 2) {
+    if (FAILED(hr) || pSignature == nullptr || signatureSize < 2)
+    {
         return false;
     }
 
@@ -161,29 +178,34 @@ bool ClassLayoutCache::IsFieldReferenceType(mdFieldDef fieldToken, ModuleID modu
     // Skip calling convention byte (IMAGE_CEE_CS_CALLCONV_FIELD = 0x06)
     idx++;
 
-    if (idx >= signatureSize) {
+    if (idx >= signatureSize)
+    {
         return false;
     }
 
     // Skip optional custom modifiers (CMOD_OPT, CMOD_REQD) and PINNED/BYREF prefixes.
     // These can appear before the actual element type in the signature.
-    while (idx < signatureSize) {
+    while (idx < signatureSize)
+    {
         CorElementType prefix = static_cast<CorElementType>(pSignature[idx]);
-        if (prefix == ELEMENT_TYPE_CMOD_OPT || prefix == ELEMENT_TYPE_CMOD_REQD) {
+        if (prefix == ELEMENT_TYPE_CMOD_OPT || prefix == ELEMENT_TYPE_CMOD_REQD)
+        {
             idx++; // skip the CMOD byte
             // skip the compressed token that follows the CMOD
             mdToken token;
             idx += CorSigUncompressToken(&pSignature[idx], &token);
             continue;
         }
-        if (prefix == ELEMENT_TYPE_PINNED || prefix == ELEMENT_TYPE_BYREF) {
+        if (prefix == ELEMENT_TYPE_PINNED || prefix == ELEMENT_TYPE_BYREF)
+        {
             idx++; // skip the prefix byte
             continue;
         }
         break; // actual element type reached
     }
 
-    if (idx >= signatureSize) {
+    if (idx >= signatureSize)
+    {
         return false;
     }
 
@@ -195,16 +217,19 @@ bool ClassLayoutCache::IsFieldReferenceType(mdFieldDef fieldToken, ModuleID modu
         elementType == ELEMENT_TYPE_STRING ||
         elementType == ELEMENT_TYPE_OBJECT ||
         elementType == ELEMENT_TYPE_SZARRAY ||
-        elementType == ELEMENT_TYPE_ARRAY) {
+        elementType == ELEMENT_TYPE_ARRAY)
+    {
         return true;
     }
 
     // Generic instantiation: GENERICINST (CLASS | VALUETYPE) token arg_count args...
     // If the generic is instantiated over CLASS, it's a reference type (e.g., List<string>).
     // If over VALUETYPE, it's a value type (e.g., Nullable<int>).
-    if (elementType == ELEMENT_TYPE_GENERICINST) {
+    if (elementType == ELEMENT_TYPE_GENERICINST)
+    {
         idx++;
-        if (idx >= signatureSize) {
+        if (idx >= signatureSize)
+        {
             return false;
         }
         CorElementType genericBase = static_cast<CorElementType>(pSignature[idx]);
@@ -219,23 +244,27 @@ bool ClassLayoutCache::IsFieldReferenceType(mdFieldDef fieldToken, ModuleID modu
     return false;
 }
 
-void ClassLayoutCache::GetParentClassFields(ClassID parentClassID, std::vector<FieldInfo>& fields) {
+void ClassLayoutCache::GetParentClassFields(ClassID parentClassID, std::vector<FieldInfo>& fields)
+{
     // Recursively get parent class fields
     const ClassLayoutData* parentLayout = GetLayout(parentClassID);
-    if (parentLayout != nullptr) {
+    if (parentLayout != nullptr)
+    {
         // Append parent fields (they come before child fields in memory)
         fields.insert(fields.begin(), parentLayout->fields.begin(), parentLayout->fields.end());
     }
 }
 
-bool ClassLayoutCache::IsReferenceType(ClassID classID, mdTypeDef typeDef, ModuleID moduleID) {
+bool ClassLayoutCache::IsReferenceType(ClassID classID, mdTypeDef typeDef, ModuleID moduleID)
+{
     // Get metadata import for the module
     ComPtr<IMetaDataImport> pMetadataImport;
     HRESULT hr = _pCorProfilerInfo->GetModuleMetaData(
         moduleID, ofRead, IID_IMetaDataImport,
         reinterpret_cast<IUnknown**>(pMetadataImport.GetAddressOf()));
 
-    if (FAILED(hr) || pMetadataImport.Get() == nullptr) {
+    if (FAILED(hr) || pMetadataImport.Get() == nullptr)
+    {
         return false;
     }
 
@@ -247,38 +276,45 @@ bool ClassLayoutCache::IsReferenceType(ClassID classID, mdTypeDef typeDef, Modul
     hr = pMetadataImport->GetTypeDefProps(
         typeDef, nullptr, 0, &nameLen, &flags, &extendsToken);
 
-    if (FAILED(hr)) {
+    if (FAILED(hr))
+    {
         return false;
     }
 
     // Check if it's a value type
     // Value types extend System.ValueType or System.Enum
     if (TypeFromToken(extendsToken) == mdtTypeRef ||
-        TypeFromToken(extendsToken) == mdtTypeDef) {
-
+        TypeFromToken(extendsToken) == mdtTypeDef)
+    {
         // Get the base type name
         WCHAR baseTypeName[256];
         ULONG baseTypeNameLen = 0;
 
-        if (TypeFromToken(extendsToken) == mdtTypeRef) {
+        if (TypeFromToken(extendsToken) == mdtTypeRef)
+        {
             hr = pMetadataImport->GetTypeRefProps(
                 extendsToken, nullptr, baseTypeName, 256, &baseTypeNameLen);
-        } else {
+        }
+        else
+        {
             hr = pMetadataImport->GetTypeDefProps(
                 extendsToken, baseTypeName, 256, &baseTypeNameLen, nullptr, nullptr);
         }
 
-        if (SUCCEEDED(hr)) {
+        if (SUCCEEDED(hr))
+        {
             // Check if it's System.ValueType or System.Enum
             if (wcscmp(baseTypeName, L"System.ValueType") == 0 ||
-                wcscmp(baseTypeName, L"System.Enum") == 0) {
+                wcscmp(baseTypeName, L"System.Enum") == 0)
+            {
                 return false;  // It's a value type
             }
         }
     }
 
     // Check type flags
-    if (IsTdInterface(flags)) {
+    if (IsTdInterface(flags))
+    {
         return true;  // Interfaces are reference types
     }
 

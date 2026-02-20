@@ -14,19 +14,24 @@
 struct COR_FIELD_OFFSET;
 
 // Field information
-struct FieldInfo {
+struct FieldInfo
+{
     ULONG offset;           // Field offset in object
     ClassID fieldTypeID;    // Type of the field (0 if not a reference type)
     bool isReferenceType;   // True if field contains a reference
     mdFieldDef fieldToken;  // Metadata token for the field
 
-    FieldInfo() : offset(0), fieldTypeID(0), isReferenceType(false), fieldToken(0) {}
+    FieldInfo() : offset(0), fieldTypeID(0), isReferenceType(false), fieldToken(0)
+    {
+    }
 };
 
 // Cached class layout information
-class ClassLayoutCache {
+class ClassLayoutCache
+{
 public:
-    struct ClassLayoutData {
+    struct ClassLayoutData
+    {
         ULONG classSize;
         std::vector<FieldInfo> fields;
         bool isArray;
@@ -35,14 +40,19 @@ public:
         ULONG arrayRank;
 
         ClassLayoutData() : classSize(0), isArray(false), arrayElementType(ELEMENT_TYPE_END),
-                           arrayElementClassID(0), arrayRank(0) {}
+                           arrayElementClassID(0), arrayRank(0)
+        {
+        }
     };
 
     ClassLayoutCache(ICorProfilerInfo12* pCorProfilerInfo, IFrameStore* pFrameStore);
 
     const ClassLayoutData* GetLayout(ClassID classID);
 
-    void Clear() { _cache.clear(); }
+    void Clear()
+    {
+        _cache.clear();
+    }
 
 private:
     ClassLayoutData BuildLayout(ClassID classID);

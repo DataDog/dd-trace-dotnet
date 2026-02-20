@@ -7,7 +7,8 @@
 
 // Root category enumeration
 // Follow Perfview categories for consistency
-enum class RootCategory : uint8_t {
+enum class RootCategory : uint8_t
+{
     Stack = 0,          // local variables
     StaticVariable = 1, // global/thread static variables
     Finalizer = 2,      // objects with finalizers (which are rooted until finalization)

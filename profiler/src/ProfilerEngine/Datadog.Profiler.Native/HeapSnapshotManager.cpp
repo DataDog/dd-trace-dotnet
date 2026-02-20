@@ -187,7 +187,8 @@ std::string HeapSnapshotManager::GetAndClearReferenceTreeJson()
 {
     std::lock_guard lock(_histogramLock);
 
-    if (!_typeReferenceTree || _typeReferenceTree->IsEmpty()) {
+    if (!_typeReferenceTree || _typeReferenceTree->IsEmpty())
+    {
         return "{}";
     }
 
@@ -518,7 +519,8 @@ void HeapSnapshotManager::StartGCDump()
     {
         std::lock_guard lock(_histogramLock);
         _classHistogram.clear();
-        if (_typeReferenceTree) {
+        if (_typeReferenceTree)
+        {
             _typeReferenceTree->Clear();
         }
 

@@ -7,24 +7,29 @@
 #include <cstdint>
 
 // Track visited objects to prevent cycles during traversal
-class VisitedObjectSet {
+class VisitedObjectSet
+{
 private:
     std::unordered_set<uintptr_t> _visited;
 
 public:
-    bool IsVisited(uintptr_t address) const {
+    bool IsVisited(uintptr_t address) const
+    {
         return _visited.find(address) != _visited.end();
     }
 
-    void MarkVisited(uintptr_t address) {
+    void MarkVisited(uintptr_t address)
+    {
         _visited.insert(address);
     }
 
-    void Clear() {
+    void Clear()
+    {
         _visited.clear();
     }
 
-    size_t Size() const {
+    size_t Size() const
+    {
         return _visited.size();
     }
 };

@@ -13,7 +13,8 @@
 // Walks the tree structure directly — no cycle detection needed
 // because the tree is naturally acyclic (instance-level cycles are
 // stopped during traversal by VisitedObjectSet).
-class TypeReferenceTreeJsonSerializer {
+class TypeReferenceTreeJsonSerializer
+{
 public:
     static std::string Serialize(const TypeReferenceTree& tree, IFrameStore* pFrameStore);
 

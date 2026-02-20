@@ -30,7 +30,8 @@ ReferenceChainTraverser::ReferenceChainTraverser(
 {
 }
 
-void ReferenceChainTraverser::TraverseFromSingleRoot(const RootInfo& root) {
+void ReferenceChainTraverser::TraverseFromSingleRoot(const RootInfo& root)
+{
     // Add the root to the tree and get the tree node to navigate from
     TypeTreeNode* rootNode = _tree.AddRoot(root.classID, root.category, root.objectSize);
 
@@ -46,7 +47,8 @@ void ReferenceChainTraverser::TraverseFromSingleRoot(const RootInfo& root) {
     _rootsProcessed++;
 }
 
-void ReferenceChainTraverser::LogStats() const {
+void ReferenceChainTraverser::LogStats() const
+{
     Log::Debug("Reference chain traversal completed: ",
                _rootsProcessed, " roots, ",
                _objectsTraversed, " objects traversed");
@@ -56,15 +58,17 @@ void ReferenceChainTraverser::TraverseObject(
     uintptr_t objectAddress,
     VisitedObjectSet& visited,
     TypeTreeNode* currentNode,
-    uint32_t depth) {
-
+    uint32_t depth)
+{
     // Check if already visited in this root's traversal (cycle detection)
-    if (visited.IsVisited(objectAddress)) {
+    if (visited.IsVisited(objectAddress))
+    {
         return;
     }
 
     // Depth limit to prevent pathological cases (e.g., million-element linked lists)
-    if (depth > MaxTreeDepth) {
+    if (depth > MaxTreeDepth)
+    {
         return;
     }
 
@@ -75,57 +79,67 @@ void ReferenceChainTraverser::TraverseObject(
     // Get object's ClassID
     ClassID classID = 0;
     HRESULT hr = _pCorProfilerInfo->GetClassFromObject(objectAddress, &classID);
-    if (FAILED(hr) || classID == 0) {
+    if (FAILED(hr) || classID == 0)
+    {
         return;  // Invalid object
     }
 
     // Get object size using GetObjectSize2 (supports objects > 4GB)
     SIZE_T objectSize = 0;
     hr = _pCorProfilerInfo->GetObjectSize2(objectAddress, &objectSize);
-    if (FAILED(hr) || objectSize == 0) {
+    if (FAILED(hr) || objectSize == 0)
+    {
         return;
     }
 
     // Get class layout
     const ClassLayoutCache::ClassLayoutData* layout = _layoutCache.GetLayout(classID);
-    if (layout == nullptr) {
+    if (layout == nullptr)
+    {
         return;
     }
 
     // Handle arrays
-    if (layout->isArray) {
+    if (layout->isArray)
+    {
         TraverseArray(objectAddress, classID, *layout, visited, currentNode, depth);
         return;
     }
 
     // Traverse reference fields
-    for (const auto& field : layout->fields) {
-        if (!field.isReferenceType) {
+    for (const auto& field : layout->fields)
+    {
+        if (!field.isReferenceType)
+        {
             continue;  // Skip non-reference fields
         }
 
         // Read the field value (object reference) with bounds checking.
         uintptr_t fieldValue = ReadFieldReference(objectAddress, field.offset, objectSize);
 
-        if (fieldValue == 0) {
+        if (fieldValue == 0)
+        {
             continue;  // Null reference or invalid read
         }
 
         // Verify it's a valid object address
-        if (!IsValidObjectAddress(fieldValue)) {
+        if (!IsValidObjectAddress(fieldValue))
+        {
             continue;
         }
 
         // If this object was already visited in the current root traversal,
         // it's a back-reference (cycle). Skip it.
-        if (visited.IsVisited(fieldValue)) {
+        if (visited.IsVisited(fieldValue))
+        {
             continue;
         }
 
         // Get the target object's type
         ClassID targetClassID = 0;
         hr = _pCorProfilerInfo->GetClassFromObject(fieldValue, &targetClassID);
-        if (FAILED(hr) || targetClassID == 0) {
+        if (FAILED(hr) || targetClassID == 0)
+        {
             continue;
         }
 
@@ -150,19 +164,21 @@ void ReferenceChainTraverser::TraverseArray(
     const ClassLayoutCache::ClassLayoutData& layout,
     VisitedObjectSet& visited,
     TypeTreeNode* currentNode,
-    uint32_t depth) {
-
+    uint32_t depth)
+{
     // Check if array element type is a reference type
     if (layout.arrayElementType != ELEMENT_TYPE_CLASS &&
         layout.arrayElementType != ELEMENT_TYPE_STRING &&
         layout.arrayElementType != ELEMENT_TYPE_OBJECT &&
         layout.arrayElementType != ELEMENT_TYPE_SZARRAY &&
-        layout.arrayElementType != ELEMENT_TYPE_ARRAY) {
+        layout.arrayElementType != ELEMENT_TYPE_ARRAY)
+    {
         return;  // Array of value types, no references to follow
     }
 
     ULONG32 rank = layout.arrayRank;
-    if (rank == 0) {
+    if (rank == 0)
+    {
         return;  // Invalid rank
     }
 
@@ -178,17 +194,20 @@ void ReferenceChainTraverser::TraverseArray(
         dimensionLowerBounds.data(),
         &pData);
 
-    if (FAILED(hr) || pData == nullptr) {
+    if (FAILED(hr) || pData == nullptr)
+    {
         return;
     }
 
     // Compute total number of elements (product of all dimension sizes)
     uint64_t totalElements = 1;
-    for (ULONG32 d = 0; d < rank; d++) {
+    for (ULONG32 d = 0; d < rank; d++)
+    {
         totalElements *= dimensionSizes[d];
     }
 
-    if (totalElements == 0) {
+    if (totalElements == 0)
+    {
         return;  // Empty array
     }
 
@@ -196,27 +215,32 @@ void ReferenceChainTraverser::TraverseArray(
     // For reference type arrays, each element is a pointer-sized reference.
     uintptr_t* pElements = reinterpret_cast<uintptr_t*>(pData);
 
-    for (uint64_t i = 0; i < totalElements; i++) {
+    for (uint64_t i = 0; i < totalElements; i++)
+    {
         uintptr_t elementAddress = pElements[i];
 
-        if (elementAddress == 0) {
+        if (elementAddress == 0)
+        {
             continue;  // Null element
         }
 
         // Verify valid object
-        if (!IsValidObjectAddress(elementAddress)) {
+        if (!IsValidObjectAddress(elementAddress))
+        {
             continue;
         }
 
         // Skip already-visited objects (cycle / shared reference).
-        if (visited.IsVisited(elementAddress)) {
+        if (visited.IsVisited(elementAddress))
+        {
             continue;
         }
 
         // Get element type
         ClassID elementClassID = 0;
         hr = _pCorProfilerInfo->GetClassFromObject(elementAddress, &elementClassID);
-        if (FAILED(hr) || elementClassID == 0) {
+        if (FAILED(hr) || elementClassID == 0)
+        {
             continue;
         }
 
@@ -233,21 +257,25 @@ void ReferenceChainTraverser::TraverseArray(
     }
 }
 
-bool ReferenceChainTraverser::IsValidObjectAddress(uintptr_t address) const {
+bool ReferenceChainTraverser::IsValidObjectAddress(uintptr_t address) const
+{
     // Basic validation - check if address is in reasonable range
-    if (address == 0 || address < 0x10000) {
+    if (address == 0 || address < 0x10000)
+    {
         return false;  // Null or too small
     }
 
     // Check alignment (objects are typically pointer-aligned)
-    if ((address % sizeof(void*)) != 0) {
+    if ((address % sizeof(void*)) != 0)
+    {
         return false;
     }
 
     return true;
 }
 
-uintptr_t ReferenceChainTraverser::ReadFieldReference(uintptr_t objectAddress, ULONG fieldOffset, SIZE_T objectSize) const {
+uintptr_t ReferenceChainTraverser::ReadFieldReference(uintptr_t objectAddress, ULONG fieldOffset, SIZE_T objectSize) const
+{
     // CLR object layout:
     //   objectAddress + 0              = MethodTable* (NOT a field!)
     //   objectAddress + sizeof(void*)  = first instance field
@@ -262,14 +290,16 @@ uintptr_t ReferenceChainTraverser::ReadFieldReference(uintptr_t objectAddress, U
     // When offset is 0, adjust to MinFieldOffset (= sizeof(void*)) to skip past
     // the MethodTable pointer and reach the actual first field.
 
-    if (fieldOffset < MinFieldOffset) {
+    if (fieldOffset < MinFieldOffset)
+    {
         Log::Debug("ReadFieldReference: adjusting field offset from ", fieldOffset,
                    " to MinFieldOffset=", MinFieldOffset);
         fieldOffset = MinFieldOffset;
     }
 
     // Guard: field value (a pointer-sized reference) must fit within the object
-    if (static_cast<SIZE_T>(fieldOffset) + sizeof(uintptr_t) > objectSize) {
+    if (static_cast<SIZE_T>(fieldOffset) + sizeof(uintptr_t) > objectSize)
+    {
         Log::Debug("ReadFieldReference: field at offset ", fieldOffset,
                    " + ", sizeof(uintptr_t), " exceeds object size ", objectSize);
         return 0;

@@ -19,7 +19,8 @@ static constexpr uint32_t MaxTreeDepth = 128;
 // Each node represents a type AT A SPECIFIC POSITION in a reference chain.
 // The same ClassID can appear at multiple positions (different nodes).
 // For example: TypeA -> TypeB -> TypeA -> TypeC produces 4 nodes.
-struct TypeTreeNode {
+struct TypeTreeNode
+{
     ClassID typeID;
     uint64_t instanceCount;  // How many instances at this tree position
     uint64_t totalSize;      // Aggregate size of instances at this position
@@ -28,17 +29,22 @@ struct TypeTreeNode {
     // Multiple instances flowing through the same type path merge into one child node.
     std::unordered_map<ClassID, std::unique_ptr<TypeTreeNode>> children;
 
-    TypeTreeNode(ClassID id) : typeID(id), instanceCount(0), totalSize(0) {}
+    TypeTreeNode(ClassID id) : typeID(id), instanceCount(0), totalSize(0)
+    {
+    }
 
-    void AddInstance(uint64_t size) {
+    void AddInstance(uint64_t size)
+    {
         instanceCount++;
         totalSize += size;
     }
 
     // Get or create a child node for the given type.
-    TypeTreeNode* GetOrCreateChild(ClassID childTypeID) {
+    TypeTreeNode* GetOrCreateChild(ClassID childTypeID)
+    {
         auto it = children.find(childTypeID);
-        if (it != children.end()) {
+        if (it != children.end())
+        {
             return it->second.get();
         }
         auto child = std::make_unique<TypeTreeNode>(childTypeID);
@@ -48,7 +54,8 @@ struct TypeTreeNode {
     }
 
     // Get an existing child node (returns nullptr if not found).
-    const TypeTreeNode* GetChild(ClassID childTypeID) const {
+    const TypeTreeNode* GetChild(ClassID childTypeID) const
+    {
         auto it = children.find(childTypeID);
         return it != children.end() ? it->second.get() : nullptr;
     }
@@ -57,18 +64,23 @@ struct TypeTreeNode {
 
 // A root node in the reference tree.
 // Extends TypeTreeNode with root-specific metadata (category bitmask).
-struct TypeRootNode {
+struct TypeRootNode
+{
     TypeTreeNode node;
     uint8_t rootCategories;  // Bitmask of RootCategory values
 
-    TypeRootNode(ClassID typeID) : node(typeID), rootCategories(0) {}
+    TypeRootNode(ClassID typeID) : node(typeID), rootCategories(0)
+    {
+    }
 
-    void AddRoot(RootCategory category, uint64_t size) {
+    void AddRoot(RootCategory category, uint64_t size)
+    {
         node.AddInstance(size);
         rootCategories |= (1 << static_cast<uint8_t>(category));
     }
 
-    bool HasRootCategory(RootCategory category) const {
+    bool HasRootCategory(RootCategory category) const
+    {
         return (rootCategories & (1 << static_cast<uint8_t>(category))) != 0;
     }
 };
@@ -77,7 +89,8 @@ struct TypeRootNode {
 // Complete type reference tree.
 // Roots are the top-level entries; each root has a tree of children
 // representing the type-level reference chains from that root.
-class TypeReferenceTree {
+class TypeReferenceTree
+{
 public:
     // Root nodes indexed by ClassID.
     // Multiple root instances of the same type merge into one TypeRootNode.
@@ -85,9 +98,11 @@ public:
 
     // Add or update a root.
     // Returns a pointer to the root's TypeTreeNode for use during traversal.
-    TypeTreeNode* AddRoot(ClassID typeID, RootCategory category, uint64_t size) {
+    TypeTreeNode* AddRoot(ClassID typeID, RootCategory category, uint64_t size)
+    {
         auto it = _roots.find(typeID);
-        if (it != _roots.end()) {
+        if (it != _roots.end())
+        {
             it->second->AddRoot(category, size);
             return &it->second->node;
         }
@@ -98,11 +113,13 @@ public:
         return nodePtr;
     }
 
-    bool IsEmpty() const {
+    bool IsEmpty() const
+    {
         return _roots.empty();
     }
 
-    void Clear() {
+    void Clear()
+    {
         _roots.clear();
     }
 };

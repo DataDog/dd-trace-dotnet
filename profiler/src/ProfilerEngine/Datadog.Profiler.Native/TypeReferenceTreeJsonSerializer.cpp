@@ -7,10 +7,12 @@
 #include <sstream>
 #include <algorithm>
 
-std::string TypeReferenceTreeJsonSerializer::Serialize(const TypeReferenceTree& tree, IFrameStore* pFrameStore) {
+std::string TypeReferenceTreeJsonSerializer::Serialize(const TypeReferenceTree& tree, IFrameStore* pFrameStore)
+{
     auto startTime = OpSysTools::GetHighPrecisionTimestamp();
 
-    if (pFrameStore == nullptr) {
+    if (pFrameStore == nullptr)
+    {
         return "{}";
     }
 
@@ -20,7 +22,8 @@ std::string TypeReferenceTreeJsonSerializer::Serialize(const TypeReferenceTree& 
     std::vector<std::string> typeTable;
     uint32_t nextIndex = 0;
 
-    for (const auto& [typeID, rootNode] : tree._roots) {
+    for (const auto& [typeID, rootNode] : tree._roots)
+    {
         CollectTypes(rootNode->node, typeToIndex, typeTable, nextIndex, pFrameStore);
     }
 
@@ -31,10 +34,15 @@ std::string TypeReferenceTreeJsonSerializer::Serialize(const TypeReferenceTree& 
     ss << "{\"v\":7";
 
     // Output type table
-    if (!typeTable.empty()) {
+    if (!typeTable.empty())
+    {
         ss << ",\"tt\":[";
-        for (size_t i = 0; i < typeTable.size(); i++) {
-            if (i > 0) ss << ",";
+        for (size_t i = 0; i < typeTable.size(); i++)
+        {
+            if (i > 0)
+            {
+                ss << ",";
+            }
             ss << "\"" << EscapeJson(typeTable[i]) << "\"";
         }
         ss << "]";
@@ -44,21 +52,28 @@ std::string TypeReferenceTreeJsonSerializer::Serialize(const TypeReferenceTree& 
     ss << ",\"r\":[";
 
     bool firstRoot = true;
-    for (const auto& [typeID, rootNode] : tree._roots) {
+    for (const auto& [typeID, rootNode] : tree._roots)
+    {
         auto it = typeToIndex.find(typeID);
-        if (it == typeToIndex.end()) {
+        if (it == typeToIndex.end())
+        {
             continue;  // Type not in table (GetTypeName failed)
         }
 
-        if (!firstRoot) ss << ",";
+        if (!firstRoot)
+        {
+            ss << ",";
+        }
         firstRoot = false;
 
         uint32_t typeIndex = it->second;
 
         // Find first root category
         uint8_t categoryIndex = 0;
-        for (int cat = 0; cat < 8; cat++) {
-            if (rootNode->HasRootCategory(static_cast<RootCategory>(cat))) {
+        for (int cat = 0; cat < 8; cat++)
+        {
+            if (rootNode->HasRootCategory(static_cast<RootCategory>(cat)))
+            {
                 categoryIndex = cat;
                 break;
             }
@@ -72,11 +87,16 @@ std::string TypeReferenceTreeJsonSerializer::Serialize(const TypeReferenceTree& 
            << ",\"ts\":" << rootNode->node.totalSize;
 
         // Output children
-        if (!rootNode->node.children.empty()) {
+        if (!rootNode->node.children.empty())
+        {
             ss << ",\"ch\":[";
             bool firstChild = true;
-            for (const auto& [childTypeID, childNode] : rootNode->node.children) {
-                if (!firstChild) ss << ",";
+            for (const auto& [childTypeID, childNode] : rootNode->node.children)
+            {
+                if (!firstChild)
+                {
+                    ss << ",";
+                }
                 firstChild = false;
                 OutputNode(*childNode, typeToIndex, ss);
             }
@@ -102,10 +122,11 @@ std::string TypeReferenceTreeJsonSerializer::Serialize(const TypeReferenceTree& 
 void TypeReferenceTreeJsonSerializer::OutputNode(
     const TypeTreeNode& node,
     const std::unordered_map<ClassID, uint32_t>& typeToIndex,
-    std::stringstream& ss) {
-
+    std::stringstream& ss)
+{
     auto it = typeToIndex.find(node.typeID);
-    if (it == typeToIndex.end()) {
+    if (it == typeToIndex.end())
+    {
         ss << "{}";  // Unknown type — emit empty node to keep JSON valid
         return;
     }
@@ -114,19 +135,26 @@ void TypeReferenceTreeJsonSerializer::OutputNode(
 
     ss << "{\"t\":" << typeIndex;
 
-    if (node.instanceCount > 0) {
+    if (node.instanceCount > 0)
+    {
         ss << ",\"ic\":" << node.instanceCount;
     }
-    if (node.totalSize > 0) {
+    if (node.totalSize > 0)
+    {
         ss << ",\"ts\":" << node.totalSize;
     }
 
     // Output children (no cycle detection needed — the tree is acyclic by construction)
-    if (!node.children.empty()) {
+    if (!node.children.empty())
+    {
         ss << ",\"ch\":[";
         bool firstChild = true;
-        for (const auto& [childTypeID, childNode] : node.children) {
-            if (!firstChild) ss << ",";
+        for (const auto& [childTypeID, childNode] : node.children)
+        {
+            if (!firstChild)
+            {
+                ss << ",";
+            }
             firstChild = false;
             OutputNode(*childNode, typeToIndex, ss);
         }
@@ -141,25 +169,30 @@ void TypeReferenceTreeJsonSerializer::CollectTypes(
     std::unordered_map<ClassID, uint32_t>& typeToIndex,
     std::vector<std::string>& typeTable,
     uint32_t& nextIndex,
-    IFrameStore* pFrameStore) {
-
+    IFrameStore* pFrameStore)
+{
     // Add this type if not already in the table
-    if (typeToIndex.find(node.typeID) == typeToIndex.end()) {
+    if (typeToIndex.find(node.typeID) == typeToIndex.end())
+    {
         std::string typeName;
-        if (pFrameStore->GetTypeName(node.typeID, typeName)) {
+        if (pFrameStore->GetTypeName(node.typeID, typeName))
+        {
             typeToIndex[node.typeID] = nextIndex++;
             typeTable.push_back(typeName);
         }
     }
 
     // Recurse into children
-    for (const auto& [childTypeID, childNode] : node.children) {
+    for (const auto& [childTypeID, childNode] : node.children)
+    {
         CollectTypes(*childNode, typeToIndex, typeTable, nextIndex, pFrameStore);
     }
 }
 
-const char* TypeReferenceTreeJsonSerializer::GetRootCategoryCode(RootCategory category) {
-    switch (category) {
+const char* TypeReferenceTreeJsonSerializer::GetRootCategoryCode(RootCategory category)
+{
+    switch (category)
+    {
         case RootCategory::Stack: return "S";
         case RootCategory::StaticVariable: return "s";
         case RootCategory::Finalizer: return "F";
@@ -172,12 +205,15 @@ const char* TypeReferenceTreeJsonSerializer::GetRootCategoryCode(RootCategory ca
     }
 }
 
-std::string TypeReferenceTreeJsonSerializer::EscapeJson(const std::string& str) {
+std::string TypeReferenceTreeJsonSerializer::EscapeJson(const std::string& str)
+{
     std::string escaped;
     escaped.reserve(str.length() + 10);
 
-    for (char c : str) {
-        switch (c) {
+    for (char c : str)
+    {
+        switch (c)
+        {
             case '"': escaped += "\\\""; break;
             case '\\': escaped += "\\\\"; break;
             case '\b': escaped += "\\b"; break;
@@ -186,11 +222,14 @@ std::string TypeReferenceTreeJsonSerializer::EscapeJson(const std::string& str) 
             case '\r': escaped += "\\r"; break;
             case '\t': escaped += "\\t"; break;
             default:
-                if (static_cast<unsigned char>(c) < 0x20) {
+                if (static_cast<unsigned char>(c) < 0x20)
+                {
                     char buf[7];
                     snprintf(buf, sizeof(buf), "\\u%04x", static_cast<unsigned char>(c));
                     escaped += buf;
-                } else {
+                }
+                else
+                {
                     escaped += c;
                 }
                 break;

@@ -20,7 +20,8 @@ class IFrameStore;
 // from within ICorProfilerCallback methods (i.e. during GC dump events).
 // They cannot be called from another thread or after the GC ends.
 // Therefore, traversal MUST happen inside the OnBulkRoot* event handlers.
-class ReferenceChainTraverser {
+class ReferenceChainTraverser
+{
 public:
     ReferenceChainTraverser(
         ICorProfilerInfo12* pCorProfilerInfo,
