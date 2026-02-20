@@ -22,6 +22,9 @@
 // forward declarations
 class IThreadsCpuManager;
 class INativeThreadList;
+class TypeReferenceTree;
+class ReferenceChainTraverser;
+struct RootInfo;
 
 using namespace std::chrono_literals;
 
@@ -66,6 +69,9 @@ public:
     // used for debugging purpose
     std::string GetHeapSnapshotText();
 
+    // Reference tree output (separate from histogram)
+    std::string GetAndClearReferenceTreeJson() override;
+
     ~HeapSnapshotManager();
 
 protected:
@@ -105,6 +111,12 @@ protected:
         uint32_t index,
         uint32_t count,
         GCBulkEdgeValue* pEdges) override;
+    void OnBulkRootEdges(
+        uint32_t index,
+        uint32_t count,
+        GCBulkRootEdgeValue* pRoots) override;
+    void OnBulkRootStaticVar(
+        const GCBulkRootStaticVarValue& root) override;
 
     // Inherited via ServiceBase
     bool StartImpl() override;
@@ -169,6 +181,10 @@ private:
     // keep track of each type instances count and size during heap snapshot
     std::unordered_map<ClassID, ClassHistogramEntry> _classHistogram;
     std::recursive_mutex _histogramLock;
+
+    // Reference chain tracking
+    std::unique_ptr<TypeReferenceTree> _typeReferenceTree;
+    std::unique_ptr<ReferenceChainTraverser> _pReferenceChainTraverser;
 
     std::chrono::nanoseconds _startTimestamp;
 

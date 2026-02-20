@@ -54,6 +54,8 @@ const int EVENT_SW_STACK = 82;
 // events sent during heap dumps
 const int EVENT_GC_BULK_NODE = 18;
 const int EVENT_GC_BULK_EDGE = 19;
+const int EVENT_GC_BULK_ROOT_EDGE = 20;
+const int EVENT_GC_BULK_ROOT_STATIC_VAR = 38;
 
 
 #define LONG_LENGTH 1024

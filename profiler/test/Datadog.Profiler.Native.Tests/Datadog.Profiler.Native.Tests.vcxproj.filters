@@ -193,6 +193,9 @@
     <ClCompile Include="CpuSampleProviderTest.cpp">
       <Filter>Tests</Filter>
     </ClCompile>
+    <ClCompile Include="ReferenceChainTest.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
     <ClCompile Include="ManagedThreadInfoTest.cpp">
       <Filter>Tests</Filter>
     </ClCompile>
