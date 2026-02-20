@@ -31,12 +31,12 @@ pr:
       - .devcontainer/
       - .vscode/
       - docs/
-      - tracer/README.MD
       - tracer/samples/
-      - tracer/tools/Build-AzureFunctionsNuget.ps1
+      - tracer/tools/*.ps1
       - AGENTS.md
       - LICENSE
       - NOTICE
+      - "**/README.md"
 
 schedules:
   - cron: "0 3 * * *"
