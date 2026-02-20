@@ -631,6 +631,56 @@ DD_RUNTIME_METRICS_ENABLED: |
   Configuration key for enabling or disabling runtime metrics sent to DogStatsD.
   Default value is <c>false</c> (disabled).
 
+  When enabled, the following runtime metrics are collected and sent to DogStatsD:
+
+  <b>GC Metrics:</b>
+  - runtime.dotnet.gc.count.gen0/gen1/gen2 - GC collection counts by generation
+  - runtime.dotnet.gc.size.gen0/gen1/gen2/loh/poh - Heap sizes by generation (POH: .NET 5+)
+  - runtime.dotnet.gc.pause_time - GC pause duration
+  - runtime.dotnet.gc.memory_load - Memory load percentage
+  - runtime.dotnet.gc.allocated_bytes - Total allocated bytes (.NET Core 3.0+)
+  - runtime.dotnet.gc.fragmentation_percent - Heap fragmentation percentage
+  - runtime.dotnet.gc.total_available_memory - Container-aware total available memory
+  - runtime.dotnet.gc.high_memory_load_threshold - GC high memory pressure trigger threshold
+
+  <b>Threading Metrics:</b>
+  - runtime.dotnet.threads.contention_time - Lock contention time
+  - runtime.dotnet.threads.contention_count - Lock contention count
+  - runtime.dotnet.threads.workers_count - ThreadPool worker thread count
+  - runtime.dotnet.threads.count - Total process thread count
+  - runtime.dotnet.threads.queue_length - ThreadPool work item queue length (.NET Core 3.0+)
+  - runtime.dotnet.threads.available_worker_threads - Available ThreadPool worker threads
+  - runtime.dotnet.threads.available_completion_port_threads - Available ThreadPool I/O completion port threads
+  - runtime.dotnet.threads.completed_work_items - Completed ThreadPool work items (.NET 5+)
+  - runtime.dotnet.threads.active_timers - Active timer count (.NET 6+)
+
+  <b>JIT Metrics (.NET 6+):</b>
+  - runtime.dotnet.jit.compiled_il_bytes - Total IL bytes compiled by JIT
+  - runtime.dotnet.jit.compiled_methods - Total methods compiled by JIT
+  - runtime.dotnet.jit.compilation_time - Total JIT compilation time (milliseconds)
+
+  <b>Memory Metrics:</b>
+  - runtime.dotnet.mem.committed - Process committed memory
+
+  <b>CPU Metrics:</b>
+  - runtime.dotnet.cpu.user - CPU user time
+  - runtime.dotnet.cpu.system - CPU system time
+  - runtime.dotnet.cpu.percent - CPU usage percentage
+
+  <b>Exception Metrics:</b>
+  - runtime.dotnet.exceptions.count - Total exception count
+
+  <b>ASP.NET Core Metrics (.NET 8+):</b>
+  - runtime.dotnet.aspnetcore.requests.current - Current active requests
+  - runtime.dotnet.aspnetcore.requests.failed - Failed request count
+  - runtime.dotnet.aspnetcore.requests.total - Total request count
+  - runtime.dotnet.aspnetcore.requests.queue_length - Request queue length
+  - runtime.dotnet.aspnetcore.connections.current - Current active connections
+  - runtime.dotnet.aspnetcore.connections.queue_length - Connection queue length
+  - runtime.dotnet.aspnetcore.connections.total - Total connection count
+
+  Note: Some metrics are only available on specific .NET versions as indicated above.
+
 DD_RUNTIME_METRICS_DIAGNOSTICS_METRICS_API_ENABLED: |
   Enables an experimental runtime metrics collector which uses the 
   <a href="https://learn.microsoft.com/en-us/dotnet/core/diagnostics/metrics">System.Diagnostics.Metrics</a> API.

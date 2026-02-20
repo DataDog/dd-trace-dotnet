@@ -39,6 +39,18 @@ namespace Datadog.Trace.Tests.RuntimeMetrics
             statsd.Verify(s => s.Gauge(MetricsNames.ContentionTime, It.IsAny<double>(), 1, null), Times.Once);
             statsd.Verify(s => s.Counter(MetricsNames.ContentionCount, It.IsAny<double>(), 1, null), Times.Once);
             statsd.Verify(s => s.Gauge(MetricsNames.ThreadPoolWorkersCount, It.IsAny<double>(), 1, null), Times.Once);
+
+            // ThreadPool metrics
+            statsd.Verify(s => s.Gauge(MetricsNames.ThreadsAvailableWorkers, It.IsAny<double>(), 1, null), Times.Once);
+            statsd.Verify(s => s.Gauge(MetricsNames.ThreadsAvailableCompletionPorts, It.IsAny<double>(), 1, null), Times.Once);
+            statsd.Verify(s => s.Gauge(MetricsNames.ThreadsCompletedWorkItems, It.IsAny<double>(), 1, null), Times.Once);
+
+#if NET6_0_OR_GREATER
+            // JIT metrics
+            statsd.Verify(s => s.Gauge(MetricsNames.JitCompiledILBytes, It.IsAny<double>(), 1, null), Times.Once);
+            statsd.Verify(s => s.Gauge(MetricsNames.JitCompiledMethods, It.IsAny<double>(), 1, null), Times.Once);
+            statsd.Verify(s => s.Gauge(MetricsNames.JitCompilationTime, It.IsAny<double>(), 1, null), Times.Once);
+#endif
         }
 
         [Fact]
@@ -75,6 +87,13 @@ namespace Datadog.Trace.Tests.RuntimeMetrics
             statsd.Verify(s => s.Timer(MetricsNames.GcPauseTime, It.IsAny<double>(), It.IsAny<double>(), null), Times.AtLeastOnce);
             statsd.Verify(s => s.Gauge(MetricsNames.GcMemoryLoad, It.IsAny<double>(), It.IsAny<double>(), null), Times.AtLeastOnce);
             statsd.Verify(s => s.Increment(MetricsNames.Gen2CollectionsCount, 1, It.IsAny<double>(), compactingGcTags), Times.AtLeastOnce);
+
+            // GC metrics
+            statsd.Verify(s => s.Gauge(MetricsNames.GcAllocatedBytes, It.IsAny<double>(), It.IsAny<double>(), null), Times.AtLeastOnce);
+            statsd.Verify(s => s.Gauge(MetricsNames.GcFragmentationPercent, It.IsAny<double>(), It.IsAny<double>(), null), Times.AtLeastOnce);
+            statsd.Verify(s => s.Gauge(MetricsNames.GcTotalAvailableMemory, It.IsAny<double>(), It.IsAny<double>(), null), Times.AtLeastOnce);
+            statsd.Verify(s => s.Gauge(MetricsNames.GcHighMemoryLoadThreshold, It.IsAny<double>(), It.IsAny<double>(), null), Times.AtLeastOnce);
+            statsd.Verify(s => s.Gauge(MetricsNames.PohSize, It.IsAny<double>(), It.IsAny<double>(), null), Times.AtLeastOnce);
         }
 
         [Fact]
