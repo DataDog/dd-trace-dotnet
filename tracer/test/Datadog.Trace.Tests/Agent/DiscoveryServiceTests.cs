@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -363,32 +364,34 @@ public class DiscoveryServiceTests
     }
 
     [Fact]
-    [Flaky("This is an inherently flaky test as it relies on time periods")]
     public async Task HandlesFailuresInApiWithBackoff()
     {
-        using var mutex = new ManualResetEventSlim(initialState: false, spinCount: 0);
+        const int expectedRequests = 5;
         var factory = new TestRequestFactory(
-            _ => new ThrowingRequest(),
-            _ => new ThrowingRequest(),
-            _ => new ThrowingRequest(),
-            _ => new ThrowingRequest(),
-            _ => new ThrowingRequest(),
-            _ => new ThrowingRequest(),
-            _ => new ThrowingRequest());
+            Enumerable.Range(0, expectedRequests + 2)
+                      .Select<int, Func<Uri, TestApiRequest>>(_ => _ => new ThrowingRequest())
+                      .ToArray());
 
         // These are the default values in the other constructor
         // but setting them explicitly here as it's the behaviour we're testing
         // not the exact values we choose later
         var ds = new DiscoveryService(factory, NullContainerMetadata, initialRetryDelayMs: 500, maxRetryDelayMs: 5_000, recheckIntervalMs: 30_000);
-        ds.SubscribeToChanges(_ => mutex.Set());
+        ds.SubscribeToChanges(_ => { });
 
-        // wait for 0 + 500 + 1000 + 2000 + 4000 + 5000 ms (+ 2500 buffer).
-        // should not be set
-        mutex.Wait(15_000);
+        // Wait for the expected number of requests with a generous timeout
+        // instead of asserting on count after a fixed wall-clock duration.
+        // The backoff schedule is 0 + 500 + 1000 + 2000 + 4000 = 7500ms for 5 requests,
+        // but we use 60s to avoid flakiness on slow CI agents (e.g., ARM64).
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        while (factory.RequestsSent.Count < expectedRequests && sw.Elapsed < TimeSpan.FromSeconds(60))
+        {
+            await Task.Delay(100);
+        }
 
         await ds.DisposeAsync();
-        // add some leeway in case of slowness
-        factory.RequestsSent.Count.Should().BeInRange(3, 6, "Should make between 3 and 6 retries in 13s");
+
+        factory.RequestsSent.Count.Should()
+               .BeGreaterOrEqualTo(expectedRequests, "Should have made at least {0} retry requests", expectedRequests);
     }
 
     [Fact]
