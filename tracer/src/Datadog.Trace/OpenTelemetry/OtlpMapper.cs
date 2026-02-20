@@ -44,6 +44,7 @@ internal static class OtlpMapper
         }
 
         // Write telemetry SDK attributes
+        writeKeyValue(new KeyValue("telemetry.sdk.name", TracerConstants.TelemetrySdkName));
         writeKeyValue(new KeyValue("telemetry.sdk.language", TracerConstants.Language));
         writeKeyValue(new KeyValue("telemetry.sdk.version", TracerConstants.AssemblyVersion));
 
