@@ -269,7 +269,6 @@ namespace Datadog.Trace.Tests.Util
             actual.Should().Equal(expected);
         }
 
-#if NETCOREAPP3_1_OR_GREATER
         [Theory]
         [InlineData(1)]
         [InlineData(2)]
@@ -284,7 +283,6 @@ namespace Datadog.Trace.Tests.Util
 
             act.Should().Throw<ArgumentException>();
         }
-#endif
 
         private static byte[] CreateSequentialBytes(int count)
         {

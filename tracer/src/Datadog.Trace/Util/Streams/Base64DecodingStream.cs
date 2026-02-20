@@ -113,6 +113,17 @@ internal sealed class Base64DecodingStream : Stream
 #else
     public override int Read(byte[] buffer, int offset, int count)
     {
+        if (count == 0)
+        {
+            return 0;
+        }
+
+        // Added for consistency with .NET Core case
+        if (count < 3)
+        {
+            ThrowDestinationTooSmall();
+        }
+
         var totalRead = 0;
 
         while (count > 0)
