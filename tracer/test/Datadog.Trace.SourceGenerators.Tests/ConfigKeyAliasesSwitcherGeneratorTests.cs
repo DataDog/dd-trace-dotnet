@@ -18,16 +18,18 @@ public class ConfigKeyAliasesSwitcherGeneratorTests
         const string supportedConfigJson = """
                                            {
                                              "supportedConfigurations": {
-                                               "DD_AGENT_HOST": {
-                                                 "version": "A"
-                                               },
-                                               "DD_TRACE_AGENT_URL": {
-                                                 "version": "A"
-                                               }
-                                             },
-                                             "aliases": {
-                                               "DD_AGENT_HOST": ["DATADOG_TRACE_AGENT_HOSTNAME_OPTIMIZED", "DD_TRACE_AGENT_HOSTNAME"],
-                                               "DD_TRACE_AGENT_URL": ["DD_AGENT_URL", "DD_TRACE_AGENT_PORT"]
+                                               "DD_AGENT_HOST": [
+                                                 {
+                                                   "implementation": "A",
+                                                   "aliases": ["DATADOG_TRACE_AGENT_HOSTNAME_OPTIMIZED", "DD_TRACE_AGENT_HOSTNAME"]
+                                                 }
+                                               ],
+                                               "DD_TRACE_AGENT_URL": [
+                                                 {
+                                                   "implementation": "A",
+                                                   "aliases": ["DD_AGENT_URL", "DD_TRACE_AGENT_PORT"]
+                                                 }
+                                               ]
                                              }
                                            }
                                            """;
@@ -95,11 +97,13 @@ internal static partial class ConfigKeyAliasesSwitcher
         const string supportedConfigJson = """
                                            {
                                              "supportedConfigurations": {
-                                               "DD_AGENT_HOST": {
-                                                 "version": "A"
-                                               }
-                                             },
-                                             "aliases": {}
+                                               "DD_AGENT_HOST": [
+                                                 {
+                                                   "implementation": "A",
+                                                   "aliases": []
+                                                 }
+                                               ]
+                                             }
                                            }
                                            """;
 
@@ -162,9 +166,11 @@ internal static partial class ConfigKeyAliasesSwitcher
         const string supportedConfigJson = """
                                            {
                                              "supportedConfigurations": {
-                                               "DD_AGENT_HOST": {
-                                                 "version": "A"
-                                               }
+                                               "DD_AGENT_HOST": [
+                                                 {
+                                                   "implementation": "A"
+                                                 }
+                                               ]
                                              }
                                            }
                                            """;

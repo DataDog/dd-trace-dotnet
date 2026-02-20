@@ -396,6 +396,15 @@ The tracer runs in-process with customer applications and must have minimal perf
 - `docs/development/CI/TroubleshootingCIFailures.md` — Investigating build/test failures in Azure DevOps
 - `docs/development/CI/RunSmokeTestsLocally.md` — Running smoke tests locally
 
+## Configuration
+
+📖 **Load when**: Need reference for tracer configuration settings and environment variables
+- **`tracer/src/Datadog.Trace/Configuration/supported-configurations-docs.yaml`** — Human-readable descriptions and default values for all `DD_*` environment variables
+- **`tracer/src/Datadog.Trace/Configuration/supported-configurations.json`** — Machine-readable config metadata: product categorization, key aliases, and deprecations (consumed by source generators)
+
+📖 **Load when**: Adding a new `DD_*` configuration key or modifying the configuration system
+- **`docs/development/Configuration/AddingConfigurationKeys.md`** — Step-by-step guide for adding config keys: JSON/YAML definitions, source generators, aliases, telemetry normalization, and related analyzers
+
 ## Security & Configuration
 
 - Do not commit secrets; prefer env vars (`DD_*`). `.env` should not contain credentials.

@@ -196,6 +196,9 @@
     <ClCompile Include="ReferenceChainTest.cpp">
       <Filter>Tests</Filter>
     </ClCompile>
+    <ClCompile Include="ManagedThreadInfoTest.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native\HResultConverter.h">

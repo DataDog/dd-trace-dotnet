@@ -152,6 +152,12 @@ namespace Datadog.Trace.Ci.Tagging
 #else
         private static readonly byte[] AttemptToFixPassedBytes = new byte[] { 217, 42, 116, 101, 115, 116, 46, 116, 101, 115, 116, 95, 109, 97, 110, 97, 103, 101, 109, 101, 110, 116, 46, 97, 116, 116, 101, 109, 112, 116, 95, 116, 111, 95, 102, 105, 120, 95, 112, 97, 115, 115, 101, 100 };
 #endif
+        // FinalStatusBytes = MessagePack.Serialize("test.final_status");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> FinalStatusBytes => new byte[] { 177, 116, 101, 115, 116, 46, 102, 105, 110, 97, 108, 95, 115, 116, 97, 116, 117, 115 };
+#else
+        private static readonly byte[] FinalStatusBytes = new byte[] { 177, 116, 101, 115, 116, 46, 102, 105, 110, 97, 108, 95, 115, 116, 97, 116, 117, 115 };
+#endif
         // CapabilitiesTestImpactAnalysisBytes = MessagePack.Serialize("_dd.library_capabilities.test_impact_analysis");
 #if NETCOREAPP
         private static ReadOnlySpan<byte> CapabilitiesTestImpactAnalysisBytes => new byte[] { 217, 45, 95, 100, 100, 46, 108, 105, 98, 114, 97, 114, 121, 95, 99, 97, 112, 97, 98, 105, 108, 105, 116, 105, 101, 115, 46, 116, 101, 115, 116, 95, 105, 109, 112, 97, 99, 116, 95, 97, 110, 97, 108, 121, 115, 105, 115 };
@@ -214,6 +220,7 @@ namespace Datadog.Trace.Ci.Tagging
                 "test.test_management.is_attempt_to_fix" => IsAttemptToFix,
                 "test.has_failed_all_retries" => HasFailedAllRetries,
                 "test.test_management.attempt_to_fix_passed" => AttemptToFixPassed,
+                "test.final_status" => FinalStatus,
                 "_dd.library_capabilities.test_impact_analysis" => CapabilitiesTestImpactAnalysis,
                 "_dd.library_capabilities.early_flake_detection" => CapabilitiesEarlyFlakeDetection,
                 "_dd.library_capabilities.auto_test_retries" => CapabilitiesAutoTestRetries,
@@ -290,6 +297,9 @@ namespace Datadog.Trace.Ci.Tagging
                     break;
                 case "test.test_management.attempt_to_fix_passed": 
                     AttemptToFixPassed = value;
+                    break;
+                case "test.final_status": 
+                    FinalStatus = value;
                     break;
                 case "_dd.library_capabilities.test_impact_analysis": 
                     CapabilitiesTestImpactAnalysis = value;
@@ -420,6 +430,11 @@ namespace Datadog.Trace.Ci.Tagging
             if (AttemptToFixPassed is not null)
             {
                 processor.Process(new TagItem<string>("test.test_management.attempt_to_fix_passed", AttemptToFixPassed, AttemptToFixPassedBytes));
+            }
+
+            if (FinalStatus is not null)
+            {
+                processor.Process(new TagItem<string>("test.final_status", FinalStatus, FinalStatusBytes));
             }
 
             if (CapabilitiesTestImpactAnalysis is not null)
@@ -601,6 +616,13 @@ namespace Datadog.Trace.Ci.Tagging
             {
                 sb.Append("test.test_management.attempt_to_fix_passed (tag):")
                   .Append(AttemptToFixPassed)
+                  .Append(',');
+            }
+
+            if (FinalStatus is not null)
+            {
+                sb.Append("test.final_status (tag):")
+                  .Append(FinalStatus)
                   .Append(',');
             }
 

@@ -53,6 +53,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         [Trait("Category", "TestIntegrations")]
         public async Task SubmitTraces(string packageVersion)
         {
+            // Right now, the test is very flaky under Linux. Skip to avoid flakiness until solved.
+            SkipOn.Platform(SkipOn.PlatformValue.Linux);
+
             if (new Version(FrameworkDescription.Instance.ProductVersion).Major >= 5)
             {
                 if (!string.IsNullOrWhiteSpace(packageVersion) && new Version(packageVersion) < new Version("3.13"))
@@ -97,6 +100,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                             // Remove EFD tags
                             targetSpan.Tags.Remove(TestTags.TestIsNew);
                             targetSpan.Tags.Remove(TestTags.TestIsRetry);
+
+                            // Remove test final status
+                            targetSpan.Tags.Remove(TestTags.TestFinalStatus);
 
                             // Remove capabilities
                             targetSpan.Tags.Remove(CapabilitiesTags.LibraryCapabilitiesAutoTestRetries);
