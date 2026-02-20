@@ -77,13 +77,12 @@ namespace Datadog.Trace.Tests.Util
         }
 
         [Theory]
-        [InlineData(100, 1)]
         [InlineData(100, 3)]
         [InlineData(100, 7)]
         [InlineData(100, 16)]
         [InlineData(100, 64)]
         [InlineData(100, 128)]
-        [InlineData(5000, 1)]
+        [InlineData(5000, 3)]
         [InlineData(5000, 13)]
         [InlineData(5000, 256)]
         [InlineData(5000, 1024)]
@@ -157,6 +156,23 @@ namespace Datadog.Trace.Tests.Util
 
             act.Should().Throw<FormatException>();
         }
+
+#if NETCOREAPP3_1_OR_GREATER
+        [Theory]
+        [InlineData(1)]
+        [InlineData(2)]
+        public void Read_BufferTooSmall_ThrowsArgumentException(int bufferSize)
+        {
+            using var stream = new Base64DecodingStream("AQID"); // decodes to [1, 2, 3]
+            var buffer = new byte[bufferSize];
+
+#pragma warning disable CA2022 // Avoid exact read (.NET 10+)
+            Action act = () => stream.Read(buffer, 0, buffer.Length);
+#pragma warning restore CA2022
+
+            act.Should().Throw<ArgumentException>();
+        }
+#endif
 
         [Theory]
         [InlineData(100, 128)]
