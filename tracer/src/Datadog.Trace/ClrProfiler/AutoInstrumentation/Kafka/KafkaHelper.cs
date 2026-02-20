@@ -26,6 +26,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         private static readonly string[] DefaultProduceEdgeTags = ["direction:out", "type:kafka"];
         private static bool _headersInjectionEnabled = true;
 
+        [ThreadStatic]
+        private static bool _isGettingClusterId;
+
         internal static Scope? CreateProducerScope(
             Tracer tracer,
             object producer,
@@ -72,9 +75,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     tags.Partition = (topicPartition?.Partition).ToString();
                 }
 
-                if (ProducerCache.TryGetProducer(producer, out var bootstrapServers))
+                if (ProducerCache.TryGetProducer(producer, out var bootstrapServers, out var clusterId))
                 {
                     tags.BootstrapServers = bootstrapServers;
+                    if (!string.IsNullOrEmpty(clusterId))
+                    {
+                        tags.ClusterId = clusterId;
+                    }
                 }
 
                 if (isTombstone)
@@ -212,10 +219,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     tags.Offset = offset.ToString();
                 }
 
-                if (ConsumerCache.TryGetConsumerGroup(consumer, out var groupId, out var bootstrapServers))
+                var consumerClusterId = string.Empty;
+                if (ConsumerCache.TryGetConsumerGroup(consumer, out var groupId, out var bootstrapServers, out var clusterId))
                 {
                     tags.ConsumerGroup = groupId;
                     tags.BootstrapServers = bootstrapServers;
+                    if (!string.IsNullOrEmpty(clusterId))
+                    {
+                        tags.ClusterId = clusterId;
+                        consumerClusterId = clusterId;
+                    }
                 }
 
                 if (message?.Instance is not null && message.Timestamp.Type != 0)
@@ -244,9 +257,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 {
                     // TODO: we could pool these arrays to reduce allocations
                     // NOTE: the tags must be sorted in alphabetical order
-                    var edgeTags = string.IsNullOrEmpty(topic)
+                    string[] edgeTags;
+                    if (!string.IsNullOrEmpty(consumerClusterId))
+                    {
+                        edgeTags = string.IsNullOrEmpty(topic)
+                                       ? new[] { "direction:in", $"group:{groupId}", $"kafka_cluster_id:{consumerClusterId}", "type:kafka" }
+                                       : new[] { "direction:in", $"group:{groupId}", $"kafka_cluster_id:{consumerClusterId}", $"topic:{topic}", "type:kafka" };
+                    }
+                    else
+                    {
+                        edgeTags = string.IsNullOrEmpty(topic)
                                        ? new[] { "direction:in", $"group:{groupId}", "type:kafka" }
                                        : new[] { "direction:in", $"group:{groupId}", $"topic:{topic}", "type:kafka" };
+                    }
 
                     span.SetDataStreamsCheckpoint(
                         dataStreamsManager,
@@ -339,9 +362,26 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
                 if (dataStreamsManager.IsEnabled)
                 {
-                    var edgeTags = string.IsNullOrEmpty(topic)
+                    var producerClusterId = string.Empty;
+                    if (span.Tags is KafkaTags kafkaTags && !string.IsNullOrEmpty(kafkaTags.ClusterId))
+                    {
+                        producerClusterId = kafkaTags.ClusterId;
+                    }
+
+                    string[] edgeTags;
+                    if (!string.IsNullOrEmpty(producerClusterId))
+                    {
+                        edgeTags = string.IsNullOrEmpty(topic)
+                                       ? new[] { "direction:out", $"kafka_cluster_id:{producerClusterId}", "type:kafka" }
+                                       : new[] { "direction:out", $"kafka_cluster_id:{producerClusterId}", $"topic:{topic}", "type:kafka" };
+                    }
+                    else
+                    {
+                        edgeTags = string.IsNullOrEmpty(topic)
                                        ? DefaultProduceEdgeTags
-                                       : ["direction:out", $"topic:{topic}", "type:kafka"];
+                                       : new[] { "direction:out", $"topic:{topic}", "type:kafka" };
+                    }
+
                     var msgSize = dataStreamsManager.IsInDefaultState ? 0 : GetMessageSize(message);
                     // produce is always the start of the edge, so defaultEdgeStartMs is always 0
                     span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, msgSize, 0);
@@ -361,6 +401,82 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 // don't keep trying if we run into problems
                 _headersInjectionEnabled = false;
                 Log.Warning(ex, "There was a problem injecting headers into the Kafka record. Disabling Headers injection");
+            }
+        }
+
+        internal static string? GetClusterId(string bootstrapServers)
+        {
+            if (_isGettingClusterId)
+            {
+                return null;
+            }
+
+            if (string.IsNullOrEmpty(bootstrapServers))
+            {
+                return null;
+            }
+
+            try
+            {
+                _isGettingClusterId = true;
+
+                var configType = Type.GetType("Confluent.Kafka.AdminClientConfig, Confluent.Kafka");
+                if (configType is null)
+                {
+                    return null;
+                }
+
+                var config = Activator.CreateInstance(configType);
+                if (!config.TryDuckCast<IAdminClientConfig>(out var adminConfig))
+                {
+                    return null;
+                }
+
+                adminConfig.BootstrapServers = bootstrapServers;
+
+                var builderType = Type.GetType("Confluent.Kafka.AdminClientBuilder, Confluent.Kafka");
+                if (builderType is null)
+                {
+                    return null;
+                }
+
+                var builder = Activator.CreateInstance(builderType, new object[] { ((IDuckType)adminConfig).Instance! });
+                if (!builder.TryDuckCast<IAdminClientBuilder>(out var adminBuilder))
+                {
+                    return null;
+                }
+
+                var adminClientObj = adminBuilder.Build();
+                if (adminClientObj is null)
+                {
+                    return null;
+                }
+
+                if (!adminClientObj.TryDuckCast<IAdminClient>(out var adminClient))
+                {
+                    (adminClientObj as IDisposable)?.Dispose();
+                    return null;
+                }
+
+                try
+                {
+                    var duckTask = adminClient.DescribeClusterAsync(null);
+                    var describeResult = duckTask.GetAwaiter().GetResult();
+                    return describeResult?.ClusterId;
+                }
+                finally
+                {
+                    adminClient.Dispose();
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "Error extracting cluster_id from Kafka metadata");
+                return null;
+            }
+            finally
+            {
+                _isGettingClusterId = false;
             }
         }
 
