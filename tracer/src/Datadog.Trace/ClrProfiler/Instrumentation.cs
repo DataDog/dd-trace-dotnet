@@ -104,7 +104,7 @@ namespace Datadog.Trace.ClrProfiler
 
             if (tracerSettings.PropagateProcessTags)
             {
-                config.ProcessTags = ProcessTags.SerializedTags;
+                config.ProcessTags = mutableSettings.ProcessTags?.SerializedTags;
             }
 
             // Make sure nothing bubbles up, even if there are issues

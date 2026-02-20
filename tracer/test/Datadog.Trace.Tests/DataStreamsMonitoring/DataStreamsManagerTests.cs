@@ -320,7 +320,7 @@ public class DataStreamsManagerTests
                 { ConfigurationKeys.ServiceName, "bar" },
                 { ConfigurationKeys.DataStreamsMonitoring.Enabled, enabled.ToString() },
             });
-        return new DataStreamsManager(settings, writer, processTags: null);
+        return new DataStreamsManager(settings, writer);
     }
 
     internal class DataStreamsWriterMock : IDataStreamsWriter

@@ -55,6 +55,7 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
 
         private byte[] _environmentValueBytes;
         private byte[] _serviceValueBytes;
+        private ProcessTags? _processTags;
 
         public DataStreamsMessagePackFormatter(TracerSettings tracerSettings, ProfilerSettings profilerSettings)
         {
@@ -83,6 +84,8 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
 
                 var service = StringUtil.IsNullOrEmpty(settings.DefaultServiceName) ? [] : StringEncoding.UTF8.GetBytes(settings.DefaultServiceName);
                 Interlocked.Exchange(ref _serviceValueBytes!, service);
+
+                Interlocked.Exchange(ref _processTags, settings.ProcessTags);
             }
         }
 
@@ -115,7 +118,7 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
 
         public int Serialize(Stream stream, long bucketDurationNs, List<SerializableStatsBucket> statsBuckets, List<SerializableBacklogBucket> backlogsBuckets)
         {
-            var withProcessTags = _writeProcessTags && ProcessTags.TagsList.Count > 0;
+            var withProcessTags = _writeProcessTags && _processTags?.TagsList.Count > 0;
             var bytesWritten = 0;
 
             // Should be in sync with Java
@@ -219,8 +222,8 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
             if (withProcessTags)
             {
                 bytesWritten += MessagePackBinary.WriteStringBytes(stream, _processTagsBytes);
-                bytesWritten += MessagePackBinary.WriteArrayHeader(stream, ProcessTags.TagsList.Count);
-                foreach (var tag in ProcessTags.TagsList)
+                bytesWritten += MessagePackBinary.WriteArrayHeader(stream, _processTags!.TagsList.Count);
+                foreach (var tag in _processTags.TagsList)
                 {
                     bytesWritten += MessagePackBinary.WriteString(stream, tag);
                 }
