@@ -22,6 +22,11 @@
     Directory for saved JSON artifacts and logs. Defaults to temp directory.
 
 .EXAMPLE
+    .\Get-AzureDevOpsBuildAnalysis.ps1
+
+    Auto-detects the PR for the current git branch and analyzes its build.
+
+.EXAMPLE
     .\Get-AzureDevOpsBuildAnalysis.ps1 -BuildId 12345
 
     Analyzes build 12345 and displays summary table.
@@ -42,7 +47,7 @@
     Outputs structured JSON for programmatic consumption.
 #>
 
-[CmdletBinding(DefaultParameterSetName = 'ByBuildId')]
+[CmdletBinding(DefaultParameterSetName = 'ByCurrentBranch')]
 param(
     [Parameter(Mandatory = $true, ParameterSetName = 'ByBuildId')]
     [int]$BuildId,
@@ -50,12 +55,8 @@ param(
     [Parameter(Mandatory = $true, ParameterSetName = 'ByPullRequest')]
     [int]$PullRequest,
 
-    [Parameter(ParameterSetName = 'ByBuildId')]
-    [Parameter(ParameterSetName = 'ByPullRequest')]
     [switch]$IncludeLogs,
 
-    [Parameter(ParameterSetName = 'ByBuildId')]
-    [Parameter(ParameterSetName = 'ByPullRequest')]
     [string]$OutputPath = [System.IO.Path]::GetTempPath()
 )
 
@@ -314,10 +315,21 @@ try {
         throw "Azure CLI (az) not found. Install from https://aka.ms/azure-cli"
     }
 
-    if ($PSCmdlet.ParameterSetName -eq 'ByPullRequest') {
+    if ($PSCmdlet.ParameterSetName -eq 'ByCurrentBranch' -or $PSCmdlet.ParameterSetName -eq 'ByPullRequest') {
         if (-not (Get-Command gh -ErrorAction SilentlyContinue)) {
             throw "GitHub CLI (gh) not found. Install from https://cli.github.com"
         }
+
+        if ($PSCmdlet.ParameterSetName -eq 'ByCurrentBranch') {
+            Write-Verbose "No arguments provided. Detecting PR for current branch..."
+            $prOutput = & gh pr view --json number -q .number 2>&1
+            if ($LASTEXITCODE -ne 0) {
+                throw "No PR found for current branch. Specify -PullRequest or -BuildId."
+            }
+            $PullRequest = [int]$prOutput
+            Write-Verbose "Detected PR #$PullRequest for current branch."
+        }
+
         $BuildId = Get-BuildIdFromPR -PRNumber $PullRequest
     }
 

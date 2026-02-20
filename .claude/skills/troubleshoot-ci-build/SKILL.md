@@ -61,10 +61,11 @@ You are analyzing CI failures for the dd-trace-dotnet repository.
 
 ## Arguments
 
-The skill accepts two invocation patterns:
+The skill accepts these invocation patterns:
 
 - **`pr <NUMBER>`** - Analyze failures for a GitHub PR
 - **`build <BUILD_ID>`** - Analyze a specific Azure DevOps build
+- **No arguments** - The script auto-detects the PR for the current git branch
 
 Arguments are available as: `$ARGUMENTS`
 
@@ -78,12 +79,15 @@ Perform these steps quickly to give user an overview, then ask what they want to
 
 Use the `Get-AzureDevOpsBuildAnalysis.ps1` script for quick analysis:
 
+**No arguments provided** — the script auto-detects the PR for the current branch:
+```bash
+pwsh -NoProfile -Command ".\tracer\tools\Get-AzureDevOpsBuildAnalysis.ps1 -Verbose"
+```
+
 **For PR analysis** (`pr <NUMBER>`):
 ```bash
 pwsh -NoProfile -Command ".\tracer\tools\Get-AzureDevOpsBuildAnalysis.ps1 -PullRequest $PR_NUMBER -Verbose"
 ```
-
-The script automatically resolves the build ID via `gh pr checks`.
 
 **For direct build analysis** (`build <BUILD_ID>`):
 ```bash
