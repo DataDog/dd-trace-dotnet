@@ -49,6 +49,9 @@ namespace Datadog.Trace.Telemetry
 
         public TimeSpan HeartbeatInterval { get; }
 
+        // TODO: Read from settings
+        public TimeSpan ExtendedHeartbeatInterval => TimeSpan.FromHours(24);
+
         public bool AgentProxyEnabled { get; }
 
         public bool DependencyCollectionEnabled { get; }
