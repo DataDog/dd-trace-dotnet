@@ -16,33 +16,41 @@ namespace Datadog.Trace.Util.Streams;
 /// <summary>
 /// A read-only, forward-only <see cref="Stream"/> that decodes a base64-encoded <see cref="string"/>
 /// into its raw bytes on-the-fly, without allocating the full decoded byte array.
-/// Uses <see cref="ArrayPool{T}"/> internally to avoid GC pressure.
 /// </summary>
 /// <remarks>
 /// This stream processes base64 input in chunks, decoding only as much as
 /// the caller requests via <see cref="Read(byte[], int, int)"/>.
 /// The input must be valid base64 with standard padding (no embedded whitespace).
+/// On .NET Core, decodes directly into the caller's buffer with no intermediate allocation.
+/// On .NET Framework, uses <see cref="ArrayPool{T}"/> internally to avoid GC pressure.
 /// </remarks>
 internal sealed class Base64DecodingStream : Stream
 {
+#if !NETCOREAPP
     /// <summary>
     /// Maximum number of base64 characters to process per decode operation.
     /// Must be a multiple of 4 (the base64 quantum size).
-    /// On non-NETCOREAPP targets, the internal buffer also holds the narrowed
-    /// ASCII bytes before in-place decode, so the buffer size equals this value.
+    /// The internal buffer also holds the narrowed ASCII bytes before
+    /// in-place decode, so the buffer size equals this value.
     /// </summary>
     private const int CharsPerChunk = 4096;
+#endif
 
     private readonly string _base64;
-    private byte[] _buffer;
     private int _charPosition;
+
+#if !NETCOREAPP
+    private byte[] _buffer;
     private int _bufferOffset;
     private int _bufferCount;
+#endif
 
     public Base64DecodingStream(string base64)
     {
         _base64 = base64 ?? throw new ArgumentNullException(nameof(base64));
+#if !NETCOREAPP
         _buffer = ArrayPool<byte>.Shared.Rent(CharsPerChunk);
+#endif
     }
 
     public override bool CanRead => true;
@@ -59,6 +67,50 @@ internal sealed class Base64DecodingStream : Stream
         set => throw new NotSupportedException();
     }
 
+#if NETCOREAPP
+    public override int Read(byte[] buffer, int offset, int count)
+        => Read(buffer.AsSpan(offset, count));
+
+    public override int Read(Span<byte> destination)
+    {
+        if (destination.Length == 0 || _charPosition >= _base64.Length)
+        {
+            return 0;
+        }
+
+        var remainingChars = _base64.Length - _charPosition;
+        var maxQuanta = destination.Length / 3;
+
+        if (maxQuanta == 0)
+        {
+            ThrowDestinationTooSmall();
+        }
+
+        var charsToProcess = maxQuanta * 4;
+        if (charsToProcess >= remainingChars)
+        {
+            charsToProcess = remainingChars;
+        }
+
+        if (!Convert.TryFromBase64Chars(
+                _base64.AsSpan(_charPosition, charsToProcess),
+                destination,
+                out var bytesWritten))
+        {
+            ThrowFormatException();
+        }
+
+        _charPosition += charsToProcess;
+        return bytesWritten;
+    }
+
+    public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
+    {
+        return cancellationToken.IsCancellationRequested
+                   ? new ValueTask<int>(Task.FromCanceled<int>(cancellationToken))
+                   : new ValueTask<int>(Read(buffer.Span));
+    }
+#else
     public override int Read(byte[] buffer, int offset, int count)
     {
         var totalRead = 0;
@@ -89,42 +141,6 @@ internal sealed class Base64DecodingStream : Stream
 
         return totalRead;
     }
-
-#if NETCOREAPP
-    public override int Read(Span<byte> buffer)
-    {
-        var totalRead = 0;
-
-        while (buffer.Length > 0)
-        {
-            var available = _bufferCount - _bufferOffset;
-            if (available > 0)
-            {
-                var toCopy = Math.Min(buffer.Length, available);
-                _buffer.AsSpan(_bufferOffset, toCopy).CopyTo(buffer);
-                _bufferOffset += toCopy;
-                buffer = buffer.Slice(toCopy);
-                totalRead += toCopy;
-                continue;
-            }
-
-            if (_charPosition >= _base64.Length)
-            {
-                break;
-            }
-
-            DecodeNextChunk();
-        }
-
-        return totalRead;
-    }
-
-    public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
-    {
-        return cancellationToken.IsCancellationRequested
-                   ? new ValueTask<int>(Task.FromCanceled<int>(cancellationToken))
-                   : new ValueTask<int>(Read(buffer.Span));
-    }
 #endif
 
     public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
@@ -136,7 +152,6 @@ internal sealed class Base64DecodingStream : Stream
 
     public override void Flush()
     {
-        // No-op: read-only stream
     }
 
     public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
@@ -147,11 +162,13 @@ internal sealed class Base64DecodingStream : Stream
 
     protected override void Dispose(bool disposing)
     {
+#if !NETCOREAPP
         if (_buffer is { } buffer)
         {
-            _buffer = null!; // Safer to throw a null ref if you use it incorrectly than to accidentally use stale data
+            _buffer = null!;
             ArrayPool<byte>.Shared.Return(buffer);
         }
+#endif
 
         base.Dispose(disposing);
     }
@@ -159,6 +176,10 @@ internal sealed class Base64DecodingStream : Stream
     [DoesNotReturn]
     private static void ThrowFormatException() => throw new FormatException("The input is not a valid base64 string.");
 
+    [DoesNotReturn]
+    private static void ThrowDestinationTooSmall() => throw new ArgumentException("Destination buffer must be at least 3 bytes to hold a decoded base64 quantum.");
+
+#if !NETCOREAPP
     private void DecodeNextChunk()
     {
         var remainingChars = _base64.Length - _charPosition;
@@ -180,41 +201,20 @@ internal sealed class Base64DecodingStream : Stream
             return;
         }
 
-        DecodeChunk(charsToProcess);
-        _charPosition += charsToProcess;
-    }
-
-#if NETCOREAPP
-    private void DecodeChunk(int charCount)
-    {
-        if (!Convert.TryFromBase64Chars(
-                _base64.AsSpan(_charPosition, charCount),
-                _buffer,
-                out var bytesWritten))
-        {
-            ThrowFormatException();
-        }
-
-        _bufferOffset = 0;
-        _bufferCount = bytesWritten;
-    }
-#else
-    private void DecodeChunk(int charCount)
-    {
         // All valid base64 characters are in the ASCII range (0–127),
         // so we can safely narrow each char to a byte for the UTF-8 decoder.
         var buf = _buffer;
         var str = _base64;
         var offset = _charPosition;
 
-        for (var i = 0; i < charCount; i++)
+        for (var i = 0; i < charsToProcess; i++)
         {
             buf[i] = (byte)str[offset + i];
         }
 
         // Decode the UTF-8 base64 bytes in-place. The decoded output is always
         // shorter than the input (3 bytes per 4 input bytes), so in-place is safe.
-        var status = Base64.DecodeFromUtf8InPlace(buf.AsSpan(0, charCount), out var bytesWritten);
+        var status = Base64.DecodeFromUtf8InPlace(buf.AsSpan(0, charsToProcess), out var bytesWritten);
         if (status != OperationStatus.Done)
         {
             ThrowFormatException();
@@ -222,6 +222,7 @@ internal sealed class Base64DecodingStream : Stream
 
         _bufferOffset = 0;
         _bufferCount = bytesWritten;
+        _charPosition += charsToProcess;
     }
 #endif
 }
