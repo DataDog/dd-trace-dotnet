@@ -221,9 +221,8 @@ internal sealed class TestOptimizationTestCommand
 
         if (test is not null && testTags is not null)
         {
-            // Emit final_status for any execution that won't be retried anymore:
-            // - tests with no retries
-            // - final retry execution
+            // Non-retry execution: emit final_status only when no retry will be scheduled.
+            // Final retry executions are handled in the isFinalExecution block below.
             if (!retryState.IsARetry && testTags.FinalStatus is null)
             {
                 var isSkippedOrInconclusive = resultStatus is TestStatus.Skipped or TestStatus.Inconclusive;
