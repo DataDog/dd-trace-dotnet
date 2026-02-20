@@ -40,7 +40,7 @@ internal sealed class NullConfigurationTelemetry : IConfigurationTelemetry
 
     public ICollection<ConfigurationKeyValue>? GetData() => null;
 
-    public List<ConfigurationKeyValue>? GetFullData() => null;
+    public ICollection<ConfigurationKeyValue>? GetFullData() => null;
 
     public void CopyTo(IConfigurationTelemetry destination)
     {

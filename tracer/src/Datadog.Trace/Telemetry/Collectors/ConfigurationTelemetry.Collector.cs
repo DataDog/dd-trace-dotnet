@@ -5,6 +5,7 @@
 
 #nullable enable
 
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -19,6 +20,7 @@ namespace Datadog.Trace.Configuration.Telemetry
     {
         private readonly List<List<ConfigurationKeyValue>> _allData = new();
         private ConcurrentQueue<ConfigurationTelemetryEntry> _backBuffer = new();
+        private int _reportedCount = 0;
 
         public bool HasChanges() => !_entries.IsEmpty || !_backBuffer.IsEmpty;
 
@@ -45,45 +47,48 @@ namespace Datadog.Trace.Configuration.Telemetry
         /// <returns>Null if there are no changes, or the collector is not yet initialized</returns>
         public ICollection<ConfigurationKeyValue>? GetData()
         {
-            if (_entries.IsEmpty && _backBuffer.IsEmpty)
+            lock (_allData)
             {
-                return null;
+                var latestData = GetLatestData();
+                if (latestData != null)
+                {
+                    _allData.Add(latestData);
+                }
+
+                if (_reportedCount == _allData.Count)
+                {
+                    // we've reported everything, nothing more to do
+                    return null;
+                }
+
+                if (_reportedCount == _allData.Count - 1)
+                {
+                    // we just need to report the latest results
+                    _reportedCount++;
+                    return latestData;
+                }
+
+                // we have multiple collections to report
+                _reportedCount = _allData.Count;
+                return new ListOfListOfConfigurationKeyValue(_allData, _reportedCount);
             }
-
-            var data = new List<ConfigurationKeyValue>();
-
-            // There's a small race condition in the telemetry collector, which means that
-            // the _backBuffer MAY contain "left over" config from the previous flush
-            // this ensures that we don't lose it completely
-            GetData(_backBuffer, data);
-
-            Debug.Assert(_backBuffer.IsEmpty, "The back buffer should be empty because nothing should be writing to it");
-
-            var config = Interlocked.Exchange(ref _entries, _backBuffer);
-            _backBuffer = config;
-
-            if (config.IsEmpty)
-            {
-                return data;
-            }
-
-            GetData(config, data);
-
-            // Save the configuration so we can report it all in extended heart beat
-            // and in tracer flare
-            _allData.Add(data);
-            return data;
         }
 
-        public List<ConfigurationKeyValue>? GetFullData()
+        public ICollection<ConfigurationKeyValue>? GetFullData()
         {
-            var fullData = new List<ConfigurationKeyValue>(capacity: _allData.Sum(x => x.Count));
-            foreach (var data in _allData)
+            lock (_allData)
             {
-                fullData.AddRange(data);
-            }
+                // We have to make sure we include all the data that isn't
+                // yet reported through other means
+                var latestData = GetLatestData();
+                if (latestData != null)
+                {
+                    _allData.Add(latestData);
+                }
 
-            return fullData;
+                // Take a copy of the full collection, don't skip anything
+                return new ListOfListOfConfigurationKeyValue(_allData, skipCount: 0);
+            }
         }
 
         private static void GetData(ConcurrentQueue<ConfigurationTelemetryEntry> buffer, List<ConfigurationKeyValue> destination)
@@ -116,6 +121,37 @@ namespace Datadog.Trace.Configuration.Telemetry
                 value: GetValue(entry));
         }
 
+        private List<ConfigurationKeyValue>? GetLatestData()
+        {
+            if (_entries.IsEmpty && _backBuffer.IsEmpty)
+            {
+                return null;
+            }
+
+            // Getting the count is relatively expensive, but we use it here regardless to try
+            // to avoid list array re-allocations. The arbitrary additional 8 is because if more
+            // configs flow in while this method is running, the allocation would be expensive,
+            // but an array 8 larger isn't a big deal!
+            var data = new List<ConfigurationKeyValue>(_backBuffer.Count + _entries.Count + 8);
+
+            // There's a small race condition in the telemetry collector, which means that
+            // the _backBuffer MAY contain "left over" config from the previous flush.
+            // Grabbing it here ensures that we don't lose them completely
+            GetData(_backBuffer, data);
+
+            Debug.Assert(_backBuffer.IsEmpty, "The back buffer should be empty because nothing should be writing to it");
+
+            var config = Interlocked.Exchange(ref _entries, _backBuffer);
+            _backBuffer = config;
+
+            if (!config.IsEmpty)
+            {
+                GetData(config, data);
+            }
+
+            return data;
+        }
+
         public void Clear()
         {
             // clears any data stored in the buffers
@@ -130,6 +166,100 @@ namespace Datadog.Trace.Configuration.Telemetry
 
             // clears any saved data
             _allData.Clear();
+        }
+
+        private sealed class ListOfListOfConfigurationKeyValue : ICollection<ConfigurationKeyValue>
+        {
+            private readonly List<List<ConfigurationKeyValue>> _list;
+
+            public ListOfListOfConfigurationKeyValue(List<List<ConfigurationKeyValue>> listOfLists, int skipCount)
+            {
+                var itemCount = 0;
+                var listCount = listOfLists.Count;
+                var finalList = new List<List<ConfigurationKeyValue>>(listCount - skipCount);
+                for (var i = skipCount; i < listCount; i++)
+                {
+                    var list = listOfLists[i];
+                    finalList.Add(list);
+                    itemCount += list.Count;
+                }
+
+                _list = finalList;
+                Count = itemCount;
+            }
+
+            public int Count { get; }
+
+            public bool IsReadOnly => true;
+
+            public Enumerator GetEnumerator() => new Enumerator(_list);
+
+            IEnumerator<ConfigurationKeyValue> IEnumerable<ConfigurationKeyValue>.GetEnumerator() => GetEnumerator();
+
+            IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+            // We don't need to implement these for now as they're never called
+            public void Add(ConfigurationKeyValue item) => throw new System.NotImplementedException();
+
+            public void Clear() => throw new System.NotImplementedException();
+
+            public bool Contains(ConfigurationKeyValue item) => throw new System.NotImplementedException();
+
+            public void CopyTo(ConfigurationKeyValue[] array, int arrayIndex) => throw new System.NotImplementedException();
+
+            public bool Remove(ConfigurationKeyValue item) => throw new System.NotImplementedException();
+
+            internal struct Enumerator : IEnumerator<ConfigurationKeyValue>
+            {
+                private readonly List<List<ConfigurationKeyValue>> _outer;
+                private int _outerIndex;
+                private int _innerIndex;
+                private ConfigurationKeyValue _current;
+
+                internal Enumerator(List<List<ConfigurationKeyValue>> outer)
+                {
+                    _outer = outer;
+                    _outerIndex = 0;
+                    _innerIndex = 0;
+                    _current = default;
+                }
+
+                public ConfigurationKeyValue Current => _current;
+
+                object IEnumerator.Current => _current;
+
+                public bool MoveNext()
+                {
+                    while (_outerIndex < _outer.Count)
+                    {
+                        var inner = _outer[_outerIndex];
+
+                        if (_innerIndex < inner.Count)
+                        {
+                            _current = inner[_innerIndex];
+                            _innerIndex++;
+                            return true;
+                        }
+
+                        _outerIndex++;
+                        _innerIndex = 0;
+                    }
+
+                    return false;
+                }
+
+                public void Reset()
+                {
+                    _outerIndex = 0;
+                    _innerIndex = 0;
+                    _current = default;
+                }
+
+                public void Dispose()
+                {
+                    // nothing to dispose
+                }
+            }
         }
     }
 }
