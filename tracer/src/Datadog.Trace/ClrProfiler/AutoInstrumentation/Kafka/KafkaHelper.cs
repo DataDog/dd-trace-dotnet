@@ -263,8 +263,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     {
                         // Include cluster_id in edge tags (sorted alphabetically)
                         edgeTags = string.IsNullOrEmpty(topic)
-                                       ? new[] { $"kafka_cluster_id:{consumerClusterId}", "direction:in", $"group:{groupId}", "type:kafka" }
-                                       : new[] { $"kafka_cluster_id:{consumerClusterId}", "direction:in", $"group:{groupId}", $"topic:{topic}", "type:kafka" };
+                                       ? new[] { "direction:in", $"group:{groupId}", $"kafka_cluster_id:{consumerClusterId}", "type:kafka" }
+                                       : new[] { "direction:in", $"group:{groupId}", $"kafka_cluster_id:{consumerClusterId}", $"topic:{topic}", "type:kafka" };
                     }
                     else
                     {
@@ -376,8 +376,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     {
                         // Include cluster_id in edge tags (sorted alphabetically)
                         edgeTags = string.IsNullOrEmpty(topic)
-                                       ? new[] { $"kafka_cluster_id:{producerClusterId}", "direction:out", "type:kafka" }
-                                       : new[] { $"kafka_cluster_id:{producerClusterId}", "direction:out", $"topic:{topic}", "type:kafka" };
+                                       ? new[] { "direction:out", $"kafka_cluster_id:{producerClusterId}", "type:kafka" }
+                                       : new[] { "direction:out", $"kafka_cluster_id:{producerClusterId}", $"topic:{topic}", "type:kafka" };
                     }
                     else
                     {

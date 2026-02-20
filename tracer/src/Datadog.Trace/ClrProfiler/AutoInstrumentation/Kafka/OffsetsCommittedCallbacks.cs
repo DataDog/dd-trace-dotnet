@@ -43,7 +43,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 for (var i = 0; i < committedOffsets?.Offsets.Count; i++)
                 {
                     var item = committedOffsets.Offsets[i];
-                    var backlogTags = $"kafka_cluster_id:{clusterId ?? string.Empty},consumer_group:{GroupId},partition:{item.Partition.Value},topic:{item.Topic},type:kafka_commit";
+                    var backlogTags = $"consumer_group:{GroupId},partition:{item.Partition.Value},topic:{item.Topic},type:kafka_commit";
+                    if (!string.IsNullOrEmpty(clusterId))
+                    {
+                        backlogTags = $"kafka_cluster_id:{clusterId},{backlogTags}";
+                    }
+
                     dataStreams.TrackBacklog(backlogTags, item.Offset.Value);
                 }
             }

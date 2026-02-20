@@ -178,7 +178,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Kafka
         }
 
         [Fact]
-        public void KafkaHelper_GetClusterId_ReturnsNonNull_WhenConfluentKafkaIsAvailable()
+        public void KafkaHelper_GetClusterId_HandlesConnectionFailureGracefully()
         {
             // When Confluent.Kafka is loaded (as in this test project), GetClusterId
             // should proceed past the type checks. With no real Kafka broker, it will
