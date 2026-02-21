@@ -38,6 +38,6 @@ public class GcpTests
             }
         }
 
-        new Gcp().IsCloudFunctions.Should().Be(value);
+        new Gcp().IsCloudFunction.Should().Be(value);
     }
 }
