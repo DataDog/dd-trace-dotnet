@@ -223,6 +223,8 @@ src/Datadog.Trace/Agent/Transports/HttpStreamRequest.cs
 src/Datadog.Trace/Agent/Transports/HttpStreamRequestFactory.cs
 src/Datadog.Trace/Agent/Transports/MimeTypes.cs
 src/Datadog.Trace/Agent/Transports/SocketHandlerRequestFactory.cs
+src/Datadog.Trace/AppSec/Rasp/DownstreamSampler.cs
+src/Datadog.Trace/AppSec/Rasp/IDownstreamSampler.cs
 src/Datadog.Trace/AppSec/Waf/WafConstants.cs
 src/Datadog.Trace/AppSec/Waf/WafReturnCode.cs
 src/Datadog.Trace/ClrProfiler/Helpers/Interception.cs
