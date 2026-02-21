@@ -25,6 +25,10 @@
       "const_name": "ApiKey"
     },
     {
+      "env_var": "DD_API_SECURITY_DOWNSTREAM_BODY_ANALYSIS_SAMPLE_RATE",
+      "const_name": "ApiSecurityDownstreamBodyAnalysisSampleRate"
+    },
+    {
       "env_var": "DD_API_SECURITY_ENABLED",
       "const_name": "ApiSecurityEnabled"
     },
@@ -35,6 +39,10 @@
     {
       "env_var": "DD_API_SECURITY_ENDPOINT_COLLECTION_MESSAGE_LIMIT",
       "const_name": "ApiSecurityEndpointCollectionMessageLimit"
+    },
+    {
+      "env_var": "DD_API_SECURITY_MAX_DOWNSTREAM_REQUEST_BODY_ANALYSIS",
+      "const_name": "ApiSecurityMaxDownstreamRequestBodyAnalysis"
     },
     {
       "env_var": "DD_API_SECURITY_PARSE_RESPONSE_BODY",
@@ -71,6 +79,10 @@
     {
       "env_var": "DD_APPSEC_AUTO_USER_INSTRUMENTATION_MODE",
       "const_name": "UserEventsAutoInstrumentationMode"
+    },
+    {
+      "env_var": "DD_APPSEC_BODY_PARSING_SIZE_LIMIT",
+      "const_name": "AppSecBodyParsingSizeLimit"
     },
     {
       "env_var": "DD_APPSEC_ENABLED",

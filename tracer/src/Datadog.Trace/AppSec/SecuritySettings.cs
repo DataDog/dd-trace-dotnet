@@ -1,4 +1,4 @@
-﻿// <copyright file="SecuritySettings.cs" company="Datadog">
+// <copyright file="SecuritySettings.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -172,6 +172,18 @@ namespace Datadog.Trace.AppSec
                              .WithKeys(ConfigurationKeys.AppSec.WafDebugEnabled)
                              .AsBool(defaultValue: false);
 
+            ApiSecurityMaxDownstreamRequestBodyAnalysis = config
+                                                          .WithKeys(ConfigurationKeys.AppSec.ApiSecurityMaxDownstreamRequestBodyAnalysis)
+                                                          .AsInt32(1);
+
+            AppSecBodyParsingSizeLimit = config
+                                        .WithKeys(ConfigurationKeys.AppSec.AppSecBodyParsingSizeLimit)
+                                        .AsInt32(10_000_000);
+
+            ApiSecurityDownstreamBodyAnalysisSampleRate = config
+                                                          .WithKeys(ConfigurationKeys.AppSec.ApiSecurityDownstreamBodyAnalysisSampleRate)
+                                                          .AsDouble(0.5);
+
             ScaEnabled = config
                         .WithKeys(ConfigurationKeys.AppSec.ScaEnabled)
                         .AsBool();
@@ -279,6 +291,22 @@ namespace Datadog.Trace.AppSec
         /// Gets a value indicating whether or not api security is enabled, defaults to false.
         /// </summary>
         public bool ApiSecurityEnabled { get; }
+
+        /// <summary>
+        /// Gets the number of downstream requests (per request) on which the request and response body are analysed.
+        /// </summary>
+        public int ApiSecurityMaxDownstreamRequestBodyAnalysis { get; }
+
+        /// <summary>
+        /// Gets the max size of the request body for being parsed.
+        /// </summary>
+        public int AppSecBodyParsingSizeLimit { get; }
+
+        /// <summary>
+        /// Gets the probability of a downstream request body being sampled, or said differently,
+        /// defines the overall number of requests for which the request and response body should be sampled / analysed
+        /// </summary>
+        public double ApiSecurityDownstreamBodyAnalysisSampleRate { get; }
 
         /// <summary>
         /// Gets a value indicating whether or not SCA (Software Composition Analysis) is enabled, defaults to null.

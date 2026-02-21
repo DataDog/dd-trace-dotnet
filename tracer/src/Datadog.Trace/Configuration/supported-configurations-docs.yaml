@@ -42,6 +42,10 @@ DD_APPLICATION_MONITORING_CONFIG_FILE_ENABLED: |
   Configuration key for deactivating reading the application monitoring config file through libdatadog (hands off config).
   True by default
 
+DD_APPSEC_BODY_PARSING_SIZE_LIMIT: |
+  Configuration key for limiting the size of the request body being parsed.
+  Default value is 10_000_000.
+
 DD_APPSEC_ENABLED: |
   Configuration key for enabling or disabling the AppSec.
   Default value is false (disabled).
@@ -108,6 +112,9 @@ DD_APPSEC_AUTOMATED_USER_EVENTS_TRACKING: |
 DD_APPSEC_AUTO_USER_INSTRUMENTATION_MODE: |
   Automatic instrumentation of user event mode. Values can be ident, disabled, anon.
 
+DD_API_SECURITY_DOWNSTREAM_BODY_ANALYSIS_SAMPLE_RATE: |
+  When RASP is enabled, defines the probability of a downstream request body being sampled, or said differently, defines the overall number of requests for which the request and response body should be sampled / analysed (50%).
+
 DD_API_SECURITY_ENABLED: |
   When ASM is enabled, collects in spans endpoints apis schemas analyzed by the waf, default value is true.
 
@@ -119,6 +126,9 @@ DD_API_SECURITY_ENDPOINT_COLLECTION_ENABLED: |
 
 DD_API_SECURITY_ENDPOINT_COLLECTION_MESSAGE_LIMIT: |
   with a default value of 300, it defines the maximum number of endpoints to be collected (serialized) for API Security.
+
+DD_API_SECURITY_MAX_DOWNSTREAM_REQUEST_BODY_ANALYSIS: |
+  When RASP is enabled, defines the maximum number of downstream requests per request for which the request and response body should be analysed. default value of 1.
 
 DD_API_SECURITY_PARSE_RESPONSE_BODY: |
   Enables the parsing of the response body in the API Security module. Defaults to true
