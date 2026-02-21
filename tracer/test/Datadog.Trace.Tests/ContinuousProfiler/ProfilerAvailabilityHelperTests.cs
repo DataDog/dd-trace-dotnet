@@ -5,7 +5,6 @@
 
 using System;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.Serverless;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
@@ -25,12 +24,6 @@ public class ProfilerAvailabilityHelperTests
 {
     private static readonly Func<bool> ClrProfilerIsAttached = () => true;
     private static readonly Func<bool> ClrProfilerNotAttached = () => false;
-
-    public ProfilerAvailabilityHelperTests()
-    {
-        AwsPlatformDetection.Reset();
-        AzurePlatformDetection.Reset();
-    }
 
     [SkippableFact]
     public void IsContinuousProfilerAvailable_OnUnsupportedPlatforms_ReturnsFalse()
