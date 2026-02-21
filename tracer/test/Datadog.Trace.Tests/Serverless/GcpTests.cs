@@ -1,4 +1,4 @@
-// <copyright file="GcpPlatformDetectionTests.cs" company="Datadog">
+// <copyright file="GcpTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -17,11 +17,11 @@ namespace Datadog.Trace.Tests.Serverless;
     "GCP_PROJECT",
     "FUNCTION_TARGET",
     "K_SERVICE")]
-public class GcpPlatformDetectionTests
+public class GcpTests
 {
     [Theory]
     [PairwiseData]
-    public void IsGoogleCloudFunctions(bool value, bool gen1)
+    public void IsCloudFunctions(bool value, bool gen1)
     {
         if (value)
         {
@@ -38,6 +38,6 @@ public class GcpPlatformDetectionTests
             }
         }
 
-        GcpPlatformDetection.IsGoogleCloudFunctions.Should().Be(value);
+        new Gcp().IsCloudFunctions.Should().Be(value);
     }
 }
