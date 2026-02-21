@@ -13,22 +13,18 @@ namespace Datadog.Trace.Serverless;
 
 /// <summary>
 /// Cached helpers for detecting Azure serverless platforms.
-/// Delegates to <see cref="EnvironmentHelpers"/> for env-var reads.
+/// Delegates to <see cref="Util.EnvironmentHelpers"/> for env-var reads.
 /// Create a new instance for test isolation; use <see cref="Default"/> for production code.
 /// </summary>
 internal sealed class Azure
 {
-    private bool? _isAppServices;
-    private bool? _isFunctions;
+    private bool? _isAppService;
+    private bool? _isFunction;
     private bool? _isUsingSiteExtension;
-    private bool? _isFunctionsIsolated;
-    private bool? _isRunningInFunctionsHost;
-
-    private string? _workerRuntime;
-    private bool _workerRuntimeCached;
-
-    private string? _extensionVersion;
-    private bool _extensionVersionCached;
+    private bool? _isIsolatedFunction;
+    private bool? _isIsolatedFunctionHostProcess;
+    private bool _functionWorkerRuntimeCached;
+    private bool _functionExtensionVersionCached;
 
     /// <summary>
     /// Gets the shared singleton instance. Cached after first evaluation.
@@ -38,21 +34,21 @@ internal sealed class Azure
     /// <summary>
     /// Gets a value indicating whether the current environment is Azure App Services
     /// by checking for the presence of "WEBSITE_SITE_NAME".
-    /// Note that this is a superset of <see cref="IsFunctions"/>.
+    /// Note that this is a superset of <see cref="IsFunction"/>.
     /// The result is cached after the first evaluation.
     /// </summary>
-    internal bool IsAppServices =>
-        _isAppServices ??= EnvironmentHelpers.EnvironmentVariableExists(PlatformKeys.AzureAppService.SiteNameKey);
+    internal bool IsAppService =>
+        _isAppService ??= EnvironmentHelpers.EnvironmentVariableExists(PlatformKeys.AzureAppService.SiteNameKey);
 
     /// <summary>
     /// Gets a value indicating whether the current environment is Azure Functions
     /// by checking for the presence of "WEBSITE_SITE_NAME", "FUNCTIONS_WORKER_RUNTIME", and "FUNCTIONS_EXTENSION_VERSION".
-    /// Note that this is a subset of <see cref="IsAppServices"/>.
+    /// Note that this is a subset of <see cref="IsAppService"/>.
     /// The result is cached after the first evaluation.
     /// </summary>
-    internal bool IsFunctions =>
-        _isFunctions ??=
-            IsAppServices &&
+    internal bool IsFunction =>
+        _isFunction ??=
+            IsAppService &&
             EnvironmentHelpers.EnvironmentVariableExists(PlatformKeys.AzureFunctions.FunctionsWorkerRuntime) &&
             EnvironmentHelpers.EnvironmentVariableExists(PlatformKeys.AzureFunctions.FunctionsExtensionVersion);
 
@@ -70,65 +66,65 @@ internal sealed class Azure
     /// Gets a value indicating whether the current environment is an Azure Functions isolated worker process
     /// (as opposed to in-process functions) by checking that:
     ///
-    /// - <see cref="IsFunctions"/> is <c>true</c>
+    /// - <see cref="IsFunction"/> is <c>true</c>
     /// - "FUNCTIONS_WORKER_RUNTIME" is set to "dotnet-isolated"
     ///
     /// This will return true for both the host process and worker process in isolated functions.
-    /// Use <see cref="IsRunningInFunctionsHost"/> to distinguish between host and worker.
+    /// Use <see cref="IsIsolatedFunctionHostProcess"/> to distinguish between host and worker.
     /// The result is cached after the first evaluation.
     /// </summary>
-    internal bool IsFunctionsIsolated =>
-        _isFunctionsIsolated ??=
-            IsFunctions && string.Equals(WorkerRuntime, "dotnet-isolated", StringComparison.Ordinal);
+    internal bool IsIsolatedFunction =>
+        _isIsolatedFunction ??=
+            IsFunction && string.Equals(FunctionWorkerRuntime, "dotnet-isolated", StringComparison.Ordinal);
 
     /// <summary>
     /// Gets the cached value of the "FUNCTIONS_WORKER_RUNTIME" environment variable.
     /// </summary>
-    internal string? WorkerRuntime
+    internal string? FunctionWorkerRuntime
     {
         get
         {
-            if (!_workerRuntimeCached)
+            if (!_functionWorkerRuntimeCached)
             {
-                _workerRuntime = EnvironmentHelpers.GetEnvironmentVariable(PlatformKeys.AzureFunctions.FunctionsWorkerRuntime, defaultValue: string.Empty);
-                _workerRuntimeCached = true;
+                field = EnvironmentHelpers.GetEnvironmentVariable(PlatformKeys.AzureFunctions.FunctionsWorkerRuntime, defaultValue: string.Empty);
+                _functionWorkerRuntimeCached = true;
             }
 
-            return _workerRuntime;
+            return field;
         }
     }
 
     /// <summary>
     /// Gets the cached value of the "FUNCTIONS_EXTENSION_VERSION" environment variable.
     /// </summary>
-    internal string? ExtensionVersion
+    internal string? FunctionExtensionVersion
     {
         get
         {
-            if (!_extensionVersionCached)
+            if (!_functionExtensionVersionCached)
             {
-                _extensionVersion = EnvironmentHelpers.GetEnvironmentVariable(PlatformKeys.AzureFunctions.FunctionsExtensionVersion, defaultValue: string.Empty);
-                _extensionVersionCached = true;
+                field = EnvironmentHelpers.GetEnvironmentVariable(PlatformKeys.AzureFunctions.FunctionsExtensionVersion, defaultValue: string.Empty);
+                _functionExtensionVersionCached = true;
             }
 
-            return _extensionVersion;
+            return field;
         }
     }
 
     /// <summary>
     /// Gets a value indicating whether the current environment is the Azure Functions host process
     /// by checking that:
-    /// - <see cref="IsFunctionsIsolated"/> is <c>true</c>
+    /// - <see cref="IsIsolatedFunction"/> is <c>true</c>
     /// - we DO NOT see EITHER "--functions-worker-id" or "--workerId" on the command line as flags.
     /// The host and worker process will share the top two bullet points; however, only the worker process will have the flags.
-    /// Note that this is a subset of <see cref="IsFunctions"/>.
+    /// Note that this is a subset of <see cref="IsFunction"/>.
     /// The result is cached after the first evaluation.
     /// </summary>
-    internal bool IsRunningInFunctionsHost
+    internal bool IsIsolatedFunctionHostProcess
     {
         get
         {
-            if (_isRunningInFunctionsHost is { } cached)
+            if (_isIsolatedFunctionHostProcess is { } cached)
             {
                 return cached;
             }
@@ -139,11 +135,11 @@ internal sealed class Azure
             // The worker process has these flags.
             // Example from log output:
             // "CommandLine": "Samples.AzureFunctions.V4Isolated.AspNetCore.dll --workerId <GUID> --functions-worker-id <GUID>"
-            var result = IsFunctionsIsolated &&
+            var result = IsIsolatedFunction &&
                          cmd.IndexOf("--functions-worker-id", StringComparison.OrdinalIgnoreCase) < 0 &&
                          cmd.IndexOf("--workerId", StringComparison.OrdinalIgnoreCase) < 0;
 
-            _isRunningInFunctionsHost = result;
+            _isIsolatedFunctionHostProcess = result;
             return result;
         }
     }

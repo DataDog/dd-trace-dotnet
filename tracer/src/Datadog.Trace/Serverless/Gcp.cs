@@ -17,7 +17,7 @@ namespace Datadog.Trace.Serverless;
 /// </summary>
 internal sealed class Gcp
 {
-    private bool? _isCloudFunctions;
+    private bool? _isCloudFunction;
 
     /// <summary>
     /// Gets the shared singleton instance. Cached after first evaluation.
@@ -30,8 +30,8 @@ internal sealed class Gcp
     /// or "FUNCTION_NAME" and "GCP_PROJECT".
     /// The result is cached after the first evaluation.
     /// </summary>
-    internal bool IsCloudFunctions =>
-        _isCloudFunctions ??=
+    internal bool IsCloudFunction =>
+        _isCloudFunction ??=
             (EnvironmentHelpers.EnvironmentVariableExists(PlatformKeys.GcpFunction.FunctionNameKey) &&
              EnvironmentHelpers.EnvironmentVariableExists(PlatformKeys.GcpFunction.FunctionTargetKey)) ||
             (EnvironmentHelpers.EnvironmentVariableExists(PlatformKeys.GcpFunction.DeprecatedFunctionNameKey) &&
