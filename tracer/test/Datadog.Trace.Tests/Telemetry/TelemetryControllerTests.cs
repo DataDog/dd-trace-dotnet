@@ -28,6 +28,7 @@ namespace Datadog.Trace.Tests.Telemetry;
 public class TelemetryControllerTests
 {
     private readonly TimeSpan _flushInterval = TimeSpan.FromMilliseconds(100);
+    private readonly TimeSpan _extendedHeartbeatInterval = TimeSpan.FromMilliseconds(86400_000);
     // private readonly TimeSpan _heartbeatInterval = TimeSpan.FromMilliseconds(10_000); // We don't need them for most tests
     private readonly TimeSpan _timeout = TimeSpan.FromMilliseconds(60_000); // definitely should receive telemetry by now
 
@@ -44,7 +45,8 @@ public class TelemetryControllerTests
             new NullMetricsTelemetryCollector(),
             new RedactedErrorLogCollector(),
             transportManager,
-            _flushInterval);
+            _flushInterval,
+            _extendedHeartbeatInterval);
 
         controller.Start();
 
@@ -65,7 +67,8 @@ public class TelemetryControllerTests
             new NullMetricsTelemetryCollector(),
             new RedactedErrorLogCollector(),
             transportManager,
-            _flushInterval);
+            _flushInterval,
+            _extendedHeartbeatInterval);
 
         var sha = "testCommitSha";
         var repo = "testRepositoryUrl";
@@ -114,7 +117,8 @@ public class TelemetryControllerTests
             new NullMetricsTelemetryCollector(),
             new RedactedErrorLogCollector(),
             transportManager,
-            _flushInterval);
+            _flushInterval,
+            _extendedHeartbeatInterval);
 
         controller.Start();
 
@@ -148,7 +152,8 @@ public class TelemetryControllerTests
             new NullMetricsTelemetryCollector(),
             new RedactedErrorLogCollector(),
             transportManager,
-            _flushInterval);
+            _flushInterval,
+            _extendedHeartbeatInterval);
 
         await controller.DisposeAsync();
         await controller.DisposeAsync();
@@ -167,7 +172,8 @@ public class TelemetryControllerTests
             new NullMetricsTelemetryCollector(),
             new RedactedErrorLogCollector(),
             transportManager,
-            _flushInterval);
+            _flushInterval,
+            _extendedHeartbeatInterval);
 
         controller.Start();
 
@@ -212,7 +218,8 @@ public class TelemetryControllerTests
             new NullMetricsTelemetryCollector(),
             new RedactedErrorLogCollector(),
             transportManager,
-            _flushInterval);
+            _flushInterval,
+            _extendedHeartbeatInterval);
 
         controller.Start();
 
@@ -251,7 +258,8 @@ public class TelemetryControllerTests
             new NullMetricsTelemetryCollector(),
             new RedactedErrorLogCollector(),
             transportManager,
-            _flushInterval);
+            _flushInterval,
+            _extendedHeartbeatInterval);
 
         controller.RecordAppEndpoints(new List<AppEndpointData>
         {
@@ -297,7 +305,8 @@ public class TelemetryControllerTests
             new NullMetricsTelemetryCollector(),
             new RedactedErrorLogCollector(),
             transportManager,
-            _flushInterval);
+            _flushInterval,
+            _extendedHeartbeatInterval);
 
         // before the controller is started, nothing should be written when we try to dump telemetry
         var tempFile = Path.GetTempFileName();

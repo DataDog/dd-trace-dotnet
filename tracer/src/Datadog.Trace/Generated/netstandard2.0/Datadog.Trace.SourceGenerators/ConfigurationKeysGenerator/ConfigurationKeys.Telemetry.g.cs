@@ -89,6 +89,13 @@ internal static partial class ConfigurationKeys
         public const string HeartbeatIntervalSeconds = "DD_TELEMETRY_HEARTBEAT_INTERVAL";
 
         /// <summary>
+        /// Configuration key for how often extended heartbeat telemetry should be sent, in seconds.
+        /// For testing purposes. Defaults to 86400 (24 hours)
+        /// <see cref="Datadog.Trace.Telemetry.TelemetrySettings.ExtendedHeartbeatInterval"/>
+        /// </summary>
+        public const string ExtendedHeartbeatIntervalSeconds = "DD_TELEMETRY_EXTENDED_HEARTBEAT_INTERVAL";
+
+        /// <summary>
         /// Configuration key for whether to enable redacted error log collection.
         /// </summary>
         public const string TelemetryLogsEnabled = "DD_TELEMETRY_LOG_COLLECTION_ENABLED";
