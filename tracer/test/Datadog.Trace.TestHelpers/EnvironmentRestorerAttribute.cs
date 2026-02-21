@@ -6,7 +6,6 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
-using Datadog.Trace.Serverless;
 using Xunit.Sdk;
 
 namespace Datadog.Trace.TestHelpers;
@@ -34,10 +33,6 @@ public class EnvironmentRestorerAttribute : BeforeAfterTestAttribute
             Environment.SetEnvironmentVariable(variable, null, Target);
         }
 
-        AwsPlatformDetection.Reset();
-        AzurePlatformDetection.Reset();
-        GcpPlatformDetection.Reset();
-
         base.Before(methodUnderTest);
     }
 
@@ -47,9 +42,5 @@ public class EnvironmentRestorerAttribute : BeforeAfterTestAttribute
         {
             Environment.SetEnvironmentVariable(variable.Key, variable.Value, Target);
         }
-
-        AwsPlatformDetection.Reset();
-        AzurePlatformDetection.Reset();
-        GcpPlatformDetection.Reset();
     }
 }
