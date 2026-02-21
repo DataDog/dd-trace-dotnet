@@ -29,7 +29,7 @@ public class AzureTests
             Environment.SetEnvironmentVariable("WEBSITE_SITE_NAME", "test");
         }
 
-        new Azure().IsAppServices.Should().Be(value);
+        new Azure().IsAppService.Should().Be(value);
     }
 
     [Theory]
@@ -43,7 +43,7 @@ public class AzureTests
             Environment.SetEnvironmentVariable("FUNCTIONS_EXTENSION_VERSION", "~4");
         }
 
-        new Azure().IsFunctions.Should().Be(value);
+        new Azure().IsFunction.Should().Be(value);
     }
 
     [Theory]
