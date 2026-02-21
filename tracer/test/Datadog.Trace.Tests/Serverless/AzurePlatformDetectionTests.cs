@@ -20,11 +20,6 @@ namespace Datadog.Trace.Tests.Serverless;
     "DD_AAS_DOTNET_EXTENSION_VERSION")]
 public class AzurePlatformDetectionTests
 {
-    public AzurePlatformDetectionTests()
-    {
-        AzurePlatformDetection.Reset();
-    }
-
     [Theory]
     [PairwiseData]
     public void IsAzureAppServices(bool value)

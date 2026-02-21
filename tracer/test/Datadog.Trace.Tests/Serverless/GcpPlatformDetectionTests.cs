@@ -19,11 +19,6 @@ namespace Datadog.Trace.Tests.Serverless;
     "K_SERVICE")]
 public class GcpPlatformDetectionTests
 {
-    public GcpPlatformDetectionTests()
-    {
-        GcpPlatformDetection.Reset();
-    }
-
     [Theory]
     [PairwiseData]
     public void IsGoogleCloudFunctions(bool value, bool gen1)

@@ -15,11 +15,6 @@ namespace Datadog.Trace.Tests.Serverless;
 [EnvironmentRestorer("AWS_LAMBDA_FUNCTION_NAME")]
 public class AwsPlatformDetectionTests
 {
-    public AwsPlatformDetectionTests()
-    {
-        AwsPlatformDetection.Reset();
-    }
-
     [Theory]
     [PairwiseData]
     public void IsAwsLambda(bool value)
