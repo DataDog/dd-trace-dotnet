@@ -429,6 +429,7 @@ namespace Datadog.Trace.Agent.DiscoveryService
                 eventPlatformProxyEndpoint: eventPlatformProxyEndpoint,
                 telemetryProxyEndpoint: telemetryProxyEndpoint,
                 tracerFlareEndpoint: tracerFlareEndpoint,
+                _containerMetadata.ContainerTagsHash, // either the value just received, or the one we stored before (prevents overriding with null)
                 clientDropP0: clientDropP0,
                 spanMetaStructs: spanMetaStructs,
                 spanEvents: spanEvents);
