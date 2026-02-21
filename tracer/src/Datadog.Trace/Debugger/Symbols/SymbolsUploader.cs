@@ -344,6 +344,10 @@ namespace Datadog.Trace.Debugger.Symbols
 
         private async Task<bool> SendSymbol(string symbol)
         {
+            // TODO: Consider streaming SymDB payload bytes directly to the stream
+            // to avoid the extra `string -> UTF8 bytes` encoding step and intermediate byte[] allocations/copies.
+            // Similar allocation reductions were done in https://github.com/DataDog/dd-trace-dotnet/pull/8017
+            // and https://github.com/DataDog/dd-trace-dotnet/pull/8019).
             var count = Encoding.UTF8.GetByteCount(symbol);
             if (_payload == null || count > _payload.Length)
             {
