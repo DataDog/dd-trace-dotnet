@@ -1,4 +1,4 @@
-﻿// <copyright file="Waf.cs" company="Datadog">
+// <copyright file="Waf.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -33,6 +33,7 @@ namespace Datadog.Trace.AppSec.Waf
         private readonly IEncoder _encoder;
         private readonly IntPtr _wafBuilderHandle;
         private IntPtr _wafHandle;
+        private bool? _isKnowAddressesSuported = null;
 
         internal Waf(IntPtr wafBuilderHandle, IntPtr wafHandle, WafLibraryInvoker wafLibraryInvoker, IEncoder encoder)
         {
@@ -159,7 +160,12 @@ namespace Datadog.Trace.AppSec.Waf
 
         public bool IsKnowAddressesSuported()
         {
-            return _wafLibraryInvoker.IsKnowAddressesSuported();
+            if (_isKnowAddressesSuported is null)
+            {
+                _isKnowAddressesSuported = _wafLibraryInvoker.IsKnowAddressesSuported();
+            }
+
+            return _isKnowAddressesSuported.Value;
         }
 
         public string[] GetKnownAddresses()
