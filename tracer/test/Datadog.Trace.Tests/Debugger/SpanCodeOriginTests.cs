@@ -4,9 +4,7 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
 using System.Collections.Specialized;
-using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
@@ -14,11 +12,13 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.SpanCodeOrigin;
+using Datadog.Trace.Tagging;
 using FluentAssertions;
 #if !NETFRAMEWORK
 using Microsoft.AspNetCore.Mvc;
 #endif
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Datadog.Trace.Tests.Debugger
 {
@@ -95,6 +95,25 @@ namespace Datadog.Trace.Tests.Debugger
                 // Arrange
                 SpanCodeOrigin spanCodeOrigin = CreateSpanCodeOrigin();
                 var span = CreateSpan();
+                var type = GetType();
+                var method = type.GetMethod(nameof(TestMethod), BindingFlags.Instance | BindingFlags.NonPublic);
+
+                // Act
+                spanCodeOrigin.SetCodeOriginForEntrySpan(span, type, method);
+
+                // Assert
+                span.GetTag($"{CodeOriginTag}.type").Should().Be("entry");
+                span.GetTag($"{CodeOriginTag}.frames.0.index").Should().Be("0");
+                span.GetTag($"{CodeOriginTag}.frames.0.method").Should().Be(nameof(TestMethod));
+                span.GetTag($"{CodeOriginTag}.frames.0.type").Should().Be(type.FullName);
+            }
+
+            [Fact]
+            public void SetCodeOriginForEntrySpan_WithWebTags_ShouldSetCorrectTags()
+            {
+                // Arrange
+                SpanCodeOrigin spanCodeOrigin = CreateSpanCodeOrigin();
+                var span = CreateWebSpan();
                 var type = GetType();
                 var method = type.GetMethod(nameof(TestMethod), BindingFlags.Instance | BindingFlags.NonPublic);
 
@@ -203,6 +222,12 @@ namespace Datadog.Trace.Tests.Debugger
             {
                 var spanContext = new SpanContext(1234, 5678);
                 return new Span(spanContext, DateTimeOffset.UtcNow);
+            }
+
+            private Span CreateWebSpan()
+            {
+                var spanContext = new SpanContext(1234, 5678);
+                return new Span(spanContext, DateTimeOffset.UtcNow, new WebTags());
             }
 
             private int TestMethod() => 42;
@@ -320,4 +345,122 @@ namespace Datadog.Trace.Tests.Debugger
         }
 #endif
     }
+
+#if NET6_0_OR_GREATER
+#pragma warning disable SA1402 // File may only contain a single type
+    public class SpanCodeOriginAllocationTests
+#pragma warning restore SA1402 // File may only contain a single type
+    {
+        private const string CodeOriginTypeKey = "_dd.code_origin.type";
+        private const string CodeOriginFrames0IndexKey = "_dd.code_origin.frames.0.index";
+        private const string CodeOriginFrames0MethodKey = "_dd.code_origin.frames.0.method";
+        private const string CodeOriginFrames0TypeKey = "_dd.code_origin.frames.0.type";
+        private const string CodeOriginFrames0FileKey = "_dd.code_origin.frames.0.file";
+        private const string CodeOriginFrames0LineKey = "_dd.code_origin.frames.0.line";
+        private const string CodeOriginFrames0ColumnKey = "_dd.code_origin.frames.0.column";
+
+        private const string EntryValue = "entry";
+        private const string IndexValue = "0";
+        private const string MethodValue = "TestMethod";
+        private const string TypeValue = "MyCompany.MyService.Controllers.ValuesController";
+
+        private const string FileValue = "src/repos/my-repo/MyCompany.MyService/Controllers/ValuesController.cs";
+        private const string LineValue = "1001";
+        private const string ColumnValue = "101";
+
+        private readonly ITestOutputHelper _output;
+
+        public SpanCodeOriginAllocationTests(ITestOutputHelper output)
+        {
+            _output = output;
+        }
+
+        [Fact]
+        public void EntryCodeOriginTagging_ShouldReduceAllocations()
+        {
+            // 1) the optimized approach allocates less than the baseline
+            // 2) the optimized approach stays below a fixed budget to catch regressions
+            //
+            // This test focuses on allocations only (not CPU).
+            const int iterations = 10_000;
+            const int rounds = 3;
+            const double maxOptimizedRatio = 0.90;
+            const long maxOptimizedBytesPerOp = 300;
+
+            var baselineBytes = MeasurePerOperationAllocatedBytesMedian(iterations, rounds, Baseline_TagsListSetTagSevenTimes);
+            var optimizedBytes = MeasurePerOperationAllocatedBytesMedian(iterations, rounds, Optimized_TagsListSetTagsSevenInOneCall);
+
+            _output.WriteLine($"Allocated bytes/op (baseline SetTag x7) [median of {rounds}]: {baselineBytes}");
+            _output.WriteLine($"Allocated bytes/op (optimized SetTags x7 in one call) [median of {rounds}]: {optimizedBytes}");
+
+            baselineBytes.Should().BeGreaterThan(optimizedBytes);
+            optimizedBytes.Should().BeLessOrEqualTo((long)(baselineBytes * maxOptimizedRatio));
+            optimizedBytes.Should().BeLessOrEqualTo(maxOptimizedBytesPerOp);
+        }
+
+        private static long MeasurePerOperationAllocatedBytesMedian(int iterations, int rounds, Action operation)
+        {
+            // Warmup
+            for (var i = 0; i < 200; i++)
+            {
+                operation();
+            }
+
+            var results = new long[rounds];
+
+            for (var round = 0; round < rounds; round++)
+            {
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+                GC.Collect();
+
+                var before = GC.GetAllocatedBytesForCurrentThread();
+                for (var i = 0; i < iterations; i++)
+                {
+                    operation();
+                }
+
+                var after = GC.GetAllocatedBytesForCurrentThread();
+                results[round] = (after - before) / iterations;
+            }
+
+            Array.Sort(results);
+            return results[results.Length / 2];
+        }
+
+        // Baseline: use SetTag repeatedly for _dd.code_origin.* keys (causes tag list allocation/growth).
+        private static void Baseline_TagsListSetTagSevenTimes()
+        {
+            var tags = new TagsList();
+            tags.SetTag(CodeOriginTypeKey, EntryValue);
+            tags.SetTag(CodeOriginFrames0IndexKey, IndexValue);
+            tags.SetTag(CodeOriginFrames0MethodKey, MethodValue);
+            tags.SetTag(CodeOriginFrames0TypeKey, TypeValue);
+            tags.SetTag(CodeOriginFrames0FileKey, FileValue);
+            tags.SetTag(CodeOriginFrames0LineKey, LineValue);
+            tags.SetTag(CodeOriginFrames0ColumnKey, ColumnValue);
+        }
+
+        // Optimized: set all 7 tags in a single call (pre-sizes underlying list once).
+        private static void Optimized_TagsListSetTagsSevenInOneCall()
+        {
+            var tags = new TagsList();
+            tags.SetTags(
+                CodeOriginTypeKey,
+                EntryValue,
+                CodeOriginFrames0IndexKey,
+                IndexValue,
+                CodeOriginFrames0MethodKey,
+                MethodValue,
+                CodeOriginFrames0TypeKey,
+                TypeValue,
+                CodeOriginFrames0FileKey,
+                FileValue,
+                CodeOriginFrames0LineKey,
+                LineValue,
+                CodeOriginFrames0ColumnKey,
+                ColumnValue);
+        }
+    }
+#endif
 }
