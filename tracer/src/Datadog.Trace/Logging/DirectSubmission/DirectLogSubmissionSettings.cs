@@ -172,7 +172,7 @@ namespace Datadog.Trace.Logging.DirectSubmission
 
             var isEnabled = enabledIntegrations is not null;
 
-            if (!AzureFunctionsHostEnabled && AzurePlatformDetection.IsRunningInAzureFunctionsHost)
+            if (!AzureFunctionsHostEnabled && Azure.Default.IsRunningInFunctionsHost)
             {
                 isEnabled = false;
             }

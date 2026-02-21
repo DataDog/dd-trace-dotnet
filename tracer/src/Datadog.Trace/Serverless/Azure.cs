@@ -1,4 +1,4 @@
-// <copyright file="AzurePlatformDetection.cs" company="Datadog">
+// <copyright file="Azure.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -7,47 +7,52 @@
 
 using System;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Serverless;
 
 /// <summary>
 /// Cached helpers for detecting Azure serverless platforms.
-/// Delegates to <see cref="Datadog.Trace.Util.EnvironmentHelpers"/> for env-var reads.
+/// Delegates to <see cref="EnvironmentHelpers"/> for env-var reads.
+/// Create a new instance for test isolation; use <see cref="Default"/> for production code.
 /// </summary>
-internal static class AzurePlatformDetection
+internal sealed class Azure
 {
-    private static bool? _isAzureAppServices;
-    private static bool? _isAzureFunctions;
-    private static bool? _isUsingAzureAppServicesSiteExtension;
-    private static bool? _isAzureFunctionsIsolated;
-    private static bool? _isRunningInAzureFunctionsHost;
+    private bool? _isAppServices;
+    private bool? _isFunctions;
+    private bool? _isUsingSiteExtension;
+    private bool? _isFunctionsIsolated;
+    private bool? _isRunningInFunctionsHost;
 
-    private static string? _workerRuntime;
-    private static bool _workerRuntimeCached;
+    private string? _workerRuntime;
+    private bool _workerRuntimeCached;
 
-    private static string? _extensionVersion;
-    private static bool _extensionVersionCached;
+    private string? _extensionVersion;
+    private bool _extensionVersionCached;
+
+    /// <summary>
+    /// Gets the shared singleton instance. Cached after first evaluation.
+    /// </summary>
+    internal static Azure Default { get; } = new();
 
     /// <summary>
     /// Gets a value indicating whether the current environment is Azure App Services
     /// by checking for the presence of "WEBSITE_SITE_NAME".
-    /// Note that this is a superset of <see cref="IsAzureFunctions"/>.
+    /// Note that this is a superset of <see cref="IsFunctions"/>.
     /// The result is cached after the first evaluation.
     /// </summary>
-    internal static bool IsAzureAppServices =>
-        _isAzureAppServices ??= EnvironmentHelpers.EnvironmentVariableExists(PlatformKeys.AzureAppService.SiteNameKey);
+    internal bool IsAppServices =>
+        _isAppServices ??= EnvironmentHelpers.EnvironmentVariableExists(PlatformKeys.AzureAppService.SiteNameKey);
 
     /// <summary>
     /// Gets a value indicating whether the current environment is Azure Functions
     /// by checking for the presence of "WEBSITE_SITE_NAME", "FUNCTIONS_WORKER_RUNTIME", and "FUNCTIONS_EXTENSION_VERSION".
-    /// Note that this is a subset of <see cref="IsAzureAppServices"/>.
+    /// Note that this is a subset of <see cref="IsAppServices"/>.
     /// The result is cached after the first evaluation.
     /// </summary>
-    internal static bool IsAzureFunctions =>
-        _isAzureFunctions ??=
-            IsAzureAppServices &&
+    internal bool IsFunctions =>
+        _isFunctions ??=
+            IsAppServices &&
             EnvironmentHelpers.EnvironmentVariableExists(PlatformKeys.AzureFunctions.FunctionsWorkerRuntime) &&
             EnvironmentHelpers.EnvironmentVariableExists(PlatformKeys.AzureFunctions.FunctionsExtensionVersion);
 
@@ -56,8 +61,8 @@ internal static class AzurePlatformDetection
     /// by checking for the presence of "DD_AZURE_APP_SERVICES=1" and "DD_AAS_DOTNET_EXTENSION_VERSION".
     /// The result is cached after the first evaluation.
     /// </summary>
-    internal static bool IsUsingAzureAppServicesSiteExtension =>
-        _isUsingAzureAppServicesSiteExtension ??=
+    internal bool IsUsingSiteExtension =>
+        _isUsingSiteExtension ??=
             EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.AzureAppService.AzureAppServicesContextKey) == "1" &&
             EnvironmentHelpers.EnvironmentVariableExists(ConfigurationKeys.AzureAppService.SiteExtensionVersionKey);
 
@@ -65,21 +70,21 @@ internal static class AzurePlatformDetection
     /// Gets a value indicating whether the current environment is an Azure Functions isolated worker process
     /// (as opposed to in-process functions) by checking that:
     ///
-    /// - <see cref="IsAzureFunctions"/> is <c>true</c>
+    /// - <see cref="IsFunctions"/> is <c>true</c>
     /// - "FUNCTIONS_WORKER_RUNTIME" is set to "dotnet-isolated"
     ///
     /// This will return true for both the host process and worker process in isolated functions.
-    /// Use <see cref="IsRunningInAzureFunctionsHost"/> to distinguish between host and worker.
+    /// Use <see cref="IsRunningInFunctionsHost"/> to distinguish between host and worker.
     /// The result is cached after the first evaluation.
     /// </summary>
-    internal static bool IsAzureFunctionsIsolated =>
-        _isAzureFunctionsIsolated ??=
-            IsAzureFunctions && string.Equals(WorkerRuntime, "dotnet-isolated", StringComparison.Ordinal);
+    internal bool IsFunctionsIsolated =>
+        _isFunctionsIsolated ??=
+            IsFunctions && string.Equals(WorkerRuntime, "dotnet-isolated", StringComparison.Ordinal);
 
     /// <summary>
     /// Gets the cached value of the "FUNCTIONS_WORKER_RUNTIME" environment variable.
     /// </summary>
-    internal static string? WorkerRuntime
+    internal string? WorkerRuntime
     {
         get
         {
@@ -96,7 +101,7 @@ internal static class AzurePlatformDetection
     /// <summary>
     /// Gets the cached value of the "FUNCTIONS_EXTENSION_VERSION" environment variable.
     /// </summary>
-    internal static string? ExtensionVersion
+    internal string? ExtensionVersion
     {
         get
         {
@@ -113,17 +118,17 @@ internal static class AzurePlatformDetection
     /// <summary>
     /// Gets a value indicating whether the current environment is the Azure Functions host process
     /// by checking that:
-    /// - <see cref="IsAzureFunctionsIsolated"/> is <c>true</c>
+    /// - <see cref="IsFunctionsIsolated"/> is <c>true</c>
     /// - we DO NOT see EITHER "--functions-worker-id" or "--workerId" on the command line as flags.
     /// The host and worker process will share the top two bullet points; however, only the worker process will have the flags.
-    /// Note that this is a subset of <see cref="IsAzureFunctions"/>.
+    /// Note that this is a subset of <see cref="IsFunctions"/>.
     /// The result is cached after the first evaluation.
     /// </summary>
-    internal static bool IsRunningInAzureFunctionsHost
+    internal bool IsRunningInFunctionsHost
     {
         get
         {
-            if (_isRunningInAzureFunctionsHost is { } cached)
+            if (_isRunningInFunctionsHost is { } cached)
             {
                 return cached;
             }
@@ -134,29 +139,12 @@ internal static class AzurePlatformDetection
             // The worker process has these flags.
             // Example from log output:
             // "CommandLine": "Samples.AzureFunctions.V4Isolated.AspNetCore.dll --workerId <GUID> --functions-worker-id <GUID>"
-            var result = IsAzureFunctionsIsolated &&
+            var result = IsFunctionsIsolated &&
                          cmd.IndexOf("--functions-worker-id", StringComparison.OrdinalIgnoreCase) < 0 &&
                          cmd.IndexOf("--workerId", StringComparison.OrdinalIgnoreCase) < 0;
 
-            _isRunningInAzureFunctionsHost = result;
+            _isRunningInFunctionsHost = result;
             return result;
         }
-    }
-
-    /// <summary>
-    /// Resets all cached values. For testing only.
-    /// </summary>
-    [TestingOnly]
-    internal static void Reset()
-    {
-        _isAzureAppServices = null;
-        _isAzureFunctions = null;
-        _isUsingAzureAppServicesSiteExtension = null;
-        _isAzureFunctionsIsolated = null;
-        _isRunningInAzureFunctionsHost = null;
-        _workerRuntime = null;
-        _workerRuntimeCached = false;
-        _extensionVersion = null;
-        _extensionVersionCached = false;
     }
 }

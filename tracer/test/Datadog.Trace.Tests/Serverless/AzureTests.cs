@@ -1,4 +1,4 @@
-// <copyright file="AzurePlatformDetectionTests.cs" company="Datadog">
+// <copyright file="AzureTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -18,23 +18,23 @@ namespace Datadog.Trace.Tests.Serverless;
     "FUNCTIONS_EXTENSION_VERSION",
     "DD_AZURE_APP_SERVICES",
     "DD_AAS_DOTNET_EXTENSION_VERSION")]
-public class AzurePlatformDetectionTests
+public class AzureTests
 {
     [Theory]
     [PairwiseData]
-    public void IsAzureAppServices(bool value)
+    public void IsAppServices(bool value)
     {
         if (value)
         {
             Environment.SetEnvironmentVariable("WEBSITE_SITE_NAME", "test");
         }
 
-        AzurePlatformDetection.IsAzureAppServices.Should().Be(value);
+        new Azure().IsAppServices.Should().Be(value);
     }
 
     [Theory]
     [PairwiseData]
-    public void IsAzureFunctions(bool value)
+    public void IsFunctions(bool value)
     {
         if (value)
         {
@@ -43,12 +43,12 @@ public class AzurePlatformDetectionTests
             Environment.SetEnvironmentVariable("FUNCTIONS_EXTENSION_VERSION", "~4");
         }
 
-        AzurePlatformDetection.IsAzureFunctions.Should().Be(value);
+        new Azure().IsFunctions.Should().Be(value);
     }
 
     [Theory]
     [PairwiseData]
-    public void IsUsingAzureAppServicesSiteExtension(bool value)
+    public void IsUsingSiteExtension(bool value)
     {
         if (value)
         {
@@ -56,6 +56,6 @@ public class AzurePlatformDetectionTests
             Environment.SetEnvironmentVariable("DD_AAS_DOTNET_EXTENSION_VERSION", "3.20.0");
         }
 
-        AzurePlatformDetection.IsUsingAzureAppServicesSiteExtension.Should().Be(value);
+        new Azure().IsUsingSiteExtension.Should().Be(value);
     }
 }

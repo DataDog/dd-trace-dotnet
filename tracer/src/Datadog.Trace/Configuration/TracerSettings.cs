@@ -541,10 +541,10 @@ namespace Datadog.Trace.Configuration
             IsDataStreamsMonitoringEnabled = config
                                             .WithKeys(ConfigurationKeys.DataStreamsMonitoring.Enabled)
                                             .AsBool(
-                                                  !AwsPlatformDetection.IsAwsLambda &&
-                                                  !AzurePlatformDetection.IsAzureAppServices &&
-                                                  !AzurePlatformDetection.IsAzureFunctions &&
-                                                  !GcpPlatformDetection.IsGoogleCloudFunctions);
+                                                  !Aws.Default.IsLambda &&
+                                                  !Azure.Default.IsAppServices &&
+                                                  !Azure.Default.IsFunctions &&
+                                                  !Gcp.Default.IsCloudFunctions);
 
             IsDataStreamsMonitoringInDefaultState = config
                                                     .WithKeys(ConfigurationKeys.DataStreamsMonitoring.Enabled)
