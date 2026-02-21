@@ -97,6 +97,7 @@ variables:
   Verify_DisableClipboard: true
   DiffEngine_Disabled: true
   OriginalCommitId: $[coalesce(variables['System.PullRequest.SourceCommitId'], variables['Build.SourceVersion'])]
+  TESTCONTAINERS_RYUK_DISABLED: true
   NUGET_ENABLE_EXPERIMENTAL_HTTP_RETRY: true
   NUGET_EXPERIMENTAL_CHAIN_BUILD_RETRY_POLICY: 3,1000
   # Retry parameters for network operations to improve CI resilency
