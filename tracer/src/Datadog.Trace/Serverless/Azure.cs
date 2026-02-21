@@ -23,6 +23,7 @@ internal sealed class Azure
     private bool? _isUsingSiteExtension;
     private bool? _isIsolatedFunction;
     private bool? _isIsolatedFunctionHostProcess;
+    private bool? _isIsolatedFunctionWorkerProcess;
     private bool _functionWorkerRuntimeCached;
     private bool _functionExtensionVersionCached;
 
@@ -115,9 +116,9 @@ internal sealed class Azure
     /// Gets a value indicating whether the current environment is the Azure Functions host process
     /// by checking that:
     /// - <see cref="IsIsolatedFunction"/> is <c>true</c>
-    /// - we DO NOT see EITHER "--functions-worker-id" or "--workerId" on the command line as flags.
-    /// The host and worker process will share the top two bullet points; however, only the worker process will have the flags.
-    /// Note that this is a subset of <see cref="IsFunction"/>.
+    /// - we do not see either "--functions-worker-id" or "--workerId" on the command line.
+    /// Only the worker process will have these command-line parameters.
+    /// Note that this is a subset of <see cref="IsFunction"/> and <see cref="IsIsolatedFunction"/>.
     /// The result is cached after the first evaluation.
     /// </summary>
     internal bool IsIsolatedFunctionHostProcess
@@ -140,6 +141,30 @@ internal sealed class Azure
                          cmd.IndexOf("--workerId", StringComparison.OrdinalIgnoreCase) < 0;
 
             _isIsolatedFunctionHostProcess = result;
+            return result;
+        }
+    }
+
+    /// <summary>
+    /// Gets a value indicating whether the current environment is the Azure Functions worker process
+    /// by checking that:
+    /// - <see cref="IsIsolatedFunction"/> is <c>true</c>
+    /// - we see either "--functions-worker-id" or "--workerId" on the command line.
+    /// Only the worker process will have these command-line parameters.
+    /// Note that this is a subset of <see cref="IsFunction"/> and <see cref="IsIsolatedFunction"/>.
+    /// The result is cached after the first evaluation.
+    /// </summary>
+    internal bool IsIsolatedFunctionWorkerProcess
+    {
+        get
+        {
+            if (_isIsolatedFunctionWorkerProcess is { } cached)
+            {
+                return cached;
+            }
+
+            var result = IsIsolatedFunction && !IsIsolatedFunctionHostProcess;
+            _isIsolatedFunctionWorkerProcess = result;
             return result;
         }
     }
