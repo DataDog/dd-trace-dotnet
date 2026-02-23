@@ -71,6 +71,8 @@ internal static class JsonHelper
 
     public static JObject ParseJObject(string json)
     {
+        // equivalent to Datadog.Trace.Vendors.Newtonsoft.Json.Linq.JObject.Parse()
+        // differs from the vendored version, in that we use an array pool
         using var reader = new JsonTextReader(new StringReader(json)) { ArrayPool = JsonArrayPool.Shared };
         var o = JObject.Load(reader);
         while (reader.Read())
@@ -81,36 +83,22 @@ internal static class JsonHelper
         return o;
     }
 
-    public static JToken ParseJToken(string json)
-    {
-        using var reader = new JsonTextReader(new StringReader(json)) { ArrayPool = JsonArrayPool.Shared };
-        var t = JToken.Load(reader);
-        while (reader.Read())
-        {
-            // validate no trailing content
-        }
-
-        return t;
-    }
-
-    public static JArray ParseJArray(string json)
-    {
-        using var reader = new JsonTextReader(new StringReader(json)) { ArrayPool = JsonArrayPool.Shared };
-        var a = JArray.Load(reader);
-        while (reader.Read())
-        {
-            // validate no trailing content
-        }
-
-        return a;
-    }
-
     public static string TokenToString(JToken token, Formatting formatting = Formatting.Indented, params JsonConverter[] converters)
     {
-        using var sw = new StringWriter(CultureInfo.InvariantCulture);
-        using var jw = new JsonTextWriter(sw) { ArrayPool = JsonArrayPool.Shared, Formatting = formatting };
-        token.WriteTo(jw, converters);
-        return sw.ToString();
+        // equivalent to Datadog.Trace.Vendors.Newtonsoft.Json.Linq.JToken.ToString()
+
+        // differs from the vendored version, in that it uses our cache instead
+        var sb = StringBuilderCache.Acquire();
+        using var sw = new StringWriter(sb, CultureInfo.InvariantCulture);
+        // differs from the vendored version, in that we use an array pool
+        using (var jw = new JsonTextWriter(sw) { ArrayPool = JsonArrayPool.Shared, Formatting = formatting })
+        {
+            token.WriteTo(jw, converters);
+        }
+
+        var result = sw.ToString();
+        StringBuilderCache.Release(sb);
+        return result;
     }
 
     private static string SerializeObjectInternal(object? value, System.Type? type, JsonSerializer jsonSerializer)
