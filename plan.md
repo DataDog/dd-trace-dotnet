@@ -12,6 +12,7 @@ Per `docs/development/XunitCombinatorial.md`, this is **a visual bug only** — 
 
 - `SerializableList<T>` — `tracer/test/Datadog.Trace.TestHelpers/SerializableList.cs` — JSON-serializes a `List<T>`
 - `SerializableDictionary` — `tracer/test/Datadog.Trace.TestHelpers/SerializableDictionary.cs` — JSON-serializes a `Dictionary<string, string>`
+- `BaggageEntry` — `tracer/test/Datadog.Trace.TestHelpers/BaggageEntry.cs` — JSON-serializable key/value pair for use with `SerializableList<BaggageEntry>` (**new**)
 - Pattern: see `HttpMessageHandlerTests.InstrumentationOptions` and `StringSizeExpectation` for examples of classes implementing `IXunitSerializable` directly via `AddValue`/`GetValue<T>`
 
 ## Worktree
@@ -20,60 +21,42 @@ All changes in: `D:/source/datadog/dd-trace-dotnet-worktrees/lpimentel/fix-xunit
 
 ## Changes by File
 
-### 1. `ParseUtilityTests.cs` — IEnumerable<string> parameters
-**Problem:** `TheoryData<IEnumerable<string>, T>` — xUnit can't serialize `IEnumerable<string>`.
-**Fix:** Use `SerializableList<string>` (which implements `IXunitSerializable` and `IEnumerable<T>`) instead of `IEnumerable<string>` in the `TheoryData` type and test method signatures. Existing `List<string>` and `string[]` entries can be wrapped in `SerializableList<string>`. The SUT still receives an `IEnumerable<string>`, and the test still exercises both list and array data.
+### ✅ 1. `RequestHeadersHelpersTests.cs` / `TestScenario.cs` — Custom TestScenario object
+**Fix:** Converted `TestScenario` from primary constructor to implement `IXunitSerializable`. Added parameterless constructor, `Serialize()` and `Deserialize()`. All fields are primitives or `SerializableDictionary`.
 
-### 2. `W3CBaggagePropagatorTests.cs` — ValueTuple arrays
-**Problem:** `TheoryData<string, (string Key, string Value)[]>` — ValueTuple arrays aren't serializable.
-**Fix:** Create a small `SerializableKeyValuePair` class implementing `IXunitSerializable` (fields: `Key`, `Value`), and use `SerializableList<SerializableKeyValuePair>` for the array parameter. Note: `SerializableList<T>` uses JSON serialization, so `T` must be JSON-serializable (a simple two-string class is fine).
+### ✅ 2. `ParseUtilityTests.cs` — IEnumerable<string> parameters
+**Fix:** Replaced `TheoryData<IEnumerable<string>, T>` with `TheoryData<SerializableList<string>, T>`. Updated all three `TheoryData` properties and four test method signatures.
 
-### 3. `W3CTraceContextPropagatorTests.cs` — IEnumerable<string> in object[]
-**Problem:** `TryGetSingleTestCases()` and `TryExtractTestCases()` return `object[]` containing `HashSet<string>`, `List<string>`, `Queue<string>`, LINQ expressions, and yield-return iterators — deliberately testing different `IEnumerable<string>` implementations.
-**Fix:** The tests intentionally exercise different collection types, so we must preserve that distinction. Use a `string collectionType` discriminator parameter ("HashSet", "List", "Array", "Queue", "Enumerable", "Yield") + `SerializableList<string>` for the values. Construct the appropriate collection in the test body based on `collectionType`. All parameters become serializable.
+### ✅ 3. `FeatureFlagsEvaluatorTests.cs` (FlattenContext) — Dictionary<string, object?> data
+**Fix:** Replaced single `[Theory]` + `FlattenContextCases` member data with 4 named `[Fact]` methods sharing a private `AssertFlattenContext` helper.
 
-### 4. `RequestHeadersHelpersTests.cs` — Custom TestScenario object
-**Problem:** `TestScenario` doesn't implement `IXunitSerializable`.
-**Fix:** Make `TestScenario` implement `IXunitSerializable`. All fields are already primitives or `SerializableDictionary`. Add a parameterless constructor (required by xUnit), implement `Serialize()` and `Deserialize()` using `AddValue`/`GetValue<T>`.
+### ✅ 4. `W3CBaggagePropagatorTests.cs` — ValueTuple arrays
+**Fix:** Added `BaggageEntry` to TestHelpers (JSON-serializable). Changed `TheoryData` to use `SerializableList<BaggageEntry>`. Updated `CreateHeader` and `ParseHeader` method signatures.
 
-### 5. `ExposureCacheTests.cs` — Nested object[] with ExposureEvent and bool[]
-**Problem:** `Cases()` returns `IEnumerable<object?[]>` containing `ExposureEvent` objects and `bool[]`.
-**Fix:** Create an `ExposureCacheTestCase` class implementing `IXunitSerializable`. Store `ExposureEvent` data as primitive fields (flag, subject, variant, allocation strings), expected bool results as a `SerializableList<bool>`, and the int capacity/size fields. Construct `ExposureEvent` objects inside the test from these primitives.
+### ✅ 5. Schema tests (Client, Database, Messaging, Naming, Server)
+**Fix:** Replaced `IEnumerable<ValueTuple>` return types with local wrapper classes implementing `IXunitSerializable` (one per distinct tuple shape per file). Added `#pragma warning disable SA1201` around each class. Data methods now return the wrapper type.
 
-### 6. `FeatureFlagsEvaluatorTests.cs` — Mixed object?[] with Type objects and Dictionary
-**Problem:** `MapValueCases()` uses `DateTime` and `Type` refs. `FlattenContextCases()` uses `Dictionary<string, object?>`.
+### ✅ 6. `FeatureFlagsEvaluatorTests.cs` (MapValue) — Type/DateTime in object?[]
+**Fix:** Added `MapValueTestCase : IXunitSerializable` as a nested class. Encodes `Type` as assembly-qualified name, `DateTime` as ISO string, primitives via `ToString()`/`Parse()`. Changed `MapValueCases` to return `TheoryData<MapValueTestCase>`. Updated test method to accept `MapValueTestCase`.
 
-**Fix for MapValueCases:** Create a `MapValueTestCase` class implementing `IXunitSerializable`. Encode `Type` as its assembly-qualified name string; encode `DateTime` as ISO 8601 string. Parse in `Deserialize()`.
+### ✅ 7. `W3CTraceContextPropagatorTests.cs` — IEnumerable<string> + collection type
+**Fix:** Changed `TryGetSingleTestCases` and `TryExtractTestCases` to `TheoryData` with a `string collectionType` discriminator + `SerializableList<string>`. Added private `BuildCollection` helper to reconstruct the appropriate collection type (HashSet, List, Array, Queue, Enumerable, Yield, or null). Updated test method signatures.
 
-**Fix for FlattenContextCases:** Only 4 cases — convert to 4 separate `[Fact]` methods (cleaner than a complex serializable wrapper for `Dictionary<string, object?>`).
-
-### 7–11. Schema tests (Client, Database, Messaging, Naming, Server)
-**Problem:** `[CombinatorialMemberData]` returns `IEnumerable<ValueTuple>` — ValueTuples aren't serializable by xUnit.
-**Fix:** The tuples contain only primitives (`int`, `string`). Create a serializable wrapper class (e.g., `SchemaTestCase`) implementing `IXunitSerializable`, or simply expand the combinatorial product (tuple × bool combinations) into explicit `TheoryData` rows in the member data method. Since the tuples are combined with `bool` values via `[CombinatorialData]`, we replace `[CombinatorialData]` + `[CombinatorialMemberData]` with plain `[Theory]` + `[MemberData]` where the member data method emits all combinations explicitly.
+### ✅ 8. `ExposureCacheTests.cs` — Nested ExposureEvent objects and bool[]
+**Fix:** Added `ExposureEventData` (JSON-serializable) and `ExposureCacheTestCase : IXunitSerializable`. Changed `Cases()` to return `TheoryData<ExposureCacheTestCase>`. Updated test method to accept `ExposureCacheTestCase` and reconstruct `ExposureEvent` objects in the test body.
 
 ## Summary
 
-| Category | Files | Strategy |
-|----------|-------|----------|
-| `IEnumerable<string>` | `ParseUtilityTests` | Use `SerializableList<string>` |
-| ValueTuple arrays | `W3CBaggagePropagatorTests` | `SerializableList<SerializableKeyValuePair>` (new small class) |
-| `IEnumerable<string>` + collection type | `W3CTraceContextPropagatorTests` | `string collectionType` + `SerializableList<string>` |
-| Custom object | `RequestHeadersHelpersTests` | Implement `IXunitSerializable` on `TestScenario` |
-| Nested domain objects | `ExposureCacheTests` | New `ExposureCacheTestCase : IXunitSerializable` |
-| `Type`/`DateTime` params | `FeatureFlagsEvaluatorTests` (MapValue) | New `MapValueTestCase : IXunitSerializable` |
-| Complex dictionary data | `FeatureFlagsEvaluatorTests` (FlattenContext) | Split into 4 `[Fact]` methods |
-| `CombinatorialMemberData` tuples | 5 Schema tests | Expand combinations explicitly in `[MemberData]` |
-
-## Implementation Order (easiest to hardest)
-
-1. **`TestScenario` (RequestHeadersHelpersTests)** — Add `IXunitSerializable` to existing class; all fields already serializable.
-2. **`FlattenContextCases` (FeatureFlagsEvaluatorTests)** — Only 4 cases, split to `[Fact]` methods.
-3. **`ParseUtilityTests`** — Swap `IEnumerable<string>` for `SerializableList<string>`; minimal changes.
-4. **Schema tests (5 files)** — Mechanical: expand combinatorial products explicitly. Tedious but straightforward.
-5. **`MapValueCases` (FeatureFlagsEvaluatorTests)** — New `MapValueTestCase` class with string-encoded `Type`/`DateTime`.
-6. **`W3CBaggagePropagatorTests`** — New `SerializableKeyValuePair` + `SerializableList<SerializableKeyValuePair>`.
-7. **`W3CTraceContextPropagatorTests`** — Collection-type discriminator + `SerializableList<string>`.
-8. **`ExposureCacheTests`** — New `ExposureCacheTestCase : IXunitSerializable` with nested domain data as primitives.
+| # | File(s) | Status | Strategy |
+|---|---------|--------|----------|
+| 1 | `RequestHeadersHelpersTests` / `TestScenario` | ✅ Done | `IXunitSerializable` on `TestScenario` |
+| 2 | `ParseUtilityTests` | ✅ Done | `SerializableList<string>` |
+| 3 | `FeatureFlagsEvaluatorTests` (FlattenContext) | ✅ Done | Split into 4 `[Fact]` methods |
+| 4 | `W3CBaggagePropagatorTests` | ✅ Done | `BaggageEntry` + `SerializableList<BaggageEntry>` |
+| 5 | 5 Schema tests | ✅ Done | Local `IXunitSerializable` wrapper classes per file |
+| 6 | `FeatureFlagsEvaluatorTests` (MapValue) | ✅ Done | `MapValueTestCase : IXunitSerializable` |
+| 7 | `W3CTraceContextPropagatorTests` | ✅ Done | `string collectionType` + `SerializableList<string>` |
+| 8 | `ExposureCacheTests` | ✅ Done | `ExposureCacheTestCase : IXunitSerializable` |
 
 ## Verification
 
@@ -85,7 +68,4 @@ dotnet build tracer/test/Datadog.Trace.Tests/ -c Release
 dotnet test tracer/test/Datadog.Trace.Tests/ -c Release --filter "FullyQualifiedName~ParseUtilityTests|FullyQualifiedName~W3CBaggagePropagatorTests|FullyQualifiedName~W3CTraceContextPropagatorTests|FullyQualifiedName~RequestHeadersHelpersTests|FullyQualifiedName~ExposureCacheTests|FullyQualifiedName~FeatureFlagsEvaluatorTests|FullyQualifiedName~ClientSchemaTests|FullyQualifiedName~DatabaseSchemaTests|FullyQualifiedName~MessagingSchemaTests|FullyQualifiedName~NamingSchemaTests|FullyQualifiedName~ServerSchemaTests"
 ```
 
-Verify:
-1. All tests pass
-2. No "Non-serializable data" warnings in output
-3. Test count is the same or higher (individual cases now visible)
+Result: **926 tests passed, 0 failed, 0 warnings** (net6.0)
