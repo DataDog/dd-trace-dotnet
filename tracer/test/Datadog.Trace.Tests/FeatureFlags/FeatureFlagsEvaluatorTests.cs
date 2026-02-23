@@ -10,8 +10,8 @@ using System.Collections.Generic;
 using Datadog.Trace.FeatureFlags;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
 using Datadog.Trace.TestHelpers;
+using FluentAssertions;
 using Xunit;
-using ValueType = Datadog.Trace.FeatureFlags.ValueType;
 
 namespace Datadog.Trace.Tests.FeatureFlags;
 
@@ -28,38 +28,38 @@ public partial class FeatureFlagsEvaluatorTests
     public static IEnumerable<object?[]> MapValueCases()
     {
         // targetType, value, expected, typeof(Exception)
-        yield return new object?[] { null, null, null };
+        yield return [null, null, null];
 
         // String
-        yield return new object?[] { "hello", "hello", null };
-        yield return new object?[] { 123, "123", null };
-        yield return new object?[] { true, "True", null };
-        yield return new object?[] { 3.14, "3.14", null };
+        yield return ["hello", "hello", null];
+        yield return [123, "123", null];
+        yield return [true, "True", null];
+        yield return [3.14, "3.14", null];
 
         // Bool
-        yield return new object?[] { true, true, null };
-        yield return new object?[] { false, false, null };
-        yield return new object?[] { "true", true, null };
-        yield return new object?[] { "false", false, null };
-        yield return new object?[] { "TRUE", true, null };
-        yield return new object?[] { "FALSE", false, null };
-        yield return new object?[] { 1, true, null };
-        yield return new object?[] { 0, false, null };
+        yield return [true, true, null];
+        yield return [false, false, null];
+        yield return ["true", true, null];
+        yield return ["false", false, null];
+        yield return ["TRUE", true, null];
+        yield return ["FALSE", false, null];
+        yield return [1, true, null];
+        yield return [0, false, null];
 
         // Int
-        yield return new object?[] { 42, (int)42, null };
-        yield return new object?[] { "42", (int)42, null };
+        yield return [42, 42, null];
+        yield return ["42", 42, null];
 
         // Double
-        yield return new object?[] { 3.14, 3.14, null };
-        yield return new object?[] { "3.14", 3.14, null };
-        yield return new object?[] { 42, 42d, null };
-        yield return new object?[] { "42", 42d, null };
+        yield return [3.14, 3.14, null];
+        yield return ["3.14", 3.14, null];
+        yield return [42, 42d, null];
+        yield return ["42", 42d, null];
 
         // Unsupported
-        yield return new object?[] { new DateTime(2023, 12, 21), null, typeof(ArgumentException) };
-        yield return new object?[] { "3.14", (int)3, typeof(FormatException) };
-        yield return new object?[] { 3.14, (int)3, typeof(FormatException) };
+        yield return [new DateTime(2023, 12, 21), null, typeof(ArgumentException)];
+        yield return ["3.14", 3, typeof(FormatException)];
+        yield return [3.14, 3, typeof(FormatException)];
     }
 
     [Theory]
@@ -70,7 +70,7 @@ public partial class FeatureFlagsEvaluatorTests
         {
             try
             {
-                _ = FeatureFlagsEvaluator.MapValue(Trace.FeatureFlags.ValueType.String, input);
+                _ = FeatureFlagsEvaluator.MapValue(Datadog.Trace.FeatureFlags.ValueType.String, input);
             }
             catch (Exception res)
             {
@@ -79,23 +79,23 @@ public partial class FeatureFlagsEvaluatorTests
         }
         else if (expected is null || expected is string)
         {
-            var res = FeatureFlagsEvaluator.MapValue(Trace.FeatureFlags.ValueType.String, input);
-            Assert.Equal(expected, res);
+            var res = FeatureFlagsEvaluator.MapValue(Datadog.Trace.FeatureFlags.ValueType.String, input);
+            res.Should().Be(expected);
         }
-        else if (expected is int expectedInt)
+        else if (expected is int)
         {
-            var res = FeatureFlagsEvaluator.MapValue(Trace.FeatureFlags.ValueType.Integer, input);
-            Assert.Equal(expected, res);
+            var res = FeatureFlagsEvaluator.MapValue(Datadog.Trace.FeatureFlags.ValueType.Integer, input);
+            res.Should().Be(expected);
         }
-        else if (expected is double expectedDouble)
+        else if (expected is double)
         {
-            var res = FeatureFlagsEvaluator.MapValue(Trace.FeatureFlags.ValueType.Numeric, input);
-            Assert.Equal(expected, res);
+            var res = FeatureFlagsEvaluator.MapValue(Datadog.Trace.FeatureFlags.ValueType.Numeric, input);
+            res.Should().Be(expected);
         }
-        else if (expected is bool expectedBool)
+        else if (expected is bool)
         {
-            var res = FeatureFlagsEvaluator.MapValue(Trace.FeatureFlags.ValueType.Boolean, input);
-            Assert.Equal(expected, res);
+            var res = FeatureFlagsEvaluator.MapValue(Datadog.Trace.FeatureFlags.ValueType.Boolean, input);
+            res.Should().Be(expected);
         }
         else
         {
@@ -109,35 +109,35 @@ public partial class FeatureFlagsEvaluatorTests
         var evaluator = new FeatureFlagsEvaluator(null, null);
         var ctx = new EvaluationContext("target");
 
-        var result = evaluator.Evaluate("test", Trace.FeatureFlags.ValueType.Integer, 23, ctx);
+        var result = evaluator.Evaluate("test", Datadog.Trace.FeatureFlags.ValueType.Integer, 23, ctx);
 
-        Assert.Equal(23, result.Value);
+        result.Value.Should().Be(23);
         Assert.Equal(EvaluationReason.Error, result.Reason);
-        Assert.Equal("PROVIDER_NOT_READY", result.Error);
+        result.Error.Should().Be("PROVIDER_NOT_READY");
     }
 
     [Fact]
     public void EvaluateWithMissingTargetingKeyReturnsTargetingKeyMissing()
     {
         var flags = new Dictionary<string, Flag>
-        {
-            ["simple-string"] = FeatureFlagsHelpers.CreateSimpleFlag("simple-string", ValueType.String, "default", "on")
-        };
+                    {
+                        ["simple-string"] = FeatureFlagsHelpers.CreateSimpleFlag("simple-string", Datadog.Trace.FeatureFlags.ValueType.String, "default", "on")
+                    };
 
         var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration { Flags = flags });
 
         var ctx = new EvaluationContext("user-123");
-        var result = evaluator.Evaluate("simple-string", Trace.FeatureFlags.ValueType.String, "default", ctx);
-        Assert.Equal("default", result.Value);
+        var result = evaluator.Evaluate("simple-string", Datadog.Trace.FeatureFlags.ValueType.String, "default", ctx);
+        result.Value.Should().Be("default");
         Assert.Equal(EvaluationReason.TargetingMatch, result.Reason);
-        Assert.Equal("on", result.Variant);
+        result.Variant.Should().Be("on");
 
         var noTargettingKeyCtx = new EvaluationContext(string.Empty); // no targetingKey
-        result = evaluator.Evaluate("simple-string", Trace.FeatureFlags.ValueType.String, "default", noTargettingKeyCtx);
+        result = evaluator.Evaluate("simple-string", Datadog.Trace.FeatureFlags.ValueType.String, "default", noTargettingKeyCtx);
 
-        Assert.Equal("default", result.Value);
+        result.Value.Should().Be("default");
         Assert.Equal(EvaluationReason.Error, result.Reason);
-        Assert.Equal("TARGETING_KEY_MISSING", result.Error);
+        result.Error.Should().Be("TARGETING_KEY_MISSING");
     }
 
     [Fact]
@@ -145,69 +145,69 @@ public partial class FeatureFlagsEvaluatorTests
     {
         var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration());
         var ctx = new EvaluationContext("user-123");
-        var result = evaluator.Evaluate("unknown", Trace.FeatureFlags.ValueType.String, "default", ctx);
+        var result = evaluator.Evaluate("unknown", Datadog.Trace.FeatureFlags.ValueType.String, "default", ctx);
 
-        Assert.Equal("default", result.Value);
+        result.Value.Should().Be("default");
         Assert.Equal(EvaluationReason.Error, result.Reason);
-        Assert.Equal("FLAG_NOT_FOUND", result.Error);
+        result.Error.Should().Be("FLAG_NOT_FOUND");
     }
 
     [Fact]
     public void EvaluateDisabledFlagReturnsDisabledReason()
     {
         var flags = new Dictionary<string, Flag>
-        {
-            ["disabled-flag"] = new Flag { Key = "disabled-flag", Enabled = false, VariationType = ValueType.Boolean }
-        };
+                    {
+                        ["disabled-flag"] = new Flag { Key = "disabled-flag", Enabled = false, VariationType = Datadog.Trace.FeatureFlags.ValueType.Boolean }
+                    };
         var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration { Flags = flags });
         var ctx = new EvaluationContext("user");
 
-        var result = evaluator.Evaluate("disabled-flag", Trace.FeatureFlags.ValueType.Boolean, true, ctx);
+        var result = evaluator.Evaluate("disabled-flag", Datadog.Trace.FeatureFlags.ValueType.Boolean, true, ctx);
 
-        Assert.Equal(true, result.Value);
+        result.Value.Should().Be(true);
         Assert.Equal(EvaluationReason.Disabled, result.Reason);
-        Assert.Null(result.Error);
+        result.Error.Should().BeNull();
     }
 
     [Fact]
     public void EvaluateFlagWithTypeMismatchReturnsTypeMismatchError()
     {
         var flags = new Dictionary<string, Flag>
-        {
-            ["null-allocation"] = new Flag { Key = "target", Enabled = true, VariationType = ValueType.String },
-            ["empty-allocation"] = new Flag { Key = "target", Enabled = true, VariationType = ValueType.String, Allocations = new List<Allocation>() },
-        };
+                    {
+                        ["null-allocation"] = new Flag { Key = "target", Enabled = true, VariationType = Datadog.Trace.FeatureFlags.ValueType.String },
+                        ["empty-allocation"] = new Flag { Key = "target", Enabled = true, VariationType = Datadog.Trace.FeatureFlags.ValueType.String, Allocations = [] },
+                    };
         var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration { Flags = flags });
         var ctx = new EvaluationContext("allocation");
 
-        var result1 = evaluator.Evaluate("null-allocation", Trace.FeatureFlags.ValueType.Boolean, 23, ctx);
-        Assert.Equal(23, result1.Value);
+        var result1 = evaluator.Evaluate("null-allocation", Datadog.Trace.FeatureFlags.ValueType.Boolean, 23, ctx);
+        result1.Value.Should().Be(23);
         Assert.Equal(EvaluationReason.Error, result1.Reason);
-        Assert.Equal("TYPE_MISMATCH", result1.FlagMetadata?["errorCode"]);
+        (result1.FlagMetadata?["errorCode"]).Should().Be("TYPE_MISMATCH");
 
-        var result2 = evaluator.Evaluate("empty-allocation", Trace.FeatureFlags.ValueType.Numeric, 23, ctx);
-        Assert.Equal(23, result2.Value);
+        var result2 = evaluator.Evaluate("empty-allocation", Datadog.Trace.FeatureFlags.ValueType.Numeric, 23, ctx);
+        result2.Value.Should().Be(23);
         Assert.Equal(EvaluationReason.Error, result2.Reason);
-        Assert.Equal("TYPE_MISMATCH", result2.FlagMetadata?["errorCode"]);
+        (result2.FlagMetadata?["errorCode"]).Should().Be("TYPE_MISMATCH");
     }
 
     [Fact]
     public void EvaluateFlagWithoutAllocationsReturnsDefaultValue()
     {
         var flags = new Dictionary<string, Flag>
-        {
-            ["null-allocation"] = new Flag { Key = "target", Enabled = true, VariationType = ValueType.String },
-            ["empty-allocation"] = new Flag { Key = "target", Enabled = true, VariationType = ValueType.String, Allocations = new List<Allocation>() },
-        };
+                    {
+                        ["null-allocation"] = new Flag { Key = "target", Enabled = true, VariationType = Datadog.Trace.FeatureFlags.ValueType.String },
+                        ["empty-allocation"] = new Flag { Key = "target", Enabled = true, VariationType = Datadog.Trace.FeatureFlags.ValueType.String, Allocations = [] },
+                    };
         var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration { Flags = flags });
         var ctx = new EvaluationContext("allocation");
 
-        var result1 = evaluator.Evaluate("null-allocation", Trace.FeatureFlags.ValueType.String, 23, ctx);
-        Assert.Equal(23, result1.Value);
+        var result1 = evaluator.Evaluate("null-allocation", Datadog.Trace.FeatureFlags.ValueType.String, 23, ctx);
+        result1.Value.Should().Be(23);
         Assert.Equal(EvaluationReason.Default, result1.Reason);
 
-        var result2 = evaluator.Evaluate("empty-allocation", Trace.FeatureFlags.ValueType.String, 23, ctx);
-        Assert.Equal(23, result2.Value);
+        var result2 = evaluator.Evaluate("empty-allocation", Datadog.Trace.FeatureFlags.ValueType.String, 23, ctx);
+        result2.Value.Should().Be(23);
         Assert.Equal(EvaluationReason.Default, result2.Reason);
     }
 
@@ -215,51 +215,37 @@ public partial class FeatureFlagsEvaluatorTests
     // FlattenContext tests
     // ---------------------------------------------------------------------
 
-    public static IEnumerable<object?[]> FlattenContextCases()
+    [Fact]
+    public void FlattenContextWithEmptyDictionary()
     {
-        // empty
-        yield return new object[]
-        {
-                new Dictionary<string, object?>(),
-                new Dictionary<string, object?>()
-        };
-
-        // scalars
-        yield return new object[]
-        {
-            new Dictionary<string, object?> { { "integer", 1 }, { "double", 23d }, { "boolean", true }, { "string", "string" }, { "null", null } },
-            new Dictionary<string, object?> { { "integer", 1 }, { "double", 23d }, { "boolean", true }, { "string", "string" }, { "null", null } },
-        };
-
-        // list: [1,2,[4]]
-        yield return new object[]
-        {
-            new Dictionary<string, object?> { { "integer", 1 }, { "list", new List<object?> { 1, 2, new List<object?> { 4 } } } },
-            new Dictionary<string, object?> { { "integer", 1 } },
-        };
-
-        // nested map
-        yield return new object[]
-        {
-            new Dictionary<string, object?> { { "integer", 1 }, { "map", new Dictionary<string, object?> { { "key1", 1 }, { "key2", 2 }, { "key3", new Dictionary<string, object?> { { "key4", 4 } } } } } },
-            new Dictionary<string, object?> { { "integer", 1 } },
-        };
+        var attrs = new Dictionary<string, object?>();
+        var expected = new Dictionary<string, object?>();
+        AssertFlattenContext(attrs, expected);
     }
 
-    [Theory]
-    [MemberData(nameof(FlattenContextCases))]
-    public void FlattenContextFlattensListsAndDictionarys(Dictionary<string, object?> attrs, Dictionary<string, object?> expected)
+    [Fact]
+    public void FlattenContextWithScalars()
     {
-        var ctx = new EvaluationContext("structure", attrs);
-        var flattened = FeatureFlagsEvaluator.FlattenContext(ctx);
+        var attrs = new Dictionary<string, object?> { { "integer", 1 }, { "double", 23d }, { "boolean", true }, { "string", "string" }, { "null", null } };
+        var expected = new Dictionary<string, object?> { { "integer", 1 }, { "double", 23d }, { "boolean", true }, { "string", "string" }, { "null", null } };
+        AssertFlattenContext(attrs, expected);
+    }
 
-        Assert.Equal(expected.Count, flattened.Count);
+    [Fact]
+    public void FlattenContextStripsNestedLists()
+    {
+        // list: [1,2,[4]] — lists are stripped
+        var attrs = new Dictionary<string, object?> { { "integer", 1 }, { "list", new List<object?> { 1, 2, new List<object?> { 4 } } } };
+        var expected = new Dictionary<string, object?> { { "integer", 1 } };
+        AssertFlattenContext(attrs, expected);
+    }
 
-        foreach (var pair in expected)
-        {
-            Assert.True(flattened.TryGetValue(pair.Key, out var actual));
-            Assert.Equal(pair.Value, actual);
-        }
+    [Fact]
+    public void FlattenContextStripsNestedMaps()
+    {
+        var attrs = new Dictionary<string, object?> { { "integer", 1 }, { "map", new Dictionary<string, object?> { { "key1", 1 }, { "key2", 2 }, { "key3", new Dictionary<string, object?> { { "key4", 4 } } } } } };
+        var expected = new Dictionary<string, object?> { { "integer", 1 } };
+        AssertFlattenContext(attrs, expected);
     }
 
     // ---------------------------------------------------------------------
@@ -271,70 +257,70 @@ public partial class FeatureFlagsEvaluatorTests
     public void EvaluateSimpleStringFlagReturnsTargetingMatch()
     {
         var flags = new Dictionary<string, Flag>
-        {
-            ["simple-string"] = FeatureFlagsHelpers.CreateSimpleFlag("simple-string", ValueType.String, "test-value", "on")
-        };
+                    {
+                        ["simple-string"] = FeatureFlagsHelpers.CreateSimpleFlag("simple-string", Datadog.Trace.FeatureFlags.ValueType.String, "test-value", "on")
+                    };
 
         var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration { Flags = flags });
         var ctx = new EvaluationContext("user-123");
 
-        var result = evaluator.Evaluate("simple-string", Trace.FeatureFlags.ValueType.String, "default", ctx);
+        var result = evaluator.Evaluate("simple-string", Datadog.Trace.FeatureFlags.ValueType.String, "default", ctx);
 
-        Assert.Equal("test-value", result.Value);
+        result.Value.Should().Be("test-value");
         Assert.Equal(EvaluationReason.TargetingMatch, result.Reason);
-        Assert.Equal("on", result.Variant);
+        result.Variant.Should().Be("on");
     }
 
     [Fact]
     public void EvaluateRuleBasedFlagMatchesEmailPremium()
     {
         var flags = new Dictionary<string, Flag>
-        {
-            ["rule-based-flag"] = FeatureFlagsHelpers.CreateRuleBasedFlag()
-        };
+                    {
+                        ["rule-based-flag"] = FeatureFlagsHelpers.CreateRuleBasedFlag()
+                    };
 
         var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration { Flags = flags });
         var ctx = new EvaluationContext("user-premium", new Dictionary<string, object?> { { "email", "john@company.com" } });
 
-        var result = evaluator.Evaluate("rule-based-flag", Trace.FeatureFlags.ValueType.String, "default", ctx);
+        var result = evaluator.Evaluate("rule-based-flag", Datadog.Trace.FeatureFlags.ValueType.String, "default", ctx);
 
-        Assert.Equal("premium", result.Value);
+        result.Value.Should().Be("premium");
         Assert.Equal(EvaluationReason.TargetingMatch, result.Reason);
-        Assert.Equal("premium", result.Variant);
+        result.Variant.Should().Be("premium");
     }
 
     [Fact]
     public void EvaluateNumericRuleFlagMatchesScoreGte800()
     {
         var flags = new Dictionary<string, Flag>
-        {
-            ["numeric-rule-flag"] = FeatureFlagsHelpers.CreateNumericRuleFlag()
-        };
+                    {
+                        ["numeric-rule-flag"] = FeatureFlagsHelpers.CreateNumericRuleFlag()
+                    };
 
         var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration { Flags = flags });
         var ctx = new EvaluationContext("user-vip", new Dictionary<string, object?> { { "score", 850 } });
 
-        var result = evaluator.Evaluate("numeric-rule-flag", Trace.FeatureFlags.ValueType.String, "default", ctx);
+        var result = evaluator.Evaluate("numeric-rule-flag", Datadog.Trace.FeatureFlags.ValueType.String, "default", ctx);
 
-        Assert.Equal("vip", result.Value);
+        result.Value.Should().Be("vip");
         Assert.Equal(EvaluationReason.TargetingMatch, result.Reason);
-        Assert.Equal("vip", result.Variant);
+        result.Variant.Should().Be("vip");
     }
 
     [Fact]
     public void EvaluateTimeBasedFlagWithExpiredAllocationReturnsDefaultReason()
     {
         var flags = new Dictionary<string, Flag>
-        {
-            ["time-based-flag"] = FeatureFlagsHelpers.CreateTimeBasedFlag()
-        };
+                    {
+                        ["time-based-flag"] = FeatureFlagsHelpers.CreateTimeBasedFlag()
+                    };
 
         var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration { Flags = flags });
         var ctx = new EvaluationContext("user");
 
-        var result = evaluator.Evaluate("time-based-flag", Trace.FeatureFlags.ValueType.String, "default", ctx);
+        var result = evaluator.Evaluate("time-based-flag", Datadog.Trace.FeatureFlags.ValueType.String, "default", ctx);
 
-        Assert.Equal("default", result.Value);
+        result.Value.Should().Be("default");
         Assert.Equal(EvaluationReason.Default, result.Reason);
     }
 
@@ -342,19 +328,19 @@ public partial class FeatureFlagsEvaluatorTests
     public void EvaluateExposureFlagLogsExposureEvent()
     {
         var flags = new Dictionary<string, Flag>
-        {
-            ["exposure-flag"] = FeatureFlagsHelpers.CreateExposureFlag()
-        };
+                    {
+                        ["exposure-flag"] = FeatureFlagsHelpers.CreateExposureFlag()
+                    };
 
-        List<Trace.FeatureFlags.Exposure.Model.ExposureEvent> events = new List<Trace.FeatureFlags.Exposure.Model.ExposureEvent>();
-        var evaluator = new FeatureFlagsEvaluator((in Trace.FeatureFlags.Exposure.Model.ExposureEvent e) => events.Add(e), new ServerConfiguration { Flags = flags });
+        List<Trace.FeatureFlags.Exposure.Model.ExposureEvent> events = [];
+        var evaluator = new FeatureFlagsEvaluator((in e) => events.Add(e), new ServerConfiguration { Flags = flags });
         var ctx = new EvaluationContext("user-123");
 
-        var result = evaluator.Evaluate("exposure-flag", Trace.FeatureFlags.ValueType.String, "default", ctx);
+        var result = evaluator.Evaluate("exposure-flag", Datadog.Trace.FeatureFlags.ValueType.String, "default", ctx);
 
-        Assert.Equal("tracked-value", result.Value);
+        result.Value.Should().Be("tracked-value");
         Assert.Equal(EvaluationReason.TargetingMatch, result.Reason);
-        Assert.Equal("tracked", result.Variant);
+        result.Variant.Should().Be("tracked");
 
         // DoLog=true -> one exposure event
         Assert.Single(events);
@@ -365,12 +351,12 @@ public partial class FeatureFlagsEvaluatorTests
     // ---------------------------------------------------------------------
 
     [Theory]
-    [InlineData("2020-01-01T00:00:00.123Z", "2099-12-31T23:59:59.456Z")] // 3-digit milliseconds
-    [InlineData("2020-01-01T00:00:00.123456Z", "2099-12-31T23:59:59.654321Z")] // 6-digit microseconds
+    [InlineData("2020-01-01T00:00:00.123Z", "2099-12-31T23:59:59.456Z")]             // 3-digit milliseconds
+    [InlineData("2020-01-01T00:00:00.123456Z", "2099-12-31T23:59:59.654321Z")]       // 6-digit microseconds
     [InlineData("2020-01-01T00:00:00.123456789Z", "2099-12-31T23:59:59.987654321Z")] // 9-digit nanoseconds (last 2 digits truncated by .NET)
-    [InlineData("2020-01-01T00:00:00Z", "2099-12-31T23:59:59Z")] // no fractional seconds
-    [InlineData("2020-01-01T00:00:00.1Z", "2099-12-31T23:59:59.9Z")] // 1-digit
-    [InlineData("2020-01-01T00:00:00.12Z", "2099-12-31T23:59:59.99Z")] // 2-digit
+    [InlineData("2020-01-01T00:00:00Z", "2099-12-31T23:59:59Z")]                     // no fractional seconds
+    [InlineData("2020-01-01T00:00:00.1Z", "2099-12-31T23:59:59.9Z")]                 // 1-digit
+    [InlineData("2020-01-01T00:00:00.12Z", "2099-12-31T23:59:59.99Z")]               // 2-digit
     public void EvaluateTimeBasedFlagWithVariousIso8601DateFormats(string startAt, string endAt)
     {
         var flag = CreateTimeBasedFlagWithDates("iso8601-flag", startAt, endAt);
@@ -379,17 +365,17 @@ public partial class FeatureFlagsEvaluatorTests
         var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration { Flags = flags });
         var ctx = new EvaluationContext("user-123");
 
-        var result = evaluator.Evaluate("iso8601-flag", Trace.FeatureFlags.ValueType.String, "default", ctx);
+        var result = evaluator.Evaluate("iso8601-flag", Datadog.Trace.FeatureFlags.ValueType.String, "default", ctx);
 
         // The allocation is active (2020-2099 dates), so it should match
-        Assert.Equal("time-limited", result.Value);
+        result.Value.Should().Be("time-limited");
         Assert.Equal(EvaluationReason.TargetingMatch, result.Reason);
-        Assert.Equal("time-limited", result.Variant);
+        result.Variant.Should().Be("time-limited");
     }
 
     [Theory]
-    [InlineData("2020-01-01T00:00:00.235982Z", "2020-12-31T23:59:59.235982Z")] // 6-digit microseconds (past)
-    [InlineData("2020-01-01T00:00:00Z", "2020-12-31T23:59:59Z")] // no fractional seconds (past)
+    [InlineData("2020-01-01T00:00:00.235982Z", "2020-12-31T23:59:59.235982Z")]       // 6-digit microseconds (past)
+    [InlineData("2020-01-01T00:00:00Z", "2020-12-31T23:59:59Z")]                     // no fractional seconds (past)
     [InlineData("2020-01-01T00:00:00.123456789Z", "2020-12-31T23:59:59.987654321Z")] // 9-digit nanoseconds (truncated to 7 digits by .NET, but parses correctly)
     public void EvaluateTimeBasedFlagWithExpiredMicrosecondDatesReturnsDefault(string startAt, string endAt)
     {
@@ -399,16 +385,16 @@ public partial class FeatureFlagsEvaluatorTests
         var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration { Flags = flags });
         var ctx = new EvaluationContext("user-123");
 
-        var result = evaluator.Evaluate("expired-flag", Trace.FeatureFlags.ValueType.String, "default", ctx);
+        var result = evaluator.Evaluate("expired-flag", Datadog.Trace.FeatureFlags.ValueType.String, "default", ctx);
 
         // The allocation is expired (2020 dates), so it should return default
-        Assert.Equal("default", result.Value);
+        result.Value.Should().Be("default");
         Assert.Equal(EvaluationReason.Default, result.Reason);
     }
 
     [Theory]
-    [InlineData("1/1/2020", "12/31/2099")]           // US short date format
-    [InlineData("2020/01/01T00:00:00Z", "2099/12/31T23:59:59Z")] // slash separators
+    [InlineData("1/1/2020", "12/31/2099")]                         // US short date format
+    [InlineData("2020/01/01T00:00:00Z", "2099/12/31T23:59:59Z")]   // slash separators
     [InlineData("01 Jan 2020 00:00:00Z", "31 Dec 2099 23:59:59Z")] // RFC 2822 style
     public void EvaluateTimeBasedFlagWithNonStandardDateFormatsStillParses(string startAt, string endAt)
     {
@@ -421,24 +407,24 @@ public partial class FeatureFlagsEvaluatorTests
         var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration { Flags = flags });
         var ctx = new EvaluationContext("user-123");
 
-        var result = evaluator.Evaluate("non-standard-flag", Trace.FeatureFlags.ValueType.String, "default", ctx);
+        var result = evaluator.Evaluate("non-standard-flag", Datadog.Trace.FeatureFlags.ValueType.String, "default", ctx);
 
         // The allocation is active (2020-2099 dates), so it should match
-        Assert.Equal("time-limited", result.Value);
+        result.Value.Should().Be("time-limited");
         Assert.Equal(EvaluationReason.TargetingMatch, result.Reason);
-        Assert.Equal("time-limited", result.Variant);
+        result.Variant.Should().Be("time-limited");
     }
 
     [Theory]
-    [InlineData("not-a-date", "2099-12-31T23:59:59Z")] // invalid startAt
-    [InlineData("2020-01-01T00:00:00Z", "not-a-date")] // invalid endAt
-    [InlineData("garbage-123-xyz", "2099-12-31T23:59:59Z")] // garbage string
-    [InlineData("", "2099-12-31T23:59:59Z")]              // empty string
-    [InlineData("abc123", "2099-12-31T23:59:59Z")]        // alphanumeric garbage
+    [InlineData("not-a-date", "2099-12-31T23:59:59Z")]           // invalid startAt
+    [InlineData("2020-01-01T00:00:00Z", "not-a-date")]           // invalid endAt
+    [InlineData("garbage-123-xyz", "2099-12-31T23:59:59Z")]      // garbage string
+    [InlineData("", "2099-12-31T23:59:59Z")]                     // empty string
+    [InlineData("abc123", "2099-12-31T23:59:59Z")]               // alphanumeric garbage
     [InlineData("2020-13-01T00:00:00Z", "2099-12-31T23:59:59Z")] // invalid month (13)
     [InlineData("2020-01-32T00:00:00Z", "2099-12-31T23:59:59Z")] // invalid day (32)
-    [InlineData("12345", "2099-12-31T23:59:59Z")]         // just numbers
-    [InlineData("T00:00:00Z", "2099-12-31T23:59:59Z")]    // time only, no date
+    [InlineData("12345", "2099-12-31T23:59:59Z")]                // just numbers
+    [InlineData("T00:00:00Z", "2099-12-31T23:59:59Z")]           // time only, no date
     public void EvaluateTimeBasedFlagWithInvalidDateReturnsParseError(string startAt, string endAt)
     {
         var flag = CreateTimeBasedFlagWithDates("invalid-flag", startAt, endAt);
@@ -447,24 +433,38 @@ public partial class FeatureFlagsEvaluatorTests
         var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration { Flags = flags });
         var ctx = new EvaluationContext("user-123");
 
-        var result = evaluator.Evaluate("invalid-flag", Trace.FeatureFlags.ValueType.String, "default", ctx);
+        var result = evaluator.Evaluate("invalid-flag", Datadog.Trace.FeatureFlags.ValueType.String, "default", ctx);
 
-        Assert.Equal("default", result.Value);
+        result.Value.Should().Be("default");
         Assert.Equal(EvaluationReason.Error, result.Reason);
-        Assert.Equal("PARSE_ERROR", result.Error);
+        result.Error.Should().Be("PARSE_ERROR");
+    }
+
+    private static void AssertFlattenContext(Dictionary<string, object?> attrs, Dictionary<string, object?> expected)
+    {
+        var ctx = new EvaluationContext("structure", attrs);
+        var flattened = FeatureFlagsEvaluator.FlattenContext(ctx);
+
+        Assert.Equal(expected.Count, flattened.Count);
+
+        foreach (var pair in expected)
+        {
+            flattened.TryGetValue(pair.Key, out var actual).Should().BeTrue();
+            actual.Should().Be(pair.Value);
+        }
     }
 
     private static Flag CreateTimeBasedFlagWithDates(string key, string startAt, string endAt)
     {
         var variants = new Dictionary<string, Variant>
-        {
-            ["time-limited"] = new Variant("time-limited", "time-limited")
-        };
+                       {
+                           ["time-limited"] = new Variant("time-limited", "time-limited")
+                       };
 
-        var splits = new List<Split> { new Split { Shards = new List<Shard>(), VariationKey = "time-limited" } };
+        var splits = new List<Split> { new() { Shards = [], VariationKey = "time-limited" } };
         var alloc = new Allocation { Key = "time-alloc", StartAt = startAt, EndAt = endAt, Splits = splits, DoLog = false };
 
-        return new Flag { Key = key, Enabled = true, VariationType = ValueType.String, Variations = variants, Allocations = new List<Allocation> { alloc } };
+        return new Flag { Key = key, Enabled = true, VariationType = Datadog.Trace.FeatureFlags.ValueType.String, Variations = variants, Allocations = [alloc] };
     }
 }
 #pragma warning restore SA1204 // Static elements should appear before instance elements
