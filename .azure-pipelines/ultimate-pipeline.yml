@@ -4985,7 +4985,7 @@ stages:
       matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.temp_linux_smoke_tests_matrix'] ]
 
     pool:
-      name: azure-linux-smoke-scale-set
+      name: $(linuxX64SmokePool)
 
     steps:
     - template: steps/clone-repo.yml
