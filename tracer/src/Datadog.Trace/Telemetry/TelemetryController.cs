@@ -22,6 +22,7 @@ using Datadog.Trace.Telemetry.Collectors;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Telemetry.Transports;
 using Datadog.Trace.Util;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using ConfigurationKeys = Datadog.Trace.Configuration.ConfigurationKeys;
 
@@ -211,7 +212,8 @@ internal sealed class TelemetryController : ITelemetryController
             var serializer = JsonSerializer.Create(JsonTelemetryTransport.SerializerSettings);
             using var file = File.Open(filePath, FileMode.Create, FileAccess.Write);
             using var writer = new StreamWriter(file);
-            serializer.Serialize(writer, data);
+            using var jsonWriter = new JsonTextWriter(writer) { ArrayPool = JsonArrayPool.Shared };
+            serializer.Serialize(jsonWriter, data);
             await writer.FlushAsync().ConfigureAwait(false);
             Log.Debug("Telemetry dump complete");
         }

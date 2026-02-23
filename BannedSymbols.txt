@@ -7,3 +7,45 @@ M:System.Environment.GetEnvironmentVariable(System.String);Use EnvironmentHelper
 M:System.Environment.GetEnvironmentVariable(System.String,System.EnvironmentVariableTarget);Use EnvironmentHelpers.GetEnvironmentVariable instead to ensure proper configuration handling
 M:System.Environment.GetEnvironmentVariables();Avoid using this alltogether and get precise env vars through ConfigurationBuilder
 
+# Ban JsonConvert.SerializeObject - use JsonHelper in Datadog.Trace.Util.Json instead
+M:Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(System.Object);Use Datadog.Trace.Util.Json.JsonHelper.SerializeObject instead for ArrayPool optimization - new overloads can be added if required
+M:Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(System.Object,Datadog.Trace.Vendors.Newtonsoft.Json.Formatting);Use Datadog.Trace.Util.Json.JsonHelper.SerializeObject instead for ArrayPool optimization - new overloads can be added if required
+M:Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(System.Object,Datadog.Trace.Vendors.Newtonsoft.Json.JsonConverter[]);Use Datadog.Trace.Util.Json.JsonHelper.SerializeObject instead for ArrayPool optimization - new overloads can be added if required
+M:Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(System.Object,Datadog.Trace.Vendors.Newtonsoft.Json.Formatting,Datadog.Trace.Vendors.Newtonsoft.Json.JsonConverter[]);Use Datadog.Trace.Util.Json.JsonHelper.SerializeObject instead for ArrayPool optimization - new overloads can be added if required
+M:Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(System.Object,Datadog.Trace.Vendors.Newtonsoft.Json.JsonSerializerSettings);Use Datadog.Trace.Util.Json.JsonHelper.SerializeObject instead for ArrayPool optimization - new overloads can be added if required
+M:Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(System.Object,System.Type,Datadog.Trace.Vendors.Newtonsoft.Json.JsonSerializerSettings);Use Datadog.Trace.Util.Json.JsonHelper.SerializeObject instead for ArrayPool optimization - new overloads can be added if required
+M:Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(System.Object,Datadog.Trace.Vendors.Newtonsoft.Json.Formatting,Datadog.Trace.Vendors.Newtonsoft.Json.JsonSerializerSettings);Use Datadog.Trace.Util.Json.JsonHelper.SerializeObject instead for ArrayPool optimization - new overloads can be added if required
+M:Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(System.Object,System.Type,Datadog.Trace.Vendors.Newtonsoft.Json.Formatting,Datadog.Trace.Vendors.Newtonsoft.Json.JsonSerializerSettings);Use Datadog.Trace.Util.Json.JsonHelper.SerializeObject instead for ArrayPool optimization - new overloads can be added if required
+
+# Ban JsonConvert.DeserializeObject - use JsonHelper in Datadog.Trace.Util.Json instead
+M:Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.DeserializeObject(System.String);Use Datadog.Trace.Util.Json.JsonHelper.DeserializeObject instead for ArrayPool optimization - new overloads can be added if required
+M:Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.DeserializeObject(System.String,Datadog.Trace.Vendors.Newtonsoft.Json.JsonSerializerSettings);Use Datadog.Trace.Util.Json.JsonHelper.DeserializeObject instead for ArrayPool optimization - new overloads can be added if required
+M:Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.DeserializeObject(System.String,System.Type);Use Datadog.Trace.Util.Json.JsonHelper.DeserializeObject instead for ArrayPool optimization - new overloads can be added if required
+M:Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.DeserializeObject``1(System.String);Use Datadog.Trace.Util.Json.JsonHelper.DeserializeObject<T> instead for ArrayPool optimization - new overloads can be added if required
+M:Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.DeserializeObject``1(System.String,Datadog.Trace.Vendors.Newtonsoft.Json.JsonConverter[]);Use Datadog.Trace.Util.Json.JsonHelper.DeserializeObject<T> instead for ArrayPool optimization - new overloads can be added if required
+M:Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.DeserializeObject``1(System.String,Datadog.Trace.Vendors.Newtonsoft.Json.JsonSerializerSettings);Use Datadog.Trace.Util.Json.JsonHelper.DeserializeObject<T> instead for ArrayPool optimization - new overloads can be added if required
+M:Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.DeserializeObject(System.String,System.Type,Datadog.Trace.Vendors.Newtonsoft.Json.JsonConverter[]);Use Datadog.Trace.Util.Json.JsonHelper.DeserializeObject instead for ArrayPool optimization - new overloads can be added if required
+M:Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.DeserializeObject(System.String,System.Type,Datadog.Trace.Vendors.Newtonsoft.Json.JsonSerializerSettings);Use Datadog.Trace.Util.Json.JsonHelper.DeserializeObject instead for ArrayPool optimization - new overloads can be added if required
+
+# Ban JsonConvert.DeserializeAnonymousType - use JsonHelper in Datadog.Trace.Util.Json instead
+M:Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.DeserializeAnonymousType``1(System.String,``0);Use Datadog.Trace.Util.Json.JsonHelper.DeserializeObject<T> instead for ArrayPool optimization - new overloads can be added if required
+M:Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.DeserializeAnonymousType``1(System.String,``0,Datadog.Trace.Vendors.Newtonsoft.Json.JsonSerializerSettings);Use Datadog.Trace.Util.Json.JsonHelper.DeserializeObject<T> instead for ArrayPool optimization - new overloads can be added if required
+
+# Ban JObject.Parse - use JsonHelper.ParseJObject instead
+M:Datadog.Trace.Vendors.Newtonsoft.Json.Linq.JObject.Parse(System.String);Use JsonHelper.ParseJObject instead for ArrayPool optimization
+M:Datadog.Trace.Vendors.Newtonsoft.Json.Linq.JObject.Parse(System.String,Datadog.Trace.Vendors.Newtonsoft.Json.Linq.JsonLoadSettings);Use JsonHelper.ParseJObject instead for ArrayPool optimization
+
+# Ban JToken.Parse - use JsonHelper.ParseJToken instead
+M:Datadog.Trace.Vendors.Newtonsoft.Json.Linq.JToken.Parse(System.String);Use JsonHelper.ParseJToken instead for ArrayPool optimization
+M:Datadog.Trace.Vendors.Newtonsoft.Json.Linq.JToken.Parse(System.String,Datadog.Trace.Vendors.Newtonsoft.Json.Linq.JsonLoadSettings);Use JsonHelper.ParseJToken instead for ArrayPool optimization
+
+# Ban JArray.Parse - use JsonHelper.ParseJArray instead
+M:Datadog.Trace.Vendors.Newtonsoft.Json.Linq.JArray.Parse(System.String);Use JsonHelper.ParseJArray instead for ArrayPool optimization
+M:Datadog.Trace.Vendors.Newtonsoft.Json.Linq.JArray.Parse(System.String,Datadog.Trace.Vendors.Newtonsoft.Json.Linq.JsonLoadSettings);Use JsonHelper.ParseJArray instead for ArrayPool optimization
+
+# Ban JToken.ToString(Formatting, ...) - use JsonHelper.TokenToString instead
+M:Datadog.Trace.Vendors.Newtonsoft.Json.Linq.JToken.ToString(Datadog.Trace.Vendors.Newtonsoft.Json.Formatting,Datadog.Trace.Vendors.Newtonsoft.Json.JsonConverter[]);Use JsonHelper.TokenToString instead for ArrayPool optimization
+
+# Ban JsonSerializer.Serialize(TextWriter) - use JsonTextWriter with ArrayPool instead
+M:Datadog.Trace.Vendors.Newtonsoft.Json.JsonSerializer.Serialize(System.IO.TextWriter,System.Object);Use JsonTextWriter with ArrayPool = JsonArrayPool.Shared instead
+M:Datadog.Trace.Vendors.Newtonsoft.Json.JsonSerializer.Serialize(System.IO.TextWriter,System.Object,System.Type);Use JsonTextWriter with ArrayPool = JsonArrayPool.Shared instead

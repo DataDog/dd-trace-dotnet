@@ -6,6 +6,7 @@
 #nullable enable
 using System.Linq;
 using System.Threading.Tasks;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Debugger.Sink
@@ -35,7 +36,7 @@ namespace Datadog.Trace.Debugger.Sink
             var diagnostics = _diagnosticsSink.GetDiagnostics();
             if (diagnostics.Count > 0)
             {
-                await _diagnosticsBatchUploader.Upload(diagnostics.Select(JsonConvert.SerializeObject)).ConfigureAwait(continueOnCapturedContext: false);
+                await _diagnosticsBatchUploader.Upload(diagnostics.Select(JsonHelper.SerializeObject)).ConfigureAwait(continueOnCapturedContext: false);
             }
         }
 

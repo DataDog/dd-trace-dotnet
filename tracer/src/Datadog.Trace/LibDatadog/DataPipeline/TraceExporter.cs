@@ -11,6 +11,7 @@ using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using static Datadog.Trace.Agent.Api;
 
@@ -63,7 +64,7 @@ internal sealed class TraceExporter : SafeHandle, IApi
                 {
                     try
                     {
-                        var apiResponse = JsonConvert.DeserializeObject<ApiResponse>(json);
+                        var apiResponse = JsonHelper.DeserializeObject<ApiResponse>(json);
                         _updateSampleRates(apiResponse.RateByService);
                         _cachedResponse = json;
                     }

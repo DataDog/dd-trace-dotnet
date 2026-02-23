@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.AppSec.WafEncoding;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
@@ -28,7 +29,7 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
                 if (ReportedDiagnostics.Rules.Errors is { Count: > 0 })
                 {
                     HasRuleErrors = true;
-                    ErrorMessage = JsonConvert.SerializeObject(ReportedDiagnostics.Rules.Errors);
+                    ErrorMessage = JsonHelper.SerializeObject(ReportedDiagnostics.Rules.Errors);
                 }
             }
         }

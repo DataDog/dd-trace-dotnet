@@ -27,6 +27,7 @@ using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Ci;
@@ -422,7 +423,8 @@ public sealed class TestModule
                 {
                     using var fStream = File.OpenWrite(codeCoveragePath);
                     using var sWriter = new StreamWriter(fStream, Encoding.UTF8, 4096, false);
-                    new JsonSerializer().Serialize(sWriter, globalCoverage);
+                    using var jsonWriter = new JsonTextWriter(sWriter) { ArrayPool = JsonArrayPool.Shared };
+                    JsonSerializer.Create().Serialize(jsonWriter, globalCoverage);
                 }
                 catch (Exception ex)
                 {

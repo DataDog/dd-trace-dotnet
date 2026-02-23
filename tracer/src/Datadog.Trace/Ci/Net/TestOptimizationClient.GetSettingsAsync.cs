@@ -10,6 +10,7 @@ using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Ci.Telemetry;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 // ReSharper disable ConvertToPrimaryConstructor
@@ -80,7 +81,7 @@ internal sealed partial class TestOptimizationClient
                 new SettingsQuery(_serviceName, _environment, _repositoryUrl, _branchName, _commitSha, GetTestConfigurations(skipFrameworkInfo))),
             null);
 
-        var jsonQuery = JsonConvert.SerializeObject(query, SerializerSettings);
+        var jsonQuery = JsonHelper.SerializeObject(query, SerializerSettings);
         Log.Debug("TestOptimizationClient: Settings.JSON RQ = {Json}", jsonQuery);
 
         string? queryResponse;
@@ -101,7 +102,7 @@ internal sealed partial class TestOptimizationClient
             return default;
         }
 
-        var deserializedResult = JsonConvert.DeserializeObject<DataEnvelope<Data<SettingsResponse>?>>(queryResponse);
+        var deserializedResult = JsonHelper.DeserializeObject<DataEnvelope<Data<SettingsResponse>?>>(queryResponse);
         var settingsResponse = deserializedResult.Data?.Attributes ?? default;
         TelemetryFactory.Metrics.RecordCountCIVisibilityGitRequestsSettingsResponse(
             settingsResponse.CodeCoverage == true ? MetricTags.CIVisibilitySettingsResponse_CoverageFeature.Enabled : MetricTags.CIVisibilitySettingsResponse_CoverageFeature.Disabled,

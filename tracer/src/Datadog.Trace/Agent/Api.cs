@@ -18,6 +18,7 @@ using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util.Http;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Serilog.Events;
 using Datadog.Trace.Vendors.StatsdClient;
@@ -368,7 +369,7 @@ namespace Datadog.Trace.Agent
 
                         if (responseContent != _cachedResponse)
                         {
-                            var apiResponse = JsonConvert.DeserializeObject<ApiResponse>(responseContent);
+                            var apiResponse = JsonHelper.DeserializeObject<ApiResponse>(responseContent);
 
                             _updateSampleRates(apiResponse.RateByService);
 

@@ -11,6 +11,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.StatsdClient;
 
@@ -48,7 +49,7 @@ namespace Datadog.Trace.RuntimeMetrics
             }
 
             var rawValue = EnvironmentHelpers.GetEnvironmentVariable(PlatformKeys.AzureAppService.CountersKey);
-            var value = JsonConvert.DeserializeObject<PerformanceCountersValue>(rawValue);
+            var value = JsonHelper.DeserializeObject<PerformanceCountersValue>(rawValue);
 
             statsd.Gauge(MetricsNames.Gen0HeapSize, value.Gen0Size);
             statsd.Gauge(MetricsNames.Gen1HeapSize, value.Gen1Size);
