@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
 
@@ -14,54 +15,54 @@ namespace Datadog.Trace.Tests.Propagators
 {
     public class ParseUtilityTests
     {
-        public static TheoryData<IEnumerable<string>, ulong?> UInt64
+        public static TheoryData<SerializableList<string>, ulong?> UInt64
             => new()
-            {
-                { new[] { "42" }, 42 },
-                { new[] { "4x" }, null },
-                { new[] { "4x", "42" }, 42 }, // return first valid value
-                { new[] { string.Empty }, null },
-                { new[] { (string)null }, null },
-                { new List<string> { "42" }, 42 },
-                { new List<string> { "4x" }, null },
-                { new List<string> { string.Empty }, null },
-                { new List<string> { null }, null },
-                { null, null }, // null collection returns null
-            };
+               {
+                   { ["42"], 42 },
+                   { ["4x"], null },
+                   { ["4x", "42"], 42 }, // return first valid value
+                   { [string.Empty], null },
+                   { [null], null },
+                   { ["42"], 42 },
+                   { ["4x"], null },
+                   { [string.Empty], null },
+                   { [null], null },
+                   { null, null }, // null collection returns null
+               };
 
-        public static TheoryData<IEnumerable<string>, int?> Int32
+        public static TheoryData<SerializableList<string>, int?> Int32
             => new()
-            {
-                { new[] { "42" }, 42 },
-                { new[] { "4x" }, null },
-                { new[] { "4x", "42" }, 42 }, // return first valid value
-                { new[] { string.Empty }, null },
-                { new[] { (string)null }, null },
-                { new List<string> { "42" }, 42 },
-                { new List<string> { "4x" }, null },
-                { new List<string> { string.Empty }, null },
-                { new List<string> { null }, null },
-                { null, null }, // null collection returns null
-            };
+               {
+                   { ["42"], 42 },
+                   { ["4x"], null },
+                   { ["4x", "42"], 42 }, // return first valid value
+                   { [string.Empty], null },
+                   { [null], null },
+                   { ["42"], 42 },
+                   { ["4x"], null },
+                   { [string.Empty], null },
+                   { [null], null },
+                   { null, null }, // null collection returns null
+               };
 
-        public static TheoryData<IEnumerable<string>, string> String
+        public static TheoryData<SerializableList<string>, string> String
             => new()
-            {
-                { new[] { "42" }, "42" },
-                { new[] { "4x" }, "4x" },
-                { new[] { "4x", "42" }, "4x" },   // return first valid value
-                { new[] { string.Empty }, null }, // null or empty returns null
-                { new[] { (string)null }, null }, // null or empty returns null
-                { new List<string> { "42" }, "42" },
-                { new List<string> { "4x" }, "4x" },
-                { new List<string> { string.Empty }, null }, // null or empty returns null
-                { new List<string> { null }, null },         // null or empty returns null
-                { null, null },                              // null collection returns null
-            };
+               {
+                   { ["42"], "42" },
+                   { ["4x"], "4x" },
+                   { ["4x", "42"], "4x" },   // return first valid value
+                   { [string.Empty], null }, // null or empty returns null
+                   { [null], null },         // null or empty returns null
+                   { ["42"], "42" },
+                   { ["4x"], "4x" },
+                   { [string.Empty], null }, // null or empty returns null
+                   { [null], null },         // null or empty returns null
+                   { null, null },           // null collection returns null
+               };
 
         [Theory]
         [MemberData(nameof(UInt64))]
-        public void ParseUInt64Test(IEnumerable<string> values, ulong? expected)
+        public void ParseUInt64Test(SerializableList<string> values, ulong? expected)
         {
             var result = ParseUtility.ParseUInt64(
                 (object)null,
@@ -73,7 +74,7 @@ namespace Datadog.Trace.Tests.Propagators
 
         [Theory]
         [MemberData(nameof(Int32))]
-        public void ParseInt32Test(IEnumerable<string> values, int? expected)
+        public void ParseInt32Test(SerializableList<string> values, int? expected)
         {
             var result = ParseUtility.ParseInt32(
                 (object)null,
@@ -85,7 +86,7 @@ namespace Datadog.Trace.Tests.Propagators
 
         [Theory]
         [MemberData(nameof(String))]
-        public void ParseStringTest(IEnumerable<string> values, string expected)
+        public void ParseStringTest(SerializableList<string> values, string expected)
         {
             var result = ParseUtility.ParseString(
                 (object)null,
@@ -97,7 +98,7 @@ namespace Datadog.Trace.Tests.Propagators
 
         [Theory]
         [MemberData(nameof(String))]
-        public void ParseStringWithHeaders(IEnumerable<string> values, string expected)
+        public void ParseStringWithHeaders(SerializableList<string> values, string expected)
         {
             var result = ParseUtility.ParseString(
                 new HeaderStruct(() => values),
