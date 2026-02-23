@@ -324,11 +324,13 @@ internal sealed class TelemetryController : ITelemetryController
             if (sendExtendedHeartbeat)
             {
                 Log.Debug("Pushing extended heartbeat telemetry");
+                // Not including dependencies in the extended heartbeat to reduce
+                // payload size and to avoid the 2000 dependency limit
                 var payload = _dataBuilder.BuildExtendedHeartbeatData(
                     application,
                     host,
                     _configuration.GetFullData(),
-                    _dependencies.GetFullData(),
+                    dependencies: null,
                     _integrations.GetFullData(),
                     _namingVersion);
                 await _transportManager.TryPushTelemetry(payload).ConfigureAwait(false);
