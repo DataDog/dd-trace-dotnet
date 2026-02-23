@@ -360,6 +360,9 @@ The tracer runs in-process with customer applications and must have minimal perf
   - Example: Managed loader tests use `MockEnvironmentVariableProvider` (see `tracer/test/Datadog.Trace.Tests/ClrProfiler/Managed/Loader/`)
 - Prefer using `[Theory]` with input data rather than duplicating tests
 
+📖 **Load when**: Using `[CombinatorialData]`, `[CombinatorialMemberData]`, `[PairwiseData]`, or fixing non-serializable xUnit theory data warnings
+- **`docs/development/XunitCombinatorial.md`** — Combinatorial/pairwise test configuration, `[CombinatorialOrPairwiseData]` attribute, serializable test data requirements, and existing `SerializableList<T>`/`SerializableDictionary` helpers
+
 ## Commit & Pull Request Guidelines
 
 **Commits:**
