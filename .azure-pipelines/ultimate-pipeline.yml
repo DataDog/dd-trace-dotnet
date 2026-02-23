@@ -5021,6 +5021,7 @@ stages:
         baseImage: alpine
         command: "RunArtifactSmokeTests -SmokeTestCategory $(category) -SmokeTestScenario $(scenario)"
         apikey: $(DD_LOGGER_DD_API_KEY)
+        extraArgs: "-v /var/run/docker.sock:/var/run/docker.sock"
 
     - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
