@@ -7,17 +7,20 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using Datadog.Trace.FeatureFlags;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Datadog.Trace.Tests.FeatureFlags;
 
 /// <summary> FeatureFlagsEvaluator discrete tests </summary>
 public partial class FeatureFlagsEvaluatorTests
 {
+#pragma warning disable SA1201 // A method should not follow a class
 #pragma warning disable SA1204 // Static elements should appear before instance elements
 #pragma warning disable SA1500 // Braces for multi-line statements should not share line
 
@@ -25,47 +28,106 @@ public partial class FeatureFlagsEvaluatorTests
     // MapValue tests
     // ---------------------------------------------------------------------
 
-    public static IEnumerable<object?[]> MapValueCases()
+    public class MapValueTestCase : IXunitSerializable
     {
-        // targetType, value, expected, typeof(Exception)
-        yield return [null, null, null];
+        public MapValueTestCase()
+        {
+        }
 
-        // String
-        yield return ["hello", "hello", null];
-        yield return [123, "123", null];
-        yield return [true, "True", null];
-        yield return [3.14, "3.14", null];
+        public MapValueTestCase(object? input, object? expected, Type? expectedExceptionType)
+        {
+            Input = input;
+            Expected = expected;
+            ExpectedExceptionType = expectedExceptionType;
+        }
 
-        // Bool
-        yield return [true, true, null];
-        yield return [false, false, null];
-        yield return ["true", true, null];
-        yield return ["false", false, null];
-        yield return ["TRUE", true, null];
-        yield return ["FALSE", false, null];
-        yield return [1, true, null];
-        yield return [0, false, null];
+        public object? Input { get; private set; }
 
-        // Int
-        yield return [42, 42, null];
-        yield return ["42", 42, null];
+        public object? Expected { get; private set; }
 
-        // Double
-        yield return [3.14, 3.14, null];
-        yield return ["3.14", 3.14, null];
-        yield return [42, 42d, null];
-        yield return ["42", 42d, null];
+        public Type? ExpectedExceptionType { get; private set; }
 
-        // Unsupported
-        yield return [new DateTime(2023, 12, 21), null, typeof(ArgumentException)];
-        yield return ["3.14", 3, typeof(FormatException)];
-        yield return [3.14, 3, typeof(FormatException)];
+        public void Serialize(IXunitSerializationInfo info)
+        {
+            info.AddValue("InputType", Input?.GetType().Name ?? "null");
+            info.AddValue("InputValue", Input?.ToString());
+            info.AddValue("ExpectedType", Expected?.GetType().Name ?? "null");
+            info.AddValue("ExpectedValue", Expected?.ToString());
+            info.AddValue("ExceptionType", ExpectedExceptionType?.AssemblyQualifiedName);
+        }
+
+        public void Deserialize(IXunitSerializationInfo info)
+        {
+            var inputType = info.GetValue<string>("InputType");
+            var inputValue = info.GetValue<string>("InputValue");
+            Input = Decode(inputType, inputValue);
+
+            var expectedType = info.GetValue<string>("ExpectedType");
+            var expectedValue = info.GetValue<string>("ExpectedValue");
+            Expected = Decode(expectedType, expectedValue);
+
+            var exceptionTypeName = info.GetValue<string>("ExceptionType");
+            ExpectedExceptionType = exceptionTypeName is null ? null : Type.GetType(exceptionTypeName);
+        }
+
+        private static object? Decode(string typeName, string? value) => typeName switch
+        {
+            "null" => null,
+            "String" => value,
+            "Int32" => int.Parse(value!, CultureInfo.InvariantCulture),
+            "Double" => double.Parse(value!, CultureInfo.InvariantCulture),
+            "Boolean" => bool.Parse(value!),
+            "DateTime" => DateTime.Parse(value!, CultureInfo.InvariantCulture),
+            _ => throw new InvalidOperationException($"Unknown type: {typeName}")
+        };
     }
+
+    public static TheoryData<MapValueTestCase> MapValueCases()
+        => new()
+        {
+            // input, expected, expectedExceptionType
+            new(null, null, null),
+
+            // String
+            new("hello", "hello", null),
+            new(123, "123", null),
+            new(true, "True", null),
+            new(3.14, "3.14", null),
+
+            // Bool
+            new(true, true, null),
+            new(false, false, null),
+            new("true", true, null),
+            new("false", false, null),
+            new("TRUE", true, null),
+            new("FALSE", false, null),
+            new(1, true, null),
+            new(0, false, null),
+
+            // Int
+            new(42, 42, null),
+            new("42", 42, null),
+
+            // Double
+            new(3.14, 3.14, null),
+            new("3.14", 3.14, null),
+            new(42, 42d, null),
+            new("42", 42d, null),
+
+            // Unsupported
+            new(new DateTime(2023, 12, 21), null, typeof(ArgumentException)),
+            new("3.14", 3, typeof(FormatException)),
+            new(3.14, 3, typeof(FormatException)),
+        };
 
     [Theory]
     [MemberData(nameof(MapValueCases))]
-    public void MapValueTests(object? input, object? expected, Type? expectedExceptionType)
+    public void MapValueTests(MapValueTestCase tc)
     {
+        var input = tc.Input;
+        var expected = tc.Expected;
+        var expectedExceptionType = tc.ExpectedExceptionType;
+
         if (expectedExceptionType is not null)
         {
             try
@@ -467,5 +529,6 @@ public partial class FeatureFlagsEvaluatorTests
         return new Flag { Key = key, Enabled = true, VariationType = Datadog.Trace.FeatureFlags.ValueType.String, Variations = variants, Allocations = [alloc] };
     }
 }
+#pragma warning restore SA1201 // A method should not follow a class
 #pragma warning restore SA1204 // Static elements should appear before instance elements
 #pragma warning restore SA1500 // Braces for multi-line statements should not share line

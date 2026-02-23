@@ -11,9 +11,11 @@ using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.Tagging;
 using FluentAssertions;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Datadog.Trace.Tests.Configuration.Schema
 {
+#pragma warning disable SA1201 // A method should not follow a class
     public class MessagingSchemaTests
     {
         private const string DefaultServiceName = "MyApplication";
@@ -23,63 +25,141 @@ namespace Datadog.Trace.Tests.Configuration.Schema
             { "rabbitmq", "my-rabbitmq" },
         };
 
-        public static IEnumerable<(int SchemaVersion, int OperationType, string ExpectedInboundOpName, string ExpectedOutboundOpName)> GetOperationNameData()
+        public class OperationNameData : IXunitSerializable
         {
-            yield return (0, (int)MessagingSchema.OperationType.Kafka, "kafka.consume", "kafka.produce");
-            yield return (0, (int)MessagingSchema.OperationType.IbmMq, "ibmmq.consume", "ibmmq.produce");
-            yield return (0, (int)MessagingSchema.OperationType.AwsSqs, "aws.sqs.consume", "aws.sqs.produce");
-            yield return (1, (int)MessagingSchema.OperationType.Kafka, "kafka.process", "kafka.send");
-            yield return (1, (int)MessagingSchema.OperationType.IbmMq, "ibmmq.process", "ibmmq.send");
-            yield return (1, (int)MessagingSchema.OperationType.AwsSqs, "aws.sqs.process", "aws.sqs.send");
+            public OperationNameData()
+            {
+            }
+
+            public OperationNameData(int schemaVersion, int operationType, string expectedInboundOpName, string expectedOutboundOpName)
+            {
+                SchemaVersion = schemaVersion;
+                OperationType = operationType;
+                ExpectedInboundOpName = expectedInboundOpName;
+                ExpectedOutboundOpName = expectedOutboundOpName;
+            }
+
+            public int SchemaVersion { get; private set; }
+
+            public int OperationType { get; private set; }
+
+            public string ExpectedInboundOpName { get; private set; }
+
+            public string ExpectedOutboundOpName { get; private set; }
+
+            public void Deserialize(IXunitSerializationInfo info)
+            {
+                SchemaVersion = info.GetValue<int>(nameof(SchemaVersion));
+                OperationType = info.GetValue<int>(nameof(OperationType));
+                ExpectedInboundOpName = info.GetValue<string>(nameof(ExpectedInboundOpName));
+                ExpectedOutboundOpName = info.GetValue<string>(nameof(ExpectedOutboundOpName));
+            }
+
+            public void Serialize(IXunitSerializationInfo info)
+            {
+                info.AddValue(nameof(SchemaVersion), SchemaVersion);
+                info.AddValue(nameof(OperationType), OperationType);
+                info.AddValue(nameof(ExpectedInboundOpName), ExpectedInboundOpName);
+                info.AddValue(nameof(ExpectedOutboundOpName), ExpectedOutboundOpName);
+            }
         }
 
-        public static IEnumerable<(int SchemaVersion, int ServiceType, string ExpectedValue, bool RemoveClientServiceNamesEnabled)> GetServiceNameData()
+        public class ServiceNameData : IXunitSerializable
+        {
+            public ServiceNameData()
+            {
+            }
+
+            public ServiceNameData(int schemaVersion, int serviceType, string expectedValue, bool removeClientServiceNamesEnabled)
+            {
+                SchemaVersion = schemaVersion;
+                ServiceType = serviceType;
+                ExpectedValue = expectedValue;
+                RemoveClientServiceNamesEnabled = removeClientServiceNamesEnabled;
+            }
+
+            public int SchemaVersion { get; private set; }
+
+            public int ServiceType { get; private set; }
+
+            public string ExpectedValue { get; private set; }
+
+            public bool RemoveClientServiceNamesEnabled { get; private set; }
+
+            public void Deserialize(IXunitSerializationInfo info)
+            {
+                SchemaVersion = info.GetValue<int>(nameof(SchemaVersion));
+                ServiceType = info.GetValue<int>(nameof(ServiceType));
+                ExpectedValue = info.GetValue<string>(nameof(ExpectedValue));
+                RemoveClientServiceNamesEnabled = info.GetValue<bool>(nameof(RemoveClientServiceNamesEnabled));
+            }
+
+            public void Serialize(IXunitSerializationInfo info)
+            {
+                info.AddValue(nameof(SchemaVersion), SchemaVersion);
+                info.AddValue(nameof(ServiceType), ServiceType);
+                info.AddValue(nameof(ExpectedValue), ExpectedValue);
+                info.AddValue(nameof(RemoveClientServiceNamesEnabled), RemoveClientServiceNamesEnabled);
+            }
+        }
+
+        public static IEnumerable<OperationNameData> GetOperationNameData()
+        {
+            yield return new(0, (int)MessagingSchema.OperationType.Kafka, "kafka.consume", "kafka.produce");
+            yield return new(0, (int)MessagingSchema.OperationType.IbmMq, "ibmmq.consume", "ibmmq.produce");
+            yield return new(0, (int)MessagingSchema.OperationType.AwsSqs, "aws.sqs.consume", "aws.sqs.produce");
+            yield return new(1, (int)MessagingSchema.OperationType.Kafka, "kafka.process", "kafka.send");
+            yield return new(1, (int)MessagingSchema.OperationType.IbmMq, "ibmmq.process", "ibmmq.send");
+            yield return new(1, (int)MessagingSchema.OperationType.AwsSqs, "aws.sqs.process", "aws.sqs.send");
+        }
+
+        public static IEnumerable<ServiceNameData> GetServiceNameData()
         {
             // Mapped service names (always return mapped value)
-            yield return (0, (int)MessagingSchema.ServiceType.Kafka, "custom-kafka", true);
-            yield return (0, (int)MessagingSchema.ServiceType.Kafka, "custom-kafka", false);
-            yield return (1, (int)MessagingSchema.ServiceType.Kafka, "custom-kafka", true);
-            yield return (1, (int)MessagingSchema.ServiceType.Kafka, "custom-kafka", false);
+            yield return new(0, (int)MessagingSchema.ServiceType.Kafka, "custom-kafka", true);
+            yield return new(0, (int)MessagingSchema.ServiceType.Kafka, "custom-kafka", false);
+            yield return new(1, (int)MessagingSchema.ServiceType.Kafka, "custom-kafka", true);
+            yield return new(1, (int)MessagingSchema.ServiceType.Kafka, "custom-kafka", false);
             // Unmapped service names
-            yield return (0, (int)MessagingSchema.ServiceType.AwsSqs, DefaultServiceName, true);
-            yield return (0, (int)MessagingSchema.ServiceType.AwsSqs, $"{DefaultServiceName}-aws.sqs", false);
-            yield return (1, (int)MessagingSchema.ServiceType.AwsSqs, DefaultServiceName, true);
-            yield return (1, (int)MessagingSchema.ServiceType.AwsSqs, DefaultServiceName, false);
+            yield return new(0, (int)MessagingSchema.ServiceType.AwsSqs, DefaultServiceName, true);
+            yield return new(0, (int)MessagingSchema.ServiceType.AwsSqs, $"{DefaultServiceName}-aws.sqs", false);
+            yield return new(1, (int)MessagingSchema.ServiceType.AwsSqs, DefaultServiceName, true);
+            yield return new(1, (int)MessagingSchema.ServiceType.AwsSqs, DefaultServiceName, false);
         }
 
         [Theory]
         [CombinatorialData]
         public void GetInboundOperationNameIsCorrect(
-            [CombinatorialMemberData(nameof(GetOperationNameData))] (int SchemaVersion, int MessagingSystem, string ExpectedInboundOpName, string ExpectedOutboundOpName) values,
+            [CombinatorialMemberData(nameof(GetOperationNameData))] OperationNameData values,
             bool peerServiceTagsEnabled,
             bool removeClientServiceNamesEnabled)
         {
             var schemaVersion = (SchemaVersion)values.SchemaVersion;
             var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings, new Dictionary<string, string>());
-            namingSchema.Messaging.GetInboundOperationName((MessagingSchema.OperationType)values.MessagingSystem).Should().Be(values.ExpectedInboundOpName);
+            namingSchema.Messaging.GetInboundOperationName((MessagingSchema.OperationType)values.OperationType).Should().Be(values.ExpectedInboundOpName);
         }
 
         [Theory]
         [CombinatorialData]
         public void GetOutboundOperationNameIsCorrect(
-            [CombinatorialMemberData(nameof(GetOperationNameData))] (int SchemaVersion, int MessagingSystem, string ExpectedInboundOpName, string ExpectedOutboundOpName) values,
+            [CombinatorialMemberData(nameof(GetOperationNameData))] OperationNameData values,
             bool peerServiceTagsEnabled,
             bool removeClientServiceNamesEnabled)
         {
             var schemaVersion = (SchemaVersion)values.SchemaVersion;
             var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings, new Dictionary<string, string>());
-            namingSchema.Messaging.GetOutboundOperationName((MessagingSchema.OperationType)values.MessagingSystem).Should().Be(values.ExpectedOutboundOpName);
+            namingSchema.Messaging.GetOutboundOperationName((MessagingSchema.OperationType)values.OperationType).Should().Be(values.ExpectedOutboundOpName);
         }
 
         [Theory]
         [CombinatorialData]
         public void GetServiceNameIsCorrect(
-            [CombinatorialMemberData(nameof(GetServiceNameData))] (int SchemaVersion, int MessagingSystem, string ExpectedValue, bool RemoveClientServiceNamesEnabled) values,
+            [CombinatorialMemberData(nameof(GetServiceNameData))] ServiceNameData values,
             bool peerServiceTagsEnabled)
         {
             var schemaVersion = (SchemaVersion)values.SchemaVersion;
             var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, values.RemoveClientServiceNamesEnabled, DefaultServiceName, _mappings, new Dictionary<string, string>());
-            namingSchema.Messaging.GetServiceName((MessagingSchema.ServiceType)values.MessagingSystem).Should().Be(values.ExpectedValue);
+            namingSchema.Messaging.GetServiceName((MessagingSchema.ServiceType)values.ServiceType).Should().Be(values.ExpectedValue);
         }
 
         [Theory]
@@ -190,4 +270,5 @@ namespace Datadog.Trace.Tests.Configuration.Schema
             }
         }
     }
+#pragma warning restore SA1201 // A method should not follow a class
 }

@@ -10,6 +10,7 @@ using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Tests.Util;
 using FluentAssertions;
 using Moq;
@@ -57,14 +58,16 @@ namespace Datadog.Trace.Tests.Propagators
         /// This data tests those methods directly (as it is signifcantly easier to see the error).
         /// </summary>
         /// <returns>The test data</returns>
-        public static IEnumerable<object[]> TryGetSingleTestCases()
+        public static TheoryData<string, SerializableList<string>> TryGetSingleTestCases()
         {
-            yield return new object[] { new HashSet<string> { "foo" } };                // Triggers TryGetSingleRare
-            yield return new object[] { new List<string> { "foo" } };                   // Triggers fast path
-            yield return new object[] { new string[] { "foo" } };                       // Triggers fast path
-            yield return new object[] { new Queue<string>(new[] { "foo" }) };           // Triggers TryGetSingleRare
-            yield return new object[] { Enumerable.Range(0, 1).Select(_ => "foo") };    // Triggers TryGetSingleRare
-            yield return new object[] { GetYieldValues("foo") };                        // Triggers TryGetSingleRare
+            var data = new TheoryData<string, SerializableList<string>>();
+            data.Add("HashSet", new SerializableList<string> { "foo" });    // Triggers TryGetSingleRare
+            data.Add("List", new SerializableList<string> { "foo" });       // Triggers fast path
+            data.Add("Array", new SerializableList<string> { "foo" });      // Triggers fast path
+            data.Add("Queue", new SerializableList<string> { "foo" });      // Triggers TryGetSingleRare
+            data.Add("Enumerable", new SerializableList<string> { "foo" }); // Triggers TryGetSingleRare
+            data.Add("Yield", new SerializableList<string> { "foo" });      // Triggers TryGetSingleRare
+            return data;
         }
 
         /// <summary>
@@ -73,54 +76,22 @@ namespace Datadog.Trace.Tests.Propagators
         /// However, this was failing and always return false for non-standard array types (e.g. a queue or hashset).
         /// </summary>
         /// <returns>The test data</returns>
-        public static IEnumerable<object[]> TryExtractTestCases()
+        public static TheoryData<string, SerializableList<string>, bool> TryExtractTestCases()
         {
-            yield return new object[]
-            {
-                new[] { DummyTraceParent },                                         // Fast path (string[])
-                true                                                                // VALID
-            };
-
-            yield return new object[]
-            {
-                new List<string> { DummyTraceParent },                              // Fast path (List<string>)
-                true                                                                // VALID
-            };
-
-            yield return new object[]
-            {
-                new HashSet<string> { DummyTraceParent },                           // TryGetSingleRare path (HashSet<string>)
-                true                                                                // VALID
-            };
-
-            yield return new object[]
-            {
-                new Queue<string>(new[] { DummyTraceParent }),                      // TryGetSingleRare path (Queue<string>)
-                true                                                                // VALID
-            };
-
-            yield return new object[]
-            {
-                GetYieldValues(DummyTraceParent),                                   // TryGetSingleRare path (yield return)
-                true                                                                // VALID
-            };
-
+            var data = new TheoryData<string, SerializableList<string>, bool>();
+            data.Add("Array", new SerializableList<string> { DummyTraceParent }, true);        // Fast path (string[])
+            data.Add("List", new SerializableList<string> { DummyTraceParent }, true);         // Fast path (List<string>)
+            data.Add("HashSet", new SerializableList<string> { DummyTraceParent }, true);      // TryGetSingleRare path (HashSet<string>)
+            data.Add("Queue", new SerializableList<string> { DummyTraceParent }, true);        // TryGetSingleRare path (Queue<string>)
+            data.Add("Yield", new SerializableList<string> { DummyTraceParent }, true);        // TryGetSingleRare path (yield return)
             // edge cases that are invalid, but have likely already been covered by other tests
-            yield return new object[] { Array.Empty<string>(), false };             // No headers
-            yield return new object[] { new[] { string.Empty }, false };            // Empty string header
-            yield return new object[] { new[] { "  " }, false };                    // Whitespace-only header
-            yield return new object[] { new[] { "invalid" }, false };               // Invalid traceparent format
-            yield return new object[]
-            {
-                new[]
-                {
-                    DummyTraceParent,
-                    DummyTraceParent
-                },
-                false                                                               // Multiple headers should fail
-            };
-
-            yield return new object[] { null, false };                              // null values - regression test
+            data.Add("Array", new SerializableList<string>(), false);                          // No headers
+            data.Add("Array", new SerializableList<string> { string.Empty }, false);           // Empty string header
+            data.Add("Array", new SerializableList<string> { "  " }, false);                   // Whitespace-only header
+            data.Add("Array", new SerializableList<string> { "invalid" }, false);              // Invalid traceparent format
+            data.Add("Array", new SerializableList<string> { DummyTraceParent, DummyTraceParent }, false); // Multiple headers should fail
+            data.Add("null", new SerializableList<string>(), false);                           // null values - regression test
+            return data;
         }
 
         public static IEnumerable<string> GetYieldValues(params string[] values)
@@ -1132,26 +1103,23 @@ namespace Datadog.Trace.Tests.Propagators
 
         [Theory]
         [MemberData(nameof(TryGetSingleTestCases))]
-        public void TryGetSingle_ShouldReturnTrue_ForSingleValues(IEnumerable<string> values)
+        public void TryGetSingle_ShouldReturnTrue_ForSingleValues(string collectionType, SerializableList<string> data)
         {
+            var values = BuildCollection(collectionType, data);
             W3CTraceContextPropagator.TryGetSingle(values, out var value).Should().BeTrue();
             value.Should().Be("foo");
         }
 
         [Theory]
         [MemberData(nameof(TryExtractTestCases))]
-        public void TryExtract_ShouldReturnExpectedResult(IEnumerable<string> traceParentHeaders, bool expectedSuccess)
+        public void TryExtract_ShouldReturnExpectedResult(string collectionType, SerializableList<string> data, bool expectedSuccess)
         {
+            var traceParentHeaders = BuildCollection(collectionType, data);
             var headers = new Mock<IHeadersCollection>(MockBehavior.Strict);
             headers.Setup(h => h.GetValues("traceparent"))
                    .Returns(traceParentHeaders);
             headers.Setup(h => h.GetValues("tracestate"))
                    .Returns(new[] { "dd=s:2;o:rum;t.dm:-4;t.usr.id:12345" });
-
-            var carrier = headers.Object;
-            var carrierGetter = new Mock<ICarrierGetter<IHeadersCollection>>();
-            carrierGetter.Setup(c => c.Get(carrier, "traceparent"))
-                         .Returns(traceParentHeaders);
 
             var result = W3CPropagator.Extract(headers.Object, (carrier, name) => carrier.GetValues(name));
 
@@ -1163,6 +1131,21 @@ namespace Datadog.Trace.Tests.Propagators
             {
                 result.SpanContext.Should().BeNull();
             }
+        }
+
+        private static IEnumerable<string> BuildCollection(string collectionType, SerializableList<string> data)
+        {
+            return collectionType switch
+            {
+                "null" => null,
+                "HashSet" => new HashSet<string>(data.Values),
+                "List" => new List<string>(data.Values),
+                "Array" => data.Values.ToArray(),
+                "Queue" => new Queue<string>(data.Values),
+                "Enumerable" => data.Values.Select(x => x),
+                "Yield" => GetYieldValues([.. data.Values]),
+                _ => throw new ArgumentException($"Unknown collection type: {collectionType}"),
+            };
         }
     }
 }

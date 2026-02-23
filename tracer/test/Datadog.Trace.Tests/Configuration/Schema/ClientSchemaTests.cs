@@ -12,9 +12,11 @@ using Datadog.Trace.ServiceFabric;
 using Datadog.Trace.Tagging;
 using FluentAssertions;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Datadog.Trace.Tests.Configuration.Schema
 {
+#pragma warning disable SA1201 // A method should not follow a class
     public class ClientSchemaTests
     {
         private const string DefaultServiceName = "MyApplication";
@@ -25,36 +27,138 @@ namespace Datadog.Trace.Tests.Configuration.Schema
             { "mongodb", "my-mongo" },
         };
 
-        public static IEnumerable<(int SchemaVersion, int Protocol, string ExpectedValue)> GetOperationNameForProtocolData()
+        public class OperationNameData : IXunitSerializable
         {
-            yield return (0, (int)ClientSchema.Protocol.Http, "http.request");         // SchemaVersion.V0
-            yield return (0, (int)ClientSchema.Protocol.Grpc, "grpc.request");
-            yield return (1, (int)ClientSchema.Protocol.Http, "http.client.request");  // SchemaVersion.V1
-            yield return (1, (int)ClientSchema.Protocol.Grpc, "grpc.client.request");
+            public OperationNameData()
+            {
+            }
+
+            public OperationNameData(int schemaVersion, int protocol, string expectedValue)
+            {
+                SchemaVersion = schemaVersion;
+                Protocol = protocol;
+                ExpectedValue = expectedValue;
+            }
+
+            public int SchemaVersion { get; private set; }
+
+            public int Protocol { get; private set; }
+
+            public string ExpectedValue { get; private set; }
+
+            public void Deserialize(IXunitSerializationInfo info)
+            {
+                SchemaVersion = info.GetValue<int>(nameof(SchemaVersion));
+                Protocol = info.GetValue<int>(nameof(Protocol));
+                ExpectedValue = info.GetValue<string>(nameof(ExpectedValue));
+            }
+
+            public void Serialize(IXunitSerializationInfo info)
+            {
+                info.AddValue(nameof(SchemaVersion), SchemaVersion);
+                info.AddValue(nameof(Protocol), Protocol);
+                info.AddValue(nameof(ExpectedValue), ExpectedValue);
+            }
         }
 
-        public static IEnumerable<(int SchemaVersion, int Component, string ExpectedValue, bool RemoveClientServiceNamesEnabled)> GetServiceNameData()
+        public class ServiceNameData : IXunitSerializable
         {
-            yield return (0, (int)ClientSchema.Component.Http, "some-service", true);   // V0, mapped
-            yield return (0, (int)ClientSchema.Component.Http, "some-service", false);
-            yield return (1, (int)ClientSchema.Component.Http, "some-service", true);   // V1, mapped
-            yield return (1, (int)ClientSchema.Component.Http, "some-service", false);
-            yield return (0, (int)ClientSchema.Component.Grpc, DefaultServiceName, true);   // V0, unmapped
-            yield return (0, (int)ClientSchema.Component.Grpc, $"{DefaultServiceName}-grpc-client", false);
-            yield return (1, (int)ClientSchema.Component.Grpc, DefaultServiceName, true);   // V1, unmapped
-            yield return (1, (int)ClientSchema.Component.Grpc, DefaultServiceName, false);
+            public ServiceNameData()
+            {
+            }
+
+            public ServiceNameData(int schemaVersion, int component, string expectedValue, bool removeClientServiceNamesEnabled)
+            {
+                SchemaVersion = schemaVersion;
+                Component = component;
+                ExpectedValue = expectedValue;
+                RemoveClientServiceNamesEnabled = removeClientServiceNamesEnabled;
+            }
+
+            public int SchemaVersion { get; private set; }
+
+            public int Component { get; private set; }
+
+            public string ExpectedValue { get; private set; }
+
+            public bool RemoveClientServiceNamesEnabled { get; private set; }
+
+            public void Deserialize(IXunitSerializationInfo info)
+            {
+                SchemaVersion = info.GetValue<int>(nameof(SchemaVersion));
+                Component = info.GetValue<int>(nameof(Component));
+                ExpectedValue = info.GetValue<string>(nameof(ExpectedValue));
+                RemoveClientServiceNamesEnabled = info.GetValue<bool>(nameof(RemoveClientServiceNamesEnabled));
+            }
+
+            public void Serialize(IXunitSerializationInfo info)
+            {
+                info.AddValue(nameof(SchemaVersion), SchemaVersion);
+                info.AddValue(nameof(Component), Component);
+                info.AddValue(nameof(ExpectedValue), ExpectedValue);
+                info.AddValue(nameof(RemoveClientServiceNamesEnabled), RemoveClientServiceNamesEnabled);
+            }
         }
 
-        public static IEnumerable<(int SchemaVersion, string ExpectedSuffix)> GetOperationNameSuffixForRequestData()
+        public class OperationNameSuffixData : IXunitSerializable
         {
-            yield return (0, string.Empty);           // SchemaVersion.V0
-            yield return (1, ".request");   // SchemaVersion.V1
+            public OperationNameSuffixData()
+            {
+            }
+
+            public OperationNameSuffixData(int schemaVersion, string expectedSuffix)
+            {
+                SchemaVersion = schemaVersion;
+                ExpectedSuffix = expectedSuffix;
+            }
+
+            public int SchemaVersion { get; private set; }
+
+            public string ExpectedSuffix { get; private set; }
+
+            public void Deserialize(IXunitSerializationInfo info)
+            {
+                SchemaVersion = info.GetValue<int>(nameof(SchemaVersion));
+                ExpectedSuffix = info.GetValue<string>(nameof(ExpectedSuffix));
+            }
+
+            public void Serialize(IXunitSerializationInfo info)
+            {
+                info.AddValue(nameof(SchemaVersion), SchemaVersion);
+                info.AddValue(nameof(ExpectedSuffix), ExpectedSuffix);
+            }
+        }
+
+        public static IEnumerable<OperationNameData> GetOperationNameForProtocolData()
+        {
+            yield return new(0, (int)ClientSchema.Protocol.Http, "http.request");         // SchemaVersion.V0
+            yield return new(0, (int)ClientSchema.Protocol.Grpc, "grpc.request");
+            yield return new(1, (int)ClientSchema.Protocol.Http, "http.client.request");  // SchemaVersion.V1
+            yield return new(1, (int)ClientSchema.Protocol.Grpc, "grpc.client.request");
+        }
+
+        public static IEnumerable<ServiceNameData> GetServiceNameData()
+        {
+            yield return new(0, (int)ClientSchema.Component.Http, "some-service", true);   // V0, mapped
+            yield return new(0, (int)ClientSchema.Component.Http, "some-service", false);
+            yield return new(1, (int)ClientSchema.Component.Http, "some-service", true);   // V1, mapped
+            yield return new(1, (int)ClientSchema.Component.Http, "some-service", false);
+            yield return new(0, (int)ClientSchema.Component.Grpc, DefaultServiceName, true);   // V0, unmapped
+            yield return new(0, (int)ClientSchema.Component.Grpc, $"{DefaultServiceName}-grpc-client", false);
+            yield return new(1, (int)ClientSchema.Component.Grpc, DefaultServiceName, true);   // V1, unmapped
+            yield return new(1, (int)ClientSchema.Component.Grpc, DefaultServiceName, false);
+        }
+
+        public static IEnumerable<OperationNameSuffixData> GetOperationNameSuffixForRequestData()
+        {
+            yield return new(0, string.Empty);   // SchemaVersion.V0
+            yield return new(1, ".request");     // SchemaVersion.V1
         }
 
         [Theory]
         [CombinatorialData]
         public void GetOperationNameForProtocolIsCorrect(
-            [CombinatorialMemberData(nameof(GetOperationNameForProtocolData))] (int SchemaVersion, int Protocol, string ExpectedValue) values,
+            [CombinatorialMemberData(nameof(GetOperationNameForProtocolData))] OperationNameData values,
             bool peerServiceTagsEnabled,
             bool removeClientServiceNamesEnabled)
         {
@@ -66,7 +170,7 @@ namespace Datadog.Trace.Tests.Configuration.Schema
         [Theory]
         [CombinatorialData]
         public void GetOperationNameSuffixForRequestIsCorrect(
-            [CombinatorialMemberData(nameof(GetOperationNameSuffixForRequestData))] (int SchemaVersion, string ExpectedSuffix) values,
+            [CombinatorialMemberData(nameof(GetOperationNameSuffixForRequestData))] OperationNameSuffixData values,
             bool peerServiceTagsEnabled,
             bool removeClientServiceNamesEnabled)
         {
@@ -78,7 +182,7 @@ namespace Datadog.Trace.Tests.Configuration.Schema
         [Theory]
         [CombinatorialData]
         public void GetServiceNameIsCorrect(
-            [CombinatorialMemberData(nameof(GetServiceNameData))] (int SchemaVersion, int Component, string ExpectedValue, bool RemoveClientServiceNamesEnabled) values,
+            [CombinatorialMemberData(nameof(GetServiceNameData))] ServiceNameData values,
             bool peerServiceTagsEnabled)
         {
             var schemaVersion = (SchemaVersion)values.SchemaVersion;
@@ -168,4 +272,5 @@ namespace Datadog.Trace.Tests.Configuration.Schema
             }
         }
     }
+#pragma warning restore SA1201 // A method should not follow a class
 }

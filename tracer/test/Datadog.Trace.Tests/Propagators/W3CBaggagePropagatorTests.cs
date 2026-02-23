@@ -6,6 +6,7 @@
 using System.Text;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Moq;
 using Xunit;
@@ -24,25 +25,25 @@ public class W3CBaggagePropagatorTests
             propagationExtractFirst: false);
     }
 
-    public static TheoryData<string, (string Key, string Value)[]> InjectBaggageData
+    public static TheoryData<string, SerializableList<BaggageEntry>> InjectBaggageData
         => new()
         {
             // expected header after encoding ⬅️ input key/value pairs
             { string.Empty, [] },
-            { string.Empty, [("key", null)] },
-            { string.Empty, [("key", string.Empty)] },
-            { string.Empty, [(null, "value")] },
-            { string.Empty, [(string.Empty, "value")] },
-            { "key1=value1,key2=value2", [("key1", "value1"), ("key2", "value2")] },
-            { "key1=value1=valid", [("key1", "value1=valid")] },
-            { "key1=value1%2Cvalid", [("key1", "value1,valid")] },
-            { "%20key1%20=%20value1%20", [(" key1 ", " value1 ")] },     // encode whitespace
-            { "key=%20", [("key", " ")] },                               // encode whitespace
-            { "%20key1%20=%20value%091", [(" key1 ", " value\t1")] },    // encode whitespace
-            { "key%F0%9F%90%B6=value%E6%88%91", [("key🐶", "value我")] }, // encode unicode
+            { string.Empty, [new("key", null)] },
+            { string.Empty, [new("key", string.Empty)] },
+            { string.Empty, [new(null, "value")] },
+            { string.Empty, [new(string.Empty, "value")] },
+            { "key1=value1,key2=value2", [new("key1", "value1"), new("key2", "value2")] },
+            { "key1=value1=valid", [new("key1", "value1=valid")] },
+            { "key1=value1%2Cvalid", [new("key1", "value1,valid")] },
+            { "%20key1%20=%20value1%20", [new(" key1 ", " value1 ")] },     // encode whitespace
+            { "key=%20", [new("key", " ")] },                               // encode whitespace
+            { "%20key1%20=%20value%091", [new(" key1 ", " value\t1")] },    // encode whitespace
+            { "key%F0%9F%90%B6=value%E6%88%91", [new("key🐶", "value我")] }, // encode unicode
         };
 
-    public static TheoryData<string, (string Key, string Value)[]> ExtractBaggageData
+    public static TheoryData<string, SerializableList<BaggageEntry>> ExtractBaggageData
         => new()
         {
             // input header ➡️ expected key/value pairs after decoding
@@ -76,17 +77,17 @@ public class W3CBaggagePropagatorTests
             { "=,key2=value2", null },
             { "key1;a=value1,key2=value2", null },
             // valid
-            { "valid=%20", [("valid", " ")] },
-            { "%20=valid", [(" ", "valid")] },
-            { "%20=%20", [(" ", " ")] },
-            { "key1=value1,key2=value2", [("key1", "value1"), ("key2", "value2")] },
-            { "key1=value1, key2 = value2;property1;property2, key3=value3; propertyKey=propertyValue", [("key1", "value1"), ("key2", "value2"), ("key3", "value3")] }, // W3C metadata/property not currently supported so the values are discarded
-            { "key1=value1%2Cvalid", [("key1", "value1,valid")] },
-            { "key1=value1=valid", [("key1", "value1=valid")] },
-            { "%20key1%20=%20value%091", [(" key1 ", " value\t1")] },                          // encoded whitespace
-            { "key1 = value1, key2 = value\t2 ", [("key1", "value1"), ("key2", "value\t2")] }, // whitespace not encoded
-            { "key%F0%9F%90%B6=value%E6%88%91", [("key🐶", "value我")] },                       // encoded unicode
-            { "key🐶=value我", [("key🐶", "value我")] },                                         // unicode not encoded
+            { "valid=%20", [new("valid", " ")] },
+            { "%20=valid", [new(" ", "valid")] },
+            { "%20=%20", [new(" ", " ")] },
+            { "key1=value1,key2=value2", [new("key1", "value1"), new("key2", "value2")] },
+            { "key1=value1, key2 = value2;property1;property2, key3=value3; propertyKey=propertyValue", [new("key1", "value1"), new("key2", "value2"), new("key3", "value3")] }, // W3C metadata/property not currently supported so the values are discarded
+            { "key1=value1%2Cvalid", [new("key1", "value1,valid")] },
+            { "key1=value1=valid", [new("key1", "value1=valid")] },
+            { "%20key1%20=%20value%091", [new(" key1 ", " value\t1")] },                          // encoded whitespace
+            { "key1 = value1, key2 = value\t2 ", [new("key1", "value1"), new("key2", "value\t2")] }, // whitespace not encoded
+            { "key%F0%9F%90%B6=value%E6%88%91", [new("key🐶", "value我")] },                       // encoded unicode
+            { "key🐶=value我", [new("key🐶", "value我")] },                                         // unicode not encoded
         };
 
     [Theory]
@@ -123,7 +124,7 @@ public class W3CBaggagePropagatorTests
 
     [Theory]
     [MemberData(nameof(InjectBaggageData))]
-    public void CreateHeader(string expectedHeader, (string Key, string Value)[] inputPairs)
+    public void CreateHeader(string expectedHeader, SerializableList<BaggageEntry> inputPairs)
     {
         var baggage = new Baggage();
 
@@ -176,7 +177,7 @@ public class W3CBaggagePropagatorTests
 
     [Theory]
     [MemberData(nameof(ExtractBaggageData))]
-    public void ParseHeader(string inputHeader, (string Key, string Value)[] expectedPairs)
+    public void ParseHeader(string inputHeader, SerializableList<BaggageEntry> expectedPairs)
     {
         var baggage = W3CBaggagePropagator.ParseHeader(inputHeader)!;
 
@@ -187,7 +188,7 @@ public class W3CBaggagePropagatorTests
         }
 
         baggage.Should().NotBeNull();
-        baggage.Should().HaveCount(expectedPairs.Length);
+        baggage.Should().HaveCount(expectedPairs.Values.Count);
 
         foreach (var pair in expectedPairs)
         {

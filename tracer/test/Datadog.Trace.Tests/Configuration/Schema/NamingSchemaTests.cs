@@ -9,9 +9,11 @@ using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.Tagging;
 using FluentAssertions;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Datadog.Trace.Tests.Configuration.Schema
 {
+#pragma warning disable SA1201 // A method should not follow a class
     public class NamingSchemaTests
     {
         private readonly Dictionary<string, string> _peerServiceMappings = new()
@@ -19,20 +21,54 @@ namespace Datadog.Trace.Tests.Configuration.Schema
             { "localhost", "AFancyServer" },
         };
 
-        public static IEnumerable<(int SchemaVersion, bool PeerServiceTagsEnabled, string ExpectedPeerServiceValue)> GetPeerServiceRemapData()
+        public class PeerServiceRemapData : IXunitSerializable
+        {
+            public PeerServiceRemapData()
+            {
+            }
+
+            public PeerServiceRemapData(int schemaVersion, bool peerServiceTagsEnabled, string expectedPeerServiceValue)
+            {
+                SchemaVersion = schemaVersion;
+                PeerServiceTagsEnabled = peerServiceTagsEnabled;
+                ExpectedPeerServiceValue = expectedPeerServiceValue;
+            }
+
+            public int SchemaVersion { get; private set; }
+
+            public bool PeerServiceTagsEnabled { get; private set; }
+
+            public string ExpectedPeerServiceValue { get; private set; }
+
+            public void Deserialize(IXunitSerializationInfo info)
+            {
+                SchemaVersion = info.GetValue<int>(nameof(SchemaVersion));
+                PeerServiceTagsEnabled = info.GetValue<bool>(nameof(PeerServiceTagsEnabled));
+                ExpectedPeerServiceValue = info.GetValue<string>(nameof(ExpectedPeerServiceValue));
+            }
+
+            public void Serialize(IXunitSerializationInfo info)
+            {
+                info.AddValue(nameof(SchemaVersion), SchemaVersion);
+                info.AddValue(nameof(PeerServiceTagsEnabled), PeerServiceTagsEnabled);
+                info.AddValue(nameof(ExpectedPeerServiceValue), ExpectedPeerServiceValue);
+            }
+        }
+
+        public static IEnumerable<PeerServiceRemapData> GetPeerServiceRemapData()
         {
             // When V1 or peerServiceTagsEnabled, should remap to the mapped value
-            yield return (1, true, "AFancyServer");
-            yield return (1, false, "AFancyServer");
-            yield return (0, true, "AFancyServer");
+            yield return new(1, true, "AFancyServer");
+            yield return new(1, false, "AFancyServer");
+            yield return new(0, true, "AFancyServer");
             // When V0 and peerServiceTagsEnabled is false, should not remap
-            yield return (0, false, "localhost");
+            yield return new(0, false, "localhost");
         }
 
         [Theory]
         [CombinatorialData]
         public void SetMappedPeerServiceNames(
-            [CombinatorialMemberData(nameof(GetPeerServiceRemapData))] (int SchemaVersion, bool PeerServiceTagsEnabled, string ExpectedPeerServiceValue) values,
+            [CombinatorialMemberData(nameof(GetPeerServiceRemapData))] PeerServiceRemapData values,
             bool removeClientServiceNamesEnabled)
         {
             var schemaVersion = (SchemaVersion)values.SchemaVersion;
@@ -65,4 +101,5 @@ namespace Datadog.Trace.Tests.Configuration.Schema
             tags.GetTag(Tags.PeerService).Should().BeNull();
         }
     }
+#pragma warning restore SA1201 // A method should not follow a class
 }

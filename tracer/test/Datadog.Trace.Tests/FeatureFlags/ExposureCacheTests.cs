@@ -13,147 +13,136 @@ using Datadog.Trace.FeatureFlags.Exposure.Model;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
 using Datadog.Trace.TestHelpers;
 using Xunit;
+using Xunit.Abstractions;
 using ValueType = Datadog.Trace.FeatureFlags.ValueType;
 
 namespace Datadog.Trace.Tests.FeatureFlags;
 
 /// <summary> FeatureFlagsEvaluator discrete tests </summary>
+#pragma warning disable SA1201 // A method should not follow a class
 public partial class ExposureCacheTests
 {
-    public static IEnumerable<object?[]> Cases()
+    public class ExposureEventData
     {
-        yield return new object?[]
+        public string Flag { get; set; } = string.Empty;
+
+        public string Subject { get; set; } = string.Empty;
+
+        public string Variant { get; set; } = string.Empty;
+
+        public string Allocation { get; set; } = string.Empty;
+    }
+
+    public class ExposureCacheTestCase : IXunitSerializable
+    {
+        public ExposureCacheTestCase()
         {
-            5,
-            new object[]
-            {
-            },
-            new bool[]
-            {
-            },
-            0
-        };
-        yield return new object?[]
+        }
+
+        public ExposureCacheTestCase(int capacity, SerializableList<ExposureEventData> events, SerializableList<bool> expected, int size)
         {
-            5,
-            new object[]
-            {
-                CreateEvent("flag", "subject", "variant", "allocation"),
-            },
-            new bool[]
-            {
-                true,
-            },
-            1
-        };
-        yield return new object?[]
+            Capacity = capacity;
+            Events = events;
+            Expected = expected;
+            Size = size;
+        }
+
+        public int Capacity { get; private set; }
+
+        public SerializableList<ExposureEventData> Events { get; private set; } = new();
+
+        public SerializableList<bool> Expected { get; private set; } = new();
+
+        public int Size { get; private set; }
+
+        public void Deserialize(IXunitSerializationInfo info)
         {
-            5,
-            new object[]
-            {
-                CreateEvent("flag", "subject", "variant", "allocation"),
-                CreateEvent("flag", "subject", "variant", "allocation"),
-            },
-            new bool[]
-            {
-                true,
-                false,
-            },
-            1
-        };
-        yield return new object?[]
+            Capacity = info.GetValue<int>(nameof(Capacity));
+            Events = info.GetValue<SerializableList<ExposureEventData>>(nameof(Events));
+            Expected = info.GetValue<SerializableList<bool>>(nameof(Expected));
+            Size = info.GetValue<int>(nameof(Size));
+        }
+
+        public void Serialize(IXunitSerializationInfo info)
         {
+            info.AddValue(nameof(Capacity), Capacity);
+            info.AddValue(nameof(Events), Events);
+            info.AddValue(nameof(Expected), Expected);
+            info.AddValue(nameof(Size), Size);
+        }
+    }
+
+    public static TheoryData<ExposureCacheTestCase> Cases()
+    {
+        var data = new TheoryData<ExposureCacheTestCase>();
+
+        data.Add(new ExposureCacheTestCase(5, [], [], 0));
+
+        data.Add(new ExposureCacheTestCase(
             5,
-            new object[]
-            {
-                CreateEvent("flag", "subject", "variant", "allocation"),
-                CreateEvent("flag", "subject", "variant", "allocation"),
-                CreateEvent("flag1", "subject", "variant", "allocation"),
-                CreateEvent("flag1", "subject", "variant", "allocation"),
-            },
-            new bool[]
-            {
-                true,
-                false,
-                true,
-                false,
-            },
-            2
-        };
-        yield return new object?[]
+            [Event("flag", "subject", "variant", "allocation")],
+            [true],
+            1));
+
+        data.Add(new ExposureCacheTestCase(
+            5,
+            [Event("flag", "subject", "variant", "allocation"), Event("flag", "subject", "variant", "allocation")],
+            [true, false],
+            1));
+
+        data.Add(new ExposureCacheTestCase(
+            5,
+            [Event("flag", "subject", "variant", "allocation"), Event("flag", "subject", "variant", "allocation"), Event("flag1", "subject", "variant", "allocation"), Event("flag1", "subject", "variant", "allocation")],
+            [true, false, true, false],
+            2));
+
+        data.Add(new ExposureCacheTestCase(
+            5,
+            [Event("flag", "subject", "variant", "allocation"), Event("flag", "subject", "variant1", "allocation")],
+            [true, true],
+            1));
+
+        data.Add(new ExposureCacheTestCase(
+            5,
+            [Event("flag", "subject1", "variant", "allocation"), Event("flag", "subject2", "variant", "allocation"), Event("flag", "subject3", "variant", "allocation")],
+            [true, true, true],
+            3));
+
+        data.Add(new ExposureCacheTestCase(
+            5,
+            [Event("flag1", "subject", "variant", "allocation"), Event("flag2", "subject", "variant", "allocation"), Event("flag3", "subject", "variant", "allocation")],
+            [true, true, true],
+            3));
+
+        data.Add(new ExposureCacheTestCase(
+            5,
+            [Event("flag1", "subject", "variant", "allocation"), Event("flag2", "subject", "variant", "allocation"), Event("flag3", "subject", "variant", "allocation"), Event("flag4", "subject", "variant", "allocation"), Event("flag5", "subject", "variant", "allocation"), Event("flag6", "subject", "variant", "allocation"), Event("flag7", "subject", "variant", "allocation")],
+            [true, true, true, true, true, true, true],
+            5));
+
+        return data;
+
+        static ExposureEventData Event(string flag, string subject, string variant, string allocation)
+            => new() { Flag = flag, Subject = subject, Variant = variant, Allocation = allocation };
+    }
+
+    [Theory]
+    [MemberData(nameof(Cases))]
+    public void ExposureEventsAreAddedOrDiscarded(ExposureCacheTestCase tc)
+    {
+        var cache = new ExposureCache(tc.Capacity);
+
+        Assert.Equal(tc.Events.Values.Count, tc.Expected.Values.Count);
+
+        for (int x = 0; x < tc.Events.Values.Count; x++)
         {
-            5,
-            new object[]
-            {
-                CreateEvent("flag", "subject", "variant", "allocation"),
-                CreateEvent("flag", "subject", "variant1", "allocation"),
-            },
-            new bool[]
-            {
-                true,
-                true,
-            },
-            1
-        };
-        yield return new object?[]
-        {
-            5,
-            new object[]
-            {
-                CreateEvent("flag", "subject1", "variant", "allocation"),
-                CreateEvent("flag", "subject2", "variant", "allocation"),
-                CreateEvent("flag", "subject3", "variant", "allocation"),
-            },
-            new bool[]
-            {
-                true,
-                true,
-                true,
-            },
-            3
-        };
-        yield return new object?[]
-        {
-            5,
-            new object[]
-            {
-                CreateEvent("flag1", "subject", "variant", "allocation"),
-                CreateEvent("flag2", "subject", "variant", "allocation"),
-                CreateEvent("flag3", "subject", "variant", "allocation"),
-            },
-            new bool[]
-            {
-                true,
-                true,
-                true,
-            },
-            3
-        };
-        yield return new object?[]
-        {
-            5,
-            new object[]
-            {
-                CreateEvent("flag1", "subject", "variant", "allocation"),
-                CreateEvent("flag2", "subject", "variant", "allocation"),
-                CreateEvent("flag3", "subject", "variant", "allocation"),
-                CreateEvent("flag4", "subject", "variant", "allocation"),
-                CreateEvent("flag5", "subject", "variant", "allocation"),
-                CreateEvent("flag6", "subject", "variant", "allocation"),
-                CreateEvent("flag7", "subject", "variant", "allocation"),
-            },
-            new bool[]
-            {
-                true,
-                true,
-                true,
-                true,
-                true,
-                true,
-                true,
-            },
-            5
-        };
+            var e = tc.Events.Values[x];
+            var exposureEvent = CreateEvent(e.Flag, e.Subject, e.Variant, e.Allocation);
+            bool added = cache.Add(exposureEvent);
+            Assert.Equal(tc.Expected.Values[x], added);
+        }
+
+        Assert.Equal(tc.Size, cache.Size);
 
         static ExposureEvent CreateEvent(string flag, string subject, string variant, string allocation)
         {
@@ -163,23 +152,7 @@ public partial class ExposureCacheTests
               new Trace.FeatureFlags.Exposure.Model.Flag(flag),
               new Trace.FeatureFlags.Exposure.Model.Variant(variant),
               new Subject(subject, new Dictionary<string, object?>()));
-      }
-    }
-
-    [Theory]
-    [MemberData(nameof(Cases))]
-    public void ExposureEventsAreAddedOrDiscarded(int capacity, object[] exposureEvents, bool[] expected, int size)
-    {
-        var cache = new ExposureCache(capacity);
-
-        Assert.Equal(exposureEvents.Length, expected.Length);
-
-        for (int x = 0; x < exposureEvents.Length; x++)
-        {
-            bool added = cache.Add((ExposureEvent)exposureEvents[x]);
-            Assert.Equal(expected[x], added);
         }
-
-        Assert.Equal(size, cache.Size);
     }
 }
+#pragma warning restore SA1201 // A method should not follow a class

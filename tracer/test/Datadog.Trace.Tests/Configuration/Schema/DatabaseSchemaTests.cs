@@ -14,9 +14,11 @@ using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.Tagging;
 using FluentAssertions;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Datadog.Trace.Tests.Configuration.Schema
 {
+#pragma warning disable SA1201 // A method should not follow a class
     public class DatabaseSchemaTests
     {
         private const string DefaultServiceName = "MyApplication";
@@ -26,32 +28,105 @@ namespace Datadog.Trace.Tests.Configuration.Schema
             { "mongodb", "my-mongo" },
         };
 
-        public static IEnumerable<(int SchemaVersion, int DatabaseType, string ExpectedOperationName)> GetOperationNameData()
+        public class OperationNameData : IXunitSerializable
         {
-            yield return (0, (int)DatabaseSchema.OperationType.MongoDb, "mongodb.query");
-            yield return (0, (int)DatabaseSchema.OperationType.Elasticsearch, "elasticsearch.query");
-            yield return (1, (int)DatabaseSchema.OperationType.MongoDb, "mongodb.query");
-            yield return (1, (int)DatabaseSchema.OperationType.Elasticsearch, "elasticsearch.query");
+            public OperationNameData()
+            {
+            }
+
+            public OperationNameData(int schemaVersion, int databaseType, string expectedOperationName)
+            {
+                SchemaVersion = schemaVersion;
+                DatabaseType = databaseType;
+                ExpectedOperationName = expectedOperationName;
+            }
+
+            public int SchemaVersion { get; private set; }
+
+            public int DatabaseType { get; private set; }
+
+            public string ExpectedOperationName { get; private set; }
+
+            public void Deserialize(IXunitSerializationInfo info)
+            {
+                SchemaVersion = info.GetValue<int>(nameof(SchemaVersion));
+                DatabaseType = info.GetValue<int>(nameof(DatabaseType));
+                ExpectedOperationName = info.GetValue<string>(nameof(ExpectedOperationName));
+            }
+
+            public void Serialize(IXunitSerializationInfo info)
+            {
+                info.AddValue(nameof(SchemaVersion), SchemaVersion);
+                info.AddValue(nameof(DatabaseType), DatabaseType);
+                info.AddValue(nameof(ExpectedOperationName), ExpectedOperationName);
+            }
         }
 
-        public static IEnumerable<(int SchemaVersion, int DatabaseType, string ExpectedValue, bool RemoveClientServiceNamesEnabled)> GetServiceNameData()
+        public class ServiceNameData : IXunitSerializable
+        {
+            public ServiceNameData()
+            {
+            }
+
+            public ServiceNameData(int schemaVersion, int databaseType, string expectedValue, bool removeClientServiceNamesEnabled)
+            {
+                SchemaVersion = schemaVersion;
+                DatabaseType = databaseType;
+                ExpectedValue = expectedValue;
+                RemoveClientServiceNamesEnabled = removeClientServiceNamesEnabled;
+            }
+
+            public int SchemaVersion { get; private set; }
+
+            public int DatabaseType { get; private set; }
+
+            public string ExpectedValue { get; private set; }
+
+            public bool RemoveClientServiceNamesEnabled { get; private set; }
+
+            public void Deserialize(IXunitSerializationInfo info)
+            {
+                SchemaVersion = info.GetValue<int>(nameof(SchemaVersion));
+                DatabaseType = info.GetValue<int>(nameof(DatabaseType));
+                ExpectedValue = info.GetValue<string>(nameof(ExpectedValue));
+                RemoveClientServiceNamesEnabled = info.GetValue<bool>(nameof(RemoveClientServiceNamesEnabled));
+            }
+
+            public void Serialize(IXunitSerializationInfo info)
+            {
+                info.AddValue(nameof(SchemaVersion), SchemaVersion);
+                info.AddValue(nameof(DatabaseType), DatabaseType);
+                info.AddValue(nameof(ExpectedValue), ExpectedValue);
+                info.AddValue(nameof(RemoveClientServiceNamesEnabled), RemoveClientServiceNamesEnabled);
+            }
+        }
+
+        public static IEnumerable<OperationNameData> GetOperationNameData()
+        {
+            yield return new(0, (int)DatabaseSchema.OperationType.MongoDb, "mongodb.query");
+            yield return new(0, (int)DatabaseSchema.OperationType.Elasticsearch, "elasticsearch.query");
+            yield return new(1, (int)DatabaseSchema.OperationType.MongoDb, "mongodb.query");
+            yield return new(1, (int)DatabaseSchema.OperationType.Elasticsearch, "elasticsearch.query");
+        }
+
+        public static IEnumerable<ServiceNameData> GetServiceNameData()
         {
             // Mapped service names (always return mapped value)
-            yield return (0, (int)DatabaseSchema.ServiceType.MongoDb, "my-mongo", true);
-            yield return (0, (int)DatabaseSchema.ServiceType.MongoDb, "my-mongo", false);
-            yield return (1, (int)DatabaseSchema.ServiceType.MongoDb, "my-mongo", true);
-            yield return (1, (int)DatabaseSchema.ServiceType.MongoDb, "my-mongo", false);
+            yield return new(0, (int)DatabaseSchema.ServiceType.MongoDb, "my-mongo", true);
+            yield return new(0, (int)DatabaseSchema.ServiceType.MongoDb, "my-mongo", false);
+            yield return new(1, (int)DatabaseSchema.ServiceType.MongoDb, "my-mongo", true);
+            yield return new(1, (int)DatabaseSchema.ServiceType.MongoDb, "my-mongo", false);
             // Unmapped service names
-            yield return (0, (int)DatabaseSchema.ServiceType.Elasticsearch, DefaultServiceName, true);
-            yield return (0, (int)DatabaseSchema.ServiceType.Elasticsearch, $"{DefaultServiceName}-elasticsearch", false);
-            yield return (1, (int)DatabaseSchema.ServiceType.Elasticsearch, DefaultServiceName, true);
-            yield return (1, (int)DatabaseSchema.ServiceType.Elasticsearch, DefaultServiceName, false);
+            yield return new(0, (int)DatabaseSchema.ServiceType.Elasticsearch, DefaultServiceName, true);
+            yield return new(0, (int)DatabaseSchema.ServiceType.Elasticsearch, $"{DefaultServiceName}-elasticsearch", false);
+            yield return new(1, (int)DatabaseSchema.ServiceType.Elasticsearch, DefaultServiceName, true);
+            yield return new(1, (int)DatabaseSchema.ServiceType.Elasticsearch, DefaultServiceName, false);
         }
 
         [Theory]
         [CombinatorialData]
         public void GetOperationNameIsCorrect(
-            [CombinatorialMemberData(nameof(GetOperationNameData))] (int SchemaVersion, int DatabaseType, string ExpectedOperationName) values,
+            [CombinatorialMemberData(nameof(GetOperationNameData))] OperationNameData values,
             bool peerServiceTagsEnabled,
             bool removeClientServiceNamesEnabled)
         {
@@ -63,7 +138,7 @@ namespace Datadog.Trace.Tests.Configuration.Schema
         [Theory]
         [CombinatorialData]
         public void GetServiceNameIsCorrect(
-            [CombinatorialMemberData(nameof(GetServiceNameData))] (int SchemaVersion, int DatabaseType, string ExpectedValue, bool RemoveClientServiceNamesEnabled) values,
+            [CombinatorialMemberData(nameof(GetServiceNameData))] ServiceNameData values,
             bool peerServiceTagsEnabled)
         {
             var schemaVersion = (SchemaVersion)values.SchemaVersion;
@@ -198,4 +273,5 @@ namespace Datadog.Trace.Tests.Configuration.Schema
             }
         }
     }
+#pragma warning restore SA1201 // A method should not follow a class
 }
