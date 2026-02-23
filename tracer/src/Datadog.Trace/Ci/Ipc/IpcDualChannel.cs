@@ -6,6 +6,8 @@
 
 using System;
 using System.IO;
+using Datadog.Trace.Util;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Serialization;
 
@@ -50,7 +52,7 @@ internal abstract class IpcDualChannel : IDisposable
     {
         using var memoryStream = new MemoryStream(data.Array!, data.Offset, data.Count);
         using var reader = new StreamReader(memoryStream, Util.EncodingHelpers.Utf8NoBom);
-        using var jsonReader = new JsonTextReader(reader);
+        using var jsonReader = new JsonTextReader(reader) { ArrayPool = JsonArrayPool.Shared };
         var message = _jsonSerializer.Deserialize(jsonReader);
         if (message != null)
         {
@@ -66,7 +68,7 @@ internal abstract class IpcDualChannel : IDisposable
             using var memoryStream = new MemoryStream();
             using (var writer = new StreamWriter(memoryStream, Util.EncodingHelpers.Utf8NoBom))
             {
-                using var jsonWriter = new JsonTextWriter(writer);
+                using var jsonWriter = new JsonTextWriter(writer) { ArrayPool = JsonArrayPool.Shared };
                 _jsonSerializer.Serialize(jsonWriter, message);
             }
 
