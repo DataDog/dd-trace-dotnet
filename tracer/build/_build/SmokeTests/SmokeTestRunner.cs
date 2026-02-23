@@ -217,7 +217,13 @@ public static class SmokeTestBuilder
             if (Directory.Exists(artifactsDir))
             {
                 var artifactsTarPath = $"{testAppRelPath}/artifacts";
-                Logger.Information("Injecting artifacts from {ArtifactsDir} into tar at {TarPath}", artifactsDir, artifactsTarPath);
+                var artifactFiles = Directory.GetFiles(artifactsDir, "*", SearchOption.AllDirectories);
+                Logger.Information("Injecting {Count} artifact files from {ArtifactsDir} into tar at {TarPath}", artifactFiles.Length, artifactsDir, artifactsTarPath);
+                foreach (var f in artifactFiles)
+                {
+                    Logger.Information("  Artifact: {File}", Path.GetRelativePath(artifactsDir, f));
+                }
+
                 AddDirectoryToTar(tarWriter, artifactsDir, artifactsTarPath);
             }
             else
