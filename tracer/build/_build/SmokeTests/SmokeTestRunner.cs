@@ -82,19 +82,19 @@ public static class SmokeTestBuilder
     public static SmokeTestScenario GetScenario(SmokeTestCategory category, string scenario)
         => GetScenariosForCategory(category)[scenario];
 
-    public static async Task BuildImageAsync(SmokeTestCategory category, SmokeTestScenario scenario, AbsolutePath tracerDir, CancellationToken cancellationToken = default)
+    public static async Task BuildImageAsync(SmokeTestCategory category, SmokeTestScenario scenario, AbsolutePath tracerDir, AbsolutePath artifactsDir, CancellationToken cancellationToken = default)
     {
         switch (category)
         {
             case SmokeTestCategory.LinuxX64Installer:
-                await BuildLinuxX64InstallerImageAsync(scenario, tracerDir, cancellationToken);
+                await BuildLinuxX64InstallerImageAsync(scenario, tracerDir, artifactsDir, cancellationToken);
                 break;
             default:
                 throw new InvalidOperationException($"Unknown smoke test scenario: {category}");
         }
     }
 
-    static async Task BuildLinuxX64InstallerImageAsync(SmokeTestScenario scenario, AbsolutePath tracerDir, CancellationToken cancellationToken)
+    static async Task BuildLinuxX64InstallerImageAsync(SmokeTestScenario scenario, AbsolutePath tracerDir, AbsolutePath artifactsDir, CancellationToken cancellationToken)
     {
         var runtimeImage = $"mcr.microsoft.com/dotnet/aspnet:{scenario.RuntimeTag}";
         var installCmd = "dpkg -i ./datadog-dotnet-apm*_amd64.deb";
@@ -108,7 +108,7 @@ public static class SmokeTestBuilder
             ["INSTALL_CMD"] = installCmd,
         };
 
-        await BuildImageFromDockerfileAsync(tracerDir, dockerfilePath, scenario.DockerTag, buildArgs, cancellationToken);
+        await BuildImageFromDockerfileAsync(tracerDir, dockerfilePath, scenario.DockerTag, buildArgs, artifactsDir, cancellationToken);
     }
 
     static async Task BuildImageFromDockerfileAsync(
@@ -116,12 +116,13 @@ public static class SmokeTestBuilder
         string dockerfilePath,
         string tag,
         Dictionary<string, string> buildArgs,
+        AbsolutePath artifactsDir,
         CancellationToken cancellationToken)
     {
         using var client = CreateDockerClient();
 
         // Create a tar archive of the build context
-        using var contextStream = CreateBuildContextTar(contextDir, dockerfilePath);
+        using var contextStream = CreateBuildContextTar(contextDir, dockerfilePath, artifactsDir);
 
         var buildParams = new ImageBuildParameters
         {
@@ -188,8 +189,11 @@ public static class SmokeTestBuilder
     /// <summary>
     /// Creates a tar archive containing only the files needed for the Docker build context.
     /// This avoids sending the entire tracer directory (which would be huge).
+    /// The Dockerfile COPYs the test app directory into the builder stage, including an
+    /// "artifacts" subdirectory containing installer packages (.deb/.rpm). In CI, these
+    /// are downloaded separately, so we inject them into the tar at the expected path.
     /// </summary>
-    static MemoryStream CreateBuildContextTar(AbsolutePath contextDir, string dockerfilePath)
+    static MemoryStream CreateBuildContextTar(AbsolutePath contextDir, string dockerfilePath, AbsolutePath artifactsDir)
     {
         var memoryStream = new MemoryStream();
         using (var tarWriter = new TarWriter(memoryStream, leaveOpen: true))
@@ -204,6 +208,21 @@ public static class SmokeTestBuilder
             if (Directory.Exists(testAppDir))
             {
                 AddDirectoryToTar(tarWriter, testAppDir, testAppRelPath);
+            }
+
+            // Inject installer artifacts into the test app's artifacts/ subdirectory.
+            // The Dockerfile does: COPY --from=builder /src/artifacts /app/install
+            // Since the test app is COPYd to /src, the artifacts must be at /src/artifacts,
+            // i.e. inside the test app directory as "artifacts/".
+            if (Directory.Exists(artifactsDir))
+            {
+                var artifactsTarPath = $"{testAppRelPath}/artifacts";
+                Logger.Information("Injecting artifacts from {ArtifactsDir} into tar at {TarPath}", artifactsDir, artifactsTarPath);
+                AddDirectoryToTar(tarWriter, artifactsDir, artifactsTarPath);
+            }
+            else
+            {
+                Logger.Warning("Artifacts directory {ArtifactsDir} does not exist — image build will likely fail at COPY --from=builder /src/artifacts", artifactsDir);
             }
         }
 
