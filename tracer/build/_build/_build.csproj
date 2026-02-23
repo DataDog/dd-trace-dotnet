@@ -45,6 +45,7 @@
     <PackageReference Include="Perfolizer" Version="0.2.1" />
     <PackageReference Include="Sep" Version="0.7.0" />
     <PackageReference Include="ByteSize" Version="2.1.0" />
+    <PackageReference Include="Docker.DotNet" Version="3.125.15" />
     <!-- Enable binary serialization for .NET 9+ -->
     <PackageReference Include="System.Runtime.Serialization.Formatters" Version="10.0.0" Condition="$(USE_NATIVE_SDK_VERSION) != 'true'" />
   </ItemGroup>

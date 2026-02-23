@@ -1,9 +1,15 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+using System.Formats.Tar;
+using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
+using System.Threading;
+using System.Threading.Tasks;
+using Docker.DotNet;
+using Docker.DotNet.Models;
 using Nuke.Common.IO;
-using Nuke.Common.Tooling;
-using Nuke.Common.Tools.Docker;
+using Logger = Serilog.Log;
 
 namespace SmokeTests;
 
@@ -76,39 +82,143 @@ public static class SmokeTestBuilder
     public static SmokeTestScenario GetScenario(SmokeTestCategory category, string scenario)
         => GetScenariosForCategory(category)[scenario];
 
-    public static IReadOnlyCollection<Output> BuildImage(SmokeTestCategory category, SmokeTestScenario scenario, AbsolutePath tracerDir)
+    public static async Task BuildImageAsync(SmokeTestCategory category, SmokeTestScenario scenario, AbsolutePath tracerDir, CancellationToken cancellationToken = default)
     {
-        var dockerLogger = DockerTasks.DockerLogger;
-        try
+        switch (category)
         {
-            // avoid stderr being logged as an error
-            DockerTasks.DockerLogger = (_, s) => Serilog.Log.Debug(s);
+            case SmokeTestCategory.LinuxX64Installer:
+                await BuildLinuxX64InstallerImageAsync(scenario, tracerDir, cancellationToken);
+                break;
+            default:
+                throw new InvalidOperationException($"Unknown smoke test scenario: {category}");
+        }
+    }
 
-            return category switch
+    static async Task BuildLinuxX64InstallerImageAsync(SmokeTestScenario scenario, AbsolutePath tracerDir, CancellationToken cancellationToken)
+    {
+        var runtimeImage = $"mcr.microsoft.com/dotnet/aspnet:{scenario.RuntimeTag}";
+        var installCmd = "dpkg -i ./datadog-dotnet-apm*_amd64.deb";
+        var dockerfilePath = "build/_build/docker/smoke.dockerfile";
+
+        var buildArgs = new Dictionary<string, string>
+        {
+            ["DOTNETSDK_VERSION"] = DotnetSdkVersion,
+            ["RUNTIME_IMAGE"] = runtimeImage,
+            ["PUBLISH_FRAMEWORK"] = scenario.PublishFramework,
+            ["INSTALL_CMD"] = installCmd,
+        };
+
+        await BuildImageFromDockerfileAsync(tracerDir, dockerfilePath, scenario.DockerTag, buildArgs, cancellationToken);
+    }
+
+    static async Task BuildImageFromDockerfileAsync(
+        AbsolutePath contextDir,
+        string dockerfilePath,
+        string tag,
+        Dictionary<string, string> buildArgs,
+        CancellationToken cancellationToken)
+    {
+        using var client = CreateDockerClient();
+
+        // Create a tar archive of the build context
+        using var contextStream = CreateBuildContextTar(contextDir, dockerfilePath);
+
+        var buildParams = new ImageBuildParameters
+        {
+            Dockerfile = dockerfilePath,
+            Tags = new List<string> { tag },
+            BuildArgs = buildArgs,
+            Remove = true,
+            ForceRemove = true,
+        };
+
+        string lastError = null;
+        var progress = new Progress<JSONMessage>(msg =>
+        {
+            if (!string.IsNullOrEmpty(msg.Stream))
             {
-                SmokeTestCategory.LinuxX64Installer => LinuxX64InstallerDockerfile(scenario, tracerDir),
-                _ => throw new InvalidOperationException($"Unknown smoke test scenario: {category}"),
-            };
-        }
-        finally
+                // Stream lines already contain trailing newlines
+                var line = msg.Stream.TrimEnd('\n', '\r');
+                if (!string.IsNullOrEmpty(line))
+                {
+                    Logger.Debug("{DockerBuild}", line);
+                }
+            }
+
+            if (!string.IsNullOrEmpty(msg.Status))
+            {
+                Logger.Debug("[{Id}] {Status} {Progress}", msg.ID, msg.Status, msg.ProgressMessage);
+            }
+
+            if (!string.IsNullOrEmpty(msg.ErrorMessage))
+            {
+                lastError = msg.ErrorMessage;
+                Logger.Error("Docker build error: {Error}", msg.ErrorMessage);
+            }
+        });
+
+        Logger.Information("Building image {Tag} using Docker API...", tag);
+
+        await client.Images.BuildImageFromDockerfileAsync(
+            buildParams,
+            contextStream,
+            authConfigs: null,
+            headers: null,
+            progress: progress,
+            cancellationToken: cancellationToken);
+
+        if (lastError is not null)
         {
-            DockerTasks.DockerLogger = dockerLogger;
+            throw new InvalidOperationException($"Docker build failed: {lastError}");
         }
 
-        static IReadOnlyCollection<Output> LinuxX64InstallerDockerfile(SmokeTestScenario scenario, AbsolutePath tracerDir)
-        {
-            var runtimeImage = $"mcr.microsoft.com/dotnet/aspnet:{scenario.RuntimeTag}";
-            var installCmd = "dpkg -i ./datadog-dotnet-apm*_amd64.deb";
+        Logger.Information("Successfully built image {Tag}", tag);
+    }
 
-            return DockerTasks.DockerBuild(
-                x => x
-                    .SetPath(tracerDir)
-                    .SetFile(tracerDir / "build" / "_build" / "docker" / "smoke.dockerfile")
-                    .SetBuildArg($"DOTNETSDK_VERSION={DotnetSdkVersion}",
-                                 $"RUNTIME_IMAGE={runtimeImage}",
-                                 $"PUBLISH_FRAMEWORK={scenario.PublishFramework}",
-                                 $"INSTALL_CMD={installCmd}")
-                    .SetTag(scenario.DockerTag));
+    static DockerClient CreateDockerClient()
+    {
+        // Use the default Docker endpoint for the current platform
+        var endpoint = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+            ? new Uri("npipe://./pipe/docker_engine")
+            : new Uri("unix:///var/run/docker.sock");
+
+        return new DockerClientConfiguration(endpoint).CreateClient();
+    }
+
+    /// <summary>
+    /// Creates a tar archive containing only the files needed for the Docker build context.
+    /// This avoids sending the entire tracer directory (which would be huge).
+    /// </summary>
+    static MemoryStream CreateBuildContextTar(AbsolutePath contextDir, string dockerfilePath)
+    {
+        var memoryStream = new MemoryStream();
+        using (var tarWriter = new TarWriter(memoryStream, leaveOpen: true))
+        {
+            // Add the Dockerfile
+            var fullDockerfilePath = contextDir / dockerfilePath;
+            tarWriter.WriteEntry(fullDockerfilePath, dockerfilePath.Replace('\\', '/'));
+
+            // Add the test application directory (referenced by COPY in the Dockerfile)
+            var testAppRelPath = "test/test-applications/regression/AspNetCoreSmokeTest";
+            var testAppDir = contextDir / testAppRelPath;
+            if (Directory.Exists(testAppDir))
+            {
+                AddDirectoryToTar(tarWriter, testAppDir, testAppRelPath);
+            }
+        }
+
+        memoryStream.Position = 0;
+        return memoryStream;
+    }
+
+    static void AddDirectoryToTar(TarWriter tarWriter, string sourceDir, string tarBasePath)
+    {
+        foreach (var filePath in Directory.EnumerateFiles(sourceDir, "*", SearchOption.AllDirectories))
+        {
+            // Compute relative path within tar, always using forward slashes
+            var relativePath = Path.GetRelativePath(sourceDir, filePath).Replace('\\', '/');
+            var entryName = $"{tarBasePath}/{relativePath}";
+            tarWriter.WriteEntry(filePath, entryName);
         }
     }
 }

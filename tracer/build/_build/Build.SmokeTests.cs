@@ -14,7 +14,7 @@ partial class Build
         .Unlisted()
         .Requires(() => SmokeTestCategory)
         .Requires(() => SmokeTestScenario)
-        .Executes(() =>
+        .Executes(async () =>
         {
             EnsureExistingDirectory(TestDumpsDirectory);
 
@@ -22,7 +22,6 @@ partial class Build
             var smokeTest = SmokeTests.SmokeTestBuilder.GetScenario(category, SmokeTestScenario);
 
             Logger.Information("Building test image for {SmokeTestName}...", smokeTest.ShortName);
-            SmokeTests.SmokeTestBuilder.BuildImage(category, smokeTest, TracerDirectory);
-            Logger.Information("Successfully built image {DockerTag}", smokeTest.DockerTag);
+            await SmokeTests.SmokeTestBuilder.BuildImageAsync(category, smokeTest, TracerDirectory);
         });
 }
