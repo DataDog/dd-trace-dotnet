@@ -30,7 +30,7 @@ namespace Datadog.Trace.Configuration
         {
             if (configs.Count == 0)
             {
-                return JToken.Parse("{\"lib_config\":{}}");
+                return GetNullObject();
             }
 
             var applicableConfigs = new List<ApmTracingConfig>(configs.Count);
@@ -65,7 +65,7 @@ namespace Datadog.Trace.Configuration
             if (applicableConfigs.Count == 0)
             {
                 Log.Debug("No APM_TRACING configurations match service '{ServiceName}' and environment '{Environment}'", serviceName, environment);
-                return JToken.Parse("{\"lib_config\":{}}");
+                return GetNullObject();
             }
 
             // Sort configs by priority (highest first), then by config ID (alphabetically) for deterministic ordering
@@ -76,6 +76,8 @@ namespace Datadog.Trace.Configuration
 
             var result = new { lib_config = mergedLibConfig };
             return JToken.FromObject(result);
+
+            JObject GetNullObject() => new() { ["lib_config"] = new JObject(), };
         }
 
         /// <summary>

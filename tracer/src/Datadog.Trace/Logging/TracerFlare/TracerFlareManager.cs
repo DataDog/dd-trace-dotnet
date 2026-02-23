@@ -362,7 +362,7 @@ internal sealed class TracerFlareManager : ITracerFlareManager
                 return true;
             }
 
-            var json = JObject.Parse(EncodingHelpers.Utf8NoBom.GetString(remoteConfig.Contents));
+            var json = JsonHelper.ParseJObject(remoteConfig.Contents, EncodingHelpers.Utf8NoBom);
 
             var logLevel = json["config"]?["log_level"]?.Value<string>();
 

@@ -9,6 +9,7 @@ using System.Linq;
 using System.Reflection;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Pdb.SourceLink;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 #nullable enable
@@ -78,7 +79,7 @@ internal static class SourceLinkInformationExtractor
 
         try
         {
-            var sourceLinkMappedUrl = JObject.Parse(sourceLinkJsonDocument).SelectTokens("$.documents.*").FirstOrDefault()?.ToString();
+            var sourceLinkMappedUrl = JsonHelper.ParseJObject(sourceLinkJsonDocument).SelectTokens("$.documents.*").FirstOrDefault()?.ToString();
             if (string.IsNullOrWhiteSpace(sourceLinkMappedUrl) || !Uri.TryCreate(sourceLinkMappedUrl, UriKind.Absolute, out sourceLinkMappedUri))
             {
                 Log.Information("PDB file {PdbFullPath} contained SourceLink information, but we failed to parse it.", pdbFullPath);
