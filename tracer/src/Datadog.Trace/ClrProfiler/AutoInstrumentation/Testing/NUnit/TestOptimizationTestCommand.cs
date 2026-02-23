@@ -48,7 +48,6 @@ internal sealed class TestOptimizationTestCommand
             SetSkippedResult(result, "Flaky test is disabled by Datadog.");
             if (NUnitIntegration.GetOrCreateTest(context.CurrentTest, 0) is { } test)
             {
-                // Set final_status = skip for disabled tests (no execution, so direct skip)
                 if (test.GetTags() is { } disabledTestTags)
                 {
                     disabledTestTags.FinalStatus = TestTags.StatusSkip;
@@ -83,21 +82,6 @@ internal sealed class TestOptimizationTestCommand
                            testOptimization.FlakyRetryFeature?.Enabled == true &&
                            atrHasBudget;
         var atfWillRetry = testManagementProperties is { AttemptToFix: true };
-        var willRetry = !isSkippedOrInconclusive && (efdWillRetry || atrWillRetry || atfWillRetry);
-
-        // We bailout if the test was skipped or inconclusive
-        // But first set final_status for the bailout path
-        if (isSkippedOrInconclusive || !willRetry)
-        {
-            // Set final_status for tests that won't retry (single-execution or skip/inconclusive bailout)
-            if (testTags is not null && testTags.FinalStatus is null)
-            {
-                // Single execution: passed if status == Pass (not skip, not fail)
-                var anyExecutionPassed = resultStatus == TestStatus.Passed;
-                var anyExecutionFailed = resultStatus == TestStatus.Failed;
-                testTags.FinalStatus = Common.CalculateFinalStatus(anyExecutionPassed, anyExecutionFailed, isSkippedOrInconclusive, testTags);
-            }
-        }
 
         // Early bailout for skip/inconclusive
         if (isSkippedOrInconclusive)
@@ -237,6 +221,27 @@ internal sealed class TestOptimizationTestCommand
 
         if (test is not null && testTags is not null)
         {
+            // Non-retry execution: emit final_status only when no retry will be scheduled.
+            // Final retry executions are handled in the isFinalExecution block below.
+            if (!retryState.IsARetry && testTags.FinalStatus is null)
+            {
+                var isSkippedOrInconclusive = resultStatus is TestStatus.Skipped or TestStatus.Inconclusive;
+                var efdWillRetry = TestOptimization.Instance.EarlyFlakeDetectionFeature?.Enabled == true && testTags.TestIsNew == "true";
+                var atrRemainingBudget = TestOptimization.Instance.FlakyRetryFeature?.Enabled == true ? FlakyRetryBehavior.GetRemainingBudget() : 0;
+                var atrWillRetry = resultStatus == TestStatus.Failed &&
+                                   TestOptimization.Instance.FlakyRetryFeature?.Enabled == true &&
+                                   atrRemainingBudget != 0;
+                var atfWillRetry = testTags.IsAttemptToFix == "true";
+                var willRetry = !isSkippedOrInconclusive && (efdWillRetry || atrWillRetry || atfWillRetry);
+
+                if (!willRetry)
+                {
+                    var anyExecutionPassed = resultStatus == TestStatus.Passed;
+                    var anyExecutionFailed = resultStatus == TestStatus.Failed;
+                    testTags.FinalStatus = Common.CalculateFinalStatus(anyExecutionPassed, anyExecutionFailed, isSkippedOrInconclusive, testTags);
+                }
+            }
+
             if (duration.TotalMinutes >= 5 &&
                 TestOptimization.Instance.EarlyFlakeDetectionFeature?.Enabled == true &&
                 testTags.TestIsNew == "true")

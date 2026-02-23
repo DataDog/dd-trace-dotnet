@@ -5,6 +5,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using CodeOwners;
+using Microsoft.Extensions.FileSystemGlobbing;
 using Newtonsoft.Json;
 using Nuke.Common;
 using Nuke.Common.CI.AzurePipelines;
@@ -1891,19 +1892,34 @@ partial class Build : NukeBuild
            AzurePipelines.Instance.SetOutputVariable("noop_run_skip_stages", string.IsNullOrEmpty(allStages) ? "false" : "true");
            AzurePipelines.Instance.SetOutputVariable("noop_stages", allStages);
 
-           List<string> GetTracerStagesThatWillNotRun(string[] gitChanges)
+           static List<string> GetTracerStagesThatWillNotRun(string[] gitChanges)
            {
                var tracerConfig = PipelineParser.GetPipelineDefinition(RootDirectory);
 
                var tracerExcludePaths = tracerConfig.Pr?.Paths?.Exclude ?? Array.Empty<string>();
                Logger.Information($"Found {tracerExcludePaths.Length} exclude paths for the tracer");
 
-               var willTracerPipelineRun = gitChanges.Any(
-                   changed => !tracerExcludePaths.Any(prefix => changed.StartsWith(prefix)));
+               // Use FileSystemGlobbing to match patterns like Azure DevOps does.
+               // Azure DevOps supports wildcards (*, **, ?) and is case-sensitive.
+               var matcher = new Matcher(StringComparison.Ordinal);
 
-               return willTracerPipelineRun
-                          ? new List<string>()
-                          : tracerConfig.Stages.Select(x => x.Stage).ToList();
+               foreach (var excludePath in tracerExcludePaths)
+               {
+                   // Normalize the pattern for the matcher.
+                   // Azure DevOps treats trailing slashes as "match this directory and all descendants."
+                   var pattern = excludePath.EndsWith("/")
+                       ? excludePath + "**"  // Match directory and all descendants
+                       : excludePath;        // Match the exact file or use as-is for glob patterns
+
+                   matcher.AddInclude(pattern);
+               }
+
+               // if all changed files are excluded, pipelines will not run
+               var allFilesAreExcluded = gitChanges.All(changed => matcher.Match(changed).HasMatches);
+
+               return allFilesAreExcluded
+                          ? tracerConfig.Stages.Select(x => x.Stage).ToList()
+                          : new List<string>();
            }
        });
 

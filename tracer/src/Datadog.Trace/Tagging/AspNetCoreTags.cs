@@ -19,6 +19,6 @@ namespace Datadog.Trace.Tagging
         public string AspNetCoreRoute { get; set; }
 
         [Tag(Tags.HttpRoute)]
-        public string HttpRoute { get; set; }
+        public string HttpRoute => AspNetCoreRoute;
     }
 }

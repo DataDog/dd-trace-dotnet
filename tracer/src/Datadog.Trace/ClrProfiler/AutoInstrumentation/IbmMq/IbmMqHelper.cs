@@ -7,6 +7,7 @@
 
 using System;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Util;
@@ -16,7 +17,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.IbmMq;
 
 internal static class IbmMqHelper
 {
-    private const string MessagingType = "ibmmq";
     private const string QueueUriPrefix = "queue://";
     private const string TopicUriPrefix = "topic://";
 
@@ -66,8 +66,8 @@ internal static class IbmMqHelper
                 return null;
             }
 
-            var operationName = settings.Schema.Messaging.GetOutboundOperationName(MessagingType);
-            var serviceName = settings.Schema.Messaging.GetServiceName(MessagingType);
+            var operationName = settings.Schema.Messaging.GetOutboundOperationName(MessagingSchema.OperationType.IbmMq);
+            var serviceName = settings.Schema.Messaging.GetServiceName(MessagingSchema.ServiceType.IbmMq);
             var tags = settings.Schema.Messaging.CreateIbmMqTags(SpanKinds.Consumer);
             var queueName = SanitizeQueueName(queue.Name);
             tags.TopicName = queueName;
@@ -113,7 +113,7 @@ internal static class IbmMqHelper
             }
 
             var parent = tracer.ActiveScope?.Span;
-            var operationName = settings.Schema.Messaging.GetInboundOperationName(MessagingType);
+            var operationName = settings.Schema.Messaging.GetInboundOperationName(MessagingSchema.OperationType.IbmMq);
             if (parent is not null &&
                 parent.OperationName == operationName &&
                 parent.GetTag(Tags.InstrumentationName) != null)
@@ -133,7 +133,7 @@ internal static class IbmMqHelper
                 Log.Error(ex, "Error extracting propagated headers from IbmMq message");
             }
 
-            var serviceName = settings.Schema.Messaging.GetServiceName(MessagingType);
+            var serviceName = settings.Schema.Messaging.GetServiceName(MessagingSchema.ServiceType.IbmMq);
             var tags = settings.Schema.Messaging.CreateIbmMqTags(SpanKinds.Producer);
             var queueName = SanitizeQueueName(queue.Name);
             tags.TopicName = queueName;
