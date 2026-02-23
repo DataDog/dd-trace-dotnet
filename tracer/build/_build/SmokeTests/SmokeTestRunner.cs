@@ -9,9 +9,9 @@ namespace SmokeTests;
 
 public static class SmokeTestBuilder
 {
-    const string DotnetSdkVersion = "9.0.100";
+    const string DotnetSdkVersion = "10.0.100";
 
-    public static Dictionary<string, SmokeTestScenario> GetAllScenarios()
+    public static Dictionary<SmokeTestCategory, Dictionary<string, SmokeTestScenario>> GetAllScenarios()
         => Enum.GetValues<SmokeTestCategory>().ToDictionary(x => x, GetScenariosForCategory);
 
     static Dictionary<string, SmokeTestScenario> GetScenariosForCategory(SmokeTestCategory category)
