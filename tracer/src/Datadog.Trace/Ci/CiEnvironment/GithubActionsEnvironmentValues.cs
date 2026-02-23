@@ -368,7 +368,7 @@ internal sealed class GithubActionsEnvironmentValues<TValueProvider>(TValueProvi
             if (!string.IsNullOrWhiteSpace(githubEventPath))
             {
                 var githubEvent = File.ReadAllText(githubEventPath);
-                var githubEventObject = JObject.Parse(githubEvent);
+                var githubEventObject = JsonHelper.ParseJObject(githubEvent);
                 var number = githubEventObject["number"]?.Value<int>();
                 if (number is > 0)
                 {

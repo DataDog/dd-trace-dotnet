@@ -9,6 +9,7 @@ using System.Globalization;
 using System.IO;
 using System.Text;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.Util.Json;
 
@@ -50,6 +51,66 @@ internal static class JsonHelper
     {
         // equivalent to Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.DeserializeObject()
         return (T?)DeserializeObject(value, typeof(T), settings: null);
+    }
+
+    public static JObject ParseJObject(byte[] json, Encoding encoding)
+    {
+        // A new overload, equivalent to calling Encoding.Utf8.GetBytes() and
+        // passing that to Datadog.Trace.Vendors.Newtonsoft.Json.Linq.JObject.Parse()
+        using var stream = new MemoryStream(json);
+        using var streamReader = new StreamReader(stream, encoding);
+        using var reader = new JsonTextReader(streamReader) { ArrayPool = JsonArrayPool.Shared };
+        var o = JObject.Load(reader);
+        while (reader.Read())
+        {
+            // validate no trailing content
+        }
+
+        return o;
+    }
+
+    public static JObject ParseJObject(string json)
+    {
+        using var reader = new JsonTextReader(new StringReader(json)) { ArrayPool = JsonArrayPool.Shared };
+        var o = JObject.Load(reader);
+        while (reader.Read())
+        {
+            // validate no trailing content
+        }
+
+        return o;
+    }
+
+    public static JToken ParseJToken(string json)
+    {
+        using var reader = new JsonTextReader(new StringReader(json)) { ArrayPool = JsonArrayPool.Shared };
+        var t = JToken.Load(reader);
+        while (reader.Read())
+        {
+            // validate no trailing content
+        }
+
+        return t;
+    }
+
+    public static JArray ParseJArray(string json)
+    {
+        using var reader = new JsonTextReader(new StringReader(json)) { ArrayPool = JsonArrayPool.Shared };
+        var a = JArray.Load(reader);
+        while (reader.Read())
+        {
+            // validate no trailing content
+        }
+
+        return a;
+    }
+
+    public static string TokenToString(JToken token, Formatting formatting = Formatting.Indented, params JsonConverter[] converters)
+    {
+        using var sw = new StringWriter(CultureInfo.InvariantCulture);
+        using var jw = new JsonTextWriter(sw) { ArrayPool = JsonArrayPool.Shared, Formatting = formatting };
+        token.WriteTo(jw, converters);
+        return sw.ToString();
     }
 
     private static string SerializeObjectInternal(object? value, System.Type? type, JsonSerializer jsonSerializer)

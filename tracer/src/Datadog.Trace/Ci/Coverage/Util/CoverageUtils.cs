@@ -41,7 +41,8 @@ internal static class CoverageUtils
         {
             using var fStream = File.OpenWrite(outputFile);
             using var sWriter = new StreamWriter(fStream, Encoding.UTF8, 4096, false);
-            new JsonSerializer().Serialize(sWriter, globalCoverageInfo);
+            using var jsonWriter = new JsonTextWriter(sWriter) { ArrayPool = JsonArrayPool.Shared };
+            new JsonSerializer().Serialize(jsonWriter, globalCoverageInfo);
             return true;
         }
         catch (Exception ex)
