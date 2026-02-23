@@ -270,8 +270,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 }
 
                 var functionName = functionContext.FunctionDefinition.Name;
-                var spanRootName = tracer.InternalActiveScope?.Root.Span.OperationName;
-
                 if (tracer.InternalActiveScope == null)
                 {
                     // This is the root scope
