@@ -4988,8 +4988,7 @@ stages:
         artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
 
 - stage: temp_installer_smoke_tests
-  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
-  dependsOn: [package_linux, generate_variables, merge_commit_id]
+  dependsOn: [generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
@@ -5015,19 +5014,24 @@ stages:
     - task: DownloadPipelineArtifact@2
       displayName: Download x64 artifacts to artifact directory
       inputs:
-        artifact: linux-packages-linux-x64
-        path: $(outputDir)/artifacts/artifacts
+        artifactName: linux-packages-linux-x64
+        targetPath: $(outputDir)/artifacts/artifacts
+        buildType: 'specific'
+        project: 'dd-trace-dotnet'
+        definition: 54
+        buildVersionToDownload: 'specific'
+        pipelineId: 196299
 
     - task: DownloadPipelineArtifact@2
       displayName: Download x64 musl artifacts to artifact directory
       inputs:
-        artifact: linux-packages-linux-musl-x64
-        path: $(outputDir)/artifacts/artifacts
-
-    - publish: artifacts/build_data
-      artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: always()
-      continueOnError: true
+        artifactName: linux-packages-linux-musl-x64
+        targetPath: $(outputDir)/artifacts/artifacts
+        buildType: 'specific'
+        project: 'dd-trace-dotnet'
+        definition: 54
+        buildVersionToDownload: 'specific'
+        pipelineId: 196299
 
     - template: steps/run-in-docker.yml
       parameters:
@@ -5035,6 +5039,11 @@ stages:
         baseImage: alpine
         command: "RunArtifactSmokeTests -SmokeTestCategory $(category) -SmokeTestScenario $(scenario)"
         apikey: $(DD_LOGGER_DD_API_KEY)
+
+    - publish: artifacts/build_data
+      artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
+      condition: always()
+      continueOnError: true
 
 - stage: installer_smoke_tests
   dependsOn: [package_linux, generate_variables, merge_commit_id]
