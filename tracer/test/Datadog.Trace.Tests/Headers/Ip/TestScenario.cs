@@ -4,24 +4,63 @@
 // </copyright>
 
 using Datadog.Trace.TestHelpers;
+using Xunit.Abstractions;
 
 namespace Datadog.Trace.Tests.Headers.Ip;
 
-public class TestScenario(SerializableDictionary data, string name, string customIpHeader, string expectedIp, int? expectedPort, string peerIp, int peerPort)
+public class TestScenario : IXunitSerializable
 {
-    internal SerializableDictionary Data { get; set; } = data;
+    // Parameterless constructor required by IXunitSerializable
+    public TestScenario()
+    {
+    }
 
-    internal string Name { get; set; } = name;
+    public TestScenario(SerializableDictionary data, string name, string customIpHeader, string expectedIp, int? expectedPort, string peerIp, int peerPort)
+    {
+        Data = data;
+        Name = name;
+        CustomIpHeader = customIpHeader;
+        ExpectedIp = expectedIp;
+        ExpectedPort = expectedPort;
+        PeerIp = peerIp;
+        PeerPort = peerPort;
+    }
 
-    internal string CustomIpHeader { get; } = customIpHeader;
+    internal SerializableDictionary Data { get; set; }
 
-    internal string ExpectedIp { get; } = expectedIp;
+    internal string Name { get; set; }
 
-    internal int? ExpectedPort { get; } = expectedPort;
+    internal string CustomIpHeader { get; private set; }
 
-    internal string PeerIp { get; } = peerIp;
+    internal string ExpectedIp { get; private set; }
 
-    internal int PeerPort { get; } = peerPort;
+    internal int? ExpectedPort { get; private set; }
+
+    internal string PeerIp { get; private set; }
+
+    internal int PeerPort { get; private set; }
+
+    public void Deserialize(IXunitSerializationInfo info)
+    {
+        Data = info.GetValue<SerializableDictionary>(nameof(Data));
+        Name = info.GetValue<string>(nameof(Name));
+        CustomIpHeader = info.GetValue<string>(nameof(CustomIpHeader));
+        ExpectedIp = info.GetValue<string>(nameof(ExpectedIp));
+        ExpectedPort = info.GetValue<int?>(nameof(ExpectedPort));
+        PeerIp = info.GetValue<string>(nameof(PeerIp));
+        PeerPort = info.GetValue<int>(nameof(PeerPort));
+    }
+
+    public void Serialize(IXunitSerializationInfo info)
+    {
+        info.AddValue(nameof(Data), Data);
+        info.AddValue(nameof(Name), Name);
+        info.AddValue(nameof(CustomIpHeader), CustomIpHeader);
+        info.AddValue(nameof(ExpectedIp), ExpectedIp);
+        info.AddValue(nameof(ExpectedPort), ExpectedPort);
+        info.AddValue(nameof(PeerIp), PeerIp);
+        info.AddValue(nameof(PeerPort), PeerPort);
+    }
 
     public override string ToString()
     {
