@@ -3,15 +3,27 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
+using System.IO;
+using System.Linq;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Tagging;
 using FluentAssertions;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Kafka
 {
     public class KafkaClusterIdTests
     {
+        private readonly ITestOutputHelper _output;
+
+        public KafkaClusterIdTests(ITestOutputHelper output)
+        {
+            _output = output;
+        }
+
         [Fact]
         public void ConsumerCache_StoresAndRetrievesClusterId()
         {
@@ -196,5 +208,73 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Kafka
         {
             Tags.KafkaClusterId.Should().Be("messaging.kafka.cluster_id");
         }
+
+#if NETCOREAPP3_1_OR_GREATER
+        [Fact]
+        public void DuckTyping_AdminClientConfig_CanBeCreatedAndDuckCast()
+        {
+            var configType = Type.GetType("Confluent.Kafka.AdminClientConfig, Confluent.Kafka");
+            configType.Should().NotBeNull("AdminClientConfig should exist in Confluent.Kafka");
+
+            var config = Activator.CreateInstance(configType!);
+            config.Should().NotBeNull();
+
+            var canDuck = config!.TryDuckCast<IAdminClientConfig>(out var adminConfig);
+            canDuck.Should().BeTrue("AdminClientConfig should be duck-castable to IAdminClientConfig");
+
+            adminConfig!.BootstrapServers = "localhost:9092";
+            adminConfig.BootstrapServers.Should().Be("localhost:9092");
+
+            _output.WriteLine($"AdminClientConfig duck typing works. Type: {configType!.FullName}");
+        }
+
+        [Fact]
+        public void DuckTyping_AdminClientBuilder_CanBeCreatedAndDuckCast()
+        {
+            var configType = Type.GetType("Confluent.Kafka.AdminClientConfig, Confluent.Kafka")!;
+            var config = Activator.CreateInstance(configType);
+            config!.TryDuckCast<IAdminClientConfig>(out var adminConfig);
+            adminConfig!.BootstrapServers = "localhost:9092";
+
+            var builderType = Type.GetType("Confluent.Kafka.AdminClientBuilder, Confluent.Kafka");
+            builderType.Should().NotBeNull("AdminClientBuilder should exist in Confluent.Kafka");
+
+            var builder = Activator.CreateInstance(builderType!, new object[] { ((IDuckType)adminConfig).Instance! });
+            builder.Should().NotBeNull();
+
+            var canDuck = builder!.TryDuckCast<IAdminClientBuilder>(out var adminBuilder);
+            canDuck.Should().BeTrue("AdminClientBuilder should be duck-castable to IAdminClientBuilder");
+
+            _output.WriteLine($"AdminClientBuilder duck typing works. Type: {builderType!.FullName}");
+        }
+
+        [Fact]
+        public void DuckTyping_AdminClient_DescribeClusterAsync_CheckAvailability()
+        {
+            // AdminClientBuilder.Build() requires the native librdkafka library,
+            // so we can't instantiate an AdminClient in unit tests.
+            // Instead, verify whether the Confluent.Kafka version has DescribeClusterAsync
+            // by checking the AdminClient type definition directly.
+            var adminClientType = Type.GetType("Confluent.Kafka.AdminClient, Confluent.Kafka");
+            adminClientType.Should().NotBeNull();
+
+            var hasDescribeCluster = adminClientType!.GetMethod("DescribeClusterAsync") is not null;
+            var version = adminClientType.Assembly.GetName().Version;
+            _output.WriteLine($"Confluent.Kafka version: {version}");
+            _output.WriteLine($"Has DescribeClusterAsync: {hasDescribeCluster}");
+
+            if (version!.Major >= 2)
+            {
+                hasDescribeCluster.Should().BeTrue(
+                    "Confluent.Kafka 2.x should have DescribeClusterAsync for cluster_id extraction");
+            }
+            else
+            {
+                hasDescribeCluster.Should().BeFalse(
+                    "Confluent.Kafka < 2.0 does not have DescribeClusterAsync. " +
+                    "The kafka_cluster_id feature requires Confluent.Kafka 2.0+.");
+            }
+        }
+#endif
     }
 }
