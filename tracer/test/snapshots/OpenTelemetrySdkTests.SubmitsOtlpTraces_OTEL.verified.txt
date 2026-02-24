@@ -119,7 +119,7 @@
                       {
                         "key": "exception.stacktrace",
                         "value": {
-                          "string_value": "System.ArgumentException: Example argument exception\r\n   at Samples.OpenTelemetrySdk.Program.RunSpanUpdateMethods(TelemetrySpan span) in C:\\git\\datadog2\\dd-trace-dotnet\\tracer\\test\\test-applications\\integrations\\Samples.OpenTelemetrySdk\\Program.cs:line 267"
+                          "string_value": "System.ArgumentException: Example argument exception"
                         }
                       },
                       {

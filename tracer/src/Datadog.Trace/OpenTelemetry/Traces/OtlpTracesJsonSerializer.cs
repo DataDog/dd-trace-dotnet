@@ -70,7 +70,7 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
     {
         writer.WriteStartObject();
 
-        writer.WritePropertyName("resource_spans");
+        writer.WritePropertyName("resourceSpans");
         writer.WriteStartArray();
 
         writer.WriteStartObject();
@@ -85,7 +85,7 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
 
         // Note: Since the Datadog tracer only allows one Instrumentation Scope, we collapse them all for now
         // TODO: Allow individual scopes by name/version
-        writer.WritePropertyName("scope_spans");
+        writer.WritePropertyName("scopeSpans");
         writer.WriteStartArray();
 
         WriteScopeSpans(writer, in traceChunk);
@@ -147,24 +147,24 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
         writer.WriteStartObject();
 
         // traceId (required) - encoded as hex string in JSON
-        writer.WritePropertyName("trace_id");
+        writer.WritePropertyName("traceId");
         writer.WriteValue(spanModel.Span.Context.RawTraceId);
 
         // spanId (required) - encoded as hex string in JSON
-        writer.WritePropertyName("span_id");
+        writer.WritePropertyName("spanId");
         writer.WriteValue(spanModel.Span.Context.RawSpanId);
 
         // traceState (optional)
         // if (!string.IsNullOrEmpty(spanModel.Span.TraceState))
         // {
-        //     writer.WritePropertyName("trace_state");
+        //     writer.WritePropertyName("traceState");
         //     writer.WriteValue(spanModel.Span.TraceState);
         // }
 
         // parentSpanId (optional) - encoded as hex string in JSON
         if (spanModel.Span.Context.ParentId is ulong parentId && parentId > 0)
         {
-            writer.WritePropertyName("parent_span_id");
+            writer.WritePropertyName("parentSpanId");
             writer.WriteValue(HexString.ToHexString(parentId));
         }
 
@@ -182,21 +182,21 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
         // kind (optional, default should be SPAN_KIND_UNSPECIFIED but we use SPAN_KIND_INTERNAL instead)
         var spanKind = spanModel.Span.GetTag(Tags.SpanKind) switch
         {
-            SpanKinds.Server => "SPAN_KIND_SERVER",
-            SpanKinds.Client => "SPAN_KIND_CLIENT",
-            SpanKinds.Producer => "SPAN_KIND_PRODUCER",
-            SpanKinds.Consumer => "SPAN_KIND_CONSUMER",
-            _ => "SPAN_KIND_INTERNAL",
+            SpanKinds.Server => SpanKind.Server,
+            SpanKinds.Client => SpanKind.Client,
+            SpanKinds.Producer => SpanKind.Producer,
+            SpanKinds.Consumer => SpanKind.Consumer,
+            _ => SpanKind.Internal,
         };
         writer.WritePropertyName("kind");
-        writer.WriteValue(spanKind);
+        writer.WriteValue((int)spanKind);
 
         // startTimeUnixNano (required) - string representation of uint64
-        writer.WritePropertyName("start_time_unix_nano");
+        writer.WritePropertyName("startTimeUnixNano");
         writer.WriteValue(spanModel.Span.StartTime.ToUnixTimeNanoseconds().ToString());
 
         // endTimeUnixNano (required) - string representation of uint64
-        writer.WritePropertyName("end_time_unix_nano");
+        writer.WritePropertyName("endTimeUnixNano");
         writer.WriteValue((spanModel.Span.StartTime + spanModel.Span.Duration).ToUnixTimeNanoseconds().ToString());
 
         // attributes (optional)
@@ -298,7 +298,7 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
         writer.WriteStartObject();
 
         // timeUnixNano - string representation of uint64
-        writer.WritePropertyName("time_unix_nano");
+        writer.WritePropertyName("timeUnixNano");
         writer.WriteValue(evt.Timestamp.ToUnixTimeNanoseconds().ToString());
 
         // name
@@ -316,7 +316,7 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
         // droppedAttributesCount (optional)
         if (droppedAttributesCount > 0)
         {
-            writer.WritePropertyName("dropped_attributes_count");
+            writer.WritePropertyName("droppedAttributesCount");
             writer.WriteValue(droppedAttributesCount);
         }
 
@@ -328,17 +328,17 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
         writer.WriteStartObject();
 
         // traceId - encoded as hex string in JSON
-        writer.WritePropertyName("trace_id");
+        writer.WritePropertyName("traceId");
         writer.WriteValue(link.Context.RawTraceId);
 
         // spanId - encoded as hex string in JSON
-        writer.WritePropertyName("span_id");
+        writer.WritePropertyName("spanId");
         writer.WriteValue(link.Context.RawSpanId);
 
         // traceState (optional)
         if (link.Context.IsRemote)
         {
-            writer.WritePropertyName("trace_state");
+            writer.WritePropertyName("traceState");
             writer.WriteValue(W3CTraceContextPropagator.CreateTraceStateHeader(link.Context));
         }
 
@@ -353,7 +353,7 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
         // droppedAttributesCount (optional)
         if (droppedAttributesCount > 0)
         {
-            writer.WritePropertyName("dropped_attributes_count");
+            writer.WritePropertyName("droppedAttributesCount");
             writer.WriteValue(droppedAttributesCount);
         }
 
@@ -389,7 +389,7 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
         if (status.Code != StatusCode.Unset)
         {
             writer.WritePropertyName("code");
-            writer.WriteValue(GetStatusCodeString(status.Code));
+            writer.WriteValue((int)status.Code);
         }
 
         writer.WriteEndObject();
@@ -415,7 +415,7 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
         // droppedAttributesCount (optional)
         if (droppedAttributesCount > 0)
         {
-            writer.WritePropertyName("dropped_attributes_count");
+            writer.WritePropertyName("droppedAttributesCount");
             writer.WriteValue(droppedAttributesCount);
         }
 
@@ -449,7 +449,7 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
         // droppedAttributesCount (optional)
         if (scope.DroppedAttributesCount > 0)
         {
-            writer.WritePropertyName("dropped_attributes_count");
+            writer.WritePropertyName("droppedAttributesCount");
             writer.WriteValue(scope.DroppedAttributesCount);
         }
 
@@ -554,43 +554,43 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
         switch (value)
         {
             case string stringValue:
-                writer.WritePropertyName("string_value");
+                writer.WritePropertyName("stringValue");
                 writer.WriteValue(stringValue);
                 break;
 
             case bool boolValue:
-                writer.WritePropertyName("bool_value");
+                writer.WritePropertyName("boolValue");
                 writer.WriteValue(boolValue);
                 break;
 
             case int intValue:
-                writer.WritePropertyName("int_value");
+                writer.WritePropertyName("intValue");
                 writer.WriteValue(intValue.ToString());
                 break;
 
             case long longValue:
-                writer.WritePropertyName("int_value");
+                writer.WritePropertyName("intValue");
                 writer.WriteValue(longValue.ToString());
                 break;
 
             case double doubleValue:
-                writer.WritePropertyName("double_value");
+                writer.WritePropertyName("doubleValue");
                 writer.WriteValue(doubleValue);
                 break;
 
             case float floatValue:
-                writer.WritePropertyName("double_value");
+                writer.WritePropertyName("doubleValue");
                 writer.WriteValue(floatValue);
                 break;
 
             case byte[] bytesValue:
-                writer.WritePropertyName("bytes_value");
+                writer.WritePropertyName("bytesValue");
                 writer.WriteValue(Convert.ToBase64String(bytesValue));
                 break;
 
             default:
                 // For other types, try to convert to string
-                writer.WritePropertyName("string_value");
+                writer.WritePropertyName("stringValue");
                 writer.WriteValue(value.ToString());
                 break;
         }
@@ -656,7 +656,7 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
     /// The JSON format follows the official OTLP specification with proper encoding:
     /// - Byte arrays (traceId, spanId) are encoded as lowercase hex strings
     /// - uint64 values (timestamps) are encoded as strings
-    /// - Enum values use their protobuf string names (e.g., "SPAN_KIND_SERVER")
+    /// - Enum values use their integer values (e.g., "SPAN_KIND_SERVER" is encoded as 2)
     /// - Field names use camelCase (e.g., "resourceSpans", "startTimeUnixNano")
     ///
     /// Note: This method is stateful. The first time a trace chunk is serialized (the provided offset is the same as the header size),
