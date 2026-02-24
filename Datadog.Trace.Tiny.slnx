@@ -1,0 +1,36 @@
+﻿<Solution>
+  <Folder Name="/build/">
+    <Project Path="tracer\build\_build\_build.csproj" Type="C#" />
+  </Folder>
+  <Folder Name="/deps/">
+    <Project Path="tracer/src/Datadog.Trace.Tools.Analyzers.CodeFixes/Datadog.Trace.Tools.Analyzers.CodeFixes.csproj" />
+    <Project Path="tracer\src\Datadog.InstrumentedAssemblyGenerator\Datadog.InstrumentedAssemblyGenerator.csproj" />
+    <Project Path="tracer\src\Datadog.InstrumentedAssemblyVerification\Datadog.InstrumentedAssemblyVerification.csproj" />
+    <Project Path="tracer\src\Datadog.Trace.Annotations\Datadog.Trace.Annotations.csproj" />
+    <Project Path="tracer\src\Datadog.Trace.SourceGenerators\Datadog.Trace.SourceGenerators.csproj" />
+    <Project Path="tracer\src\Datadog.Trace.Tools.Analyzers\Datadog.Trace.Tools.Analyzers.csproj" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="tracer\src\Datadog.AzureFunctions\Datadog.AzureFunctions.csproj" Type="C#" />
+    <Project Path="tracer\src\Datadog.Trace.Bundle\Datadog.Trace.Bundle.csproj" Type="C#" />
+    <Project Path="tracer\src\Datadog.Trace.ClrProfiler.Managed.Loader\Datadog.Trace.ClrProfiler.Managed.Loader.csproj" Type="C#" />
+    <Project Path="tracer\src\Datadog.Trace.Manual\Datadog.Trace.Manual.csproj" />
+    <Project Path="tracer\src\Datadog.Trace\Datadog.Trace.csproj" />
+    <File Path="tracer\src\Directory.Build.props" />
+  </Folder>
+  <Folder Name="/test-apps/">
+    <Project Path="tracer\test\test-applications\azure-functions\Samples.AzureFunctions.V4Isolated.HostLogsDisabled\Samples.AzureFunctions.V4Isolated.HostLogsDisabled.csproj" Type="C#" />
+    <Project Path="tracer\test\test-applications\integrations\Samples.AzureServiceBus\Samples.AzureServiceBus.csproj" />
+    <Project Path="tracer\test\test-applications\integrations\Samples.Console\Samples.Console.csproj" Type="C#" />
+    <Project Path="tracer\test\test-applications\Samples.Shared\Samples.Shared.shproj" />
+  </Folder>
+  <Folder Name="/test/">
+    <Project Path="tracer\test\Datadog.Trace.ClrProfiler.IntegrationTests\Datadog.Trace.ClrProfiler.IntegrationTests.csproj" />
+    <Project Path="tracer\test\Datadog.Trace.ClrProfiler.Managed.Tests\Datadog.Trace.ClrProfiler.Managed.Tests.csproj" />
+    <Project Path="tracer\test\Datadog.Trace.IntegrationTests\Datadog.Trace.IntegrationTests.csproj" />
+    <Project Path="tracer\test\Datadog.Trace.TestHelpers.AutoInstrumentation\Datadog.Trace.TestHelpers.AutoInstrumentation.csproj" />
+    <Project Path="tracer\test\Datadog.Trace.TestHelpers\Datadog.Trace.TestHelpers.csproj" />
+    <Project Path="tracer\test\Datadog.Trace.Tests\Datadog.Trace.Tests.csproj" />
+    <File Path="tracer\test\Directory.Build.props" />
+  </Folder>
+</Solution>
