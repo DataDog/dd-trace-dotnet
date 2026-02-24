@@ -8,6 +8,7 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
 
@@ -20,7 +21,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions
 
         private const string DatadogAwsStepFunctionsServiceName = "aws-stepfunctions";
         private const string StepFunctionsServiceName = "StepFunctions";
-        private const string StepFunctionsOperationName = "aws.stepfunctions";
         private const string StepFunctionsRequestOperationName = "stepfunctions.request";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AwsStepFunctionsCommon));
 
@@ -84,9 +84,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions
 
             return spanKind switch
             {
-                SpanKinds.Consumer => tracer.CurrentTraceSettings.Schema.Messaging.GetInboundOperationName(StepFunctionsOperationName),
-                SpanKinds.Producer => tracer.CurrentTraceSettings.Schema.Messaging.GetOutboundOperationName(StepFunctionsOperationName),
-                _ => $"{StepFunctionsOperationName}.request"
+                SpanKinds.Consumer => tracer.CurrentTraceSettings.Schema.Messaging.GetInboundOperationName(MessagingSchema.OperationType.AwsStepFunctions),
+                SpanKinds.Producer => tracer.CurrentTraceSettings.Schema.Messaging.GetOutboundOperationName(MessagingSchema.OperationType.AwsStepFunctions),
+                _ => "aws.stepfunctions.request"
             };
         }
     }

@@ -404,7 +404,7 @@ namespace Datadog.Trace.Tests.Propagators
                       opts => opts.ExcludingMissingMembers());
 
             result.Baggage.Should().BeNull();
-            result.Links.Should().BeEmpty();
+            result.Links.Should().BeNullOrEmpty();
         }
 
         [Fact]

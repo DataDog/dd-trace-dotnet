@@ -325,6 +325,15 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
         return returnValue;
     }
 
+    /// <summary>
+    /// Read-only snapshot of remaining ATR budget for pre-close checks (XUnit v3).
+    /// Value meanings: -1 = uninitialized, 0 = exhausted, positive = nominally available.
+    /// This value is observed before retry scheduling decrements budget, so values of 1 or 0 mean no
+    /// further retry can run after the current failed execution.
+    /// </summary>
+    internal static int GetRemainingAtrBudget()
+        => Interlocked.CompareExchange(ref _totalRetries, 0, 0);
+
     private readonly struct TestRunnerState
     {
         public readonly RetryMessageBus MessageBus;

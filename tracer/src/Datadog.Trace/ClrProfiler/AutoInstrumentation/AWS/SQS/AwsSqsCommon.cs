@@ -8,6 +8,7 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
 
@@ -18,7 +19,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
         private const string DatadogAwsSqsServiceName = "aws-sqs";
         private const string SqsRequestOperationName = "sqs.request";
         private const string SqsServiceName = "SQS";
-        private const string SqsOperationName = "aws.sqs";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AwsSqsCommon));
 
         internal const string IntegrationName = nameof(Configuration.IntegrationId.AwsSqs);
@@ -84,9 +84,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
 
             return spanKind switch
             {
-                SpanKinds.Consumer => tracer.CurrentTraceSettings.Schema.Messaging.GetInboundOperationName(SqsOperationName),
-                SpanKinds.Producer => tracer.CurrentTraceSettings.Schema.Messaging.GetOutboundOperationName(SqsOperationName),
-                _ => $"{SqsOperationName}.request"
+                SpanKinds.Consumer => tracer.CurrentTraceSettings.Schema.Messaging.GetInboundOperationName(MessagingSchema.OperationType.AwsSqs),
+                SpanKinds.Producer => tracer.CurrentTraceSettings.Schema.Messaging.GetOutboundOperationName(MessagingSchema.OperationType.AwsSqs),
+                _ => "aws.sqs.request"
             };
         }
     }

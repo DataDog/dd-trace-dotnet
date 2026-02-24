@@ -27,4 +27,13 @@ internal readonly struct FlakyRetryBehavior : IRetryBehavior
         => result.ResultState.Status == TestStatus.Failed && Interlocked.Decrement(ref _totalRetries) > 0;
 
     public ITestResult ResultChanges(ITestResult result) => result;
+
+    /// <summary>
+    /// Read-only snapshot of remaining ATR budget for pre-close checks.
+    /// Value meanings: -1 = uninitialized, 0 = exhausted, positive = nominally available.
+    /// This value is observed before ShouldRetry() decrements budget, so values of 1 or 0 mean no
+    /// further retry can run after the current failed execution.
+    /// </summary>
+    internal static int GetRemainingBudget()
+        => Interlocked.CompareExchange(ref _totalRetries, 0, 0);
 }
