@@ -170,7 +170,7 @@ Downloads, extracts, and analyzes Azure Function logs.
   -AppName "<app-name>" `
   -ResourceGroup "<resource-group>" `
   -OutputPath $env:TEMP `
-  -ExecutionTimestamp "2026-01-23 17:53:00" `
+  -ExecutionTimestamp "<YYYY-MM-DD HH:MM:SS>" `
   -All `
   -Verbose
 ```

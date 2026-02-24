@@ -2,7 +2,7 @@
 name: azure-functions
 description: Dev/test workflow for tracer engineers working on the Datadog .NET tracer — build a local Datadog.AzureFunctions NuGet package, deploy it to a test Azure Function App, trigger it, and analyze traces/logs to verify instrumentation behavior. Use this skill whenever the user mentions building or testing the Datadog.AzureFunctions NuGet package, deploying to an Azure Function App for tracer testing, analyzing Azure function instrumentation logs or traces, or configuring Datadog environment variables on Azure — even if they don't explicitly invoke /azure-functions.
 argument-hint: [build-nuget|deploy|test|logs|configure]
-allowed-tools: Bash(az:functionapp:show:*) Bash(az:functionapp:list:*) Bash(az:functionapp:list-functions:*) Bash(az:functionapp:function:list:*) Bash(az:functionapp:function:show:*) Bash(az:functionapp:config:appsettings:list:*) Bash(az:functionapp:config:appsettings:set:*) Bash(az:functionapp:config:appsettings:delete:*) Bash(az:functionapp:config:show:*) Bash(az:functionapp:deployment:list:*) Bash(az:functionapp:deployment:show:*) Bash(az:functionapp:deployment:source:show:*) Bash(az:functionapp:plan:list:*) Bash(az:functionapp:plan:show:*) Bash(az:functionapp:restart:*) Bash(az:functionapp:stop:*) Bash(az:functionapp:start:*) Bash(az:webapp:log:download:*) Bash(az:webapp:log:tail:*) Bash(az:group:list:*) Bash(az:group:show:*) Bash(curl:*) Bash(pwsh:*) Bash(func:azure:functionapp:publish:*) Bash(func:azure:functionapp:logstream:*) Bash(func:azure:functionapp:list-functions:*) Bash(func:azure:functionapp:fetch-app-settings:*) Bash(func:azure:functionapp:fetch:*) Bash(dotnet:restore) Bash(dotnet:clean) Bash(dotnet:build:*) Bash(unzip:*) Bash(date:*) Bash(grep:*) Bash(find:*) Bash(ls:*) Bash(cat:*) Bash(head:*) Bash(tail:*) Bash(wc:*) Bash(sort:*) Bash(jq:*) Bash(uname:*) Read
+allowed-tools: Bash(pwsh:*) Bash(az:functionapp:show:*) Bash(az:functionapp:list:*) Bash(az:functionapp:list-functions:*) Bash(az:functionapp:function:list:*) Bash(az:functionapp:function:show:*) Bash(az:functionapp:config:appsettings:list:*) Bash(az:functionapp:config:appsettings:set:*) Bash(az:functionapp:config:appsettings:delete:*) Bash(az:functionapp:config:show:*) Bash(az:functionapp:deployment:list:*) Bash(az:functionapp:deployment:show:*) Bash(az:functionapp:deployment:source:show:*) Bash(az:functionapp:plan:list:*) Bash(az:functionapp:plan:show:*) Bash(az:functionapp:restart:*) Bash(az:functionapp:stop:*) Bash(az:functionapp:start:*) Bash(az:webapp:log:download:*) Bash(az:webapp:log:tail:*) Bash(az:group:list:*) Bash(az:group:show:*) Bash(curl:*) Bash(pwsh:*) Bash(func:azure:functionapp:publish:*) Bash(func:azure:functionapp:logstream:*) Bash(func:azure:functionapp:list-functions:*) Bash(func:azure:functionapp:fetch-app-settings:*) Bash(func:azure:functionapp:fetch:*) Bash(dotnet:restore) Bash(dotnet:clean) Bash(dotnet:build:*) Bash(unzip:*) Bash(date:*) Bash(grep:*) Bash(find:*) Bash(ls:*) Bash(cat:*) Bash(head:*) Bash(tail:*) Bash(wc:*) Bash(sort:*) Bash(jq:*) Bash(uname:*) Read
 ---
 
 # Azure Functions Dev/Test Workflow
@@ -21,7 +21,7 @@ This skill requires the following tools (assume they are installed and only trou
 - **.NET SDK**: Matching target framework of sample app
 
 **Only if a tool fails, provide installation links**:
-- **PowerShell**: See [README.md](README.md#installing-powershell)
+- **PowerShell**: https://learn.microsoft.com/en-us/powershell/scripting/install/installing-powershell
 - **Azure CLI**: https://learn.microsoft.com/en-us/cli/azure/install-azure-cli
 - **Azure Functions Core Tools**: https://learn.microsoft.com/en-us/azure/azure-functions/functions-run-local
 - **.NET SDK**: https://dotnet.microsoft.com/download
@@ -32,9 +32,9 @@ When invoked with an argument, perform the corresponding workflow:
 
 - `/azure-functions build-nuget` - Build the Datadog.AzureFunctions NuGet package
 - `/azure-functions deploy [app-name]` - Deploy to Azure Function App
+- `/azure-functions configure [app-name]` - Configure environment variables for Datadog instrumentation
 - `/azure-functions test [app-name]` - Trigger and verify function execution
 - `/azure-functions logs [app-name]` - Download and analyze logs
-- `/azure-functions configure [app-name]` - Configure environment variables for Datadog instrumentation
 
 If no argument is provided, guide the user through the full workflow interactively.
 
@@ -167,34 +167,7 @@ $deploy = ./tracer/tools/Deploy-AzureFunction.ps1 `
   -SampleAppPath "<path-to-sample-app>"
 ```
 
-### 3. Test Function
-
-Trigger an already-deployed function and capture the execution timestamp. Useful for re-testing after a deploy, or testing an app that was deployed earlier.
-
-**Discover available triggers**:
-```bash
-# List HTTP-triggered functions and their URLs
-func azure functionapp list-functions <app-name> --show-keys
-```
-
-Or via Azure CLI:
-```bash
-az functionapp function list --name <app-name> --resource-group <resource-group> --query "[].{name:name, href:invokeUrlTemplate}" -o table
-```
-
-**Trigger and capture timestamp**:
-```powershell
-$timestamp = (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss")
-$response = Invoke-WebRequest -Uri "<trigger-url>" -UseBasicParsing
-Write-Host "HTTP Status: $($response.StatusCode)"
-Write-Host "Execution timestamp (UTC): $timestamp"
-```
-
-Save the timestamp — you'll need it for log filtering in the next step.
-
-**Note**: The Deploy script (step 2) already triggers and captures a timestamp. Use this step when you want to re-test without redeploying.
-
-### 4. Configure Environment Variables
+### 3. Configure Environment Variables
 
 Configure Datadog instrumentation environment variables for an Azure Function App using `Set-EnvVars.ps1`:
 
@@ -241,6 +214,33 @@ Configure Datadog instrumentation environment variables for an Azure Function Ap
 
 **Complete reference**: See [environment-variables.md](environment-variables.md) for all available variables.
 
+### 4. Test Function
+
+Trigger an already-deployed function and capture the execution timestamp. Useful for re-testing after a deploy, or testing an app that was deployed earlier.
+
+**Discover available triggers**:
+```bash
+# List HTTP-triggered functions and their URLs
+func azure functionapp list-functions <app-name> --show-keys
+```
+
+Or via Azure CLI:
+```bash
+az functionapp function list --name <app-name> --resource-group <resource-group> --query "[].{name:name, href:invokeUrlTemplate}" -o table
+```
+
+**Trigger and capture timestamp**:
+```powershell
+$timestamp = (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss")
+$response = Invoke-WebRequest -Uri "<trigger-url>" -UseBasicParsing
+Write-Host "HTTP Status: $($response.StatusCode)"
+Write-Host "Execution timestamp (UTC): $timestamp"
+```
+
+Save the timestamp — you'll need it for log filtering in the next step.
+
+**Note**: The Deploy script (step 2) already triggers and captures a timestamp. Use this step when you want to re-test without redeploying.
+
 ### 5. Download and Analyze Logs
 
 Use the `Get-AzureFunctionLogs.ps1` script to download, extract, and analyze logs:
@@ -250,7 +250,7 @@ Use the `Get-AzureFunctionLogs.ps1` script to download, extract, and analyze log
   -AppName "<app-name>" `
   -ResourceGroup "<resource-group>" `
   -OutputPath $env:TEMP `
-  -ExecutionTimestamp "2026-01-23 17:53:00" `
+  -ExecutionTimestamp "<YYYY-MM-DD HH:MM:SS>" `
   -All
 ```
 
@@ -326,6 +326,25 @@ If the app is running but not responding:
 # Restart function app
 az functionapp restart --name <app-name> --resource-group <resource-group>
 ```
+
+### Deployment Fails (`func azure functionapp publish`)
+
+If the publish command fails, diagnose with:
+```bash
+# Check recent deployment status
+az functionapp deployment list \
+  --name <app-name> \
+  --resource-group <resource-group> \
+  --query "[0].{status:status, message:message, startTime:startTime}" -o table
+
+# Stream live logs to see startup errors
+func azure functionapp logstream <app-name>
+```
+
+Common causes:
+- **Auth expired**: Run `az login` and retry
+- **App not running**: Start it first with `az functionapp start --name <app-name> --resource-group <resource-group>`
+- **Build errors**: Check `dotnet restore` output in the sample app directory
 
 ### Wrong Tracer Version After Deployment
 ```bash

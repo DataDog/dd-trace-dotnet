@@ -21,16 +21,16 @@ This guide provides grep patterns and techniques for manual log investigation. S
 ### Finding Executions by Timestamp
 ```bash
 # Specific minute
-grep "2026-01-23 17:53:" worker.log
+grep "<YYYY-MM-DD HH:MM>:" worker.log
 
 # Specific seconds
-grep "2026-01-23 17:53:3[89]" worker.log
+grep "<YYYY-MM-DD HH:MM:3[89]>" worker.log
 
 # Entire hour range
-grep "2026-01-23 17:5[0-9]:" worker.log
+grep "<YYYY-MM-DD HH:[0-9][0-9]>:" worker.log
 
-# Last 5 minutes (adjust regex for your time)
-grep "2026-01-23 17:5[3-7]:" worker.log
+# Last 5 minutes (adjust regex for your time range)
+grep "<YYYY-MM-DD HH:5[3-7]>:" worker.log
 ```
 
 ### Finding Initializations
@@ -48,28 +48,28 @@ grep "Assembly metadata" worker.log | tail -1 | awk '{print $1, $2}'
 ### Finding Span Information
 ```bash
 # All spans created in timeframe
-grep "2026-01-23 17:53:" worker.log | grep "Span started"
+grep "<YYYY-MM-DD HH:MM>:" worker.log | grep "Span started"
 
 # Specific trace ID
-grep "68e948220000000047fef7bad8bb854e" worker.log
+grep "<trace-id>" worker.log
 
 # Root spans only (orphaned traces)
 grep "p_id: null" worker.log | grep "Span started"
 
 # Span closed events (see final tags)
-grep "2026-01-23 17:53:" worker.log | grep "Span closed"
+grep "<YYYY-MM-DD HH:MM>:" worker.log | grep "Span closed"
 ```
 
 ### Finding Integration Activity
 ```bash
 # Azure Functions specific
-grep "2026-01-23 17:53:" worker.log | grep -i "azure.functions\|FunctionExecutionMiddleware"
+grep "<YYYY-MM-DD HH:MM>:" worker.log | grep -i "azure.functions\|FunctionExecutionMiddleware"
 
 # Host process integrations
-grep "2026-01-23 17:53:" host.log | grep -i "ToRpcHttp\|FunctionInvocationMiddleware"
+grep "<YYYY-MM-DD HH:MM>:" host.log | grep -i "ToRpcHttp\|FunctionInvocationMiddleware"
 
 # AsyncLocal context flow
-grep "2026-01-23 17:53:" worker.log | grep -i "asynclocal\|active.*scope"
+grep "<YYYY-MM-DD HH:MM>:" worker.log | grep -i "asynclocal\|active.*scope"
 ```
 
 ### Context Lines for Better Understanding
@@ -97,7 +97,7 @@ grep "Span started" worker.log \
 ### Build Span Tree
 ```bash
 # Find all spans in a trace
-grep "68e948220000000047fef7bad8bb854e" host.log worker.log \
+grep "<trace-id>" host.log worker.log \
   | grep "Span started" \
   | awk -F'[\\[\\]]' '{print $2}'
 ```
@@ -124,7 +124,7 @@ echo "Most recent initialization: $INIT_TIME"
 grep "$INIT_TIME" worker.log | grep "TracerVersion"
 
 # 3. Verify version in subsequent logs
-grep "2026-01-23 17:53:" worker.log | grep "TracerVersion" | head -1
+grep "<YYYY-MM-DD HH:MM>:" worker.log | grep "TracerVersion" | head -1
 ```
 
 ### Pattern 2: Trace Host→Worker Flow
@@ -133,7 +133,7 @@ grep "2026-01-23 17:53:" worker.log | grep "TracerVersion" | head -1
 grep "Executing 'Functions" host.log | tail -1
 
 # 2. Get host trace ID
-HOST_TIME="2026-01-23 17:53:39"
+HOST_TIME="<YYYY-MM-DD HH:MM:SS>"
 TRACE_ID=$(grep "$HOST_TIME" host.log | grep "Span started" | grep -o 't_id: [^]]*' | cut -d' ' -f2)
 echo "Host trace ID: $TRACE_ID"
 
@@ -148,22 +148,22 @@ grep "$TRACE_ID" host.log worker.log | grep "Span started" | sort
 ### Pattern 3: Find Orphaned Traces
 ```bash
 # Find all root spans (should only be in host)
-grep "2026-01-23 17:53:" host.log worker.log \
+grep "<YYYY-MM-DD HH:MM>:" host.log worker.log \
   | grep "Span started" \
   | grep "p_id: null"
 
 # Count root spans by file
 echo "Host root spans:"
-grep "2026-01-23 17:53:" host.log | grep "Span started" | grep "p_id: null" | wc -l
+grep "<YYYY-MM-DD HH:MM>:" host.log | grep "Span started" | grep "p_id: null" | wc -l
 echo "Worker root spans (should be 0):"
-grep "2026-01-23 17:53:" worker.log | grep "Span started" | grep "p_id: null" | wc -l
+grep "<YYYY-MM-DD HH:MM>:" worker.log | grep "Span started" | grep "p_id: null" | wc -l
 ```
 
 ### Pattern 4: Compare Multiple Executions
 ```bash
-# Save logs for each execution
-grep "2026-01-23 17:48:" worker.log > exec1.log
-grep "2026-01-23 17:53:" worker.log > exec2.log
+# Save logs for each execution (substitute your actual timestamps)
+grep "<YYYY-MM-DD HH:MM>:" worker.log > exec1.log
+grep "<YYYY-MM-DD HH:MM>:" worker.log > exec2.log
 
 # Compare span counts
 echo "Execution 1 spans: $(grep "Span started" exec1.log | wc -l)"
@@ -213,7 +213,7 @@ Worker process (PID 56):
 #!/bin/bash
 # trace-viz.sh - Visualize trace structure
 
-TIMESTAMP="2026-01-23 17:53:3[89]"
+TIMESTAMP="<YYYY-MM-DD HH:MM:S[89]>"  # adjust regex to match your seconds
 
 echo "=== Host Spans ==="
 grep "$TIMESTAMP" host.log \
@@ -232,7 +232,7 @@ grep "$TIMESTAMP" worker.log \
 #!/bin/bash
 # span-timing.sh - Extract span durations
 
-TRACE_ID="68e948220000000047fef7bad8bb854e"
+TRACE_ID="<trace-id>"
 
 # Find spans with start/end times
 grep "$TRACE_ID" host.log worker.log \
@@ -261,13 +261,13 @@ grep "Span started" worker.log | grep -o 'OperationName: "[^"]*"' | sort | uniq 
 grep "Span started" worker.log | grep -o 't_id: [^]]*' | cut -d' ' -f2 | sort -u
 
 # Check for errors during execution
-grep "2026-01-23 17:53:" worker.log | grep -i "error\|exception\|fail"
+grep "<YYYY-MM-DD HH:MM>:" worker.log | grep -i "error\|exception\|fail"
 
 # Verify tracer configuration
-grep "2026-01-23 17:53:" worker.log | grep -i "DD_TRACE"
+grep "<YYYY-MM-DD HH:MM>:" worker.log | grep -i "DD_TRACE"
 
 # Find active scope information
-grep "2026-01-23 17:53:" worker.log | grep -i "activescope\|internalactivescope"
+grep "<YYYY-MM-DD HH:MM>:" worker.log | grep -i "activescope\|internalactivescope"
 ```
 
 ## Tips for Effective Log Analysis
