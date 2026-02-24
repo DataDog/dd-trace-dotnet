@@ -111,7 +111,7 @@ public static class SmokeTestBuilder
         await BuildImageFromDockerfileAsync(tracerDir, dockerfilePath, scenario.DockerTag, buildArgs, artifactsDir, cancellationToken);
     }
 
-    static readonly TimeSpan[] RetryDelays = { TimeSpan.FromMilliseconds(100), TimeSpan.FromMilliseconds(500), TimeSpan.FromSeconds(1) TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(15)};
+    static readonly TimeSpan[] RetryDelays = { TimeSpan.FromMilliseconds(100), TimeSpan.FromMilliseconds(500), TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(15) };
     static int MaxRetries => RetryDelays.Length;
 
     static async Task BuildImageFromDockerfileAsync(
