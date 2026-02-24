@@ -4997,7 +4997,7 @@ stages:
       displayName: Download x64 artifacts to artifact directory
       inputs:
         artifactName: linux-packages-linux-x64
-        targetPath: $(outputDir)/artifacts/artifacts
+        targetPath: $(outputDir)
         buildType: 'specific'
         project: 'dd-trace-dotnet'
         definition: 54
@@ -5008,7 +5008,7 @@ stages:
       displayName: Download x64 musl artifacts to artifact directory
       inputs:
         artifactName: linux-packages-linux-musl-x64
-        targetPath: $(outputDir)/artifacts/artifacts
+        targetPath: $(outputDir)
         buildType: 'specific'
         project: 'dd-trace-dotnet'
         definition: 54
@@ -5019,7 +5019,7 @@ stages:
       parameters:
         build: true
         baseImage: alpine
-        command: "RunArtifactSmokeTests -SmokeTestCategory $(category) -SmokeTestScenario $(scenario) --Artifacts /project/artifacts/artifacts"
+        command: "RunArtifactSmokeTests -SmokeTestCategory $(category) -SmokeTestScenario $(scenario) --Artifacts /project/artifacts"
         apikey: $(DD_LOGGER_DD_API_KEY)
         extraArgs: "-v /var/run/docker.sock:/var/run/docker.sock"
 
