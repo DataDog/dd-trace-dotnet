@@ -129,10 +129,20 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
 
         foreach (var subscription in subscriptions)
         {
-            var configByProduct = configByProducts?.Where(c => subscription.ProductKeys.Contains(c.Key))
-                                                  .ToDictionary(c => c.Key, c => c.Value);
+            Dictionary<string, List<RemoteConfiguration>>? filteredConfigs = null;
+            if (configByProducts is not null)
+            {
+                foreach (var productKey in subscription.ProductKeys)
+                {
+                    if (configByProducts.TryGetValue(productKey, out var configs))
+                    {
+                        filteredConfigs ??= new(subscription.ProductKeys.Count);
+                        filteredConfigs[productKey] = configs;
+                    }
+                }
+            }
 
-            var haveChanges = configByProduct?.Count > 0 || removedConfigsByProduct?.Count > 0;
+            var haveChanges = filteredConfigs?.Count > 0 || removedConfigsByProduct?.Count > 0;
             if (!haveChanges)
             {
                 continue;
@@ -141,7 +151,7 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
             try
             {
                 results ??= new();
-                results.AddRange(await subscription.Invoke(configByProduct ?? [], removedConfigsByProduct).ConfigureAwait(false));
+                results.AddRange(await subscription.Invoke(filteredConfigs ?? [], removedConfigsByProduct).ConfigureAwait(false));
             }
             catch (Exception e)
             {
