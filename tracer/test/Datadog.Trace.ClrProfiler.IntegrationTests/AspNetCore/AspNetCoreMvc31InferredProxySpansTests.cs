@@ -125,3 +125,4 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
     }
 }
 
+#endif
