@@ -6,9 +6,11 @@
 using System;
 using System.Linq;
 using System.Threading;
+using Datadog.Trace.AppSec.Rasp;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.Vendors.dnlib.DotNet;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
 {
@@ -43,7 +45,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
                     tracer.TracerManager.SpanContextPropagator.Inject(context, new HttpHeadersCollection(headers));
 
                     tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(implementationIntegrationId ?? integrationId);
-                    return new CallTargetState(scope);
+
+                    bool executeOnDownstreamResponse = false;
+#if NETCOREAPP3_0_OR_GREATER
+                    if (requestMessage.Instance is { } request)
+                    {
+                        var rootSpan = tracer.InternalActiveScope?.Root?.Span;
+                        executeOnDownstreamResponse = RaspModule.OnDownstreamRequest(request, scope.Span.SpanId, rootSpan);
+                    }
+#endif
+
+                    return new CallTargetState(scope, executeOnDownstreamResponse);
                 }
             }
 
@@ -71,6 +83,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
                 {
                     scope.Span.SetException(exception);
                 }
+
+#if NETCOREAPP3_0_OR_GREATER
+                if (state.State is true && responseMessage.Instance is { } response)
+                {
+                    RaspModule.OnDownstreamResponse(response, scope.Span.SpanId);
+                }
+#endif
             }
             finally
             {

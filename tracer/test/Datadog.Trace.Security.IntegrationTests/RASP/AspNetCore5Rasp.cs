@@ -108,6 +108,10 @@ public abstract class AspNetCore5Rasp : AspNetBase, IClassFixture<AspNetCoreTest
     [Trait("RunOnWindows", "True")]
     public async Task TestRaspRequest(string url, string exploit)
     {
+#pragma warning disable CS0618 // Type or member is obsolete
+        EnableDebugMode();
+#pragma warning restore CS0618 // Type or member is obsolete
+
         AddHeaders(new()
         {
             { "Accept-Language", "en_UK" },

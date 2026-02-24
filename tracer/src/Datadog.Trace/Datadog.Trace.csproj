@@ -111,8 +111,7 @@
     <None Include="$(DotNetRuntimeFiles)" />
 
     <!-- We use Unsafe.IsNullRef() which was added in .NET 5 -->
-    <Compile Include="Vendors/System.Runtime.CompilerServices.Unsafe/Unsafe.cs"
-        Condition="!$([MSBuild]::IsTargetFrameworkCompatible($(TargetFramework), 'net5.0'))" />
+    <Compile Include="Vendors/System.Runtime.CompilerServices.Unsafe/Unsafe.cs" Condition="!$([MSBuild]::IsTargetFrameworkCompatible($(TargetFramework), 'net5.0'))" />
   </ItemGroup>
 
   <ItemGroup>

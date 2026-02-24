@@ -8,10 +8,12 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
+using System.Threading;
 using Datadog.Trace.AppSec.Coordinator;
+using Datadog.Trace.AppSec.Rasp.HttpClient;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry;
 using static Datadog.Trace.Telemetry.Metrics.MetricTags;
@@ -22,6 +24,11 @@ internal static class RaspModule
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RaspModule));
     private static bool _nullContextReported = false;
+
+#if NETCOREAPP3_0_OR_GREATER
+    [ThreadStatic]
+    private static bool _processDownstreamRequest = false;
+#endif
 
     internal enum BlockType
     {
@@ -34,7 +41,7 @@ internal static class RaspModule
     => address switch
     {
         AddressesConstants.FileAccess => RaspRuleType.Lfi,
-        AddressesConstants.UrlAccess => RaspRuleType.Ssrf,
+        AddressesConstants.DownstreamUrl => RaspRuleType.Ssrf,
         AddressesConstants.DBStatement => RaspRuleType.SQlI,
         AddressesConstants.ShellInjection => RaspRuleType.CommandInjectionShell,
         AddressesConstants.CommandInjection => RaspRuleType.CommandInjectionExec,
@@ -51,7 +58,7 @@ internal static class RaspModule
             BlockType.Irrelevant => RaspRuleTypeMatch.LfiIrrelevant,
             _ => null,
         },
-        AddressesConstants.UrlAccess => blockType switch
+        AddressesConstants.DownstreamUrl => blockType switch
         {
             BlockType.Success => RaspRuleTypeMatch.SsrfSuccess,
             BlockType.Failure => RaspRuleTypeMatch.SsrfFailure,
@@ -89,7 +96,11 @@ internal static class RaspModule
 
     internal static void OnSSRF(string url)
     {
-        CheckVulnerability(new Dictionary<string, object> { [AddressesConstants.UrlAccess] = url }, AddressesConstants.UrlAccess);
+#if !NETCOREAPP3_0_OR_GREATER
+        CheckVulnerability(new Dictionary<string, object> { [AddressesConstants.DownstreamUrl] = url }, AddressesConstants.DownstreamUrl);
+#else
+        _processDownstreamRequest = true;
+#endif
     }
 
     internal static void OnSqlQuery(string sql, IntegrationId id)
@@ -113,7 +124,7 @@ internal static class RaspModule
         };
     }
 
-    private static void CheckVulnerability(Dictionary<string, object> arguments, string address)
+    private static void CheckVulnerability(Dictionary<string, object> arguments, string address, Span? rootSpan = null, Action? onBlock = null)
     {
         var security = Security.Instance;
 
@@ -122,14 +133,14 @@ internal static class RaspModule
             return;
         }
 
-        var rootSpan = Tracer.Instance.InternalActiveScope?.Root?.Span;
+        rootSpan??= Tracer.Instance.InternalActiveScope?.Root?.Span;
 
         if (rootSpan is null || rootSpan.IsFinished || rootSpan.Type != SpanTypes.Web)
         {
             return;
         }
 
-        RunWafRasp(arguments, rootSpan, address);
+        RunWafRasp(arguments, rootSpan, address, onBlock);
     }
 
     private static void RecordRaspTelemetry(string address, bool isMatch, bool timeOut, BlockType matchType)
@@ -163,7 +174,7 @@ internal static class RaspModule
         }
     }
 
-    private static void RunWafRasp(Dictionary<string, object> arguments, Span rootSpan, string address)
+    private static void RunWafRasp(Dictionary<string, object> arguments, Span rootSpan, string address, Action? onBlock = null)
     {
         var securityCoordinator = SecurityCoordinator.TryGet(Security.Instance, rootSpan);
 
@@ -217,6 +228,8 @@ internal static class RaspModule
             {
                 var matchSuccesCode = result.ReturnCode == WafReturnCode.Match && result.ShouldBlock ?
                     BlockType.Success : BlockType.Irrelevant;
+
+                if (matchSuccesCode == BlockType.Success) { onBlock?.Invoke(); }
 
                 securityCoordinator.Value.ReportAndBlock(result, () => RecordRaspTelemetry(address, result.ReturnCode == Waf.WafReturnCode.Match, result.Timeout, matchSuccesCode));
             }
@@ -294,4 +307,156 @@ internal static class RaspModule
             Log.Error(ex, "RASP: Error while checking command injection.");
         }
     }
+
+#if NETCOREAPP3_0_OR_GREATER
+    internal static Dictionary<string, object>? ExtractHeaders(IHttpHeaders headers)
+    {
+        var enumerator = headers.GetEnumerator();
+        Dictionary<string, object>? headersDic = null;
+        while (enumerator.MoveNext())
+        {
+            var key = enumerator.Current.Key;
+            if (!key.Equals("cookie", StringComparison.OrdinalIgnoreCase))
+            {
+                headersDic ??= new Dictionary<string, object>();
+                var currentKey = key.ToLowerInvariant();
+                var value = enumerator.Current.Value;
+                if (!headersDic.TryAdd(currentKey, value))
+                {
+                    Log.Warning("Header {Key} couldn't be added as argument to the waf", currentKey);
+                }
+            }
+        }
+
+        return headersDic;
+    }
+
+    internal static bool OnDownstreamRequest(object requestMessageInstance, ulong requestSpanId, Span rootSpan)
+    {
+        try
+        {
+            if (_processDownstreamRequest)
+            {
+                _processDownstreamRequest = false;
+                var security = Security.Instance;
+
+                if (!security.RaspEnabled)
+                {
+                    return false;
+                }
+
+                if (rootSpan is null || rootSpan.IsFinished || rootSpan.Type != SpanTypes.Web)
+                {
+                    return false;
+                }
+
+                var context = rootSpan.Context.TraceContext.AppSecRequestContext;
+                if (context is null)
+                {
+                    return false;
+                }
+
+                if (!requestMessageInstance.TryDuckCast<IHttpRequestMessage>(out var requestMessage))
+                {
+                    Log.Error("DuckCast to IHttpRequestMessage failed");
+                    return false;
+                }
+
+                var wafArgs = new Dictionary<string, object>();
+                wafArgs[AddressesConstants.DownstreamUrl] = requestMessage.RequestUri.ToString();
+                wafArgs[AddressesConstants.DownstreamRequestMethod] = requestMessage.Method.Method;
+                if (requestMessage is { Headers: var headers } && headers is not null)
+                {
+                    var extractedHeaders = ExtractHeaders(headers);
+                    if (extractedHeaders is not null)
+                    {
+                        wafArgs.Add(AddressesConstants.DownstreamRequestHeaders, extractedHeaders);
+                    }
+                }
+
+                if (context.IsHttpClientRequestSampled(requestSpanId))
+                {
+                    AddBody(requestMessage.Content, wafArgs, AddressesConstants.DownstreamRequestBody, security.AppSecBodyParsingSizeLimit);
+                }
+
+                // If a block is issued we must stop current child outbound request span, as the call is going to be interrupted
+                CheckVulnerability(wafArgs, AddressesConstants.DownstreamUrl, rootSpan, () => Tracer.Instance.InternalActiveScope?.Dispose());
+                return true;
+            }
+        }
+        catch (Exception ex) when (ex is not BlockException)
+        {
+            Log.Error(ex, "RASP: Error while checking downstream request body.");
+        }
+
+        return false;
+    }
+
+    internal static void OnDownstreamResponse(object responseMessageInstance, ulong requestSpanId)
+    {
+        try
+        {
+            _processDownstreamRequest = false;
+            var security = Security.Instance;
+
+            if (!security.RaspEnabled)
+            {
+                return;
+            }
+
+            var rootSpan = Tracer.Instance.InternalActiveScope?.Root?.Span;
+            if (rootSpan is null || rootSpan.IsFinished || rootSpan.Type != SpanTypes.Web)
+            {
+                return;
+            }
+
+            var context = rootSpan.Context.TraceContext.AppSecRequestContext;
+            if (context is null)
+            {
+                return;
+            }
+
+            if (!responseMessageInstance.TryDuckCast<IHttpResponseMessage>(out var requestMessage))
+            {
+                Log.Error("DuckCast to IHttpResponseMessage failed");
+                return;
+            }
+
+            var wafArgs = new Dictionary<string, object>();
+            wafArgs[AddressesConstants.DownstreamResponseStatus] = requestMessage.StatusCode;
+            if (requestMessage is { Headers: var headers } && headers is not null)
+            {
+                var extractedHeaders = ExtractHeaders(headers);
+                if (extractedHeaders is not null)
+                {
+                    wafArgs.Add(AddressesConstants.DownstreamResponseHeaders, extractedHeaders);
+                }
+            }
+
+            if (context.IsHttpClientRequestSampled(requestSpanId))
+            {
+                AddBody(requestMessage.Content, wafArgs, AddressesConstants.DownstreamResponseBody, security.AppSecBodyParsingSizeLimit);
+            }
+
+            CheckVulnerability(wafArgs, AddressesConstants.DownstreamUrl);
+        }
+        catch (Exception ex) when (ex is not BlockException)
+        {
+            Log.Error(ex, "RASP: Error while checking downstream request body.");
+        }
+    }
+
+    private static void AddBody(IHttpContent content, Dictionary<string, object> wafArgs, string wafAddress, long bodySizeLimit)
+    {
+        if (content?.Instance is not null && content.TryComputeLength(out var len) && len > 0 && len < bodySizeLimit)
+        {
+            content.LoadIntoBufferAsync().SafeWait();
+            var body = content.ReadAsStringAsync().SafeGetResult();
+            if (BodyParser.Parse(body) is { } parsedBody)
+            {
+                wafArgs[AddressesConstants.DownstreamRequestBody] = parsedBody;
+            }
+        }
+    }
+#endif
 }

@@ -18,6 +18,11 @@ internal static partial class ConfigurationKeys
     internal static class AppSec
     {
         /// <summary>
+        /// When RASP is enabled, defines the probability of a downstream request body being sampled, or said differently, defines the overall number of requests for which the request and response body should be sampled / analysed (50%).
+        /// </summary>
+        public const string ApiSecurityDownstreamBodyAnalysisSampleRate = "DD_API_SECURITY_DOWNSTREAM_BODY_ANALYSIS_SAMPLE_RATE";
+
+        /// <summary>
         /// When ASM is enabled, collects in spans endpoints apis schemas analyzed by the waf, default value is true.
         /// </summary>
         public const string ApiSecurityEnabled = "DD_API_SECURITY_ENABLED";
@@ -31,6 +36,11 @@ internal static partial class ConfigurationKeys
         /// with a default value of 300, it defines the maximum number of endpoints to be collected (serialized) for API Security.
         /// </summary>
         public const string ApiSecurityEndpointCollectionMessageLimit = "DD_API_SECURITY_ENDPOINT_COLLECTION_MESSAGE_LIMIT";
+
+        /// <summary>
+        /// When RASP is enabled, defines the maximum number of downstream requests per request for which the request and response body should be analysed. default value of 1.
+        /// </summary>
+        public const string ApiSecurityMaxDownstreamRequestBodyAnalysis = "DD_API_SECURITY_MAX_DOWNSTREAM_REQUEST_BODY_ANALYSIS";
 
         /// <summary>
         /// Enables the parsing of the response body in the API Security module. Defaults to true
@@ -57,6 +67,12 @@ internal static partial class ConfigurationKeys
         /// extended = ident
         /// </summary>
         public const string UserEventsAutomatedTracking = "DD_APPSEC_AUTOMATED_USER_EVENTS_TRACKING";
+
+        /// <summary>
+        /// Configuration key for limiting the size of the request body being parsed.
+        /// Default value is 10_000_000.
+        /// </summary>
+        public const string AppSecBodyParsingSizeLimit = "DD_APPSEC_BODY_PARSING_SIZE_LIMIT";
 
         /// <summary>
         /// Configuration key for enabling or disabling the AppSec.
