@@ -113,7 +113,7 @@ Searches for `nuget.config` file by walking up the directory hierarchy from a st
 
 **Basic usage**:
 ```powershell
-$nugetConfig = .\.claude\skills\azure-functions\Find-NuGetConfig.ps1 -StartPath "<path-to-sample-app>"
+$nugetConfig = ./.claude/skills/azure-functions/Find-NuGetConfig.ps1 -StartPath "<path-to-sample-app>"
 if (-not $nugetConfig) {
     Write-Error "nuget.config not found in sample app directory or parent directories"
     exit 1
@@ -134,7 +134,7 @@ Automates deployment, wait, and HTTP trigger with timestamp capture.
 
 **Basic usage**:
 ```powershell
-.\tracer\tools\Deploy-AzureFunction.ps1 `
+./tracer/tools/Deploy-AzureFunction.ps1 `
   -AppName "<app-name>" `
   -ResourceGroup "<resource-group>" `
   -SampleAppPath "<path-to-your-azure-functions-app>" `
@@ -143,7 +143,7 @@ Automates deployment, wait, and HTTP trigger with timestamp capture.
 
 **Pipeline usage** (save output for log analysis):
 ```powershell
-$deploy = .\tracer\tools\Deploy-AzureFunction.ps1 `
+$deploy = ./tracer/tools/Deploy-AzureFunction.ps1 `
   -AppName "<app-name>" `
   -ResourceGroup "<resource-group>" `
   -SampleAppPath "<path-to-your-azure-functions-app>"
@@ -166,7 +166,7 @@ Downloads, extracts, and analyzes Azure Function logs.
 
 **Basic usage**:
 ```powershell
-.\tracer\tools\Get-AzureFunctionLogs.ps1 `
+./tracer/tools/Get-AzureFunctionLogs.ps1 `
   -AppName "<app-name>" `
   -ResourceGroup "<resource-group>" `
   -OutputPath $env:TEMP `
@@ -177,12 +177,12 @@ Downloads, extracts, and analyzes Azure Function logs.
 
 **Full pipeline** (deploy + analyze):
 ```powershell
-$deploy = .\tracer\tools\Deploy-AzureFunction.ps1 `
+$deploy = ./tracer/tools/Deploy-AzureFunction.ps1 `
   -AppName "<app-name>" `
   -ResourceGroup "<resource-group>" `
   -SampleAppPath "<path-to-your-azure-functions-app>"
 
-.\tracer\tools\Get-AzureFunctionLogs.ps1 `
+./tracer/tools/Get-AzureFunctionLogs.ps1 `
   -AppName $deploy.AppName `
   -ResourceGroup "<resource-group>" `
   -OutputPath $env:TEMP `
@@ -205,7 +205,7 @@ Build the Datadog.AzureFunctions NuGet package.
 
 **Usage**:
 ```powershell
-.\tracer\tools\Build-AzureFunctionsNuget.ps1 -CopyTo <output-dir> -Verbose
+./tracer/tools/Build-AzureFunctionsNuget.ps1 -CopyTo <output-dir> -Verbose
 ```
 
 **Options**:
@@ -218,20 +218,20 @@ Build the Datadog.AzureFunctions NuGet package.
 ### Build NuGet Package (Standard)
 ```powershell
 # Build with verbose output
-.\tracer\tools\Build-AzureFunctionsNuget.ps1 -CopyTo <output-dir> -Verbose
+./tracer/tools/Build-AzureFunctionsNuget.ps1 -CopyTo <output-dir> -Verbose
 
 # Build without copying
-.\tracer\tools\Build-AzureFunctionsNuget.ps1 -Verbose
+./tracer/tools/Build-AzureFunctionsNuget.ps1 -Verbose
 
 # Build from specific Azure DevOps build
-.\tracer\tools\Build-AzureFunctionsNuget.ps1 -BuildId 12345 -CopyTo <output-dir> -Verbose
+./tracer/tools/Build-AzureFunctionsNuget.ps1 -BuildId 12345 -CopyTo <output-dir> -Verbose
 ```
 
 ### Clean and Rebuild
 ```powershell
 # Clear NuGet caches and rebuild
 dotnet nuget locals all --clear
-.\tracer\tools\Build-AzureFunctionsNuget.ps1 -CopyTo <output-dir> -Verbose
+./tracer/tools/Build-AzureFunctionsNuget.ps1 -CopyTo <output-dir> -Verbose
 ```
 
 ## Testing Scripts
@@ -552,16 +552,16 @@ Retrieves all spans for a trace ID from the Datadog API. Requires `DD_API_KEY` a
 **Examples**:
 ```powershell
 # Table view (default) — columns: operation, resource, span ID, parent ID, process, duration
-.\tracer\tools\Get-DatadogTrace.ps1 -TraceId "690507fc00000000b882bcd2bdac6b9e"
+./tracer/tools/Get-DatadogTrace.ps1 -TraceId "690507fc00000000b882bcd2bdac6b9e"
 
 # Hierarchy view — shows span parent-child tree with process tags
-.\tracer\tools\Get-DatadogTrace.ps1 -TraceId "690507fc00000000b882bcd2bdac6b9e" -OutputFormat hierarchy
+./tracer/tools/Get-DatadogTrace.ps1 -TraceId "690507fc00000000b882bcd2bdac6b9e" -OutputFormat hierarchy
 
 # JSON output for further processing
-.\tracer\tools\Get-DatadogTrace.ps1 -TraceId "690507fc00000000b882bcd2bdac6b9e" -OutputFormat json
+./tracer/tools/Get-DatadogTrace.ps1 -TraceId "690507fc00000000b882bcd2bdac6b9e" -OutputFormat json
 
 # Search further back in time
-.\tracer\tools\Get-DatadogTrace.ps1 -TraceId "690507fc00000000b882bcd2bdac6b9e" -TimeRange "1d"
+./tracer/tools/Get-DatadogTrace.ps1 -TraceId "690507fc00000000b882bcd2bdac6b9e" -TimeRange "1d"
 ```
 
 ### Get-DatadogLogs.ps1
@@ -579,11 +579,11 @@ Queries logs from the Datadog Logs API. Requires `DD_API_KEY` and `DD_APPLICATIO
 **Examples**:
 ```powershell
 # Search logs for a specific service
-.\tracer\tools\Get-DatadogLogs.ps1 -Query "service:lucasp-premium-linux-isolated"
+./tracer/tools/Get-DatadogLogs.ps1 -Query "service:lucasp-premium-linux-isolated"
 
 # Search for errors with time range
-.\tracer\tools\Get-DatadogLogs.ps1 -Query "service:my-app error" -TimeRange "2h" -Limit 100
+./tracer/tools/Get-DatadogLogs.ps1 -Query "service:my-app error" -TimeRange "2h" -Limit 100
 
 # Raw output (one line per log entry, good for piping)
-.\tracer\tools\Get-DatadogLogs.ps1 -Query "service:my-app" -OutputFormat raw
+./tracer/tools/Get-DatadogLogs.ps1 -Query "service:my-app" -OutputFormat raw
 ```
