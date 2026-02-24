@@ -169,24 +169,32 @@ public static class SmokeTestBuilder
                 },
                 RetryDelays);
 
-            // 2. Pull + start test-agent container
+            // 2. Detect environment (container vs host) for path translation & networking
+            //    Must happen before creating containers, because bind mount paths need
+            //    translating when running inside a container (Docker-in-Docker).
+            var environment = await DetectEnvironmentAsync(client, networkName);
+            buildContainerId = environment.BuildContainerId;
+
+            // 3. Pull + start test-agent container
             await PullImageAsync(client, TestAgentImage);
 
             // sourceSnapshotsDir: source-of-truth expected snapshots, mounted read-only as /snapshots
             var sourceSnapshotsDir = tracerDir / "build" / "smoke_test_snapshots";
             testAgentContainerId = await CreateAndStartContainerWithRetryAsync(
-                client, "test-agent", BuildTestAgentContainerParams(networkName, sourceSnapshotsDir, debugSnapshotsDir));
+                client, "test-agent", BuildTestAgentContainerParams(
+                    networkName,
+                    environment.ToHostPath(sourceSnapshotsDir),
+                    environment.ToHostPath(debugSnapshotsDir)));
 
-            // 3. Determine how to reach the test-agent's HTTP API
-            var testAgentUrl = await GetTestAgentUrlAsync(client, networkName, testAgentContainerId);
-            buildContainerId = testAgentUrl.BuildContainerId;
-            Logger.Information("Test agent reachable at {Url}", testAgentUrl.BaseUrl);
+            // 4. Determine how to reach the test-agent's HTTP API
+            var testAgentBaseUrl = await GetTestAgentUrlAsync(client, environment, testAgentContainerId);
+            Logger.Information("Test agent reachable at {Url}", testAgentBaseUrl);
 
-            // 4. Wait for test-agent to be healthy
-            using var httpClient = new HttpClient { BaseAddress = new Uri(testAgentUrl.BaseUrl) };
+            // 5. Wait for test-agent to be healthy
+            using var httpClient = new HttpClient { BaseAddress = new Uri(testAgentBaseUrl) };
             await WaitForTestAgentAsync(httpClient);
 
-            // 5. Start a trace session
+            // 6. Start a trace session
             var sessionToken = Guid.NewGuid().ToString();
             Logger.Information("Starting trace session {Token}...", sessionToken);
             await RetryAsync(
@@ -199,9 +207,12 @@ public static class SmokeTestBuilder
                 },
                 RetryDelays);
 
-            // 6. Start the smoke test app container, wait for exit
+            // 7. Start the smoke test app container, wait for exit
             smokeTestContainerId = await CreateAndStartContainerWithRetryAsync(
-                client, "smoke-test", BuildSmokeTestAppContainerParams(scenario, networkName, logsDir, dumpsDir));
+                client, "smoke-test", BuildSmokeTestAppContainerParams(
+                    scenario, networkName,
+                    environment.ToHostPath(logsDir),
+                    environment.ToHostPath(dumpsDir)));
 
             Logger.Information("Waiting for smoke test container to exit...");
             using (var appTimeoutCts = new CancellationTokenSource(TimeSpan.FromMinutes(15)))
@@ -215,10 +226,10 @@ public static class SmokeTestBuilder
                 }
             }
 
-            // 7. Dump traces/stats/requests from test-agent
+            // 8. Dump traces/stats/requests from test-agent
             await DumpSessionDataAsync(httpClient, sessionToken, "smoke_test", debugSnapshotsDir);
 
-            // 8. Verify snapshot
+            // 9. Verify snapshot
             if (!scenario.IsNoop)
             {
                 var snapshotFile = scenario.PublishFramework == "netcoreapp2.1"
@@ -246,12 +257,14 @@ public static class SmokeTestBuilder
                 Logger.Information("Snapshot verification passed");
             }
 
-            // 9. Run crash test (conditional)
+            // 10. Run crash test (conditional)
             if (scenario.RunCrashTest && scenario.IsLinuxContainer && !scenario.IsNoop)
             {
                 Logger.Information("Running crash test...");
                 crashTestContainerId = await RunCrashTestAsync(
-                    client, scenario, networkName, logsDir, dumpsDir);
+                    client, scenario, networkName,
+                    environment.ToHostPath(logsDir),
+                    environment.ToHostPath(dumpsDir));
             }
         }
         finally
@@ -271,8 +284,8 @@ public static class SmokeTestBuilder
 
     static CreateContainerParameters BuildTestAgentContainerParams(
         string networkName,
-        AbsolutePath snapshotsDir,
-        AbsolutePath debugSnapshotsDir)
+        string snapshotsDir,
+        string debugSnapshotsDir)
     {
         return new CreateContainerParameters
         {
@@ -315,8 +328,8 @@ public static class SmokeTestBuilder
     static CreateContainerParameters BuildSmokeTestAppContainerParams(
         SmokeTestScenario scenario,
         string networkName,
-        AbsolutePath logsDir,
-        AbsolutePath dumpsDir)
+        string logsDir,
+        string dumpsDir)
     {
         return new CreateContainerParameters
         {
@@ -349,8 +362,8 @@ public static class SmokeTestBuilder
     static CreateContainerParameters BuildCrashTestContainerParams(
         SmokeTestScenario scenario,
         string networkName,
-        AbsolutePath logsDir,
-        AbsolutePath dumpsDir)
+        string logsDir,
+        string dumpsDir)
     {
         return new CreateContainerParameters
         {
@@ -387,38 +400,84 @@ public static class SmokeTestBuilder
     // Network connectivity
     // ──────────────────────────────────────────────────────────────
 
-    record TestAgentConnection(string BaseUrl, string BuildContainerId);
+    /// <summary>
+    /// Captures whether we're running inside a container (CI) or on the host (local dev).
+    /// When in a container, <see cref="BuildContainerId"/> is set and <see cref="ToHostPath"/>
+    /// translates container-local paths to Docker-host paths for use in bind mounts.
+    /// </summary>
+    record DockerEnvironment(string BuildContainerId, Func<string, string> ToHostPath);
 
     /// <summary>
-    /// Determines how to reach the test-agent HTTP API. In CI the build runs inside a
-    /// container, so localhost port-mapping doesn't work — we join the smoke-test network
-    /// and use the container alias directly. On the host (local dev) we use the mapped port.
+    /// Detects whether we're running inside a Docker container. If so, joins the smoke-test
+    /// network (so we can reach containers by DNS alias) and inspects our own mounts to build
+    /// a path translator for bind mounts. On the host, returns an identity translator.
+    /// Must be called before creating any containers that need bind mounts.
     /// </summary>
-    static async Task<TestAgentConnection> GetTestAgentUrlAsync(
-        DockerClient client, string networkName, string testAgentContainerId)
+    static async Task<DockerEnvironment> DetectEnvironmentAsync(DockerClient client, string networkName)
     {
-        // Try joining the smoke-test network using our hostname as container ID.
-        // In a container, the hostname is the container ID so this succeeds and
-        // gives us DNS access to "test-agent". On the host it fails (not a valid
-        // container) and we fall back to the mapped port.
         try
         {
             var buildContainerId = Environment.MachineName;
             await client.Networks.ConnectNetworkAsync(
                 networkName,
                 new NetworkConnectParameters { Container = buildContainerId });
-            Logger.Information("Joined network {Network} as {Id}, using container DNS", networkName, buildContainerId);
-            return new TestAgentConnection("http://test-agent:8126", buildContainerId);
+            Logger.Information("Joined network {Network} as {Id} — running in container", networkName, buildContainerId);
+
+            // Inspect our own container to discover mount mappings (container path → host path)
+            var inspection = await client.Containers.InspectContainerAsync(buildContainerId);
+            var mounts = inspection.Mounts
+                .Where(m => !string.IsNullOrEmpty(m.Destination) && !string.IsNullOrEmpty(m.Source))
+                .OrderByDescending(m => m.Destination.Length) // longest prefix first
+                .ToList();
+
+            foreach (var m in mounts)
+            {
+                Logger.Debug("Mount: {Source} -> {Destination} (Type: {Type})", m.Source, m.Destination, m.Type);
+            }
+
+            string ToHostPath(string containerPath)
+            {
+                foreach (var mount in mounts)
+                {
+                    var dest = mount.Destination.TrimEnd('/');
+                    if (containerPath == dest || containerPath.StartsWith(dest + "/", StringComparison.Ordinal))
+                    {
+                        var relativePart = containerPath.Substring(dest.Length);
+                        var hostPath = mount.Source.TrimEnd('/') + relativePart;
+                        Logger.Debug("Translated path {Container} -> {Host}", containerPath, hostPath);
+                        return hostPath;
+                    }
+                }
+
+                Logger.Warning("No mount found for path {Path}, using as-is", containerPath);
+                return containerPath;
+            }
+
+            return new DockerEnvironment(buildContainerId, ToHostPath);
         }
         catch (Exception ex)
         {
-            Logger.Debug(ex, "Could not join network {Network} (likely running on host), using port mapping", networkName);
+            Logger.Debug(ex, "Could not join network {Network} (likely running on host)", networkName);
+            return new DockerEnvironment(null, path => path);
+        }
+    }
+
+    /// <summary>
+    /// Returns the base URL to reach the test-agent HTTP API.
+    /// In a container we use DNS; on the host we use the mapped port.
+    /// </summary>
+    static async Task<string> GetTestAgentUrlAsync(
+        DockerClient client, DockerEnvironment environment, string testAgentContainerId)
+    {
+        if (environment.BuildContainerId is not null)
+        {
+            return "http://test-agent:8126";
         }
 
         var inspection = await client.Containers.InspectContainerAsync(testAgentContainerId);
         var hostPort = inspection.NetworkSettings.Ports["8126/tcp"][0].HostPort;
         Logger.Information("Test agent listening on host port {Port}", hostPort);
-        return new TestAgentConnection($"http://localhost:{hostPort}", null);
+        return $"http://localhost:{hostPort}";
     }
 
     static async Task DisconnectFromNetworkAsync(DockerClient client, string networkName, string containerId)
@@ -581,8 +640,8 @@ public static class SmokeTestBuilder
         DockerClient client,
         SmokeTestScenario scenario,
         string networkName,
-        AbsolutePath logsDir,
-        AbsolutePath dumpsDir)
+        string logsDir,
+        string dumpsDir)
     {
         using var crashCts = new CancellationTokenSource(TimeSpan.FromMinutes(4));
         var ct = crashCts.Token;
