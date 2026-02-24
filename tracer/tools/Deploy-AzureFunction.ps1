@@ -162,6 +162,8 @@ try {
             $statusCode = $_.Exception.Response.StatusCode.value__
             if ($statusCode) {
                 $result.HttpStatus = $statusCode
+                $result.ExecutionTimestamp = $timestamp
+                $result.TriggerUrl = $TriggerUrl
                 Write-Warning "Function returned HTTP $statusCode"
             } else {
                 Write-Error "Failed to trigger function: $_"
