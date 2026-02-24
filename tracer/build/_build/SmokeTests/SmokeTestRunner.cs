@@ -143,6 +143,7 @@ public static class SmokeTestBuilder
         string testAgentContainerId = null;
         string smokeTestContainerId = null;
         string crashTestContainerId = null;
+        string buildContainerId = null;
 
         // Ensure output directories exist
         // debugSnapshotsDir: mounted as /debug_snapshots in the test-agent container,
@@ -171,18 +172,18 @@ public static class SmokeTestBuilder
             // 2. Pull + start test-agent container
             await PullImageAsync(client, TestAgentImage);
 
-            // snapshotsDir: source-of-truth expected snapshots, mounted read-only as /snapshots
+            // sourceSnapshotsDir: source-of-truth expected snapshots, mounted read-only as /snapshots
             var sourceSnapshotsDir = tracerDir / "build" / "smoke_test_snapshots";
             testAgentContainerId = await CreateAndStartContainerWithRetryAsync(
                 client, "test-agent", BuildTestAgentContainerParams(networkName, sourceSnapshotsDir, debugSnapshotsDir));
 
-            // 3. Get the mapped host port for 8126
-            var inspection = await client.Containers.InspectContainerAsync(testAgentContainerId);
-            var hostPort = inspection.NetworkSettings.Ports["8126/tcp"][0].HostPort;
-            Logger.Information("Test agent listening on host port {Port}", hostPort);
+            // 3. Determine how to reach the test-agent's HTTP API
+            var testAgentUrl = await GetTestAgentUrlAsync(client, networkName, testAgentContainerId);
+            buildContainerId = testAgentUrl.BuildContainerId;
+            Logger.Information("Test agent reachable at {Url}", testAgentUrl.BaseUrl);
 
             // 4. Wait for test-agent to be healthy
-            using var httpClient = new HttpClient { BaseAddress = new Uri($"http://localhost:{hostPort}") };
+            using var httpClient = new HttpClient { BaseAddress = new Uri(testAgentUrl.BaseUrl) };
             await WaitForTestAgentAsync(httpClient);
 
             // 5. Start a trace session
@@ -255,10 +256,11 @@ public static class SmokeTestBuilder
         }
         finally
         {
-            // Cleanup: remove containers (force) then the network
+            // Cleanup: remove containers, disconnect ourselves from the network, then remove it
             await CleanupContainerAsync(client, smokeTestContainerId);
             await CleanupContainerAsync(client, crashTestContainerId);
             await CleanupContainerAsync(client, testAgentContainerId);
+            await DisconnectFromNetworkAsync(client, networkName, buildContainerId);
             await CleanupNetworkAsync(client, networkName);
         }
     }
@@ -379,6 +381,64 @@ public static class SmokeTestBuilder
                 },
             },
         };
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // Network connectivity
+    // ──────────────────────────────────────────────────────────────
+
+    record TestAgentConnection(string BaseUrl, string BuildContainerId);
+
+    /// <summary>
+    /// Determines how to reach the test-agent HTTP API. In CI the build runs inside a
+    /// container, so localhost port-mapping doesn't work — we join the smoke-test network
+    /// and use the container alias directly. On the host (local dev) we use the mapped port.
+    /// </summary>
+    static async Task<TestAgentConnection> GetTestAgentUrlAsync(
+        DockerClient client, string networkName, string testAgentContainerId)
+    {
+        // Try joining the smoke-test network using our hostname as container ID.
+        // In a container, the hostname is the container ID so this succeeds and
+        // gives us DNS access to "test-agent". On the host it fails (not a valid
+        // container) and we fall back to the mapped port.
+        try
+        {
+            var buildContainerId = Environment.MachineName;
+            await client.Networks.ConnectNetworkAsync(
+                networkName,
+                new NetworkConnectParameters { Container = buildContainerId });
+            Logger.Information("Joined network {Network} as {Id}, using container DNS", networkName, buildContainerId);
+            return new TestAgentConnection("http://test-agent:8126", buildContainerId);
+        }
+        catch (Exception ex)
+        {
+            Logger.Debug(ex, "Could not join network {Network} (likely running on host), using port mapping", networkName);
+        }
+
+        var inspection = await client.Containers.InspectContainerAsync(testAgentContainerId);
+        var hostPort = inspection.NetworkSettings.Ports["8126/tcp"][0].HostPort;
+        Logger.Information("Test agent listening on host port {Port}", hostPort);
+        return new TestAgentConnection($"http://localhost:{hostPort}", null);
+    }
+
+    static async Task DisconnectFromNetworkAsync(DockerClient client, string networkName, string containerId)
+    {
+        if (containerId is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await client.Networks.DisconnectNetworkAsync(
+                networkName,
+                new NetworkDisconnectParameters { Container = containerId });
+            Logger.Debug("Disconnected {Id} from network {Network}", containerId, networkName);
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning(ex, "Failed to disconnect {Id} from network {Network}", containerId, networkName);
+        }
     }
 
     // ──────────────────────────────────────────────────────────────
