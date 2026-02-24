@@ -1,408 +1,414 @@
 ﻿{
-  "resource_spans": [
+  "resourceSpans": [
     {
       "resource": {
         "attributes": [
           {
             "key": "service.name",
             "value": {
-              "string_value": "Samples.OpenTelemetrySdk"
+              "stringValue": "Samples.OpenTelemetrySdk"
             }
           },
           {
             "key": "service.version",
             "value": {
-              "string_value": "1.0.x"
+              "stringValue": "1.0.x"
+            }
+          },
+          {
+            "key": "telemetry.sdk.name",
+            "value": {
+              "stringValue": "sdk-name"
             }
           },
           {
             "key": "telemetry.sdk.language",
             "value": {
-              "string_value": "dotnet"
+              "stringValue": "dotnet"
             }
           },
           {
             "key": "telemetry.sdk.version",
             "value": {
-              "string_value": "sdk-version"
+              "stringValue": "sdk-version"
             }
           },
           {
             "key": "git.commit.sha",
             "value": {
-              "string_value": "normalized-git-commit-sha"
+              "stringValue": "normalized-git-commit-sha"
             }
           },
           {
             "key": "git.repository_url",
             "value": {
-              "string_value": "https://github.com/DataDog/dd-trace-dotnet"
+              "stringValue": "https://github.com/DataDog/dd-trace-dotnet"
             }
           },
           {
             "key": "runtime-id",
             "value": {
-              "string_value": "Guid_1"
+              "stringValue": "Guid_1"
             }
           }
         ]
       },
-      "scope_spans": [
+      "scopeSpans": [
         {
           "spans": [
             {
-              "trace_id": "normalized-trace-id",
-              "span_id": "normalized-span-id",
-              "parent_span_id": "normalized-parent-span-id",
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "parentSpanId": "normalized-parent-span-id",
               "name": "DeprecatedHttpStatusTagName",
-              "kind": "SPAN_KIND_INTERNAL",
-              "start_time_unix_nano": "0",
-              "end_time_unix_nano": "0",
+              "kind": 1,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
               "attributes": [
                 {
                   "key": "span.kind",
                   "value": {
-                    "string_value": "internal"
+                    "stringValue": "internal"
                   }
                 },
                 {
                   "key": "otel.trace_id",
                   "value": {
-                    "string_value": "normalized-otel-trace-id"
+                    "stringValue": "normalized-otel-trace-id"
                   }
                 },
                 {
                   "key": "otel.library.name",
                   "value": {
-                    "string_value": "MyServiceName"
+                    "stringValue": "MyServiceName"
                   }
                 },
                 {
                   "key": "otel.status_code",
                   "value": {
-                    "string_value": "STATUS_CODE_UNSET"
+                    "stringValue": "STATUS_CODE_UNSET"
                   }
                 },
                 {
                   "key": "service.name",
                   "value": {
-                    "string_value": "MyServiceName"
+                    "stringValue": "MyServiceName"
                   }
                 },
                 {
                   "key": "service.version",
                   "value": {
-                    "string_value": "1.0.x"
+                    "stringValue": "1.0.x"
                   }
                 },
                 {
                   "key": "service.instance.id",
                   "value": {
-                    "string_value": "Guid_2"
+                    "stringValue": "Guid_2"
                   }
                 },
                 {
                   "key": "telemetry.sdk.name",
                   "value": {
-                    "string_value": "opentelemetry"
+                    "stringValue": "opentelemetry"
                   }
                 },
                 {
                   "key": "telemetry.sdk.language",
                   "value": {
-                    "string_value": "dotnet"
+                    "stringValue": "dotnet"
                   }
                 },
                 {
                   "key": "telemetry.sdk.version",
                   "value": {
-                    "string_value": "1.13.1"
+                    "stringValue": "1.13.1"
                   }
                 },
                 {
                   "key": "http.status_code",
                   "value": {
-                    "string_value": "404"
+                    "stringValue": "404"
                   }
                 }
               ]
             },
             {
-              "trace_id": "normalized-trace-id",
-              "span_id": "normalized-span-id",
-              "parent_span_id": "normalized-parent-span-id",
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "parentSpanId": "normalized-parent-span-id",
               "name": "InnerSpanError",
-              "kind": "SPAN_KIND_INTERNAL",
-              "start_time_unix_nano": "0",
-              "end_time_unix_nano": "0",
+              "kind": 1,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
               "attributes": [
                 {
                   "key": "span.kind",
                   "value": {
-                    "string_value": "internal"
+                    "stringValue": "internal"
                   }
                 },
                 {
                   "key": "otel.trace_id",
                   "value": {
-                    "string_value": "normalized-otel-trace-id"
+                    "stringValue": "normalized-otel-trace-id"
                   }
                 },
                 {
                   "key": "otel.library.name",
                   "value": {
-                    "string_value": "MyServiceName"
+                    "stringValue": "MyServiceName"
                   }
                 },
                 {
                   "key": "otel.status_code",
                   "value": {
-                    "string_value": "STATUS_CODE_ERROR"
+                    "stringValue": "STATUS_CODE_ERROR"
                   }
                 },
                 {
                   "key": "service.name",
                   "value": {
-                    "string_value": "MyServiceName"
+                    "stringValue": "MyServiceName"
                   }
                 },
                 {
                   "key": "service.version",
                   "value": {
-                    "string_value": "1.0.x"
+                    "stringValue": "1.0.x"
                   }
                 },
                 {
                   "key": "service.instance.id",
                   "value": {
-                    "string_value": "Guid_2"
+                    "stringValue": "Guid_2"
                   }
                 },
                 {
                   "key": "telemetry.sdk.name",
                   "value": {
-                    "string_value": "opentelemetry"
+                    "stringValue": "opentelemetry"
                   }
                 },
                 {
                   "key": "telemetry.sdk.language",
                   "value": {
-                    "string_value": "dotnet"
+                    "stringValue": "dotnet"
                   }
                 },
                 {
                   "key": "telemetry.sdk.version",
                   "value": {
-                    "string_value": "1.13.1"
+                    "stringValue": "1.13.1"
                   }
                 },
                 {
                   "key": "otel.status_description",
                   "value": {
-                    "string_value": "Something went wrong"
+                    "stringValue": "Something went wrong"
                   }
                 },
                 {
                   "key": "error.msg",
                   "value": {
-                    "string_value": "Something went wrong"
+                    "stringValue": "Something went wrong"
                   }
                 }
               ],
               "status": {
                 "message": "Something went wrong",
-                "code": "STATUS_CODE_ERROR"
+                "code": 2
               }
             },
             {
-              "trace_id": "normalized-trace-id",
-              "span_id": "normalized-span-id",
-              "parent_span_id": "normalized-parent-span-id",
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "parentSpanId": "normalized-parent-span-id",
               "name": "InnerSpanOk",
-              "kind": "SPAN_KIND_INTERNAL",
-              "start_time_unix_nano": "0",
-              "end_time_unix_nano": "0",
+              "kind": 1,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
               "attributes": [
                 {
                   "key": "span.kind",
                   "value": {
-                    "string_value": "internal"
+                    "stringValue": "internal"
                   }
                 },
                 {
                   "key": "otel.trace_id",
                   "value": {
-                    "string_value": "normalized-otel-trace-id"
+                    "stringValue": "normalized-otel-trace-id"
                   }
                 },
                 {
                   "key": "otel.library.name",
                   "value": {
-                    "string_value": "MyServiceName"
+                    "stringValue": "MyServiceName"
                   }
                 },
                 {
                   "key": "otel.status_code",
                   "value": {
-                    "string_value": "STATUS_CODE_OK"
+                    "stringValue": "STATUS_CODE_OK"
                   }
                 },
                 {
                   "key": "service.name",
                   "value": {
-                    "string_value": "MyServiceName"
+                    "stringValue": "MyServiceName"
                   }
                 },
                 {
                   "key": "service.version",
                   "value": {
-                    "string_value": "1.0.x"
+                    "stringValue": "1.0.x"
                   }
                 },
                 {
                   "key": "service.instance.id",
                   "value": {
-                    "string_value": "Guid_2"
+                    "stringValue": "Guid_2"
                   }
                 },
                 {
                   "key": "telemetry.sdk.name",
                   "value": {
-                    "string_value": "opentelemetry"
+                    "stringValue": "opentelemetry"
                   }
                 },
                 {
                   "key": "telemetry.sdk.language",
                   "value": {
-                    "string_value": "dotnet"
+                    "stringValue": "dotnet"
                   }
                 },
                 {
                   "key": "telemetry.sdk.version",
                   "value": {
-                    "string_value": "1.13.1"
+                    "stringValue": "1.13.1"
                   }
                 }
               ],
               "status": {
-                "code": "STATUS_CODE_OK"
+                "code": 1
               }
             },
             {
-              "trace_id": "normalized-trace-id",
-              "span_id": "normalized-span-id",
-              "parent_span_id": "normalized-parent-span-id",
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "parentSpanId": "normalized-parent-span-id",
               "name": "InnerSpanUpdated",
-              "kind": "SPAN_KIND_INTERNAL",
-              "start_time_unix_nano": "0",
-              "end_time_unix_nano": "0",
+              "kind": 1,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
               "attributes": [
                 {
                   "key": "span.kind",
                   "value": {
-                    "string_value": "internal"
+                    "stringValue": "internal"
                   }
                 },
                 {
                   "key": "otel.trace_id",
                   "value": {
-                    "string_value": "normalized-otel-trace-id"
+                    "stringValue": "normalized-otel-trace-id"
                   }
                 },
                 {
                   "key": "otel.library.name",
                   "value": {
-                    "string_value": "MyServiceName"
+                    "stringValue": "MyServiceName"
                   }
                 },
                 {
                   "key": "otel.status_code",
                   "value": {
-                    "string_value": "STATUS_CODE_ERROR"
+                    "stringValue": "STATUS_CODE_ERROR"
                   }
                 },
                 {
                   "key": "service.name",
                   "value": {
-                    "string_value": "MyServiceName"
+                    "stringValue": "MyServiceName"
                   }
                 },
                 {
                   "key": "service.version",
                   "value": {
-                    "string_value": "1.0.x"
+                    "stringValue": "1.0.x"
                   }
                 },
                 {
                   "key": "service.instance.id",
                   "value": {
-                    "string_value": "Guid_2"
+                    "stringValue": "Guid_2"
                   }
                 },
                 {
                   "key": "telemetry.sdk.name",
                   "value": {
-                    "string_value": "opentelemetry"
+                    "stringValue": "opentelemetry"
                   }
                 },
                 {
                   "key": "telemetry.sdk.language",
                   "value": {
-                    "string_value": "dotnet"
+                    "stringValue": "dotnet"
                   }
                 },
                 {
                   "key": "telemetry.sdk.version",
                   "value": {
-                    "string_value": "1.13.1"
+                    "stringValue": "1.13.1"
                   }
                 },
                 {
                   "key": "otel.status_description",
                   "value": {
-                    "string_value": "Example argument exception"
+                    "stringValue": "Example argument exception"
                   }
                 },
                 {
                   "key": "error.type",
                   "value": {
-                    "string_value": "ArgumentException"
+                    "stringValue": "ArgumentException"
                   }
                 },
                 {
                   "key": "error.msg",
                   "value": {
-                    "string_value": "Example argument exception"
+                    "stringValue": "Example argument exception"
                   }
                 },
                 {
                   "key": "error.stack",
                   "value": {
-                    "string_value": "System.ArgumentException: Example argument exception\r\n   at Samples.OpenTelemetrySdk.Program.RunSpanUpdateMethods(TelemetrySpan span) in C:\\git\\datadog2\\dd-trace-dotnet\\tracer\\test\\test-applications\\integrations\\Samples.OpenTelemetrySdk\\Program.cs:line 267"
+                    "stringValue": "System.ArgumentException: Example argument exception"
                   }
                 }
               ],
               "events": [
                 {
-                  "time_unix_nano": "0",
+                  "timeUnixNano": "0",
                   "name": "exception",
                   "attributes": [
                     {
                       "key": "exception.type",
                       "value": {
-                        "string_value": "ArgumentException"
+                        "stringValue": "ArgumentException"
                       }
                     },
                     {
                       "key": "exception.stacktrace",
                       "value": {
-                        "string_value": "System.ArgumentException: Example argument exception\r\n   at Samples.OpenTelemetrySdk.Program.RunSpanUpdateMethods(TelemetrySpan span) in C:\\git\\datadog2\\dd-trace-dotnet\\tracer\\test\\test-applications\\integrations\\Samples.OpenTelemetrySdk\\Program.cs:line 267"
+                        "stringValue": "System.ArgumentException: Example argument exception"
                       }
                     },
                     {
                       "key": "exception.message",
                       "value": {
-                        "string_value": "Example argument exception"
+                        "stringValue": "Example argument exception"
                       }
                     }
                   ]
@@ -410,2170 +416,2170 @@
               ],
               "status": {
                 "message": "Example argument exception",
-                "code": "STATUS_CODE_ERROR"
+                "code": 2
               }
             },
             {
-              "trace_id": "normalized-trace-id",
-              "span_id": "normalized-span-id",
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
               "name": "OperationNameRootSpan",
-              "kind": "SPAN_KIND_INTERNAL",
-              "start_time_unix_nano": "0",
-              "end_time_unix_nano": "0",
+              "kind": 1,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
               "attributes": [
                 {
                   "key": "span.kind",
                   "value": {
-                    "string_value": "internal"
+                    "stringValue": "internal"
                   }
                 },
                 {
                   "key": "otel.trace_id",
                   "value": {
-                    "string_value": "normalized-otel-trace-id"
+                    "stringValue": "normalized-otel-trace-id"
                   }
                 },
                 {
                   "key": "otel.library.name",
                   "value": {
-                    "string_value": "MyServiceName"
+                    "stringValue": "MyServiceName"
                   }
                 },
                 {
                   "key": "otel.status_code",
                   "value": {
-                    "string_value": "STATUS_CODE_UNSET"
+                    "stringValue": "STATUS_CODE_UNSET"
                   }
                 },
                 {
                   "key": "service.name",
                   "value": {
-                    "string_value": "MyServiceName"
+                    "stringValue": "MyServiceName"
                   }
                 },
                 {
                   "key": "service.version",
                   "value": {
-                    "string_value": "1.0.x"
+                    "stringValue": "1.0.x"
                   }
                 },
                 {
                   "key": "service.instance.id",
                   "value": {
-                    "string_value": "Guid_2"
+                    "stringValue": "Guid_2"
                   }
                 },
                 {
                   "key": "telemetry.sdk.name",
                   "value": {
-                    "string_value": "opentelemetry"
+                    "stringValue": "opentelemetry"
                   }
                 },
                 {
                   "key": "telemetry.sdk.language",
                   "value": {
-                    "string_value": "dotnet"
+                    "stringValue": "dotnet"
                   }
                 },
                 {
                   "key": "telemetry.sdk.version",
                   "value": {
-                    "string_value": "1.13.1"
+                    "stringValue": "1.13.1"
                   }
                 },
                 {
                   "key": "runtime-id",
                   "value": {
-                    "string_value": "Guid_1"
+                    "stringValue": "Guid_1"
                   }
                 }
               ]
             },
             {
-              "trace_id": "normalized-trace-id",
-              "span_id": "normalized-span-id",
-              "parent_span_id": "normalized-parent-span-id",
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "parentSpanId": "normalized-parent-span-id",
               "name": "ResourceName",
-              "kind": "SPAN_KIND_SERVER",
-              "start_time_unix_nano": "0",
-              "end_time_unix_nano": "0",
+              "kind": 2,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
               "attributes": [
                 {
                   "key": "span.kind",
                   "value": {
-                    "string_value": "server"
+                    "stringValue": "server"
                   }
                 },
                 {
                   "key": "otel.trace_id",
                   "value": {
-                    "string_value": "normalized-otel-trace-id"
+                    "stringValue": "normalized-otel-trace-id"
                   }
                 },
                 {
                   "key": "otel.library.name",
                   "value": {
-                    "string_value": "MyServiceName"
+                    "stringValue": "MyServiceName"
                   }
                 },
                 {
                   "key": "otel.status_code",
                   "value": {
-                    "string_value": "STATUS_CODE_UNSET"
+                    "stringValue": "STATUS_CODE_UNSET"
                   }
                 },
                 {
                   "key": "service.name",
                   "value": {
-                    "string_value": "MyServiceName"
+                    "stringValue": "MyServiceName"
                   }
                 },
                 {
                   "key": "service.version",
                   "value": {
-                    "string_value": "1.0.x"
+                    "stringValue": "1.0.x"
                   }
                 },
                 {
                   "key": "service.instance.id",
                   "value": {
-                    "string_value": "Guid_2"
+                    "stringValue": "Guid_2"
                   }
                 },
                 {
                   "key": "telemetry.sdk.name",
                   "value": {
-                    "string_value": "opentelemetry"
+                    "stringValue": "opentelemetry"
                   }
                 },
                 {
                   "key": "telemetry.sdk.language",
                   "value": {
-                    "string_value": "dotnet"
+                    "stringValue": "dotnet"
                   }
                 },
                 {
                   "key": "telemetry.sdk.version",
                   "value": {
-                    "string_value": "1.13.1"
+                    "stringValue": "1.13.1"
                   }
                 },
                 {
                   "key": "http.request.method",
                   "value": {
-                    "string_value": "GET"
+                    "stringValue": "GET"
                   }
                 }
               ]
             },
             {
-              "trace_id": "normalized-trace-id",
-              "span_id": "normalized-span-id",
-              "parent_span_id": "normalized-parent-span-id",
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "parentSpanId": "normalized-parent-span-id",
               "name": "ResourceName",
-              "kind": "SPAN_KIND_CLIENT",
-              "start_time_unix_nano": "0",
-              "end_time_unix_nano": "0",
+              "kind": 3,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
               "attributes": [
                 {
                   "key": "span.kind",
                   "value": {
-                    "string_value": "client"
+                    "stringValue": "client"
                   }
                 },
                 {
                   "key": "otel.trace_id",
                   "value": {
-                    "string_value": "normalized-otel-trace-id"
+                    "stringValue": "normalized-otel-trace-id"
                   }
                 },
                 {
                   "key": "otel.library.name",
                   "value": {
-                    "string_value": "MyServiceName"
+                    "stringValue": "MyServiceName"
                   }
                 },
                 {
                   "key": "otel.status_code",
                   "value": {
-                    "string_value": "STATUS_CODE_UNSET"
+                    "stringValue": "STATUS_CODE_UNSET"
                   }
                 },
                 {
                   "key": "service.name",
                   "value": {
-                    "string_value": "MyServiceName"
+                    "stringValue": "MyServiceName"
                   }
                 },
                 {
                   "key": "service.version",
                   "value": {
-                    "string_value": "1.0.x"
+                    "stringValue": "1.0.x"
                   }
                 },
                 {
                   "key": "service.instance.id",
                   "value": {
-                    "string_value": "Guid_2"
+                    "stringValue": "Guid_2"
                   }
                 },
                 {
                   "key": "telemetry.sdk.name",
                   "value": {
-                    "string_value": "opentelemetry"
+                    "stringValue": "opentelemetry"
                   }
                 },
                 {
                   "key": "telemetry.sdk.language",
                   "value": {
-                    "string_value": "dotnet"
+                    "stringValue": "dotnet"
                   }
                 },
                 {
                   "key": "telemetry.sdk.version",
                   "value": {
-                    "string_value": "1.13.1"
+                    "stringValue": "1.13.1"
                   }
                 },
                 {
                   "key": "http.request.method",
                   "value": {
-                    "string_value": "GET"
+                    "stringValue": "GET"
                   }
                 }
               ]
             },
             {
-              "trace_id": "normalized-trace-id",
-              "span_id": "normalized-span-id",
-              "parent_span_id": "normalized-parent-span-id",
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "parentSpanId": "normalized-parent-span-id",
               "name": "ResourceName",
-              "kind": "SPAN_KIND_CLIENT",
-              "start_time_unix_nano": "0",
-              "end_time_unix_nano": "0",
+              "kind": 3,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
               "attributes": [
                 {
                   "key": "span.kind",
                   "value": {
-                    "string_value": "client"
+                    "stringValue": "client"
                   }
                 },
                 {
                   "key": "otel.trace_id",
                   "value": {
-                    "string_value": "normalized-otel-trace-id"
+                    "stringValue": "normalized-otel-trace-id"
                   }
                 },
                 {
                   "key": "otel.library.name",
                   "value": {
-                    "string_value": "MyServiceName"
+                    "stringValue": "MyServiceName"
                   }
                 },
                 {
                   "key": "otel.status_code",
                   "value": {
-                    "string_value": "STATUS_CODE_UNSET"
+                    "stringValue": "STATUS_CODE_UNSET"
                   }
                 },
                 {
                   "key": "service.name",
                   "value": {
-                    "string_value": "MyServiceName"
+                    "stringValue": "MyServiceName"
                   }
                 },
                 {
                   "key": "service.version",
                   "value": {
-                    "string_value": "1.0.x"
+                    "stringValue": "1.0.x"
                   }
                 },
                 {
                   "key": "service.instance.id",
                   "value": {
-                    "string_value": "Guid_2"
+                    "stringValue": "Guid_2"
                   }
                 },
                 {
                   "key": "telemetry.sdk.name",
                   "value": {
-                    "string_value": "opentelemetry"
+                    "stringValue": "opentelemetry"
                   }
                 },
                 {
                   "key": "telemetry.sdk.language",
                   "value": {
-                    "string_value": "dotnet"
+                    "stringValue": "dotnet"
                   }
                 },
                 {
                   "key": "telemetry.sdk.version",
                   "value": {
-                    "string_value": "1.13.1"
+                    "stringValue": "1.13.1"
                   }
                 },
                 {
                   "key": "db.system",
                   "value": {
-                    "string_value": "Redis"
+                    "stringValue": "Redis"
                   }
                 }
               ]
             },
             {
-              "trace_id": "normalized-trace-id",
-              "span_id": "normalized-span-id",
-              "parent_span_id": "normalized-parent-span-id",
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "parentSpanId": "normalized-parent-span-id",
               "name": "ResourceName",
-              "kind": "SPAN_KIND_CLIENT",
-              "start_time_unix_nano": "0",
-              "end_time_unix_nano": "0",
+              "kind": 3,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
               "attributes": [
                 {
                   "key": "span.kind",
                   "value": {
-                    "string_value": "client"
+                    "stringValue": "client"
                   }
                 },
                 {
                   "key": "otel.trace_id",
                   "value": {
-                    "string_value": "normalized-otel-trace-id"
+                    "stringValue": "normalized-otel-trace-id"
                   }
                 },
                 {
                   "key": "otel.library.name",
                   "value": {
-                    "string_value": "MyServiceName"
+                    "stringValue": "MyServiceName"
                   }
                 },
                 {
                   "key": "otel.status_code",
                   "value": {
-                    "string_value": "STATUS_CODE_UNSET"
+                    "stringValue": "STATUS_CODE_UNSET"
                   }
                 },
                 {
                   "key": "service.name",
                   "value": {
-                    "string_value": "MyServiceName"
+                    "stringValue": "MyServiceName"
                   }
                 },
                 {
                   "key": "service.version",
                   "value": {
-                    "string_value": "1.0.x"
+                    "stringValue": "1.0.x"
                   }
                 },
                 {
                   "key": "service.instance.id",
                   "value": {
-                    "string_value": "Guid_2"
+                    "stringValue": "Guid_2"
                   }
                 },
                 {
                   "key": "telemetry.sdk.name",
                   "value": {
-                    "string_value": "opentelemetry"
+                    "stringValue": "opentelemetry"
                   }
                 },
                 {
                   "key": "telemetry.sdk.language",
                   "value": {
-                    "string_value": "dotnet"
+                    "stringValue": "dotnet"
                   }
                 },
                 {
                   "key": "telemetry.sdk.version",
                   "value": {
-                    "string_value": "1.13.1"
+                    "stringValue": "1.13.1"
                   }
                 },
                 {
                   "key": "messaging.system",
                   "value": {
-                    "string_value": "Kafka"
+                    "stringValue": "Kafka"
                   }
                 },
                 {
                   "key": "messaging.operation",
                   "value": {
-                    "string_value": "Receive"
+                    "stringValue": "Receive"
                   }
                 }
               ]
             },
             {
-              "trace_id": "normalized-trace-id",
-              "span_id": "normalized-span-id",
-              "parent_span_id": "normalized-parent-span-id",
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "parentSpanId": "normalized-parent-span-id",
               "name": "ResourceName",
-              "kind": "SPAN_KIND_SERVER",
-              "start_time_unix_nano": "0",
-              "end_time_unix_nano": "0",
+              "kind": 2,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
               "attributes": [
                 {
                   "key": "span.kind",
                   "value": {
-                    "string_value": "server"
+                    "stringValue": "server"
                   }
                 },
                 {
                   "key": "otel.trace_id",
                   "value": {
-                    "string_value": "normalized-otel-trace-id"
+                    "stringValue": "normalized-otel-trace-id"
                   }
                 },
                 {
                   "key": "otel.library.name",
                   "value": {
-                    "string_value": "MyServiceName"
+                    "stringValue": "MyServiceName"
                   }
                 },
                 {
                   "key": "otel.status_code",
                   "value": {
-                    "string_value": "STATUS_CODE_UNSET"
+                    "stringValue": "STATUS_CODE_UNSET"
                   }
                 },
                 {
                   "key": "service.name",
                   "value": {
-                    "string_value": "MyServiceName"
+                    "stringValue": "MyServiceName"
                   }
                 },
                 {
                   "key": "service.version",
                   "value": {
-                    "string_value": "1.0.x"
+                    "stringValue": "1.0.x"
                   }
                 },
                 {
                   "key": "service.instance.id",
                   "value": {
-                    "string_value": "Guid_2"
+                    "stringValue": "Guid_2"
                   }
                 },
                 {
                   "key": "telemetry.sdk.name",
                   "value": {
-                    "string_value": "opentelemetry"
+                    "stringValue": "opentelemetry"
                   }
                 },
                 {
                   "key": "telemetry.sdk.language",
                   "value": {
-                    "string_value": "dotnet"
+                    "stringValue": "dotnet"
                   }
                 },
                 {
                   "key": "telemetry.sdk.version",
                   "value": {
-                    "string_value": "1.13.1"
+                    "stringValue": "1.13.1"
                   }
                 },
                 {
                   "key": "messaging.system",
                   "value": {
-                    "string_value": "Kafka"
+                    "stringValue": "Kafka"
                   }
                 },
                 {
                   "key": "messaging.operation",
                   "value": {
-                    "string_value": "Receive"
+                    "stringValue": "Receive"
                   }
                 }
               ]
             },
             {
-              "trace_id": "normalized-trace-id",
-              "span_id": "normalized-span-id",
-              "parent_span_id": "normalized-parent-span-id",
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "parentSpanId": "normalized-parent-span-id",
               "name": "ResourceName",
-              "kind": "SPAN_KIND_PRODUCER",
-              "start_time_unix_nano": "0",
-              "end_time_unix_nano": "0",
+              "kind": 4,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
               "attributes": [
                 {
                   "key": "span.kind",
                   "value": {
-                    "string_value": "producer"
+                    "stringValue": "producer"
                   }
                 },
                 {
                   "key": "otel.trace_id",
                   "value": {
-                    "string_value": "normalized-otel-trace-id"
+                    "stringValue": "normalized-otel-trace-id"
                   }
                 },
                 {
                   "key": "otel.library.name",
                   "value": {
-                    "string_value": "MyServiceName"
+                    "stringValue": "MyServiceName"
                   }
                 },
                 {
                   "key": "otel.status_code",
                   "value": {
-                    "string_value": "STATUS_CODE_UNSET"
+                    "stringValue": "STATUS_CODE_UNSET"
                   }
                 },
                 {
                   "key": "service.name",
                   "value": {
-                    "string_value": "MyServiceName"
+                    "stringValue": "MyServiceName"
                   }
                 },
                 {
                   "key": "service.version",
                   "value": {
-                    "string_value": "1.0.x"
+                    "stringValue": "1.0.x"
                   }
                 },
                 {
                   "key": "service.instance.id",
                   "value": {
-                    "string_value": "Guid_2"
+                    "stringValue": "Guid_2"
                   }
                 },
                 {
                   "key": "telemetry.sdk.name",
                   "value": {
-                    "string_value": "opentelemetry"
+                    "stringValue": "opentelemetry"
                   }
                 },
                 {
                   "key": "telemetry.sdk.language",
                   "value": {
-                    "string_value": "dotnet"
+                    "stringValue": "dotnet"
                   }
                 },
                 {
                   "key": "telemetry.sdk.version",
                   "value": {
-                    "string_value": "1.13.1"
+                    "stringValue": "1.13.1"
                   }
                 },
                 {
                   "key": "messaging.system",
                   "value": {
-                    "string_value": "Kafka"
+                    "stringValue": "Kafka"
                   }
                 },
                 {
                   "key": "messaging.operation",
                   "value": {
-                    "string_value": "Receive"
+                    "stringValue": "Receive"
                   }
                 }
               ]
             },
             {
-              "trace_id": "normalized-trace-id",
-              "span_id": "normalized-span-id",
-              "parent_span_id": "normalized-parent-span-id",
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "parentSpanId": "normalized-parent-span-id",
               "name": "ResourceName",
-              "kind": "SPAN_KIND_CONSUMER",
-              "start_time_unix_nano": "0",
-              "end_time_unix_nano": "0",
+              "kind": 5,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
               "attributes": [
                 {
                   "key": "span.kind",
                   "value": {
-                    "string_value": "consumer"
+                    "stringValue": "consumer"
                   }
                 },
                 {
                   "key": "otel.trace_id",
                   "value": {
-                    "string_value": "normalized-otel-trace-id"
+                    "stringValue": "normalized-otel-trace-id"
                   }
                 },
                 {
                   "key": "otel.library.name",
                   "value": {
-                    "string_value": "MyServiceName"
+                    "stringValue": "MyServiceName"
                   }
                 },
                 {
                   "key": "otel.status_code",
                   "value": {
-                    "string_value": "STATUS_CODE_UNSET"
+                    "stringValue": "STATUS_CODE_UNSET"
                   }
                 },
                 {
                   "key": "service.name",
                   "value": {
-                    "string_value": "MyServiceName"
+                    "stringValue": "MyServiceName"
                   }
                 },
                 {
                   "key": "service.version",
                   "value": {
-                    "string_value": "1.0.x"
+                    "stringValue": "1.0.x"
                   }
                 },
                 {
                   "key": "service.instance.id",
                   "value": {
-                    "string_value": "Guid_2"
+                    "stringValue": "Guid_2"
                   }
                 },
                 {
                   "key": "telemetry.sdk.name",
                   "value": {
-                    "string_value": "opentelemetry"
+                    "stringValue": "opentelemetry"
                   }
                 },
                 {
                   "key": "telemetry.sdk.language",
                   "value": {
-                    "string_value": "dotnet"
+                    "stringValue": "dotnet"
                   }
                 },
                 {
                   "key": "telemetry.sdk.version",
                   "value": {
-                    "string_value": "1.13.1"
+                    "stringValue": "1.13.1"
                   }
                 },
                 {
                   "key": "messaging.system",
                   "value": {
-                    "string_value": "Kafka"
+                    "stringValue": "Kafka"
                   }
                 },
                 {
                   "key": "messaging.operation",
                   "value": {
-                    "string_value": "Receive"
+                    "stringValue": "Receive"
                   }
                 }
               ]
             },
             {
-              "trace_id": "normalized-trace-id",
-              "span_id": "normalized-span-id",
-              "parent_span_id": "normalized-parent-span-id",
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "parentSpanId": "normalized-parent-span-id",
               "name": "ResourceName",
-              "kind": "SPAN_KIND_CLIENT",
-              "start_time_unix_nano": "0",
-              "end_time_unix_nano": "0",
+              "kind": 3,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
               "attributes": [
                 {
                   "key": "span.kind",
                   "value": {
-                    "string_value": "client"
+                    "stringValue": "client"
                   }
                 },
                 {
                   "key": "otel.trace_id",
                   "value": {
-                    "string_value": "normalized-otel-trace-id"
+                    "stringValue": "normalized-otel-trace-id"
                   }
                 },
                 {
                   "key": "otel.library.name",
                   "value": {
-                    "string_value": "MyServiceName"
+                    "stringValue": "MyServiceName"
                   }
                 },
                 {
                   "key": "otel.status_code",
                   "value": {
-                    "string_value": "STATUS_CODE_UNSET"
+                    "stringValue": "STATUS_CODE_UNSET"
                   }
                 },
                 {
                   "key": "service.name",
                   "value": {
-                    "string_value": "MyServiceName"
+                    "stringValue": "MyServiceName"
                   }
                 },
                 {
                   "key": "service.version",
                   "value": {
-                    "string_value": "1.0.x"
+                    "stringValue": "1.0.x"
                   }
                 },
                 {
                   "key": "service.instance.id",
                   "value": {
-                    "string_value": "Guid_2"
+                    "stringValue": "Guid_2"
                   }
                 },
                 {
                   "key": "telemetry.sdk.name",
                   "value": {
-                    "string_value": "opentelemetry"
+                    "stringValue": "opentelemetry"
                   }
                 },
                 {
                   "key": "telemetry.sdk.language",
                   "value": {
-                    "string_value": "dotnet"
+                    "stringValue": "dotnet"
                   }
                 },
                 {
                   "key": "telemetry.sdk.version",
                   "value": {
-                    "string_value": "1.13.1"
+                    "stringValue": "1.13.1"
                   }
                 },
                 {
                   "key": "rpc.system",
                   "value": {
-                    "string_value": "aws-api"
+                    "stringValue": "aws-api"
                   }
                 },
                 {
                   "key": "rpc.service",
                   "value": {
-                    "string_value": "S3"
+                    "stringValue": "S3"
                   }
                 }
               ]
             },
             {
-              "trace_id": "normalized-trace-id",
-              "span_id": "normalized-span-id",
-              "parent_span_id": "normalized-parent-span-id",
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "parentSpanId": "normalized-parent-span-id",
               "name": "ResourceName",
-              "kind": "SPAN_KIND_CLIENT",
-              "start_time_unix_nano": "0",
-              "end_time_unix_nano": "0",
+              "kind": 3,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
               "attributes": [
                 {
                   "key": "span.kind",
                   "value": {
-                    "string_value": "client"
+                    "stringValue": "client"
                   }
                 },
                 {
                   "key": "otel.trace_id",
                   "value": {
-                    "string_value": "normalized-otel-trace-id"
+                    "stringValue": "normalized-otel-trace-id"
                   }
                 },
                 {
                   "key": "otel.library.name",
                   "value": {
-                    "string_value": "MyServiceName"
+                    "stringValue": "MyServiceName"
                   }
                 },
                 {
                   "key": "otel.status_code",
                   "value": {
-                    "string_value": "STATUS_CODE_UNSET"
+                    "stringValue": "STATUS_CODE_UNSET"
                   }
                 },
                 {
                   "key": "service.name",
                   "value": {
-                    "string_value": "MyServiceName"
+                    "stringValue": "MyServiceName"
                   }
                 },
                 {
                   "key": "service.version",
                   "value": {
-                    "string_value": "1.0.x"
+                    "stringValue": "1.0.x"
                   }
                 },
                 {
                   "key": "service.instance.id",
                   "value": {
-                    "string_value": "Guid_2"
+                    "stringValue": "Guid_2"
                   }
                 },
                 {
                   "key": "telemetry.sdk.name",
                   "value": {
-                    "string_value": "opentelemetry"
+                    "stringValue": "opentelemetry"
                   }
                 },
                 {
                   "key": "telemetry.sdk.language",
                   "value": {
-                    "string_value": "dotnet"
+                    "stringValue": "dotnet"
                   }
                 },
                 {
                   "key": "telemetry.sdk.version",
                   "value": {
-                    "string_value": "1.13.1"
+                    "stringValue": "1.13.1"
                   }
                 },
                 {
                   "key": "rpc.system",
                   "value": {
-                    "string_value": "aws-api"
+                    "stringValue": "aws-api"
                   }
                 }
               ]
             },
             {
-              "trace_id": "normalized-trace-id",
-              "span_id": "normalized-span-id",
-              "parent_span_id": "normalized-parent-span-id",
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "parentSpanId": "normalized-parent-span-id",
               "name": "ResourceName",
-              "kind": "SPAN_KIND_CLIENT",
-              "start_time_unix_nano": "0",
-              "end_time_unix_nano": "0",
+              "kind": 3,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
               "attributes": [
                 {
                   "key": "span.kind",
                   "value": {
-                    "string_value": "client"
+                    "stringValue": "client"
                   }
                 },
                 {
                   "key": "otel.trace_id",
                   "value": {
-                    "string_value": "normalized-otel-trace-id"
+                    "stringValue": "normalized-otel-trace-id"
                   }
                 },
                 {
                   "key": "otel.library.name",
                   "value": {
-                    "string_value": "MyServiceName"
+                    "stringValue": "MyServiceName"
                   }
                 },
                 {
                   "key": "otel.status_code",
                   "value": {
-                    "string_value": "STATUS_CODE_UNSET"
+                    "stringValue": "STATUS_CODE_UNSET"
                   }
                 },
                 {
                   "key": "service.name",
                   "value": {
-                    "string_value": "MyServiceName"
+                    "stringValue": "MyServiceName"
                   }
                 },
                 {
                   "key": "service.version",
                   "value": {
-                    "string_value": "1.0.x"
+                    "stringValue": "1.0.x"
                   }
                 },
                 {
                   "key": "service.instance.id",
                   "value": {
-                    "string_value": "Guid_2"
+                    "stringValue": "Guid_2"
                   }
                 },
                 {
                   "key": "telemetry.sdk.name",
                   "value": {
-                    "string_value": "opentelemetry"
+                    "stringValue": "opentelemetry"
                   }
                 },
                 {
                   "key": "telemetry.sdk.language",
                   "value": {
-                    "string_value": "dotnet"
+                    "stringValue": "dotnet"
                   }
                 },
                 {
                   "key": "telemetry.sdk.version",
                   "value": {
-                    "string_value": "1.13.1"
+                    "stringValue": "1.13.1"
                   }
                 },
                 {
                   "key": "rpc.system",
                   "value": {
-                    "string_value": "GRPC"
+                    "stringValue": "GRPC"
                   }
                 }
               ]
             },
             {
-              "trace_id": "normalized-trace-id",
-              "span_id": "normalized-span-id",
-              "parent_span_id": "normalized-parent-span-id",
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "parentSpanId": "normalized-parent-span-id",
               "name": "ResourceName",
-              "kind": "SPAN_KIND_SERVER",
-              "start_time_unix_nano": "0",
-              "end_time_unix_nano": "0",
+              "kind": 2,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
               "attributes": [
                 {
                   "key": "span.kind",
                   "value": {
-                    "string_value": "server"
+                    "stringValue": "server"
                   }
                 },
                 {
                   "key": "otel.trace_id",
                   "value": {
-                    "string_value": "normalized-otel-trace-id"
+                    "stringValue": "normalized-otel-trace-id"
                   }
                 },
                 {
                   "key": "otel.library.name",
                   "value": {
-                    "string_value": "MyServiceName"
+                    "stringValue": "MyServiceName"
                   }
                 },
                 {
                   "key": "otel.status_code",
                   "value": {
-                    "string_value": "STATUS_CODE_UNSET"
+                    "stringValue": "STATUS_CODE_UNSET"
                   }
                 },
                 {
                   "key": "service.name",
                   "value": {
-                    "string_value": "MyServiceName"
+                    "stringValue": "MyServiceName"
                   }
                 },
                 {
                   "key": "service.version",
                   "value": {
-                    "string_value": "1.0.x"
+                    "stringValue": "1.0.x"
                   }
                 },
                 {
                   "key": "service.instance.id",
                   "value": {
-                    "string_value": "Guid_2"
+                    "stringValue": "Guid_2"
                   }
                 },
                 {
                   "key": "telemetry.sdk.name",
                   "value": {
-                    "string_value": "opentelemetry"
+                    "stringValue": "opentelemetry"
                   }
                 },
                 {
                   "key": "telemetry.sdk.language",
                   "value": {
-                    "string_value": "dotnet"
+                    "stringValue": "dotnet"
                   }
                 },
                 {
                   "key": "telemetry.sdk.version",
                   "value": {
-                    "string_value": "1.13.1"
+                    "stringValue": "1.13.1"
                   }
                 },
                 {
                   "key": "rpc.system",
                   "value": {
-                    "string_value": "GRPC"
+                    "stringValue": "GRPC"
                   }
                 }
               ]
             },
             {
-              "trace_id": "normalized-trace-id",
-              "span_id": "normalized-span-id",
-              "parent_span_id": "normalized-parent-span-id",
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "parentSpanId": "normalized-parent-span-id",
               "name": "ResourceName",
-              "kind": "SPAN_KIND_CLIENT",
-              "start_time_unix_nano": "0",
-              "end_time_unix_nano": "0",
+              "kind": 3,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
               "attributes": [
                 {
                   "key": "span.kind",
                   "value": {
-                    "string_value": "client"
+                    "stringValue": "client"
                   }
                 },
                 {
                   "key": "otel.trace_id",
                   "value": {
-                    "string_value": "normalized-otel-trace-id"
+                    "stringValue": "normalized-otel-trace-id"
                   }
                 },
                 {
                   "key": "otel.library.name",
                   "value": {
-                    "string_value": "MyServiceName"
+                    "stringValue": "MyServiceName"
                   }
                 },
                 {
                   "key": "otel.status_code",
                   "value": {
-                    "string_value": "STATUS_CODE_UNSET"
+                    "stringValue": "STATUS_CODE_UNSET"
                   }
                 },
                 {
                   "key": "service.name",
                   "value": {
-                    "string_value": "MyServiceName"
+                    "stringValue": "MyServiceName"
                   }
                 },
                 {
                   "key": "service.version",
                   "value": {
-                    "string_value": "1.0.x"
+                    "stringValue": "1.0.x"
                   }
                 },
                 {
                   "key": "service.instance.id",
                   "value": {
-                    "string_value": "Guid_2"
+                    "stringValue": "Guid_2"
                   }
                 },
                 {
                   "key": "telemetry.sdk.name",
                   "value": {
-                    "string_value": "opentelemetry"
+                    "stringValue": "opentelemetry"
                   }
                 },
                 {
                   "key": "telemetry.sdk.language",
                   "value": {
-                    "string_value": "dotnet"
+                    "stringValue": "dotnet"
                   }
                 },
                 {
                   "key": "telemetry.sdk.version",
                   "value": {
-                    "string_value": "1.13.1"
+                    "stringValue": "1.13.1"
                   }
                 },
                 {
                   "key": "faas.invoked_provider",
                   "value": {
-                    "string_value": "aws"
+                    "stringValue": "aws"
                   }
                 },
                 {
                   "key": "faas.invoked_name",
                   "value": {
-                    "string_value": "My-Function"
+                    "stringValue": "My-Function"
                   }
                 }
               ]
             },
             {
-              "trace_id": "normalized-trace-id",
-              "span_id": "normalized-span-id",
-              "parent_span_id": "normalized-parent-span-id",
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "parentSpanId": "normalized-parent-span-id",
               "name": "ResourceName",
-              "kind": "SPAN_KIND_SERVER",
-              "start_time_unix_nano": "0",
-              "end_time_unix_nano": "0",
+              "kind": 2,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
               "attributes": [
                 {
                   "key": "span.kind",
                   "value": {
-                    "string_value": "server"
+                    "stringValue": "server"
                   }
                 },
                 {
                   "key": "otel.trace_id",
                   "value": {
-                    "string_value": "normalized-otel-trace-id"
+                    "stringValue": "normalized-otel-trace-id"
                   }
                 },
                 {
                   "key": "otel.library.name",
                   "value": {
-                    "string_value": "MyServiceName"
+                    "stringValue": "MyServiceName"
                   }
                 },
                 {
                   "key": "otel.status_code",
                   "value": {
-                    "string_value": "STATUS_CODE_UNSET"
+                    "stringValue": "STATUS_CODE_UNSET"
                   }
                 },
                 {
                   "key": "service.name",
                   "value": {
-                    "string_value": "MyServiceName"
+                    "stringValue": "MyServiceName"
                   }
                 },
                 {
                   "key": "service.version",
                   "value": {
-                    "string_value": "1.0.x"
+                    "stringValue": "1.0.x"
                   }
                 },
                 {
                   "key": "service.instance.id",
                   "value": {
-                    "string_value": "Guid_2"
+                    "stringValue": "Guid_2"
                   }
                 },
                 {
                   "key": "telemetry.sdk.name",
                   "value": {
-                    "string_value": "opentelemetry"
+                    "stringValue": "opentelemetry"
                   }
                 },
                 {
                   "key": "telemetry.sdk.language",
                   "value": {
-                    "string_value": "dotnet"
+                    "stringValue": "dotnet"
                   }
                 },
                 {
                   "key": "telemetry.sdk.version",
                   "value": {
-                    "string_value": "1.13.1"
+                    "stringValue": "1.13.1"
                   }
                 },
                 {
                   "key": "faas.trigger",
                   "value": {
-                    "string_value": "Datasource"
+                    "stringValue": "Datasource"
                   }
                 }
               ]
             },
             {
-              "trace_id": "normalized-trace-id",
-              "span_id": "normalized-span-id",
-              "parent_span_id": "normalized-parent-span-id",
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "parentSpanId": "normalized-parent-span-id",
               "name": "ResourceName",
-              "kind": "SPAN_KIND_SERVER",
-              "start_time_unix_nano": "0",
-              "end_time_unix_nano": "0",
+              "kind": 2,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
               "attributes": [
                 {
                   "key": "span.kind",
                   "value": {
-                    "string_value": "server"
+                    "stringValue": "server"
                   }
                 },
                 {
                   "key": "otel.trace_id",
                   "value": {
-                    "string_value": "normalized-otel-trace-id"
+                    "stringValue": "normalized-otel-trace-id"
                   }
                 },
                 {
                   "key": "otel.library.name",
                   "value": {
-                    "string_value": "MyServiceName"
+                    "stringValue": "MyServiceName"
                   }
                 },
                 {
                   "key": "otel.status_code",
                   "value": {
-                    "string_value": "STATUS_CODE_UNSET"
+                    "stringValue": "STATUS_CODE_UNSET"
                   }
                 },
                 {
                   "key": "service.name",
                   "value": {
-                    "string_value": "MyServiceName"
+                    "stringValue": "MyServiceName"
                   }
                 },
                 {
                   "key": "service.version",
                   "value": {
-                    "string_value": "1.0.x"
+                    "stringValue": "1.0.x"
                   }
                 },
                 {
                   "key": "service.instance.id",
                   "value": {
-                    "string_value": "Guid_2"
+                    "stringValue": "Guid_2"
                   }
                 },
                 {
                   "key": "telemetry.sdk.name",
                   "value": {
-                    "string_value": "opentelemetry"
+                    "stringValue": "opentelemetry"
                   }
                 },
                 {
                   "key": "telemetry.sdk.language",
                   "value": {
-                    "string_value": "dotnet"
+                    "stringValue": "dotnet"
                   }
                 },
                 {
                   "key": "telemetry.sdk.version",
                   "value": {
-                    "string_value": "1.13.1"
+                    "stringValue": "1.13.1"
                   }
                 },
                 {
                   "key": "graphql.operation.type",
                   "value": {
-                    "string_value": "query"
+                    "stringValue": "query"
                   }
                 }
               ]
             },
             {
-              "trace_id": "normalized-trace-id",
-              "span_id": "normalized-span-id",
-              "parent_span_id": "normalized-parent-span-id",
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "parentSpanId": "normalized-parent-span-id",
               "name": "ResourceName",
-              "kind": "SPAN_KIND_SERVER",
-              "start_time_unix_nano": "0",
-              "end_time_unix_nano": "0",
+              "kind": 2,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
               "attributes": [
                 {
                   "key": "span.kind",
                   "value": {
-                    "string_value": "server"
+                    "stringValue": "server"
                   }
                 },
                 {
                   "key": "otel.trace_id",
                   "value": {
-                    "string_value": "normalized-otel-trace-id"
+                    "stringValue": "normalized-otel-trace-id"
                   }
                 },
                 {
                   "key": "otel.library.name",
                   "value": {
-                    "string_value": "MyServiceName"
+                    "stringValue": "MyServiceName"
                   }
                 },
                 {
                   "key": "otel.status_code",
                   "value": {
-                    "string_value": "STATUS_CODE_UNSET"
+                    "stringValue": "STATUS_CODE_UNSET"
                   }
                 },
                 {
                   "key": "service.name",
                   "value": {
-                    "string_value": "MyServiceName"
+                    "stringValue": "MyServiceName"
                   }
                 },
                 {
                   "key": "service.version",
                   "value": {
-                    "string_value": "1.0.x"
+                    "stringValue": "1.0.x"
                   }
                 },
                 {
                   "key": "service.instance.id",
                   "value": {
-                    "string_value": "Guid_2"
+                    "stringValue": "Guid_2"
                   }
                 },
                 {
                   "key": "telemetry.sdk.name",
                   "value": {
-                    "string_value": "opentelemetry"
+                    "stringValue": "opentelemetry"
                   }
                 },
                 {
                   "key": "telemetry.sdk.language",
                   "value": {
-                    "string_value": "dotnet"
+                    "stringValue": "dotnet"
                   }
                 },
                 {
                   "key": "telemetry.sdk.version",
                   "value": {
-                    "string_value": "1.13.1"
+                    "stringValue": "1.13.1"
                   }
                 },
                 {
                   "key": "network.protocol.name",
                   "value": {
-                    "string_value": "Amqp"
+                    "stringValue": "Amqp"
                   }
                 }
               ]
             },
             {
-              "trace_id": "normalized-trace-id",
-              "span_id": "normalized-span-id",
-              "parent_span_id": "normalized-parent-span-id",
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "parentSpanId": "normalized-parent-span-id",
               "name": "ResourceName",
-              "kind": "SPAN_KIND_SERVER",
-              "start_time_unix_nano": "0",
-              "end_time_unix_nano": "0",
+              "kind": 2,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
               "attributes": [
                 {
                   "key": "span.kind",
                   "value": {
-                    "string_value": "server"
+                    "stringValue": "server"
                   }
                 },
                 {
                   "key": "otel.trace_id",
                   "value": {
-                    "string_value": "normalized-otel-trace-id"
+                    "stringValue": "normalized-otel-trace-id"
                   }
                 },
                 {
                   "key": "otel.library.name",
                   "value": {
-                    "string_value": "MyServiceName"
+                    "stringValue": "MyServiceName"
                   }
                 },
                 {
                   "key": "otel.status_code",
                   "value": {
-                    "string_value": "STATUS_CODE_UNSET"
+                    "stringValue": "STATUS_CODE_UNSET"
                   }
                 },
                 {
                   "key": "service.name",
                   "value": {
-                    "string_value": "MyServiceName"
+                    "stringValue": "MyServiceName"
                   }
                 },
                 {
                   "key": "service.version",
                   "value": {
-                    "string_value": "1.0.x"
+                    "stringValue": "1.0.x"
                   }
                 },
                 {
                   "key": "service.instance.id",
                   "value": {
-                    "string_value": "Guid_2"
+                    "stringValue": "Guid_2"
                   }
                 },
                 {
                   "key": "telemetry.sdk.name",
                   "value": {
-                    "string_value": "opentelemetry"
+                    "stringValue": "opentelemetry"
                   }
                 },
                 {
                   "key": "telemetry.sdk.language",
                   "value": {
-                    "string_value": "dotnet"
+                    "stringValue": "dotnet"
                   }
                 },
                 {
                   "key": "telemetry.sdk.version",
                   "value": {
-                    "string_value": "1.13.1"
+                    "stringValue": "1.13.1"
                   }
                 }
               ]
             },
             {
-              "trace_id": "normalized-trace-id",
-              "span_id": "normalized-span-id",
-              "parent_span_id": "normalized-parent-span-id",
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "parentSpanId": "normalized-parent-span-id",
               "name": "ResourceName",
-              "kind": "SPAN_KIND_CLIENT",
-              "start_time_unix_nano": "0",
-              "end_time_unix_nano": "0",
+              "kind": 3,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
               "attributes": [
                 {
                   "key": "span.kind",
                   "value": {
-                    "string_value": "client"
+                    "stringValue": "client"
                   }
                 },
                 {
                   "key": "otel.trace_id",
                   "value": {
-                    "string_value": "normalized-otel-trace-id"
+                    "stringValue": "normalized-otel-trace-id"
                   }
                 },
                 {
                   "key": "otel.library.name",
                   "value": {
-                    "string_value": "MyServiceName"
+                    "stringValue": "MyServiceName"
                   }
                 },
                 {
                   "key": "otel.status_code",
                   "value": {
-                    "string_value": "STATUS_CODE_UNSET"
+                    "stringValue": "STATUS_CODE_UNSET"
                   }
                 },
                 {
                   "key": "service.name",
                   "value": {
-                    "string_value": "MyServiceName"
+                    "stringValue": "MyServiceName"
                   }
                 },
                 {
                   "key": "service.version",
                   "value": {
-                    "string_value": "1.0.x"
+                    "stringValue": "1.0.x"
                   }
                 },
                 {
                   "key": "service.instance.id",
                   "value": {
-                    "string_value": "Guid_2"
+                    "stringValue": "Guid_2"
                   }
                 },
                 {
                   "key": "telemetry.sdk.name",
                   "value": {
-                    "string_value": "opentelemetry"
+                    "stringValue": "opentelemetry"
                   }
                 },
                 {
                   "key": "telemetry.sdk.language",
                   "value": {
-                    "string_value": "dotnet"
+                    "stringValue": "dotnet"
                   }
                 },
                 {
                   "key": "telemetry.sdk.version",
                   "value": {
-                    "string_value": "1.13.1"
+                    "stringValue": "1.13.1"
                   }
                 },
                 {
                   "key": "network.protocol.name",
                   "value": {
-                    "string_value": "Amqp"
+                    "stringValue": "Amqp"
                   }
                 }
               ]
             },
             {
-              "trace_id": "normalized-trace-id",
-              "span_id": "normalized-span-id",
-              "parent_span_id": "normalized-parent-span-id",
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "parentSpanId": "normalized-parent-span-id",
               "name": "ResourceName",
-              "kind": "SPAN_KIND_CLIENT",
-              "start_time_unix_nano": "0",
-              "end_time_unix_nano": "0",
+              "kind": 3,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
               "attributes": [
                 {
                   "key": "span.kind",
                   "value": {
-                    "string_value": "client"
+                    "stringValue": "client"
                   }
                 },
                 {
                   "key": "otel.trace_id",
                   "value": {
-                    "string_value": "normalized-otel-trace-id"
+                    "stringValue": "normalized-otel-trace-id"
                   }
                 },
                 {
                   "key": "otel.library.name",
                   "value": {
-                    "string_value": "MyServiceName"
+                    "stringValue": "MyServiceName"
                   }
                 },
                 {
                   "key": "otel.status_code",
                   "value": {
-                    "string_value": "STATUS_CODE_UNSET"
+                    "stringValue": "STATUS_CODE_UNSET"
                   }
                 },
                 {
                   "key": "service.name",
                   "value": {
-                    "string_value": "MyServiceName"
+                    "stringValue": "MyServiceName"
                   }
                 },
                 {
                   "key": "service.version",
                   "value": {
-                    "string_value": "1.0.x"
+                    "stringValue": "1.0.x"
                   }
                 },
                 {
                   "key": "service.instance.id",
                   "value": {
-                    "string_value": "Guid_2"
+                    "stringValue": "Guid_2"
                   }
                 },
                 {
                   "key": "telemetry.sdk.name",
                   "value": {
-                    "string_value": "opentelemetry"
+                    "stringValue": "opentelemetry"
                   }
                 },
                 {
                   "key": "telemetry.sdk.language",
                   "value": {
-                    "string_value": "dotnet"
+                    "stringValue": "dotnet"
                   }
                 },
                 {
                   "key": "telemetry.sdk.version",
                   "value": {
-                    "string_value": "1.13.1"
+                    "stringValue": "1.13.1"
                   }
                 }
               ]
             },
             {
-              "trace_id": "normalized-trace-id",
-              "span_id": "normalized-span-id",
-              "parent_span_id": "normalized-parent-span-id",
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "parentSpanId": "normalized-parent-span-id",
               "name": "ResourceName",
-              "kind": "SPAN_KIND_INTERNAL",
-              "start_time_unix_nano": "0",
-              "end_time_unix_nano": "0",
+              "kind": 1,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
               "attributes": [
                 {
                   "key": "span.kind",
                   "value": {
-                    "string_value": "internal"
+                    "stringValue": "internal"
                   }
                 },
                 {
                   "key": "otel.trace_id",
                   "value": {
-                    "string_value": "normalized-otel-trace-id"
+                    "stringValue": "normalized-otel-trace-id"
                   }
                 },
                 {
                   "key": "otel.library.name",
                   "value": {
-                    "string_value": "MyServiceName"
+                    "stringValue": "MyServiceName"
                   }
                 },
                 {
                   "key": "otel.status_code",
                   "value": {
-                    "string_value": "STATUS_CODE_UNSET"
+                    "stringValue": "STATUS_CODE_UNSET"
                   }
                 },
                 {
                   "key": "service.name",
                   "value": {
-                    "string_value": "MyServiceName"
+                    "stringValue": "MyServiceName"
                   }
                 },
                 {
                   "key": "service.version",
                   "value": {
-                    "string_value": "1.0.x"
+                    "stringValue": "1.0.x"
                   }
                 },
                 {
                   "key": "service.instance.id",
                   "value": {
-                    "string_value": "Guid_2"
+                    "stringValue": "Guid_2"
                   }
                 },
                 {
                   "key": "telemetry.sdk.name",
                   "value": {
-                    "string_value": "opentelemetry"
+                    "stringValue": "opentelemetry"
                   }
                 },
                 {
                   "key": "telemetry.sdk.language",
                   "value": {
-                    "string_value": "dotnet"
+                    "stringValue": "dotnet"
                   }
                 },
                 {
                   "key": "telemetry.sdk.version",
                   "value": {
-                    "string_value": "1.13.1"
+                    "stringValue": "1.13.1"
                   }
                 }
               ]
             },
             {
-              "trace_id": "normalized-trace-id",
-              "span_id": "normalized-span-id",
-              "parent_span_id": "normalized-parent-span-id",
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "parentSpanId": "normalized-parent-span-id",
               "name": "ResourceName",
-              "kind": "SPAN_KIND_CONSUMER",
-              "start_time_unix_nano": "0",
-              "end_time_unix_nano": "0",
+              "kind": 5,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
               "attributes": [
                 {
                   "key": "span.kind",
                   "value": {
-                    "string_value": "consumer"
+                    "stringValue": "consumer"
                   }
                 },
                 {
                   "key": "otel.trace_id",
                   "value": {
-                    "string_value": "normalized-otel-trace-id"
+                    "stringValue": "normalized-otel-trace-id"
                   }
                 },
                 {
                   "key": "otel.library.name",
                   "value": {
-                    "string_value": "MyServiceName"
+                    "stringValue": "MyServiceName"
                   }
                 },
                 {
                   "key": "otel.status_code",
                   "value": {
-                    "string_value": "STATUS_CODE_UNSET"
+                    "stringValue": "STATUS_CODE_UNSET"
                   }
                 },
                 {
                   "key": "service.name",
                   "value": {
-                    "string_value": "MyServiceName"
+                    "stringValue": "MyServiceName"
                   }
                 },
                 {
                   "key": "service.version",
                   "value": {
-                    "string_value": "1.0.x"
+                    "stringValue": "1.0.x"
                   }
                 },
                 {
                   "key": "service.instance.id",
                   "value": {
-                    "string_value": "Guid_2"
+                    "stringValue": "Guid_2"
                   }
                 },
                 {
                   "key": "telemetry.sdk.name",
                   "value": {
-                    "string_value": "opentelemetry"
+                    "stringValue": "opentelemetry"
                   }
                 },
                 {
                   "key": "telemetry.sdk.language",
                   "value": {
-                    "string_value": "dotnet"
+                    "stringValue": "dotnet"
                   }
                 },
                 {
                   "key": "telemetry.sdk.version",
                   "value": {
-                    "string_value": "1.13.1"
+                    "stringValue": "1.13.1"
                   }
                 }
               ]
             },
             {
-              "trace_id": "normalized-trace-id",
-              "span_id": "normalized-span-id",
-              "parent_span_id": "normalized-parent-span-id",
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "parentSpanId": "normalized-parent-span-id",
               "name": "ResourceName",
-              "kind": "SPAN_KIND_PRODUCER",
-              "start_time_unix_nano": "0",
-              "end_time_unix_nano": "0",
+              "kind": 4,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
               "attributes": [
                 {
                   "key": "span.kind",
                   "value": {
-                    "string_value": "producer"
+                    "stringValue": "producer"
                   }
                 },
                 {
                   "key": "otel.trace_id",
                   "value": {
-                    "string_value": "normalized-otel-trace-id"
+                    "stringValue": "normalized-otel-trace-id"
                   }
                 },
                 {
                   "key": "otel.library.name",
                   "value": {
-                    "string_value": "MyServiceName"
+                    "stringValue": "MyServiceName"
                   }
                 },
                 {
                   "key": "otel.status_code",
                   "value": {
-                    "string_value": "STATUS_CODE_UNSET"
+                    "stringValue": "STATUS_CODE_UNSET"
                   }
                 },
                 {
                   "key": "service.name",
                   "value": {
-                    "string_value": "MyServiceName"
+                    "stringValue": "MyServiceName"
                   }
                 },
                 {
                   "key": "service.version",
                   "value": {
-                    "string_value": "1.0.x"
+                    "stringValue": "1.0.x"
                   }
                 },
                 {
                   "key": "service.instance.id",
                   "value": {
-                    "string_value": "Guid_2"
+                    "stringValue": "Guid_2"
                   }
                 },
                 {
                   "key": "telemetry.sdk.name",
                   "value": {
-                    "string_value": "opentelemetry"
+                    "stringValue": "opentelemetry"
                   }
                 },
                 {
                   "key": "telemetry.sdk.language",
                   "value": {
-                    "string_value": "dotnet"
+                    "stringValue": "dotnet"
                   }
                 },
                 {
                   "key": "telemetry.sdk.version",
                   "value": {
-                    "string_value": "1.13.1"
+                    "stringValue": "1.13.1"
                   }
                 }
               ]
             },
             {
-              "trace_id": "normalized-trace-id",
-              "span_id": "normalized-span-id",
-              "parent_span_id": "normalized-parent-span-id",
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "parentSpanId": "normalized-parent-span-id",
               "name": "ResourceNameOverride",
-              "kind": "SPAN_KIND_SERVER",
-              "start_time_unix_nano": "0",
-              "end_time_unix_nano": "0",
+              "kind": 2,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
               "attributes": [
                 {
                   "key": "span.kind",
                   "value": {
-                    "string_value": "server"
+                    "stringValue": "server"
                   }
                 },
                 {
                   "key": "otel.trace_id",
                   "value": {
-                    "string_value": "normalized-otel-trace-id"
+                    "stringValue": "normalized-otel-trace-id"
                   }
                 },
                 {
                   "key": "otel.library.name",
                   "value": {
-                    "string_value": "MyServiceName"
+                    "stringValue": "MyServiceName"
                   }
                 },
                 {
                   "key": "otel.status_code",
                   "value": {
-                    "string_value": "STATUS_CODE_UNSET"
+                    "stringValue": "STATUS_CODE_UNSET"
                   }
                 },
                 {
                   "key": "service.name",
                   "value": {
-                    "string_value": "MyServiceName"
+                    "stringValue": "MyServiceName"
                   }
                 },
                 {
                   "key": "service.version",
                   "value": {
-                    "string_value": "1.0.x"
+                    "stringValue": "1.0.x"
                   }
                 },
                 {
                   "key": "service.instance.id",
                   "value": {
-                    "string_value": "Guid_2"
+                    "stringValue": "Guid_2"
                   }
                 },
                 {
                   "key": "telemetry.sdk.name",
                   "value": {
-                    "string_value": "opentelemetry"
+                    "stringValue": "opentelemetry"
                   }
                 },
                 {
                   "key": "telemetry.sdk.language",
                   "value": {
-                    "string_value": "dotnet"
+                    "stringValue": "dotnet"
                   }
                 },
                 {
                   "key": "telemetry.sdk.version",
                   "value": {
-                    "string_value": "1.13.1"
+                    "stringValue": "1.13.1"
                   }
                 },
                 {
                   "key": "http.request.method",
                   "value": {
-                    "string_value": "GET"
+                    "stringValue": "GET"
                   }
                 },
                 {
                   "key": "runtime-id",
                   "value": {
-                    "string_value": "Guid_1"
+                    "stringValue": "Guid_1"
                   }
                 },
                 {
                   "key": "_dd1.sr.eausr",
                   "value": {
-                    "double_value": 1.0
+                    "doubleValue": 1.0
                   }
                 }
               ]
             },
             {
-              "trace_id": "normalized-trace-id",
-              "span_id": "normalized-span-id",
-              "parent_span_id": "normalized-parent-span-id",
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "parentSpanId": "normalized-parent-span-id",
               "name": "Response",
-              "kind": "SPAN_KIND_INTERNAL",
-              "start_time_unix_nano": "0",
-              "end_time_unix_nano": "0",
+              "kind": 1,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
               "attributes": [
                 {
                   "key": "span.kind",
                   "value": {
-                    "string_value": "internal"
+                    "stringValue": "internal"
                   }
                 },
                 {
                   "key": "otel.trace_id",
                   "value": {
-                    "string_value": "normalized-otel-trace-id"
+                    "stringValue": "normalized-otel-trace-id"
                   }
                 },
                 {
                   "key": "otel.library.name",
                   "value": {
-                    "string_value": "OtherLibrary"
+                    "stringValue": "OtherLibrary"
                   }
                 },
                 {
                   "key": "otel.library.version",
                   "value": {
-                    "string_value": "4.0.0"
+                    "stringValue": "4.0.0"
                   }
                 },
                 {
                   "key": "otel.status_code",
                   "value": {
-                    "string_value": "STATUS_CODE_UNSET"
+                    "stringValue": "STATUS_CODE_UNSET"
                   }
                 },
                 {
                   "key": "service.name",
                   "value": {
-                    "string_value": "MyServiceName"
+                    "stringValue": "MyServiceName"
                   }
                 },
                 {
                   "key": "service.version",
                   "value": {
-                    "string_value": "1.0.x"
+                    "stringValue": "1.0.x"
                   }
                 },
                 {
                   "key": "service.instance.id",
                   "value": {
-                    "string_value": "Guid_2"
+                    "stringValue": "Guid_2"
                   }
                 },
                 {
                   "key": "telemetry.sdk.name",
                   "value": {
-                    "string_value": "opentelemetry"
+                    "stringValue": "opentelemetry"
                   }
                 },
                 {
                   "key": "telemetry.sdk.language",
                   "value": {
-                    "string_value": "dotnet"
+                    "stringValue": "dotnet"
                   }
                 },
                 {
                   "key": "telemetry.sdk.version",
                   "value": {
-                    "string_value": "1.13.1"
+                    "stringValue": "1.13.1"
                   }
                 }
               ]
             },
             {
-              "trace_id": "normalized-trace-id",
-              "span_id": "normalized-span-id",
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
               "name": "SayHello",
-              "kind": "SPAN_KIND_INTERNAL",
-              "start_time_unix_nano": "0",
-              "end_time_unix_nano": "0",
+              "kind": 1,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
               "attributes": [
                 {
                   "key": "span.kind",
                   "value": {
-                    "string_value": "internal"
+                    "stringValue": "internal"
                   }
                 },
                 {
                   "key": "otel.trace_id",
                   "value": {
-                    "string_value": "normalized-otel-trace-id"
+                    "stringValue": "normalized-otel-trace-id"
                   }
                 },
                 {
                   "key": "otel.library.name",
                   "value": {
-                    "string_value": "MyServiceName"
+                    "stringValue": "MyServiceName"
                   }
                 },
                 {
                   "key": "otel.status_code",
                   "value": {
-                    "string_value": "STATUS_CODE_UNSET"
+                    "stringValue": "STATUS_CODE_UNSET"
                   }
                 },
                 {
                   "key": "service.name",
                   "value": {
-                    "string_value": "MyServiceName"
+                    "stringValue": "MyServiceName"
                   }
                 },
                 {
                   "key": "service.version",
                   "value": {
-                    "string_value": "1.0.x"
+                    "stringValue": "1.0.x"
                   }
                 },
                 {
                   "key": "service.instance.id",
                   "value": {
-                    "string_value": "Guid_2"
+                    "stringValue": "Guid_2"
                   }
                 },
                 {
                   "key": "telemetry.sdk.name",
                   "value": {
-                    "string_value": "opentelemetry"
+                    "stringValue": "opentelemetry"
                   }
                 },
                 {
                   "key": "telemetry.sdk.language",
                   "value": {
-                    "string_value": "dotnet"
+                    "stringValue": "dotnet"
                   }
                 },
                 {
                   "key": "telemetry.sdk.version",
                   "value": {
-                    "string_value": "1.13.1"
+                    "stringValue": "1.13.1"
                   }
                 },
                 {
                   "key": "attribute-string",
                   "value": {
-                    "string_value": "\"str"
+                    "stringValue": "\"str"
                   }
                 },
                 {
                   "key": "attribute-bool",
                   "value": {
-                    "string_value": "true"
+                    "stringValue": "true"
                   }
                 },
                 {
                   "key": "attribute-stringArray.0",
                   "value": {
-                    "string_value": "\"str1\""
+                    "stringValue": "\"str1\""
                   }
                 },
                 {
                   "key": "attribute-stringArray.1",
                   "value": {
-                    "string_value": "str2"
+                    "stringValue": "str2"
                   }
                 },
                 {
                   "key": "attribute-stringArray.2",
                   "value": {
-                    "string_value": "str3"
+                    "stringValue": "str3"
                   }
                 },
                 {
                   "key": "attribute-stringArrayEmpty",
                   "value": {
-                    "string_value": "[]"
+                    "stringValue": "[]"
                   }
                 },
                 {
                   "key": "attribute-intArrayEmpty",
                   "value": {
-                    "string_value": "[]"
+                    "stringValue": "[]"
                   }
                 },
                 {
                   "key": "attribute-boolArray.0",
                   "value": {
-                    "string_value": "false"
+                    "stringValue": "false"
                   }
                 },
                 {
                   "key": "attribute-boolArray.1",
                   "value": {
-                    "string_value": "true"
+                    "stringValue": "true"
                   }
                 },
                 {
                   "key": "attribute-boolArray.2",
                   "value": {
-                    "string_value": "false"
+                    "stringValue": "false"
                   }
                 },
                 {
                   "key": "attribute-boolArrayEmpty",
                   "value": {
-                    "string_value": "[]"
+                    "stringValue": "[]"
                   }
                 },
                 {
                   "key": "attribute-doubleArrayEmpty",
                   "value": {
-                    "string_value": "[]"
+                    "stringValue": "[]"
                   }
                 },
                 {
                   "key": "runtime-id",
                   "value": {
-                    "string_value": "Guid_1"
+                    "stringValue": "Guid_1"
                   }
                 },
                 {
                   "key": "attribute-int",
                   "value": {
-                    "double_value": 1.0
+                    "doubleValue": 1.0
                   }
                 },
                 {
                   "key": "attribute-double",
                   "value": {
-                    "double_value": 2.0
+                    "doubleValue": 2.0
                   }
                 },
                 {
                   "key": "attribute-intArray.0",
                   "value": {
-                    "double_value": 1.0
+                    "doubleValue": 1.0
                   }
                 },
                 {
                   "key": "attribute-intArray.1",
                   "value": {
-                    "double_value": 2.0
+                    "doubleValue": 2.0
                   }
                 },
                 {
                   "key": "attribute-intArray.2",
                   "value": {
-                    "double_value": 3.0
+                    "doubleValue": 3.0
                   }
                 },
                 {
                   "key": "attribute-doubleArray.0",
                   "value": {
-                    "double_value": 4.1
+                    "doubleValue": 4.1
                   }
                 },
                 {
                   "key": "attribute-doubleArray.1",
                   "value": {
-                    "double_value": 5.0
+                    "doubleValue": 5.0
                   }
                 },
                 {
                   "key": "attribute-doubleArray.2",
                   "value": {
-                    "double_value": 6.0
+                    "doubleValue": 6.0
                   }
                 }
               ],
               "events": [
                 {
-                  "time_unix_nano": "0",
+                  "timeUnixNano": "0",
                   "name": "event-message"
                 },
                 {
-                  "time_unix_nano": "0",
+                  "timeUnixNano": "0",
                   "name": "event-messageWithDateTime"
                 },
                 {
-                  "time_unix_nano": "0",
+                  "timeUnixNano": "0",
                   "name": "event-messageWithAttributes",
                   "attributes": [
                     {
                       "key": "foo",
                       "value": {
-                        "int_value": "1"
+                        "intValue": "1"
                       }
                     },
                     {
                       "key": "bar",
                       "value": {
-                        "string_value": "Hello, World!"
+                        "stringValue": "Hello, World!"
                       }
                     },
                     {
                       "key": "baz",
                       "value": {
-                        "string_value": "System.Int32[]"
+                        "stringValue": "System.Int32[]"
                       }
                     },
                     {
                       "key": "strings",
                       "value": {
-                        "string_value": "System.String[]"
+                        "stringValue": "System.String[]"
                       }
                     },
                     {
                       "key": "ignored_array_of_object",
                       "value": {
-                        "string_value": "System.Object[]"
+                        "stringValue": "System.Object[]"
                       }
                     },
                     {
                       "key": "ignored_array_of_arrays",
                       "value": {
-                        "string_value": "System.String[][]"
+                        "stringValue": "System.String[][]"
                       }
                     },
                     {
                       "key": "ignored_dict",
                       "value": {
-                        "string_value": "System.Collections.Generic.Dictionary`2[System.String,System.String]"
+                        "stringValue": "System.Collections.Generic.Dictionary`2[System.String,System.String]"
                       }
                     }
                   ]
                 },
                 {
-                  "time_unix_nano": "0",
+                  "timeUnixNano": "0",
                   "name": "event-messageWithDateTimeAndAttributes",
                   "attributes": [
                     {
                       "key": "foo",
                       "value": {
-                        "int_value": "1"
+                        "intValue": "1"
                       }
                     },
                     {
                       "key": "bar",
                       "value": {
-                        "string_value": "Hello, World!"
+                        "stringValue": "Hello, World!"
                       }
                     },
                     {
                       "key": "baz",
                       "value": {
-                        "string_value": "System.Int32[]"
+                        "stringValue": "System.Int32[]"
                       }
                     },
                     {
                       "key": "strings",
                       "value": {
-                        "string_value": "System.String[]"
+                        "stringValue": "System.String[]"
                       }
                     },
                     {
                       "key": "ignored_array_of_object",
                       "value": {
-                        "string_value": "System.Object[]"
+                        "stringValue": "System.Object[]"
                       }
                     },
                     {
                       "key": "ignored_array_of_arrays",
                       "value": {
-                        "string_value": "System.String[][]"
+                        "stringValue": "System.String[][]"
                       }
                     },
                     {
                       "key": "ignored_dict",
                       "value": {
-                        "string_value": "System.Collections.Generic.Dictionary`2[System.String,System.String]"
+                        "stringValue": "System.Collections.Generic.Dictionary`2[System.String,System.String]"
                       }
                     }
                   ]
@@ -2581,637 +2587,637 @@
               ]
             },
             {
-              "trace_id": "normalized-trace-id",
-              "span_id": "normalized-span-id",
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
               "name": "SayHello2",
-              "kind": "SPAN_KIND_INTERNAL",
-              "start_time_unix_nano": "0",
-              "end_time_unix_nano": "0",
+              "kind": 1,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
               "attributes": [
                 {
                   "key": "span.kind",
                   "value": {
-                    "string_value": "internal"
+                    "stringValue": "internal"
                   }
                 },
                 {
                   "key": "otel.trace_id",
                   "value": {
-                    "string_value": "normalized-otel-trace-id"
+                    "stringValue": "normalized-otel-trace-id"
                   }
                 },
                 {
                   "key": "otel.library.name",
                   "value": {
-                    "string_value": "MyServiceName"
+                    "stringValue": "MyServiceName"
                   }
                 },
                 {
                   "key": "otel.status_code",
                   "value": {
-                    "string_value": "STATUS_CODE_UNSET"
+                    "stringValue": "STATUS_CODE_UNSET"
                   }
                 },
                 {
                   "key": "service.name",
                   "value": {
-                    "string_value": "MyServiceName"
+                    "stringValue": "MyServiceName"
                   }
                 },
                 {
                   "key": "service.version",
                   "value": {
-                    "string_value": "1.0.x"
+                    "stringValue": "1.0.x"
                   }
                 },
                 {
                   "key": "service.instance.id",
                   "value": {
-                    "string_value": "Guid_2"
+                    "stringValue": "Guid_2"
                   }
                 },
                 {
                   "key": "telemetry.sdk.name",
                   "value": {
-                    "string_value": "opentelemetry"
+                    "stringValue": "opentelemetry"
                   }
                 },
                 {
                   "key": "telemetry.sdk.language",
                   "value": {
-                    "string_value": "dotnet"
+                    "stringValue": "dotnet"
                   }
                 },
                 {
                   "key": "telemetry.sdk.version",
                   "value": {
-                    "string_value": "1.13.1"
+                    "stringValue": "1.13.1"
                   }
                 },
                 {
                   "key": "runtime-id",
                   "value": {
-                    "string_value": "Guid_1"
+                    "stringValue": "Guid_1"
                   }
                 }
               ],
               "links": [
                 {
-                  "trace_id": "normalized-trace-id",
-                  "span_id": "normalized-span-id",
+                  "traceId": "normalized-trace-id",
+                  "spanId": "normalized-span-id",
                   "flags": 2147483649
                 }
               ]
             },
             {
-              "trace_id": "normalized-trace-id",
-              "span_id": "normalized-span-id",
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
               "name": "SayHello3",
-              "kind": "SPAN_KIND_INTERNAL",
-              "start_time_unix_nano": "0",
-              "end_time_unix_nano": "0",
+              "kind": 1,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
               "attributes": [
                 {
                   "key": "span.kind",
                   "value": {
-                    "string_value": "internal"
+                    "stringValue": "internal"
                   }
                 },
                 {
                   "key": "otel.trace_id",
                   "value": {
-                    "string_value": "normalized-otel-trace-id"
+                    "stringValue": "normalized-otel-trace-id"
                   }
                 },
                 {
                   "key": "otel.library.name",
                   "value": {
-                    "string_value": "MyServiceName"
+                    "stringValue": "MyServiceName"
                   }
                 },
                 {
                   "key": "otel.status_code",
                   "value": {
-                    "string_value": "STATUS_CODE_UNSET"
+                    "stringValue": "STATUS_CODE_UNSET"
                   }
                 },
                 {
                   "key": "service.name",
                   "value": {
-                    "string_value": "MyServiceName"
+                    "stringValue": "MyServiceName"
                   }
                 },
                 {
                   "key": "service.version",
                   "value": {
-                    "string_value": "1.0.x"
+                    "stringValue": "1.0.x"
                   }
                 },
                 {
                   "key": "service.instance.id",
                   "value": {
-                    "string_value": "Guid_2"
+                    "stringValue": "Guid_2"
                   }
                 },
                 {
                   "key": "telemetry.sdk.name",
                   "value": {
-                    "string_value": "opentelemetry"
+                    "stringValue": "opentelemetry"
                   }
                 },
                 {
                   "key": "telemetry.sdk.language",
                   "value": {
-                    "string_value": "dotnet"
+                    "stringValue": "dotnet"
                   }
                 },
                 {
                   "key": "telemetry.sdk.version",
                   "value": {
-                    "string_value": "1.13.1"
+                    "stringValue": "1.13.1"
                   }
                 },
                 {
                   "key": "runtime-id",
                   "value": {
-                    "string_value": "Guid_1"
+                    "stringValue": "Guid_1"
                   }
                 }
               ],
               "links": [
                 {
-                  "trace_id": "normalized-trace-id",
-                  "span_id": "normalized-span-id",
+                  "traceId": "normalized-trace-id",
+                  "spanId": "normalized-span-id",
                   "flags": 2147483649
                 },
                 {
-                  "trace_id": "normalized-trace-id",
-                  "span_id": "normalized-span-id",
+                  "traceId": "normalized-trace-id",
+                  "spanId": "normalized-span-id",
                   "flags": 2147483649
                 }
               ]
             },
             {
-              "trace_id": "normalized-trace-id",
-              "span_id": "normalized-span-id",
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
               "name": "service.name should be the DefaultServiceName value",
-              "kind": "SPAN_KIND_INTERNAL",
-              "start_time_unix_nano": "0",
-              "end_time_unix_nano": "0",
+              "kind": 1,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
               "attributes": [
                 {
                   "key": "span.kind",
                   "value": {
-                    "string_value": "internal"
+                    "stringValue": "internal"
                   }
                 },
                 {
                   "key": "otel.trace_id",
                   "value": {
-                    "string_value": "normalized-otel-trace-id"
+                    "stringValue": "normalized-otel-trace-id"
                   }
                 },
                 {
                   "key": "otel.library.name",
                   "value": {
-                    "string_value": "MissingServiceName"
+                    "stringValue": "MissingServiceName"
                   }
                 },
                 {
                   "key": "otel.status_code",
                   "value": {
-                    "string_value": "STATUS_CODE_UNSET"
+                    "stringValue": "STATUS_CODE_UNSET"
                   }
                 },
                 {
                   "key": "telemetry.sdk.name",
                   "value": {
-                    "string_value": "opentelemetry"
+                    "stringValue": "opentelemetry"
                   }
                 },
                 {
                   "key": "telemetry.sdk.language",
                   "value": {
-                    "string_value": "dotnet"
+                    "stringValue": "dotnet"
                   }
                 },
                 {
                   "key": "telemetry.sdk.version",
                   "value": {
-                    "string_value": "1.13.1"
+                    "stringValue": "1.13.1"
                   }
                 },
                 {
                   "key": "service.name",
                   "value": {
-                    "string_value": "Samples.OpenTelemetrySdk"
+                    "stringValue": "Samples.OpenTelemetrySdk"
                   }
                 },
                 {
                   "key": "runtime-id",
                   "value": {
-                    "string_value": "Guid_1"
+                    "stringValue": "Guid_1"
                   }
                 }
               ]
             },
             {
-              "trace_id": "normalized-trace-id",
-              "span_id": "normalized-span-id",
-              "parent_span_id": "normalized-parent-span-id",
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "parentSpanId": "normalized-parent-span-id",
               "name": "SomeHttpSpan",
-              "kind": "SPAN_KIND_INTERNAL",
-              "start_time_unix_nano": "0",
-              "end_time_unix_nano": "0",
+              "kind": 1,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
               "attributes": [
                 {
                   "key": "span.kind",
                   "value": {
-                    "string_value": "internal"
+                    "stringValue": "internal"
                   }
                 },
                 {
                   "key": "otel.trace_id",
                   "value": {
-                    "string_value": "normalized-otel-trace-id"
+                    "stringValue": "normalized-otel-trace-id"
                   }
                 },
                 {
                   "key": "otel.library.name",
                   "value": {
-                    "string_value": "MyServiceName"
+                    "stringValue": "MyServiceName"
                   }
                 },
                 {
                   "key": "otel.status_code",
                   "value": {
-                    "string_value": "STATUS_CODE_UNSET"
+                    "stringValue": "STATUS_CODE_UNSET"
                   }
                 },
                 {
                   "key": "service.name",
                   "value": {
-                    "string_value": "MyServiceName"
+                    "stringValue": "MyServiceName"
                   }
                 },
                 {
                   "key": "service.version",
                   "value": {
-                    "string_value": "1.0.x"
+                    "stringValue": "1.0.x"
                   }
                 },
                 {
                   "key": "service.instance.id",
                   "value": {
-                    "string_value": "Guid_2"
+                    "stringValue": "Guid_2"
                   }
                 },
                 {
                   "key": "telemetry.sdk.name",
                   "value": {
-                    "string_value": "opentelemetry"
+                    "stringValue": "opentelemetry"
                   }
                 },
                 {
                   "key": "telemetry.sdk.language",
                   "value": {
-                    "string_value": "dotnet"
+                    "stringValue": "dotnet"
                   }
                 },
                 {
                   "key": "telemetry.sdk.version",
                   "value": {
-                    "string_value": "1.13.1"
+                    "stringValue": "1.13.1"
                   }
                 },
                 {
                   "key": "http.status_code",
                   "value": {
-                    "string_value": "404"
+                    "stringValue": "404"
                   }
                 }
               ]
             },
             {
-              "trace_id": "normalized-trace-id",
-              "span_id": "normalized-span-id",
-              "parent_span_id": "normalized-parent-span-id",
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "parentSpanId": "normalized-parent-span-id",
               "name": "StartActiveSpan.Child",
-              "kind": "SPAN_KIND_INTERNAL",
-              "start_time_unix_nano": "0",
-              "end_time_unix_nano": "0",
+              "kind": 1,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
               "attributes": [
                 {
                   "key": "span.kind",
                   "value": {
-                    "string_value": "internal"
+                    "stringValue": "internal"
                   }
                 },
                 {
                   "key": "otel.trace_id",
                   "value": {
-                    "string_value": "normalized-otel-trace-id"
+                    "stringValue": "normalized-otel-trace-id"
                   }
                 },
                 {
                   "key": "otel.library.name",
                   "value": {
-                    "string_value": "MyServiceName"
+                    "stringValue": "MyServiceName"
                   }
                 },
                 {
                   "key": "otel.status_code",
                   "value": {
-                    "string_value": "STATUS_CODE_UNSET"
+                    "stringValue": "STATUS_CODE_UNSET"
                   }
                 },
                 {
                   "key": "service.name",
                   "value": {
-                    "string_value": "MyServiceName"
+                    "stringValue": "MyServiceName"
                   }
                 },
                 {
                   "key": "service.version",
                   "value": {
-                    "string_value": "1.0.x"
+                    "stringValue": "1.0.x"
                   }
                 },
                 {
                   "key": "service.instance.id",
                   "value": {
-                    "string_value": "Guid_2"
+                    "stringValue": "Guid_2"
                   }
                 },
                 {
                   "key": "telemetry.sdk.name",
                   "value": {
-                    "string_value": "opentelemetry"
+                    "stringValue": "opentelemetry"
                   }
                 },
                 {
                   "key": "telemetry.sdk.language",
                   "value": {
-                    "string_value": "dotnet"
+                    "stringValue": "dotnet"
                   }
                 },
                 {
                   "key": "telemetry.sdk.version",
                   "value": {
-                    "string_value": "1.13.1"
+                    "stringValue": "1.13.1"
                   }
                 }
               ]
             },
             {
-              "trace_id": "normalized-trace-id",
-              "span_id": "normalized-span-id",
-              "parent_span_id": "normalized-parent-span-id",
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "parentSpanId": "normalized-parent-span-id",
               "name": "StartRootSpan",
-              "kind": "SPAN_KIND_INTERNAL",
-              "start_time_unix_nano": "0",
-              "end_time_unix_nano": "0",
+              "kind": 1,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
               "attributes": [
                 {
                   "key": "span.kind",
                   "value": {
-                    "string_value": "internal"
+                    "stringValue": "internal"
                   }
                 },
                 {
                   "key": "otel.trace_id",
                   "value": {
-                    "string_value": "normalized-otel-trace-id"
+                    "stringValue": "normalized-otel-trace-id"
                   }
                 },
                 {
                   "key": "otel.library.name",
                   "value": {
-                    "string_value": "MyServiceName"
+                    "stringValue": "MyServiceName"
                   }
                 },
                 {
                   "key": "otel.status_code",
                   "value": {
-                    "string_value": "STATUS_CODE_UNSET"
+                    "stringValue": "STATUS_CODE_UNSET"
                   }
                 },
                 {
                   "key": "service.name",
                   "value": {
-                    "string_value": "MyServiceName"
+                    "stringValue": "MyServiceName"
                   }
                 },
                 {
                   "key": "service.version",
                   "value": {
-                    "string_value": "1.0.x"
+                    "stringValue": "1.0.x"
                   }
                 },
                 {
                   "key": "service.instance.id",
                   "value": {
-                    "string_value": "Guid_2"
+                    "stringValue": "Guid_2"
                   }
                 },
                 {
                   "key": "telemetry.sdk.name",
                   "value": {
-                    "string_value": "opentelemetry"
+                    "stringValue": "opentelemetry"
                   }
                 },
                 {
                   "key": "telemetry.sdk.language",
                   "value": {
-                    "string_value": "dotnet"
+                    "stringValue": "dotnet"
                   }
                 },
                 {
                   "key": "telemetry.sdk.version",
                   "value": {
-                    "string_value": "1.13.1"
+                    "stringValue": "1.13.1"
                   }
                 }
               ]
             },
             {
-              "trace_id": "normalized-trace-id",
-              "span_id": "normalized-span-id",
-              "parent_span_id": "normalized-parent-span-id",
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "parentSpanId": "normalized-parent-span-id",
               "name": "StartSpan",
-              "kind": "SPAN_KIND_INTERNAL",
-              "start_time_unix_nano": "0",
-              "end_time_unix_nano": "0",
+              "kind": 1,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
               "attributes": [
                 {
                   "key": "span.kind",
                   "value": {
-                    "string_value": "internal"
+                    "stringValue": "internal"
                   }
                 },
                 {
                   "key": "otel.trace_id",
                   "value": {
-                    "string_value": "normalized-otel-trace-id"
+                    "stringValue": "normalized-otel-trace-id"
                   }
                 },
                 {
                   "key": "otel.library.name",
                   "value": {
-                    "string_value": "MyServiceName"
+                    "stringValue": "MyServiceName"
                   }
                 },
                 {
                   "key": "otel.status_code",
                   "value": {
-                    "string_value": "STATUS_CODE_UNSET"
+                    "stringValue": "STATUS_CODE_UNSET"
                   }
                 },
                 {
                   "key": "service.name",
                   "value": {
-                    "string_value": "MyServiceName"
+                    "stringValue": "MyServiceName"
                   }
                 },
                 {
                   "key": "service.version",
                   "value": {
-                    "string_value": "1.0.x"
+                    "stringValue": "1.0.x"
                   }
                 },
                 {
                   "key": "service.instance.id",
                   "value": {
-                    "string_value": "Guid_2"
+                    "stringValue": "Guid_2"
                   }
                 },
                 {
                   "key": "telemetry.sdk.name",
                   "value": {
-                    "string_value": "opentelemetry"
+                    "stringValue": "opentelemetry"
                   }
                 },
                 {
                   "key": "telemetry.sdk.language",
                   "value": {
-                    "string_value": "dotnet"
+                    "stringValue": "dotnet"
                   }
                 },
                 {
                   "key": "telemetry.sdk.version",
                   "value": {
-                    "string_value": "1.13.1"
+                    "stringValue": "1.13.1"
                   }
                 }
               ]
             },
             {
-              "trace_id": "normalized-trace-id",
-              "span_id": "normalized-span-id",
-              "parent_span_id": "normalized-parent-span-id",
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "parentSpanId": "normalized-parent-span-id",
               "name": "StartSpan2",
-              "kind": "SPAN_KIND_INTERNAL",
-              "start_time_unix_nano": "0",
-              "end_time_unix_nano": "0",
+              "kind": 1,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
               "attributes": [
                 {
                   "key": "span.kind",
                   "value": {
-                    "string_value": "internal"
+                    "stringValue": "internal"
                   }
                 },
                 {
                   "key": "otel.trace_id",
                   "value": {
-                    "string_value": "normalized-otel-trace-id"
+                    "stringValue": "normalized-otel-trace-id"
                   }
                 },
                 {
                   "key": "otel.library.name",
                   "value": {
-                    "string_value": "MyServiceName"
+                    "stringValue": "MyServiceName"
                   }
                 },
                 {
                   "key": "otel.status_code",
                   "value": {
-                    "string_value": "STATUS_CODE_UNSET"
+                    "stringValue": "STATUS_CODE_UNSET"
                   }
                 },
                 {
                   "key": "service.name",
                   "value": {
-                    "string_value": "MyServiceName"
+                    "stringValue": "MyServiceName"
                   }
                 },
                 {
                   "key": "service.version",
                   "value": {
-                    "string_value": "1.0.x"
+                    "stringValue": "1.0.x"
                   }
                 },
                 {
                   "key": "service.instance.id",
                   "value": {
-                    "string_value": "Guid_2"
+                    "stringValue": "Guid_2"
                   }
                 },
                 {
                   "key": "telemetry.sdk.name",
                   "value": {
-                    "string_value": "opentelemetry"
+                    "stringValue": "opentelemetry"
                   }
                 },
                 {
                   "key": "telemetry.sdk.language",
                   "value": {
-                    "string_value": "dotnet"
+                    "stringValue": "dotnet"
                   }
                 },
                 {
                   "key": "telemetry.sdk.version",
                   "value": {
-                    "string_value": "1.13.1"
+                    "stringValue": "1.13.1"
                   }
                 }
               ]
             },
             {
-              "trace_id": "normalized-trace-id",
-              "span_id": "normalized-span-id",
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
               "name": "Transform",
-              "kind": "SPAN_KIND_INTERNAL",
-              "start_time_unix_nano": "0",
-              "end_time_unix_nano": "0",
+              "kind": 1,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
               "attributes": [
                 {
                   "key": "span.kind",
                   "value": {
-                    "string_value": "internal"
+                    "stringValue": "internal"
                   }
                 },
                 {
                   "key": "otel.trace_id",
                   "value": {
-                    "string_value": "normalized-otel-trace-id"
+                    "stringValue": "normalized-otel-trace-id"
                   }
                 },
                 {
                   "key": "otel.library.name",
                   "value": {
-                    "string_value": "AdditionalActivitySource"
+                    "stringValue": "AdditionalActivitySource"
                   }
                 },
                 {
                   "key": "otel.status_code",
                   "value": {
-                    "string_value": "STATUS_CODE_UNSET"
+                    "stringValue": "STATUS_CODE_UNSET"
                   }
                 },
                 {
                   "key": "runtime-id",
                   "value": {
-                    "string_value": "Guid_1"
+                    "stringValue": "Guid_1"
                   }
                 }
               ]
