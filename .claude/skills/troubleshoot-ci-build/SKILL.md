@@ -3,7 +3,7 @@ name: troubleshoot-ci-build
 description: Troubleshoot CI failures in dd-trace-dotnet Azure DevOps pipeline. Use this skill whenever the user mentions a failing CI build, PR checks failing, Azure DevOps pipeline failures, test failures in CI, or when they share a build ID or PR number and want to understand what went wrong. Analyzes build failures, categorizes them (infrastructure/flaky/real), and provides actionable recommendations.
 argument-hint: <pr NUMBER | build BUILD_ID>
 user-invocable: true
-allowed-tools: WebFetch, Bash(gh pr checks:*), Bash(az devops invoke:*), Bash(az pipelines build list:*), Bash(az pipelines build show:*), Bash(az pipelines runs artifact list:*), Bash(az pipelines runs list:*), Bash(az pipelines runs show:*)
+allowed-tools: WebFetch, Bash(pwsh:*), Bash(gh pr checks:*), Bash(az devops invoke:*), Bash(az pipelines build list:*), Bash(az pipelines build show:*), Bash(az pipelines runs artifact list:*), Bash(az pipelines runs list:*), Bash(az pipelines runs show:*)
 ---
 
 # Troubleshoot Azure DevOps Builds for dd-trace-dotnet
@@ -37,9 +37,9 @@ Troubleshoot Azure DevOps pipeline failures with automated analysis.
 
 ## Additional Resources
 
-- **[failure-patterns.md](failure-patterns.md)** - Reference guide with known CI failure patterns, categorization rules, and decision trees. Load when you need to categorize a failure type or compare against historical patterns.
-- **[scripts-reference.md](scripts-reference.md)** - Documentation for `Get-AzureDevOpsBuildAnalysis.ps1` script (parameters, usage, output structure).
-- **[references/cli-reference.md](references/cli-reference.md)** - Azure DevOps API endpoints and Windows CLI pitfalls. Load when running Azure DevOps CLI commands directly (bypassing the PowerShell script).
+- **[failure-patterns.md](failure-patterns.md)** — Load ONLY during Phase 2 categorization or when the user asks about a specific failure type. Not needed for Phase 1 quick analysis.
+- **[scripts-reference.md](scripts-reference.md)** — Load ONLY if the PowerShell script fails, returns unexpected output, or you need to understand the output object shape.
+- **[references/cli-reference.md](references/cli-reference.md)** — Load ONLY if bypassing the PowerShell script entirely and running Azure DevOps CLI commands directly.
 
 ## Task
 
@@ -150,168 +150,36 @@ The script automatically:
 
 ## Output Format
 
-**Important**: Use actual Unicode emoji characters (e.g., ❌, 🔴, 🟡, 🔵, 🔍, ✅) in output, NOT markdown emoji codes (e.g., `:x:`, `:red_circle:`). Markdown emoji codes are not rendered in all contexts.
+**Important**: Use actual Unicode emoji characters (e.g., ❌, 🔴, 🟡, 🔵, 🔍, ✅), NOT markdown emoji codes (e.g., `:x:`).
 
-### Phase 1: Quick Summary (Always Show This First)
+### Phase 1: Quick Summary
 
-```markdown
-# CI Failure Analysis for Build <BUILD_ID>
+Structure the output as:
 
-**Status**: ❌ Failed
-**Build**: [<BUILD_NUMBER>](https://dev.azure.com/datadoghq/dd-trace-dotnet/_build/results?buildId=<BUILD_ID>)
-
-**PR**: [#<PR_NUMBER>](https://github.com/DataDog/dd-trace-dotnet/pull/<PR_NUMBER>) _(if PR-triggered)_
-**Branch**: `<source_branch_name>` _(use `triggerInfo["pr.sourceBranch"]` for PR builds instead of `sourceBranch`)_
-**Commit**: `<commit_sha>`
-
-## Quick Overview
-
-**Failed Tasks** (<count>):
-- `<task_name_1>`
-- `<task_name_2>`
-- `<task_name_3>`
-...
-
-**Failed Jobs** (<count> platforms affected):
-- `<job_name_1>` (e.g., Test alpine_net8.0_Tracer)
-- `<job_name_2>` (e.g., Win x86_net8.0_Tracer)
-...
-
-**Failed Stages**:
-- integration_tests_linux
-- integration_tests_windows
-...
-
-**Timed Out Jobs** (<count>, canceled after ~60 min):
-- `DockerTest alpine_netcoreapp3.0_group1 (60.3 min)`
-- `IntegrationTests Windows x64 net8.0 (58.7 min)`
-...
-_(Note: These are jobs with result="canceled" and duration >= 55 minutes)_
-
-**Collateral Cancellations** (<count>, < 5 min):
-- `Dependent Job 1`
-- `Dependent Job 2`
-...
-_(Note: Jobs canceled quickly, likely due to parent stage failure)_
-
-**Failed Tests** (<count>, if applicable):
-- `TestNamespace.TestClass.TestMethod1`
-- `TestNamespace.TestClass.TestMethod2`
-- `TestNamespace.TestClass.TestMethod3`
-...
-_(Note: List specific test names extracted from error messages, if test failures detected)_
-
-**Snapshot Mismatches Detected** _(if applicable — show only when snapshot failures are detected)_
-
-The following failed tests likely involve snapshot verification:
-- `TestClass.SubmitsTraces`
-- ...
-
-To update snapshots from this build:
-- **Windows**: `./tracer/build.ps1 UpdateSnapshotsFromBuild --BuildId <BUILD_ID>`
-- **Linux/macOS**: `./tracer/build.sh UpdateSnapshotsFromBuild --BuildId <BUILD_ID>`
-
-This downloads the `.received.txt` snapshot artifacts from CI and replaces your local `.verified.txt` files.
-
----
-
-## 🔍 What would you like to investigate?
-
-1. **Categorize failures** - Analyze failure types (infrastructure/flaky/real)
-2. **View specific logs** - Download logs for failed tasks
-3. **Show full analysis** - Run complete analysis with all details
-4. **Update snapshots** - Download and apply updated snapshots from this build _(shown only when snapshot failures detected)_
-```
-
-**Resolving PR number**: When invoked with `build <BUILD_ID>`, extract the PR number from the build details JSON:
-- `triggerInfo["pr.number"]` — most direct
-- `sourceBranch` — parse from `refs/pull/<NUMBER>/merge` pattern
-- Only show the PR link if the build was PR-triggered (`reason == "pullRequest"`)
-
+1. **Header**: `# CI Failure Analysis for Build <BUILD_ID>`
+2. **Metadata**: Status, Build link (`https://dev.azure.com/datadoghq/dd-trace-dotnet/_build/results?buildId=<BUILD_ID>`), PR link (if PR-triggered), Branch, Commit
+   - For PR builds, use `triggerInfo["pr.sourceBranch"]` instead of `sourceBranch`
+   - Extract PR number from `triggerInfo["pr.number"]` or parse from `refs/pull/<NUMBER>/merge`
+3. **Failed Tasks/Jobs/Stages**: List names with counts
+4. **Timed Out Jobs**: Jobs with `result="canceled"` and duration >= 55 min (show duration)
+5. **Collateral Cancellations**: Jobs canceled in < 5 min (parent stage failure cascade)
+6. **Failed Tests**: Specific test names extracted from error messages
+7. **Snapshot Mismatches** (if detected): List affected tests and show `UpdateSnapshotsFromBuild` command
+8. **Investigation menu**: Categorize failures / View logs / Full analysis / Update snapshots (if applicable)
 
 ### Phase 2: Detailed Output (Only If User Requests)
 
-**If user requests log analysis**:
-```markdown
-## Log Analysis
+- **Log analysis**: List successfully retrieved vs failed downloads with error patterns
+- **Categorization**: Group failures into 🔴 Real / 🟡 Flaky / 🔵 Infrastructure (see [failure-patterns.md](failure-patterns.md))
 
-Attempted to download logs for failed tasks:
+## Failure Categorization
 
-✅ Successfully retrieved:
-- Task: `<name>` (Log ID: <id>)
-  - Error pattern: <brief description>
+For detailed categorization rules, pattern examples, and the decision tree, see [failure-patterns.md](failure-patterns.md).
 
-❌ Failed to retrieve (HTTP 500):
-- Task: `<name>` (Log ID: <id>)
-  - View manually: [Link](https://...)
-```
-
-**If user requests categorization**:
-```markdown
-## Failure Categories
-
-### 🔴 Real Failures (Action: Investigate)
-- `<task>` - <reason>
-
-### 🟡 Flaky Tests (Action: Consider Retry)
-- `<task>` - <reason>
-
-### 🔵 Infrastructure Issues (Action: Retry)
-- `<task>` - <reason>
-```
-
-## Failure Categorization Rules
-
-### 🔴 Real Failures (Action: Investigate)
-**Indicators**:
-- Test assertions: `Expected X but got Y`, `Assert.*failed`
-- Compilation errors: `error CS\d+`, `MSB\d+`
-- Segmentation faults: `SIGSEGV`, `Access Violation`
-- Missing spans: `Expected N spans but got M`
-
-**Pattern examples**:
-```
-[FAIL] TestName
-Expected 21 spans but got 14
-Assert.Equal() Failure
-Expected: True
-Actual:   False
-```
-
-### 🟡 Flaky Tests (Action: Retry, May Investigate)
-**Indicators**:
-- Tests with `previousAttempts > 0` (already auto-retried by CI)
-- Stack walking failures: `Failed to walk N stacks for sampled exception: E_FAIL`
-- Known intermittent tests (reference `failure-patterns.md`)
-- Tests that pass/fail inconsistently across platforms
-- **Single-runtime failures**: Same test fails on only one .NET runtime but passes on others (especially net6+). Example: net6 pass, net8 pass, net10 fail → likely flaky, not a real regression.
-- **ARM64 single-platform timeout**: In an ARM64 stage (e.g., `unit_tests_arm64`), one runtime job is cancelled after ~60 min while all other runtimes complete normally in ~14 min → almost certainly a transient ARM64 infrastructure issue, not a code regression. Retry.
-
-**Pattern examples**:
-```
-Stack walking failed with E_FAIL
-ThreadAbortException
-Timeout waiting for spans
-```
-
-### 🔵 Infrastructure Failures (Action: Retry)
-**Indicators**:
-- Docker rate limiting: `toomanyrequests`, `pull rate limit exceeded`
-- Network timeouts: `TLS handshake timeout`, `Connection reset by peer`, `ECONNRESET`
-- Execution timeouts: `maximum execution time exceeded`, `Test timeout`
-- Timeout via cancellation: Job canceled with duration >= 55 minutes
-- Disk space: `No space left on device`, `ENOSPC`
-- Container failures: `docker: Error response from daemon`
-
-**Pattern examples**:
-```
-pull access denied, repository does not exist or may require authentication
-TLS handshake timeout
-Connection reset by peer
-Build failed in XX:XX:XX (timeout)
-```
-
-**Recommendation**: Retry the build once. If the failure persists after 2 consecutive runs, investigate and alert the **#apm-dotnet** Slack channel.
+**Quick reference** — three categories:
+- 🔴 **Real Failures** — Test assertions, compilation errors, segfaults, span count mismatches → Investigate
+- 🟡 **Flaky Tests** — Auto-retried tests, single-runtime failures, Alpine stack walking, ARM64 timeouts → Retry
+- 🔵 **Infrastructure** — Docker rate limits, network timeouts, disk space, job cancellation >= 55 min → Retry
 
 ## Error Handling
 

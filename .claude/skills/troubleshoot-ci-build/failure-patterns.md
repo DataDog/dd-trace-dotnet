@@ -2,6 +2,18 @@
 
 Reference guide for categorizing and troubleshooting common CI failures in dd-trace-dotnet.
 
+## Table of Contents
+
+- [Infrastructure Failures](#infrastructure-failures) — Docker rate limiting, network issues, timeouts, disk space
+- [Flaky Tests](#flaky-tests) — Stack walking, auto-retried tests, single-runtime failures, ASM init
+- [Real Failures](#real-failures) — Assertion failures, snapshot mismatches, compilation errors, segfaults, missing deps
+- [Platform-Specific Patterns](#platform-specific-patterns) — Windows-only, Linux-only, ARM64
+- [Framework-Specific Patterns](#framework-specific-patterns) — .NET Framework, .NET 6/7/8
+- [Test-Specific Patterns](#test-specific-patterns) — Azure Functions, integration tests, smoke tests
+- [Categorization Decision Tree](#categorization-decision-tree) — Flowchart for classifying failures
+- [Quick Reference Table](#quick-reference-table) — Pattern → Category → Action lookup
+- [When to Investigate vs Retry](#when-to-investigate-vs-retry)
+
 ## Infrastructure Failures
 
 These are typically transient issues with CI infrastructure, not code problems. **Recommendation: Retry the build. Alert #apm-dotnet if persistent after retries.**
