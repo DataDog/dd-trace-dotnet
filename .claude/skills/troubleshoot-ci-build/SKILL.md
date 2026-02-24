@@ -1,8 +1,7 @@
 ---
 name: troubleshoot-ci-build
-description: Troubleshoot CI failures in dd-trace-dotnet Azure DevOps pipeline. Analyzes build failures, categorizes failures (infrastructure/flaky/real), and provides actionable recommendations. Use for PR failures or specific build IDs.
+description: Troubleshoot CI failures in dd-trace-dotnet Azure DevOps pipeline. Use this skill whenever the user mentions a failing CI build, PR checks failing, Azure DevOps pipeline failures, test failures in CI, or when they share a build ID or PR number and want to understand what went wrong. Analyzes build failures, categorizes them (infrastructure/flaky/real), and provides actionable recommendations.
 argument-hint: <pr NUMBER | build BUILD_ID>
-disable-model-invocation: true
 user-invocable: true
 allowed-tools: WebFetch, Bash(gh pr checks:*), Bash(az devops invoke:*), Bash(az pipelines build list:*), Bash(az pipelines build show:*), Bash(az pipelines runs artifact list:*), Bash(az pipelines runs list:*), Bash(az pipelines runs show:*)
 ---
@@ -27,7 +26,7 @@ Troubleshoot Azure DevOps pipeline failures with automated analysis.
 **If the user does not have PowerShell installed**:
 1. Check for `pwsh` first: `pwsh -Version`
 2. If not found and on Windows, check for PowerShell 5.1: `powershell -NoProfile -Command '$PSVersionTable.PSVersion'`
-3. If neither found or version is too old, provide installation instructions from [README.md](README.md#installing-powershell)
+3. If neither found or version is too old, provide installation instructions (see Prerequisites above)
 4. Do NOT attempt to replicate the script functionality using bash/jq - the logic is too complex
 
 **Always prefer `pwsh` over `powershell.exe`** when both are available (better cross-platform compatibility and modern features).
@@ -39,8 +38,8 @@ Troubleshoot Azure DevOps pipeline failures with automated analysis.
 ## Additional Resources
 
 - **[failure-patterns.md](failure-patterns.md)** - Reference guide with known CI failure patterns, categorization rules, and decision trees. Load when you need to categorize a failure type or compare against historical patterns.
-- **[README.md](README.md)** - User-facing documentation with usage examples and installation instructions. Reference when explaining skill capabilities to users.
 - **[scripts-reference.md](scripts-reference.md)** - Documentation for `Get-AzureDevOpsBuildAnalysis.ps1` script (parameters, usage, output structure).
+- **[references/cli-reference.md](references/cli-reference.md)** - Azure DevOps API endpoints and Windows CLI pitfalls. Load when running Azure DevOps CLI commands directly (bypassing the PowerShell script).
 
 ## Task
 
@@ -314,189 +313,6 @@ Build failed in XX:XX:XX (timeout)
 
 **Recommendation**: Retry the build once. If the failure persists after 2 consecutive runs, investigate and alert the **#apm-dotnet** Slack channel.
 
-## API Reference
-
-### Azure DevOps REST API
-
-**Base URL**: `https://dev.azure.com/datadoghq`
-**Project**: `dd-trace-dotnet`
-**Project ID**: `a51c4863-3eb4-4c5d-878a-58b41a049e4e`
-
-**Using az devops invoke**:
-```bash
-az devops invoke \
-  --area <area> \
-  --resource <resource> \
-  --route-parameters project=dd-trace-dotnet [key=value ...] \
-  --org https://dev.azure.com/datadoghq \
-  --api-version 6.0 \
-  [--query-parameters key=value ...]
-```
-
-**Common endpoints**:
-
-**Get Build Details**:
-```bash
-az devops invoke --area build --resource builds \
-  --route-parameters project=dd-trace-dotnet buildId=$BUILD_ID
-```
-
-**Get Build Timeline**:
-```bash
-az devops invoke --area build --resource timeline \
-  --route-parameters project=dd-trace-dotnet buildId=$BUILD_ID
-```
-
-**Get Build Logs** (may fail with HTTP 500):
-```bash
-az devops invoke --area build --resource logs \
-  --route-parameters project=dd-trace-dotnet buildId=$BUILD_ID logId=$LOG_ID
-```
-
-### GitHub CLI
-
-**Get PR Checks**:
-```bash
-gh pr checks <PR_NUMBER> --repo DataDog/dd-trace-dotnet \
-  --json name,state,link,completedAt
-```
-
-Available fields: `bucket`, `completedAt`, `description`, `event`, `link`, `name`, `startedAt`, `state`, `workflow`
-
-## Windows CLI Pitfalls (Lessons Learned)
-
-### 0. Always Use Scratchpad Directory
-
-**Problem**: Using `/tmp` or `$TEMP` can cause issues on Windows
-
-**Solution**: Always use the scratchpad directory provided in the system prompt
-
-```bash
-# ❌ BAD - Don't hardcode /tmp
-az devops invoke ... > /tmp/timeline.json
-
-# ✅ GOOD - Use scratchpad from system prompt
-SCRATCHPAD="<path provided in system prompt>"
-az devops invoke ... > "$SCRATCHPAD/timeline.json"
-```
-
-### 1. Complex jq Filters Fail on Windows
-
-**Problem**: Complex jq expressions with `!=` or nested filters cause parse errors
-
-**Solution**: Save JSON to file first, then query with simpler filters
-
-```bash
-# ❌ BAD - Complex filter inline (fails on Windows)
-az devops invoke ... | jq '.records[] | select(.issues != null and .issues != [])'
-
-# ✅ GOOD - Save first, then query
-az devops invoke ... --output json > "$SCRATCHPAD/timeline.json"
-cat "$SCRATCHPAD/timeline.json" | jq '.records[] | select(.issues)'
-```
-
-### 2. API 500 Errors for Logs - USE TIMELINE URLs INSTEAD
-
-**Problem**: `az devops invoke --resource logs` frequently returns HTTP 500
-
-**Solution**: Use the log URLs directly from the timeline data instead of the logs API
-
-```bash
-# ❌ BAD - az devops invoke --resource logs returns HTTP 500
-az devops invoke --area build --resource logs \
-  --route-parameters project=dd-trace-dotnet buildId=$BUILD_ID logId=$LOG_ID
-
-# ✅ GOOD - Extract log URL from timeline and use curl
-LOG_URL=$(cat "$SCRATCHPAD/build-$BUILD_ID-timeline.json" | \
-  jq -r '.records[] | select(.result == "failed" and .type == "Task") | .log.url' | head -1)
-curl -s "$LOG_URL" > "$SCRATCHPAD/build-$BUILD_ID-log.txt"
-
-# ✅ GOOD - Or use WebFetch tool
-LOG_URL=$(cat "$SCRATCHPAD/build-$BUILD_ID-timeline.json" | \
-  jq -r '.records[] | select(.result == "failed" and .type == "Task") | .log.url' | head -1)
-# Then use WebFetch with $LOG_URL
-```
-
-The timeline `.log.url` field provides direct URLs that work reliably:
-```
-https://dev.azure.com/datadoghq/<project-id>/_apis/build/builds/<buildId>/logs/<logId>
-```
-
-### 3. Piping to head Causes Errors
-
-**Problem**: `jq ... | head -50` can cause "Invalid argument" errors on Windows
-
-**Solution**: Avoid piping jq to head entirely; let jq output naturally or use first()
-
-```bash
-# ❌ BAD - Causes "Invalid argument" on Windows
-jq '.records[]' | head -50
-
-# ✅ GOOD - Let jq output naturally (it's filtered already)
-jq '.records[] | select(.result == "failed")'
-
-# ✅ GOOD - Use first() if you only need one result
-jq '.records[] | select(.result == "failed") | first'
-
-# ✅ GOOD - Use limit if you need specific count
-jq '[.records[] | select(.result == "failed")] | .[0:10]'
-```
-
-### 4. Query Parameter Escaping
-
-**Problem**: Special characters in query parameters need escaping on Windows
-
-**Solution**: Use single quotes for parameter values containing special chars
-
-```bash
-# ❌ BAD - $top interpreted as shell variable
---query-parameters branchName=refs/heads/master $top=5
-
-# ✅ GOOD - Quote the parameter
---query-parameters branchName=refs/heads/master '$top=10'
-```
-
-### 5. `--route-parameters` Must Be Separate Arguments
-
-**Problem**: Passing route parameters as a single space-separated string causes cryptic authentication errors (`TF400813: The user '...' is not authorized`)
-
-**Solution**: Each key=value pair must be a separate argument
-
-```bash
-# ❌ BAD - Single string, causes auth errors
-az devops invoke --route-parameters "project=dd-trace-dotnet buildId=12345"
-
-# ✅ GOOD - Separate arguments
-az devops invoke --route-parameters project=dd-trace-dotnet buildId=12345
-```
-
-In PowerShell, when building argument arrays, split them into individual elements:
-```powershell
-# ❌ BAD - Single array element
-$azArgs += "project=dd-trace-dotnet buildId=$BuildId"
-
-# ✅ GOOD - Separate array elements
-$azArgs += "project=dd-trace-dotnet"
-$azArgs += "buildId=$BuildId"
-```
-
-### 6. jq Pitfalls with Nullable Fields
-
-**Problem**: Using `startswith()`, `contains()`, or `test()` on nullable fields causes errors when the field is null
-
-**Solution**: Guard with `!= null` or use `// ""` default value
-
-```bash
-# ❌ BAD - Fails if .name is null
-jq '.records[] | select(.name | startswith("Test"))'
-
-# ✅ GOOD - Guard with null check
-jq '.records[] | select(.name != null and (.name | startswith("Test")))'
-
-# ✅ GOOD - Use default value
-jq '.records[] | select((.name // "") | startswith("Test"))'
-```
-
 ## Error Handling
 
 ### Build Not Found
@@ -515,15 +331,6 @@ jq '.records[] | select((.name // "") | startswith("Test"))'
 - Wait and retry after delay
 - Cache timeline data to temporary files
 - Suggest user check web UI if repeated failures
-
-## Supporting Files
-
-Additional resources in this skill directory:
-
-- **[failure-patterns.md](failure-patterns.md)** - Known failure patterns and their classifications
-- **[README.md](README.md)** - User-facing documentation and examples
-
-Reference these files when categorizing failures or looking for known issues.
 
 ## Examples
 
@@ -585,7 +392,7 @@ What would you like to investigate?
 - **Run Tests Locally**: `docs/development/CI/RunSmokeTestsLocally.md` - Reproduce failures locally
 - **Azure DevOps Pipeline**: `.azure-pipelines.yml` - Pipeline configuration
 
-## Key Learnings & Best Practices
+## Key Learnings
 
 ### Timeline Record Structure
 
@@ -594,38 +401,11 @@ The Azure DevOps timeline contains a hierarchy:
 - Filter by `type` field: `"Stage"`, `"Phase"`, `"Job"`, or `"Task"`
 - Failed stages/jobs cascade down - focus on Task-level failures for specifics
 - Job `identifier` field reveals platform/variant info (e.g., `integration_tests_linux.Test.Job23`)
-
-### Canceled Jobs and Timeout Detection
-
-**Result values**: `"succeeded"`, `"failed"`, `"canceled"`, `"abandoned"`
-
-**Canceled vs Failed**: Jobs canceled due to timeout have `result == "canceled"`, NOT `"failed"`.
-
-**Duration-based Classification**:
-- **Timeout** (>= 55 min): Job likely hit Azure DevOps 60-minute timeout
-- **Collateral** (< 5 min): Job canceled quickly due to parent stage failure
-- **Unknown** (5-55 min): Could be manual cancellation or other cause
-
-**Key Rule**: If a stage shows `result == "failed"` but no jobs have `result == "failed"`, check for canceled jobs with duration >= 55 minutes. These are likely timeouts that caused the stage failure.
-
-**Example**: Build 195486 - `integration_tests_linux` stage failed with no failed jobs, but `DockerTest alpine_netcoreapp3.0_group1` was canceled after 60.3 minutes (timeout).
-
-### Understanding Test Results
-
-1. **Build warnings vs test failures**:
-   - `.issues` array contains warnings (build warnings, package warnings)
-   - Check `.result == "failed"` for actual failures
-   - Don't confuse build warnings with test failures
-
-2. **Log download failures**:
-   - Azure DevOps logs API frequently returns HTTP 500
-   - This is a known limitation, not a user error
-   - Always provide web UI links as fallback
-   - The timeline itself contains valuable data even without logs
+- Result values: `"succeeded"`, `"failed"`, `"canceled"`, `"abandoned"`
+- Jobs canceled due to timeout have `result == "canceled"`, NOT `"failed"` — see `failure-patterns.md` for classification details
 
 ## Notes
 
-- This skill always runs with `disable-model-invocation: true` - must be invoked manually
 - Requires `gh` CLI authenticated for PR analysis
 - Requires `az` CLI configured (but public API, no auth needed for dd-trace-dotnet)
 - Large builds may take 30-60 seconds to analyze
