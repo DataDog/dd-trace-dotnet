@@ -423,9 +423,9 @@ public abstract class AzureFunctionsTests : TestHelper
             using (await RunAzureFunctionAndWaitForExit(agent, expectedExitCode: -1))
             {
                 // 6 spans: Timer TriggerAllTimer, http.request, azure.apim, host span (GET /api/simple),
-                // worker span (Http SimpleHttpTrigger), and host HTTP pipeline span (e.g. aspnet_core.request)
+                // worker span (Http SimpleHttpTrigger), Manual inside Simple.
                 const int expectedSpanCount = 6;
-                var spans = await agent.WaitForSpansAsync(expectedSpanCount + 1); // +1 for ExitApp timer
+                var spans = await agent.WaitForSpansAsync(expectedSpanCount);
                 var filteredSpans = spans.Where(s => !s.Resource.Equals("Timer ExitApp", StringComparison.OrdinalIgnoreCase)).ToImmutableList();
 
                 using var assertionScope = new AssertionScope();
