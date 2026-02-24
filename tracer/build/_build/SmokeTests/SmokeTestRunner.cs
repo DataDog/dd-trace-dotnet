@@ -111,6 +111,9 @@ public static class SmokeTestBuilder
         await BuildImageFromDockerfileAsync(tracerDir, dockerfilePath, scenario.DockerTag, buildArgs, artifactsDir, cancellationToken);
     }
 
+    static readonly TimeSpan[] RetryDelays = { TimeSpan.FromMilliseconds(100), TimeSpan.FromMilliseconds(500), TimeSpan.FromSeconds(1) TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(15)};
+    static int MaxRetries => RetryDelays.Length;
+
     static async Task BuildImageFromDockerfileAsync(
         AbsolutePath contextDir,
         string dockerfilePath,
@@ -119,9 +122,7 @@ public static class SmokeTestBuilder
         AbsolutePath artifactsDir,
         CancellationToken cancellationToken)
     {
-        using var client = CreateDockerClient();
-
-        // Create a tar archive of the build context
+        // Build the context tar once — MemoryStream is re-seekable for retries
         using var contextStream = CreateBuildContextTar(contextDir, dockerfilePath, artifactsDir);
 
         var buildParams = new ImageBuildParameters
@@ -133,47 +134,65 @@ public static class SmokeTestBuilder
             ForceRemove = true,
         };
 
-        string lastError = null;
-        var progress = new Progress<JSONMessage>(msg =>
+        for (var attempt = 1; attempt <= MaxRetries; attempt++)
         {
-            if (!string.IsNullOrEmpty(msg.Stream))
+            try
             {
-                // Stream lines already contain trailing newlines
-                var line = msg.Stream.TrimEnd('\n', '\r');
-                if (!string.IsNullOrEmpty(line))
+                // Reset the context stream for each attempt
+                contextStream.Position = 0;
+
+                // Create a fresh client for each attempt — the previous connection may be in a bad state
+                using var client = CreateDockerClient();
+
+                string lastError = null;
+                var progress = new Progress<JSONMessage>(msg =>
                 {
-                    Logger.Debug("{DockerBuild}", line);
+                    if (!string.IsNullOrEmpty(msg.Stream))
+                    {
+                        var line = msg.Stream.TrimEnd('\n', '\r');
+                        if (!string.IsNullOrEmpty(line))
+                        {
+                            Logger.Debug("{DockerBuild}", line);
+                        }
+                    }
+
+                    if (!string.IsNullOrEmpty(msg.Status))
+                    {
+                        Logger.Debug("[{Id}] {Status} {Progress}", msg.ID, msg.Status, msg.ProgressMessage);
+                    }
+
+                    if (!string.IsNullOrEmpty(msg.ErrorMessage))
+                    {
+                        lastError = msg.ErrorMessage;
+                        Logger.Error("Docker build error: {Error}", msg.ErrorMessage);
+                    }
+                });
+
+                Logger.Information("Building image {Tag} using Docker API (attempt {Attempt}/{MaxRetries})...", tag, attempt, MaxRetries);
+
+                await client.Images.BuildImageFromDockerfileAsync(
+                    buildParams,
+                    contextStream,
+                    authConfigs: null,
+                    headers: null,
+                    progress: progress,
+                    cancellationToken: cancellationToken);
+
+                if (lastError is not null)
+                {
+                    throw new InvalidOperationException($"Docker build failed: {lastError}");
                 }
-            }
 
-            if (!string.IsNullOrEmpty(msg.Status))
+                Logger.Information("Successfully built image {Tag}", tag);
+                return;
+            }
+            catch (Exception ex) when (attempt < MaxRetries && !cancellationToken.IsCancellationRequested)
             {
-                Logger.Debug("[{Id}] {Status} {Progress}", msg.ID, msg.Status, msg.ProgressMessage);
+                var delay = RetryDelays[attempt - 1];
+                Logger.Warning(ex, "Docker build attempt {Attempt}/{MaxRetries} failed, retrying in {Delay}s...", attempt, MaxRetries, delay.TotalSeconds);
+                await Task.Delay(delay, cancellationToken);
             }
-
-            if (!string.IsNullOrEmpty(msg.ErrorMessage))
-            {
-                lastError = msg.ErrorMessage;
-                Logger.Error("Docker build error: {Error}", msg.ErrorMessage);
-            }
-        });
-
-        Logger.Information("Building image {Tag} using Docker API...", tag);
-
-        await client.Images.BuildImageFromDockerfileAsync(
-            buildParams,
-            contextStream,
-            authConfigs: null,
-            headers: null,
-            progress: progress,
-            cancellationToken: cancellationToken);
-
-        if (lastError is not null)
-        {
-            throw new InvalidOperationException($"Docker build failed: {lastError}");
         }
-
-        Logger.Information("Successfully built image {Tag}", tag);
     }
 
     static DockerClient CreateDockerClient()
