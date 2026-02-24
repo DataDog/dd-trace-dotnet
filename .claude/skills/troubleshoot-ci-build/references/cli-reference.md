@@ -51,19 +51,18 @@ Available fields: `bucket`, `completedAt`, `description`, `event`, `link`, `name
 
 ## Windows CLI Pitfalls (Lessons Learned)
 
-### 0. Always Use Scratchpad Directory
+### 0. Use Temporary Directory for Output Files
 
-**Problem**: Using `/tmp` or `$TEMP` can cause issues on Windows
+**Problem**: Using `/tmp` or hardcoded paths can cause issues on Windows
 
-**Solution**: Always use the scratchpad directory provided in the system prompt
+**Solution**: Use `$TEMP` (PowerShell/Windows) or a user-specified output directory
 
 ```bash
 # Bad - Don't hardcode /tmp
 az devops invoke ... > /tmp/timeline.json
 
-# Good - Use scratchpad from system prompt
-SCRATCHPAD="<path provided in system prompt>"
-az devops invoke ... > "$SCRATCHPAD/timeline.json"
+# Good - Use $TEMP or a specific output directory
+az devops invoke ... > "$TEMP/timeline.json"
 ```
 
 ### 1. Complex jq Filters Fail on Windows
@@ -77,8 +76,8 @@ az devops invoke ... > "$SCRATCHPAD/timeline.json"
 az devops invoke ... | jq '.records[] | select(.issues != null and .issues != [])'
 
 # Good - Save first, then query
-az devops invoke ... --output json > "$SCRATCHPAD/timeline.json"
-cat "$SCRATCHPAD/timeline.json" | jq '.records[] | select(.issues)'
+az devops invoke ... --output json > "$TEMP/timeline.json"
+cat "$TEMP/timeline.json" | jq '.records[] | select(.issues)'
 ```
 
 ### 2. API 500 Errors for Logs - USE TIMELINE URLs INSTEAD

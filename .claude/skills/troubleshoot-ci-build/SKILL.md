@@ -260,8 +260,6 @@ What would you like to investigate?
 - **Run Tests Locally**: `docs/development/CI/RunSmokeTestsLocally.md` - Reproduce failures locally
 - **Azure DevOps Pipeline**: `.azure-pipelines.yml` - Pipeline configuration
 
-## Key Learnings
-
 ### Timeline Record Structure
 
 The Azure DevOps timeline contains a hierarchy:

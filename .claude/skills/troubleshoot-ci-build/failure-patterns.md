@@ -532,27 +532,6 @@ Are there canceled jobs?
 
 ---
 
-## Useful Commands for Investigation
-
-### Download Specific Test Logs
-```bash
-# Get timeline to find log ID
-curl -s "https://dev.azure.com/datadoghq/.../builds/<BUILD_ID>/timeline" | jq '.records[] | select(.result == "failed")'
-
-# Download log
-curl -s "https://dev.azure.com/datadoghq/.../builds/<BUILD_ID>/logs/<LOG_ID>" > test.log
-```
-
-### Search for Common Patterns
-```bash
-# In downloaded log
-grep -i "\[FAIL\]" test.log
-grep -i "Expected" test.log
-grep -i "error\|exception" test.log -A 5
-```
-
----
-
 ## Historical Context
 
 ### Known Issues
