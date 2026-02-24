@@ -1,8 +1,8 @@
 ---
 name: azure-functions
-description: Dev/test workflow for tracer engineers working on the Datadog .NET tracer — build a local Datadog.AzureFunctions NuGet package, deploy it to a test Azure Function App, trigger it, and analyze traces/logs to verify instrumentation behavior. Use this skill whenever the user mentions building or testing the Datadog.AzureFunctions NuGet package, deploying to an Azure Function App for tracer testing, analyzing Azure function instrumentation logs or traces, or configuring Datadog environment variables on Azure — even if they don't explicitly invoke /azure-functions.
+description: Dev/test workflow for tracer engineers working on the Datadog .NET tracer — build a local Datadog.AzureFunctions NuGet package, deploy it to a test Azure Function App, trigger it, and analyze traces/logs to verify instrumentation behavior. Use this skill whenever the user is working on Azure Functions instrumentation: building or testing the Datadog.AzureFunctions NuGet package, deploying to a test Function App, analyzing instrumentation logs or spans from an Azure Functions app, or configuring Datadog environment variables on Azure — even if they don't explicitly invoke /azure-functions.
 argument-hint: [build-nuget|deploy|test|logs|configure]
-allowed-tools: Bash(pwsh:*) Bash(az:functionapp:show:*) Bash(az:functionapp:list:*) Bash(az:functionapp:list-functions:*) Bash(az:functionapp:function:list:*) Bash(az:functionapp:function:show:*) Bash(az:functionapp:config:appsettings:list:*) Bash(az:functionapp:config:appsettings:set:*) Bash(az:functionapp:config:appsettings:delete:*) Bash(az:functionapp:config:show:*) Bash(az:functionapp:deployment:list:*) Bash(az:functionapp:deployment:show:*) Bash(az:functionapp:deployment:source:show:*) Bash(az:functionapp:plan:list:*) Bash(az:functionapp:plan:show:*) Bash(az:functionapp:restart:*) Bash(az:functionapp:stop:*) Bash(az:functionapp:start:*) Bash(az:webapp:log:download:*) Bash(az:webapp:log:tail:*) Bash(az:group:list:*) Bash(az:group:show:*) Bash(curl:*) Bash(pwsh:*) Bash(func:azure:functionapp:publish:*) Bash(func:azure:functionapp:logstream:*) Bash(func:azure:functionapp:list-functions:*) Bash(func:azure:functionapp:fetch-app-settings:*) Bash(func:azure:functionapp:fetch:*) Bash(dotnet:restore) Bash(dotnet:clean) Bash(dotnet:build:*) Bash(unzip:*) Bash(date:*) Bash(grep:*) Bash(find:*) Bash(ls:*) Bash(cat:*) Bash(head:*) Bash(tail:*) Bash(wc:*) Bash(sort:*) Bash(jq:*) Bash(uname:*) Read
+allowed-tools: Bash(pwsh *) Bash(az functionapp show *) Bash(az functionapp list *) Bash(az functionapp list-functions *) Bash(az functionapp function list *) Bash(az functionapp function show *) Bash(az functionapp config appsettings list *) Bash(az functionapp config appsettings set *) Bash(az functionapp config appsettings delete *) Bash(az functionapp config show *) Bash(az functionapp deployment list *) Bash(az functionapp deployment show *) Bash(az functionapp deployment source show *) Bash(az functionapp plan list *) Bash(az functionapp plan show *) Bash(az functionapp restart *) Bash(az functionapp stop *) Bash(az functionapp start *) Bash(az webapp log download *) Bash(az webapp log tail *) Bash(az group list *) Bash(az group show *) Bash(curl *) Bash(func azure functionapp publish *) Bash(func azure functionapp logstream *) Bash(func azure functionapp list-functions *) Bash(func azure functionapp fetch-app-settings *) Bash(func azure functionapp fetch *) Bash(dotnet restore) Bash(dotnet clean) Bash(dotnet build *) Bash(unzip *) Read
 ---
 
 # Azure Functions Dev/Test Workflow
@@ -125,12 +125,11 @@ if (-not $nugetConfig) {
 Write-Host "Found nuget.config at: $nugetConfig"
 ```
 
-**Verify environment variables are configured**:
+**Verify environment variables are configured** (skip if already done on a previous deploy):
 ```powershell
 $envCheck = ./.claude/skills/azure-functions/Test-EnvVars.ps1 -AppName "<app-name>" -ResourceGroup "<resource-group>"
 if (-not $envCheck.AllRequiredPresent) {
-    Write-Error "Required environment variables are missing. Run '/azure-functions configure' first."
-    exit 1
+    Write-Warning "Required environment variables are missing. Run '/azure-functions configure' first, or proceed if you plan to configure after deploying."
 }
 ```
 
@@ -146,7 +145,7 @@ Use the `Deploy-AzureFunction.ps1` script to automate deployment, wait, and trig
 **What this does**:
 1. Runs `dotnet restore` in the sample app directory
 2. Publishes to Azure with `func azure functionapp publish`
-3. Waits 2 minutes for worker process to restart
+3. Waits 60 seconds (default) for worker process to restart
 4. Triggers the HTTP endpoint and captures execution timestamp
 5. Outputs a result object for pipeline usage
 

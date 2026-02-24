@@ -16,72 +16,80 @@ This guide provides grep patterns and techniques for manual log investigation. S
 - Multiple process lifetimes appear in the same file
 - Always verify which initialization is current
 
+## Log File Names
+
+Actual log file names follow this pattern (run from the `LogFiles/datadog/` directory):
+- **Worker**: `dotnet-tracer-managed-dotnet-<pid>.log`
+- **Host**: `dotnet-tracer-managed-Microsoft.Azure.WebJobs.Script.WebHost-<pid>.log`
+
+Multi-step script examples below use short aliases (`worker.log`, `host.log`) for readability after `cd`ing into the log directory. Single-command examples use globs directly.
+
 ## Essential Grep Patterns
 
 ### Finding Executions by Timestamp
 ```bash
 # Specific minute
-grep "<YYYY-MM-DD HH:MM>:" worker.log
+grep "<YYYY-MM-DD HH:MM>:" dotnet-tracer-managed-dotnet-*.log
 
 # Specific seconds
-grep "<YYYY-MM-DD HH:MM:3[89]>" worker.log
+grep "<YYYY-MM-DD HH:MM:3[89]>" dotnet-tracer-managed-dotnet-*.log
 
 # Entire hour range
-grep "<YYYY-MM-DD HH:[0-9][0-9]>:" worker.log
+grep "<YYYY-MM-DD HH:[0-9][0-9]>:" dotnet-tracer-managed-dotnet-*.log
 
 # Last 5 minutes (adjust regex for your time range)
-grep "<YYYY-MM-DD HH:5[3-7]>:" worker.log
+grep "<YYYY-MM-DD HH:5[3-7]>:" dotnet-tracer-managed-dotnet-*.log
 ```
 
 ### Finding Initializations
 ```bash
 # All worker initializations (shows restart history)
-grep "Assembly metadata" worker.log
+grep "Assembly metadata" dotnet-tracer-managed-dotnet-*.log
 
 # Most recent initialization (current process)
-grep "Assembly metadata" worker.log | tail -1
+grep "Assembly metadata" dotnet-tracer-managed-dotnet-*.log | tail -1
 
 # Get initialization timestamp for filtering
-grep "Assembly metadata" worker.log | tail -1 | awk '{print $1, $2}'
+grep "Assembly metadata" dotnet-tracer-managed-dotnet-*.log | tail -1 | awk '{print $1, $2}'
 ```
 
 ### Finding Span Information
 ```bash
 # All spans created in timeframe
-grep "<YYYY-MM-DD HH:MM>:" worker.log | grep "Span started"
+grep "<YYYY-MM-DD HH:MM>:" dotnet-tracer-managed-dotnet-*.log | grep "Span started"
 
 # Specific trace ID
-grep "<trace-id>" worker.log
+grep "<trace-id>" dotnet-tracer-managed-dotnet-*.log
 
 # Root spans only (orphaned traces)
-grep "p_id: null" worker.log | grep "Span started"
+grep "p_id: null" dotnet-tracer-managed-dotnet-*.log | grep "Span started"
 
 # Span closed events (see final tags)
-grep "<YYYY-MM-DD HH:MM>:" worker.log | grep "Span closed"
+grep "<YYYY-MM-DD HH:MM>:" dotnet-tracer-managed-dotnet-*.log | grep "Span closed"
 ```
 
 ### Finding Integration Activity
 ```bash
 # Azure Functions specific
-grep "<YYYY-MM-DD HH:MM>:" worker.log | grep -i "azure.functions\|FunctionExecutionMiddleware"
+grep "<YYYY-MM-DD HH:MM>:" dotnet-tracer-managed-dotnet-*.log | grep -i "azure.functions\|FunctionExecutionMiddleware"
 
 # Host process integrations
-grep "<YYYY-MM-DD HH:MM>:" host.log | grep -i "ToRpcHttp\|FunctionInvocationMiddleware"
+grep "<YYYY-MM-DD HH:MM>:" dotnet-tracer-managed-Microsoft.Azure.WebJobs.Script.WebHost-*.log | grep -i "ToRpcHttp\|FunctionInvocationMiddleware"
 
 # AsyncLocal context flow
-grep "<YYYY-MM-DD HH:MM>:" worker.log | grep -i "asynclocal\|active.*scope"
+grep "<YYYY-MM-DD HH:MM>:" dotnet-tracer-managed-dotnet-*.log | grep -i "asynclocal\|active.*scope"
 ```
 
 ### Context Lines for Better Understanding
 ```bash
 # Show 2 lines before and after
-grep -B 2 -A 2 "Span started" worker.log
+grep -B 2 -A 2 "Span started" dotnet-tracer-managed-dotnet-*.log
 
 # Show 5 lines after span creation (see tags)
-grep -A 5 "Span started" worker.log
+grep -A 5 "Span started" dotnet-tracer-managed-dotnet-*.log
 
 # Show 10 lines around error
-grep -B 5 -A 5 "ERROR\|Exception" worker.log
+grep -B 5 -A 5 "ERROR\|Exception" dotnet-tracer-managed-dotnet-*.log
 ```
 
 ## Parsing Span Relationships
@@ -89,7 +97,7 @@ grep -B 5 -A 5 "ERROR\|Exception" worker.log
 ### Extract Span Fields
 ```bash
 # Extract trace_id | span_id | parent_id
-grep "Span started" worker.log \
+grep "Span started" dotnet-tracer-managed-dotnet-*.log \
   | sed -E 's/.*\[s_id: ([^,]+), p_id: ([^,]+), t_id: ([^\]]+)\].*/\3 | \1 | \2/' \
   | sort
 ```
@@ -97,7 +105,7 @@ grep "Span started" worker.log \
 ### Build Span Tree
 ```bash
 # Find all spans in a trace
-grep "<trace-id>" host.log worker.log \
+grep "<trace-id>" dotnet-tracer-managed-Microsoft.Azure.WebJobs.Script.WebHost-*.log dotnet-tracer-managed-dotnet-*.log \
   | grep "Span started" \
   | awk -F'[\\[\\]]' '{print $2}'
 ```
@@ -105,65 +113,77 @@ grep "<trace-id>" host.log worker.log \
 ### Identify Span Type
 ```bash
 # Extract operation names
-grep "Span started" worker.log \
+grep "Span started" dotnet-tracer-managed-dotnet-*.log \
   | sed -E 's/.*OperationName: "([^"]+)".*/\1/'
 
 # Find specific operation
-grep "Span started" worker.log | grep "azure_functions.invoke"
+grep "Span started" dotnet-tracer-managed-dotnet-*.log | grep "azure_functions.invoke"
 ```
 
 ## Common Investigation Patterns
 
+> These multi-step patterns use short aliases (`worker_log`, `host_log`) for readability. Set them first.
+
 ### Pattern 1: Verify Version After Deployment
 ```bash
+worker_log="dotnet-tracer-managed-dotnet-*.log"
+
 # 1. Find most recent worker initialization
-INIT_TIME=$(grep "Assembly metadata" worker.log | tail -1 | awk '{print $1, $2}')
+INIT_TIME=$(grep "Assembly metadata" $worker_log | tail -1 | awk '{print $1, $2}')
 echo "Most recent initialization: $INIT_TIME"
 
 # 2. Check version in that initialization
-grep "$INIT_TIME" worker.log | grep "TracerVersion"
+grep "$INIT_TIME" $worker_log | grep "TracerVersion"
 
 # 3. Verify version in subsequent logs
-grep "<YYYY-MM-DD HH:MM>:" worker.log | grep "TracerVersion" | head -1
+grep "<YYYY-MM-DD HH:MM>:" $worker_log | grep "TracerVersion" | head -1
 ```
 
 ### Pattern 2: Trace Host→Worker Flow
 ```bash
+worker_log="dotnet-tracer-managed-dotnet-*.log"
+host_log="dotnet-tracer-managed-Microsoft.Azure.WebJobs.Script.WebHost-*.log"
+
 # 1. Find host execution time
-grep "Executing 'Functions" host.log | tail -1
+grep "Executing 'Functions" $host_log | tail -1
 
 # 2. Get host trace ID
 HOST_TIME="<YYYY-MM-DD HH:MM:SS>"
-TRACE_ID=$(grep "$HOST_TIME" host.log | grep "Span started" | grep -o 't_id: [^]]*' | cut -d' ' -f2)
+TRACE_ID=$(grep "$HOST_TIME" $host_log | grep "Span started" | grep -o 't_id: [^]]*' | cut -d' ' -f2)
 echo "Host trace ID: $TRACE_ID"
 
 # 3. Check if worker has spans in same trace
-grep "$TRACE_ID" worker.log | wc -l
-echo "Worker spans in this trace: $(grep "$TRACE_ID" worker.log | wc -l)"
+grep "$TRACE_ID" $worker_log | wc -l
+echo "Worker spans in this trace: $(grep "$TRACE_ID" $worker_log | wc -l)"
 
 # 4. Show all spans in chronological order
-grep "$TRACE_ID" host.log worker.log | grep "Span started" | sort
+grep "$TRACE_ID" $host_log $worker_log | grep "Span started" | sort
 ```
 
 ### Pattern 3: Find Orphaned Traces
 ```bash
+worker_log="dotnet-tracer-managed-dotnet-*.log"
+host_log="dotnet-tracer-managed-Microsoft.Azure.WebJobs.Script.WebHost-*.log"
+
 # Find all root spans (should only be in host)
-grep "<YYYY-MM-DD HH:MM>:" host.log worker.log \
+grep "<YYYY-MM-DD HH:MM>:" $host_log $worker_log \
   | grep "Span started" \
   | grep "p_id: null"
 
 # Count root spans by file
 echo "Host root spans:"
-grep "<YYYY-MM-DD HH:MM>:" host.log | grep "Span started" | grep "p_id: null" | wc -l
+grep "<YYYY-MM-DD HH:MM>:" $host_log | grep "Span started" | grep "p_id: null" | wc -l
 echo "Worker root spans (should be 0):"
-grep "<YYYY-MM-DD HH:MM>:" worker.log | grep "Span started" | grep "p_id: null" | wc -l
+grep "<YYYY-MM-DD HH:MM>:" $worker_log | grep "Span started" | grep "p_id: null" | wc -l
 ```
 
 ### Pattern 4: Compare Multiple Executions
 ```bash
+worker_log="dotnet-tracer-managed-dotnet-*.log"
+
 # Save logs for each execution (substitute your actual timestamps)
-grep "<YYYY-MM-DD HH:MM>:" worker.log > exec1.log
-grep "<YYYY-MM-DD HH:MM>:" worker.log > exec2.log
+grep "<YYYY-MM-DD HH:MM>:" $worker_log > exec1.log
+grep "<YYYY-MM-DD HH:MM>:" $worker_log > exec2.log
 
 # Compare span counts
 echo "Execution 1 spans: $(grep "Span started" exec1.log | wc -l)"
@@ -214,15 +234,17 @@ Worker process (PID 56):
 # trace-viz.sh - Visualize trace structure
 
 TIMESTAMP="<YYYY-MM-DD HH:MM:S[89]>"  # adjust regex to match your seconds
+worker_log="dotnet-tracer-managed-dotnet-*.log"
+host_log="dotnet-tracer-managed-Microsoft.Azure.WebJobs.Script.WebHost-*.log"
 
 echo "=== Host Spans ==="
-grep "$TIMESTAMP" host.log \
+grep "$TIMESTAMP" $host_log \
   | grep "Span started" \
   | sed -E 's/.*\[s_id: ([^,]+), p_id: ([^,]+), t_id: ([^\]]+)\].*OperationName: "([^"]+)".*/\4: s=\1 p=\2 t=\3/'
 
 echo ""
 echo "=== Worker Spans ==="
-grep "$TIMESTAMP" worker.log \
+grep "$TIMESTAMP" $worker_log \
   | grep "Span started" \
   | sed -E 's/.*\[s_id: ([^,]+), p_id: ([^,]+), t_id: ([^\]]+)\].*OperationName: "([^"]+)".*/\4: s=\1 p=\2 t=\3/'
 ```
@@ -233,9 +255,11 @@ grep "$TIMESTAMP" worker.log \
 # span-timing.sh - Extract span durations
 
 TRACE_ID="<trace-id>"
+worker_log="dotnet-tracer-managed-dotnet-*.log"
+host_log="dotnet-tracer-managed-Microsoft.Azure.WebJobs.Script.WebHost-*.log"
 
 # Find spans with start/end times
-grep "$TRACE_ID" host.log worker.log \
+grep "$TRACE_ID" $host_log $worker_log \
   | grep "Span \(started\|closed\)" \
   | awk '{
     if ($0 ~ /Span started/) {
@@ -255,19 +279,19 @@ grep "$TRACE_ID" host.log worker.log \
 ### One-Liner Investigations
 ```bash
 # Count spans by operation name
-grep "Span started" worker.log | grep -o 'OperationName: "[^"]*"' | sort | uniq -c
+grep "Span started" dotnet-tracer-managed-dotnet-*.log | grep -o 'OperationName: "[^"]*"' | sort | uniq -c
 
 # Find all unique trace IDs in logs
-grep "Span started" worker.log | grep -o 't_id: [^]]*' | cut -d' ' -f2 | sort -u
+grep "Span started" dotnet-tracer-managed-dotnet-*.log | grep -o 't_id: [^]]*' | cut -d' ' -f2 | sort -u
 
 # Check for errors during execution
-grep "<YYYY-MM-DD HH:MM>:" worker.log | grep -i "error\|exception\|fail"
+grep "<YYYY-MM-DD HH:MM>:" dotnet-tracer-managed-dotnet-*.log | grep -i "error\|exception\|fail"
 
 # Verify tracer configuration
-grep "<YYYY-MM-DD HH:MM>:" worker.log | grep -i "DD_TRACE"
+grep "<YYYY-MM-DD HH:MM>:" dotnet-tracer-managed-dotnet-*.log | grep -i "DD_TRACE"
 
 # Find active scope information
-grep "<YYYY-MM-DD HH:MM>:" worker.log | grep -i "activescope\|internalactivescope"
+grep "<YYYY-MM-DD HH:MM>:" dotnet-tracer-managed-dotnet-*.log | grep -i "activescope\|internalactivescope"
 ```
 
 ## Tips for Effective Log Analysis

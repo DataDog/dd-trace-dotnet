@@ -210,7 +210,8 @@ Build the Datadog.AzureFunctions NuGet package.
 
 **Options**:
 - `-BuildId 12345` - Download bundle from Azure DevOps build instead of building locally
-- `-CopyTo <output-dir>` - Copy package to directory
+- `-CopyTo <output-dir>` - Copy package to directory (typically your local NuGet feed)
+- `-Version '3.38.0-dev.custom'` - Use a specific version instead of auto-generating a timestamp-based one
 - `-Verbose` - Show detailed build output
 
 ## Build Scripts
