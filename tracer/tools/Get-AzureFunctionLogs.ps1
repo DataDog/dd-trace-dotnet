@@ -134,7 +134,7 @@ Write-Host "Extracting logs to: $extractDir" -ForegroundColor Cyan
 Expand-Archive -Path $zipPath -DestinationPath $extractDir -Force
 
 # Locate Datadog logs directory
-$datadogLogDir = Join-Path $extractDir "LogFiles\datadog"
+$datadogLogDir = Join-Path $extractDir "LogFiles" "datadog"
 if (-not (Test-Path $datadogLogDir)) {
     Write-Warning "Datadog logs directory not found at: $datadogLogDir"
     return [PSCustomObject]@{
