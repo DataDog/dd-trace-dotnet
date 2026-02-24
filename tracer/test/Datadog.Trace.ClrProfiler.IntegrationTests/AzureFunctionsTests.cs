@@ -422,7 +422,9 @@ public abstract class AzureFunctionsTests : TestHelper
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
             using (await RunAzureFunctionAndWaitForExit(agent, expectedExitCode: -1))
             {
-                const int expectedSpanCount = 4;
+                // 6 spans: Timer TriggerAllTimer, http.request, azure.apim, host span (GET /api/simple),
+                // worker span (Http SimpleHttpTrigger), and host HTTP pipeline span (e.g. aspnet_core.request)
+                const int expectedSpanCount = 6;
                 var spans = await agent.WaitForSpansAsync(expectedSpanCount + 1); // +1 for ExitApp timer
                 var filteredSpans = spans.Where(s => !s.Resource.Equals("Timer ExitApp", StringComparison.OrdinalIgnoreCase)).ToImmutableList();
 
@@ -432,11 +434,12 @@ public abstract class AzureFunctionsTests : TestHelper
 
                 filteredSpans.Should().ContainSingle(s => s.Name == "azure.apim");
 
-                // Verify we have azure_functions.invoke spans
+                // Verify we have azure_functions.invoke spans: host (GET /api/simple), worker (Http SimpleHttpTrigger), Timer TriggerAllTimer
                 var functionSpans = filteredSpans.Where(s => s.Name == "azure_functions.invoke").ToList();
-                functionSpans.Should().HaveCount(2);
+                functionSpans.Should().HaveCount(3);
                 functionSpans.Should().Contain(s => s.Resource.Contains("TriggerAllTimer"));
                 functionSpans.Should().Contain(s => s.Resource.Contains("SimpleHttpTrigger"));
+                functionSpans.Should().Contain(s => s.Resource.Contains("GET /api/simple"));
 
                 // Verify the http.request span
                 var httpSpan = filteredSpans.Should().ContainSingle(s => s.Name == "http.request").Subject;
