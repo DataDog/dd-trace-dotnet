@@ -34,9 +34,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 var dataStreams = Tracer.Instance.TracerManager.DataStreamsManager;
 
                 string? clusterId = null;
-                if (sender != null)
+                if (consumer is not null)
                 {
-                    ConsumerCache.TryGetConsumerGroup(sender, out var _, out var _, out clusterId);
+                    ConsumerCache.TryGetConsumerGroup(consumer, out var _, out var _, out clusterId);
                 }
 
                 for (var i = 0; i < committedOffsets?.Offsets.Count; i++)
