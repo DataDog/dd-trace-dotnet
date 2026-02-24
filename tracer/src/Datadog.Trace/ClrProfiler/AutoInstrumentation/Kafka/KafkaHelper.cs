@@ -334,6 +334,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         /// <param name="dataStreamsManager">The global data streams manager</param>
         /// <param name="topic">Topic name</param>
         /// <param name="message">The duck-typed Kafka Message object</param>
+        /// <param name="producer">The Kafka producer instance, used to look up cluster_id from the cache</param>
         /// <typeparam name="TTopicPartitionMarker">The TopicPartition type (used  optimisation purposes)</typeparam>
         /// <typeparam name="TMessage">The type of the duck-type proxy</typeparam>
         internal static void TryInjectHeaders<TTopicPartitionMarker, TMessage>(
