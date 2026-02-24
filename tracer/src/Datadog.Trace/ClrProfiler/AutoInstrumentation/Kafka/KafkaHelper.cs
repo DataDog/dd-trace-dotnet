@@ -340,7 +340,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
             Span span,
             DataStreamsManager dataStreamsManager,
             string topic,
-            TMessage message)
+            TMessage message,
+            object producer)
             where TMessage : IMessage
         {
             if (!_headersInjectionEnabled || message.Instance is null)
@@ -363,9 +364,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 if (dataStreamsManager.IsEnabled)
                 {
                     var producerClusterId = string.Empty;
-                    if (span.Tags is KafkaTags kafkaTags && !string.IsNullOrEmpty(kafkaTags.ClusterId))
+                    if (ProducerCache.TryGetProducer(producer, out _, out var clusterId) && !string.IsNullOrEmpty(clusterId))
                     {
-                        producerClusterId = kafkaTags.ClusterId;
+                        producerClusterId = clusterId;
                     }
 
                     string[] edgeTags;

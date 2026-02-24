@@ -56,7 +56,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     scope.Span,
                     Tracer.Instance.TracerManager.DataStreamsManager,
                     partition?.Topic,
-                    message);
+                    message,
+                    instance);
                 return new CallTargetState(scope);
             }
 
