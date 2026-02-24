@@ -287,6 +287,15 @@ namespace Datadog.Trace
 
         protected virtual IAgentWriter GetAgentWriter(TracerSettings settings, IStatsdManager statsd, Action<Dictionary<string, float>> updateSampleRates, Action<string> updateConfigHash, IDiscoveryService discoveryService, TelemetrySettings telemetrySettings)
         {
+#if NET6_0_OR_GREATER
+            if (settings.Manager.InitialExporterSettings.TracesEncoding is TracesEncoding.OtlpProtobuf or TracesEncoding.OtlpJson)
+            {
+                var otlpApi = new ManagedApiOtlp(settings);
+                var otlpStatsAggregator = StatsAggregator.Create(otlpApi, settings, discoveryService);
+                return new AgentWriter(otlpApi, otlpStatsAggregator, statsd, settings);
+            }
+
+#endif
             // Currently we assume this _can't_ toggle at runtime, may need to revisit this if that changes
             IApi api = settings.DataPipelineEnabled && ManagedTraceExporter.TryCreateTraceExporter(settings, updateSampleRates, telemetrySettings, out var traceExporter)
                            ? traceExporter

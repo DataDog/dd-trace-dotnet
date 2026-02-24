@@ -1,4 +1,4 @@
-﻿// <copyright file="OtlpExporter.cs" company="Datadog">
+// <copyright file="OtlpExporter.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -7,12 +7,14 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Vendors.OpenTelemetry.Exporter.OpenTelemetryProtocol;
@@ -35,16 +37,16 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
         private readonly Telemetry.Metrics.MetricTags.MetricEncoding _encodingTag;
         private readonly OtlpMetricsSerializer _serializer;
         private readonly Uri _endpoint;
-        private readonly IReadOnlyDictionary<string, string> _headers;
+        private readonly KeyValuePair<string, string>[] _headers;
         private readonly int _timeoutMs;
         private readonly Configuration.OtlpProtocol _protocol;
 
-        public OtlpExporter(Configuration.TracerSettings settings)
+        public OtlpExporter(Configuration.TracerSettings settings, ExporterSettings exporterSettings)
         {
-            _endpoint = settings.OtlpMetricsEndpoint;
-            _headers = settings.OtlpMetricsHeaders;
-            _timeoutMs = settings.OtlpMetricsTimeoutMs;
-            _protocol = settings.OtlpMetricsProtocol;
+            _endpoint = exporterSettings.OtlpMetricsEndpoint;
+            _headers = exporterSettings.OtlpMetricsHeaders.ToArray();
+            _timeoutMs = exporterSettings.OtlpMetricsTimeoutMs;
+            _protocol = exporterSettings.OtlpMetricsProtocol;
 
             _protocolTag = _protocol switch
             {
@@ -60,7 +62,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
                 _ => Telemetry.Metrics.MetricTags.MetricEncoding.Protobuf
             };
 
-            _serializer = new OtlpMetricsSerializer(settings);
+            _serializer = new OtlpMetricsSerializer(settings, settings.OtlpMetricsTemporalityPreference);
             _httpClient = CreateHttpClient(_endpoint);
 
             if (_protocol == Configuration.OtlpProtocol.Grpc)
@@ -83,7 +85,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
             }
         }
 
-        private delegate HttpRequestMessage HttpRequestFactory(byte[] payload, Uri endpoint, IReadOnlyDictionary<string, string> headers);
+        private delegate HttpRequestMessage HttpRequestFactory(byte[] payload, Uri endpoint, IEnumerable<KeyValuePair<string, string>> headers);
 
         /// <summary>
         /// Exports a batch of metrics using OTLP protocol asynchronously.
@@ -220,7 +222,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
 
         private async Task<bool> SendHttpProtobufRequest(byte[] otlpPayload)
         {
-            static HttpRequestMessage CreateHttpProtobufRequest(byte[] payload, Uri endpoint, IReadOnlyDictionary<string, string> headers)
+            static HttpRequestMessage CreateHttpProtobufRequest(byte[] payload, Uri endpoint, IEnumerable<KeyValuePair<string, string>> headers)
             {
                 var content = new ByteArrayContent(payload);
                 content.Headers.ContentType = new MediaTypeHeaderValue("application/x-protobuf");

@@ -1,0 +1,3230 @@
+﻿{
+  "resourceSpans": [
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "Samples.OpenTelemetrySdk"
+            }
+          },
+          {
+            "key": "service.version",
+            "value": {
+              "stringValue": "1.0.x"
+            }
+          },
+          {
+            "key": "telemetry.sdk.name",
+            "value": {
+              "stringValue": "sdk-name"
+            }
+          },
+          {
+            "key": "telemetry.sdk.language",
+            "value": {
+              "stringValue": "dotnet"
+            }
+          },
+          {
+            "key": "telemetry.sdk.version",
+            "value": {
+              "stringValue": "sdk-version"
+            }
+          },
+          {
+            "key": "git.commit.sha",
+            "value": {
+              "stringValue": "normalized-git-commit-sha"
+            }
+          },
+          {
+            "key": "git.repository_url",
+            "value": {
+              "stringValue": "https://github.com/DataDog/dd-trace-dotnet"
+            }
+          },
+          {
+            "key": "runtime-id",
+            "value": {
+              "stringValue": "Guid_1"
+            }
+          }
+        ]
+      },
+      "scopeSpans": [
+        {
+          "spans": [
+            {
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "parentSpanId": "normalized-parent-span-id",
+              "name": "DeprecatedHttpStatusTagName",
+              "kind": 1,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
+              "attributes": [
+                {
+                  "key": "span.kind",
+                  "value": {
+                    "stringValue": "internal"
+                  }
+                },
+                {
+                  "key": "otel.trace_id",
+                  "value": {
+                    "stringValue": "normalized-otel-trace-id"
+                  }
+                },
+                {
+                  "key": "otel.library.name",
+                  "value": {
+                    "stringValue": "MyServiceName"
+                  }
+                },
+                {
+                  "key": "otel.status_code",
+                  "value": {
+                    "stringValue": "STATUS_CODE_UNSET"
+                  }
+                },
+                {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "MyServiceName"
+                  }
+                },
+                {
+                  "key": "service.version",
+                  "value": {
+                    "stringValue": "1.0.x"
+                  }
+                },
+                {
+                  "key": "service.instance.id",
+                  "value": {
+                    "stringValue": "Guid_2"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.name",
+                  "value": {
+                    "stringValue": "opentelemetry"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.language",
+                  "value": {
+                    "stringValue": "dotnet"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.version",
+                  "value": {
+                    "stringValue": "1.13.1"
+                  }
+                },
+                {
+                  "key": "http.status_code",
+                  "value": {
+                    "stringValue": "404"
+                  }
+                }
+              ]
+            },
+            {
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "parentSpanId": "normalized-parent-span-id",
+              "name": "InnerSpanError",
+              "kind": 1,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
+              "attributes": [
+                {
+                  "key": "span.kind",
+                  "value": {
+                    "stringValue": "internal"
+                  }
+                },
+                {
+                  "key": "otel.trace_id",
+                  "value": {
+                    "stringValue": "normalized-otel-trace-id"
+                  }
+                },
+                {
+                  "key": "otel.library.name",
+                  "value": {
+                    "stringValue": "MyServiceName"
+                  }
+                },
+                {
+                  "key": "otel.status_code",
+                  "value": {
+                    "stringValue": "STATUS_CODE_ERROR"
+                  }
+                },
+                {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "MyServiceName"
+                  }
+                },
+                {
+                  "key": "service.version",
+                  "value": {
+                    "stringValue": "1.0.x"
+                  }
+                },
+                {
+                  "key": "service.instance.id",
+                  "value": {
+                    "stringValue": "Guid_2"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.name",
+                  "value": {
+                    "stringValue": "opentelemetry"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.language",
+                  "value": {
+                    "stringValue": "dotnet"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.version",
+                  "value": {
+                    "stringValue": "1.13.1"
+                  }
+                },
+                {
+                  "key": "otel.status_description",
+                  "value": {
+                    "stringValue": "Something went wrong"
+                  }
+                },
+                {
+                  "key": "error.msg",
+                  "value": {
+                    "stringValue": "Something went wrong"
+                  }
+                }
+              ],
+              "status": {
+                "message": "Something went wrong",
+                "code": 2
+              }
+            },
+            {
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "parentSpanId": "normalized-parent-span-id",
+              "name": "InnerSpanOk",
+              "kind": 1,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
+              "attributes": [
+                {
+                  "key": "span.kind",
+                  "value": {
+                    "stringValue": "internal"
+                  }
+                },
+                {
+                  "key": "otel.trace_id",
+                  "value": {
+                    "stringValue": "normalized-otel-trace-id"
+                  }
+                },
+                {
+                  "key": "otel.library.name",
+                  "value": {
+                    "stringValue": "MyServiceName"
+                  }
+                },
+                {
+                  "key": "otel.status_code",
+                  "value": {
+                    "stringValue": "STATUS_CODE_OK"
+                  }
+                },
+                {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "MyServiceName"
+                  }
+                },
+                {
+                  "key": "service.version",
+                  "value": {
+                    "stringValue": "1.0.x"
+                  }
+                },
+                {
+                  "key": "service.instance.id",
+                  "value": {
+                    "stringValue": "Guid_2"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.name",
+                  "value": {
+                    "stringValue": "opentelemetry"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.language",
+                  "value": {
+                    "stringValue": "dotnet"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.version",
+                  "value": {
+                    "stringValue": "1.13.1"
+                  }
+                }
+              ],
+              "status": {
+                "code": 1
+              }
+            },
+            {
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "parentSpanId": "normalized-parent-span-id",
+              "name": "InnerSpanUpdated",
+              "kind": 1,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
+              "attributes": [
+                {
+                  "key": "span.kind",
+                  "value": {
+                    "stringValue": "internal"
+                  }
+                },
+                {
+                  "key": "otel.trace_id",
+                  "value": {
+                    "stringValue": "normalized-otel-trace-id"
+                  }
+                },
+                {
+                  "key": "otel.library.name",
+                  "value": {
+                    "stringValue": "MyServiceName"
+                  }
+                },
+                {
+                  "key": "otel.status_code",
+                  "value": {
+                    "stringValue": "STATUS_CODE_ERROR"
+                  }
+                },
+                {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "MyServiceName"
+                  }
+                },
+                {
+                  "key": "service.version",
+                  "value": {
+                    "stringValue": "1.0.x"
+                  }
+                },
+                {
+                  "key": "service.instance.id",
+                  "value": {
+                    "stringValue": "Guid_2"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.name",
+                  "value": {
+                    "stringValue": "opentelemetry"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.language",
+                  "value": {
+                    "stringValue": "dotnet"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.version",
+                  "value": {
+                    "stringValue": "1.13.1"
+                  }
+                },
+                {
+                  "key": "otel.status_description",
+                  "value": {
+                    "stringValue": "Example argument exception"
+                  }
+                },
+                {
+                  "key": "error.type",
+                  "value": {
+                    "stringValue": "ArgumentException"
+                  }
+                },
+                {
+                  "key": "error.msg",
+                  "value": {
+                    "stringValue": "Example argument exception"
+                  }
+                },
+                {
+                  "key": "error.stack",
+                  "value": {
+                    "stringValue": "System.ArgumentException: Example argument exception"
+                  }
+                }
+              ],
+              "events": [
+                {
+                  "timeUnixNano": "0",
+                  "name": "exception",
+                  "attributes": [
+                    {
+                      "key": "exception.type",
+                      "value": {
+                        "stringValue": "ArgumentException"
+                      }
+                    },
+                    {
+                      "key": "exception.stacktrace",
+                      "value": {
+                        "stringValue": "System.ArgumentException: Example argument exception"
+                      }
+                    },
+                    {
+                      "key": "exception.message",
+                      "value": {
+                        "stringValue": "Example argument exception"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "status": {
+                "message": "Example argument exception",
+                "code": 2
+              }
+            },
+            {
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "name": "OperationNameRootSpan",
+              "kind": 1,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
+              "attributes": [
+                {
+                  "key": "span.kind",
+                  "value": {
+                    "stringValue": "internal"
+                  }
+                },
+                {
+                  "key": "otel.trace_id",
+                  "value": {
+                    "stringValue": "normalized-otel-trace-id"
+                  }
+                },
+                {
+                  "key": "otel.library.name",
+                  "value": {
+                    "stringValue": "MyServiceName"
+                  }
+                },
+                {
+                  "key": "otel.status_code",
+                  "value": {
+                    "stringValue": "STATUS_CODE_UNSET"
+                  }
+                },
+                {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "MyServiceName"
+                  }
+                },
+                {
+                  "key": "service.version",
+                  "value": {
+                    "stringValue": "1.0.x"
+                  }
+                },
+                {
+                  "key": "service.instance.id",
+                  "value": {
+                    "stringValue": "Guid_2"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.name",
+                  "value": {
+                    "stringValue": "opentelemetry"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.language",
+                  "value": {
+                    "stringValue": "dotnet"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.version",
+                  "value": {
+                    "stringValue": "1.13.1"
+                  }
+                },
+                {
+                  "key": "runtime-id",
+                  "value": {
+                    "stringValue": "Guid_1"
+                  }
+                }
+              ]
+            },
+            {
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "parentSpanId": "normalized-parent-span-id",
+              "name": "ResourceName",
+              "kind": 2,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
+              "attributes": [
+                {
+                  "key": "span.kind",
+                  "value": {
+                    "stringValue": "server"
+                  }
+                },
+                {
+                  "key": "otel.trace_id",
+                  "value": {
+                    "stringValue": "normalized-otel-trace-id"
+                  }
+                },
+                {
+                  "key": "otel.library.name",
+                  "value": {
+                    "stringValue": "MyServiceName"
+                  }
+                },
+                {
+                  "key": "otel.status_code",
+                  "value": {
+                    "stringValue": "STATUS_CODE_UNSET"
+                  }
+                },
+                {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "MyServiceName"
+                  }
+                },
+                {
+                  "key": "service.version",
+                  "value": {
+                    "stringValue": "1.0.x"
+                  }
+                },
+                {
+                  "key": "service.instance.id",
+                  "value": {
+                    "stringValue": "Guid_2"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.name",
+                  "value": {
+                    "stringValue": "opentelemetry"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.language",
+                  "value": {
+                    "stringValue": "dotnet"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.version",
+                  "value": {
+                    "stringValue": "1.13.1"
+                  }
+                },
+                {
+                  "key": "http.request.method",
+                  "value": {
+                    "stringValue": "GET"
+                  }
+                }
+              ]
+            },
+            {
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "parentSpanId": "normalized-parent-span-id",
+              "name": "ResourceName",
+              "kind": 3,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
+              "attributes": [
+                {
+                  "key": "span.kind",
+                  "value": {
+                    "stringValue": "client"
+                  }
+                },
+                {
+                  "key": "otel.trace_id",
+                  "value": {
+                    "stringValue": "normalized-otel-trace-id"
+                  }
+                },
+                {
+                  "key": "otel.library.name",
+                  "value": {
+                    "stringValue": "MyServiceName"
+                  }
+                },
+                {
+                  "key": "otel.status_code",
+                  "value": {
+                    "stringValue": "STATUS_CODE_UNSET"
+                  }
+                },
+                {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "MyServiceName"
+                  }
+                },
+                {
+                  "key": "service.version",
+                  "value": {
+                    "stringValue": "1.0.x"
+                  }
+                },
+                {
+                  "key": "service.instance.id",
+                  "value": {
+                    "stringValue": "Guid_2"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.name",
+                  "value": {
+                    "stringValue": "opentelemetry"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.language",
+                  "value": {
+                    "stringValue": "dotnet"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.version",
+                  "value": {
+                    "stringValue": "1.13.1"
+                  }
+                },
+                {
+                  "key": "http.request.method",
+                  "value": {
+                    "stringValue": "GET"
+                  }
+                }
+              ]
+            },
+            {
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "parentSpanId": "normalized-parent-span-id",
+              "name": "ResourceName",
+              "kind": 3,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
+              "attributes": [
+                {
+                  "key": "span.kind",
+                  "value": {
+                    "stringValue": "client"
+                  }
+                },
+                {
+                  "key": "otel.trace_id",
+                  "value": {
+                    "stringValue": "normalized-otel-trace-id"
+                  }
+                },
+                {
+                  "key": "otel.library.name",
+                  "value": {
+                    "stringValue": "MyServiceName"
+                  }
+                },
+                {
+                  "key": "otel.status_code",
+                  "value": {
+                    "stringValue": "STATUS_CODE_UNSET"
+                  }
+                },
+                {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "MyServiceName"
+                  }
+                },
+                {
+                  "key": "service.version",
+                  "value": {
+                    "stringValue": "1.0.x"
+                  }
+                },
+                {
+                  "key": "service.instance.id",
+                  "value": {
+                    "stringValue": "Guid_2"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.name",
+                  "value": {
+                    "stringValue": "opentelemetry"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.language",
+                  "value": {
+                    "stringValue": "dotnet"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.version",
+                  "value": {
+                    "stringValue": "1.13.1"
+                  }
+                },
+                {
+                  "key": "db.system",
+                  "value": {
+                    "stringValue": "Redis"
+                  }
+                }
+              ]
+            },
+            {
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "parentSpanId": "normalized-parent-span-id",
+              "name": "ResourceName",
+              "kind": 3,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
+              "attributes": [
+                {
+                  "key": "span.kind",
+                  "value": {
+                    "stringValue": "client"
+                  }
+                },
+                {
+                  "key": "otel.trace_id",
+                  "value": {
+                    "stringValue": "normalized-otel-trace-id"
+                  }
+                },
+                {
+                  "key": "otel.library.name",
+                  "value": {
+                    "stringValue": "MyServiceName"
+                  }
+                },
+                {
+                  "key": "otel.status_code",
+                  "value": {
+                    "stringValue": "STATUS_CODE_UNSET"
+                  }
+                },
+                {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "MyServiceName"
+                  }
+                },
+                {
+                  "key": "service.version",
+                  "value": {
+                    "stringValue": "1.0.x"
+                  }
+                },
+                {
+                  "key": "service.instance.id",
+                  "value": {
+                    "stringValue": "Guid_2"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.name",
+                  "value": {
+                    "stringValue": "opentelemetry"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.language",
+                  "value": {
+                    "stringValue": "dotnet"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.version",
+                  "value": {
+                    "stringValue": "1.13.1"
+                  }
+                },
+                {
+                  "key": "messaging.system",
+                  "value": {
+                    "stringValue": "Kafka"
+                  }
+                },
+                {
+                  "key": "messaging.operation",
+                  "value": {
+                    "stringValue": "Receive"
+                  }
+                }
+              ]
+            },
+            {
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "parentSpanId": "normalized-parent-span-id",
+              "name": "ResourceName",
+              "kind": 2,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
+              "attributes": [
+                {
+                  "key": "span.kind",
+                  "value": {
+                    "stringValue": "server"
+                  }
+                },
+                {
+                  "key": "otel.trace_id",
+                  "value": {
+                    "stringValue": "normalized-otel-trace-id"
+                  }
+                },
+                {
+                  "key": "otel.library.name",
+                  "value": {
+                    "stringValue": "MyServiceName"
+                  }
+                },
+                {
+                  "key": "otel.status_code",
+                  "value": {
+                    "stringValue": "STATUS_CODE_UNSET"
+                  }
+                },
+                {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "MyServiceName"
+                  }
+                },
+                {
+                  "key": "service.version",
+                  "value": {
+                    "stringValue": "1.0.x"
+                  }
+                },
+                {
+                  "key": "service.instance.id",
+                  "value": {
+                    "stringValue": "Guid_2"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.name",
+                  "value": {
+                    "stringValue": "opentelemetry"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.language",
+                  "value": {
+                    "stringValue": "dotnet"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.version",
+                  "value": {
+                    "stringValue": "1.13.1"
+                  }
+                },
+                {
+                  "key": "messaging.system",
+                  "value": {
+                    "stringValue": "Kafka"
+                  }
+                },
+                {
+                  "key": "messaging.operation",
+                  "value": {
+                    "stringValue": "Receive"
+                  }
+                }
+              ]
+            },
+            {
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "parentSpanId": "normalized-parent-span-id",
+              "name": "ResourceName",
+              "kind": 4,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
+              "attributes": [
+                {
+                  "key": "span.kind",
+                  "value": {
+                    "stringValue": "producer"
+                  }
+                },
+                {
+                  "key": "otel.trace_id",
+                  "value": {
+                    "stringValue": "normalized-otel-trace-id"
+                  }
+                },
+                {
+                  "key": "otel.library.name",
+                  "value": {
+                    "stringValue": "MyServiceName"
+                  }
+                },
+                {
+                  "key": "otel.status_code",
+                  "value": {
+                    "stringValue": "STATUS_CODE_UNSET"
+                  }
+                },
+                {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "MyServiceName"
+                  }
+                },
+                {
+                  "key": "service.version",
+                  "value": {
+                    "stringValue": "1.0.x"
+                  }
+                },
+                {
+                  "key": "service.instance.id",
+                  "value": {
+                    "stringValue": "Guid_2"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.name",
+                  "value": {
+                    "stringValue": "opentelemetry"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.language",
+                  "value": {
+                    "stringValue": "dotnet"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.version",
+                  "value": {
+                    "stringValue": "1.13.1"
+                  }
+                },
+                {
+                  "key": "messaging.system",
+                  "value": {
+                    "stringValue": "Kafka"
+                  }
+                },
+                {
+                  "key": "messaging.operation",
+                  "value": {
+                    "stringValue": "Receive"
+                  }
+                }
+              ]
+            },
+            {
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "parentSpanId": "normalized-parent-span-id",
+              "name": "ResourceName",
+              "kind": 5,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
+              "attributes": [
+                {
+                  "key": "span.kind",
+                  "value": {
+                    "stringValue": "consumer"
+                  }
+                },
+                {
+                  "key": "otel.trace_id",
+                  "value": {
+                    "stringValue": "normalized-otel-trace-id"
+                  }
+                },
+                {
+                  "key": "otel.library.name",
+                  "value": {
+                    "stringValue": "MyServiceName"
+                  }
+                },
+                {
+                  "key": "otel.status_code",
+                  "value": {
+                    "stringValue": "STATUS_CODE_UNSET"
+                  }
+                },
+                {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "MyServiceName"
+                  }
+                },
+                {
+                  "key": "service.version",
+                  "value": {
+                    "stringValue": "1.0.x"
+                  }
+                },
+                {
+                  "key": "service.instance.id",
+                  "value": {
+                    "stringValue": "Guid_2"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.name",
+                  "value": {
+                    "stringValue": "opentelemetry"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.language",
+                  "value": {
+                    "stringValue": "dotnet"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.version",
+                  "value": {
+                    "stringValue": "1.13.1"
+                  }
+                },
+                {
+                  "key": "messaging.system",
+                  "value": {
+                    "stringValue": "Kafka"
+                  }
+                },
+                {
+                  "key": "messaging.operation",
+                  "value": {
+                    "stringValue": "Receive"
+                  }
+                }
+              ]
+            },
+            {
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "parentSpanId": "normalized-parent-span-id",
+              "name": "ResourceName",
+              "kind": 3,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
+              "attributes": [
+                {
+                  "key": "span.kind",
+                  "value": {
+                    "stringValue": "client"
+                  }
+                },
+                {
+                  "key": "otel.trace_id",
+                  "value": {
+                    "stringValue": "normalized-otel-trace-id"
+                  }
+                },
+                {
+                  "key": "otel.library.name",
+                  "value": {
+                    "stringValue": "MyServiceName"
+                  }
+                },
+                {
+                  "key": "otel.status_code",
+                  "value": {
+                    "stringValue": "STATUS_CODE_UNSET"
+                  }
+                },
+                {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "MyServiceName"
+                  }
+                },
+                {
+                  "key": "service.version",
+                  "value": {
+                    "stringValue": "1.0.x"
+                  }
+                },
+                {
+                  "key": "service.instance.id",
+                  "value": {
+                    "stringValue": "Guid_2"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.name",
+                  "value": {
+                    "stringValue": "opentelemetry"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.language",
+                  "value": {
+                    "stringValue": "dotnet"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.version",
+                  "value": {
+                    "stringValue": "1.13.1"
+                  }
+                },
+                {
+                  "key": "rpc.system",
+                  "value": {
+                    "stringValue": "aws-api"
+                  }
+                },
+                {
+                  "key": "rpc.service",
+                  "value": {
+                    "stringValue": "S3"
+                  }
+                }
+              ]
+            },
+            {
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "parentSpanId": "normalized-parent-span-id",
+              "name": "ResourceName",
+              "kind": 3,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
+              "attributes": [
+                {
+                  "key": "span.kind",
+                  "value": {
+                    "stringValue": "client"
+                  }
+                },
+                {
+                  "key": "otel.trace_id",
+                  "value": {
+                    "stringValue": "normalized-otel-trace-id"
+                  }
+                },
+                {
+                  "key": "otel.library.name",
+                  "value": {
+                    "stringValue": "MyServiceName"
+                  }
+                },
+                {
+                  "key": "otel.status_code",
+                  "value": {
+                    "stringValue": "STATUS_CODE_UNSET"
+                  }
+                },
+                {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "MyServiceName"
+                  }
+                },
+                {
+                  "key": "service.version",
+                  "value": {
+                    "stringValue": "1.0.x"
+                  }
+                },
+                {
+                  "key": "service.instance.id",
+                  "value": {
+                    "stringValue": "Guid_2"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.name",
+                  "value": {
+                    "stringValue": "opentelemetry"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.language",
+                  "value": {
+                    "stringValue": "dotnet"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.version",
+                  "value": {
+                    "stringValue": "1.13.1"
+                  }
+                },
+                {
+                  "key": "rpc.system",
+                  "value": {
+                    "stringValue": "aws-api"
+                  }
+                }
+              ]
+            },
+            {
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "parentSpanId": "normalized-parent-span-id",
+              "name": "ResourceName",
+              "kind": 3,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
+              "attributes": [
+                {
+                  "key": "span.kind",
+                  "value": {
+                    "stringValue": "client"
+                  }
+                },
+                {
+                  "key": "otel.trace_id",
+                  "value": {
+                    "stringValue": "normalized-otel-trace-id"
+                  }
+                },
+                {
+                  "key": "otel.library.name",
+                  "value": {
+                    "stringValue": "MyServiceName"
+                  }
+                },
+                {
+                  "key": "otel.status_code",
+                  "value": {
+                    "stringValue": "STATUS_CODE_UNSET"
+                  }
+                },
+                {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "MyServiceName"
+                  }
+                },
+                {
+                  "key": "service.version",
+                  "value": {
+                    "stringValue": "1.0.x"
+                  }
+                },
+                {
+                  "key": "service.instance.id",
+                  "value": {
+                    "stringValue": "Guid_2"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.name",
+                  "value": {
+                    "stringValue": "opentelemetry"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.language",
+                  "value": {
+                    "stringValue": "dotnet"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.version",
+                  "value": {
+                    "stringValue": "1.13.1"
+                  }
+                },
+                {
+                  "key": "rpc.system",
+                  "value": {
+                    "stringValue": "GRPC"
+                  }
+                }
+              ]
+            },
+            {
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "parentSpanId": "normalized-parent-span-id",
+              "name": "ResourceName",
+              "kind": 2,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
+              "attributes": [
+                {
+                  "key": "span.kind",
+                  "value": {
+                    "stringValue": "server"
+                  }
+                },
+                {
+                  "key": "otel.trace_id",
+                  "value": {
+                    "stringValue": "normalized-otel-trace-id"
+                  }
+                },
+                {
+                  "key": "otel.library.name",
+                  "value": {
+                    "stringValue": "MyServiceName"
+                  }
+                },
+                {
+                  "key": "otel.status_code",
+                  "value": {
+                    "stringValue": "STATUS_CODE_UNSET"
+                  }
+                },
+                {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "MyServiceName"
+                  }
+                },
+                {
+                  "key": "service.version",
+                  "value": {
+                    "stringValue": "1.0.x"
+                  }
+                },
+                {
+                  "key": "service.instance.id",
+                  "value": {
+                    "stringValue": "Guid_2"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.name",
+                  "value": {
+                    "stringValue": "opentelemetry"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.language",
+                  "value": {
+                    "stringValue": "dotnet"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.version",
+                  "value": {
+                    "stringValue": "1.13.1"
+                  }
+                },
+                {
+                  "key": "rpc.system",
+                  "value": {
+                    "stringValue": "GRPC"
+                  }
+                }
+              ]
+            },
+            {
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "parentSpanId": "normalized-parent-span-id",
+              "name": "ResourceName",
+              "kind": 3,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
+              "attributes": [
+                {
+                  "key": "span.kind",
+                  "value": {
+                    "stringValue": "client"
+                  }
+                },
+                {
+                  "key": "otel.trace_id",
+                  "value": {
+                    "stringValue": "normalized-otel-trace-id"
+                  }
+                },
+                {
+                  "key": "otel.library.name",
+                  "value": {
+                    "stringValue": "MyServiceName"
+                  }
+                },
+                {
+                  "key": "otel.status_code",
+                  "value": {
+                    "stringValue": "STATUS_CODE_UNSET"
+                  }
+                },
+                {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "MyServiceName"
+                  }
+                },
+                {
+                  "key": "service.version",
+                  "value": {
+                    "stringValue": "1.0.x"
+                  }
+                },
+                {
+                  "key": "service.instance.id",
+                  "value": {
+                    "stringValue": "Guid_2"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.name",
+                  "value": {
+                    "stringValue": "opentelemetry"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.language",
+                  "value": {
+                    "stringValue": "dotnet"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.version",
+                  "value": {
+                    "stringValue": "1.13.1"
+                  }
+                },
+                {
+                  "key": "faas.invoked_provider",
+                  "value": {
+                    "stringValue": "aws"
+                  }
+                },
+                {
+                  "key": "faas.invoked_name",
+                  "value": {
+                    "stringValue": "My-Function"
+                  }
+                }
+              ]
+            },
+            {
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "parentSpanId": "normalized-parent-span-id",
+              "name": "ResourceName",
+              "kind": 2,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
+              "attributes": [
+                {
+                  "key": "span.kind",
+                  "value": {
+                    "stringValue": "server"
+                  }
+                },
+                {
+                  "key": "otel.trace_id",
+                  "value": {
+                    "stringValue": "normalized-otel-trace-id"
+                  }
+                },
+                {
+                  "key": "otel.library.name",
+                  "value": {
+                    "stringValue": "MyServiceName"
+                  }
+                },
+                {
+                  "key": "otel.status_code",
+                  "value": {
+                    "stringValue": "STATUS_CODE_UNSET"
+                  }
+                },
+                {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "MyServiceName"
+                  }
+                },
+                {
+                  "key": "service.version",
+                  "value": {
+                    "stringValue": "1.0.x"
+                  }
+                },
+                {
+                  "key": "service.instance.id",
+                  "value": {
+                    "stringValue": "Guid_2"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.name",
+                  "value": {
+                    "stringValue": "opentelemetry"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.language",
+                  "value": {
+                    "stringValue": "dotnet"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.version",
+                  "value": {
+                    "stringValue": "1.13.1"
+                  }
+                },
+                {
+                  "key": "faas.trigger",
+                  "value": {
+                    "stringValue": "Datasource"
+                  }
+                }
+              ]
+            },
+            {
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "parentSpanId": "normalized-parent-span-id",
+              "name": "ResourceName",
+              "kind": 2,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
+              "attributes": [
+                {
+                  "key": "span.kind",
+                  "value": {
+                    "stringValue": "server"
+                  }
+                },
+                {
+                  "key": "otel.trace_id",
+                  "value": {
+                    "stringValue": "normalized-otel-trace-id"
+                  }
+                },
+                {
+                  "key": "otel.library.name",
+                  "value": {
+                    "stringValue": "MyServiceName"
+                  }
+                },
+                {
+                  "key": "otel.status_code",
+                  "value": {
+                    "stringValue": "STATUS_CODE_UNSET"
+                  }
+                },
+                {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "MyServiceName"
+                  }
+                },
+                {
+                  "key": "service.version",
+                  "value": {
+                    "stringValue": "1.0.x"
+                  }
+                },
+                {
+                  "key": "service.instance.id",
+                  "value": {
+                    "stringValue": "Guid_2"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.name",
+                  "value": {
+                    "stringValue": "opentelemetry"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.language",
+                  "value": {
+                    "stringValue": "dotnet"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.version",
+                  "value": {
+                    "stringValue": "1.13.1"
+                  }
+                },
+                {
+                  "key": "graphql.operation.type",
+                  "value": {
+                    "stringValue": "query"
+                  }
+                }
+              ]
+            },
+            {
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "parentSpanId": "normalized-parent-span-id",
+              "name": "ResourceName",
+              "kind": 2,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
+              "attributes": [
+                {
+                  "key": "span.kind",
+                  "value": {
+                    "stringValue": "server"
+                  }
+                },
+                {
+                  "key": "otel.trace_id",
+                  "value": {
+                    "stringValue": "normalized-otel-trace-id"
+                  }
+                },
+                {
+                  "key": "otel.library.name",
+                  "value": {
+                    "stringValue": "MyServiceName"
+                  }
+                },
+                {
+                  "key": "otel.status_code",
+                  "value": {
+                    "stringValue": "STATUS_CODE_UNSET"
+                  }
+                },
+                {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "MyServiceName"
+                  }
+                },
+                {
+                  "key": "service.version",
+                  "value": {
+                    "stringValue": "1.0.x"
+                  }
+                },
+                {
+                  "key": "service.instance.id",
+                  "value": {
+                    "stringValue": "Guid_2"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.name",
+                  "value": {
+                    "stringValue": "opentelemetry"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.language",
+                  "value": {
+                    "stringValue": "dotnet"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.version",
+                  "value": {
+                    "stringValue": "1.13.1"
+                  }
+                },
+                {
+                  "key": "network.protocol.name",
+                  "value": {
+                    "stringValue": "Amqp"
+                  }
+                }
+              ]
+            },
+            {
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "parentSpanId": "normalized-parent-span-id",
+              "name": "ResourceName",
+              "kind": 2,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
+              "attributes": [
+                {
+                  "key": "span.kind",
+                  "value": {
+                    "stringValue": "server"
+                  }
+                },
+                {
+                  "key": "otel.trace_id",
+                  "value": {
+                    "stringValue": "normalized-otel-trace-id"
+                  }
+                },
+                {
+                  "key": "otel.library.name",
+                  "value": {
+                    "stringValue": "MyServiceName"
+                  }
+                },
+                {
+                  "key": "otel.status_code",
+                  "value": {
+                    "stringValue": "STATUS_CODE_UNSET"
+                  }
+                },
+                {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "MyServiceName"
+                  }
+                },
+                {
+                  "key": "service.version",
+                  "value": {
+                    "stringValue": "1.0.x"
+                  }
+                },
+                {
+                  "key": "service.instance.id",
+                  "value": {
+                    "stringValue": "Guid_2"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.name",
+                  "value": {
+                    "stringValue": "opentelemetry"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.language",
+                  "value": {
+                    "stringValue": "dotnet"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.version",
+                  "value": {
+                    "stringValue": "1.13.1"
+                  }
+                }
+              ]
+            },
+            {
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "parentSpanId": "normalized-parent-span-id",
+              "name": "ResourceName",
+              "kind": 3,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
+              "attributes": [
+                {
+                  "key": "span.kind",
+                  "value": {
+                    "stringValue": "client"
+                  }
+                },
+                {
+                  "key": "otel.trace_id",
+                  "value": {
+                    "stringValue": "normalized-otel-trace-id"
+                  }
+                },
+                {
+                  "key": "otel.library.name",
+                  "value": {
+                    "stringValue": "MyServiceName"
+                  }
+                },
+                {
+                  "key": "otel.status_code",
+                  "value": {
+                    "stringValue": "STATUS_CODE_UNSET"
+                  }
+                },
+                {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "MyServiceName"
+                  }
+                },
+                {
+                  "key": "service.version",
+                  "value": {
+                    "stringValue": "1.0.x"
+                  }
+                },
+                {
+                  "key": "service.instance.id",
+                  "value": {
+                    "stringValue": "Guid_2"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.name",
+                  "value": {
+                    "stringValue": "opentelemetry"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.language",
+                  "value": {
+                    "stringValue": "dotnet"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.version",
+                  "value": {
+                    "stringValue": "1.13.1"
+                  }
+                },
+                {
+                  "key": "network.protocol.name",
+                  "value": {
+                    "stringValue": "Amqp"
+                  }
+                }
+              ]
+            },
+            {
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "parentSpanId": "normalized-parent-span-id",
+              "name": "ResourceName",
+              "kind": 3,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
+              "attributes": [
+                {
+                  "key": "span.kind",
+                  "value": {
+                    "stringValue": "client"
+                  }
+                },
+                {
+                  "key": "otel.trace_id",
+                  "value": {
+                    "stringValue": "normalized-otel-trace-id"
+                  }
+                },
+                {
+                  "key": "otel.library.name",
+                  "value": {
+                    "stringValue": "MyServiceName"
+                  }
+                },
+                {
+                  "key": "otel.status_code",
+                  "value": {
+                    "stringValue": "STATUS_CODE_UNSET"
+                  }
+                },
+                {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "MyServiceName"
+                  }
+                },
+                {
+                  "key": "service.version",
+                  "value": {
+                    "stringValue": "1.0.x"
+                  }
+                },
+                {
+                  "key": "service.instance.id",
+                  "value": {
+                    "stringValue": "Guid_2"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.name",
+                  "value": {
+                    "stringValue": "opentelemetry"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.language",
+                  "value": {
+                    "stringValue": "dotnet"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.version",
+                  "value": {
+                    "stringValue": "1.13.1"
+                  }
+                }
+              ]
+            },
+            {
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "parentSpanId": "normalized-parent-span-id",
+              "name": "ResourceName",
+              "kind": 1,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
+              "attributes": [
+                {
+                  "key": "span.kind",
+                  "value": {
+                    "stringValue": "internal"
+                  }
+                },
+                {
+                  "key": "otel.trace_id",
+                  "value": {
+                    "stringValue": "normalized-otel-trace-id"
+                  }
+                },
+                {
+                  "key": "otel.library.name",
+                  "value": {
+                    "stringValue": "MyServiceName"
+                  }
+                },
+                {
+                  "key": "otel.status_code",
+                  "value": {
+                    "stringValue": "STATUS_CODE_UNSET"
+                  }
+                },
+                {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "MyServiceName"
+                  }
+                },
+                {
+                  "key": "service.version",
+                  "value": {
+                    "stringValue": "1.0.x"
+                  }
+                },
+                {
+                  "key": "service.instance.id",
+                  "value": {
+                    "stringValue": "Guid_2"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.name",
+                  "value": {
+                    "stringValue": "opentelemetry"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.language",
+                  "value": {
+                    "stringValue": "dotnet"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.version",
+                  "value": {
+                    "stringValue": "1.13.1"
+                  }
+                }
+              ]
+            },
+            {
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "parentSpanId": "normalized-parent-span-id",
+              "name": "ResourceName",
+              "kind": 5,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
+              "attributes": [
+                {
+                  "key": "span.kind",
+                  "value": {
+                    "stringValue": "consumer"
+                  }
+                },
+                {
+                  "key": "otel.trace_id",
+                  "value": {
+                    "stringValue": "normalized-otel-trace-id"
+                  }
+                },
+                {
+                  "key": "otel.library.name",
+                  "value": {
+                    "stringValue": "MyServiceName"
+                  }
+                },
+                {
+                  "key": "otel.status_code",
+                  "value": {
+                    "stringValue": "STATUS_CODE_UNSET"
+                  }
+                },
+                {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "MyServiceName"
+                  }
+                },
+                {
+                  "key": "service.version",
+                  "value": {
+                    "stringValue": "1.0.x"
+                  }
+                },
+                {
+                  "key": "service.instance.id",
+                  "value": {
+                    "stringValue": "Guid_2"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.name",
+                  "value": {
+                    "stringValue": "opentelemetry"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.language",
+                  "value": {
+                    "stringValue": "dotnet"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.version",
+                  "value": {
+                    "stringValue": "1.13.1"
+                  }
+                }
+              ]
+            },
+            {
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "parentSpanId": "normalized-parent-span-id",
+              "name": "ResourceName",
+              "kind": 4,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
+              "attributes": [
+                {
+                  "key": "span.kind",
+                  "value": {
+                    "stringValue": "producer"
+                  }
+                },
+                {
+                  "key": "otel.trace_id",
+                  "value": {
+                    "stringValue": "normalized-otel-trace-id"
+                  }
+                },
+                {
+                  "key": "otel.library.name",
+                  "value": {
+                    "stringValue": "MyServiceName"
+                  }
+                },
+                {
+                  "key": "otel.status_code",
+                  "value": {
+                    "stringValue": "STATUS_CODE_UNSET"
+                  }
+                },
+                {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "MyServiceName"
+                  }
+                },
+                {
+                  "key": "service.version",
+                  "value": {
+                    "stringValue": "1.0.x"
+                  }
+                },
+                {
+                  "key": "service.instance.id",
+                  "value": {
+                    "stringValue": "Guid_2"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.name",
+                  "value": {
+                    "stringValue": "opentelemetry"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.language",
+                  "value": {
+                    "stringValue": "dotnet"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.version",
+                  "value": {
+                    "stringValue": "1.13.1"
+                  }
+                }
+              ]
+            },
+            {
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "parentSpanId": "normalized-parent-span-id",
+              "name": "ResourceNameOverride",
+              "kind": 2,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
+              "attributes": [
+                {
+                  "key": "span.kind",
+                  "value": {
+                    "stringValue": "server"
+                  }
+                },
+                {
+                  "key": "otel.trace_id",
+                  "value": {
+                    "stringValue": "normalized-otel-trace-id"
+                  }
+                },
+                {
+                  "key": "otel.library.name",
+                  "value": {
+                    "stringValue": "MyServiceName"
+                  }
+                },
+                {
+                  "key": "otel.status_code",
+                  "value": {
+                    "stringValue": "STATUS_CODE_UNSET"
+                  }
+                },
+                {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "MyServiceName"
+                  }
+                },
+                {
+                  "key": "service.version",
+                  "value": {
+                    "stringValue": "1.0.x"
+                  }
+                },
+                {
+                  "key": "service.instance.id",
+                  "value": {
+                    "stringValue": "Guid_2"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.name",
+                  "value": {
+                    "stringValue": "opentelemetry"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.language",
+                  "value": {
+                    "stringValue": "dotnet"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.version",
+                  "value": {
+                    "stringValue": "1.13.1"
+                  }
+                },
+                {
+                  "key": "http.request.method",
+                  "value": {
+                    "stringValue": "GET"
+                  }
+                },
+                {
+                  "key": "runtime-id",
+                  "value": {
+                    "stringValue": "Guid_1"
+                  }
+                },
+                {
+                  "key": "_dd1.sr.eausr",
+                  "value": {
+                    "doubleValue": 1.0
+                  }
+                }
+              ]
+            },
+            {
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "parentSpanId": "normalized-parent-span-id",
+              "name": "Response",
+              "kind": 1,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
+              "attributes": [
+                {
+                  "key": "span.kind",
+                  "value": {
+                    "stringValue": "internal"
+                  }
+                },
+                {
+                  "key": "otel.trace_id",
+                  "value": {
+                    "stringValue": "normalized-otel-trace-id"
+                  }
+                },
+                {
+                  "key": "otel.library.name",
+                  "value": {
+                    "stringValue": "OtherLibrary"
+                  }
+                },
+                {
+                  "key": "otel.library.version",
+                  "value": {
+                    "stringValue": "4.0.0"
+                  }
+                },
+                {
+                  "key": "otel.status_code",
+                  "value": {
+                    "stringValue": "STATUS_CODE_UNSET"
+                  }
+                },
+                {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "MyServiceName"
+                  }
+                },
+                {
+                  "key": "service.version",
+                  "value": {
+                    "stringValue": "1.0.x"
+                  }
+                },
+                {
+                  "key": "service.instance.id",
+                  "value": {
+                    "stringValue": "Guid_2"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.name",
+                  "value": {
+                    "stringValue": "opentelemetry"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.language",
+                  "value": {
+                    "stringValue": "dotnet"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.version",
+                  "value": {
+                    "stringValue": "1.13.1"
+                  }
+                }
+              ]
+            },
+            {
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "name": "SayHello",
+              "kind": 1,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
+              "attributes": [
+                {
+                  "key": "span.kind",
+                  "value": {
+                    "stringValue": "internal"
+                  }
+                },
+                {
+                  "key": "otel.trace_id",
+                  "value": {
+                    "stringValue": "normalized-otel-trace-id"
+                  }
+                },
+                {
+                  "key": "otel.library.name",
+                  "value": {
+                    "stringValue": "MyServiceName"
+                  }
+                },
+                {
+                  "key": "otel.status_code",
+                  "value": {
+                    "stringValue": "STATUS_CODE_UNSET"
+                  }
+                },
+                {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "MyServiceName"
+                  }
+                },
+                {
+                  "key": "service.version",
+                  "value": {
+                    "stringValue": "1.0.x"
+                  }
+                },
+                {
+                  "key": "service.instance.id",
+                  "value": {
+                    "stringValue": "Guid_2"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.name",
+                  "value": {
+                    "stringValue": "opentelemetry"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.language",
+                  "value": {
+                    "stringValue": "dotnet"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.version",
+                  "value": {
+                    "stringValue": "1.13.1"
+                  }
+                },
+                {
+                  "key": "attribute-string",
+                  "value": {
+                    "stringValue": "\"str"
+                  }
+                },
+                {
+                  "key": "attribute-bool",
+                  "value": {
+                    "stringValue": "true"
+                  }
+                },
+                {
+                  "key": "attribute-stringArray.0",
+                  "value": {
+                    "stringValue": "\"str1\""
+                  }
+                },
+                {
+                  "key": "attribute-stringArray.1",
+                  "value": {
+                    "stringValue": "str2"
+                  }
+                },
+                {
+                  "key": "attribute-stringArray.2",
+                  "value": {
+                    "stringValue": "str3"
+                  }
+                },
+                {
+                  "key": "attribute-stringArrayEmpty",
+                  "value": {
+                    "stringValue": "[]"
+                  }
+                },
+                {
+                  "key": "attribute-intArrayEmpty",
+                  "value": {
+                    "stringValue": "[]"
+                  }
+                },
+                {
+                  "key": "attribute-boolArray.0",
+                  "value": {
+                    "stringValue": "false"
+                  }
+                },
+                {
+                  "key": "attribute-boolArray.1",
+                  "value": {
+                    "stringValue": "true"
+                  }
+                },
+                {
+                  "key": "attribute-boolArray.2",
+                  "value": {
+                    "stringValue": "false"
+                  }
+                },
+                {
+                  "key": "attribute-boolArrayEmpty",
+                  "value": {
+                    "stringValue": "[]"
+                  }
+                },
+                {
+                  "key": "attribute-doubleArrayEmpty",
+                  "value": {
+                    "stringValue": "[]"
+                  }
+                },
+                {
+                  "key": "runtime-id",
+                  "value": {
+                    "stringValue": "Guid_1"
+                  }
+                },
+                {
+                  "key": "attribute-int",
+                  "value": {
+                    "doubleValue": 1.0
+                  }
+                },
+                {
+                  "key": "attribute-double",
+                  "value": {
+                    "doubleValue": 2.0
+                  }
+                },
+                {
+                  "key": "attribute-intArray.0",
+                  "value": {
+                    "doubleValue": 1.0
+                  }
+                },
+                {
+                  "key": "attribute-intArray.1",
+                  "value": {
+                    "doubleValue": 2.0
+                  }
+                },
+                {
+                  "key": "attribute-intArray.2",
+                  "value": {
+                    "doubleValue": 3.0
+                  }
+                },
+                {
+                  "key": "attribute-doubleArray.0",
+                  "value": {
+                    "doubleValue": 4.1
+                  }
+                },
+                {
+                  "key": "attribute-doubleArray.1",
+                  "value": {
+                    "doubleValue": 5.0
+                  }
+                },
+                {
+                  "key": "attribute-doubleArray.2",
+                  "value": {
+                    "doubleValue": 6.0
+                  }
+                }
+              ],
+              "events": [
+                {
+                  "timeUnixNano": "0",
+                  "name": "event-message"
+                },
+                {
+                  "timeUnixNano": "0",
+                  "name": "event-messageWithDateTime"
+                },
+                {
+                  "timeUnixNano": "0",
+                  "name": "event-messageWithAttributes",
+                  "attributes": [
+                    {
+                      "key": "foo",
+                      "value": {
+                        "intValue": "1"
+                      }
+                    },
+                    {
+                      "key": "bar",
+                      "value": {
+                        "stringValue": "Hello, World!"
+                      }
+                    },
+                    {
+                      "key": "baz",
+                      "value": {
+                        "stringValue": "System.Int32[]"
+                      }
+                    },
+                    {
+                      "key": "strings",
+                      "value": {
+                        "stringValue": "System.String[]"
+                      }
+                    },
+                    {
+                      "key": "ignored_array_of_object",
+                      "value": {
+                        "stringValue": "System.Object[]"
+                      }
+                    },
+                    {
+                      "key": "ignored_array_of_arrays",
+                      "value": {
+                        "stringValue": "System.String[][]"
+                      }
+                    },
+                    {
+                      "key": "ignored_dict",
+                      "value": {
+                        "stringValue": "System.Collections.Generic.Dictionary`2[System.String,System.String]"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "timeUnixNano": "0",
+                  "name": "event-messageWithDateTimeAndAttributes",
+                  "attributes": [
+                    {
+                      "key": "foo",
+                      "value": {
+                        "intValue": "1"
+                      }
+                    },
+                    {
+                      "key": "bar",
+                      "value": {
+                        "stringValue": "Hello, World!"
+                      }
+                    },
+                    {
+                      "key": "baz",
+                      "value": {
+                        "stringValue": "System.Int32[]"
+                      }
+                    },
+                    {
+                      "key": "strings",
+                      "value": {
+                        "stringValue": "System.String[]"
+                      }
+                    },
+                    {
+                      "key": "ignored_array_of_object",
+                      "value": {
+                        "stringValue": "System.Object[]"
+                      }
+                    },
+                    {
+                      "key": "ignored_array_of_arrays",
+                      "value": {
+                        "stringValue": "System.String[][]"
+                      }
+                    },
+                    {
+                      "key": "ignored_dict",
+                      "value": {
+                        "stringValue": "System.Collections.Generic.Dictionary`2[System.String,System.String]"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "name": "SayHello2",
+              "kind": 1,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
+              "attributes": [
+                {
+                  "key": "span.kind",
+                  "value": {
+                    "stringValue": "internal"
+                  }
+                },
+                {
+                  "key": "otel.trace_id",
+                  "value": {
+                    "stringValue": "normalized-otel-trace-id"
+                  }
+                },
+                {
+                  "key": "otel.library.name",
+                  "value": {
+                    "stringValue": "MyServiceName"
+                  }
+                },
+                {
+                  "key": "otel.status_code",
+                  "value": {
+                    "stringValue": "STATUS_CODE_UNSET"
+                  }
+                },
+                {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "MyServiceName"
+                  }
+                },
+                {
+                  "key": "service.version",
+                  "value": {
+                    "stringValue": "1.0.x"
+                  }
+                },
+                {
+                  "key": "service.instance.id",
+                  "value": {
+                    "stringValue": "Guid_2"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.name",
+                  "value": {
+                    "stringValue": "opentelemetry"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.language",
+                  "value": {
+                    "stringValue": "dotnet"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.version",
+                  "value": {
+                    "stringValue": "1.13.1"
+                  }
+                },
+                {
+                  "key": "runtime-id",
+                  "value": {
+                    "stringValue": "Guid_1"
+                  }
+                }
+              ],
+              "links": [
+                {
+                  "traceId": "normalized-trace-id",
+                  "spanId": "normalized-span-id",
+                  "flags": 2147483649
+                }
+              ]
+            },
+            {
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "name": "SayHello3",
+              "kind": 1,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
+              "attributes": [
+                {
+                  "key": "span.kind",
+                  "value": {
+                    "stringValue": "internal"
+                  }
+                },
+                {
+                  "key": "otel.trace_id",
+                  "value": {
+                    "stringValue": "normalized-otel-trace-id"
+                  }
+                },
+                {
+                  "key": "otel.library.name",
+                  "value": {
+                    "stringValue": "MyServiceName"
+                  }
+                },
+                {
+                  "key": "otel.status_code",
+                  "value": {
+                    "stringValue": "STATUS_CODE_UNSET"
+                  }
+                },
+                {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "MyServiceName"
+                  }
+                },
+                {
+                  "key": "service.version",
+                  "value": {
+                    "stringValue": "1.0.x"
+                  }
+                },
+                {
+                  "key": "service.instance.id",
+                  "value": {
+                    "stringValue": "Guid_2"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.name",
+                  "value": {
+                    "stringValue": "opentelemetry"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.language",
+                  "value": {
+                    "stringValue": "dotnet"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.version",
+                  "value": {
+                    "stringValue": "1.13.1"
+                  }
+                },
+                {
+                  "key": "runtime-id",
+                  "value": {
+                    "stringValue": "Guid_1"
+                  }
+                }
+              ],
+              "links": [
+                {
+                  "traceId": "normalized-trace-id",
+                  "spanId": "normalized-span-id",
+                  "flags": 2147483649
+                },
+                {
+                  "traceId": "normalized-trace-id",
+                  "spanId": "normalized-span-id",
+                  "flags": 2147483649
+                }
+              ]
+            },
+            {
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "name": "service.name should be the DefaultServiceName value",
+              "kind": 1,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
+              "attributes": [
+                {
+                  "key": "span.kind",
+                  "value": {
+                    "stringValue": "internal"
+                  }
+                },
+                {
+                  "key": "otel.trace_id",
+                  "value": {
+                    "stringValue": "normalized-otel-trace-id"
+                  }
+                },
+                {
+                  "key": "otel.library.name",
+                  "value": {
+                    "stringValue": "MissingServiceName"
+                  }
+                },
+                {
+                  "key": "otel.status_code",
+                  "value": {
+                    "stringValue": "STATUS_CODE_UNSET"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.name",
+                  "value": {
+                    "stringValue": "opentelemetry"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.language",
+                  "value": {
+                    "stringValue": "dotnet"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.version",
+                  "value": {
+                    "stringValue": "1.13.1"
+                  }
+                },
+                {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "Samples.OpenTelemetrySdk"
+                  }
+                },
+                {
+                  "key": "runtime-id",
+                  "value": {
+                    "stringValue": "Guid_1"
+                  }
+                }
+              ]
+            },
+            {
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "parentSpanId": "normalized-parent-span-id",
+              "name": "SomeHttpSpan",
+              "kind": 1,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
+              "attributes": [
+                {
+                  "key": "span.kind",
+                  "value": {
+                    "stringValue": "internal"
+                  }
+                },
+                {
+                  "key": "otel.trace_id",
+                  "value": {
+                    "stringValue": "normalized-otel-trace-id"
+                  }
+                },
+                {
+                  "key": "otel.library.name",
+                  "value": {
+                    "stringValue": "MyServiceName"
+                  }
+                },
+                {
+                  "key": "otel.status_code",
+                  "value": {
+                    "stringValue": "STATUS_CODE_UNSET"
+                  }
+                },
+                {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "MyServiceName"
+                  }
+                },
+                {
+                  "key": "service.version",
+                  "value": {
+                    "stringValue": "1.0.x"
+                  }
+                },
+                {
+                  "key": "service.instance.id",
+                  "value": {
+                    "stringValue": "Guid_2"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.name",
+                  "value": {
+                    "stringValue": "opentelemetry"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.language",
+                  "value": {
+                    "stringValue": "dotnet"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.version",
+                  "value": {
+                    "stringValue": "1.13.1"
+                  }
+                },
+                {
+                  "key": "http.status_code",
+                  "value": {
+                    "stringValue": "404"
+                  }
+                }
+              ]
+            },
+            {
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "parentSpanId": "normalized-parent-span-id",
+              "name": "StartActiveSpan.Child",
+              "kind": 1,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
+              "attributes": [
+                {
+                  "key": "span.kind",
+                  "value": {
+                    "stringValue": "internal"
+                  }
+                },
+                {
+                  "key": "otel.trace_id",
+                  "value": {
+                    "stringValue": "normalized-otel-trace-id"
+                  }
+                },
+                {
+                  "key": "otel.library.name",
+                  "value": {
+                    "stringValue": "MyServiceName"
+                  }
+                },
+                {
+                  "key": "otel.status_code",
+                  "value": {
+                    "stringValue": "STATUS_CODE_UNSET"
+                  }
+                },
+                {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "MyServiceName"
+                  }
+                },
+                {
+                  "key": "service.version",
+                  "value": {
+                    "stringValue": "1.0.x"
+                  }
+                },
+                {
+                  "key": "service.instance.id",
+                  "value": {
+                    "stringValue": "Guid_2"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.name",
+                  "value": {
+                    "stringValue": "opentelemetry"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.language",
+                  "value": {
+                    "stringValue": "dotnet"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.version",
+                  "value": {
+                    "stringValue": "1.13.1"
+                  }
+                }
+              ]
+            },
+            {
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "parentSpanId": "normalized-parent-span-id",
+              "name": "StartRootSpan",
+              "kind": 1,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
+              "attributes": [
+                {
+                  "key": "span.kind",
+                  "value": {
+                    "stringValue": "internal"
+                  }
+                },
+                {
+                  "key": "otel.trace_id",
+                  "value": {
+                    "stringValue": "normalized-otel-trace-id"
+                  }
+                },
+                {
+                  "key": "otel.library.name",
+                  "value": {
+                    "stringValue": "MyServiceName"
+                  }
+                },
+                {
+                  "key": "otel.status_code",
+                  "value": {
+                    "stringValue": "STATUS_CODE_UNSET"
+                  }
+                },
+                {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "MyServiceName"
+                  }
+                },
+                {
+                  "key": "service.version",
+                  "value": {
+                    "stringValue": "1.0.x"
+                  }
+                },
+                {
+                  "key": "service.instance.id",
+                  "value": {
+                    "stringValue": "Guid_2"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.name",
+                  "value": {
+                    "stringValue": "opentelemetry"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.language",
+                  "value": {
+                    "stringValue": "dotnet"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.version",
+                  "value": {
+                    "stringValue": "1.13.1"
+                  }
+                }
+              ]
+            },
+            {
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "parentSpanId": "normalized-parent-span-id",
+              "name": "StartSpan",
+              "kind": 1,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
+              "attributes": [
+                {
+                  "key": "span.kind",
+                  "value": {
+                    "stringValue": "internal"
+                  }
+                },
+                {
+                  "key": "otel.trace_id",
+                  "value": {
+                    "stringValue": "normalized-otel-trace-id"
+                  }
+                },
+                {
+                  "key": "otel.library.name",
+                  "value": {
+                    "stringValue": "MyServiceName"
+                  }
+                },
+                {
+                  "key": "otel.status_code",
+                  "value": {
+                    "stringValue": "STATUS_CODE_UNSET"
+                  }
+                },
+                {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "MyServiceName"
+                  }
+                },
+                {
+                  "key": "service.version",
+                  "value": {
+                    "stringValue": "1.0.x"
+                  }
+                },
+                {
+                  "key": "service.instance.id",
+                  "value": {
+                    "stringValue": "Guid_2"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.name",
+                  "value": {
+                    "stringValue": "opentelemetry"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.language",
+                  "value": {
+                    "stringValue": "dotnet"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.version",
+                  "value": {
+                    "stringValue": "1.13.1"
+                  }
+                }
+              ]
+            },
+            {
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "parentSpanId": "normalized-parent-span-id",
+              "name": "StartSpan2",
+              "kind": 1,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
+              "attributes": [
+                {
+                  "key": "span.kind",
+                  "value": {
+                    "stringValue": "internal"
+                  }
+                },
+                {
+                  "key": "otel.trace_id",
+                  "value": {
+                    "stringValue": "normalized-otel-trace-id"
+                  }
+                },
+                {
+                  "key": "otel.library.name",
+                  "value": {
+                    "stringValue": "MyServiceName"
+                  }
+                },
+                {
+                  "key": "otel.status_code",
+                  "value": {
+                    "stringValue": "STATUS_CODE_UNSET"
+                  }
+                },
+                {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "MyServiceName"
+                  }
+                },
+                {
+                  "key": "service.version",
+                  "value": {
+                    "stringValue": "1.0.x"
+                  }
+                },
+                {
+                  "key": "service.instance.id",
+                  "value": {
+                    "stringValue": "Guid_2"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.name",
+                  "value": {
+                    "stringValue": "opentelemetry"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.language",
+                  "value": {
+                    "stringValue": "dotnet"
+                  }
+                },
+                {
+                  "key": "telemetry.sdk.version",
+                  "value": {
+                    "stringValue": "1.13.1"
+                  }
+                }
+              ]
+            },
+            {
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "name": "Transform",
+              "kind": 1,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
+              "attributes": [
+                {
+                  "key": "span.kind",
+                  "value": {
+                    "stringValue": "internal"
+                  }
+                },
+                {
+                  "key": "otel.trace_id",
+                  "value": {
+                    "stringValue": "normalized-otel-trace-id"
+                  }
+                },
+                {
+                  "key": "otel.library.name",
+                  "value": {
+                    "stringValue": "AdditionalActivitySource"
+                  }
+                },
+                {
+                  "key": "otel.status_code",
+                  "value": {
+                    "stringValue": "STATUS_CODE_UNSET"
+                  }
+                },
+                {
+                  "key": "runtime-id",
+                  "value": {
+                    "stringValue": "Guid_1"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-﻿// <copyright file="TraceExporter.cs" company="Datadog">
+// <copyright file="TraceExporter.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -18,6 +18,8 @@ namespace Datadog.Trace.LibDatadog.DataPipeline;
 
 internal sealed class TraceExporter : SafeHandle, IApi
 {
+    private static readonly ArraySegment<byte> EmptyPayload = new([0x90]);
+
     private readonly IDatadogLogger _log;
     private readonly Action<Dictionary<string, float>> _updateSampleRates;
     private string _cachedResponse;
@@ -39,7 +41,11 @@ internal sealed class TraceExporter : SafeHandle, IApi
 
     public override bool IsInvalid => handle == IntPtr.Zero;
 
-    public Task<bool> SendTracesAsync(ArraySegment<byte> traces, int numberOfTraces, bool statsComputationEnabled, long numberOfDroppedP0Traces, long numberOfDroppedP0Spans, bool appsecStandaloneEnabled)
+    public TracesEncoding TracesEncoding => TracesEncoding.DatadogV0_4;
+
+    public Task<bool> Ping() => SendTracesAsync(EmptyPayload, 0, false, 0, 0, true);
+
+    public Task<bool> SendTracesAsync(ArraySegment<byte> traces, int numberOfTraces, bool statsComputationEnabled, long numberOfDroppedP0Traces, long numberOfDroppedP0Spans, bool apmTracingEnabled)
     {
         _log.Debug<int>("Sending {Count} traces to the Datadog Agent.", numberOfTraces);
 

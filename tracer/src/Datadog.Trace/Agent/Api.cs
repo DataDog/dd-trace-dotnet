@@ -1,4 +1,4 @@
-﻿// <copyright file="Api.cs" company="Datadog">
+// <copyright file="Api.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -31,6 +31,7 @@ namespace Datadog.Trace.Agent
         internal const string FailedToSendMessageTemplate = "An error occurred while sending data to the agent at {AgentEndpoint}. If the error isn't transient, please check https://docs.datadoghq.com/tracing/troubleshooting/connection_errors/?code-lang=dotnet for guidance.";
 
         private static readonly IDatadogLogger StaticLog = DatadogLogging.GetLoggerFor<Api>();
+        private static readonly ArraySegment<byte> EmptyPayload = new([0x90]);
 
         private readonly IDatadogLogger _log;
         private readonly IApiRequestFactory _apiRequestFactory;
@@ -85,12 +86,16 @@ namespace Datadog.Trace.Agent
             Failed_DontRetry,
         }
 
+        public TracesEncoding TracesEncoding => TracesEncoding.DatadogV0_4;
+
         [MemberNotNull(nameof(_statsd))]
         public void ToggleTracerHealthMetrics(bool enabled)
         {
             Volatile.Write(ref _healthMetricsEnabled, enabled);
             _statsd.SetRequired(StatsdConsumer.TraceApi, enabled);
         }
+
+        public Task<bool> Ping() => SendTracesAsync(EmptyPayload, 0, false, 0, 0);
 
         public Task<bool> SendStatsAsync(StatsBuffer stats, long bucketDuration)
         {
