@@ -1,4 +1,4 @@
-// <copyright file="GcpTests.cs" company="Datadog">
+// <copyright file="GcpInfoTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -17,7 +17,7 @@ namespace Datadog.Trace.Tests.Serverless;
     "GCP_PROJECT",
     "FUNCTION_TARGET",
     "K_SERVICE")]
-public class GcpTests
+public class GcpInfoTests
 {
     [Theory]
     [PairwiseData]
@@ -38,6 +38,6 @@ public class GcpTests
             }
         }
 
-        new Gcp().IsCloudFunction.Should().Be(value);
+        new GcpInfo().IsCloudFunction.Should().Be(value);
     }
 }

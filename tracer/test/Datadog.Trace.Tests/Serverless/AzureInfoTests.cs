@@ -1,4 +1,4 @@
-// <copyright file="AzureTests.cs" company="Datadog">
+// <copyright file="AzureInfoTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -18,7 +18,7 @@ namespace Datadog.Trace.Tests.Serverless;
     "FUNCTIONS_EXTENSION_VERSION",
     "DD_AZURE_APP_SERVICES",
     "DD_AAS_DOTNET_EXTENSION_VERSION")]
-public class AzureTests
+public class AzureInfoTests
 {
     [Theory]
     [PairwiseData]
@@ -29,7 +29,7 @@ public class AzureTests
             Environment.SetEnvironmentVariable("WEBSITE_SITE_NAME", "test");
         }
 
-        new Azure().IsAppService.Should().Be(value);
+        new AzureInfo().IsAppService.Should().Be(value);
     }
 
     [Theory]
@@ -43,7 +43,7 @@ public class AzureTests
             Environment.SetEnvironmentVariable("FUNCTIONS_EXTENSION_VERSION", "~4");
         }
 
-        new Azure().IsFunction.Should().Be(value);
+        new AzureInfo().IsFunction.Should().Be(value);
     }
 
     [Theory]
@@ -56,6 +56,6 @@ public class AzureTests
             Environment.SetEnvironmentVariable("DD_AAS_DOTNET_EXTENSION_VERSION", "3.20.0");
         }
 
-        new Azure().IsUsingSiteExtension.Should().Be(value);
+        new AzureInfo().IsUsingSiteExtension.Should().Be(value);
     }
 }

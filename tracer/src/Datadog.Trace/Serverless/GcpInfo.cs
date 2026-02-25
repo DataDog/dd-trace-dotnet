@@ -1,4 +1,4 @@
-// <copyright file="Gcp.cs" company="Datadog">
+// <copyright file="GcpInfo.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -13,16 +13,16 @@ namespace Datadog.Trace.Serverless;
 /// <summary>
 /// Cached helpers for detecting Google Cloud serverless platforms.
 /// Delegates to <see cref="EnvironmentHelpers"/> for env-var reads.
-/// Create a new instance for test isolation; use <see cref="Default"/> for production code.
+/// Create a new instance for test isolation; use <see cref="Instance"/> for production code.
 /// </summary>
-internal sealed class Gcp
+internal sealed class GcpInfo
 {
     private bool? _isCloudFunction;
 
     /// <summary>
     /// Gets the shared singleton instance. Cached after first evaluation.
     /// </summary>
-    internal static Gcp Default { get; } = new();
+    internal static GcpInfo Instance { get; } = new();
 
     /// <summary>
     /// Gets a value indicating whether the current environment is Google Cloud Functions

@@ -505,7 +505,7 @@ namespace Datadog.Trace.ClrProfiler
         private static bool SkipAspNetCoreDiagnosticObserver()
         {
             // this is extremely simple now, but will get more complex soon...
-            return Azure.Default.IsFunction;
+            return AzureInfo.Instance.IsFunction;
         }
 
 #endif // #if !NETFRAMEWORK
