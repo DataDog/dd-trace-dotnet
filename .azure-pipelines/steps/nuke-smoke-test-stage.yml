@@ -29,16 +29,37 @@ jobs:
   # archives that need to be extracted; all others download directly.
   - ${{ each artifact in parameters.artifacts }}:
     - ${{ if not(startsWith(artifact, 'runner-standalone-')) }}:
-      - template: download-artifact.yml
-        parameters:
-          artifact: ${{ artifact }}
-          path: $(outputDir)
+      # - template: download-artifact.yml
+      #   parameters:
+      #     artifact: ${{ artifact }}
+      #     path: $(outputDir)
+      - task: DownloadPipelineArtifact@2
+        displayName: Download ${{ artifact }} to artifact directory
+        inputs:
+          artifactName: ${{ artifact }}
+          targetPath: $(outputDir)
+          buildType: 'specific'
+          project: 'dd-trace-dotnet'
+          definition: 54
+          buildVersionToDownload: 'specific'
+          pipelineId: 196299
     - ${{ if startsWith(artifact, 'runner-standalone-') }}:
-      - template: download-artifact.yml
-        parameters:
-          artifact: ${{ artifact }}
-          path: $(Agent.TempDirectory)
+      - task: DownloadPipelineArtifact@2
+        displayName: Download ${{ artifact }} to artifact directory
+        inputs:
+          artifactName: ${{ artifact }}
+          targetPath: $(Agent.TempDirectory)
           patterns: "*.tar.gz"
+          buildType: 'specific'
+          project: 'dd-trace-dotnet'
+          definition: 54
+          buildVersionToDownload: 'specific'
+          pipelineId: 196299
+      # - template: download-artifact.yml
+      #   parameters:
+      #     artifact: ${{ artifact }}
+      #     path: $(Agent.TempDirectory)
+      #     patterns: "*.tar.gz"
       - script: |
           mkdir -p $(outputDir)
           tar -xf $(Agent.TempDirectory)/dd-trace-*.tar.gz -C $(outputDir)

@@ -4975,7 +4975,7 @@ stages:
 
 # Installer x64 (LinuxX64Installer, LinuxChiseledInstaller)
 - stage: nuke_installer_smoke_tests
-  dependsOn: [package_linux, generate_variables, merge_commit_id]
+  dependsOn: [generate_variables, merge_commit_id]
   pool:
     name: $(linuxX64SmokePool)
   jobs:
@@ -4987,7 +4987,7 @@ stages:
 
 # Installer arm64 (LinuxArm64Installer, LinuxChiseledArm64Installer)
 - stage: nuke_installer_smoke_tests_arm64
-  dependsOn: [package_arm64, generate_variables, merge_commit_id]
+  dependsOn: [generate_variables, merge_commit_id]
   pool:
     name: $(linuxArm64Pool)
   jobs:
@@ -4999,7 +4999,7 @@ stages:
 
 # Installer musl x64 (LinuxMuslInstaller)
 - stage: nuke_installer_musl_smoke_tests
-  dependsOn: [package_linux, generate_variables, merge_commit_id]
+  dependsOn: [generate_variables, merge_commit_id]
   pool:
     name: $(linuxX64SmokePool)
   jobs:
@@ -5012,7 +5012,7 @@ stages:
 # NuGet x64 (LinuxNuGet)
 - stage: nuke_nuget_smoke_tests
   condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
-  dependsOn: [dotnet_tool, package_windows, generate_variables, merge_commit_id]
+  dependsOn: [generate_variables, merge_commit_id]
   pool:
     name: $(linuxX64SmokePool)
   jobs:
@@ -5026,7 +5026,7 @@ stages:
 # NuGet arm64 (LinuxNuGetArm64)
 - stage: nuke_nuget_smoke_tests_arm64
   condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
-  dependsOn: [dotnet_tool, package_windows, generate_variables, merge_commit_id]
+  dependsOn: [generate_variables, merge_commit_id]
   pool:
     name: $(linuxArm64Pool)
   jobs:
@@ -5040,7 +5040,7 @@ stages:
 # DotnetTool x64 (LinuxDotnetTool)
 - stage: nuke_dotnet_tool_smoke_tests
   condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
-  dependsOn: [dotnet_tool, generate_variables, merge_commit_id]
+  dependsOn: [generate_variables, merge_commit_id]
   pool:
     name: $(linuxX64SmokePool)
   jobs:
@@ -5053,7 +5053,7 @@ stages:
 # DotnetTool arm64 (LinuxDotnetToolArm64)
 - stage: nuke_dotnet_tool_smoke_tests_arm64
   condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
-  dependsOn: [dotnet_tool, generate_variables, merge_commit_id]
+  dependsOn: [generate_variables, merge_commit_id]
   pool:
     name: $(linuxArm64Pool)
   jobs:
@@ -5066,7 +5066,7 @@ stages:
 # DotnetToolNuget (LinuxDotnetToolNuget)
 - stage: nuke_dotnet_tool_nuget_smoke_tests
   condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
-  dependsOn: [dotnet_tool, generate_variables, merge_commit_id]
+  dependsOn: [generate_variables, merge_commit_id]
   pool:
     name: $(linuxX64SmokePool)
   jobs:
@@ -5078,7 +5078,7 @@ stages:
 
 # Trimming x64 (LinuxTrimming)
 - stage: nuke_trimming_smoke_tests
-  dependsOn: [package_windows, package_linux, generate_variables, merge_commit_id]
+  dependsOn: [generate_variables, merge_commit_id]
   pool:
     name: $(linuxX64SmokePool)
   jobs:
@@ -5091,7 +5091,7 @@ stages:
 
 # Trimming musl x64 (LinuxMuslTrimming)
 - stage: nuke_trimming_musl_smoke_tests
-  dependsOn: [package_windows, package_linux, generate_variables, merge_commit_id]
+  dependsOn: [generate_variables, merge_commit_id]
   pool:
     name: $(linuxX64SmokePool)
   jobs:
