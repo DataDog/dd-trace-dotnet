@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Concurrent;
 using System.Text;
 using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.DataStreamsMonitoring;
@@ -24,6 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         internal const string EnableDeliveryReportsField = "dotnet.producer.enable.delivery.reports";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(KafkaHelper));
         private static readonly string[] DefaultProduceEdgeTags = ["direction:out", "type:kafka"];
+        private static readonly ConcurrentDictionary<string, string?> ClusterIdCache = new();
         private static bool _headersInjectionEnabled = true;
 
         [ThreadStatic]
@@ -418,6 +420,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 return null;
             }
 
+            if (ClusterIdCache.TryGetValue(bootstrapServers, out var cached))
+            {
+                return cached;
+            }
+
             try
             {
                 _isGettingClusterId = true;
@@ -462,9 +469,20 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
                 try
                 {
-                    var duckTask = adminClient.DescribeClusterAsync(null);
+                    object? options = null;
+                    var optionsType = Type.GetType("Confluent.Kafka.Admin.DescribeClusterOptions, Confluent.Kafka");
+                    if (optionsType is not null)
+                    {
+                        options = Activator.CreateInstance(optionsType);
+                        var requestTimeoutProp = optionsType.GetProperty("RequestTimeout");
+                        requestTimeoutProp?.SetValue(options, TimeSpan.FromSeconds(2));
+                    }
+
+                    var duckTask = adminClient.DescribeClusterAsync(options);
                     var describeResult = duckTask.GetAwaiter().GetResult();
-                    return describeResult?.ClusterId;
+                    var clusterId = describeResult?.ClusterId;
+                    ClusterIdCache.TryAdd(bootstrapServers, clusterId);
+                    return clusterId;
                 }
                 finally
                 {
