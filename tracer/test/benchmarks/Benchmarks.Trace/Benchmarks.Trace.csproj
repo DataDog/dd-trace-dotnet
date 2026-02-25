@@ -51,6 +51,15 @@
     <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="7.0.0" />
   </ItemGroup>
 
+  <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp2.1' ">
+    <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="2.1.0" />
+    <PackageReference Include="Microsoft.AspNetCore" Version="2.1.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.1.0" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.0' ">
+    <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="3.0.0" />
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\Datadog.Trace.BenchmarkDotNet\Datadog.Trace.BenchmarkDotNet.csproj" />
@@ -59,28 +68,7 @@
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFrameworkIdentifier)' != '.NETFramework' AND '$(TargetFramework)' != 'netcoreapp2.1' AND '$(TargetFramework)' != 'netcoreapp3.0' ">
-    <!--
-    This reference allows us to build the code without precompiler directives,
-    but the logic at runtime will never try to use the Registry if it's not available
-    -->
     <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="3.1.14" />
-  </ItemGroup>
-
-  <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp2.1' ">
-    <!--
-    This reference allows us to build the code without precompiler directives,
-    but the logic at runtime will never try to use the Registry if it's not available
-    -->
-    <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="2.1.0" />
-    <PackageReference Include="Microsoft.AspNetCore" Version="2.1.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.1.0" />
-  </ItemGroup>
-  <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.0' ">
-    <!--
-    This reference allows us to build the code without precompiler directives,
-    but the logic at runtime will never try to use the Registry if it's not available
-    -->
-    <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="3.0.0" />
   </ItemGroup>
 
   <ItemGroup>
