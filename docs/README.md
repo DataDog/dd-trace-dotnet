@@ -30,7 +30,7 @@ This library powers [Distributed Tracing](https://docs.datadoghq.com/tracing/),
 
 ## Development
 
-For local development and testing, see [Setup docs](https://github.com/DataDog/dd-trace-dotnet/blob/master/tracer/README.MD)
+For local development and testing, see [Setup docs](https://github.com/DataDog/dd-trace-dotnet/blob/master/tracer/README.md)
 
 ## Copyright
 
