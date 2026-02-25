@@ -4969,53 +4969,138 @@ stages:
         displayName: System tests logs
         artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
 
-- stage: temp_installer_smoke_tests
-  dependsOn: [generate_variables, merge_commit_id]
-  variables:
-    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
-    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+# ──────────────────────────────────────────────────────────────
+# Nuke-based smoke tests
+# ──────────────────────────────────────────────────────────────
+
+# Installer x64 (LinuxX64Installer, LinuxChiseledInstaller)
+- stage: nuke_installer_smoke_tests
+  dependsOn: [package_linux, generate_variables, merge_commit_id]
+  pool:
+    name: $(linuxX64SmokePool)
   jobs:
-  - template: steps/update-github-status-jobs.yml
+  - template: steps/nuke-smoke-test-stage.yml
     parameters:
-      jobs: [linux]
+      matrixVariable: nuke_installer_x64_matrix
+      artifacts:
+        - linux-packages-linux-x64
 
-  - job: linux
-    timeoutInMinutes: 20 # should take ~5 mins
-    strategy:
-      matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.temp_linux_smoke_tests_matrix'] ]
+# Installer arm64 (LinuxArm64Installer, LinuxChiseledArm64Installer)
+- stage: nuke_installer_smoke_tests_arm64
+  dependsOn: [package_arm64, generate_variables, merge_commit_id]
+  pool:
+    name: $(linuxArm64Pool)
+  jobs:
+  - template: steps/nuke-smoke-test-stage.yml
+    parameters:
+      matrixVariable: nuke_installer_arm64_matrix
+      artifacts:
+        - linux-packages-linux-arm64
 
-    pool:
-      name: $(linuxX64SmokePool)
+# Installer musl x64 (LinuxMuslInstaller)
+- stage: nuke_installer_musl_smoke_tests
+  dependsOn: [package_linux, generate_variables, merge_commit_id]
+  pool:
+    name: $(linuxX64SmokePool)
+  jobs:
+  - template: steps/nuke-smoke-test-stage.yml
+    parameters:
+      matrixVariable: nuke_installer_musl_matrix
+      artifacts:
+        - linux-packages-linux-musl-x64
 
-    steps:
-    - template: steps/clone-repo.yml
-      parameters:
-        targetShaId: $(targetShaId)
-        targetBranch: $(targetBranch)
+# NuGet x64 (LinuxNuGet)
+- stage: nuke_nuget_smoke_tests
+  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
+  dependsOn: [dotnet_tool, package_windows, generate_variables, merge_commit_id]
+  pool:
+    name: $(linuxX64SmokePool)
+  jobs:
+  - template: steps/nuke-smoke-test-stage.yml
+    parameters:
+      matrixVariable: nuke_nuget_x64_matrix
+      artifacts:
+        - bundle-nuget-package
+        - nuget-packages
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download $(artifactName) to artifact directory
-      inputs:
-        artifactName: $(artifactName)
-        targetPath: $(outputDir)
-        buildType: 'specific'
-        project: 'dd-trace-dotnet'
-        definition: 54
-        buildVersionToDownload: 'specific'
-        pipelineId: 196299
+# NuGet arm64 (LinuxNuGetArm64)
+- stage: nuke_nuget_smoke_tests_arm64
+  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
+  dependsOn: [dotnet_tool, package_windows, generate_variables, merge_commit_id]
+  pool:
+    name: $(linuxArm64Pool)
+  jobs:
+  - template: steps/nuke-smoke-test-stage.yml
+    parameters:
+      matrixVariable: nuke_nuget_arm64_matrix
+      artifacts:
+        - bundle-nuget-package
+        - nuget-packages
 
-    - template: steps/run-in-docker.yml
-      parameters:
-        build: true
-        baseImage: alpine
-        command: "RunArtifactSmokeTests -SmokeTestCategory $(category) -SmokeTestScenario $(scenario) --Artifacts /project/artifacts"
-        apikey: $(DD_LOGGER_DD_API_KEY)
-        extraArgs: "-v /var/run/docker.sock:/var/run/docker.sock"
+# DotnetTool x64 (LinuxDotnetTool)
+- stage: nuke_dotnet_tool_smoke_tests
+  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
+  dependsOn: [dotnet_tool, generate_variables, merge_commit_id]
+  pool:
+    name: $(linuxX64SmokePool)
+  jobs:
+  - template: steps/nuke-smoke-test-stage.yml
+    parameters:
+      matrixVariable: nuke_dotnet_tool_x64_matrix
+      artifacts:
+        - runner-standalone-linux-x64
 
-    - publish: artifacts/build_data
-      artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: always()
-      continueOnError: true
+# DotnetTool arm64 (LinuxDotnetToolArm64)
+- stage: nuke_dotnet_tool_smoke_tests_arm64
+  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
+  dependsOn: [dotnet_tool, generate_variables, merge_commit_id]
+  pool:
+    name: $(linuxArm64Pool)
+  jobs:
+  - template: steps/nuke-smoke-test-stage.yml
+    parameters:
+      matrixVariable: nuke_dotnet_tool_arm64_matrix
+      artifacts:
+        - runner-standalone-linux-arm64
+
+# DotnetToolNuget (LinuxDotnetToolNuget)
+- stage: nuke_dotnet_tool_nuget_smoke_tests
+  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
+  dependsOn: [dotnet_tool, generate_variables, merge_commit_id]
+  pool:
+    name: $(linuxX64SmokePool)
+  jobs:
+  - template: steps/nuke-smoke-test-stage.yml
+    parameters:
+      matrixVariable: nuke_dotnet_tool_nuget_matrix
+      artifacts:
+        - runner-dotnet-tool
+
+# Trimming x64 (LinuxTrimming)
+- stage: nuke_trimming_smoke_tests
+  dependsOn: [package_windows, package_linux, generate_variables, merge_commit_id]
+  pool:
+    name: $(linuxX64SmokePool)
+  jobs:
+  - template: steps/nuke-smoke-test-stage.yml
+    parameters:
+      matrixVariable: nuke_trimming_matrix
+      artifacts:
+        - linux-packages-linux-x64
+        - nuget-packages
+
+# Trimming musl x64 (LinuxMuslTrimming)
+- stage: nuke_trimming_musl_smoke_tests
+  dependsOn: [package_windows, package_linux, generate_variables, merge_commit_id]
+  pool:
+    name: $(linuxX64SmokePool)
+  jobs:
+  - template: steps/nuke-smoke-test-stage.yml
+    parameters:
+      matrixVariable: nuke_trimming_musl_matrix
+      artifacts:
+        - linux-packages-linux-musl-x64
+        - nuget-packages
 
 - stage: installer_smoke_tests
   dependsOn: [package_linux, generate_variables, merge_commit_id]

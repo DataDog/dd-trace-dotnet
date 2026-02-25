@@ -31,6 +31,8 @@ public static class SmokeTestScenarios
             SmokeTestCategory.LinuxDotnetToolArm64 => LinuxDotnetToolArm64Scenarios(),
             SmokeTestCategory.LinuxDotnetToolNuget => LinuxDotnetToolNugetScenarios(),
             SmokeTestCategory.LinuxTrimming => LinuxTrimmingScenarios(),
+            SmokeTestCategory.LinuxMuslInstaller => LinuxMuslInstallerScenarios(),
+            SmokeTestCategory.LinuxMuslTrimming => LinuxMuslTrimmingScenarios(),
             _ => throw new InvalidOperationException($"Unknown smoke test scenario: {category}"),
         };
 
@@ -49,7 +51,7 @@ public static class SmokeTestScenarios
                 shortName: "ubuntu",
                 os: "ubuntu",
                 installType: InstallType.DebX64,
-                artifactType: ArtifactType.LinuxX64,
+
                 scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[]
                 {
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-noble", "noble", true),
@@ -64,7 +66,7 @@ public static class SmokeTestScenarios
                 shortName: "debian",
                 os: "debian",
                 installType: InstallType.DebX64,
-                artifactType: ArtifactType.LinuxX64,
+
                 scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[]
                 {
                     (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-bookworm-slim", "bookworm", true),
@@ -80,7 +82,7 @@ public static class SmokeTestScenarios
                 shortName: "ubuntu_interim",
                 os: "ubuntu",
                 installType: InstallType.DebX64,
-                artifactType: ArtifactType.LinuxX64,
+
                 scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[]
                 {
                     // (TargetFramework.NET10_0, "andrewlock/dotnet-ubuntu", "25.10-10.0", "questing", true),
@@ -93,7 +95,7 @@ public static class SmokeTestScenarios
                 shortName: "debian",
                 os: "debian",
                 installType: InstallType.DebX64,
-                artifactType: ArtifactType.LinuxX64,
+
                 scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[]
                 {
                     (TargetFramework.NET10_0, "andrewlock/dotnet-debian", "trixie-10.0", "trixie", true),
@@ -107,7 +109,7 @@ public static class SmokeTestScenarios
                 shortName: "fedora",
                 os: "fedora",
                 installType: InstallType.RpmX64,
-                artifactType: ArtifactType.LinuxX64,
+
                 scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[]
                 {
                     // (TargetFramework.NET10_0, "andrewlock/dotnet-fedora", "42-10.0", "42", true),
@@ -130,29 +132,7 @@ public static class SmokeTestScenarios
                 shortName: "alpine",
                 os: "alpine",
                 installType: InstallType.TarX64,
-                artifactType: ArtifactType.LinuxX64,
-                scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[]
-                {
-                    (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22", "3.22", true),
-                    (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22-composite", "3.22", true),
-                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.20", "3.20", true),
-                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.20-composite", "3.20", true),
-                    (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-alpine3.18", "3.18", true),
-                    (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-alpine3.18-composite", "3.18", true),
-                    (TargetFramework.NET7_0, "mcr.microsoft.com/dotnet/aspnet", "7.0-alpine3.16", "3.16", true),
-                    (TargetFramework.NET6_0, "mcr.microsoft.com/dotnet/aspnet", "6.0-alpine3.14", "3.14", true),
-                    (TargetFramework.NET5_0, "mcr.microsoft.com/dotnet/aspnet", "5.0-alpine3.13", "3.13", true),
-                    (TargetFramework.NETCOREAPP3_1, "mcr.microsoft.com/dotnet/aspnet", "3.1-alpine3.14", "3.14", true),
-                    (TargetFramework.NETCOREAPP2_1, "mcr.microsoft.com/dotnet/aspnet", "2.1-alpine3.12", "3.12", true),
-                });
 
-            // Alpine tests with the musl-specific package
-            yield return GetInstaller(
-                category: SmokeTestCategory.LinuxX64Installer,
-                shortName: "alpine_musl",
-                os: "alpine",
-                installType: InstallType.TarMuslX64,
-                artifactType: ArtifactType.LinuxMuslX64,
                 scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[]
                 {
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22", "3.22", true),
@@ -174,7 +154,7 @@ public static class SmokeTestScenarios
                 shortName: "centos",
                 os: "centos",
                 installType: InstallType.RpmX64,
-                artifactType: ArtifactType.LinuxX64,
+
                 scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[]
                 {
                     (TargetFramework.NET7_0, "andrewlock/dotnet-centos", "7-7.0", "7", true),
@@ -190,7 +170,7 @@ public static class SmokeTestScenarios
                 shortName: "rhel",
                 os: "rhel",
                 installType: InstallType.RpmX64,
-                artifactType: ArtifactType.LinuxX64,
+
                 scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[]
                 {
                     // (TargetFramework.NET10_0, "andrewlock/dotnet-rhel", "10-10.0", "10", true),
@@ -208,7 +188,7 @@ public static class SmokeTestScenarios
                 shortName: "centos-stream",
                 os: "centos-stream",
                 installType: InstallType.RpmX64,
-                artifactType: ArtifactType.LinuxX64,
+
                 scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[]
                 {
                     // (TargetFramework.NET10_0, "andrewlock/dotnet-centos-stream", "10-10.0", "10", true),
@@ -225,7 +205,7 @@ public static class SmokeTestScenarios
                 shortName: "opensuse",
                 os: "opensuse",
                 installType: InstallType.RpmX64,
-                artifactType: ArtifactType.LinuxX64,
+
                 scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[]
                 {
                     (TargetFramework.NET10_0, "andrewlock/dotnet-opensuse", "15-10.0", "15", true),
@@ -238,6 +218,29 @@ public static class SmokeTestScenarios
                 });
         }
 
+        static IEnumerable<IEnumerable<SmokeTestScenario>> LinuxMuslInstallerScenarios()
+        {
+            yield return GetInstaller(
+                category: SmokeTestCategory.LinuxMuslInstaller,
+                shortName: "alpine_musl",
+                os: "alpine",
+                installType: InstallType.TarMuslX64,
+                scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[]
+                {
+                    (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22", "3.22", true),
+                    (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22-composite", "3.22", true),
+                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.20", "3.20", true),
+                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.20-composite", "3.20", true),
+                    (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-alpine3.18", "3.18", true),
+                    (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-alpine3.18-composite", "3.18", true),
+                    (TargetFramework.NET7_0, "mcr.microsoft.com/dotnet/aspnet", "7.0-alpine3.16", "3.16", true),
+                    (TargetFramework.NET6_0, "mcr.microsoft.com/dotnet/aspnet", "6.0-alpine3.14", "3.14", true),
+                    (TargetFramework.NET5_0, "mcr.microsoft.com/dotnet/aspnet", "5.0-alpine3.13", "3.13", true),
+                    (TargetFramework.NETCOREAPP3_1, "mcr.microsoft.com/dotnet/aspnet", "3.1-alpine3.14", "3.14", true),
+                    (TargetFramework.NETCOREAPP2_1, "mcr.microsoft.com/dotnet/aspnet", "2.1-alpine3.12", "3.12", true),
+                });
+        }
+
         static IEnumerable<IEnumerable<SmokeTestScenario>> LinuxArm64InstallerScenarios()
         {
             // This is actually a mix of ubuntu and debian, but they're all in the same MS repository
@@ -246,7 +249,7 @@ public static class SmokeTestScenarios
                 shortName: "ubuntu",
                 os: "ubuntu",
                 installType: InstallType.DebArm64,
-                artifactType: ArtifactType.LinuxArm64,
+
                 scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[]
                 {
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-noble", "noble", true),
@@ -265,7 +268,7 @@ public static class SmokeTestScenarios
                 shortName: "ubuntu_interim",
                 os: "ubuntu",
                 installType: InstallType.DebArm64,
-                artifactType: ArtifactType.LinuxArm64,
+
                 scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[]
                 {
                     // new (publishFramework: TargetFramework.NET10_0, "25.10-10.0", "ubuntu", "questing"),
@@ -278,7 +281,7 @@ public static class SmokeTestScenarios
                 shortName: "debian",
                 os: "debian",
                 installType: InstallType.DebArm64,
-                artifactType: ArtifactType.LinuxArm64,
+
                 scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[]
                 {
                     // (TargetFramework.NET10_0, "andrewlock/dotnet-debian", "trixie-10.0", "trixie", true),
@@ -291,7 +294,7 @@ public static class SmokeTestScenarios
                 shortName: "fedora",
                 os: "fedora",
                 installType: InstallType.RpmArm64,
-                artifactType: ArtifactType.LinuxArm64,
+
                 scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[]
                 {
                     // (TargetFramework.NET10_0, "andrewlock/dotnet-fedora-arm64", "42-10.0", "42", true),
@@ -308,7 +311,7 @@ public static class SmokeTestScenarios
                 shortName: "alpine",
                 os: "alpine",
                 installType: InstallType.TarArm64,
-                artifactType: ArtifactType.LinuxArm64,
+
                 scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[]
                 {
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22", "3.22", true),
@@ -331,7 +334,7 @@ public static class SmokeTestScenarios
                 category: SmokeTestCategory.LinuxChiseledInstaller,
                 shortName: "debian",
                 os: "ubuntu",
-                artifactType: ArtifactType.LinuxX64,
+
                 scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion)[]
                 {
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-noble-chiseled", "noble"),
@@ -349,7 +352,7 @@ public static class SmokeTestScenarios
                 category: SmokeTestCategory.LinuxChiseledArm64Installer,
                 shortName: "debian",
                 os: "ubuntu",
-                artifactType: ArtifactType.LinuxArm64,
+
                 scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion)[]
                 {
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-noble-chiseled", "noble"),
@@ -710,7 +713,7 @@ public static class SmokeTestScenarios
                 shortName: "ubuntu",
                 os: "ubuntu",
                 installType: InstallType.DebX64,
-                artifactType: ArtifactType.LinuxX64,
+
                 runtimeId: "linux-x64",
                 scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion)[]
                 {
@@ -726,29 +729,11 @@ public static class SmokeTestScenarios
                 shortName: "debian",
                 os: "debian",
                 installType: InstallType.DebX64,
-                artifactType: ArtifactType.LinuxX64,
+
                 runtimeId: "linux-x64",
                 scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion)[]
                 {
                     (TargetFramework.NET10_0, "andrewlock/dotnet-debian", "trixie-10.0", "trixie"),
-                });
-
-            // Alpine tests with the musl-specific package
-            yield return GetTrimming(
-                category: SmokeTestCategory.LinuxTrimming,
-                shortName: "alpine_musl",
-                os: "alpine",
-                installType: InstallType.TarMuslX64,
-                artifactType: ArtifactType.LinuxMuslX64,
-                runtimeId: "linux-musl-x64",
-                scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion)[]
-                {
-                    (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22", "3.22"),
-                    (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22-composite", "3.22"),
-                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.20", "3.20"),
-                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.20-composite", "3.20"),
-                    (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-alpine3.18", "3.18"),
-                    (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-alpine3.18-composite", "3.18"),
                 });
 
             yield return GetTrimming(
@@ -756,7 +741,7 @@ public static class SmokeTestScenarios
                 shortName: "rhel",
                 os: "rhel",
                 installType: InstallType.RpmX64,
-                artifactType: ArtifactType.LinuxX64,
+
                 runtimeId: "linux-x64",
                 scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion)[]
                 {
@@ -770,12 +755,31 @@ public static class SmokeTestScenarios
                 shortName: "opensuse",
                 os: "opensuse",
                 installType: InstallType.RpmX64,
-                artifactType: ArtifactType.LinuxX64,
+
                 runtimeId: "linux-x64",
                 scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion)[]
                 {
                     (TargetFramework.NET10_0, "andrewlock/dotnet-opensuse", "15-10.0", "15"),
                     (TargetFramework.NET9_0, "andrewlock/dotnet-opensuse", "15-9.0", "15"),
+                });
+        }
+
+        static IEnumerable<IEnumerable<SmokeTestScenario>> LinuxMuslTrimmingScenarios()
+        {
+            yield return GetTrimming(
+                category: SmokeTestCategory.LinuxMuslTrimming,
+                shortName: "alpine_musl",
+                os: "alpine",
+                installType: InstallType.TarMuslX64,
+                runtimeId: "linux-musl-x64",
+                scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion)[]
+                {
+                    (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22", "3.22"),
+                    (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22-composite", "3.22"),
+                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.20", "3.20"),
+                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.20-composite", "3.20"),
+                    (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-alpine3.18", "3.18"),
+                    (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-alpine3.18-composite", "3.18"),
                 });
         }
 
@@ -788,7 +792,6 @@ public static class SmokeTestScenarios
             string shortName,
             string os,
             InstallType installType,
-            ArtifactType artifactType,
             params (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[] scenarios)
             => scenarios.Select(scenario => new SmokeTestScenario(
                 Category: category,
@@ -797,7 +800,6 @@ public static class SmokeTestScenarios
                 RuntimeTag: scenario.Tag,
                 DockerImageRepo: scenario.Image,
                 InstallType: installType,
-                ArtifactType: artifactType,
                 Os: os,
                 OsVersion: scenario.OsVersion,
                 RunCrashTest: scenario.RunCrashTest));
@@ -806,7 +808,6 @@ public static class SmokeTestScenarios
             SmokeTestCategory category,
             string shortName,
             string os,
-            ArtifactType artifactType,
             params (string PublishFramework, string Image, string Tag, string OsVersion)[] scenarios)
             => scenarios.Select(scenario => new SmokeTestScenario(
                 Category: category,
@@ -814,7 +815,6 @@ public static class SmokeTestScenarios
                 PublishFramework: scenario.PublishFramework,
                 RuntimeTag: scenario.Tag,
                 DockerImageRepo: scenario.Image,
-                ArtifactType: artifactType,
                 Os: os,
                 OsVersion: scenario.OsVersion));
 
@@ -859,7 +859,6 @@ public static class SmokeTestScenarios
             string shortName,
             string os,
             InstallType installType,
-            ArtifactType artifactType,
             string runtimeId,
             params (string PublishFramework, string Image, string Tag, string OsVersion)[] scenarios)
         {
@@ -878,7 +877,6 @@ public static class SmokeTestScenarios
                        RuntimeTag: scenario.Tag,
                        DockerImageRepo: scenario.Image,
                        InstallType: installType,
-                       ArtifactType: artifactType,
                        RuntimeId: runtimeId,
                        PackageName: package.name,
                        PackageVersionSuffix: package.suffix,

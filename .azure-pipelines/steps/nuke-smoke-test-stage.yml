@@ -1,0 +1,59 @@
+parameters:
+  - name: matrixVariable
+    type: string
+
+  - name: artifacts
+    type: object
+    default: []
+
+jobs:
+- template: update-github-status-jobs.yml
+  parameters:
+    jobs: [test]
+
+- job: test
+  timeoutInMinutes: 20
+  variables:
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+  strategy:
+    matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.${{ parameters.matrixVariable }}'] ]
+
+  steps:
+  - template: clone-repo.yml
+    parameters:
+      targetShaId: $(targetShaId)
+      targetBranch: $(targetBranch)
+
+  # Download required artifacts. runner-standalone-* artifacts are tar.gz
+  # archives that need to be extracted; all others download directly.
+  - ${{ each artifact in parameters.artifacts }}:
+    - ${{ if not(startsWith(artifact, 'runner-standalone-')) }}:
+      - template: download-artifact.yml
+        parameters:
+          artifact: ${{ artifact }}
+          path: $(outputDir)
+    - ${{ if startsWith(artifact, 'runner-standalone-') }}:
+      - template: download-artifact.yml
+        parameters:
+          artifact: ${{ artifact }}
+          path: $(Agent.TempDirectory)
+          patterns: "*.tar.gz"
+      - script: |
+          mkdir -p $(outputDir)
+          tar -xf $(Agent.TempDirectory)/dd-trace-*.tar.gz -C $(outputDir)
+          chmod +x $(outputDir)/dd-trace
+        displayName: extract dd-trace tool to artifacts
+
+  - template: run-in-docker.yml
+    parameters:
+      build: true
+      baseImage: alpine
+      command: "RunArtifactSmokeTests -SmokeTestCategory $(category) -SmokeTestScenario $(scenario) --Artifacts /project/artifacts"
+      apiKey: $(DD_LOGGER_DD_API_KEY)
+      extraArgs: "-v /var/run/docker.sock:/var/run/docker.sock"
+
+  - publish: artifacts/build_data
+    artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
+    condition: always()
+    continueOnError: true
