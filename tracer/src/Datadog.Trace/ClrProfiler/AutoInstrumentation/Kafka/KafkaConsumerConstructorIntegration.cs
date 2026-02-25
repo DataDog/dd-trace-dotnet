@@ -72,21 +72,14 @@ public sealed class KafkaConsumerConstructorIntegration
 
     internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception exception, in CallTargetState state)
     {
-        if (state is not { State: string[] { Length: 2 } config })
+        if (exception is null && state is { State: string[] { Length: 2 } config })
         {
-            return CallTargetReturn.GetDefault();
+            var groupId = config[0];
+            var bootstrapServers = config[1];
+            var clusterId = KafkaHelper.GetClusterId(bootstrapServers, instance) ?? string.Empty;
+            ConsumerCache.SetConsumerGroup(instance, groupId, bootstrapServers, clusterId);
         }
 
-        var groupId = config[0];
-        var bootstrapServers = config[1];
-
-        if (exception is not null)
-        {
-            return CallTargetReturn.GetDefault();
-        }
-
-        var clusterId = KafkaHelper.GetClusterId(bootstrapServers, instance) ?? string.Empty;
-        ConsumerCache.SetConsumerGroup(instance, groupId, bootstrapServers, clusterId);
         return CallTargetReturn.GetDefault();
     }
 }

@@ -67,18 +67,12 @@ public sealed class KafkaProducerConstructorIntegration
 
     internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception exception, in CallTargetState state)
     {
-        if (state is not { State: string bootstrapServers })
+        if (exception is null && state is { State: string bootstrapServers })
         {
-            return CallTargetReturn.GetDefault();
+            var clusterId = KafkaHelper.GetClusterId(bootstrapServers, instance) ?? string.Empty;
+            ProducerCache.AddBootstrapServers(instance, bootstrapServers, clusterId);
         }
 
-        if (exception is not null)
-        {
-            return CallTargetReturn.GetDefault();
-        }
-
-        var clusterId = KafkaHelper.GetClusterId(bootstrapServers, instance) ?? string.Empty;
-        ProducerCache.AddBootstrapServers(instance, bootstrapServers, clusterId);
         return CallTargetReturn.GetDefault();
     }
 }
