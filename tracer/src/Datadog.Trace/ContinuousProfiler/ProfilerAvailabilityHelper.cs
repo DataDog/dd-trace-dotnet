@@ -23,8 +23,8 @@ internal static class ProfilerAvailabilityHelper
     // today that only works on Windows (hence the early short-circuit).
     private static readonly Lazy<bool> ProfilerIsAvailable = new(() => GetIsContinuousProfilerAvailable(
                                                                      EnvironmentHelpersNoLogging.IsClrProfilerAttachedSafe,
-                                                                     Aws.Default.IsLambda,
-                                                                     Azure.Default.IsFunction));
+                                                                     AwsInfo.Instance.IsLambda,
+                                                                     AzureInfo.Instance.IsFunction));
 
     /// <summary>
     /// Gets a value indicating whether returns true if the continuous profiler _should_ be available

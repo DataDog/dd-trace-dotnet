@@ -23,8 +23,8 @@ internal sealed class DefaultEnvironmentChecker : IEnvironmentChecker
     private static bool CheckServerlessEnvironment()
     {
         // Checking serverless environment based on environment variables
-        return Aws.Default.IsLambda ||
-               Azure.Default.IsFunction ||
-               Gcp.Default.IsCloudFunction;
+        return AwsInfo.Instance.IsLambda ||
+               AzureInfo.Instance.IsFunction ||
+               GcpInfo.Instance.IsCloudFunction;
     }
 }

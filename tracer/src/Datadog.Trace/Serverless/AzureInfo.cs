@@ -1,4 +1,4 @@
-// <copyright file="Azure.cs" company="Datadog">
+// <copyright file="AzureInfo.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -14,9 +14,9 @@ namespace Datadog.Trace.Serverless;
 /// <summary>
 /// Cached helpers for detecting Azure serverless platforms.
 /// Delegates to <see cref="Util.EnvironmentHelpers"/> for env-var reads.
-/// Create a new instance for test isolation; use <see cref="Default"/> for production code.
+/// Create a new instance for test isolation; use <see cref="Instance"/> for production code.
 /// </summary>
-internal sealed class Azure
+internal sealed class AzureInfo
 {
     private bool? _isAppService;
     private bool? _isFunction;
@@ -30,7 +30,7 @@ internal sealed class Azure
     /// <summary>
     /// Gets the shared singleton instance. Cached after first evaluation.
     /// </summary>
-    internal static Azure Default { get; } = new();
+    internal static AzureInfo Instance { get; } = new();
 
     /// <summary>
     /// Gets a value indicating whether the current environment is Azure App Services
