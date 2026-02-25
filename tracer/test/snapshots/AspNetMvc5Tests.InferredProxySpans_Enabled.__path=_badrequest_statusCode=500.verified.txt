@@ -52,7 +52,7 @@ at Samples.AspNetMvc5.Controllers.HomeController.BadRequest(),
       http.url: test.api.com/api/test/1,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: internal,
+      span.kind: server,
       stage: prod,
       _dd.base_service: sample
     },
