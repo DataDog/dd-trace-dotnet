@@ -42,6 +42,7 @@ public static class SmokeTestBuilder
         {
             case SmokeTestCategory.LinuxX64Installer:
             case SmokeTestCategory.LinuxArm64Installer:
+            case SmokeTestCategory.LinuxMuslInstaller:
                 await BuildInstallerImageAsync(scenario, tracerDir, artifactsDir);
                 break;
             case SmokeTestCategory.LinuxChiseledInstaller:
@@ -60,6 +61,7 @@ public static class SmokeTestBuilder
                 await BuildDotnetToolNugetImageAsync(scenario, tracerDir, artifactsDir, toolVersion);
                 break;
             case SmokeTestCategory.LinuxTrimming:
+            case SmokeTestCategory.LinuxMuslTrimming:
                 await BuildTrimmingImageAsync(scenario, tracerDir, artifactsDir, toolVersion);
                 break;
             default:
