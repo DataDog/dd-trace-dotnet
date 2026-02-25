@@ -8,10 +8,7 @@
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;
 
 /// <summary>
-/// Duck Type for Confluent.Kafka.AdminClientBuilder
-/// Returns object so we can TryDuckCast the result separately,
-/// allowing graceful fallback on older Confluent.Kafka versions
-/// that lack DescribeClusterAsync.
+/// Duck Type for Confluent.Kafka.AdminClientBuilder and DependentAdminClientBuilder
 /// </summary>
 internal interface IAdminClientBuilder
 {
