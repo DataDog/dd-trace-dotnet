@@ -14,7 +14,7 @@ using Xunit;
 
 namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Proxy;
 
-public class InferredProxySpanHelperTests
+public class InferredProxySpanHelperTests : IAsyncLifetime
 {
     private readonly Tracer _tracer;
 
@@ -22,6 +22,10 @@ public class InferredProxySpanHelperTests
     {
         _tracer = ProxyTestHelpers.GetMockTracer();
     }
+
+    public Task InitializeAsync() => Task.CompletedTask;
+
+    public async Task DisposeAsync() => await _tracer.DisposeAsync();
 
     [Fact]
     public void ExtractAndCreateInferredProxyScope_WithAwsHeaders_ReturnsAwsScope()
