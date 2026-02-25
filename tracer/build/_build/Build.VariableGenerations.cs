@@ -555,7 +555,23 @@ partial class Build : NukeBuild
                 {
                     var matrix = SmokeTests.SmokeTestScenarios.GetAllScenarios()
                                            .SelectMany(pair => pair.Value.Select(kv => (category: pair.Key, scenario: kv.Key, details: kv.Value)))
-                                           .ToDictionary(x => x.scenario, x => new { x.category, x.scenario, artifactName = x.details.ArtifactName });
+                                           .ToDictionary(x => x.scenario, x => new
+                                           {
+                                               category = x.category.ToString(),
+                                               scenario = x.scenario,
+                                               artifactName = x.details.ArtifactName,
+                                               runtimeId = x.details.RuntimeId,
+                                               relativeProfilerPath = x.details.RelativeProfilerPath,
+                                               relativeApiWrapperPath = x.details.RelativeApiWrapperPath,
+                                               packageName = x.details.PackageName,
+                                               packageVersionSuffix = x.details.PackageVersionSuffix,
+                                               excludeWhenPrerelease = x.details.ExcludeWhenPrerelease,
+                                               runCrashTest = x.details.RunCrashTest ? "true" : "false",
+                                               publishFramework = x.details.PublishFramework,
+                                               runtimeImage = x.details.RuntimeImage,
+                                               smokeTestOs = x.details.Os,
+                                               smokeTestOsVersion = x.details.OsVersion,
+                                           });
 
                     Logger.Information("Temp Installer smoke tests matrix");
                     Logger.Information(JsonConvert.SerializeObject(matrix, Formatting.Indented));
