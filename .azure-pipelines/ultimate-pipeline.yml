@@ -4994,20 +4994,9 @@ stages:
         targetBranch: $(targetBranch)
 
     - task: DownloadPipelineArtifact@2
-      displayName: Download x64 artifacts to artifact directory
+      displayName: Download $(artifactName) to artifact directory
       inputs:
-        artifactName: linux-packages-linux-x64
-        targetPath: $(outputDir)
-        buildType: 'specific'
-        project: 'dd-trace-dotnet'
-        definition: 54
-        buildVersionToDownload: 'specific'
-        pipelineId: 196299
-
-    - task: DownloadPipelineArtifact@2
-      displayName: Download x64 musl artifacts to artifact directory
-      inputs:
-        artifactName: linux-packages-linux-musl-x64
+        artifactName: $(artifactName)
         targetPath: $(outputDir)
         buildType: 'specific'
         project: 'dd-trace-dotnet'
