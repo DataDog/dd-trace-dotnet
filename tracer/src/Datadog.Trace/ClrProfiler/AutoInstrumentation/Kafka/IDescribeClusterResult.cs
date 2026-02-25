@@ -9,7 +9,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;
 
 /// <summary>
 /// Duck Type for Confluent.Kafka.Admin.DescribeClusterResult
-/// Used to access ClusterId from cluster description
 /// </summary>
 internal interface IDescribeClusterResult
 {

@@ -9,7 +9,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;
 
 /// <summary>
 /// Duck Type for Confluent.Kafka.AdminClientConfig
-/// Used to create an AdminClient for cluster_id extraction
 /// </summary>
 internal interface IAdminClientConfig
 {
