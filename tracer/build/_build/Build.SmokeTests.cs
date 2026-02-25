@@ -19,7 +19,7 @@ partial class Build
             EnsureExistingDirectory(TestDumpsDirectory);
 
             var category = SmokeTestCategory!.Value;
-            var smokeTest = SmokeTests.SmokeTestBuilder.GetScenario(category, SmokeTestScenario);
+            var smokeTest = SmokeTests.SmokeTestScenarios.GetScenario(category, SmokeTestScenario);
 
             var artifactsDir = ArtifactsDirectory;
             Logger.Information("Building test image for {SmokeTestName} (artifacts: {ArtifactsDir})...", smokeTest.ShortName, artifactsDir);
