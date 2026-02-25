@@ -12,6 +12,8 @@ public record SmokeTestScenario(
     string DockerImageRepo,
     InstallType InstallType,
     ArtifactType ArtifactType,
+    string Os,
+    string OsVersion,
     bool RunCrashTest = true,
     bool IsNoop = false)
 {
