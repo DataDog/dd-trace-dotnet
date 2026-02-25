@@ -50,16 +50,14 @@ public static class SmokeTestBuilder
 
     static async Task BuildLinuxX64InstallerImageAsync(SmokeTestScenario scenario, AbsolutePath tracerDir, AbsolutePath artifactsDir)
     {
-        var runtimeImage = $"mcr.microsoft.com/dotnet/aspnet:{scenario.RuntimeTag}";
-        var installCmd = "dpkg -i ./datadog-dotnet-apm*_amd64.deb";
         var dockerfilePath = "build/_build/docker/smoke.dockerfile";
 
         var buildArgs = new Dictionary<string, string>
         {
             ["DOTNETSDK_VERSION"] = DotnetSdkVersion,
-            ["RUNTIME_IMAGE"] = runtimeImage,
+            ["RUNTIME_IMAGE"] = scenario.RuntimeImage,
             ["PUBLISH_FRAMEWORK"] = scenario.PublishFramework,
-            ["INSTALL_CMD"] = installCmd,
+            ["INSTALL_CMD"] = scenario.InstallCommand,
         };
 
         await BuildImageFromDockerfileAsync(tracerDir, dockerfilePath, scenario.DockerTag, buildArgs, artifactsDir);
@@ -193,7 +191,7 @@ public static class SmokeTestBuilder
             }
 
             // 10. Run crash test (conditional)
-            if (scenario.RunCrashTest && scenario.IsLinuxContainer && !scenario.IsNoop)
+            if (scenario.RunCrashTest && !scenario.IsNoop)
             {
                 Logger.Information("Running crash test...");
                 crashTestContainerId = await RunCrashTestAsync(
