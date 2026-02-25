@@ -553,29 +553,66 @@ partial class Build : NukeBuild
 
                 void GenerateNukeSmokeTestsMatrix()
                 {
-                    var matrix = SmokeTests.SmokeTestScenarios.GetAllScenarios()
-                                           .SelectMany(pair => pair.Value.Select(kv => (category: pair.Key, scenario: kv.Key, details: kv.Value)))
-                                           .ToDictionary(x => x.scenario, x => new
-                                           {
-                                               category = x.category.ToString(),
-                                               scenario = x.scenario,
-                                               artifactName = x.details.ArtifactName,
-                                               runtimeId = x.details.RuntimeId,
-                                               relativeProfilerPath = x.details.RelativeProfilerPath,
-                                               relativeApiWrapperPath = x.details.RelativeApiWrapperPath,
-                                               packageName = x.details.PackageName,
-                                               packageVersionSuffix = x.details.PackageVersionSuffix,
-                                               excludeWhenPrerelease = x.details.ExcludeWhenPrerelease,
-                                               runCrashTest = x.details.RunCrashTest ? "true" : "false",
-                                               publishFramework = x.details.PublishFramework,
-                                               runtimeImage = x.details.RuntimeImage,
-                                               smokeTestOs = x.details.Os,
-                                               smokeTestOsVersion = x.details.OsVersion,
-                                           });
+                    var allScenarios = SmokeTests.SmokeTestScenarios.GetAllScenarios()
+                        .SelectMany(pair => pair.Value.Select(kv => (category: pair.Key, scenario: kv.Key, details: kv.Value)))
+                        .Where(x => !IsPrerelease || !x.details.ExcludeWhenPrerelease)
+                        .Select(x => (x.category, x.scenario, x.details, entry: (object)new
+                        {
+                            category = x.category.ToString(),
+                            scenario = x.scenario,
+                            runtimeId = x.details.RuntimeId,
+                            relativeProfilerPath = x.details.RelativeProfilerPath,
+                            relativeApiWrapperPath = x.details.RelativeApiWrapperPath,
+                            packageName = x.details.PackageName,
+                            packageVersionSuffix = x.details.PackageVersionSuffix,
+                            runCrashTest = x.details.RunCrashTest ? "true" : "false",
+                            publishFramework = x.details.PublishFramework,
+                            runtimeImage = x.details.RuntimeImage,
+                            smokeTestOs = x.details.Os,
+                            smokeTestOsVersion = x.details.OsVersion,
+                        }))
+                        .ToList();
 
-                    Logger.Information("Temp Installer smoke tests matrix");
-                    Logger.Information(JsonConvert.SerializeObject(matrix, Formatting.Indented));
-                    AzurePipelines.Instance.SetOutputVariable("temp_linux_smoke_tests_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
+                    // Emit per-stage matrices grouped by download pattern and pool
+                    EmitMatrix("nuke_installer_x64_matrix",
+                        allScenarios.Where(x => x.category is SmokeTests.SmokeTestCategory.LinuxX64Installer
+                                              or SmokeTests.SmokeTestCategory.LinuxChiseledInstaller));
+
+                    EmitMatrix("nuke_installer_arm64_matrix",
+                        allScenarios.Where(x => x.category is SmokeTests.SmokeTestCategory.LinuxArm64Installer
+                                              or SmokeTests.SmokeTestCategory.LinuxChiseledArm64Installer));
+
+                    EmitMatrix("nuke_nuget_x64_matrix",
+                        allScenarios.Where(x => x.category is SmokeTests.SmokeTestCategory.LinuxNuGet));
+
+                    EmitMatrix("nuke_nuget_arm64_matrix",
+                        allScenarios.Where(x => x.category is SmokeTests.SmokeTestCategory.LinuxNuGetArm64));
+
+                    EmitMatrix("nuke_dotnet_tool_x64_matrix",
+                        allScenarios.Where(x => x.category is SmokeTests.SmokeTestCategory.LinuxDotnetTool));
+
+                    EmitMatrix("nuke_dotnet_tool_arm64_matrix",
+                        allScenarios.Where(x => x.category is SmokeTests.SmokeTestCategory.LinuxDotnetToolArm64));
+
+                    EmitMatrix("nuke_dotnet_tool_nuget_matrix",
+                        allScenarios.Where(x => x.category is SmokeTests.SmokeTestCategory.LinuxDotnetToolNuget));
+
+                    EmitMatrix("nuke_trimming_matrix",
+                        allScenarios.Where(x => x.category is SmokeTests.SmokeTestCategory.LinuxTrimming));
+
+                    EmitMatrix("nuke_installer_musl_matrix",
+                        allScenarios.Where(x => x.category is SmokeTests.SmokeTestCategory.LinuxMuslInstaller));
+
+                    EmitMatrix("nuke_trimming_musl_matrix",
+                        allScenarios.Where(x => x.category is SmokeTests.SmokeTestCategory.LinuxMuslTrimming));
+
+                    void EmitMatrix(string name, IEnumerable<(SmokeTests.SmokeTestCategory category, string scenario, SmokeTests.SmokeTestScenario details, object entry)> scenarios)
+                    {
+                        var matrix = scenarios.ToDictionary(x => x.scenario, x => x.entry);
+                        Logger.Information($"Nuke smoke tests matrix: {name}");
+                        Logger.Information(JsonConvert.SerializeObject(matrix, Formatting.Indented));
+                        AzurePipelines.Instance.SetOutputVariable(name, JsonConvert.SerializeObject(matrix, Formatting.None));
+                    }
                 }
 
                 // installer smoke tests

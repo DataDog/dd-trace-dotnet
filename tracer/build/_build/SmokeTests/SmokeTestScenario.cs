@@ -14,7 +14,6 @@ public record SmokeTestScenario(
     string Os,
     string OsVersion,
     InstallType? InstallType = null,
-    ArtifactType? ArtifactType = null,
     string? RuntimeId = null,
     string? PackageName = null,
     string? PackageVersionSuffix = null,
@@ -28,7 +27,6 @@ public record SmokeTestScenario(
 
     public string RuntimeImage => $"{DockerImageRepo}:{RuntimeTag}";
     public string? InstallCommand => InstallType?.GetInstallCommand();
-    public string? ArtifactName => ArtifactType?.GetArtifactName();
 
     public string? RelativeProfilerPath => RuntimeId is not null
         ? $"datadog/{RuntimeId}/Datadog.Trace.ClrProfiler.Native.so" : null;
