@@ -248,26 +248,25 @@ public class RemoteConfigurationApiTests
             globalTags: ReadOnlyDictionary.Empty,
             processTags: ["a.b:c", "x.y:z"]);
 
-        var state = new RcmClientState(
-            rootVersion: 1,
-            targetsVersion: 0,
-            configStates: [], // e.g. first request
-            hasError: false,
-            error: null,
-            backendClientState: backendClientStage);
+        var state = new RcmClientState
+        {
+            RootVersion = 1,
+            TargetsVersion = 0,
+            BackendClientState = backendClientStage
+        };
 
         // make sure we test with something valid at least
         var rcm = new RcmSubscriptionManager();
         rcm.SetCapability(RcmCapabilitiesIndices.ApmTracingTracingEnabled, true);
         var capabilities = rcm.GetCapabilities();
 
-        var client = new RcmClient(
-            Guid.NewGuid().ToString(),
-            products: [RcmProducts.TracerFlareInitiated, RcmProducts.TracerFlareRequested],
-            tracer,
-            state,
-            capabilities);
+        var client = new RcmClient(Guid.NewGuid().ToString(), state)
+        {
+            Products = [RcmProducts.TracerFlareInitiated, RcmProducts.TracerFlareRequested],
+            ClientTracer = tracer,
+            Capabilities = capabilities,
+        };
 
-        return new GetRcmRequest(client, cachedTargetFiles: []);
+        return new GetRcmRequest(client);
     }
 }

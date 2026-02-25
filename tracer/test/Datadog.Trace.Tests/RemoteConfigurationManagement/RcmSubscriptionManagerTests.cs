@@ -808,59 +808,51 @@ public class RcmSubscriptionManagerTests
                 RcmProducts.AsmFeatures));
 
         var tracer = CreateTracer();
-        var previous = await CaptureRequest(manager, tracer);
+        var request = await CaptureRequest(manager, tracer);
 
-        // Same inputs → same cached instance
-        var current = await CaptureRequest(manager, tracer);
-        current.Should().BeSameAs(previous, "request should be cached when no inputs change");
+        // Always returns the same object (mutated in-place)
+        var request2 = await CaptureRequest(manager, tracer);
+        request2.Should().BeSameAs(request, "request should always be the same object (mutated in-place)");
 
-        // Different tracer reference → rebuild
-        previous = current;
-        current = await CaptureRequest(manager, tracer = CreateTracer());
-        current.Should().NotBeSameAs(previous, "request should rebuild when tracer changes");
+        // Different tracer reference → tracer updated on the client
+        var tracer2 = CreateTracer();
+        await CaptureRequest(manager, tracer2);
+        request.Client.ClientTracer.Should().BeSameAs(tracer2, "tracer should be updated when reference changes");
 
-        // Same tracer again → cached
-        previous = current;
-        current = await CaptureRequest(manager, tracer);
-        current.Should().BeSameAs(previous, "request should be cached again after stabilizing");
-
-        // Capabilities change → rebuild
-        previous = current;
+        // Capabilities change → capabilities updated on the client
+        var capsBefore = request.Client.Capabilities;
         manager.SetCapability(RcmCapabilitiesIndices.AsmActivation, true);
-        current = await CaptureRequest(manager, tracer);
-        current.Should().NotBeSameAs(previous, "request should rebuild when capabilities change");
+        await CaptureRequest(manager, tracer2);
+        request.Client.Capabilities.Should().NotBeEquivalentTo(capsBefore, "capabilities should be updated when they change");
 
-        // Product keys change (new subscription) → rebuild
-        previous = current;
+        // Product keys change (new subscription) → products updated on the client
+        var productsBefore = request.Client.Products;
         manager.SubscribeToChanges(new Subscription((_, _) => [], RcmProducts.LiveDebugging));
-        current = await CaptureRequest(manager, tracer);
-        current.Should().NotBeSameAs(previous, "request should rebuild when product keys change");
+        await CaptureRequest(manager, tracer2);
+        request.Client.Products.Should().NotBeSameAs(productsBefore, "products should be updated when subscriptions change");
+        request.Client.Products.Should().Contain(RcmProducts.LiveDebugging);
 
-        // Process a response (changes targets version, backend state, applied configs) → rebuild
-        previous = current;
+        // Process a response (changes targets version, backend state, applied configs)
         var entry = MakeConfig(RcmProducts.AsmFeatures, "config-1");
         var response = CreateSingleProductResponse(new[] { entry }, targetsVersion: 5, backendClientState: "state-1");
-        await manager.SendRequest(tracer, _ => Task.FromResult(response));
-        current = await CaptureRequest(manager, tracer);
-        current.Should().NotBeSameAs(previous, "request should rebuild after processing a response");
-        current.Client.State.TargetsVersion.Should().Be(5);
-        current.Client.State.BackendClientState.Should().Be("state-1");
+        await manager.SendRequest(tracer2, _ => Task.FromResult(response));
+        await CaptureRequest(manager, tracer2);
+        request.Client.State.TargetsVersion.Should().Be(5);
+        request.Client.State.BackendClientState.Should().Be("state-1");
+        request.CachedTargetFiles.Should().NotBeEmpty();
 
-        // Steady state (same response again) → cached
-        previous = current;
-        current = await CaptureRequest(manager, tracer);
-        current.Should().BeSameAs(previous, "request should be cached in steady state");
+        // Steady state → values remain the same
+        var targetFilesBefore = request.CachedTargetFiles;
+        await CaptureRequest(manager, tracer2);
+        request.CachedTargetFiles.Should().BeSameAs(targetFilesBefore, "cached target files should not be rebuilt when nothing changed");
 
-        // Config removed → rebuild
-        previous = current;
+        // Config removed → cached target files cleared
         var emptyResponse = CreateSingleProductResponse(Array.Empty<ConfigEntry>(), targetsVersion: 6, backendClientState: "state-2");
-        await manager.SendRequest(tracer, _ => Task.FromResult(emptyResponse));
-        current = await CaptureRequest(manager, tracer);
-        current.Should().NotBeSameAs(previous, "request should rebuild when configs are removed");
-        current.CachedTargetFiles.Should().BeEmpty();
+        await manager.SendRequest(tracer2, _ => Task.FromResult(emptyResponse));
+        await CaptureRequest(manager, tracer2);
+        request.CachedTargetFiles.Should().BeEmpty();
 
-        // Poll error → rebuild
-        previous = current;
+        // Poll error → hasError set
         var malformedResponse = new GetRcmResponse();
         malformedResponse.ClientConfigs.Add("datadog/2/ASM_FEATURES/missing/config");
         malformedResponse.Targets = new TufRoot
@@ -872,10 +864,9 @@ public class RcmSubscriptionManagerTests
                 Custom = new TargetsCustom { OpaqueBackendState = "state-3" }
             }
         };
-        await manager.SendRequest(tracer, _ => Task.FromResult(malformedResponse));
-        current = await CaptureRequest(manager, tracer);
-        current.Should().NotBeSameAs(previous, "request should rebuild after a poll error");
-        current.Client.State.HasError.Should().BeTrue();
+        await manager.SendRequest(tracer2, _ => Task.FromResult(malformedResponse));
+        await CaptureRequest(manager, tracer2);
+        request.Client.State.HasError.Should().BeTrue();
 
         static async Task<GetRcmRequest> CaptureRequest(RcmSubscriptionManager mgr, RcmClientTracer t)
         {
