@@ -19,8 +19,13 @@ public static class JetbrainsExtensions
     /// <returns>Same configuration instance</returns>
     public static IConfig WithJetbrains(this IConfig config, JetbrainsProduct product, string? outputFolder = null)
     {
+#if NETCOREAPP2_1
+        System.Console.WriteLine("WARNING: Jetbrains profiler is not supported in .NET Core 2.1");
+        return config;
+#else
         return config
               .AddDiagnoser(new JetbrainsDiagnoser(product, outputFolder))
               .AddJob(Job.InProcess);
+#endif
     }
 }

@@ -14,7 +14,8 @@
     <AssemblyOriginatorKeyFile>..\..\..\..\Datadog.Trace.snk</AssemblyOriginatorKeyFile>
     <DelaySign>false</DelaySign>
     <!-- NU* are workaround for Rider bug: https://youtrack.jetbrains.com/issue/RIDER-103207/Cannot-suppress-vulnerable-package-errors -->
-    <NoWarn>1591;NU1901;NU1902;NU1903;NU1904</NoWarn>
+    <!-- ASPDEPR004: 'WebHostBuilder' is obsolete: 'WebHostBuilder is deprecated in favor of HostBuilder and WebApplicationBuilder  -->
+    <NoWarn>1591;NU1901;NU1902;NU1903;NU1904;ASPDEPR004</NoWarn>
 
      <!-- Tell Visual Studio to not create a new launchSettings.json file, even though we have AspNetCore assets -->
     <NoDefaultLaunchSettingsFile>true</NoDefaultLaunchSettingsFile>
@@ -42,7 +43,7 @@
 
   <ItemGroup>
     <PackageReference Include="BenchmarkDotNet" Version="0.15.8" />
-    <PackageReference Include="JetBrains.Profiler.SelfApi" Version="2.5.14" />
+    <PackageReference Include="JetBrains.Profiler.SelfApi" Version="2.5.16" Condition=" '$(TargetFramework)' != 'netcoreapp2.1'" />
     <PackageReference Include="log4net" Version="2.0.12" />
     <PackageReference Include="NLog" Version="5.2.0" />
     <PackageReference Include="Serilog" Version="2.10.0" />
