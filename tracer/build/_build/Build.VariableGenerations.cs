@@ -553,7 +553,7 @@ partial class Build : NukeBuild
 
                 void GenerateNukeSmokeTestsMatrix()
                 {
-                    var matrix = SmokeTests.SmokeTestBuilder.GetAllScenarios()
+                    var matrix = SmokeTests.SmokeTestScenarios.GetAllScenarios()
                                            .SelectMany(pair => pair.Value.Keys.Select(scenario => (category: pair.Key, scenario)))
                                            .ToDictionary(x => x, x => new { x.category, x.scenario });
 
