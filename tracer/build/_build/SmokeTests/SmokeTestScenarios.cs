@@ -28,7 +28,8 @@ public static class SmokeTestScenarios
 
         static IEnumerable<IEnumerable<SmokeTestScenario>> LinuxX64InstallerScenarios()
         {
-            // This is actually a mix of ubuntu and debian, but they're all in the same MS repository
+            // The dotnet/aspnet image is a mix of ubuntu and debian, but they're all in the same MS repository
+            // So we split them here
             yield return Get(
                 category: SmokeTestCategory.LinuxX64Installer,
                 shortName: "ubuntu",
@@ -38,13 +39,22 @@ public static class SmokeTestScenarios
                 {
                     (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-noble"),
                     (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-noble"),
-                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-bookworm-slim"),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-jammy"),
+                    (TargetFramework.NET5_0, "mcr.microsoft.com/dotnet/aspnet", "5.0-focal"),
+                    (TargetFramework.NETCOREAPP3_1, "mcr.microsoft.com/dotnet/aspnet", "3.1-bionic"),
+                });
+
+            yield return Get(
+                category: SmokeTestCategory.LinuxX64Installer,
+                shortName: "debian",
+                installType: InstallType.DebX64,
+                artifactType: ArtifactType.LinuxX64,
+                scenarios: new (string PublishFramework, string Image, string Tag)[]
+                {
+                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-bookworm-slim"),
                     (TargetFramework.NET7_0, "mcr.microsoft.com/dotnet/aspnet", "7.0-bullseye-slim"),
                     (TargetFramework.NET6_0, "mcr.microsoft.com/dotnet/aspnet", "6.0-bullseye-slim"),
                     (TargetFramework.NET5_0, "mcr.microsoft.com/dotnet/aspnet", "5.0-buster-slim"),
-                    (TargetFramework.NET5_0, "mcr.microsoft.com/dotnet/aspnet", "5.0-focal"),
-                    (TargetFramework.NETCOREAPP3_1, "mcr.microsoft.com/dotnet/aspnet", "3.1-bionic"),
                     (TargetFramework.NETCOREAPP2_1, "mcr.microsoft.com/dotnet/aspnet", "2.1-stretch-slim")
                 });
 
