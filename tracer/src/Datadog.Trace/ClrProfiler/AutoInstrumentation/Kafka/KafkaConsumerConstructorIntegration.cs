@@ -63,8 +63,7 @@ public sealed class KafkaConsumerConstructorIntegration
             // Only config setting "group.id" is required, so assert that the value is non-null before adding to the ConsumerGroup cache
             if (groupId is not null)
             {
-                var clusterId = KafkaHelper.GetClusterId(bootstrapServers) ?? string.Empty;
-                ConsumerCache.SetConsumerGroup(instance, groupId, bootstrapServers, clusterId);
+                ConsumerCache.SetConsumerGroup(instance, groupId, bootstrapServers, string.Empty);
                 return new CallTargetState(scope: null, state: instance);
             }
         }
@@ -79,6 +78,20 @@ public sealed class KafkaConsumerConstructorIntegration
         if (exception is not null && state is { State: { } consumer })
         {
             ConsumerCache.RemoveConsumerGroup(consumer);
+        }
+        else if (state is { State: { } completedConsumer })
+        {
+            // Resolve cluster_id now that the consumer is fully constructed.
+            // Uses DependentAdminClientBuilder to reuse the consumer's existing broker connection.
+            if (ConsumerCache.TryGetConsumerGroup(completedConsumer, out _, out var bootstrapServers, out var existingClusterId)
+                && string.IsNullOrEmpty(existingClusterId))
+            {
+                var clusterId = KafkaHelper.GetClusterId(bootstrapServers, completedConsumer);
+                if (!string.IsNullOrEmpty(clusterId))
+                {
+                    ConsumerCache.UpdateClusterId(completedConsumer, clusterId);
+                }
+            }
         }
 
         return CallTargetReturn.GetDefault();

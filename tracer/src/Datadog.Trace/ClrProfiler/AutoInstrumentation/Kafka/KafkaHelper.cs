@@ -408,7 +408,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
             }
         }
 
-        internal static string? GetClusterId(string bootstrapServers)
+        internal static string? GetClusterId(string? bootstrapServers, object? clientInstance = null)
         {
             if (_isGettingClusterId)
             {
@@ -420,7 +420,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 return null;
             }
 
-            if (ClusterIdCache.TryGetValue(bootstrapServers, out var cached))
+            if (ClusterIdCache.TryGetValue(bootstrapServers!, out var cached))
             {
                 return cached;
             }
@@ -429,65 +429,20 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
             {
                 _isGettingClusterId = true;
 
-                var configType = Type.GetType("Confluent.Kafka.AdminClientConfig, Confluent.Kafka");
-                if (configType is null)
+                // Try DependentAdminClientBuilder first if we have an existing client instance.
+                // This reuses the client's existing broker connection instead of opening a new one.
+                if (clientInstance is not null)
                 {
-                    return null;
-                }
-
-                var config = Activator.CreateInstance(configType);
-                if (!config.TryDuckCast<IAdminClientConfig>(out var adminConfig))
-                {
-                    return null;
-                }
-
-                adminConfig.BootstrapServers = bootstrapServers;
-
-                var builderType = Type.GetType("Confluent.Kafka.AdminClientBuilder, Confluent.Kafka");
-                if (builderType is null)
-                {
-                    return null;
-                }
-
-                var builder = Activator.CreateInstance(builderType, new object[] { ((IDuckType)adminConfig).Instance! });
-                if (!builder.TryDuckCast<IAdminClientBuilder>(out var adminBuilder))
-                {
-                    return null;
-                }
-
-                var adminClientObj = adminBuilder.Build();
-                if (adminClientObj is null)
-                {
-                    return null;
-                }
-
-                if (!adminClientObj.TryDuckCast<IAdminClient>(out var adminClient))
-                {
-                    (adminClientObj as IDisposable)?.Dispose();
-                    return null;
-                }
-
-                try
-                {
-                    object? options = null;
-                    var optionsType = Type.GetType("Confluent.Kafka.Admin.DescribeClusterOptions, Confluent.Kafka");
-                    if (optionsType is not null)
+                    var result = GetClusterIdFromClientHandle(clientInstance);
+                    if (result is not null)
                     {
-                        options = Activator.CreateInstance(optionsType);
-                        var requestTimeoutProp = optionsType.GetProperty("RequestTimeout");
-                        requestTimeoutProp?.SetValue(options, TimeSpan.FromSeconds(2));
+                        ClusterIdCache.TryAdd(bootstrapServers!, result);
+                        return result;
                     }
+                }
 
-                    var duckTask = adminClient.DescribeClusterAsync(options);
-                    var describeResult = duckTask.GetAwaiter().GetResult();
-                    var clusterId = describeResult?.ClusterId;
-                    ClusterIdCache.TryAdd(bootstrapServers, clusterId);
-                    return clusterId;
-                }
-                finally
-                {
-                    adminClient.Dispose();
-                }
+                // Fall back to creating a standalone AdminClient with its own connection
+                return GetClusterIdFromNewAdminClient(bootstrapServers!);
             }
             catch (Exception ex)
             {
@@ -498,6 +453,126 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
             {
                 _isGettingClusterId = false;
             }
+        }
+
+        private static string? GetClusterIdFromClientHandle(object clientInstance)
+        {
+            if (!clientInstance.TryDuckCast<IClientHandle>(out var clientHandle))
+            {
+                return null;
+            }
+
+            var handle = clientHandle.Handle;
+            if (handle is null)
+            {
+                return null;
+            }
+
+            var builderType = Type.GetType("Confluent.Kafka.DependentAdminClientBuilder, Confluent.Kafka");
+            if (builderType is null)
+            {
+                return null;
+            }
+
+            var builder = Activator.CreateInstance(builderType, new object[] { handle });
+            if (!builder.TryDuckCast<IAdminClientBuilder>(out var adminBuilder))
+            {
+                return null;
+            }
+
+            var adminClientObj = adminBuilder.Build();
+            if (adminClientObj is null)
+            {
+                return null;
+            }
+
+            if (!adminClientObj.TryDuckCast<IAdminClient>(out var adminClient))
+            {
+                (adminClientObj as IDisposable)?.Dispose();
+                return null;
+            }
+
+            try
+            {
+                return DescribeClusterWithTimeout(adminClient);
+            }
+            finally
+            {
+                // Dispose the AdminClient but NOT the underlying handle (it's borrowed, not owned)
+                adminClient.Dispose();
+            }
+        }
+
+        private static string? GetClusterIdFromNewAdminClient(string bootstrapServers)
+        {
+            var configType = Type.GetType("Confluent.Kafka.AdminClientConfig, Confluent.Kafka");
+            if (configType is null)
+            {
+                return null;
+            }
+
+            var config = Activator.CreateInstance(configType);
+            if (!config.TryDuckCast<IAdminClientConfig>(out var adminConfig))
+            {
+                return null;
+            }
+
+            adminConfig.BootstrapServers = bootstrapServers;
+
+            var builderType = Type.GetType("Confluent.Kafka.AdminClientBuilder, Confluent.Kafka");
+            if (builderType is null)
+            {
+                return null;
+            }
+
+            var builder = Activator.CreateInstance(builderType, new object[] { ((IDuckType)adminConfig).Instance! });
+            if (!builder.TryDuckCast<IAdminClientBuilder>(out var adminBuilder))
+            {
+                return null;
+            }
+
+            var adminClientObj = adminBuilder.Build();
+            if (adminClientObj is null)
+            {
+                return null;
+            }
+
+            if (!adminClientObj.TryDuckCast<IAdminClient>(out var adminClient))
+            {
+                (adminClientObj as IDisposable)?.Dispose();
+                return null;
+            }
+
+            try
+            {
+                var clusterId = DescribeClusterWithTimeout(adminClient);
+                if (clusterId is not null)
+                {
+                    ClusterIdCache.TryAdd(bootstrapServers, clusterId);
+                }
+
+                return clusterId;
+            }
+            finally
+            {
+                adminClient.Dispose();
+            }
+        }
+
+        private static string? DescribeClusterWithTimeout(IAdminClient adminClient)
+        {
+            object? options = null;
+            var optionsType = Type.GetType("Confluent.Kafka.Admin.DescribeClusterOptions, Confluent.Kafka");
+            if (optionsType is not null)
+            {
+                options = Activator.CreateInstance(optionsType);
+                var requestTimeoutProp = optionsType.GetProperty("RequestTimeout");
+                requestTimeoutProp?.SetValue(options, TimeSpan.FromSeconds(2));
+            }
+
+            var duckTask = adminClient.DescribeClusterAsync(options);
+            var describeResult = duckTask.GetAwaiter().GetResult();
+            return describeResult?.ClusterId;
         }
 
         internal static void DisableHeadersIfUnsupportedBroker(Exception exception)

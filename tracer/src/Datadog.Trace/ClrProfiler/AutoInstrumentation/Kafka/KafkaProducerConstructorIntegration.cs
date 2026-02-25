@@ -58,8 +58,7 @@ public sealed class KafkaProducerConstructorIntegration
 
             if (!string.IsNullOrEmpty(bootstrapServers))
             {
-                var clusterId = KafkaHelper.GetClusterId(bootstrapServers) ?? string.Empty;
-                ProducerCache.AddBootstrapServers(instance, bootstrapServers, clusterId);
+                ProducerCache.AddBootstrapServers(instance, bootstrapServers, string.Empty);
                 return new CallTargetState(scope: null, state: instance);
             }
         }
@@ -70,10 +69,24 @@ public sealed class KafkaProducerConstructorIntegration
     internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception exception, in CallTargetState state)
     {
         // This method is called in the Producer constructor, so if we have an exception
-        // the consumer won't be created, so no point recording it.
+        // the producer won't be created, so no point recording it.
         if (exception is not null && state is { State: { } producer })
         {
             ProducerCache.RemoveProducer(producer);
+        }
+        else if (state is { State: { } completedProducer })
+        {
+            // Resolve cluster_id now that the producer is fully constructed.
+            // Uses DependentAdminClientBuilder to reuse the producer's existing broker connection.
+            if (ProducerCache.TryGetProducer(completedProducer, out var bootstrapServers, out var existingClusterId)
+                && string.IsNullOrEmpty(existingClusterId))
+            {
+                var clusterId = KafkaHelper.GetClusterId(bootstrapServers, completedProducer);
+                if (!string.IsNullOrEmpty(clusterId))
+                {
+                    ProducerCache.UpdateClusterId(completedProducer, clusterId);
+                }
+            }
         }
 
         return CallTargetReturn.GetDefault();

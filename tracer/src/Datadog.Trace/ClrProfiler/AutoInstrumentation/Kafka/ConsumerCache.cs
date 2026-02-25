@@ -31,6 +31,16 @@ internal static class ConsumerCache
 #endif
     }
 
+    public static void UpdateClusterId(object consumer, string clusterId)
+    {
+#if NETCOREAPP3_1_OR_GREATER
+        ConsumerToClusterIdMap.AddOrUpdate(consumer, clusterId);
+#else
+        ConsumerToClusterIdMap.Remove(consumer);
+        ConsumerToClusterIdMap.GetValue(consumer, _ => clusterId);
+#endif
+    }
+
     public static bool TryGetConsumerGroup(object consumer, out string? groupId, out string? bootstrapServers, out string? clusterId)
     {
         groupId = null;
