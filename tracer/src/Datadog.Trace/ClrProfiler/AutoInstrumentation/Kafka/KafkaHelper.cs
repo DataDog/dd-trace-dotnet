@@ -28,9 +28,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         private static readonly ConcurrentDictionary<string, string?> ClusterIdCache = new();
         private static bool _headersInjectionEnabled = true;
 
-        [ThreadStatic]
-        private static bool _isGettingClusterId;
-
         internal static Scope? CreateProducerScope(
             Tracer tracer,
             object producer,
@@ -410,11 +407,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
         internal static string? GetClusterId(string? bootstrapServers, object clientInstance)
         {
-            if (_isGettingClusterId)
-            {
-                return null;
-            }
-
             if (string.IsNullOrEmpty(bootstrapServers))
             {
                 return null;
@@ -427,8 +419,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
             try
             {
-                _isGettingClusterId = true;
-
                 if (!clientInstance.TryDuckCast<IClientHandle>(out var clientHandle))
                 {
                     return null;
@@ -440,7 +430,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     return null;
                 }
 
-                // Use DependentAdminClientBuilder to reuse the client's existing broker connection
                 var builderType = Type.GetType("Confluent.Kafka.DependentAdminClientBuilder, Confluent.Kafka");
                 if (builderType is null)
                 {
@@ -473,7 +462,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 }
                 finally
                 {
-                    // Dispose the AdminClient but NOT the underlying handle (it's borrowed, not owned)
                     adminClient.Dispose();
                 }
             }
@@ -481,10 +469,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
             {
                 Log.Debug(ex, "Error extracting cluster_id from Kafka metadata");
                 return null;
-            }
-            finally
-            {
-                _isGettingClusterId = false;
             }
         }
 

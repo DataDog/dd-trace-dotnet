@@ -74,7 +74,6 @@ public sealed class KafkaProducerConstructorIntegration
 
         if (exception is not null)
         {
-            ProducerCache.RemoveProducer(instance);
             return CallTargetReturn.GetDefault();
         }
 
