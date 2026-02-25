@@ -25,8 +25,6 @@ namespace Datadog.Trace.RemoteConfigurationManagement;
 
 internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
 {
-    private long _rootVersion = 1;
-
     public static readonly IRcmSubscriptionManager Instance = new RcmSubscriptionManager();
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<RcmSubscriptionManager>();
 
@@ -40,25 +38,30 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
 
     private readonly string _id = Guid.NewGuid().ToString();
 
+    // Persistent request object, mutated in-place each poll
+    private readonly GetRcmRequest _request;
+
     // Ideally this would be an ImmutableArray but that's not available in net461
     private IReadOnlyList<ISubscription> _subscriptions = [];
 
+    private long _rootVersion = 1;
     private string? _backendClientState;
     private long _targetsVersion;
     private BigInteger _capabilities;
     private string? _lastPollError;
     private long _appliedConfigsVersion;
 
-    // Cached request and the input snapshot used to build it
-    private GetRcmRequest? _cachedRequest;
-    private RcmClientTracer? _cachedRcmTracer;
-    private long _cachedRootVersion;
-    private string? _cachedLastPollError;
-    private long _cachedAppliedConfigsVersion;
-    private long _cachedTargetsVersion;
-    private string? _cachedBackendClientState;
+    // Cached capabilities byte[] — only recomputed when _capabilities changes
     private BigInteger _cachedCapabilities;
-    private ICollection<string>? _cachedProductKeys;
+    private byte[]? _cachedCapabilitiesBytes;
+
+    // Version tracking for lists that are expensive to rebuild
+    private long _requestAppliedConfigsVersion = -1;
+
+    public RcmSubscriptionManager()
+    {
+        _request = new GetRcmRequest(new RcmClient(_id, new RcmClientState()));
+    }
 
     public bool HasAnySubscription => _subscriptions.Count > 0;
 
@@ -234,44 +237,49 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
 
     private GetRcmRequest BuildRequest(RcmClientTracer rcmTracer, string? lastPollError)
     {
-        if (_cachedRequest is not null
-            && ReferenceEquals(rcmTracer, _cachedRcmTracer)
-            && lastPollError == _cachedLastPollError
-            && _appliedConfigsVersion == _cachedAppliedConfigsVersion
-            && _rootVersion == _cachedRootVersion
-            && _targetsVersion == _cachedTargetsVersion
-            && _backendClientState == _cachedBackendClientState
-            && _capabilities == _cachedCapabilities
-            && ReferenceEquals(ProductKeys, _cachedProductKeys))
+        // Update all fields in-place instead of recreating everything
+        var requestClient = _request.Client;
+        var requestState = requestClient.State;
+        requestState.RootVersion = _rootVersion;
+        requestState.TargetsVersion = _targetsVersion;
+        requestState.HasError = lastPollError is not null;
+        requestState.Error = lastPollError;
+        requestState.BackendClientState = _backendClientState;
+
+        requestClient.ClientTracer = rcmTracer;
+        requestClient.Products = ProductKeys;
+        requestClient.Capabilities = GetCachedCapabilities();
+
+        // Rebuild config-derived lists only when applied configs have changed
+        if (_requestAppliedConfigsVersion != _appliedConfigsVersion)
         {
-            return _cachedRequest;
+            _requestAppliedConfigsVersion = _appliedConfigsVersion;
+            var cachedTargetFiles = new List<RcmCachedTargetFile>(_appliedConfigurations.Values.Count);
+            var configStates = new List<RcmConfigState>(_appliedConfigurations.Values.Count);
+
+            foreach (var cache in _appliedConfigurations.Values)
+            {
+                cachedTargetFiles.Add(new RcmCachedTargetFile(cache.Path.Path, cache.Length, cache.Hashes.Select(kp => new RcmCachedTargetFileHash(kp.Key, kp.Value)).ToList()));
+                configStates.Add(new RcmConfigState(cache.Path.Id, cache.Version, cache.Path.Product, cache.ApplyState, cache.Error));
+            }
+
+            _request.CachedTargetFiles = cachedTargetFiles;
+            requestState.ConfigStates = configStates;
         }
 
-        var cachedTargetFiles = new List<RcmCachedTargetFile>();
-        var configStates = new List<RcmConfigState>();
-        var appliedConfigs = _appliedConfigurations.Values;
+        return _request;
 
-        foreach (var cache in appliedConfigs)
+        byte[] GetCachedCapabilities()
         {
-            cachedTargetFiles.Add(new RcmCachedTargetFile(cache.Path.Path, cache.Length, cache.Hashes.Select(kp => new RcmCachedTargetFileHash(kp.Key, kp.Value)).ToList()));
-            configStates.Add(new RcmConfigState(cache.Path.Id, cache.Version, cache.Path.Product, cache.ApplyState, cache.Error));
+            if (_cachedCapabilitiesBytes is not null && _capabilities == _cachedCapabilities)
+            {
+                return _cachedCapabilitiesBytes;
+            }
+
+            _cachedCapabilities = _capabilities;
+            _cachedCapabilitiesBytes = GetCapabilities();
+            return _cachedCapabilitiesBytes;
         }
-
-        var rcmState = new RcmClientState(_rootVersion, _targetsVersion, configStates, lastPollError != null, lastPollError, _backendClientState);
-        var rcmClient = new RcmClient(_id, ProductKeys, rcmTracer, rcmState, GetCapabilities());
-        var rcmRequest = new GetRcmRequest(rcmClient, cachedTargetFiles);
-
-        _cachedRequest = rcmRequest;
-        _cachedRcmTracer = rcmTracer;
-        _cachedLastPollError = lastPollError;
-        _cachedAppliedConfigsVersion = _appliedConfigsVersion;
-        _cachedRootVersion = _rootVersion;
-        _cachedTargetsVersion = _targetsVersion;
-        _cachedBackendClientState = _backendClientState;
-        _cachedCapabilities = _capabilities;
-        _cachedProductKeys = ProductKeys;
-
-        return rcmRequest;
     }
 
     private async Task<GetRcmResponse?> TrySendRequest(RcmClientTracer rcmClientTracer, Func<GetRcmRequest, Task<GetRcmResponse?>> func)
