@@ -777,8 +777,11 @@ public class RcmSubscriptionManagerTests
         // Second request: respond with roots containing multiple entries;
         // only the last entry's version should be used
         var response = CreateSingleProductResponse(Array.Empty<ConfigEntry>());
-        response.Roots.Add(Convert.ToBase64String(Encoding.UTF8.GetBytes("""{"signed":{"version":2}}""")));
-        response.Roots.Add(Convert.ToBase64String(Encoding.UTF8.GetBytes("""{"signed":{"version":5}}""")));
+        response.Roots =
+        [
+            Convert.ToBase64String(Encoding.UTF8.GetBytes("""{"signed":{"version":2}}""")),
+            Convert.ToBase64String(Encoding.UTF8.GetBytes("""{"signed":{"version":5}}""")),
+        ];
 
         await manager.SendRequest(CreateTracer(), _ => Task.FromResult(response));
 
@@ -853,16 +856,18 @@ public class RcmSubscriptionManagerTests
         request.CachedTargetFiles.Should().BeEmpty();
 
         // Poll error → hasError set
-        var malformedResponse = new GetRcmResponse();
-        malformedResponse.ClientConfigs.Add("datadog/2/ASM_FEATURES/missing/config");
-        malformedResponse.Targets = new TufRoot
+        var malformedResponse = new GetRcmResponse
         {
-            Signed = new Signed
+            ClientConfigs = ["datadog/2/ASM_FEATURES/missing/config"],
+            Targets = new TufRoot
             {
-                Targets = new Dictionary<string, Target>(),
-                Version = 7,
-                Custom = new TargetsCustom { OpaqueBackendState = "state-3" }
-            }
+                Signed = new Signed
+                {
+                    Targets = new Dictionary<string, Target>(),
+                    Version = 7,
+                    Custom = new TargetsCustom { OpaqueBackendState = "state-3" }
+                }
+            },
         };
         await manager.SendRequest(tracer2, _ => Task.FromResult(malformedResponse));
         await CaptureRequest(manager, tracer2);
@@ -897,25 +902,18 @@ public class RcmSubscriptionManagerTests
         long targetsVersion = 1,
         string backendClientState = "test-backend-state")
     {
-        var response = new GetRcmResponse();
-
-        foreach (var file in targetFiles)
+        var response = new GetRcmResponse
         {
-            response.TargetFiles.Add(file);
-        }
-
-        foreach (var config in clientConfigs)
-        {
-            response.ClientConfigs.Add(config);
-        }
-
-        response.Targets = new TufRoot
-        {
-            Signed = new Signed
+            TargetFiles = [..targetFiles],
+            ClientConfigs = [..clientConfigs],
+            Targets = new TufRoot
             {
-                Targets = targets,
-                Version = targetsVersion,
-                Custom = new TargetsCustom { OpaqueBackendState = backendClientState }
+                Signed = new Signed
+                {
+                    Targets = targets,
+                    Version = targetsVersion,
+                    Custom = new TargetsCustom { OpaqueBackendState = backendClientState }
+                }
             }
         };
 

@@ -312,59 +312,64 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
     {
         if (Log.IsEnabled(LogEventLevel.Debug))
         {
-            var description = response.TargetFiles.Count > 0
+            var description = response.TargetFiles?.Count > 0
                                   ? "with the following paths: " + string.Join(",", response.TargetFiles.Select(t => t.Path))
                                   : "that is empty.";
             Log.Debug("Received Remote Configuration response {ResponseDescription}.", description);
         }
 
-        var signed = response.Targets.Signed.Targets;
+        var signed = response.Targets?.Signed?.Targets;
 
         Dictionary<string, List<RemoteConfiguration>>? configByProducts = null;
-        var receivedPaths = new List<string>(capacity: response.ClientConfigs.Count);
-
-        // handle new configurations
-        foreach (var clientConfig in response.ClientConfigs)
+        List<string>? receivedPaths = null;
+        if (response.ClientConfigs?.Count > 0)
         {
-            var remoteConfigurationPath = RemoteConfigurationPath.FromPath(clientConfig);
-            receivedPaths.Add(remoteConfigurationPath.Path);
+            receivedPaths = new List<string>(capacity: response.ClientConfigs.Count);
 
-            if (!signed.TryGetValue(remoteConfigurationPath.Path, out var signedTarget))
+            // handle new configurations
+            foreach (var clientConfig in response.ClientConfigs)
             {
-                ThrowHelper.ThrowException($"Missing config {remoteConfigurationPath.Path} in targets");
+                var remoteConfigurationPath = RemoteConfigurationPath.FromPath(clientConfig);
+                receivedPaths.Add(remoteConfigurationPath.Path);
+
+                if (signed is null || !signed.TryGetValue(remoteConfigurationPath.Path, out var signedTarget))
+                {
+                    ThrowHelper.ThrowException($"Missing config {remoteConfigurationPath.Path} in targets");
+                    return; // keep compiler happy
+                }
+
+                if (!ProductKeys.Contains(remoteConfigurationPath.Product))
+                {
+                    Log.Warning("Received config {RemoteConfigurationPath} for a product that was not requested", remoteConfigurationPath);
+                    continue;
+                }
+
+                if (_appliedConfigurations.TryGetValue(remoteConfigurationPath.Path, out var appliedConfig) &&
+                    IsConfigAlreadyApplied(appliedConfig, signedTarget))
+                {
+                    continue;
+                }
+
+                var targetFile = response.TargetFiles?.FirstOrDefault(file => file.Path == remoteConfigurationPath.Path);
+                if (targetFile is null)
+                {
+                    ThrowHelper.ThrowException($"Missing config {remoteConfigurationPath.Path} in target files");
+                }
+
+                var remoteConfigurationCache = new RemoteConfigurationCache(remoteConfigurationPath, signedTarget.Length, signedTarget.Hashes, signedTarget.Custom?.V ?? 0);
+                _appliedConfigurations[remoteConfigurationCache.Path.Path] = remoteConfigurationCache;
+                _appliedConfigsVersion++;
+
+                var remoteConfiguration = new RemoteConfiguration(remoteConfigurationPath, targetFile.Raw, signedTarget.Length, signedTarget.Hashes, signedTarget.Custom?.V ?? 0);
+                configByProducts ??= [];
+                if (!configByProducts.TryGetValue(remoteConfigurationPath.Product, out var configByProduct))
+                {
+                    configByProduct ??= [];
+                    configByProducts[remoteConfigurationPath.Product] = configByProduct;
+                }
+
+                configByProduct.Add(remoteConfiguration);
             }
-
-            if (!ProductKeys.Contains(remoteConfigurationPath.Product))
-            {
-                Log.Warning("Received config {RemoteConfigurationPath} for a product that was not requested", remoteConfigurationPath);
-                continue;
-            }
-
-            if (_appliedConfigurations.TryGetValue(remoteConfigurationPath.Path, out var appliedConfig) &&
-                IsConfigAlreadyApplied(appliedConfig, signedTarget))
-            {
-                continue;
-            }
-
-            var targetFile = response.TargetFiles.FirstOrDefault(file => file.Path == remoteConfigurationPath.Path);
-            if (targetFile is null)
-            {
-                ThrowHelper.ThrowException($"Missing config {remoteConfigurationPath.Path} in target files");
-            }
-
-            var remoteConfigurationCache = new RemoteConfigurationCache(remoteConfigurationPath, signedTarget.Length, signedTarget.Hashes, signedTarget.Custom.V);
-            _appliedConfigurations[remoteConfigurationCache.Path.Path] = remoteConfigurationCache;
-            _appliedConfigsVersion++;
-
-            var remoteConfiguration = new RemoteConfiguration(remoteConfigurationPath, targetFile.Raw, signedTarget.Length, signedTarget.Hashes, signedTarget.Custom.V);
-            configByProducts ??= [];
-            if (!configByProducts.TryGetValue(remoteConfigurationPath.Product, out var configByProduct))
-            {
-                configByProduct ??= [];
-                configByProducts[remoteConfigurationPath.Product] = configByProduct;
-            }
-
-            configByProduct.Add(remoteConfiguration);
         }
 
         Dictionary<string, List<RemoteConfigurationPath>>? removedConfigsByProduct = null;
@@ -372,7 +377,7 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
         // handle removed configurations
         foreach (var appliedConfiguration in _appliedConfigurations)
         {
-            if (receivedPaths.Contains(appliedConfiguration.Key))
+            if (receivedPaths is not null && receivedPaths.Contains(appliedConfiguration.Key))
             {
                 continue;
             }
@@ -426,13 +431,13 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
             }
         }
 
-        _targetsVersion = response.Targets.Signed.Version;
-        _backendClientState = response.Targets.Signed.Custom?.OpaqueBackendState;
+        _targetsVersion = response.Targets?.Signed?.Version ?? 0;
+        _backendClientState = response.Targets?.Signed?.Custom?.OpaqueBackendState;
 
         static bool IsConfigAlreadyApplied(RemoteConfigurationCache appliedConfig, Target signedTarget)
         {
             var newHashes = signedTarget.Hashes;
-            if (appliedConfig.Hashes.Count != newHashes.Count)
+            if (appliedConfig.Hashes.Count != newHashes?.Count)
             {
                 return false;
             }
