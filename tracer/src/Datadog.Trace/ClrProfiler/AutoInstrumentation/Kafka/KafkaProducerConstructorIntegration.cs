@@ -58,8 +58,7 @@ public sealed class KafkaProducerConstructorIntegration
 
             if (!string.IsNullOrEmpty(bootstrapServers))
             {
-                ProducerCache.AddBootstrapServers(instance, bootstrapServers, string.Empty);
-                return new CallTargetState(scope: null, state: instance);
+                return new CallTargetState(scope: null, state: bootstrapServers);
             }
         }
 
@@ -68,27 +67,18 @@ public sealed class KafkaProducerConstructorIntegration
 
     internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception exception, in CallTargetState state)
     {
-        if (state is not { State: { } producer })
+        if (state is not { State: string bootstrapServers })
         {
             return CallTargetReturn.GetDefault();
         }
 
         if (exception is not null)
         {
-            ProducerCache.RemoveProducer(producer);
             return CallTargetReturn.GetDefault();
         }
 
-        // Resolve cluster_id now that the producer is fully constructed
-        if (ProducerCache.TryGetProducer(producer, out var bootstrapServers, out _))
-        {
-            var clusterId = KafkaHelper.GetClusterId(bootstrapServers, producer);
-            if (!string.IsNullOrEmpty(clusterId))
-            {
-                ProducerCache.UpdateClusterId(producer, clusterId);
-            }
-        }
-
+        var clusterId = KafkaHelper.GetClusterId(bootstrapServers, instance) ?? string.Empty;
+        ProducerCache.AddBootstrapServers(instance, bootstrapServers, clusterId);
         return CallTargetReturn.GetDefault();
     }
 }

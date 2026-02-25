@@ -8,9 +8,7 @@
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;
 
 /// <summary>
-/// Duck Type for Confluent.Kafka.IClient to access the Handle property.
-/// The Handle object can be passed to DependentAdminClientBuilder to
-/// create an AdminClient that reuses the existing broker connection.
+/// Duck Type for Confluent.Kafka.IClient
 /// </summary>
 internal interface IClientHandle
 {

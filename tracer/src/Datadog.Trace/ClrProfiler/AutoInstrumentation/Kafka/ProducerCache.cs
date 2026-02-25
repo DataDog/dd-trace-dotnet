@@ -58,16 +58,6 @@ internal static class ProducerCache
         return null;
     }
 
-    public static void UpdateClusterId(object producer, string clusterId)
-    {
-#if NETCOREAPP3_1_OR_GREATER
-        ProducerToClusterIdMap.AddOrUpdate(producer, clusterId);
-#else
-        ProducerToClusterIdMap.Remove(producer);
-        ProducerToClusterIdMap.GetValue(producer, _ => clusterId);
-#endif
-    }
-
     public static bool TryGetProducer(object producer, out string? bootstrapServers, out string? clusterId)
     {
         bootstrapServers = null;
