@@ -57,7 +57,8 @@ internal sealed class TelemetryController : ITelemetryController
         IMetricsTelemetryCollector metrics,
         RedactedErrorLogCollector? redactedErrorLogs,
         TelemetryTransportManager transportManager,
-        TimeSpan flushInterval)
+        TimeSpan flushInterval,
+        TimeSpan extendedHeartbeatInterval)
     {
         _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
         _dependencies = dependencies ?? throw new ArgumentNullException(nameof(dependencies));
@@ -67,7 +68,7 @@ internal sealed class TelemetryController : ITelemetryController
         // We use Task.Delay(Timeout.Infinite) here as "a Task that never completes".
         // It simplifies some of the logic we need to do in the scheduler
         var redactedErrorLogsTask = () => _redactedErrorLogs?.WaitForLogsAsync() ?? Task.Delay(Timeout.Infinite);
-        _scheduler = new(flushInterval, redactedErrorLogsTask, _processExit);
+        _scheduler = new(flushInterval, extendedHeartbeatInterval, redactedErrorLogsTask, _processExit);
 
         try
         {
@@ -280,6 +281,11 @@ internal sealed class TelemetryController : ITelemetryController
                 await PushTelemetry(includeLogs: _scheduler.ShouldFlushRedactedErrorLogs, sendAppClosing: isFinalPush).ConfigureAwait(false);
             }
 
+            if (_isStarted && _scheduler.ShouldSendExtendedHeartbeat)
+            {
+                await PushExtendedHeartbeat().ConfigureAwait(false);
+            }
+
             if (isFinalPush)
             {
                 Log.Debug("Process exit requested, ending telemetry loop");
@@ -335,6 +341,35 @@ internal sealed class TelemetryController : ITelemetryController
         catch (Exception ex)
         {
             Log.Warning(ex, "Error pushing telemetry");
+        }
+    }
+
+    private async Task PushExtendedHeartbeat()
+    {
+        try
+        {
+            var application = _application.GetApplicationData();
+            var host = _application.GetHostData();
+            if (application is null || host is null)
+            {
+                Log.Debug("Telemetry not initialized, skipping extended heartbeat");
+                return;
+            }
+
+            var data = _dataBuilder.BuildExtendedHeartbeatData(
+                application,
+                host,
+                _configuration.GetData(),
+                _dependencies.GetFullData(),
+                _integrations.GetFullData(),
+                _namingVersion);
+
+            Log.Debug("Pushing extended heartbeat telemetry");
+            await _transportManager.TryPushTelemetry(data).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "Error pushing extended heartbeat telemetry");
         }
     }
 
@@ -439,6 +474,7 @@ internal sealed class TelemetryController : ITelemetryController
         private const int ProcessTaskIndex = 1;
         private const int InitializationTaskIndex = 2;
         private const int LogQueueSizeTaskIndex = 3;
+        private const int ExtendedHeartbeatTaskIndex = 4;
 
         private readonly TaskCompletionSource<bool> _tracerInitialized = new(TaskCreationOptions.RunContinuationsAsynchronously);
         private readonly TaskCompletionSource<bool> _processExitSource;
@@ -447,31 +483,36 @@ internal sealed class TelemetryController : ITelemetryController
         private readonly IClock _clock;
         private readonly IDelayFactory _delayFactory;
         private TimeSpan _flushInterval;
+        private TimeSpan _extendedHeartbeatInterval;
         private DateTime _lastFlush;
+        private DateTime _lastExtendedHeartbeat;
         private bool _initializationFlushExecuted = false;
 
-        public Scheduler(TimeSpan flushInterval, Func<Task> logQueueTaskGenerator, TaskCompletionSource<bool> processExitSource)
-            : this(flushInterval, logQueueTaskGenerator, processExitSource, new Clock(), new DelayFactory())
+        public Scheduler(TimeSpan flushInterval, TimeSpan extendedHeartbeatInterval, Func<Task> logQueueTaskGenerator, TaskCompletionSource<bool> processExitSource)
+            : this(flushInterval, extendedHeartbeatInterval, logQueueTaskGenerator, processExitSource, new Clock(), new DelayFactory())
         {
         }
 
         // For testing only
-        public Scheduler(TimeSpan flushInterval, Func<Task> logQueueTaskGenerator, TaskCompletionSource<bool> processExitSource, IClock clock, IDelayFactory delayFactory)
+        public Scheduler(TimeSpan flushInterval, TimeSpan extendedHeartbeatInterval, Func<Task> logQueueTaskGenerator, TaskCompletionSource<bool> processExitSource, IClock clock, IDelayFactory delayFactory)
         {
             _clock = clock;
             _delayFactory = delayFactory;
             _processExitSource = processExitSource;
             _flushInterval = flushInterval;
+            _extendedHeartbeatInterval = extendedHeartbeatInterval;
             _logQueueTaskGenerator = logQueueTaskGenerator;
             ShouldFlushTelemetry = false; // wait for initialization before flushing metrics
             _lastFlush = _clock.UtcNow;
+            _lastExtendedHeartbeat = _clock.UtcNow;
 
             // Using a task array instead of overloads to avoid allocating the array every loop
-            _tasks = new Task[4];
+            _tasks = new Task[5];
             _tasks[DelayTaskIndex] = Task.CompletedTask; // Replaced on first iteration of WaitForNextInterval(), but ensures there's no nulls around
             _tasks[ProcessTaskIndex] = processExitSource.Task;
             _tasks[InitializationTaskIndex] = _tracerInitialized.Task;
             _tasks[LogQueueSizeTaskIndex] = _logQueueTaskGenerator();
+            _tasks[ExtendedHeartbeatTaskIndex] = Task.Delay(Timeout.Infinite);
         }
 
         public interface IDelayFactory
@@ -482,6 +523,8 @@ internal sealed class TelemetryController : ITelemetryController
         public bool ShouldFlushTelemetry { get; private set; }
 
         public bool ShouldFlushRedactedErrorLogs { get; private set; }
+
+        public bool ShouldSendExtendedHeartbeat { get; private set; }
 
         public void SetFlushInterval(TimeSpan flushInterval)
         {
@@ -499,6 +542,7 @@ internal sealed class TelemetryController : ITelemetryController
             // take a long time to push telemetry if the network is slow or faulty
 
             var nextFlush = _lastFlush.Add(_flushInterval);
+            var nextExtendedHeartbeat = _lastExtendedHeartbeat.Add(_extendedHeartbeatInterval);
 
             // Note that we don't start flushing until initialized, so using infinite delay initially
             TimeSpan? waitPeriod = _initializationFlushExecuted
@@ -516,6 +560,13 @@ internal sealed class TelemetryController : ITelemetryController
                 // if we don't have a wait period, it's because we're waiting for initialization
                 _tasks[DelayTaskIndex] = _delayFactory.Delay(waitPeriod ?? Timeout.InfiniteTimeSpan);
                 _tasks[LogQueueSizeTaskIndex] = logFlushTask;
+
+                // Set up extended heartbeat timer
+                var extendedHeartbeatWait = _initializationFlushExecuted
+                                           ? nextExtendedHeartbeat - _clock.UtcNow
+                                           : Timeout.InfiniteTimeSpan;
+                _tasks[ExtendedHeartbeatTaskIndex] = _delayFactory.Delay(extendedHeartbeatWait);
+
                 await Task.WhenAny(_tasks).ConfigureAwait(false);
             }
 
@@ -524,12 +575,14 @@ internal sealed class TelemetryController : ITelemetryController
                 // end of the line, flush everything, don't bother recalculating;
                 ShouldFlushTelemetry = true;
                 ShouldFlushRedactedErrorLogs = true;
+                ShouldSendExtendedHeartbeat = true;
                 return;
             }
 
             // Reset variables
             ShouldFlushTelemetry = false;
             ShouldFlushRedactedErrorLogs = false;
+            ShouldSendExtendedHeartbeat = false;
             var now = _clock.UtcNow;
 
             // Should we flush telemetry?
@@ -540,6 +593,8 @@ internal sealed class TelemetryController : ITelemetryController
                 ShouldFlushTelemetry = true;
                 // Including logs as we typically log a lot at startup
                 ShouldFlushRedactedErrorLogs = true;
+                // Send first extended heartbeat on startup
+                ShouldSendExtendedHeartbeat = true;
                 // replace the tracerInitializedTask with a task that never completes
                 _tasks[InitializationTaskIndex] = Task.Delay(Timeout.Infinite);
             }
@@ -556,9 +611,19 @@ internal sealed class TelemetryController : ITelemetryController
                 ShouldFlushRedactedErrorLogs = true;
             }
 
+            if (_initializationFlushExecuted && (nextExtendedHeartbeat <= now))
+            {
+                ShouldSendExtendedHeartbeat = true;
+            }
+
             if (ShouldFlushTelemetry)
             {
                 _lastFlush = now;
+            }
+
+            if (ShouldSendExtendedHeartbeat)
+            {
+                _lastExtendedHeartbeat = now;
             }
         }
 
