@@ -73,24 +73,24 @@ public sealed class KafkaConsumerConstructorIntegration
 
     internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception exception, in CallTargetState state)
     {
-        // This method is called in the Consumer constructor, so if we have an exception
-        // the consumer won't be created, so no point recording it.
-        if (exception is not null && state is { State: { } consumer })
+        if (state is not { State: { } consumer })
+        {
+            return CallTargetReturn.GetDefault();
+        }
+
+        if (exception is not null)
         {
             ConsumerCache.RemoveConsumerGroup(consumer);
+            return CallTargetReturn.GetDefault();
         }
-        else if (state is { State: { } completedConsumer })
+
+        // Resolve cluster_id now that the consumer is fully constructed
+        if (ConsumerCache.TryGetConsumerGroup(consumer, out _, out var bootstrapServers, out _))
         {
-            // Resolve cluster_id now that the consumer is fully constructed.
-            // Uses DependentAdminClientBuilder to reuse the consumer's existing broker connection.
-            if (ConsumerCache.TryGetConsumerGroup(completedConsumer, out _, out var bootstrapServers, out var existingClusterId)
-                && string.IsNullOrEmpty(existingClusterId))
+            var clusterId = KafkaHelper.GetClusterId(bootstrapServers, consumer);
+            if (!string.IsNullOrEmpty(clusterId))
             {
-                var clusterId = KafkaHelper.GetClusterId(bootstrapServers, completedConsumer);
-                if (!string.IsNullOrEmpty(clusterId))
-                {
-                    ConsumerCache.UpdateClusterId(completedConsumer, clusterId);
-                }
+                ConsumerCache.UpdateClusterId(consumer, clusterId);
             }
         }
 
