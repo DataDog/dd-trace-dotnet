@@ -62,7 +62,7 @@ namespace Datadog.Trace.IntegrationTests
             using var agent = MockTracerAgent.Create(output, new WindowsPipesConfig(pipeName, metrics: string.Empty) { UseTelemetry = true });
 
             var transportFactory = new TelemetryTransportFactory(
-                new TelemetrySettings(telemetryEnabled: true, configurationError: null, agentlessSettings: null, agentProxyEnabled: true, heartbeatInterval: HeartbeatInterval, dependencyCollectionEnabled: true, metricsEnabled: false, debugEnabled: false, compressionMethod: compressionMethod));
+                new TelemetrySettings(telemetryEnabled: true, configurationError: null, agentlessSettings: null, agentProxyEnabled: true, heartbeatInterval: HeartbeatInterval, extendedHeartbeatInterval: TimeSpan.FromHours(24), dependencyCollectionEnabled: true, metricsEnabled: false, debugEnabled: false, compressionMethod: compressionMethod));
             transportFactory.AgentTransportFactory.Should().NotBeNull();
             var transport = transportFactory.AgentTransportFactory!(ExporterSettings.Create(new() { { ConfigurationKeys.TracesPipeName, pipeName } }));
 
@@ -211,7 +211,7 @@ namespace Datadog.Trace.IntegrationTests
         private static ITelemetryTransport GetAgentOnlyTransport(Uri telemetryUri, string compressionMethod)
         {
             var transport = new TelemetryTransportFactory(
-                new TelemetrySettings(telemetryEnabled: true, configurationError: null, agentlessSettings: null, agentProxyEnabled: true, heartbeatInterval: HeartbeatInterval, dependencyCollectionEnabled: true, metricsEnabled: false, debugEnabled: false, compressionMethod: compressionMethod));
+                new TelemetrySettings(telemetryEnabled: true, configurationError: null, agentlessSettings: null, agentProxyEnabled: true, heartbeatInterval: HeartbeatInterval, extendedHeartbeatInterval: TimeSpan.FromHours(24), dependencyCollectionEnabled: true, metricsEnabled: false, debugEnabled: false, compressionMethod: compressionMethod));
             transport.AgentTransportFactory.Should().NotBeNull();
             return transport.AgentTransportFactory!(ExporterSettings.Create(new() { { ConfigurationKeys.AgentUri, telemetryUri } }));
         }
@@ -221,7 +221,7 @@ namespace Datadog.Trace.IntegrationTests
             var agentlessSettings = new TelemetrySettings.AgentlessSettings(telemetryUri, apiKey, cloudSettings);
 
             var transport = new TelemetryTransportFactory(
-                new TelemetrySettings(telemetryEnabled: true, configurationError: null, agentlessSettings, agentProxyEnabled: false, heartbeatInterval: HeartbeatInterval, dependencyCollectionEnabled: true, metricsEnabled: false, debugEnabled: false, compressionMethod: GzipCompression));
+                new TelemetrySettings(telemetryEnabled: true, configurationError: null, agentlessSettings, agentProxyEnabled: false, heartbeatInterval: HeartbeatInterval, extendedHeartbeatInterval: TimeSpan.FromHours(24), dependencyCollectionEnabled: true, metricsEnabled: false, debugEnabled: false, compressionMethod: GzipCompression));
 
             transport.AgentlessTransport.Should().NotBeNull().And.BeOfType<AgentlessTelemetryTransport>();
             return transport.AgentlessTransport;
