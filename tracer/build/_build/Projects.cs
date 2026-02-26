@@ -45,6 +45,8 @@ public static class Projects
     public const string DebuggerUnreferencedExternal = "Samples.Probes.Unreferenced.External";
 
     public const string RazorPages = "Samples.AspNetCoreRazorPages";
+    
+    public const string DatadogTraceTestHelpers = "Datadog.Trace.TestHelpers";
 }
 
 public static class FileNames

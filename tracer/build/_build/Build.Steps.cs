@@ -21,6 +21,7 @@ using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Tools.MSBuild;
 using Nuke.Common.Tools.NuGet;
 using Nuke.Common.Utilities.Collections;
+using Serilog;
 using static Nuke.Common.EnvironmentInfo;
 using static Nuke.Common.IO.CompressionTasks;
 using static Nuke.Common.IO.FileSystemTasks;
@@ -469,6 +470,7 @@ partial class Build
             var toBuild = include.Except(exclude);
 
             DotnetBuild(toBuild, noDependencies: false);
+            BuildInternalDatadogTrace();
 
             var nativeGeneratedFilesOutputPath = NativeTracerProject.Directory / "Generated";
             CallSitesGenerator.GenerateCallSites(TargetFrameworks, tfm => DatadogTraceDirectory / "bin" / BuildConfiguration / tfm / Projects.DatadogTrace + ".dll", nativeGeneratedFilesOutputPath);
@@ -2759,19 +2761,61 @@ partial class Build
         bool noDependencies = true)
     {
         DotNetBuild(s => s
-            .SetConfiguration(BuildConfiguration)
-            .SetTargetPlatformAnyCPU()
-            .When(noRestore, settings => settings.EnableNoRestore())
-            .When(noDependencies, settings => settings.EnableNoDependencies())
-            .When(framework is not null, settings => settings.SetFramework(framework))
-            .When(DebugType is not null, settings => settings.SetProperty(nameof(DebugType), DebugType))
-            .When(Optimize is not null, settings => settings.SetProperty(nameof(Optimize), Optimize))
-            .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
-            .When(TestAllPackageVersions, o => o.SetProperty("TestAllPackageVersions", "true"))
-            .When(IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))
-            .SetNoWarnDotNetCore3()
-            .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701")) //nowarn:NU1701 - Package 'x' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.1'.
-            .CombineWith(projPaths, (settings, projPath) => settings.SetProjectFile(projPath)));
+                        .SetConfiguration(BuildConfiguration)
+                        .SetTargetPlatformAnyCPU()
+                        .When(noRestore, settings => settings.EnableNoRestore())
+                        .When(noDependencies, settings => settings.EnableNoDependencies())
+                        .When(framework is not null, settings => settings.SetFramework(framework))
+                        .When(DebugType is not null, settings => settings.SetProperty(nameof(DebugType), DebugType))
+                        .When(Optimize is not null, settings => settings.SetProperty(nameof(Optimize), Optimize))
+                        .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
+                        .When(TestAllPackageVersions, o => o.SetProperty("TestAllPackageVersions", "true"))
+                        .When(IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))
+                        .SetNoWarnDotNetCore3()
+                        .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701")) //nowarn:NU1701 - Package 'x' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.1'.
+                        .CombineWith(projPaths, (settings, projPath) => settings.SetProjectFile(projPath)));
+    }
+
+    private void BuildInternalDatadogTrace()
+    {
+        var datadogTraceDir = Solution.GetProject(Projects.DatadogTrace)!.Directory / "bin" / BuildConfiguration / "net461";
+        var datadogTracePath = datadogTraceDir / "Datadog.Trace.dll";
+        var snkFile = Solution.Directory / "Datadog.Trace.snk";
+
+        if (datadogTracePath.Exists())
+        {
+            Log.Debug("Building Internal.Datadog.Trace");
+            using var assmDefinition = AssemblyDefinition.ReadAssembly(datadogTracePath);
+            
+            Log.Debug("Changing assembly name to Internal.Datadog.Trace");
+            assmDefinition.Name.Name = "Internal.Datadog.Trace";
+
+            Log.Debug("Changing namespaces name to Internal.*");
+            foreach (var module in assmDefinition.Modules)
+            {
+                foreach (var type in module.Types)
+                {
+                    if (type.Namespace != string.Empty && !type.Namespace.StartsWith("System."))
+                    {
+                        type.Namespace = "Internal." + type.Namespace;
+                    }
+
+                    if (type.Name == "IgnoresAccessChecksToAttribute")
+                    {
+                        type.IsPublic = false;
+                        type.IsSealed = true;
+                    }
+                }
+            }
+            
+            var outputDir = Solution.GetProject(Projects.DatadogTraceTestHelpers)!.Directory / "Internal.Datadog.Trace.dll";
+            Log.Information("Writing Internal.Datadog.Trace to {OutputDir}", outputDir);
+            var writerParameters = new WriterParameters
+            {
+                StrongNameKeyBlob = File.ReadAllBytes(snkFile)
+            };
+            assmDefinition.Write(outputDir, writerParameters);
+        }
     }
 
 
