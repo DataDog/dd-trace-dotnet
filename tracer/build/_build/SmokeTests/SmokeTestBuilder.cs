@@ -560,7 +560,11 @@ public static class SmokeTestBuilder
                     {
                         if (!string.IsNullOrEmpty(msg.Status))
                         {
-                            Logger.Debug("[Pull] [{Id}] {Status} {Progress}", msg.ID, msg.Status, msg.ProgressMessage);
+                            var progress = string.IsNullOrEmpty(msg.ProgressMessage) ? "" : " " + msg.ProgressMessage;
+                            if (string.IsNullOrEmpty(msg.ID))
+                                Logger.Debug("[Pull] {Status}{Progress}", msg.Status, progress);
+                            else
+                                Logger.Debug("[Pull] [{Id}] {Status}{Progress}", msg.ID, msg.Status, progress);
                         }
                     }));
                 Logger.Information("Pulled image {Image}", image);
@@ -860,7 +864,11 @@ public static class SmokeTestBuilder
 
                     if (!string.IsNullOrEmpty(msg.Status))
                     {
-                        Logger.Debug("[{Id}] {Status} {Progress}", msg.ID, msg.Status, msg.ProgressMessage);
+                        var progress = string.IsNullOrEmpty(msg.ProgressMessage) ? "" : " " + msg.ProgressMessage;
+                        if (string.IsNullOrEmpty(msg.ID))
+                            Logger.Debug("{Status}{Progress}", msg.Status, progress);
+                        else
+                            Logger.Debug("[{Id}] {Status}{Progress}", msg.ID, msg.Status, progress);
                     }
 
                     if (!string.IsNullOrEmpty(msg.ErrorMessage))
