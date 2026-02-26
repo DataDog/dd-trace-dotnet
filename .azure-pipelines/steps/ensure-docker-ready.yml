@@ -1,0 +1,28 @@
+parameters:
+  - name: timeoutSeconds
+    type: number
+    default: 120
+
+steps:
+- powershell: |
+    $timeout = ${{ parameters.timeoutSeconds }}
+    $interval = 10
+    $elapsed = 0
+    Write-Host "Waiting up to ${timeout}s for Docker daemon..."
+    while ($elapsed -lt $timeout) {
+        try {
+            docker version 2>&1 | Out-Null
+            if ($LASTEXITCODE -eq 0) {
+                Write-Host "Docker daemon is ready (waited ${elapsed}s)"
+                docker info
+                exit 0
+            }
+        } catch {}
+        Write-Host "Docker not ready yet (${elapsed}s elapsed), retrying in ${interval}s..."
+        Start-Sleep -Seconds $interval
+        $elapsed += $interval
+    }
+    Write-Host "##vso[task.logissue type=error]Docker daemon did not become ready within ${timeout}s"
+    exit 1
+  displayName: Ensure Docker daemon is ready
+  condition: eq(variables['Agent.OS'], 'Windows_NT')

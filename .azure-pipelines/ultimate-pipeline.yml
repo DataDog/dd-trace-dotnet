@@ -5840,6 +5840,8 @@ stages:
       parameters:
         dockerComposePath: $(dockerComposePath)
 
+    - template: steps/ensure-docker-ready.yml
+
     - template: steps/clone-repo.yml
       parameters:
         targetShaId: $(targetShaId)
@@ -5939,6 +5941,8 @@ stages:
       parameters:
         dockerComposePath: $(dockerComposePath)
 
+    - template: steps/ensure-docker-ready.yml
+
     - template: steps/clone-repo.yml
       parameters:
         targetShaId: $(targetShaId)
@@ -6013,6 +6017,8 @@ stages:
     - template: steps/install-docker-compose-v1.yml
       parameters:
         dockerComposePath: $(dockerComposePath)
+
+    - template: steps/ensure-docker-ready.yml
 
     - template: steps/clone-repo.yml
       parameters:
@@ -6089,6 +6095,8 @@ stages:
           parameters:
             dockerComposePath: $(dockerComposePath)
 
+        - template: steps/ensure-docker-ready.yml
+
         - template: steps/clone-repo.yml
           parameters:
             targetShaId: $(targetShaId)
@@ -6162,6 +6170,8 @@ stages:
       parameters:
         dockerComposePath: $(dockerComposePath)
 
+    - template: steps/ensure-docker-ready.yml
+
     - template: steps/clone-repo.yml
       parameters:
         targetShaId: $(targetShaId)
@@ -6233,6 +6243,8 @@ stages:
         - template: steps/install-docker-compose-v1.yml
           parameters:
             dockerComposePath: $(dockerComposePath)
+
+        - template: steps/ensure-docker-ready.yml
 
         - template: steps/clone-repo.yml
           parameters:
