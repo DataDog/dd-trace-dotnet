@@ -147,7 +147,7 @@ namespace Datadog.Trace.Telemetry
 
             var extendedHeartbeatInterval = config
                                            .WithKeys(ConfigurationKeys.Telemetry.ExtendedHeartbeatIntervalSeconds)
-                                           .AsDouble(defaultValue: 86400, rawInterval => rawInterval is > 0 and <= 604800)
+                                           .AsInt32(defaultValue: 86400, rawInterval => rawInterval is > 0 and <= 604800)
                                            .Value;
 
             var dependencyCollectionEnabled = config.WithKeys(ConfigurationKeys.Telemetry.DependencyCollectionEnabled).AsBool(true);
