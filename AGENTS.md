@@ -194,7 +194,7 @@ tracer/src/Datadog.Trace
 - Integration tests: `BuildAndRunLinuxIntegrationTests` / `BuildAndRunWindowsIntegrationTests` / `BuildAndRunOsxIntegrationTests`
 
 📖 **Load when**: Setting up development environment, running builds, or troubleshooting build issues
-- **`tracer/README.MD`** — Complete development setup guide (VS requirements, Docker, Dev Containers, platform-specific build commands, and Nuke targets)
+- **`tracer/README.md`** — Complete development setup guide (VS requirements, Docker, Dev Containers, platform-specific build commands, and Nuke targets)
 
 ## Creating Integrations
 
@@ -234,7 +234,7 @@ tracer/src/Datadog.Trace
 - See `.editorconfig` (4-space indent, `System.*` first, prefer `var`). Types/methods PascalCase; locals camelCase
 - Add missing `using` directives instead of fully-qualified type names
 - Use modern C# syntax, but avoid features requiring types unavailable in older runtimes (e.g., no `ValueTuple` syntax for .NET Framework 4.6.1)
-  - For instance, prefer `is not null` to `!= null` 
+  - For instance, prefer `is not null` to `!= null`
 - Prefer modern collection expressions (`[]`)
 - Use `StringUtil.IsNullOrEmpty()` instead of `string.IsNullOrEmpty()` for compatibility across all supported runtimes
 - StyleCop: see `tracer/stylecop.json`; address warnings before pushing
@@ -380,7 +380,7 @@ The tracer runs in-process with customer applications and must have minimal perf
 **Core docs:**
 - `docs/README.md` — Overview and links
 - `docs/CONTRIBUTING.md` — Contribution process and external PR policies
-- `tracer/README.MD` — Dev setup, platform requirements, and build targets
+- `tracer/README.md` — Dev setup, platform requirements, and build targets
 - `docs/RUNTIME_SUPPORT_POLICY.md` — Supported runtimes
 
 **Development guides:**
@@ -399,11 +399,12 @@ The tracer runs in-process with customer applications and must have minimal perf
 ## Configuration
 
 📖 **Load when**: Need reference for tracer configuration settings and environment variables
-- **`tracer/src/Datadog.Trace/Configuration/supported-configurations-docs.yaml`** — Human-readable descriptions and default values for all `DD_*` environment variables
-- **`tracer/src/Datadog.Trace/Configuration/supported-configurations.json`** — Machine-readable config metadata: product categorization, key aliases, and deprecations (consumed by source generators)
+- **`tracer/src/Datadog.Trace/Configuration/supported-configurations.yaml`** — Human-readable config metadata, 
+  product categorization, key aliases, deprecations and default values for all `DD_*` and `OTEL_*` environment 
+  variables (consumed by source generators as well)
 
 📖 **Load when**: Adding a new `DD_*` configuration key or modifying the configuration system
-- **`docs/development/Configuration/AddingConfigurationKeys.md`** — Step-by-step guide for adding config keys: JSON/YAML definitions, source generators, aliases, telemetry normalization, and related analyzers
+- **`docs/development/Configuration/AddingConfigurationKeys.md`** — Step-by-step guide for adding config keys: YAML definitions, source generators, aliases, telemetry normalization, and related analyzers
 
 ## Security & Configuration
 

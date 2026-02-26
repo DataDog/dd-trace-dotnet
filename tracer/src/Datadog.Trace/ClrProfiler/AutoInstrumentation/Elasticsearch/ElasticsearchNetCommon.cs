@@ -8,6 +8,7 @@
 using System;
 using System.Threading;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util.Http;
 
@@ -15,8 +16,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch
 {
     internal static class ElasticsearchNetCommon
     {
-        public const string DatabaseType = "elasticsearch";
         public const string ComponentValue = "elasticsearch-net";
+        private const string SpanType = "elasticsearch";
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ElasticsearchNetCommon));
 
@@ -54,8 +55,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch
 
             var requestName = requestParameters?.GetType().Name.Replace("RequestParameters", string.Empty);
 
-            var operationName = perTraceSettings.Schema.Database.GetOperationName(DatabaseType);
-            var serviceName = perTraceSettings.Schema.Database.GetServiceName(DatabaseType);
+            var operationName = perTraceSettings.Schema.Database.GetOperationName(DatabaseSchema.OperationType.Elasticsearch);
+            var serviceName = perTraceSettings.Schema.Database.GetServiceName(DatabaseSchema.ServiceType.Elasticsearch);
             tags = perTraceSettings.Schema.Database.CreateElasticsearchTags();
 
             Scope? scope = null;
@@ -65,7 +66,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch
                 scope = tracer.StartActiveInternal(operationName, serviceName: serviceName, tags: tags);
                 var span = scope.Span;
                 span.ResourceName = requestName ?? operationName;
-                span.Type = DatabaseType;
+                span.Type = SpanType;
                 tags.Action = requestName;
                 tags.Method = method;
 

@@ -1,4 +1,4 @@
-﻿// <copyright file="DatabaseSchema.cs" company="Datadog">
+// <copyright file="DatabaseSchema.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -6,6 +6,7 @@
 #nullable enable
 
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis;
@@ -15,86 +16,104 @@ namespace Datadog.Trace.Configuration.Schema
 {
     internal sealed class DatabaseSchema
     {
-        private readonly SchemaVersion _version;
-        private readonly bool _peerServiceTagsEnabled;
-        private readonly bool _removeClientServiceNamesEnabled;
-        private readonly string _defaultServiceName;
-        private readonly IReadOnlyDictionary<string, string>? _serviceNameMappings;
+        private static readonly string[] OperationNames =
+        [
+            "cosmosdb.query",
+            "couchbase.query",
+            "elasticsearch.query",
+            "mongodb.query",
+        ];
+
+        private readonly bool _useV0Tags;
+        private readonly string[] _serviceNames;
 
         public DatabaseSchema(SchemaVersion version, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled, string defaultServiceName, IReadOnlyDictionary<string, string>? serviceNameMappings)
         {
-            _version = version;
-            _peerServiceTagsEnabled = peerServiceTagsEnabled;
-            _removeClientServiceNamesEnabled = removeClientServiceNamesEnabled;
-            _defaultServiceName = defaultServiceName;
-            _serviceNameMappings = serviceNameMappings;
-        }
+            _useV0Tags = version == SchemaVersion.V0 && !peerServiceTagsEnabled;
 
-        public string GetOperationName(string databaseType) => $"{databaseType}.query";
+            // Calculate service names once, to avoid allocations with every call
+            var useSuffix = version == SchemaVersion.V0 && !removeClientServiceNamesEnabled;
+            _serviceNames =
+            [
+                useSuffix ? $"{defaultServiceName}-aerospike" : defaultServiceName,
+                useSuffix ? $"{defaultServiceName}-cosmosdb" : defaultServiceName,
+                useSuffix ? $"{defaultServiceName}-couchbase" : defaultServiceName,
+                useSuffix ? $"{defaultServiceName}-elasticsearch" : defaultServiceName,
+                useSuffix ? $"{defaultServiceName}-mongodb" : defaultServiceName,
+                useSuffix ? $"{defaultServiceName}-redis" : defaultServiceName,
+            ];
 
-        public string GetServiceName(string databaseType)
-        {
-            if (_serviceNameMappings is not null && _serviceNameMappings.TryGetValue(databaseType, out var mappedServiceName))
+            if (serviceNameMappings is not null)
             {
-                return mappedServiceName;
+                TryApplyMapping(_serviceNames, serviceNameMappings, "aerospike", ServiceType.Aerospike);
+                TryApplyMapping(_serviceNames, serviceNameMappings, "couchbase", ServiceType.Couchbase);
+                TryApplyMapping(_serviceNames, serviceNameMappings, "cosmosdb", ServiceType.CosmosDb);
+                TryApplyMapping(_serviceNames, serviceNameMappings, "elasticsearch", ServiceType.Elasticsearch);
+                TryApplyMapping(_serviceNames, serviceNameMappings, "mongodb", ServiceType.MongoDb);
+                TryApplyMapping(_serviceNames, serviceNameMappings, "redis", ServiceType.Redis);
             }
 
-            return _version switch
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            static void TryApplyMapping(string[] serviceNames, IReadOnlyDictionary<string, string> mappings, string key, ServiceType dbType)
             {
-                SchemaVersion.V0 when !_removeClientServiceNamesEnabled => $"{_defaultServiceName}-{databaseType}",
-                _ => _defaultServiceName,
-            };
+                if (mappings.TryGetValue(key, out var mappedName))
+                {
+                    serviceNames[(int)dbType] = mappedName;
+                }
+            }
         }
 
+        /// <summary>
+        /// WARNING: when adding new values, you _must_ update the corresponding array in <see cref="OperationNames"/>
+        /// and update the service name initialization in the constructor.
+        /// </summary>
+        public enum ServiceType
+        {
+            Aerospike,
+            CosmosDb,
+            Couchbase,
+            Elasticsearch,
+            MongoDb,
+            Redis,
+        }
+
+        /// <summary>
+        /// WARNING: when adding new values, you _must_ update the corresponding array in <see cref="OperationNames"/>
+        /// and update the service name initialization in the constructor.
+        /// </summary>
+        public enum OperationType
+        {
+            CosmosDb,
+            Couchbase,
+            Elasticsearch,
+            MongoDb,
+        }
+
+        public string GetOperationName(OperationType databaseType) => OperationNames[(int)databaseType];
+
+        public string GetServiceName(ServiceType databaseType) => _serviceNames[(int)databaseType];
+
         public CouchbaseTags CreateCouchbaseTags()
-            => _version switch
-            {
-                SchemaVersion.V0 when !_peerServiceTagsEnabled => new CouchbaseTags(),
-                _ => new CouchbaseV1Tags(),
-            };
+            => _useV0Tags ? new CouchbaseTags() : new CouchbaseV1Tags();
 
         public ElasticsearchTags CreateElasticsearchTags()
-            => _version switch
-            {
-                SchemaVersion.V0 when !_peerServiceTagsEnabled => new ElasticsearchTags(),
-                _ => new ElasticsearchV1Tags(),
-            };
+            => _useV0Tags ? new ElasticsearchTags() : new ElasticsearchV1Tags();
 
         public MongoDbTags CreateMongoDbTags()
-            => _version switch
-            {
-                SchemaVersion.V0 when !_peerServiceTagsEnabled => new MongoDbTags(),
-                _ => new MongoDbV1Tags(),
-            };
+            => _useV0Tags ? new MongoDbTags() : new MongoDbV1Tags();
 
         public SqlTags CreateSqlTags()
-            => _version switch
-            {
-                SchemaVersion.V0 when !_peerServiceTagsEnabled => new SqlTags(),
-                _ => new SqlV1Tags(),
-            };
+            => _useV0Tags ? new SqlTags() : new SqlV1Tags();
 
         public RedisTags CreateRedisTags()
-            => _version switch
-            {
-                SchemaVersion.V0 when !_peerServiceTagsEnabled => new RedisTags(),
-                _ => new RedisV1Tags(),
-            };
+            => _useV0Tags ? new RedisTags() : new RedisV1Tags();
 
         public CosmosDbTags CreateCosmosDbTags()
-            => _version switch
-            {
-                SchemaVersion.V0 when !_peerServiceTagsEnabled => new CosmosDbTags(),
-                _ => new CosmosDbV1Tags(),
-            };
+            => _useV0Tags ? new CosmosDbTags() : new CosmosDbV1Tags();
 
         public AerospikeTags CreateAerospikeTags()
-            => _version switch
-            {
-                SchemaVersion.V0 when !_peerServiceTagsEnabled => new AerospikeTags(),
-                _ => new AerospikeV1Tags(),
-            };
+            => _useV0Tags ? new AerospikeTags() : new AerospikeV1Tags();
 
-        public AwsDynamoDbTags CreateAwsDynamoDbTags() => new AwsDynamoDbTags();
+        public AwsDynamoDbTags CreateAwsDynamoDbTags() => new();
     }
 }

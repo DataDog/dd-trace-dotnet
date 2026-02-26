@@ -300,13 +300,17 @@ namespace Datadog.Trace
             //   https://github.com/dotnet/runtime/blob/main/src/libraries/System.Private.CoreLib/src/System/AppDomain.cs
             try
             {
-                Environment.Exit(0);
+                // Calling Environment.Exit(0); caused an issue in Microsoft Orleans (look https://github.com/DataDog/dd-trace-dotnet/issues/8165)
+                // The Posix signals registration mechanism doesn't use a normal MulticastDelegate kind of list; it's using a HashSet<Token> internally.
+                // meaning that the call order is not deterministic, creating a flaky behavior between all the handlers.
+                // The fact that there's no way to guarantee that we are the last handler means that we cannot force the exit of the process to raise
+                // the finialization events calls because that means other handlers will not be called, for that reason we will just proceed with a manual
+                // cleanup of our tasks without forcing the exit so other handlers can be executed as well.
+                RunShutdownTasks();
             }
             catch (Exception ex)
             {
-                // Best-effort. If this fails, the OS default handling will likely terminate the process.
-                Log.Warning(ex, "Failed to initiate managed shutdown via Environment.Exit(0). Attempting best-effort tracer shutdown.");
-                RunShutdownTasks();
+                Log.Warning(ex, "Failed to call tracer shutdown with RunShutdownTasks()");
             }
         }
 #endif

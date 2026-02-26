@@ -6,6 +6,7 @@
 using System;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
@@ -23,8 +24,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
 
         public const string IntegrationName = nameof(Configuration.IntegrationId.CosmosDb);
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.CosmosDb;
-
-        private const string DatabaseType = "cosmosdb";
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(CosmosCommon));
 
@@ -119,8 +118,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
                     return new CallTargetState(null);
                 }
 
-                var operationName = perTraceSettings.Schema.Database.GetOperationName(DatabaseType);
-                var serviceName = perTraceSettings.Schema.Database.GetServiceName(DatabaseType);
+                var operationName = perTraceSettings.Schema.Database.GetOperationName(DatabaseSchema.OperationType.CosmosDb);
+                var serviceName = perTraceSettings.Schema.Database.GetServiceName(DatabaseSchema.ServiceType.CosmosDb);
                 var tags = perTraceSettings.Schema.Database.CreateCosmosDbTags();
                 tags.ContainerId = containerId;
                 tags.DatabaseId = databaseId;
