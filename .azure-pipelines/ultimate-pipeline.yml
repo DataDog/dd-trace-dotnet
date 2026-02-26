@@ -5076,6 +5076,32 @@ stages:
       artifacts:
         - runner-dotnet-tool
 
+# DotnetTool musl x64 (LinuxMuslDotnetTool)
+- stage: nuke_dotnet_tool_musl_smoke_tests
+  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
+  dependsOn: [generate_variables, merge_commit_id]
+  pool:
+    name: $(linuxX64SmokePool)
+  jobs:
+  - template: steps/nuke-smoke-test-stage.yml
+    parameters:
+      matrixVariable: nuke_dotnet_tool_musl_x64_matrix
+      artifacts:
+        - runner-standalone-linux-musl-x64
+
+# DotnetTool musl arm64 (LinuxMuslDotnetToolArm64)
+- stage: nuke_dotnet_tool_musl_smoke_tests_arm64
+  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
+  dependsOn: [generate_variables, merge_commit_id]
+  pool:
+    name: $(linuxArm64Pool)
+  jobs:
+  - template: steps/nuke-smoke-test-stage.yml
+    parameters:
+      matrixVariable: nuke_dotnet_tool_musl_arm64_matrix
+      artifacts:
+        - runner-standalone-linux-musl-arm64
+
 # Trimming x64 (LinuxTrimming)
 - stage: nuke_trimming_smoke_tests
   dependsOn: [generate_variables, merge_commit_id]

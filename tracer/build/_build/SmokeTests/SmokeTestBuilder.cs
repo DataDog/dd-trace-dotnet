@@ -59,6 +59,8 @@ public static class SmokeTestBuilder
                 return await BuildNuGetImageAsync(scenario, tracerDir, artifactsDir, toolVersion);
             case SmokeTestCategory.LinuxDotnetTool:
             case SmokeTestCategory.LinuxDotnetToolArm64:
+            case SmokeTestCategory.LinuxMuslDotnetTool:
+            case SmokeTestCategory.LinuxMuslDotnetToolArm64:
                 return await BuildDotnetToolImageAsync(scenario, tracerDir, artifactsDir);
             case SmokeTestCategory.LinuxDotnetToolNuget:
                 return await BuildDotnetToolNugetImageAsync(scenario, tracerDir, artifactsDir, toolVersion);

@@ -32,6 +32,8 @@ public static class SmokeTestScenarios
             SmokeTestCategory.LinuxDotnetToolNuget => LinuxDotnetToolNugetScenarios(),
             SmokeTestCategory.LinuxTrimming => LinuxTrimmingScenarios(),
             SmokeTestCategory.LinuxMuslInstaller => LinuxMuslInstallerScenarios(),
+            SmokeTestCategory.LinuxMuslDotnetTool => LinuxMuslDotnetToolScenarios(),
+            SmokeTestCategory.LinuxMuslDotnetToolArm64 => LinuxMuslDotnetToolArm64Scenarios(),
             SmokeTestCategory.LinuxMuslTrimming => LinuxMuslTrimmingScenarios(),
             _ => throw new InvalidOperationException($"Unknown smoke test scenario: {category}"),
         };
@@ -559,26 +561,6 @@ public static class SmokeTestScenarios
 
             yield return GetDotnetTool(
                 category: SmokeTestCategory.LinuxDotnetTool,
-                shortName: "alpine",
-                os: "alpine",
-                runtimeId: "linux-musl-x64",
-                scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[]
-                {
-                    (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22", "3.22", true),
-                    (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22-composite", "3.22", true),
-                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.20", "3.20", true),
-                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.20-composite", "3.20", true),
-                    (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-alpine3.18", "3.18", true),
-                    (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-alpine3.18-composite", "3.18", true),
-                    (TargetFramework.NET7_0, "mcr.microsoft.com/dotnet/aspnet", "7.0-alpine3.16", "3.16", true),
-                    (TargetFramework.NET6_0, "mcr.microsoft.com/dotnet/aspnet", "6.0-alpine3.14", "3.14", true),
-                    (TargetFramework.NET5_0, "mcr.microsoft.com/dotnet/aspnet", "5.0-alpine3.14", "3.14", true),
-                    (TargetFramework.NETCOREAPP3_1, "mcr.microsoft.com/dotnet/aspnet", "3.1-alpine3.14", "3.14", true),
-                    (TargetFramework.NETCOREAPP2_1, "mcr.microsoft.com/dotnet/aspnet", "2.1-alpine3.12", "3.12", true),
-                });
-
-            yield return GetDotnetTool(
-                category: SmokeTestCategory.LinuxDotnetTool,
                 shortName: "centos",
                 os: "centos",
                 runtimeId: "linux-x64",
@@ -639,8 +621,39 @@ public static class SmokeTestScenarios
                     // (TargetFramework.NET10_0, "andrewlock/dotnet-debian", "trixie-10.0", "trixie", true),
                 });
 
+        }
+
+        // ─────────────────────────────────────────────────────────
+        // Musl DotnetTool categories (Alpine)
+        // ─────────────────────────────────────────────────────────
+
+        static IEnumerable<IEnumerable<SmokeTestScenario>> LinuxMuslDotnetToolScenarios()
+        {
             yield return GetDotnetTool(
-                category: SmokeTestCategory.LinuxDotnetToolArm64,
+                category: SmokeTestCategory.LinuxMuslDotnetTool,
+                shortName: "alpine",
+                os: "alpine",
+                runtimeId: "linux-musl-x64",
+                scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[]
+                {
+                    (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22", "3.22", true),
+                    (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22-composite", "3.22", true),
+                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.20", "3.20", true),
+                    (TargetFramework.NET9_0, "mcr.microsoft.com/dotnet/aspnet", "9.0-alpine3.20-composite", "3.20", true),
+                    (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-alpine3.18", "3.18", true),
+                    (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-alpine3.18-composite", "3.18", true),
+                    (TargetFramework.NET7_0, "mcr.microsoft.com/dotnet/aspnet", "7.0-alpine3.16", "3.16", true),
+                    (TargetFramework.NET6_0, "mcr.microsoft.com/dotnet/aspnet", "6.0-alpine3.14", "3.14", true),
+                    (TargetFramework.NET5_0, "mcr.microsoft.com/dotnet/aspnet", "5.0-alpine3.14", "3.14", true),
+                    (TargetFramework.NETCOREAPP3_1, "mcr.microsoft.com/dotnet/aspnet", "3.1-alpine3.14", "3.14", true),
+                    (TargetFramework.NETCOREAPP2_1, "mcr.microsoft.com/dotnet/aspnet", "2.1-alpine3.12", "3.12", true),
+                });
+        }
+
+        static IEnumerable<IEnumerable<SmokeTestScenario>> LinuxMuslDotnetToolArm64Scenarios()
+        {
+            yield return GetDotnetTool(
+                category: SmokeTestCategory.LinuxMuslDotnetToolArm64,
                 shortName: "alpine",
                 os: "alpine",
                 runtimeId: "linux-musl-arm64",
