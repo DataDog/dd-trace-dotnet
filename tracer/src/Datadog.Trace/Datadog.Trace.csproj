@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <!-- NuGet -->
@@ -116,13 +116,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <AdditionalFiles Include="Configuration\supported-configurations.json">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </AdditionalFiles>
-    <AdditionalFiles Include="Configuration\supported-configurations-docs.yaml">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </AdditionalFiles>
-    <AdditionalFiles Include="Configuration\configuration_keys_mapping.json">
+    <AdditionalFiles Include="Configuration\supported-configurations.yaml">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </AdditionalFiles>
     <AdditionalFiles Include="..\..\..\BannedSymbols.txt" Link="BannedSymbols.txt" />
