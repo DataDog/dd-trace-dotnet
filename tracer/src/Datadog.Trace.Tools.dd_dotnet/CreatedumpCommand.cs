@@ -637,7 +637,7 @@ internal class CreatedumpCommand : Command
         {
             DebugPrint("Resolving callstacks");
             var callback = (delegate* unmanaged<int, IntPtr, ResolveMethodData**, int*, int>)&ResolveManagedCallstack;
-            crashReport.ResolveStacks(crashThread ?? 0, (IntPtr)callback, GCHandle.ToIntPtr(handle), out isSuspicious);
+            crashReport.ResolveStacks(crashThread ?? 0, threadContextAddress ?? IntPtr.Zero, (IntPtr)callback, GCHandle.ToIntPtr(handle), out isSuspicious);
         }
         catch (Win32Exception ex)
         {
