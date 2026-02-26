@@ -36,7 +36,11 @@ public static class SmokeTestBuilder
     // Image build
     // ──────────────────────────────────────────────────────────────
 
-    public static async Task BuildImageAsync(SmokeTestCategory category, SmokeTestScenario scenario, AbsolutePath tracerDir, AbsolutePath artifactsDir, string toolVersion)
+    /// <summary>
+    /// Builds all Docker images for the given scenario. Returns the list of image tags to test.
+    /// Most categories produce a single image; chiseled categories produce two (one per entrypoint style).
+    /// </summary>
+    public static async Task<string[]> BuildImageAsync(SmokeTestCategory category, SmokeTestScenario scenario, AbsolutePath tracerDir, AbsolutePath artifactsDir, string toolVersion)
     {
         LogSection($"Building image: {scenario.ShortName}");
         Logger.Information("Artifacts: {ArtifactsDir}", artifactsDir);
@@ -46,33 +50,27 @@ public static class SmokeTestBuilder
             case SmokeTestCategory.LinuxX64Installer:
             case SmokeTestCategory.LinuxArm64Installer:
             case SmokeTestCategory.LinuxMuslInstaller:
-                await BuildInstallerImageAsync(scenario, tracerDir, artifactsDir);
-                break;
+                return await BuildInstallerImageAsync(scenario, tracerDir, artifactsDir);
             case SmokeTestCategory.LinuxChiseledInstaller:
             case SmokeTestCategory.LinuxChiseledArm64Installer:
-                await BuildChiseledImageAsync(scenario, tracerDir, artifactsDir);
-                break;
+                return await BuildChiseledImageAsync(category, scenario, tracerDir, artifactsDir);
             case SmokeTestCategory.LinuxNuGet:
             case SmokeTestCategory.LinuxNuGetArm64:
-                await BuildNuGetImageAsync(scenario, tracerDir, artifactsDir, toolVersion);
-                break;
+                return await BuildNuGetImageAsync(scenario, tracerDir, artifactsDir, toolVersion);
             case SmokeTestCategory.LinuxDotnetTool:
             case SmokeTestCategory.LinuxDotnetToolArm64:
-                await BuildDotnetToolImageAsync(scenario, tracerDir, artifactsDir);
-                break;
+                return await BuildDotnetToolImageAsync(scenario, tracerDir, artifactsDir);
             case SmokeTestCategory.LinuxDotnetToolNuget:
-                await BuildDotnetToolNugetImageAsync(scenario, tracerDir, artifactsDir, toolVersion);
-                break;
+                return await BuildDotnetToolNugetImageAsync(scenario, tracerDir, artifactsDir, toolVersion);
             case SmokeTestCategory.LinuxTrimming:
             case SmokeTestCategory.LinuxMuslTrimming:
-                await BuildTrimmingImageAsync(scenario, tracerDir, artifactsDir, toolVersion);
-                break;
+                return await BuildTrimmingImageAsync(scenario, tracerDir, artifactsDir, toolVersion);
             default:
                 throw new InvalidOperationException($"Unknown smoke test scenario: {category}");
         }
     }
 
-    static async Task BuildInstallerImageAsync(SmokeTestScenario scenario, AbsolutePath tracerDir, AbsolutePath artifactsDir)
+    static async Task<string[]> BuildInstallerImageAsync(SmokeTestScenario scenario, AbsolutePath tracerDir, AbsolutePath artifactsDir)
     {
         const string dockerfilePath = "build/_build/docker/smoke.dockerfile";
 
@@ -85,9 +83,11 @@ public static class SmokeTestBuilder
         };
 
         await BuildImageFromDockerfileAsync(tracerDir, dockerfilePath, scenario.DockerTag, buildArgs, artifactsDir);
+
+        return new[] { scenario.DockerTag };
     }
 
-    static async Task BuildChiseledImageAsync(SmokeTestScenario scenario, AbsolutePath tracerDir, AbsolutePath artifactsDir)
+    static async Task<string[]> BuildChiseledImageAsync(SmokeTestCategory category, SmokeTestScenario scenario, AbsolutePath tracerDir, AbsolutePath artifactsDir)
     {
         const string dockerfilePath = "build/_build/docker/smoke.chiseled.dockerfile";
 
@@ -98,10 +98,24 @@ public static class SmokeTestBuilder
             ["PUBLISH_FRAMEWORK"] = scenario.PublishFramework,
         };
 
-        await BuildImageFromDockerfileAsync(tracerDir, dockerfilePath, scenario.DockerTag, buildArgs, artifactsDir);
+        // Build the "manual" env-var-based entrypoint image
+        await BuildImageFromDockerfileAsync(tracerDir, dockerfilePath, scenario.DockerTag, buildArgs, artifactsDir, target: "installer-final");
+
+        // Build the dd-dotnet entrypoint image (reuses cached layers through installer-base)
+        var ddDotnetTarget = category switch
+        {
+            SmokeTestCategory.LinuxChiseledInstaller => "dd-dotnet-final-linux-x64",
+            SmokeTestCategory.LinuxChiseledArm64Installer => "dd-dotnet-final-linux-arm64",
+            _ => throw new InvalidOperationException($"Unexpected category for {nameof(BuildChiseledImageAsync)}: {category}"),
+        };
+
+        var ddDotnetTag = scenario.DockerTag + "-dd-dotnet";
+        await BuildImageFromDockerfileAsync(tracerDir, dockerfilePath, ddDotnetTag, buildArgs, artifactsDir, target: ddDotnetTarget);
+
+        return new[] { scenario.DockerTag, ddDotnetTag };
     }
 
-    static async Task BuildNuGetImageAsync(SmokeTestScenario scenario, AbsolutePath tracerDir, AbsolutePath artifactsDir, string toolVersion)
+    static async Task<string[]> BuildNuGetImageAsync(SmokeTestScenario scenario, AbsolutePath tracerDir, AbsolutePath artifactsDir, string toolVersion)
     {
         const string dockerfilePath = "build/_build/docker/smoke.nuget.dockerfile";
 
@@ -116,9 +130,10 @@ public static class SmokeTestBuilder
         };
 
         await BuildImageFromDockerfileAsync(tracerDir, dockerfilePath, scenario.DockerTag, buildArgs, artifactsDir);
+        return new[] {scenario.DockerTag};
     }
 
-    static async Task BuildDotnetToolImageAsync(SmokeTestScenario scenario, AbsolutePath tracerDir, AbsolutePath artifactsDir)
+    static async Task<string[]> BuildDotnetToolImageAsync(SmokeTestScenario scenario, AbsolutePath tracerDir, AbsolutePath artifactsDir)
     {
         const string dockerfilePath = "build/_build/docker/smoke.dotnet-tool.dockerfile";
 
@@ -133,9 +148,10 @@ public static class SmokeTestBuilder
         };
 
         await BuildImageFromDockerfileAsync(tracerDir, dockerfilePath, scenario.DockerTag, buildArgs, artifactsDir);
+        return new[] {scenario.DockerTag};
     }
 
-    static async Task BuildDotnetToolNugetImageAsync(SmokeTestScenario scenario, AbsolutePath tracerDir, AbsolutePath artifactsDir, string toolVersion)
+    static async Task<string[]> BuildDotnetToolNugetImageAsync(SmokeTestScenario scenario, AbsolutePath tracerDir, AbsolutePath artifactsDir, string toolVersion)
     {
         const string dockerfilePath = "build/_build/docker/smoke.dotnet-tool.nuget.dockerfile";
 
@@ -151,9 +167,10 @@ public static class SmokeTestBuilder
         };
 
         await BuildImageFromDockerfileAsync(tracerDir, dockerfilePath, scenario.DockerTag, buildArgs, artifactsDir);
+        return new[] {scenario.DockerTag};
     }
 
-    static async Task BuildTrimmingImageAsync(SmokeTestScenario scenario, AbsolutePath tracerDir, AbsolutePath artifactsDir, string toolVersion)
+    static async Task<string[]> BuildTrimmingImageAsync(SmokeTestScenario scenario, AbsolutePath tracerDir, AbsolutePath artifactsDir, string toolVersion)
     {
         const string dockerfilePath = "build/_build/docker/smoke.trimming.dockerfile";
 
@@ -169,6 +186,8 @@ public static class SmokeTestBuilder
         };
 
         await BuildImageFromDockerfileAsync(tracerDir, dockerfilePath, scenario.DockerTag, buildArgs, artifactsDir);
+
+        return new[] {scenario.DockerTag};
     }
 
     // ──────────────────────────────────────────────────────────────
@@ -178,9 +197,10 @@ public static class SmokeTestBuilder
     public static async Task RunSmokeTestAsync(
         SmokeTestScenario scenario,
         AbsolutePath tracerDir,
-        AbsolutePath buildDataDir)
+        AbsolutePath buildDataDir,
+        string imageTag)
     {
-        LogSection($"Running smoke test: {scenario.ShortName}");
+        LogSection($"Running smoke test: {imageTag}");
 
         var networkName = $"smoke-test-{Guid.NewGuid():N}";
         string testAgentContainerId = null;
@@ -255,7 +275,7 @@ public static class SmokeTestBuilder
             LogSection("Running smoke test app");
             smokeTestContainerId = await CreateAndStartContainerWithRetryAsync(
                 client, "smoke-test", BuildSmokeTestAppContainerParams(
-                    scenario, networkName,
+                    imageTag, networkName,
                     environment.ToHostPath(logsDir),
                     environment.ToHostPath(dumpsDir)));
 
@@ -308,7 +328,7 @@ public static class SmokeTestBuilder
             {
                 LogSection("Running crash test");
                 crashTestContainerId = await RunCrashTestAsync(
-                    client, scenario, networkName,
+                    client, imageTag, networkName,
                     environment.ToHostPath(logsDir),
                     environment.ToHostPath(dumpsDir));
             }
@@ -379,19 +399,19 @@ public static class SmokeTestBuilder
     }
 
     static CreateContainerParameters BuildSmokeTestAppContainerParams(
-        SmokeTestScenario scenario,
+        string imageTag,
         string networkName,
         string logsDir,
         string dumpsDir)
     {
         return new CreateContainerParameters
         {
-            Image = scenario.DockerTag,
+            Image = imageTag,
             Env = new List<string>
             {
                 "DD_TRACE_AGENT_URL=http://test-agent:8126",
                 "DD_PROFILING_ENABLED=1",
-                $"dockerTag={scenario.DockerTag}",
+                $"dockerTag={imageTag}",
             },
             HostConfig = new HostConfig
             {
@@ -413,14 +433,14 @@ public static class SmokeTestBuilder
     }
 
     static CreateContainerParameters BuildCrashTestContainerParams(
-        SmokeTestScenario scenario,
+        string imageTag,
         string networkName,
         string logsDir,
         string dumpsDir)
     {
         return new CreateContainerParameters
         {
-            Image = scenario.DockerTag,
+            Image = imageTag,
             Env = new List<string>
             {
                 "DD_TRACE_AGENT_URL=http://test-agent:8126",
@@ -428,7 +448,7 @@ public static class SmokeTestBuilder
                 "CRASH_APP_ON_STARTUP=1",
                 "DD_CRASHTRACKING_INTERNAL_LOG_TO_CONSOLE=1",
                 "COMPlus_DbgEnableMiniDump=0",
-                $"dockerTag={scenario.DockerTag}",
+                $"dockerTag={imageTag}",
             },
             HostConfig = new HostConfig
             {
@@ -695,7 +715,7 @@ public static class SmokeTestBuilder
 
     static async Task<string> RunCrashTestAsync(
         DockerClient client,
-        SmokeTestScenario scenario,
+        string imageTag,
         string networkName,
         string logsDir,
         string dumpsDir)
@@ -704,7 +724,7 @@ public static class SmokeTestBuilder
         var ct = crashCts.Token;
 
         var containerId = await CreateAndStartContainerWithRetryAsync(
-            client, "crash-test", BuildCrashTestContainerParams(scenario, networkName, logsDir, dumpsDir), ct);
+            client, "crash-test", BuildCrashTestContainerParams(imageTag, networkName, logsDir, dumpsDir), ct);
 
         // Wait for the container to exit (non-zero exit is expected)
         var waitResponse = await client.Containers.WaitContainerAsync(containerId, ct);
@@ -866,7 +886,8 @@ public static class SmokeTestBuilder
         string dockerfilePath,
         string tag,
         Dictionary<string, string> buildArgs,
-        AbsolutePath artifactsDir)
+        AbsolutePath artifactsDir,
+        string target = null)
     {
         // Build the context tar once — MemoryStream is re-seekable for retries
         using var contextStream = CreateBuildContextTar(contextDir, dockerfilePath, artifactsDir);
@@ -876,6 +897,7 @@ public static class SmokeTestBuilder
             Dockerfile = dockerfilePath,
             Tags = new List<string> { tag },
             BuildArgs = buildArgs,
+            Target = target,
             Remove = true,
             ForceRemove = true,
         };
