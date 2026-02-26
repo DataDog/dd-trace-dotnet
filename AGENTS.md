@@ -236,44 +236,10 @@ tracer/src/Datadog.Trace
 - Use modern C# syntax, but avoid features requiring types unavailable in older runtimes (e.g., no `ValueTuple` syntax for .NET Framework 4.6.1)
   - For instance, prefer `is not null` to `!= null`
 - Prefer modern collection expressions (`[]`)
-- Use `StringUtil.IsNullOrEmpty()` instead of `string.IsNullOrEmpty()` for compatibility across all supported runtimes
 - StyleCop: see `tracer/stylecop.json`; address warnings before pushing
 
 **C/C++ style:**
 - See `.clang-format`; keep consistent naming
-
-## Windows Command Line Best Practices
-
-**CRITICAL: Avoid `>nul` and `2>nul` redirections on Windows**
-
-On Windows, redirecting to `nul` can create a literal file named "nul" instead of redirecting to the NUL device. These files are extremely difficult to delete and cause repository issues.
-
-**Problem commands:**
-```cmd
-findstr /s /i "pattern" "*.cpp" "*.h" 2>nul
-command 2>nul | head -20
-any-command >nul
-```
-
-**Safe alternatives:**
-1. **Don't suppress errors** - Let error output show naturally
-2. **Use full device path**: `2>\\.\NUL` (works reliably but verbose)
-3. **Use PowerShell** for cross-platform compatibility where applicable
-4. **Prefer dedicated tools** over piped bash commands (use Grep, Glob, Read tools instead)
-
-**Examples of safe patterns:**
-```cmd
-# Bad: Creates nul file
-findstr /s /i "DD_TRACE" "*.cpp" 2>nul
-
-# Good: Let errors show
-findstr /s /i "DD_TRACE" "*.cpp"
-
-# Good: Use full device path if suppression is essential
-findstr /s /i "DD_TRACE" "*.cpp" 2>\\.\NUL
-```
-
-**Reference:** See https://github.com/anthropics/claude-code/issues/4928 for details on this Windows limitation.
 
 ## Logging Guidelines
 
@@ -294,17 +260,6 @@ Use clear, customer-facing terminology in log messages to avoid confusion. `Prof
 - `CorProfiler` / `ICorProfiler` / `COR Profiler` for runtime components
 
 **Reference:** See PR 7467 for examples of consistent terminology in native logs.
-
-### Log Argument Formatting
-
-Never use `ToString()` on numeric types in log calls - use generic log methods instead:
-```csharp
-// BAD - allocates a string unnecessarily
-Log.Debug(ex, "Error (attempt {Attempt})", (attempt + 1).ToString());
-
-// GOOD - uses generic method, no allocation
-Log.Debug<int>(ex, "Error (attempt {Attempt})", attempt + 1);
-```
 
 ### Log Levels for Retry Operations
 
