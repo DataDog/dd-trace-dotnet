@@ -30,9 +30,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
     {
         public const string IntegrationName = nameof(Configuration.IntegrationId.AzureFunctions);
 
-        public const string OperationName = "azure_functions.invoke";
+        public const string OperationName = AzureFunctionsConstants.AzureFunctionName;
         public const string SpanType = SpanTypes.Serverless;
-        public const string AzureApim = "azure.apim";
+        public const string AzureApim = AzureFunctionsConstants.AzureApimName;
         public const IntegrationId IntegrationId = Configuration.IntegrationId.AzureFunctions;
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AzureFunctionsCommon));

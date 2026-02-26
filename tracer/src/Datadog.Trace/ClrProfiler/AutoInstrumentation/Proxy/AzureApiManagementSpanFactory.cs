@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Shared;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
@@ -17,7 +18,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
 /// </summary>
 internal sealed class AzureApiManagementSpanFactory : IInferredSpanFactory
 {
-    private const string OperationName = "azure.apim";
+    private const string OperationName = AzureFunctionsConstants.AzureApimName;
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AzureApiManagementSpanFactory>();
 
     public Scope? CreateSpan(Tracer tracer, InferredProxyData data, ISpanContext? parent = null)
