@@ -401,3 +401,6 @@ tools/dumps/
 !tools/dumps/README_DEBIAN_ARM64.md
 !tools/dumps/start_debian-arm64.cmd
 !tools/dumps/start_debian-arm64.sh
+
+# test optimization temp/run folder
+.dd/
