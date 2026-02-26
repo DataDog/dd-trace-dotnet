@@ -4,6 +4,7 @@
 // </copyright>
 
 #nullable enable
+
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Shared;
 
 internal static class AzureFunctionsConstants
