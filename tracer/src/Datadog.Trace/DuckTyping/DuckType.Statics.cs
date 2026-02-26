@@ -1,4 +1,4 @@
-// <copyright file="DuckType.Statics.cs" company="Datadog">
+﻿// <copyright file="DuckType.Statics.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -15,6 +15,7 @@ using System.Runtime.CompilerServices;
 #if NETCOREAPP3_1 || NET6_0_OR_GREATER
 using System.Runtime.Loader;
 #endif
+using System.Threading;
 // ReSharper disable InconsistentNaming
 
 namespace Datadog.Trace.DuckTyping
@@ -60,6 +61,10 @@ namespace Datadog.Trace.DuckTyping
         private static long _assemblyCount;
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static long _typeCount;
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private static int _runtimeMode;
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private static int _runtimeModeInitialized;
 
         static DuckType()
         {
@@ -86,6 +91,8 @@ namespace Datadog.Trace.DuckTyping
 
             _assemblyCount = 0;
             _typeCount = 0;
+            _runtimeMode = (int)DuckTypeRuntimeMode.Dynamic;
+            _runtimeModeInitialized = 0;
         }
 
         /// <summary>
@@ -123,6 +130,8 @@ namespace Datadog.Trace.DuckTyping
         internal static long AssemblyCount => _assemblyCount;
 
         internal static long TypeCount => _typeCount;
+
+        internal static DuckTypeRuntimeMode RuntimeMode => (DuckTypeRuntimeMode)Volatile.Read(ref _runtimeMode);
 
         private static PropertyInfo DuckTypeInstancePropertyInfo
         {
