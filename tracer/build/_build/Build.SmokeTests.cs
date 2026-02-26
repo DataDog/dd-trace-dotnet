@@ -22,10 +22,7 @@ partial class Build
             var smokeTest = SmokeTests.SmokeTestScenarios.GetScenario(category, SmokeTestScenario);
 
             var artifactsDir = ArtifactsDirectory;
-            Logger.Information("Building test image for {SmokeTestName} (artifacts: {ArtifactsDir})...", smokeTest.ShortName, artifactsDir);
             await SmokeTests.SmokeTestBuilder.BuildImageAsync(category, smokeTest, TracerDirectory, artifactsDir, Version);
-
-            Logger.Information("Running smoke test for {SmokeTestName}...", smokeTest.ShortName);
             await SmokeTests.SmokeTestBuilder.RunSmokeTestAsync(smokeTest, TracerDirectory, BuildDataDirectory);
         });
 }

@@ -38,6 +38,9 @@ public static class SmokeTestBuilder
 
     public static async Task BuildImageAsync(SmokeTestCategory category, SmokeTestScenario scenario, AbsolutePath tracerDir, AbsolutePath artifactsDir, string toolVersion)
     {
+        LogSection($"Building image: {scenario.ShortName}");
+        Logger.Information("Artifacts: {ArtifactsDir}", artifactsDir);
+
         switch (category)
         {
             case SmokeTestCategory.LinuxX64Installer:
@@ -177,6 +180,8 @@ public static class SmokeTestBuilder
         AbsolutePath tracerDir,
         AbsolutePath buildDataDir)
     {
+        LogSection($"Running smoke test: {scenario.ShortName}");
+
         var networkName = $"smoke-test-{Guid.NewGuid():N}";
         string testAgentContainerId = null;
         string smokeTestContainerId = null;
@@ -214,6 +219,7 @@ public static class SmokeTestBuilder
             buildContainerId = environment.BuildContainerId;
 
             // 3. Pull + start test-agent container
+            LogSection("Starting test agent");
             await PullImageAsync(client, TestAgentImage);
 
             // sourceSnapshotsDir: source-of-truth expected snapshots, mounted read-only as /snapshots
@@ -246,6 +252,7 @@ public static class SmokeTestBuilder
                 RetryDelays);
 
             // 7. Start the smoke test app container, wait for exit
+            LogSection("Running smoke test app");
             smokeTestContainerId = await CreateAndStartContainerWithRetryAsync(
                 client, "smoke-test", BuildSmokeTestAppContainerParams(
                     scenario, networkName,
@@ -265,6 +272,7 @@ public static class SmokeTestBuilder
             }
 
             // 8. Dump traces/stats/requests from test-agent
+            LogSection("Verifying results");
             await DumpSessionDataAsync(httpClient, sessionToken, "smoke_test", debugSnapshotsDir);
 
             // 9. Verify snapshot
@@ -298,7 +306,7 @@ public static class SmokeTestBuilder
             // 10. Run crash test (conditional)
             if (scenario.RunCrashTest && !scenario.IsNoop)
             {
-                Logger.Information("Running crash test...");
+                LogSection("Running crash test");
                 crashTestContainerId = await RunCrashTestAsync(
                     client, scenario, networkName,
                     environment.ToHostPath(logsDir),
@@ -307,7 +315,14 @@ public static class SmokeTestBuilder
         }
         finally
         {
+            // Dump container logs before cleanup for debugging
+            LogSection("Container logs");
+            await DumpContainerLogsAsync(client, "smoke-test", smokeTestContainerId);
+            await DumpContainerLogsAsync(client, "crash-test", crashTestContainerId);
+            await DumpContainerLogsAsync(client, "test-agent", testAgentContainerId);
+
             // Cleanup: remove containers, disconnect ourselves from the network, then remove it
+            LogSection("Cleanup");
             await CleanupContainerAsync(client, smokeTestContainerId);
             await CleanupContainerAsync(client, crashTestContainerId);
             await CleanupContainerAsync(client, testAgentContainerId);
@@ -738,6 +753,31 @@ public static class SmokeTestBuilder
     // Cleanup
     // ──────────────────────────────────────────────────────────────
 
+    static async Task DumpContainerLogsAsync(DockerClient client, string name, string containerId)
+    {
+        if (containerId is null)
+        {
+            return;
+        }
+
+        try
+        {
+            var logs = await ReadContainerLogsAsync(client, containerId, CancellationToken.None);
+            if (!string.IsNullOrWhiteSpace(logs))
+            {
+                Logger.Information("=== Logs from {Name} ({Id}) ===\n{Logs}", name, containerId[..12], logs);
+            }
+            else
+            {
+                Logger.Information("=== No logs from {Name} ({Id}) ===", name, containerId[..12]);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning(ex, "Failed to read logs from {Name} ({Id})", name, containerId[..12]);
+        }
+    }
+
     static async Task CleanupContainerAsync(DockerClient client, string containerId)
     {
         if (containerId is null)
@@ -973,5 +1013,12 @@ public static class SmokeTestBuilder
             var entryName = $"{tarBasePath}/{relativePath}";
             tarWriter.WriteEntry(filePath, entryName);
         }
+    }
+
+    static void LogSection(string title)
+    {
+        Logger.Information("────────────────────────────────────────────────────────────");
+        Logger.Information("{Title}", title);
+        Logger.Information("────────────────────────────────────────────────────────────");
     }
 }
