@@ -514,4 +514,76 @@ namespace Datadog.Trace.DuckTyping
             throw new DuckTypeDuckCopyStructDoesNotContainsAnyField(type?.FullName ?? type?.Name ?? "NULL");
         }
     }
+
+    /// <summary>
+    /// DuckType runtime mode was configured with a different value
+    /// </summary>
+    internal sealed class DuckTypeRuntimeModeConflictException : DuckTypeException
+    {
+        private DuckTypeRuntimeModeConflictException(DuckTypeRuntimeMode currentMode, DuckTypeRuntimeMode requestedMode)
+            : base($"DuckType runtime mode is immutable after initialization. Current mode: '{currentMode}', requested mode: '{requestedMode}'.")
+        {
+        }
+
+        [DebuggerHidden]
+        [DoesNotReturn]
+        internal static void Throw(DuckTypeRuntimeMode currentMode, DuckTypeRuntimeMode requestedMode)
+        {
+            throw new DuckTypeRuntimeModeConflictException(currentMode, requestedMode);
+        }
+    }
+
+    /// <summary>
+    /// No AOT proxy registration exists for the requested pair
+    /// </summary>
+    internal sealed class DuckTypeAotMissingProxyRegistrationException : DuckTypeException
+    {
+        private DuckTypeAotMissingProxyRegistrationException(Type proxyDefinitionType, Type targetType, bool reverse)
+            : base($"AOT duck typing mapping not found for proxy '{proxyDefinitionType.FullName}' and target '{targetType.FullName}' (reverse={reverse}).")
+        {
+        }
+
+        [DebuggerHidden]
+        [DoesNotReturn]
+        internal static void Throw(Type proxyDefinitionType, Type targetType, bool reverse)
+        {
+            throw new DuckTypeAotMissingProxyRegistrationException(proxyDefinitionType, targetType, reverse);
+        }
+    }
+
+    /// <summary>
+    /// AOT proxy registration for a key already exists with a different generated proxy type
+    /// </summary>
+    internal sealed class DuckTypeAotProxyRegistrationConflictException : DuckTypeException
+    {
+        private DuckTypeAotProxyRegistrationConflictException(Type proxyDefinitionType, Type targetType, bool reverse, Type existingProxyType, Type newProxyType)
+            : base($"Conflicting AOT duck typing registration for proxy '{proxyDefinitionType.FullName}' and target '{targetType.FullName}' (reverse={reverse}). Existing generated proxy: '{existingProxyType.FullName}', new generated proxy: '{newProxyType.FullName}'.")
+        {
+        }
+
+        [DebuggerHidden]
+        [DoesNotReturn]
+        internal static void Throw(Type proxyDefinitionType, Type targetType, bool reverse, Type existingProxyType, Type newProxyType)
+        {
+            throw new DuckTypeAotProxyRegistrationConflictException(proxyDefinitionType, targetType, reverse, existingProxyType, newProxyType);
+        }
+    }
+
+    /// <summary>
+    /// Generated AOT proxy type does not satisfy the proxy definition contract
+    /// </summary>
+    internal sealed class DuckTypeAotGeneratedProxyTypeMismatchException : DuckTypeException
+    {
+        private DuckTypeAotGeneratedProxyTypeMismatchException(Type proxyDefinitionType, Type generatedProxyType)
+            : base($"Generated AOT proxy type '{generatedProxyType.FullName}' is not assignable to proxy definition '{proxyDefinitionType.FullName}'.")
+        {
+        }
+
+        [DebuggerHidden]
+        [DoesNotReturn]
+        internal static void Throw(Type proxyDefinitionType, Type generatedProxyType)
+        {
+            throw new DuckTypeAotGeneratedProxyTypeMismatchException(proxyDefinitionType, generatedProxyType);
+        }
+    }
 }
