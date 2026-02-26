@@ -10,6 +10,7 @@ using Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
 using Xunit;
 
@@ -17,7 +18,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Proxy;
 
 public class InferredProxySpanHelperTests : IAsyncLifetime
 {
-    private readonly Tracer _tracer;
+    private readonly ScopedTracer _tracer;
 
     public InferredProxySpanHelperTests()
     {
