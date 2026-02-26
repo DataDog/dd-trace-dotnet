@@ -220,6 +220,19 @@ public static class SmokeTestBuilder
         EnsureExistingDirectory(logsDir);
         EnsureExistingDirectory(dumpsDir);
 
+        // Make bind-mounted directories world-writable so non-root containers
+        // (e.g. chiseled images) can write logs and dumps
+        if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            const UnixFileMode worldRwx =
+                UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute |
+                UnixFileMode.GroupRead | UnixFileMode.GroupWrite | UnixFileMode.GroupExecute |
+                UnixFileMode.OtherRead | UnixFileMode.OtherWrite | UnixFileMode.OtherExecute;
+            File.SetUnixFileMode(debugSnapshotsDir, worldRwx);
+            File.SetUnixFileMode(logsDir, worldRwx);
+            File.SetUnixFileMode(dumpsDir, worldRwx);
+        }
+
         using var client = CreateDockerClient();
 
         try
