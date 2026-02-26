@@ -777,8 +777,11 @@ public class RcmSubscriptionManagerTests
         // Second request: respond with roots containing multiple entries;
         // only the last entry's version should be used
         var response = CreateSingleProductResponse(Array.Empty<ConfigEntry>());
-        response.Roots.Add(Convert.ToBase64String(Encoding.UTF8.GetBytes("""{"signed":{"version":2}}""")));
-        response.Roots.Add(Convert.ToBase64String(Encoding.UTF8.GetBytes("""{"signed":{"version":5}}""")));
+        response.Roots =
+        [
+            Convert.ToBase64String(Encoding.UTF8.GetBytes("""{"signed":{"version":2}}""")),
+            Convert.ToBase64String(Encoding.UTF8.GetBytes("""{"signed":{"version":5}}""")),
+        ];
 
         await manager.SendRequest(CreateTracer(), _ => Task.FromResult(response));
 
@@ -793,6 +796,93 @@ public class RcmSubscriptionManagerTests
             });
 
         captured.Client.State.RootVersion.Should().Be(5);
+    }
+
+    [Fact]
+    public async Task BuildRequest_CachesRequest_AndInvalidatesWhenInputsChange()
+    {
+        var manager = new RcmSubscriptionManager();
+        manager.SubscribeToChanges(
+            new Subscription(
+                (configs, _) =>
+                    configs.SelectMany(c => c.Value)
+                           .Select(c => ApplyDetails.FromOk(c.Path.Path))
+                           .ToArray(),
+                RcmProducts.AsmFeatures));
+
+        var tracer = CreateTracer();
+        var request = await CaptureRequest(manager, tracer);
+
+        // Always returns the same object (mutated in-place)
+        var request2 = await CaptureRequest(manager, tracer);
+        request2.Should().BeSameAs(request, "request should always be the same object (mutated in-place)");
+
+        // Different tracer reference → tracer updated on the client
+        var tracer2 = CreateTracer();
+        await CaptureRequest(manager, tracer2);
+        request.Client.ClientTracer.Should().BeSameAs(tracer2, "tracer should be updated when reference changes");
+
+        // Capabilities change → capabilities updated on the client
+        var capsBefore = request.Client.Capabilities;
+        manager.SetCapability(RcmCapabilitiesIndices.AsmActivation, true);
+        await CaptureRequest(manager, tracer2);
+        request.Client.Capabilities.Should().NotBeEquivalentTo(capsBefore, "capabilities should be updated when they change");
+
+        // Product keys change (new subscription) → products updated on the client
+        var productsBefore = request.Client.Products;
+        manager.SubscribeToChanges(new Subscription((_, _) => [], RcmProducts.LiveDebugging));
+        await CaptureRequest(manager, tracer2);
+        request.Client.Products.Should().NotBeSameAs(productsBefore, "products should be updated when subscriptions change");
+        request.Client.Products.Should().Contain(RcmProducts.LiveDebugging);
+
+        // Process a response (changes targets version, backend state, applied configs)
+        var entry = MakeConfig(RcmProducts.AsmFeatures, "config-1");
+        var response = CreateSingleProductResponse(new[] { entry }, targetsVersion: 5, backendClientState: "state-1");
+        await manager.SendRequest(tracer2, _ => Task.FromResult(response));
+        await CaptureRequest(manager, tracer2);
+        request.Client.State.TargetsVersion.Should().Be(5);
+        request.Client.State.BackendClientState.Should().Be("state-1");
+        request.CachedTargetFiles.Should().NotBeEmpty();
+
+        // Steady state → values remain the same
+        var targetFilesBefore = request.CachedTargetFiles;
+        await CaptureRequest(manager, tracer2);
+        request.CachedTargetFiles.Should().BeSameAs(targetFilesBefore, "cached target files should not be rebuilt when nothing changed");
+
+        // Config removed → cached target files cleared
+        var emptyResponse = CreateSingleProductResponse(Array.Empty<ConfigEntry>(), targetsVersion: 6, backendClientState: "state-2");
+        await manager.SendRequest(tracer2, _ => Task.FromResult(emptyResponse));
+        await CaptureRequest(manager, tracer2);
+        request.CachedTargetFiles.Should().BeEmpty();
+
+        // Poll error → hasError set
+        var malformedResponse = new GetRcmResponse
+        {
+            ClientConfigs = ["datadog/2/ASM_FEATURES/missing/config"],
+            Targets = new TufRoot
+            {
+                Signed = new Signed
+                {
+                    Targets = new Dictionary<string, Target>(),
+                    Version = 7,
+                    Custom = new TargetsCustom { OpaqueBackendState = "state-3" }
+                }
+            },
+        };
+        await manager.SendRequest(tracer2, _ => Task.FromResult(malformedResponse));
+        await CaptureRequest(manager, tracer2);
+        request.Client.State.HasError.Should().BeTrue();
+
+        static async Task<GetRcmRequest> CaptureRequest(RcmSubscriptionManager mgr, RcmClientTracer t)
+        {
+            GetRcmRequest captured = null;
+            await mgr.SendRequest(t, req =>
+            {
+                captured = req;
+                return Task.FromResult<GetRcmResponse>(null);
+            });
+            return captured;
+        }
     }
 
     private static RcmClientTracer CreateTracer() =>
@@ -812,25 +902,18 @@ public class RcmSubscriptionManagerTests
         long targetsVersion = 1,
         string backendClientState = "test-backend-state")
     {
-        var response = new GetRcmResponse();
-
-        foreach (var file in targetFiles)
+        var response = new GetRcmResponse
         {
-            response.TargetFiles.Add(file);
-        }
-
-        foreach (var config in clientConfigs)
-        {
-            response.ClientConfigs.Add(config);
-        }
-
-        response.Targets = new TufRoot
-        {
-            Signed = new Signed
+            TargetFiles = [..targetFiles],
+            ClientConfigs = [..clientConfigs],
+            Targets = new TufRoot
             {
-                Targets = targets,
-                Version = targetsVersion,
-                Custom = new TargetsCustom { OpaqueBackendState = backendClientState }
+                Signed = new Signed
+                {
+                    Targets = targets,
+                    Version = targetsVersion,
+                    Custom = new TargetsCustom { OpaqueBackendState = backendClientState }
+                }
             }
         };
 

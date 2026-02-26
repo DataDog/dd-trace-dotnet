@@ -308,15 +308,6 @@ src/Datadog.Trace/Iast/Dataflow/AspectType.cs
 src/Datadog.Trace/PDBs/dnlibAdditions/DssSymbolReaderImpl.Additions.cs
 src/Datadog.Trace/PDBs/dnlibAdditions/PdbReader.Additions.cs
 src/Datadog.Trace/PDBs/dnlibAdditions/PortablePdbReader.Additions.cs
-src/Datadog.Trace/RemoteConfigurationManagement/Json/TufRootBase64Converter.cs
-src/Datadog.Trace/RemoteConfigurationManagement/Protocol/GetRcmRequest.cs
-src/Datadog.Trace/RemoteConfigurationManagement/Protocol/GetRcmResponse.cs
-src/Datadog.Trace/RemoteConfigurationManagement/Protocol/RcmCachedTargetFile.cs
-src/Datadog.Trace/RemoteConfigurationManagement/Protocol/RcmCachedTargetFileHash.cs
-src/Datadog.Trace/RemoteConfigurationManagement/Protocol/RcmClient.cs
-src/Datadog.Trace/RemoteConfigurationManagement/Protocol/RcmClientState.cs
-src/Datadog.Trace/RemoteConfigurationManagement/Protocol/RcmConfigState.cs
-src/Datadog.Trace/RemoteConfigurationManagement/Protocol/RcmFile.cs
 src/Datadog.Trace/Telemetry/DTOs/IPayload.cs
 src/Datadog.Trace/Telemetry/Metrics/IntegrationIdExtensions.cs
 src/Datadog.Trace/Telemetry/Transports/TelemetryTransportStrategy.cs
@@ -492,11 +483,6 @@ src/Datadog.Trace/Iast/Aspects/System.DirectoryServices/SearchRequestAspect.cs
 src/Datadog.Trace/Iast/Aspects/System.Web.SessionState/HttpSessionStateBaseAspect.cs
 src/Datadog.Trace/Iast/Aspects/System.Web.SessionState/SessionExtensionsAspect.cs
 src/Datadog.Trace/Iast/Aspects/System/StringAspects.cs
-src/Datadog.Trace/RemoteConfigurationManagement/Protocol/Tuf/Signed.cs
-src/Datadog.Trace/RemoteConfigurationManagement/Protocol/Tuf/Target.cs
-src/Datadog.Trace/RemoteConfigurationManagement/Protocol/Tuf/TargetCustom.cs
-src/Datadog.Trace/RemoteConfigurationManagement/Protocol/Tuf/TargetsCustom.cs
-src/Datadog.Trace/RemoteConfigurationManagement/Protocol/Tuf/TufRoot.cs
 src/Datadog.Trace/Util/Http/QueryStringObfuscation/NullObfuscator.cs
 src/Datadog.Trace/Util/Http/QueryStringObfuscation/Obfuscator.cs
 src/Datadog.Trace/Util/Http/QueryStringObfuscation/ObfuscatorBase.cs

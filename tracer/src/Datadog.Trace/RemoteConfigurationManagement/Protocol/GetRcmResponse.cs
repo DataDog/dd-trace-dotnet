@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System.Collections.Generic;
 using Datadog.Trace.RemoteConfigurationManagement.Json;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol.Tuf;
@@ -13,16 +15,16 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Protocol
     internal sealed class GetRcmResponse
     {
         [JsonProperty("roots")]
-        public List<string> Roots { get; set; } = new();
+        public List<string>? Roots { get; set; }
 
         [JsonConverter(typeof(TufRootBase64Converter))]
         [JsonProperty("targets")]
-        public TufRoot Targets { get; set; }
+        public TufRoot? Targets { get; set; }
 
         [JsonProperty("client_configs")]
-        public List<string> ClientConfigs { get; set; } = new();
+        public List<string>? ClientConfigs { get; set; }
 
         [JsonProperty("target_files")]
-        public List<RcmFile> TargetFiles { get; set; } = new();
+        public List<RcmFile>? TargetFiles { get; set; }
     }
 }
