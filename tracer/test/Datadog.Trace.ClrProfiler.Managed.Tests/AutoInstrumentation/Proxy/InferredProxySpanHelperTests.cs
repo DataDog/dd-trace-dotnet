@@ -5,6 +5,7 @@
 
 using System;
 using System.Globalization;
+using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Headers;
