@@ -399,11 +399,12 @@ The tracer runs in-process with customer applications and must have minimal perf
 ## Configuration
 
 📖 **Load when**: Need reference for tracer configuration settings and environment variables
-- **`tracer/src/Datadog.Trace/Configuration/supported-configurations-docs.yaml`** — Human-readable descriptions and default values for all `DD_*` environment variables
-- **`tracer/src/Datadog.Trace/Configuration/supported-configurations.json`** — Machine-readable config metadata: product categorization, key aliases, and deprecations (consumed by source generators)
+- **`tracer/src/Datadog.Trace/Configuration/supported-configurations.yaml`** — Human-readable config metadata, 
+  product categorization, key aliases, deprecations and default values for all `DD_*` and `OTEL_*` environment 
+  variables (consumed by source generators as well)
 
 📖 **Load when**: Adding a new `DD_*` configuration key or modifying the configuration system
-- **`docs/development/Configuration/AddingConfigurationKeys.md`** — Step-by-step guide for adding config keys: JSON/YAML definitions, source generators, aliases, telemetry normalization, and related analyzers
+- **`docs/development/Configuration/AddingConfigurationKeys.md`** — Step-by-step guide for adding config keys: YAML definitions, source generators, aliases, telemetry normalization, and related analyzers
 
 ## Security & Configuration
 
