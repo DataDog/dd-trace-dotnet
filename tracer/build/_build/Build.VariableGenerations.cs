@@ -603,6 +603,12 @@ partial class Build : NukeBuild
                     EmitMatrix("nuke_installer_musl_matrix",
                         allScenarios.Where(x => x.category is SmokeTests.SmokeTestCategory.LinuxMuslInstaller));
 
+                    EmitMatrix("nuke_dotnet_tool_musl_x64_matrix",
+                        allScenarios.Where(x => x.category is SmokeTests.SmokeTestCategory.LinuxMuslDotnetTool));
+
+                    EmitMatrix("nuke_dotnet_tool_musl_arm64_matrix",
+                        allScenarios.Where(x => x.category is SmokeTests.SmokeTestCategory.LinuxMuslDotnetToolArm64));
+
                     EmitMatrix("nuke_trimming_musl_matrix",
                         allScenarios.Where(x => x.category is SmokeTests.SmokeTestCategory.LinuxMuslTrimming));
 

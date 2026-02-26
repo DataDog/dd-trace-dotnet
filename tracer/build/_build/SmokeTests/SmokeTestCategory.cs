@@ -13,5 +13,7 @@ public enum SmokeTestCategory
     LinuxDotnetToolNuget,
     LinuxTrimming,
     LinuxMuslInstaller,
+    LinuxMuslDotnetTool,
+    LinuxMuslDotnetToolArm64,
     LinuxMuslTrimming,
 }
