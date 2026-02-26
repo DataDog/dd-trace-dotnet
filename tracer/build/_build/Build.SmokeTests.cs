@@ -22,7 +22,11 @@ partial class Build
             var smokeTest = SmokeTests.SmokeTestScenarios.GetScenario(category, SmokeTestScenario);
 
             var artifactsDir = ArtifactsDirectory;
-            await SmokeTests.SmokeTestBuilder.BuildImageAsync(category, smokeTest, TracerDirectory, artifactsDir, Version);
-            await SmokeTests.SmokeTestBuilder.RunSmokeTestAsync(smokeTest, TracerDirectory, BuildDataDirectory);
+            var imageTags = await SmokeTests.SmokeTestBuilder.BuildImageAsync(category, smokeTest, TracerDirectory, artifactsDir, Version);
+
+            foreach (var imageTag in imageTags)
+            {
+                await SmokeTests.SmokeTestBuilder.RunSmokeTestAsync(smokeTest, TracerDirectory, BuildDataDirectory, imageTag);
+            }
         });
 }
