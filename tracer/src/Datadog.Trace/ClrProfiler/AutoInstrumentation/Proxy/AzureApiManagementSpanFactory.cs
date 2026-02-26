@@ -17,6 +17,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
 /// </summary>
 internal sealed class AzureApiManagementSpanFactory : IInferredSpanFactory
 {
+    private const string OperationName = "azure.apim";
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AzureApiManagementSpanFactory>();
 
     public Scope? CreateSpan(Tracer tracer, InferredProxyData data, ISpanContext? parent = null)
@@ -35,7 +36,7 @@ internal sealed class AzureApiManagementSpanFactory : IInferredSpanFactory
                 Region = data.Region,
             };
 
-            var scope = tracer.StartActiveInternal(operationName: AzureFunctionsCommon.OperationName, parent: parent, startTime: data.StartTime, tags: tags, serviceName: data.DomainName);
+            var scope = tracer.StartActiveInternal(operationName: OperationName, parent: parent, startTime: data.StartTime, tags: tags, serviceName: data.DomainName);
             scope.Span.ResourceName = data.HttpMethod is null ? resourceUrl : $"{data.HttpMethod.ToUpperInvariant()} {resourceUrl}";
             scope.Span.Type = SpanTypes.Web;
 
