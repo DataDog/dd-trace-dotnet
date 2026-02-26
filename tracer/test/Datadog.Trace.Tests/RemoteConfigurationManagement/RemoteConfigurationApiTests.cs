@@ -182,7 +182,7 @@ public class RemoteConfigurationApiTests
         requestFactory.RequestsSent.Should().ContainSingle();
 
         AssertTargetsDeserialization(result);
-        result.TargetFiles.Should().BeEmpty();
+        result.TargetFiles.Should().BeNullOrEmpty();
         result.ClientConfigs.Should().NotBeNullOrEmpty().And.NotContainNulls();
     }
 
@@ -201,8 +201,8 @@ public class RemoteConfigurationApiTests
         requestFactory.RequestsSent.Should().ContainSingle();
 
         AssertTargetsDeserialization(result);
-        result.TargetFiles.Should().BeEmpty();
-        result.ClientConfigs.Should().BeEmpty();
+        result.TargetFiles.Should().BeNullOrEmpty();
+        result.ClientConfigs.Should().BeNullOrEmpty();
     }
 
     [Fact]
