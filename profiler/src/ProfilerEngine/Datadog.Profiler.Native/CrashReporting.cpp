@@ -291,7 +291,7 @@ int32_t CrashReporting::SetSignalInfo(int32_t signal, int32_t code)
     return 0;
 }
 
-int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, ResolveManagedCallstack resolveCallback, void* context, bool* isSuspicious)
+int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, void* crashingThreadContext, ResolveManagedCallstack resolveCallback, void* context, bool* isSuspicious)
 {
     auto threads = GetThreads();
 
