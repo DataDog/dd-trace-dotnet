@@ -32,6 +32,10 @@ internal static class MessagePackStringCache
     [ThreadStatic]
     private static CachedBytes _service;
 
+    // Process tags can change when the service name is changed in configuration which shouldn't happen often.
+    [ThreadStatic]
+    private static CachedBytes _processTags;
+
     // NOTE: all of these can be cached in SpanMessagePackFormatter as static byte[]
     // since they never change over the lifetime of a process
     private static CachedBytes _gitCommitSha;
@@ -54,6 +58,7 @@ internal static class MessagePackStringCache
         _version = default;
         _origin = default;
         _service = default;
+        _processTags = default;
         _gitCommitSha = default;
         _gitRepositoryUrl = default;
         _aasSiteNameBytes = default;
@@ -97,6 +102,11 @@ internal static class MessagePackStringCache
     public static byte[]? GetServiceBytes(string? service)
     {
         return GetBytes(service, ref _service);
+    }
+
+    public static byte[]? GetProcessTagsBytes(string? processTags)
+    {
+        return GetBytes(processTags, ref _processTags);
     }
 
     public static byte[]? GetAzureAppServiceKeyBytes(string key, string? value)

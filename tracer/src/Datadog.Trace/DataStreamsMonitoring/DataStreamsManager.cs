@@ -36,8 +36,7 @@ internal sealed class DataStreamsManager
 
     public DataStreamsManager(
         TracerSettings tracerSettings,
-        IDataStreamsWriter? writer,
-        string? processTags)
+        IDataStreamsWriter? writer)
     {
         UpdateNodeHash(tracerSettings.Manager.InitialMutableSettings);
         _isEnabled = writer is not null;
@@ -55,7 +54,7 @@ internal sealed class DataStreamsManager
         void UpdateNodeHash(MutableSettings settings)
         {
             // We don't yet support primary tag in .NET yet
-            var value = HashHelper.CalculateNodeHashBase(settings.DefaultServiceName, settings.Environment, primaryTag: null, processTags);
+            var value = HashHelper.CalculateNodeHashBase(settings.DefaultServiceName, settings.Environment, primaryTag: null, settings.ProcessTags?.SerializedTags);
             // Working around the fact we can't do Interlocked.Exchange with the struct
             // and also that we can't do Interlocked.Exchange with a ulong in < .NET 5
             Interlocked.Exchange(
@@ -77,7 +76,7 @@ internal sealed class DataStreamsManager
                          ? DataStreamsWriter.Create(settings, profilerSettings, discoveryService)
                          : null;
 
-        return new DataStreamsManager(settings, writer, settings.PropagateProcessTags ? ProcessTags.SerializedTags : null);
+        return new DataStreamsManager(settings, writer);
     }
 
     public async Task DisposeAsync()

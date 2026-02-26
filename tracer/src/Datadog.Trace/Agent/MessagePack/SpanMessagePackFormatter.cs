@@ -68,12 +68,7 @@ namespace Datadog.Trace.Agent.MessagePack
         private readonly byte[] _runtimeIdNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.RuntimeId);
         private readonly byte[] _runtimeIdValueBytes = StringEncoding.UTF8.GetBytes(Tracer.RuntimeId);
 
-        // using a Lazy here to make sure we don't compute the value of the process tags too early in the life of the app,
-        // some values may need a bit of time to be accessible.
-        // With this construct, it should be queried after the first span(s) get closed, which should be late enough.
-        private readonly Lazy<byte[]> _processTagsValueBytes = new(() => StringEncoding.UTF8.GetBytes(ProcessTags.SerializedTags));
         private readonly byte[] _processTagsNameBytes = StringEncoding.UTF8.GetBytes(Tags.ProcessTags);
-
         private readonly byte[] _environmentNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Env);
         private readonly byte[] _gitCommitShaNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.GitCommitSha);
         private readonly byte[] _gitRepositoryUrlNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.GitRepositoryUrl);
@@ -596,7 +591,7 @@ namespace Datadog.Trace.Agent.MessagePack
                 }
             }
 
-            // add _dd.base_service tag to spans where the service name has been overrideen
+            // add _dd.base_service tag to spans where the service name has been overridden
             if (!serviceNameEqualsDefault && !string.IsNullOrEmpty(model.TraceChunk.DefaultServiceName))
             {
                 var serviceNameRawBytes = MessagePackStringCache.GetServiceBytes(model.TraceChunk.DefaultServiceName);
@@ -610,14 +605,15 @@ namespace Datadog.Trace.Agent.MessagePack
             }
 
             // Process tags will be sent only once per buffer/payload (one payload can contain many chunks from different traces)
-            if (model.IsFirstSpanInChunk && model.TraceChunk.IsFirstChunkInPayload && model.TraceChunk.ShouldPropagateProcessTags)
+            if (model.IsFirstSpanInChunk && model.TraceChunk.IsFirstChunkInPayload && model.TraceChunk.ProcessTags is not null)
             {
-                var processTagsRawBytes = _processTagsValueBytes.Value;
-                if (processTagsRawBytes.Length > 0)
+                var processTagsRawBytes = MessagePackStringCache.GetProcessTagsBytes(model.TraceChunk.ProcessTags.SerializedTags);
+
+                if (processTagsRawBytes is not null)
                 {
                     count++;
                     offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _processTagsNameBytes);
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, processTagsRawBytes);
+                    offset += MessagePackBinary.WriteRaw(ref bytes, offset, processTagsRawBytes);
                 }
             }
 
