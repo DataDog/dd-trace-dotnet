@@ -4965,7 +4965,7 @@ stages:
         condition: always()
         displayName: Group logs
 
-      - script: npm install -g @datadog/datadog-ci || sleep 60 && npm install -g @datadog/datadog-ci
+      - script: npm install -g @datadog/datadog-ci || (sleep 60 && npm install -g @datadog/datadog-ci)
         condition: always()
         displayName: Install datadog-ci
 
