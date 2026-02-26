@@ -2557,6 +2557,7 @@ partial class Build
     Target CheckSmokeTestsForErrors => _ => _
        .Unlisted()
        .Description("Reads the logs from build_data and checks for error lines in the smoke test logs")
+       .After(RunArtifactSmokeTests)
        .Executes(async () =>
        {
            var knownPatterns = new List<Regex>();
@@ -2625,6 +2626,8 @@ partial class Build
     Target ExtractMetricsFromLogs => _ => _
        .Unlisted()
        .Description("Reads the logs from build_data, extracts the metrics, and submits them to Datadog")
+       .After(RunArtifactSmokeTests)
+       .Before(CheckSmokeTestsForErrors)
        .Executes(async () =>
        {
            var logDirectory = BuildDataDirectory / "logs";
