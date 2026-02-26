@@ -1,0 +1,367 @@
+{
+  "id": "AZwL_bToAACp1uYcEK8TwHEA",
+  "type": "spans",
+  "attributes": {
+    "custom": {
+      "aas": {
+        "environment": {
+          "extension_version": "unknown",
+          "function_runtime": "~4",
+          "instance_id": "13793a8704fa87fab6da47a000e8cc02016759fc5d679b59e5edebe062974c57",
+          "instance_name": "pl0sdlwk001END",
+          "os": "linux",
+          "runtime": "dotnet-isolated",
+          "runtime_version": "8.0"
+        },
+        "function": {
+          "binding": "Microsoft.Azure.WebJobs.Host.Executors.BindingSource",
+          "name": "HttpTest",
+          "trigger": "Http"
+        },
+        "resource": {
+          "group": "lucas.pimentel",
+          "id": "/subscriptions/1dd25961-a5c7-45bf-a5ba-c1475d365cc7/resourcegroups/lucas.pimentel/providers/microsoft.web/sites/lucasp-premium-linux-isolated-aspnet"
+        },
+        "site": {
+          "kind": "functionapp",
+          "name": "lucasp-premium-linux-isolated-aspnet",
+          "type": "function"
+        },
+        "subscription": {
+          "id": "1dd25961-a5c7-45bf-a5ba-c1475d365cc7"
+        }
+      },
+      "component": "AzureFunctions",
+      "duration": 1181553900,
+      "env": "lucas.pimentel",
+      "functionname": "lucasp-premium-linux-isolated-aspnet",
+      "git": {
+        "commit": {
+          "sha": "ef15b0c233fa26e3039e172fff93f12f11609091"
+        },
+        "repository": {
+          "id": "github.com/azure/azure-functions-host"
+        },
+        "repository_url": "https://github.com/Azure/azure-functions-host"
+      },
+      "http": {
+        "host": "lucasp-premium-linux-isolated-aspnet.azurewebsites.net",
+        "method": "GET",
+        "path_group": "/api/HttpTest",
+        "request": {
+          "headers": {
+            "host": "lucasp-premium-linux-isolated-aspnet.azurewebsites.net",
+            "user-agent": "curl/8.17.0"
+          }
+        },
+        "status_code": "200",
+        "url": "https://lucasp-premium-linux-isolated-aspnet.azurewebsites.net/api/HttpTest",
+        "url_details": {
+          "host": "lucasp-premium-linux-isolated-aspnet.azurewebsites.net",
+          "path": "/api/HttpTest",
+          "scheme": "https"
+        },
+        "useragent": "curl/8.17.0",
+        "useragent_details": {
+          "browser": {
+            "family": "curl",
+            "major": "8",
+            "minor": "17",
+            "patch": "0"
+          },
+          "device": {
+            "category": "Other",
+            "family": "Other"
+          },
+          "os": {
+            "family": "Other"
+          }
+        }
+      },
+      "language": "dotnet",
+      "origin": "azurefunction",
+      "process_id": "27",
+      "runtime-id": "25315714-e55b-41b8-b358-eab44613c666",
+      "span": {
+        "kind": "server"
+      },
+      "version": "ef15b0c"
+    },
+    "end_timestamp": "2026-01-29T23:01:41.587Z",
+    "env": "lucas.pimentel",
+    "error": null,
+    "host": "",
+    "ingestion_reason": "",
+    "operation_name": "azure_functions.invoke",
+    "parent_id": "0",
+    "resource_hash": "9fa681ff7de458bd",
+    "resource_name": "GET /api/httptest",
+    "retained_by": "retention_filter",
+    "service": "lucasp-premium-linux-isolated-aspnet",
+    "single_span": false,
+    "span_id": "14649688245808190204",
+    "start_timestamp": "2026-01-29T23:01:40.406Z",
+    "status": "ok",
+    "tags": [
+      "ingestion_reason:auto",
+      "source:apm"
+    ],
+    "trace_id": "697be6d40000000000710c25e093bbc4",
+    "type": "serverless"
+  }
+}
+{
+  "id": "AZwL_bToAABDOJGk21C9oXEA",
+  "type": "spans",
+  "attributes": {
+    "custom": {
+      "aas": {
+        "environment": {
+          "extension_version": "unknown",
+          "function_runtime": "~4",
+          "instance_id": "13793a8704fa87fab6da47a000e8cc02016759fc5d679b59e5edebe062974c57",
+          "instance_name": "pl0sdlwk001END",
+          "os": "linux",
+          "runtime": "dotnet-isolated",
+          "runtime_version": "8.0"
+        },
+        "resource": {
+          "group": "lucas.pimentel",
+          "id": "/subscriptions/1dd25961-a5c7-45bf-a5ba-c1475d365cc7/resourcegroups/lucas.pimentel/providers/microsoft.web/sites/lucasp-premium-linux-isolated-aspnet"
+        },
+        "site": {
+          "kind": "functionapp",
+          "name": "lucasp-premium-linux-isolated-aspnet",
+          "type": "function"
+        },
+        "subscription": {
+          "id": "1dd25961-a5c7-45bf-a5ba-c1475d365cc7"
+        }
+      },
+      "aspnet_core": {
+        "endpoint": "HttpTest"
+      },
+      "component": "aspnet_core",
+      "duration": 677148700,
+      "env": "lucas.pimentel",
+      "functionname": "lucasp-premium-linux-isolated-aspnet",
+      "git": {
+        "commit": {
+          "sha": "78c8a9b748b531260544411d3df63ff10b0c4e72"
+        },
+        "repository": {
+          "id": "github.com/datadog/serverless-dev-apps"
+        },
+        "repository_url": "https://github.com/DataDog/serverless-dev-apps"
+      },
+      "http": {
+        "host": "localhost",
+        "method": "GET",
+        "path_group": "/api/HttpTest",
+        "request": {
+          "headers": {
+            "host": "localhost:46081",
+            "user-agent": "curl/8.17.0"
+          }
+        },
+        "route": "api/httptest",
+        "status_code": "200",
+        "url": "http://localhost:46081/api/HttpTest",
+        "url_details": {
+          "host": "localhost",
+          "path": "/api/HttpTest",
+          "port": "46081",
+          "scheme": "http"
+        },
+        "useragent": "curl/8.17.0",
+        "useragent_details": {
+          "browser": {
+            "family": "curl",
+            "major": "8",
+            "minor": "17",
+            "patch": "0"
+          },
+          "device": {
+            "category": "Other",
+            "family": "Other"
+          },
+          "os": {
+            "family": "Other"
+          }
+        }
+      },
+      "language": "dotnet",
+      "origin": "azurefunction",
+      "process_id": "58",
+      "runtime-id": "22d8b248-da2a-40f0-aaab-8d4b41bcd166",
+      "span": {
+        "kind": "server"
+      },
+      "version": "78c8a9b"
+    },
+    "end_timestamp": "2026-01-29T23:01:41.445Z",
+    "env": "lucas.pimentel",
+    "error": null,
+    "host": "",
+    "ingestion_reason": "",
+    "operation_name": "aspnet_core.request",
+    "parent_id": "4769262256366565961",
+    "resource_hash": "9fa681ff7de458bd",
+    "resource_name": "GET /api/httptest",
+    "retained_by": "retention_filter",
+    "service": "lucasp-premium-linux-isolated-aspnet",
+    "single_span": false,
+    "span_id": "6489312288077679870",
+    "start_timestamp": "2026-01-29T23:01:40.768Z",
+    "status": "ok",
+    "tags": [
+      "ingestion_reason:auto",
+      "source:apm"
+    ],
+    "trace_id": "697be6d40000000000710c25e093bbc4",
+    "type": "web"
+  }
+}
+{
+  "id": "AZwL_bToAAC9Zq1N6BvtKHEA",
+  "type": "spans",
+  "attributes": {
+    "custom": {
+      "aas": {
+        "environment": {
+          "function_runtime": "~4",
+          "instance_id": "13793a8704fa87fab6da47a000e8cc02016759fc5d679b59e5edebe062974c57",
+          "instance_name": "pl0sdlwk001END",
+          "os": "linux",
+          "runtime": "dotnet-isolated",
+          "runtime_version": "8.0"
+        },
+        "function": {
+          "method": "AzureFunctions.Isolated.AspNetCore8.Functions.HttpTest",
+          "name": "HttpTest",
+          "trigger": "Http"
+        },
+        "resource": {
+          "group": "lucas.pimentel",
+          "id": "/subscriptions/1dd25961-a5c7-45bf-a5ba-c1475d365cc7/resourcegroups/lucas.pimentel/providers/microsoft.web/sites/lucasp-premium-linux-isolated-aspnet"
+        },
+        "site": {
+          "kind": "functionapp",
+          "name": "lucasp-premium-linux-isolated-aspnet",
+          "type": "function"
+        },
+        "subscription": {
+          "id": "1dd25961-a5c7-45bf-a5ba-c1475d365cc7"
+        }
+      },
+      "component": "AzureFunctions",
+      "duration": 455903700,
+      "env": "lucas.pimentel",
+      "git": {
+        "commit": {
+          "sha": "78c8a9b748b531260544411d3df63ff10b0c4e72"
+        },
+        "repository": {
+          "id": "github.com/datadog/serverless-dev-apps"
+        },
+        "repository_url": "https://github.com/DataDog/serverless-dev-apps"
+      },
+      "language": "dotnet",
+      "runtime-id": "22d8b248-da2a-40f0-aaab-8d4b41bcd166",
+      "span": {
+        "kind": "server"
+      },
+      "version": "78c8a9b"
+    },
+    "end_timestamp": "2026-01-29T23:01:41.396Z",
+    "env": "lucas.pimentel",
+    "error": null,
+    "host": "",
+    "ingestion_reason": "",
+    "operation_name": "azure_functions.invoke",
+    "parent_id": "6489312288077679870",
+    "resource_hash": "60ad5300e27c29ce",
+    "resource_name": "Http HttpTest",
+    "retained_by": "retention_filter",
+    "service": "lucasp-premium-linux-isolated-aspnet",
+    "single_span": false,
+    "span_id": "15431669645236193747",
+    "start_timestamp": "2026-01-29T23:01:40.941Z",
+    "status": "ok",
+    "tags": [
+      "ingestion_reason:auto",
+      "source:apm"
+    ],
+    "trace_id": "697be6d40000000000710c25e093bbc4",
+    "type": "serverless"
+  }
+}
+{
+  "id": "AZwL_bToAACprlGxfH2-hnEA",
+  "type": "spans",
+  "attributes": {
+    "custom": {
+      "aas": {
+        "environment": {
+          "function_runtime": "~4",
+          "instance_id": "13793a8704fa87fab6da47a000e8cc02016759fc5d679b59e5edebe062974c57",
+          "instance_name": "pl0sdlwk001END",
+          "os": "linux",
+          "runtime": "dotnet-isolated",
+          "runtime_version": "8.0"
+        },
+        "resource": {
+          "group": "lucas.pimentel",
+          "id": "/subscriptions/1dd25961-a5c7-45bf-a5ba-c1475d365cc7/resourcegroups/lucas.pimentel/providers/microsoft.web/sites/lucasp-premium-linux-isolated-aspnet"
+        },
+        "site": {
+          "kind": "functionapp",
+          "name": "lucasp-premium-linux-isolated-aspnet",
+          "type": "function"
+        },
+        "subscription": {
+          "id": "1dd25961-a5c7-45bf-a5ba-c1475d365cc7"
+        }
+      },
+      "duration": 420001000,
+      "env": "lucas.pimentel",
+      "git": {
+        "commit": {
+          "sha": "78c8a9b748b531260544411d3df63ff10b0c4e72"
+        },
+        "repository": {
+          "id": "github.com/datadog/serverless-dev-apps"
+        },
+        "repository_url": "https://github.com/DataDog/serverless-dev-apps"
+      },
+      "language": "dotnet",
+      "process": {
+        "id": "58",
+        "name": "dotnet"
+      },
+      "runtime-id": "22d8b248-da2a-40f0-aaab-8d4b41bcd166",
+      "version": "78c8a9b"
+    },
+    "end_timestamp": "2026-01-29T23:01:41.394Z",
+    "env": "lucas.pimentel",
+    "error": null,
+    "host": "",
+    "ingestion_reason": "",
+    "operation_name": "test_span",
+    "parent_id": "15431669645236193747",
+    "resource_hash": "62d254ba89c0e9b7",
+    "resource_name": "test_span",
+    "retained_by": "retention_filter",
+    "service": "lucasp-premium-linux-isolated-aspnet",
+    "single_span": false,
+    "span_id": "2340021095460581344",
+    "start_timestamp": "2026-01-29T23:01:40.974Z",
+    "status": "ok",
+    "tags": [
+      "ingestion_reason:auto",
+      "source:apm"
+    ],
+    "trace_id": "697be6d40000000000710c25e093bbc4",
+    "type": ""
+  }
+}
