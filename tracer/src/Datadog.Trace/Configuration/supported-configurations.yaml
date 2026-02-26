@@ -1546,8 +1546,8 @@ supportedConfigurations:
       <see cref="Datadog.Trace.Telemetry.TelemetrySettings.HeartbeatInterval"/>
   DD_TELEMETRY_EXTENDED_HEARTBEAT_INTERVAL:
   - implementation: A
-    type: decimal
-    default: '86400.0'
+    type: integer
+    default: '86400'
     product: Telemetry
     const_name: ExtendedHeartbeatIntervalSeconds
     documentation: |-
