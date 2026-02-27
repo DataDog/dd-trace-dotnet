@@ -62,6 +62,12 @@ namespace Datadog.Trace.Tagging
 #else
         private static readonly byte[] StageBytes = new byte[] { 165, 115, 116, 97, 103, 101 };
 #endif
+        // RegionBytes = MessagePack.Serialize("region");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> RegionBytes => new byte[] { 166, 114, 101, 103, 105, 111, 110 };
+#else
+        private static readonly byte[] RegionBytes = new byte[] { 166, 114, 101, 103, 105, 111, 110 };
+#endif
 
         public override string? GetTag(string key)
         {
@@ -74,6 +80,7 @@ namespace Datadog.Trace.Tagging
                 "http.route" => HttpRoute,
                 "http.status_code" => HttpStatusCode,
                 "stage" => Stage,
+                "region" => Region,
                 _ => base.GetTag(key),
             };
         }
@@ -99,6 +106,9 @@ namespace Datadog.Trace.Tagging
                     break;
                 case "stage": 
                     Stage = value;
+                    break;
+                case "region": 
+                    Region = value;
                     break;
                 case "span.kind": 
                     Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(InferredProxyTags));
@@ -144,6 +154,11 @@ namespace Datadog.Trace.Tagging
             if (Stage is not null)
             {
                 processor.Process(new TagItem<string>("stage", Stage, StageBytes));
+            }
+
+            if (Region is not null)
+            {
+                processor.Process(new TagItem<string>("region", Region, RegionBytes));
             }
 
             base.EnumerateTags(ref processor);
@@ -197,6 +212,13 @@ namespace Datadog.Trace.Tagging
             {
                 sb.Append("stage (tag):")
                   .Append(Stage)
+                  .Append(',');
+            }
+
+            if (Region is not null)
+            {
+                sb.Append("region (tag):")
+                  .Append(Region)
                   .Append(',');
             }
 

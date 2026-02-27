@@ -1,26 +1,24 @@
-// <copyright file="AwsApiGatewayExtractorTests.cs" company="Datadog">
+// <copyright file="AzureApiManagementExtractorTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 using System;
 using System.Globalization;
-using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
 using Datadog.Trace.Headers;
-using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
 using Xunit;
 
 namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Proxy;
 
-public class AwsApiGatewayExtractorTests
+public class AzureApiManagementExtractorTests
 {
-    private readonly AwsApiGatewayExtractor _extractor;
+    private readonly AzureApiManagementExtractor _extractor;
 
-    public AwsApiGatewayExtractorTests()
+    public AzureApiManagementExtractorTests()
     {
-        _extractor = new AwsApiGatewayExtractor();
+        _extractor = new AzureApiManagementExtractor();
     }
 
     [Fact]
@@ -30,17 +28,18 @@ public class AwsApiGatewayExtractorTests
         var unixTimeMilliseconds = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         var start = DateTimeOffset.FromUnixTimeMilliseconds(unixTimeMilliseconds);
 
-        var headers = ProxyTestHelpers.CreateValidHeaders(unixTimeMilliseconds.ToString(CultureInfo.InvariantCulture));
+        var headers = ProxyTestHelpers.CreateValidAzureHeaders(unixTimeMilliseconds.ToString());
 
         var success = _extractor.TryExtract(headers, headers.GetAccessor(), out var data);
 
         success.Should().BeTrue();
-        data.ProxyName.Should().Be("aws-apigateway");
+        data.ProxyName.Should().Be("azure-apim");
         data.StartTime.Should().Be(start);
-        data.DomainName.Should().Be("test.api.com");
-        data.HttpMethod.Should().Be("GET");
-        data.Path.Should().Be("/api/test");
-        data.Stage.Should().Be("prod");
+        data.DomainName.Should().BeNull(); // Azure doesn't use domain
+        data.HttpMethod.Should().Be("POST");
+        data.Path.Should().Be("/api/v1/users");
+        data.Stage.Should().BeNull(); // Azure doesn't use stage
+        data.Region.Should().Be("canada central");
     }
 
     [Fact]
@@ -50,21 +49,21 @@ public class AwsApiGatewayExtractorTests
         var unixTimeMilliseconds = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         var start = DateTimeOffset.FromUnixTimeMilliseconds(unixTimeMilliseconds);
 
-        var headers = ProxyTestHelpers.CreateValidHeaders(unixTimeMilliseconds.ToString(CultureInfo.InvariantCulture));
-        headers.Remove(InferredProxyHeaders.Domain);
+        var headers = ProxyTestHelpers.CreateValidAzureHeaders(unixTimeMilliseconds.ToString());
         headers.Remove(InferredProxyHeaders.HttpMethod);
         headers.Remove(InferredProxyHeaders.Path);
-        headers.Remove(InferredProxyHeaders.Stage);
+        headers.Remove(InferredProxyHeaders.Region);
 
         var success = _extractor.TryExtract(headers, headers.GetAccessor(), out var data);
 
         success.Should().BeTrue();
-        data.ProxyName.Should().Be("aws-apigateway");
+        data.ProxyName.Should().Be("azure-apim");
         data.StartTime.Should().Be(start);
         data.DomainName.Should().BeNull();
         data.HttpMethod.Should().BeNull();
         data.Path.Should().BeNull();
         data.Stage.Should().BeNull();
+        data.Region.Should().BeNull();
     }
 
     [Theory]
@@ -74,7 +73,7 @@ public class AwsApiGatewayExtractorTests
     [InlineData("1111111122222222333333334444444455555555666666667777777788888888")] // too large
     public void TryExtract_WithInvalidStartTime_ReturnsFalse(string startTime)
     {
-        var headers = ProxyTestHelpers.CreateValidHeaders();
+        var headers = ProxyTestHelpers.CreateValidAzureHeaders();
         headers.Set(InferredProxyHeaders.StartTime, startTime);
 
         var success = _extractor.TryExtract(headers, headers.GetAccessor(), out var data);
@@ -86,7 +85,7 @@ public class AwsApiGatewayExtractorTests
     [Fact]
     public void TryExtract_WithMissingStartTime_ReturnsFalse()
     {
-        var headers = ProxyTestHelpers.CreateValidHeaders();
+        var headers = ProxyTestHelpers.CreateValidAzureHeaders();
         headers.Remove(InferredProxyHeaders.StartTime);
 
         var success = _extractor.TryExtract(headers, headers.GetAccessor(), out var data);

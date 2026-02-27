@@ -1,4 +1,4 @@
-﻿// <copyright file="AwsApiGatewayExtractor.cs" company="Datadog">
+// <copyright file="AzureApiManagementExtractor.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -13,12 +13,11 @@ using Datadog.Trace.Vendors.Serilog.Events;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
 
 /// <summary>
-/// Extracts proxy metadata from AWS API Gateway headers.
+/// Extracts proxy metadata from Azure API Management headers.
 /// </summary>
-internal sealed class AwsApiGatewayExtractor : IInferredProxyExtractor
+internal sealed class AzureApiManagementExtractor : IInferredProxyExtractor
 {
-    // This is the expected value of the x-dd-proxy header
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AwsApiGatewayExtractor>();
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AzureApiManagementExtractor>();
 
     public bool TryExtract<TCarrier, TCarrierGetter>(TCarrier carrier, TCarrierGetter carrierGetter, out InferredProxyData data)
         where TCarrierGetter : struct, ICarrierGetter<TCarrier>
@@ -39,22 +38,21 @@ internal sealed class AwsApiGatewayExtractor : IInferredProxyExtractor
             var domainName = ParseUtility.ParseString(carrier, carrierGetter, InferredProxyHeaders.Domain);
             var httpMethod = ParseUtility.ParseString(carrier, carrierGetter, InferredProxyHeaders.HttpMethod);
             var path = ParseUtility.ParseString(carrier, carrierGetter, InferredProxyHeaders.Path);
-            var stage = ParseUtility.ParseString(carrier, carrierGetter, InferredProxyHeaders.Stage);
-
-            data = new InferredProxyData(InferredProxySpanHelper.AwsProxyHeaderValue, startTime, domainName, httpMethod, path, stage, null);
+            var region = ParseUtility.ParseString(carrier, carrierGetter, InferredProxyHeaders.Region);
+            data = new InferredProxyData(InferredProxySpanHelper.AzureProxyHeaderValue, startTime, domainName, httpMethod, path, null, region);
 
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
                 Log.Debug(
-                    "Successfully extracted proxy data: StartTime={StartTime}, Domain={Domain}, Method={Method}, Path={Path}, Stage={Stage}",
-                    [startTimeHeaderValue, domainName, httpMethod, path, stage]);
+                    "Successfully extracted proxy data: StartTime={StartTime}, Domain={Domain}, Method={Method}, Path={Path}, Region={Region}",
+                    [startTimeHeaderValue, domainName, httpMethod, path, region]);
             }
 
             return true;
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error extracting proxy data from {Proxy} headers", InferredProxySpanHelper.AwsProxyHeaderValue);
+            Log.Error(ex, "Error extracting proxy data from {Proxy} headers", InferredProxySpanHelper.AzureProxyHeaderValue);
             return false;
         }
     }
