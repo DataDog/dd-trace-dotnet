@@ -24,6 +24,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
             var proxyAssemblyPathsByName = BuildAssemblyPathIndex(options.ProxyAssemblies, "--proxy-assembly", errors);
             var targetAssemblyPathsByName = BuildAssemblyPathIndex(GetTargetAssemblyPaths(options), "--target-assembly/--target-folder", errors);
+            var genericTypeRoots = new Dictionary<string, DuckTypeAotTypeReference>(StringComparer.Ordinal);
 
             var resolvedMappings = new Dictionary<string, DuckTypeAotMapping>(StringComparer.Ordinal);
 
@@ -63,6 +64,18 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 }
             }
 
+            if (!string.IsNullOrWhiteSpace(options.GenericInstantiationsFile))
+            {
+                var genericInstantiationsResult = DuckTypeAotGenericInstantiationsParser.Parse(options.GenericInstantiationsFile!);
+                errors.AddRange(genericInstantiationsResult.Errors);
+                foreach (var typeRoot in genericInstantiationsResult.TypeRoots)
+                {
+                    genericTypeRoots[typeRoot.Key] = typeRoot;
+                }
+            }
+
+            ValidateGenericClosure(resolvedMappings.Values, errors);
+
             foreach (var mapping in resolvedMappings.Values)
             {
                 if (!proxyAssemblyPathsByName.ContainsKey(mapping.ProxyAssemblyName))
@@ -80,6 +93,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 resolvedMappings.Values,
                 proxyAssemblyPathsByName,
                 targetAssemblyPathsByName,
+                genericTypeRoots.Values,
                 warnings,
                 errors);
         }
@@ -139,6 +153,23 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
             return assemblyPathByName;
         }
+
+        private static void ValidateGenericClosure(IEnumerable<DuckTypeAotMapping> mappings, ICollection<string> errors)
+        {
+            foreach (var mapping in mappings)
+            {
+                if (!DuckTypeAotNameHelpers.IsOpenGenericTypeName(mapping.ProxyTypeName) &&
+                    !DuckTypeAotNameHelpers.IsOpenGenericTypeName(mapping.TargetTypeName))
+                {
+                    continue;
+                }
+
+                errors.Add(
+                    $"Mapping '{mapping.Key}' contains an open generic type. " +
+                    "NativeAOT generation requires closed proxy and target types. " +
+                    "Provide closed concrete mappings in --map-file and use --generic-instantiations for additional closed-generic roots.");
+            }
+        }
     }
 
     internal sealed class DuckTypeAotMappingResolutionResult
@@ -147,12 +178,14 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             IEnumerable<DuckTypeAotMapping> mappings,
             IReadOnlyDictionary<string, string> proxyAssemblyPathsByName,
             IReadOnlyDictionary<string, string> targetAssemblyPathsByName,
+            IEnumerable<DuckTypeAotTypeReference> genericTypeRoots,
             IReadOnlyList<string> warnings,
             IReadOnlyList<string> errors)
         {
             Mappings = new List<DuckTypeAotMapping>(mappings);
             ProxyAssemblyPathsByName = proxyAssemblyPathsByName;
             TargetAssemblyPathsByName = targetAssemblyPathsByName;
+            GenericTypeRoots = new List<DuckTypeAotTypeReference>(genericTypeRoots);
             Warnings = warnings;
             Errors = errors;
         }
@@ -162,6 +195,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         public IReadOnlyDictionary<string, string> ProxyAssemblyPathsByName { get; }
 
         public IReadOnlyDictionary<string, string> TargetAssemblyPathsByName { get; }
+
+        public IReadOnlyList<DuckTypeAotTypeReference> GenericTypeRoots { get; }
 
         public IReadOnlyList<string> Warnings { get; }
 
