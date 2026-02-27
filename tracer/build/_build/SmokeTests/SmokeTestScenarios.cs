@@ -40,7 +40,6 @@ public static class SmokeTestScenarios
             SmokeTestCategory.WindowsNuGet => WindowsNuGetScenarios(),
             SmokeTestCategory.WindowsDotnetTool => WindowsDotnetToolScenarios(),
             SmokeTestCategory.WindowsTracerHome => WindowsTracerHomeScenarios(),
-            SmokeTestCategory.WindowsFleetInstaller => WindowsFleetInstallerScenarios(),
             _ => throw new InvalidOperationException($"Unknown smoke test scenario: {category}"),
         };
 
@@ -1033,28 +1032,5 @@ public static class SmokeTestScenarios
                              WindowsRelativeProfilerPath: $"win-{platform}/Datadog.Trace.ClrProfiler.Native.dll");
         }
 
-        static IEnumerable<IEnumerable<SmokeTestScenario>> WindowsFleetInstallerScenarios()
-        {
-            // FleetInstaller: x64 and x86 (net10.0, net9.0, net8.0 only)
-            var platforms = new[] { "x64", "x86" };
-            var images = GetWindowsRuntimeImages()
-                .Where(x => x.PublishFramework.IsGreaterThan(TargetFramework.NET8_0));
-
-            yield return from platform in platforms
-                         from image in images
-                         let channel32Bit = platform == "x86"
-                             ? GetInstallerChannel(image.PublishFramework)
-                             : ""
-                         select new SmokeTestScenario(
-                             Category: SmokeTestCategory.WindowsFleetInstaller,
-                             ShortName: $"{platform}",
-                             PublishFramework: image.PublishFramework,
-                             RuntimeTag: image.Tag,
-                             DockerImageRepo: "mcr.microsoft.com/dotnet/aspnet",
-                             Os: "windows",
-                             OsVersion: image.OsVersion,
-                             RunCrashTest: false,
-                             Channel32Bit: channel32Bit);
-        }
     }
 }

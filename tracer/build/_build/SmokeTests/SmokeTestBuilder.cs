@@ -79,8 +79,6 @@ public static class SmokeTestBuilder
                 return await BuildWindowsDotnetToolImageAsync(scenario, tracerDir, artifactsDir);
             case SmokeTestCategory.WindowsTracerHome:
                 return await BuildWindowsTracerHomeImageAsync(scenario, tracerDir, artifactsDir);
-            case SmokeTestCategory.WindowsFleetInstaller:
-                return await BuildWindowsFleetInstallerImageAsync(scenario, tracerDir, artifactsDir);
             default:
                 throw new InvalidOperationException($"Unknown smoke test scenario: {category}");
         }
@@ -329,22 +327,6 @@ public static class SmokeTestBuilder
             ["PUBLISH_FRAMEWORK"] = scenario.PublishFramework,
             ["CHANNEL_32_BIT"] = scenario.Channel32Bit ?? "",
             ["RELATIVE_PROFILER_PATH"] = scenario.RelativeProfilerPath!,
-        };
-
-        await BuildImageFromDockerfileAsync(tracerDir, dockerfilePath, scenario.DockerTag, buildArgs, artifactsDir);
-        return new[] { scenario.DockerTag };
-    }
-
-    static async Task<string[]> BuildWindowsFleetInstallerImageAsync(SmokeTestScenario scenario, AbsolutePath tracerDir, AbsolutePath artifactsDir)
-    {
-        const string dockerfilePath = "build/_build/docker/smoke.windows.fleet-installer.dockerfile";
-
-        var buildArgs = new Dictionary<string, string>
-        {
-            ["DOTNETSDK_VERSION"] = DotnetSdkVersion,
-            ["RUNTIME_IMAGE"] = scenario.RuntimeImage,
-            ["PUBLISH_FRAMEWORK"] = scenario.PublishFramework,
-            ["CHANNEL_32_BIT"] = scenario.Channel32Bit ?? "",
         };
 
         await BuildImageFromDockerfileAsync(tracerDir, dockerfilePath, scenario.DockerTag, buildArgs, artifactsDir);
