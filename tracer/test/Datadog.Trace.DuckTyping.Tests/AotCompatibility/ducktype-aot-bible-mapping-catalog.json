@@ -768,6 +768,166 @@
       "proxyAssembly": "Datadog.Trace.DuckTyping.Tests",
       "targetType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExamplesParityTests+Ex20IncludeTarget",
       "targetAssembly": "Datadog.Trace.DuckTyping.Tests"
+    },
+    {
+      "scenarioId": "TX-A",
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExcerptsParityTests+ITxADefaultProxy",
+      "proxyAssembly": "Datadog.Trace.DuckTyping.Tests",
+      "targetType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExcerptsParityTests+TxATarget",
+      "targetAssembly": "Datadog.Trace.DuckTyping.Tests"
+    },
+    {
+      "scenarioId": "TX-B",
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExcerptsParityTests+TxBProxy",
+      "proxyAssembly": "Datadog.Trace.DuckTyping.Tests",
+      "targetType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExcerptsParityTests+TxBTarget",
+      "targetAssembly": "Datadog.Trace.DuckTyping.Tests"
+    },
+    {
+      "scenarioId": "TX-C",
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExcerptsParityTests+ITxCProxy",
+      "proxyAssembly": "Datadog.Trace.DuckTyping.Tests",
+      "targetType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExcerptsParityTests+TxCTarget",
+      "targetAssembly": "Datadog.Trace.DuckTyping.Tests"
+    },
+    {
+      "scenarioId": "TX-D",
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExcerptsParityTests+ITxDProxy",
+      "proxyAssembly": "Datadog.Trace.DuckTyping.Tests",
+      "targetType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExcerptsParityTests+TxDTarget",
+      "targetAssembly": "Datadog.Trace.DuckTyping.Tests"
+    },
+    {
+      "scenarioId": "TX-E",
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExcerptsParityTests+ITxEProxy",
+      "proxyAssembly": "Datadog.Trace.DuckTyping.Tests",
+      "targetType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExcerptsParityTests+TxETarget",
+      "targetAssembly": "Datadog.Trace.DuckTyping.Tests"
+    },
+    {
+      "scenarioId": "TX-F",
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExcerptsParityTests+TxFProxyBase",
+      "proxyAssembly": "Datadog.Trace.DuckTyping.Tests",
+      "targetType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExcerptsParityTests+TxFTarget",
+      "targetAssembly": "Datadog.Trace.DuckTyping.Tests"
+    },
+    {
+      "scenarioId": "TX-G",
+      "mode": "reverse",
+      "proxyType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExcerptsParityTests+ITxGReverseContract",
+      "proxyAssembly": "Datadog.Trace.DuckTyping.Tests",
+      "targetType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExcerptsParityTests+TxGReverseDelegation",
+      "targetAssembly": "Datadog.Trace.DuckTyping.Tests"
+    },
+    {
+      "scenarioId": "TX-H",
+      "mode": "reverse",
+      "proxyType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExcerptsParityTests+ITxHReverseContract",
+      "proxyAssembly": "Datadog.Trace.DuckTyping.Tests",
+      "targetType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExcerptsParityTests+TxHReverseDelegation",
+      "targetAssembly": "Datadog.Trace.DuckTyping.Tests"
+    },
+    {
+      "scenarioId": "TX-I",
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExcerptsParityTests+TxIRootCopy",
+      "proxyAssembly": "Datadog.Trace.DuckTyping.Tests",
+      "targetType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExcerptsParityTests+TxIRootTarget",
+      "targetAssembly": "Datadog.Trace.DuckTyping.Tests"
+    },
+    {
+      "scenarioId": "TX-J",
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExcerptsParityTests+ITxJValueWithTypeProxy",
+      "proxyAssembly": "Datadog.Trace.DuckTyping.Tests",
+      "targetType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExcerptsParityTests+TxJValueWithTypeTarget",
+      "targetAssembly": "Datadog.Trace.DuckTyping.Tests"
+    },
+    {
+      "scenarioId": "TX-K",
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExcerptsParityTests+ITxKMethodProxy",
+      "proxyAssembly": "Datadog.Trace.DuckTyping.Tests",
+      "targetType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExcerptsParityTests+TxKMethodTarget",
+      "targetAssembly": "Datadog.Trace.DuckTyping.Tests"
+    },
+    {
+      "scenarioId": "TX-L",
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExcerptsParityTests+ITxLOverloadProxy",
+      "proxyAssembly": "Datadog.Trace.DuckTyping.Tests",
+      "targetType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExcerptsParityTests+TxLOverloadTarget",
+      "targetAssembly": "Datadog.Trace.DuckTyping.Tests"
+    },
+    {
+      "scenarioId": "TX-M",
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExcerptsParityTests+ITxMFieldProxy",
+      "proxyAssembly": "Datadog.Trace.DuckTyping.Tests",
+      "targetType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExcerptsParityTests+TxMFieldTarget",
+      "targetAssembly": "Datadog.Trace.DuckTyping.Tests"
+    },
+    {
+      "scenarioId": "TX-N",
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExcerptsParityTests+ITxNPropertyProxy",
+      "proxyAssembly": "Datadog.Trace.DuckTyping.Tests",
+      "targetType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExcerptsParityTests+TxNPropertyTarget",
+      "targetAssembly": "Datadog.Trace.DuckTyping.Tests"
+    },
+    {
+      "scenarioId": "TX-O",
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExcerptsParityTests+ITxONullProxy",
+      "proxyAssembly": "Datadog.Trace.DuckTyping.Tests",
+      "targetType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExcerptsParityTests+TxONullTarget",
+      "targetAssembly": "Datadog.Trace.DuckTyping.Tests"
+    },
+    {
+      "scenarioId": "TX-P",
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExcerptsParityTests+ITxPLongNameProxy",
+      "proxyAssembly": "Datadog.Trace.DuckTyping.Tests",
+      "targetType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExcerptsParityTests+TxPTypeNameNesting+TxPMyTargetTypeThatHasAReallyReallyReallyReallyReallyReallyReallyReallyReallyReallyReallyReallyReallyReallyReallyReallyReallyReallyReallyReallyReallyReallyReallyReallyReallyReallyReallyLongName",
+      "targetAssembly": "Datadog.Trace.DuckTyping.Tests"
+    },
+    {
+      "scenarioId": "TX-Q",
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExcerptsParityTests+ITxQDeepGenericProxy",
+      "proxyAssembly": "Datadog.Trace.DuckTyping.Tests",
+      "targetType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExcerptsParityTests+TxQDeepGenericTarget",
+      "targetAssembly": "Datadog.Trace.DuckTyping.Tests"
+    },
+    {
+      "scenarioId": "TX-R",
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExcerptsParityTests+ITxRToStringProxy",
+      "proxyAssembly": "Datadog.Trace.DuckTyping.Tests",
+      "targetType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExcerptsParityTests+TxRTarget",
+      "targetAssembly": "Datadog.Trace.DuckTyping.Tests"
+    },
+    {
+      "scenarioId": "TX-S",
+      "mode": "reverse",
+      "proxyType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExcerptsParityTests+ITxSReversePropertyContract",
+      "proxyAssembly": "Datadog.Trace.DuckTyping.Tests",
+      "targetType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExcerptsParityTests+TxSReversePropertyDelegation",
+      "targetAssembly": "Datadog.Trace.DuckTyping.Tests"
+    },
+    {
+      "scenarioId": "TX-T",
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExcerptsParityTests+ITxTOptionalProxy",
+      "proxyAssembly": "Datadog.Trace.DuckTyping.Tests",
+      "targetType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExcerptsParityTests+TxTOptionalTarget",
+      "targetAssembly": "Datadog.Trace.DuckTyping.Tests"
     }
   ]
 }
