@@ -95,6 +95,32 @@ namespace Datadog.Trace.DuckTyping.Tests
             resolvedResult.CreateInstance<ILateProxy>(new LateTarget(42)).Number.Should().Be(42);
         }
 
+        [Fact]
+        public void RegisterReverseProxyAndResolve()
+        {
+            DuckTypeAotEngine.RegisterReverseProxy(
+                typeof(IReverseProxy),
+                typeof(ReverseTarget),
+                typeof(ReverseGeneratedProxy),
+                instance => new ReverseGeneratedProxy((ReverseTarget)instance!));
+
+            var result = DuckTypeAotEngine.GetOrCreateReverseProxyType(typeof(IReverseProxy), typeof(ReverseTarget));
+            result.CanCreate().Should().BeTrue();
+            result.CreateInstance<IReverseProxy>(new ReverseTarget("reverse")).Value.Should().Be("reverse");
+        }
+
+        [Fact]
+        public void RegisterProxyWithIncompatibleGeneratedTypeThrows()
+        {
+            Action register = () => DuckTypeAotEngine.RegisterProxy(
+                typeof(IInvalidGeneratedProxy),
+                typeof(InvalidGeneratedTarget),
+                typeof(InvalidGeneratedProxyType),
+                _ => new InvalidGeneratedProxyType());
+
+            register.Should().Throw<DuckTypeAotGeneratedProxyTypeMismatchException>();
+        }
+
         private interface IMissingProxy
         {
             string Value { get; }
@@ -222,6 +248,46 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
 
             public int Number => _target.Number;
+        }
+
+        private interface IReverseProxy
+        {
+            string Value { get; }
+        }
+
+        private class ReverseTarget
+        {
+            public ReverseTarget(string value)
+            {
+                Value = value;
+            }
+
+            public string Value { get; }
+        }
+
+        private class ReverseGeneratedProxy : IReverseProxy
+        {
+            private readonly ReverseTarget _target;
+
+            public ReverseGeneratedProxy(ReverseTarget target)
+            {
+                _target = target;
+            }
+
+            public string Value => _target.Value;
+        }
+
+        private interface IInvalidGeneratedProxy
+        {
+            string Value { get; }
+        }
+
+        private class InvalidGeneratedTarget
+        {
+        }
+
+        private class InvalidGeneratedProxyType
+        {
         }
     }
 }
