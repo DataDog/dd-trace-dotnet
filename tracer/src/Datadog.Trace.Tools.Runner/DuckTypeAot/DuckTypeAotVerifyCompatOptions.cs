@@ -14,12 +14,14 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             string compatMatrixPath,
             string? mappingCatalogPath,
             string? manifestPath,
-            bool strictAssemblyFingerprintValidation)
+            string? scenarioInventoryPath = null,
+            bool strictAssemblyFingerprintValidation = false)
         {
             CompatReportPath = compatReportPath;
             CompatMatrixPath = compatMatrixPath;
             MappingCatalogPath = mappingCatalogPath;
             ManifestPath = manifestPath;
+            ScenarioInventoryPath = scenarioInventoryPath;
             StrictAssemblyFingerprintValidation = strictAssemblyFingerprintValidation;
         }
 
@@ -30,6 +32,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         public string? MappingCatalogPath { get; }
 
         public string? ManifestPath { get; }
+
+        public string? ScenarioInventoryPath { get; }
 
         public bool StrictAssemblyFingerprintValidation { get; }
     }

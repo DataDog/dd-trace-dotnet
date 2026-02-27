@@ -999,6 +999,182 @@ public class DuckTypeAotProcessorsTests
     }
 
     [Fact]
+    public void VerifyCompatProcessorShouldSucceedWhenScenarioInventoryMatchesCompatibilityMatrix()
+    {
+        var tempDirectory = CreateTempDirectory();
+        try
+        {
+            var reportPath = Path.Combine(tempDirectory, "ducktyping-aot-compat.md");
+            var matrixPath = Path.Combine(tempDirectory, "ducktyping-aot-compat.json");
+            var scenarioInventoryPath = Path.Combine(tempDirectory, "ducktyping-aot-scenario-inventory.json");
+
+            File.WriteAllText(reportPath, "# Compatibility Report");
+            var matrix = new DuckTypeAotCompatibilityMatrix
+            {
+                Mappings = new List<DuckTypeAotCompatibilityMapping>
+                {
+                    new()
+                    {
+                        Id = "A-01",
+                        Mode = "forward",
+                        ProxyType = "Datadog.Trace.Tools.Runner.Tests.ITestDuckProxy",
+                        ProxyAssembly = "Datadog.Trace.Tools.Runner.Tests",
+                        TargetType = "Datadog.Trace.Tools.Runner.Tests.TestDuckTarget",
+                        TargetAssembly = "Datadog.Trace.Tools.Runner.Tests",
+                        Status = DuckTypeAotCompatibilityStatuses.Compatible
+                    },
+                    new()
+                    {
+                        Id = "FG-001",
+                        Mode = "forward",
+                        ProxyType = "Datadog.Trace.Tools.Runner.Tests.ITestDuckProxy",
+                        ProxyAssembly = "Datadog.Trace.Tools.Runner.Tests",
+                        TargetType = "Datadog.Trace.Tools.Runner.Tests.TestDuckTarget",
+                        TargetAssembly = "Datadog.Trace.Tools.Runner.Tests",
+                        Status = DuckTypeAotCompatibilityStatuses.Compatible
+                    }
+                }
+            };
+            File.WriteAllText(matrixPath, JsonConvert.SerializeObject(matrix));
+
+            var scenarioInventory = new
+            {
+                schemaVersion = "1",
+                requiredScenarios = new[] { "A-01", "FG-*" }
+            };
+            File.WriteAllText(scenarioInventoryPath, JsonConvert.SerializeObject(scenarioInventory, Formatting.Indented));
+
+            var result = DuckTypeAotVerifyCompatProcessor.Process(
+                new DuckTypeAotVerifyCompatOptions(
+                    reportPath,
+                    matrixPath,
+                    mappingCatalogPath: null,
+                    manifestPath: null,
+                    scenarioInventoryPath: scenarioInventoryPath,
+                    strictAssemblyFingerprintValidation: false));
+            result.Should().Be(0);
+        }
+        finally
+        {
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
+
+    [Fact]
+    public void VerifyCompatProcessorShouldFailWhenScenarioInventoryRequiresMissingScenario()
+    {
+        var tempDirectory = CreateTempDirectory();
+        try
+        {
+            var reportPath = Path.Combine(tempDirectory, "ducktyping-aot-compat.md");
+            var matrixPath = Path.Combine(tempDirectory, "ducktyping-aot-compat.json");
+            var scenarioInventoryPath = Path.Combine(tempDirectory, "ducktyping-aot-scenario-inventory.json");
+
+            File.WriteAllText(reportPath, "# Compatibility Report");
+            var matrix = new DuckTypeAotCompatibilityMatrix
+            {
+                Mappings = new List<DuckTypeAotCompatibilityMapping>
+                {
+                    new()
+                    {
+                        Id = "A-01",
+                        Mode = "forward",
+                        ProxyType = "Datadog.Trace.Tools.Runner.Tests.ITestDuckProxy",
+                        ProxyAssembly = "Datadog.Trace.Tools.Runner.Tests",
+                        TargetType = "Datadog.Trace.Tools.Runner.Tests.TestDuckTarget",
+                        TargetAssembly = "Datadog.Trace.Tools.Runner.Tests",
+                        Status = DuckTypeAotCompatibilityStatuses.Compatible
+                    }
+                }
+            };
+            File.WriteAllText(matrixPath, JsonConvert.SerializeObject(matrix));
+
+            var scenarioInventory = new
+            {
+                schemaVersion = "1",
+                requiredScenarios = new[] { "A-01", "B-16" }
+            };
+            File.WriteAllText(scenarioInventoryPath, JsonConvert.SerializeObject(scenarioInventory, Formatting.Indented));
+
+            var result = DuckTypeAotVerifyCompatProcessor.Process(
+                new DuckTypeAotVerifyCompatOptions(
+                    reportPath,
+                    matrixPath,
+                    mappingCatalogPath: null,
+                    manifestPath: null,
+                    scenarioInventoryPath: scenarioInventoryPath,
+                    strictAssemblyFingerprintValidation: false));
+            result.Should().Be(1);
+        }
+        finally
+        {
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
+
+    [Fact]
+    public void VerifyCompatProcessorShouldFailWhenCompatibilityMatrixContainsUntrackedScenario()
+    {
+        var tempDirectory = CreateTempDirectory();
+        try
+        {
+            var reportPath = Path.Combine(tempDirectory, "ducktyping-aot-compat.md");
+            var matrixPath = Path.Combine(tempDirectory, "ducktyping-aot-compat.json");
+            var scenarioInventoryPath = Path.Combine(tempDirectory, "ducktyping-aot-scenario-inventory.json");
+
+            File.WriteAllText(reportPath, "# Compatibility Report");
+            var matrix = new DuckTypeAotCompatibilityMatrix
+            {
+                Mappings = new List<DuckTypeAotCompatibilityMapping>
+                {
+                    new()
+                    {
+                        Id = "A-01",
+                        Mode = "forward",
+                        ProxyType = "Datadog.Trace.Tools.Runner.Tests.ITestDuckProxy",
+                        ProxyAssembly = "Datadog.Trace.Tools.Runner.Tests",
+                        TargetType = "Datadog.Trace.Tools.Runner.Tests.TestDuckTarget",
+                        TargetAssembly = "Datadog.Trace.Tools.Runner.Tests",
+                        Status = DuckTypeAotCompatibilityStatuses.Compatible
+                    },
+                    new()
+                    {
+                        Id = "X-99",
+                        Mode = "forward",
+                        ProxyType = "Datadog.Trace.Tools.Runner.Tests.ITestDuckProxy",
+                        ProxyAssembly = "Datadog.Trace.Tools.Runner.Tests",
+                        TargetType = "Datadog.Trace.Tools.Runner.Tests.TestDuckTarget",
+                        TargetAssembly = "Datadog.Trace.Tools.Runner.Tests",
+                        Status = DuckTypeAotCompatibilityStatuses.Compatible
+                    }
+                }
+            };
+            File.WriteAllText(matrixPath, JsonConvert.SerializeObject(matrix));
+
+            var scenarioInventory = new
+            {
+                schemaVersion = "1",
+                requiredScenarios = new[] { "A-01" }
+            };
+            File.WriteAllText(scenarioInventoryPath, JsonConvert.SerializeObject(scenarioInventory, Formatting.Indented));
+
+            var result = DuckTypeAotVerifyCompatProcessor.Process(
+                new DuckTypeAotVerifyCompatOptions(
+                    reportPath,
+                    matrixPath,
+                    mappingCatalogPath: null,
+                    manifestPath: null,
+                    scenarioInventoryPath: scenarioInventoryPath,
+                    strictAssemblyFingerprintValidation: false));
+            result.Should().Be(1);
+        }
+        finally
+        {
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
+
+    [Fact]
     public void VerifyCompatProcessorShouldSucceedWhenManifestMatchesCompatibilityMatrix()
     {
         var tempDirectory = CreateTempDirectory();
