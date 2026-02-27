@@ -663,6 +663,15 @@ namespace Datadog.Trace.DuckTyping
                     case DuckKind.Property:
                     case DuckKind.PropertyOrField:
                         PropertyInfo? targetProperty = GetTargetPropertyOrIndex(targetType, duckAttribute.Name, duckAttribute.BindingFlags, proxyProperty);
+
+                        if (duckAttribute.FallbackToBaseTypes)
+                        {
+                            while (targetProperty is null && targetType is { IsValueType: false, BaseType: not null } && targetType.BaseType != typeof(object))
+                            {
+                                targetProperty = GetTargetPropertyOrIndex(targetType.BaseType, duckAttribute.Name, duckAttribute.BindingFlags, proxyProperty);
+                            }
+                        }
+
                         if (targetProperty is null)
                         {
                             if (duckAttribute.Kind == DuckKind.PropertyOrField)
@@ -749,6 +758,15 @@ namespace Datadog.Trace.DuckTyping
 
                     case DuckKind.Field:
                         FieldInfo? targetField = GetTargetField(targetType, duckAttribute.Name, duckAttribute.BindingFlags);
+
+                        if (duckAttribute.FallbackToBaseTypes)
+                        {
+                            while (targetField is null && targetType is { IsValueType: false, BaseType: not null } && targetType.BaseType != typeof(object))
+                            {
+                                targetField = GetTargetField(targetType.BaseType, duckAttribute.Name, duckAttribute.BindingFlags);
+                            }
+                        }
+
                         if (targetField is null)
                         {
                             DuckTypePropertyOrFieldNotFoundException.Throw(proxyProperty.Name, duckAttribute.Name, targetType);
