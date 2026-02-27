@@ -55,13 +55,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             {
                 var catalogResult = DuckTypeAotMappingCatalogParser.Parse(options.MappingCatalog!);
                 errors.AddRange(catalogResult.Errors);
-                foreach (var requiredMapping in catalogResult.RequiredMappings)
-                {
-                    if (!resolvedMappings.ContainsKey(requiredMapping.Key))
-                    {
-                        errors.Add($"Required mapping is missing: mode={requiredMapping.Mode}, proxy={requiredMapping.ProxyTypeName}, target={requiredMapping.TargetTypeName}.");
-                    }
-                }
+                ApplyMappingCatalogRequirements(resolvedMappings, catalogResult.RequiredMappings, errors);
             }
 
             if (!string.IsNullOrWhiteSpace(options.GenericInstantiationsFile))
@@ -75,6 +69,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
 
             ValidateGenericClosure(resolvedMappings.Values, errors);
+            ValidateScenarioIds(resolvedMappings.Values, errors);
 
             foreach (var mapping in resolvedMappings.Values)
             {
@@ -168,6 +163,68 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     $"Mapping '{mapping.Key}' contains an open generic type. " +
                     "NativeAOT generation requires closed proxy and target types. " +
                     "Provide closed concrete mappings in --map-file and use --generic-instantiations for additional closed-generic roots.");
+            }
+        }
+
+        private static void ApplyMappingCatalogRequirements(
+            IDictionary<string, DuckTypeAotMapping> resolvedMappings,
+            IEnumerable<DuckTypeAotMapping> requiredMappings,
+            ICollection<string> errors)
+        {
+            foreach (var requiredMapping in requiredMappings)
+            {
+                if (!resolvedMappings.TryGetValue(requiredMapping.Key, out var resolvedMapping))
+                {
+                    var scenarioSuffix = string.IsNullOrWhiteSpace(requiredMapping.ScenarioId)
+                                             ? string.Empty
+                                             : $", scenario={requiredMapping.ScenarioId}";
+                    errors.Add(
+                        $"Required mapping is missing: mode={requiredMapping.Mode}, proxy={requiredMapping.ProxyTypeName}, target={requiredMapping.TargetTypeName}{scenarioSuffix}.");
+                    continue;
+                }
+
+                if (string.IsNullOrWhiteSpace(requiredMapping.ScenarioId))
+                {
+                    continue;
+                }
+
+                if (string.IsNullOrWhiteSpace(resolvedMapping.ScenarioId))
+                {
+                    resolvedMappings[requiredMapping.Key] = resolvedMapping.WithScenarioId(requiredMapping.ScenarioId!);
+                    continue;
+                }
+
+                if (!string.Equals(resolvedMapping.ScenarioId, requiredMapping.ScenarioId, StringComparison.Ordinal))
+                {
+                    errors.Add(
+                        $"Scenario id mismatch for mapping '{requiredMapping.Key}'. " +
+                        $"Resolved='{resolvedMapping.ScenarioId}', catalog='{requiredMapping.ScenarioId}'.");
+                }
+            }
+        }
+
+        private static void ValidateScenarioIds(IEnumerable<DuckTypeAotMapping> mappings, ICollection<string> errors)
+        {
+            var mappingKeyByScenarioId = new Dictionary<string, string>(StringComparer.Ordinal);
+            foreach (var mapping in mappings)
+            {
+                if (string.IsNullOrWhiteSpace(mapping.ScenarioId))
+                {
+                    continue;
+                }
+
+                if (mappingKeyByScenarioId.TryGetValue(mapping.ScenarioId!, out var existingMappingKey))
+                {
+                    if (!string.Equals(existingMappingKey, mapping.Key, StringComparison.Ordinal))
+                    {
+                        errors.Add(
+                            $"Duplicate scenario id '{mapping.ScenarioId}' is assigned to multiple mappings: '{existingMappingKey}' and '{mapping.Key}'.");
+                    }
+
+                    continue;
+                }
+
+                mappingKeyByScenarioId[mapping.ScenarioId!] = mapping.Key;
             }
         }
     }
