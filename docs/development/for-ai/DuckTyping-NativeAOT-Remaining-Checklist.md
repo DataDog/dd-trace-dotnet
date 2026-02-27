@@ -6,7 +6,7 @@ This file is the persistent execution checklist for the remaining work from [Duc
 
 1. [ ] Expand Bible mapping catalog to full scoped coverage (seed exists; full catalog still pending).
 2. [ ] Expand differential parity harness so each scenario runs in both Dynamic and AOT and compares outcomes structurally.
-3. [ ] Complete explicit Bible feature ID coverage (`A-01..E-42`).
+3. [x] Complete explicit Bible feature ID coverage (`A-01..E-42`).
 4. [ ] Add IL atlas parity coverage (`FG-*`, `FS-*`, `FF-*`, `FM-*`, `RT-*`).
 5. [ ] Add Bible example parity coverage (`EX-01..EX-20`).
 6. [ ] Add test-adapted excerpt parity coverage (`TX-A..TX-T`).
@@ -22,4 +22,6 @@ This file is the persistent execution checklist for the remaining work from [Duc
 
 - Scenario inventory contract/enforcement is implemented.
 - `--require-mapping-catalog` enforcement is implemented.
-- Next active focus: item 1 + item 2.
+- Explicit feature IDs `A-01..E-42` are now implemented and passing in differential parity.
+- IL atlas baseline anchors are implemented and passing: `FG-1`, `FG-2`, `FS-1`, `FS-5`, `FF-1`, `FF-2`, `FM-1`, `FM-8`, `RT-1`.
+- Next active focus: item 1 + item 2 + expand item 4 breadth.
