@@ -22,13 +22,16 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             IsRequired = true
         };
 
+        private readonly Option<string?> _mappingCatalogOption = new("--mapping-catalog", "Optional declared mapping inventory used to enforce required mapping/scenario coverage.");
+
         public DuckTypeAotVerifyCompatCommand()
             : base("verify-compat", "Validate generated compatibility artifacts for Bible parity coverage")
         {
             AddOption(_compatReportOption);
             AddOption(_compatMatrixOption);
+            AddOption(_mappingCatalogOption);
 
-            AddExample("dd-trace ducktype-aot verify-compat --compat-report ducktyping-aot-compat.md --compat-matrix ducktyping-aot-compat.json");
+            AddExample("dd-trace ducktype-aot verify-compat --compat-report ducktyping-aot-compat.md --compat-matrix ducktyping-aot-compat.json --mapping-catalog ducktyping-aot-catalog.json");
 
             this.SetHandler(Execute);
         }
@@ -37,8 +40,9 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         {
             var compatReportPath = _compatReportOption.GetValue(context);
             var compatMatrixPath = _compatMatrixOption.GetValue(context);
+            var mappingCatalogPath = _mappingCatalogOption.GetValue(context);
 
-            var options = new DuckTypeAotVerifyCompatOptions(compatReportPath, compatMatrixPath);
+            var options = new DuckTypeAotVerifyCompatOptions(compatReportPath, compatMatrixPath, mappingCatalogPath);
             context.ExitCode = DuckTypeAotVerifyCompatProcessor.Process(options);
         }
     }
