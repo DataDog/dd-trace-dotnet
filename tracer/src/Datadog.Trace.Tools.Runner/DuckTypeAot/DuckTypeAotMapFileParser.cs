@@ -114,7 +114,14 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 return false;
             }
 
-            mapping = new DuckTypeAotMapping(proxyType, proxyAssembly, targetType, targetAssembly, mode.Value, DuckTypeAotMappingSource.MapFile);
+            mapping = new DuckTypeAotMapping(
+                proxyType,
+                proxyAssembly,
+                targetType,
+                targetAssembly,
+                mode.Value,
+                DuckTypeAotMappingSource.MapFile,
+                entry.ScenarioId);
             return true;
         }
 
@@ -162,6 +169,9 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
             [JsonProperty("exclude")]
             public bool? Exclude { get; set; }
+
+            [JsonProperty("scenarioId")]
+            public string? ScenarioId { get; set; }
         }
     }
 
@@ -238,7 +248,14 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 return false;
             }
 
-            mapping = new DuckTypeAotMapping(proxyType, proxyAssembly, targetType, targetAssembly, mode.Value, DuckTypeAotMappingSource.MapFile);
+            mapping = new DuckTypeAotMapping(
+                proxyType,
+                proxyAssembly,
+                targetType,
+                targetAssembly,
+                mode.Value,
+                DuckTypeAotMappingSource.MapFile,
+                entry.ScenarioId);
             return true;
         }
 
@@ -280,6 +297,9 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
             [JsonProperty("mode")]
             public string? Mode { get; set; }
+
+            [JsonProperty("scenarioId")]
+            public string? ScenarioId { get; set; }
         }
     }
 

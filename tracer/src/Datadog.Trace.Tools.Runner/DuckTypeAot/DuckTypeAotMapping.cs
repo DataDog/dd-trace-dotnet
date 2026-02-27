@@ -33,7 +33,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             string targetTypeName,
             string targetAssemblyName,
             DuckTypeAotMappingMode mode,
-            DuckTypeAotMappingSource source)
+            DuckTypeAotMappingSource source,
+            string? scenarioId = null)
         {
             ProxyTypeName = proxyTypeName;
             ProxyAssemblyName = DuckTypeAotNameHelpers.NormalizeAssemblyName(proxyAssemblyName);
@@ -41,6 +42,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             TargetAssemblyName = DuckTypeAotNameHelpers.NormalizeAssemblyName(targetAssemblyName);
             Mode = mode;
             Source = source;
+            ScenarioId = NormalizeScenarioId(scenarioId);
         }
 
         public string ProxyTypeName { get; }
@@ -55,6 +57,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
         public DuckTypeAotMappingSource Source { get; }
 
+        public string? ScenarioId { get; }
+
         public string Key =>
             string.Concat(
                 Mode.ToString(),
@@ -66,6 +70,28 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 TargetAssemblyName.ToUpperInvariant(),
                 "|",
                 TargetTypeName);
+
+        public DuckTypeAotMapping WithScenarioId(string scenarioId)
+        {
+            return new DuckTypeAotMapping(
+                ProxyTypeName,
+                ProxyAssemblyName,
+                TargetTypeName,
+                TargetAssemblyName,
+                Mode,
+                Source,
+                scenarioId);
+        }
+
+        private static string? NormalizeScenarioId(string? scenarioId)
+        {
+            if (string.IsNullOrWhiteSpace(scenarioId))
+            {
+                return null;
+            }
+
+            return scenarioId.Trim();
+        }
     }
 
     internal static class DuckTypeAotNameHelpers

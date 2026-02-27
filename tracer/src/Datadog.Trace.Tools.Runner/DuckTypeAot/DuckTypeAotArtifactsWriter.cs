@@ -40,7 +40,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     var hasResult = emissionResult.MappingResultsByKey.TryGetValue(mapping.Key, out var mappingResult);
                     return new DuckTypeAotCompatibilityMapping
                     {
-                        Id = $"MAP-{index + 1:D4}",
+                        Id = mapping.ScenarioId ?? $"MAP-{index + 1:D4}",
+                        MappingIdentityChecksum = ComputeMappingIdentityChecksum(mapping.Key),
                         Mode = mapping.Mode.ToString().ToLowerInvariant(),
                         ProxyType = mapping.ProxyTypeName,
                         ProxyAssembly = mapping.ProxyAssemblyName,
@@ -100,6 +101,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     .Select(mapping => new DuckTypeAotManifestMapping
                     {
                         Mode = mapping.Mode.ToString().ToLowerInvariant(),
+                        ScenarioId = mapping.ScenarioId,
+                        MappingIdentityChecksum = ComputeMappingIdentityChecksum(mapping.Key),
                         ProxyType = mapping.ProxyTypeName,
                         ProxyAssembly = mapping.ProxyAssemblyName,
                         TargetType = mapping.TargetTypeName,
@@ -152,6 +155,18 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             using var sha256 = SHA256.Create();
             using var stream = File.OpenRead(filePath);
             var hash = sha256.ComputeHash(stream);
+            return ConvertToLowerHex(hash);
+        }
+
+        private static string ComputeMappingIdentityChecksum(string mappingKey)
+        {
+            using var sha256 = SHA256.Create();
+            var hash = sha256.ComputeHash(Encoding.UTF8.GetBytes(mappingKey));
+            return ConvertToLowerHex(hash);
+        }
+
+        private static string ConvertToLowerHex(byte[] hash)
+        {
             var sb = new StringBuilder(hash.Length * 2);
             foreach (var hashByte in hash)
             {
@@ -382,6 +397,9 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         [JsonProperty("id")]
         public string? Id { get; set; }
 
+        [JsonProperty("mappingIdentityChecksum")]
+        public string? MappingIdentityChecksum { get; set; }
+
         [JsonProperty("mode")]
         public string? Mode { get; set; }
 
@@ -459,6 +477,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
     {
         [JsonProperty("mode")]
         public string? Mode { get; set; }
+
+        [JsonProperty("scenarioId")]
+        public string? ScenarioId { get; set; }
+
+        [JsonProperty("mappingIdentityChecksum")]
+        public string? MappingIdentityChecksum { get; set; }
 
         [JsonProperty("proxyType")]
         public string? ProxyType { get; set; }
