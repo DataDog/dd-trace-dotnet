@@ -143,7 +143,7 @@ protected:
     ddog_crasht_Handle_CrashInfoBuilder _builder;
     void SetLastError(ddog_Error error);
     virtual std::vector<std::pair<int32_t, std::string>> GetThreads() = 0;
-    virtual std::vector<StackFrame> GetThreadFrames(int32_t tid, ResolveManagedCallstack resolveManagedCallstack, void* context) = 0;
+    virtual std::vector<StackFrame> GetThreadFrames(int32_t tid, void* threadContext, ResolveManagedCallstack resolveManagedCallstack, void* context) = 0;
 
 #ifdef DD_TEST
 public:

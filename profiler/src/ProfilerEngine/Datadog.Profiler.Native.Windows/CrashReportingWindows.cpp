@@ -86,7 +86,7 @@ std::vector<std::pair<int32_t, std::string>> CrashReportingWindows::GetThreads()
     return threads;
 }
 
-std::vector<StackFrame> CrashReportingWindows::GetThreadFrames(int32_t tid, ResolveManagedCallstack resolveManagedCallstack, void* callbackContext)
+std::vector<StackFrame> CrashReportingWindows::GetThreadFrames(int32_t tid, void* threadContext, ResolveManagedCallstack resolveManagedCallstack, void* callbackContext)
 {
     std::vector<StackFrame> frames;
 
