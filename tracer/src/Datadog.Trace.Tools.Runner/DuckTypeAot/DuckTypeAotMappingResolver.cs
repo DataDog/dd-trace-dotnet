@@ -74,7 +74,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
 
             ValidateGenericClosure(resolvedMappings.Values, errors);
-            ValidateScenarioIds(resolvedMappings.Values, errors);
 
             foreach (var mapping in resolvedMappings.Values)
             {
@@ -205,31 +204,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                         $"Scenario id mismatch for mapping '{requiredMapping.Key}'. " +
                         $"Resolved='{resolvedMapping.ScenarioId}', catalog='{requiredMapping.ScenarioId}'.");
                 }
-            }
-        }
-
-        private static void ValidateScenarioIds(IEnumerable<DuckTypeAotMapping> mappings, ICollection<string> errors)
-        {
-            var mappingKeyByScenarioId = new Dictionary<string, string>(StringComparer.Ordinal);
-            foreach (var mapping in mappings)
-            {
-                if (string.IsNullOrWhiteSpace(mapping.ScenarioId))
-                {
-                    continue;
-                }
-
-                if (mappingKeyByScenarioId.TryGetValue(mapping.ScenarioId!, out var existingMappingKey))
-                {
-                    if (!string.Equals(existingMappingKey, mapping.Key, StringComparison.Ordinal))
-                    {
-                        errors.Add(
-                            $"Duplicate scenario id '{mapping.ScenarioId}' is assigned to multiple mappings: '{existingMappingKey}' and '{mapping.Key}'.");
-                    }
-
-                    continue;
-                }
-
-                mappingKeyByScenarioId[mapping.ScenarioId!] = mapping.Key;
             }
         }
     }
