@@ -52,22 +52,22 @@ namespace Datadog.Trace.DuckTyping.Tests
             if (!TestOptimization.Instance.IsRunning)
             {
 #if NETFRAMEWORK
-                asmDuckTypes.Should().Be(1137);
+                asmDuckTypes.Should().Be(1183);
 #elif NETCOREAPP2_1
-                asmDuckTypes.Should().Be(1140);
+                asmDuckTypes.Should().Be(1186);
 #else
-                asmDuckTypes.Should().Be(1141);
+                asmDuckTypes.Should().Be(1187);
 #endif
             }
             else
             {
                 // When running inside CI Visibility, we will generate additional duck types
 #if NETFRAMEWORK
-                asmDuckTypes.Should().BeGreaterThan(1137);
+                asmDuckTypes.Should().BeGreaterThan(1183);
 #elif NETCOREAPP2_1
-                asmDuckTypes.Should().BeGreaterThan(1140);
+                asmDuckTypes.Should().BeGreaterThan(1186);
 #else
-                asmDuckTypes.Should().BeGreaterThan(1141);
+                asmDuckTypes.Should().BeGreaterThan(1187);
 #endif
             }
         }

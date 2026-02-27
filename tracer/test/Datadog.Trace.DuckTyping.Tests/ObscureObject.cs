@@ -1055,29 +1055,56 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
-        // *** Derived types for testing base-type member lookup
+        // *** Derived types for testing base-type member lookup.
+        // An intermediate type sits between the base and derived types so the
+        // fallback loop must walk more than one level, catching bugs where the
+        // loop fails to advance up the hierarchy.
 
-        public class FieldDerivedFromPublicObject : FieldPublicObject
+        public class FieldIntermediateFromPublicObject : FieldPublicObject
         {
         }
 
-        internal class FieldDerivedFromInternalObject : FieldInternalObject
+        public class FieldDerivedFromPublicObject : FieldIntermediateFromPublicObject
         {
         }
 
-        private class FieldDerivedFromPrivateObject : FieldPrivateObject
+        internal class FieldIntermediateFromInternalObject : FieldInternalObject
         {
         }
 
-        public class PropertyDerivedFromPublicObject : PropertyPublicObject
+        internal class FieldDerivedFromInternalObject : FieldIntermediateFromInternalObject
         {
         }
 
-        internal class PropertyDerivedFromInternalObject : PropertyInternalObject
+        private class FieldIntermediateFromPrivateObject : FieldPrivateObject
         {
         }
 
-        private class PropertyDerivedFromPrivateObject : PropertyPrivateObject
+        private class FieldDerivedFromPrivateObject : FieldIntermediateFromPrivateObject
+        {
+        }
+
+        public class PropertyIntermediateFromPublicObject : PropertyPublicObject
+        {
+        }
+
+        public class PropertyDerivedFromPublicObject : PropertyIntermediateFromPublicObject
+        {
+        }
+
+        internal class PropertyIntermediateFromInternalObject : PropertyInternalObject
+        {
+        }
+
+        internal class PropertyDerivedFromInternalObject : PropertyIntermediateFromInternalObject
+        {
+        }
+
+        private class PropertyIntermediateFromPrivateObject : PropertyPrivateObject
+        {
+        }
+
+        private class PropertyDerivedFromPrivateObject : PropertyIntermediateFromPrivateObject
         {
         }
 
