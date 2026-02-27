@@ -6,8 +6,12 @@
 #nullable enable
 
 using System;
+using System.Collections.Concurrent;
+using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Threading;
+using System.Threading.Tasks;
 using FluentAssertions;
 using Xunit;
 
@@ -20,7 +24,184 @@ namespace Datadog.Trace.DuckTyping.Tests
     {
         public DuckTypeAotEngineTests()
         {
-            DuckTypeAotEngine.ResetForTests();
+            DuckType.ResetRuntimeModeForTests();
+        }
+
+        [Fact]
+        public void RuntimeModeShouldBeImmutableAfterDynamicInitialization()
+        {
+            var dynamicResult = DuckType.GetOrCreateProxyType(typeof(IForwardProxy), typeof(ForwardTarget));
+            dynamicResult.CanCreate().Should().BeTrue();
+
+            Action enableAot = DuckType.EnableAotMode;
+            enableAot.Should().Throw<DuckTypeRuntimeModeConflictException>();
+            DuckType.IsAotMode().Should().BeFalse();
+        }
+
+        [Fact]
+        public void RuntimeModeShouldBeImmutableAfterAotInitialization()
+        {
+            DuckType.EnableAotMode();
+            DuckType.IsAotMode().Should().BeTrue();
+
+            Action enableAotAgain = DuckType.EnableAotMode;
+            enableAotAgain.Should().NotThrow();
+
+            var result = DuckType.GetOrCreateProxyType(typeof(IMissingProxy), typeof(MissingTarget));
+            result.CanCreate().Should().BeFalse();
+            Action getProxyType = () => _ = result.ProxyType;
+            getProxyType.Should().Throw<DuckTypeAotMissingProxyRegistrationException>();
+        }
+
+        [Fact]
+        public void RegisterAotProxyAfterDynamicInitializationShouldThrowModeConflict()
+        {
+            var dynamicResult = DuckType.GetOrCreateProxyType(typeof(IForwardProxy), typeof(ForwardTarget));
+            dynamicResult.CanCreate().Should().BeTrue();
+
+            Action register = () => DuckType.RegisterAotProxy(
+                typeof(IForwardProxy),
+                typeof(ForwardTarget),
+                typeof(ForwardGeneratedProxy),
+                instance => new ForwardGeneratedProxy((ForwardTarget)instance!));
+
+            register.Should().Throw<DuckTypeRuntimeModeConflictException>();
+        }
+
+        [Fact]
+        public void RegisterAotReverseProxyAfterDynamicInitializationShouldThrowModeConflict()
+        {
+            var dynamicResult = DuckType.GetOrCreateProxyType(typeof(IForwardProxy), typeof(ForwardTarget));
+            dynamicResult.CanCreate().Should().BeTrue();
+
+            Action register = () => DuckType.RegisterAotReverseProxy(
+                typeof(IReverseProxy),
+                typeof(ReverseTarget),
+                typeof(ReverseGeneratedProxy),
+                instance => new ReverseGeneratedProxy((ReverseTarget)instance!));
+
+            register.Should().Throw<DuckTypeRuntimeModeConflictException>();
+        }
+
+        [Fact]
+        public async Task EnableAotModeShouldBeThreadSafeUnderConcurrentCalls()
+        {
+            var startGate = new ManualResetEventSlim(initialState: false);
+            var exceptions = new ConcurrentQueue<Exception>();
+
+            var tasks = Enumerable.Range(0, 32)
+                                  .Select(_ => Task.Run(() =>
+                                  {
+                                      startGate.Wait();
+                                      try
+                                      {
+                                          DuckType.EnableAotMode();
+                                      }
+                                      catch (Exception ex)
+                                      {
+                                          exceptions.Enqueue(ex);
+                                      }
+                                  }))
+                                  .ToArray();
+
+            startGate.Set();
+            await Task.WhenAll(tasks);
+
+            exceptions.Should().BeEmpty();
+            DuckType.IsAotMode().Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task ConcurrentRuntimeInitializationRaceShouldKeepSingleMode()
+        {
+            var startGate = new ManualResetEventSlim(initialState: false);
+            var exceptions = new ConcurrentQueue<Exception>();
+            var dynamicCanCreateResults = new ConcurrentQueue<bool>();
+            var tasks = new Task[32];
+
+            for (var i = 0; i < 16; i++)
+            {
+                tasks[i] = Task.Run(() =>
+                {
+                    startGate.Wait();
+                    try
+                    {
+                        DuckType.EnableAotMode();
+                    }
+                    catch (Exception ex)
+                    {
+                        exceptions.Enqueue(ex);
+                    }
+                });
+            }
+
+            for (var i = 16; i < tasks.Length; i++)
+            {
+                tasks[i] = Task.Run(() =>
+                {
+                    startGate.Wait();
+                    try
+                    {
+                        var result = DuckType.GetOrCreateProxyType(typeof(IForwardProxy), typeof(ForwardTarget));
+                        dynamicCanCreateResults.Enqueue(result.CanCreate());
+                    }
+                    catch (Exception ex)
+                    {
+                        exceptions.Enqueue(ex);
+                    }
+                });
+            }
+
+            startGate.Set();
+            await Task.WhenAll(tasks);
+
+            var unexpectedExceptions = exceptions.Where(ex => ex is not DuckTypeRuntimeModeConflictException).ToList();
+            unexpectedExceptions.Should().BeEmpty();
+
+            if (DuckType.IsAotMode())
+            {
+                exceptions.Should().BeEmpty();
+                dynamicCanCreateResults.Should().OnlyContain(canCreate => canCreate == false);
+            }
+            else
+            {
+                exceptions.Should().OnlyContain(ex => ex is DuckTypeRuntimeModeConflictException);
+                exceptions.Should().NotBeEmpty();
+                dynamicCanCreateResults.Should().OnlyContain(canCreate => canCreate);
+            }
+        }
+
+        [Fact]
+        public async Task ConcurrentDuplicateAotRegistrationsShouldRemainIdempotent()
+        {
+            var startGate = new ManualResetEventSlim(initialState: false);
+            var exceptions = new ConcurrentQueue<Exception>();
+
+            var tasks = Enumerable.Range(0, 32)
+                                  .Select(_ => Task.Run(() =>
+                                  {
+                                      startGate.Wait();
+                                      try
+                                      {
+                                          DuckTypeAotEngine.RegisterProxy(
+                                              typeof(IDuplicateProxy),
+                                              typeof(DuplicateTarget),
+                                              typeof(DuplicateGeneratedProxy),
+                                              instance => new DuplicateGeneratedProxy((DuplicateTarget)instance!));
+                                      }
+                                      catch (Exception ex)
+                                      {
+                                          exceptions.Enqueue(ex);
+                                      }
+                                  }))
+                                  .ToArray();
+
+            startGate.Set();
+            await Task.WhenAll(tasks);
+
+            exceptions.Should().BeEmpty();
+            var result = DuckTypeAotEngine.GetOrCreateProxyType(typeof(IDuplicateProxy), typeof(DuplicateTarget));
+            result.CanCreate().Should().BeTrue();
         }
 
         [Fact]

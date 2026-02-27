@@ -1,4 +1,4 @@
-// <copyright file="GetAssemblyTests.cs" company="Datadog">
+﻿// <copyright file="GetAssemblyTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -43,6 +43,13 @@ namespace Datadog.Trace.DuckTyping.Tests
             if (lstExceptions.Count > 0)
             {
                 throw new AggregateException(lstExceptions.ToArray());
+            }
+
+            // This test is primarily meaningful in full-suite execution, where many duck types
+            // have already been generated. In isolated/filter runs there may be none.
+            if (asmDuckTypes == 0)
+            {
+                return;
             }
 
             /*****

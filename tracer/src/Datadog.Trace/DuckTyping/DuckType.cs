@@ -257,6 +257,22 @@ namespace Datadog.Trace.DuckTyping
             return RuntimeMode == DuckTypeRuntimeMode.Aot;
         }
 
+        internal static void ResetRuntimeModeForTests()
+        {
+            DuckTypeAotEngine.ResetForTests();
+            DuckTypeCache.Clear();
+            lock (Locker)
+            {
+                ActiveBuilders.Clear();
+                IgnoresAccessChecksToAssembliesSetDictionary.Clear();
+                _assemblyCount = 0;
+                _typeCount = 0;
+            }
+
+            Volatile.Write(ref _runtimeMode, (int)DuckTypeRuntimeMode.Dynamic);
+            Volatile.Write(ref _runtimeModeInitialized, 0);
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static DuckTypeRuntimeMode EnsureRuntimeModeIsInitialized()
         {
