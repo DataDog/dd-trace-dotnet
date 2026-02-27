@@ -67,18 +67,26 @@ __thread unsigned long long functions_entered_counter = 0;
 // By calling fork(), the child process and the parent process will have their own address space,
 // which means that the child process won't be able to modify the parent process's variables.
 // We need a way to enable communication between the child and parent processes.
-// This is done by creating a shared memory region and use it as a flag to indicate that
-// the application is crashing.
-// This variable will be a pointer to that shared memory region.
+// This is done by creating a shared memory region and save crashing data in it.
+// crashing_data_t is a struct that contains the following fields:
+// - is_app_crashing: use it as a flag to indicate that the application is crashing.
+// - thread_context: the thread context of the crashing thread. Unwind the crashing thread's callstack
+//   skipping the signal frame. Useful for alpine.
+
+typedef struct crashing_data_t {
+    int is_app_crashing;
+    ucontext_t* thread_context;
+} crashing_data_t;
 __attribute__((visibility("hidden")))
-int* is_app_crashing = NULL;
+crashing_data_t* crash_data = NULL;
 
 // this function is called by the profiler
 unsigned long long dd_inside_wrapped_functions()
 {
     int app_is_crashing = 0;
-    if (is_app_crashing != NULL) {
-        app_is_crashing = *is_app_crashing;
+    struct crashing_data_t* current_crash_data = crash_data;
+    if (current_crash_data != NULL) {
+        app_is_crashing = current_crash_data->is_app_crashing;
     }
     return functions_entered_counter + app_is_crashing;
 }
@@ -472,6 +480,25 @@ int ShouldCallCustomCreatedump(const char* pathname, char* const argv[])
     return 0;
 }
 
+static void ptr_to_decimal(char* buf, unsigned long val) {
+    char tmp[21];
+    int i = 0;
+    if (val == 0) {
+        buf[0] = '0';
+        buf[1] = '\0';
+        return;
+    }
+    while (val > 0) {
+        tmp[i++] = '0' + (val % 10);
+        val /= 10;
+    }
+    // reverse into buf
+    for (int j = 0; j < i; j++) {
+        buf[j] = tmp[i - 1 - j];
+    }
+    buf[i] = '\0';
+}
+
 int execve(const char* pathname, char* const argv[], char* const envp[])
 {
     check_init();
@@ -483,9 +510,13 @@ int execve(const char* pathname, char* const argv[], char* const envp[])
         return __real_execve(pathname, argv, envp);
     }
 
-    if (is_app_crashing != NULL) {
-        *is_app_crashing = 1;
+    ucontext_t* thread_context = NULL;
+    struct crashing_data_t* current_crash_data = crash_data;
+    if (current_crash_data != NULL) {
+        current_crash_data->is_app_crashing = 1;
+        thread_context = current_crash_data->thread_context;
     }
+
     // Execute the alternative crash handler, and prepend "createdump" to the arguments
 
     // Count the number of arguments (the list ends with a null pointer)
@@ -493,7 +524,15 @@ int execve(const char* pathname, char* const argv[], char* const envp[])
     while (argv[argc++] != NULL);
 
     // We add two arguments: the path to dd-dotnet, and "createdump"
-    char** newArgv = malloc((argc + 2) * sizeof(char*));
+    int newArgc = argc + 2;
+
+    // if thread_context is not NULL, we add two more string:
+    // --threadcontext and the decimal representation of the thread context address
+    if (thread_context != NULL) {
+        newArgc += 2;
+    }
+
+    char** newArgv = malloc((newArgc) * sizeof(char*));
 
     // By convention, argv[0] contains the name of the executable
     // Insert createdump as the first actual argument
@@ -520,6 +559,14 @@ int execve(const char* pathname, char* const argv[], char* const envp[])
             newArgv[new_idx++] = argv[idx++];
         }
     }
+    
+    char context_addr[21]; // 20 hex digits + null
+    if (thread_context != NULL) {
+        ptr_to_decimal(context_addr, (unsigned long)thread_context);
+        newArgv[new_idx++] = "--dd-thread-context";
+        newArgv[new_idx++] = context_addr;
+    }
+
     newArgv[new_idx] = NULL;  // NULL terminate the array
 
     size_t envp_count;
@@ -673,6 +720,64 @@ pid_t fork()
 }
 #endif
 #endif
+
+typedef void (*sigsegv_handler_fn)(int signum, siginfo_t* info, void* context);
+static _Atomic sigsegv_handler_fn sigsegv_current_handler;
+static void dd_sigsegv_handler(int signum, siginfo_t* info, void* context)
+{
+    if (crash_data != NULL) {
+        crash_data->thread_context = (ucontext_t*)context;
+    }
+    sigsegv_handler_fn handler = sigsegv_current_handler;
+    if (handler != NULL) {
+        handler(signum, info, context);
+    }
+}
+
+static pthread_mutex_t sigaction_lock = PTHREAD_MUTEX_INITIALIZER;
+static int (*__real_sigaction)(int signum, const struct sigaction *_Nullable restrict act, struct sigaction *_Nullable restrict oldact) = NULL;
+int sigaction(int signum,
+    const struct sigaction *_Nullable restrict act,
+    struct sigaction *_Nullable restrict oldact)
+{
+    check_init();
+
+    if (signum == SIGSEGV && act != NULL && ((act->sa_flags & SA_SIGINFO) == SA_SIGINFO))
+    {
+        struct sigaction new_act = *act;
+        new_act.sa_sigaction = dd_sigsegv_handler;
+
+        pthread_mutex_lock(&sigaction_lock);
+        void (*prev_handler)(int signum, siginfo_t* info, void* context) = sigsegv_current_handler;
+        sigsegv_current_handler = act->sa_sigaction;
+        int result = __real_sigaction(signum, &new_act, oldact);
+        if (oldact != NULL &&
+            ((oldact->sa_flags & SA_SIGINFO) == SA_SIGINFO) &&
+            (oldact->sa_sigaction == dd_sigsegv_handler))
+        {
+            oldact->sa_sigaction = prev_handler;
+        }
+        pthread_mutex_unlock(&sigaction_lock);
+
+        return result;
+    }
+
+    if (signum == SIGSEGV && act == NULL && oldact != NULL)
+    {
+        pthread_mutex_lock(&sigaction_lock);
+        int result = __real_sigaction(signum, act, oldact);
+        if (((oldact->sa_flags & SA_SIGINFO) == SA_SIGINFO) &&
+            (oldact->sa_sigaction == dd_sigsegv_handler))
+        {
+            oldact->sa_sigaction = sigsegv_current_handler;
+        }
+        pthread_mutex_unlock(&sigaction_lock);
+        return result;
+    }
+
+    return __real_sigaction(signum, act, oldact);
+}
+
 static pthread_once_t once_control = PTHREAD_ONCE_INIT;
 
 static void init()
@@ -682,6 +787,7 @@ static void init()
     __real_dlclose = __dd_dlsym(RTLD_NEXT, "dlclose");
     __real_dladdr = __dd_dlsym(RTLD_NEXT, "dladdr");
     __real_execve = __dd_dlsym(RTLD_NEXT, "execve");
+    __real_sigaction = __dd_dlsym(RTLD_NEXT, "sigaction");
 #ifdef DD_ALPINE
     __real_pthread_create = __dd_dlsym(RTLD_NEXT, "pthread_create");
     __real_pthread_attr_init = __dd_dlsym(RTLD_NEXT, "pthread_attr_init");
@@ -691,10 +797,10 @@ static void init()
 #endif
     // if we failed at allocating memory for the shared variable
     // the parent process won't be notified that the app is crashing.
-    is_app_crashing = mmap(NULL, sizeof(int), PROT_READ | PROT_WRITE,
+    crash_data = mmap(NULL, sizeof(crashing_data_t), PROT_READ | PROT_WRITE,
                            MAP_SHARED | MAP_ANONYMOUS, -1, 0);
-    if (is_app_crashing != MAP_FAILED) {
-        *is_app_crashing = 0; // Initialize flag
+    if (crash_data != MAP_FAILED) {
+        memset(crash_data, 0, sizeof(crashing_data_t));
     }
 }
 

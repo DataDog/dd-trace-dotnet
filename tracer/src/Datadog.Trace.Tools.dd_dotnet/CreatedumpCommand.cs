@@ -96,7 +96,7 @@ internal class CreatedumpCommand : Command
             { "--code", true },
             { "--errno", true },
             { "--address", true },
-            { "--threadcontext", true }
+            { "--dd-thread-context", true }
         };
 
         const string pidRegex = "[0-9]+";
@@ -175,7 +175,7 @@ internal class CreatedumpCommand : Command
             crashThread = crashThreadValue;
         }
 
-        if (parsedArguments.TryGetValue("--threadcontext", out var rawThreadContextAddress) && IntPtr.TryParse(rawThreadContextAddress, out var threadContextAddressValue))
+        if (parsedArguments.TryGetValue("--dd-thread-context", out var rawThreadContextAddress) && IntPtr.TryParse(rawThreadContextAddress, out var threadContextAddressValue))
         {
             threadContextAddress = threadContextAddressValue;
         }
