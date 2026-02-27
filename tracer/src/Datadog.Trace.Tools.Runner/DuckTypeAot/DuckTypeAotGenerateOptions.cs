@@ -22,7 +22,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             string outputPath,
             string? assemblyName,
             string trimmerDescriptorPath,
-            string propsPath)
+            string propsPath,
+            bool requireMappingCatalog = false)
         {
             ProxyAssemblies = proxyAssemblies;
             TargetAssemblies = targetAssemblies;
@@ -35,6 +36,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             AssemblyName = assemblyName;
             TrimmerDescriptorPath = trimmerDescriptorPath;
             PropsPath = propsPath;
+            RequireMappingCatalog = requireMappingCatalog;
         }
 
         public IReadOnlyList<string> ProxyAssemblies { get; }
@@ -58,5 +60,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         public string TrimmerDescriptorPath { get; }
 
         public string PropsPath { get; }
+
+        public bool RequireMappingCatalog { get; }
     }
 }

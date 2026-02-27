@@ -55,6 +55,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             {
                 var catalogResult = DuckTypeAotMappingCatalogParser.Parse(options.MappingCatalog!);
                 errors.AddRange(catalogResult.Errors);
+                if (options.RequireMappingCatalog && catalogResult.RequiredMappings.Count == 0)
+                {
+                    errors.Add("--mapping-catalog must contain at least one entry in requiredMappings when --require-mapping-catalog is enabled.");
+                }
+
                 ApplyMappingCatalogRequirements(resolvedMappings, catalogResult.RequiredMappings, errors);
             }
 

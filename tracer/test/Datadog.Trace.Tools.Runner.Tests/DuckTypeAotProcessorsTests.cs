@@ -258,6 +258,85 @@ public class DuckTypeAotProcessorsTests
     }
 
     [Fact]
+    public void GenerateProcessorShouldFailWhenRequireMappingCatalogIsEnabledAndCatalogIsMissing()
+    {
+        var tempDirectory = CreateTempDirectory();
+        try
+        {
+            var proxyAssemblyPath = typeof(DuckTypeAotProcessorsTests).Assembly.Location;
+            var targetAssemblyPath = typeof(TestDuckTarget).Assembly.Location;
+
+            var outputPath = Path.Combine(tempDirectory, "Datadog.Trace.DuckType.AotRegistry.RequireCatalog.Missing.dll");
+            var trimmerDescriptorPath = Path.Combine(tempDirectory, "ducktype-aot-require-catalog-missing.linker.xml");
+            var propsPath = Path.Combine(tempDirectory, "ducktype-aot-require-catalog-missing.props");
+
+            var options = new DuckTypeAotGenerateOptions(
+                proxyAssemblies: new[] { proxyAssemblyPath },
+                targetAssemblies: new[] { targetAssemblyPath },
+                targetFolders: Array.Empty<string>(),
+                targetFilters: new[] { "*.dll" },
+                mapFile: null,
+                mappingCatalog: null,
+                genericInstantiationsFile: null,
+                outputPath: outputPath,
+                assemblyName: "Datadog.Trace.DuckType.AotRegistry.RequireCatalog.Missing",
+                trimmerDescriptorPath: trimmerDescriptorPath,
+                propsPath: propsPath,
+                requireMappingCatalog: true);
+
+            var exitCode = DuckTypeAotGenerateProcessor.Process(options);
+            exitCode.Should().Be(1);
+        }
+        finally
+        {
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
+
+    [Fact]
+    public void GenerateProcessorShouldFailWhenRequireMappingCatalogIsEnabledAndCatalogIsEmpty()
+    {
+        var tempDirectory = CreateTempDirectory();
+        try
+        {
+            var proxyAssemblyPath = typeof(DuckTypeAotProcessorsTests).Assembly.Location;
+            var targetAssemblyPath = typeof(TestDuckTarget).Assembly.Location;
+
+            var outputPath = Path.Combine(tempDirectory, "Datadog.Trace.DuckType.AotRegistry.RequireCatalog.Empty.dll");
+            var mappingCatalogPath = Path.Combine(tempDirectory, "ducktype-aot-mapping-catalog-empty.json");
+            var trimmerDescriptorPath = Path.Combine(tempDirectory, "ducktype-aot-require-catalog-empty.linker.xml");
+            var propsPath = Path.Combine(tempDirectory, "ducktype-aot-require-catalog-empty.props");
+
+            var mappingCatalogDocument = new
+            {
+                requiredMappings = Array.Empty<object>()
+            };
+            File.WriteAllText(mappingCatalogPath, JsonConvert.SerializeObject(mappingCatalogDocument, Formatting.Indented));
+
+            var options = new DuckTypeAotGenerateOptions(
+                proxyAssemblies: new[] { proxyAssemblyPath },
+                targetAssemblies: new[] { targetAssemblyPath },
+                targetFolders: Array.Empty<string>(),
+                targetFilters: new[] { "*.dll" },
+                mapFile: null,
+                mappingCatalog: mappingCatalogPath,
+                genericInstantiationsFile: null,
+                outputPath: outputPath,
+                assemblyName: "Datadog.Trace.DuckType.AotRegistry.RequireCatalog.Empty",
+                trimmerDescriptorPath: trimmerDescriptorPath,
+                propsPath: propsPath,
+                requireMappingCatalog: true);
+
+            var exitCode = DuckTypeAotGenerateProcessor.Process(options);
+            exitCode.Should().Be(1);
+        }
+        finally
+        {
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
+
+    [Fact]
     public void GenerateProcessorShouldApplyScenarioIdFromMappingCatalog()
     {
         var tempDirectory = CreateTempDirectory();
@@ -318,7 +397,8 @@ public class DuckTypeAotProcessorsTests
                 outputPath: outputPath,
                 assemblyName: "Datadog.Trace.DuckType.AotRegistry.Scenario.Catalog",
                 trimmerDescriptorPath: trimmerDescriptorPath,
-                propsPath: propsPath);
+                propsPath: propsPath,
+                requireMappingCatalog: true);
 
             var exitCode = DuckTypeAotGenerateProcessor.Process(options);
             exitCode.Should().Be(0);
