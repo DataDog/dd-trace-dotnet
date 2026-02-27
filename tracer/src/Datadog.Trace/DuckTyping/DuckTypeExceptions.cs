@@ -604,4 +604,22 @@ namespace Datadog.Trace.DuckTyping
             throw new DuckTypeAotMultipleRegistryAssembliesException(currentRegistryAssembly, newRegistryAssembly);
         }
     }
+
+    /// <summary>
+    /// Generated AOT registry contract is invalid for the current Datadog.Trace runtime
+    /// </summary>
+    internal sealed class DuckTypeAotRegistryContractValidationException : DuckTypeException
+    {
+        private DuckTypeAotRegistryContractValidationException(string detail)
+            : base($"AOT registry contract validation failed. {detail}")
+        {
+        }
+
+        [DebuggerHidden]
+        [DoesNotReturn]
+        internal static void ThrowValidation(string detail)
+        {
+            throw new DuckTypeAotRegistryContractValidationException(detail);
+        }
+    }
 }

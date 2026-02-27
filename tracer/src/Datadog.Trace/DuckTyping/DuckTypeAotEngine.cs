@@ -44,7 +44,16 @@ namespace Datadog.Trace.DuckTyping
                 method.GetParameters()[0].ParameterType == typeof(Func<object?, object?>));
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private static readonly string CurrentDatadogTraceAssemblyVersion = typeof(DuckTypeAotEngine).Assembly.GetName().Version?.ToString() ?? "0.0.0.0";
+
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private static readonly string CurrentDatadogTraceAssemblyMvid = typeof(DuckTypeAotEngine).Assembly.ManifestModule.ModuleVersionId.ToString("D");
+
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static string? _registeredRegistryAssemblyIdentity;
+
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private static string? _validatedRegistryAssemblyIdentity;
 
         private static int _cacheVersion;
 
@@ -70,6 +79,63 @@ namespace Datadog.Trace.DuckTyping
             Register(typeToDeriveFrom, delegationType, generatedProxyType, activator, reverse: true);
         }
 
+        internal static void ValidateContract(DuckTypeAotContract contract, DuckTypeAotAssemblyMetadata metadata)
+        {
+            if (string.IsNullOrWhiteSpace(contract.SchemaVersion))
+            {
+                DuckTypeAotRegistryContractValidationException.ThrowValidation("AOT contract schema version is missing.");
+            }
+
+            if (string.IsNullOrWhiteSpace(contract.DatadogTraceAssemblyVersion))
+            {
+                DuckTypeAotRegistryContractValidationException.ThrowValidation("AOT contract Datadog.Trace assembly version is missing.");
+            }
+
+            if (string.IsNullOrWhiteSpace(contract.DatadogTraceAssemblyMvid))
+            {
+                DuckTypeAotRegistryContractValidationException.ThrowValidation("AOT contract Datadog.Trace assembly MVID is missing.");
+            }
+
+            if (string.IsNullOrWhiteSpace(metadata.RegistryAssemblyFullName))
+            {
+                DuckTypeAotRegistryContractValidationException.ThrowValidation("AOT registry assembly full name is missing.");
+            }
+
+            if (string.IsNullOrWhiteSpace(metadata.RegistryAssemblyMvid))
+            {
+                DuckTypeAotRegistryContractValidationException.ThrowValidation("AOT registry assembly MVID is missing.");
+            }
+
+            if (!string.Equals(DuckTypeAotContract.CurrentSchemaVersion, contract.SchemaVersion, StringComparison.Ordinal))
+            {
+                DuckTypeAotRegistryContractValidationException.ThrowValidation(
+                    $"AOT contract schema version mismatch. Expected '{DuckTypeAotContract.CurrentSchemaVersion}', got '{contract.SchemaVersion}'.");
+            }
+
+            if (!string.Equals(CurrentDatadogTraceAssemblyVersion, contract.DatadogTraceAssemblyVersion, StringComparison.Ordinal) ||
+                !string.Equals(CurrentDatadogTraceAssemblyMvid, contract.DatadogTraceAssemblyMvid, StringComparison.OrdinalIgnoreCase))
+            {
+                DuckTypeAotRegistryContractValidationException.ThrowValidation(
+                    $"AOT contract Datadog.Trace assembly mismatch. Expected version='{CurrentDatadogTraceAssemblyVersion}', mvid='{CurrentDatadogTraceAssemblyMvid}', got version='{contract.DatadogTraceAssemblyVersion}', mvid='{contract.DatadogTraceAssemblyMvid}'.");
+            }
+
+            lock (RegistrationLock)
+            {
+                var incomingRegistryAssemblyIdentity = NormalizeRegistryAssemblyIdentity(metadata.RegistryAssemblyFullName, metadata.RegistryAssemblyMvid);
+                var currentRegistryAssemblyIdentity = _registeredRegistryAssemblyIdentity ?? _validatedRegistryAssemblyIdentity;
+                if (string.IsNullOrWhiteSpace(currentRegistryAssemblyIdentity))
+                {
+                    _validatedRegistryAssemblyIdentity = incomingRegistryAssemblyIdentity;
+                    return;
+                }
+
+                if (!string.Equals(currentRegistryAssemblyIdentity, incomingRegistryAssemblyIdentity, StringComparison.Ordinal))
+                {
+                    DuckTypeAotMultipleRegistryAssembliesException.Throw(currentRegistryAssemblyIdentity!, incomingRegistryAssemblyIdentity);
+                }
+            }
+        }
+
         internal static void ResetForTests()
         {
             lock (RegistrationLock)
@@ -79,6 +145,7 @@ namespace Datadog.Trace.DuckTyping
                 ForwardMissCache.Clear();
                 ReverseMissCache.Clear();
                 _registeredRegistryAssemblyIdentity = null;
+                _validatedRegistryAssemblyIdentity = null;
                 Interlocked.Increment(ref _cacheVersion);
             }
         }
@@ -139,7 +206,7 @@ namespace Datadog.Trace.DuckTyping
         private static void EnsureSingleRegistryAssemblyPerProcess(Func<object?, object?> activator)
         {
             var incomingRegistryAssemblyIdentity = ResolveRegistryAssemblyIdentity(activator);
-            var currentRegistryAssemblyIdentity = _registeredRegistryAssemblyIdentity;
+            var currentRegistryAssemblyIdentity = _registeredRegistryAssemblyIdentity ?? _validatedRegistryAssemblyIdentity;
             if (string.IsNullOrWhiteSpace(currentRegistryAssemblyIdentity))
             {
                 _registeredRegistryAssemblyIdentity = incomingRegistryAssemblyIdentity;
@@ -150,6 +217,8 @@ namespace Datadog.Trace.DuckTyping
             {
                 DuckTypeAotMultipleRegistryAssembliesException.Throw(currentRegistryAssemblyIdentity!, incomingRegistryAssemblyIdentity);
             }
+
+            _registeredRegistryAssemblyIdentity = incomingRegistryAssemblyIdentity;
         }
 
         private static string ResolveRegistryAssemblyIdentity(Delegate activator)
@@ -164,7 +233,34 @@ namespace Datadog.Trace.DuckTyping
                 assemblyFullName = assemblyName.FullName ?? assemblyName.Name ?? "unknown";
             }
 
-            return $"{assemblyFullName}; MVID={module.ModuleVersionId:D}";
+            return NormalizeRegistryAssemblyIdentity(assemblyFullName, module.ModuleVersionId.ToString("D"));
+        }
+
+        private static string NormalizeRegistryAssemblyIdentity(string assemblyNameOrFullName, string moduleMvid)
+        {
+            var normalizedAssemblyName = NormalizeAssemblyIdentityName(assemblyNameOrFullName);
+            var normalizedMvid = Guid.TryParse(moduleMvid, out var parsedMvid) ? parsedMvid.ToString("D") : moduleMvid;
+            return $"{normalizedAssemblyName}; MVID={normalizedMvid}";
+        }
+
+        private static string NormalizeAssemblyIdentityName(string assemblyNameOrFullName)
+        {
+            if (string.IsNullOrWhiteSpace(assemblyNameOrFullName))
+            {
+                return "unknown";
+            }
+
+            try
+            {
+                var assemblyName = new AssemblyName(assemblyNameOrFullName);
+                var simpleName = assemblyName.Name ?? assemblyNameOrFullName;
+                var version = assemblyName.Version?.ToString() ?? "0.0.0.0";
+                return $"{simpleName}, Version={version}";
+            }
+            catch
+            {
+                return assemblyNameOrFullName.Trim();
+            }
         }
 
         private static DuckType.CreateTypeResult CreateMissingResult(TypesTuple key, bool reverse)
