@@ -88,13 +88,93 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 return (string.Empty, null);
             }
 
-            var commaIndex = value.IndexOf(',');
+            var commaIndex = FindTopLevelComma(value);
             if (commaIndex < 0)
             {
                 return (value.Trim(), null);
             }
 
             return (value.Substring(0, commaIndex).Trim(), NormalizeAssemblyName(value.Substring(commaIndex + 1)));
+        }
+
+        internal static bool IsGenericTypeName(string typeName)
+        {
+            return !string.IsNullOrWhiteSpace(typeName) && typeName.IndexOf('`') >= 0;
+        }
+
+        internal static bool IsOpenGenericTypeName(string typeName)
+        {
+            if (string.IsNullOrWhiteSpace(typeName))
+            {
+                return false;
+            }
+
+            if (typeName.IndexOf('!') >= 0)
+            {
+                return true;
+            }
+
+            for (var i = 0; i < typeName.Length; i++)
+            {
+                if (typeName[i] != '`')
+                {
+                    continue;
+                }
+
+                var arityStart = i + 1;
+                if (arityStart >= typeName.Length || !char.IsDigit(typeName[arityStart]))
+                {
+                    continue;
+                }
+
+                var nextToken = arityStart;
+                while (nextToken < typeName.Length && char.IsDigit(typeName[nextToken]))
+                {
+                    nextToken++;
+                }
+
+                while (nextToken < typeName.Length && char.IsWhiteSpace(typeName[nextToken]))
+                {
+                    nextToken++;
+                }
+
+                if (nextToken + 1 < typeName.Length && typeName[nextToken] == '[' && typeName[nextToken + 1] == '[')
+                {
+                    continue;
+                }
+
+                return true;
+            }
+
+            return false;
+        }
+
+        internal static bool IsClosedGenericTypeName(string typeName)
+        {
+            return IsGenericTypeName(typeName) && !IsOpenGenericTypeName(typeName);
+        }
+
+        private static int FindTopLevelComma(string value)
+        {
+            var bracketDepth = 0;
+            for (var i = 0; i < value.Length; i++)
+            {
+                var c = value[i];
+                if (c == '[')
+                {
+                    bracketDepth++;
+                }
+                else if (c == ']')
+                {
+                    bracketDepth = Math.Max(0, bracketDepth - 1);
+                }
+                else if (c == ',' && bracketDepth == 0)
+                {
+                    return i;
+                }
+            }
+
+            return -1;
         }
     }
 }

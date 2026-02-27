@@ -107,6 +107,14 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                         Source = mapping.Source.ToString().ToLowerInvariant()
                     })
                     .ToList(),
+                GenericInstantiations = mappingResolutionResult.GenericTypeRoots
+                    .OrderBy(root => root.Key, StringComparer.Ordinal)
+                    .Select(root => new DuckTypeAotManifestTypeReference
+                    {
+                        Type = root.TypeName,
+                        Assembly = root.AssemblyName
+                    })
+                    .ToList(),
                 ProxyAssemblies = CreateAssemblyFingerprints(mappingResolutionResult.ProxyAssemblyPathsByName.Values),
                 TargetAssemblies = CreateAssemblyFingerprints(mappingResolutionResult.TargetAssemblyPathsByName.Values),
                 DatadogTraceAssembly = CreateAssemblyFingerprint(typeof(Datadog.Trace.Tracer).Assembly.Location)
@@ -237,6 +245,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 {
                     AddTypeRoot(typesByAssembly, mappingResult.GeneratedProxyAssemblyName!, mappingResult.GeneratedProxyTypeName!);
                 }
+            }
+
+            foreach (var genericTypeRoot in mappingResolutionResult.GenericTypeRoots.OrderBy(root => root.Key, StringComparer.Ordinal))
+            {
+                AddTypeRoot(typesByAssembly, genericTypeRoot.AssemblyName, genericTypeRoot.TypeName);
             }
 
             var sb = new StringBuilder();
@@ -429,6 +442,9 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         [JsonProperty("mappings")]
         public List<DuckTypeAotManifestMapping> Mappings { get; set; } = new();
 
+        [JsonProperty("genericInstantiations")]
+        public List<DuckTypeAotManifestTypeReference> GenericInstantiations { get; set; } = new();
+
         [JsonProperty("proxyAssemblies")]
         public List<DuckTypeAotAssemblyFingerprint> ProxyAssemblies { get; set; } = new();
 
@@ -458,6 +474,15 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
         [JsonProperty("source")]
         public string? Source { get; set; }
+    }
+
+    internal sealed class DuckTypeAotManifestTypeReference
+    {
+        [JsonProperty("type")]
+        public string? Type { get; set; }
+
+        [JsonProperty("assembly")]
+        public string? Assembly { get; set; }
     }
 
     internal sealed class DuckTypeAotAssemblyFingerprint
