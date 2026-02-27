@@ -9,7 +9,7 @@ This file is the persistent execution checklist for the remaining work from [Duc
 3. [x] Complete explicit Bible feature ID coverage (`A-01..E-42`).
 4. [x] Add IL atlas parity coverage (`FG-*`, `FS-*`, `FF-*`, `FM-*`, `RT-*`).
 5. [x] Add Bible example parity coverage (`EX-01..EX-20`).
-6. [ ] Add test-adapted excerpt parity coverage (`TX-A..TX-T`).
+6. [x] Add test-adapted excerpt parity coverage (`TX-A..TX-T`).
 7. [ ] Close remaining non-compatible statuses for in-scope features (or explicitly mark approved known limitations).
 8. [ ] Add explicit engine-isolation and mode-immutability tests.
 9. [ ] Add concurrency and once-only initialization race tests.
@@ -25,4 +25,5 @@ This file is the persistent execution checklist for the remaining work from [Duc
 - Explicit feature IDs `A-01..E-42` are now implemented and passing in differential parity.
 - IL atlas parity IDs are implemented and passing: `FG-1..FG-9`, `FS-1..FS-6`, `FF-1..FF-5`, `FM-1..FM-8`, `RT-1..RT-5` (including parity for unsupported invocation paths such as FS-4).
 - Bible example parity IDs are implemented and passing: `EX-01..EX-20`.
-- Next active focus: item 6 + item 7.
+- Bible test-adapted excerpt parity IDs are implemented and passing: `TX-A..TX-T`.
+- Next active focus: item 7 + item 8.

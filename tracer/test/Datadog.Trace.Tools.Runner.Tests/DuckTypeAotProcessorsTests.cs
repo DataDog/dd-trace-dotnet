@@ -46,7 +46,7 @@ public class DuckTypeAotProcessorsTests
         var parseResult = DuckTypeAotMappingCatalogParser.Parse(catalogPath);
         parseResult.Errors.Should().BeEmpty();
         parseResult.RequiredMappings.Should().NotBeEmpty();
-        parseResult.RequiredMappings.Should().HaveCountGreaterOrEqualTo(96);
+        parseResult.RequiredMappings.Should().HaveCountGreaterOrEqualTo(116);
 
         var scenarioIds = parseResult.RequiredMappings
                                      .Where(mapping => !string.IsNullOrWhiteSpace(mapping.ScenarioId))
@@ -148,6 +148,26 @@ public class DuckTypeAotProcessorsTests
         scenarioIds.Should().Contain("EX-18");
         scenarioIds.Should().Contain("EX-19");
         scenarioIds.Should().Contain("EX-20");
+        scenarioIds.Should().Contain("TX-A");
+        scenarioIds.Should().Contain("TX-B");
+        scenarioIds.Should().Contain("TX-C");
+        scenarioIds.Should().Contain("TX-D");
+        scenarioIds.Should().Contain("TX-E");
+        scenarioIds.Should().Contain("TX-F");
+        scenarioIds.Should().Contain("TX-G");
+        scenarioIds.Should().Contain("TX-H");
+        scenarioIds.Should().Contain("TX-I");
+        scenarioIds.Should().Contain("TX-J");
+        scenarioIds.Should().Contain("TX-K");
+        scenarioIds.Should().Contain("TX-L");
+        scenarioIds.Should().Contain("TX-M");
+        scenarioIds.Should().Contain("TX-N");
+        scenarioIds.Should().Contain("TX-O");
+        scenarioIds.Should().Contain("TX-P");
+        scenarioIds.Should().Contain("TX-Q");
+        scenarioIds.Should().Contain("TX-R");
+        scenarioIds.Should().Contain("TX-S");
+        scenarioIds.Should().Contain("TX-T");
     }
 
     [Fact]
