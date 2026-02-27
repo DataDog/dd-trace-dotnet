@@ -170,6 +170,170 @@ public class DuckTypeAotProcessorsTests
     }
 
     [Fact]
+    public void ParseTypeAndAssemblyShouldHandleAssemblyQualifiedGenericType()
+    {
+        const string typeName = "System.Collections.Generic.Dictionary`2[[System.String, System.Private.CoreLib],[System.Int32, System.Private.CoreLib]]";
+        const string qualifiedType = typeName + ", System.Private.CoreLib";
+
+        var (parsedTypeName, parsedAssemblyName) = DuckTypeAotNameHelpers.ParseTypeAndAssembly(qualifiedType);
+        parsedTypeName.Should().Be(typeName);
+        parsedAssemblyName.Should().Be("System.Private.CoreLib");
+    }
+
+    [Fact]
+    public void GenerateProcessorShouldIncludeGenericInstantiationsInManifestAndTrimmerDescriptor()
+    {
+        var tempDirectory = CreateTempDirectory();
+        try
+        {
+            var proxyAssemblyPath = typeof(DuckTypeAotProcessorsTests).Assembly.Location;
+            var targetAssemblyPath = typeof(TestDuckTarget).Assembly.Location;
+            var proxyAssemblyName = AssemblyName.GetAssemblyName(proxyAssemblyPath).Name;
+            var targetAssemblyName = AssemblyName.GetAssemblyName(targetAssemblyPath).Name;
+            var coreAssemblyName = typeof(List<string>).Assembly.GetName().Name!;
+
+            var outputPath = Path.Combine(tempDirectory, "Datadog.Trace.DuckType.AotRegistry.GenericRoots.dll");
+            var mapFilePath = Path.Combine(tempDirectory, "ducktype-aot-map-generic-roots.json");
+            var genericInstantiationsPath = Path.Combine(tempDirectory, "ducktype-aot-generic-instantiations.json");
+            var trimmerDescriptorPath = Path.Combine(tempDirectory, "ducktype-aot-generic-roots.linker.xml");
+            var propsPath = Path.Combine(tempDirectory, "ducktype-aot-generic-roots.props");
+
+            var mapDocument = new
+            {
+                mappings = new[]
+                {
+                    new
+                    {
+                        mode = "forward",
+                        proxyType = typeof(ITestDuckProxy).FullName,
+                        proxyAssembly = proxyAssemblyName,
+                        targetType = typeof(TestDuckTarget).FullName,
+                        targetAssembly = targetAssemblyName
+                    }
+                }
+            };
+            File.WriteAllText(mapFilePath, JsonConvert.SerializeObject(mapDocument, Formatting.Indented));
+
+            var listOfStringTypeName = typeof(List<string>).FullName!;
+            var dictionaryTypeName = typeof(Dictionary<string, int>).FullName!;
+            var genericInstantiationsDocument = new
+            {
+                instantiations = new object[]
+                {
+                    new
+                    {
+                        type = listOfStringTypeName,
+                        assembly = coreAssemblyName
+                    },
+                    $"{dictionaryTypeName}, {coreAssemblyName}"
+                }
+            };
+            File.WriteAllText(genericInstantiationsPath, JsonConvert.SerializeObject(genericInstantiationsDocument, Formatting.Indented));
+
+            var options = new DuckTypeAotGenerateOptions(
+                proxyAssemblies: new[] { proxyAssemblyPath },
+                targetAssemblies: new[] { targetAssemblyPath },
+                targetFolders: Array.Empty<string>(),
+                targetFilters: new[] { "*.dll" },
+                mapFile: mapFilePath,
+                mappingCatalog: null,
+                genericInstantiationsFile: genericInstantiationsPath,
+                outputPath: outputPath,
+                assemblyName: "Datadog.Trace.DuckType.AotRegistry.GenericRoots",
+                trimmerDescriptorPath: trimmerDescriptorPath,
+                propsPath: propsPath);
+
+            var exitCode = DuckTypeAotGenerateProcessor.Process(options);
+            exitCode.Should().Be(0);
+
+            var manifestPath = $"{outputPath}.manifest.json";
+            var manifest = JsonConvert.DeserializeObject<DuckTypeAotManifest>(File.ReadAllText(manifestPath));
+            manifest.Should().NotBeNull();
+            manifest!.GenericInstantiations.Should().Contain(entry =>
+                string.Equals(entry.Assembly, coreAssemblyName, StringComparison.Ordinal) &&
+                string.Equals(entry.Type, listOfStringTypeName, StringComparison.Ordinal));
+            manifest.GenericInstantiations.Should().Contain(entry =>
+                string.Equals(entry.Assembly, coreAssemblyName, StringComparison.Ordinal) &&
+                string.Equals(entry.Type, dictionaryTypeName, StringComparison.Ordinal));
+
+            var trimmerDescriptorContent = File.ReadAllText(trimmerDescriptorPath);
+            trimmerDescriptorContent.Should().Contain($"<assembly fullname=\"{coreAssemblyName}\">");
+            trimmerDescriptorContent.Should().Contain(listOfStringTypeName);
+            trimmerDescriptorContent.Should().Contain(dictionaryTypeName);
+        }
+        finally
+        {
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
+
+    [Fact]
+    public void GenerateProcessorShouldFailForOpenGenericInstantiationRoots()
+    {
+        var tempDirectory = CreateTempDirectory();
+        try
+        {
+            var proxyAssemblyPath = typeof(DuckTypeAotProcessorsTests).Assembly.Location;
+            var targetAssemblyPath = typeof(TestDuckTarget).Assembly.Location;
+            var proxyAssemblyName = AssemblyName.GetAssemblyName(proxyAssemblyPath).Name;
+            var targetAssemblyName = AssemblyName.GetAssemblyName(targetAssemblyPath).Name;
+            var coreAssemblyName = typeof(List<string>).Assembly.GetName().Name!;
+
+            var outputPath = Path.Combine(tempDirectory, "Datadog.Trace.DuckType.AotRegistry.GenericRoots.Invalid.dll");
+            var mapFilePath = Path.Combine(tempDirectory, "ducktype-aot-map-generic-roots-invalid.json");
+            var genericInstantiationsPath = Path.Combine(tempDirectory, "ducktype-aot-generic-instantiations-invalid.json");
+            var trimmerDescriptorPath = Path.Combine(tempDirectory, "ducktype-aot-generic-roots-invalid.linker.xml");
+            var propsPath = Path.Combine(tempDirectory, "ducktype-aot-generic-roots-invalid.props");
+
+            var mapDocument = new
+            {
+                mappings = new[]
+                {
+                    new
+                    {
+                        mode = "forward",
+                        proxyType = typeof(ITestDuckProxy).FullName,
+                        proxyAssembly = proxyAssemblyName,
+                        targetType = typeof(TestDuckTarget).FullName,
+                        targetAssembly = targetAssemblyName
+                    }
+                }
+            };
+            File.WriteAllText(mapFilePath, JsonConvert.SerializeObject(mapDocument, Formatting.Indented));
+
+            var genericInstantiationsDocument = new
+            {
+                instantiations = new object[]
+                {
+                    $"{typeof(List<>).FullName}, {coreAssemblyName}"
+                }
+            };
+            File.WriteAllText(genericInstantiationsPath, JsonConvert.SerializeObject(genericInstantiationsDocument, Formatting.Indented));
+
+            var options = new DuckTypeAotGenerateOptions(
+                proxyAssemblies: new[] { proxyAssemblyPath },
+                targetAssemblies: new[] { targetAssemblyPath },
+                targetFolders: Array.Empty<string>(),
+                targetFilters: new[] { "*.dll" },
+                mapFile: mapFilePath,
+                mappingCatalog: null,
+                genericInstantiationsFile: genericInstantiationsPath,
+                outputPath: outputPath,
+                assemblyName: "Datadog.Trace.DuckType.AotRegistry.GenericRoots.Invalid",
+                trimmerDescriptorPath: trimmerDescriptorPath,
+                propsPath: propsPath);
+
+            var exitCode = DuckTypeAotGenerateProcessor.Process(options);
+            exitCode.Should().Be(1);
+            File.Exists(outputPath).Should().BeFalse();
+        }
+        finally
+        {
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
+
+    [Fact]
     public void VerifyCompatProcessorShouldSucceedWhenAllMappingsAreCompatible()
     {
         var tempDirectory = CreateTempDirectory();
