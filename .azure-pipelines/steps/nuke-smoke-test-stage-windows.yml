@@ -43,7 +43,7 @@ jobs:
         pipelineId: 196299
 
   - template: install-latest-dotnet-sdk.yml
-  - script: tracer\build.cmd RunArtifactSmokeTests CheckSmokeTestsForErrors ExtractMetricsFromLogs -SmokeTestCategory $(category) -SmokeTestScenario $(scenario)
+  - script: tracer\build.cmd RunArtifactSmokeTests CheckSmokeTestsForErrors ExtractMetricsFromLogs -SmokeTestCategory $(category) -SmokeTestScenario $(scenario) --Artifacts $(outputDir)
     displayName: Run Nuke smoke test
     env:
       DD_LOGGER_DD_API_KEY: $(ddApiKey)

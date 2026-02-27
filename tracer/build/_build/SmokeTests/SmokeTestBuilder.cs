@@ -858,15 +858,15 @@ public static class SmokeTestBuilder
                 await client.Images.CreateImageAsync(
                     new ImagesCreateParameters { FromImage = repo, Tag = tag },
                     authConfig: null,
-                    progress: new Progress<JSONMessage>(msg =>
+                    progress: new InlineProgress<JSONMessage>(msg =>
                     {
                         if (!string.IsNullOrEmpty(msg.Status))
                         {
-                            var progress = string.IsNullOrEmpty(msg.ProgressMessage) ? "" : " " + msg.ProgressMessage;
+                            var progressMsg = string.IsNullOrEmpty(msg.ProgressMessage) ? "" : " " + msg.ProgressMessage;
                             if (string.IsNullOrEmpty(msg.ID))
-                                Logger.Debug("[Pull] {Status}{Progress}", msg.Status, progress);
+                                Logger.Debug("[Pull] {Status}{Progress}", msg.Status, progressMsg);
                             else
-                                Logger.Debug("[Pull] [{Id}] {Status}{Progress}", msg.ID, msg.Status, progress);
+                                Logger.Debug("[Pull] [{Id}] {Status}{Progress}", msg.ID, msg.Status, progressMsg);
                         }
                     }));
                 Logger.Information("Pulled image {Image}", image);
@@ -1180,7 +1180,7 @@ public static class SmokeTestBuilder
                 using var client = CreateDockerClient();
 
                 string lastError = null;
-                var progress = new Progress<JSONMessage>(msg =>
+                var progress = new InlineProgress<JSONMessage>(msg =>
                 {
                     if (!string.IsNullOrEmpty(msg.Stream))
                     {
@@ -1193,11 +1193,11 @@ public static class SmokeTestBuilder
 
                     if (!string.IsNullOrEmpty(msg.Status))
                     {
-                        var progress = string.IsNullOrEmpty(msg.ProgressMessage) ? "" : " " + msg.ProgressMessage;
+                        var progressMsg = string.IsNullOrEmpty(msg.ProgressMessage) ? "" : " " + msg.ProgressMessage;
                         if (string.IsNullOrEmpty(msg.ID))
-                            Logger.Debug("{Status}{Progress}", msg.Status, progress);
+                            Logger.Debug("{Status}{Progress}", msg.Status, progressMsg);
                         else
-                            Logger.Debug("[{Id}] {Status}{Progress}", msg.ID, msg.Status, progress);
+                            Logger.Debug("[{Id}] {Status}{Progress}", msg.ID, msg.Status, progressMsg);
                     }
 
                     if (!string.IsNullOrEmpty(msg.ErrorMessage))
@@ -1338,5 +1338,19 @@ public static class SmokeTestBuilder
         Logger.Information("────────────────────────────────────────────────────────────");
         Logger.Information("{Title}", title);
         Logger.Information("────────────────────────────────────────────────────────────");
+    }
+
+    /// <summary>
+    /// IProgress&lt;T&gt; implementation that invokes the handler synchronously.
+    /// Unlike <see cref="Progress{T}"/>, which posts callbacks to the thread pool,
+    /// this ensures the handler runs inline during <c>Report()</c> so that any
+    /// side effects (e.g. setting <c>lastError</c>) are visible immediately after
+    /// the awaited API call returns.
+    /// </summary>
+    sealed class InlineProgress<T> : IProgress<T>
+    {
+        private readonly Action<T> _handler;
+        public InlineProgress(Action<T> handler) => _handler = handler;
+        public void Report(T value) => _handler(value);
     }
 }
