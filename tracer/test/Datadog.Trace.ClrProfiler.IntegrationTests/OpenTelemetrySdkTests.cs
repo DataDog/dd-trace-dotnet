@@ -78,6 +78,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         private readonly Regex _exceptionStacktraceRegex = new(@"exception.stacktrace"":""System.ArgumentException: Example argument exception.*"",""");
         private readonly Regex _exceptionStacktraceOtlpRegex = new(@"string_value"": ""System.ArgumentException: Example argument exception.*""");
         private readonly Regex _exceptionStacktraceOtlpJsonRegex = new(@"stringValue"": ""System.ArgumentException: Example argument exception.*""");
+        private readonly Regex _traceIdRegex = new(@"^([a-fA-F0-9]{32})$");
+        private readonly Regex _spanIdRegex = new(@"^([a-fA-F0-9]{16})$");
 
         public OpenTelemetrySdkTests(ITestOutputHelper output)
             : base("OpenTelemetrySdk", output)
@@ -272,6 +274,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 SetEnvironmentVariable("OTEL_EXPORTER_OTLP_METRICS_ENDPOINT", $"http://{testAgentHost}:{otlpPort}");
             }
 
+            var applicationStartTimeUnixNano = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
             using var agent = EnvironmentHelper.GetMockAgent();
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion ?? "1.13.1"))
             {
@@ -312,6 +315,52 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 foreach (var span in tracesRequests.SelectTokens("$..spans[*]"))
                 {
+                    static string ToHexString(byte[] bytes, int length)
+                    {
+                        bytes.Length.Should().Be(length);
+
+                        var traceId = new byte[length * 2];
+                        for (int i = 0; i < length; i++)
+                        {
+                            traceId[2 * i] = (byte)(bytes[i] >> 4);         // high 4 bits
+                            traceId[(2 * i) + 1] = (byte)(bytes[i] & 0x0F); // low 4 bits
+                        }
+
+                        // Convert each nibble (0-15) to its hex character
+                        var result = new char[length * 2];
+                        for (int i = 0; i < length * 2; i++)
+                        {
+                            result[i] = (char)(traceId[i] < 10 ? '0' + traceId[i] : 'a' + traceId[i] - 10);
+                        }
+
+                        return new string(result);
+                    }
+
+                    static string ToTraceId(byte[] bytes) => ToHexString(bytes, 16);
+
+                    static string ToSpanId(byte[] bytes) => ToHexString(bytes, 8);
+
+                    // Parse unstable information from the span
+                    string traceIdData = isJson ? span[traceIdKey].ToString()
+                                                : ToTraceId(Convert.FromBase64String(span[traceIdKey].ToString()));
+                    string spanIdData = isJson ? span[spanIdKey].ToString()
+                                                : ToSpanId(Convert.FromBase64String(span[spanIdKey].ToString()));
+                    var spanStartTimeUnixNano = long.Parse(span[startTimeUnixNanoKey].ToString());
+                    var spanEndTimeUnixNano = long.Parse(span[endTimeUnixNanoKey].ToString());
+
+                    // Add strong assertions on unstable span information
+                    spanStartTimeUnixNano.Should().BeGreaterThanOrEqualTo(applicationStartTimeUnixNano);
+                    spanEndTimeUnixNano.Should().BeGreaterThanOrEqualTo(spanStartTimeUnixNano);
+                    traceIdData.Should().MatchRegex(_traceIdRegex);
+                    spanIdData.Should().MatchRegex(_spanIdRegex);
+                    if (span[parentSpanIdKey] != null)
+                    {
+                        string parentSpanIdData = isJson ? span[parentSpanIdKey]?.ToString()
+                                                        : ToSpanId(Convert.FromBase64String(span[parentSpanIdKey].ToString()));
+                        parentSpanIdData.Should().MatchRegex(_spanIdRegex);
+                    }
+
+                    // Normalize the unstable span information for our snapshots
                     span[startTimeUnixNanoKey] = "0";
                     span[endTimeUnixNanoKey] = "0";
                     span[traceIdKey] = "normalized-trace-id";
@@ -329,6 +378,20 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 foreach (var link in tracesRequests.SelectTokens("$..links[*]"))
                 {
+                    if (isJson)
+                    {
+                        link[traceIdKey].ToString().Should().MatchRegex(_traceIdRegex);
+                        link[spanIdKey].ToString().Should().MatchRegex(_spanIdRegex);
+                    }
+                    else
+                    {
+                        // We need to emit each byte as a character, so use ASCII encoding
+                        // var decodedTraceId = System.Text.Encoding.ASCII.GetString(Convert.FromBase64String(link[traceIdKey].ToString()));
+                        // var decodedSpanId = System.Text.Encoding.ASCII.GetString(Convert.FromBase64String(link[spanIdKey].ToString()));
+                        // decodedTraceId.Should().MatchRegex(_traceIdRegex);
+                        // decodedSpanId.Should().MatchRegex(_spanIdRegex);
+                    }
+
                     link[traceIdKey] = "normalized-trace-id";
                     link[spanIdKey] = "normalized-span-id";
                 }
