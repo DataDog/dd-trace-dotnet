@@ -47,12 +47,20 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
     internal sealed class DuckTypeAotMappingEmissionResult
     {
-        private DuckTypeAotMappingEmissionResult(DuckTypeAotMapping mapping, string status, string? diagnosticCode, string? detail)
+        private DuckTypeAotMappingEmissionResult(
+            DuckTypeAotMapping mapping,
+            string status,
+            string? diagnosticCode,
+            string? detail,
+            string? generatedProxyAssemblyName,
+            string? generatedProxyTypeName)
         {
             Mapping = mapping;
             Status = status;
             DiagnosticCode = diagnosticCode;
             Detail = detail;
+            GeneratedProxyAssemblyName = generatedProxyAssemblyName;
+            GeneratedProxyTypeName = generatedProxyTypeName;
         }
 
         public DuckTypeAotMapping Mapping { get; }
@@ -63,14 +71,33 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
         public string? Detail { get; }
 
-        public static DuckTypeAotMappingEmissionResult Compatible(DuckTypeAotMapping mapping)
+        public string? GeneratedProxyAssemblyName { get; }
+
+        public string? GeneratedProxyTypeName { get; }
+
+        public static DuckTypeAotMappingEmissionResult Compatible(
+            DuckTypeAotMapping mapping,
+            string generatedProxyAssemblyName,
+            string generatedProxyTypeName)
         {
-            return new DuckTypeAotMappingEmissionResult(mapping, DuckTypeAotCompatibilityStatuses.Compatible, diagnosticCode: null, detail: null);
+            return new DuckTypeAotMappingEmissionResult(
+                mapping,
+                DuckTypeAotCompatibilityStatuses.Compatible,
+                diagnosticCode: null,
+                detail: null,
+                generatedProxyAssemblyName,
+                generatedProxyTypeName);
         }
 
         public static DuckTypeAotMappingEmissionResult NotCompatible(DuckTypeAotMapping mapping, string status, string diagnosticCode, string detail)
         {
-            return new DuckTypeAotMappingEmissionResult(mapping, status, diagnosticCode, detail);
+            return new DuckTypeAotMappingEmissionResult(
+                mapping,
+                status,
+                diagnosticCode,
+                detail,
+                generatedProxyAssemblyName: null,
+                generatedProxyTypeName: null);
         }
     }
 }

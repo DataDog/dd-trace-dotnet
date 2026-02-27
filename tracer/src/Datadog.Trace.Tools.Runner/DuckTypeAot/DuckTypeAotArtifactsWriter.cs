@@ -49,7 +49,9 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                         Source = mapping.Source.ToString().ToLowerInvariant(),
                         Status = hasResult ? mappingResult!.Status : DuckTypeAotCompatibilityStatuses.PendingProxyEmission,
                         DiagnosticCode = hasResult ? mappingResult!.DiagnosticCode : null,
-                        Details = hasResult ? mappingResult!.Detail : null
+                        Details = hasResult ? mappingResult!.Detail : null,
+                        GeneratedProxyAssembly = hasResult ? mappingResult!.GeneratedProxyAssemblyName : null,
+                        GeneratedProxyType = hasResult ? mappingResult!.GeneratedProxyTypeName : null
                     };
                 })
                 .ToList();
@@ -66,7 +68,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             WriteJson(artifactPaths.CompatibilityMatrixPath, compatibilityMatrix);
             WriteCompatibilityMarkdown(artifactPaths.CompatibilityReportPath, compatibilityMatrix);
             WriteManifest(artifactPaths.ManifestPath, mappingResolutionResult, registryAssemblyInfo, generatedAtUtc, toolVersion);
-            WriteTrimmerDescriptor(artifactPaths.TrimmerDescriptorPath, registryAssemblyInfo);
+            WriteTrimmerDescriptor(artifactPaths.TrimmerDescriptorPath, mappingResolutionResult, emissionResult);
             WritePropsFile(artifactPaths.PropsPath, artifactPaths, registryAssemblyInfo);
 
             return new DuckTypeAotCompatibilityArtifacts(
@@ -186,6 +188,15 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     .Append(mapping.TargetAssembly)
                     .AppendLine(" |");
 
+                if (!string.IsNullOrWhiteSpace(mapping.GeneratedProxyType) || !string.IsNullOrWhiteSpace(mapping.GeneratedProxyAssembly))
+                {
+                    _ = sb.Append("|  |  |  |  |  | generated: ")
+                        .Append(mapping.GeneratedProxyType ?? "-")
+                        .Append(", ")
+                        .Append(mapping.GeneratedProxyAssembly ?? "-")
+                        .AppendLine(" |  |");
+                }
+
                 if (!string.IsNullOrWhiteSpace(mapping.Details))
                 {
                     var details = mapping.Details;
@@ -198,16 +209,86 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             File.WriteAllText(path, sb.ToString());
         }
 
-        private static void WriteTrimmerDescriptor(string path, DuckTypeAotRegistryAssemblyInfo registryAssemblyInfo)
+        private static void WriteTrimmerDescriptor(
+            string path,
+            DuckTypeAotMappingResolutionResult mappingResolutionResult,
+            DuckTypeAotRegistryEmissionResult emissionResult)
         {
-            var linkerXml =
-                "<linker>" + Environment.NewLine +
-                $"  <assembly fullname=\"{registryAssemblyInfo.AssemblyName}\">" + Environment.NewLine +
-                $"    <type fullname=\"{registryAssemblyInfo.BootstrapTypeFullName}\" preserve=\"all\" />" + Environment.NewLine +
-                "  </assembly>" + Environment.NewLine +
-                "</linker>" + Environment.NewLine;
+            var typesByAssembly = new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase);
 
-            File.WriteAllText(path, linkerXml);
+            AddTypeRoot(
+                typesByAssembly,
+                emissionResult.RegistryAssemblyInfo.AssemblyName,
+                emissionResult.RegistryAssemblyInfo.BootstrapTypeFullName);
+
+            foreach (var mapping in mappingResolutionResult.Mappings.OrderBy(m => m.Key, StringComparer.Ordinal))
+            {
+                if (!emissionResult.MappingResultsByKey.TryGetValue(mapping.Key, out var mappingResult) ||
+                    !string.Equals(mappingResult.Status, DuckTypeAotCompatibilityStatuses.Compatible, StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                AddTypeRoot(typesByAssembly, mapping.ProxyAssemblyName, mapping.ProxyTypeName);
+                AddTypeRoot(typesByAssembly, mapping.TargetAssemblyName, mapping.TargetTypeName);
+
+                if (!string.IsNullOrWhiteSpace(mappingResult.GeneratedProxyAssemblyName) &&
+                    !string.IsNullOrWhiteSpace(mappingResult.GeneratedProxyTypeName))
+                {
+                    AddTypeRoot(typesByAssembly, mappingResult.GeneratedProxyAssemblyName!, mappingResult.GeneratedProxyTypeName!);
+                }
+            }
+
+            var sb = new StringBuilder();
+            _ = sb.AppendLine("<linker>");
+            foreach (var (assemblyName, typeNames) in typesByAssembly.OrderBy(kvp => kvp.Key, StringComparer.OrdinalIgnoreCase))
+            {
+                _ = sb.Append("  <assembly fullname=\"")
+                      .Append(EscapeXml(assemblyName))
+                      .AppendLine("\">");
+
+                foreach (var typeName in typeNames.OrderBy(name => name, StringComparer.Ordinal))
+                {
+                    _ = sb.Append("    <type fullname=\"")
+                          .Append(EscapeXml(typeName))
+                          .AppendLine("\" preserve=\"all\" />");
+                }
+
+                _ = sb.AppendLine("  </assembly>");
+            }
+
+            _ = sb.AppendLine("</linker>");
+            File.WriteAllText(path, sb.ToString());
+        }
+
+        private static void AddTypeRoot(IDictionary<string, HashSet<string>> typesByAssembly, string assemblyName, string typeName)
+        {
+            if (string.IsNullOrWhiteSpace(assemblyName) || string.IsNullOrWhiteSpace(typeName))
+            {
+                return;
+            }
+
+            if (!typesByAssembly.TryGetValue(assemblyName, out var assemblyTypes))
+            {
+                assemblyTypes = new HashSet<string>(StringComparer.Ordinal);
+                typesByAssembly[assemblyName] = assemblyTypes;
+            }
+
+            _ = assemblyTypes.Add(NormalizeTypeNameForLinker(typeName));
+        }
+
+        private static string NormalizeTypeNameForLinker(string typeName)
+        {
+            return typeName.Replace('+', '/');
+        }
+
+        private static string EscapeXml(string value)
+        {
+            return value
+                .Replace("&", "&amp;")
+                .Replace("\"", "&quot;")
+                .Replace("<", "&lt;")
+                .Replace(">", "&gt;");
         }
 
         private static void WritePropsFile(string path, DuckTypeAotArtifactPaths artifactPaths, DuckTypeAotRegistryAssemblyInfo registryAssemblyInfo)
@@ -314,6 +395,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
         [JsonProperty("details")]
         public string? Details { get; set; }
+
+        [JsonProperty("generatedProxyAssembly")]
+        public string? GeneratedProxyAssembly { get; set; }
+
+        [JsonProperty("generatedProxyType")]
+        public string? GeneratedProxyType { get; set; }
     }
 
     internal sealed class DuckTypeAotManifest
