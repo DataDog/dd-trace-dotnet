@@ -226,7 +226,9 @@ int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, void* crashingTh
 
     for (auto const& [threadId, threadName] : threads)
     {
-        auto frames = GetThreadFrames(threadId, resolveCallback, context);
+        auto currentIsCrashingThread = threadId == crashingThreadId;
+        auto threadContext = currentIsCrashingThread ? crashingThreadContext : nullptr;
+        auto frames = GetThreadFrames(threadId, threadContext, resolveCallback, context);
 
         auto [stackTrace, succeeded] = ExtractResult(ddog_crasht_StackTrace_new());
 
@@ -235,7 +237,6 @@ int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, void* crashingTh
             return 1;
         }
 
-        auto currentIsCrashingThread = threadId == crashingThreadId;
         // GetThreadFrames returns the frames in reverse order, so we need to iterate in reverse
         for (auto it = frames.rbegin(); it != frames.rend(); it++)
         {
