@@ -147,6 +147,25 @@ namespace Datadog.Trace.DuckTyping.Tests
             conflictingRegistryRegistration.Should().Throw<DuckTypeAotMultipleRegistryAssembliesException>();
         }
 
+        [Fact]
+        public void RegisterProxyFromDifferentRegistryAssemblyWithSameSimpleNameThrows()
+        {
+            DuckTypeAotEngine.RegisterProxy(
+                typeof(ISingleRegistryWarmupProxy),
+                typeof(SingleRegistryWarmupTarget),
+                typeof(SingleRegistryWarmupGeneratedProxy),
+                instance => new SingleRegistryWarmupGeneratedProxy((SingleRegistryWarmupTarget)instance!));
+
+            var dynamicActivator = CreateSameSimpleNameDynamicAssemblyActivator();
+            Action conflictingRegistryRegistration = () => DuckTypeAotEngine.RegisterProxy(
+                typeof(ISingleRegistryConflictProxy),
+                typeof(SingleRegistryConflictTarget),
+                typeof(SingleRegistryConflictGeneratedProxy),
+                dynamicActivator);
+
+            conflictingRegistryRegistration.Should().Throw<DuckTypeAotMultipleRegistryAssembliesException>();
+        }
+
         private interface IMissingProxy
         {
             string Value { get; }
@@ -370,6 +389,11 @@ namespace Datadog.Trace.DuckTyping.Tests
             public string Value => _target.Value;
         }
 
+        public static object CreateSingleRegistryConflictProxyInstance(object? instance)
+        {
+            return new SingleRegistryConflictGeneratedProxy((SingleRegistryConflictTarget)instance!);
+        }
+
         private static Func<object?, object?> CreateDynamicAssemblyActivator()
         {
             var ctor = typeof(SingleRegistryConflictGeneratedProxy).GetConstructor(
@@ -389,6 +413,41 @@ namespace Datadog.Trace.DuckTyping.Tests
             il.Emit(OpCodes.Newobj, ctor!);
             il.Emit(OpCodes.Ret);
             return (Func<object?, object?>)dynamicMethod.CreateDelegate(typeof(Func<object?, object?>));
+        }
+
+        private static Func<object?, object?> CreateSameSimpleNameDynamicAssemblyActivator()
+        {
+            var currentAssemblySimpleName = typeof(DuckTypeAotEngineTests).Assembly.GetName().Name;
+            currentAssemblySimpleName.Should().NotBeNullOrEmpty();
+
+            var dynamicAssembly = AssemblyBuilder.DefineDynamicAssembly(new AssemblyName(currentAssemblySimpleName!), AssemblyBuilderAccess.Run);
+            var dynamicModule = dynamicAssembly.DefineDynamicModule("MainModule");
+            var dynamicType = dynamicModule.DefineType(
+                "SingleRegistrySameNameActivatorFactory",
+                TypeAttributes.Public | TypeAttributes.Abstract | TypeAttributes.Sealed);
+            var dynamicMethod = dynamicType.DefineMethod(
+                "Create",
+                MethodAttributes.Public | MethodAttributes.Static,
+                typeof(object),
+                [typeof(object)]);
+
+            var bridgeMethod = typeof(DuckTypeAotEngineTests).GetMethod(
+                nameof(CreateSingleRegistryConflictProxyInstance),
+                BindingFlags.Public | BindingFlags.Static);
+            bridgeMethod.Should().NotBeNull();
+
+            var il = dynamicMethod.GetILGenerator();
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Call, bridgeMethod!);
+            il.Emit(OpCodes.Ret);
+
+            var factoryType = dynamicType.CreateTypeInfo();
+            factoryType.Should().NotBeNull();
+
+            var createMethod = factoryType!.GetMethod("Create", BindingFlags.Public | BindingFlags.Static);
+            createMethod.Should().NotBeNull();
+
+            return (Func<object?, object?>)Delegate.CreateDelegate(typeof(Func<object?, object?>), createMethod!);
         }
     }
 }
