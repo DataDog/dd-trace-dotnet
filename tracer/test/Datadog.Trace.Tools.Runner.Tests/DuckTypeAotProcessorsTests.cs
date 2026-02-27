@@ -46,7 +46,7 @@ public class DuckTypeAotProcessorsTests
         var parseResult = DuckTypeAotMappingCatalogParser.Parse(catalogPath);
         parseResult.Errors.Should().BeEmpty();
         parseResult.RequiredMappings.Should().NotBeEmpty();
-        parseResult.RequiredMappings.Should().HaveCountGreaterOrEqualTo(15);
+        parseResult.RequiredMappings.Should().HaveCountGreaterOrEqualTo(52);
 
         var scenarioIds = parseResult.RequiredMappings
                                      .Where(mapping => !string.IsNullOrWhiteSpace(mapping.ScenarioId))
@@ -60,13 +60,50 @@ public class DuckTypeAotProcessorsTests
         scenarioIds.Should().Contain("A-05");
         scenarioIds.Should().Contain("A-06");
         scenarioIds.Should().Contain("A-07");
+        scenarioIds.Should().Contain("A-08");
+        scenarioIds.Should().Contain("A-09");
+        scenarioIds.Should().Contain("A-10");
+        scenarioIds.Should().Contain("A-11");
+        scenarioIds.Should().Contain("A-12");
+        scenarioIds.Should().Contain("A-13");
+        scenarioIds.Should().Contain("A-14");
+        scenarioIds.Should().Contain("A-15");
         scenarioIds.Should().Contain("B-16");
         scenarioIds.Should().Contain("B-17");
+        scenarioIds.Should().Contain("B-18");
+        scenarioIds.Should().Contain("B-19");
+        scenarioIds.Should().Contain("B-20");
+        scenarioIds.Should().Contain("B-21");
+        scenarioIds.Should().Contain("B-22");
+        scenarioIds.Should().Contain("B-23");
+        scenarioIds.Should().Contain("B-24");
+        scenarioIds.Should().Contain("B-25");
+        scenarioIds.Should().Contain("B-26");
+        scenarioIds.Should().Contain("B-27");
         scenarioIds.Should().Contain("C-28");
         scenarioIds.Should().Contain("C-29");
+        scenarioIds.Should().Contain("C-30");
+        scenarioIds.Should().Contain("C-31");
+        scenarioIds.Should().Contain("C-32");
+        scenarioIds.Should().Contain("C-33");
         scenarioIds.Should().Contain("D-34");
         scenarioIds.Should().Contain("D-35");
         scenarioIds.Should().Contain("D-36");
+        scenarioIds.Should().Contain("D-37");
+        scenarioIds.Should().Contain("E-38");
+        scenarioIds.Should().Contain("E-39");
+        scenarioIds.Should().Contain("E-40");
+        scenarioIds.Should().Contain("E-41");
+        scenarioIds.Should().Contain("E-42");
+        scenarioIds.Should().Contain("FG-1");
+        scenarioIds.Should().Contain("FS-1");
+        scenarioIds.Should().Contain("FF-1");
+        scenarioIds.Should().Contain("FM-1");
+        scenarioIds.Should().Contain("RT-1");
+        scenarioIds.Should().Contain("FG-2");
+        scenarioIds.Should().Contain("FS-5");
+        scenarioIds.Should().Contain("FF-2");
+        scenarioIds.Should().Contain("FM-8");
     }
 
     [Fact]
