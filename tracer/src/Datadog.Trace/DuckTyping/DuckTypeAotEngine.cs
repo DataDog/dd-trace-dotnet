@@ -44,7 +44,7 @@ namespace Datadog.Trace.DuckTyping
                 method.GetParameters()[0].ParameterType == typeof(Func<object?, object?>));
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private static string? _registeredRegistryAssemblyName;
+        private static string? _registeredRegistryAssemblyIdentity;
 
         private static int _cacheVersion;
 
@@ -78,7 +78,7 @@ namespace Datadog.Trace.DuckTyping
                 ReverseRegistry.Clear();
                 ForwardMissCache.Clear();
                 ReverseMissCache.Clear();
-                _registeredRegistryAssemblyName = null;
+                _registeredRegistryAssemblyIdentity = null;
                 Interlocked.Increment(ref _cacheVersion);
             }
         }
@@ -138,24 +138,33 @@ namespace Datadog.Trace.DuckTyping
 
         private static void EnsureSingleRegistryAssemblyPerProcess(Func<object?, object?> activator)
         {
-            var incomingRegistryAssemblyName = ResolveRegistryAssemblyName(activator);
-            var currentRegistryAssemblyName = _registeredRegistryAssemblyName;
-            if (string.IsNullOrWhiteSpace(currentRegistryAssemblyName))
+            var incomingRegistryAssemblyIdentity = ResolveRegistryAssemblyIdentity(activator);
+            var currentRegistryAssemblyIdentity = _registeredRegistryAssemblyIdentity;
+            if (string.IsNullOrWhiteSpace(currentRegistryAssemblyIdentity))
             {
-                _registeredRegistryAssemblyName = incomingRegistryAssemblyName;
+                _registeredRegistryAssemblyIdentity = incomingRegistryAssemblyIdentity;
                 return;
             }
 
-            if (!string.Equals(currentRegistryAssemblyName, incomingRegistryAssemblyName, StringComparison.OrdinalIgnoreCase))
+            if (!string.Equals(currentRegistryAssemblyIdentity, incomingRegistryAssemblyIdentity, StringComparison.Ordinal))
             {
-                DuckTypeAotMultipleRegistryAssembliesException.Throw(currentRegistryAssemblyName!, incomingRegistryAssemblyName);
+                DuckTypeAotMultipleRegistryAssembliesException.Throw(currentRegistryAssemblyIdentity!, incomingRegistryAssemblyIdentity);
             }
         }
 
-        private static string ResolveRegistryAssemblyName(Delegate activator)
+        private static string ResolveRegistryAssemblyIdentity(Delegate activator)
         {
-            var assembly = activator.Method.Module.Assembly;
-            return assembly.GetName().Name ?? assembly.FullName ?? "unknown";
+            var module = activator.Method.Module;
+            var assembly = module.Assembly;
+
+            var assemblyFullName = assembly.FullName;
+            if (string.IsNullOrWhiteSpace(assemblyFullName))
+            {
+                var assemblyName = assembly.GetName();
+                assemblyFullName = assemblyName.FullName ?? assemblyName.Name ?? "unknown";
+            }
+
+            return $"{assemblyFullName}; MVID={module.ModuleVersionId:D}";
         }
 
         private static DuckType.CreateTypeResult CreateMissingResult(TypesTuple key, bool reverse)
