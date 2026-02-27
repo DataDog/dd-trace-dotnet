@@ -29,10 +29,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         private const string BootstrapInitializeMethodName = "Initialize";
         private const string GeneratedProxyNamespace = "Datadog.Trace.DuckTyping.Generated.Proxies";
         private const string StatusCodeUnsupportedProxyKind = "DTAOT0202";
-        private const string StatusCodeUnsupportedTargetValueType = "DTAOT0203";
         private const string StatusCodeMissingProxyType = "DTAOT0204";
         private const string StatusCodeMissingTargetType = "DTAOT0205";
-        private const string StatusCodeUnsupportedGenericMethod = "DTAOT0206";
         private const string StatusCodeMissingMethod = "DTAOT0207";
         private const string StatusCodeIncompatibleSignature = "DTAOT0209";
         private const string StatusCodeUnsupportedProxyConstructor = "DTAOT0210";
@@ -57,6 +55,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             Setter
         }
 
+        private enum StructCopySourceKind
+        {
+            Property,
+            Field
+        }
+
         private enum FieldResolutionMode
         {
             Disabled,
@@ -68,14 +72,16 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         {
             None,
             UnwrapValueWithType,
-            ExtractDuckTypeInstance
+            ExtractDuckTypeInstance,
+            TypeConversion
         }
 
         private enum MethodReturnConversionKind
         {
             None,
             WrapValueWithType,
-            DuckChainToProxy
+            DuckChainToProxy,
+            TypeConversion
         }
 
         internal static DuckTypeAotRegistryEmissionResult Emit(
@@ -234,22 +240,35 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     $"Target type '{mapping.TargetTypeName}' was not found in '{mapping.TargetAssemblyName}'.");
             }
 
+            if (proxyType.IsValueType)
+            {
+                if (isReverseMapping)
+                {
+                    return DuckTypeAotMappingEmissionResult.NotCompatible(
+                        mapping,
+                        DuckTypeAotCompatibilityStatuses.UnsupportedProxyKind,
+                        StatusCodeUnsupportedProxyKind,
+                        $"Reverse proxy type '{mapping.ProxyTypeName}' is not supported when the proxy definition is a value type.");
+                }
+
+                return EmitStructCopyMapping(
+                    moduleDef,
+                    bootstrapType,
+                    initializeMethod,
+                    importedMembers,
+                    mapping,
+                    mappingIndex,
+                    proxyType,
+                    targetType);
+            }
+
             if (!proxyType.IsInterface && !proxyType.IsClass)
             {
                 return DuckTypeAotMappingEmissionResult.NotCompatible(
                     mapping,
                     DuckTypeAotCompatibilityStatuses.UnsupportedProxyKind,
                     StatusCodeUnsupportedProxyKind,
-                    $"Proxy type '{mapping.ProxyTypeName}' is not supported. Only interface and class proxies are emitted in this phase.");
-            }
-
-            if (targetType.IsValueType)
-            {
-                return DuckTypeAotMappingEmissionResult.NotCompatible(
-                    mapping,
-                    DuckTypeAotCompatibilityStatuses.UnsupportedTargetValueType,
-                    StatusCodeUnsupportedTargetValueType,
-                    $"Target type '{mapping.TargetTypeName}' is a value type. Value-type targets are not emitted in this phase.");
+                    $"Proxy type '{mapping.ProxyTypeName}' is not supported. Only interface, class, and DuckCopy struct proxies are emitted in this phase.");
             }
 
             var isInterfaceProxy = proxyType.IsInterface;
@@ -305,12 +324,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             generatedConstructor.Body.Instructions.Add(OpCodes.Call.ToInstruction(baseCtorToCall));
             generatedConstructor.Body.Instructions.Add(OpCodes.Ldarg_0.ToInstruction());
             generatedConstructor.Body.Instructions.Add(OpCodes.Ldarg_1.ToInstruction());
-            generatedConstructor.Body.Instructions.Add(OpCodes.Castclass.ToInstruction(importedTargetType));
+            generatedConstructor.Body.Instructions.Add((targetType.IsValueType ? OpCodes.Unbox_Any : OpCodes.Castclass).ToInstruction(importedTargetType));
             generatedConstructor.Body.Instructions.Add(OpCodes.Stfld.ToInstruction(targetField));
             generatedConstructor.Body.Instructions.Add(OpCodes.Ret.ToInstruction());
             generatedType.Methods.Add(generatedConstructor);
 
-            EmitIDuckTypeImplementation(moduleDef, generatedType, importedTargetType, targetField, importedMembers);
+            EmitIDuckTypeImplementation(moduleDef, generatedType, importedTargetType, targetField, importedMembers, targetType.IsValueType);
 
             foreach (var binding in bindings!)
             {
@@ -323,6 +342,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     MethodImplAttributes.IL | MethodImplAttributes.Managed,
                     isInterfaceProxy ? GetInterfaceMethodAttributes(proxyMethod) : GetClassOverrideMethodAttributes(proxyMethod));
 
+                CopyMethodGenericParameters(moduleDef, proxyMethod, generatedMethod);
                 generatedMethod.Body = new CilBody();
                 switch (binding.Kind)
                 {
@@ -330,54 +350,67 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     {
                         var targetMethod = binding.TargetMethod!;
                         var methodBinding = binding.MethodBinding!.Value;
+                        var byRefWriteBacks = new List<ByRefWriteBackPlan>();
                         if (!targetMethod.IsStatic)
                         {
                             generatedMethod.Body.Instructions.Add(OpCodes.Ldarg_0.ToInstruction());
-                            generatedMethod.Body.Instructions.Add(OpCodes.Ldfld.ToInstruction(targetField));
+                            generatedMethod.Body.Instructions.Add((targetType.IsValueType ? OpCodes.Ldflda : OpCodes.Ldfld).ToInstruction(targetField));
                         }
 
                         for (var parameterIndex = 0; parameterIndex < proxyMethod.MethodSig.Params.Count; parameterIndex++)
                         {
-                            var argumentConversion = methodBinding.ArgumentConversions[parameterIndex];
-                            generatedMethod.Body.Instructions.Add(Instruction.Create(OpCodes.Ldarg, generatedMethod.Parameters[parameterIndex + 1]));
-                            if (argumentConversion.Kind == MethodArgumentConversionKind.UnwrapValueWithType)
+                            var parameterBinding = methodBinding.ParameterBindings[parameterIndex];
+                            var proxyParameter = generatedMethod.Parameters[parameterIndex + 1];
+                            if (parameterBinding.IsByRef && parameterBinding.UseLocalForByRef)
                             {
-                                var valueFieldRef = CreateValueWithTypeValueFieldRef(moduleDef, argumentConversion.WrapperTypeSig!, argumentConversion.InnerTypeSig!);
-                                generatedMethod.Body.Instructions.Add(OpCodes.Ldfld.ToInstruction(valueFieldRef));
+                                var targetElementTypeSig = moduleDef.Import(parameterBinding.TargetByRefElementTypeSig!);
+                                var targetByRefLocal = new Local(targetElementTypeSig);
+                                generatedMethod.Body.Variables.Add(targetByRefLocal);
+                                generatedMethod.Body.InitLocals = true;
+
+                                if (!parameterBinding.IsOut)
+                                {
+                                    generatedMethod.Body.Instructions.Add(Instruction.Create(OpCodes.Ldarg, proxyParameter));
+                                    EmitLoadByRefValue(moduleDef, generatedMethod.Body, parameterBinding.ProxyByRefElementTypeSig!, $"proxy parameter '{proxyMethod.FullName}'");
+                                    EmitMethodArgumentConversion(moduleDef, generatedMethod.Body, parameterBinding.PreCallConversion, importedMembers, $"target parameter of method '{targetMethod.FullName}'");
+                                    generatedMethod.Body.Instructions.Add(OpCodes.Stloc.ToInstruction(targetByRefLocal));
+                                }
+
+                                generatedMethod.Body.Instructions.Add(OpCodes.Ldloca.ToInstruction(targetByRefLocal));
+                                byRefWriteBacks.Add(new ByRefWriteBackPlan(proxyParameter, targetByRefLocal, parameterBinding));
                             }
-                            else if (argumentConversion.Kind == MethodArgumentConversionKind.ExtractDuckTypeInstance)
+                            else
                             {
-                                generatedMethod.Body.Instructions.Add(OpCodes.Castclass.ToInstruction(importedMembers.IDuckTypeType));
-                                generatedMethod.Body.Instructions.Add(OpCodes.Callvirt.ToInstruction(importedMembers.IDuckTypeInstanceGetter));
-                                EmitObjectToExpectedTypeConversion(moduleDef, generatedMethod.Body, argumentConversion.InnerTypeSig!, $"target parameter of method '{targetMethod.FullName}'");
+                                generatedMethod.Body.Instructions.Add(Instruction.Create(OpCodes.Ldarg, proxyParameter));
+                                if (!parameterBinding.IsByRef)
+                                {
+                                    EmitMethodArgumentConversion(moduleDef, generatedMethod.Body, parameterBinding.PreCallConversion, importedMembers, $"target parameter of method '{targetMethod.FullName}'");
+                                }
                             }
                         }
 
                         var importedTargetMethod = moduleDef.Import(targetMethod);
-                        var targetCallOpcode = targetMethod.IsStatic ? OpCodes.Call : (targetMethod.IsVirtual || targetMethod.DeclaringType.IsInterface ? OpCodes.Callvirt : OpCodes.Call);
-                        generatedMethod.Body.Instructions.Add(targetCallOpcode.ToInstruction(importedTargetMethod));
-
-                        if (methodBinding.ReturnConversion.Kind == MethodReturnConversionKind.WrapValueWithType)
+                        var targetMethodToCall = CreateMethodCallTarget(moduleDef, importedTargetMethod, generatedMethod);
+                        if (!targetMethod.IsStatic && targetType.IsValueType && (targetMethod.IsVirtual || targetMethod.DeclaringType.IsInterface))
                         {
-                            var importedTargetReturnType = ResolveImportedTypeForTypeToken(moduleDef, methodBinding.ReturnConversion.InnerTypeSig!, $"target method '{targetMethod.FullName}'");
-                            generatedMethod.Body.Instructions.Add(OpCodes.Ldtoken.ToInstruction(importedTargetReturnType));
-                            generatedMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(importedMembers.GetTypeFromHandleMethod));
-
-                            var createMethodRef = CreateValueWithTypeCreateMethodRef(
-                                moduleDef,
-                                methodBinding.ReturnConversion.WrapperTypeSig!,
-                                methodBinding.ReturnConversion.InnerTypeSig!);
-                            generatedMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(createMethodRef));
+                            generatedMethod.Body.Instructions.Add(OpCodes.Constrained.ToInstruction(importedTargetType));
+                            generatedMethod.Body.Instructions.Add(OpCodes.Callvirt.ToInstruction(targetMethodToCall));
                         }
-                        else if (methodBinding.ReturnConversion.Kind == MethodReturnConversionKind.DuckChainToProxy)
+                        else
                         {
-                            EmitDuckChainToProxyConversion(
-                                moduleDef,
-                                generatedMethod.Body,
-                                methodBinding.ReturnConversion.WrapperTypeSig!,
-                                methodBinding.ReturnConversion.InnerTypeSig!,
-                                $"target method '{targetMethod.FullName}'");
+                            var targetCallOpcode = targetMethod.IsStatic ? OpCodes.Call : (targetMethod.IsVirtual || targetMethod.DeclaringType.IsInterface ? OpCodes.Callvirt : OpCodes.Call);
+                            generatedMethod.Body.Instructions.Add(targetCallOpcode.ToInstruction(targetMethodToCall));
                         }
+
+                        foreach (var byRefWriteBack in byRefWriteBacks)
+                        {
+                            generatedMethod.Body.Instructions.Add(Instruction.Create(OpCodes.Ldarg, byRefWriteBack.ProxyParameter));
+                            generatedMethod.Body.Instructions.Add(OpCodes.Ldloc.ToInstruction(byRefWriteBack.TargetLocal));
+                            EmitMethodReturnConversion(moduleDef, generatedMethod.Body, byRefWriteBack.ParameterBinding.PostCallConversion, importedMembers, $"proxy parameter '{proxyMethod.FullName}'");
+                            EmitStoreByRefValue(moduleDef, generatedMethod.Body, byRefWriteBack.ParameterBinding.ProxyByRefElementTypeSig!, $"proxy parameter '{proxyMethod.FullName}'");
+                        }
+
+                        EmitMethodReturnConversion(moduleDef, generatedMethod.Body, methodBinding.ReturnConversion, importedMembers, $"target method '{targetMethod.FullName}'");
 
                         break;
                     }
@@ -393,31 +426,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                         else
                         {
                             generatedMethod.Body.Instructions.Add(OpCodes.Ldarg_0.ToInstruction());
-                            generatedMethod.Body.Instructions.Add(OpCodes.Ldfld.ToInstruction(targetField));
+                            generatedMethod.Body.Instructions.Add((targetType.IsValueType ? OpCodes.Ldflda : OpCodes.Ldfld).ToInstruction(targetField));
                             generatedMethod.Body.Instructions.Add(OpCodes.Ldfld.ToInstruction(importedTargetMemberField));
                         }
 
-                        if (fieldBinding.ReturnConversion.Kind == MethodReturnConversionKind.WrapValueWithType)
-                        {
-                            var importedFieldTypeForToken = ResolveImportedTypeForTypeToken(moduleDef, fieldBinding.ReturnConversion.InnerTypeSig!, $"target field '{binding.TargetField!.FullName}'");
-                            generatedMethod.Body.Instructions.Add(OpCodes.Ldtoken.ToInstruction(importedFieldTypeForToken));
-                            generatedMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(importedMembers.GetTypeFromHandleMethod));
-
-                            var createMethodRef = CreateValueWithTypeCreateMethodRef(
-                                moduleDef,
-                                fieldBinding.ReturnConversion.WrapperTypeSig!,
-                                fieldBinding.ReturnConversion.InnerTypeSig!);
-                            generatedMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(createMethodRef));
-                        }
-                        else if (fieldBinding.ReturnConversion.Kind == MethodReturnConversionKind.DuckChainToProxy)
-                        {
-                            EmitDuckChainToProxyConversion(
-                                moduleDef,
-                                generatedMethod.Body,
-                                fieldBinding.ReturnConversion.WrapperTypeSig!,
-                                fieldBinding.ReturnConversion.InnerTypeSig!,
-                                $"target field '{binding.TargetField!.FullName}'");
-                        }
+                        EmitMethodReturnConversion(moduleDef, generatedMethod.Body, fieldBinding.ReturnConversion, importedMembers, $"target field '{binding.TargetField!.FullName}'");
 
                         break;
                     }
@@ -429,36 +442,16 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                         if (binding.TargetField!.IsStatic)
                         {
                             generatedMethod.Body.Instructions.Add(Instruction.Create(OpCodes.Ldarg, generatedMethod.Parameters[1]));
-                            if (fieldBinding.ArgumentConversion.Kind == MethodArgumentConversionKind.UnwrapValueWithType)
-                            {
-                                var valueFieldRef = CreateValueWithTypeValueFieldRef(moduleDef, fieldBinding.ArgumentConversion.WrapperTypeSig!, fieldBinding.ArgumentConversion.InnerTypeSig!);
-                                generatedMethod.Body.Instructions.Add(OpCodes.Ldfld.ToInstruction(valueFieldRef));
-                            }
-                            else if (fieldBinding.ArgumentConversion.Kind == MethodArgumentConversionKind.ExtractDuckTypeInstance)
-                            {
-                                generatedMethod.Body.Instructions.Add(OpCodes.Castclass.ToInstruction(importedMembers.IDuckTypeType));
-                                generatedMethod.Body.Instructions.Add(OpCodes.Callvirt.ToInstruction(importedMembers.IDuckTypeInstanceGetter));
-                                EmitObjectToExpectedTypeConversion(moduleDef, generatedMethod.Body, fieldBinding.ArgumentConversion.InnerTypeSig!, $"target field '{binding.TargetField!.FullName}'");
-                            }
+                            EmitMethodArgumentConversion(moduleDef, generatedMethod.Body, fieldBinding.ArgumentConversion, importedMembers, $"target field '{binding.TargetField!.FullName}'");
 
                             generatedMethod.Body.Instructions.Add(OpCodes.Stsfld.ToInstruction(importedTargetMemberField));
                         }
                         else
                         {
                             generatedMethod.Body.Instructions.Add(OpCodes.Ldarg_0.ToInstruction());
-                            generatedMethod.Body.Instructions.Add(OpCodes.Ldfld.ToInstruction(targetField));
+                            generatedMethod.Body.Instructions.Add((targetType.IsValueType ? OpCodes.Ldflda : OpCodes.Ldfld).ToInstruction(targetField));
                             generatedMethod.Body.Instructions.Add(Instruction.Create(OpCodes.Ldarg, generatedMethod.Parameters[1]));
-                            if (fieldBinding.ArgumentConversion.Kind == MethodArgumentConversionKind.UnwrapValueWithType)
-                            {
-                                var valueFieldRef = CreateValueWithTypeValueFieldRef(moduleDef, fieldBinding.ArgumentConversion.WrapperTypeSig!, fieldBinding.ArgumentConversion.InnerTypeSig!);
-                                generatedMethod.Body.Instructions.Add(OpCodes.Ldfld.ToInstruction(valueFieldRef));
-                            }
-                            else if (fieldBinding.ArgumentConversion.Kind == MethodArgumentConversionKind.ExtractDuckTypeInstance)
-                            {
-                                generatedMethod.Body.Instructions.Add(OpCodes.Castclass.ToInstruction(importedMembers.IDuckTypeType));
-                                generatedMethod.Body.Instructions.Add(OpCodes.Callvirt.ToInstruction(importedMembers.IDuckTypeInstanceGetter));
-                                EmitObjectToExpectedTypeConversion(moduleDef, generatedMethod.Body, fieldBinding.ArgumentConversion.InnerTypeSig!, $"target field '{binding.TargetField!.FullName}'");
-                            }
+                            EmitMethodArgumentConversion(moduleDef, generatedMethod.Body, fieldBinding.ArgumentConversion, importedMembers, $"target field '{binding.TargetField!.FullName}'");
 
                             generatedMethod.Body.Instructions.Add(OpCodes.Stfld.ToInstruction(importedTargetMemberField));
                         }
@@ -496,7 +489,709 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             initializeMethod.Body.Instructions.Add(OpCodes.Newobj.ToInstruction(importedMembers.FuncObjectObjectCtor));
             initializeMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(isReverseMapping ? importedMembers.RegisterAotReverseProxyMethod : importedMembers.RegisterAotProxyMethod));
 
-            return DuckTypeAotMappingEmissionResult.Compatible(mapping);
+            return DuckTypeAotMappingEmissionResult.Compatible(
+                mapping,
+                moduleDef.Assembly?.Name?.String ?? string.Empty,
+                generatedType.FullName);
+        }
+
+        private static DuckTypeAotMappingEmissionResult EmitStructCopyMapping(
+            ModuleDef moduleDef,
+            TypeDef bootstrapType,
+            MethodDef initializeMethod,
+            ImportedMembers importedMembers,
+            DuckTypeAotMapping mapping,
+            int mappingIndex,
+            TypeDef proxyType,
+            TypeDef targetType)
+        {
+            if (!TryCollectStructCopyBindings(mapping, proxyType, targetType, out var bindings, out var failure))
+            {
+                return failure!;
+            }
+
+            var importedTargetType = moduleDef.Import(targetType) as ITypeDefOrRef
+                ?? throw new InvalidOperationException($"Unable to import target type '{targetType.FullName}'.");
+            var importedProxyType = moduleDef.Import(proxyType) as ITypeDefOrRef
+                ?? throw new InvalidOperationException($"Unable to import proxy type '{proxyType.FullName}'.");
+
+            var importedTargetTypeSig = moduleDef.Import(targetType.ToTypeSig());
+            var importedProxyTypeSig = moduleDef.Import(proxyType.ToTypeSig());
+
+            var activatorMethod = new MethodDefUser(
+                $"CreateProxy_{mappingIndex:D4}",
+                MethodSig.CreateStatic(moduleDef.CorLibTypes.Object, moduleDef.CorLibTypes.Object),
+                MethodImplAttributes.IL | MethodImplAttributes.Managed,
+                MethodAttributes.Private | MethodAttributes.Static | MethodAttributes.HideBySig);
+            activatorMethod.Body = new CilBody();
+            activatorMethod.Body.InitLocals = true;
+
+            var targetLocal = new Local(importedTargetTypeSig);
+            var proxyLocal = new Local(importedProxyTypeSig);
+            activatorMethod.Body.Variables.Add(targetLocal);
+            activatorMethod.Body.Variables.Add(proxyLocal);
+
+            activatorMethod.Body.Instructions.Add(OpCodes.Ldarg_0.ToInstruction());
+            activatorMethod.Body.Instructions.Add((targetType.IsValueType ? OpCodes.Unbox_Any : OpCodes.Castclass).ToInstruction(importedTargetType));
+            activatorMethod.Body.Instructions.Add(OpCodes.Stloc.ToInstruction(targetLocal));
+
+            activatorMethod.Body.Instructions.Add(OpCodes.Ldloca.ToInstruction(proxyLocal));
+            activatorMethod.Body.Instructions.Add(OpCodes.Initobj.ToInstruction(importedProxyType));
+
+            foreach (var binding in bindings!)
+            {
+                var importedProxyField = moduleDef.Import(binding.ProxyField);
+                activatorMethod.Body.Instructions.Add(OpCodes.Ldloca.ToInstruction(proxyLocal));
+
+                if (binding.SourceKind == StructCopySourceKind.Property)
+                {
+                    var sourceProperty = binding.SourceProperty!;
+                    var sourceGetter = sourceProperty.GetMethod!;
+                    var importedSourceGetter = moduleDef.Import(sourceGetter);
+
+                    if (!sourceGetter.IsStatic)
+                    {
+                        activatorMethod.Body.Instructions.Add((targetType.IsValueType ? OpCodes.Ldloca : OpCodes.Ldloc).ToInstruction(targetLocal));
+                    }
+
+                    if (!sourceGetter.IsStatic && targetType.IsValueType && (sourceGetter.IsVirtual || sourceGetter.DeclaringType.IsInterface))
+                    {
+                        activatorMethod.Body.Instructions.Add(OpCodes.Constrained.ToInstruction(importedTargetType));
+                        activatorMethod.Body.Instructions.Add(OpCodes.Callvirt.ToInstruction(importedSourceGetter));
+                    }
+                    else
+                    {
+                        var callOpcode = sourceGetter.IsStatic ? OpCodes.Call : (sourceGetter.IsVirtual || sourceGetter.DeclaringType.IsInterface ? OpCodes.Callvirt : OpCodes.Call);
+                        activatorMethod.Body.Instructions.Add(callOpcode.ToInstruction(importedSourceGetter));
+                    }
+                }
+                else
+                {
+                    var sourceField = binding.SourceField!;
+                    var importedSourceField = moduleDef.Import(sourceField);
+                    if (sourceField.IsStatic)
+                    {
+                        activatorMethod.Body.Instructions.Add(OpCodes.Ldsfld.ToInstruction(importedSourceField));
+                    }
+                    else
+                    {
+                        activatorMethod.Body.Instructions.Add((targetType.IsValueType ? OpCodes.Ldloca : OpCodes.Ldloc).ToInstruction(targetLocal));
+                        activatorMethod.Body.Instructions.Add(OpCodes.Ldfld.ToInstruction(importedSourceField));
+                    }
+                }
+
+                EmitMethodReturnConversion(
+                    moduleDef,
+                    activatorMethod.Body,
+                    binding.ReturnConversion,
+                    importedMembers,
+                    $"target member for struct field '{binding.ProxyField.FullName}'");
+
+                activatorMethod.Body.Instructions.Add(OpCodes.Stfld.ToInstruction(importedProxyField));
+            }
+
+            activatorMethod.Body.Instructions.Add(OpCodes.Ldloc.ToInstruction(proxyLocal));
+            activatorMethod.Body.Instructions.Add(OpCodes.Box.ToInstruction(importedProxyType));
+            activatorMethod.Body.Instructions.Add(OpCodes.Ret.ToInstruction());
+            bootstrapType.Methods.Add(activatorMethod);
+
+            initializeMethod.Body.Instructions.Add(OpCodes.Ldtoken.ToInstruction(importedProxyType));
+            initializeMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(importedMembers.GetTypeFromHandleMethod));
+            initializeMethod.Body.Instructions.Add(OpCodes.Ldtoken.ToInstruction(importedTargetType));
+            initializeMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(importedMembers.GetTypeFromHandleMethod));
+            initializeMethod.Body.Instructions.Add(OpCodes.Ldtoken.ToInstruction(importedProxyType));
+            initializeMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(importedMembers.GetTypeFromHandleMethod));
+            initializeMethod.Body.Instructions.Add(OpCodes.Ldnull.ToInstruction());
+            initializeMethod.Body.Instructions.Add(OpCodes.Ldftn.ToInstruction(activatorMethod));
+            initializeMethod.Body.Instructions.Add(OpCodes.Newobj.ToInstruction(importedMembers.FuncObjectObjectCtor));
+            initializeMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(importedMembers.RegisterAotProxyMethod));
+
+            return DuckTypeAotMappingEmissionResult.Compatible(
+                mapping,
+                mapping.ProxyAssemblyName,
+                proxyType.FullName);
+        }
+
+        private static bool TryCollectStructCopyBindings(
+            DuckTypeAotMapping mapping,
+            TypeDef proxyStructType,
+            TypeDef targetType,
+            out IReadOnlyList<StructCopyFieldBinding> bindings,
+            out DuckTypeAotMappingEmissionResult? failure)
+        {
+            var collectedBindings = new List<StructCopyFieldBinding>();
+            bindings = collectedBindings;
+            failure = null;
+
+            foreach (var proxyField in proxyStructType.Fields)
+            {
+                if (proxyField.IsStatic || proxyField.IsInitOnly || !proxyField.IsPublic)
+                {
+                    continue;
+                }
+
+                if (proxyField.CustomAttributes.Any(attribute => string.Equals(attribute.TypeFullName, "Datadog.Trace.DuckTyping.DuckIgnoreAttribute", StringComparison.Ordinal)))
+                {
+                    continue;
+                }
+
+                if (!TryResolveStructCopyFieldBinding(mapping, targetType, proxyField, out var binding, out failure))
+                {
+                    return false;
+                }
+
+                collectedBindings.Add(binding);
+            }
+
+            if (collectedBindings.Count == 0 && proxyStructType.Properties.Count > 0)
+            {
+                failure = DuckTypeAotMappingEmissionResult.NotCompatible(
+                    mapping,
+                    DuckTypeAotCompatibilityStatuses.IncompatibleMethodSignature,
+                    StatusCodeIncompatibleSignature,
+                    $"DuckCopy struct '{mapping.ProxyTypeName}' does not expose any writable public fields.");
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool TryResolveStructCopyFieldBinding(
+            DuckTypeAotMapping mapping,
+            TypeDef targetType,
+            FieldDef proxyField,
+            out StructCopyFieldBinding binding,
+            out DuckTypeAotMappingEmissionResult? failure)
+        {
+            binding = default;
+            failure = null;
+
+            var hasFieldOnlyAttribute = false;
+            var allowFieldFallback = false;
+            foreach (var attribute in proxyField.CustomAttributes)
+            {
+                if (!IsDuckAttribute(attribute))
+                {
+                    continue;
+                }
+
+                var kind = ResolveDuckKind(attribute);
+                switch (kind)
+                {
+                    case DuckKindField:
+                        hasFieldOnlyAttribute = true;
+                        allowFieldFallback = true;
+                        break;
+                    case DuckKindPropertyOrField:
+                        allowFieldFallback = true;
+                        break;
+                }
+
+                if (hasFieldOnlyAttribute)
+                {
+                    break;
+                }
+            }
+
+            var candidateNames = TryGetDuckAttributeNames(proxyField.CustomAttributes, out var configuredNames)
+                                     ? configuredNames
+                                     : new[] { proxyField.Name.String ?? proxyField.Name.ToString() };
+
+            if (!hasFieldOnlyAttribute &&
+                TryFindStructCopyTargetProperty(targetType, candidateNames, out var targetProperty))
+            {
+                if (!TryCreateReturnConversion(proxyField.FieldSig.Type, targetProperty!.PropertySig.RetType, out var returnConversion))
+                {
+                    failure = DuckTypeAotMappingEmissionResult.NotCompatible(
+                        mapping,
+                        DuckTypeAotCompatibilityStatuses.IncompatibleMethodSignature,
+                        StatusCodeIncompatibleSignature,
+                        $"Return type mismatch between proxy struct field '{proxyField.FullName}' and target property '{targetProperty.FullName}'.");
+                    return false;
+                }
+
+                binding = StructCopyFieldBinding.ForProperty(proxyField, targetProperty, returnConversion);
+                return true;
+            }
+
+            if (hasFieldOnlyAttribute || allowFieldFallback)
+            {
+                if (TryFindStructCopyTargetField(targetType, candidateNames, out var targetField))
+                {
+                    if (!TryCreateReturnConversion(proxyField.FieldSig.Type, targetField!.FieldSig.Type, out var returnConversion))
+                    {
+                        failure = DuckTypeAotMappingEmissionResult.NotCompatible(
+                            mapping,
+                            DuckTypeAotCompatibilityStatuses.IncompatibleMethodSignature,
+                            StatusCodeIncompatibleSignature,
+                            $"Return type mismatch between proxy struct field '{proxyField.FullName}' and target field '{targetField.FullName}'.");
+                        return false;
+                    }
+
+                    binding = StructCopyFieldBinding.ForField(proxyField, targetField, returnConversion);
+                    return true;
+                }
+            }
+
+            failure = DuckTypeAotMappingEmissionResult.NotCompatible(
+                mapping,
+                DuckTypeAotCompatibilityStatuses.MissingTargetMethod,
+                StatusCodeMissingMethod,
+                $"Target member for proxy struct field '{proxyField.FullName}' was not found.");
+            return false;
+        }
+
+        private static bool TryFindStructCopyTargetProperty(TypeDef targetType, IReadOnlyList<string> candidateNames, out PropertyDef? targetProperty)
+        {
+            foreach (var candidateName in candidateNames)
+            {
+                var current = targetType;
+                while (current is not null)
+                {
+                    foreach (var property in current.Properties)
+                    {
+                        if (!string.Equals(property.Name, candidateName, StringComparison.Ordinal))
+                        {
+                            continue;
+                        }
+
+                        if (property.GetMethod is null || property.GetMethod.MethodSig.Params.Count != 0)
+                        {
+                            continue;
+                        }
+
+                        targetProperty = property;
+                        return true;
+                    }
+
+                    current = current.BaseType?.ResolveTypeDef();
+                }
+            }
+
+            targetProperty = null;
+            return false;
+        }
+
+        private static bool TryFindStructCopyTargetField(TypeDef targetType, IReadOnlyList<string> candidateNames, out FieldDef? targetField)
+        {
+            foreach (var candidateName in candidateNames)
+            {
+                var current = targetType;
+                while (current is not null)
+                {
+                    foreach (var field in current.Fields)
+                    {
+                        if (string.Equals(field.Name, candidateName, StringComparison.Ordinal))
+                        {
+                            targetField = field;
+                            return true;
+                        }
+                    }
+
+                    current = current.BaseType?.ResolveTypeDef();
+                }
+            }
+
+            targetField = null;
+            return false;
+        }
+
+        private static bool TryCreateReturnConversion(TypeSig proxyReturnType, TypeSig targetReturnType, out MethodReturnConversion returnConversion)
+        {
+            if (AreTypesEquivalent(proxyReturnType, targetReturnType))
+            {
+                returnConversion = MethodReturnConversion.None();
+                return true;
+            }
+
+            if (TryGetValueWithTypeArgument(proxyReturnType, out var proxyReturnValueWithTypeArgument) && AreTypesEquivalent(proxyReturnValueWithTypeArgument!, targetReturnType))
+            {
+                returnConversion = MethodReturnConversion.WrapValueWithType(proxyReturnType, proxyReturnValueWithTypeArgument!);
+                return true;
+            }
+
+            if (IsDuckChainingRequired(targetReturnType, proxyReturnType))
+            {
+                returnConversion = MethodReturnConversion.DuckChainToProxy(proxyReturnType, targetReturnType);
+                return true;
+            }
+
+            if (CanUseTypeConversion(targetReturnType, proxyReturnType))
+            {
+                returnConversion = MethodReturnConversion.TypeConversion(targetReturnType, proxyReturnType);
+                return true;
+            }
+
+            returnConversion = default;
+            return false;
+        }
+
+        private static void CopyMethodGenericParameters(ModuleDef moduleDef, MethodDef sourceMethod, MethodDef targetMethod)
+        {
+            if (sourceMethod.GenericParameters.Count == 0)
+            {
+                return;
+            }
+
+            foreach (var sourceGenericParameter in sourceMethod.GenericParameters)
+            {
+                var copiedGenericParameter = new GenericParamUser(sourceGenericParameter.Number, sourceGenericParameter.Flags, sourceGenericParameter.Name)
+                {
+                    Kind = sourceGenericParameter.Kind
+                };
+
+                foreach (var constraint in sourceGenericParameter.GenericParamConstraints)
+                {
+                    var importedConstraint = moduleDef.Import(constraint.Constraint) as ITypeDefOrRef
+                        ?? throw new InvalidOperationException($"Unable to import generic parameter constraint '{constraint.Constraint?.FullName}' for '{sourceMethod.FullName}'.");
+                    copiedGenericParameter.GenericParamConstraints.Add(new GenericParamConstraintUser(importedConstraint));
+                }
+
+                targetMethod.GenericParameters.Add(copiedGenericParameter);
+            }
+        }
+
+        private static IMethod CreateMethodCallTarget(ModuleDef moduleDef, IMethodDefOrRef importedTargetMethod, MethodDef generatedMethod)
+        {
+            if (generatedMethod.MethodSig.GenParamCount == 0)
+            {
+                return importedTargetMethod;
+            }
+
+            var genericArguments = new List<TypeSig>((int)generatedMethod.MethodSig.GenParamCount);
+            for (var genericParameterIndex = 0; genericParameterIndex < generatedMethod.MethodSig.GenParamCount; genericParameterIndex++)
+            {
+                genericArguments.Add(new GenericMVar((uint)genericParameterIndex));
+            }
+
+            var methodSpec = new MethodSpecUser(importedTargetMethod, new GenericInstMethodSig(genericArguments));
+            return moduleDef.UpdateRowId(methodSpec);
+        }
+
+        private static void EmitMethodReturnConversion(
+            ModuleDef moduleDef,
+            CilBody methodBody,
+            MethodReturnConversion conversion,
+            ImportedMembers importedMembers,
+            string context)
+        {
+            if (conversion.Kind == MethodReturnConversionKind.WrapValueWithType)
+            {
+                var importedTargetReturnType = ResolveImportedTypeForTypeToken(moduleDef, conversion.InnerTypeSig!, context);
+                methodBody.Instructions.Add(OpCodes.Ldtoken.ToInstruction(importedTargetReturnType));
+                methodBody.Instructions.Add(OpCodes.Call.ToInstruction(importedMembers.GetTypeFromHandleMethod));
+
+                var createMethodRef = CreateValueWithTypeCreateMethodRef(
+                    moduleDef,
+                    conversion.WrapperTypeSig!,
+                    conversion.InnerTypeSig!);
+                methodBody.Instructions.Add(OpCodes.Call.ToInstruction(createMethodRef));
+                return;
+            }
+
+            if (conversion.Kind == MethodReturnConversionKind.TypeConversion)
+            {
+                EmitTypeConversion(moduleDef, methodBody, conversion.WrapperTypeSig!, conversion.InnerTypeSig!, context);
+                return;
+            }
+
+            if (conversion.Kind == MethodReturnConversionKind.DuckChainToProxy)
+            {
+                EmitDuckChainToProxyConversion(
+                    moduleDef,
+                    methodBody,
+                    conversion.WrapperTypeSig!,
+                    conversion.InnerTypeSig!,
+                    context);
+            }
+        }
+
+        private static void EmitMethodArgumentConversion(
+            ModuleDef moduleDef,
+            CilBody methodBody,
+            MethodArgumentConversion conversion,
+            ImportedMembers importedMembers,
+            string context)
+        {
+            switch (conversion.Kind)
+            {
+                case MethodArgumentConversionKind.None:
+                    return;
+                case MethodArgumentConversionKind.UnwrapValueWithType:
+                {
+                    var valueFieldRef = CreateValueWithTypeValueFieldRef(moduleDef, conversion.WrapperTypeSig!, conversion.InnerTypeSig!);
+                    methodBody.Instructions.Add(OpCodes.Ldfld.ToInstruction(valueFieldRef));
+                    return;
+                }
+
+                case MethodArgumentConversionKind.ExtractDuckTypeInstance:
+                    methodBody.Instructions.Add(OpCodes.Castclass.ToInstruction(importedMembers.IDuckTypeType));
+                    methodBody.Instructions.Add(OpCodes.Callvirt.ToInstruction(importedMembers.IDuckTypeInstanceGetter));
+                    EmitObjectToExpectedTypeConversion(moduleDef, methodBody, conversion.InnerTypeSig!, context);
+                    return;
+                case MethodArgumentConversionKind.TypeConversion:
+                    EmitTypeConversion(moduleDef, methodBody, conversion.WrapperTypeSig!, conversion.InnerTypeSig!, context);
+                    return;
+                default:
+                    throw new InvalidOperationException($"Unsupported method argument conversion '{conversion.Kind}'.");
+            }
+        }
+
+        private static void EmitLoadByRefValue(ModuleDef moduleDef, CilBody methodBody, TypeSig valueTypeSig, string context)
+        {
+            var importedValueType = ResolveImportedTypeForTypeToken(moduleDef, valueTypeSig, context);
+            methodBody.Instructions.Add(OpCodes.Ldobj.ToInstruction(importedValueType));
+        }
+
+        private static void EmitStoreByRefValue(ModuleDef moduleDef, CilBody methodBody, TypeSig valueTypeSig, string context)
+        {
+            var importedValueType = ResolveImportedTypeForTypeToken(moduleDef, valueTypeSig, context);
+            methodBody.Instructions.Add(OpCodes.Stobj.ToInstruction(importedValueType));
+        }
+
+        private static bool CanUseTypeConversion(TypeSig actualTypeSig, TypeSig expectedTypeSig)
+        {
+            if (actualTypeSig.ElementType == ElementType.ByRef || expectedTypeSig.ElementType == ElementType.ByRef)
+            {
+                return false;
+            }
+
+            if (actualTypeSig.IsGenericParameter || expectedTypeSig.IsGenericParameter)
+            {
+                return actualTypeSig.IsGenericParameter && expectedTypeSig.IsGenericParameter && AreTypesEquivalent(actualTypeSig, expectedTypeSig);
+            }
+
+            var actualRuntimeType = TryResolveRuntimeType(actualTypeSig);
+            var expectedRuntimeType = TryResolveRuntimeType(expectedTypeSig);
+            if (actualRuntimeType is not null && expectedRuntimeType is not null)
+            {
+                return CanUseTypeConversion(actualRuntimeType, expectedRuntimeType);
+            }
+
+            var actualUnderlyingTypeSig = GetUnderlyingTypeForTypeConversion(actualTypeSig);
+            var expectedUnderlyingTypeSig = GetUnderlyingTypeForTypeConversion(expectedTypeSig);
+            if (AreTypesEquivalent(actualUnderlyingTypeSig, expectedUnderlyingTypeSig))
+            {
+                return true;
+            }
+
+            if (actualUnderlyingTypeSig.IsValueType)
+            {
+                if (expectedUnderlyingTypeSig.IsValueType)
+                {
+                    return false;
+                }
+
+                return IsObjectTypeSig(expectedUnderlyingTypeSig)
+                    || IsTypeAssignableFrom(expectedUnderlyingTypeSig, actualUnderlyingTypeSig);
+            }
+
+            if (expectedUnderlyingTypeSig.IsValueType)
+            {
+                return IsObjectTypeSig(actualUnderlyingTypeSig)
+                    || IsTypeAssignableFrom(actualUnderlyingTypeSig, expectedUnderlyingTypeSig);
+            }
+
+            return true;
+        }
+
+        private static bool CanUseTypeConversion(Type actualType, Type expectedType)
+        {
+            var actualUnderlyingType = actualType.IsEnum ? Enum.GetUnderlyingType(actualType) : actualType;
+            var expectedUnderlyingType = expectedType.IsEnum ? Enum.GetUnderlyingType(expectedType) : expectedType;
+
+            if (actualUnderlyingType == expectedUnderlyingType)
+            {
+                return true;
+            }
+
+            if (actualUnderlyingType.IsValueType)
+            {
+                if (expectedUnderlyingType.IsValueType)
+                {
+                    return false;
+                }
+
+                return expectedUnderlyingType == typeof(object) || expectedUnderlyingType.IsAssignableFrom(actualUnderlyingType);
+            }
+
+            if (expectedUnderlyingType.IsValueType)
+            {
+                return actualUnderlyingType == typeof(object) || actualUnderlyingType.IsAssignableFrom(expectedUnderlyingType);
+            }
+
+            return true;
+        }
+
+        private static void EmitTypeConversion(
+            ModuleDef moduleDef,
+            CilBody methodBody,
+            TypeSig actualTypeSig,
+            TypeSig expectedTypeSig,
+            string context)
+        {
+            if (actualTypeSig.IsGenericParameter && expectedTypeSig.IsGenericParameter)
+            {
+                return;
+            }
+
+            var actualUnderlyingTypeSig = GetUnderlyingTypeForTypeConversion(actualTypeSig);
+            var expectedUnderlyingTypeSig = GetUnderlyingTypeForTypeConversion(expectedTypeSig);
+            if (AreTypesEquivalent(actualUnderlyingTypeSig, expectedUnderlyingTypeSig))
+            {
+                return;
+            }
+
+            if (actualUnderlyingTypeSig.IsValueType)
+            {
+                if (expectedUnderlyingTypeSig.IsValueType)
+                {
+                    throw new InvalidOperationException($"Unsupported value-type conversion from '{actualTypeSig.FullName}' to '{expectedTypeSig.FullName}' in {context}.");
+                }
+
+                var importedActualType = ResolveImportedTypeForTypeToken(moduleDef, actualTypeSig, context);
+                methodBody.Instructions.Add(OpCodes.Box.ToInstruction(importedActualType));
+                if (!IsObjectTypeSig(expectedUnderlyingTypeSig))
+                {
+                    var importedExpectedType = ResolveImportedTypeForTypeToken(moduleDef, expectedUnderlyingTypeSig, context);
+                    methodBody.Instructions.Add(OpCodes.Castclass.ToInstruction(importedExpectedType));
+                }
+
+                return;
+            }
+
+            if (expectedUnderlyingTypeSig.IsValueType)
+            {
+                var importedExpectedType = ResolveImportedTypeForTypeToken(moduleDef, expectedTypeSig, context);
+                var isExpectedLabel = Instruction.Create(OpCodes.Nop);
+                methodBody.Instructions.Add(OpCodes.Dup.ToInstruction());
+                methodBody.Instructions.Add(OpCodes.Isinst.ToInstruction(importedExpectedType));
+                methodBody.Instructions.Add(OpCodes.Brtrue_S.ToInstruction(isExpectedLabel));
+                methodBody.Instructions.Add(OpCodes.Pop.ToInstruction());
+                var invalidCastExceptionCtor = typeof(InvalidCastException).GetConstructor(Type.EmptyTypes)
+                                            ?? throw new InvalidOperationException("Unable to resolve InvalidCastException::.ctor().");
+                methodBody.Instructions.Add(OpCodes.Newobj.ToInstruction(moduleDef.Import(invalidCastExceptionCtor)));
+                methodBody.Instructions.Add(OpCodes.Throw.ToInstruction());
+                methodBody.Instructions.Add(isExpectedLabel);
+                methodBody.Instructions.Add(OpCodes.Unbox_Any.ToInstruction(importedExpectedType));
+                return;
+            }
+
+            if (!IsObjectTypeSig(expectedUnderlyingTypeSig))
+            {
+                var importedExpectedType = ResolveImportedTypeForTypeToken(moduleDef, expectedUnderlyingTypeSig, context);
+                methodBody.Instructions.Add(OpCodes.Castclass.ToInstruction(importedExpectedType));
+            }
+        }
+
+        private static TypeSig GetUnderlyingTypeForTypeConversion(TypeSig typeSig)
+        {
+            var typeDef = typeSig.ToTypeDefOrRef()?.ResolveTypeDef();
+            if (typeDef?.IsEnum != true)
+            {
+                return typeSig;
+            }
+
+            foreach (var field in typeDef.Fields)
+            {
+                if (field.IsSpecialName && string.Equals(field.Name, "value__", StringComparison.Ordinal))
+                {
+                    return field.FieldSig.Type;
+                }
+            }
+
+            return typeSig;
+        }
+
+        private static Type? TryResolveRuntimeType(TypeSig typeSig)
+        {
+            if (typeSig.IsGenericParameter)
+            {
+                return null;
+            }
+
+            return typeSig.ElementType switch
+            {
+                ElementType.Boolean => typeof(bool),
+                ElementType.Char => typeof(char),
+                ElementType.I1 => typeof(sbyte),
+                ElementType.U1 => typeof(byte),
+                ElementType.I2 => typeof(short),
+                ElementType.U2 => typeof(ushort),
+                ElementType.I4 => typeof(int),
+                ElementType.U4 => typeof(uint),
+                ElementType.I8 => typeof(long),
+                ElementType.U8 => typeof(ulong),
+                ElementType.R4 => typeof(float),
+                ElementType.R8 => typeof(double),
+                ElementType.String => typeof(string),
+                ElementType.Object => typeof(object),
+                ElementType.I => typeof(IntPtr),
+                ElementType.U => typeof(UIntPtr),
+                _ => TryResolveRuntimeTypeFromTypeDefOrRef(typeSig)
+            };
+        }
+
+        private static Type? TryResolveRuntimeTypeFromTypeDefOrRef(TypeSig typeSig)
+        {
+            var typeDefOrRef = typeSig.ToTypeDefOrRef();
+            if (typeDefOrRef is null)
+            {
+                return null;
+            }
+
+            var reflectionName = typeDefOrRef.ReflectionFullName;
+            if (string.IsNullOrWhiteSpace(reflectionName))
+            {
+                reflectionName = typeDefOrRef.FullName;
+            }
+
+            if (string.IsNullOrWhiteSpace(reflectionName))
+            {
+                return null;
+            }
+
+            reflectionName = reflectionName.Replace('/', '+');
+            var assemblyName = DuckTypeAotNameHelpers.NormalizeAssemblyName(typeDefOrRef.DefinitionAssembly?.Name.String ?? string.Empty);
+            if (!string.IsNullOrWhiteSpace(assemblyName))
+            {
+                var assemblyQualifiedName = $"{reflectionName}, {assemblyName}";
+                var resolvedFromAssembly = Type.GetType(assemblyQualifiedName, throwOnError: false);
+                if (resolvedFromAssembly is not null)
+                {
+                    return resolvedFromAssembly;
+                }
+            }
+
+            return Type.GetType(reflectionName, throwOnError: false);
+        }
+
+        private static bool IsObjectTypeSig(TypeSig typeSig)
+        {
+            if (typeSig.ElementType == ElementType.Object)
+            {
+                return true;
+            }
+
+            var typeDefOrRef = typeSig.ToTypeDefOrRef();
+            if (typeDefOrRef is null)
+            {
+                return false;
+            }
+
+            return string.Equals(typeDefOrRef.FullName, "System.Object", StringComparison.Ordinal);
+        }
+
+        private static bool IsTypeAssignableFrom(TypeSig candidateBaseTypeSig, TypeSig derivedTypeSig)
+        {
+            var candidateBaseType = candidateBaseTypeSig.ToTypeDefOrRef();
+            var derivedType = derivedTypeSig.ToTypeDefOrRef();
+            if (candidateBaseType is null || derivedType is null)
+            {
+                return false;
+            }
+
+            return IsAssignableFrom(candidateBaseType, derivedType);
         }
 
         private static void EmitIDuckTypeImplementation(
@@ -504,7 +1199,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             TypeDef generatedType,
             ITypeDefOrRef importedTargetType,
             FieldDef targetField,
-            ImportedMembers importedMembers)
+            ImportedMembers importedMembers,
+            bool targetIsValueType)
         {
             if (generatedType.FindMethod("get_Instance") is null)
             {
@@ -516,6 +1212,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 getInstanceMethod.Body = new CilBody();
                 getInstanceMethod.Body.Instructions.Add(OpCodes.Ldarg_0.ToInstruction());
                 getInstanceMethod.Body.Instructions.Add(OpCodes.Ldfld.ToInstruction(targetField));
+                if (targetIsValueType)
+                {
+                    getInstanceMethod.Body.Instructions.Add(OpCodes.Box.ToInstruction(importedTargetType));
+                }
+
                 getInstanceMethod.Body.Instructions.Add(OpCodes.Ret.ToInstruction());
                 generatedType.Methods.Add(getInstanceMethod);
 
@@ -565,16 +1266,27 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     MethodImplAttributes.IL | MethodImplAttributes.Managed,
                     MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.HideBySig | MethodAttributes.ReuseSlot);
                 toStringMethod.Body = new CilBody();
-                var hasValueLabel = Instruction.Create(OpCodes.Nop);
-                toStringMethod.Body.Instructions.Add(OpCodes.Ldarg_0.ToInstruction());
-                toStringMethod.Body.Instructions.Add(OpCodes.Ldfld.ToInstruction(targetField));
-                toStringMethod.Body.Instructions.Add(OpCodes.Dup.ToInstruction());
-                toStringMethod.Body.Instructions.Add(OpCodes.Brtrue_S.ToInstruction(hasValueLabel));
-                toStringMethod.Body.Instructions.Add(OpCodes.Pop.ToInstruction());
-                toStringMethod.Body.Instructions.Add(OpCodes.Ldnull.ToInstruction());
-                toStringMethod.Body.Instructions.Add(OpCodes.Ret.ToInstruction());
-                toStringMethod.Body.Instructions.Add(hasValueLabel);
-                toStringMethod.Body.Instructions.Add(OpCodes.Callvirt.ToInstruction(importedMembers.ObjectToStringMethod));
+                if (targetIsValueType)
+                {
+                    toStringMethod.Body.Instructions.Add(OpCodes.Ldarg_0.ToInstruction());
+                    toStringMethod.Body.Instructions.Add(OpCodes.Ldflda.ToInstruction(targetField));
+                    toStringMethod.Body.Instructions.Add(OpCodes.Constrained.ToInstruction(importedTargetType));
+                    toStringMethod.Body.Instructions.Add(OpCodes.Callvirt.ToInstruction(importedMembers.ObjectToStringMethod));
+                }
+                else
+                {
+                    var hasValueLabel = Instruction.Create(OpCodes.Nop);
+                    toStringMethod.Body.Instructions.Add(OpCodes.Ldarg_0.ToInstruction());
+                    toStringMethod.Body.Instructions.Add(OpCodes.Ldfld.ToInstruction(targetField));
+                    toStringMethod.Body.Instructions.Add(OpCodes.Dup.ToInstruction());
+                    toStringMethod.Body.Instructions.Add(OpCodes.Brtrue_S.ToInstruction(hasValueLabel));
+                    toStringMethod.Body.Instructions.Add(OpCodes.Pop.ToInstruction());
+                    toStringMethod.Body.Instructions.Add(OpCodes.Ldnull.ToInstruction());
+                    toStringMethod.Body.Instructions.Add(OpCodes.Ret.ToInstruction());
+                    toStringMethod.Body.Instructions.Add(hasValueLabel);
+                    toStringMethod.Body.Instructions.Add(OpCodes.Callvirt.ToInstruction(importedMembers.ObjectToStringMethod));
+                }
+
                 toStringMethod.Body.Instructions.Add(OpCodes.Ret.ToInstruction());
                 generatedType.Methods.Add(toStringMethod);
             }
@@ -658,16 +1370,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     return false;
                 }
 
-                if (proxyMethod.MethodSig.GenParamCount > 0)
-                {
-                    failure = DuckTypeAotMappingEmissionResult.NotCompatible(
-                        mapping,
-                        DuckTypeAotCompatibilityStatuses.UnsupportedGenericMethod,
-                        StatusCodeUnsupportedGenericMethod,
-                        $"Proxy method '{proxyMethod.FullName}' is generic. Generic methods are not emitted in this phase.");
-                    return false;
-                }
-
                 if (!TryResolveForwardBinding(mapping, targetType, proxyMethod, out var binding, out failure))
                 {
                     return false;
@@ -703,16 +1405,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
             foreach (var proxyMethod in proxyMethods)
             {
-                if (proxyMethod.MethodSig.GenParamCount > 0)
-                {
-                    failure = DuckTypeAotMappingEmissionResult.NotCompatible(
-                        mapping,
-                        DuckTypeAotCompatibilityStatuses.UnsupportedGenericMethod,
-                        StatusCodeUnsupportedGenericMethod,
-                        $"Proxy method '{proxyMethod.FullName}' is generic. Generic methods are not emitted in this phase.");
-                    return false;
-                }
-
                 if (!TryResolveForwardBinding(mapping, targetType, proxyMethod, out var binding, out failure))
                 {
                     return false;
@@ -921,7 +1613,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                             continue;
                         }
 
-                        if (candidate.MethodSig.GenParamCount > 0 || candidate.MethodSig.Params.Count != proxyMethod.MethodSig.Params.Count)
+                        if (candidate.MethodSig.GenParamCount != proxyMethod.MethodSig.GenParamCount || candidate.MethodSig.Params.Count != proxyMethod.MethodSig.Params.Count)
                         {
                             continue;
                         }
@@ -940,64 +1632,27 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             out ForwardMethodBindingInfo binding,
             out MethodCompatibilityFailure? failure)
         {
-            var argumentConversions = new MethodArgumentConversion[proxyMethod.MethodSig.Params.Count];
-            for (var parameterIndex = 0; parameterIndex < proxyMethod.MethodSig.Params.Count; parameterIndex++)
+            if (proxyMethod.MethodSig.GenParamCount != targetMethod.MethodSig.GenParamCount)
             {
-                var proxyParameterType = proxyMethod.MethodSig.Params[parameterIndex];
-                var targetParameterType = targetMethod.MethodSig.Params[parameterIndex];
-
-                if (proxyParameterType.ElementType == ElementType.ByRef || targetParameterType.ElementType == ElementType.ByRef)
-                {
-                    if (!AreTypesEquivalent(proxyParameterType, targetParameterType))
-                    {
-                        failure = new MethodCompatibilityFailure(
-                            $"By-ref parameter mismatch between proxy method '{proxyMethod.FullName}' and target method '{targetMethod.FullName}'.");
-                        binding = default;
-                        return false;
-                    }
-
-                    argumentConversions[parameterIndex] = MethodArgumentConversion.None();
-                    continue;
-                }
-
-                if (AreTypesEquivalent(proxyParameterType, targetParameterType))
-                {
-                    argumentConversions[parameterIndex] = MethodArgumentConversion.None();
-                    continue;
-                }
-
-                if (TryGetValueWithTypeArgument(proxyParameterType, out var proxyValueWithTypeArgument) && AreTypesEquivalent(proxyValueWithTypeArgument!, targetParameterType))
-                {
-                    argumentConversions[parameterIndex] = MethodArgumentConversion.UnwrapValueWithType(proxyParameterType, proxyValueWithTypeArgument!);
-                    continue;
-                }
-
-                if (IsDuckChainingRequired(targetParameterType, proxyParameterType))
-                {
-                    argumentConversions[parameterIndex] = MethodArgumentConversion.ExtractDuckTypeInstance(proxyParameterType, targetParameterType);
-                    continue;
-                }
-
                 failure = new MethodCompatibilityFailure(
-                    $"Parameter type mismatch between proxy method '{proxyMethod.FullName}' and target method '{targetMethod.FullName}'.");
+                    $"Generic arity mismatch between proxy method '{proxyMethod.FullName}' and target method '{targetMethod.FullName}'.");
                 binding = default;
                 return false;
             }
 
-            MethodReturnConversion returnConversion;
-            if (AreTypesEquivalent(proxyMethod.MethodSig.RetType, targetMethod.MethodSig.RetType))
+            var parameterBindings = new MethodParameterBinding[proxyMethod.MethodSig.Params.Count];
+            for (var parameterIndex = 0; parameterIndex < proxyMethod.MethodSig.Params.Count; parameterIndex++)
             {
-                returnConversion = MethodReturnConversion.None();
+                if (!TryCreateForwardMethodParameterBinding(proxyMethod, targetMethod, parameterIndex, out var parameterBinding, out failure))
+                {
+                    binding = default;
+                    return false;
+                }
+
+                parameterBindings[parameterIndex] = parameterBinding;
             }
-            else if (TryGetValueWithTypeArgument(proxyMethod.MethodSig.RetType, out var proxyReturnValueWithTypeArgument) && AreTypesEquivalent(proxyReturnValueWithTypeArgument!, targetMethod.MethodSig.RetType))
-            {
-                returnConversion = MethodReturnConversion.WrapValueWithType(proxyMethod.MethodSig.RetType, proxyReturnValueWithTypeArgument!);
-            }
-            else if (IsDuckChainingRequired(targetMethod.MethodSig.RetType, proxyMethod.MethodSig.RetType))
-            {
-                returnConversion = MethodReturnConversion.DuckChainToProxy(proxyMethod.MethodSig.RetType, targetMethod.MethodSig.RetType);
-            }
-            else
+
+            if (!TryCreateReturnConversion(proxyMethod.MethodSig.RetType, targetMethod.MethodSig.RetType, out var returnConversion))
             {
                 failure = new MethodCompatibilityFailure(
                     $"Return type mismatch between proxy method '{proxyMethod.FullName}' and target method '{targetMethod.FullName}'.");
@@ -1005,9 +1660,183 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 return false;
             }
 
-            binding = new ForwardMethodBindingInfo(argumentConversions, returnConversion);
+            binding = new ForwardMethodBindingInfo(parameterBindings, returnConversion);
             failure = null;
             return true;
+        }
+
+        private static bool TryCreateForwardMethodParameterBinding(
+            MethodDef proxyMethod,
+            MethodDef targetMethod,
+            int parameterIndex,
+            out MethodParameterBinding parameterBinding,
+            out MethodCompatibilityFailure? failure)
+        {
+            var proxyParameterType = proxyMethod.MethodSig.Params[parameterIndex];
+            var targetParameterType = targetMethod.MethodSig.Params[parameterIndex];
+
+            var proxyIsByRef = proxyParameterType.ElementType == ElementType.ByRef;
+            var targetIsByRef = targetParameterType.ElementType == ElementType.ByRef;
+            if (proxyIsByRef != targetIsByRef)
+            {
+                failure = new MethodCompatibilityFailure(
+                    $"By-ref parameter mismatch between proxy method '{proxyMethod.FullName}' and target method '{targetMethod.FullName}'.");
+                parameterBinding = default;
+                return false;
+            }
+
+            if (!proxyIsByRef)
+            {
+                if (!TryCreateMethodArgumentConversion(proxyParameterType, targetParameterType, out var argumentConversion))
+                {
+                    failure = new MethodCompatibilityFailure(
+                        $"Parameter type mismatch between proxy method '{proxyMethod.FullName}' and target method '{targetMethod.FullName}'.");
+                    parameterBinding = default;
+                    return false;
+                }
+
+                parameterBinding = MethodParameterBinding.ForStandard(proxyParameterType, targetParameterType, argumentConversion);
+                failure = null;
+                return true;
+            }
+
+            _ = TryGetMethodParameterDirection(proxyMethod, parameterIndex, out var proxyParameterDirection);
+            _ = TryGetMethodParameterDirection(targetMethod, parameterIndex, out var targetParameterDirection);
+            var proxyIsOut = proxyParameterDirection.IsOut;
+            var targetIsOut = targetParameterDirection.IsOut;
+            var proxyIsIn = proxyParameterDirection.IsIn;
+            var targetIsIn = targetParameterDirection.IsIn;
+            if (proxyIsOut != targetIsOut || proxyIsIn != targetIsIn)
+            {
+                failure = new MethodCompatibilityFailure(
+                    $"Parameter direction mismatch between proxy method '{proxyMethod.FullName}' and target method '{targetMethod.FullName}'.");
+                parameterBinding = default;
+                return false;
+            }
+
+            if (!TryGetByRefElementType(proxyParameterType, out var proxyByRefElementTypeSig) ||
+                !TryGetByRefElementType(targetParameterType, out var targetByRefElementTypeSig))
+            {
+                failure = new MethodCompatibilityFailure(
+                    $"By-ref parameter mismatch between proxy method '{proxyMethod.FullName}' and target method '{targetMethod.FullName}'.");
+                parameterBinding = default;
+                return false;
+            }
+
+            if (AreTypesEquivalent(proxyParameterType, targetParameterType))
+            {
+                parameterBinding = MethodParameterBinding.ForByRefDirect(
+                    proxyParameterType,
+                    targetParameterType,
+                    proxyByRefElementTypeSig!,
+                    targetByRefElementTypeSig!,
+                    proxyIsOut);
+                failure = null;
+                return true;
+            }
+
+            MethodArgumentConversion preCallConversion;
+            if (proxyIsOut)
+            {
+                preCallConversion = MethodArgumentConversion.None();
+            }
+            else if (!TryCreateMethodArgumentConversion(proxyByRefElementTypeSig!, targetByRefElementTypeSig!, out preCallConversion))
+            {
+                failure = new MethodCompatibilityFailure(
+                    $"Parameter type mismatch between proxy method '{proxyMethod.FullName}' and target method '{targetMethod.FullName}'.");
+                parameterBinding = default;
+                return false;
+            }
+
+            if (!TryCreateByRefPostCallConversion(proxyByRefElementTypeSig!, targetByRefElementTypeSig!, out var postCallConversion))
+            {
+                failure = new MethodCompatibilityFailure(
+                    $"By-ref parameter mismatch between proxy method '{proxyMethod.FullName}' and target method '{targetMethod.FullName}'.");
+                parameterBinding = default;
+                return false;
+            }
+
+            parameterBinding = MethodParameterBinding.ForByRefWithLocal(
+                proxyParameterType,
+                targetParameterType,
+                proxyByRefElementTypeSig!,
+                targetByRefElementTypeSig!,
+                proxyIsOut,
+                preCallConversion,
+                postCallConversion);
+            failure = null;
+            return true;
+        }
+
+        private static bool TryCreateMethodArgumentConversion(TypeSig proxyParameterType, TypeSig targetParameterType, out MethodArgumentConversion argumentConversion)
+        {
+            if (AreTypesEquivalent(proxyParameterType, targetParameterType))
+            {
+                argumentConversion = MethodArgumentConversion.None();
+                return true;
+            }
+
+            if (TryGetValueWithTypeArgument(proxyParameterType, out var proxyValueWithTypeArgument) && AreTypesEquivalent(proxyValueWithTypeArgument!, targetParameterType))
+            {
+                argumentConversion = MethodArgumentConversion.UnwrapValueWithType(proxyParameterType, proxyValueWithTypeArgument!);
+                return true;
+            }
+
+            if (IsDuckChainingRequired(targetParameterType, proxyParameterType))
+            {
+                argumentConversion = MethodArgumentConversion.ExtractDuckTypeInstance(proxyParameterType, targetParameterType);
+                return true;
+            }
+
+            if (CanUseTypeConversion(proxyParameterType, targetParameterType))
+            {
+                argumentConversion = MethodArgumentConversion.TypeConversion(proxyParameterType, targetParameterType);
+                return true;
+            }
+
+            argumentConversion = default;
+            return false;
+        }
+
+        private static bool TryCreateByRefPostCallConversion(TypeSig proxyParameterElementType, TypeSig targetParameterElementType, out MethodReturnConversion returnConversion)
+        {
+            if (TryCreateReturnConversion(proxyParameterElementType, targetParameterElementType, out returnConversion))
+            {
+                return true;
+            }
+
+            returnConversion = default;
+            return false;
+        }
+
+        private static bool TryGetMethodParameterDirection(MethodDef method, int parameterIndex, out ParameterDirection direction)
+        {
+            foreach (var parameter in method.Parameters)
+            {
+                if (parameter.MethodSigIndex != parameterIndex)
+                {
+                    continue;
+                }
+
+                var paramDef = parameter.ParamDef;
+                direction = new ParameterDirection(paramDef?.IsOut ?? false, paramDef?.IsIn ?? false);
+                return true;
+            }
+
+            direction = default;
+            return false;
+        }
+
+        private static bool TryGetByRefElementType(TypeSig typeSig, out TypeSig? elementType)
+        {
+            if (typeSig is ByRefSig byRefSig)
+            {
+                elementType = byRefSig.Next;
+                return true;
+            }
+
+            elementType = null;
+            return false;
         }
 
         private static bool TryGetValueWithTypeArgument(TypeSig typeSig, out TypeSig? valueArgument)
@@ -1120,8 +1949,55 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 body.Instructions.Add(OpCodes.Box.ToInstruction(importedTargetTypeForBox));
             }
 
-            var createCacheCreateMethodRef = CreateDuckTypeCreateCacheCreateMethodRef(moduleDef, proxyTypeSig);
-            body.Instructions.Add(OpCodes.Call.ToInstruction(createCacheCreateMethodRef));
+            if (TryGetNullableElementType(proxyTypeSig, out var nullableProxyElementType))
+            {
+                var boxedTargetLocal = new Local(moduleDef.CorLibTypes.Object);
+                var nullableResultLocal = new Local(moduleDef.Import(proxyTypeSig));
+                body.Variables.Add(boxedTargetLocal);
+                body.Variables.Add(nullableResultLocal);
+                body.InitLocals = true;
+
+                var hasValueLabel = Instruction.Create(OpCodes.Nop);
+                var endLabel = Instruction.Create(OpCodes.Nop);
+                var importedNullableType = ResolveImportedTypeForTypeToken(moduleDef, proxyTypeSig, context);
+                var nullableCtor = CreateNullableCtorRef(moduleDef, proxyTypeSig);
+
+                body.Instructions.Add(OpCodes.Stloc.ToInstruction(boxedTargetLocal));
+                body.Instructions.Add(OpCodes.Ldloc.ToInstruction(boxedTargetLocal));
+                body.Instructions.Add(OpCodes.Brtrue_S.ToInstruction(hasValueLabel));
+
+                body.Instructions.Add(OpCodes.Ldloca.ToInstruction(nullableResultLocal));
+                body.Instructions.Add(OpCodes.Initobj.ToInstruction(importedNullableType));
+                body.Instructions.Add(OpCodes.Br_S.ToInstruction(endLabel));
+
+                body.Instructions.Add(hasValueLabel);
+                body.Instructions.Add(OpCodes.Ldloc.ToInstruction(boxedTargetLocal));
+                var createCacheCreateMethodRef = CreateDuckTypeCreateCacheCreateMethodRef(moduleDef, nullableProxyElementType!);
+                body.Instructions.Add(OpCodes.Call.ToInstruction(createCacheCreateMethodRef));
+                body.Instructions.Add(OpCodes.Newobj.ToInstruction(nullableCtor));
+                body.Instructions.Add(OpCodes.Stloc.ToInstruction(nullableResultLocal));
+
+                body.Instructions.Add(endLabel);
+                body.Instructions.Add(OpCodes.Ldloc.ToInstruction(nullableResultLocal));
+                return;
+            }
+
+            var createMethodRef = CreateDuckTypeCreateCacheCreateMethodRef(moduleDef, proxyTypeSig);
+            body.Instructions.Add(OpCodes.Call.ToInstruction(createMethodRef));
+        }
+
+        private static IMethodDefOrRef CreateNullableCtorRef(ModuleDef moduleDef, TypeSig nullableTypeSig)
+        {
+            if (!TryGetNullableElementType(nullableTypeSig, out _))
+            {
+                throw new InvalidOperationException($"Expected Nullable<T> type but received '{nullableTypeSig.FullName}'.");
+            }
+
+            var importedNullableTypeSig = moduleDef.Import(nullableTypeSig);
+            var nullableTypeSpec = moduleDef.UpdateRowId(new TypeSpecUser(importedNullableTypeSig));
+            var ctorSig = MethodSig.CreateInstance(moduleDef.CorLibTypes.Void, new GenericVar(0));
+            var ctorRef = new MemberRefUser(moduleDef, ".ctor", ctorSig, nullableTypeSpec);
+            return moduleDef.UpdateRowId(ctorRef);
         }
 
         private static bool TryFindForwardTargetField(
@@ -1250,21 +2126,16 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             {
                 case FieldAccessorKind.Getter:
                 {
-                    if (AreTypesEquivalent(proxyMethod.MethodSig.RetType, targetField.FieldSig.Type))
+                    if (TryCreateReturnConversion(proxyMethod.MethodSig.RetType, targetField.FieldSig.Type, out var returnConversion))
                     {
-                        return true;
-                    }
-
-                    if (TryGetValueWithTypeArgument(proxyMethod.MethodSig.RetType, out var proxyReturnValueWithTypeArgument)
-                     && AreTypesEquivalent(proxyReturnValueWithTypeArgument!, targetField.FieldSig.Type))
-                    {
-                        fieldBinding = ForwardFieldBindingInfo.WrapValueWithType(proxyMethod.MethodSig.RetType, proxyReturnValueWithTypeArgument!);
-                        return true;
-                    }
-
-                    if (IsDuckChainingRequired(targetField.FieldSig.Type, proxyMethod.MethodSig.RetType))
-                    {
-                        fieldBinding = ForwardFieldBindingInfo.DuckChainToProxy(proxyMethod.MethodSig.RetType, targetField.FieldSig.Type);
+                        fieldBinding = returnConversion.Kind switch
+                        {
+                            MethodReturnConversionKind.None => ForwardFieldBindingInfo.None(),
+                            MethodReturnConversionKind.WrapValueWithType => ForwardFieldBindingInfo.WrapValueWithType(returnConversion.WrapperTypeSig!, returnConversion.InnerTypeSig!),
+                            MethodReturnConversionKind.DuckChainToProxy => ForwardFieldBindingInfo.DuckChainToProxy(returnConversion.WrapperTypeSig!, returnConversion.InnerTypeSig!),
+                            MethodReturnConversionKind.TypeConversion => ForwardFieldBindingInfo.ReturnTypeConversion(returnConversion.WrapperTypeSig!, returnConversion.InnerTypeSig!),
+                            _ => ForwardFieldBindingInfo.None()
+                        };
                         return true;
                     }
 
@@ -1281,31 +2152,21 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     }
 
                     var proxyParameterType = proxyMethod.MethodSig.Params[0];
-                    if (AreTypesEquivalent(proxyParameterType, targetField.FieldSig.Type))
+                    if (TryCreateMethodArgumentConversion(proxyParameterType, targetField.FieldSig.Type, out var argumentConversion))
                     {
+                        fieldBinding = argumentConversion.Kind switch
+                        {
+                            MethodArgumentConversionKind.None => ForwardFieldBindingInfo.None(),
+                            MethodArgumentConversionKind.UnwrapValueWithType => ForwardFieldBindingInfo.UnwrapValueWithType(argumentConversion.WrapperTypeSig!, argumentConversion.InnerTypeSig!),
+                            MethodArgumentConversionKind.ExtractDuckTypeInstance => ForwardFieldBindingInfo.ExtractDuckTypeInstance(argumentConversion.WrapperTypeSig!, argumentConversion.InnerTypeSig!),
+                            MethodArgumentConversionKind.TypeConversion => ForwardFieldBindingInfo.TypeConversion(argumentConversion.WrapperTypeSig!, argumentConversion.InnerTypeSig!),
+                            _ => ForwardFieldBindingInfo.None()
+                        };
                         return true;
                     }
 
-                    if (TryGetValueWithTypeArgument(proxyParameterType, out var proxyParameterValueWithTypeArgument)
-                     && AreTypesEquivalent(proxyParameterValueWithTypeArgument!, targetField.FieldSig.Type))
-                    {
-                        fieldBinding = ForwardFieldBindingInfo.UnwrapValueWithType(proxyParameterType, proxyParameterValueWithTypeArgument!);
-                        return true;
-                    }
-
-                    if (IsDuckChainingRequired(targetField.FieldSig.Type, proxyParameterType))
-                    {
-                        fieldBinding = ForwardFieldBindingInfo.ExtractDuckTypeInstance(proxyParameterType, targetField.FieldSig.Type);
-                        return true;
-                    }
-
-                    if (!AreTypesEquivalent(proxyParameterType, targetField.FieldSig.Type))
-                    {
-                        failureReason = $"Parameter type mismatch between proxy method '{proxyMethod.FullName}' and target field '{targetField.FullName}'.";
-                        return false;
-                    }
-
-                    return true;
+                    failureReason = $"Parameter type mismatch between proxy method '{proxyMethod.FullName}' and target field '{targetField.FullName}'.";
+                    return false;
                 }
 
                 default:
@@ -1570,11 +2431,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
         private static bool AreTypesEquivalent(TypeSig proxyType, TypeSig targetType)
         {
-            if (proxyType.ContainsGenericParameter || targetType.ContainsGenericParameter)
-            {
-                return false;
-            }
-
             return string.Equals(proxyType.FullName, targetType.FullName, StringComparison.Ordinal);
         }
 
@@ -1595,20 +2451,14 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 return false;
             }
 
-            var proxyTypeDefOrRef = proxyType.ToTypeDefOrRef();
+            if (!TryGetDuckChainingProxyType(proxyType, out var proxyTypeForCache))
+            {
+                return false;
+            }
+
+            var proxyTypeDefOrRef = proxyTypeForCache.ToTypeDefOrRef();
             var targetTypeDefOrRef = targetType.ToTypeDefOrRef();
             if (proxyTypeDefOrRef is null || targetTypeDefOrRef is null)
-            {
-                return false;
-            }
-
-            var proxyTypeDef = proxyTypeDefOrRef.ResolveTypeDef();
-            if (proxyTypeDef?.IsValueType == true)
-            {
-                return false;
-            }
-
-            if (proxyType.DefinitionAssembly?.IsCorLib() == true)
             {
                 return false;
             }
@@ -1618,6 +2468,87 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 return false;
             }
 
+            return true;
+        }
+
+        private static bool TryGetDuckChainingProxyType(TypeSig proxyType, out TypeSig proxyTypeForCache)
+        {
+            if (TryGetNullableElementType(proxyType, out var nullableInnerType) && IsDuckProxyCandidate(nullableInnerType!))
+            {
+                proxyTypeForCache = nullableInnerType!;
+                return true;
+            }
+
+            if (IsDuckProxyCandidate(proxyType))
+            {
+                proxyTypeForCache = proxyType;
+                return true;
+            }
+
+            proxyTypeForCache = null!;
+            return false;
+        }
+
+        private static bool IsDuckProxyCandidate(TypeSig typeSig)
+        {
+            var typeDefOrRef = typeSig.ToTypeDefOrRef();
+            if (typeDefOrRef is null)
+            {
+                return false;
+            }
+
+            var typeDef = typeDefOrRef.ResolveTypeDef();
+            if (typeDef is null)
+            {
+                return false;
+            }
+
+            if (typeDef.IsInterface)
+            {
+                return true;
+            }
+
+            if (typeDef.IsClass)
+            {
+                return typeSig.DefinitionAssembly?.IsCorLib() != true;
+            }
+
+            if (typeDef.IsValueType)
+            {
+                return IsDuckCopyValueType(typeDef);
+            }
+
+            return false;
+        }
+
+        private static bool IsDuckCopyValueType(TypeDef typeDef)
+        {
+            foreach (var customAttribute in typeDef.CustomAttributes)
+            {
+                if (string.Equals(customAttribute.TypeFullName, "Datadog.Trace.DuckTyping.DuckCopyAttribute", StringComparison.Ordinal))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool TryGetNullableElementType(TypeSig typeSig, out TypeSig? elementType)
+        {
+            elementType = null;
+            if (typeSig is not GenericInstSig genericInstSig || genericInstSig.GenericArguments.Count != 1)
+            {
+                return false;
+            }
+
+            var genericType = genericInstSig.GenericType?.TypeDefOrRef;
+            if (genericType is null || !string.Equals(genericType.FullName, "System.Nullable`1", StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            elementType = genericInstSig.GenericArguments[0];
             return true;
         }
 
@@ -1773,6 +2704,43 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return string.Concat(bytes.Take(4).Select(b => b.ToString("x2")));
         }
 
+        private readonly struct StructCopyFieldBinding
+        {
+            private StructCopyFieldBinding(
+                FieldDef proxyField,
+                StructCopySourceKind sourceKind,
+                PropertyDef? sourceProperty,
+                FieldDef? sourceField,
+                MethodReturnConversion returnConversion)
+            {
+                ProxyField = proxyField;
+                SourceKind = sourceKind;
+                SourceProperty = sourceProperty;
+                SourceField = sourceField;
+                ReturnConversion = returnConversion;
+            }
+
+            internal FieldDef ProxyField { get; }
+
+            internal StructCopySourceKind SourceKind { get; }
+
+            internal PropertyDef? SourceProperty { get; }
+
+            internal FieldDef? SourceField { get; }
+
+            internal MethodReturnConversion ReturnConversion { get; }
+
+            internal static StructCopyFieldBinding ForProperty(FieldDef proxyField, PropertyDef sourceProperty, MethodReturnConversion returnConversion)
+            {
+                return new StructCopyFieldBinding(proxyField, StructCopySourceKind.Property, sourceProperty, sourceField: null, returnConversion);
+            }
+
+            internal static StructCopyFieldBinding ForField(FieldDef proxyField, FieldDef sourceField, MethodReturnConversion returnConversion)
+            {
+                return new StructCopyFieldBinding(proxyField, StructCopySourceKind.Field, sourceProperty: null, sourceField, returnConversion);
+            }
+        }
+
         private readonly struct ForwardBinding
         {
             private ForwardBinding(
@@ -1821,15 +2789,112 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
         private readonly struct ForwardMethodBindingInfo
         {
-            internal ForwardMethodBindingInfo(IReadOnlyList<MethodArgumentConversion> argumentConversions, MethodReturnConversion returnConversion)
+            internal ForwardMethodBindingInfo(IReadOnlyList<MethodParameterBinding> parameterBindings, MethodReturnConversion returnConversion)
             {
-                ArgumentConversions = argumentConversions;
+                ParameterBindings = parameterBindings;
                 ReturnConversion = returnConversion;
             }
 
-            internal IReadOnlyList<MethodArgumentConversion> ArgumentConversions { get; }
+            internal IReadOnlyList<MethodParameterBinding> ParameterBindings { get; }
 
             internal MethodReturnConversion ReturnConversion { get; }
+        }
+
+        private readonly struct MethodParameterBinding
+        {
+            private MethodParameterBinding(
+                bool isByRef,
+                bool useLocalForByRef,
+                bool isOut,
+                TypeSig proxyTypeSig,
+                TypeSig targetTypeSig,
+                TypeSig? proxyByRefElementTypeSig,
+                TypeSig? targetByRefElementTypeSig,
+                MethodArgumentConversion preCallConversion,
+                MethodReturnConversion postCallConversion)
+            {
+                IsByRef = isByRef;
+                UseLocalForByRef = useLocalForByRef;
+                IsOut = isOut;
+                ProxyTypeSig = proxyTypeSig;
+                TargetTypeSig = targetTypeSig;
+                ProxyByRefElementTypeSig = proxyByRefElementTypeSig;
+                TargetByRefElementTypeSig = targetByRefElementTypeSig;
+                PreCallConversion = preCallConversion;
+                PostCallConversion = postCallConversion;
+            }
+
+            internal bool IsByRef { get; }
+
+            internal bool UseLocalForByRef { get; }
+
+            internal bool IsOut { get; }
+
+            internal TypeSig ProxyTypeSig { get; }
+
+            internal TypeSig TargetTypeSig { get; }
+
+            internal TypeSig? ProxyByRefElementTypeSig { get; }
+
+            internal TypeSig? TargetByRefElementTypeSig { get; }
+
+            internal MethodArgumentConversion PreCallConversion { get; }
+
+            internal MethodReturnConversion PostCallConversion { get; }
+
+            internal static MethodParameterBinding ForStandard(TypeSig proxyTypeSig, TypeSig targetTypeSig, MethodArgumentConversion preCallConversion)
+            {
+                return new MethodParameterBinding(
+                    isByRef: false,
+                    useLocalForByRef: false,
+                    isOut: false,
+                    proxyTypeSig,
+                    targetTypeSig,
+                    proxyByRefElementTypeSig: null,
+                    targetByRefElementTypeSig: null,
+                    preCallConversion,
+                    MethodReturnConversion.None());
+            }
+
+            internal static MethodParameterBinding ForByRefDirect(
+                TypeSig proxyTypeSig,
+                TypeSig targetTypeSig,
+                TypeSig proxyByRefElementTypeSig,
+                TypeSig targetByRefElementTypeSig,
+                bool isOut)
+            {
+                return new MethodParameterBinding(
+                    isByRef: true,
+                    useLocalForByRef: false,
+                    isOut,
+                    proxyTypeSig,
+                    targetTypeSig,
+                    proxyByRefElementTypeSig,
+                    targetByRefElementTypeSig,
+                    MethodArgumentConversion.None(),
+                    MethodReturnConversion.None());
+            }
+
+            internal static MethodParameterBinding ForByRefWithLocal(
+                TypeSig proxyTypeSig,
+                TypeSig targetTypeSig,
+                TypeSig proxyByRefElementTypeSig,
+                TypeSig targetByRefElementTypeSig,
+                bool isOut,
+                MethodArgumentConversion preCallConversion,
+                MethodReturnConversion postCallConversion)
+            {
+                return new MethodParameterBinding(
+                    isByRef: true,
+                    useLocalForByRef: true,
+                    isOut,
+                    proxyTypeSig,
+                    targetTypeSig,
+                    proxyByRefElementTypeSig,
+                    targetByRefElementTypeSig,
+                    preCallConversion,
+                    postCallConversion);
+            }
         }
 
         private readonly struct ForwardFieldBindingInfo
@@ -1868,6 +2933,16 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             {
                 return new ForwardFieldBindingInfo(MethodArgumentConversion.None(), MethodReturnConversion.DuckChainToProxy(wrapperTypeSig, innerTypeSig));
             }
+
+            internal static ForwardFieldBindingInfo ReturnTypeConversion(TypeSig actualTypeSig, TypeSig expectedTypeSig)
+            {
+                return new ForwardFieldBindingInfo(MethodArgumentConversion.None(), MethodReturnConversion.TypeConversion(actualTypeSig, expectedTypeSig));
+            }
+
+            internal static ForwardFieldBindingInfo TypeConversion(TypeSig actualTypeSig, TypeSig expectedTypeSig)
+            {
+                return new ForwardFieldBindingInfo(MethodArgumentConversion.TypeConversion(actualTypeSig, expectedTypeSig), MethodReturnConversion.None());
+            }
         }
 
         private readonly struct MethodArgumentConversion
@@ -1898,6 +2973,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             internal static MethodArgumentConversion ExtractDuckTypeInstance(TypeSig wrapperTypeSig, TypeSig innerTypeSig)
             {
                 return new MethodArgumentConversion(MethodArgumentConversionKind.ExtractDuckTypeInstance, wrapperTypeSig, innerTypeSig);
+            }
+
+            internal static MethodArgumentConversion TypeConversion(TypeSig actualTypeSig, TypeSig expectedTypeSig)
+            {
+                return new MethodArgumentConversion(MethodArgumentConversionKind.TypeConversion, actualTypeSig, expectedTypeSig);
             }
         }
 
@@ -1930,6 +3010,40 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             {
                 return new MethodReturnConversion(MethodReturnConversionKind.DuckChainToProxy, wrapperTypeSig, innerTypeSig);
             }
+
+            internal static MethodReturnConversion TypeConversion(TypeSig actualTypeSig, TypeSig expectedTypeSig)
+            {
+                return new MethodReturnConversion(MethodReturnConversionKind.TypeConversion, actualTypeSig, expectedTypeSig);
+            }
+        }
+
+        private readonly struct ParameterDirection
+        {
+            internal ParameterDirection(bool isOut, bool isIn)
+            {
+                IsOut = isOut;
+                IsIn = isIn;
+            }
+
+            internal bool IsOut { get; }
+
+            internal bool IsIn { get; }
+        }
+
+        private readonly struct ByRefWriteBackPlan
+        {
+            internal ByRefWriteBackPlan(Parameter proxyParameter, Local targetLocal, MethodParameterBinding parameterBinding)
+            {
+                ProxyParameter = proxyParameter;
+                TargetLocal = targetLocal;
+                ParameterBinding = parameterBinding;
+            }
+
+            internal Parameter ProxyParameter { get; }
+
+            internal Local TargetLocal { get; }
+
+            internal MethodParameterBinding ParameterBinding { get; }
         }
 
         private readonly struct MethodCompatibilityFailure

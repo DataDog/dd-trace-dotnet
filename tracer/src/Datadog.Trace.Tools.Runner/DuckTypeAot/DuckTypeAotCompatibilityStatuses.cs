@@ -10,10 +10,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         internal const string Compatible = "compatible";
         internal const string PendingProxyEmission = "pending_proxy_emission";
         internal const string UnsupportedProxyKind = "unsupported_proxy_kind";
-        internal const string UnsupportedTargetValueType = "unsupported_target_value_type";
         internal const string MissingProxyType = "missing_proxy_type";
         internal const string MissingTargetType = "missing_target_type";
-        internal const string UnsupportedGenericMethod = "unsupported_generic_method";
         internal const string MissingTargetMethod = "missing_target_method";
         internal const string NonPublicTargetMethod = "non_public_target_method";
         internal const string IncompatibleMethodSignature = "incompatible_method_signature";
