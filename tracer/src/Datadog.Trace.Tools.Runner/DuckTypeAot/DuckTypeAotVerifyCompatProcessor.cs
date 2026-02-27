@@ -46,6 +46,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 return 1;
             }
 
+            if (!string.IsNullOrWhiteSpace(options.ScenarioInventoryPath) && !File.Exists(options.ScenarioInventoryPath))
+            {
+                Utils.WriteError($"--scenario-inventory file was not found: {options.ScenarioInventoryPath}");
+                return 1;
+            }
+
             DuckTypeAotManifest? manifest = null;
             if (!string.IsNullOrWhiteSpace(options.ManifestPath))
             {
@@ -111,6 +117,14 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             if (!string.IsNullOrWhiteSpace(options.MappingCatalogPath))
             {
                 if (!ValidateMappingCatalog(matrix, options.MappingCatalogPath!))
+                {
+                    return 1;
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(options.ScenarioInventoryPath))
+            {
+                if (!ValidateScenarioInventory(matrix, options.ScenarioInventoryPath!))
                 {
                     return 1;
                 }
@@ -192,6 +206,114 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
 
             return false;
+        }
+
+        private static bool ValidateScenarioInventory(DuckTypeAotCompatibilityMatrix matrix, string scenarioInventoryPath)
+        {
+            var inventoryResult = DuckTypeAotScenarioInventoryParser.Parse(scenarioInventoryPath);
+            if (inventoryResult.Errors.Count > 0)
+            {
+                foreach (var error in inventoryResult.Errors)
+                {
+                    Utils.WriteError(error);
+                }
+
+                return false;
+            }
+
+            var errors = new List<string>();
+            var matrixScenarioIds = new HashSet<string>(StringComparer.Ordinal);
+            for (var i = 0; i < matrix.Mappings.Count; i++)
+            {
+                var mapping = matrix.Mappings[i];
+                if (string.IsNullOrWhiteSpace(mapping.Id))
+                {
+                    errors.Add(
+                        $"--compat-matrix mapping entry #{i + 1} is missing scenario id while --scenario-inventory is enabled. " +
+                        $"proxy='{mapping.ProxyType ?? "(null)"}', target='{mapping.TargetType ?? "(null)"}'.");
+                    continue;
+                }
+
+                _ = matrixScenarioIds.Add(mapping.Id!);
+            }
+
+            foreach (var requiredEntry in inventoryResult.RequiredScenarios)
+            {
+                if (!IsScenarioCoveredByMatrix(requiredEntry, matrixScenarioIds))
+                {
+                    errors.Add($"--compat-matrix is missing required scenario from --scenario-inventory: '{requiredEntry}'.");
+                }
+            }
+
+            foreach (var matrixScenarioId in matrixScenarioIds)
+            {
+                if (!IsScenarioTrackedByInventory(matrixScenarioId, inventoryResult.RequiredScenarios))
+                {
+                    errors.Add(
+                        $"--compat-matrix contains scenario id '{matrixScenarioId}' that is not tracked by --scenario-inventory. " +
+                        "Add it to the inventory (or matching wildcard group) to avoid unreviewed scenario drift.");
+                }
+            }
+
+            if (errors.Count == 0)
+            {
+                return true;
+            }
+
+            foreach (var error in errors)
+            {
+                Utils.WriteError(error);
+            }
+
+            return false;
+        }
+
+        private static bool IsScenarioCoveredByMatrix(string requiredEntry, ISet<string> matrixScenarioIds)
+        {
+            if (!IsWildcardScenarioEntry(requiredEntry))
+            {
+                return matrixScenarioIds.Contains(requiredEntry);
+            }
+
+            var wildcardPrefix = requiredEntry.Substring(0, requiredEntry.Length - 1);
+            foreach (var matrixScenarioId in matrixScenarioIds)
+            {
+                if (matrixScenarioId.StartsWith(wildcardPrefix, StringComparison.Ordinal))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool IsScenarioTrackedByInventory(string matrixScenarioId, IReadOnlyList<string> requiredScenarios)
+        {
+            foreach (var requiredEntry in requiredScenarios)
+            {
+                if (!IsWildcardScenarioEntry(requiredEntry))
+                {
+                    if (string.Equals(matrixScenarioId, requiredEntry, StringComparison.Ordinal))
+                    {
+                        return true;
+                    }
+
+                    continue;
+                }
+
+                var wildcardPrefix = requiredEntry.Substring(0, requiredEntry.Length - 1);
+                if (matrixScenarioId.StartsWith(wildcardPrefix, StringComparison.Ordinal))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool IsWildcardScenarioEntry(string entry)
+        {
+            return entry.Length > 1 && entry[entry.Length - 1] == '*';
         }
 
         private static bool TryReadManifest(string manifestPath, out DuckTypeAotManifest? manifest)
