@@ -35,6 +35,11 @@ public static class SmokeTestScenarios
             SmokeTestCategory.LinuxMuslDotnetTool => LinuxMuslDotnetToolScenarios(),
             SmokeTestCategory.LinuxMuslDotnetToolArm64 => LinuxMuslDotnetToolArm64Scenarios(),
             SmokeTestCategory.LinuxMuslTrimming => LinuxMuslTrimmingScenarios(),
+            SmokeTestCategory.WindowsMsi => WindowsMsiScenarios(),
+            SmokeTestCategory.WindowsNuGet => WindowsNuGetScenarios(),
+            SmokeTestCategory.WindowsDotnetTool => WindowsDotnetToolScenarios(),
+            SmokeTestCategory.WindowsTracerHome => WindowsTracerHomeScenarios(),
+            SmokeTestCategory.WindowsFleetInstaller => WindowsFleetInstallerScenarios(),
             _ => throw new InvalidOperationException($"Unknown smoke test scenario: {category}"),
         };
 
@@ -896,6 +901,142 @@ public static class SmokeTestScenarios
                        Os: os,
                        OsVersion: scenario.OsVersion,
                        RunCrashTest: false);
+        }
+
+        // ─────────────────────────────────────────────────────────
+        // Windows categories
+        // ─────────────────────────────────────────────────────────
+
+        static string GetInstallerChannel(string publishFramework) =>
+            publishFramework.Replace("netcoreapp", string.Empty)
+                            .Replace("net", string.Empty);
+
+        static (TargetFramework PublishFramework, string Tag, string OsVersion)[] GetWindowsRuntimeImages() =>
+            new []
+            {
+                (TargetFramework.NET10_0, "10.0-windowsservercore-ltsc2022", "servercore-2022"),
+                (TargetFramework.NET9_0, "9.0-windowsservercore-ltsc2022", "servercore-2022"),
+                (TargetFramework.NET8_0, "8.0-windowsservercore-ltsc2022", "servercore-2022"),
+                (TargetFramework.NET7_0, "7.0-windowsservercore-ltsc2022", "servercore-2022"),
+                (TargetFramework.NET6_0, "6.0-windowsservercore-ltsc2022", "servercore-2022"),
+            };
+
+        static IEnumerable<IEnumerable<SmokeTestScenario>> WindowsMsiScenarios()
+        {
+            // MSI: x64 with and without 32-bit runtime
+            var platforms = new (string platform, bool enable32Bit)[]
+            {
+                ("x64", false),
+                ("x64", true),
+            };
+
+            yield return from platform in platforms
+                         from image in GetWindowsRuntimeImages()
+                         let channel32Bit = platform.enable32Bit
+                             ? GetInstallerChannel(image.PublishFramework)
+                             : ""
+                         select new SmokeTestScenario(
+                             Category: SmokeTestCategory.WindowsMsi,
+                             ShortName: $"{platform.platform}_{(platform.enable32Bit ? "32bit" : "64bit")}",
+                             PublishFramework: image.PublishFramework,
+                             RuntimeTag: image.Tag,
+                             DockerImageRepo: "mcr.microsoft.com/dotnet/aspnet",
+                             Os: "windows",
+                             OsVersion: image.OsVersion,
+                             RunCrashTest: false,
+                             Channel32Bit: channel32Bit);
+        }
+
+        static IEnumerable<IEnumerable<SmokeTestScenario>> WindowsNuGetScenarios()
+        {
+            // NuGet: x64 and x86
+            var platforms = new[] { "x64", "x86" };
+
+            yield return from platform in platforms
+                         from image in GetWindowsRuntimeImages()
+                         let channel32Bit = platform == "x86"
+                             ? GetInstallerChannel(image.PublishFramework)
+                             : ""
+                         select new SmokeTestScenario(
+                             Category: SmokeTestCategory.WindowsNuGet,
+                             ShortName: $"{platform}",
+                             PublishFramework: image.PublishFramework,
+                             RuntimeTag: image.Tag,
+                             DockerImageRepo: "mcr.microsoft.com/dotnet/aspnet",
+                             Os: "windows",
+                             OsVersion: image.OsVersion,
+                             RunCrashTest: false,
+                             Channel32Bit: channel32Bit,
+                             WindowsRelativeProfilerPath: $"datadog/win-{platform}/Datadog.Trace.ClrProfiler.Native.dll");
+        }
+
+        static IEnumerable<IEnumerable<SmokeTestScenario>> WindowsDotnetToolScenarios()
+        {
+            // DotnetTool: x64 and x86
+            var platforms = new[] { "x64", "x86" };
+
+            yield return from platform in platforms
+                         from image in GetWindowsRuntimeImages()
+                         let channel32Bit = platform == "x86"
+                             ? GetInstallerChannel(image.PublishFramework)
+                             : ""
+                         select new SmokeTestScenario(
+                             Category: SmokeTestCategory.WindowsDotnetTool,
+                             ShortName: $"{platform}",
+                             PublishFramework: image.PublishFramework,
+                             RuntimeTag: image.Tag,
+                             DockerImageRepo: "mcr.microsoft.com/dotnet/aspnet",
+                             Os: "windows",
+                             OsVersion: image.OsVersion,
+                             RunCrashTest: false,
+                             Channel32Bit: channel32Bit);
+        }
+
+        static IEnumerable<IEnumerable<SmokeTestScenario>> WindowsTracerHomeScenarios()
+        {
+            // TracerHome: x64 and x86
+            var platforms = new[] { "x64", "x86" };
+
+            yield return from platform in platforms
+                         from image in GetWindowsRuntimeImages()
+                         let channel32Bit = platform == "x86"
+                             ? GetInstallerChannel(image.PublishFramework)
+                             : ""
+                         select new SmokeTestScenario(
+                             Category: SmokeTestCategory.WindowsTracerHome,
+                             ShortName: $"{platform}",
+                             PublishFramework: image.PublishFramework,
+                             RuntimeTag: image.Tag,
+                             DockerImageRepo: "mcr.microsoft.com/dotnet/aspnet",
+                             Os: "windows",
+                             OsVersion: image.OsVersion,
+                             RunCrashTest: false,
+                             Channel32Bit: channel32Bit,
+                             WindowsRelativeProfilerPath: $"win-{platform}/Datadog.Trace.ClrProfiler.Native.dll");
+        }
+
+        static IEnumerable<IEnumerable<SmokeTestScenario>> WindowsFleetInstallerScenarios()
+        {
+            // FleetInstaller: x64 and x86 (net10.0, net9.0, net8.0 only)
+            var platforms = new[] { "x64", "x86" };
+            var images = GetWindowsRuntimeImages()
+                .Where(x => x.PublishFramework.IsGreaterThan(TargetFramework.NET8_0));
+
+            yield return from platform in platforms
+                         from image in images
+                         let channel32Bit = platform == "x86"
+                             ? GetInstallerChannel(image.PublishFramework)
+                             : ""
+                         select new SmokeTestScenario(
+                             Category: SmokeTestCategory.WindowsFleetInstaller,
+                             ShortName: $"{platform}",
+                             PublishFramework: image.PublishFramework,
+                             RuntimeTag: image.Tag,
+                             DockerImageRepo: "mcr.microsoft.com/dotnet/aspnet",
+                             Os: "windows",
+                             OsVersion: image.OsVersion,
+                             RunCrashTest: false,
+                             Channel32Bit: channel32Bit);
         }
     }
 }

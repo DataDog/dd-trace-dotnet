@@ -16,4 +16,9 @@ public enum SmokeTestCategory
     LinuxMuslDotnetTool,
     LinuxMuslDotnetToolArm64,
     LinuxMuslTrimming,
+    WindowsMsi,
+    WindowsNuGet,
+    WindowsDotnetTool,
+    WindowsTracerHome,
+    WindowsFleetInstaller,
 }
