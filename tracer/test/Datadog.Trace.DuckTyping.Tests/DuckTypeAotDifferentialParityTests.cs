@@ -132,6 +132,74 @@ namespace Datadog.Trace.DuckTyping.Tests
         }
 
         [Fact]
+        public void DifferentialParityA05ForwardAliasedMethodShouldMatchBetweenDynamicAndAot()
+        {
+            const string scenarioId = "A-05";
+            DuckTypeAotEngine.RegisterProxy(
+                typeof(IAliasMethodProxy),
+                typeof(AliasMethodTarget),
+                typeof(AliasMethodAotProxy),
+                instance => new AliasMethodAotProxy((AliasMethodTarget)instance!));
+
+            var dynamicResult = InvokeDynamicForward(typeof(IAliasMethodProxy), typeof(AliasMethodTarget));
+            var aotResult = DuckTypeAotEngine.GetOrCreateProxyType(typeof(IAliasMethodProxy), typeof(AliasMethodTarget));
+
+            dynamicResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in dynamic mode");
+            aotResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in AOT mode");
+
+            var dynamicProxy = dynamicResult.CreateInstance<IAliasMethodProxy>(new AliasMethodTarget());
+            var aotProxy = aotResult.CreateInstance<IAliasMethodProxy>(new AliasMethodTarget());
+
+            aotProxy.Add(4, 9).Should().Be(dynamicProxy.Add(4, 9), $"scenario {scenarioId} should preserve aliased method behavior");
+        }
+
+        [Fact]
+        public void DifferentialParityA06ForwardNullableReturnShouldMatchBetweenDynamicAndAot()
+        {
+            const string scenarioId = "A-06";
+            DuckTypeAotEngine.RegisterProxy(
+                typeof(INullableValueProxy),
+                typeof(NullableValueTarget),
+                typeof(NullableValueAotProxy),
+                instance => new NullableValueAotProxy((NullableValueTarget)instance!));
+
+            var dynamicResult = InvokeDynamicForward(typeof(INullableValueProxy), typeof(NullableValueTarget));
+            var aotResult = DuckTypeAotEngine.GetOrCreateProxyType(typeof(INullableValueProxy), typeof(NullableValueTarget));
+
+            dynamicResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in dynamic mode");
+            aotResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in AOT mode");
+
+            var dynamicProxy = dynamicResult.CreateInstance<INullableValueProxy>(new NullableValueTarget());
+            var aotProxy = aotResult.CreateInstance<INullableValueProxy>(new NullableValueTarget());
+
+            aotProxy.Maybe(8).Should().Be(dynamicProxy.Maybe(8), $"scenario {scenarioId} should preserve nullable non-null return behavior");
+            aotProxy.Maybe(-1).Should().Be(dynamicProxy.Maybe(-1), $"scenario {scenarioId} should preserve nullable null return behavior");
+        }
+
+        [Fact]
+        public void DifferentialParityA07ForwardGenericMethodShouldMatchBetweenDynamicAndAot()
+        {
+            const string scenarioId = "A-07";
+            DuckTypeAotEngine.RegisterProxy(
+                typeof(IGenericEchoProxy),
+                typeof(GenericEchoTarget),
+                typeof(GenericEchoAotProxy),
+                instance => new GenericEchoAotProxy((GenericEchoTarget)instance!));
+
+            var dynamicResult = InvokeDynamicForward(typeof(IGenericEchoProxy), typeof(GenericEchoTarget));
+            var aotResult = DuckTypeAotEngine.GetOrCreateProxyType(typeof(IGenericEchoProxy), typeof(GenericEchoTarget));
+
+            dynamicResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in dynamic mode");
+            aotResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in AOT mode");
+
+            var dynamicProxy = dynamicResult.CreateInstance<IGenericEchoProxy>(new GenericEchoTarget());
+            var aotProxy = aotResult.CreateInstance<IGenericEchoProxy>(new GenericEchoTarget());
+
+            aotProxy.Echo("omega").Should().Be(dynamicProxy.Echo("omega"), $"scenario {scenarioId} should preserve generic method behavior for reference types");
+            aotProxy.Echo(42).Should().Be(dynamicProxy.Echo(42), $"scenario {scenarioId} should preserve generic method behavior for value types");
+        }
+
+        [Fact]
         public void DifferentialParityB16ForwardFieldBackedPropertyShouldMatchBetweenDynamicAndAot()
         {
             const string scenarioId = "B-16";
@@ -161,6 +229,31 @@ namespace Datadog.Trace.DuckTyping.Tests
         }
 
         [Fact]
+        public void DifferentialParityB17ForwardDuckFieldAttributeShouldMatchBetweenDynamicAndAot()
+        {
+            const string scenarioId = "B-17";
+            DuckTypeAotEngine.RegisterProxy(
+                typeof(IDuckFieldCountProxy),
+                typeof(DuckFieldCountTarget),
+                typeof(DuckFieldCountAotProxy),
+                instance => new DuckFieldCountAotProxy((DuckFieldCountTarget)instance!));
+
+            var dynamicResult = InvokeDynamicForward(typeof(IDuckFieldCountProxy), typeof(DuckFieldCountTarget));
+            var aotResult = DuckTypeAotEngine.GetOrCreateProxyType(typeof(IDuckFieldCountProxy), typeof(DuckFieldCountTarget));
+
+            dynamicResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in dynamic mode");
+            aotResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in AOT mode");
+
+            var dynamicProxy = dynamicResult.CreateInstance<IDuckFieldCountProxy>(new DuckFieldCountTarget());
+            var aotProxy = aotResult.CreateInstance<IDuckFieldCountProxy>(new DuckFieldCountTarget());
+
+            dynamicProxy.Count = 33;
+            aotProxy.Count = 33;
+
+            aotProxy.Count.Should().Be(dynamicProxy.Count, $"scenario {scenarioId} should preserve [DuckField] binding behavior");
+        }
+
+        [Fact]
         public void DifferentialParityC28ForwardDuckChainingShouldMatchBetweenDynamicAndAot()
         {
             const string scenarioId = "C-28";
@@ -187,6 +280,34 @@ namespace Datadog.Trace.DuckTyping.Tests
             aotProxy.Inner.Should().NotBeNull();
             dynamicProxy.Inner.Should().NotBeNull();
             aotProxy.Inner.Name.Should().Be(dynamicProxy.Inner.Name, $"scenario {scenarioId} should preserve chained proxy behavior");
+        }
+
+        [Fact]
+        public void DifferentialParityC29ForwardDuckChainingNullShouldMatchBetweenDynamicAndAot()
+        {
+            const string scenarioId = "C-29";
+            DuckTypeAotEngine.RegisterProxy(
+                typeof(IChainInnerProxy),
+                typeof(ChainInnerTarget),
+                typeof(ChainInnerAotProxy),
+                instance => new ChainInnerAotProxy((ChainInnerTarget)instance!));
+            DuckTypeAotEngine.RegisterProxy(
+                typeof(IChainNullableOuterProxy),
+                typeof(ChainNullableOuterTarget),
+                typeof(ChainNullableOuterAotProxy),
+                instance => new ChainNullableOuterAotProxy((ChainNullableOuterTarget)instance!));
+
+            var dynamicResult = InvokeDynamicForward(typeof(IChainNullableOuterProxy), typeof(ChainNullableOuterTarget));
+            var aotResult = DuckTypeAotEngine.GetOrCreateProxyType(typeof(IChainNullableOuterProxy), typeof(ChainNullableOuterTarget));
+
+            dynamicResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in dynamic mode");
+            aotResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in AOT mode");
+
+            var dynamicProxy = dynamicResult.CreateInstance<IChainNullableOuterProxy>(new ChainNullableOuterTarget(inner: null));
+            var aotProxy = aotResult.CreateInstance<IChainNullableOuterProxy>(new ChainNullableOuterTarget(inner: null));
+
+            aotProxy.Inner.Should().BeNull($"scenario {scenarioId} should preserve null duck chaining");
+            dynamicProxy.Inner.Should().BeNull($"scenario {scenarioId} should preserve null duck chaining in dynamic mode");
         }
 
         [Fact]
@@ -235,6 +356,28 @@ namespace Datadog.Trace.DuckTyping.Tests
             aotProxy.State = 21;
 
             aotProxy.State.Should().Be(dynamicProxy.State, $"scenario {scenarioId} should preserve reverse proxy property behavior");
+        }
+
+        [Fact]
+        public void DifferentialParityD36ReverseMethodShouldMatchBetweenDynamicAndAot()
+        {
+            const string scenarioId = "D-36";
+            DuckTypeAotEngine.RegisterReverseProxy(
+                typeof(IReverseMathProxy),
+                typeof(ReverseMathDelegation),
+                typeof(ReverseMathAotProxy),
+                instance => new ReverseMathAotProxy((ReverseMathDelegation)instance!));
+
+            var dynamicResult = InvokeDynamicReverse(typeof(IReverseMathProxy), typeof(ReverseMathDelegation));
+            var aotResult = DuckTypeAotEngine.GetOrCreateReverseProxyType(typeof(IReverseMathProxy), typeof(ReverseMathDelegation));
+
+            dynamicResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in dynamic mode");
+            aotResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in AOT mode");
+
+            var dynamicProxy = dynamicResult.CreateInstance<IReverseMathProxy>(new ReverseMathDelegation());
+            var aotProxy = aotResult.CreateInstance<IReverseMathProxy>(new ReverseMathDelegation());
+
+            aotProxy.Multiply(6, 7).Should().Be(dynamicProxy.Multiply(6, 7), $"scenario {scenarioId} should preserve reverse method behavior");
         }
 
         private static DuckType.CreateTypeResult InvokeDynamicForward(Type proxyDefinitionType, Type targetType)
@@ -379,6 +522,91 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        private interface IAliasMethodProxy
+        {
+            [Duck(Name = "ComputeSum")]
+            int Add(int left, int right);
+        }
+
+        private class AliasMethodTarget
+        {
+            public int ComputeSum(int left, int right)
+            {
+                return left + right;
+            }
+        }
+
+        private class AliasMethodAotProxy : IAliasMethodProxy
+        {
+            private readonly AliasMethodTarget _target;
+
+            public AliasMethodAotProxy(AliasMethodTarget target)
+            {
+                _target = target;
+            }
+
+            public int Add(int left, int right)
+            {
+                return _target.ComputeSum(left, right);
+            }
+        }
+
+        private interface INullableValueProxy
+        {
+            int? Maybe(int value);
+        }
+
+        private class NullableValueTarget
+        {
+            public int? Maybe(int value)
+            {
+                return value >= 0 ? value : null;
+            }
+        }
+
+        private class NullableValueAotProxy : INullableValueProxy
+        {
+            private readonly NullableValueTarget _target;
+
+            public NullableValueAotProxy(NullableValueTarget target)
+            {
+                _target = target;
+            }
+
+            public int? Maybe(int value)
+            {
+                return _target.Maybe(value);
+            }
+        }
+
+        private interface IGenericEchoProxy
+        {
+            T Echo<T>(T value);
+        }
+
+        private class GenericEchoTarget
+        {
+            public T Echo<T>(T value)
+            {
+                return value;
+            }
+        }
+
+        private class GenericEchoAotProxy : IGenericEchoProxy
+        {
+            private readonly GenericEchoTarget _target;
+
+            public GenericEchoAotProxy(GenericEchoTarget target)
+            {
+                _target = target;
+            }
+
+            public T Echo<T>(T value)
+            {
+                return _target.Echo(value);
+            }
+        }
+
         private interface IFieldCountProxy
         {
             [DuckPropertyOrField]
@@ -403,6 +631,33 @@ namespace Datadog.Trace.DuckTyping.Tests
             {
                 get => _target.Count;
                 set => _target.Count = value;
+            }
+        }
+
+        private interface IDuckFieldCountProxy
+        {
+            [DuckField(Name = "CountField")]
+            int Count { get; set; }
+        }
+
+        private class DuckFieldCountTarget
+        {
+            public int CountField;
+        }
+
+        private class DuckFieldCountAotProxy : IDuckFieldCountProxy
+        {
+            private readonly DuckFieldCountTarget _target;
+
+            public DuckFieldCountAotProxy(DuckFieldCountTarget target)
+            {
+                _target = target;
+            }
+
+            public int Count
+            {
+                get => _target.CountField;
+                set => _target.CountField = value;
             }
         }
 
@@ -458,6 +713,33 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
 
             public IChainInnerProxy Inner => new ChainInnerAotProxy(_target.Inner);
+        }
+
+        private interface IChainNullableOuterProxy
+        {
+            IChainInnerProxy? Inner { get; }
+        }
+
+        private class ChainNullableOuterTarget
+        {
+            public ChainNullableOuterTarget(ChainInnerTarget? inner)
+            {
+                Inner = inner;
+            }
+
+            public ChainInnerTarget? Inner { get; }
+        }
+
+        private class ChainNullableOuterAotProxy : IChainNullableOuterProxy
+        {
+            private readonly ChainNullableOuterTarget _target;
+
+            public ChainNullableOuterAotProxy(ChainNullableOuterTarget target)
+            {
+                _target = target;
+            }
+
+            public IChainInnerProxy? Inner => _target.Inner is null ? null : new ChainInnerAotProxy(_target.Inner);
         }
 
         private interface IReverseGreetingProxy
@@ -520,6 +802,35 @@ namespace Datadog.Trace.DuckTyping.Tests
             {
                 get => _delegation.State;
                 set => _delegation.State = value;
+            }
+        }
+
+        private interface IReverseMathProxy
+        {
+            int Multiply(int left, int right);
+        }
+
+        private class ReverseMathDelegation
+        {
+            [DuckReverseMethod]
+            public int Multiply(int left, int right)
+            {
+                return left * right;
+            }
+        }
+
+        private class ReverseMathAotProxy : IReverseMathProxy
+        {
+            private readonly ReverseMathDelegation _delegation;
+
+            public ReverseMathAotProxy(ReverseMathDelegation delegation)
+            {
+                _delegation = delegation;
+            }
+
+            public int Multiply(int left, int right)
+            {
+                return _delegation.Multiply(left, right);
             }
         }
     }
