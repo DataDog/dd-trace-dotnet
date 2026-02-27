@@ -17,7 +17,7 @@ using Xunit;
 
 namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Proxy;
 
-public class InferredProxyCoordinatorTests
+public class InferredProxyCoordinatorTests : IAsyncLifetime
 {
     private readonly Mock<IInferredProxyExtractor> _extractor;
     private readonly Mock<IInferredSpanFactory> _factory;
@@ -36,6 +36,10 @@ public class InferredProxyCoordinatorTests
         NameValueHeadersCollection carrier,
         HeadersCollectionAccesor<NameValueHeadersCollection> carrierGetter,
         out InferredProxyData data);
+
+    public Task InitializeAsync() => Task.CompletedTask;
+
+    public async Task DisposeAsync() => await _tracer.DisposeAsync();
 
     [Fact]
     public void ExtractAndCreateScope_WhenExtractorReturnsFalse_ShouldReturnNull()

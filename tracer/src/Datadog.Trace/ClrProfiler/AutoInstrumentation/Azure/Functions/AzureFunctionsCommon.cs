@@ -293,7 +293,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                         fullName: functionContext.FunctionDefinition.EntryPoint,
                         bindingSource: rootSpan.Tags is AzureFunctionsTags t ? t.BindingSource : null,
                         triggerType: triggerType);
-
                 }
 
                 {
