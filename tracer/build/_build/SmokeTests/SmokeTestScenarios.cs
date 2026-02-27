@@ -1047,7 +1047,7 @@ public static class SmokeTestScenarios
                          from image in runtimeImages
                          select new SmokeTestScenario(
                              Category: SmokeTestCategory.WindowsFleetInstallerIis,
-                             ShortName: $"{platform}_iis",
+                             ShortName: $"{platform}_{image.PublishFramework.ToString().Replace(".", "")}",
                              PublishFramework: image.PublishFramework,
                              RuntimeTag: image.Tag,
                              DockerImageRepo: "mcr.microsoft.com/dotnet/framework/aspnet",
