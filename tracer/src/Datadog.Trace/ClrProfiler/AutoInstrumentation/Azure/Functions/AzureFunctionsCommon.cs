@@ -293,9 +293,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                         fullName: functionContext.FunctionDefinition.EntryPoint,
                         bindingSource: rootSpan.Tags is AzureFunctionsTags t ? t.BindingSource : null,
                         triggerType: triggerType);
-                }
-
-                {
                     // change root span's type to "serverless"
                     scope.Root.Span.Type = SpanType;
                     scope.Span.ResourceName = $"{triggerType} {functionName}";
