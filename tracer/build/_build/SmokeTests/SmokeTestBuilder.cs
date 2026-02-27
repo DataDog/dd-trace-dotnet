@@ -79,6 +79,8 @@ public static class SmokeTestBuilder
                 return await BuildWindowsDotnetToolImageAsync(scenario, tracerDir, artifactsDir);
             case SmokeTestCategory.WindowsTracerHome:
                 return await BuildWindowsTracerHomeImageAsync(scenario, tracerDir, artifactsDir);
+            case SmokeTestCategory.WindowsFleetInstallerIis:
+                return await BuildWindowsFleetInstallerIisImageAsync(scenario, tracerDir, artifactsDir);
             default:
                 throw new InvalidOperationException($"Unknown smoke test scenario: {category}");
         }
@@ -333,6 +335,28 @@ public static class SmokeTestBuilder
         return new[] { scenario.DockerTag };
     }
 
+    static async Task<string[]> BuildWindowsFleetInstallerIisImageAsync(SmokeTestScenario scenario, AbsolutePath tracerDir, AbsolutePath artifactsDir)
+    {
+        const string dockerfilePath = "build/_build/docker/smoke.windows.iis.fleet-installer.dockerfile";
+
+        var channel = scenario.PublishFramework.ToString()
+            .Replace("netcoreapp", string.Empty)
+            .Replace("net", string.Empty);
+
+        var buildArgs = new Dictionary<string, string>
+        {
+            ["DOTNETSDK_VERSION"] = DotnetSdkVersion,
+            ["RUNTIME_IMAGE"] = scenario.RuntimeImage,
+            ["PUBLISH_FRAMEWORK"] = scenario.PublishFramework,
+            ["CHANNEL"] = channel,
+            ["TARGET_PLATFORM"] = scenario.TargetPlatform!,
+            ["INSTALL_COMMAND"] = scenario.FleetInstallerCommand!,
+        };
+
+        await BuildImageFromDockerfileAsync(tracerDir, dockerfilePath, scenario.DockerTag, buildArgs, artifactsDir);
+        return new[] { scenario.DockerTag };
+    }
+
     // ──────────────────────────────────────────────────────────────
     // Smoke test orchestration
     // ──────────────────────────────────────────────────────────────
@@ -400,12 +424,19 @@ public static class SmokeTestBuilder
 
             if (scenario.IsWindows)
             {
+                var ignoredAttrs = SnapshotIgnoredAttrs;
+                if (!string.IsNullOrEmpty(scenario.ExtraSnapshotIgnoredAttrs))
+                {
+                    ignoredAttrs += "," + scenario.ExtraSnapshotIgnoredAttrs;
+                }
+
                 await BuildWindowsTestAgentImageAsync(tracerDir);
                 testAgentContainerId = await CreateAndStartContainerWithRetryAsync(
                     client, "test-agent", BuildWindowsTestAgentContainerParams(
                         networkName,
                         environment.ToHostPath(sourceSnapshotsDir),
-                        environment.ToHostPath(debugSnapshotsDir)));
+                        environment.ToHostPath(debugSnapshotsDir),
+                        ignoredAttrs));
             }
             else
             {
@@ -470,9 +501,10 @@ public static class SmokeTestBuilder
             // 9. Verify snapshot
             if (!scenario.IsNoop)
             {
-                var snapshotFile = scenario.PublishFramework == "netcoreapp2.1"
-                    ? "smoke_test_snapshots_2_1"
-                    : "smoke_test_snapshots";
+                var snapshotFile = scenario.SnapshotFile
+                    ?? (scenario.PublishFramework == "netcoreapp2.1"
+                        ? "smoke_test_snapshots_2_1"
+                        : "smoke_test_snapshots");
 
                 Logger.Information("Verifying snapshot {File}...", snapshotFile);
 
@@ -647,7 +679,8 @@ public static class SmokeTestBuilder
     static CreateContainerParameters BuildWindowsTestAgentContainerParams(
         string networkName,
         string snapshotsDir,
-        string debugSnapshotsDir)
+        string debugSnapshotsDir,
+        string snapshotIgnoredAttrs)
     {
         return new CreateContainerParameters
         {
@@ -656,7 +689,7 @@ public static class SmokeTestBuilder
             {
                 "ENABLED_CHECKS=trace_count_header,meta_tracer_version_header,trace_content_length",
                 "SNAPSHOT_CI=1",
-                $"SNAPSHOT_IGNORED_ATTRS={SnapshotIgnoredAttrs}",
+                $"SNAPSHOT_IGNORED_ATTRS={snapshotIgnoredAttrs}",
             },
             ExposedPorts = new Dictionary<string, EmptyStruct>
             {
