@@ -29,11 +29,13 @@ COPY --from=builder /src/artifacts /install
 
 RUN mkdir /logs; \
     mkdir /monitoring-home; \
-    Expand-Archive 'c:\install\windows-tracer-home.zip' -DestinationPath 'c:\monitoring-home\'; \
-    c:\install\Datadog.FleetInstaller.exe install-version --home-path c:\monitoring-home; \
-    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }; \
-    c:\install\Datadog.FleetInstaller.exe enable-global-instrumentation --home-path c:\monitoring-home; \
-    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+    mkdir /installer; \
+    cd /install; \
+    Expand-Archive 'c:\install\windows-tracer-home.zip' -DestinationPath 'c:\monitoring-home\';  \
+    Copy-Item c:\install\installer\*.* -Destination 'c:\installer\'; \
+    c:\installer\Datadog.FleetInstaller.exe install-version --home-path c:\monitoring-home; \
+    c:\installer\Datadog.FleetInstaller.exe enable-global-instrumentation --home-path c:\monitoring-home; \
+    cd /app;
 
 # Set the additional env vars
 ENV DD_PROFILING_ENABLED=1 \

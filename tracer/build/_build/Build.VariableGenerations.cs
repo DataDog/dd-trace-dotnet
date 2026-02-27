@@ -628,9 +628,6 @@ partial class Build : NukeBuild
                     EmitMatrix("nuke_windows_tracer_home_matrix",
                         allScenarios.Where(x => x.category is SmokeTests.SmokeTestCategory.WindowsTracerHome));
 
-                    EmitMatrix("nuke_windows_fleet_installer_matrix",
-                        allScenarios.Where(x => x.category is SmokeTests.SmokeTestCategory.WindowsFleetInstaller));
-
                     void EmitMatrix(string name, IEnumerable<(SmokeTests.SmokeTestCategory category, string scenario, SmokeTests.SmokeTestScenario details, object entry)> scenarios)
                     {
                         var matrix = scenarios.ToDictionary(x => x.scenario, x => x.entry);
