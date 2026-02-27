@@ -46,7 +46,7 @@ public class DuckTypeAotProcessorsTests
         var parseResult = DuckTypeAotMappingCatalogParser.Parse(catalogPath);
         parseResult.Errors.Should().BeEmpty();
         parseResult.RequiredMappings.Should().NotBeEmpty();
-        parseResult.RequiredMappings.Should().HaveCountGreaterOrEqualTo(52);
+        parseResult.RequiredMappings.Should().HaveCountGreaterOrEqualTo(53);
 
         var scenarioIds = parseResult.RequiredMappings
                                      .Where(mapping => !string.IsNullOrWhiteSpace(mapping.ScenarioId))
@@ -104,6 +104,7 @@ public class DuckTypeAotProcessorsTests
         scenarioIds.Should().Contain("FS-5");
         scenarioIds.Should().Contain("FF-2");
         scenarioIds.Should().Contain("FM-8");
+        scenarioIds.Should().Contain("RT-3");
     }
 
     [Fact]
