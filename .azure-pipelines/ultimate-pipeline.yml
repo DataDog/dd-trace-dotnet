@@ -5128,6 +5128,72 @@ stages:
         - linux-packages-linux-musl-x64
         - nuget-packages
 
+# Windows MSI (WindowsMsi)
+- stage: nuke_windows_msi_smoke_tests
+  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
+  dependsOn: [package_windows, generate_variables, merge_commit_id]
+  pool:
+    vmImage: windows-2022
+  jobs:
+  - template: steps/nuke-smoke-test-stage-windows.yml
+    parameters:
+      matrixVariable: nuke_windows_msi_matrix
+      artifacts:
+        - windows-msi-x64
+
+# Windows NuGet (WindowsNuGet)
+- stage: nuke_windows_nuget_smoke_tests
+  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
+  dependsOn: [package_windows, generate_variables, merge_commit_id]
+  pool:
+    vmImage: windows-2022
+  jobs:
+  - template: steps/nuke-smoke-test-stage-windows.yml
+    parameters:
+      matrixVariable: nuke_windows_nuget_matrix
+      artifacts:
+        - bundle-nuget-package
+        - nuget-packages
+
+# Windows DotnetTool (WindowsDotnetTool)
+- stage: nuke_windows_dotnet_tool_smoke_tests
+  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
+  dependsOn: [package_windows, generate_variables, merge_commit_id]
+  pool:
+    vmImage: windows-2022
+  jobs:
+  - template: steps/nuke-smoke-test-stage-windows.yml
+    parameters:
+      matrixVariable: nuke_windows_dotnet_tool_matrix
+      artifacts:
+        - runner-standalone-win-x64
+
+# Windows TracerHome (WindowsTracerHome)
+- stage: nuke_windows_tracer_home_smoke_tests
+  dependsOn: [package_windows, generate_variables, merge_commit_id]
+  pool:
+    vmImage: windows-2022
+  jobs:
+  - template: steps/nuke-smoke-test-stage-windows.yml
+    parameters:
+      matrixVariable: nuke_windows_tracer_home_matrix
+      artifacts:
+        - windows-tracer-home.zip
+
+# Windows FleetInstaller (WindowsFleetInstaller)
+- stage: nuke_windows_fleet_installer_smoke_tests
+  dependsOn: [package_windows, generate_variables, merge_commit_id]
+  pool:
+    vmImage: windows-2022
+  jobs:
+  - template: steps/nuke-smoke-test-stage-windows.yml
+    parameters:
+      matrixVariable: nuke_windows_fleet_installer_matrix
+      artifacts:
+        - windows-tracer-home.zip
+        - fleet-installer
+        - fleet-installer-telemetry-forwarder
+
 - stage: installer_smoke_tests
   dependsOn: [package_linux, generate_variables, merge_commit_id]
   variables:

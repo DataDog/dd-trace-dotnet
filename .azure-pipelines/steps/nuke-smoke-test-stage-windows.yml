@@ -1,0 +1,54 @@
+parameters:
+  - name: matrixVariable
+    type: string
+
+  - name: artifacts
+    type: object
+    default: []
+
+jobs:
+- template: update-github-status-jobs.yml
+  parameters:
+    jobs: [test]
+
+- job: test
+  timeoutInMinutes: 45
+  variables:
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+  strategy:
+    matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.${{ parameters.matrixVariable }}'] ]
+
+  steps:
+  - template: clone-repo.yml
+    parameters:
+      targetShaId: $(targetShaId)
+      targetBranch: $(targetBranch)
+
+  # Download required artifacts to the output directory
+  - ${{ each artifact in parameters.artifacts }}:
+#    - template: download-artifact.yml
+#      parameters:
+#        artifact: ${{ artifact }}
+#        path: $(outputDir)
+    - task: DownloadPipelineArtifact@2
+      displayName: Download ${{ artifact }} to artifact directory
+      inputs:
+        artifactName: ${{ artifact }}
+        targetPath: $(outputDir)
+        buildType: 'specific'
+        project: 'dd-trace-dotnet'
+        definition: 54
+        buildVersionToDownload: 'specific'
+        pipelineId: 196299
+
+  - template: install-latest-dotnet-sdk.yml
+  - script: tracer\build.cmd RunArtifactSmokeTests CheckSmokeTestsForErrors ExtractMetricsFromLogs -SmokeTestCategory $(category) -SmokeTestScenario $(scenario)
+    displayName: Run Nuke smoke test
+    env:
+      DD_LOGGER_DD_API_KEY: $(ddApiKey)
+
+  - publish: artifacts/build_data
+    artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
+    condition: always()
+    continueOnError: true
