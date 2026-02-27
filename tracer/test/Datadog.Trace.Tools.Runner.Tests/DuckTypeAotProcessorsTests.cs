@@ -139,6 +139,13 @@ public class DuckTypeAotProcessorsTests
                     string.Equals(method.Name, "EnableAotMode", StringComparison.Ordinal));
             enableAotModeInstruction.Should().NotBeNull();
 
+            var validateAotRegistryContractInstruction = initializeMethod.Body.Instructions.SingleOrDefault(
+                instruction =>
+                    instruction.OpCode == OpCodes.Call &&
+                    instruction.Operand is IMethod method &&
+                    string.Equals(method.Name, "ValidateAotRegistryContract", StringComparison.Ordinal));
+            validateAotRegistryContractInstruction.Should().NotBeNull();
+
             var registerAotProxyInstruction = initializeMethod.Body.Instructions.SingleOrDefault(
                 instruction =>
                     instruction.OpCode == OpCodes.Call &&

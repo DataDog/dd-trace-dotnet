@@ -166,6 +166,47 @@ namespace Datadog.Trace.DuckTyping.Tests
             conflictingRegistryRegistration.Should().Throw<DuckTypeAotMultipleRegistryAssembliesException>();
         }
 
+        [Fact]
+        public void ValidateContractWithSchemaMismatchThrows()
+        {
+            Action validate = () => DuckTypeAotEngine.ValidateContract(
+                new DuckTypeAotContract("999", CurrentDatadogTraceAssemblyVersion, CurrentDatadogTraceAssemblyMvid),
+                CreateCurrentRegistryMetadata());
+
+            validate.Should().Throw<DuckTypeAotRegistryContractValidationException>();
+        }
+
+        [Fact]
+        public void ValidateContractWithDatadogTraceMismatchThrows()
+        {
+            Action validate = () => DuckTypeAotEngine.ValidateContract(
+                new DuckTypeAotContract(DuckTypeAotContract.CurrentSchemaVersion, "0.0.0.0", CurrentDatadogTraceAssemblyMvid),
+                CreateCurrentRegistryMetadata());
+
+            validate.Should().Throw<DuckTypeAotRegistryContractValidationException>();
+        }
+
+        [Fact]
+        public void ValidateContractWithDifferentRegistryIdentityThenRegisterThrows()
+        {
+            DuckTypeAotEngine.ValidateContract(
+                new DuckTypeAotContract(
+                    DuckTypeAotContract.CurrentSchemaVersion,
+                    CurrentDatadogTraceAssemblyVersion,
+                    CurrentDatadogTraceAssemblyMvid),
+                new DuckTypeAotAssemblyMetadata(
+                    "Fake.DuckType.Registry, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+                    Guid.NewGuid().ToString("D")));
+
+            Action register = () => DuckTypeAotEngine.RegisterProxy(
+                typeof(IForwardProxy),
+                typeof(ForwardTarget),
+                typeof(ForwardGeneratedProxy),
+                instance => new ForwardGeneratedProxy((ForwardTarget)instance!));
+
+            register.Should().Throw<DuckTypeAotMultipleRegistryAssembliesException>();
+        }
+
         private interface IMissingProxy
         {
             string Value { get; }
@@ -448,6 +489,18 @@ namespace Datadog.Trace.DuckTyping.Tests
             createMethod.Should().NotBeNull();
 
             return (Func<object?, object?>)Delegate.CreateDelegate(typeof(Func<object?, object?>), createMethod!);
+        }
+
+        private static string CurrentDatadogTraceAssemblyVersion => typeof(DuckTypeAotEngine).Assembly.GetName().Version?.ToString() ?? "0.0.0.0";
+
+        private static string CurrentDatadogTraceAssemblyMvid => typeof(DuckTypeAotEngine).Assembly.ManifestModule.ModuleVersionId.ToString("D");
+
+        private static DuckTypeAotAssemblyMetadata CreateCurrentRegistryMetadata()
+        {
+            var assembly = typeof(DuckTypeAotEngineTests).Assembly;
+            return new DuckTypeAotAssemblyMetadata(
+                assembly.FullName ?? assembly.GetName().Name ?? "unknown",
+                assembly.ManifestModule.ModuleVersionId.ToString("D"));
         }
     }
 }
