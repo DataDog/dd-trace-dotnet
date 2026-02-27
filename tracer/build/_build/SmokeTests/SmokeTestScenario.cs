@@ -19,7 +19,9 @@ public record SmokeTestScenario(
     string? PackageVersionSuffix = null,
     bool ExcludeWhenPrerelease = false,
     bool RunCrashTest = true,
-    bool IsNoop = false)
+    bool IsNoop = false,
+    string? Channel32Bit = null,
+    string? WindowsRelativeProfilerPath = null)
 {
     public string JobName { get; } = $"{ShortName}_{RuntimeTag.Replace('.', '_')}";
     public string FullName => $"{Category}_{JobName}";
@@ -28,8 +30,10 @@ public record SmokeTestScenario(
     public string RuntimeImage => $"{DockerImageRepo}:{RuntimeTag}";
     public string? InstallCommand => InstallType?.GetInstallCommand();
 
-    public string? RelativeProfilerPath => RuntimeId is not null
-        ? $"datadog/{RuntimeId}/Datadog.Trace.ClrProfiler.Native.so" : null;
+    public string? RelativeProfilerPath => WindowsRelativeProfilerPath
+        ?? (RuntimeId is not null ? $"datadog/{RuntimeId}/Datadog.Trace.ClrProfiler.Native.so" : null);
     public string? RelativeApiWrapperPath => RuntimeId is not null
         ? $"datadog/{RuntimeId}/Datadog.Linux.ApiWrapper.x64.so" : null;
+
+    public bool IsWindows => Os == "windows";
 }

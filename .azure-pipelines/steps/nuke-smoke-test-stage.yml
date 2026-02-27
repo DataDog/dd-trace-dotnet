@@ -70,7 +70,7 @@ jobs:
     parameters:
       build: true
       baseImage: alpine
-      command: "RunArtifactSmokeTests -SmokeTestCategory $(category) -SmokeTestScenario $(scenario) --Artifacts /project/artifacts"
+      command: "RunArtifactSmokeTests CheckSmokeTestsForErrors ExtractMetricsFromLogs -SmokeTestCategory $(category) -SmokeTestScenario $(scenario) --Artifacts /project/artifacts"
       apiKey: $(DD_LOGGER_DD_API_KEY)
       extraArgs: "-v /var/run/docker.sock:/var/run/docker.sock"
 

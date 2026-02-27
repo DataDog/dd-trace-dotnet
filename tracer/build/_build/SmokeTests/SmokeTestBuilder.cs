@@ -20,6 +20,8 @@ public static class SmokeTestBuilder
 {
     const string DotnetSdkVersion = "10.0.100";
     const string TestAgentImage = "ghcr.io/datadog/dd-apm-test-agent/ddapm-test-agent:latest";
+    const string WindowsTestAgentImage = "dd-trace-dotnet/ddapm-test-agent-windows";
+    const string WindowsTestAgentDockerfile = "build/_build/docker/test-agent.windows.dockerfile";
 
     const string SnapshotIgnoredAttrs =
         "span_id" + ",trace_id" + ",parent_id" + ",duration" + ",start" + ",metrics.system.pid" + ",meta.runtime-id" + ","
@@ -67,6 +69,16 @@ public static class SmokeTestBuilder
             case SmokeTestCategory.LinuxTrimming:
             case SmokeTestCategory.LinuxMuslTrimming:
                 return await BuildTrimmingImageAsync(scenario, tracerDir, artifactsDir, toolVersion);
+            case SmokeTestCategory.WindowsMsi:
+                return await BuildWindowsMsiImageAsync(scenario, tracerDir, artifactsDir);
+            case SmokeTestCategory.WindowsNuGet:
+                return await BuildWindowsNuGetImageAsync(scenario, tracerDir, artifactsDir, toolVersion);
+            case SmokeTestCategory.WindowsDotnetTool:
+                return await BuildWindowsDotnetToolImageAsync(scenario, tracerDir, artifactsDir);
+            case SmokeTestCategory.WindowsTracerHome:
+                return await BuildWindowsTracerHomeImageAsync(scenario, tracerDir, artifactsDir);
+            case SmokeTestCategory.WindowsFleetInstaller:
+                return await BuildWindowsFleetInstallerImageAsync(scenario, tracerDir, artifactsDir);
             default:
                 throw new InvalidOperationException($"Unknown smoke test scenario: {category}");
         }
@@ -193,6 +205,152 @@ public static class SmokeTestBuilder
     }
 
     // ──────────────────────────────────────────────────────────────
+    // Windows image builds
+    // ──────────────────────────────────────────────────────────────
+
+    static async Task BuildWindowsTestAgentImageAsync(AbsolutePath tracerDir)
+    {
+        var buildArgs = new Dictionary<string, string>();
+        await BuildImageFromDockerfileAsync(tracerDir, WindowsTestAgentDockerfile, WindowsTestAgentImage, buildArgs, null);
+    }
+
+    static async Task<string[]> BuildWindowsMsiImageAsync(SmokeTestScenario scenario, AbsolutePath tracerDir, AbsolutePath artifactsDir)
+    {
+        // The Dockerfile expects the MSI file to be named "datadog-apm.msi"
+        // Rename any *.msi file in the artifacts directory
+        RenameArtifact(artifactsDir, "*.msi", "datadog-apm.msi");
+
+        // Build the standard MSI image
+        const string dockerfilePath = "build/_build/docker/smoke.windows.dockerfile";
+        var buildArgs = new Dictionary<string, string>
+        {
+            ["DOTNETSDK_VERSION"] = DotnetSdkVersion,
+            ["RUNTIME_IMAGE"] = scenario.RuntimeImage,
+            ["PUBLISH_FRAMEWORK"] = scenario.PublishFramework,
+            ["CHANNEL_32_BIT"] = scenario.Channel32Bit ?? "",
+        };
+
+        await BuildImageFromDockerfileAsync(tracerDir, dockerfilePath, scenario.DockerTag, buildArgs, artifactsDir);
+
+        // Build the dd-dotnet variant (always uses no 32-bit)
+        const string ddDotnetDockerfilePath = "build/_build/docker/smoke.windows.dd-dotnet.dockerfile";
+        var ddDotnetTag = scenario.DockerTag + "-dd-dotnet";
+        var ddDotnetBuildArgs = new Dictionary<string, string>
+        {
+            ["DOTNETSDK_VERSION"] = DotnetSdkVersion,
+            ["RUNTIME_IMAGE"] = scenario.RuntimeImage,
+            ["PUBLISH_FRAMEWORK"] = scenario.PublishFramework,
+            ["CHANNEL_32_BIT"] = "",
+        };
+
+        await BuildImageFromDockerfileAsync(tracerDir, ddDotnetDockerfilePath, ddDotnetTag, ddDotnetBuildArgs, artifactsDir);
+
+        return new[] { scenario.DockerTag, ddDotnetTag };
+    }
+
+    static async Task<string[]> BuildWindowsNuGetImageAsync(SmokeTestScenario scenario, AbsolutePath tracerDir, AbsolutePath artifactsDir, string toolVersion)
+    {
+        // Build the standard NuGet image
+        const string dockerfilePath = "build/_build/docker/smoke.windows.nuget.dockerfile";
+        var buildArgs = new Dictionary<string, string>
+        {
+            ["DOTNETSDK_VERSION"] = DotnetSdkVersion,
+            ["RUNTIME_IMAGE"] = scenario.RuntimeImage,
+            ["PUBLISH_FRAMEWORK"] = scenario.PublishFramework,
+            ["TOOL_VERSION"] = toolVersion,
+            ["CHANNEL_32_BIT"] = scenario.Channel32Bit ?? "",
+            ["RELATIVE_PROFILER_PATH"] = scenario.RelativeProfilerPath!,
+        };
+
+        await BuildImageFromDockerfileAsync(tracerDir, dockerfilePath, scenario.DockerTag, buildArgs, artifactsDir);
+
+        // Build the dd-dotnet NuGet variant
+        const string ddDotnetDockerfilePath = "build/_build/docker/smoke.windows.nuget.dd-dotnet.dockerfile";
+        var ddDotnetTag = scenario.DockerTag + "-dd-dotnet";
+        var ddDotnetBuildArgs = new Dictionary<string, string>
+        {
+            ["DOTNETSDK_VERSION"] = DotnetSdkVersion,
+            ["RUNTIME_IMAGE"] = scenario.RuntimeImage,
+            ["PUBLISH_FRAMEWORK"] = scenario.PublishFramework,
+            ["TOOL_VERSION"] = toolVersion,
+            ["CHANNEL_32_BIT"] = scenario.Channel32Bit ?? "",
+        };
+
+        await BuildImageFromDockerfileAsync(tracerDir, ddDotnetDockerfilePath, ddDotnetTag, ddDotnetBuildArgs, artifactsDir);
+
+        return new[] { scenario.DockerTag, ddDotnetTag };
+    }
+
+    static async Task<string[]> BuildWindowsDotnetToolImageAsync(SmokeTestScenario scenario, AbsolutePath tracerDir, AbsolutePath artifactsDir)
+    {
+        // The Dockerfile expects "dd-trace-win.zip"
+        RenameArtifact(artifactsDir, "dd-trace-win-*.zip", "dd-trace-win.zip");
+
+        const string dockerfilePath = "build/_build/docker/smoke.windows.dotnet-tool.dockerfile";
+
+        var buildArgs = new Dictionary<string, string>
+        {
+            ["DOTNETSDK_VERSION"] = DotnetSdkVersion,
+            ["RUNTIME_IMAGE"] = scenario.RuntimeImage,
+            ["PUBLISH_FRAMEWORK"] = scenario.PublishFramework,
+            ["CHANNEL_32_BIT"] = scenario.Channel32Bit ?? "",
+        };
+
+        await BuildImageFromDockerfileAsync(tracerDir, dockerfilePath, scenario.DockerTag, buildArgs, artifactsDir);
+        return new[] { scenario.DockerTag };
+    }
+
+    static async Task<string[]> BuildWindowsTracerHomeImageAsync(SmokeTestScenario scenario, AbsolutePath tracerDir, AbsolutePath artifactsDir)
+    {
+        const string dockerfilePath = "build/_build/docker/smoke.windows.tracer-home.dockerfile";
+
+        var buildArgs = new Dictionary<string, string>
+        {
+            ["DOTNETSDK_VERSION"] = DotnetSdkVersion,
+            ["RUNTIME_IMAGE"] = scenario.RuntimeImage,
+            ["PUBLISH_FRAMEWORK"] = scenario.PublishFramework,
+            ["CHANNEL_32_BIT"] = scenario.Channel32Bit ?? "",
+            ["RELATIVE_PROFILER_PATH"] = scenario.RelativeProfilerPath!,
+        };
+
+        await BuildImageFromDockerfileAsync(tracerDir, dockerfilePath, scenario.DockerTag, buildArgs, artifactsDir);
+        return new[] { scenario.DockerTag };
+    }
+
+    static async Task<string[]> BuildWindowsFleetInstallerImageAsync(SmokeTestScenario scenario, AbsolutePath tracerDir, AbsolutePath artifactsDir)
+    {
+        // The Dockerfile expects installer executables in an "installer/" subdirectory
+        // Move any fleet installer exe/dll files into the subdirectory
+        if (artifactsDir is not null && Directory.Exists(artifactsDir))
+        {
+            var installerDir = Path.Combine(artifactsDir, "installer");
+            if (!Directory.Exists(installerDir))
+            {
+                Directory.CreateDirectory(installerDir);
+                foreach (var file in Directory.GetFiles(artifactsDir, "Datadog.FleetInstaller*"))
+                {
+                    var dest = Path.Combine(installerDir, Path.GetFileName(file));
+                    Logger.Information("Moving {Source} -> {Dest}", Path.GetFileName(file), $"installer/{Path.GetFileName(file)}");
+                    File.Move(file, dest);
+                }
+            }
+        }
+
+        const string dockerfilePath = "build/_build/docker/smoke.windows.fleet-installer.dockerfile";
+
+        var buildArgs = new Dictionary<string, string>
+        {
+            ["DOTNETSDK_VERSION"] = DotnetSdkVersion,
+            ["RUNTIME_IMAGE"] = scenario.RuntimeImage,
+            ["PUBLISH_FRAMEWORK"] = scenario.PublishFramework,
+            ["CHANNEL_32_BIT"] = scenario.Channel32Bit ?? "",
+        };
+
+        await BuildImageFromDockerfileAsync(tracerDir, dockerfilePath, scenario.DockerTag, buildArgs, artifactsDir);
+        return new[] { scenario.DockerTag };
+    }
+
+    // ──────────────────────────────────────────────────────────────
     // Smoke test orchestration
     // ──────────────────────────────────────────────────────────────
 
@@ -253,17 +411,28 @@ public static class SmokeTestBuilder
             var environment = await DetectEnvironmentAsync(client, networkName);
             buildContainerId = environment.BuildContainerId;
 
-            // 3. Pull + start test-agent container
+            // 3. Pull/build + start test-agent container
             LogSection("Starting test agent");
-            await PullImageAsync(client, TestAgentImage);
-
-            // sourceSnapshotsDir: source-of-truth expected snapshots, mounted read-only as /snapshots
             var sourceSnapshotsDir = tracerDir / "build" / "smoke_test_snapshots";
-            testAgentContainerId = await CreateAndStartContainerWithRetryAsync(
-                client, "test-agent", BuildTestAgentContainerParams(
-                    networkName,
-                    environment.ToHostPath(sourceSnapshotsDir),
-                    environment.ToHostPath(debugSnapshotsDir)));
+
+            if (scenario.IsWindows)
+            {
+                await BuildWindowsTestAgentImageAsync(tracerDir);
+                testAgentContainerId = await CreateAndStartContainerWithRetryAsync(
+                    client, "test-agent", BuildWindowsTestAgentContainerParams(
+                        networkName,
+                        environment.ToHostPath(sourceSnapshotsDir),
+                        environment.ToHostPath(debugSnapshotsDir)));
+            }
+            else
+            {
+                await PullImageAsync(client, TestAgentImage);
+                testAgentContainerId = await CreateAndStartContainerWithRetryAsync(
+                    client, "test-agent", BuildTestAgentContainerParams(
+                        networkName,
+                        environment.ToHostPath(sourceSnapshotsDir),
+                        environment.ToHostPath(debugSnapshotsDir)));
+            }
 
             // 4. Determine how to reach the test-agent's HTTP API
             var testAgentBaseUrl = await GetTestAgentUrlAsync(client, environment, testAgentContainerId);
@@ -288,11 +457,16 @@ public static class SmokeTestBuilder
 
             // 7. Start the smoke test app container, wait for exit
             LogSection("Running smoke test app");
-            smokeTestContainerId = await CreateAndStartContainerWithRetryAsync(
-                client, "smoke-test", BuildSmokeTestAppContainerParams(
+            var appContainerParams = scenario.IsWindows
+                ? BuildWindowsSmokeTestAppContainerParams(
+                    imageTag, networkName,
+                    environment.ToHostPath(logsDir))
+                : BuildSmokeTestAppContainerParams(
                     imageTag, networkName,
                     environment.ToHostPath(logsDir),
-                    environment.ToHostPath(dumpsDir)));
+                    environment.ToHostPath(dumpsDir));
+            smokeTestContainerId = await CreateAndStartContainerWithRetryAsync(
+                client, "smoke-test", appContainerParams);
 
             Logger.Information("Waiting for smoke test container to exit...");
             using (var appTimeoutCts = new CancellationTokenSource(TimeSpan.FromMinutes(15)))
@@ -319,12 +493,15 @@ public static class SmokeTestBuilder
 
                 Logger.Information("Verifying snapshot {File}...", snapshotFile);
 
+                // Windows containers mount snapshots at c:/snapshots, Linux at /snapshots
+                var snapshotPathPrefix = scenario.IsWindows ? "c:/snapshots" : "/snapshots";
+
                 // Retry the HTTP call itself (transport errors), but not a successful
                 // response indicating a real snapshot mismatch
                 var verifyResponse = await RetryAsync(
                     $"Verify snapshot {snapshotFile}",
                     () => httpClient.GetAsync(
-                        $"/test/session/snapshot?test_session_token={sessionToken}&file=/snapshots/{snapshotFile}"),
+                        $"/test/session/snapshot?test_session_token={sessionToken}&file={snapshotPathPrefix}/{snapshotFile}"),
                     RetryDelays);
 
                 var verifyBody = await verifyResponse.Content.ReadAsStringAsync();
@@ -338,8 +515,8 @@ public static class SmokeTestBuilder
                 Logger.Information("Snapshot verification passed");
             }
 
-            // 10. Run crash test (conditional)
-            if (scenario.RunCrashTest && !scenario.IsNoop)
+            // 10. Run crash test (conditional, Linux only)
+            if (scenario.RunCrashTest && !scenario.IsNoop && !scenario.IsWindows)
             {
                 LogSection("Running crash test");
                 crashTestContainerId = await RunCrashTestAsync(
@@ -472,6 +649,81 @@ public static class SmokeTestBuilder
                 {
                     $"{logsDir}:/var/log/datadog/dotnet",
                     $"{dumpsDir}:/dumps",
+                },
+            },
+            NetworkingConfig = new NetworkingConfig
+            {
+                EndpointsConfig = new Dictionary<string, EndpointSettings>
+                {
+                    [networkName] = new EndpointSettings(),
+                },
+            },
+        };
+    }
+
+    static CreateContainerParameters BuildWindowsTestAgentContainerParams(
+        string networkName,
+        string snapshotsDir,
+        string debugSnapshotsDir)
+    {
+        return new CreateContainerParameters
+        {
+            Image = WindowsTestAgentImage,
+            Env = new List<string>
+            {
+                "ENABLED_CHECKS=trace_count_header,meta_tracer_version_header,trace_content_length",
+                "SNAPSHOT_CI=1",
+                $"SNAPSHOT_IGNORED_ATTRS={SnapshotIgnoredAttrs}",
+            },
+            ExposedPorts = new Dictionary<string, EmptyStruct>
+            {
+                ["8126/tcp"] = default,
+            },
+            HostConfig = new HostConfig
+            {
+                PortBindings = new Dictionary<string, IList<PortBinding>>
+                {
+                    ["8126/tcp"] = new List<PortBinding> { new() { HostPort = "0" } },
+                },
+                Binds = new List<string>
+                {
+                    $"{snapshotsDir}:c:/snapshots:ro",
+                    $"{debugSnapshotsDir}:c:/debug_snapshots",
+                },
+            },
+            NetworkingConfig = new NetworkingConfig
+            {
+                EndpointsConfig = new Dictionary<string, EndpointSettings>
+                {
+                    [networkName] = new EndpointSettings
+                    {
+                        Aliases = new List<string> { "test-agent" },
+                    },
+                },
+            },
+        };
+    }
+
+    static CreateContainerParameters BuildWindowsSmokeTestAppContainerParams(
+        string imageTag,
+        string networkName,
+        string logsDir)
+    {
+        return new CreateContainerParameters
+        {
+            Image = imageTag,
+            Env = new List<string>
+            {
+                "DD_TRACE_AGENT_URL=http://test-agent:8126",
+                "DD_PROFILING_ENABLED=1",
+                $"dockerTag={imageTag}",
+            },
+            HostConfig = new HostConfig
+            {
+                // No Init on Windows (Linux-only feature)
+                Binds = new List<string>
+                {
+                    $"{logsDir}:c:/logs",
                 },
             },
             NetworkingConfig = new NetworkingConfig
@@ -1039,6 +1291,35 @@ public static class SmokeTestBuilder
 
         memoryStream.Position = 0;
         return memoryStream;
+    }
+
+    /// <summary>
+    /// Renames the first file matching <paramref name="searchPattern"/> in <paramref name="directory"/>
+    /// to <paramref name="targetName"/>. Used to normalize artifact file names before Docker builds.
+    /// </summary>
+    static void RenameArtifact(AbsolutePath directory, string searchPattern, string targetName)
+    {
+        if (directory is null || !Directory.Exists(directory))
+        {
+            return;
+        }
+
+        var targetPath = Path.Combine(directory, targetName);
+        if (File.Exists(targetPath))
+        {
+            Logger.Debug("Artifact {Target} already exists, skipping rename", targetPath);
+            return;
+        }
+
+        var files = Directory.GetFiles(directory, searchPattern);
+        if (files.Length == 0)
+        {
+            Logger.Warning("No files matching {Pattern} found in {Dir}", searchPattern, directory);
+            return;
+        }
+
+        Logger.Information("Renaming {Source} -> {Target}", Path.GetFileName(files[0]), targetName);
+        File.Move(files[0], targetPath);
     }
 
     static void AddDirectoryToTar(TarWriter tarWriter, string sourceDir, string tarBasePath)

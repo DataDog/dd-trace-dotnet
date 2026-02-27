@@ -612,6 +612,22 @@ partial class Build : NukeBuild
                     EmitMatrix("nuke_trimming_musl_matrix",
                         allScenarios.Where(x => x.category is SmokeTests.SmokeTestCategory.LinuxMuslTrimming));
 
+                    // Windows categories
+                    EmitMatrix("nuke_windows_msi_matrix",
+                        allScenarios.Where(x => x.category is SmokeTests.SmokeTestCategory.WindowsMsi));
+
+                    EmitMatrix("nuke_windows_nuget_matrix",
+                        allScenarios.Where(x => x.category is SmokeTests.SmokeTestCategory.WindowsNuGet));
+
+                    EmitMatrix("nuke_windows_dotnet_tool_matrix",
+                        allScenarios.Where(x => x.category is SmokeTests.SmokeTestCategory.WindowsDotnetTool));
+
+                    EmitMatrix("nuke_windows_tracer_home_matrix",
+                        allScenarios.Where(x => x.category is SmokeTests.SmokeTestCategory.WindowsTracerHome));
+
+                    EmitMatrix("nuke_windows_fleet_installer_matrix",
+                        allScenarios.Where(x => x.category is SmokeTests.SmokeTestCategory.WindowsFleetInstaller));
+
                     void EmitMatrix(string name, IEnumerable<(SmokeTests.SmokeTestCategory category, string scenario, SmokeTests.SmokeTestScenario details, object entry)> scenarios)
                     {
                         var matrix = scenarios.ToDictionary(x => x.scenario, x => x.entry);
