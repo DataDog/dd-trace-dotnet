@@ -17,6 +17,9 @@ namespace Datadog.Trace.DuckTyping.Tests.Fields.ValueType
                 nameof(ObscureObject.GetFieldPublicObject),
                 nameof(ObscureObject.GetFieldInternalObject),
                 nameof(ObscureObject.GetFieldPrivateObject),
+                nameof(ObscureObject.GetFieldDerivedFromPublicObject),
+                nameof(ObscureObject.GetFieldDerivedFromInternalObject),
+                nameof(ObscureObject.GetFieldDerivedFromPrivateObject),
             };
 
         [Theory]

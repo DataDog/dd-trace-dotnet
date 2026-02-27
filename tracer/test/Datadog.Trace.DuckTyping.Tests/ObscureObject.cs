@@ -27,17 +27,37 @@ namespace Datadog.Trace.DuckTyping.Tests
         private static PropertyInternalObject propertyInternalObject = new PropertyInternalObject();
         private static PropertyPrivateObject propertyPrivateObject = new PropertyPrivateObject();
 
+        private static FieldDerivedFromPublicObject fieldDerivedFromPublicObject = new();
+        private static FieldDerivedFromInternalObject fieldDerivedFromInternalObject = new();
+        private static FieldDerivedFromPrivateObject fieldDerivedFromPrivateObject = new();
+
+        private static PropertyDerivedFromPublicObject propertyDerivedFromPublicObject = new();
+        private static PropertyDerivedFromInternalObject propertyDerivedFromInternalObject = new();
+        private static PropertyDerivedFromPrivateObject propertyDerivedFromPrivateObject = new();
+
         public static object GetFieldPublicObject() => fieldPublicObject;
 
         public static object GetFieldInternalObject() => fieldInternalObject;
 
         public static object GetFieldPrivateObject() => fieldPrivateObject;
 
+        public static object GetFieldDerivedFromPublicObject() => fieldDerivedFromPublicObject;
+
+        public static object GetFieldDerivedFromInternalObject() => fieldDerivedFromInternalObject;
+
+        public static object GetFieldDerivedFromPrivateObject() => fieldDerivedFromPrivateObject;
+
         public static object GetPropertyPublicObject() => propertyPublicObject;
 
         public static object GetPropertyInternalObject() => propertyInternalObject;
 
         public static object GetPropertyPrivateObject() => propertyPrivateObject;
+
+        public static object GetPropertyDerivedFromPublicObject() => propertyDerivedFromPublicObject;
+
+        public static object GetPropertyDerivedFromInternalObject() => propertyDerivedFromInternalObject;
+
+        public static object GetPropertyDerivedFromPrivateObject() => propertyDerivedFromPrivateObject;
 
         public static object GetObject(string methodName)
             => typeof(ObscureObject)
@@ -1033,6 +1053,32 @@ namespace Datadog.Trace.DuckTyping.Tests
                     callback(this, state);
                 }
             }
+        }
+
+        // *** Derived types for testing base-type member lookup
+
+        public class FieldDerivedFromPublicObject : FieldPublicObject
+        {
+        }
+
+        internal class FieldDerivedFromInternalObject : FieldInternalObject
+        {
+        }
+
+        private class FieldDerivedFromPrivateObject : FieldPrivateObject
+        {
+        }
+
+        public class PropertyDerivedFromPublicObject : PropertyPublicObject
+        {
+        }
+
+        internal class PropertyDerivedFromInternalObject : PropertyInternalObject
+        {
+        }
+
+        private class PropertyDerivedFromPrivateObject : PropertyPrivateObject
+        {
         }
 
         // ***
