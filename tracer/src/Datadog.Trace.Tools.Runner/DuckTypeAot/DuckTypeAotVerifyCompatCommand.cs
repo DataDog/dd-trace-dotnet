@@ -23,6 +23,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         };
 
         private readonly Option<string?> _mappingCatalogOption = new("--mapping-catalog", "Optional declared mapping inventory used to enforce required mapping/scenario coverage.");
+        private readonly Option<string?> _manifestOption = new("--manifest", "Optional generated manifest file used to validate matrix/manifest consistency.");
+        private readonly Option<bool> _strictAssemblyFingerprintsOption = new("--strict-assembly-fingerprints", "Treat manifest assembly fingerprint drift as an error instead of a warning.");
 
         public DuckTypeAotVerifyCompatCommand()
             : base("verify-compat", "Validate generated compatibility artifacts for Bible parity coverage")
@@ -30,8 +32,10 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             AddOption(_compatReportOption);
             AddOption(_compatMatrixOption);
             AddOption(_mappingCatalogOption);
+            AddOption(_manifestOption);
+            AddOption(_strictAssemblyFingerprintsOption);
 
-            AddExample("dd-trace ducktype-aot verify-compat --compat-report ducktyping-aot-compat.md --compat-matrix ducktyping-aot-compat.json --mapping-catalog ducktyping-aot-catalog.json");
+            AddExample("dd-trace ducktype-aot verify-compat --compat-report ducktyping-aot-compat.md --compat-matrix ducktyping-aot-compat.json --mapping-catalog ducktyping-aot-catalog.json --manifest Datadog.Trace.DuckType.AotRegistry.dll.manifest.json --strict-assembly-fingerprints");
 
             this.SetHandler(Execute);
         }
@@ -41,8 +45,10 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             var compatReportPath = _compatReportOption.GetValue(context);
             var compatMatrixPath = _compatMatrixOption.GetValue(context);
             var mappingCatalogPath = _mappingCatalogOption.GetValue(context);
+            var manifestPath = _manifestOption.GetValue(context);
+            var strictAssemblyFingerprints = _strictAssemblyFingerprintsOption.GetValue(context);
 
-            var options = new DuckTypeAotVerifyCompatOptions(compatReportPath, compatMatrixPath, mappingCatalogPath);
+            var options = new DuckTypeAotVerifyCompatOptions(compatReportPath, compatMatrixPath, mappingCatalogPath, manifestPath, strictAssemblyFingerprints);
             context.ExitCode = DuckTypeAotVerifyCompatProcessor.Process(options);
         }
     }

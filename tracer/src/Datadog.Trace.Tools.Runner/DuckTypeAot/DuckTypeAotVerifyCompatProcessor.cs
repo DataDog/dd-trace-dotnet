@@ -7,9 +7,14 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Reflection;
+using System.Security.Cryptography;
+using System.Text;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+using dnlib.DotNet;
 
 namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 {
@@ -33,6 +38,21 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             {
                 Utils.WriteError($"--mapping-catalog file was not found: {options.MappingCatalogPath}");
                 return 1;
+            }
+
+            if (!string.IsNullOrWhiteSpace(options.ManifestPath) && !File.Exists(options.ManifestPath))
+            {
+                Utils.WriteError($"--manifest file was not found: {options.ManifestPath}");
+                return 1;
+            }
+
+            DuckTypeAotManifest? manifest = null;
+            if (!string.IsNullOrWhiteSpace(options.ManifestPath))
+            {
+                if (!TryReadManifest(options.ManifestPath!, out manifest))
+                {
+                    return 1;
+                }
             }
 
             DuckTypeAotCompatibilityMatrix? matrix;
@@ -73,6 +93,19 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             {
                 Utils.WriteError($"Compatibility verification failed. Non-compatible mappings found: {incompatibleMappings.Count}.");
                 return 1;
+            }
+
+            if (manifest is not null)
+            {
+                if (!ValidateManifest(matrix, manifest))
+                {
+                    return 1;
+                }
+
+                if (!ValidateManifestAssemblyFingerprints(manifest, options.StrictAssemblyFingerprintValidation))
+                {
+                    return 1;
+                }
             }
 
             if (!string.IsNullOrWhiteSpace(options.MappingCatalogPath))
@@ -161,6 +194,153 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return false;
         }
 
+        private static bool TryReadManifest(string manifestPath, out DuckTypeAotManifest? manifest)
+        {
+            try
+            {
+                manifest = JsonConvert.DeserializeObject<DuckTypeAotManifest>(File.ReadAllText(manifestPath));
+            }
+            catch (Exception ex)
+            {
+                Utils.WriteError($"--manifest file could not be parsed: {ex.Message}");
+                manifest = null;
+                return false;
+            }
+
+            if (manifest?.Mappings is null || manifest.Mappings.Count == 0)
+            {
+                Utils.WriteError("--manifest does not contain any mappings.");
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool ValidateManifest(DuckTypeAotCompatibilityMatrix matrix, DuckTypeAotManifest manifest)
+        {
+            var errors = new List<string>();
+
+            if (!string.IsNullOrWhiteSpace(matrix.SchemaVersion) &&
+                !string.IsNullOrWhiteSpace(manifest.SchemaVersion) &&
+                !string.Equals(matrix.SchemaVersion, manifest.SchemaVersion, StringComparison.Ordinal))
+            {
+                errors.Add($"Schema version mismatch between --compat-matrix and --manifest. Matrix='{matrix.SchemaVersion}', manifest='{manifest.SchemaVersion}'.");
+            }
+
+            var matrixMappingByKey = new Dictionary<string, DuckTypeAotCompatibilityMapping>(StringComparer.Ordinal);
+            foreach (var matrixMapping in matrix.Mappings)
+            {
+                if (!TryBuildCompatibilityMappingKey(matrixMapping, out var mappingKey, out var error))
+                {
+                    errors.Add(error);
+                    continue;
+                }
+
+                if (!matrixMappingByKey.TryAdd(mappingKey, matrixMapping))
+                {
+                    errors.Add($"--compat-matrix contains duplicate mappings for key '{mappingKey}'.");
+                }
+            }
+
+            var manifestMappingByKey = new Dictionary<string, DuckTypeAotManifestMapping>(StringComparer.Ordinal);
+            foreach (var manifestMapping in manifest.Mappings)
+            {
+                if (!TryBuildManifestMappingKey(manifestMapping, out var mappingKey, out var error))
+                {
+                    errors.Add(error);
+                    continue;
+                }
+
+                if (!manifestMappingByKey.TryAdd(mappingKey, manifestMapping))
+                {
+                    errors.Add($"--manifest contains duplicate mappings for key '{mappingKey}'.");
+                }
+            }
+
+            foreach (var (mappingKey, matrixMapping) in matrixMappingByKey)
+            {
+                if (!manifestMappingByKey.TryGetValue(mappingKey, out var manifestMapping))
+                {
+                    errors.Add($"--manifest is missing mapping from --compat-matrix: key='{mappingKey}'.");
+                    continue;
+                }
+
+                if (!ValidateChecksum(matrixMapping.MappingIdentityChecksum, out var matrixChecksumError))
+                {
+                    errors.Add($"--compat-matrix mapping id '{matrixMapping.Id ?? "(null)"}' has invalid mappingIdentityChecksum: {matrixChecksumError}");
+                    continue;
+                }
+
+                if (!ValidateChecksum(manifestMapping.MappingIdentityChecksum, out var manifestChecksumError))
+                {
+                    errors.Add($"--manifest mapping key '{mappingKey}' has invalid mappingIdentityChecksum: {manifestChecksumError}");
+                    continue;
+                }
+
+                if (!string.Equals(matrixMapping.MappingIdentityChecksum, manifestMapping.MappingIdentityChecksum, StringComparison.OrdinalIgnoreCase))
+                {
+                    errors.Add(
+                        $"mappingIdentityChecksum mismatch for mapping '{mappingKey}'. " +
+                        $"Matrix='{matrixMapping.MappingIdentityChecksum}', manifest='{manifestMapping.MappingIdentityChecksum}'.");
+                }
+
+                if (!string.IsNullOrWhiteSpace(manifestMapping.ScenarioId) &&
+                    !string.Equals(matrixMapping.Id, manifestMapping.ScenarioId, StringComparison.Ordinal))
+                {
+                    errors.Add(
+                        $"Scenario id mismatch between --compat-matrix and --manifest for mapping '{mappingKey}'. " +
+                        $"Matrix='{matrixMapping.Id ?? "(null)"}', manifest='{manifestMapping.ScenarioId}'.");
+                }
+            }
+
+            foreach (var mappingKey in manifestMappingByKey.Keys)
+            {
+                if (!matrixMappingByKey.ContainsKey(mappingKey))
+                {
+                    errors.Add($"--compat-matrix is missing mapping from --manifest: key='{mappingKey}'.");
+                }
+            }
+
+            if (errors.Count == 0)
+            {
+                return true;
+            }
+
+            foreach (var error in errors)
+            {
+                Utils.WriteError(error);
+            }
+
+            return false;
+        }
+
+        private static bool ValidateManifestAssemblyFingerprints(DuckTypeAotManifest manifest, bool strictAssemblyFingerprintValidation)
+        {
+            var issues = new List<string>();
+
+            ValidateFingerprints(manifest.TargetAssemblies, "target", issues);
+            ValidateFingerprints(manifest.ProxyAssemblies, "proxy", issues);
+
+            if (issues.Count == 0)
+            {
+                return true;
+            }
+
+            foreach (var issue in issues)
+            {
+                if (strictAssemblyFingerprintValidation)
+                {
+                    Utils.WriteError(issue);
+                }
+                else
+                {
+                    Utils.WriteWarning(issue);
+                }
+            }
+
+            return !strictAssemblyFingerprintValidation;
+        }
+
         private static bool TryBuildCompatibilityMappingKey(
             DuckTypeAotCompatibilityMapping mapping,
             out string key,
@@ -184,15 +364,169 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 return false;
             }
 
+            var proxyType = mapping.ProxyType!;
+            var proxyAssembly = mapping.ProxyAssembly!;
+            var targetType = mapping.TargetType!;
+            var targetAssembly = mapping.TargetAssembly!;
             key = new DuckTypeAotMapping(
-                    mapping.ProxyType,
-                    mapping.ProxyAssembly,
-                    mapping.TargetType,
-                    mapping.TargetAssembly,
+                    proxyType,
+                    proxyAssembly,
+                    targetType,
+                    targetAssembly,
                     mode,
                     DuckTypeAotMappingSource.MapFile)
                 .Key;
             return true;
+        }
+
+        private static bool TryBuildManifestMappingKey(
+            DuckTypeAotManifestMapping mapping,
+            out string key,
+            out string error)
+        {
+            key = string.Empty;
+            error = string.Empty;
+
+            if (!TryParseMode(mapping.Mode, out var mode))
+            {
+                error = $"--manifest mapping has invalid mode '{mapping.Mode ?? "(null)"}'.";
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(mapping.ProxyType) ||
+                string.IsNullOrWhiteSpace(mapping.ProxyAssembly) ||
+                string.IsNullOrWhiteSpace(mapping.TargetType) ||
+                string.IsNullOrWhiteSpace(mapping.TargetAssembly))
+            {
+                error = "--manifest mapping is missing proxy/target type or assembly values.";
+                return false;
+            }
+
+            var proxyType = mapping.ProxyType!;
+            var proxyAssembly = mapping.ProxyAssembly!;
+            var targetType = mapping.TargetType!;
+            var targetAssembly = mapping.TargetAssembly!;
+            key = new DuckTypeAotMapping(
+                    proxyType,
+                    proxyAssembly,
+                    targetType,
+                    targetAssembly,
+                    mode,
+                    DuckTypeAotMappingSource.MapFile)
+                .Key;
+            return true;
+        }
+
+        private static bool ValidateChecksum(string? value, out string error)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                error = "value is empty";
+                return false;
+            }
+
+            var checksum = value!;
+            if (checksum.Length != 64)
+            {
+                error = $"value must be 64 hex chars, got length {checksum.Length}";
+                return false;
+            }
+
+            for (var i = 0; i < checksum.Length; i++)
+            {
+                var c = checksum[i];
+                if ((c >= '0' && c <= '9') ||
+                    (c >= 'a' && c <= 'f') ||
+                    (c >= 'A' && c <= 'F'))
+                {
+                    continue;
+                }
+
+                error = $"value contains non-hex character '{c}' at position {i}";
+                return false;
+            }
+
+            error = string.Empty;
+            return true;
+        }
+
+        private static void ValidateFingerprints(
+            IReadOnlyList<DuckTypeAotAssemblyFingerprint>? fingerprints,
+            string assemblyKind,
+            ICollection<string> issues)
+        {
+            if (fingerprints is null || fingerprints.Count == 0)
+            {
+                return;
+            }
+
+            foreach (var fingerprint in fingerprints)
+            {
+                var expectedName = fingerprint.Name ?? "(unknown)";
+                var assemblyPath = fingerprint.Path;
+                if (string.IsNullOrWhiteSpace(assemblyPath))
+                {
+                    issues.Add($"Manifest {assemblyKind} assembly '{expectedName}' is missing path.");
+                    continue;
+                }
+
+                var resolvedAssemblyPath = assemblyPath!;
+                if (!File.Exists(resolvedAssemblyPath))
+                {
+                    issues.Add($"Manifest {assemblyKind} assembly '{expectedName}' path was not found: {resolvedAssemblyPath}");
+                    continue;
+                }
+
+                try
+                {
+                    var assemblyName = AssemblyName.GetAssemblyName(resolvedAssemblyPath);
+                    var actualName = assemblyName.Name ?? string.Empty;
+                    if (!string.IsNullOrWhiteSpace(fingerprint.Name) &&
+                        !string.Equals(actualName, fingerprint.Name, StringComparison.Ordinal))
+                    {
+                        issues.Add($"Manifest {assemblyKind} assembly name mismatch for '{resolvedAssemblyPath}'. Expected '{fingerprint.Name}', got '{actualName}'.");
+                    }
+
+                    using var module = ModuleDefMD.Load(resolvedAssemblyPath);
+                    var actualMvid = module.Mvid?.ToString("D") ?? string.Empty;
+                    if (!string.IsNullOrWhiteSpace(fingerprint.Mvid) &&
+                        !string.Equals(actualMvid, fingerprint.Mvid, StringComparison.OrdinalIgnoreCase))
+                    {
+                        issues.Add($"Manifest {assemblyKind} assembly MVID mismatch for '{resolvedAssemblyPath}'. Expected '{fingerprint.Mvid}', got '{actualMvid}'.");
+                    }
+
+                    if (!ValidateChecksum(fingerprint.Sha256, out var checksumError))
+                    {
+                        issues.Add($"Manifest {assemblyKind} assembly has invalid sha256 for '{resolvedAssemblyPath}': {checksumError}.");
+                    }
+                    else
+                    {
+                        var actualSha256 = ComputeSha256(resolvedAssemblyPath);
+                        if (!string.Equals(actualSha256, fingerprint.Sha256, StringComparison.OrdinalIgnoreCase))
+                        {
+                            issues.Add($"Manifest {assemblyKind} assembly sha256 mismatch for '{resolvedAssemblyPath}'. Expected '{fingerprint.Sha256}', got '{actualSha256}'.");
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    issues.Add($"Manifest {assemblyKind} assembly '{resolvedAssemblyPath}' could not be validated: {ex.Message}");
+                }
+            }
+        }
+
+        private static string ComputeSha256(string filePath)
+        {
+            using var sha256 = SHA256.Create();
+            using var stream = File.OpenRead(filePath);
+            var hash = sha256.ComputeHash(stream);
+            var sb = new StringBuilder(hash.Length * 2);
+            foreach (var hashByte in hash)
+            {
+                _ = sb.Append(hashByte.ToString("x2", CultureInfo.InvariantCulture));
+            }
+
+            return sb.ToString();
         }
 
         private static bool TryParseMode(string? value, out DuckTypeAotMappingMode mode)
