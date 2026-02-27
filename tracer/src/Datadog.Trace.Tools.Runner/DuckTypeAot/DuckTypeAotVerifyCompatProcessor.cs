@@ -52,6 +52,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 return 1;
             }
 
+            if (!string.IsNullOrWhiteSpace(options.KnownLimitationsPath) && !File.Exists(options.KnownLimitationsPath))
+            {
+                Utils.WriteError($"--known-limitations file was not found: {options.KnownLimitationsPath}");
+                return 1;
+            }
+
             DuckTypeAotManifest? manifest = null;
             if (!string.IsNullOrWhiteSpace(options.ManifestPath))
             {
@@ -78,17 +84,13 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 return 1;
             }
 
-            var duplicateMappingIds = matrix.Mappings
-                                            .Where(mapping => !string.IsNullOrWhiteSpace(mapping.Id))
-                                            .GroupBy(mapping => mapping.Id!, StringComparer.Ordinal)
-                                            .Where(group => group.Count() > 1)
-                                            .Select(group => group.Key)
-                                            .OrderBy(id => id, StringComparer.Ordinal)
-                                            .ToList();
-            if (duplicateMappingIds.Count > 0)
+            IReadOnlyList<DuckTypeAotKnownLimitation> approvedKnownLimitations = Array.Empty<DuckTypeAotKnownLimitation>();
+            if (!string.IsNullOrWhiteSpace(options.KnownLimitationsPath))
             {
-                Utils.WriteError($"--compat-matrix contains duplicate mapping ids: {string.Join(", ", duplicateMappingIds)}");
-                return 1;
+                if (!TryReadKnownLimitations(options.KnownLimitationsPath!, out approvedKnownLimitations))
+                {
+                    return 1;
+                }
             }
 
             var incompatibleMappings = matrix.Mappings
@@ -97,8 +99,17 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
             if (incompatibleMappings.Count > 0)
             {
-                Utils.WriteError($"Compatibility verification failed. Non-compatible mappings found: {incompatibleMappings.Count}.");
-                return 1;
+                var knownLimitationsValidationErrors = ValidateKnownLimitations(incompatibleMappings, approvedKnownLimitations);
+                if (knownLimitationsValidationErrors.Count > 0)
+                {
+                    foreach (var error in knownLimitationsValidationErrors)
+                    {
+                        Utils.WriteError(error);
+                    }
+
+                    Utils.WriteError($"Compatibility verification failed. Non-compatible mappings found: {incompatibleMappings.Count}.");
+                    return 1;
+                }
             }
 
             if (manifest is not null)
@@ -116,7 +127,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
             if (!string.IsNullOrWhiteSpace(options.MappingCatalogPath))
             {
-                if (!ValidateMappingCatalog(matrix, options.MappingCatalogPath!))
+                if (!ValidateMappingCatalog(matrix, options.MappingCatalogPath!, approvedKnownLimitations))
                 {
                     return 1;
                 }
@@ -133,7 +144,142 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return 0;
         }
 
-        private static bool ValidateMappingCatalog(DuckTypeAotCompatibilityMatrix matrix, string mappingCatalogPath)
+        private static IReadOnlyList<string> ValidateKnownLimitations(
+            IReadOnlyList<DuckTypeAotCompatibilityMapping> incompatibleMappings,
+            IReadOnlyList<DuckTypeAotKnownLimitation> approvedKnownLimitations)
+        {
+            if (incompatibleMappings.Count == 0)
+            {
+                return Array.Empty<string>();
+            }
+
+            var errors = new List<string>();
+            if (approvedKnownLimitations.Count == 0)
+            {
+                errors.Add(
+                    $"Compatibility matrix contains {incompatibleMappings.Count} non-compatible mappings, but --known-limitations was not provided (or is empty).");
+                return errors;
+            }
+
+            var approvedStatusesByScenario = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
+            foreach (var knownLimitation in approvedKnownLimitations)
+            {
+                if (!approvedStatusesByScenario.TryGetValue(knownLimitation.ScenarioId, out var statuses))
+                {
+                    statuses = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                    approvedStatusesByScenario[knownLimitation.ScenarioId] = statuses;
+                }
+
+                _ = statuses.Add(knownLimitation.Status);
+            }
+
+            var observedIncompatiblePairs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var mapping in incompatibleMappings)
+            {
+                if (string.IsNullOrWhiteSpace(mapping.Id))
+                {
+                    errors.Add(
+                        $"Non-compatible mapping for proxy '{mapping.ProxyType ?? "(null)"}' and target '{mapping.TargetType ?? "(null)"}' is missing scenario id while --known-limitations is enabled.");
+                    continue;
+                }
+
+                var scenarioId = mapping.Id!;
+                var status = mapping.Status ?? string.Empty;
+                _ = observedIncompatiblePairs.Add($"{scenarioId}|{status}");
+
+                if (!approvedStatusesByScenario.TryGetValue(scenarioId, out var allowedStatuses) ||
+                    !allowedStatuses.Contains(status))
+                {
+                    errors.Add(
+                        $"Non-compatible mapping is not approved by --known-limitations: scenario='{scenarioId}', status='{status}'.");
+                }
+            }
+
+            foreach (var knownLimitation in approvedKnownLimitations)
+            {
+                var expectedPair = $"{knownLimitation.ScenarioId}|{knownLimitation.Status}";
+                if (!observedIncompatiblePairs.Contains(expectedPair))
+                {
+                    errors.Add(
+                        $"--known-limitations entry is stale or mismatched: scenario='{knownLimitation.ScenarioId}', status='{knownLimitation.Status}'.");
+                }
+            }
+
+            return errors;
+        }
+
+        private static bool TryReadKnownLimitations(string knownLimitationsPath, out IReadOnlyList<DuckTypeAotKnownLimitation> knownLimitations)
+        {
+            knownLimitations = Array.Empty<DuckTypeAotKnownLimitation>();
+            DuckTypeAotKnownLimitationsDocument? knownLimitationsDocument;
+            try
+            {
+                knownLimitationsDocument = JsonConvert.DeserializeObject<DuckTypeAotKnownLimitationsDocument>(File.ReadAllText(knownLimitationsPath));
+            }
+            catch (Exception ex)
+            {
+                Utils.WriteError($"--known-limitations file could not be parsed ({knownLimitationsPath}): {ex.Message}");
+                return false;
+            }
+
+            if (knownLimitationsDocument is null)
+            {
+                Utils.WriteError($"--known-limitations file is empty or invalid JSON: {knownLimitationsPath}");
+                return false;
+            }
+
+            var entries = knownLimitationsDocument.KnownLimitations
+                          ?? knownLimitationsDocument.ApprovedLimitations
+                          ?? knownLimitationsDocument.Approved
+                          ?? new List<DuckTypeAotKnownLimitationEntry>();
+            if (entries.Count == 0)
+            {
+                Utils.WriteError($"--known-limitations does not contain any entries: {knownLimitationsPath}");
+                return false;
+            }
+
+            var errors = new List<string>();
+            var normalizedEntries = new List<DuckTypeAotKnownLimitation>(entries.Count);
+            var seenEntries = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            for (var i = 0; i < entries.Count; i++)
+            {
+                var entry = entries[i];
+                var scenarioId = entry?.ScenarioId?.Trim();
+                var status = entry?.Status?.Trim();
+                if (string.IsNullOrWhiteSpace(scenarioId) || string.IsNullOrWhiteSpace(status))
+                {
+                    errors.Add($"--known-limitations entry #{i + 1} in '{knownLimitationsPath}' must include non-empty scenarioId and status.");
+                    continue;
+                }
+
+                var pairKey = $"{scenarioId}|{status}";
+                if (!seenEntries.Add(pairKey))
+                {
+                    errors.Add($"--known-limitations contains duplicate entry '{pairKey}' in '{knownLimitationsPath}'.");
+                    continue;
+                }
+
+                normalizedEntries.Add(new DuckTypeAotKnownLimitation(scenarioId!, status!));
+            }
+
+            if (errors.Count > 0)
+            {
+                foreach (var error in errors)
+                {
+                    Utils.WriteError(error);
+                }
+
+                return false;
+            }
+
+            knownLimitations = normalizedEntries;
+            return true;
+        }
+
+        private static bool ValidateMappingCatalog(
+            DuckTypeAotCompatibilityMatrix matrix,
+            string mappingCatalogPath,
+            IReadOnlyList<DuckTypeAotKnownLimitation> approvedKnownLimitations)
         {
             var catalogResult = DuckTypeAotMappingCatalogParser.Parse(mappingCatalogPath);
             if (catalogResult.Errors.Count > 0)
@@ -147,6 +293,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
 
             var errors = new List<string>();
+            var knownLimitationPairs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var knownLimitation in approvedKnownLimitations)
+            {
+                _ = knownLimitationPairs.Add($"{knownLimitation.ScenarioId}|{knownLimitation.Status}");
+            }
+
             var matrixMappingByKey = new Dictionary<string, DuckTypeAotCompatibilityMapping>(StringComparer.Ordinal);
             foreach (var matrixMapping in matrix.Mappings)
             {
@@ -182,8 +334,15 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
                 if (!string.Equals(matrixMapping.Status, DuckTypeAotCompatibilityStatuses.Compatible, StringComparison.OrdinalIgnoreCase))
                 {
-                    errors.Add(
-                        $"Required mapping is not compatible in --compat-matrix: key='{requiredMapping.Key}', status='{matrixMapping.Status ?? "(null)"}'.");
+                    var scenarioId = matrixMapping.Id ?? string.Empty;
+                    var status = matrixMapping.Status ?? string.Empty;
+                    var knownLimitationPair = $"{scenarioId}|{status}";
+                    if (!knownLimitationPairs.Contains(knownLimitationPair))
+                    {
+                        errors.Add(
+                            $"Required mapping is not compatible in --compat-matrix and is not approved by --known-limitations: " +
+                            $"key='{requiredMapping.Key}', scenario='{matrixMapping.Id ?? "(null)"}', status='{matrixMapping.Status ?? "(null)"}'.");
+                    }
                 }
 
                 if (!string.IsNullOrWhiteSpace(requiredMapping.ScenarioId) &&
@@ -667,6 +826,40 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
             mode = DuckTypeAotMappingMode.Forward;
             return false;
+        }
+
+        private readonly struct DuckTypeAotKnownLimitation
+        {
+            internal DuckTypeAotKnownLimitation(string scenarioId, string status)
+            {
+                ScenarioId = scenarioId;
+                Status = status;
+            }
+
+            internal string ScenarioId { get; }
+
+            internal string Status { get; }
+        }
+
+        private sealed class DuckTypeAotKnownLimitationsDocument
+        {
+            [JsonProperty("knownLimitations")]
+            public List<DuckTypeAotKnownLimitationEntry>? KnownLimitations { get; set; }
+
+            [JsonProperty("approvedLimitations")]
+            public List<DuckTypeAotKnownLimitationEntry>? ApprovedLimitations { get; set; }
+
+            [JsonProperty("approved")]
+            public List<DuckTypeAotKnownLimitationEntry>? Approved { get; set; }
+        }
+
+        private sealed class DuckTypeAotKnownLimitationEntry
+        {
+            [JsonProperty("scenarioId")]
+            public string? ScenarioId { get; set; }
+
+            [JsonProperty("status")]
+            public string? Status { get; set; }
         }
     }
 }

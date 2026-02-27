@@ -6,6 +6,7 @@
 3. Use static-link bootstrap for NativeAOT builds; do not introduce runtime dynamic assembly loading in NativeAOT mode.
 4. Keep first delivery scoped to `Datadog.Trace.DuckTyping` only; do not AOT-enable `CallTarget IntegrationMapper` in this effort.
 5. Add explicit registry/runtime compatibility validation, trimming-root contracts, deterministic conflict handling, explicit engine isolation guarantees, and a hard 100% parity gate against `docs/development/DuckTyping.Bible.md`.
+6. Current execution priority: complete unit-test parity and compatibility gating first; run NativeAOT publish integration tests after parity closure.
 
 ## Tool Choice
 1. Use `dnlib`.
@@ -216,7 +217,7 @@
    AOT pre-registration hits isolated AOT cache fast paths; existing dynamic `DuckTypeCache`/`CreateCache<T>` semantics remain unchanged in Dynamic mode.
 18. Late-registration cache invalidation tests:
    if AOT registration happens after an AOT miss, AOT negative-cache entries are invalidated and subsequent AOT lookups resolve the new mapping.
-19. NativeAOT integration sample test:
+19. NativeAOT integration sample test (post-unit-parity milestone):
    generate registry, publish NativeAOT sample, verify duck casts/reverse proxies execute without runtime emit or dynamic assembly loading.
 20. Backward compatibility:
    existing runtime DuckTyping tests still pass with no AOT assemblies configured.
@@ -242,6 +243,8 @@
     NativeAOT phase-1 profile fails generation or publish integration when multiple AOT registries are configured for the same app.
 31. Compatibility acceptance gate:
     no GA/enable-by-default until Bible compatibility matrix reports 100% pass with zero unreviewed or `N/A` Bible scenario entries.
+32. Current sequencing rule:
+    complete 1-18 and 20-31 first (unit parity + compatibility closure), then execute 19 as publish-level hardening.
 
 ## Rollout Plan
 1. Phase 1:
@@ -251,7 +254,7 @@
 3. Phase 3:
    close all Bible scenario gaps (`A-01..E-42`, IL atlas groups, `EX-01..EX-20`, `TX-A..TX-T`) and complete non-public NativeAOT spike matrix.
 4. Phase 4:
-   GA gate: enable by default only after 100% Bible compatibility pass; after GA, evaluate separate `IntegrationMapper` AOT project and optional call-site auto-discovery.
+   run NativeAOT publish integration hardening, then GA gate: enable by default only after 100% Bible compatibility pass; after GA, evaluate separate `IntegrationMapper` AOT project and optional call-site auto-discovery.
 
 ## Assumptions and Defaults (Locked)
 1. Scope boundary: DuckTyping subsystem only.
