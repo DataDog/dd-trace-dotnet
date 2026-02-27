@@ -554,7 +554,7 @@ public class DuckTypeAotProcessorsTests
     }
 
     [Fact]
-    public void GenerateProcessorShouldReportClosedGenericMappingsAsUnsupported()
+    public void GenerateProcessorShouldSupportClosedGenericMappingsWhenTargetIsDirectlyAssignable()
     {
         var tempDirectory = CreateTempDirectory();
         try
@@ -577,6 +577,85 @@ public class DuckTypeAotProcessorsTests
                         proxyType = typeof(IReadOnlyCollection<int>).FullName,
                         proxyAssembly = sharedAssemblyName,
                         targetType = typeof(List<int>).FullName,
+                        targetAssembly = sharedAssemblyName
+                    }
+                }
+            };
+            File.WriteAllText(mapFilePath, JsonConvert.SerializeObject(mapDocument, Formatting.Indented));
+
+            var options = new DuckTypeAotGenerateOptions(
+                proxyAssemblies: new[] { sharedAssemblyPath },
+                targetAssemblies: new[] { sharedAssemblyPath },
+                targetFolders: Array.Empty<string>(),
+                targetFilters: new[] { "*.dll" },
+                mapFile: mapFilePath,
+                mappingCatalog: null,
+                genericInstantiationsFile: null,
+                outputPath: outputPath,
+                assemblyName: "Datadog.Trace.DuckType.AotRegistry.ClosedGeneric.Unsupported",
+                trimmerDescriptorPath: trimmerDescriptorPath,
+                propsPath: propsPath);
+
+            var exitCode = DuckTypeAotGenerateProcessor.Process(options);
+            exitCode.Should().Be(0);
+
+            var compatibilityMatrixPath = $"{outputPath}.compat.json";
+            var matrix = JsonConvert.DeserializeObject<DuckTypeAotCompatibilityMatrix>(File.ReadAllText(compatibilityMatrixPath));
+            matrix.Should().NotBeNull();
+            matrix!.Mappings.Should().ContainSingle(mapping =>
+                string.Equals(mapping.Status, DuckTypeAotCompatibilityStatuses.Compatible, StringComparison.Ordinal));
+
+            var loadContext = new AssemblyLoadContext("DuckTypeAotProcessorsTests-ClosedGeneric-Assignable", isCollectible: true);
+            try
+            {
+                var generatedAssembly = loadContext.LoadFromAssemblyPath(outputPath);
+                var bootstrapType = generatedAssembly.GetType("Datadog.Trace.DuckTyping.Generated.DuckTypeAotRegistryBootstrap");
+                bootstrapType.Should().NotBeNull();
+                var initializeMethod = bootstrapType!.GetMethod("Initialize", BindingFlags.Public | BindingFlags.Static);
+                initializeMethod.Should().NotBeNull();
+                _ = initializeMethod!.Invoke(obj: null, parameters: null);
+
+                var instance = new List<int> { 2, 4, 6 };
+                var proxy = DuckType.Create(typeof(IReadOnlyCollection<int>), instance);
+                proxy.Should().NotBeNull();
+                proxy.Should().BeAssignableTo<IReadOnlyCollection<int>>();
+                ((IReadOnlyCollection<int>)proxy!).Count.Should().Be(3);
+            }
+            finally
+            {
+                loadContext.Unload();
+            }
+        }
+        finally
+        {
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
+
+    [Fact]
+    public void GenerateProcessorShouldReportClosedGenericMappingsAsUnsupportedWhenDuckAdaptationIsRequired()
+    {
+        var tempDirectory = CreateTempDirectory();
+        try
+        {
+            var sharedAssemblyPath = typeof(DuckTypeAotProcessorsTests).Assembly.Location;
+            var sharedAssemblyName = AssemblyName.GetAssemblyName(sharedAssemblyPath).Name;
+
+            var outputPath = Path.Combine(tempDirectory, "Datadog.Trace.DuckType.AotRegistry.ClosedGeneric.Unsupported.dll");
+            var mapFilePath = Path.Combine(tempDirectory, "ducktype-aot-map-closed-generic-unsupported.json");
+            var trimmerDescriptorPath = Path.Combine(tempDirectory, "ducktype-aot-closed-generic-unsupported.linker.xml");
+            var propsPath = Path.Combine(tempDirectory, "ducktype-aot-closed-generic-unsupported.props");
+
+            var mapDocument = new
+            {
+                mappings = new[]
+                {
+                    new
+                    {
+                        mode = "forward",
+                        proxyType = typeof(IClosedGenericDuckProxy<int>).FullName,
+                        proxyAssembly = sharedAssemblyName,
+                        targetType = typeof(ClosedGenericDuckTarget<int>).FullName,
                         targetAssembly = sharedAssemblyName
                     }
                 }

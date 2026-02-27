@@ -164,7 +164,9 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                         mapping,
                         i + 1,
                         proxyModulesByAssemblyName,
-                        targetModulesByAssemblyName);
+                        targetModulesByAssemblyName,
+                        mappingResolutionResult.ProxyAssemblyPathsByName,
+                        mappingResolutionResult.TargetAssemblyPathsByName);
                 }
             }
             finally
@@ -218,18 +220,24 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             DuckTypeAotMapping mapping,
             int mappingIndex,
             IReadOnlyDictionary<string, ModuleDefMD> proxyModulesByAssemblyName,
-            IReadOnlyDictionary<string, ModuleDefMD> targetModulesByAssemblyName)
+            IReadOnlyDictionary<string, ModuleDefMD> targetModulesByAssemblyName,
+            IReadOnlyDictionary<string, string> proxyAssemblyPathsByName,
+            IReadOnlyDictionary<string, string> targetAssemblyPathsByName)
         {
             var isReverseMapping = mapping.Mode == DuckTypeAotMappingMode.Reverse;
             if (DuckTypeAotNameHelpers.IsClosedGenericTypeName(mapping.ProxyTypeName) ||
                 DuckTypeAotNameHelpers.IsClosedGenericTypeName(mapping.TargetTypeName))
             {
-                var closedGenericDetail = $"Closed generic mappings are not yet emitted in this phase. proxy='{mapping.ProxyTypeName}', target='{mapping.TargetTypeName}'.";
-                return DuckTypeAotMappingEmissionResult.NotCompatible(
+                return EmitClosedGenericMapping(
+                    moduleDef,
+                    bootstrapType,
+                    initializeMethod,
+                    importedMembers,
                     mapping,
-                    DuckTypeAotCompatibilityStatuses.UnsupportedClosedGenericMapping,
-                    StatusCodeUnsupportedClosedGenericMapping,
-                    closedGenericDetail);
+                    mappingIndex,
+                    isReverseMapping,
+                    proxyAssemblyPathsByName,
+                    targetAssemblyPathsByName);
             }
 
             if (!proxyModulesByAssemblyName.TryGetValue(mapping.ProxyAssemblyName, out var proxyModule))
@@ -521,6 +529,192 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 mapping,
                 moduleDef.Assembly?.Name?.String ?? string.Empty,
                 generatedType.FullName);
+        }
+
+        private static DuckTypeAotMappingEmissionResult EmitClosedGenericMapping(
+            ModuleDef moduleDef,
+            TypeDef bootstrapType,
+            MethodDef initializeMethod,
+            ImportedMembers importedMembers,
+            DuckTypeAotMapping mapping,
+            int mappingIndex,
+            bool isReverseMapping,
+            IReadOnlyDictionary<string, string> proxyAssemblyPathsByName,
+            IReadOnlyDictionary<string, string> targetAssemblyPathsByName)
+        {
+            if (!proxyAssemblyPathsByName.TryGetValue(mapping.ProxyAssemblyName, out var proxyAssemblyPath))
+            {
+                return DuckTypeAotMappingEmissionResult.NotCompatible(
+                    mapping,
+                    DuckTypeAotCompatibilityStatuses.MissingProxyType,
+                    StatusCodeMissingProxyType,
+                    $"Proxy assembly '{mapping.ProxyAssemblyName}' was not loaded.");
+            }
+
+            if (!targetAssemblyPathsByName.TryGetValue(mapping.TargetAssemblyName, out var targetAssemblyPath))
+            {
+                return DuckTypeAotMappingEmissionResult.NotCompatible(
+                    mapping,
+                    DuckTypeAotCompatibilityStatuses.MissingTargetType,
+                    StatusCodeMissingTargetType,
+                    $"Target assembly '{mapping.TargetAssemblyName}' was not loaded.");
+            }
+
+            if (!TryResolveRuntimeType(mapping.ProxyAssemblyName, proxyAssemblyPath, mapping.ProxyTypeName, out var proxyRuntimeType))
+            {
+                return DuckTypeAotMappingEmissionResult.NotCompatible(
+                    mapping,
+                    DuckTypeAotCompatibilityStatuses.MissingProxyType,
+                    StatusCodeMissingProxyType,
+                    $"Proxy closed generic type '{mapping.ProxyTypeName}' was not found in '{mapping.ProxyAssemblyName}'.");
+            }
+
+            if (!TryResolveRuntimeType(mapping.TargetAssemblyName, targetAssemblyPath, mapping.TargetTypeName, out var targetRuntimeType))
+            {
+                return DuckTypeAotMappingEmissionResult.NotCompatible(
+                    mapping,
+                    DuckTypeAotCompatibilityStatuses.MissingTargetType,
+                    StatusCodeMissingTargetType,
+                    $"Target closed generic type '{mapping.TargetTypeName}' was not found in '{mapping.TargetAssemblyName}'.");
+            }
+
+            if (!proxyRuntimeType!.IsAssignableFrom(targetRuntimeType))
+            {
+                var detail = $"Closed generic mapping requires duck adaptation that is not emitted yet. proxy='{mapping.ProxyTypeName}', target='{mapping.TargetTypeName}'.";
+                return DuckTypeAotMappingEmissionResult.NotCompatible(
+                    mapping,
+                    DuckTypeAotCompatibilityStatuses.UnsupportedClosedGenericMapping,
+                    StatusCodeUnsupportedClosedGenericMapping,
+                    detail);
+            }
+
+            var resolvedProxyRuntimeType = proxyRuntimeType!;
+            var resolvedTargetRuntimeType = targetRuntimeType!;
+
+            var importedProxyType = moduleDef.Import(resolvedProxyRuntimeType) as ITypeDefOrRef
+                ?? throw new InvalidOperationException($"Unable to import closed generic proxy type '{mapping.ProxyTypeName}'.");
+            var importedTargetType = moduleDef.Import(resolvedTargetRuntimeType) as ITypeDefOrRef
+                ?? throw new InvalidOperationException($"Unable to import closed generic target type '{mapping.TargetTypeName}'.");
+
+            var activatorMethod = new MethodDefUser(
+                $"CreateProxy_{mappingIndex:D4}",
+                MethodSig.CreateStatic(moduleDef.CorLibTypes.Object, moduleDef.CorLibTypes.Object),
+                MethodImplAttributes.IL | MethodImplAttributes.Managed,
+                MethodAttributes.Private | MethodAttributes.Static | MethodAttributes.HideBySig);
+            activatorMethod.Body = new CilBody();
+            EmitClosedGenericDirectCastActivation(activatorMethod.Body, importedProxyType, importedTargetType, resolvedProxyRuntimeType, resolvedTargetRuntimeType);
+            activatorMethod.Body.Instructions.Add(OpCodes.Ret.ToInstruction());
+            bootstrapType.Methods.Add(activatorMethod);
+
+            initializeMethod.Body.Instructions.Add(OpCodes.Ldtoken.ToInstruction(importedProxyType));
+            initializeMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(importedMembers.GetTypeFromHandleMethod));
+            initializeMethod.Body.Instructions.Add(OpCodes.Ldtoken.ToInstruction(importedTargetType));
+            initializeMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(importedMembers.GetTypeFromHandleMethod));
+            initializeMethod.Body.Instructions.Add(OpCodes.Ldtoken.ToInstruction(importedProxyType));
+            initializeMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(importedMembers.GetTypeFromHandleMethod));
+            initializeMethod.Body.Instructions.Add(OpCodes.Ldnull.ToInstruction());
+            initializeMethod.Body.Instructions.Add(OpCodes.Ldftn.ToInstruction(activatorMethod));
+            initializeMethod.Body.Instructions.Add(OpCodes.Newobj.ToInstruction(importedMembers.FuncObjectObjectCtor));
+            initializeMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(isReverseMapping ? importedMembers.RegisterAotReverseProxyMethod : importedMembers.RegisterAotProxyMethod));
+
+            return DuckTypeAotMappingEmissionResult.Compatible(
+                mapping,
+                mapping.ProxyAssemblyName,
+                mapping.ProxyTypeName);
+        }
+
+        private static void EmitClosedGenericDirectCastActivation(
+            CilBody body,
+            ITypeDefOrRef importedProxyType,
+            ITypeDefOrRef importedTargetType,
+            Type proxyRuntimeType,
+            Type targetRuntimeType)
+        {
+            body.Instructions.Add(OpCodes.Ldarg_0.ToInstruction());
+
+            if (targetRuntimeType.IsValueType)
+            {
+                body.Instructions.Add(OpCodes.Unbox_Any.ToInstruction(importedTargetType));
+
+                if (proxyRuntimeType.IsValueType)
+                {
+                    if (proxyRuntimeType != targetRuntimeType)
+                    {
+                        throw new InvalidOperationException(
+                            $"Closed generic mapping cannot cast value type '{targetRuntimeType.FullName}' to '{proxyRuntimeType.FullName}'.");
+                    }
+
+                    body.Instructions.Add(OpCodes.Box.ToInstruction(importedProxyType));
+                    return;
+                }
+
+                body.Instructions.Add(OpCodes.Box.ToInstruction(importedTargetType));
+                body.Instructions.Add(OpCodes.Castclass.ToInstruction(importedProxyType));
+                return;
+            }
+
+            body.Instructions.Add(OpCodes.Castclass.ToInstruction(importedTargetType));
+            if (proxyRuntimeType.IsValueType)
+            {
+                throw new InvalidOperationException(
+                    $"Closed generic mapping cannot cast reference type '{targetRuntimeType.FullName}' to value type '{proxyRuntimeType.FullName}'.");
+            }
+
+            if (proxyRuntimeType != targetRuntimeType)
+            {
+                body.Instructions.Add(OpCodes.Castclass.ToInstruction(importedProxyType));
+            }
+        }
+
+        private static bool TryResolveRuntimeType(string assemblyName, string assemblyPath, string typeName, out Type? runtimeType)
+        {
+            runtimeType = null;
+            try
+            {
+                runtimeType = Type.GetType(typeName, throwOnError: false);
+                if (runtimeType is not null)
+                {
+                    return true;
+                }
+
+                Assembly? candidateAssembly = null;
+                foreach (var loadedAssembly in AppDomain.CurrentDomain.GetAssemblies())
+                {
+                    var loadedAssemblyName = DuckTypeAotNameHelpers.NormalizeAssemblyName(loadedAssembly.GetName().Name ?? string.Empty);
+                    if (string.Equals(loadedAssemblyName, assemblyName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        candidateAssembly = loadedAssembly;
+                        break;
+                    }
+                }
+
+                candidateAssembly ??= Assembly.LoadFrom(assemblyPath);
+                runtimeType = candidateAssembly.GetType(typeName, throwOnError: false, ignoreCase: false);
+                if (runtimeType is not null)
+                {
+                    return true;
+                }
+
+                var candidateAssemblyName = candidateAssembly.GetName().Name;
+                if (!string.IsNullOrWhiteSpace(candidateAssemblyName))
+                {
+                    runtimeType = Type.GetType($"{typeName}, {candidateAssemblyName}", throwOnError: false);
+                    if (runtimeType is not null)
+                    {
+                        return true;
+                    }
+                }
+
+                if (!string.IsNullOrWhiteSpace(candidateAssembly.FullName))
+                {
+                    runtimeType = Type.GetType($"{typeName}, {candidateAssembly.FullName}", throwOnError: false);
+                }
+            }
+            catch
+            {
+            }
+
+            return false;
         }
 
         private static DuckTypeAotMappingEmissionResult EmitStructCopyMapping(
