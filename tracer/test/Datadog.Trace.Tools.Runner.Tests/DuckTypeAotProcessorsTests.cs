@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 #if NETCOREAPP2_1
 using AssemblyLoadContext = Datadog.Trace.Tools.Runner.Tests.NetCore21AssemblyLoadContext;
 #else
@@ -29,9 +30,31 @@ namespace Datadog.Trace.Tools.Runner.Tests;
 
 public class DuckTypeAotProcessorsTests
 {
+    private const string BibleMappingCatalogFileName = "ducktype-aot-bible-mapping-catalog.json";
+
     public DuckTypeAotProcessorsTests()
     {
         DuckTypeAotEngine.ResetForTests();
+    }
+
+    [Fact]
+    public void BibleMappingCatalogFileShouldParseAndContainRequiredSeedScenarios()
+    {
+        var catalogPath = GetDuckTypingAotCompatibilityFilePath(BibleMappingCatalogFileName);
+        File.Exists(catalogPath).Should().BeTrue($"expected checked-in compatibility artifact '{catalogPath}' to exist");
+
+        var parseResult = DuckTypeAotMappingCatalogParser.Parse(catalogPath);
+        parseResult.Errors.Should().BeEmpty();
+        parseResult.RequiredMappings.Should().NotBeEmpty();
+
+        var scenarioIds = parseResult.RequiredMappings
+                                     .Where(mapping => !string.IsNullOrWhiteSpace(mapping.ScenarioId))
+                                     .Select(mapping => mapping.ScenarioId!)
+                                     .ToHashSet(StringComparer.Ordinal);
+
+        scenarioIds.Should().Contain("A-01");
+        scenarioIds.Should().Contain("A-02");
+        scenarioIds.Should().Contain("D-34");
     }
 
     [Fact]
@@ -5549,6 +5572,20 @@ public class DuckTypeAotProcessorsTests
         }
 
         return builder.ToString();
+    }
+
+    private static string GetDuckTypingAotCompatibilityFilePath(string fileName, [CallerFilePath] string sourceFilePath = "")
+    {
+        var testsDirectory = Path.GetDirectoryName(sourceFilePath);
+        testsDirectory.Should().NotBeNullOrWhiteSpace();
+
+        return Path.GetFullPath(
+            Path.Combine(
+                testsDirectory!,
+                "..",
+                "Datadog.Trace.DuckTyping.Tests",
+                "AotCompatibility",
+                fileName));
     }
 
     private static void TryDeleteDirectory(string directory)
