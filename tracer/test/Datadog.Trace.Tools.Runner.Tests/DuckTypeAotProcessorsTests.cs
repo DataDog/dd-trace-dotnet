@@ -692,6 +692,85 @@ public class DuckTypeAotProcessorsTests
     }
 
     [Fact]
+    public void GenerateProcessorShouldSupportReverseClosedGenericMappingsWhenDelegationTypeIsDirectlyAssignable()
+    {
+        var tempDirectory = CreateTempDirectory();
+        try
+        {
+            var sharedAssemblyPath = typeof(List<int>).Assembly.Location;
+            var sharedAssemblyName = AssemblyName.GetAssemblyName(sharedAssemblyPath).Name;
+
+            var outputPath = Path.Combine(tempDirectory, "Datadog.Trace.DuckType.AotRegistry.ClosedGeneric.Reverse.Assignable.dll");
+            var mapFilePath = Path.Combine(tempDirectory, "ducktype-aot-map-closed-generic-reverse-assignable.json");
+            var trimmerDescriptorPath = Path.Combine(tempDirectory, "ducktype-aot-closed-generic-reverse-assignable.linker.xml");
+            var propsPath = Path.Combine(tempDirectory, "ducktype-aot-closed-generic-reverse-assignable.props");
+
+            var mapDocument = new
+            {
+                mappings = new[]
+                {
+                    new
+                    {
+                        mode = "reverse",
+                        proxyType = typeof(IReadOnlyCollection<int>).FullName,
+                        proxyAssembly = sharedAssemblyName,
+                        targetType = typeof(List<int>).FullName,
+                        targetAssembly = sharedAssemblyName
+                    }
+                }
+            };
+            File.WriteAllText(mapFilePath, JsonConvert.SerializeObject(mapDocument, Formatting.Indented));
+
+            var options = new DuckTypeAotGenerateOptions(
+                proxyAssemblies: new[] { sharedAssemblyPath },
+                targetAssemblies: new[] { sharedAssemblyPath },
+                targetFolders: Array.Empty<string>(),
+                targetFilters: new[] { "*.dll" },
+                mapFile: mapFilePath,
+                mappingCatalog: null,
+                genericInstantiationsFile: null,
+                outputPath: outputPath,
+                assemblyName: "Datadog.Trace.DuckType.AotRegistry.ClosedGeneric.Reverse.Assignable",
+                trimmerDescriptorPath: trimmerDescriptorPath,
+                propsPath: propsPath);
+
+            var exitCode = DuckTypeAotGenerateProcessor.Process(options);
+            exitCode.Should().Be(0);
+
+            var compatibilityMatrixPath = $"{outputPath}.compat.json";
+            var matrix = JsonConvert.DeserializeObject<DuckTypeAotCompatibilityMatrix>(File.ReadAllText(compatibilityMatrixPath));
+            matrix.Should().NotBeNull();
+            matrix!.Mappings.Should().ContainSingle(mapping =>
+                string.Equals(mapping.Status, DuckTypeAotCompatibilityStatuses.Compatible, StringComparison.Ordinal));
+
+            var loadContext = new AssemblyLoadContext("DuckTypeAotProcessorsTests-ClosedGeneric-Reverse-Assignable", isCollectible: true);
+            try
+            {
+                var generatedAssembly = loadContext.LoadFromAssemblyPath(outputPath);
+                var bootstrapType = generatedAssembly.GetType("Datadog.Trace.DuckTyping.Generated.DuckTypeAotRegistryBootstrap");
+                bootstrapType.Should().NotBeNull();
+                var initializeMethod = bootstrapType!.GetMethod("Initialize", BindingFlags.Public | BindingFlags.Static);
+                initializeMethod.Should().NotBeNull();
+                _ = initializeMethod!.Invoke(obj: null, parameters: null);
+
+                var delegation = new List<int> { 1, 3, 5 };
+                var reverseProxy = DuckType.CreateReverse(typeof(IReadOnlyCollection<int>), delegation);
+                reverseProxy.Should().NotBeNull();
+                reverseProxy.Should().BeAssignableTo<IReadOnlyCollection<int>>();
+                ((IReadOnlyCollection<int>)reverseProxy!).Count.Should().Be(3);
+            }
+            finally
+            {
+                loadContext.Unload();
+            }
+        }
+        finally
+        {
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
+
+    [Fact]
     public void VerifyCompatProcessorShouldSucceedWhenAllMappingsAreCompatible()
     {
         var tempDirectory = CreateTempDirectory();
