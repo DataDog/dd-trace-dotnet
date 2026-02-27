@@ -43,6 +43,9 @@ namespace Datadog.Trace.DuckTyping
                 method.GetParameters().Length == 1 &&
                 method.GetParameters()[0].ParameterType == typeof(Func<object?, object?>));
 
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private static string? _registeredRegistryAssemblyName;
+
         private static int _cacheVersion;
 
         internal static int CacheVersion => Volatile.Read(ref _cacheVersion);
@@ -65,6 +68,19 @@ namespace Datadog.Trace.DuckTyping
         internal static void RegisterReverseProxy(Type typeToDeriveFrom, Type delegationType, Type generatedProxyType, Func<object?, object?> activator)
         {
             Register(typeToDeriveFrom, delegationType, generatedProxyType, activator, reverse: true);
+        }
+
+        internal static void ResetForTests()
+        {
+            lock (RegistrationLock)
+            {
+                ForwardRegistry.Clear();
+                ReverseRegistry.Clear();
+                ForwardMissCache.Clear();
+                ReverseMissCache.Clear();
+                _registeredRegistryAssemblyName = null;
+                Interlocked.Increment(ref _cacheVersion);
+            }
         }
 
         private static DuckType.CreateTypeResult GetOrCreateResult(TypesTuple key, bool reverse)
@@ -98,6 +114,8 @@ namespace Datadog.Trace.DuckTyping
 
             lock (RegistrationLock)
             {
+                EnsureSingleRegistryAssemblyPerProcess(activator);
+
                 var registry = reverse ? ReverseRegistry : ForwardRegistry;
                 if (registry.TryGetValue(key, out var currentRegistration))
                 {
@@ -116,6 +134,28 @@ namespace Datadog.Trace.DuckTyping
 
                 Interlocked.Increment(ref _cacheVersion);
             }
+        }
+
+        private static void EnsureSingleRegistryAssemblyPerProcess(Func<object?, object?> activator)
+        {
+            var incomingRegistryAssemblyName = ResolveRegistryAssemblyName(activator);
+            var currentRegistryAssemblyName = _registeredRegistryAssemblyName;
+            if (string.IsNullOrWhiteSpace(currentRegistryAssemblyName))
+            {
+                _registeredRegistryAssemblyName = incomingRegistryAssemblyName;
+                return;
+            }
+
+            if (!string.Equals(currentRegistryAssemblyName, incomingRegistryAssemblyName, StringComparison.OrdinalIgnoreCase))
+            {
+                DuckTypeAotMultipleRegistryAssembliesException.Throw(currentRegistryAssemblyName!, incomingRegistryAssemblyName);
+            }
+        }
+
+        private static string ResolveRegistryAssemblyName(Delegate activator)
+        {
+            var assembly = activator.Method.Module.Assembly;
+            return assembly.GetName().Name ?? assembly.FullName ?? "unknown";
         }
 
         private static DuckType.CreateTypeResult CreateMissingResult(TypesTuple key, bool reverse)
