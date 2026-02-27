@@ -6,6 +6,8 @@
 #nullable enable
 
 using System;
+using System.Reflection;
+using System.Reflection.Emit;
 using FluentAssertions;
 using Xunit;
 
@@ -16,6 +18,11 @@ namespace Datadog.Trace.DuckTyping.Tests
     [Collection(nameof(GetAssemblyTestsCollection))]
     public class DuckTypeAotEngineTests
     {
+        public DuckTypeAotEngineTests()
+        {
+            DuckTypeAotEngine.ResetForTests();
+        }
+
         [Fact]
         public void MissingMappingReturnsErrorResult()
         {
@@ -119,6 +126,25 @@ namespace Datadog.Trace.DuckTyping.Tests
                 _ => new InvalidGeneratedProxyType());
 
             register.Should().Throw<DuckTypeAotGeneratedProxyTypeMismatchException>();
+        }
+
+        [Fact]
+        public void RegisterProxyFromDifferentRegistryAssemblyThrows()
+        {
+            DuckTypeAotEngine.RegisterProxy(
+                typeof(ISingleRegistryWarmupProxy),
+                typeof(SingleRegistryWarmupTarget),
+                typeof(SingleRegistryWarmupGeneratedProxy),
+                instance => new SingleRegistryWarmupGeneratedProxy((SingleRegistryWarmupTarget)instance!));
+
+            var dynamicActivator = CreateDynamicAssemblyActivator();
+            Action conflictingRegistryRegistration = () => DuckTypeAotEngine.RegisterProxy(
+                typeof(ISingleRegistryConflictProxy),
+                typeof(SingleRegistryConflictTarget),
+                typeof(SingleRegistryConflictGeneratedProxy),
+                dynamicActivator);
+
+            conflictingRegistryRegistration.Should().Throw<DuckTypeAotMultipleRegistryAssembliesException>();
         }
 
         private interface IMissingProxy
@@ -288,6 +314,81 @@ namespace Datadog.Trace.DuckTyping.Tests
 
         private class InvalidGeneratedProxyType
         {
+        }
+
+        private interface ISingleRegistryWarmupProxy
+        {
+            string Value { get; }
+        }
+
+        private class SingleRegistryWarmupTarget
+        {
+            public SingleRegistryWarmupTarget(string value)
+            {
+                Value = value;
+            }
+
+            public string Value { get; }
+        }
+
+        private class SingleRegistryWarmupGeneratedProxy : ISingleRegistryWarmupProxy
+        {
+            private readonly SingleRegistryWarmupTarget _target;
+
+            public SingleRegistryWarmupGeneratedProxy(SingleRegistryWarmupTarget target)
+            {
+                _target = target;
+            }
+
+            public string Value => _target.Value;
+        }
+
+        private interface ISingleRegistryConflictProxy
+        {
+            string Value { get; }
+        }
+
+        private class SingleRegistryConflictTarget
+        {
+            public SingleRegistryConflictTarget(string value)
+            {
+                Value = value;
+            }
+
+            public string Value { get; }
+        }
+
+        private class SingleRegistryConflictGeneratedProxy : ISingleRegistryConflictProxy
+        {
+            private readonly SingleRegistryConflictTarget _target;
+
+            public SingleRegistryConflictGeneratedProxy(SingleRegistryConflictTarget target)
+            {
+                _target = target;
+            }
+
+            public string Value => _target.Value;
+        }
+
+        private static Func<object?, object?> CreateDynamicAssemblyActivator()
+        {
+            var ctor = typeof(SingleRegistryConflictGeneratedProxy).GetConstructor(
+                BindingFlags.Instance | BindingFlags.Public,
+                binder: null,
+                types: [typeof(SingleRegistryConflictTarget)],
+                modifiers: null);
+            ctor.Should().NotBeNull();
+
+            var dynamicMethod = new DynamicMethod(
+                "CreateSingleRegistryConflictProxy",
+                typeof(object),
+                [typeof(object)]);
+            var il = dynamicMethod.GetILGenerator();
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Castclass, typeof(SingleRegistryConflictTarget));
+            il.Emit(OpCodes.Newobj, ctor!);
+            il.Emit(OpCodes.Ret);
+            return (Func<object?, object?>)dynamicMethod.CreateDelegate(typeof(Func<object?, object?>));
         }
     }
 }

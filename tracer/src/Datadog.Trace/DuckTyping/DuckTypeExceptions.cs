@@ -586,4 +586,22 @@ namespace Datadog.Trace.DuckTyping
             throw new DuckTypeAotGeneratedProxyTypeMismatchException(proxyDefinitionType, generatedProxyType);
         }
     }
+
+    /// <summary>
+    /// Multiple AOT registry assemblies attempted to register mappings in the same process
+    /// </summary>
+    internal sealed class DuckTypeAotMultipleRegistryAssembliesException : DuckTypeException
+    {
+        private DuckTypeAotMultipleRegistryAssembliesException(string currentRegistryAssembly, string newRegistryAssembly)
+            : base($"AOT duck typing supports a single generated registry assembly per process. Current registry assembly: '{currentRegistryAssembly}', attempted registration from: '{newRegistryAssembly}'.")
+        {
+        }
+
+        [DebuggerHidden]
+        [DoesNotReturn]
+        internal static void Throw(string currentRegistryAssembly, string newRegistryAssembly)
+        {
+            throw new DuckTypeAotMultipleRegistryAssembliesException(currentRegistryAssembly, newRegistryAssembly);
+        }
+    }
 }

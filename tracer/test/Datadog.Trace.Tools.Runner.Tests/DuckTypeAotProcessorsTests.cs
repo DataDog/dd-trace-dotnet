@@ -23,6 +23,11 @@ namespace Datadog.Trace.Tools.Runner.Tests;
 
 public class DuckTypeAotProcessorsTests
 {
+    public DuckTypeAotProcessorsTests()
+    {
+        DuckTypeAotEngine.ResetForTests();
+    }
+
     [Fact]
     public void GenerateProcessorShouldEmitExpectedArtifactsAndBootstrap()
     {
