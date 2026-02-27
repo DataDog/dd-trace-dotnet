@@ -102,7 +102,7 @@ internal class CreatedumpCommand : Command
             { "--address", true },
             // Datadog-specific argument. Will be discarded by createdump.
             { "--dd-native-exception-code", true },
-            { "--threadcontext", true }
+            { "--dd-thread-context", true }
         };
 
         const string pidRegex = "[0-9]+";
@@ -186,12 +186,16 @@ internal class CreatedumpCommand : Command
             crashThread = crashThreadValue;
         }
 
+<<<<<<< HEAD
         if (parsedArguments.TryGetValue("--dd-native-exception-code", out var rawNativeExceptionCode) && uint.TryParse(rawNativeExceptionCode, out var nativeExceptionCodeValue))
         {
             nativeExceptionCode = nativeExceptionCodeValue;
         }
 
         if (parsedArguments.TryGetValue("--threadcontext", out var rawThreadContextAddress) && IntPtr.TryParse(rawThreadContextAddress, out var threadContextAddressValue))
+=======
+        if (parsedArguments.TryGetValue("--dd-thread-context", out var rawThreadContextAddress) && IntPtr.TryParse(rawThreadContextAddress, out var threadContextAddressValue))
+>>>>>>> be99586574 (Capture thread context (ucontext_t) and pass it to dd-dotnet)
         {
             threadContextAddress = threadContextAddressValue;
         }
