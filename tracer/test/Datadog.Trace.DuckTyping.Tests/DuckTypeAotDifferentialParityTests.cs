@@ -1231,6 +1231,28 @@ namespace Datadog.Trace.DuckTyping.Tests
             aotProxy.AddWithDefault(10, 5).Should().Be(dynamicProxy.AddWithDefault(10, 5), $"scenario {scenarioId} should preserve explicit optional parameter binding");
         }
 
+        [Fact]
+        public void DifferentialParityRT3ReturnConversionShouldMatchBetweenDynamicAndAot()
+        {
+            const string scenarioId = "RT-3";
+            DuckTypeAotEngine.RegisterProxy(
+                typeof(IRt3ReturnConversionProxy),
+                typeof(Rt3ReturnConversionTarget),
+                typeof(Rt3ReturnConversionAotProxy),
+                instance => new Rt3ReturnConversionAotProxy((Rt3ReturnConversionTarget)instance!));
+
+            var dynamicResult = InvokeDynamicForward(typeof(IRt3ReturnConversionProxy), typeof(Rt3ReturnConversionTarget));
+            var aotResult = DuckTypeAotEngine.GetOrCreateProxyType(typeof(IRt3ReturnConversionProxy), typeof(Rt3ReturnConversionTarget));
+
+            dynamicResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in dynamic mode");
+            aotResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in AOT mode");
+
+            var dynamicProxy = dynamicResult.CreateInstance<IRt3ReturnConversionProxy>(new Rt3ReturnConversionTarget());
+            var aotProxy = aotResult.CreateInstance<IRt3ReturnConversionProxy>(new Rt3ReturnConversionTarget());
+
+            aotProxy.GetCount().Should().Be(dynamicProxy.GetCount(), $"scenario {scenarioId} should preserve conversion-only return semantics");
+        }
+
         private static DuckType.CreateTypeResult InvokeDynamicForward(Type proxyDefinitionType, Type targetType)
         {
             if (DynamicForwardFactory is null)
@@ -2551,6 +2573,34 @@ namespace Datadog.Trace.DuckTyping.Tests
             public int AddWithDefault(int left, int right = 7)
             {
                 return _target.AddWithDefault(left, right);
+            }
+        }
+
+        private interface IRt3ReturnConversionProxy
+        {
+            object GetCount();
+        }
+
+        private class Rt3ReturnConversionTarget
+        {
+            public int GetCount()
+            {
+                return 31;
+            }
+        }
+
+        private class Rt3ReturnConversionAotProxy : IRt3ReturnConversionProxy
+        {
+            private readonly Rt3ReturnConversionTarget _target;
+
+            public Rt3ReturnConversionAotProxy(Rt3ReturnConversionTarget target)
+            {
+                _target = target;
+            }
+
+            public object GetCount()
+            {
+                return _target.GetCount();
             }
         }
 
