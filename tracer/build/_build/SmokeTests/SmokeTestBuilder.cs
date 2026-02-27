@@ -319,23 +319,6 @@ public static class SmokeTestBuilder
 
     static async Task<string[]> BuildWindowsFleetInstallerImageAsync(SmokeTestScenario scenario, AbsolutePath tracerDir, AbsolutePath artifactsDir)
     {
-        // The Dockerfile expects installer executables in an "installer/" subdirectory
-        // Move any fleet installer exe/dll files into the subdirectory
-        if (artifactsDir is not null && Directory.Exists(artifactsDir))
-        {
-            var installerDir = Path.Combine(artifactsDir, "installer");
-            if (!Directory.Exists(installerDir))
-            {
-                Directory.CreateDirectory(installerDir);
-                foreach (var file in Directory.GetFiles(artifactsDir, "Datadog.FleetInstaller*"))
-                {
-                    var dest = Path.Combine(installerDir, Path.GetFileName(file));
-                    Logger.Information("Moving {Source} -> {Dest}", Path.GetFileName(file), $"installer/{Path.GetFileName(file)}");
-                    File.Move(file, dest);
-                }
-            }
-        }
-
         const string dockerfilePath = "build/_build/docker/smoke.windows.fleet-installer.dockerfile";
 
         var buildArgs = new Dictionary<string, string>
