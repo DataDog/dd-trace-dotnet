@@ -10,7 +10,13 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+#if NETCOREAPP2_1
+using AssemblyLoadContext = Datadog.Trace.Tools.Runner.Tests.NetCore21AssemblyLoadContext;
+#else
 using System.Runtime.Loader;
+#endif
+using System.Security.Cryptography;
+using System.Text;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Tools.Runner.DuckTypeAot;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -548,6 +554,65 @@ public class DuckTypeAotProcessorsTests
     }
 
     [Fact]
+    public void GenerateProcessorShouldReportClosedGenericMappingsAsUnsupported()
+    {
+        var tempDirectory = CreateTempDirectory();
+        try
+        {
+            var sharedAssemblyPath = typeof(List<int>).Assembly.Location;
+            var sharedAssemblyName = AssemblyName.GetAssemblyName(sharedAssemblyPath).Name;
+
+            var outputPath = Path.Combine(tempDirectory, "Datadog.Trace.DuckType.AotRegistry.ClosedGeneric.Unsupported.dll");
+            var mapFilePath = Path.Combine(tempDirectory, "ducktype-aot-map-closed-generic-unsupported.json");
+            var trimmerDescriptorPath = Path.Combine(tempDirectory, "ducktype-aot-closed-generic-unsupported.linker.xml");
+            var propsPath = Path.Combine(tempDirectory, "ducktype-aot-closed-generic-unsupported.props");
+
+            var mapDocument = new
+            {
+                mappings = new[]
+                {
+                    new
+                    {
+                        mode = "forward",
+                        proxyType = typeof(IReadOnlyCollection<int>).FullName,
+                        proxyAssembly = sharedAssemblyName,
+                        targetType = typeof(List<int>).FullName,
+                        targetAssembly = sharedAssemblyName
+                    }
+                }
+            };
+            File.WriteAllText(mapFilePath, JsonConvert.SerializeObject(mapDocument, Formatting.Indented));
+
+            var options = new DuckTypeAotGenerateOptions(
+                proxyAssemblies: new[] { sharedAssemblyPath },
+                targetAssemblies: new[] { sharedAssemblyPath },
+                targetFolders: Array.Empty<string>(),
+                targetFilters: new[] { "*.dll" },
+                mapFile: mapFilePath,
+                mappingCatalog: null,
+                genericInstantiationsFile: null,
+                outputPath: outputPath,
+                assemblyName: "Datadog.Trace.DuckType.AotRegistry.ClosedGeneric.Unsupported",
+                trimmerDescriptorPath: trimmerDescriptorPath,
+                propsPath: propsPath);
+
+            var exitCode = DuckTypeAotGenerateProcessor.Process(options);
+            exitCode.Should().Be(0);
+
+            var compatibilityMatrixPath = $"{outputPath}.compat.json";
+            var matrix = JsonConvert.DeserializeObject<DuckTypeAotCompatibilityMatrix>(File.ReadAllText(compatibilityMatrixPath));
+            matrix.Should().NotBeNull();
+            matrix!.Mappings.Should().ContainSingle(mapping =>
+                string.Equals(mapping.Status, DuckTypeAotCompatibilityStatuses.UnsupportedClosedGenericMapping, StringComparison.Ordinal) &&
+                string.Equals(mapping.DiagnosticCode, "DTAOT0211", StringComparison.Ordinal));
+        }
+        finally
+        {
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
+
+    [Fact]
     public void VerifyCompatProcessorShouldSucceedWhenAllMappingsAreCompatible()
     {
         var tempDirectory = CreateTempDirectory();
@@ -570,7 +635,7 @@ public class DuckTypeAotProcessorsTests
             };
             File.WriteAllText(matrixPath, JsonConvert.SerializeObject(matrix));
 
-            var result = DuckTypeAotVerifyCompatProcessor.Process(new DuckTypeAotVerifyCompatOptions(reportPath, matrixPath, mappingCatalogPath: null));
+            var result = DuckTypeAotVerifyCompatProcessor.Process(new DuckTypeAotVerifyCompatOptions(reportPath, matrixPath, mappingCatalogPath: null, manifestPath: null, strictAssemblyFingerprintValidation: false));
             result.Should().Be(0);
         }
         finally
@@ -602,7 +667,7 @@ public class DuckTypeAotProcessorsTests
             };
             File.WriteAllText(matrixPath, JsonConvert.SerializeObject(matrix));
 
-            var result = DuckTypeAotVerifyCompatProcessor.Process(new DuckTypeAotVerifyCompatOptions(reportPath, matrixPath, mappingCatalogPath: null));
+            var result = DuckTypeAotVerifyCompatProcessor.Process(new DuckTypeAotVerifyCompatOptions(reportPath, matrixPath, mappingCatalogPath: null, manifestPath: null, strictAssemblyFingerprintValidation: false));
             result.Should().Be(1);
         }
         finally
@@ -657,7 +722,7 @@ public class DuckTypeAotProcessorsTests
             };
             File.WriteAllText(mappingCatalogPath, JsonConvert.SerializeObject(catalog, Formatting.Indented));
 
-            var result = DuckTypeAotVerifyCompatProcessor.Process(new DuckTypeAotVerifyCompatOptions(reportPath, matrixPath, mappingCatalogPath));
+            var result = DuckTypeAotVerifyCompatProcessor.Process(new DuckTypeAotVerifyCompatOptions(reportPath, matrixPath, mappingCatalogPath, manifestPath: null, strictAssemblyFingerprintValidation: false));
             result.Should().Be(0);
         }
         finally
@@ -712,7 +777,7 @@ public class DuckTypeAotProcessorsTests
             };
             File.WriteAllText(mappingCatalogPath, JsonConvert.SerializeObject(catalog, Formatting.Indented));
 
-            var result = DuckTypeAotVerifyCompatProcessor.Process(new DuckTypeAotVerifyCompatOptions(reportPath, matrixPath, mappingCatalogPath));
+            var result = DuckTypeAotVerifyCompatProcessor.Process(new DuckTypeAotVerifyCompatOptions(reportPath, matrixPath, mappingCatalogPath, manifestPath: null, strictAssemblyFingerprintValidation: false));
             result.Should().Be(1);
         }
         finally
@@ -766,7 +831,332 @@ public class DuckTypeAotProcessorsTests
             };
             File.WriteAllText(mappingCatalogPath, JsonConvert.SerializeObject(catalog, Formatting.Indented));
 
-            var result = DuckTypeAotVerifyCompatProcessor.Process(new DuckTypeAotVerifyCompatOptions(reportPath, matrixPath, mappingCatalogPath));
+            var result = DuckTypeAotVerifyCompatProcessor.Process(new DuckTypeAotVerifyCompatOptions(reportPath, matrixPath, mappingCatalogPath, manifestPath: null, strictAssemblyFingerprintValidation: false));
+            result.Should().Be(1);
+        }
+        finally
+        {
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
+
+    [Fact]
+    public void VerifyCompatProcessorShouldSucceedWhenManifestMatchesCompatibilityMatrix()
+    {
+        var tempDirectory = CreateTempDirectory();
+        try
+        {
+            var reportPath = Path.Combine(tempDirectory, "ducktyping-aot-compat.md");
+            var matrixPath = Path.Combine(tempDirectory, "ducktyping-aot-compat.json");
+            var manifestPath = Path.Combine(tempDirectory, "ducktyping-aot-manifest.json");
+            var mapping = new DuckTypeAotMapping(
+                proxyTypeName: "Datadog.Trace.Tools.Runner.Tests.ITestDuckProxy",
+                proxyAssemblyName: "Datadog.Trace.Tools.Runner.Tests",
+                targetTypeName: "Datadog.Trace.Tools.Runner.Tests.TestDuckTarget",
+                targetAssemblyName: "Datadog.Trace.Tools.Runner.Tests",
+                mode: DuckTypeAotMappingMode.Forward,
+                source: DuckTypeAotMappingSource.MapFile,
+                scenarioId: "A-01");
+            var mappingChecksum = ComputeMappingIdentityChecksumForTest(mapping.Key);
+
+            File.WriteAllText(reportPath, "# Compatibility Report");
+            var matrix = new DuckTypeAotCompatibilityMatrix
+            {
+                SchemaVersion = "1",
+                Mappings = new List<DuckTypeAotCompatibilityMapping>
+                {
+                    new()
+                    {
+                        Id = "A-01",
+                        MappingIdentityChecksum = mappingChecksum,
+                        Mode = "forward",
+                        ProxyType = mapping.ProxyTypeName,
+                        ProxyAssembly = mapping.ProxyAssemblyName,
+                        TargetType = mapping.TargetTypeName,
+                        TargetAssembly = mapping.TargetAssemblyName,
+                        Status = DuckTypeAotCompatibilityStatuses.Compatible
+                    }
+                }
+            };
+            File.WriteAllText(matrixPath, JsonConvert.SerializeObject(matrix));
+
+            var manifest = new DuckTypeAotManifest
+            {
+                SchemaVersion = "1",
+                Mappings = new List<DuckTypeAotManifestMapping>
+                {
+                    new()
+                    {
+                        Mode = "forward",
+                        ScenarioId = "A-01",
+                        MappingIdentityChecksum = mappingChecksum,
+                        ProxyType = mapping.ProxyTypeName,
+                        ProxyAssembly = mapping.ProxyAssemblyName,
+                        TargetType = mapping.TargetTypeName,
+                        TargetAssembly = mapping.TargetAssemblyName,
+                        Source = "mapfile"
+                    }
+                }
+            };
+            File.WriteAllText(manifestPath, JsonConvert.SerializeObject(manifest));
+
+            var result = DuckTypeAotVerifyCompatProcessor.Process(
+                new DuckTypeAotVerifyCompatOptions(
+                    reportPath,
+                    matrixPath,
+                    mappingCatalogPath: null,
+                    manifestPath: manifestPath,
+                    strictAssemblyFingerprintValidation: false));
+            result.Should().Be(0);
+        }
+        finally
+        {
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
+
+    [Fact]
+    public void VerifyCompatProcessorShouldFailWhenManifestChecksumDiffersFromCompatibilityMatrix()
+    {
+        var tempDirectory = CreateTempDirectory();
+        try
+        {
+            var reportPath = Path.Combine(tempDirectory, "ducktyping-aot-compat.md");
+            var matrixPath = Path.Combine(tempDirectory, "ducktyping-aot-compat.json");
+            var manifestPath = Path.Combine(tempDirectory, "ducktyping-aot-manifest.json");
+            var mapping = new DuckTypeAotMapping(
+                proxyTypeName: "Datadog.Trace.Tools.Runner.Tests.ITestDuckProxy",
+                proxyAssemblyName: "Datadog.Trace.Tools.Runner.Tests",
+                targetTypeName: "Datadog.Trace.Tools.Runner.Tests.TestDuckTarget",
+                targetAssemblyName: "Datadog.Trace.Tools.Runner.Tests",
+                mode: DuckTypeAotMappingMode.Forward,
+                source: DuckTypeAotMappingSource.MapFile,
+                scenarioId: "A-01");
+            var mappingChecksum = ComputeMappingIdentityChecksumForTest(mapping.Key);
+            var mismatchedChecksum = new string('f', 64);
+
+            File.WriteAllText(reportPath, "# Compatibility Report");
+            var matrix = new DuckTypeAotCompatibilityMatrix
+            {
+                SchemaVersion = "1",
+                Mappings = new List<DuckTypeAotCompatibilityMapping>
+                {
+                    new()
+                    {
+                        Id = "A-01",
+                        MappingIdentityChecksum = mappingChecksum,
+                        Mode = "forward",
+                        ProxyType = mapping.ProxyTypeName,
+                        ProxyAssembly = mapping.ProxyAssemblyName,
+                        TargetType = mapping.TargetTypeName,
+                        TargetAssembly = mapping.TargetAssemblyName,
+                        Status = DuckTypeAotCompatibilityStatuses.Compatible
+                    }
+                }
+            };
+            File.WriteAllText(matrixPath, JsonConvert.SerializeObject(matrix));
+
+            var manifest = new DuckTypeAotManifest
+            {
+                SchemaVersion = "1",
+                Mappings = new List<DuckTypeAotManifestMapping>
+                {
+                    new()
+                    {
+                        Mode = "forward",
+                        ScenarioId = "A-01",
+                        MappingIdentityChecksum = mismatchedChecksum,
+                        ProxyType = mapping.ProxyTypeName,
+                        ProxyAssembly = mapping.ProxyAssemblyName,
+                        TargetType = mapping.TargetTypeName,
+                        TargetAssembly = mapping.TargetAssemblyName,
+                        Source = "mapfile"
+                    }
+                }
+            };
+            File.WriteAllText(manifestPath, JsonConvert.SerializeObject(manifest));
+
+            var result = DuckTypeAotVerifyCompatProcessor.Process(
+                new DuckTypeAotVerifyCompatOptions(
+                    reportPath,
+                    matrixPath,
+                    mappingCatalogPath: null,
+                    manifestPath: manifestPath,
+                    strictAssemblyFingerprintValidation: false));
+            result.Should().Be(1);
+        }
+        finally
+        {
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
+
+    [Fact]
+    public void VerifyCompatProcessorShouldWarnButSucceedWhenAssemblyFingerprintDriftsInNonStrictMode()
+    {
+        var tempDirectory = CreateTempDirectory();
+        try
+        {
+            var reportPath = Path.Combine(tempDirectory, "ducktyping-aot-compat.md");
+            var matrixPath = Path.Combine(tempDirectory, "ducktyping-aot-compat.json");
+            var manifestPath = Path.Combine(tempDirectory, "ducktyping-aot-manifest.json");
+            var targetAssemblyPath = typeof(TestDuckTarget).Assembly.Location;
+            var targetAssemblyName = AssemblyName.GetAssemblyName(targetAssemblyPath).Name;
+            var mapping = new DuckTypeAotMapping(
+                proxyTypeName: "Datadog.Trace.Tools.Runner.Tests.ITestDuckProxy",
+                proxyAssemblyName: "Datadog.Trace.Tools.Runner.Tests",
+                targetTypeName: "Datadog.Trace.Tools.Runner.Tests.TestDuckTarget",
+                targetAssemblyName: "Datadog.Trace.Tools.Runner.Tests",
+                mode: DuckTypeAotMappingMode.Forward,
+                source: DuckTypeAotMappingSource.MapFile,
+                scenarioId: "A-01");
+            var mappingChecksum = ComputeMappingIdentityChecksumForTest(mapping.Key);
+
+            File.WriteAllText(reportPath, "# Compatibility Report");
+            var matrix = new DuckTypeAotCompatibilityMatrix
+            {
+                SchemaVersion = "1",
+                Mappings = new List<DuckTypeAotCompatibilityMapping>
+                {
+                    new()
+                    {
+                        Id = "A-01",
+                        MappingIdentityChecksum = mappingChecksum,
+                        Mode = "forward",
+                        ProxyType = mapping.ProxyTypeName,
+                        ProxyAssembly = mapping.ProxyAssemblyName,
+                        TargetType = mapping.TargetTypeName,
+                        TargetAssembly = mapping.TargetAssemblyName,
+                        Status = DuckTypeAotCompatibilityStatuses.Compatible
+                    }
+                }
+            };
+            File.WriteAllText(matrixPath, JsonConvert.SerializeObject(matrix));
+
+            var manifest = new DuckTypeAotManifest
+            {
+                SchemaVersion = "1",
+                Mappings = new List<DuckTypeAotManifestMapping>
+                {
+                    new()
+                    {
+                        Mode = "forward",
+                        ScenarioId = "A-01",
+                        MappingIdentityChecksum = mappingChecksum,
+                        ProxyType = mapping.ProxyTypeName,
+                        ProxyAssembly = mapping.ProxyAssemblyName,
+                        TargetType = mapping.TargetTypeName,
+                        TargetAssembly = mapping.TargetAssemblyName,
+                        Source = "mapfile"
+                    }
+                },
+                TargetAssemblies = new List<DuckTypeAotAssemblyFingerprint>
+                {
+                    new()
+                    {
+                        Name = targetAssemblyName,
+                        Path = targetAssemblyPath,
+                        Mvid = Guid.Empty.ToString("D"),
+                        Sha256 = new string('0', 64)
+                    }
+                }
+            };
+            File.WriteAllText(manifestPath, JsonConvert.SerializeObject(manifest));
+
+            var result = DuckTypeAotVerifyCompatProcessor.Process(
+                new DuckTypeAotVerifyCompatOptions(
+                    reportPath,
+                    matrixPath,
+                    mappingCatalogPath: null,
+                    manifestPath: manifestPath,
+                    strictAssemblyFingerprintValidation: false));
+            result.Should().Be(0);
+        }
+        finally
+        {
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
+
+    [Fact]
+    public void VerifyCompatProcessorShouldFailWhenAssemblyFingerprintDriftsInStrictMode()
+    {
+        var tempDirectory = CreateTempDirectory();
+        try
+        {
+            var reportPath = Path.Combine(tempDirectory, "ducktyping-aot-compat.md");
+            var matrixPath = Path.Combine(tempDirectory, "ducktyping-aot-compat.json");
+            var manifestPath = Path.Combine(tempDirectory, "ducktyping-aot-manifest.json");
+            var targetAssemblyPath = typeof(TestDuckTarget).Assembly.Location;
+            var targetAssemblyName = AssemblyName.GetAssemblyName(targetAssemblyPath).Name;
+            var mapping = new DuckTypeAotMapping(
+                proxyTypeName: "Datadog.Trace.Tools.Runner.Tests.ITestDuckProxy",
+                proxyAssemblyName: "Datadog.Trace.Tools.Runner.Tests",
+                targetTypeName: "Datadog.Trace.Tools.Runner.Tests.TestDuckTarget",
+                targetAssemblyName: "Datadog.Trace.Tools.Runner.Tests",
+                mode: DuckTypeAotMappingMode.Forward,
+                source: DuckTypeAotMappingSource.MapFile,
+                scenarioId: "A-01");
+            var mappingChecksum = ComputeMappingIdentityChecksumForTest(mapping.Key);
+
+            File.WriteAllText(reportPath, "# Compatibility Report");
+            var matrix = new DuckTypeAotCompatibilityMatrix
+            {
+                SchemaVersion = "1",
+                Mappings = new List<DuckTypeAotCompatibilityMapping>
+                {
+                    new()
+                    {
+                        Id = "A-01",
+                        MappingIdentityChecksum = mappingChecksum,
+                        Mode = "forward",
+                        ProxyType = mapping.ProxyTypeName,
+                        ProxyAssembly = mapping.ProxyAssemblyName,
+                        TargetType = mapping.TargetTypeName,
+                        TargetAssembly = mapping.TargetAssemblyName,
+                        Status = DuckTypeAotCompatibilityStatuses.Compatible
+                    }
+                }
+            };
+            File.WriteAllText(matrixPath, JsonConvert.SerializeObject(matrix));
+
+            var manifest = new DuckTypeAotManifest
+            {
+                SchemaVersion = "1",
+                Mappings = new List<DuckTypeAotManifestMapping>
+                {
+                    new()
+                    {
+                        Mode = "forward",
+                        ScenarioId = "A-01",
+                        MappingIdentityChecksum = mappingChecksum,
+                        ProxyType = mapping.ProxyTypeName,
+                        ProxyAssembly = mapping.ProxyAssemblyName,
+                        TargetType = mapping.TargetTypeName,
+                        TargetAssembly = mapping.TargetAssemblyName,
+                        Source = "mapfile"
+                    }
+                },
+                TargetAssemblies = new List<DuckTypeAotAssemblyFingerprint>
+                {
+                    new()
+                    {
+                        Name = targetAssemblyName,
+                        Path = targetAssemblyPath,
+                        Mvid = Guid.Empty.ToString("D"),
+                        Sha256 = new string('0', 64)
+                    }
+                }
+            };
+            File.WriteAllText(manifestPath, JsonConvert.SerializeObject(manifest));
+
+            var result = DuckTypeAotVerifyCompatProcessor.Process(
+                new DuckTypeAotVerifyCompatOptions(
+                    reportPath,
+                    matrixPath,
+                    mappingCatalogPath: null,
+                    manifestPath: manifestPath,
+                    strictAssemblyFingerprintValidation: true));
             result.Should().Be(1);
         }
         finally
@@ -4732,6 +5122,19 @@ public class DuckTypeAotProcessorsTests
         var tempDirectory = Path.Combine(Path.GetTempPath(), "dd-trace-ducktype-aot-tests", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(tempDirectory);
         return tempDirectory;
+    }
+
+    private static string ComputeMappingIdentityChecksumForTest(string key)
+    {
+        using var sha256 = SHA256.Create();
+        var hash = sha256.ComputeHash(Encoding.UTF8.GetBytes(key));
+        var builder = new StringBuilder(hash.Length * 2);
+        foreach (var hashByte in hash)
+        {
+            _ = builder.Append(hashByte.ToString("x2"));
+        }
+
+        return builder.ToString();
     }
 
     private static void TryDeleteDirectory(string directory)

@@ -16,5 +16,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         internal const string NonPublicTargetMethod = "non_public_target_method";
         internal const string IncompatibleMethodSignature = "incompatible_method_signature";
         internal const string UnsupportedProxyConstructor = "unsupported_proxy_constructor";
+        internal const string UnsupportedClosedGenericMapping = "unsupported_closed_generic_mapping";
     }
 }
