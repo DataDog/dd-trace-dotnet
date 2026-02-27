@@ -666,9 +666,11 @@ namespace Datadog.Trace.DuckTyping
 
                         if (duckAttribute.FallbackToBaseTypes)
                         {
-                            while (targetProperty is null && targetType is { IsValueType: false, BaseType: not null } && targetType.BaseType != typeof(object))
+                            var currentType = targetType;
+                            while (targetProperty is null && currentType is { IsValueType: false, BaseType: not null } && currentType.BaseType != typeof(object))
                             {
-                                targetProperty = GetTargetPropertyOrIndex(targetType.BaseType, duckAttribute.Name, duckAttribute.BindingFlags, proxyProperty);
+                                currentType = currentType.BaseType;
+                                targetProperty = GetTargetPropertyOrIndex(currentType, duckAttribute.Name, duckAttribute.BindingFlags, proxyProperty);
                             }
                         }
 
@@ -761,9 +763,11 @@ namespace Datadog.Trace.DuckTyping
 
                         if (duckAttribute.FallbackToBaseTypes)
                         {
-                            while (targetField is null && targetType is { IsValueType: false, BaseType: not null } && targetType.BaseType != typeof(object))
+                            var currentType = targetType;
+                            while (targetField is null && currentType is { IsValueType: false, BaseType: not null } && currentType.BaseType != typeof(object))
                             {
-                                targetField = GetTargetField(targetType.BaseType, duckAttribute.Name, duckAttribute.BindingFlags);
+                                currentType = currentType.BaseType;
+                                targetField = GetTargetField(currentType, duckAttribute.Name, duckAttribute.BindingFlags);
                             }
                         }
 
@@ -966,6 +970,17 @@ namespace Datadog.Trace.DuckTyping
                     case DuckKind.Property:
                     case DuckKind.PropertyOrField:
                         PropertyInfo? targetProperty = GetTargetProperty(targetType, duckAttribute.Name, duckAttribute.BindingFlags);
+
+                        if (duckAttribute.FallbackToBaseTypes)
+                        {
+                            var currentType = targetType;
+                            while (targetProperty is null && currentType is { IsValueType: false, BaseType: not null } && currentType.BaseType != typeof(object))
+                            {
+                                currentType = currentType.BaseType;
+                                targetProperty = GetTargetProperty(currentType, duckAttribute.Name, duckAttribute.BindingFlags);
+                            }
+                        }
+
                         if (targetProperty is null)
                         {
                             if (duckAttribute.Kind == DuckKind.PropertyOrField)
@@ -1003,6 +1018,17 @@ namespace Datadog.Trace.DuckTyping
 
                     case DuckKind.Field:
                         FieldInfo? targetField = GetTargetField(targetType, duckAttribute.Name, duckAttribute.BindingFlags);
+
+                        if (duckAttribute.FallbackToBaseTypes)
+                        {
+                            var currentType = targetType;
+                            while (targetField is null && currentType is { IsValueType: false, BaseType: not null } && currentType.BaseType != typeof(object))
+                            {
+                                currentType = currentType.BaseType;
+                                targetField = GetTargetField(currentType, duckAttribute.Name, duckAttribute.BindingFlags);
+                            }
+                        }
+
                         if (targetField is null)
                         {
                             DuckTypePropertyOrFieldNotFoundException.Throw(proxyFieldInfo.Name, duckAttribute.Name, targetType);
