@@ -5128,6 +5128,20 @@ stages:
         - linux-packages-linux-musl-x64
         - nuget-packages
 
+# Self-instrument (LinuxSelfInstrument)
+- stage: nuke_self_instrument_smoke_tests
+  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
+  dependsOn: [generate_variables, merge_commit_id]
+  pool:
+    name: $(linuxX64SmokePool)
+  jobs:
+  - template: steps/nuke-smoke-test-stage.yml
+    parameters:
+      matrixVariable: nuke_self_instrument_matrix
+      artifacts:
+        - linux-packages-linux-x64
+        - runner-standalone-linux-x64
+
 # Windows MSI (WindowsMsi)
 - stage: nuke_windows_msi_smoke_tests
   condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))

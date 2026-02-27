@@ -35,6 +35,7 @@ public static class SmokeTestScenarios
             SmokeTestCategory.LinuxMuslDotnetTool => LinuxMuslDotnetToolScenarios(),
             SmokeTestCategory.LinuxMuslDotnetToolArm64 => LinuxMuslDotnetToolArm64Scenarios(),
             SmokeTestCategory.LinuxMuslTrimming => LinuxMuslTrimmingScenarios(),
+            SmokeTestCategory.LinuxSelfInstrument => LinuxSelfInstrumentScenarios(),
             SmokeTestCategory.WindowsMsi => WindowsMsiScenarios(),
             SmokeTestCategory.WindowsNuGet => WindowsNuGetScenarios(),
             SmokeTestCategory.WindowsDotnetTool => WindowsDotnetToolScenarios(),
@@ -799,6 +800,23 @@ public static class SmokeTestScenarios
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-alpine3.18", "3.18"),
                     (TargetFramework.NET8_0, "mcr.microsoft.com/dotnet/aspnet", "8.0-alpine3.18-composite", "3.18"),
                 });
+        }
+
+        static IEnumerable<IEnumerable<SmokeTestScenario>> LinuxSelfInstrumentScenarios()
+        {
+            yield return new[]
+            {
+                new SmokeTestScenario(
+                    Category: SmokeTestCategory.LinuxSelfInstrument,
+                    ShortName: "debian",
+                    PublishFramework: TargetFramework.NET6_0,
+                    RuntimeTag: "6.0-bullseye-slim",
+                    DockerImageRepo: "mcr.microsoft.com/dotnet/aspnet",
+                    Os: "debian",
+                    OsVersion: "bullseye",
+                    InstallType: InstallType.DebX64,
+                    RunCrashTest: true),
+            };
         }
 
         // ─────────────────────────────────────────────────────────

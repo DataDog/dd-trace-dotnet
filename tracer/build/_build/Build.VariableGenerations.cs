@@ -612,6 +612,9 @@ partial class Build : NukeBuild
                     EmitMatrix("nuke_trimming_musl_matrix",
                         allScenarios.Where(x => x.category is SmokeTests.SmokeTestCategory.LinuxMuslTrimming));
 
+                    EmitMatrix("nuke_self_instrument_matrix",
+                        allScenarios.Where(x => x.category is SmokeTests.SmokeTestCategory.LinuxSelfInstrument));
+
                     // Windows categories
                     EmitMatrix("nuke_windows_msi_matrix",
                         allScenarios.Where(x => x.category is SmokeTests.SmokeTestCategory.WindowsMsi));
