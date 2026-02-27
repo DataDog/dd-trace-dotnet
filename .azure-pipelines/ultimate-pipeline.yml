@@ -5194,6 +5194,19 @@ stages:
       artifacts:
         - windows-tracer-home.zip
 
+# Windows Fleet Installer IIS (WindowsFleetInstallerIis)
+- stage: nuke_windows_fleet_installer_iis_smoke_tests
+  dependsOn: [package_windows, generate_variables, merge_commit_id]
+  pool:
+    vmImage: windows-2022
+  jobs:
+  - template: steps/nuke-smoke-test-stage-windows.yml
+    parameters:
+      matrixVariable: nuke_windows_fleet_installer_iis_matrix
+      artifacts:
+        - windows-tracer-home.zip
+        - fleet-installer
+        - fleet-installer-telemetry-forwarder
 
 - stage: installer_smoke_tests
   dependsOn: [package_linux, generate_variables, merge_commit_id]

@@ -40,6 +40,7 @@ public static class SmokeTestScenarios
             SmokeTestCategory.WindowsNuGet => WindowsNuGetScenarios(),
             SmokeTestCategory.WindowsDotnetTool => WindowsDotnetToolScenarios(),
             SmokeTestCategory.WindowsTracerHome => WindowsTracerHomeScenarios(),
+            SmokeTestCategory.WindowsFleetInstallerIis => WindowsFleetInstallerIisScenarios(),
             _ => throw new InvalidOperationException($"Unknown smoke test scenario: {category}"),
         };
 
@@ -1030,6 +1031,33 @@ public static class SmokeTestScenarios
                              RunCrashTest: false,
                              Channel32Bit: channel32Bit,
                              WindowsRelativeProfilerPath: $"win-{platform}/Datadog.Trace.ClrProfiler.Native.dll");
+        }
+
+        static IEnumerable<IEnumerable<SmokeTestScenario>> WindowsFleetInstallerIisScenarios()
+        {
+            // Fleet Installer IIS: x64 and x86 on .NET Framework 4.8 (aspnet image)
+            var platforms = new[] { "x64", "x86" };
+            var runtimeImages = new[]
+            {
+                (PublishFramework: TargetFramework.NET9_0, Tag: "4.8-windowsservercore-ltsc2022", OsVersion: "servercore-2022"),
+                (PublishFramework: TargetFramework.NET8_0, Tag: "4.8-windowsservercore-ltsc2022", OsVersion: "servercore-2022"),
+            };
+
+            yield return from platform in platforms
+                         from image in runtimeImages
+                         select new SmokeTestScenario(
+                             Category: SmokeTestCategory.WindowsFleetInstallerIis,
+                             ShortName: $"{platform}_iis",
+                             PublishFramework: image.PublishFramework,
+                             RuntimeTag: image.Tag,
+                             DockerImageRepo: "mcr.microsoft.com/dotnet/framework/aspnet",
+                             Os: "windows",
+                             OsVersion: image.OsVersion,
+                             RunCrashTest: false,
+                             TargetPlatform: platform,
+                             FleetInstallerCommand: "enable-iis-instrumentation",
+                             SnapshotFile: "smoke_test_iis_snapshots",
+                             ExtraSnapshotIgnoredAttrs: "meta._dd.appsec.waf.version,metrics._dd.appsec.event_rules.loaded,metrics._dd.appsec.event_rules.error_count,metrics._dd.tracer_kr,metrics._sampling_priority_v1");
         }
 
     }

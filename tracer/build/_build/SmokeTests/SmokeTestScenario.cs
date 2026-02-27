@@ -21,7 +21,11 @@ public record SmokeTestScenario(
     bool RunCrashTest = true,
     bool IsNoop = false,
     string? Channel32Bit = null,
-    string? WindowsRelativeProfilerPath = null)
+    string? WindowsRelativeProfilerPath = null,
+    string? TargetPlatform = null,
+    string? FleetInstallerCommand = null,
+    string? SnapshotFile = null,
+    string? ExtraSnapshotIgnoredAttrs = null)
 {
     public string JobName { get; } = $"{ShortName}_{RuntimeTag.Replace('.', '_')}";
     public string FullName => $"{Category}_{JobName}";

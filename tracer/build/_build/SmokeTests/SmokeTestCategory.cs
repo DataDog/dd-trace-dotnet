@@ -21,4 +21,5 @@ public enum SmokeTestCategory
     WindowsNuGet,
     WindowsDotnetTool,
     WindowsTracerHome,
+    WindowsFleetInstallerIis,
 }
