@@ -28,6 +28,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         private const string BootstrapTypeName = "DuckTypeAotRegistryBootstrap";
         private const string BootstrapInitializeMethodName = "Initialize";
         private const string GeneratedProxyNamespace = "Datadog.Trace.DuckTyping.Generated.Proxies";
+        private const string AotContractSchemaVersion = "1";
         private const string StatusCodeUnsupportedProxyKind = "DTAOT0202";
         private const string StatusCodeMissingProxyType = "DTAOT0204";
         private const string StatusCodeMissingTargetType = "DTAOT0205";
@@ -91,8 +92,10 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         {
             var generatedAssemblyName = options.AssemblyName ?? Path.GetFileNameWithoutExtension(artifactPaths.OutputAssemblyPath);
             var deterministicMvid = ComputeDeterministicMvid(generatedAssemblyName, mappingResolutionResult.Mappings);
+            var generatedAssemblyVersion = new Version(1, 0, 0, 0);
+            var generatedAssemblyFullName = new AssemblyName(generatedAssemblyName) { Version = generatedAssemblyVersion }.FullName ?? generatedAssemblyName;
 
-            var assemblyDef = new AssemblyDefUser(generatedAssemblyName, new Version(1, 0, 0, 0));
+            var assemblyDef = new AssemblyDefUser(generatedAssemblyName, generatedAssemblyVersion);
             var moduleDef = new ModuleDefUser(Path.GetFileName(artifactPaths.OutputAssemblyPath), deterministicMvid)
             {
                 Kind = ModuleKind.Dll
@@ -114,6 +117,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
 
             var datadogTraceAssemblyPath = typeof(Datadog.Trace.Tracer).Assembly.Location;
+            var datadogTraceAssemblyVersion = typeof(Datadog.Trace.Tracer).Assembly.GetName().Version?.ToString() ?? "0.0.0.0";
+            var datadogTraceAssemblyMvid = ResolveAssemblyMvid(datadogTraceAssemblyPath);
             _ = AddAssemblyReference(moduleDef, assemblyReferences, datadogTraceAssemblyPath);
             AddIgnoresAccessChecksToAttributes(assemblyDef, moduleDef, importedMembers.IgnoresAccessChecksToAttributeCtor, mappingResolutionResult);
 
@@ -135,6 +140,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             moduleDef.Types.Add(bootstrapType);
 
             initializeMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(importedMembers.EnableAotModeMethod));
+            initializeMethod.Body.Instructions.Add(OpCodes.Ldstr.ToInstruction(AotContractSchemaVersion));
+            initializeMethod.Body.Instructions.Add(OpCodes.Ldstr.ToInstruction(datadogTraceAssemblyVersion));
+            initializeMethod.Body.Instructions.Add(OpCodes.Ldstr.ToInstruction(datadogTraceAssemblyMvid));
+            initializeMethod.Body.Instructions.Add(OpCodes.Ldstr.ToInstruction(generatedAssemblyFullName));
+            initializeMethod.Body.Instructions.Add(OpCodes.Ldstr.ToInstruction(deterministicMvid.ToString("D")));
+            initializeMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(importedMembers.ValidateAotRegistryContractMethod));
 
             var proxyModulesByAssemblyName = LoadModules(mappingResolutionResult.ProxyAssemblyPathsByName);
             var targetModulesByAssemblyName = LoadModules(mappingResolutionResult.TargetAssemblyPathsByName);
@@ -190,6 +201,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 deterministicMvid);
 
             return new DuckTypeAotRegistryEmissionResult(registryInfo, mappingResults);
+        }
+
+        private static string ResolveAssemblyMvid(string assemblyPath)
+        {
+            using var module = ModuleDefMD.Load(assemblyPath);
+            return module.Mvid?.ToString("D") ?? string.Empty;
         }
 
         private static DuckTypeAotMappingEmissionResult EmitMapping(
@@ -3094,6 +3111,21 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     throw new InvalidOperationException("Unable to resolve DuckType.EnableAotMode().");
                 }
 
+                var validateAotRegistryContractMethod = typeof(DuckType).GetMethod(
+                    nameof(DuckType.ValidateAotRegistryContract),
+                    new[]
+                    {
+                        typeof(string),
+                        typeof(string),
+                        typeof(string),
+                        typeof(string),
+                        typeof(string)
+                    });
+                if (validateAotRegistryContractMethod is null)
+                {
+                    throw new InvalidOperationException("Unable to resolve DuckType.ValidateAotRegistryContract(string, string, string, string, string).");
+                }
+
                 var objectCtor = typeof(object).GetConstructor(Type.EmptyTypes);
                 if (objectCtor is null)
                 {
@@ -3129,6 +3161,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 RegisterAotProxyMethod = moduleDef.Import(registerAotProxyMethod);
                 RegisterAotReverseProxyMethod = moduleDef.Import(registerAotReverseProxyMethod);
                 EnableAotModeMethod = moduleDef.Import(enableAotModeMethod);
+                ValidateAotRegistryContractMethod = moduleDef.Import(validateAotRegistryContractMethod);
                 ObjectCtor = moduleDef.Import(objectCtor);
                 ObjectToStringMethod = moduleDef.Import(objectToStringMethod);
                 IDuckTypeType = iDuckTypeType;
@@ -3151,6 +3184,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             internal IMethod RegisterAotReverseProxyMethod { get; }
 
             internal IMethod EnableAotModeMethod { get; }
+
+            internal IMethod ValidateAotRegistryContractMethod { get; }
 
             internal IMethod ObjectCtor { get; }
 

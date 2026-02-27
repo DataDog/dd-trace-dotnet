@@ -71,6 +71,27 @@ namespace Datadog.Trace.DuckTyping
         }
 
         /// <summary>
+        /// Validates AOT-generated registry metadata against the current Datadog.Trace runtime contract.
+        /// </summary>
+        /// <param name="schemaVersion">AOT contract schema version.</param>
+        /// <param name="datadogTraceAssemblyVersion">Datadog.Trace assembly version used by the generator.</param>
+        /// <param name="datadogTraceAssemblyMvid">Datadog.Trace assembly MVID used by the generator.</param>
+        /// <param name="registryAssemblyFullName">Generated registry assembly full name.</param>
+        /// <param name="registryAssemblyMvid">Generated registry assembly module MVID.</param>
+        public static void ValidateAotRegistryContract(
+            string schemaVersion,
+            string datadogTraceAssemblyVersion,
+            string datadogTraceAssemblyMvid,
+            string registryAssemblyFullName,
+            string registryAssemblyMvid)
+        {
+            EnsureRuntimeModeIsInitialized(DuckTypeRuntimeMode.Aot);
+            DuckTypeAotEngine.ValidateContract(
+                new DuckTypeAotContract(schemaVersion, datadogTraceAssemblyVersion, datadogTraceAssemblyMvid),
+                new DuckTypeAotAssemblyMetadata(registryAssemblyFullName, registryAssemblyMvid));
+        }
+
+        /// <summary>
         /// Create duck type proxy using a base type
         /// </summary>
         /// <param name="instance">Instance object</param>
