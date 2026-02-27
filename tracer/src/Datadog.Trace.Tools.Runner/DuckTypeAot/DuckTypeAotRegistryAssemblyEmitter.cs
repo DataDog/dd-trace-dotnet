@@ -35,6 +35,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         private const string StatusCodeMissingMethod = "DTAOT0207";
         private const string StatusCodeIncompatibleSignature = "DTAOT0209";
         private const string StatusCodeUnsupportedProxyConstructor = "DTAOT0210";
+        private const string StatusCodeUnsupportedClosedGenericMapping = "DTAOT0211";
         private const string DuckAttributeTypeName = "Datadog.Trace.DuckTyping.DuckAttribute";
         private const string DuckFieldAttributeTypeName = "Datadog.Trace.DuckTyping.DuckFieldAttribute";
         private const string DuckPropertyOrFieldAttributeTypeName = "Datadog.Trace.DuckTyping.DuckPropertyOrFieldAttribute";
@@ -220,6 +221,16 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             IReadOnlyDictionary<string, ModuleDefMD> targetModulesByAssemblyName)
         {
             var isReverseMapping = mapping.Mode == DuckTypeAotMappingMode.Reverse;
+            if (DuckTypeAotNameHelpers.IsClosedGenericTypeName(mapping.ProxyTypeName) ||
+                DuckTypeAotNameHelpers.IsClosedGenericTypeName(mapping.TargetTypeName))
+            {
+                var closedGenericDetail = $"Closed generic mappings are not yet emitted in this phase. proxy='{mapping.ProxyTypeName}', target='{mapping.TargetTypeName}'.";
+                return DuckTypeAotMappingEmissionResult.NotCompatible(
+                    mapping,
+                    DuckTypeAotCompatibilityStatuses.UnsupportedClosedGenericMapping,
+                    StatusCodeUnsupportedClosedGenericMapping,
+                    closedGenericDetail);
+            }
 
             if (!proxyModulesByAssemblyName.TryGetValue(mapping.ProxyAssemblyName, out var proxyModule))
             {

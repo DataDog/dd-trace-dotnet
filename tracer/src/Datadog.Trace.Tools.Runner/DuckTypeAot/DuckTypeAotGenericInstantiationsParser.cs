@@ -120,7 +120,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 return false;
             }
 
-            assemblyName = DuckTypeAotNameHelpers.NormalizeAssemblyName(assemblyName);
+            assemblyName = DuckTypeAotNameHelpers.NormalizeAssemblyName(assemblyName!);
             if (!DuckTypeAotNameHelpers.IsGenericTypeName(typeName))
             {
                 errors.Add($"--generic-instantiations entry #{index + 1} in '{path}' must provide a closed generic type. '{typeName}' is not generic.");

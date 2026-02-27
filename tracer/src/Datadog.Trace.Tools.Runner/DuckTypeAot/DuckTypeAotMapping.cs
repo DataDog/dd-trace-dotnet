@@ -85,12 +85,13 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
         private static string? NormalizeScenarioId(string? scenarioId)
         {
-            if (string.IsNullOrWhiteSpace(scenarioId))
+            var trimmedScenarioId = scenarioId?.Trim();
+            if (string.IsNullOrWhiteSpace(trimmedScenarioId))
             {
                 return null;
             }
 
-            return scenarioId.Trim();
+            return trimmedScenarioId;
         }
     }
 

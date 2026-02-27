@@ -9,11 +9,18 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 {
     internal sealed class DuckTypeAotVerifyCompatOptions
     {
-        public DuckTypeAotVerifyCompatOptions(string compatReportPath, string compatMatrixPath, string? mappingCatalogPath)
+        public DuckTypeAotVerifyCompatOptions(
+            string compatReportPath,
+            string compatMatrixPath,
+            string? mappingCatalogPath,
+            string? manifestPath,
+            bool strictAssemblyFingerprintValidation)
         {
             CompatReportPath = compatReportPath;
             CompatMatrixPath = compatMatrixPath;
             MappingCatalogPath = mappingCatalogPath;
+            ManifestPath = manifestPath;
+            StrictAssemblyFingerprintValidation = strictAssemblyFingerprintValidation;
         }
 
         public string CompatReportPath { get; }
@@ -21,5 +28,9 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         public string CompatMatrixPath { get; }
 
         public string? MappingCatalogPath { get; }
+
+        public string? ManifestPath { get; }
+
+        public bool StrictAssemblyFingerprintValidation { get; }
     }
 }
