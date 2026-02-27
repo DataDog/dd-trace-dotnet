@@ -38,6 +38,11 @@ internal static class InferredProxySpanHelper
         PropagationContext propagationContext)
         where THeadersCollection : struct, IHeadersCollection
     {
+        if (!tracer.Settings.InferredProxySpansEnabled)
+        {
+            return null;
+        }
+
         var accessor = carrier.GetAccessor();
         var proxyName = ParseUtility.ParseString(carrier, accessor, InferredProxyHeaders.Name);
 
@@ -59,7 +64,7 @@ internal static class InferredProxySpanHelper
             return _awsCoordinator.ExtractAndCreateScope(tracer, carrier, accessor, propagationContext);
         }
 
-        Log.Debug("Invalid \"{HeaderName}\" header value: \"{Value}\"", InferredProxyHeaders.Name, proxyName);
+        Log.Debug("Unknown \"{HeaderName}\" header value: \"{Value}\"", InferredProxyHeaders.Name, proxyName);
         return null;
     }
 

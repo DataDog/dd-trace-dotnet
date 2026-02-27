@@ -31,7 +31,7 @@ internal readonly struct InferredProxyData(string proxyName, DateTimeOffset star
     public readonly string? DomainName = domainName;
 
     // x-dd-proxy-httpmethod
-    public readonly string? HttpMethod = httpMethod;
+    public readonly string? HttpMethod = httpMethod?.ToUpperInvariant();
 
     // x-dd-proxy-path
     public readonly string? Path = path;

@@ -511,7 +511,7 @@ public class SpanMessagePackFormatterTests
     }
 
     [Fact]
-    public void Serialize_InferredProxySpan_InAzureAppServices_DoesNotIncludeAasTags()
+    public async Task Serialize_InferredProxySpan_InAzureAppServices_DoesNotIncludeAasTags()
     {
         // Arrange
         var collection = new NameValueCollection
@@ -528,7 +528,7 @@ public class SpanMessagePackFormatterTests
 
         var source = new NameValueConfigurationSource(collection);
         var settings = new TracerSettings(source);
-        var tracer = TracerHelper.Create(settings);
+        await using var tracer = TracerHelper.Create(settings);
 
         // Create an inferred proxy span with a trace context that references the tracer
         var traceContext = new TraceContext(tracer);
@@ -578,7 +578,7 @@ public class SpanMessagePackFormatterTests
     }
 
     [Fact]
-    public void Serialize_NonProxySpan_InAzureAppServices_IncludesAasTags()
+    public async Task Serialize_NonProxySpan_InAzureAppServices_IncludesAasTags()
     {
         // Arrange
         var collection = new NameValueCollection
@@ -595,7 +595,7 @@ public class SpanMessagePackFormatterTests
 
         var source = new NameValueConfigurationSource(collection);
         var settings = new TracerSettings(source);
-        var tracer = TracerHelper.Create(settings);
+        await using var tracer = TracerHelper.Create(settings);
 
         // Create a regular (non-proxy) span with a trace context that references the tracer
         var traceContext = new TraceContext(tracer);

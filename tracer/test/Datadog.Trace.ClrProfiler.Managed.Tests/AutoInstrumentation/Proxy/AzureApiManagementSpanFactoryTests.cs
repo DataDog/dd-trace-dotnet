@@ -14,28 +14,17 @@ using Xunit;
 
 namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Proxy;
 
-public class AzureApiManagementSpanFactoryTests : IAsyncLifetime
+public class AzureApiManagementSpanFactoryTests
 {
-    private readonly AzureApiManagementSpanFactory _factory;
-    private readonly ScopedTracer _tracer; // this is a mocked instance of the tracer
-
-    public AzureApiManagementSpanFactoryTests()
-    {
-        _factory = new AzureApiManagementSpanFactory();
-        _tracer = ProxyTestHelpers.GetMockTracer();
-    }
-
-    public Task InitializeAsync() => Task.CompletedTask;
-
-    public async Task DisposeAsync() => await _tracer.DisposeAsync();
-
     [Fact]
-    public void CreateSpan_CreatesSpanWithCorrectProperties()
+    public async Task CreateSpan_CreatesSpanWithCorrectProperties()
     {
+        var factory = new AzureApiManagementSpanFactory();
+        await using var tracer = ProxyTestHelpers.GetMockTracer();
         var startTime = DateTimeOffset.UtcNow;
         var data = new InferredProxyData("azure-apim", startTime, "test.api.azure.com", "POST", "/api/v1/users", null, null);
 
-        var scope = _factory.CreateSpan(_tracer, data);
+        var scope = factory.CreateSpan(tracer, data);
 
         scope.Should().NotBeNull();
         var span = scope!.Span;

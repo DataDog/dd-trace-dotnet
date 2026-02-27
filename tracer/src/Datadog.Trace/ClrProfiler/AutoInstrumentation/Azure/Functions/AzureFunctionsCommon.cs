@@ -130,10 +130,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     // otherwise it is essentially a duplicate of the span created inside the
                     // isolated app, but we _do_ want to populate the "root" span here with the appropriate names
                     // and update it to be a "serverless" span.
-                    var rootSpan = activeScope.Root.Span;
-
                     if (!isProxySpan)
                     {
+                        var rootSpan = activeScope.Root.Span;
                         // The shortname is prefixed with "Functions.", so strip that off
                         var remoteFunctionName = functionName?.StartsWith("Functions.") == true
                                                      ? functionName.Substring(10)
@@ -286,15 +285,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 {
                     // shouldn't be hit, but better safe than sorry
                     scope = tracer.StartActiveInternal(OperationName);
-                    {
-                        var rootSpan = scope.Root.Span;
-                        AzureFunctionsTags.SetRootSpanTags(
-                            rootSpan,
-                            shortName: functionName,
-                            fullName: functionContext.FunctionDefinition.EntryPoint,
-                            bindingSource: rootSpan.Tags is AzureFunctionsTags t ? t.BindingSource : null,
-                            triggerType: triggerType);
-                    }
+
+                    var rootSpan = scope.Root.Span;
+                    AzureFunctionsTags.SetRootSpanTags(
+                        rootSpan,
+                        shortName: functionName,
+                        fullName: functionContext.FunctionDefinition.EntryPoint,
+                        bindingSource: rootSpan.Tags is AzureFunctionsTags t ? t.BindingSource : null,
+                        triggerType: triggerType);
+
                 }
 
                 {
