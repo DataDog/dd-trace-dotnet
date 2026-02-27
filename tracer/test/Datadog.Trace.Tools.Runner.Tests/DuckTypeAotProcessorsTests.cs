@@ -46,7 +46,7 @@ public class DuckTypeAotProcessorsTests
         var parseResult = DuckTypeAotMappingCatalogParser.Parse(catalogPath);
         parseResult.Errors.Should().BeEmpty();
         parseResult.RequiredMappings.Should().NotBeEmpty();
-        parseResult.RequiredMappings.Should().HaveCountGreaterOrEqualTo(53);
+        parseResult.RequiredMappings.Should().HaveCountGreaterOrEqualTo(96);
 
         var scenarioIds = parseResult.RequiredMappings
                                      .Where(mapping => !string.IsNullOrWhiteSpace(mapping.ScenarioId))
@@ -105,6 +105,49 @@ public class DuckTypeAotProcessorsTests
         scenarioIds.Should().Contain("FF-2");
         scenarioIds.Should().Contain("FM-8");
         scenarioIds.Should().Contain("RT-3");
+        scenarioIds.Should().Contain("FG-3");
+        scenarioIds.Should().Contain("FG-4");
+        scenarioIds.Should().Contain("FG-5");
+        scenarioIds.Should().Contain("FG-6");
+        scenarioIds.Should().Contain("FG-9");
+        scenarioIds.Should().Contain("FS-2");
+        scenarioIds.Should().Contain("FS-6");
+        scenarioIds.Should().Contain("FF-3");
+        scenarioIds.Should().Contain("FF-4");
+        scenarioIds.Should().Contain("FF-5");
+        scenarioIds.Should().Contain("RT-2");
+        scenarioIds.Should().Contain("FG-7");
+        scenarioIds.Should().Contain("FG-8");
+        scenarioIds.Should().Contain("FS-3");
+        scenarioIds.Should().Contain("FS-4");
+        scenarioIds.Should().Contain("FM-2");
+        scenarioIds.Should().Contain("FM-3");
+        scenarioIds.Should().Contain("FM-4");
+        scenarioIds.Should().Contain("FM-5");
+        scenarioIds.Should().Contain("FM-6");
+        scenarioIds.Should().Contain("FM-7");
+        scenarioIds.Should().Contain("RT-4");
+        scenarioIds.Should().Contain("RT-5");
+        scenarioIds.Should().Contain("EX-01");
+        scenarioIds.Should().Contain("EX-02");
+        scenarioIds.Should().Contain("EX-03");
+        scenarioIds.Should().Contain("EX-04");
+        scenarioIds.Should().Contain("EX-05");
+        scenarioIds.Should().Contain("EX-06");
+        scenarioIds.Should().Contain("EX-07");
+        scenarioIds.Should().Contain("EX-08");
+        scenarioIds.Should().Contain("EX-09");
+        scenarioIds.Should().Contain("EX-10");
+        scenarioIds.Should().Contain("EX-11");
+        scenarioIds.Should().Contain("EX-12");
+        scenarioIds.Should().Contain("EX-13");
+        scenarioIds.Should().Contain("EX-14");
+        scenarioIds.Should().Contain("EX-15");
+        scenarioIds.Should().Contain("EX-16");
+        scenarioIds.Should().Contain("EX-17");
+        scenarioIds.Should().Contain("EX-18");
+        scenarioIds.Should().Contain("EX-19");
+        scenarioIds.Should().Contain("EX-20");
     }
 
     [Fact]

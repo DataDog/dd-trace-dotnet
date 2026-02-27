@@ -1253,6 +1253,571 @@ namespace Datadog.Trace.DuckTyping.Tests
             aotProxy.GetCount().Should().Be(dynamicProxy.GetCount(), $"scenario {scenarioId} should preserve conversion-only return semantics");
         }
 
+        [Fact]
+        public void DifferentialParityFG3PropertyGetterNonPublicShouldMatchBetweenDynamicAndAot()
+        {
+            const string scenarioId = "FG-3";
+            DuckTypeAotEngine.RegisterProxy(
+                typeof(IFg3NonPublicGetterProxy),
+                typeof(Fg3NonPublicGetterTarget),
+                typeof(Fg3NonPublicGetterAotProxy),
+                instance => new Fg3NonPublicGetterAotProxy((Fg3NonPublicGetterTarget)instance!));
+
+            var dynamicResult = InvokeDynamicForward(typeof(IFg3NonPublicGetterProxy), typeof(Fg3NonPublicGetterTarget));
+            var aotResult = DuckTypeAotEngine.GetOrCreateProxyType(typeof(IFg3NonPublicGetterProxy), typeof(Fg3NonPublicGetterTarget));
+
+            dynamicResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in dynamic mode");
+            aotResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in AOT mode");
+
+            var dynamicProxy = dynamicResult.CreateInstance<IFg3NonPublicGetterProxy>(new Fg3NonPublicGetterTarget(17));
+            var aotProxy = aotResult.CreateInstance<IFg3NonPublicGetterProxy>(new Fg3NonPublicGetterTarget(17));
+
+            aotProxy.Secret.Should().Be(dynamicProxy.Secret, $"scenario {scenarioId} should preserve non-public getter behavior");
+        }
+
+        [Fact]
+        public void DifferentialParityFG4PropertyGetterStaticShouldMatchBetweenDynamicAndAot()
+        {
+            const string scenarioId = "FG-4";
+            DuckTypeAotEngine.RegisterProxy(
+                typeof(IFg4StaticGetterProxy),
+                typeof(Fg4StaticGetterTarget),
+                typeof(Fg4StaticGetterAotProxy),
+                instance => new Fg4StaticGetterAotProxy((Fg4StaticGetterTarget)instance!));
+
+            var dynamicResult = InvokeDynamicForward(typeof(IFg4StaticGetterProxy), typeof(Fg4StaticGetterTarget));
+            var aotResult = DuckTypeAotEngine.GetOrCreateProxyType(typeof(IFg4StaticGetterProxy), typeof(Fg4StaticGetterTarget));
+
+            dynamicResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in dynamic mode");
+            aotResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in AOT mode");
+
+            Fg4StaticGetterTarget.Global = 77;
+            var dynamicProxy = dynamicResult.CreateInstance<IFg4StaticGetterProxy>(new Fg4StaticGetterTarget());
+            var aotProxy = aotResult.CreateInstance<IFg4StaticGetterProxy>(new Fg4StaticGetterTarget());
+
+            aotProxy.Global.Should().Be(dynamicProxy.Global, $"scenario {scenarioId} should preserve static getter behavior");
+        }
+
+        [Fact]
+        public void DifferentialParityFG5PropertyGetterValueWithTypeShouldMatchBetweenDynamicAndAot()
+        {
+            const string scenarioId = "FG-5";
+            DuckTypeAotEngine.RegisterProxy(
+                typeof(IFg5ValueWithTypeGetterProxy),
+                typeof(Fg5ValueWithTypeGetterTarget),
+                typeof(Fg5ValueWithTypeGetterAotProxy),
+                instance => new Fg5ValueWithTypeGetterAotProxy((Fg5ValueWithTypeGetterTarget)instance!));
+
+            var dynamicResult = InvokeDynamicForward(typeof(IFg5ValueWithTypeGetterProxy), typeof(Fg5ValueWithTypeGetterTarget));
+            var aotResult = DuckTypeAotEngine.GetOrCreateProxyType(typeof(IFg5ValueWithTypeGetterProxy), typeof(Fg5ValueWithTypeGetterTarget));
+
+            dynamicResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in dynamic mode");
+            aotResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in AOT mode");
+
+            var dynamicProxy = dynamicResult.CreateInstance<IFg5ValueWithTypeGetterProxy>(new Fg5ValueWithTypeGetterTarget(21));
+            var aotProxy = aotResult.CreateInstance<IFg5ValueWithTypeGetterProxy>(new Fg5ValueWithTypeGetterTarget(21));
+
+            aotProxy.Count.Value.Should().Be(dynamicProxy.Count.Value, $"scenario {scenarioId} should preserve ValueWithType getter value");
+            aotProxy.Count.Type.Should().Be(dynamicProxy.Count.Type, $"scenario {scenarioId} should preserve ValueWithType getter type metadata");
+        }
+
+        [Fact]
+        public void DifferentialParityFG6PropertyGetterDuckChainingShouldMatchBetweenDynamicAndAot()
+        {
+            const string scenarioId = "FG-6";
+            DuckTypeAotEngine.RegisterProxy(
+                typeof(IFg6ChainInnerProxy),
+                typeof(Fg6ChainInnerTarget),
+                typeof(Fg6ChainInnerAotProxy),
+                instance => new Fg6ChainInnerAotProxy((Fg6ChainInnerTarget)instance!));
+            DuckTypeAotEngine.RegisterProxy(
+                typeof(IFg6ChainOuterProxy),
+                typeof(Fg6ChainOuterTarget),
+                typeof(Fg6ChainOuterAotProxy),
+                instance => new Fg6ChainOuterAotProxy((Fg6ChainOuterTarget)instance!));
+
+            var dynamicResult = InvokeDynamicForward(typeof(IFg6ChainOuterProxy), typeof(Fg6ChainOuterTarget));
+            var aotResult = DuckTypeAotEngine.GetOrCreateProxyType(typeof(IFg6ChainOuterProxy), typeof(Fg6ChainOuterTarget));
+
+            dynamicResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in dynamic mode");
+            aotResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in AOT mode");
+
+            var dynamicProxy = dynamicResult.CreateInstance<IFg6ChainOuterProxy>(new Fg6ChainOuterTarget(new Fg6ChainInnerTarget("fg6")));
+            var aotProxy = aotResult.CreateInstance<IFg6ChainOuterProxy>(new Fg6ChainOuterTarget(new Fg6ChainInnerTarget("fg6")));
+
+            aotProxy.Inner.Name.Should().Be(dynamicProxy.Inner.Name, $"scenario {scenarioId} should preserve forward getter duck chaining");
+        }
+
+        [Fact]
+        public void DifferentialParityFG9PropertyGetterFallbackShouldMatchBetweenDynamicAndAot()
+        {
+            const string scenarioId = "FG-9";
+            DuckTypeAotEngine.RegisterProxy(
+                typeof(IFg9FallbackGetterProxy),
+                typeof(Fg9FallbackGetterTarget),
+                typeof(Fg9FallbackGetterAotProxy),
+                instance => new Fg9FallbackGetterAotProxy((Fg9FallbackGetterTarget)instance!));
+
+            var dynamicResult = InvokeDynamicForward(typeof(IFg9FallbackGetterProxy), typeof(Fg9FallbackGetterTarget));
+            var aotResult = DuckTypeAotEngine.GetOrCreateProxyType(typeof(IFg9FallbackGetterProxy), typeof(Fg9FallbackGetterTarget));
+
+            dynamicResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in dynamic mode");
+            aotResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in AOT mode");
+
+            var dynamicProxy = dynamicResult.CreateInstance<IFg9FallbackGetterProxy>(new Fg9FallbackGetterTarget(81));
+            var aotProxy = aotResult.CreateInstance<IFg9FallbackGetterProxy>(new Fg9FallbackGetterTarget(81));
+
+            aotProxy.Hidden.Should().Be(dynamicProxy.Hidden, $"scenario {scenarioId} should preserve fallback getter behavior");
+        }
+
+        [Fact]
+        public void DifferentialParityFS2PropertySetterNonPublicShouldMatchBetweenDynamicAndAot()
+        {
+            const string scenarioId = "FS-2";
+            DuckTypeAotEngine.RegisterProxy(
+                typeof(IFs2NonPublicSetterProxy),
+                typeof(Fs2NonPublicSetterTarget),
+                typeof(Fs2NonPublicSetterAotProxy),
+                instance => new Fs2NonPublicSetterAotProxy((Fs2NonPublicSetterTarget)instance!));
+
+            var dynamicResult = InvokeDynamicForward(typeof(IFs2NonPublicSetterProxy), typeof(Fs2NonPublicSetterTarget));
+            var aotResult = DuckTypeAotEngine.GetOrCreateProxyType(typeof(IFs2NonPublicSetterProxy), typeof(Fs2NonPublicSetterTarget));
+
+            dynamicResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in dynamic mode");
+            aotResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in AOT mode");
+
+            var dynamicTarget = new Fs2NonPublicSetterTarget();
+            var aotTarget = new Fs2NonPublicSetterTarget();
+            var dynamicProxy = dynamicResult.CreateInstance<IFs2NonPublicSetterProxy>(dynamicTarget);
+            var aotProxy = aotResult.CreateInstance<IFs2NonPublicSetterProxy>(aotTarget);
+
+            dynamicProxy.Hidden = 34;
+            aotProxy.Hidden = 34;
+
+            aotProxy.Read().Should().Be(dynamicProxy.Read(), $"scenario {scenarioId} should preserve non-public setter behavior");
+        }
+
+        [Fact]
+        public void DifferentialParityFS6PropertySetterFallbackShouldMatchBetweenDynamicAndAot()
+        {
+            const string scenarioId = "FS-6";
+            DuckTypeAotEngine.RegisterProxy(
+                typeof(IFs6FallbackSetterProxy),
+                typeof(Fs6FallbackSetterTarget),
+                typeof(Fs6FallbackSetterAotProxy),
+                instance => new Fs6FallbackSetterAotProxy((Fs6FallbackSetterTarget)instance!));
+
+            var dynamicResult = InvokeDynamicForward(typeof(IFs6FallbackSetterProxy), typeof(Fs6FallbackSetterTarget));
+            var aotResult = DuckTypeAotEngine.GetOrCreateProxyType(typeof(IFs6FallbackSetterProxy), typeof(Fs6FallbackSetterTarget));
+
+            dynamicResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in dynamic mode");
+            aotResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in AOT mode");
+
+            var dynamicTarget = new Fs6FallbackSetterTarget();
+            var aotTarget = new Fs6FallbackSetterTarget();
+            var dynamicProxy = dynamicResult.CreateInstance<IFs6FallbackSetterProxy>(dynamicTarget);
+            var aotProxy = aotResult.CreateInstance<IFs6FallbackSetterProxy>(aotTarget);
+
+            dynamicProxy.Hidden = 48;
+            aotProxy.Hidden = 48;
+
+            aotProxy.Read().Should().Be(dynamicProxy.Read(), $"scenario {scenarioId} should preserve fallback setter behavior");
+        }
+
+        [Fact]
+        public void DifferentialParityFF3FieldSetterInstanceShouldMatchBetweenDynamicAndAot()
+        {
+            const string scenarioId = "FF-3";
+            DuckTypeAotEngine.RegisterProxy(
+                typeof(IFf3InstanceFieldSetProxy),
+                typeof(Ff3InstanceFieldSetTarget),
+                typeof(Ff3InstanceFieldSetAotProxy),
+                instance => new Ff3InstanceFieldSetAotProxy((Ff3InstanceFieldSetTarget)instance!));
+
+            var dynamicResult = InvokeDynamicForward(typeof(IFf3InstanceFieldSetProxy), typeof(Ff3InstanceFieldSetTarget));
+            var aotResult = DuckTypeAotEngine.GetOrCreateProxyType(typeof(IFf3InstanceFieldSetProxy), typeof(Ff3InstanceFieldSetTarget));
+
+            dynamicResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in dynamic mode");
+            aotResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in AOT mode");
+
+            var dynamicTarget = new Ff3InstanceFieldSetTarget();
+            var aotTarget = new Ff3InstanceFieldSetTarget();
+            var dynamicProxy = dynamicResult.CreateInstance<IFf3InstanceFieldSetProxy>(dynamicTarget);
+            var aotProxy = aotResult.CreateInstance<IFf3InstanceFieldSetProxy>(aotTarget);
+
+            dynamicProxy.Value = 64;
+            aotProxy.Value = 64;
+
+            aotTarget.Read().Should().Be(dynamicTarget.Read(), $"scenario {scenarioId} should preserve instance field setter behavior");
+        }
+
+        [Fact]
+        public void DifferentialParityFF4FieldSetterStaticShouldMatchBetweenDynamicAndAot()
+        {
+            const string scenarioId = "FF-4";
+            DuckTypeAotEngine.RegisterProxy(
+                typeof(IFf4StaticFieldSetProxy),
+                typeof(Ff4StaticFieldSetTarget),
+                typeof(Ff4StaticFieldSetAotProxy),
+                instance => new Ff4StaticFieldSetAotProxy((Ff4StaticFieldSetTarget)instance!));
+
+            var dynamicResult = InvokeDynamicForward(typeof(IFf4StaticFieldSetProxy), typeof(Ff4StaticFieldSetTarget));
+            var aotResult = DuckTypeAotEngine.GetOrCreateProxyType(typeof(IFf4StaticFieldSetProxy), typeof(Ff4StaticFieldSetTarget));
+
+            dynamicResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in dynamic mode");
+            aotResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in AOT mode");
+
+            var dynamicProxy = dynamicResult.CreateInstance<IFf4StaticFieldSetProxy>(new Ff4StaticFieldSetTarget());
+            var aotProxy = aotResult.CreateInstance<IFf4StaticFieldSetProxy>(new Ff4StaticFieldSetTarget());
+
+            Ff4StaticFieldSetTarget.Reset();
+            dynamicProxy.Value = 33;
+            var dynamicRead = Ff4StaticFieldSetTarget.Read();
+
+            Ff4StaticFieldSetTarget.Reset();
+            aotProxy.Value = 33;
+            var aotRead = Ff4StaticFieldSetTarget.Read();
+
+            aotRead.Should().Be(dynamicRead, $"scenario {scenarioId} should preserve static field setter behavior");
+        }
+
+        [Fact]
+        public void DifferentialParityFF5FieldFallbackShouldMatchBetweenDynamicAndAot()
+        {
+            const string scenarioId = "FF-5";
+            DuckTypeAotEngine.RegisterProxy(
+                typeof(IFf5FallbackFieldProxy),
+                typeof(Ff5FallbackFieldTarget),
+                typeof(Ff5FallbackFieldAotProxy),
+                instance => new Ff5FallbackFieldAotProxy((Ff5FallbackFieldTarget)instance!));
+
+            var dynamicResult = InvokeDynamicForward(typeof(IFf5FallbackFieldProxy), typeof(Ff5FallbackFieldTarget));
+            var aotResult = DuckTypeAotEngine.GetOrCreateProxyType(typeof(IFf5FallbackFieldProxy), typeof(Ff5FallbackFieldTarget));
+
+            dynamicResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in dynamic mode");
+            aotResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in AOT mode");
+
+            var dynamicProxy = dynamicResult.CreateInstance<IFf5FallbackFieldProxy>(new Ff5FallbackFieldTarget(99));
+            var aotProxy = aotResult.CreateInstance<IFf5FallbackFieldProxy>(new Ff5FallbackFieldTarget(99));
+
+            aotProxy.Hidden.Should().Be(dynamicProxy.Hidden, $"scenario {scenarioId} should preserve fallback field getter behavior");
+        }
+
+        [Fact]
+        public void DifferentialParityRT2VoidMismatchShouldFailInBothModes()
+        {
+            const string scenarioId = "RT-2";
+            var dynamicResult = InvokeDynamicForward(typeof(IRt2VoidMismatchProxy), typeof(Rt2VoidMismatchTarget));
+            var aotResult = DuckTypeAotEngine.GetOrCreateProxyType(typeof(IRt2VoidMismatchProxy), typeof(Rt2VoidMismatchTarget));
+
+            AssertCannotCreate(scenarioId, dynamicResult, aotResult);
+        }
+
+        [Fact]
+        public void DifferentialParityFG7PropertyGetterReverseFlowShouldMatchBetweenDynamicAndAot()
+        {
+            const string scenarioId = "FG-7";
+            DuckTypeAotEngine.RegisterReverseProxy(
+                typeof(IFg7ReverseGetterProxy),
+                typeof(Fg7ReverseGetterDelegation),
+                typeof(Fg7ReverseGetterAotProxy),
+                instance => new Fg7ReverseGetterAotProxy((Fg7ReverseGetterDelegation)instance!));
+
+            var dynamicResult = InvokeDynamicReverse(typeof(IFg7ReverseGetterProxy), typeof(Fg7ReverseGetterDelegation));
+            var aotResult = DuckTypeAotEngine.GetOrCreateReverseProxyType(typeof(IFg7ReverseGetterProxy), typeof(Fg7ReverseGetterDelegation));
+
+            dynamicResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in dynamic mode");
+            aotResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in AOT mode");
+
+            var dynamicProxy = dynamicResult.CreateInstance<IFg7ReverseGetterProxy>(new Fg7ReverseGetterDelegation("fg7"));
+            var aotProxy = aotResult.CreateInstance<IFg7ReverseGetterProxy>(new Fg7ReverseGetterDelegation("fg7"));
+
+            aotProxy.Name.Should().Be(dynamicProxy.Name, $"scenario {scenarioId} should preserve reverse getter flow behavior");
+        }
+
+        [Fact]
+        public void DifferentialParityFG8PropertyIndexerConversionShouldMatchBetweenDynamicAndAot()
+        {
+            const string scenarioId = "FG-8";
+            DuckTypeAotEngine.RegisterProxy(
+                typeof(IFg8IndexerInnerProxy),
+                typeof(Fg8IndexerInnerTarget),
+                typeof(Fg8IndexerInnerAotProxy),
+                instance => new Fg8IndexerInnerAotProxy((Fg8IndexerInnerTarget)instance!));
+            DuckTypeAotEngine.RegisterProxy(
+                typeof(IFg8IndexerProxy),
+                typeof(Fg8IndexerTarget),
+                typeof(Fg8IndexerAotProxy),
+                instance => new Fg8IndexerAotProxy((Fg8IndexerTarget)instance!));
+
+            var dynamicResult = InvokeDynamicForward(typeof(IFg8IndexerProxy), typeof(Fg8IndexerTarget));
+            var aotResult = DuckTypeAotEngine.GetOrCreateProxyType(typeof(IFg8IndexerProxy), typeof(Fg8IndexerTarget));
+
+            dynamicResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in dynamic mode");
+            aotResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in AOT mode");
+
+            var dynamicProxy = dynamicResult.CreateInstance<IFg8IndexerProxy>(new Fg8IndexerTarget());
+            var aotProxy = aotResult.CreateInstance<IFg8IndexerProxy>(new Fg8IndexerTarget());
+
+            aotProxy[7].Number.Should().Be(dynamicProxy[7].Number, $"scenario {scenarioId} should preserve indexer argument conversion and duck extraction");
+        }
+
+        [Fact]
+        public void DifferentialParityFS3SetterDuckExtractionShouldMatchBetweenDynamicAndAot()
+        {
+            const string scenarioId = "FS-3";
+            DuckTypeAotEngine.RegisterProxy(
+                typeof(IFs3SetterInnerProxy),
+                typeof(Fs3SetterInnerTarget),
+                typeof(Fs3SetterInnerAotProxy),
+                instance => new Fs3SetterInnerAotProxy((Fs3SetterInnerTarget)instance!));
+            DuckTypeAotEngine.RegisterProxy(
+                typeof(IFs3SetterDuckExtractProxy),
+                typeof(Fs3SetterDuckExtractTarget),
+                typeof(Fs3SetterDuckExtractAotProxy),
+                instance => new Fs3SetterDuckExtractAotProxy((Fs3SetterDuckExtractTarget)instance!));
+
+            var dynamicResult = InvokeDynamicForward(typeof(IFs3SetterDuckExtractProxy), typeof(Fs3SetterDuckExtractTarget));
+            var aotResult = DuckTypeAotEngine.GetOrCreateProxyType(typeof(IFs3SetterDuckExtractProxy), typeof(Fs3SetterDuckExtractTarget));
+            var dynamicInnerResult = InvokeDynamicForward(typeof(IFs3SetterInnerProxy), typeof(Fs3SetterInnerTarget));
+            var aotInnerResult = DuckTypeAotEngine.GetOrCreateProxyType(typeof(IFs3SetterInnerProxy), typeof(Fs3SetterInnerTarget));
+
+            dynamicResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in dynamic mode");
+            aotResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in AOT mode");
+            dynamicInnerResult.CanCreate().Should().BeTrue($"scenario {scenarioId} inner proxy must be creatable in dynamic mode");
+            aotInnerResult.CanCreate().Should().BeTrue($"scenario {scenarioId} inner proxy must be creatable in AOT mode");
+
+            var dynamicTarget = new Fs3SetterDuckExtractTarget();
+            var aotTarget = new Fs3SetterDuckExtractTarget();
+            var dynamicProxy = dynamicResult.CreateInstance<IFs3SetterDuckExtractProxy>(dynamicTarget);
+            var aotProxy = aotResult.CreateInstance<IFs3SetterDuckExtractProxy>(aotTarget);
+            var dynamicInnerProxy = dynamicInnerResult.CreateInstance<IFs3SetterInnerProxy>(new Fs3SetterInnerTarget(15));
+            var aotInnerProxy = aotInnerResult.CreateInstance<IFs3SetterInnerProxy>(new Fs3SetterInnerTarget(15));
+
+            dynamicProxy.Inner = dynamicInnerProxy;
+            aotProxy.Inner = aotInnerProxy;
+
+            aotProxy.Read().Should().Be(dynamicProxy.Read(), $"scenario {scenarioId} should preserve setter duck extraction behavior");
+        }
+
+        [Fact]
+        public void DifferentialParityFS4SetterDuckCreationShouldMatchBetweenDynamicAndAot()
+        {
+            const string scenarioId = "FS-4";
+            DuckTypeAotEngine.RegisterProxy(
+                typeof(IFs4SetterDuckCreateProxy),
+                typeof(Fs4SetterDuckCreateTarget),
+                typeof(Fs4SetterDuckCreateAotProxy),
+                instance => new Fs4SetterDuckCreateAotProxy((Fs4SetterDuckCreateTarget)instance!));
+
+            var dynamicResult = InvokeDynamicForward(typeof(IFs4SetterDuckCreateProxy), typeof(Fs4SetterDuckCreateTarget));
+            var aotResult = DuckTypeAotEngine.GetOrCreateProxyType(typeof(IFs4SetterDuckCreateProxy), typeof(Fs4SetterDuckCreateTarget));
+
+            dynamicResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in dynamic mode");
+            aotResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in AOT mode");
+
+            var dynamicTarget = new Fs4SetterDuckCreateTarget();
+            var aotTarget = new Fs4SetterDuckCreateTarget();
+            var dynamicProxy = dynamicResult.CreateInstance<IFs4SetterDuckCreateProxy>(dynamicTarget);
+            var aotProxy = aotResult.CreateInstance<IFs4SetterDuckCreateProxy>(aotTarget);
+
+            Action dynamicSet = () => dynamicProxy.Inner = new Fs4SetterConcrete(28);
+            Action aotSet = () => aotProxy.Inner = new Fs4SetterConcrete(28);
+
+            dynamicSet.Should().Throw<InvalidCastException>($"scenario {scenarioId} dynamic mode should reject unsupported setter duck creation input");
+            aotSet.Should().Throw<InvalidCastException>($"scenario {scenarioId} AOT mode should reject unsupported setter duck creation input");
+        }
+
+        [Fact]
+        public void DifferentialParityFM2MethodValueTypeReceiverShouldMatchBetweenDynamicAndAot()
+        {
+            const string scenarioId = "FM-2";
+            DuckTypeAotEngine.RegisterProxy(
+                typeof(IFm2ValueReceiverProxy),
+                typeof(Fm2ValueReceiverTarget),
+                typeof(Fm2ValueReceiverAotProxy),
+                instance => new Fm2ValueReceiverAotProxy((Fm2ValueReceiverTarget)instance!));
+
+            var dynamicResult = InvokeDynamicForward(typeof(IFm2ValueReceiverProxy), typeof(Fm2ValueReceiverTarget));
+            var aotResult = DuckTypeAotEngine.GetOrCreateProxyType(typeof(IFm2ValueReceiverProxy), typeof(Fm2ValueReceiverTarget));
+
+            dynamicResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in dynamic mode");
+            aotResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in AOT mode");
+
+            var target = new Fm2ValueReceiverTarget { Offset = 4 };
+            var dynamicProxy = dynamicResult.CreateInstance<IFm2ValueReceiverProxy>(target);
+            var aotProxy = aotResult.CreateInstance<IFm2ValueReceiverProxy>(target);
+
+            aotProxy.Increment(6).Should().Be(dynamicProxy.Increment(6), $"scenario {scenarioId} should preserve value-type receiver method behavior");
+        }
+
+        [Fact]
+        public void DifferentialParityFM3MethodStaticShouldMatchBetweenDynamicAndAot()
+        {
+            const string scenarioId = "FM-3";
+            DuckTypeAotEngine.RegisterProxy(
+                typeof(IFm3StaticMethodProxy),
+                typeof(Fm3StaticMethodTarget),
+                typeof(Fm3StaticMethodAotProxy),
+                instance => new Fm3StaticMethodAotProxy((Fm3StaticMethodTarget)instance!));
+
+            var dynamicResult = InvokeDynamicForward(typeof(IFm3StaticMethodProxy), typeof(Fm3StaticMethodTarget));
+            var aotResult = DuckTypeAotEngine.GetOrCreateProxyType(typeof(IFm3StaticMethodProxy), typeof(Fm3StaticMethodTarget));
+
+            dynamicResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in dynamic mode");
+            aotResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in AOT mode");
+
+            var dynamicProxy = dynamicResult.CreateInstance<IFm3StaticMethodProxy>(new Fm3StaticMethodTarget());
+            var aotProxy = aotResult.CreateInstance<IFm3StaticMethodProxy>(new Fm3StaticMethodTarget());
+
+            aotProxy.Multiply(7, 8).Should().Be(dynamicProxy.Multiply(7, 8), $"scenario {scenarioId} should preserve static method behavior");
+        }
+
+        [Fact]
+        public void DifferentialParityFM4MethodNonPublicShouldMatchBetweenDynamicAndAot()
+        {
+            const string scenarioId = "FM-4";
+            DuckTypeAotEngine.RegisterProxy(
+                typeof(IFm4NonPublicMethodProxy),
+                typeof(Fm4NonPublicMethodTarget),
+                typeof(Fm4NonPublicMethodAotProxy),
+                instance => new Fm4NonPublicMethodAotProxy((Fm4NonPublicMethodTarget)instance!));
+
+            var dynamicResult = InvokeDynamicForward(typeof(IFm4NonPublicMethodProxy), typeof(Fm4NonPublicMethodTarget));
+            var aotResult = DuckTypeAotEngine.GetOrCreateProxyType(typeof(IFm4NonPublicMethodProxy), typeof(Fm4NonPublicMethodTarget));
+
+            dynamicResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in dynamic mode");
+            aotResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in AOT mode");
+
+            var dynamicProxy = dynamicResult.CreateInstance<IFm4NonPublicMethodProxy>(new Fm4NonPublicMethodTarget());
+            var aotProxy = aotResult.CreateInstance<IFm4NonPublicMethodProxy>(new Fm4NonPublicMethodTarget());
+
+            aotProxy.Add(9, 11).Should().Be(dynamicProxy.Add(9, 11), $"scenario {scenarioId} should preserve non-public method behavior");
+        }
+
+        [Fact]
+        public void DifferentialParityFM5MethodGenericShouldMatchBetweenDynamicAndAot()
+        {
+            const string scenarioId = "FM-5";
+            DuckTypeAotEngine.RegisterProxy(
+                typeof(IFm5GenericMethodProxy),
+                typeof(Fm5GenericMethodTarget),
+                typeof(Fm5GenericMethodAotProxy),
+                instance => new Fm5GenericMethodAotProxy((Fm5GenericMethodTarget)instance!));
+
+            var dynamicResult = InvokeDynamicForward(typeof(IFm5GenericMethodProxy), typeof(Fm5GenericMethodTarget));
+            var aotResult = DuckTypeAotEngine.GetOrCreateProxyType(typeof(IFm5GenericMethodProxy), typeof(Fm5GenericMethodTarget));
+
+            dynamicResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in dynamic mode");
+            aotResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in AOT mode");
+
+            var dynamicProxy = dynamicResult.CreateInstance<IFm5GenericMethodProxy>(new Fm5GenericMethodTarget());
+            var aotProxy = aotResult.CreateInstance<IFm5GenericMethodProxy>(new Fm5GenericMethodTarget());
+
+            aotProxy.Echo("fm5").Should().Be(dynamicProxy.Echo("fm5"), $"scenario {scenarioId} should preserve generic method behavior for reference types");
+            aotProxy.Echo(55).Should().Be(dynamicProxy.Echo(55), $"scenario {scenarioId} should preserve generic method behavior for value types");
+        }
+
+        [Fact]
+        public void DifferentialParityFM6MethodFallbackShouldMatchBetweenDynamicAndAot()
+        {
+            const string scenarioId = "FM-6";
+            DuckTypeAotEngine.RegisterProxy(
+                typeof(IFm6FallbackMethodProxy),
+                typeof(Fm6FallbackMethodTarget),
+                typeof(Fm6FallbackMethodAotProxy),
+                instance => new Fm6FallbackMethodAotProxy((Fm6FallbackMethodTarget)instance!));
+
+            var dynamicResult = InvokeDynamicForward(typeof(IFm6FallbackMethodProxy), typeof(Fm6FallbackMethodTarget));
+            var aotResult = DuckTypeAotEngine.GetOrCreateProxyType(typeof(IFm6FallbackMethodProxy), typeof(Fm6FallbackMethodTarget));
+
+            dynamicResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in dynamic mode");
+            aotResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in AOT mode");
+
+            var dynamicProxy = dynamicResult.CreateInstance<IFm6FallbackMethodProxy>(new Fm6FallbackMethodTarget());
+            var aotProxy = aotResult.CreateInstance<IFm6FallbackMethodProxy>(new Fm6FallbackMethodTarget());
+
+            aotProxy.Compute(6).Should().Be(dynamicProxy.Compute(6), $"scenario {scenarioId} should preserve fallback method behavior");
+        }
+
+        [Fact]
+        public void DifferentialParityFM7MethodRefOutMismatchShouldMatchBetweenDynamicAndAot()
+        {
+            const string scenarioId = "FM-7";
+            DuckTypeAotEngine.RegisterProxy(
+                typeof(IFm7RefOutMismatchProxy),
+                typeof(Fm7RefOutMismatchTarget),
+                typeof(Fm7RefOutMismatchAotProxy),
+                instance => new Fm7RefOutMismatchAotProxy((Fm7RefOutMismatchTarget)instance!));
+
+            var dynamicResult = InvokeDynamicForward(typeof(IFm7RefOutMismatchProxy), typeof(Fm7RefOutMismatchTarget));
+            var aotResult = DuckTypeAotEngine.GetOrCreateProxyType(typeof(IFm7RefOutMismatchProxy), typeof(Fm7RefOutMismatchTarget));
+
+            dynamicResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in dynamic mode");
+            aotResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in AOT mode");
+
+            var dynamicProxy = dynamicResult.CreateInstance<IFm7RefOutMismatchProxy>(new Fm7RefOutMismatchTarget());
+            var aotProxy = aotResult.CreateInstance<IFm7RefOutMismatchProxy>(new Fm7RefOutMismatchTarget());
+
+            object dynamicValue = -7;
+            object aotValue = -7;
+            dynamicProxy.Normalize(ref dynamicValue, out var dynamicDoubled);
+            aotProxy.Normalize(ref aotValue, out var aotDoubled);
+
+            aotValue.Should().Be(dynamicValue, $"scenario {scenarioId} should preserve ref conversion behavior");
+            aotDoubled.Should().Be(dynamicDoubled, $"scenario {scenarioId} should preserve out conversion behavior");
+        }
+
+        [Fact]
+        public void DifferentialParityRT4ReturnDuckChainShouldMatchBetweenDynamicAndAot()
+        {
+            const string scenarioId = "RT-4";
+            DuckTypeAotEngine.RegisterProxy(
+                typeof(IRt4DuckChainInnerProxy),
+                typeof(Rt4DuckChainInnerTarget),
+                typeof(Rt4DuckChainInnerAotProxy),
+                instance => new Rt4DuckChainInnerAotProxy((Rt4DuckChainInnerTarget)instance!));
+            DuckTypeAotEngine.RegisterProxy(
+                typeof(IRt4DuckChainReturnProxy),
+                typeof(Rt4DuckChainReturnTarget),
+                typeof(Rt4DuckChainReturnAotProxy),
+                instance => new Rt4DuckChainReturnAotProxy((Rt4DuckChainReturnTarget)instance!));
+
+            var dynamicResult = InvokeDynamicForward(typeof(IRt4DuckChainReturnProxy), typeof(Rt4DuckChainReturnTarget));
+            var aotResult = DuckTypeAotEngine.GetOrCreateProxyType(typeof(IRt4DuckChainReturnProxy), typeof(Rt4DuckChainReturnTarget));
+
+            dynamicResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in dynamic mode");
+            aotResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in AOT mode");
+
+            var dynamicProxy = dynamicResult.CreateInstance<IRt4DuckChainReturnProxy>(new Rt4DuckChainReturnTarget(new Rt4DuckChainInnerTarget(42)));
+            var aotProxy = aotResult.CreateInstance<IRt4DuckChainReturnProxy>(new Rt4DuckChainReturnTarget(new Rt4DuckChainInnerTarget(42)));
+
+            aotProxy.GetInner().Number.Should().Be(dynamicProxy.GetInner().Number, $"scenario {scenarioId} should preserve duck-chain return behavior");
+        }
+
+        [Fact]
+        public void DifferentialParityRT5ReturnValueWithTypeShouldMatchBetweenDynamicAndAot()
+        {
+            const string scenarioId = "RT-5";
+            DuckTypeAotEngine.RegisterProxy(
+                typeof(IRt5ValueWithTypeReturnProxy),
+                typeof(Rt5ValueWithTypeReturnTarget),
+                typeof(Rt5ValueWithTypeReturnAotProxy),
+                instance => new Rt5ValueWithTypeReturnAotProxy((Rt5ValueWithTypeReturnTarget)instance!));
+
+            var dynamicResult = InvokeDynamicForward(typeof(IRt5ValueWithTypeReturnProxy), typeof(Rt5ValueWithTypeReturnTarget));
+            var aotResult = DuckTypeAotEngine.GetOrCreateProxyType(typeof(IRt5ValueWithTypeReturnProxy), typeof(Rt5ValueWithTypeReturnTarget));
+
+            dynamicResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in dynamic mode");
+            aotResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in AOT mode");
+
+            var dynamicProxy = dynamicResult.CreateInstance<IRt5ValueWithTypeReturnProxy>(new Rt5ValueWithTypeReturnTarget());
+            var aotProxy = aotResult.CreateInstance<IRt5ValueWithTypeReturnProxy>(new Rt5ValueWithTypeReturnTarget());
+
+            aotProxy.GetCount().Value.Should().Be(dynamicProxy.GetCount().Value, $"scenario {scenarioId} should preserve ValueWithType return value");
+            aotProxy.GetCount().Type.Should().Be(dynamicProxy.GetCount().Type, $"scenario {scenarioId} should preserve ValueWithType return metadata");
+        }
+
         private static DuckType.CreateTypeResult InvokeDynamicForward(Type proxyDefinitionType, Type targetType)
         {
             if (DynamicForwardFactory is null)
@@ -2601,6 +3166,951 @@ namespace Datadog.Trace.DuckTyping.Tests
             public object GetCount()
             {
                 return _target.GetCount();
+            }
+        }
+
+        private interface IFg3NonPublicGetterProxy
+        {
+            [Duck(Name = "Secret")]
+            int Secret { get; }
+        }
+
+        private class Fg3NonPublicGetterTarget
+        {
+            private readonly int _secret;
+
+            public Fg3NonPublicGetterTarget(int secret)
+            {
+                _secret = secret;
+            }
+
+            private int Secret => _secret;
+        }
+
+        private class Fg3NonPublicGetterAotProxy : IFg3NonPublicGetterProxy
+        {
+            private static readonly PropertyInfo SecretProperty = GetSecretProperty();
+            private readonly Fg3NonPublicGetterTarget _target;
+
+            public Fg3NonPublicGetterAotProxy(Fg3NonPublicGetterTarget target)
+            {
+                _target = target;
+            }
+
+            public int Secret
+            {
+                get
+                {
+                    if (SecretProperty.GetValue(_target) is int value)
+                    {
+                        return value;
+                    }
+
+                    return default;
+                }
+            }
+
+            private static PropertyInfo GetSecretProperty()
+            {
+                return typeof(Fg3NonPublicGetterTarget).GetProperty("Secret", BindingFlags.Instance | BindingFlags.NonPublic)
+                    ?? throw new InvalidOperationException("Unable to resolve non-public property Secret.");
+            }
+        }
+
+        private interface IFg4StaticGetterProxy
+        {
+            [Duck(Name = "Global")]
+            int Global { get; }
+        }
+
+        private class Fg4StaticGetterTarget
+        {
+            public static int Global { get; set; }
+        }
+
+        private class Fg4StaticGetterAotProxy : IFg4StaticGetterProxy
+        {
+            public Fg4StaticGetterAotProxy(Fg4StaticGetterTarget target)
+            {
+                _ = target;
+            }
+
+            public int Global => Fg4StaticGetterTarget.Global;
+        }
+
+        private interface IFg5ValueWithTypeGetterProxy
+        {
+            [Duck(Name = "Count")]
+            ValueWithType<int> Count { get; }
+        }
+
+        private class Fg5ValueWithTypeGetterTarget
+        {
+            public Fg5ValueWithTypeGetterTarget(int count)
+            {
+                Count = count;
+            }
+
+            public int Count { get; }
+        }
+
+        private class Fg5ValueWithTypeGetterAotProxy : IFg5ValueWithTypeGetterProxy
+        {
+            private readonly Fg5ValueWithTypeGetterTarget _target;
+
+            public Fg5ValueWithTypeGetterAotProxy(Fg5ValueWithTypeGetterTarget target)
+            {
+                _target = target;
+            }
+
+            public ValueWithType<int> Count => ValueWithType<int>.Create(_target.Count, typeof(int));
+        }
+
+        private interface IFg6ChainInnerProxy
+        {
+            string Name { get; }
+        }
+
+        private class Fg6ChainInnerTarget
+        {
+            public Fg6ChainInnerTarget(string name)
+            {
+                Name = name;
+            }
+
+            public string Name { get; }
+        }
+
+        private class Fg6ChainInnerAotProxy : IFg6ChainInnerProxy
+        {
+            private readonly Fg6ChainInnerTarget _target;
+
+            public Fg6ChainInnerAotProxy(Fg6ChainInnerTarget target)
+            {
+                _target = target;
+            }
+
+            public string Name => _target.Name;
+        }
+
+        private interface IFg6ChainOuterProxy
+        {
+            [Duck(Name = "Inner")]
+            IFg6ChainInnerProxy Inner { get; }
+        }
+
+        private class Fg6ChainOuterTarget
+        {
+            public Fg6ChainOuterTarget(Fg6ChainInnerTarget inner)
+            {
+                Inner = inner;
+            }
+
+            public Fg6ChainInnerTarget Inner { get; }
+        }
+
+        private class Fg6ChainOuterAotProxy : IFg6ChainOuterProxy
+        {
+            private readonly Fg6ChainOuterTarget _target;
+
+            public Fg6ChainOuterAotProxy(Fg6ChainOuterTarget target)
+            {
+                _target = target;
+            }
+
+            public IFg6ChainInnerProxy Inner => new Fg6ChainInnerAotProxy(_target.Inner);
+        }
+
+        private interface IFg9FallbackGetterProxy
+        {
+            [Duck(Name = "Hidden")]
+            int Hidden { get; }
+        }
+
+        private class Fg9FallbackGetterTarget
+        {
+            private readonly int _hidden;
+
+            public Fg9FallbackGetterTarget(int hidden)
+            {
+                _hidden = hidden;
+            }
+
+            private int Hidden => _hidden;
+        }
+
+        private class Fg9FallbackGetterAotProxy : IFg9FallbackGetterProxy
+        {
+            private static readonly PropertyInfo HiddenProperty = GetHiddenProperty();
+            private readonly Fg9FallbackGetterTarget _target;
+
+            public Fg9FallbackGetterAotProxy(Fg9FallbackGetterTarget target)
+            {
+                _target = target;
+            }
+
+            public int Hidden
+            {
+                get
+                {
+                    if (HiddenProperty.GetValue(_target) is int value)
+                    {
+                        return value;
+                    }
+
+                    return default;
+                }
+            }
+
+            private static PropertyInfo GetHiddenProperty()
+            {
+                return typeof(Fg9FallbackGetterTarget).GetProperty("Hidden", BindingFlags.Instance | BindingFlags.NonPublic)
+                    ?? throw new InvalidOperationException("Unable to resolve fallback property Hidden.");
+            }
+        }
+
+        private interface IFs2NonPublicSetterProxy
+        {
+            [Duck(Name = "Hidden")]
+            int Hidden { set; }
+
+            [Duck(Name = "Read")]
+            int Read();
+        }
+
+        private class Fs2NonPublicSetterTarget
+        {
+            private int Hidden { get; set; }
+
+            public int Read()
+            {
+                return Hidden;
+            }
+        }
+
+        private class Fs2NonPublicSetterAotProxy : IFs2NonPublicSetterProxy
+        {
+            private static readonly PropertyInfo HiddenProperty = GetHiddenProperty();
+            private readonly Fs2NonPublicSetterTarget _target;
+
+            public Fs2NonPublicSetterAotProxy(Fs2NonPublicSetterTarget target)
+            {
+                _target = target;
+            }
+
+            public int Hidden
+            {
+                set => HiddenProperty.SetValue(_target, value);
+            }
+
+            public int Read()
+            {
+                return _target.Read();
+            }
+
+            private static PropertyInfo GetHiddenProperty()
+            {
+                return typeof(Fs2NonPublicSetterTarget).GetProperty("Hidden", BindingFlags.Instance | BindingFlags.NonPublic)
+                    ?? throw new InvalidOperationException("Unable to resolve non-public setter property Hidden.");
+            }
+        }
+
+        private interface IFs6FallbackSetterProxy
+        {
+            [Duck(Name = "Hidden")]
+            int Hidden { set; }
+
+            [Duck(Name = "Read")]
+            int Read();
+        }
+
+        private class Fs6FallbackSetterTarget
+        {
+            private int Hidden { get; set; }
+
+            public int Read()
+            {
+                return Hidden;
+            }
+        }
+
+        private class Fs6FallbackSetterAotProxy : IFs6FallbackSetterProxy
+        {
+            private static readonly PropertyInfo HiddenProperty = GetHiddenProperty();
+            private readonly Fs6FallbackSetterTarget _target;
+
+            public Fs6FallbackSetterAotProxy(Fs6FallbackSetterTarget target)
+            {
+                _target = target;
+            }
+
+            public int Hidden
+            {
+                set => HiddenProperty.SetValue(_target, value);
+            }
+
+            public int Read()
+            {
+                return _target.Read();
+            }
+
+            private static PropertyInfo GetHiddenProperty()
+            {
+                return typeof(Fs6FallbackSetterTarget).GetProperty("Hidden", BindingFlags.Instance | BindingFlags.NonPublic)
+                    ?? throw new InvalidOperationException("Unable to resolve fallback setter property Hidden.");
+            }
+        }
+
+        private interface IFf3InstanceFieldSetProxy
+        {
+            [DuckField(Name = "_value")]
+            int Value { set; }
+        }
+
+        private class Ff3InstanceFieldSetTarget
+        {
+            private int _value = 0;
+
+            public int Read()
+            {
+                return _value;
+            }
+        }
+
+        private class Ff3InstanceFieldSetAotProxy : IFf3InstanceFieldSetProxy
+        {
+            private static readonly FieldInfo ValueField = GetValueField();
+            private readonly Ff3InstanceFieldSetTarget _target;
+
+            public Ff3InstanceFieldSetAotProxy(Ff3InstanceFieldSetTarget target)
+            {
+                _target = target;
+            }
+
+            public int Value
+            {
+                set => ValueField.SetValue(_target, value);
+            }
+
+            private static FieldInfo GetValueField()
+            {
+                return typeof(Ff3InstanceFieldSetTarget).GetField("_value", BindingFlags.Instance | BindingFlags.NonPublic)
+                    ?? throw new InvalidOperationException("Unable to resolve field _value.");
+            }
+        }
+
+        private interface IFf4StaticFieldSetProxy
+        {
+            [DuckField(Name = "_global")]
+            int Value { set; }
+        }
+
+        private class Ff4StaticFieldSetTarget
+        {
+            private static int _global;
+
+            public static int Read()
+            {
+                return _global;
+            }
+
+            public static void Reset()
+            {
+                _global = 0;
+            }
+        }
+
+        private class Ff4StaticFieldSetAotProxy : IFf4StaticFieldSetProxy
+        {
+            private static readonly FieldInfo GlobalField = GetGlobalField();
+
+            public Ff4StaticFieldSetAotProxy(Ff4StaticFieldSetTarget target)
+            {
+                _ = target;
+            }
+
+            public int Value
+            {
+                set => GlobalField.SetValue(null, value);
+            }
+
+            private static FieldInfo GetGlobalField()
+            {
+                return typeof(Ff4StaticFieldSetTarget).GetField("_global", BindingFlags.Static | BindingFlags.NonPublic)
+                    ?? throw new InvalidOperationException("Unable to resolve static field _global.");
+            }
+        }
+
+        private interface IFf5FallbackFieldProxy
+        {
+            [DuckField(Name = "_hidden")]
+            int Hidden { get; }
+        }
+
+        private class Ff5FallbackFieldTarget
+        {
+            private readonly int _hidden;
+
+            public Ff5FallbackFieldTarget(int hidden)
+            {
+                _hidden = hidden;
+            }
+        }
+
+        private class Ff5FallbackFieldAotProxy : IFf5FallbackFieldProxy
+        {
+            private static readonly FieldInfo HiddenField = GetHiddenField();
+            private readonly Ff5FallbackFieldTarget _target;
+
+            public Ff5FallbackFieldAotProxy(Ff5FallbackFieldTarget target)
+            {
+                _target = target;
+            }
+
+            public int Hidden
+            {
+                get
+                {
+                    if (HiddenField.GetValue(_target) is int value)
+                    {
+                        return value;
+                    }
+
+                    return default;
+                }
+            }
+
+            private static FieldInfo GetHiddenField()
+            {
+                return typeof(Ff5FallbackFieldTarget).GetField("_hidden", BindingFlags.Instance | BindingFlags.NonPublic)
+                    ?? throw new InvalidOperationException("Unable to resolve fallback field _hidden.");
+            }
+        }
+
+        private interface IRt2VoidMismatchProxy
+        {
+            void Ping();
+        }
+
+        private class Rt2VoidMismatchTarget
+        {
+            public int Ping()
+            {
+                return 1;
+            }
+        }
+
+        private interface IFg7ReverseGetterProxy
+        {
+            string Name { get; }
+        }
+
+        private class Fg7ReverseGetterDelegation
+        {
+            private readonly string _name;
+
+            public Fg7ReverseGetterDelegation(string name)
+            {
+                _name = name;
+            }
+
+            [DuckReverseMethod]
+            public string Name => _name;
+        }
+
+        private class Fg7ReverseGetterAotProxy : IFg7ReverseGetterProxy
+        {
+            private readonly Fg7ReverseGetterDelegation _delegation;
+
+            public Fg7ReverseGetterAotProxy(Fg7ReverseGetterDelegation delegation)
+            {
+                _delegation = delegation;
+            }
+
+            public string Name => _delegation.Name;
+        }
+
+        private interface IFg8IndexerInnerProxy
+        {
+            int Number { get; }
+        }
+
+        private class Fg8IndexerInnerTarget
+        {
+            public Fg8IndexerInnerTarget(int number)
+            {
+                Number = number;
+            }
+
+            public int Number { get; }
+        }
+
+        private class Fg8IndexerInnerAotProxy : IFg8IndexerInnerProxy
+        {
+            private readonly Fg8IndexerInnerTarget _target;
+
+            public Fg8IndexerInnerAotProxy(Fg8IndexerInnerTarget target)
+            {
+                _target = target;
+            }
+
+            public int Number => _target.Number;
+        }
+
+        private interface IFg8IndexerProxy
+        {
+            IFg8IndexerInnerProxy this[int index] { get; }
+        }
+
+        private class Fg8IndexerTarget
+        {
+            public Fg8IndexerInnerTarget this[int index] => new Fg8IndexerInnerTarget(index + 100);
+        }
+
+        private class Fg8IndexerAotProxy : IFg8IndexerProxy
+        {
+            private readonly Fg8IndexerTarget _target;
+
+            public Fg8IndexerAotProxy(Fg8IndexerTarget target)
+            {
+                _target = target;
+            }
+
+            public IFg8IndexerInnerProxy this[int index]
+            {
+                get => new Fg8IndexerInnerAotProxy(_target[index]);
+            }
+        }
+
+        private interface IFs3SetterInnerProxy
+        {
+            int Number { get; }
+        }
+
+        private class Fs3SetterInnerTarget
+        {
+            public Fs3SetterInnerTarget(int number)
+            {
+                Number = number;
+            }
+
+            public int Number { get; }
+        }
+
+        private class Fs3SetterInnerAotProxy : IFs3SetterInnerProxy
+        {
+            private readonly Fs3SetterInnerTarget _target;
+
+            public Fs3SetterInnerAotProxy(Fs3SetterInnerTarget target)
+            {
+                _target = target;
+            }
+
+            public int Number => _target.Number;
+
+            internal Fs3SetterInnerTarget Target => _target;
+        }
+
+        private interface IFs3SetterDuckExtractProxy
+        {
+            [Duck(Name = "Inner")]
+            IFs3SetterInnerProxy Inner { set; }
+
+            [Duck(Name = "Read")]
+            int Read();
+        }
+
+        private class Fs3SetterDuckExtractTarget
+        {
+            public Fs3SetterInnerTarget Inner { private get; set; } = new Fs3SetterInnerTarget(0);
+
+            public int Read()
+            {
+                return Inner.Number;
+            }
+        }
+
+        private class Fs3SetterDuckExtractAotProxy : IFs3SetterDuckExtractProxy
+        {
+            private readonly Fs3SetterDuckExtractTarget _target;
+
+            public Fs3SetterDuckExtractAotProxy(Fs3SetterDuckExtractTarget target)
+            {
+                _target = target;
+            }
+
+            public IFs3SetterInnerProxy Inner
+            {
+                set
+                {
+                    if (value is Fs3SetterInnerAotProxy aotProxy)
+                    {
+                        _target.Inner = aotProxy.Target;
+                        return;
+                    }
+
+                    _target.Inner = new Fs3SetterInnerTarget(value.Number);
+                }
+            }
+
+            public int Read()
+            {
+                return _target.Read();
+            }
+        }
+
+        private interface IFs4SetterDuckCreateProxy
+        {
+            [Duck(Name = "Inner")]
+            object Inner { set; }
+
+            [Duck(Name = "Read")]
+            int Read();
+        }
+
+        private interface IFs4SetterContract
+        {
+            int Number { get; }
+        }
+
+        private class Fs4SetterConcrete
+        {
+            public Fs4SetterConcrete(int number)
+            {
+                Number = number;
+            }
+
+            public int Number { get; }
+        }
+
+        private sealed class Fs4SetterConcreteAdapter : IFs4SetterContract
+        {
+            private readonly Fs4SetterConcrete _instance;
+
+            public Fs4SetterConcreteAdapter(Fs4SetterConcrete instance)
+            {
+                _instance = instance;
+            }
+
+            public int Number => _instance.Number;
+        }
+
+        private class Fs4SetterDuckCreateTarget
+        {
+            public IFs4SetterContract Inner { private get; set; } = new Fs4SetterConcreteAdapter(new Fs4SetterConcrete(0));
+
+            public int Read()
+            {
+                return Inner.Number;
+            }
+        }
+
+        private class Fs4SetterDuckCreateAotProxy : IFs4SetterDuckCreateProxy
+        {
+            private readonly Fs4SetterDuckCreateTarget _target;
+
+            public Fs4SetterDuckCreateAotProxy(Fs4SetterDuckCreateTarget target)
+            {
+                _target = target;
+            }
+
+            public object Inner
+            {
+                set
+                {
+                    if (value is IFs4SetterContract contract)
+                    {
+                        _target.Inner = contract;
+                        return;
+                    }
+
+                    throw new InvalidCastException("Unable to cast setter input to IFs4SetterContract.");
+                }
+            }
+
+            public int Read()
+            {
+                return _target.Read();
+            }
+        }
+
+        private interface IFm2ValueReceiverProxy
+        {
+            int Increment(int value);
+        }
+
+        private struct Fm2ValueReceiverTarget
+        {
+            public int Offset;
+
+            public int Increment(int value)
+            {
+                return value + Offset;
+            }
+        }
+
+        private class Fm2ValueReceiverAotProxy : IFm2ValueReceiverProxy
+        {
+            private readonly Fm2ValueReceiverTarget _target;
+
+            public Fm2ValueReceiverAotProxy(Fm2ValueReceiverTarget target)
+            {
+                _target = target;
+            }
+
+            public int Increment(int value)
+            {
+                return _target.Increment(value);
+            }
+        }
+
+        private interface IFm3StaticMethodProxy
+        {
+            [Duck(Name = "Multiply")]
+            int Multiply(int left, int right);
+        }
+
+        private class Fm3StaticMethodTarget
+        {
+            public static int Multiply(int left, int right)
+            {
+                return left * right;
+            }
+        }
+
+        private class Fm3StaticMethodAotProxy : IFm3StaticMethodProxy
+        {
+            public Fm3StaticMethodAotProxy(Fm3StaticMethodTarget target)
+            {
+                _ = target;
+            }
+
+            public int Multiply(int left, int right)
+            {
+                return Fm3StaticMethodTarget.Multiply(left, right);
+            }
+        }
+
+        private interface IFm4NonPublicMethodProxy
+        {
+            [Duck(Name = "Add")]
+            int Add(int left, int right);
+        }
+
+        private class Fm4NonPublicMethodTarget
+        {
+            private int Add(int left, int right)
+            {
+                return left + right;
+            }
+        }
+
+        private class Fm4NonPublicMethodAotProxy : IFm4NonPublicMethodProxy
+        {
+            private static readonly MethodInfo AddMethod = GetAddMethod();
+            private readonly Fm4NonPublicMethodTarget _target;
+
+            public Fm4NonPublicMethodAotProxy(Fm4NonPublicMethodTarget target)
+            {
+                _target = target;
+            }
+
+            public int Add(int left, int right)
+            {
+                return (int)AddMethod.Invoke(_target, new object[] { left, right })!;
+            }
+
+            private static MethodInfo GetAddMethod()
+            {
+                return typeof(Fm4NonPublicMethodTarget).GetMethod("Add", BindingFlags.Instance | BindingFlags.NonPublic)
+                    ?? throw new InvalidOperationException("Unable to resolve non-public method Add.");
+            }
+        }
+
+        private interface IFm5GenericMethodProxy
+        {
+            T Echo<T>(T value);
+        }
+
+        private class Fm5GenericMethodTarget
+        {
+            public T Echo<T>(T value)
+            {
+                return value;
+            }
+        }
+
+        private class Fm5GenericMethodAotProxy : IFm5GenericMethodProxy
+        {
+            private readonly Fm5GenericMethodTarget _target;
+
+            public Fm5GenericMethodAotProxy(Fm5GenericMethodTarget target)
+            {
+                _target = target;
+            }
+
+            public T Echo<T>(T value)
+            {
+                return _target.Echo(value);
+            }
+        }
+
+        private interface IFm6FallbackMethodProxy
+        {
+            [Duck(Name = "Compute")]
+            int Compute(int value);
+        }
+
+        private class Fm6FallbackMethodTarget
+        {
+            internal int Compute(int value)
+            {
+                return value + 9;
+            }
+        }
+
+        private class Fm6FallbackMethodAotProxy : IFm6FallbackMethodProxy
+        {
+            private static readonly MethodInfo ComputeMethod = GetComputeMethod();
+            private readonly Fm6FallbackMethodTarget _target;
+
+            public Fm6FallbackMethodAotProxy(Fm6FallbackMethodTarget target)
+            {
+                _target = target;
+            }
+
+            public int Compute(int value)
+            {
+                return (int)ComputeMethod.Invoke(_target, new object[] { value })!;
+            }
+
+            private static MethodInfo GetComputeMethod()
+            {
+                return typeof(Fm6FallbackMethodTarget).GetMethod("Compute", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public)
+                    ?? throw new InvalidOperationException("Unable to resolve fallback method Compute.");
+            }
+        }
+
+        private interface IFm7RefOutMismatchProxy
+        {
+            void Normalize(ref object value, out object doubled);
+        }
+
+        private class Fm7RefOutMismatchTarget
+        {
+            public void Normalize(ref int value, out int doubled)
+            {
+                value = Math.Abs(value);
+                doubled = value * 2;
+            }
+        }
+
+        private class Fm7RefOutMismatchAotProxy : IFm7RefOutMismatchProxy
+        {
+            private readonly Fm7RefOutMismatchTarget _target;
+
+            public Fm7RefOutMismatchAotProxy(Fm7RefOutMismatchTarget target)
+            {
+                _target = target;
+            }
+
+            public void Normalize(ref object value, out object doubled)
+            {
+                var local = Convert.ToInt32(value);
+                _target.Normalize(ref local, out var localOut);
+                value = local;
+                doubled = localOut;
+            }
+        }
+
+        private interface IRt4DuckChainInnerProxy
+        {
+            int Number { get; }
+        }
+
+        private class Rt4DuckChainInnerTarget
+        {
+            public Rt4DuckChainInnerTarget(int number)
+            {
+                Number = number;
+            }
+
+            public int Number { get; }
+        }
+
+        private class Rt4DuckChainInnerAotProxy : IRt4DuckChainInnerProxy
+        {
+            private readonly Rt4DuckChainInnerTarget _target;
+
+            public Rt4DuckChainInnerAotProxy(Rt4DuckChainInnerTarget target)
+            {
+                _target = target;
+            }
+
+            public int Number => _target.Number;
+        }
+
+        private interface IRt4DuckChainReturnProxy
+        {
+            IRt4DuckChainInnerProxy GetInner();
+        }
+
+        private class Rt4DuckChainReturnTarget
+        {
+            private readonly Rt4DuckChainInnerTarget _inner;
+
+            public Rt4DuckChainReturnTarget(Rt4DuckChainInnerTarget inner)
+            {
+                _inner = inner;
+            }
+
+            public Rt4DuckChainInnerTarget GetInner()
+            {
+                return _inner;
+            }
+        }
+
+        private class Rt4DuckChainReturnAotProxy : IRt4DuckChainReturnProxy
+        {
+            private readonly Rt4DuckChainReturnTarget _target;
+
+            public Rt4DuckChainReturnAotProxy(Rt4DuckChainReturnTarget target)
+            {
+                _target = target;
+            }
+
+            public IRt4DuckChainInnerProxy GetInner()
+            {
+                return new Rt4DuckChainInnerAotProxy(_target.GetInner());
+            }
+        }
+
+        private interface IRt5ValueWithTypeReturnProxy
+        {
+            [Duck(Name = "GetCount")]
+            ValueWithType<int> GetCount();
+        }
+
+        private class Rt5ValueWithTypeReturnTarget
+        {
+            public int GetCount()
+            {
+                return 44;
+            }
+        }
+
+        private class Rt5ValueWithTypeReturnAotProxy : IRt5ValueWithTypeReturnProxy
+        {
+            private readonly Rt5ValueWithTypeReturnTarget _target;
+
+            public Rt5ValueWithTypeReturnAotProxy(Rt5ValueWithTypeReturnTarget target)
+            {
+                _target = target;
+            }
+
+            public ValueWithType<int> GetCount()
+            {
+                return ValueWithType<int>.Create(_target.GetCount(), typeof(int));
             }
         }
 
