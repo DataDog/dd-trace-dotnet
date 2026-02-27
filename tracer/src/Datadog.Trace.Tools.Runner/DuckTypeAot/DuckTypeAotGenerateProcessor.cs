@@ -108,6 +108,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             ValidateOptionalFile(options.MappingCatalog, "--mapping-catalog", errors);
             ValidateOptionalFile(options.GenericInstantiationsFile, "--generic-instantiations", errors);
 
+            if (options.RequireMappingCatalog && string.IsNullOrWhiteSpace(options.MappingCatalog))
+            {
+                errors.Add("--mapping-catalog is required when --require-mapping-catalog is enabled.");
+            }
+
             if (string.IsNullOrWhiteSpace(options.OutputPath))
             {
                 errors.Add("--output cannot be empty.");
