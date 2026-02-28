@@ -9,6 +9,7 @@ using System.Runtime.InteropServices;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
+using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
 
@@ -240,14 +241,10 @@ public class DatadogLoggingFactoryTests
         }
     }
 
-    [Fact]
+    [SkippableFact]
     public void GetProgramDataDirectory_OnWindows_ReturnsValidProgramDataPath()
     {
-        // Skip on non-Windows platforms
-        if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-        {
-            return;
-        }
+        SkipOn.AllExcept(SkipOn.PlatformValue.Windows);
 
         var result = DatadogLoggingFactory.GetProgramDataDirectory();
 
