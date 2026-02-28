@@ -22,6 +22,7 @@ namespace Datadog.Trace.DuckTyping.Tests
         public CustomTestFramework(IMessageSink messageSink)
             : base(messageSink)
         {
+            DuckTypeTestRuntimeBootstrap.Initialize();
         }
     }
 }

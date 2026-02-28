@@ -39,6 +39,17 @@ public class DuckTypeAotProcessorsTests
         DuckTypeAotEngine.ResetForTests();
     }
 
+    [Theory]
+    [InlineData("System.Collections.Generic.List`1", true)]
+    [InlineData("System.Collections.Generic.List`1[[System.String, System.Private.CoreLib]]", false)]
+    [InlineData("Example.Outer`1+Inner`1[[System.String, System.Private.CoreLib],[System.Int32, System.Private.CoreLib]]", false)]
+    [InlineData("Example.Outer`1+Inner`1[[System.String, System.Private.CoreLib]]", true)]
+    [InlineData("Example.Container`1[!0]", true)]
+    public void OpenGenericNameDetectionShouldHandleNestedClosedGenericTypeNames(string typeName, bool expectedIsOpen)
+    {
+        DuckTypeAotNameHelpers.IsOpenGenericTypeName(typeName).Should().Be(expectedIsOpen);
+    }
+
     [Fact]
     public void BibleMappingCatalogFileShouldParseAndContainRequiredSeedScenarios()
     {
