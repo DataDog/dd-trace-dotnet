@@ -15,8 +15,6 @@
 #include "ScopedHandle.h"
 #include "StackFramesCollectorBase.h"
 #include "SystemTime.h"
-#include "Windows32BitStackFramesCollector.h"
-#include "Windows64BitStackFramesCollector.h"
 #include "WindowsThreadInfo.h"
 #include "EtwEventsManager.h"
 
@@ -64,21 +62,6 @@ std::pair<DWORD, std::string> GetLastErrorMessage()
     LocalFree(pBuffer);
     message = builder.str();
     return std::make_pair(errorCode, message);
-}
-
-std::unique_ptr<StackFramesCollectorBase> CreateNewStackFramesCollectorInstance(
-    ICorProfilerInfo4* pCorProfilerInfo,
-    IConfiguration const* const pConfiguration,
-    CallstackProvider* callstackProvider,
-    MetricsRegistry&)
-{
-#ifdef BIT64
-    static_assert(8 * sizeof(void*) == 64);
-    return std::make_unique<Windows64BitStackFramesCollector>(pCorProfilerInfo, pConfiguration, callstackProvider);
-#else
-    assert(8 * sizeof(void*) == 32);
-    return std::make_unique<Windows32BitStackFramesCollector>(pCorProfilerInfo, pConfiguration, callstackProvider);
-#endif
 }
 
 std::chrono::milliseconds GetThreadCpuTime(IThreadInfo* pThreadInfo)

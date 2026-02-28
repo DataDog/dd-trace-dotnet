@@ -3,6 +3,7 @@
 
 #include "AllocationsProvider.h"
 
+#include "StackFramesCollectorFactory.h"
 #include "COMHelpers.h"
 #include "FrameworkThreadInfo.h"
 #include "HResultConverter.h"
@@ -48,6 +49,7 @@ AllocationsProvider::AllocationsProvider(
     ISampledAllocationsListener* pListener,
     MetricsRegistry& metricsRegistry,
     CallstackProvider pool,
+    StackFramesCollectorFactory* pStackFramesCollectorFactory,
     shared::pmr::memory_resource* memoryResource)
     :
     AllocationsProvider(
@@ -60,6 +62,7 @@ AllocationsProvider::AllocationsProvider(
         pListener,
         metricsRegistry,
         std::move(pool),
+        pStackFramesCollectorFactory,
         memoryResource)
 {
 }
@@ -74,6 +77,7 @@ AllocationsProvider::AllocationsProvider(
     ISampledAllocationsListener* pListener,
     MetricsRegistry& metricsRegistry,
     CallstackProvider pool,
+    StackFramesCollectorFactory* pStackFramesCollectorFactory,
     shared::pmr::memory_resource* memoryResource) :
     CollectorBase<RawAllocationSample>("AllocationsProvider", std::move(valueTypes), rawSampleTransformer, memoryResource),
     _pCorProfilerInfo(pCorProfilerInfo),
@@ -84,7 +88,7 @@ AllocationsProvider::AllocationsProvider(
     _sampleLimit(pConfiguration->AllocationSampleLimit()),
     _pConfiguration(pConfiguration),
     _callstackProvider{std::move(pool)},
-    _metricsRegistry{metricsRegistry}
+    _pStackFramesCollectorFactory{pStackFramesCollectorFactory}
 {
     _allocationsCountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_allocations");
     _allocationsSizeMetric = metricsRegistry.GetOrRegister<MeanMaxMetric>("dotnet_allocations_size");
@@ -122,8 +126,7 @@ void AllocationsProvider::OnAllocation(uint32_t allocationKind,
         return;
     }
 
-    const auto pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(
-        _pCorProfilerInfo, _pConfiguration, &_callstackProvider, _metricsRegistry);
+    const auto pStackFramesCollector = _pStackFramesCollectorFactory->Create(&_callstackProvider);
     pStackFramesCollector->PrepareForNextCollection();
 
     uint32_t hrCollectStack = E_FAIL;
@@ -202,8 +205,7 @@ void AllocationsProvider::OnAllocationSampled(
         return;
     }
 
-    const auto pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(
-        _pCorProfilerInfo, _pConfiguration, &_callstackProvider, _metricsRegistry);
+    const auto pStackFramesCollector = _pStackFramesCollectorFactory->Create(&_callstackProvider);
     pStackFramesCollector->PrepareForNextCollection();
 
     uint32_t hrCollectStack = E_FAIL;
