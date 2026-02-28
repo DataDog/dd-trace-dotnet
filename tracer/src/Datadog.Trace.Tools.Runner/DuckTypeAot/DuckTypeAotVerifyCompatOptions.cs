@@ -7,6 +7,12 @@
 
 namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 {
+    internal enum DuckTypeAotFailureMode
+    {
+        Default = 0,
+        Strict = 1
+    }
+
     internal sealed class DuckTypeAotVerifyCompatOptions
     {
         public DuckTypeAotVerifyCompatOptions(
@@ -15,16 +21,20 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             string? mappingCatalogPath,
             string? manifestPath,
             string? scenarioInventoryPath = null,
+            string? expectedOutcomesPath = null,
             string? knownLimitationsPath = null,
-            bool strictAssemblyFingerprintValidation = false)
+            bool strictAssemblyFingerprintValidation = false,
+            DuckTypeAotFailureMode failureMode = DuckTypeAotFailureMode.Default)
         {
             CompatReportPath = compatReportPath;
             CompatMatrixPath = compatMatrixPath;
             MappingCatalogPath = mappingCatalogPath;
             ManifestPath = manifestPath;
             ScenarioInventoryPath = scenarioInventoryPath;
+            ExpectedOutcomesPath = expectedOutcomesPath;
             KnownLimitationsPath = knownLimitationsPath;
-            StrictAssemblyFingerprintValidation = strictAssemblyFingerprintValidation;
+            FailureMode = failureMode;
+            StrictAssemblyFingerprintValidation = strictAssemblyFingerprintValidation || failureMode == DuckTypeAotFailureMode.Strict;
         }
 
         public string CompatReportPath { get; }
@@ -37,7 +47,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
         public string? ScenarioInventoryPath { get; }
 
+        public string? ExpectedOutcomesPath { get; }
+
         public string? KnownLimitationsPath { get; }
+
+        public DuckTypeAotFailureMode FailureMode { get; }
 
         public bool StrictAssemblyFingerprintValidation { get; }
     }

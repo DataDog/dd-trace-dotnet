@@ -13,6 +13,7 @@ using System.Linq;
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
+using System.Xml.Linq;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using dnlib.DotNet;
 
@@ -52,6 +53,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 return 1;
             }
 
+            if (!string.IsNullOrWhiteSpace(options.ExpectedOutcomesPath) && !File.Exists(options.ExpectedOutcomesPath))
+            {
+                Utils.WriteError($"--expected-outcomes file was not found: {options.ExpectedOutcomesPath}");
+                return 1;
+            }
+
             if (!string.IsNullOrWhiteSpace(options.KnownLimitationsPath) && !File.Exists(options.KnownLimitationsPath))
             {
                 Utils.WriteError($"--known-limitations file was not found: {options.KnownLimitationsPath}");
@@ -84,32 +91,26 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 return 1;
             }
 
-            IReadOnlyList<DuckTypeAotKnownLimitation> approvedKnownLimitations = Array.Empty<DuckTypeAotKnownLimitation>();
-            if (!string.IsNullOrWhiteSpace(options.KnownLimitationsPath))
+            var expectedOutcomes = DuckTypeAotExpectedOutcomes.DefaultCompatible;
+            if (!string.IsNullOrWhiteSpace(options.ExpectedOutcomesPath))
             {
-                if (!TryReadKnownLimitations(options.KnownLimitationsPath!, out approvedKnownLimitations))
+                if (!TryReadExpectedOutcomes(options.ExpectedOutcomesPath!, out expectedOutcomes))
+                {
+                    return 1;
+                }
+            }
+            else if (!string.IsNullOrWhiteSpace(options.KnownLimitationsPath))
+            {
+                Utils.WriteWarning("--known-limitations is deprecated. Use --expected-outcomes instead.");
+                if (!TryReadLegacyKnownLimitationsAsExpectedOutcomes(options.KnownLimitationsPath!, out expectedOutcomes))
                 {
                     return 1;
                 }
             }
 
-            var incompatibleMappings = matrix.Mappings
-                                             .Where(mapping => !string.Equals(mapping.Status, DuckTypeAotCompatibilityStatuses.Compatible, System.StringComparison.OrdinalIgnoreCase))
-                                             .ToList();
-
-            if (incompatibleMappings.Count > 0)
+            if (!ValidateExpectedOutcomes(matrix, expectedOutcomes))
             {
-                var knownLimitationsValidationErrors = ValidateKnownLimitations(incompatibleMappings, approvedKnownLimitations);
-                if (knownLimitationsValidationErrors.Count > 0)
-                {
-                    foreach (var error in knownLimitationsValidationErrors)
-                    {
-                        Utils.WriteError(error);
-                    }
-
-                    Utils.WriteError($"Compatibility verification failed. Non-compatible mappings found: {incompatibleMappings.Count}.");
-                    return 1;
-                }
+                return 1;
             }
 
             if (manifest is not null)
@@ -123,11 +124,21 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 {
                     return 1;
                 }
+
+                if (!ValidateManifestGeneratedArtifacts(manifest, options.StrictAssemblyFingerprintValidation))
+                {
+                    return 1;
+                }
+
+                if (!ValidateTrimmerDescriptorCoupling(matrix, manifest))
+                {
+                    return 1;
+                }
             }
 
             if (!string.IsNullOrWhiteSpace(options.MappingCatalogPath))
             {
-                if (!ValidateMappingCatalog(matrix, options.MappingCatalogPath!, approvedKnownLimitations))
+                if (!ValidateMappingCatalog(matrix, options.MappingCatalogPath!, expectedOutcomes))
                 {
                     return 1;
                 }
@@ -144,73 +155,95 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return 0;
         }
 
-        private static IReadOnlyList<string> ValidateKnownLimitations(
-            IReadOnlyList<DuckTypeAotCompatibilityMapping> incompatibleMappings,
-            IReadOnlyList<DuckTypeAotKnownLimitation> approvedKnownLimitations)
+        private static bool ValidateExpectedOutcomes(
+            DuckTypeAotCompatibilityMatrix matrix,
+            DuckTypeAotExpectedOutcomes expectedOutcomes)
         {
-            if (incompatibleMappings.Count == 0)
-            {
-                return Array.Empty<string>();
-            }
-
             var errors = new List<string>();
-            if (approvedKnownLimitations.Count == 0)
-            {
-                errors.Add(
-                    $"Compatibility matrix contains {incompatibleMappings.Count} non-compatible mappings, but --known-limitations was not provided (or is empty).");
-                return errors;
-            }
+            var observedPairs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-            var approvedStatusesByScenario = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
-            foreach (var knownLimitation in approvedKnownLimitations)
+            for (var i = 0; i < matrix.Mappings.Count; i++)
             {
-                if (!approvedStatusesByScenario.TryGetValue(knownLimitation.ScenarioId, out var statuses))
-                {
-                    statuses = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                    approvedStatusesByScenario[knownLimitation.ScenarioId] = statuses;
-                }
-
-                _ = statuses.Add(knownLimitation.Status);
-            }
-
-            var observedIncompatiblePairs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            foreach (var mapping in incompatibleMappings)
-            {
+                var mapping = matrix.Mappings[i];
                 if (string.IsNullOrWhiteSpace(mapping.Id))
                 {
                     errors.Add(
-                        $"Non-compatible mapping for proxy '{mapping.ProxyType ?? "(null)"}' and target '{mapping.TargetType ?? "(null)"}' is missing scenario id while --known-limitations is enabled.");
+                        $"--compat-matrix mapping entry #{i + 1} is missing scenario id while expected-outcomes validation is enabled. " +
+                        $"proxy='{mapping.ProxyType ?? "(null)"}', target='{mapping.TargetType ?? "(null)"}'.");
                     continue;
                 }
 
                 var scenarioId = mapping.Id!;
-                var status = mapping.Status ?? string.Empty;
-                _ = observedIncompatiblePairs.Add($"{scenarioId}|{status}");
+                var actualStatus = mapping.Status ?? string.Empty;
+                _ = observedPairs.Add($"{scenarioId}|{actualStatus}");
 
-                if (!approvedStatusesByScenario.TryGetValue(scenarioId, out var allowedStatuses) ||
-                    !allowedStatuses.Contains(status))
+                _ = expectedOutcomes.TryGetExpectedStatuses(scenarioId, out var expectedStatuses);
+
+                if (!expectedStatuses.Contains(actualStatus))
                 {
                     errors.Add(
-                        $"Non-compatible mapping is not approved by --known-limitations: scenario='{scenarioId}', status='{status}'.");
+                        $"Compatibility status mismatch for scenario '{scenarioId}'. " +
+                        $"Expected one of [{string.Join(", ", expectedStatuses)}], actual '{actualStatus}'.");
                 }
             }
 
-            foreach (var knownLimitation in approvedKnownLimitations)
+            foreach (var expectedOutcome in expectedOutcomes.ExplicitOutcomes)
             {
-                var expectedPair = $"{knownLimitation.ScenarioId}|{knownLimitation.Status}";
-                if (!observedIncompatiblePairs.Contains(expectedPair))
+                var expectedPair = $"{expectedOutcome.ScenarioId}|{expectedOutcome.Status}";
+                if (!observedPairs.Contains(expectedPair))
                 {
                     errors.Add(
-                        $"--known-limitations entry is stale or mismatched: scenario='{knownLimitation.ScenarioId}', status='{knownLimitation.Status}'.");
+                        $"--expected-outcomes entry is stale or mismatched: scenario='{expectedOutcome.ScenarioId}', status='{expectedOutcome.Status}'.");
                 }
             }
 
-            return errors;
+            if (errors.Count == 0)
+            {
+                return true;
+            }
+
+            foreach (var error in errors)
+            {
+                Utils.WriteError(error);
+            }
+
+            return false;
         }
 
-        private static bool TryReadKnownLimitations(string knownLimitationsPath, out IReadOnlyList<DuckTypeAotKnownLimitation> knownLimitations)
+        private static bool TryReadExpectedOutcomes(string expectedOutcomesPath, out DuckTypeAotExpectedOutcomes expectedOutcomes)
         {
-            knownLimitations = Array.Empty<DuckTypeAotKnownLimitation>();
+            expectedOutcomes = DuckTypeAotExpectedOutcomes.DefaultCompatible;
+            DuckTypeAotExpectedOutcomesDocument? expectedOutcomesDocument;
+            try
+            {
+                expectedOutcomesDocument = JsonConvert.DeserializeObject<DuckTypeAotExpectedOutcomesDocument>(File.ReadAllText(expectedOutcomesPath));
+            }
+            catch (Exception ex)
+            {
+                Utils.WriteError($"--expected-outcomes file could not be parsed ({expectedOutcomesPath}): {ex.Message}");
+                return false;
+            }
+
+            if (expectedOutcomesDocument is null)
+            {
+                Utils.WriteError($"--expected-outcomes file is empty or invalid JSON: {expectedOutcomesPath}");
+                return false;
+            }
+
+            var defaultStatus = string.IsNullOrWhiteSpace(expectedOutcomesDocument.DefaultStatus)
+                                    ? DuckTypeAotCompatibilityStatuses.Compatible
+                                    : expectedOutcomesDocument.DefaultStatus!.Trim();
+            var entries = expectedOutcomesDocument.ExpectedOutcomes
+                          ?? expectedOutcomesDocument.Outcomes
+                          ?? expectedOutcomesDocument.Expected
+                          ?? new List<DuckTypeAotExpectedOutcomeEntry>();
+
+            return TryBuildExpectedOutcomes(entries, defaultStatus, expectedOutcomesPath, "--expected-outcomes", out expectedOutcomes);
+        }
+
+        private static bool TryReadLegacyKnownLimitationsAsExpectedOutcomes(string knownLimitationsPath, out DuckTypeAotExpectedOutcomes expectedOutcomes)
+        {
+            expectedOutcomes = DuckTypeAotExpectedOutcomes.DefaultCompatible;
             DuckTypeAotKnownLimitationsDocument? knownLimitationsDocument;
             try
             {
@@ -231,16 +264,33 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             var entries = knownLimitationsDocument.KnownLimitations
                           ?? knownLimitationsDocument.ApprovedLimitations
                           ?? knownLimitationsDocument.Approved
-                          ?? new List<DuckTypeAotKnownLimitationEntry>();
+                          ?? new List<DuckTypeAotExpectedOutcomeEntry>();
             if (entries.Count == 0)
             {
                 Utils.WriteError($"--known-limitations does not contain any entries: {knownLimitationsPath}");
                 return false;
             }
 
+            return TryBuildExpectedOutcomes(entries, DuckTypeAotCompatibilityStatuses.Compatible, knownLimitationsPath, "--known-limitations", out expectedOutcomes);
+        }
+
+        private static bool TryBuildExpectedOutcomes(
+            IReadOnlyList<DuckTypeAotExpectedOutcomeEntry> entries,
+            string defaultStatus,
+            string sourcePath,
+            string optionName,
+            out DuckTypeAotExpectedOutcomes expectedOutcomes)
+        {
+            expectedOutcomes = DuckTypeAotExpectedOutcomes.DefaultCompatible;
             var errors = new List<string>();
-            var normalizedEntries = new List<DuckTypeAotKnownLimitation>(entries.Count);
+            var normalizedEntries = new List<DuckTypeAotExpectedOutcome>(entries.Count);
             var seenEntries = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            if (string.IsNullOrWhiteSpace(defaultStatus))
+            {
+                errors.Add($"{optionName} defaultStatus must be non-empty in '{sourcePath}'.");
+            }
+
             for (var i = 0; i < entries.Count; i++)
             {
                 var entry = entries[i];
@@ -248,18 +298,18 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 var status = entry?.Status?.Trim();
                 if (string.IsNullOrWhiteSpace(scenarioId) || string.IsNullOrWhiteSpace(status))
                 {
-                    errors.Add($"--known-limitations entry #{i + 1} in '{knownLimitationsPath}' must include non-empty scenarioId and status.");
+                    errors.Add($"{optionName} entry #{i + 1} in '{sourcePath}' must include non-empty scenarioId and status.");
                     continue;
                 }
 
                 var pairKey = $"{scenarioId}|{status}";
                 if (!seenEntries.Add(pairKey))
                 {
-                    errors.Add($"--known-limitations contains duplicate entry '{pairKey}' in '{knownLimitationsPath}'.");
+                    errors.Add($"{optionName} contains duplicate entry '{pairKey}' in '{sourcePath}'.");
                     continue;
                 }
 
-                normalizedEntries.Add(new DuckTypeAotKnownLimitation(scenarioId!, status!));
+                normalizedEntries.Add(new DuckTypeAotExpectedOutcome(scenarioId!, status!));
             }
 
             if (errors.Count > 0)
@@ -272,14 +322,14 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 return false;
             }
 
-            knownLimitations = normalizedEntries;
+            expectedOutcomes = new DuckTypeAotExpectedOutcomes(defaultStatus.Trim(), normalizedEntries);
             return true;
         }
 
         private static bool ValidateMappingCatalog(
             DuckTypeAotCompatibilityMatrix matrix,
             string mappingCatalogPath,
-            IReadOnlyList<DuckTypeAotKnownLimitation> approvedKnownLimitations)
+            DuckTypeAotExpectedOutcomes expectedOutcomes)
         {
             var catalogResult = DuckTypeAotMappingCatalogParser.Parse(mappingCatalogPath);
             if (catalogResult.Errors.Count > 0)
@@ -293,12 +343,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
 
             var errors = new List<string>();
-            var knownLimitationPairs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            foreach (var knownLimitation in approvedKnownLimitations)
-            {
-                _ = knownLimitationPairs.Add($"{knownLimitation.ScenarioId}|{knownLimitation.Status}");
-            }
-
             var matrixMappingByKey = new Dictionary<string, DuckTypeAotCompatibilityMapping>(StringComparer.Ordinal);
             foreach (var matrixMapping in matrix.Mappings)
             {
@@ -332,17 +376,15 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     continue;
                 }
 
-                if (!string.Equals(matrixMapping.Status, DuckTypeAotCompatibilityStatuses.Compatible, StringComparison.OrdinalIgnoreCase))
+                var actualStatus = matrixMapping.Status ?? string.Empty;
+                _ = expectedOutcomes.TryGetExpectedStatuses(requiredMapping.ScenarioId!, out var expectedStatuses);
+
+                if (!expectedStatuses.Contains(actualStatus))
                 {
-                    var scenarioId = matrixMapping.Id ?? string.Empty;
-                    var status = matrixMapping.Status ?? string.Empty;
-                    var knownLimitationPair = $"{scenarioId}|{status}";
-                    if (!knownLimitationPairs.Contains(knownLimitationPair))
-                    {
-                        errors.Add(
-                            $"Required mapping is not compatible in --compat-matrix and is not approved by --known-limitations: " +
-                            $"key='{requiredMapping.Key}', scenario='{matrixMapping.Id ?? "(null)"}', status='{matrixMapping.Status ?? "(null)"}'.");
-                    }
+                    errors.Add(
+                        $"Required mapping status does not match expected outcomes: " +
+                        $"key='{requiredMapping.Key}', scenario='{matrixMapping.Id ?? "(null)"}', " +
+                        $"expected=[{string.Join(", ", expectedStatuses)}], actual='{actualStatus}'.");
                 }
 
                 if (!string.IsNullOrWhiteSpace(requiredMapping.ScenarioId) &&
@@ -622,6 +664,304 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return !strictAssemblyFingerprintValidation;
         }
 
+        private static bool ValidateManifestGeneratedArtifacts(DuckTypeAotManifest manifest, bool strictAssemblyFingerprintValidation)
+        {
+            var issues = new List<string>();
+
+            ValidateFileFingerprint(
+                manifest.RegistryAssembly,
+                manifest.RegistryAssemblySha256,
+                "registry assembly",
+                issues);
+            ValidateFileFingerprint(
+                manifest.TrimmerDescriptorPath,
+                manifest.TrimmerDescriptorSha256,
+                "trimmer descriptor",
+                issues);
+            ValidateFileFingerprint(
+                manifest.PropsPath,
+                manifest.PropsSha256,
+                "props file",
+                issues);
+
+            if (!string.IsNullOrWhiteSpace(manifest.RegistryAssembly) && File.Exists(manifest.RegistryAssembly))
+            {
+                try
+                {
+                    var assemblyName = AssemblyName.GetAssemblyName(manifest.RegistryAssembly);
+                    var actualVersion = assemblyName.Version?.ToString() ?? "0.0.0.0";
+                    var actualPublicKeyTokenBytes = assemblyName.GetPublicKeyToken();
+                    var actualPublicKeyToken = actualPublicKeyTokenBytes is { Length: > 0 }
+                                                   ? BitConverter.ToString(actualPublicKeyTokenBytes).Replace("-", string.Empty).ToLowerInvariant()
+                                                   : string.Empty;
+                    var actualIsStrongNameSigned = !string.IsNullOrWhiteSpace(actualPublicKeyToken);
+
+                    if (!string.IsNullOrWhiteSpace(manifest.RegistryAssemblyVersion) &&
+                        !string.Equals(actualVersion, manifest.RegistryAssemblyVersion, StringComparison.Ordinal))
+                    {
+                        issues.Add($"Manifest registry assembly version mismatch. Expected '{manifest.RegistryAssemblyVersion}', got '{actualVersion}'.");
+                    }
+
+                    if (manifest.RegistryStrongNameSigned.HasValue &&
+                        manifest.RegistryStrongNameSigned.Value != actualIsStrongNameSigned)
+                    {
+                        issues.Add(
+                            $"Manifest registry strong-name flag mismatch. " +
+                            $"Expected '{manifest.RegistryStrongNameSigned.Value}', got '{actualIsStrongNameSigned}'.");
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(manifest.RegistryPublicKeyToken))
+                    {
+                        if (!actualIsStrongNameSigned)
+                        {
+                            issues.Add(
+                                $"Manifest registry public key token is set ('{manifest.RegistryPublicKeyToken}') but registry assembly is not strong-name signed.");
+                        }
+                        else if (!string.Equals(actualPublicKeyToken, manifest.RegistryPublicKeyToken, StringComparison.OrdinalIgnoreCase))
+                        {
+                            issues.Add(
+                                $"Manifest registry public key token mismatch. Expected '{manifest.RegistryPublicKeyToken}', got '{actualPublicKeyToken}'.");
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    issues.Add($"Manifest registry assembly metadata could not be validated: {ex.Message}");
+                }
+            }
+
+            if (issues.Count == 0)
+            {
+                return true;
+            }
+
+            foreach (var issue in issues)
+            {
+                if (strictAssemblyFingerprintValidation)
+                {
+                    Utils.WriteError(issue);
+                }
+                else
+                {
+                    Utils.WriteWarning(issue);
+                }
+            }
+
+            return !strictAssemblyFingerprintValidation;
+        }
+
+        private static bool ValidateTrimmerDescriptorCoupling(DuckTypeAotCompatibilityMatrix matrix, DuckTypeAotManifest manifest)
+        {
+            if (string.IsNullOrWhiteSpace(manifest.TrimmerDescriptorPath))
+            {
+                return true;
+            }
+
+            if (!TryReadTrimmerDescriptorRoots(manifest.TrimmerDescriptorPath!, out var rootsByAssembly, out var readError))
+            {
+                Utils.WriteError(readError);
+                return false;
+            }
+
+            var errors = new List<string>();
+
+            if (!string.IsNullOrWhiteSpace(manifest.RegistryAssemblyName) &&
+                !string.IsNullOrWhiteSpace(manifest.RegistryBootstrapType))
+            {
+                ValidateTrimmerDescriptorRoot(
+                    rootsByAssembly,
+                    manifest.RegistryAssemblyName!,
+                    manifest.RegistryBootstrapType!,
+                    "registry bootstrap type",
+                    errors);
+            }
+
+            foreach (var mapping in matrix.Mappings)
+            {
+                if (!string.Equals(mapping.Status, DuckTypeAotCompatibilityStatuses.Compatible, StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                if (!string.IsNullOrWhiteSpace(mapping.ProxyAssembly) && !string.IsNullOrWhiteSpace(mapping.ProxyType))
+                {
+                    ValidateTrimmerDescriptorRoot(
+                        rootsByAssembly,
+                        mapping.ProxyAssembly!,
+                        mapping.ProxyType!,
+                        $"compatible mapping '{mapping.Id ?? "(null)"}' proxy root",
+                        errors);
+                }
+
+                if (!string.IsNullOrWhiteSpace(mapping.TargetAssembly) && !string.IsNullOrWhiteSpace(mapping.TargetType))
+                {
+                    ValidateTrimmerDescriptorRoot(
+                        rootsByAssembly,
+                        mapping.TargetAssembly!,
+                        mapping.TargetType!,
+                        $"compatible mapping '{mapping.Id ?? "(null)"}' target root",
+                        errors);
+                }
+
+                if (!string.IsNullOrWhiteSpace(mapping.GeneratedProxyAssembly) && !string.IsNullOrWhiteSpace(mapping.GeneratedProxyType))
+                {
+                    ValidateTrimmerDescriptorRoot(
+                        rootsByAssembly,
+                        mapping.GeneratedProxyAssembly!,
+                        mapping.GeneratedProxyType!,
+                        $"compatible mapping '{mapping.Id ?? "(null)"}' generated proxy root",
+                        errors);
+                }
+            }
+
+            if (manifest.GenericInstantiations is not null)
+            {
+                foreach (var typeReference in manifest.GenericInstantiations)
+                {
+                    if (string.IsNullOrWhiteSpace(typeReference.Assembly) || string.IsNullOrWhiteSpace(typeReference.Type))
+                    {
+                        continue;
+                    }
+
+                    ValidateTrimmerDescriptorRoot(
+                        rootsByAssembly,
+                        typeReference.Assembly!,
+                        typeReference.Type!,
+                        $"generic root '{typeReference.Type}'",
+                        errors);
+                }
+            }
+
+            if (errors.Count == 0)
+            {
+                return true;
+            }
+
+            foreach (var error in errors)
+            {
+                Utils.WriteError(error);
+            }
+
+            return false;
+        }
+
+        private static bool TryReadTrimmerDescriptorRoots(
+            string descriptorPath,
+            out Dictionary<string, HashSet<string>> rootsByAssembly,
+            out string error)
+        {
+            rootsByAssembly = new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase);
+            error = string.Empty;
+
+            if (!File.Exists(descriptorPath))
+            {
+                error = $"Manifest trimmer descriptor path was not found: {descriptorPath}";
+                return false;
+            }
+
+            try
+            {
+                var document = XDocument.Load(descriptorPath);
+                var linker = document.Root;
+                if (linker is null || !string.Equals(linker.Name.LocalName, "linker", StringComparison.Ordinal))
+                {
+                    error = $"Trimmer descriptor is invalid (missing <linker> root): {descriptorPath}";
+                    return false;
+                }
+
+                foreach (var assemblyElement in linker.Elements())
+                {
+                    if (!string.Equals(assemblyElement.Name.LocalName, "assembly", StringComparison.Ordinal))
+                    {
+                        continue;
+                    }
+
+                    var assemblyName = assemblyElement.Attribute("fullname")?.Value;
+                    if (string.IsNullOrWhiteSpace(assemblyName))
+                    {
+                        continue;
+                    }
+
+                    if (!rootsByAssembly.TryGetValue(assemblyName!, out var typeRoots))
+                    {
+                        typeRoots = new HashSet<string>(StringComparer.Ordinal);
+                        rootsByAssembly[assemblyName!] = typeRoots;
+                    }
+
+                    foreach (var typeElement in assemblyElement.Elements())
+                    {
+                        if (!string.Equals(typeElement.Name.LocalName, "type", StringComparison.Ordinal))
+                        {
+                            continue;
+                        }
+
+                        var typeName = typeElement.Attribute("fullname")?.Value;
+                        if (string.IsNullOrWhiteSpace(typeName))
+                        {
+                            continue;
+                        }
+
+                        _ = typeRoots.Add(typeName!);
+                    }
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                error = $"Failed to parse trimmer descriptor '{descriptorPath}': {ex.Message}";
+                return false;
+            }
+        }
+
+        private static void ValidateTrimmerDescriptorRoot(
+            IReadOnlyDictionary<string, HashSet<string>> rootsByAssembly,
+            string assemblyName,
+            string typeName,
+            string context,
+            ICollection<string> errors)
+        {
+            if (!rootsByAssembly.TryGetValue(assemblyName, out var typeRoots))
+            {
+                errors.Add($"Trimmer descriptor is missing assembly root '{assemblyName}' required for {context}.");
+                return;
+            }
+
+            var normalizedTypeName = NormalizeTypeNameForLinker(typeName);
+            if (!typeRoots.Contains(normalizedTypeName))
+            {
+                errors.Add($"Trimmer descriptor is missing type root '{normalizedTypeName}' in assembly '{assemblyName}' required for {context}.");
+            }
+        }
+
+        private static void ValidateFileFingerprint(string? path, string? expectedSha256, string artifactName, ICollection<string> issues)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                issues.Add($"Manifest {artifactName} path is missing.");
+                return;
+            }
+
+            var resolvedPath = path!;
+            if (!File.Exists(resolvedPath))
+            {
+                issues.Add($"Manifest {artifactName} path was not found: {resolvedPath}");
+                return;
+            }
+
+            if (!ValidateChecksum(expectedSha256, out var checksumError))
+            {
+                issues.Add($"Manifest {artifactName} has invalid sha256 for '{resolvedPath}': {checksumError}.");
+                return;
+            }
+
+            var actualSha256 = ComputeSha256(resolvedPath);
+            if (!string.Equals(actualSha256, expectedSha256, StringComparison.OrdinalIgnoreCase))
+            {
+                issues.Add($"Manifest {artifactName} sha256 mismatch for '{resolvedPath}'. Expected '{expectedSha256}', got '{actualSha256}'.");
+            }
+        }
+
         private static bool TryBuildCompatibilityMappingKey(
             DuckTypeAotCompatibilityMapping mapping,
             out string key,
@@ -810,6 +1150,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return sb.ToString();
         }
 
+        private static string NormalizeTypeNameForLinker(string typeName)
+        {
+            return typeName.Replace('+', '/');
+        }
+
         private static bool TryParseMode(string? value, out DuckTypeAotMappingMode mode)
         {
             if (string.Equals(value, "forward", StringComparison.OrdinalIgnoreCase))
@@ -828,9 +1173,9 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return false;
         }
 
-        private readonly struct DuckTypeAotKnownLimitation
+        private readonly struct DuckTypeAotExpectedOutcome
         {
-            internal DuckTypeAotKnownLimitation(string scenarioId, string status)
+            internal DuckTypeAotExpectedOutcome(string scenarioId, string status)
             {
                 ScenarioId = scenarioId;
                 Status = status;
@@ -841,19 +1186,80 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             internal string Status { get; }
         }
 
+        private sealed class DuckTypeAotExpectedOutcomes
+        {
+            private readonly Dictionary<string, HashSet<string>> _expectedStatusesByScenario;
+
+            internal DuckTypeAotExpectedOutcomes(string defaultStatus, IReadOnlyList<DuckTypeAotExpectedOutcome> explicitOutcomes)
+            {
+                DefaultStatus = defaultStatus;
+                ExplicitOutcomes = explicitOutcomes;
+                _expectedStatusesByScenario = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
+                foreach (var expectedOutcome in explicitOutcomes)
+                {
+                    if (!_expectedStatusesByScenario.TryGetValue(expectedOutcome.ScenarioId, out var statuses))
+                    {
+                        statuses = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                        _expectedStatusesByScenario[expectedOutcome.ScenarioId] = statuses;
+                    }
+
+                    _ = statuses.Add(expectedOutcome.Status);
+                }
+            }
+
+            internal static DuckTypeAotExpectedOutcomes DefaultCompatible { get; } =
+                new(
+                    DuckTypeAotCompatibilityStatuses.Compatible,
+                    Array.Empty<DuckTypeAotExpectedOutcome>());
+
+            internal string DefaultStatus { get; }
+
+            internal IReadOnlyList<DuckTypeAotExpectedOutcome> ExplicitOutcomes { get; }
+
+            internal bool TryGetExpectedStatuses(string scenarioId, out IReadOnlyCollection<string> statuses)
+            {
+                if (_expectedStatusesByScenario.TryGetValue(scenarioId, out var explicitStatuses))
+                {
+                    statuses = explicitStatuses;
+                    return true;
+                }
+
+                statuses = new[] { DefaultStatus };
+                return false;
+            }
+        }
+
+        private sealed class DuckTypeAotExpectedOutcomesDocument
+        {
+            [JsonProperty("schemaVersion")]
+            public string? SchemaVersion { get; set; }
+
+            [JsonProperty("defaultStatus")]
+            public string? DefaultStatus { get; set; }
+
+            [JsonProperty("expectedOutcomes")]
+            public List<DuckTypeAotExpectedOutcomeEntry>? ExpectedOutcomes { get; set; }
+
+            [JsonProperty("outcomes")]
+            public List<DuckTypeAotExpectedOutcomeEntry>? Outcomes { get; set; }
+
+            [JsonProperty("expected")]
+            public List<DuckTypeAotExpectedOutcomeEntry>? Expected { get; set; }
+        }
+
         private sealed class DuckTypeAotKnownLimitationsDocument
         {
             [JsonProperty("knownLimitations")]
-            public List<DuckTypeAotKnownLimitationEntry>? KnownLimitations { get; set; }
+            public List<DuckTypeAotExpectedOutcomeEntry>? KnownLimitations { get; set; }
 
             [JsonProperty("approvedLimitations")]
-            public List<DuckTypeAotKnownLimitationEntry>? ApprovedLimitations { get; set; }
+            public List<DuckTypeAotExpectedOutcomeEntry>? ApprovedLimitations { get; set; }
 
             [JsonProperty("approved")]
-            public List<DuckTypeAotKnownLimitationEntry>? Approved { get; set; }
+            public List<DuckTypeAotExpectedOutcomeEntry>? Approved { get; set; }
         }
 
-        private sealed class DuckTypeAotKnownLimitationEntry
+        private sealed class DuckTypeAotExpectedOutcomeEntry
         {
             [JsonProperty("scenarioId")]
             public string? ScenarioId { get; set; }

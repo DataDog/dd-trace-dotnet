@@ -15,6 +15,7 @@ using System.Text;
 using Datadog.Trace.DuckTyping;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
+using dnlib.DotNet.Writer;
 using FieldAttributes = dnlib.DotNet.FieldAttributes;
 using MethodAttributes = dnlib.DotNet.MethodAttributes;
 using MethodImplAttributes = dnlib.DotNet.MethodImplAttributes;
@@ -195,7 +196,13 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             moduleInitializer.Body.Instructions.Add(OpCodes.Ret.ToInstruction());
             moduleDef.GlobalType.Methods.Add(moduleInitializer);
 
-            moduleDef.Write(artifactPaths.OutputAssemblyPath);
+            var writeOptions = new ModuleWriterOptions(moduleDef);
+            if (!string.IsNullOrWhiteSpace(options.StrongNameKeyFile))
+            {
+                writeOptions.InitializeStrongNameSigning(moduleDef, new StrongNameKey(options.StrongNameKeyFile!));
+            }
+
+            moduleDef.Write(artifactPaths.OutputAssemblyPath, writeOptions);
 
             var registryInfo = new DuckTypeAotRegistryAssemblyInfo(
                 generatedAssemblyName,
