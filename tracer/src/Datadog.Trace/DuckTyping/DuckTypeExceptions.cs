@@ -21,16 +21,29 @@ namespace Datadog.Trace.DuckTyping
     /// </summary>
     internal class DuckTypeException : Exception
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DuckTypeException"/> class.
+        /// </summary>
+        /// <param name="message">The message value.</param>
         protected DuckTypeException(string message)
             : base(message)
         {
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DuckTypeException"/> class.
+        /// </summary>
+        /// <param name="message">The message value.</param>
+        /// <param name="innerException">The inner exception value.</param>
         protected DuckTypeException(string message, Exception innerException)
             : base(message, innerException)
         {
         }
 
+        /// <summary>
+        /// Throws the exception associated with throw.
+        /// </summary>
+        /// <param name="message">The message value.</param>
         [DebuggerHidden]
         [DoesNotReturn]
         internal static void Throw(string message)
@@ -38,6 +51,11 @@ namespace Datadog.Trace.DuckTyping
             throw new DuckTypeException(message);
         }
 
+        /// <summary>
+        /// Throws the exception associated with throw.
+        /// </summary>
+        /// <param name="message">The message value.</param>
+        /// <param name="innerException">The inner exception value.</param>
         [DebuggerHidden]
         [DoesNotReturn]
         internal static void Throw(string message, Exception innerException)
@@ -51,11 +69,17 @@ namespace Datadog.Trace.DuckTyping
     /// </summary>
     internal sealed class DuckTypeProxyTypeDefinitionIsNull : DuckTypeException
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DuckTypeProxyTypeDefinitionIsNull"/> class.
+        /// </summary>
         private DuckTypeProxyTypeDefinitionIsNull()
             : base($"The proxy type definition is null.")
         {
         }
 
+        /// <summary>
+        /// Throws the exception associated with throw.
+        /// </summary>
         [DebuggerHidden]
         [DoesNotReturn]
         internal static void Throw()
@@ -69,11 +93,17 @@ namespace Datadog.Trace.DuckTyping
     /// </summary>
     internal sealed class DuckTypeTargetObjectInstanceIsNull : DuckTypeException
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DuckTypeTargetObjectInstanceIsNull"/> class.
+        /// </summary>
         private DuckTypeTargetObjectInstanceIsNull()
             : base($"The target object instance is null.")
         {
         }
 
+        /// <summary>
+        /// Throws the exception associated with throw.
+        /// </summary>
         [DebuggerHidden]
         [DoesNotReturn]
         internal static void Throw()
@@ -87,11 +117,21 @@ namespace Datadog.Trace.DuckTyping
     /// </summary>
     internal sealed class DuckTypeInvalidTypeConversionException : DuckTypeException
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DuckTypeInvalidTypeConversionException"/> class.
+        /// </summary>
+        /// <param name="actualType">The actual type value.</param>
+        /// <param name="expectedType">The expected type value.</param>
         private DuckTypeInvalidTypeConversionException(Type actualType, Type expectedType)
             : base($"Invalid type conversion from {actualType.FullName} to {expectedType.FullName}")
         {
         }
 
+        /// <summary>
+        /// Throws the exception associated with throw.
+        /// </summary>
+        /// <param name="actualType">The actual type value.</param>
+        /// <param name="expectedType">The expected type value.</param>
         [DebuggerHidden]
         [DoesNotReturn]
         internal static void Throw(Type actualType, Type expectedType)
@@ -105,11 +145,19 @@ namespace Datadog.Trace.DuckTyping
     /// </summary>
     internal sealed class DuckTypePropertyCantBeReadException : DuckTypeException
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DuckTypePropertyCantBeReadException"/> class.
+        /// </summary>
+        /// <param name="property">The property value.</param>
         private DuckTypePropertyCantBeReadException(PropertyInfo property)
             : base($"The property '{property.Name}' can't be read, you should remove the getter from the proxy definition base type class or interface.")
         {
         }
 
+        /// <summary>
+        /// Throws the exception associated with throw.
+        /// </summary>
+        /// <param name="property">The property value.</param>
         [DebuggerHidden]
         [DoesNotReturn]
         internal static void Throw(PropertyInfo property)
@@ -123,11 +171,19 @@ namespace Datadog.Trace.DuckTyping
     /// </summary>
     internal sealed class DuckTypePropertyCantBeWrittenException : DuckTypeException
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DuckTypePropertyCantBeWrittenException"/> class.
+        /// </summary>
+        /// <param name="property">The property value.</param>
         private DuckTypePropertyCantBeWrittenException(PropertyInfo property)
             : base($"The property '{property.Name}' can't be written, you should remove the setter from the proxy definition base type class or interface.")
         {
         }
 
+        /// <summary>
+        /// Throws the exception associated with throw.
+        /// </summary>
+        /// <param name="property">The property value.</param>
         [DebuggerHidden]
         [DoesNotReturn]
         internal static void Throw(PropertyInfo property)
@@ -141,11 +197,19 @@ namespace Datadog.Trace.DuckTyping
     /// </summary>
     internal sealed class DuckTypePropertyArgumentsLengthException : DuckTypeException
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DuckTypePropertyArgumentsLengthException"/> class.
+        /// </summary>
+        /// <param name="property">The property value.</param>
         private DuckTypePropertyArgumentsLengthException(PropertyInfo property)
             : base($"The property '{property.Name}' doesn't have the same number of arguments as the original property.")
         {
         }
 
+        /// <summary>
+        /// Throws the exception associated with throw.
+        /// </summary>
+        /// <param name="property">The property value.</param>
         [DebuggerHidden]
         [DoesNotReturn]
         internal static void Throw(PropertyInfo property)
@@ -159,11 +223,19 @@ namespace Datadog.Trace.DuckTyping
     /// </summary>
     internal sealed class DuckTypeFieldIsReadonlyException : DuckTypeException
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DuckTypeFieldIsReadonlyException"/> class.
+        /// </summary>
+        /// <param name="field">The field value.</param>
         private DuckTypeFieldIsReadonlyException(FieldInfo field)
             : base($"The field '{field.Name}' is marked as readonly, you should remove the setter from the base type class or interface.")
         {
         }
 
+        /// <summary>
+        /// Throws the exception associated with throw.
+        /// </summary>
+        /// <param name="field">The field value.</param>
         [DebuggerHidden]
         [DoesNotReturn]
         internal static void Throw(FieldInfo field)
@@ -177,11 +249,23 @@ namespace Datadog.Trace.DuckTyping
     /// </summary>
     internal sealed class DuckTypePropertyOrFieldNotFoundException : DuckTypeException
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DuckTypePropertyOrFieldNotFoundException"/> class.
+        /// </summary>
+        /// <param name="name">The name value.</param>
+        /// <param name="duckAttributeName">The duck attribute name value.</param>
+        /// <param name="type">The type value.</param>
         private DuckTypePropertyOrFieldNotFoundException(string name, string duckAttributeName, string type)
             : base($"The property or field '{duckAttributeName}' for the proxy property '{name}' was not found in the instance of type '{type}'.")
         {
         }
 
+        /// <summary>
+        /// Throws the exception associated with throw.
+        /// </summary>
+        /// <param name="name">The name value.</param>
+        /// <param name="duckAttributeName">The duck attribute name value.</param>
+        /// <param name="type">The type value.</param>
         [DebuggerHidden]
         [DoesNotReturn]
         internal static void Throw(string name, string duckAttributeName, Type type)
@@ -195,11 +279,19 @@ namespace Datadog.Trace.DuckTyping
     /// </summary>
     internal sealed class DuckTypeStructMembersCannotBeChangedException : DuckTypeException
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DuckTypeStructMembersCannotBeChangedException"/> class.
+        /// </summary>
+        /// <param name="type">The type value.</param>
         private DuckTypeStructMembersCannotBeChangedException(Type type)
             : base($"Modifying struct members is not supported. [{type.FullName}]")
         {
         }
 
+        /// <summary>
+        /// Throws the exception associated with throw.
+        /// </summary>
+        /// <param name="type">The type value.</param>
         [DebuggerHidden]
         [DoesNotReturn]
         internal static void Throw(Type type)
@@ -213,11 +305,19 @@ namespace Datadog.Trace.DuckTyping
     /// </summary>
     internal sealed class DuckTypeTargetMethodNotFoundException : DuckTypeException
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DuckTypeTargetMethodNotFoundException"/> class.
+        /// </summary>
+        /// <param name="method">The method value.</param>
         private DuckTypeTargetMethodNotFoundException(MethodInfo method)
             : base($"The target method for the proxy method '{method}' was not found.")
         {
         }
 
+        /// <summary>
+        /// Throws the exception associated with throw.
+        /// </summary>
+        /// <param name="method">The method value.</param>
         [DebuggerHidden]
         [DoesNotReturn]
         internal static void Throw(MethodInfo method)
@@ -231,11 +331,21 @@ namespace Datadog.Trace.DuckTyping
     /// </summary>
     internal sealed class DuckTypeProxyMethodParameterIsMissingException : DuckTypeException
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DuckTypeProxyMethodParameterIsMissingException"/> class.
+        /// </summary>
+        /// <param name="proxyMethod">The proxy method value.</param>
+        /// <param name="targetParameterInfo">The target parameter info value.</param>
         private DuckTypeProxyMethodParameterIsMissingException(MethodInfo proxyMethod, ParameterInfo targetParameterInfo)
             : base($"The proxy method '{proxyMethod.Name}' is missing parameter '{targetParameterInfo.Name}' declared in the target method.")
         {
         }
 
+        /// <summary>
+        /// Throws the exception associated with throw.
+        /// </summary>
+        /// <param name="proxyMethod">The proxy method value.</param>
+        /// <param name="targetParameterInfo">The target parameter info value.</param>
         [DebuggerHidden]
         [DoesNotReturn]
         internal static void Throw(MethodInfo proxyMethod, ParameterInfo targetParameterInfo)
@@ -249,11 +359,21 @@ namespace Datadog.Trace.DuckTyping
     /// </summary>
     internal sealed class DuckTypeProxyAndTargetMethodParameterSignatureMismatchException : DuckTypeException
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DuckTypeProxyAndTargetMethodParameterSignatureMismatchException"/> class.
+        /// </summary>
+        /// <param name="proxyMethod">The proxy method value.</param>
+        /// <param name="targetMethod">The target method value.</param>
         private DuckTypeProxyAndTargetMethodParameterSignatureMismatchException(MethodInfo proxyMethod, MethodInfo targetMethod)
             : base($"Parameter signature mismatch between proxy '{proxyMethod}' and target method '{targetMethod}'")
         {
         }
 
+        /// <summary>
+        /// Throws the exception associated with throw.
+        /// </summary>
+        /// <param name="proxyMethod">The proxy method value.</param>
+        /// <param name="targetMethod">The target method value.</param>
         [DebuggerHidden]
         [DoesNotReturn]
         internal static void Throw(MethodInfo proxyMethod, MethodInfo targetMethod)
@@ -267,11 +387,21 @@ namespace Datadog.Trace.DuckTyping
     /// </summary>
     internal sealed class DuckTypeProxyAndTargetMethodReturnTypeMismatchException : DuckTypeException
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DuckTypeProxyAndTargetMethodReturnTypeMismatchException"/> class.
+        /// </summary>
+        /// <param name="proxyMethod">The proxy method value.</param>
+        /// <param name="targetMethod">The target method value.</param>
         private DuckTypeProxyAndTargetMethodReturnTypeMismatchException(MethodInfo proxyMethod, MethodInfo targetMethod)
             : base($"Return type mismatch between proxy '{proxyMethod}' and target method '{targetMethod}'.")
         {
         }
 
+        /// <summary>
+        /// Throws the exception associated with throw.
+        /// </summary>
+        /// <param name="proxyMethod">The proxy method value.</param>
+        /// <param name="targetMethod">The target method value.</param>
         [DebuggerHidden]
         [DoesNotReturn]
         internal static void Throw(MethodInfo proxyMethod, MethodInfo targetMethod)
@@ -285,11 +415,19 @@ namespace Datadog.Trace.DuckTyping
     /// </summary>
     internal sealed class DuckTypeProxyMethodsWithGenericParametersNotSupportedInNonPublicInstancesException : DuckTypeException
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DuckTypeProxyMethodsWithGenericParametersNotSupportedInNonPublicInstancesException"/> class.
+        /// </summary>
+        /// <param name="proxyMethod">The proxy method value.</param>
         private DuckTypeProxyMethodsWithGenericParametersNotSupportedInNonPublicInstancesException(MethodInfo proxyMethod)
             : base($"The proxy method with generic parameters '{proxyMethod}' are not supported on non public instances")
         {
         }
 
+        /// <summary>
+        /// Throws the exception associated with throw.
+        /// </summary>
+        /// <param name="proxyMethod">The proxy method value.</param>
         [DebuggerHidden]
         [DoesNotReturn]
         internal static void Throw(MethodInfo proxyMethod)
@@ -303,11 +441,23 @@ namespace Datadog.Trace.DuckTyping
     /// </summary>
     internal sealed class DuckTypeTargetMethodAmbiguousMatchException : DuckTypeException
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DuckTypeTargetMethodAmbiguousMatchException"/> class.
+        /// </summary>
+        /// <param name="proxyMethod">The proxy method value.</param>
+        /// <param name="targetMethod">The target method value.</param>
+        /// <param name="targetMethod2">The target method2 value.</param>
         private DuckTypeTargetMethodAmbiguousMatchException(MethodInfo proxyMethod, MethodInfo targetMethod, MethodInfo targetMethod2)
             : base($"The proxy method '{proxyMethod}' matches at least two methods in the target type. Method1 = '{targetMethod}' and Method2 = '{targetMethod2}'")
         {
         }
 
+        /// <summary>
+        /// Throws the exception associated with throw.
+        /// </summary>
+        /// <param name="proxyMethod">The proxy method value.</param>
+        /// <param name="targetMethod">The target method value.</param>
+        /// <param name="targetMethod2">The target method2 value.</param>
         [DebuggerHidden]
         [DoesNotReturn]
         internal static void Throw(MethodInfo proxyMethod, MethodInfo targetMethod, MethodInfo targetMethod2)
@@ -321,11 +471,19 @@ namespace Datadog.Trace.DuckTyping
     /// </summary>
     internal sealed class DuckTypeReverseProxyBaseIsStructException : DuckTypeException
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DuckTypeReverseProxyBaseIsStructException"/> class.
+        /// </summary>
+        /// <param name="type">The type value.</param>
         private DuckTypeReverseProxyBaseIsStructException(Type type)
             : base($"Cannot derive from struct type '{type.FullName}' for reverse proxy")
         {
         }
 
+        /// <summary>
+        /// Throws the exception associated with throw.
+        /// </summary>
+        /// <param name="type">The type value.</param>
         [DebuggerHidden]
         [DoesNotReturn]
         internal static void Throw(Type type)
@@ -339,11 +497,19 @@ namespace Datadog.Trace.DuckTyping
     /// </summary>
     internal sealed class DuckTypeReverseProxyImplementorIsAbstractOrInterfaceException : DuckTypeException
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DuckTypeReverseProxyImplementorIsAbstractOrInterfaceException"/> class.
+        /// </summary>
+        /// <param name="type">The type value.</param>
         private DuckTypeReverseProxyImplementorIsAbstractOrInterfaceException(Type type)
             : base($"The implementation type '{type.FullName}' must not be an interface or abstract type for reverse proxy")
         {
         }
 
+        /// <summary>
+        /// Throws the exception associated with throw.
+        /// </summary>
+        /// <param name="type">The type value.</param>
         [DebuggerHidden]
         [DoesNotReturn]
         internal static void Throw(Type type)
@@ -357,11 +523,19 @@ namespace Datadog.Trace.DuckTyping
     /// </summary>
     internal sealed class DuckTypeReverseProxyPropertyCannotBeAbstractException : DuckTypeException
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DuckTypeReverseProxyPropertyCannotBeAbstractException"/> class.
+        /// </summary>
+        /// <param name="property">The property value.</param>
         private DuckTypeReverseProxyPropertyCannotBeAbstractException(PropertyInfo property)
             : base($"The property '{property.Name}' cannot be abstract for reverse proxy")
         {
         }
 
+        /// <summary>
+        /// Throws the exception associated with throw.
+        /// </summary>
+        /// <param name="property">The property value.</param>
         [DebuggerHidden]
         [DoesNotReturn]
         internal static void Throw(PropertyInfo property)
@@ -375,11 +549,19 @@ namespace Datadog.Trace.DuckTyping
     /// </summary>
     internal sealed class DuckTypeIncorrectReverseMethodUsageException : DuckTypeException
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DuckTypeIncorrectReverseMethodUsageException"/> class.
+        /// </summary>
+        /// <param name="method">The method value.</param>
         private DuckTypeIncorrectReverseMethodUsageException(MethodInfo method)
             : base($"The method '{method.Name}' was marked as a [DuckReverseMethod] but not doing reverse duck typing.")
         {
         }
 
+        /// <summary>
+        /// Throws the exception associated with throw.
+        /// </summary>
+        /// <param name="method">The method value.</param>
         [DebuggerHidden]
         [DoesNotReturn]
         internal static void Throw(MethodInfo method)
@@ -393,11 +575,19 @@ namespace Datadog.Trace.DuckTyping
     /// </summary>
     internal sealed class DuckTypeIncorrectReversePropertyUsageException : DuckTypeException
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DuckTypeIncorrectReversePropertyUsageException"/> class.
+        /// </summary>
+        /// <param name="property">The property value.</param>
         private DuckTypeIncorrectReversePropertyUsageException(PropertyInfo property)
             : base($"The property '{property.Name}' was marked as a [DuckReverseMethod] but not doing reverse duck typing.")
         {
         }
 
+        /// <summary>
+        /// Throws the exception associated with throw.
+        /// </summary>
+        /// <param name="property">The property value.</param>
         [DebuggerHidden]
         [DoesNotReturn]
         internal static void Throw(PropertyInfo property)
@@ -411,11 +601,19 @@ namespace Datadog.Trace.DuckTyping
     /// </summary>
     internal sealed class DuckTypeReverseProxyMissingPropertyImplementationException : DuckTypeException
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DuckTypeReverseProxyMissingPropertyImplementationException"/> class.
+        /// </summary>
+        /// <param name="properties">The properties value.</param>
         private DuckTypeReverseProxyMissingPropertyImplementationException(IEnumerable<PropertyInfo> properties)
             : base($"The duck reverse proxy was missing implementations for properties: {string.Join(", ", properties.Select(x => x.Name))}")
         {
         }
 
+        /// <summary>
+        /// Throws the exception associated with throw.
+        /// </summary>
+        /// <param name="properties">The properties value.</param>
         [DebuggerHidden]
         [DoesNotReturn]
         internal static void Throw(IEnumerable<PropertyInfo> properties)
@@ -429,11 +627,19 @@ namespace Datadog.Trace.DuckTyping
     /// </summary>
     internal sealed class DuckTypeReverseProxyMissingMethodImplementationException : DuckTypeException
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DuckTypeReverseProxyMissingMethodImplementationException"/> class.
+        /// </summary>
+        /// <param name="methods">The methods value.</param>
         private DuckTypeReverseProxyMissingMethodImplementationException(IEnumerable<MethodInfo> methods)
             : base($"The duck reverse proxy was missing implementations for methods: {string.Join(", ", methods.Select(x => x.Name))}")
         {
         }
 
+        /// <summary>
+        /// Throws the exception associated with throw.
+        /// </summary>
+        /// <param name="methods">The methods value.</param>
         [DebuggerHidden]
         [DoesNotReturn]
         internal static void Throw(IEnumerable<MethodInfo> methods)
@@ -447,11 +653,19 @@ namespace Datadog.Trace.DuckTyping
     /// </summary>
     internal sealed class DuckTypeReverseAttributeParameterNamesMismatchException : DuckTypeException
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DuckTypeReverseAttributeParameterNamesMismatchException"/> class.
+        /// </summary>
+        /// <param name="method">The method value.</param>
         private DuckTypeReverseAttributeParameterNamesMismatchException(MethodInfo method)
             : base($"The reverse duck attribute parameter names for method '{method.Name}' did not match the method's parameters ")
         {
         }
 
+        /// <summary>
+        /// Throws the exception associated with throw.
+        /// </summary>
+        /// <param name="method">The method value.</param>
         [DebuggerHidden]
         [DoesNotReturn]
         internal static void Throw(MethodInfo method)
@@ -465,12 +679,22 @@ namespace Datadog.Trace.DuckTyping
     /// </summary>
     internal sealed class DuckTypeReverseProxyMustImplementGenericMethodAsGenericException : DuckTypeException
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DuckTypeReverseProxyMustImplementGenericMethodAsGenericException"/> class.
+        /// </summary>
+        /// <param name="implementationMethod">The implementation method value.</param>
+        /// <param name="targetMethod">The target method value.</param>
         private DuckTypeReverseProxyMustImplementGenericMethodAsGenericException(MethodInfo implementationMethod, MethodInfo targetMethod)
             : base($"The duck reverse proxy implementation '{implementationMethod.Name}' for generic target method '{targetMethod.Name}' " +
                    $"must have same number of generic parameters - had {implementationMethod.GetGenericArguments().Length}, expected {targetMethod.GetGenericArguments().Length}")
         {
         }
 
+        /// <summary>
+        /// Throws the exception associated with throw.
+        /// </summary>
+        /// <param name="implementationMethod">The implementation method value.</param>
+        /// <param name="targetMethod">The target method value.</param>
         [DebuggerHidden]
         [DoesNotReturn]
         internal static void Throw(MethodInfo implementationMethod, MethodInfo targetMethod)
@@ -484,11 +708,21 @@ namespace Datadog.Trace.DuckTyping
     /// </summary>
     internal sealed class DuckTypeCustomAttributeHasNamedArgumentsException : DuckTypeException
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DuckTypeCustomAttributeHasNamedArgumentsException"/> class.
+        /// </summary>
+        /// <param name="attributeName">The attribute name value.</param>
+        /// <param name="type">The type value.</param>
         private DuckTypeCustomAttributeHasNamedArgumentsException(string attributeName, string type)
             : base($"The attribute '{attributeName}' applied to '{type}' uses named arguments. Named arguments are not supported for custom attributes.")
         {
         }
 
+        /// <summary>
+        /// Throws the exception associated with throw.
+        /// </summary>
+        /// <param name="type">The type value.</param>
+        /// <param name="attributeData">The attribute data value.</param>
         [DebuggerHidden]
         [DoesNotReturn]
         internal static void Throw(Type type, CustomAttributeData attributeData)
@@ -502,11 +736,19 @@ namespace Datadog.Trace.DuckTyping
     /// </summary>
     internal sealed class DuckTypeDuckCopyStructDoesNotContainsAnyField : DuckTypeException
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DuckTypeDuckCopyStructDoesNotContainsAnyField"/> class.
+        /// </summary>
+        /// <param name="type">The type value.</param>
         private DuckTypeDuckCopyStructDoesNotContainsAnyField(string type)
             : base($"The [DuckCopy] struct '{type}' does not contains any public field. Remember that DuckCopy proxies must be declared using fields instead of properties.")
         {
         }
 
+        /// <summary>
+        /// Throws the exception associated with throw.
+        /// </summary>
+        /// <param name="type">The type value.</param>
         [DebuggerHidden]
         [DoesNotReturn]
         internal static void Throw(Type type)
@@ -520,11 +762,21 @@ namespace Datadog.Trace.DuckTyping
     /// </summary>
     internal sealed class DuckTypeRuntimeModeConflictException : DuckTypeException
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DuckTypeRuntimeModeConflictException"/> class.
+        /// </summary>
+        /// <param name="currentMode">The current mode value.</param>
+        /// <param name="requestedMode">The requested mode value.</param>
         private DuckTypeRuntimeModeConflictException(DuckTypeRuntimeMode currentMode, DuckTypeRuntimeMode requestedMode)
             : base($"DuckType runtime mode is immutable after initialization. Current mode: '{currentMode}', requested mode: '{requestedMode}'.")
         {
         }
 
+        /// <summary>
+        /// Throws the exception associated with throw.
+        /// </summary>
+        /// <param name="currentMode">The current mode value.</param>
+        /// <param name="requestedMode">The requested mode value.</param>
         [DebuggerHidden]
         [DoesNotReturn]
         internal static void Throw(DuckTypeRuntimeMode currentMode, DuckTypeRuntimeMode requestedMode)
@@ -538,11 +790,23 @@ namespace Datadog.Trace.DuckTyping
     /// </summary>
     internal sealed class DuckTypeAotMissingProxyRegistrationException : DuckTypeException
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DuckTypeAotMissingProxyRegistrationException"/> class.
+        /// </summary>
+        /// <param name="proxyDefinitionType">The proxy definition type value.</param>
+        /// <param name="targetType">The target type value.</param>
+        /// <param name="reverse">The reverse value.</param>
         private DuckTypeAotMissingProxyRegistrationException(Type proxyDefinitionType, Type targetType, bool reverse)
             : base($"AOT duck typing mapping not found for proxy '{proxyDefinitionType.FullName}' and target '{targetType.FullName}' (reverse={reverse}).")
         {
         }
 
+        /// <summary>
+        /// Throws the exception associated with throw.
+        /// </summary>
+        /// <param name="proxyDefinitionType">The proxy definition type value.</param>
+        /// <param name="targetType">The target type value.</param>
+        /// <param name="reverse">The reverse value.</param>
         [DebuggerHidden]
         [DoesNotReturn]
         internal static void Throw(Type proxyDefinitionType, Type targetType, bool reverse)
@@ -556,11 +820,27 @@ namespace Datadog.Trace.DuckTyping
     /// </summary>
     internal sealed class DuckTypeAotProxyRegistrationConflictException : DuckTypeException
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DuckTypeAotProxyRegistrationConflictException"/> class.
+        /// </summary>
+        /// <param name="proxyDefinitionType">The proxy definition type value.</param>
+        /// <param name="targetType">The target type value.</param>
+        /// <param name="reverse">The reverse value.</param>
+        /// <param name="existingProxyType">The existing proxy type value.</param>
+        /// <param name="newProxyType">The new proxy type value.</param>
         private DuckTypeAotProxyRegistrationConflictException(Type proxyDefinitionType, Type targetType, bool reverse, Type existingProxyType, Type newProxyType)
             : base($"Conflicting AOT duck typing registration for proxy '{proxyDefinitionType.FullName}' and target '{targetType.FullName}' (reverse={reverse}). Existing generated proxy: '{existingProxyType.FullName}', new generated proxy: '{newProxyType.FullName}'.")
         {
         }
 
+        /// <summary>
+        /// Throws the exception associated with throw.
+        /// </summary>
+        /// <param name="proxyDefinitionType">The proxy definition type value.</param>
+        /// <param name="targetType">The target type value.</param>
+        /// <param name="reverse">The reverse value.</param>
+        /// <param name="existingProxyType">The existing proxy type value.</param>
+        /// <param name="newProxyType">The new proxy type value.</param>
         [DebuggerHidden]
         [DoesNotReturn]
         internal static void Throw(Type proxyDefinitionType, Type targetType, bool reverse, Type existingProxyType, Type newProxyType)
@@ -574,11 +854,21 @@ namespace Datadog.Trace.DuckTyping
     /// </summary>
     internal sealed class DuckTypeAotGeneratedProxyTypeMismatchException : DuckTypeException
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DuckTypeAotGeneratedProxyTypeMismatchException"/> class.
+        /// </summary>
+        /// <param name="proxyDefinitionType">The proxy definition type value.</param>
+        /// <param name="generatedProxyType">The generated proxy type value.</param>
         private DuckTypeAotGeneratedProxyTypeMismatchException(Type proxyDefinitionType, Type generatedProxyType)
             : base($"Generated AOT proxy type '{generatedProxyType.FullName}' is not assignable to proxy definition '{proxyDefinitionType.FullName}'.")
         {
         }
 
+        /// <summary>
+        /// Throws the exception associated with throw.
+        /// </summary>
+        /// <param name="proxyDefinitionType">The proxy definition type value.</param>
+        /// <param name="generatedProxyType">The generated proxy type value.</param>
         [DebuggerHidden]
         [DoesNotReturn]
         internal static void Throw(Type proxyDefinitionType, Type generatedProxyType)
@@ -592,11 +882,21 @@ namespace Datadog.Trace.DuckTyping
     /// </summary>
     internal sealed class DuckTypeAotMultipleRegistryAssembliesException : DuckTypeException
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DuckTypeAotMultipleRegistryAssembliesException"/> class.
+        /// </summary>
+        /// <param name="currentRegistryAssembly">The current registry assembly value.</param>
+        /// <param name="newRegistryAssembly">The new registry assembly value.</param>
         private DuckTypeAotMultipleRegistryAssembliesException(string currentRegistryAssembly, string newRegistryAssembly)
             : base($"AOT duck typing supports a single generated registry assembly per process. Current registry assembly: '{currentRegistryAssembly}', attempted registration from: '{newRegistryAssembly}'.")
         {
         }
 
+        /// <summary>
+        /// Throws the exception associated with throw.
+        /// </summary>
+        /// <param name="currentRegistryAssembly">The current registry assembly value.</param>
+        /// <param name="newRegistryAssembly">The new registry assembly value.</param>
         [DebuggerHidden]
         [DoesNotReturn]
         internal static void Throw(string currentRegistryAssembly, string newRegistryAssembly)
@@ -610,11 +910,19 @@ namespace Datadog.Trace.DuckTyping
     /// </summary>
     internal sealed class DuckTypeAotRegistryContractValidationException : DuckTypeException
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DuckTypeAotRegistryContractValidationException"/> class.
+        /// </summary>
+        /// <param name="detail">The detail value.</param>
         private DuckTypeAotRegistryContractValidationException(string detail)
             : base($"AOT registry contract validation failed. {detail}")
         {
         }
 
+        /// <summary>
+        /// Throws the exception associated with throw validation.
+        /// </summary>
+        /// <param name="detail">The detail value.</param>
         [DebuggerHidden]
         [DoesNotReturn]
         internal static void ThrowValidation(string detail)

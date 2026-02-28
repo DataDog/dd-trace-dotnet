@@ -20,10 +20,23 @@ using dnlib.DotNet;
 
 namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 {
+    /// <summary>
+    /// Provides helper operations for duck type aot artifacts writer.
+    /// </summary>
     internal static class DuckTypeAotArtifactsWriter
     {
+        /// <summary>
+        /// Defines the schema version constant.
+        /// </summary>
         private const string SchemaVersion = "1";
 
+        /// <summary>
+        /// Writes write all.
+        /// </summary>
+        /// <param name="artifactPaths">The artifact paths value.</param>
+        /// <param name="mappingResolutionResult">The mapping resolution result value.</param>
+        /// <param name="emissionResult">The emission result value.</param>
+        /// <returns>The result produced by this operation.</returns>
         internal static DuckTypeAotCompatibilityArtifacts WriteAll(
             DuckTypeAotArtifactPaths artifactPaths,
             DuckTypeAotMappingResolutionResult mappingResolutionResult,
@@ -87,6 +100,16 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 compatibilityMatrix.Mappings.Count(mapping => !string.Equals(mapping.Status, DuckTypeAotCompatibilityStatuses.Compatible, StringComparison.Ordinal)));
         }
 
+        /// <summary>
+        /// Writes write manifest.
+        /// </summary>
+        /// <param name="manifestPath">The manifest path value.</param>
+        /// <param name="trimmerDescriptorPath">The trimmer descriptor path value.</param>
+        /// <param name="propsPath">The props path value.</param>
+        /// <param name="mappingResolutionResult">The mapping resolution result value.</param>
+        /// <param name="registryAssemblyInfo">The registry assembly info value.</param>
+        /// <param name="generatedAtUtc">The generated at utc value.</param>
+        /// <param name="toolVersion">The tool version value.</param>
         private static void WriteManifest(
             string manifestPath,
             string trimmerDescriptorPath,
@@ -144,6 +167,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             WriteJson(manifestPath, manifest);
         }
 
+        /// <summary>
+        /// Creates create assembly fingerprints.
+        /// </summary>
+        /// <param name="assemblyPaths">The assembly paths value.</param>
+        /// <returns>The result produced by this operation.</returns>
         private static List<DuckTypeAotAssemblyFingerprint> CreateAssemblyFingerprints(IEnumerable<string> assemblyPaths)
         {
             return assemblyPaths
@@ -153,6 +181,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 .ToList();
         }
 
+        /// <summary>
+        /// Creates create assembly fingerprint.
+        /// </summary>
+        /// <param name="assemblyPath">The assembly path value.</param>
+        /// <returns>The result produced by this operation.</returns>
         private static DuckTypeAotAssemblyFingerprint CreateAssemblyFingerprint(string assemblyPath)
         {
             var fullPath = Path.GetFullPath(assemblyPath);
@@ -170,6 +203,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             };
         }
 
+        /// <summary>
+        /// Computes compute sha256.
+        /// </summary>
+        /// <param name="filePath">The file path value.</param>
+        /// <returns>The resulting string value.</returns>
         private static string ComputeSha256(string filePath)
         {
             using var sha256 = SHA256.Create();
@@ -178,6 +216,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return ConvertToLowerHex(hash);
         }
 
+        /// <summary>
+        /// Computes compute mapping identity checksum.
+        /// </summary>
+        /// <param name="mappingKey">The mapping key value.</param>
+        /// <returns>The resulting string value.</returns>
         private static string ComputeMappingIdentityChecksum(string mappingKey)
         {
             using var sha256 = SHA256.Create();
@@ -185,6 +228,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return ConvertToLowerHex(hash);
         }
 
+        /// <summary>
+        /// Executes convert to lower hex.
+        /// </summary>
+        /// <param name="hash">The hash value.</param>
+        /// <returns>The resulting string value.</returns>
         private static string ConvertToLowerHex(byte[] hash)
         {
             var sb = new StringBuilder(hash.Length * 2);
@@ -196,6 +244,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return sb.ToString();
         }
 
+        /// <summary>
+        /// Writes write compatibility markdown.
+        /// </summary>
+        /// <param name="path">The path value.</param>
+        /// <param name="matrix">The matrix value.</param>
+        /// <remarks>Emits or composes IL for generated duck-typing proxy operations.</remarks>
         private static void WriteCompatibilityMarkdown(string path, DuckTypeAotCompatibilityMatrix matrix)
         {
             var sb = new StringBuilder();
@@ -252,6 +306,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             File.WriteAllText(path, sb.ToString());
         }
 
+        /// <summary>
+        /// Writes write trimmer descriptor.
+        /// </summary>
+        /// <param name="path">The path value.</param>
+        /// <param name="mappingResolutionResult">The mapping resolution result value.</param>
+        /// <param name="emissionResult">The emission result value.</param>
         private static void WriteTrimmerDescriptor(
             string path,
             DuckTypeAotMappingResolutionResult mappingResolutionResult,
@@ -309,6 +369,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             File.WriteAllText(path, sb.ToString());
         }
 
+        /// <summary>
+        /// Adds add type root.
+        /// </summary>
+        /// <param name="typesByAssembly">The types by assembly value.</param>
+        /// <param name="assemblyName">The assembly name value.</param>
+        /// <param name="typeName">The type name value.</param>
         private static void AddTypeRoot(IDictionary<string, HashSet<string>> typesByAssembly, string assemblyName, string typeName)
         {
             if (string.IsNullOrWhiteSpace(assemblyName) || string.IsNullOrWhiteSpace(typeName))
@@ -325,11 +391,21 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             _ = assemblyTypes.Add(NormalizeTypeNameForLinker(typeName));
         }
 
+        /// <summary>
+        /// Normalizes normalize type name for linker.
+        /// </summary>
+        /// <param name="typeName">The type name value.</param>
+        /// <returns>The resulting string value.</returns>
         private static string NormalizeTypeNameForLinker(string typeName)
         {
             return typeName.Replace('+', '/');
         }
 
+        /// <summary>
+        /// Executes escape xml.
+        /// </summary>
+        /// <param name="value">The value value.</param>
+        /// <returns>The resulting string value.</returns>
         private static string EscapeXml(string value)
         {
             return value
@@ -339,6 +415,13 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 .Replace(">", "&gt;");
         }
 
+        /// <summary>
+        /// Writes write props file.
+        /// </summary>
+        /// <param name="path">The path value.</param>
+        /// <param name="artifactPaths">The artifact paths value.</param>
+        /// <param name="registryAssemblyInfo">The registry assembly info value.</param>
+        /// <remarks>Emits or composes IL for generated duck-typing proxy operations.</remarks>
         private static void WritePropsFile(string path, DuckTypeAotArtifactPaths artifactPaths, DuckTypeAotRegistryAssemblyInfo registryAssemblyInfo)
         {
             var outputAssemblyPath = EscapeMsBuildPath(artifactPaths.OutputAssemblyPath);
@@ -360,11 +443,22 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             File.WriteAllText(path, propsContent);
         }
 
+        /// <summary>
+        /// Executes escape ms build path.
+        /// </summary>
+        /// <param name="value">The value value.</param>
+        /// <returns>The resulting string value.</returns>
+        /// <remarks>Emits or composes IL for generated duck-typing proxy operations.</remarks>
         private static string EscapeMsBuildPath(string value)
         {
             return value.Replace("$", "$$");
         }
 
+        /// <summary>
+        /// Writes write json.
+        /// </summary>
+        /// <param name="path">The path value.</param>
+        /// <param name="value">The value value.</param>
         private static void WriteJson<T>(string path, T value)
         {
             var json = JsonConvert.SerializeObject(value, Formatting.Indented);
@@ -372,8 +466,20 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         }
     }
 
+    /// <summary>
+    /// Represents duck type aot compatibility artifacts.
+    /// </summary>
     internal sealed class DuckTypeAotCompatibilityArtifacts
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DuckTypeAotCompatibilityArtifacts"/> class.
+        /// </summary>
+        /// <param name="matrixPath">The matrix path value.</param>
+        /// <param name="reportPath">The report path value.</param>
+        /// <param name="totalMappings">The total mappings value.</param>
+        /// <param name="compatibleMappings">The compatible mappings value.</param>
+        /// <param name="nonCompatibleMappings">The non compatible mappings value.</param>
+        /// <remarks>Emits or composes IL for generated duck-typing proxy operations.</remarks>
         public DuckTypeAotCompatibilityArtifacts(string matrixPath, string reportPath, int totalMappings, int compatibleMappings, int nonCompatibleMappings)
         {
             MatrixPath = matrixPath;
@@ -383,193 +489,447 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             NonCompatibleMappings = nonCompatibleMappings;
         }
 
+        /// <summary>
+        /// Gets matrix path.
+        /// </summary>
+        /// <value>The matrix path value.</value>
         public string MatrixPath { get; }
 
+        /// <summary>
+        /// Gets report path.
+        /// </summary>
+        /// <value>The report path value.</value>
         public string ReportPath { get; }
 
+        /// <summary>
+        /// Gets total mappings.
+        /// </summary>
+        /// <value>The total mappings value.</value>
         public int TotalMappings { get; }
 
+        /// <summary>
+        /// Gets compatible mappings.
+        /// </summary>
+        /// <value>The compatible mappings value.</value>
         public int CompatibleMappings { get; }
 
+        /// <summary>
+        /// Gets non compatible mappings.
+        /// </summary>
+        /// <value>The non compatible mappings value.</value>
         public int NonCompatibleMappings { get; }
     }
 
+    /// <summary>
+    /// Represents duck type aot compatibility matrix.
+    /// </summary>
     internal sealed class DuckTypeAotCompatibilityMatrix
     {
+        /// <summary>
+        /// Gets or sets schema version.
+        /// </summary>
+        /// <value>The schema version value.</value>
         [JsonProperty("schemaVersion")]
         public string? SchemaVersion { get; set; }
 
+        /// <summary>
+        /// Gets or sets generated at utc.
+        /// </summary>
+        /// <value>The generated at utc value.</value>
         [JsonProperty("generatedAtUtc")]
         public string? GeneratedAtUtc { get; set; }
 
+        /// <summary>
+        /// Gets or sets registry assembly.
+        /// </summary>
+        /// <value>The registry assembly value.</value>
         [JsonProperty("registryAssembly")]
         public string? RegistryAssembly { get; set; }
 
+        /// <summary>
+        /// Gets or sets total mappings.
+        /// </summary>
+        /// <value>The total mappings value.</value>
         [JsonProperty("totalMappings")]
         public int TotalMappings { get; set; }
 
+        /// <summary>
+        /// Gets or sets mappings.
+        /// </summary>
+        /// <value>The mappings value.</value>
         [JsonProperty("mappings")]
         public List<DuckTypeAotCompatibilityMapping> Mappings { get; set; } = new();
     }
 
+    /// <summary>
+    /// Represents duck type aot compatibility mapping.
+    /// </summary>
     internal sealed class DuckTypeAotCompatibilityMapping
     {
+        /// <summary>
+        /// Gets or sets id.
+        /// </summary>
+        /// <value>The id value.</value>
         [JsonProperty("id")]
         public string? Id { get; set; }
 
+        /// <summary>
+        /// Gets or sets mapping identity checksum.
+        /// </summary>
+        /// <value>The mapping identity checksum value.</value>
         [JsonProperty("mappingIdentityChecksum")]
         public string? MappingIdentityChecksum { get; set; }
 
+        /// <summary>
+        /// Gets or sets mode.
+        /// </summary>
+        /// <value>The mode value.</value>
         [JsonProperty("mode")]
         public string? Mode { get; set; }
 
+        /// <summary>
+        /// Gets or sets proxy type.
+        /// </summary>
+        /// <value>The proxy type value.</value>
         [JsonProperty("proxyType")]
         public string? ProxyType { get; set; }
 
+        /// <summary>
+        /// Gets or sets proxy assembly.
+        /// </summary>
+        /// <value>The proxy assembly value.</value>
         [JsonProperty("proxyAssembly")]
         public string? ProxyAssembly { get; set; }
 
+        /// <summary>
+        /// Gets or sets target type.
+        /// </summary>
+        /// <value>The target type value.</value>
         [JsonProperty("targetType")]
         public string? TargetType { get; set; }
 
+        /// <summary>
+        /// Gets or sets target assembly.
+        /// </summary>
+        /// <value>The target assembly value.</value>
         [JsonProperty("targetAssembly")]
         public string? TargetAssembly { get; set; }
 
+        /// <summary>
+        /// Gets or sets source.
+        /// </summary>
+        /// <value>The source value.</value>
         [JsonProperty("source")]
         public string? Source { get; set; }
 
+        /// <summary>
+        /// Gets or sets status.
+        /// </summary>
+        /// <value>The status value.</value>
         [JsonProperty("status")]
         public string? Status { get; set; }
 
+        /// <summary>
+        /// Gets or sets diagnostic code.
+        /// </summary>
+        /// <value>The diagnostic code value.</value>
         [JsonProperty("diagnosticCode")]
         public string? DiagnosticCode { get; set; }
 
+        /// <summary>
+        /// Gets or sets details.
+        /// </summary>
+        /// <value>The details value.</value>
         [JsonProperty("details")]
         public string? Details { get; set; }
 
+        /// <summary>
+        /// Gets or sets generated proxy assembly.
+        /// </summary>
+        /// <value>The generated proxy assembly value.</value>
         [JsonProperty("generatedProxyAssembly")]
         public string? GeneratedProxyAssembly { get; set; }
 
+        /// <summary>
+        /// Gets or sets generated proxy type.
+        /// </summary>
+        /// <value>The generated proxy type value.</value>
         [JsonProperty("generatedProxyType")]
         public string? GeneratedProxyType { get; set; }
     }
 
+    /// <summary>
+    /// Represents duck type aot manifest.
+    /// </summary>
     internal sealed class DuckTypeAotManifest
     {
+        /// <summary>
+        /// Gets or sets schema version.
+        /// </summary>
+        /// <value>The schema version value.</value>
         [JsonProperty("schemaVersion")]
         public string? SchemaVersion { get; set; }
 
+        /// <summary>
+        /// Gets or sets tool version.
+        /// </summary>
+        /// <value>The tool version value.</value>
         [JsonProperty("toolVersion")]
         public string? ToolVersion { get; set; }
 
+        /// <summary>
+        /// Gets or sets generated at utc.
+        /// </summary>
+        /// <value>The generated at utc value.</value>
         [JsonProperty("generatedAtUtc")]
         public string? GeneratedAtUtc { get; set; }
 
+        /// <summary>
+        /// Gets or sets registry assembly.
+        /// </summary>
+        /// <value>The registry assembly value.</value>
         [JsonProperty("registryAssembly")]
         public string? RegistryAssembly { get; set; }
 
+        /// <summary>
+        /// Gets or sets registry assembly name.
+        /// </summary>
+        /// <value>The registry assembly name value.</value>
         [JsonProperty("registryAssemblyName")]
         public string? RegistryAssemblyName { get; set; }
 
+        /// <summary>
+        /// Gets or sets registry assembly version.
+        /// </summary>
+        /// <value>The registry assembly version value.</value>
         [JsonProperty("registryAssemblyVersion")]
         public string? RegistryAssemblyVersion { get; set; }
 
+        /// <summary>
+        /// Gets or sets registry bootstrap type.
+        /// </summary>
+        /// <value>The registry bootstrap type value.</value>
         [JsonProperty("registryBootstrapType")]
         public string? RegistryBootstrapType { get; set; }
 
+        /// <summary>
+        /// Gets or sets registry mvid.
+        /// </summary>
+        /// <value>The registry mvid value.</value>
         [JsonProperty("registryMvid")]
         public string? RegistryMvid { get; set; }
 
+        /// <summary>
+        /// Gets or sets registry assembly sha256.
+        /// </summary>
+        /// <value>The registry assembly sha256 value.</value>
         [JsonProperty("registryAssemblySha256")]
         public string? RegistryAssemblySha256 { get; set; }
 
+        /// <summary>
+        /// Gets or sets a value indicating whether registry strong name signed.
+        /// </summary>
+        /// <value>The registry strong name signed value.</value>
         [JsonProperty("registryStrongNameSigned")]
         public bool? RegistryStrongNameSigned { get; set; }
 
+        /// <summary>
+        /// Gets or sets registry public key token.
+        /// </summary>
+        /// <value>The registry public key token value.</value>
         [JsonProperty("registryPublicKeyToken")]
         public string? RegistryPublicKeyToken { get; set; }
 
+        /// <summary>
+        /// Gets or sets trimmer descriptor path.
+        /// </summary>
+        /// <value>The trimmer descriptor path value.</value>
         [JsonProperty("trimmerDescriptorPath")]
         public string? TrimmerDescriptorPath { get; set; }
 
+        /// <summary>
+        /// Gets or sets trimmer descriptor sha256.
+        /// </summary>
+        /// <value>The trimmer descriptor sha256 value.</value>
         [JsonProperty("trimmerDescriptorSha256")]
         public string? TrimmerDescriptorSha256 { get; set; }
 
+        /// <summary>
+        /// Gets or sets props path.
+        /// </summary>
+        /// <value>The props path value.</value>
         [JsonProperty("propsPath")]
         public string? PropsPath { get; set; }
 
+        /// <summary>
+        /// Gets or sets props sha256.
+        /// </summary>
+        /// <value>The props sha256 value.</value>
         [JsonProperty("propsSha256")]
         public string? PropsSha256 { get; set; }
 
+        /// <summary>
+        /// Gets or sets mappings.
+        /// </summary>
+        /// <value>The mappings value.</value>
         [JsonProperty("mappings")]
         public List<DuckTypeAotManifestMapping> Mappings { get; set; } = new();
 
+        /// <summary>
+        /// Gets or sets generic instantiations.
+        /// </summary>
+        /// <value>The generic instantiations value.</value>
         [JsonProperty("genericInstantiations")]
         public List<DuckTypeAotManifestTypeReference> GenericInstantiations { get; set; } = new();
 
+        /// <summary>
+        /// Gets or sets proxy assemblies.
+        /// </summary>
+        /// <value>The proxy assemblies value.</value>
         [JsonProperty("proxyAssemblies")]
         public List<DuckTypeAotAssemblyFingerprint> ProxyAssemblies { get; set; } = new();
 
+        /// <summary>
+        /// Gets or sets target assemblies.
+        /// </summary>
+        /// <value>The target assemblies value.</value>
         [JsonProperty("targetAssemblies")]
         public List<DuckTypeAotAssemblyFingerprint> TargetAssemblies { get; set; } = new();
 
+        /// <summary>
+        /// Gets or sets datadog trace assembly.
+        /// </summary>
+        /// <value>The datadog trace assembly value.</value>
         [JsonProperty("datadogTraceAssembly")]
         public DuckTypeAotAssemblyFingerprint? DatadogTraceAssembly { get; set; }
     }
 
+    /// <summary>
+    /// Represents duck type aot manifest mapping.
+    /// </summary>
     internal sealed class DuckTypeAotManifestMapping
     {
+        /// <summary>
+        /// Gets or sets mode.
+        /// </summary>
+        /// <value>The mode value.</value>
         [JsonProperty("mode")]
         public string? Mode { get; set; }
 
+        /// <summary>
+        /// Gets or sets scenario id.
+        /// </summary>
+        /// <value>The scenario id value.</value>
         [JsonProperty("scenarioId")]
         public string? ScenarioId { get; set; }
 
+        /// <summary>
+        /// Gets or sets mapping identity checksum.
+        /// </summary>
+        /// <value>The mapping identity checksum value.</value>
         [JsonProperty("mappingIdentityChecksum")]
         public string? MappingIdentityChecksum { get; set; }
 
+        /// <summary>
+        /// Gets or sets proxy type.
+        /// </summary>
+        /// <value>The proxy type value.</value>
         [JsonProperty("proxyType")]
         public string? ProxyType { get; set; }
 
+        /// <summary>
+        /// Gets or sets proxy assembly.
+        /// </summary>
+        /// <value>The proxy assembly value.</value>
         [JsonProperty("proxyAssembly")]
         public string? ProxyAssembly { get; set; }
 
+        /// <summary>
+        /// Gets or sets target type.
+        /// </summary>
+        /// <value>The target type value.</value>
         [JsonProperty("targetType")]
         public string? TargetType { get; set; }
 
+        /// <summary>
+        /// Gets or sets target assembly.
+        /// </summary>
+        /// <value>The target assembly value.</value>
         [JsonProperty("targetAssembly")]
         public string? TargetAssembly { get; set; }
 
+        /// <summary>
+        /// Gets or sets source.
+        /// </summary>
+        /// <value>The source value.</value>
         [JsonProperty("source")]
         public string? Source { get; set; }
     }
 
+    /// <summary>
+    /// Represents duck type aot manifest type reference.
+    /// </summary>
     internal sealed class DuckTypeAotManifestTypeReference
     {
+        /// <summary>
+        /// Gets or sets type.
+        /// </summary>
+        /// <value>The type value.</value>
         [JsonProperty("type")]
         public string? Type { get; set; }
 
+        /// <summary>
+        /// Gets or sets assembly.
+        /// </summary>
+        /// <value>The assembly value.</value>
         [JsonProperty("assembly")]
         public string? Assembly { get; set; }
     }
 
+    /// <summary>
+    /// Represents duck type aot assembly fingerprint.
+    /// </summary>
     internal sealed class DuckTypeAotAssemblyFingerprint
     {
+        /// <summary>
+        /// Gets or sets name.
+        /// </summary>
+        /// <value>The name value.</value>
         [JsonProperty("name")]
         public string? Name { get; set; }
 
+        /// <summary>
+        /// Gets or sets version.
+        /// </summary>
+        /// <value>The version value.</value>
         [JsonProperty("version")]
         public string? Version { get; set; }
 
+        /// <summary>
+        /// Gets or sets path.
+        /// </summary>
+        /// <value>The path value.</value>
         [JsonProperty("path")]
         public string? Path { get; set; }
 
+        /// <summary>
+        /// Gets or sets mvid.
+        /// </summary>
+        /// <value>The mvid value.</value>
         [JsonProperty("mvid")]
         public string? Mvid { get; set; }
 
+        /// <summary>
+        /// Gets or sets sha256.
+        /// </summary>
+        /// <value>The sha256 value.</value>
         [JsonProperty("sha256")]
         public string? Sha256 { get; set; }
 
+        /// <summary>
+        /// Gets or sets public key token.
+        /// </summary>
+        /// <value>The public key token value.</value>
         [JsonProperty("publicKeyToken")]
         public string? PublicKeyToken { get; set; }
     }

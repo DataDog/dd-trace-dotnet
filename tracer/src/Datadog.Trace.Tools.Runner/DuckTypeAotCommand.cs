@@ -7,8 +7,14 @@ using Datadog.Trace.Tools.Runner.DuckTypeAot;
 
 namespace Datadog.Trace.Tools.Runner;
 
+/// <summary>
+/// Represents duck type aot command.
+/// </summary>
 internal class DuckTypeAotCommand : CommandWithExamples
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DuckTypeAotCommand"/> class.
+    /// </summary>
     public DuckTypeAotCommand()
         : base("ducktype-aot", "Generate and verify NativeAOT DuckTyping registries")
     {

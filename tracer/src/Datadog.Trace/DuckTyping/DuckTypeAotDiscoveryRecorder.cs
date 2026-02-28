@@ -23,11 +23,30 @@ namespace Datadog.Trace.DuckTyping
     /// </summary>
     internal static class DuckTypeAotDiscoveryRecorder
     {
+        /// <summary>
+        /// Stores output path.
+        /// </summary>
+        /// <remarks>This field participates in shared runtime state and must remain thread-safe.</remarks>
         private static readonly string? OutputPath = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.DuckTypeAotDiscoveryOutputPath);
+
+        /// <summary>
+        /// Stores cached mappings data.
+        /// </summary>
+        /// <remarks>This field participates in shared runtime state and must remain thread-safe.</remarks>
         private static readonly ConcurrentDictionary<string, MapEntry> Mappings = new(StringComparer.Ordinal);
 
+        /// <summary>
+        /// Stores process exit hook registered.
+        /// </summary>
+        /// <remarks>This field participates in shared runtime state and must remain thread-safe.</remarks>
         private static int _processExitHookRegistered;
 
+        /// <summary>
+        /// Executes record.
+        /// </summary>
+        /// <param name="proxyType">The proxy type value.</param>
+        /// <param name="targetType">The target type value.</param>
+        /// <param name="reverse">The reverse value.</param>
         internal static void Record(Type proxyType, Type targetType, bool reverse)
         {
             if (string.IsNullOrWhiteSpace(OutputPath))
@@ -69,6 +88,9 @@ namespace Datadog.Trace.DuckTyping
                 });
         }
 
+        /// <summary>
+        /// Ensures ensure process exit hook.
+        /// </summary>
         private static void EnsureProcessExitHook()
         {
             if (Interlocked.CompareExchange(ref _processExitHookRegistered, 1, 0) == 0)
@@ -77,6 +99,9 @@ namespace Datadog.Trace.DuckTyping
             }
         }
 
+        /// <summary>
+        /// Executes flush.
+        /// </summary>
         private static void Flush()
         {
             try
@@ -113,26 +138,56 @@ namespace Datadog.Trace.DuckTyping
             }
         }
 
+        /// <summary>
+        /// Represents map document.
+        /// </summary>
         private sealed class MapDocument
         {
+            /// <summary>
+            /// Gets or sets mappings.
+            /// </summary>
+            /// <value>The mappings value.</value>
             [JsonProperty("mappings")]
             public List<MapEntry> Mappings { get; set; } = new();
         }
 
+        /// <summary>
+        /// Represents map entry.
+        /// </summary>
         private sealed class MapEntry
         {
+            /// <summary>
+            /// Gets or sets mode.
+            /// </summary>
+            /// <value>The mode value.</value>
             [JsonProperty("mode")]
             public string Mode { get; set; } = string.Empty;
 
+            /// <summary>
+            /// Gets or sets proxy type.
+            /// </summary>
+            /// <value>The proxy type value.</value>
             [JsonProperty("proxyType")]
             public string ProxyType { get; set; } = string.Empty;
 
+            /// <summary>
+            /// Gets or sets proxy assembly.
+            /// </summary>
+            /// <value>The proxy assembly value.</value>
             [JsonProperty("proxyAssembly")]
             public string ProxyAssembly { get; set; } = string.Empty;
 
+            /// <summary>
+            /// Gets or sets target type.
+            /// </summary>
+            /// <value>The target type value.</value>
             [JsonProperty("targetType")]
             public string TargetType { get; set; } = string.Empty;
 
+            /// <summary>
+            /// Gets or sets target assembly.
+            /// </summary>
+            /// <value>The target assembly value.</value>
             [JsonProperty("targetAssembly")]
             public string TargetAssembly { get; set; } = string.Empty;
         }

@@ -12,8 +12,16 @@ using Spectre.Console;
 
 namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 {
+    /// <summary>
+    /// Provides helper operations for duck type aot generate processor.
+    /// </summary>
     internal static class DuckTypeAotGenerateProcessor
     {
+        /// <summary>
+        /// Executes process.
+        /// </summary>
+        /// <param name="options">The options value.</param>
+        /// <returns>The computed numeric value.</returns>
         internal static int Process(DuckTypeAotGenerateOptions options)
         {
             var validationErrors = Validate(options);
@@ -106,6 +114,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
         }
 
+        /// <summary>
+        /// Validates validate.
+        /// </summary>
+        /// <param name="options">The options value.</param>
+        /// <returns>The result produced by this operation.</returns>
         private static List<string> Validate(DuckTypeAotGenerateOptions options)
         {
             var errors = new List<string>();
@@ -154,6 +167,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return errors;
         }
 
+        /// <summary>
+        /// Resolves resolve strong name key file path.
+        /// </summary>
+        /// <param name="options">The options value.</param>
+        /// <returns>The result produced by this operation.</returns>
+        /// <remarks>Emits or composes IL for generated duck-typing proxy operations.</remarks>
         private static string? ResolveStrongNameKeyFilePath(DuckTypeAotGenerateOptions options)
         {
             if (!string.IsNullOrWhiteSpace(options.StrongNameKeyFile))
@@ -170,6 +189,13 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return Path.GetFullPath(environmentPath);
         }
 
+        /// <summary>
+        /// Validates validate file inputs.
+        /// </summary>
+        /// <param name="paths">The paths value.</param>
+        /// <param name="optionName">The option name value.</param>
+        /// <param name="errors">The errors value.</param>
+        /// <remarks>Emits or composes IL for generated duck-typing proxy operations.</remarks>
         private static void ValidateFileInputs(IReadOnlyList<string> paths, string optionName, List<string> errors)
         {
             foreach (var path in paths)
@@ -181,6 +207,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
         }
 
+        /// <summary>
+        /// Validates validate directory inputs.
+        /// </summary>
+        /// <param name="paths">The paths value.</param>
+        /// <param name="optionName">The option name value.</param>
+        /// <param name="errors">The errors value.</param>
         private static void ValidateDirectoryInputs(IReadOnlyList<string> paths, string optionName, List<string> errors)
         {
             foreach (var path in paths)
@@ -192,6 +224,13 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
         }
 
+        /// <summary>
+        /// Validates validate optional file.
+        /// </summary>
+        /// <param name="path">The path value.</param>
+        /// <param name="optionName">The option name value.</param>
+        /// <param name="errors">The errors value.</param>
+        /// <remarks>Emits or composes IL for generated duck-typing proxy operations.</remarks>
         private static void ValidateOptionalFile(string? path, string optionName, List<string> errors)
         {
             if (!string.IsNullOrWhiteSpace(path) && !File.Exists(path))
@@ -200,6 +239,10 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
         }
 
+        /// <summary>
+        /// Ensures ensure parent directory exists.
+        /// </summary>
+        /// <param name="path">The path value.</param>
         private static void EnsureParentDirectoryExists(string path)
         {
             var parent = Path.GetDirectoryName(path);

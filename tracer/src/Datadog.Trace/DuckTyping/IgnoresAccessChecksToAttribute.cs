@@ -28,7 +28,7 @@ namespace System.Runtime.CompilerServices
         }
 
         /// <summary>
-        /// Gets the assembly name
+        /// Gets assembly name.
         /// </summary>
         public string AssemblyName { get; }
     }

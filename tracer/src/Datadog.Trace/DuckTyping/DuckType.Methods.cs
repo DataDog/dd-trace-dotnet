@@ -18,6 +18,11 @@ namespace Datadog.Trace.DuckTyping
     /// </summary>
     public static partial class DuckType
     {
+        /// <summary>
+        /// Gets get methods.
+        /// </summary>
+        /// <param name="baseType">The base type value.</param>
+        /// <returns>The result produced by this operation.</returns>
         private static List<MethodInfo> GetMethods(Type baseType)
         {
             List<MethodInfo> selectedMethods = new List<MethodInfo>(GetBaseMethods(baseType));
@@ -94,6 +99,13 @@ namespace Datadog.Trace.DuckTyping
             }
         }
 
+        /// <summary>
+        /// Creates create methods.
+        /// </summary>
+        /// <param name="proxyTypeBuilder">The proxy type builder value.</param>
+        /// <param name="proxyType">The proxy type value.</param>
+        /// <param name="targetType">The target type value.</param>
+        /// <param name="instanceField">The instance field value.</param>
         private static void CreateMethods(
             TypeBuilder? proxyTypeBuilder,
             Type proxyType,
@@ -239,6 +251,13 @@ namespace Datadog.Trace.DuckTyping
             }
         }
 
+        /// <summary>
+        /// Creates create reverse proxy methods.
+        /// </summary>
+        /// <param name="proxyTypeBuilder">The proxy type builder value.</param>
+        /// <param name="typeToDeriveFrom">The type to derive from value.</param>
+        /// <param name="typeToDelegateTo">The type to delegate to value.</param>
+        /// <param name="instanceField">The instance field value.</param>
         private static void CreateReverseProxyMethods(TypeBuilder? proxyTypeBuilder, Type typeToDeriveFrom, Type typeToDelegateTo, FieldInfo? instanceField)
         {
             // Gets all methods that _can_ be overriden/implemented
@@ -355,6 +374,15 @@ namespace Datadog.Trace.DuckTyping
             }
         }
 
+        /// <summary>
+        /// Executes select target method.
+        /// </summary>
+        /// <param name="targetType">The target type value.</param>
+        /// <param name="proxyMethod">The proxy method value.</param>
+        /// <param name="proxyMethodParameters">The proxy method parameters value.</param>
+        /// <param name="proxyMethodParametersTypes">The proxy method parameters types value.</param>
+        /// <param name="allTargetMethods">The all target methods value.</param>
+        /// <returns>The result produced by this operation.</returns>
         private static MethodInfo? SelectTargetMethod<T>(
             Type targetType,
             MethodInfo proxyMethod,
@@ -623,6 +651,12 @@ namespace Datadog.Trace.DuckTyping
             return targetMethod;
         }
 
+        /// <summary>
+        /// Writes write safe type conversion.
+        /// </summary>
+        /// <param name="il">The il value.</param>
+        /// <param name="actualType">The actual type value.</param>
+        /// <param name="expectedType">The expected type value.</param>
         private static void WriteSafeTypeConversion(this LazyILGenerator il, Type actualType, Type expectedType)
         {
             // If both types are generics, we expect that the generic parameter are the same type (passthrough)
@@ -634,13 +668,38 @@ namespace Datadog.Trace.DuckTyping
             il.WriteTypeConversion(actualType, expectedType);
         }
 
+        /// <summary>
+        /// Represents output and ref parameter data.
+        /// </summary>
         private readonly struct OutputAndRefParameterData
         {
+            /// <summary>
+            /// Stores local type.
+            /// </summary>
             public readonly Type LocalType;
+
+            /// <summary>
+            /// Stores proxy argument type.
+            /// </summary>
             public readonly Type ProxyArgumentType;
+
+            /// <summary>
+            /// Stores local index.
+            /// </summary>
             public readonly int LocalIndex;
+
+            /// <summary>
+            /// Stores proxy argument index.
+            /// </summary>
             public readonly int ProxyArgumentIndex;
 
+            /// <summary>
+            /// Initializes a new instance of the <see cref="OutputAndRefParameterData"/> struct.
+            /// </summary>
+            /// <param name="localIndex">The local index value.</param>
+            /// <param name="localType">The local type value.</param>
+            /// <param name="proxyArgumentIndex">The proxy argument index value.</param>
+            /// <param name="proxyArgumentType">The proxy argument type value.</param>
             public OutputAndRefParameterData(int localIndex, Type localType, int proxyArgumentIndex, Type proxyArgumentType)
             {
                 LocalIndex = localIndex;
@@ -650,8 +709,20 @@ namespace Datadog.Trace.DuckTyping
             }
         }
 
+        /// <summary>
+        /// Provides helper operations for method il helper.
+        /// </summary>
         private static class MethodIlHelper
         {
+            /// <summary>
+            /// Executes initialise proxy method.
+            /// </summary>
+            /// <param name="proxyMethod">The proxy method value.</param>
+            /// <param name="proxyMethodDefinitionParameters">The proxy method definition parameters value.</param>
+            /// <param name="proxyMethodDefinitionGenericArgumentsNames">The proxy method definition generic arguments names value.</param>
+            /// <param name="targetMethod">The target method value.</param>
+            /// <param name="instanceField">The instance field value.</param>
+            /// <returns>The result produced by this operation.</returns>
             internal static LazyILGenerator InitialiseProxyMethod(
                 MethodBuilder? proxyMethod,
                 ParameterInfo[] proxyMethodDefinitionParameters,
@@ -698,6 +769,21 @@ namespace Datadog.Trace.DuckTyping
                 return il;
             }
 
+            /// <summary>
+            /// Adds add il to load arguments.
+            /// </summary>
+            /// <param name="proxyTypeBuilder">The proxy type builder value.</param>
+            /// <param name="il">The il value.</param>
+            /// <param name="innerMethod">The inner method value.</param>
+            /// <param name="innerMethodParameters">The inner method parameters value.</param>
+            /// <param name="innerMethodParametersTypes">The inner method parameters types value.</param>
+            /// <param name="outerMethod">The outer method value.</param>
+            /// <param name="outerMethodParameters">The outer method parameters value.</param>
+            /// <param name="outerMethodGenericArguments">The outer method generic arguments value.</param>
+            /// <param name="duckCastParameterFunc">The duck cast parameter func value.</param>
+            /// <param name="needsDuckChaining">The needs duck chaining value.</param>
+            /// <returns>The result produced by this operation.</returns>
+            /// <remarks>Emits or composes IL for generated duck-typing proxy operations.</remarks>
             internal static List<OutputAndRefParameterData>? AddIlToLoadArguments(
                 TypeBuilder? proxyTypeBuilder,
                 LazyILGenerator il,
@@ -872,6 +958,14 @@ namespace Datadog.Trace.DuckTyping
                 return outputAndRefParameters;
             }
 
+            /// <summary>
+            /// Adds add il for direct method call.
+            /// </summary>
+            /// <param name="il">The il value.</param>
+            /// <param name="targetMethod">The target method value.</param>
+            /// <param name="proxyMethodDefinitionGenericArguments">The proxy method definition generic arguments value.</param>
+            /// <returns>The result produced by this operation.</returns>
+            /// <remarks>Emits or composes IL for generated duck-typing proxy operations.</remarks>
             internal static MethodInfo AddIlForDirectMethodCall(
                 LazyILGenerator il,
                 MethodInfo targetMethod,
@@ -899,6 +993,15 @@ namespace Datadog.Trace.DuckTyping
                 return targetMethod;
             }
 
+            /// <summary>
+            /// Adds add il for dynamic method call.
+            /// </summary>
+            /// <param name="proxyTypeBuilder">The proxy type builder value.</param>
+            /// <param name="il">The il value.</param>
+            /// <param name="targetMethod">The target method value.</param>
+            /// <param name="targetMethodParametersTypes">The target method parameters types value.</param>
+            /// <returns>The result produced by this operation.</returns>
+            /// <remarks>Emits or composes IL for generated duck-typing proxy operations.</remarks>
             internal static Type AddIlForDynamicMethodCall(
                 TypeBuilder? proxyTypeBuilder,
                 LazyILGenerator il,
@@ -958,6 +1061,14 @@ namespace Datadog.Trace.DuckTyping
                 return returnType;
             }
 
+            /// <summary>
+            /// Adds add il to set output and ref parameters.
+            /// </summary>
+            /// <param name="il">The il value.</param>
+            /// <param name="outputAndRefParameters">The output and ref parameters value.</param>
+            /// <param name="duckChainFunc">The duck chain func value.</param>
+            /// <param name="needsDuckChaining">The needs duck chaining value.</param>
+            /// <remarks>Emits or composes IL for generated duck-typing proxy operations.</remarks>
             internal static void AddIlToSetOutputAndRefParameters(
                 LazyILGenerator il,
                 List<OutputAndRefParameterData> outputAndRefParameters,
@@ -990,6 +1101,18 @@ namespace Datadog.Trace.DuckTyping
                 }
             }
 
+            /// <summary>
+            /// Attempts to try add return il.
+            /// </summary>
+            /// <param name="proxyTypeBuilder">The proxy type builder value.</param>
+            /// <param name="il">The il value.</param>
+            /// <param name="currentReturnType">The current return type value.</param>
+            /// <param name="innerMethodReturnType">The inner method return type value.</param>
+            /// <param name="outerMethodReturnType">The outer method return type value.</param>
+            /// <param name="needsDuckChainingFunc">The needs duck chaining func value.</param>
+            /// <param name="addDuckChainIlFunc">The add duck chain il func value.</param>
+            /// <returns>true if the operation succeeds; otherwise, false.</returns>
+            /// <remarks>Emits or composes IL for generated duck-typing proxy operations.</remarks>
             internal static bool TryAddReturnIl(
                 TypeBuilder? proxyTypeBuilder,
                 LazyILGenerator il,
@@ -1044,9 +1167,24 @@ namespace Datadog.Trace.DuckTyping
                 return true;
             }
 
+            /// <summary>
+            /// Executes needs duck chaining reverse.
+            /// </summary>
+            /// <param name="targetType">The target type value.</param>
+            /// <param name="proxyType">The proxy type value.</param>
+            /// <returns>true if the operation succeeds; otherwise, false.</returns>
+            /// <remarks>Emits or composes IL for generated duck-typing proxy operations.</remarks>
             internal static bool NeedsDuckChainingReverse(Type targetType, Type proxyType)
                 => NeedsDuckChaining(targetType: proxyType, proxyType: targetType);
 
+            /// <summary>
+            /// Adds add il to duck chain.
+            /// </summary>
+            /// <param name="il">The il value.</param>
+            /// <param name="genericType">The generic type value.</param>
+            /// <param name="fromType">The from type value.</param>
+            /// <returns>The result produced by this operation.</returns>
+            /// <remarks>Emits or composes IL for generated duck-typing proxy operations.</remarks>
             internal static Type AddIlToDuckChain(LazyILGenerator il, Type genericType, Type fromType)
             {
                 if (fromType.IsValueType)
@@ -1127,6 +1265,14 @@ namespace Datadog.Trace.DuckTyping
                 return genericType;
             }
 
+            /// <summary>
+            /// Adds add il to duck chain reverse.
+            /// </summary>
+            /// <param name="il">The il value.</param>
+            /// <param name="genericType">The generic type value.</param>
+            /// <param name="originalType">The original type value.</param>
+            /// <returns>The result produced by this operation.</returns>
+            /// <remarks>Emits or composes IL for generated duck-typing proxy operations.</remarks>
             internal static Type AddIlToDuckChainReverse(LazyILGenerator il, Type genericType, Type originalType)
             {
                 var getProxyMethodInfo = typeof(CreateCache<>)
@@ -1142,6 +1288,14 @@ namespace Datadog.Trace.DuckTyping
                 return genericType;
             }
 
+            /// <summary>
+            /// Adds add il to extract duck type.
+            /// </summary>
+            /// <param name="il">The il value.</param>
+            /// <param name="toType">The to type value.</param>
+            /// <param name="fromType">The from type value.</param>
+            /// <returns>The result produced by this operation.</returns>
+            /// <remarks>Emits or composes IL for generated duck-typing proxy operations.</remarks>
             internal static Type AddIlToExtractDuckType(LazyILGenerator il, Type toType, Type fromType)
             {
                 // outer is a duck type, so extract it

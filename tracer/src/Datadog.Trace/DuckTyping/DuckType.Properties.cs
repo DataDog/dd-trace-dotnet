@@ -18,6 +18,17 @@ namespace Datadog.Trace.DuckTyping
     /// </summary>
     public static partial class DuckType
     {
+        /// <summary>
+        /// Gets get property get method.
+        /// </summary>
+        /// <param name="proxyTypeBuilder">The proxy type builder value.</param>
+        /// <param name="targetType">The target type value.</param>
+        /// <param name="proxyMember">The proxy member value.</param>
+        /// <param name="targetProperty">The target property value.</param>
+        /// <param name="instanceField">The instance field value.</param>
+        /// <param name="duckCastInnerToOuterFunc">The duck cast inner to outer func value.</param>
+        /// <param name="needsDuckChaining">The needs duck chaining value.</param>
+        /// <returns>The result produced by this operation.</returns>
         private static MethodBuilder? GetPropertyGetMethod(
             TypeBuilder? proxyTypeBuilder,
             Type targetType,
@@ -212,6 +223,17 @@ namespace Datadog.Trace.DuckTyping
             return proxyMethod;
         }
 
+        /// <summary>
+        /// Gets get property set method.
+        /// </summary>
+        /// <param name="proxyTypeBuilder">The proxy type builder value.</param>
+        /// <param name="targetType">The target type value.</param>
+        /// <param name="proxyMember">The proxy member value.</param>
+        /// <param name="targetProperty">The target property value.</param>
+        /// <param name="instanceField">The instance field value.</param>
+        /// <param name="duckCastOuterToInner">The duck cast outer to inner value.</param>
+        /// <param name="needsDuckChaining">The needs duck chaining value.</param>
+        /// <returns>The result produced by this operation.</returns>
         private static MethodBuilder? GetPropertySetMethod(
             TypeBuilder? proxyTypeBuilder,
             Type targetType,
@@ -382,6 +404,14 @@ namespace Datadog.Trace.DuckTyping
             return proxyMethod;
         }
 
+        /// <summary>
+        /// Gets get property get parameters types.
+        /// </summary>
+        /// <param name="typeBuilder">The type builder value.</param>
+        /// <param name="property">The property value.</param>
+        /// <param name="originalTypes">The original types value.</param>
+        /// <param name="isDynamicSignature">The is dynamic signature value.</param>
+        /// <returns>The result produced by this operation.</returns>
         private static IEnumerable<Type> GetPropertyGetParametersTypes(TypeBuilder? typeBuilder, PropertyInfo property, bool originalTypes, bool isDynamicSignature = false)
         {
             if (isDynamicSignature)
@@ -403,6 +433,14 @@ namespace Datadog.Trace.DuckTyping
             }
         }
 
+        /// <summary>
+        /// Gets get property set parameters types.
+        /// </summary>
+        /// <param name="typeBuilder">The type builder value.</param>
+        /// <param name="property">The property value.</param>
+        /// <param name="originalTypes">The original types value.</param>
+        /// <param name="isDynamicSignature">The is dynamic signature value.</param>
+        /// <returns>The result produced by this operation.</returns>
         private static IEnumerable<Type> GetPropertySetParametersTypes(TypeBuilder? typeBuilder, PropertyInfo property, bool originalTypes, bool isDynamicSignature = false)
         {
             if (isDynamicSignature)

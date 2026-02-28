@@ -14,8 +14,16 @@ using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 {
+    /// <summary>
+    /// Provides helper operations for duck type aot map file parser.
+    /// </summary>
     internal static class DuckTypeAotMapFileParser
     {
+        /// <summary>
+        /// Parses parse.
+        /// </summary>
+        /// <param name="path">The path value.</param>
+        /// <returns>The result produced by this operation.</returns>
         internal static DuckTypeAotMapFileParseResult Parse(string path)
         {
             var errors = new List<string>();
@@ -48,6 +56,15 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return new DuckTypeAotMapFileParseResult(mappings.Values, excludedKeys, errors);
         }
 
+        /// <summary>
+        /// Parses parse entries.
+        /// </summary>
+        /// <param name="entries">The entries value.</param>
+        /// <param name="path">The path value.</param>
+        /// <param name="mappings">The mappings value.</param>
+        /// <param name="excludedKeys">The excluded keys value.</param>
+        /// <param name="errors">The errors value.</param>
+        /// <param name="forceExclude">The force exclude value.</param>
         private static void ParseEntries(
             IReadOnlyList<MapEntry>? entries,
             string path,
@@ -80,6 +97,16 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
         }
 
+        /// <summary>
+        /// Attempts to try parse entry.
+        /// </summary>
+        /// <param name="entry">The entry value.</param>
+        /// <param name="path">The path value.</param>
+        /// <param name="index">The index value.</param>
+        /// <param name="errors">The errors value.</param>
+        /// <param name="mapping">The mapping value.</param>
+        /// <param name="exclude">The exclude value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool TryParseEntry(
             MapEntry entry,
             string path,
@@ -125,6 +152,14 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return true;
         }
 
+        /// <summary>
+        /// Parses parse mode.
+        /// </summary>
+        /// <param name="mode">The mode value.</param>
+        /// <param name="path">The path value.</param>
+        /// <param name="index">The index value.</param>
+        /// <param name="errors">The errors value.</param>
+        /// <returns>The result produced by this operation.</returns>
         private static DuckTypeAotMappingMode? ParseMode(string? mode, string path, int index, ICollection<string> errors)
         {
             if (string.IsNullOrWhiteSpace(mode) || string.Equals(mode, "forward", StringComparison.OrdinalIgnoreCase))
@@ -141,42 +176,92 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return null;
         }
 
+        /// <summary>
+        /// Represents map file document.
+        /// </summary>
         private sealed class MapFileDocument
         {
+            /// <summary>
+            /// Gets or sets mappings.
+            /// </summary>
+            /// <value>The mappings value.</value>
             [JsonProperty("mappings")]
             public List<MapEntry>? Mappings { get; set; }
 
+            /// <summary>
+            /// Gets or sets excludes.
+            /// </summary>
+            /// <value>The excludes value.</value>
             [JsonProperty("excludes")]
             public List<MapEntry>? Excludes { get; set; }
         }
 
+        /// <summary>
+        /// Represents map entry.
+        /// </summary>
         private sealed class MapEntry
         {
+            /// <summary>
+            /// Gets or sets proxy type.
+            /// </summary>
+            /// <value>The proxy type value.</value>
             [JsonProperty("proxyType")]
             public string? ProxyType { get; set; }
 
+            /// <summary>
+            /// Gets or sets proxy assembly.
+            /// </summary>
+            /// <value>The proxy assembly value.</value>
             [JsonProperty("proxyAssembly")]
             public string? ProxyAssembly { get; set; }
 
+            /// <summary>
+            /// Gets or sets target type.
+            /// </summary>
+            /// <value>The target type value.</value>
             [JsonProperty("targetType")]
             public string? TargetType { get; set; }
 
+            /// <summary>
+            /// Gets or sets target assembly.
+            /// </summary>
+            /// <value>The target assembly value.</value>
             [JsonProperty("targetAssembly")]
             public string? TargetAssembly { get; set; }
 
+            /// <summary>
+            /// Gets or sets mode.
+            /// </summary>
+            /// <value>The mode value.</value>
             [JsonProperty("mode")]
             public string? Mode { get; set; }
 
+            /// <summary>
+            /// Gets or sets a value indicating whether exclude.
+            /// </summary>
+            /// <value>The exclude value.</value>
             [JsonProperty("exclude")]
             public bool? Exclude { get; set; }
 
+            /// <summary>
+            /// Gets or sets scenario id.
+            /// </summary>
+            /// <value>The scenario id value.</value>
             [JsonProperty("scenarioId")]
             public string? ScenarioId { get; set; }
         }
     }
 
+    /// <summary>
+    /// Provides helper operations for duck type aot mapping catalog parser.
+    /// </summary>
     internal static class DuckTypeAotMappingCatalogParser
     {
+        /// <summary>
+        /// Parses parse.
+        /// </summary>
+        /// <param name="path">The path value.</param>
+        /// <returns>The result produced by this operation.</returns>
         internal static DuckTypeAotMappingCatalogParseResult Parse(string path)
         {
             var errors = new List<string>();
@@ -216,6 +301,15 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return new DuckTypeAotMappingCatalogParseResult(requiredMappings.Values, errors);
         }
 
+        /// <summary>
+        /// Attempts to try parse catalog entry.
+        /// </summary>
+        /// <param name="entry">The entry value.</param>
+        /// <param name="path">The path value.</param>
+        /// <param name="index">The index value.</param>
+        /// <param name="errors">The errors value.</param>
+        /// <param name="mapping">The mapping value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool TryParseCatalogEntry(
             CatalogEntry entry,
             string path,
@@ -259,6 +353,14 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return true;
         }
 
+        /// <summary>
+        /// Parses parse mode.
+        /// </summary>
+        /// <param name="mode">The mode value.</param>
+        /// <param name="path">The path value.</param>
+        /// <param name="index">The index value.</param>
+        /// <param name="errors">The errors value.</param>
+        /// <returns>The result produced by this operation.</returns>
         private static DuckTypeAotMappingMode? ParseMode(string? mode, string path, int index, ICollection<string> errors)
         {
             if (string.IsNullOrWhiteSpace(mode) || string.Equals(mode, "forward", StringComparison.OrdinalIgnoreCase))
@@ -275,36 +377,80 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return null;
         }
 
+        /// <summary>
+        /// Represents mapping catalog document.
+        /// </summary>
         private sealed class MappingCatalogDocument
         {
+            /// <summary>
+            /// Gets or sets required mappings.
+            /// </summary>
+            /// <value>The required mappings value.</value>
             [JsonProperty("requiredMappings")]
             public List<CatalogEntry>? RequiredMappings { get; set; }
         }
 
+        /// <summary>
+        /// Represents catalog entry.
+        /// </summary>
         private sealed class CatalogEntry
         {
+            /// <summary>
+            /// Gets or sets proxy type.
+            /// </summary>
+            /// <value>The proxy type value.</value>
             [JsonProperty("proxyType")]
             public string? ProxyType { get; set; }
 
+            /// <summary>
+            /// Gets or sets proxy assembly.
+            /// </summary>
+            /// <value>The proxy assembly value.</value>
             [JsonProperty("proxyAssembly")]
             public string? ProxyAssembly { get; set; }
 
+            /// <summary>
+            /// Gets or sets target type.
+            /// </summary>
+            /// <value>The target type value.</value>
             [JsonProperty("targetType")]
             public string? TargetType { get; set; }
 
+            /// <summary>
+            /// Gets or sets target assembly.
+            /// </summary>
+            /// <value>The target assembly value.</value>
             [JsonProperty("targetAssembly")]
             public string? TargetAssembly { get; set; }
 
+            /// <summary>
+            /// Gets or sets mode.
+            /// </summary>
+            /// <value>The mode value.</value>
             [JsonProperty("mode")]
             public string? Mode { get; set; }
 
+            /// <summary>
+            /// Gets or sets scenario id.
+            /// </summary>
+            /// <value>The scenario id value.</value>
             [JsonProperty("scenarioId")]
             public string? ScenarioId { get; set; }
         }
     }
 
+    /// <summary>
+    /// Represents duck type aot map file parse result.
+    /// </summary>
     internal sealed class DuckTypeAotMapFileParseResult
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DuckTypeAotMapFileParseResult"/> class.
+        /// </summary>
+        /// <param name="mappings">The mappings value.</param>
+        /// <param name="excludedKeys">The excluded keys value.</param>
+        /// <param name="errors">The errors value.</param>
+        /// <remarks>Emits or composes IL for generated duck-typing proxy operations.</remarks>
         public DuckTypeAotMapFileParseResult(IEnumerable<DuckTypeAotMapping> mappings, HashSet<string> excludedKeys, IReadOnlyList<string> errors)
         {
             Mappings = new List<DuckTypeAotMapping>(mappings);
@@ -312,23 +458,51 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             Errors = errors;
         }
 
+        /// <summary>
+        /// Gets mappings.
+        /// </summary>
+        /// <value>The mappings value.</value>
         public IReadOnlyList<DuckTypeAotMapping> Mappings { get; }
 
+        /// <summary>
+        /// Gets excluded keys.
+        /// </summary>
+        /// <value>The excluded keys value.</value>
         public HashSet<string> ExcludedKeys { get; }
 
+        /// <summary>
+        /// Gets errors.
+        /// </summary>
+        /// <value>The errors value.</value>
         public IReadOnlyList<string> Errors { get; }
     }
 
+    /// <summary>
+    /// Represents duck type aot mapping catalog parse result.
+    /// </summary>
     internal sealed class DuckTypeAotMappingCatalogParseResult
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DuckTypeAotMappingCatalogParseResult"/> class.
+        /// </summary>
+        /// <param name="requiredMappings">The required mappings value.</param>
+        /// <param name="errors">The errors value.</param>
         public DuckTypeAotMappingCatalogParseResult(IEnumerable<DuckTypeAotMapping> requiredMappings, IReadOnlyList<string> errors)
         {
             RequiredMappings = new List<DuckTypeAotMapping>(requiredMappings);
             Errors = errors;
         }
 
+        /// <summary>
+        /// Gets required mappings.
+        /// </summary>
+        /// <value>The required mappings value.</value>
         public IReadOnlyList<DuckTypeAotMapping> RequiredMappings { get; }
 
+        /// <summary>
+        /// Gets errors.
+        /// </summary>
+        /// <value>The errors value.</value>
         public IReadOnlyList<string> Errors { get; }
     }
 }

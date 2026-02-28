@@ -16,6 +16,15 @@ namespace Datadog.Trace.DuckTyping
     /// </summary>
     public static partial class DuckType
     {
+        /// <summary>
+        /// Gets get field get method.
+        /// </summary>
+        /// <param name="proxyTypeBuilder">The proxy type builder value.</param>
+        /// <param name="targetType">The target type value.</param>
+        /// <param name="proxyMember">The proxy member value.</param>
+        /// <param name="targetField">The target field value.</param>
+        /// <param name="instanceField">The instance field value.</param>
+        /// <returns>The result produced by this operation.</returns>
         private static MethodBuilder? GetFieldGetMethod(
             TypeBuilder? proxyTypeBuilder,
             Type targetType,
@@ -146,6 +155,15 @@ namespace Datadog.Trace.DuckTyping
             return proxyMethod;
         }
 
+        /// <summary>
+        /// Gets get field set method.
+        /// </summary>
+        /// <param name="proxyTypeBuilder">The proxy type builder value.</param>
+        /// <param name="targetType">The target type value.</param>
+        /// <param name="proxyMember">The proxy member value.</param>
+        /// <param name="targetField">The target field value.</param>
+        /// <param name="instanceField">The instance field value.</param>
+        /// <returns>The result produced by this operation.</returns>
         private static MethodBuilder? GetFieldSetMethod(
             TypeBuilder? proxyTypeBuilder,
             Type targetType,

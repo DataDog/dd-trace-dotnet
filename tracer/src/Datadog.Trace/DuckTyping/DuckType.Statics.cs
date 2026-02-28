@@ -22,32 +22,94 @@ namespace Datadog.Trace.DuckTyping
     /// </summary>
     public static partial class DuckType
     {
+        /// <summary>
+        /// Synchronizes access to locker.
+        /// </summary>
+        /// <remarks>This field participates in shared runtime state and must remain thread-safe.</remarks>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static readonly object Locker;
+
+        /// <summary>
+        /// Stores cached duck type cache data.
+        /// </summary>
+        /// <remarks>This field participates in shared runtime state and must remain thread-safe.</remarks>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static readonly ConcurrentDictionary<TypesTuple, Lazy<CreateTypeResult>> DuckTypeCache;
+
+        /// <summary>
+        /// Stores active builders.
+        /// </summary>
+        /// <remarks>This field participates in shared runtime state and must remain thread-safe.</remarks>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static readonly Dictionary<Assembly, ModuleBuilder> ActiveBuilders;
+
+        /// <summary>
+        /// Stores cached ignores access checks to assemblies set dictionary data.
+        /// </summary>
+        /// <remarks>This field participates in shared runtime state and must remain thread-safe.</remarks>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static readonly Dictionary<ModuleBuilder, HashSet<string>> IgnoresAccessChecksToAssembliesSetDictionary;
 
+        /// <summary>
+        /// Stores get type from handle method info.
+        /// </summary>
+        /// <remarks>This field participates in shared runtime state and must remain thread-safe.</remarks>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static readonly MethodInfo? _getTypeFromHandleMethodInfo;
+
+        /// <summary>
+        /// Stores enum to object method info.
+        /// </summary>
+        /// <remarks>This field participates in shared runtime state and must remain thread-safe.</remarks>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static readonly MethodInfo? _enumToObjectMethodInfo;
+
+        /// <summary>
+        /// Stores duck type instance property info.
+        /// </summary>
+        /// <remarks>This field participates in shared runtime state and must remain thread-safe.</remarks>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static readonly PropertyInfo? _duckTypeInstancePropertyInfo;
+
+        /// <summary>
+        /// Stores method builder get token.
+        /// </summary>
+        /// <remarks>This field participates in shared runtime state and must remain thread-safe.</remarks>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static readonly MethodInfo? _methodBuilderGetToken;
+
+        /// <summary>
+        /// Stores ignores access checks to attribute ctor.
+        /// </summary>
+        /// <remarks>This field participates in shared runtime state and must remain thread-safe.</remarks>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static readonly ConstructorInfo? _ignoresAccessChecksToAttributeCtor;
 
+        /// <summary>
+        /// Stores assembly count.
+        /// </summary>
+        /// <remarks>This field participates in shared runtime state and must remain thread-safe.</remarks>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static long _assemblyCount;
+
+        /// <summary>
+        /// Stores type count.
+        /// </summary>
+        /// <remarks>This field participates in shared runtime state and must remain thread-safe.</remarks>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static long _typeCount;
+
+        /// <summary>
+        /// Stores runtime mode.
+        /// </summary>
+        /// <remarks>This field participates in shared runtime state and must remain thread-safe.</remarks>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static int _runtimeMode;
+
+        /// <summary>
+        /// Stores runtime mode initialized.
+        /// </summary>
+        /// <remarks>This field participates in shared runtime state and must remain thread-safe.</remarks>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static int _runtimeModeInitialized;
 
@@ -103,10 +165,22 @@ namespace Datadog.Trace.DuckTyping
             }
         }
 
+        /// <summary>
+        /// Gets assembly count.
+        /// </summary>
+        /// <remarks>This field participates in shared runtime state and must remain thread-safe.</remarks>
         internal static long AssemblyCount => _assemblyCount;
 
+        /// <summary>
+        /// Gets type count.
+        /// </summary>
+        /// <remarks>This field participates in shared runtime state and must remain thread-safe.</remarks>
         internal static long TypeCount => _typeCount;
 
+        /// <summary>
+        /// Gets runtime mode.
+        /// </summary>
+        /// <remarks>This field participates in shared runtime state and must remain thread-safe.</remarks>
         internal static DuckTypeRuntimeMode RuntimeMode => (DuckTypeRuntimeMode)Volatile.Read(ref _runtimeMode);
 
         private static PropertyInfo DuckTypeInstancePropertyInfo
@@ -194,6 +268,12 @@ namespace Datadog.Trace.DuckTyping
             }
         }
 
+        /// <summary>
+        /// Gets get type from partial name.
+        /// </summary>
+        /// <param name="partialName">The partial name value.</param>
+        /// <param name="throwOnError">The throw on error value.</param>
+        /// <returns>The result produced by this operation.</returns>
         private static Type? GetTypeFromPartialName(string partialName, bool throwOnError = false)
         {
             // We configure it to throw in case throwOnError is true and the partial name contains a version (is not partial).
@@ -259,6 +339,10 @@ namespace Datadog.Trace.DuckTyping
         public static class DelegateCache<TProxyDelegate>
             where TProxyDelegate : Delegate
         {
+            /// <summary>
+            /// Stores delegate.
+            /// </summary>
+            /// <remarks>This field participates in shared runtime state and must remain thread-safe.</remarks>
             private static TProxyDelegate? _delegate;
 
             /// <summary>

@@ -19,8 +19,17 @@ namespace Datadog.Trace.DuckTyping
     // ReSharper disable once InconsistentNaming
     internal static class ILHelpersExtensions
     {
+        /// <summary>
+        /// Stores dynamic methods.
+        /// </summary>
+        /// <remarks>This field participates in shared runtime state and must remain thread-safe.</remarks>
         private static readonly List<DynamicMethod> DynamicMethods = new();
 
+        /// <summary>
+        /// Gets get dynamic method for index.
+        /// </summary>
+        /// <param name="index">The index value.</param>
+        /// <returns>The result produced by this operation.</returns>
         internal static DynamicMethod GetDynamicMethodForIndex(int index)
         {
             lock (DynamicMethods)
@@ -29,6 +38,13 @@ namespace Datadog.Trace.DuckTyping
             }
         }
 
+        /// <summary>
+        /// Creates create delegate type for.
+        /// </summary>
+        /// <param name="proxyType">The proxy type value.</param>
+        /// <param name="dynamicMethod">The dynamic method value.</param>
+        /// <param name="delType">The del type value.</param>
+        /// <param name="invokeMethod">The invoke method value.</param>
         internal static void CreateDelegateTypeFor(TypeBuilder proxyType, DynamicMethod dynamicMethod, out Type delType, out MethodInfo invokeMethod)
         {
             ModuleBuilder modBuilder = (ModuleBuilder)proxyType.Module;
@@ -352,6 +368,12 @@ namespace Datadog.Trace.DuckTyping
 
         // WARNING: This method is a slim version of the WriteTypeConversion method without IL
         // Checks in both method must match! if you change either, you need to change both
+
+        /// <summary>
+        /// Executes check type conversion.
+        /// </summary>
+        /// <param name="actualType">The actual type value.</param>
+        /// <param name="expectedType">The expected type value.</param>
         internal static void CheckTypeConversion(Type actualType, Type expectedType)
         {
             var actualUnderlyingType = actualType.IsEnum ? Enum.GetUnderlyingType(actualType) : actualType;
