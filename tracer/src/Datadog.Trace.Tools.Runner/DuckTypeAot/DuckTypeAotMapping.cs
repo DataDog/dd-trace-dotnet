@@ -141,39 +141,25 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 return true;
             }
 
-            for (var i = 0; i < typeName.Length; i++)
+            if (typeName.IndexOf('`') < 0)
             {
-                if (typeName[i] != '`')
-                {
-                    continue;
-                }
+                return false;
+            }
 
-                var arityStart = i + 1;
-                if (arityStart >= typeName.Length || !char.IsDigit(typeName[arityStart]))
-                {
-                    continue;
-                }
-
-                var nextToken = arityStart;
-                while (nextToken < typeName.Length && char.IsDigit(typeName[nextToken]))
-                {
-                    nextToken++;
-                }
-
-                while (nextToken < typeName.Length && char.IsWhiteSpace(typeName[nextToken]))
-                {
-                    nextToken++;
-                }
-
-                if (nextToken + 1 < typeName.Length && typeName[nextToken] == '[' && typeName[nextToken + 1] == '[')
-                {
-                    continue;
-                }
-
+            var genericArgumentsStart = typeName.IndexOf("[[", StringComparison.Ordinal);
+            if (genericArgumentsStart < 0)
+            {
                 return true;
             }
 
-            return false;
+            var declaredArity = CountDeclaredGenericArity(typeName, genericArgumentsStart);
+            if (declaredArity <= 0)
+            {
+                return false;
+            }
+
+            var providedArguments = CountTopLevelGenericArguments(typeName, genericArgumentsStart);
+            return providedArguments < declaredArity;
         }
 
         internal static bool IsClosedGenericTypeName(string typeName)
@@ -202,6 +188,80 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
 
             return -1;
+        }
+
+        private static int CountDeclaredGenericArity(string typeName, int genericArgumentsStart)
+        {
+            var arity = 0;
+            for (var i = 0; i < genericArgumentsStart; i++)
+            {
+                if (typeName[i] != '`')
+                {
+                    continue;
+                }
+
+                var digitsStart = i + 1;
+                if (digitsStart >= genericArgumentsStart || !char.IsDigit(typeName[digitsStart]))
+                {
+                    continue;
+                }
+
+                var digitsEnd = digitsStart;
+                while (digitsEnd < genericArgumentsStart && char.IsDigit(typeName[digitsEnd]))
+                {
+                    digitsEnd++;
+                }
+
+                if (int.TryParse(typeName.Substring(digitsStart, digitsEnd - digitsStart), out var parsedArity))
+                {
+                    arity += parsedArity;
+                }
+
+                i = digitsEnd - 1;
+            }
+
+            return arity;
+        }
+
+        private static int CountTopLevelGenericArguments(string typeName, int genericArgumentsStart)
+        {
+            var bracketDepth = 0;
+            var argumentCount = 0;
+            var hasStartedRootArgumentList = false;
+
+            for (var i = genericArgumentsStart; i < typeName.Length; i++)
+            {
+                var current = typeName[i];
+                if (current == '[')
+                {
+                    bracketDepth++;
+                    if (bracketDepth == 2 && !hasStartedRootArgumentList)
+                    {
+                        hasStartedRootArgumentList = true;
+                        argumentCount = 1;
+                    }
+
+                    continue;
+                }
+
+                if (current == ']')
+                {
+                    bracketDepth = Math.Max(0, bracketDepth - 1);
+                    if (hasStartedRootArgumentList && bracketDepth == 0)
+                    {
+                        break;
+                    }
+
+                    continue;
+                }
+
+                if (current == ',' && hasStartedRootArgumentList && bracketDepth == 1)
+                {
+                    argumentCount++;
+                }
+            }
+
+            return argumentCount;
         }
     }
 }
