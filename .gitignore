@@ -390,7 +390,7 @@ datadog-coverage-*
 .nuke/build.schema.json
 
 # Claude Code
-.claude/settings.local.json
+.claude/*.local.*
 .claude/worktrees
 CLAUDE.local.md
 
