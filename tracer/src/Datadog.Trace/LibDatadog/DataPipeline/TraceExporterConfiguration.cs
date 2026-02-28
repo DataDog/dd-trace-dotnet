@@ -168,15 +168,20 @@ internal sealed class TraceExporterConfiguration : SafeHandle
             _telemetryConfigPtr = IntPtr.Zero;
         }
 
+        if (IsInvalid)
+        {
+            return true;
+        }
+
         try
         {
             NativeInterop.Config.Free(handle);
+            return true;
         }
         catch (Exception ex)
         {
             Logger.Error(ex, "An error occurred while releasing the handle for TraceExporterConfiguration.");
+            return false;
         }
-
-        return true;
     }
 }

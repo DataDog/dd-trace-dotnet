@@ -19,27 +19,31 @@ internal sealed class ErrorHandle() : SafeHandle(IntPtr.Zero, true)
 
     public void ThrowIfError()
     {
-        if (!IsInvalid)
+        if (IsInvalid || IsClosed)
         {
-            var error = Marshal.PtrToStructure<Error>(handle);
-            throw error.ToException();
+            return;
         }
+
+        var error = Marshal.PtrToStructure<Error>(handle);
+        throw error.ToException();
     }
 
     protected override bool ReleaseHandle()
     {
-        if (!IsInvalid)
+        if (IsInvalid)
         {
-            try
-            {
-                NativeInterop.Common.Drop(this);
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "Failed to drop error handle");
-            }
+            return true;
         }
 
-        return true;
+        try
+        {
+            NativeInterop.Common.Drop(this);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Logger.Error(ex, "Failed to drop error handle");
+            return false;
+        }
     }
 }
