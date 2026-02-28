@@ -42,6 +42,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         private readonly Option<string?> _assemblyNameOption = new("--assembly-name", "Optional generated assembly name.");
         private readonly Option<string?> _emitTrimmerDescriptorOption = new("--emit-trimmer-descriptor", "Optional linker descriptor output path. Defaults to <output>.linker.xml.");
         private readonly Option<string?> _emitPropsOption = new("--emit-props", "Optional MSBuild props output path. Defaults to <output>.props.");
+        private readonly Option<string?> _strongNameKeyFileOption = new("--strong-name-key-file", "Optional strong-name key (.snk) file used to sign the generated registry assembly.");
         private readonly Option<string> _outputOption = new("--output", "Generated AOT registry assembly output path.")
         {
             IsRequired = true
@@ -61,6 +62,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             AddOption(_assemblyNameOption);
             AddOption(_emitTrimmerDescriptorOption);
             AddOption(_emitPropsOption);
+            AddOption(_strongNameKeyFileOption);
             AddOption(_outputOption);
 
             AddExample("dd-trace ducktype-aot generate --proxy-assembly My.Proxy.dll --target-assembly ThirdParty.dll --output Datadog.Trace.DuckType.AotRegistry.dll");
@@ -85,6 +87,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             var assemblyName = _assemblyNameOption.GetValue(context);
             var trimmerDescriptorPath = _emitTrimmerDescriptorOption.GetValue(context) ?? $"{outputPath}.linker.xml";
             var propsPath = _emitPropsOption.GetValue(context) ?? $"{outputPath}.props";
+            var strongNameKeyFile = _strongNameKeyFileOption.GetValue(context);
 
             var options = new DuckTypeAotGenerateOptions(
                 proxyAssemblies.Where(p => !string.IsNullOrWhiteSpace(p)).ToList(),
@@ -98,7 +101,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 assemblyName,
                 trimmerDescriptorPath,
                 propsPath,
-                requireMappingCatalog);
+                requireMappingCatalog,
+                strongNameKeyFile);
 
             context.ExitCode = DuckTypeAotGenerateProcessor.Process(options);
         }

@@ -48,6 +48,30 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 AnsiConsole.MarkupLine("[yellow]Warning:[/] No mappings were resolved from attributes/map file.");
             }
 
+            var signingKeyFilePath = ResolveStrongNameKeyFilePath(options);
+            if (string.IsNullOrWhiteSpace(signingKeyFilePath))
+            {
+                AnsiConsole.MarkupLine("[yellow]Warning:[/] No strong-name key configured. The generated registry assembly will be unsigned.");
+            }
+            else
+            {
+                AnsiConsole.MarkupLine($"[green]Strong-name signing key:[/] {signingKeyFilePath}");
+                options = new DuckTypeAotGenerateOptions(
+                    options.ProxyAssemblies,
+                    options.TargetAssemblies,
+                    options.TargetFolders,
+                    options.TargetFilters,
+                    options.MapFile,
+                    options.MappingCatalog,
+                    options.GenericInstantiationsFile,
+                    options.OutputPath,
+                    options.AssemblyName,
+                    options.TrimmerDescriptorPath,
+                    options.PropsPath,
+                    options.RequireMappingCatalog,
+                    signingKeyFilePath);
+            }
+
             var artifactPaths = DuckTypeAotArtifactPaths.Create(options);
             EnsureParentDirectoryExists(artifactPaths.OutputAssemblyPath);
             EnsureParentDirectoryExists(artifactPaths.ManifestPath);
@@ -107,6 +131,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             ValidateOptionalFile(options.MapFile, "--map-file", errors);
             ValidateOptionalFile(options.MappingCatalog, "--mapping-catalog", errors);
             ValidateOptionalFile(options.GenericInstantiationsFile, "--generic-instantiations", errors);
+            ValidateOptionalFile(options.StrongNameKeyFile, "--strong-name-key-file", errors);
 
             if (options.RequireMappingCatalog && string.IsNullOrWhiteSpace(options.MappingCatalog))
             {
@@ -118,7 +143,31 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 errors.Add("--output cannot be empty.");
             }
 
+            var environmentStrongNameKeyFile = Environment.GetEnvironmentVariable("DD_TRACE_DUCKTYPE_AOT_STRONG_NAME_KEY_FILE");
+            if (string.IsNullOrWhiteSpace(options.StrongNameKeyFile) &&
+                !string.IsNullOrWhiteSpace(environmentStrongNameKeyFile) &&
+                !File.Exists(environmentStrongNameKeyFile))
+            {
+                errors.Add($"Strong-name key file from DD_TRACE_DUCKTYPE_AOT_STRONG_NAME_KEY_FILE was not found: {environmentStrongNameKeyFile}");
+            }
+
             return errors;
+        }
+
+        private static string? ResolveStrongNameKeyFilePath(DuckTypeAotGenerateOptions options)
+        {
+            if (!string.IsNullOrWhiteSpace(options.StrongNameKeyFile))
+            {
+                return Path.GetFullPath(options.StrongNameKeyFile!);
+            }
+
+            var environmentPath = Environment.GetEnvironmentVariable("DD_TRACE_DUCKTYPE_AOT_STRONG_NAME_KEY_FILE");
+            if (string.IsNullOrWhiteSpace(environmentPath))
+            {
+                return null;
+            }
+
+            return Path.GetFullPath(environmentPath);
         }
 
         private static void ValidateFileInputs(IReadOnlyList<string> paths, string optionName, List<string> errors)

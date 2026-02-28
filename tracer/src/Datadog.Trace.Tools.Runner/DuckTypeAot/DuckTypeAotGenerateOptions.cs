@@ -23,7 +23,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             string? assemblyName,
             string trimmerDescriptorPath,
             string propsPath,
-            bool requireMappingCatalog = false)
+            bool requireMappingCatalog = false,
+            string? strongNameKeyFile = null)
         {
             ProxyAssemblies = proxyAssemblies;
             TargetAssemblies = targetAssemblies;
@@ -37,6 +38,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             TrimmerDescriptorPath = trimmerDescriptorPath;
             PropsPath = propsPath;
             RequireMappingCatalog = requireMappingCatalog;
+            StrongNameKeyFile = strongNameKeyFile;
         }
 
         public IReadOnlyList<string> ProxyAssemblies { get; }
@@ -62,5 +64,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         public string PropsPath { get; }
 
         public bool RequireMappingCatalog { get; }
+
+        public string? StrongNameKeyFile { get; }
     }
 }

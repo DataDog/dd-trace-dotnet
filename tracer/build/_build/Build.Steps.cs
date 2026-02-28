@@ -1459,6 +1459,94 @@ partial class Build
             }
         });
 
+    Target RunDuckTypeAotCompatibilityGate => _ => _
+        .Unlisted()
+        .After(RunManagedUnitTests)
+        .After(CompileManagedUnitTests)
+        .DependsOn(CompileManagedUnitTests)
+        .DependsOn(BuildRunnerTool)
+        .Executes(() =>
+        {
+            var runnerToolProject = Solution.GetProject(Projects.DdTrace)
+                                   ?? throw new Exception($"Could not resolve project '{Projects.DdTrace}'.");
+            var duckTypingTestsProject = Solution.GetProject(Projects.DuckTypingTests)
+                                       ?? throw new Exception($"Could not resolve project '{Projects.DuckTypingTests}'.");
+
+            var frameworkPreferences = BuildDuckTypeAotFrameworkPreferences();
+            var runnerToolAssemblyPath = ResolveBuiltAssemblyPath(
+                runnerToolProject,
+                runnerToolProject.Directory / "bin" / BuildConfiguration / "Tool",
+                "Datadog.Trace.Tools.Runner.dll",
+                frameworkPreferences);
+            var duckTypingTestsAssemblyPath = ResolveBuiltAssemblyPath(
+                duckTypingTestsProject,
+                duckTypingTestsProject.Directory / "bin" / BuildConfiguration,
+                "Datadog.Trace.DuckTyping.Tests.dll",
+                frameworkPreferences);
+
+            var compatibilityDirectory = duckTypingTestsProject.Directory / "AotCompatibility";
+            var mappingCatalogPath = compatibilityDirectory / "ducktype-aot-bible-mapping-catalog.json";
+            var scenarioInventoryPath = compatibilityDirectory / "ducktype-aot-bible-scenario-inventory.json";
+            var expectedOutcomesPath = compatibilityDirectory / "ducktype-aot-bible-expected-outcomes.json";
+
+            EnsureFileExists(mappingCatalogPath, "DuckType AOT mapping catalog");
+            EnsureFileExists(scenarioInventoryPath, "DuckType AOT scenario inventory");
+            EnsureFileExists(expectedOutcomesPath, "DuckType AOT expected outcomes");
+
+            var gateOutputDirectory = BuildDataDirectory / "ducktype-aot-compatibility-gate";
+            EnsureCleanDirectory(gateOutputDirectory);
+
+            var generatedMapFilePath = gateOutputDirectory / "ducktype-aot-bible-map.generated.json";
+            WriteDuckTypeAotMapFileFromCatalog(mappingCatalogPath, generatedMapFilePath);
+
+            var outputAssemblyPath = gateOutputDirectory / "Datadog.Trace.DuckType.AotRegistry.BibleGate.dll";
+            var trimmerDescriptorPath = gateOutputDirectory / "ducktype-aot-bible-gate.linker.xml";
+            var propsPath = gateOutputDirectory / "ducktype-aot-bible-gate.props";
+            var compatibilityReportPath = (AbsolutePath)$"{outputAssemblyPath}.compat.md";
+            var compatibilityMatrixPath = (AbsolutePath)$"{outputAssemblyPath}.compat.json";
+            var manifestPath = (AbsolutePath)$"{outputAssemblyPath}.manifest.json";
+
+            Logger.Information(
+                "Running DuckType AOT compatibility gate with runner '{RunnerAssembly}' and test assembly '{DuckTypingTestsAssembly}'",
+                runnerToolAssemblyPath,
+                duckTypingTestsAssemblyPath);
+
+            RunRunnerCommand(
+                $"ducktype-aot generate " +
+                $"--proxy-assembly {QuotePath(duckTypingTestsAssemblyPath)} " +
+                $"--target-assembly {QuotePath(duckTypingTestsAssemblyPath)} " +
+                $"--map-file {QuotePath(generatedMapFilePath)} " +
+                $"--mapping-catalog {QuotePath(mappingCatalogPath)} " +
+                "--require-mapping-catalog " +
+                $"--output {QuotePath(outputAssemblyPath)} " +
+                $"--emit-trimmer-descriptor {QuotePath(trimmerDescriptorPath)} " +
+                $"--emit-props {QuotePath(propsPath)}");
+
+            RunRunnerCommand(
+                $"ducktype-aot verify-compat " +
+                $"--compat-report {QuotePath(compatibilityReportPath)} " +
+                $"--compat-matrix {QuotePath(compatibilityMatrixPath)} " +
+                $"--mapping-catalog {QuotePath(mappingCatalogPath)} " +
+                $"--manifest {QuotePath(manifestPath)} " +
+                $"--scenario-inventory {QuotePath(scenarioInventoryPath)} " +
+                $"--expected-outcomes {QuotePath(expectedOutcomesPath)} " +
+                "--failure-mode strict");
+
+            Logger.Information("DuckType AOT compatibility gate passed. Artifacts are available at '{OutputDirectory}'.", gateOutputDirectory);
+
+            void RunRunnerCommand(string runnerArguments)
+            {
+                var dotnetPath = DotNetSettingsExtensions.GetDotNetPath(TargetPlatform);
+                using var process = ProcessTasks.StartProcess(
+                    toolPath: dotnetPath,
+                    arguments: $"{QuotePath(runnerToolAssemblyPath)} {runnerArguments}",
+                    customLogger: DotNetTasks.DotNetLogger);
+                process.AssertZeroExitCode();
+            }
+
+            static string QuotePath(AbsolutePath path) => $"\"{path}\"";
+        });
+
     Target RunTracerNativeTestsWindows => _ => _
         .Unlisted()
         .After(CompileTracerNativeTestsWindows)
@@ -2698,6 +2786,98 @@ partial class Build
         }
     }
 
+    private IReadOnlyList<string> BuildDuckTypeAotFrameworkPreferences()
+    {
+        var preferences = new List<string>();
+        if (Framework is not null)
+        {
+            preferences.Add(Framework.ToString());
+        }
+
+        preferences.AddRange(new[]
+        {
+            "net10.0",
+            "net9.0",
+            "net8.0",
+            "net7.0",
+            "net6.0",
+            "net5.0",
+            "netcoreapp3.1",
+            "netcoreapp3.0",
+            "netcoreapp2.1",
+        });
+
+        return preferences.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+    }
+
+    private static AbsolutePath ResolveBuiltAssemblyPath(
+        Project project,
+        AbsolutePath frameworkOutputBaseDirectory,
+        string assemblyFileName,
+        IReadOnlyList<string> preferredFrameworks)
+    {
+        foreach (var framework in preferredFrameworks)
+        {
+            var candidate = frameworkOutputBaseDirectory / framework / assemblyFileName;
+            if (File.Exists(candidate))
+            {
+                return candidate;
+            }
+        }
+
+        if (Directory.Exists(frameworkOutputBaseDirectory))
+        {
+            foreach (var frameworkDirectory in Directory.EnumerateDirectories(frameworkOutputBaseDirectory))
+            {
+                var candidate = (AbsolutePath)Path.Combine(frameworkDirectory, assemblyFileName);
+                if (File.Exists(candidate))
+                {
+                    return candidate;
+                }
+            }
+        }
+
+        throw new Exception(
+            $"Could not find built assembly '{assemblyFileName}' for project '{project.Name}' under '{frameworkOutputBaseDirectory}'. " +
+            $"Preferred frameworks searched: {string.Join(", ", preferredFrameworks)}.");
+    }
+
+    private static void EnsureFileExists(AbsolutePath path, string description)
+    {
+        if (!File.Exists(path))
+        {
+            throw new Exception($"{description} was not found: {path}");
+        }
+    }
+
+    private static void WriteDuckTypeAotMapFileFromCatalog(AbsolutePath mappingCatalogPath, AbsolutePath mapFilePath)
+    {
+        var deserializeOptions = new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true,
+            AllowTrailingCommas = true,
+            ReadCommentHandling = JsonCommentHandling.Skip,
+        };
+
+        var catalog = JsonSerializer.Deserialize<DuckTypeAotGateMappingCatalogDocument>(File.ReadAllText(mappingCatalogPath), deserializeOptions);
+        if (catalog is null || catalog.RequiredMappings.Count == 0)
+        {
+            throw new Exception($"DuckType AOT mapping catalog does not contain requiredMappings entries: {mappingCatalogPath}");
+        }
+
+        var mapFileDocument = new DuckTypeAotGateMapFileDocument
+        {
+            Mappings = catalog.RequiredMappings,
+        };
+        var serializeOptions = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            WriteIndented = true,
+        };
+
+        File.WriteAllText(mapFilePath, JsonSerializer.Serialize(mapFileDocument, serializeOptions));
+    }
+
     private DotNetTestSettings ConfigureCodeCoverage(DotNetTestSettings settings)
     {
         var strongNameKeyPath = Solution.Directory / "Datadog.Trace.snk";
@@ -2865,6 +3045,31 @@ partial class Build
             using var outputStream = File.Open(file, FileMode.Create);
             entryStream.CopyTo(outputStream);
         }
+    }
+
+    private sealed class DuckTypeAotGateMappingCatalogDocument
+    {
+        public List<DuckTypeAotGateMappingEntry> RequiredMappings { get; set; } = new();
+    }
+
+    private sealed class DuckTypeAotGateMapFileDocument
+    {
+        public List<DuckTypeAotGateMappingEntry> Mappings { get; set; } = new();
+    }
+
+    private sealed class DuckTypeAotGateMappingEntry
+    {
+        public string ProxyType { get; set; } = string.Empty;
+
+        public string ProxyAssembly { get; set; } = string.Empty;
+
+        public string TargetType { get; set; } = string.Empty;
+
+        public string TargetAssembly { get; set; } = string.Empty;
+
+        public string Mode { get; set; } = string.Empty;
+
+        public string ScenarioId { get; set; } = string.Empty;
     }
 
     public static class LibdatadogLogParser

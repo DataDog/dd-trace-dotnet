@@ -282,7 +282,8 @@ partial class Build : NukeBuild
         .Description("Builds the managed unit tests and runs them")
         .After(Clean, BuildTracerHome, BuildProfilerHome)
         .DependsOn(BuildManagedUnitTests)
-        .DependsOn(RunManagedUnitTests);
+        .DependsOn(RunManagedUnitTests)
+        .DependsOn(RunDuckTypeAotCompatibilityGate);
 
     Target RunNativeUnitTests => _ => _
         .Description("Builds the native unit tests and runs them")
