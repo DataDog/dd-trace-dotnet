@@ -867,7 +867,7 @@ std::chrono::milliseconds Configuration::ExtractHeapSnapshotCheckInterval() cons
         return std::chrono::milliseconds(interval);
     }
 
-    return 250ms;
+    return 500ms;
 }
 
 std::chrono::milliseconds Configuration::GetHeapSnapshotCheckInterval() const

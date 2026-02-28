@@ -59,6 +59,7 @@ namespace Samples.Computer01
 #if NETFRAMEWORK
         private AppDomainCrash _appDomainCrash;
 #endif
+        private ReferenceChainScenarios _referenceChainScenarios;
 
         public void StartService(Scenario scenario, int nbThreads, int parameter)
         {
@@ -206,6 +207,11 @@ namespace Samples.Computer01
                     break;
 #endif
 
+                case Scenario.ReferenceChain:
+                    _referenceChainScenarios = new ReferenceChainScenarios(parameter);
+                    _referenceChainScenarios.Start();
+                    break;
+
                 default:
                     throw new ArgumentOutOfRangeException(nameof(scenario), $"Unsupported scenario #{_scenario}");
             }
@@ -349,6 +355,10 @@ namespace Samples.Computer01
                     _appDomainCrash.Stop();
                     break;
 #endif
+
+                case Scenario.ReferenceChain:
+                    _referenceChainScenarios.Stop();
+                    break;
             }
         }
 
@@ -493,6 +503,10 @@ namespace Samples.Computer01
                         RunAppDomainCrash(parameter);
                         break;
 #endif
+                    case Scenario.ReferenceChain:
+                        RunReferenceChain(parameter);
+                        break;
+
                     default:
                         throw new ArgumentOutOfRangeException(nameof(scenario), $"Unsupported scenario #{_scenario}");
                 }
@@ -1029,6 +1043,12 @@ namespace Samples.Computer01
             test.Run();
         }
 #endif
+
+        private void RunReferenceChain(int scenarioNumber)
+        {
+            var test = new ReferenceChainScenarios(scenarioNumber);
+            test.Run();
+        }
 
         public class MySpecialClassA
         {
