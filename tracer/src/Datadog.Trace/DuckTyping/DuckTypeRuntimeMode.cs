@@ -5,9 +5,19 @@
 
 namespace Datadog.Trace.DuckTyping
 {
+    /// <summary>
+    /// Defines named constants for duck type runtime mode.
+    /// </summary>
     internal enum DuckTypeRuntimeMode
     {
+        /// <summary>
+        /// Represents dynamic.
+        /// </summary>
         Dynamic = 0,
+
+        /// <summary>
+        /// Represents aot.
+        /// </summary>
         Aot = 1
     }
 }

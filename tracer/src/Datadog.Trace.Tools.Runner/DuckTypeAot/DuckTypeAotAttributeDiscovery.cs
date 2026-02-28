@@ -14,11 +14,26 @@ using dnlib.DotNet;
 
 namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 {
+    /// <summary>
+    /// Provides helper operations for duck type aot attribute discovery.
+    /// </summary>
     internal static class DuckTypeAotAttributeDiscovery
     {
+        /// <summary>
+        /// Defines the duck type attribute full name constant.
+        /// </summary>
         private const string DuckTypeAttributeFullName = "Datadog.Trace.DuckTyping.DuckTypeAttribute";
+
+        /// <summary>
+        /// Defines the duck copy attribute full name constant.
+        /// </summary>
         private const string DuckCopyAttributeFullName = "Datadog.Trace.DuckTyping.DuckCopyAttribute";
 
+        /// <summary>
+        /// Executes discover.
+        /// </summary>
+        /// <param name="proxyAssemblyPaths">The proxy assembly paths value.</param>
+        /// <returns>The result produced by this operation.</returns>
         internal static DuckTypeAotAttributeDiscoveryResult Discover(IReadOnlyList<string> proxyAssemblyPaths)
         {
             var mappings = new Dictionary<string, DuckTypeAotMapping>(StringComparer.Ordinal);
@@ -75,6 +90,13 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return new DuckTypeAotAttributeDiscoveryResult(mappings.Values, warnings, errors);
         }
 
+        /// <summary>
+        /// Attempts to try read target data.
+        /// </summary>
+        /// <param name="attribute">The attribute value.</param>
+        /// <param name="targetTypeName">The target type name value.</param>
+        /// <param name="targetAssemblyName">The target assembly name value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool TryReadTargetData(CustomAttribute attribute, out string targetTypeName, out string targetAssemblyName)
         {
             targetTypeName = string.Empty;
@@ -99,6 +121,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return true;
         }
 
+        /// <summary>
+        /// Attempts to try read string value.
+        /// </summary>
+        /// <param name="attribute">The attribute value.</param>
+        /// <param name="constructorArgumentIndex">The constructor argument index value.</param>
+        /// <returns>The result produced by this operation.</returns>
         private static string? TryReadStringValue(CustomAttribute attribute, int constructorArgumentIndex)
         {
             if (attribute.ConstructorArguments.Count <= constructorArgumentIndex)
@@ -109,6 +137,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return ToStringValue(attribute.ConstructorArguments[constructorArgumentIndex].Value);
         }
 
+        /// <summary>
+        /// Attempts to try read named string value.
+        /// </summary>
+        /// <param name="attribute">The attribute value.</param>
+        /// <param name="propertyName">The property name value.</param>
+        /// <returns>The result produced by this operation.</returns>
         private static string? TryReadNamedStringValue(CustomAttribute attribute, string propertyName)
         {
             foreach (var namedArgument in attribute.NamedArguments)
@@ -124,6 +158,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return null;
         }
 
+        /// <summary>
+        /// Executes to string value.
+        /// </summary>
+        /// <param name="value">The value value.</param>
+        /// <returns>The result produced by this operation.</returns>
         private static string? ToStringValue(object? value)
         {
             return value switch
@@ -136,8 +175,17 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         }
     }
 
+    /// <summary>
+    /// Represents duck type aot attribute discovery result.
+    /// </summary>
     internal sealed class DuckTypeAotAttributeDiscoveryResult
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DuckTypeAotAttributeDiscoveryResult"/> class.
+        /// </summary>
+        /// <param name="mappings">The mappings value.</param>
+        /// <param name="warnings">The warnings value.</param>
+        /// <param name="errors">The errors value.</param>
         public DuckTypeAotAttributeDiscoveryResult(IEnumerable<DuckTypeAotMapping> mappings, IReadOnlyList<string> warnings, IReadOnlyList<string> errors)
         {
             Mappings = new List<DuckTypeAotMapping>(mappings);
@@ -145,10 +193,22 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             Errors = errors;
         }
 
+        /// <summary>
+        /// Gets mappings.
+        /// </summary>
+        /// <value>The mappings value.</value>
         public IReadOnlyList<DuckTypeAotMapping> Mappings { get; }
 
+        /// <summary>
+        /// Gets warnings.
+        /// </summary>
+        /// <value>The warnings value.</value>
         public IReadOnlyList<string> Warnings { get; }
 
+        /// <summary>
+        /// Gets errors.
+        /// </summary>
+        /// <value>The errors value.</value>
         public IReadOnlyList<string> Errors { get; }
     }
 }

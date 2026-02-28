@@ -13,20 +13,53 @@ using System;
 
 namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 {
+    /// <summary>
+    /// Defines named constants for duck type aot mapping mode.
+    /// </summary>
     internal enum DuckTypeAotMappingMode
     {
+        /// <summary>
+        /// Represents forward.
+        /// </summary>
         Forward,
+
+        /// <summary>
+        /// Represents reverse.
+        /// </summary>
         Reverse
     }
 
+    /// <summary>
+    /// Defines named constants for duck type aot mapping source.
+    /// </summary>
     internal enum DuckTypeAotMappingSource
     {
+        /// <summary>
+        /// Represents attribute.
+        /// </summary>
         Attribute,
+
+        /// <summary>
+        /// Represents map file.
+        /// </summary>
         MapFile
     }
 
+    /// <summary>
+    /// Represents duck type aot mapping.
+    /// </summary>
     internal sealed class DuckTypeAotMapping
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DuckTypeAotMapping"/> class.
+        /// </summary>
+        /// <param name="proxyTypeName">The proxy type name value.</param>
+        /// <param name="proxyAssemblyName">The proxy assembly name value.</param>
+        /// <param name="targetTypeName">The target type name value.</param>
+        /// <param name="targetAssemblyName">The target assembly name value.</param>
+        /// <param name="mode">The mode value.</param>
+        /// <param name="source">The source value.</param>
+        /// <param name="scenarioId">The scenario id value.</param>
         public DuckTypeAotMapping(
             string proxyTypeName,
             string proxyAssemblyName,
@@ -45,18 +78,46 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             ScenarioId = NormalizeScenarioId(scenarioId);
         }
 
+        /// <summary>
+        /// Gets proxy type name.
+        /// </summary>
+        /// <value>The proxy type name value.</value>
         public string ProxyTypeName { get; }
 
+        /// <summary>
+        /// Gets proxy assembly name.
+        /// </summary>
+        /// <value>The proxy assembly name value.</value>
         public string ProxyAssemblyName { get; }
 
+        /// <summary>
+        /// Gets target type name.
+        /// </summary>
+        /// <value>The target type name value.</value>
         public string TargetTypeName { get; }
 
+        /// <summary>
+        /// Gets target assembly name.
+        /// </summary>
+        /// <value>The target assembly name value.</value>
         public string TargetAssemblyName { get; }
 
+        /// <summary>
+        /// Gets mode.
+        /// </summary>
+        /// <value>The mode value.</value>
         public DuckTypeAotMappingMode Mode { get; }
 
+        /// <summary>
+        /// Gets source.
+        /// </summary>
+        /// <value>The source value.</value>
         public DuckTypeAotMappingSource Source { get; }
 
+        /// <summary>
+        /// Gets scenario id.
+        /// </summary>
+        /// <value>The scenario id value.</value>
         public string? ScenarioId { get; }
 
         public string Key =>
@@ -71,6 +132,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 "|",
                 TargetTypeName);
 
+        /// <summary>
+        /// Executes with scenario id.
+        /// </summary>
+        /// <param name="scenarioId">The scenario id value.</param>
+        /// <returns>The result produced by this operation.</returns>
         public DuckTypeAotMapping WithScenarioId(string scenarioId)
         {
             return new DuckTypeAotMapping(
@@ -83,6 +149,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 scenarioId);
         }
 
+        /// <summary>
+        /// Normalizes normalize scenario id.
+        /// </summary>
+        /// <param name="scenarioId">The scenario id value.</param>
+        /// <returns>The result produced by this operation.</returns>
         private static string? NormalizeScenarioId(string? scenarioId)
         {
             var trimmedScenarioId = scenarioId?.Trim();
@@ -95,8 +166,16 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         }
     }
 
+    /// <summary>
+    /// Provides helper operations for duck type aot name helpers.
+    /// </summary>
     internal static class DuckTypeAotNameHelpers
     {
+        /// <summary>
+        /// Normalizes normalize assembly name.
+        /// </summary>
+        /// <param name="assemblyName">The assembly name value.</param>
+        /// <returns>The resulting string value.</returns>
         internal static string NormalizeAssemblyName(string assemblyName)
         {
             if (string.IsNullOrWhiteSpace(assemblyName))
@@ -108,6 +187,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return commaIndex >= 0 ? assemblyName.Substring(0, commaIndex).Trim() : assemblyName.Trim();
         }
 
+        /// <summary>
+        /// Parses a potentially assembly-qualified type name into type and assembly components.
+        /// </summary>
+        /// <param name="value">The raw type reference value.</param>
+        /// <returns>The parsed type name and optional assembly name.</returns>
         internal static (string TypeName, string? AssemblyName) ParseTypeAndAssembly(string value)
         {
             if (string.IsNullOrWhiteSpace(value))
@@ -124,11 +208,21 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return (value.Substring(0, commaIndex).Trim(), NormalizeAssemblyName(value.Substring(commaIndex + 1)));
         }
 
+        /// <summary>
+        /// Determines whether is generic type name.
+        /// </summary>
+        /// <param name="typeName">The type name value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
         internal static bool IsGenericTypeName(string typeName)
         {
             return !string.IsNullOrWhiteSpace(typeName) && typeName.IndexOf('`') >= 0;
         }
 
+        /// <summary>
+        /// Determines whether is open generic type name.
+        /// </summary>
+        /// <param name="typeName">The type name value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
         internal static bool IsOpenGenericTypeName(string typeName)
         {
             if (string.IsNullOrWhiteSpace(typeName))
@@ -162,11 +256,21 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return providedArguments < declaredArity;
         }
 
+        /// <summary>
+        /// Determines whether is closed generic type name.
+        /// </summary>
+        /// <param name="typeName">The type name value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
         internal static bool IsClosedGenericTypeName(string typeName)
         {
             return IsGenericTypeName(typeName) && !IsOpenGenericTypeName(typeName);
         }
 
+        /// <summary>
+        /// Executes find top level comma.
+        /// </summary>
+        /// <param name="value">The value value.</param>
+        /// <returns>The computed numeric value.</returns>
         private static int FindTopLevelComma(string value)
         {
             var bracketDepth = 0;
@@ -190,6 +294,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return -1;
         }
 
+        /// <summary>
+        /// Executes count declared generic arity.
+        /// </summary>
+        /// <param name="typeName">The type name value.</param>
+        /// <param name="genericArgumentsStart">The generic arguments start value.</param>
+        /// <returns>The computed numeric value.</returns>
         private static int CountDeclaredGenericArity(string typeName, int genericArgumentsStart)
         {
             var arity = 0;
@@ -223,6 +333,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return arity;
         }
 
+        /// <summary>
+        /// Executes count top level generic arguments.
+        /// </summary>
+        /// <param name="typeName">The type name value.</param>
+        /// <param name="genericArgumentsStart">The generic arguments start value.</param>
+        /// <returns>The computed numeric value.</returns>
         private static int CountTopLevelGenericArguments(string typeName, int genericArgumentsStart)
         {
             var bracketDepth = 0;

@@ -23,70 +23,241 @@ using TypeAttributes = dnlib.DotNet.TypeAttributes;
 
 namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 {
+    /// <summary>
+    /// Provides helper operations for duck type aot registry assembly emitter.
+    /// </summary>
     internal static class DuckTypeAotRegistryAssemblyEmitter
     {
+        /// <summary>
+        /// Defines the bootstrap namespace constant.
+        /// </summary>
         private const string BootstrapNamespace = "Datadog.Trace.DuckTyping.Generated";
+
+        /// <summary>
+        /// Defines the bootstrap type name constant.
+        /// </summary>
         private const string BootstrapTypeName = "DuckTypeAotRegistryBootstrap";
+
+        /// <summary>
+        /// Defines the bootstrap initialize method name constant.
+        /// </summary>
         private const string BootstrapInitializeMethodName = "Initialize";
+
+        /// <summary>
+        /// Defines the generated proxy namespace constant.
+        /// </summary>
         private const string GeneratedProxyNamespace = "Datadog.Trace.DuckTyping.Generated.Proxies";
+
+        /// <summary>
+        /// Defines the aot contract schema version constant.
+        /// </summary>
         private const string AotContractSchemaVersion = "1";
+
+        /// <summary>
+        /// Defines the status code unsupported proxy kind constant.
+        /// </summary>
         private const string StatusCodeUnsupportedProxyKind = "DTAOT0202";
+
+        /// <summary>
+        /// Defines the status code missing proxy type constant.
+        /// </summary>
         private const string StatusCodeMissingProxyType = "DTAOT0204";
+
+        /// <summary>
+        /// Defines the status code missing target type constant.
+        /// </summary>
         private const string StatusCodeMissingTargetType = "DTAOT0205";
+
+        /// <summary>
+        /// Defines the status code missing method constant.
+        /// </summary>
         private const string StatusCodeMissingMethod = "DTAOT0207";
+
+        /// <summary>
+        /// Defines the status code incompatible signature constant.
+        /// </summary>
         private const string StatusCodeIncompatibleSignature = "DTAOT0209";
+
+        /// <summary>
+        /// Defines the status code unsupported proxy constructor constant.
+        /// </summary>
         private const string StatusCodeUnsupportedProxyConstructor = "DTAOT0210";
+
+        /// <summary>
+        /// Defines the status code unsupported closed generic mapping constant.
+        /// </summary>
+        /// <remarks>This field participates in shared runtime state and must remain thread-safe.</remarks>
         private const string StatusCodeUnsupportedClosedGenericMapping = "DTAOT0211";
+
+        /// <summary>
+        /// Defines the duck attribute type name constant.
+        /// </summary>
         private const string DuckAttributeTypeName = "Datadog.Trace.DuckTyping.DuckAttribute";
+
+        /// <summary>
+        /// Defines the duck field attribute type name constant.
+        /// </summary>
         private const string DuckFieldAttributeTypeName = "Datadog.Trace.DuckTyping.DuckFieldAttribute";
+
+        /// <summary>
+        /// Defines the duck property or field attribute type name constant.
+        /// </summary>
         private const string DuckPropertyOrFieldAttributeTypeName = "Datadog.Trace.DuckTyping.DuckPropertyOrFieldAttribute";
+
+        /// <summary>
+        /// Defines the duck reverse method attribute type name constant.
+        /// </summary>
         private const string DuckReverseMethodAttributeTypeName = "Datadog.Trace.DuckTyping.DuckReverseMethodAttribute";
+
+        /// <summary>
+        /// Defines the duck kind property constant.
+        /// </summary>
         private const int DuckKindProperty = 0;
+
+        /// <summary>
+        /// Defines the duck kind field constant.
+        /// </summary>
         private const int DuckKindField = 1;
+
+        /// <summary>
+        /// Defines the duck kind property or field constant.
+        /// </summary>
         private const int DuckKindPropertyOrField = 2;
 
+        /// <summary>
+        /// Defines named constants for forward binding kind.
+        /// </summary>
         private enum ForwardBindingKind
         {
+            /// <summary>
+            /// Represents method.
+            /// </summary>
             Method,
+
+            /// <summary>
+            /// Represents field get.
+            /// </summary>
             FieldGet,
+
+            /// <summary>
+            /// Represents field set.
+            /// </summary>
             FieldSet
         }
 
+        /// <summary>
+        /// Defines named constants for field accessor kind.
+        /// </summary>
         private enum FieldAccessorKind
         {
+            /// <summary>
+            /// Represents getter.
+            /// </summary>
             Getter,
+
+            /// <summary>
+            /// Represents setter.
+            /// </summary>
             Setter
         }
 
+        /// <summary>
+        /// Defines named constants for struct copy source kind.
+        /// </summary>
         private enum StructCopySourceKind
         {
+            /// <summary>
+            /// Represents property.
+            /// </summary>
             Property,
+
+            /// <summary>
+            /// Represents field.
+            /// </summary>
             Field
         }
 
+        /// <summary>
+        /// Defines named constants for field resolution mode.
+        /// </summary>
         private enum FieldResolutionMode
         {
+            /// <summary>
+            /// Represents disabled.
+            /// </summary>
             Disabled,
+
+            /// <summary>
+            /// Represents allow fallback.
+            /// </summary>
             AllowFallback,
+
+            /// <summary>
+            /// Represents field only.
+            /// </summary>
             FieldOnly
         }
 
+        /// <summary>
+        /// Defines named constants for method argument conversion kind.
+        /// </summary>
         private enum MethodArgumentConversionKind
         {
+            /// <summary>
+            /// Represents none.
+            /// </summary>
             None,
+
+            /// <summary>
+            /// Represents unwrap value with type.
+            /// </summary>
             UnwrapValueWithType,
+
+            /// <summary>
+            /// Represents extract duck type instance.
+            /// </summary>
             ExtractDuckTypeInstance,
+
+            /// <summary>
+            /// Represents type conversion.
+            /// </summary>
             TypeConversion
         }
 
+        /// <summary>
+        /// Defines named constants for method return conversion kind.
+        /// </summary>
         private enum MethodReturnConversionKind
         {
+            /// <summary>
+            /// Represents none.
+            /// </summary>
             None,
+
+            /// <summary>
+            /// Represents wrap value with type.
+            /// </summary>
             WrapValueWithType,
+
+            /// <summary>
+            /// Represents duck chain to proxy.
+            /// </summary>
             DuckChainToProxy,
+
+            /// <summary>
+            /// Represents type conversion.
+            /// </summary>
             TypeConversion
         }
 
+        /// <summary>
+        /// Emits emit.
+        /// </summary>
+        /// <param name="options">The options value.</param>
+        /// <param name="artifactPaths">The artifact paths value.</param>
+        /// <param name="mappingResolutionResult">The mapping resolution result value.</param>
+        /// <returns>The result produced by this operation.</returns>
+        /// <remarks>Emits or composes IL for generated duck-typing proxy operations.</remarks>
         internal static DuckTypeAotRegistryEmissionResult Emit(
             DuckTypeAotGenerateOptions options,
             DuckTypeAotArtifactPaths artifactPaths,
@@ -213,12 +384,32 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return new DuckTypeAotRegistryEmissionResult(registryInfo, mappingResults);
         }
 
+        /// <summary>
+        /// Resolves resolve assembly mvid.
+        /// </summary>
+        /// <param name="assemblyPath">The assembly path value.</param>
+        /// <returns>The resulting string value.</returns>
         private static string ResolveAssemblyMvid(string assemblyPath)
         {
             using var module = ModuleDefMD.Load(assemblyPath);
             return module.Mvid?.ToString("D") ?? string.Empty;
         }
 
+        /// <summary>
+        /// Emits emit mapping.
+        /// </summary>
+        /// <param name="moduleDef">The module def value.</param>
+        /// <param name="bootstrapType">The bootstrap type value.</param>
+        /// <param name="initializeMethod">The initialize method value.</param>
+        /// <param name="importedMembers">The imported members value.</param>
+        /// <param name="mapping">The mapping value.</param>
+        /// <param name="mappingIndex">The mapping index value.</param>
+        /// <param name="proxyModulesByAssemblyName">The proxy modules by assembly name value.</param>
+        /// <param name="targetModulesByAssemblyName">The target modules by assembly name value.</param>
+        /// <param name="proxyAssemblyPathsByName">The proxy assembly paths by name value.</param>
+        /// <param name="targetAssemblyPathsByName">The target assembly paths by name value.</param>
+        /// <returns>The result produced by this operation.</returns>
+        /// <remarks>Emits or composes IL for generated duck-typing proxy operations.</remarks>
         private static DuckTypeAotMappingEmissionResult EmitMapping(
             ModuleDef moduleDef,
             TypeDef bootstrapType,
@@ -538,6 +729,20 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 generatedType.FullName);
         }
 
+        /// <summary>
+        /// Emits emit closed generic mapping.
+        /// </summary>
+        /// <param name="moduleDef">The module def value.</param>
+        /// <param name="bootstrapType">The bootstrap type value.</param>
+        /// <param name="initializeMethod">The initialize method value.</param>
+        /// <param name="importedMembers">The imported members value.</param>
+        /// <param name="mapping">The mapping value.</param>
+        /// <param name="mappingIndex">The mapping index value.</param>
+        /// <param name="isReverseMapping">The is reverse mapping value.</param>
+        /// <param name="proxyAssemblyPathsByName">The proxy assembly paths by name value.</param>
+        /// <param name="targetAssemblyPathsByName">The target assembly paths by name value.</param>
+        /// <returns>The result produced by this operation.</returns>
+        /// <remarks>Emits or composes IL for generated duck-typing proxy operations.</remarks>
         private static DuckTypeAotMappingEmissionResult EmitClosedGenericMapping(
             ModuleDef moduleDef,
             TypeDef bootstrapType,
@@ -630,6 +835,15 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 mapping.ProxyTypeName);
         }
 
+        /// <summary>
+        /// Emits emit closed generic direct cast activation.
+        /// </summary>
+        /// <param name="body">The body value.</param>
+        /// <param name="importedProxyType">The imported proxy type value.</param>
+        /// <param name="importedTargetType">The imported target type value.</param>
+        /// <param name="proxyRuntimeType">The proxy runtime type value.</param>
+        /// <param name="targetRuntimeType">The target runtime type value.</param>
+        /// <remarks>Emits or composes IL for generated duck-typing proxy operations.</remarks>
         private static void EmitClosedGenericDirectCastActivation(
             CilBody body,
             ITypeDefOrRef importedProxyType,
@@ -673,6 +887,14 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
         }
 
+        /// <summary>
+        /// Attempts to try resolve runtime type.
+        /// </summary>
+        /// <param name="assemblyName">The assembly name value.</param>
+        /// <param name="assemblyPath">The assembly path value.</param>
+        /// <param name="typeName">The type name value.</param>
+        /// <param name="runtimeType">The runtime type value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool TryResolveRuntimeType(string assemblyName, string assemblyPath, string typeName, out Type? runtimeType)
         {
             runtimeType = null;
@@ -724,6 +946,19 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return false;
         }
 
+        /// <summary>
+        /// Emits emit struct copy mapping.
+        /// </summary>
+        /// <param name="moduleDef">The module def value.</param>
+        /// <param name="bootstrapType">The bootstrap type value.</param>
+        /// <param name="initializeMethod">The initialize method value.</param>
+        /// <param name="importedMembers">The imported members value.</param>
+        /// <param name="mapping">The mapping value.</param>
+        /// <param name="mappingIndex">The mapping index value.</param>
+        /// <param name="proxyType">The proxy type value.</param>
+        /// <param name="targetType">The target type value.</param>
+        /// <returns>The result produced by this operation.</returns>
+        /// <remarks>Emits or composes IL for generated duck-typing proxy operations.</remarks>
         private static DuckTypeAotMappingEmissionResult EmitStructCopyMapping(
             ModuleDef moduleDef,
             TypeDef bootstrapType,
@@ -841,6 +1076,15 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 proxyType.FullName);
         }
 
+        /// <summary>
+        /// Attempts to try collect struct copy bindings.
+        /// </summary>
+        /// <param name="mapping">The mapping value.</param>
+        /// <param name="proxyStructType">The proxy struct type value.</param>
+        /// <param name="targetType">The target type value.</param>
+        /// <param name="bindings">The bindings value.</param>
+        /// <param name="failure">The failure value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool TryCollectStructCopyBindings(
             DuckTypeAotMapping mapping,
             TypeDef proxyStructType,
@@ -885,6 +1129,15 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return true;
         }
 
+        /// <summary>
+        /// Attempts to try resolve struct copy field binding.
+        /// </summary>
+        /// <param name="mapping">The mapping value.</param>
+        /// <param name="targetType">The target type value.</param>
+        /// <param name="proxyField">The proxy field value.</param>
+        /// <param name="binding">The binding value.</param>
+        /// <param name="failure">The failure value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool TryResolveStructCopyFieldBinding(
             DuckTypeAotMapping mapping,
             TypeDef targetType,
@@ -970,6 +1223,13 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return false;
         }
 
+        /// <summary>
+        /// Attempts to try find struct copy target property.
+        /// </summary>
+        /// <param name="targetType">The target type value.</param>
+        /// <param name="candidateNames">The candidate names value.</param>
+        /// <param name="targetProperty">The target property value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool TryFindStructCopyTargetProperty(TypeDef targetType, IReadOnlyList<string> candidateNames, out PropertyDef? targetProperty)
         {
             foreach (var candidateName in candidateNames)
@@ -1001,6 +1261,13 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return false;
         }
 
+        /// <summary>
+        /// Attempts to try find struct copy target field.
+        /// </summary>
+        /// <param name="targetType">The target type value.</param>
+        /// <param name="candidateNames">The candidate names value.</param>
+        /// <param name="targetField">The target field value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool TryFindStructCopyTargetField(TypeDef targetType, IReadOnlyList<string> candidateNames, out FieldDef? targetField)
         {
             foreach (var candidateName in candidateNames)
@@ -1025,6 +1292,13 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return false;
         }
 
+        /// <summary>
+        /// Attempts to try create return conversion.
+        /// </summary>
+        /// <param name="proxyReturnType">The proxy return type value.</param>
+        /// <param name="targetReturnType">The target return type value.</param>
+        /// <param name="returnConversion">The return conversion value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool TryCreateReturnConversion(TypeSig proxyReturnType, TypeSig targetReturnType, out MethodReturnConversion returnConversion)
         {
             if (AreTypesEquivalent(proxyReturnType, targetReturnType))
@@ -1055,6 +1329,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return false;
         }
 
+        /// <summary>
+        /// Executes copy method generic parameters.
+        /// </summary>
+        /// <param name="moduleDef">The module def value.</param>
+        /// <param name="sourceMethod">The source method value.</param>
+        /// <param name="targetMethod">The target method value.</param>
         private static void CopyMethodGenericParameters(ModuleDef moduleDef, MethodDef sourceMethod, MethodDef targetMethod)
         {
             if (sourceMethod.GenericParameters.Count == 0)
@@ -1080,6 +1360,14 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
         }
 
+        /// <summary>
+        /// Creates create method call target.
+        /// </summary>
+        /// <param name="moduleDef">The module def value.</param>
+        /// <param name="importedTargetMethod">The imported target method value.</param>
+        /// <param name="generatedMethod">The generated method value.</param>
+        /// <param name="closedGenericMethodArguments">The closed generic method arguments value.</param>
+        /// <returns>The result produced by this operation.</returns>
         private static IMethod CreateMethodCallTarget(
             ModuleDef moduleDef,
             IMethodDefOrRef importedTargetMethod,
@@ -1113,6 +1401,15 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return moduleDef.UpdateRowId(methodSpec);
         }
 
+        /// <summary>
+        /// Emits emit method return conversion.
+        /// </summary>
+        /// <param name="moduleDef">The module def value.</param>
+        /// <param name="methodBody">The method body value.</param>
+        /// <param name="conversion">The conversion value.</param>
+        /// <param name="importedMembers">The imported members value.</param>
+        /// <param name="context">The context value.</param>
+        /// <remarks>Emits or composes IL for generated duck-typing proxy operations.</remarks>
         private static void EmitMethodReturnConversion(
             ModuleDef moduleDef,
             CilBody methodBody,
@@ -1151,6 +1448,15 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
         }
 
+        /// <summary>
+        /// Emits emit method argument conversion.
+        /// </summary>
+        /// <param name="moduleDef">The module def value.</param>
+        /// <param name="methodBody">The method body value.</param>
+        /// <param name="conversion">The conversion value.</param>
+        /// <param name="importedMembers">The imported members value.</param>
+        /// <param name="context">The context value.</param>
+        /// <remarks>Emits or composes IL for generated duck-typing proxy operations.</remarks>
         private static void EmitMethodArgumentConversion(
             ModuleDef moduleDef,
             CilBody methodBody,
@@ -1182,18 +1488,40 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
         }
 
+        /// <summary>
+        /// Emits emit load by ref value.
+        /// </summary>
+        /// <param name="moduleDef">The module def value.</param>
+        /// <param name="methodBody">The method body value.</param>
+        /// <param name="valueTypeSig">The value type sig value.</param>
+        /// <param name="context">The context value.</param>
+        /// <remarks>Emits or composes IL for generated duck-typing proxy operations.</remarks>
         private static void EmitLoadByRefValue(ModuleDef moduleDef, CilBody methodBody, TypeSig valueTypeSig, string context)
         {
             var importedValueType = ResolveImportedTypeForTypeToken(moduleDef, valueTypeSig, context);
             methodBody.Instructions.Add(OpCodes.Ldobj.ToInstruction(importedValueType));
         }
 
+        /// <summary>
+        /// Emits emit store by ref value.
+        /// </summary>
+        /// <param name="moduleDef">The module def value.</param>
+        /// <param name="methodBody">The method body value.</param>
+        /// <param name="valueTypeSig">The value type sig value.</param>
+        /// <param name="context">The context value.</param>
+        /// <remarks>Emits or composes IL for generated duck-typing proxy operations.</remarks>
         private static void EmitStoreByRefValue(ModuleDef moduleDef, CilBody methodBody, TypeSig valueTypeSig, string context)
         {
             var importedValueType = ResolveImportedTypeForTypeToken(moduleDef, valueTypeSig, context);
             methodBody.Instructions.Add(OpCodes.Stobj.ToInstruction(importedValueType));
         }
 
+        /// <summary>
+        /// Executes can use type conversion.
+        /// </summary>
+        /// <param name="actualTypeSig">The actual type sig value.</param>
+        /// <param name="expectedTypeSig">The expected type sig value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool CanUseTypeConversion(TypeSig actualTypeSig, TypeSig expectedTypeSig)
         {
             if (actualTypeSig.ElementType == ElementType.ByRef || expectedTypeSig.ElementType == ElementType.ByRef)
@@ -1240,6 +1568,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return true;
         }
 
+        /// <summary>
+        /// Executes can use type conversion.
+        /// </summary>
+        /// <param name="actualType">The actual type value.</param>
+        /// <param name="expectedType">The expected type value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool CanUseTypeConversion(Type actualType, Type expectedType)
         {
             var actualUnderlyingType = actualType.IsEnum ? Enum.GetUnderlyingType(actualType) : actualType;
@@ -1268,6 +1602,15 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return true;
         }
 
+        /// <summary>
+        /// Emits emit type conversion.
+        /// </summary>
+        /// <param name="moduleDef">The module def value.</param>
+        /// <param name="methodBody">The method body value.</param>
+        /// <param name="actualTypeSig">The actual type sig value.</param>
+        /// <param name="expectedTypeSig">The expected type sig value.</param>
+        /// <param name="context">The context value.</param>
+        /// <remarks>Emits or composes IL for generated duck-typing proxy operations.</remarks>
         private static void EmitTypeConversion(
             ModuleDef moduleDef,
             CilBody methodBody,
@@ -1329,6 +1672,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
         }
 
+        /// <summary>
+        /// Gets get underlying type for type conversion.
+        /// </summary>
+        /// <param name="typeSig">The type sig value.</param>
+        /// <returns>The result produced by this operation.</returns>
         private static TypeSig GetUnderlyingTypeForTypeConversion(TypeSig typeSig)
         {
             var typeDef = typeSig.ToTypeDefOrRef()?.ResolveTypeDef();
@@ -1348,6 +1696,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return typeSig;
         }
 
+        /// <summary>
+        /// Attempts to try resolve runtime type.
+        /// </summary>
+        /// <param name="typeSig">The type sig value.</param>
+        /// <returns>The result produced by this operation.</returns>
         private static Type? TryResolveRuntimeType(TypeSig typeSig)
         {
             if (typeSig.IsGenericParameter)
@@ -1377,6 +1730,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             };
         }
 
+        /// <summary>
+        /// Attempts to try resolve runtime type from type def or ref.
+        /// </summary>
+        /// <param name="typeSig">The type sig value.</param>
+        /// <returns>The result produced by this operation.</returns>
         private static Type? TryResolveRuntimeTypeFromTypeDefOrRef(TypeSig typeSig)
         {
             var typeDefOrRef = typeSig.ToTypeDefOrRef();
@@ -1411,6 +1769,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return Type.GetType(reflectionName, throwOnError: false);
         }
 
+        /// <summary>
+        /// Determines whether is object type sig.
+        /// </summary>
+        /// <param name="typeSig">The type sig value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool IsObjectTypeSig(TypeSig typeSig)
         {
             if (typeSig.ElementType == ElementType.Object)
@@ -1427,6 +1790,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return string.Equals(typeDefOrRef.FullName, "System.Object", StringComparison.Ordinal);
         }
 
+        /// <summary>
+        /// Determines whether is type assignable from.
+        /// </summary>
+        /// <param name="candidateBaseTypeSig">The candidate base type sig value.</param>
+        /// <param name="derivedTypeSig">The derived type sig value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool IsTypeAssignableFrom(TypeSig candidateBaseTypeSig, TypeSig derivedTypeSig)
         {
             var candidateBaseType = candidateBaseTypeSig.ToTypeDefOrRef();
@@ -1439,6 +1808,16 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return IsAssignableFrom(candidateBaseType, derivedType);
         }
 
+        /// <summary>
+        /// Emits emit i duck type implementation.
+        /// </summary>
+        /// <param name="moduleDef">The module def value.</param>
+        /// <param name="generatedType">The generated type value.</param>
+        /// <param name="importedTargetType">The imported target type value.</param>
+        /// <param name="targetField">The target field value.</param>
+        /// <param name="importedMembers">The imported members value.</param>
+        /// <param name="targetIsValueType">The target is value type value.</param>
+        /// <remarks>Emits or composes IL for generated duck-typing proxy operations.</remarks>
         private static void EmitIDuckTypeImplementation(
             ModuleDef moduleDef,
             TypeDef generatedType,
@@ -1537,6 +1916,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
         }
 
+        /// <summary>
+        /// Gets get interface method attributes.
+        /// </summary>
+        /// <param name="proxyMethod">The proxy method value.</param>
+        /// <returns>The result produced by this operation.</returns>
         private static MethodAttributes GetInterfaceMethodAttributes(MethodDef proxyMethod)
         {
             var attributes = MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Virtual | MethodAttributes.Final | MethodAttributes.NewSlot;
@@ -1553,6 +1937,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return attributes;
         }
 
+        /// <summary>
+        /// Gets get class override method attributes.
+        /// </summary>
+        /// <param name="proxyMethod">The proxy method value.</param>
+        /// <returns>The result produced by this operation.</returns>
         private static MethodAttributes GetClassOverrideMethodAttributes(MethodDef proxyMethod)
         {
             var memberAccess = proxyMethod.Attributes & MethodAttributes.MemberAccessMask;
@@ -1575,6 +1964,16 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return attributes;
         }
 
+        /// <summary>
+        /// Attempts to try collect forward bindings.
+        /// </summary>
+        /// <param name="mapping">The mapping value.</param>
+        /// <param name="proxyType">The proxy type value.</param>
+        /// <param name="targetType">The target type value.</param>
+        /// <param name="isInterfaceProxy">The is interface proxy value.</param>
+        /// <param name="bindings">The bindings value.</param>
+        /// <param name="failure">The failure value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool TryCollectForwardBindings(
             DuckTypeAotMapping mapping,
             TypeDef proxyType,
@@ -1591,6 +1990,15 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return TryCollectForwardClassBindings(mapping, proxyType, targetType, out bindings, out failure);
         }
 
+        /// <summary>
+        /// Attempts to try collect forward interface bindings.
+        /// </summary>
+        /// <param name="mapping">The mapping value.</param>
+        /// <param name="proxyInterfaceType">The proxy interface type value.</param>
+        /// <param name="targetType">The target type value.</param>
+        /// <param name="bindings">The bindings value.</param>
+        /// <param name="failure">The failure value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool TryCollectForwardInterfaceBindings(
             DuckTypeAotMapping mapping,
             TypeDef proxyInterfaceType,
@@ -1626,6 +2034,15 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return true;
         }
 
+        /// <summary>
+        /// Attempts to try collect forward class bindings.
+        /// </summary>
+        /// <param name="mapping">The mapping value.</param>
+        /// <param name="proxyClassType">The proxy class type value.</param>
+        /// <param name="targetType">The target type value.</param>
+        /// <param name="bindings">The bindings value.</param>
+        /// <param name="failure">The failure value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool TryCollectForwardClassBindings(
             DuckTypeAotMapping mapping,
             TypeDef proxyClassType,
@@ -1661,6 +2078,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return true;
         }
 
+        /// <summary>
+        /// Gets get interface methods.
+        /// </summary>
+        /// <param name="interfaceType">The interface type value.</param>
+        /// <returns>The result produced by this operation.</returns>
         private static IReadOnlyList<MethodDef> GetInterfaceMethods(TypeDef interfaceType)
         {
             var results = new List<MethodDef>();
@@ -1704,6 +2126,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return results;
         }
 
+        /// <summary>
+        /// Gets get class proxy methods.
+        /// </summary>
+        /// <param name="proxyClassType">The proxy class type value.</param>
+        /// <returns>The result produced by this operation.</returns>
         private static IReadOnlyList<MethodDef> GetClassProxyMethods(TypeDef proxyClassType)
         {
             var results = new List<MethodDef>();
@@ -1732,6 +2159,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return results;
         }
 
+        /// <summary>
+        /// Determines whether is supported class proxy method.
+        /// </summary>
+        /// <param name="method">The method value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool IsSupportedClassProxyMethod(MethodDef method)
         {
             if (method.IsConstructor || method.IsStatic || !method.IsVirtual || method.IsFinal)
@@ -1742,6 +2174,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return method.IsPublic || method.IsFamily || method.IsFamilyOrAssembly;
         }
 
+        /// <summary>
+        /// Executes find supported proxy base constructor.
+        /// </summary>
+        /// <param name="proxyType">The proxy type value.</param>
+        /// <returns>The result produced by this operation.</returns>
         private static MethodDef? FindSupportedProxyBaseConstructor(TypeDef proxyType)
         {
             foreach (var constructor in proxyType.Methods)
@@ -1760,6 +2197,15 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return null;
         }
 
+        /// <summary>
+        /// Attempts to try resolve forward binding.
+        /// </summary>
+        /// <param name="mapping">The mapping value.</param>
+        /// <param name="targetType">The target type value.</param>
+        /// <param name="proxyMethod">The proxy method value.</param>
+        /// <param name="binding">The binding value.</param>
+        /// <param name="failure">The failure value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool TryResolveForwardBinding(
             DuckTypeAotMapping mapping,
             TypeDef targetType,
@@ -1852,6 +2298,14 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return false;
         }
 
+        /// <summary>
+        /// Executes find forward target method candidates.
+        /// </summary>
+        /// <param name="mapping">The mapping value.</param>
+        /// <param name="targetType">The target type value.</param>
+        /// <param name="proxyMethod">The proxy method value.</param>
+        /// <param name="closedGenericMethodArguments">The closed generic method arguments value.</param>
+        /// <returns>The result produced by this operation.</returns>
         private static IEnumerable<MethodDef> FindForwardTargetMethodCandidates(
             DuckTypeAotMapping mapping,
             TypeDef targetType,
@@ -1910,6 +2364,15 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
         }
 
+        /// <summary>
+        /// Executes find default target method candidates.
+        /// </summary>
+        /// <param name="targetType">The target type value.</param>
+        /// <param name="proxyMethod">The proxy method value.</param>
+        /// <param name="explicitInterfaceTypeNames">The explicit interface type names value.</param>
+        /// <param name="useRelaxedNameComparison">The use relaxed name comparison value.</param>
+        /// <param name="expectedGenericArity">The expected generic arity value.</param>
+        /// <returns>The result produced by this operation.</returns>
         private static IEnumerable<MethodDef> FindDefaultTargetMethodCandidates(
             TypeDef targetType,
             MethodDef proxyMethod,
@@ -1949,11 +2412,22 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
         }
 
+        /// <summary>
+        /// Gets get method candidate key.
+        /// </summary>
+        /// <param name="candidate">The candidate value.</param>
+        /// <returns>The resulting string value.</returns>
         private static string GetMethodCandidateKey(MethodDef candidate)
         {
             return $"{candidate.DeclaringType.FullName}::{candidate.Name}::{candidate.MethodSig}";
         }
 
+        /// <summary>
+        /// Executes find reverse target method candidates.
+        /// </summary>
+        /// <param name="targetType">The target type value.</param>
+        /// <param name="proxyMethod">The proxy method value.</param>
+        /// <returns>The result produced by this operation.</returns>
         private static IEnumerable<MethodDef> FindReverseTargetMethodCandidates(TypeDef targetType, MethodDef proxyMethod)
         {
             var proxyMethodName = proxyMethod.Name.String ?? proxyMethod.Name.ToString();
@@ -2015,6 +2489,14 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
         }
 
+        /// <summary>
+        /// Determines whether is forward target method name match.
+        /// </summary>
+        /// <param name="candidateMethodName">The candidate method name value.</param>
+        /// <param name="requestedMethodName">The requested method name value.</param>
+        /// <param name="explicitInterfaceTypeNames">The explicit interface type names value.</param>
+        /// <param name="useRelaxedNameComparison">The use relaxed name comparison value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool IsForwardTargetMethodNameMatch(
             string candidateMethodName,
             string requestedMethodName,
@@ -2050,6 +2532,13 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return false;
         }
 
+        /// <summary>
+        /// Attempts to try get forward explicit interface type names.
+        /// </summary>
+        /// <param name="proxyMethod">The proxy method value.</param>
+        /// <param name="explicitInterfaceTypeNames">The explicit interface type names value.</param>
+        /// <param name="useRelaxedNameComparison">The use relaxed name comparison value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool TryGetForwardExplicitInterfaceTypeNames(
             MethodDef proxyMethod,
             out IReadOnlyList<string> explicitInterfaceTypeNames,
@@ -2107,6 +2596,15 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
         }
 
+        /// <summary>
+        /// Attempts to try create forward method binding.
+        /// </summary>
+        /// <param name="proxyMethod">The proxy method value.</param>
+        /// <param name="targetMethod">The target method value.</param>
+        /// <param name="closedGenericMethodArguments">The closed generic method arguments value.</param>
+        /// <param name="binding">The binding value.</param>
+        /// <param name="failure">The failure value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool TryCreateForwardMethodBinding(
             MethodDef proxyMethod,
             MethodDef targetMethod,
@@ -2169,6 +2667,16 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return true;
         }
 
+        /// <summary>
+        /// Attempts to try create forward method parameter binding.
+        /// </summary>
+        /// <param name="proxyMethod">The proxy method value.</param>
+        /// <param name="targetMethod">The target method value.</param>
+        /// <param name="closedGenericMethodArguments">The closed generic method arguments value.</param>
+        /// <param name="parameterIndex">The parameter index value.</param>
+        /// <param name="parameterBinding">The parameter binding value.</param>
+        /// <param name="failure">The failure value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool TryCreateForwardMethodParameterBinding(
             MethodDef proxyMethod,
             MethodDef targetMethod,
@@ -2273,6 +2781,13 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return true;
         }
 
+        /// <summary>
+        /// Attempts to try create method argument conversion.
+        /// </summary>
+        /// <param name="proxyParameterType">The proxy parameter type value.</param>
+        /// <param name="targetParameterType">The target parameter type value.</param>
+        /// <param name="argumentConversion">The argument conversion value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool TryCreateMethodArgumentConversion(TypeSig proxyParameterType, TypeSig targetParameterType, out MethodArgumentConversion argumentConversion)
         {
             if (AreTypesEquivalent(proxyParameterType, targetParameterType))
@@ -2303,6 +2818,13 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return false;
         }
 
+        /// <summary>
+        /// Attempts to try create by ref post call conversion.
+        /// </summary>
+        /// <param name="proxyParameterElementType">The proxy parameter element type value.</param>
+        /// <param name="targetParameterElementType">The target parameter element type value.</param>
+        /// <param name="returnConversion">The return conversion value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool TryCreateByRefPostCallConversion(TypeSig proxyParameterElementType, TypeSig targetParameterElementType, out MethodReturnConversion returnConversion)
         {
             if (TryCreateReturnConversion(proxyParameterElementType, targetParameterElementType, out returnConversion))
@@ -2314,6 +2836,13 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return false;
         }
 
+        /// <summary>
+        /// Attempts to try get method parameter direction.
+        /// </summary>
+        /// <param name="method">The method value.</param>
+        /// <param name="parameterIndex">The parameter index value.</param>
+        /// <param name="direction">The direction value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool TryGetMethodParameterDirection(MethodDef method, int parameterIndex, out ParameterDirection direction)
         {
             foreach (var parameter in method.Parameters)
@@ -2332,6 +2861,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return false;
         }
 
+        /// <summary>
+        /// Attempts to try get by ref element type.
+        /// </summary>
+        /// <param name="typeSig">The type sig value.</param>
+        /// <param name="elementType">The element type value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool TryGetByRefElementType(TypeSig typeSig, out TypeSig? elementType)
         {
             if (typeSig is ByRefSig byRefSig)
@@ -2344,6 +2879,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return false;
         }
 
+        /// <summary>
+        /// Executes substitute method generic type arguments.
+        /// </summary>
+        /// <param name="typeSig">The type sig value.</param>
+        /// <param name="closedGenericMethodArguments">The closed generic method arguments value.</param>
+        /// <returns>The result produced by this operation.</returns>
         private static TypeSig SubstituteMethodGenericTypeArguments(TypeSig typeSig, IReadOnlyList<TypeSig>? closedGenericMethodArguments)
         {
             if (closedGenericMethodArguments is null || closedGenericMethodArguments.Count == 0)
@@ -2381,6 +2922,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return typeSig;
         }
 
+        /// <summary>
+        /// Attempts to try get value with type argument.
+        /// </summary>
+        /// <param name="typeSig">The type sig value.</param>
+        /// <param name="valueArgument">The value argument value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool TryGetValueWithTypeArgument(TypeSig typeSig, out TypeSig? valueArgument)
         {
             valueArgument = null;
@@ -2404,6 +2951,13 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return true;
         }
 
+        /// <summary>
+        /// Creates create value with type value field ref.
+        /// </summary>
+        /// <param name="moduleDef">The module def value.</param>
+        /// <param name="wrapperTypeSig">The wrapper type sig value.</param>
+        /// <param name="innerTypeSig">The inner type sig value.</param>
+        /// <returns>The result produced by this operation.</returns>
         private static IField CreateValueWithTypeValueFieldRef(ModuleDef moduleDef, TypeSig wrapperTypeSig, TypeSig innerTypeSig)
         {
             var importedWrapperTypeSig = moduleDef.Import(wrapperTypeSig);
@@ -2412,6 +2966,13 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return moduleDef.UpdateRowId(fieldRef);
         }
 
+        /// <summary>
+        /// Creates create value with type create method ref.
+        /// </summary>
+        /// <param name="moduleDef">The module def value.</param>
+        /// <param name="wrapperTypeSig">The wrapper type sig value.</param>
+        /// <param name="innerTypeSig">The inner type sig value.</param>
+        /// <returns>The result produced by this operation.</returns>
         private static IMethodDefOrRef CreateValueWithTypeCreateMethodRef(ModuleDef moduleDef, TypeSig wrapperTypeSig, TypeSig innerTypeSig)
         {
             var importedWrapperTypeSig = moduleDef.Import(wrapperTypeSig);
@@ -2430,6 +2991,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return moduleDef.UpdateRowId(methodRef);
         }
 
+        /// <summary>
+        /// Creates create duck type create cache create method ref.
+        /// </summary>
+        /// <param name="moduleDef">The module def value.</param>
+        /// <param name="proxyTypeSig">The proxy type sig value.</param>
+        /// <returns>The result produced by this operation.</returns>
         private static IMethodDefOrRef CreateDuckTypeCreateCacheCreateMethodRef(ModuleDef moduleDef, TypeSig proxyTypeSig)
         {
             var importedProxyTypeSig = moduleDef.Import(proxyTypeSig);
@@ -2446,6 +3013,13 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return moduleDef.UpdateRowId(createMethodRef);
         }
 
+        /// <summary>
+        /// Resolves resolve imported type for type token.
+        /// </summary>
+        /// <param name="moduleDef">The module def value.</param>
+        /// <param name="typeSig">The type sig value.</param>
+        /// <param name="context">The context value.</param>
+        /// <returns>The result produced by this operation.</returns>
         private static ITypeDefOrRef ResolveImportedTypeForTypeToken(ModuleDef moduleDef, TypeSig typeSig, string context)
         {
             var typeDefOrRef = typeSig.ToTypeDefOrRef()
@@ -2454,6 +3028,14 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 ?? throw new InvalidOperationException($"Unable to import type token for {context}.");
         }
 
+        /// <summary>
+        /// Emits emit object to expected type conversion.
+        /// </summary>
+        /// <param name="moduleDef">The module def value.</param>
+        /// <param name="body">The body value.</param>
+        /// <param name="expectedTypeSig">The expected type sig value.</param>
+        /// <param name="context">The context value.</param>
+        /// <remarks>Emits or composes IL for generated duck-typing proxy operations.</remarks>
         private static void EmitObjectToExpectedTypeConversion(ModuleDef moduleDef, CilBody body, TypeSig expectedTypeSig, string context)
         {
             if (expectedTypeSig.ElementType == ElementType.Object)
@@ -2471,6 +3053,15 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             body.Instructions.Add(OpCodes.Castclass.ToInstruction(importedExpectedType));
         }
 
+        /// <summary>
+        /// Emits emit duck chain to proxy conversion.
+        /// </summary>
+        /// <param name="moduleDef">The module def value.</param>
+        /// <param name="body">The body value.</param>
+        /// <param name="proxyTypeSig">The proxy type sig value.</param>
+        /// <param name="targetTypeSig">The target type sig value.</param>
+        /// <param name="context">The context value.</param>
+        /// <remarks>Emits or composes IL for generated duck-typing proxy operations.</remarks>
         private static void EmitDuckChainToProxyConversion(
             ModuleDef moduleDef,
             CilBody body,
@@ -2528,6 +3119,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             body.Instructions.Add(OpCodes.Call.ToInstruction(createMethodRef));
         }
 
+        /// <summary>
+        /// Creates create nullable ctor ref.
+        /// </summary>
+        /// <param name="moduleDef">The module def value.</param>
+        /// <param name="nullableTypeSig">The nullable type sig value.</param>
+        /// <returns>The result produced by this operation.</returns>
         private static IMethodDefOrRef CreateNullableCtorRef(ModuleDef moduleDef, TypeSig nullableTypeSig)
         {
             if (!TryGetNullableElementType(nullableTypeSig, out _))
@@ -2542,6 +3139,16 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return moduleDef.UpdateRowId(ctorRef);
         }
 
+        /// <summary>
+        /// Attempts to try find forward target field.
+        /// </summary>
+        /// <param name="targetType">The target type value.</param>
+        /// <param name="proxyMethod">The proxy method value.</param>
+        /// <param name="accessorKind">The accessor kind value.</param>
+        /// <param name="targetField">The target field value.</param>
+        /// <param name="fieldBinding">The field binding value.</param>
+        /// <param name="failureReason">The failure reason value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool TryFindForwardTargetField(
             TypeDef targetType,
             MethodDef proxyMethod,
@@ -2584,6 +3191,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return false;
         }
 
+        /// <summary>
+        /// Gets get forward target field names.
+        /// </summary>
+        /// <param name="proxyMethod">The proxy method value.</param>
+        /// <returns>The result produced by this operation.</returns>
         private static IReadOnlyList<string> GetForwardTargetFieldNames(MethodDef proxyMethod)
         {
             var fieldNames = new List<string>();
@@ -2623,6 +3235,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return fieldNames;
         }
 
+        /// <summary>
+        /// Attempts to try get field accessor kind.
+        /// </summary>
+        /// <param name="proxyMethod">The proxy method value.</param>
+        /// <param name="accessorKind">The accessor kind value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool TryGetFieldAccessorKind(MethodDef proxyMethod, out FieldAccessorKind accessorKind)
         {
             accessorKind = default;
@@ -2643,6 +3261,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return false;
         }
 
+        /// <summary>
+        /// Attempts to try get accessor property name.
+        /// </summary>
+        /// <param name="methodName">The method name value.</param>
+        /// <param name="propertyName">The property name value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool TryGetAccessorPropertyName(string methodName, out string? propertyName)
         {
             propertyName = null;
@@ -2655,6 +3279,15 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return false;
         }
 
+        /// <summary>
+        /// Executes are field accessor signature compatible.
+        /// </summary>
+        /// <param name="proxyMethod">The proxy method value.</param>
+        /// <param name="targetField">The target field value.</param>
+        /// <param name="accessorKind">The accessor kind value.</param>
+        /// <param name="fieldBinding">The field binding value.</param>
+        /// <param name="failureReason">The failure reason value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool AreFieldAccessorSignatureCompatible(
             MethodDef proxyMethod,
             FieldDef targetField,
@@ -2717,6 +3350,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
         }
 
+        /// <summary>
+        /// Gets get field resolution mode.
+        /// </summary>
+        /// <param name="proxyMethod">The proxy method value.</param>
+        /// <returns>The result produced by this operation.</returns>
         private static FieldResolutionMode GetFieldResolutionMode(MethodDef proxyMethod)
         {
             var mode = FieldResolutionMode.Disabled;
@@ -2736,6 +3374,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return mode;
         }
 
+        /// <summary>
+        /// Executes enumerate duck attributes.
+        /// </summary>
+        /// <param name="proxyMethod">The proxy method value.</param>
+        /// <returns>The result produced by this operation.</returns>
         private static IEnumerable<CustomAttribute> EnumerateDuckAttributes(MethodDef proxyMethod)
         {
             foreach (var attribute in proxyMethod.CustomAttributes)
@@ -2758,6 +3401,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
         }
 
+        /// <summary>
+        /// Resolves resolve duck kind.
+        /// </summary>
+        /// <param name="customAttribute">The custom attribute value.</param>
+        /// <returns>The computed numeric value.</returns>
         private static int ResolveDuckKind(CustomAttribute customAttribute)
         {
             var fullName = customAttribute.TypeFullName;
@@ -2787,6 +3435,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return DuckKindProperty;
         }
 
+        /// <summary>
+        /// Gets get forward target method names.
+        /// </summary>
+        /// <param name="proxyMethod">The proxy method value.</param>
+        /// <returns>The result produced by this operation.</returns>
         private static IReadOnlyList<string> GetForwardTargetMethodNames(MethodDef proxyMethod)
         {
             var methodNames = new List<string>();
@@ -2829,6 +3482,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return methodNames;
         }
 
+        /// <summary>
+        /// Attempts to try get declaring property.
+        /// </summary>
+        /// <param name="proxyMethod">The proxy method value.</param>
+        /// <param name="propertyDef">The property def value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool TryGetDeclaringProperty(MethodDef proxyMethod, out PropertyDef? propertyDef)
         {
             propertyDef = null;
@@ -2850,6 +3509,14 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return false;
         }
 
+        /// <summary>
+        /// Attempts to try resolve forward closed generic method arguments.
+        /// </summary>
+        /// <param name="targetType">The target type value.</param>
+        /// <param name="proxyMethod">The proxy method value.</param>
+        /// <param name="closedGenericMethodArguments">The closed generic method arguments value.</param>
+        /// <param name="failureReason">The failure reason value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool TryResolveForwardClosedGenericMethodArguments(
             TypeDef targetType,
             MethodDef proxyMethod,
@@ -2880,6 +3547,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return true;
         }
 
+        /// <summary>
+        /// Attempts to try get duck generic parameter type names.
+        /// </summary>
+        /// <param name="proxyMethod">The proxy method value.</param>
+        /// <param name="genericParameterTypeNames">The generic parameter type names value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool TryGetDuckGenericParameterTypeNames(MethodDef proxyMethod, out IReadOnlyList<string> genericParameterTypeNames)
         {
             var names = new List<string>();
@@ -2904,6 +3577,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return names.Count > 0;
         }
 
+        /// <summary>
+        /// Attempts to try resolve runtime type by name.
+        /// </summary>
+        /// <param name="typeName">The type name value.</param>
+        /// <param name="runtimeType">The runtime type value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool TryResolveRuntimeTypeByName(string typeName, out Type? runtimeType)
         {
             runtimeType = Type.GetType(typeName, throwOnError: false);
@@ -2924,11 +3603,24 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return false;
         }
 
+        /// <summary>
+        /// Determines whether is reverse method attribute.
+        /// </summary>
+        /// <param name="customAttribute">The custom attribute value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool IsReverseMethodAttribute(CustomAttribute customAttribute)
         {
             return string.Equals(customAttribute.TypeFullName, DuckReverseMethodAttributeTypeName, StringComparison.Ordinal);
         }
 
+        /// <summary>
+        /// Determines whether is reverse candidate match.
+        /// </summary>
+        /// <param name="proxyMethodName">The proxy method name value.</param>
+        /// <param name="proxyParameterTypeNames">The proxy parameter type names value.</param>
+        /// <param name="reverseAttribute">The reverse attribute value.</param>
+        /// <param name="targetMethodName">The target method name value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool IsReverseCandidateMatch(
             string proxyMethodName,
             IReadOnlyList<HashSet<string>> proxyParameterTypeNames,
@@ -2982,6 +3674,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return true;
         }
 
+        /// <summary>
+        /// Attempts to try get duck attribute name.
+        /// </summary>
+        /// <param name="customAttribute">The custom attribute value.</param>
+        /// <param name="configuredName">The configured name value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool TryGetDuckAttributeName(CustomAttribute customAttribute, out string? configuredName)
         {
             foreach (var namedArgument in customAttribute.NamedArguments)
@@ -3001,6 +3699,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return false;
         }
 
+        /// <summary>
+        /// Attempts to try get duck attribute parameter type names.
+        /// </summary>
+        /// <param name="customAttribute">The custom attribute value.</param>
+        /// <param name="parameterTypeNames">The parameter type names value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool TryGetDuckAttributeParameterTypeNames(CustomAttribute customAttribute, out IReadOnlyList<string> parameterTypeNames)
         {
             var names = new List<string>();
@@ -3021,6 +3725,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return names.Count > 0;
         }
 
+        /// <summary>
+        /// Gets get type comparison names.
+        /// </summary>
+        /// <param name="typeSig">The type sig value.</param>
+        /// <returns>The result produced by this operation.</returns>
         private static HashSet<string> GetTypeComparisonNames(TypeSig typeSig)
         {
             var names = new HashSet<string>(StringComparer.Ordinal);
@@ -3060,6 +3769,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return names;
         }
 
+        /// <summary>
+        /// Attempts to try get duck attribute names.
+        /// </summary>
+        /// <param name="customAttributes">The custom attributes value.</param>
+        /// <param name="names">The names value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool TryGetDuckAttributeNames(IList<CustomAttribute> customAttributes, out IReadOnlyList<string> names)
         {
             var parsedNames = new List<string>();
@@ -3095,6 +3810,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return parsedNames.Count > 0;
         }
 
+        /// <summary>
+        /// Determines whether is duck attribute.
+        /// </summary>
+        /// <param name="customAttribute">The custom attribute value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool IsDuckAttribute(CustomAttribute customAttribute)
         {
             var fullName = customAttribute.TypeFullName;
@@ -3104,6 +3824,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 || string.Equals(fullName, DuckReverseMethodAttributeTypeName, StringComparison.Ordinal);
         }
 
+        /// <summary>
+        /// Attempts to try get string argument.
+        /// </summary>
+        /// <param name="value">The value value.</param>
+        /// <param name="text">The text value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool TryGetStringArgument(object? value, out string? text)
         {
             switch (value)
@@ -3120,6 +3846,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
         }
 
+        /// <summary>
+        /// Attempts to try get string array argument.
+        /// </summary>
+        /// <param name="value">The value value.</param>
+        /// <param name="values">The values value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool TryGetStringArrayArgument(object? value, out IReadOnlyList<string> values)
         {
             var parsedValues = new List<string>();
@@ -3162,6 +3894,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return parsedValues.Count > 0;
         }
 
+        /// <summary>
+        /// Attempts to try get int argument.
+        /// </summary>
+        /// <param name="value">The value value.</param>
+        /// <param name="intValue">The int value value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool TryGetIntArgument(object? value, out int intValue)
         {
             switch (value)
@@ -3184,6 +3922,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
         }
 
+        /// <summary>
+        /// Executes split duck names.
+        /// </summary>
+        /// <param name="configuredName">The configured name value.</param>
+        /// <returns>The result produced by this operation.</returns>
         private static IEnumerable<string> SplitDuckNames(string configuredName)
         {
             return configuredName
@@ -3192,6 +3935,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 .Where(name => !string.IsNullOrWhiteSpace(name));
         }
 
+        /// <summary>
+        /// Attempts to try get accessor prefix.
+        /// </summary>
+        /// <param name="methodName">The method name value.</param>
+        /// <param name="prefix">The prefix value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool TryGetAccessorPrefix(string methodName, out string prefix)
         {
             var separatorIndex = methodName.IndexOf('_');
@@ -3205,6 +3954,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return true;
         }
 
+        /// <summary>
+        /// Executes are methods signature compatible.
+        /// </summary>
+        /// <param name="proxyMethod">The proxy method value.</param>
+        /// <param name="targetMethod">The target method value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool AreMethodsSignatureCompatible(MethodDef proxyMethod, MethodDef targetMethod)
         {
             if (!AreTypesEquivalent(proxyMethod.MethodSig.RetType, targetMethod.MethodSig.RetType))
@@ -3223,11 +3978,24 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return true;
         }
 
+        /// <summary>
+        /// Executes are types equivalent.
+        /// </summary>
+        /// <param name="proxyType">The proxy type value.</param>
+        /// <param name="targetType">The target type value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool AreTypesEquivalent(TypeSig proxyType, TypeSig targetType)
         {
             return string.Equals(proxyType.FullName, targetType.FullName, StringComparison.Ordinal);
         }
 
+        /// <summary>
+        /// Determines whether is duck chaining required.
+        /// </summary>
+        /// <param name="targetType">The target type value.</param>
+        /// <param name="proxyType">The proxy type value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
+        /// <remarks>Emits or composes IL for generated duck-typing proxy operations.</remarks>
         private static bool IsDuckChainingRequired(TypeSig targetType, TypeSig proxyType)
         {
             if (proxyType.ContainsGenericParameter || targetType.ContainsGenericParameter)
@@ -3265,6 +4033,13 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return true;
         }
 
+        /// <summary>
+        /// Attempts to try get duck chaining proxy type.
+        /// </summary>
+        /// <param name="proxyType">The proxy type value.</param>
+        /// <param name="proxyTypeForCache">The proxy type for cache value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
+        /// <remarks>Emits or composes IL for generated duck-typing proxy operations.</remarks>
         private static bool TryGetDuckChainingProxyType(TypeSig proxyType, out TypeSig proxyTypeForCache)
         {
             if (TryGetNullableElementType(proxyType, out var nullableInnerType) && IsDuckProxyCandidate(nullableInnerType!))
@@ -3283,6 +4058,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return false;
         }
 
+        /// <summary>
+        /// Determines whether is duck proxy candidate.
+        /// </summary>
+        /// <param name="typeSig">The type sig value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool IsDuckProxyCandidate(TypeSig typeSig)
         {
             var typeDefOrRef = typeSig.ToTypeDefOrRef();
@@ -3315,6 +4095,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return false;
         }
 
+        /// <summary>
+        /// Determines whether is duck copy value type.
+        /// </summary>
+        /// <param name="typeDef">The type def value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool IsDuckCopyValueType(TypeDef typeDef)
         {
             foreach (var customAttribute in typeDef.CustomAttributes)
@@ -3328,6 +4113,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return false;
         }
 
+        /// <summary>
+        /// Attempts to try get nullable element type.
+        /// </summary>
+        /// <param name="typeSig">The type sig value.</param>
+        /// <param name="elementType">The element type value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool TryGetNullableElementType(TypeSig typeSig, out TypeSig? elementType)
         {
             elementType = null;
@@ -3346,6 +4137,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return true;
         }
 
+        /// <summary>
+        /// Determines whether is assignable from.
+        /// </summary>
+        /// <param name="candidateBaseType">The candidate base type value.</param>
+        /// <param name="derivedType">The derived type value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool IsAssignableFrom(ITypeDefOrRef candidateBaseType, ITypeDefOrRef derivedType)
         {
             if (string.Equals(candidateBaseType.FullName, derivedType.FullName, StringComparison.Ordinal))
@@ -3399,6 +4196,13 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return false;
         }
 
+        /// <summary>
+        /// Attempts to try resolve type.
+        /// </summary>
+        /// <param name="module">The module value.</param>
+        /// <param name="typeName">The type name value.</param>
+        /// <param name="type">The type value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool TryResolveType(ModuleDef module, string typeName, out TypeDef type)
         {
             type = module.Find(typeName, isReflectionName: true)
@@ -3410,6 +4214,13 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return type is not null;
         }
 
+        /// <summary>
+        /// Adds add ignores access checks to attributes.
+        /// </summary>
+        /// <param name="assemblyDef">The assembly def value.</param>
+        /// <param name="moduleDef">The module def value.</param>
+        /// <param name="ignoresAccessChecksToAttributeCtor">The ignores access checks to attribute ctor value.</param>
+        /// <param name="mappingResolutionResult">The mapping resolution result value.</param>
         private static void AddIgnoresAccessChecksToAttributes(
             AssemblyDef assemblyDef,
             ModuleDef moduleDef,
@@ -3447,6 +4258,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
         }
 
+        /// <summary>
+        /// Executes load modules.
+        /// </summary>
+        /// <param name="assemblyPathsByName">The assembly paths by name value.</param>
+        /// <returns>The result produced by this operation.</returns>
         private static IReadOnlyDictionary<string, ModuleDefMD> LoadModules(IReadOnlyDictionary<string, string> assemblyPathsByName)
         {
             var modulesByAssemblyName = new Dictionary<string, ModuleDefMD>(StringComparer.OrdinalIgnoreCase);
@@ -3458,6 +4274,13 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return modulesByAssemblyName;
         }
 
+        /// <summary>
+        /// Adds add assembly reference.
+        /// </summary>
+        /// <param name="moduleDef">The module def value.</param>
+        /// <param name="assemblyReferences">The assembly references value.</param>
+        /// <param name="assemblyPath">The assembly path value.</param>
+        /// <returns>The result produced by this operation.</returns>
         private static AssemblyRef AddAssemblyReference(ModuleDef moduleDef, IDictionary<string, AssemblyRef> assemblyReferences, string assemblyPath)
         {
             var assemblyName = AssemblyName.GetAssemblyName(assemblyPath);
@@ -3471,6 +4294,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return assemblyRef;
         }
 
+        /// <summary>
+        /// Computes compute deterministic mvid.
+        /// </summary>
+        /// <param name="generatedAssemblyName">The generated assembly name value.</param>
+        /// <param name="mappings">The mappings value.</param>
+        /// <returns>The result produced by this operation.</returns>
         private static Guid ComputeDeterministicMvid(string generatedAssemblyName, IReadOnlyList<DuckTypeAotMapping> mappings)
         {
             var deterministicInput = new StringBuilder()
@@ -3491,6 +4320,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return new Guid(guidBytes);
         }
 
+        /// <summary>
+        /// Computes compute stable short hash.
+        /// </summary>
+        /// <param name="value">The value value.</param>
+        /// <returns>The resulting string value.</returns>
         private static string ComputeStableShortHash(string value)
         {
             using var sha256 = SHA256.Create();
@@ -3498,8 +4332,19 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return string.Concat(bytes.Take(4).Select(b => b.ToString("x2")));
         }
 
+        /// <summary>
+        /// Represents struct copy field binding.
+        /// </summary>
         private readonly struct StructCopyFieldBinding
         {
+            /// <summary>
+            /// Initializes a new instance of the <see cref="StructCopyFieldBinding"/> struct.
+            /// </summary>
+            /// <param name="proxyField">The proxy field value.</param>
+            /// <param name="sourceKind">The source kind value.</param>
+            /// <param name="sourceProperty">The source property value.</param>
+            /// <param name="sourceField">The source field value.</param>
+            /// <param name="returnConversion">The return conversion value.</param>
             private StructCopyFieldBinding(
                 FieldDef proxyField,
                 StructCopySourceKind sourceKind,
@@ -3514,29 +4359,75 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 ReturnConversion = returnConversion;
             }
 
+            /// <summary>
+            /// Gets proxy field.
+            /// </summary>
+            /// <value>The proxy field value.</value>
             internal FieldDef ProxyField { get; }
 
+            /// <summary>
+            /// Gets source kind.
+            /// </summary>
+            /// <value>The source kind value.</value>
             internal StructCopySourceKind SourceKind { get; }
 
+            /// <summary>
+            /// Gets source property.
+            /// </summary>
+            /// <value>The source property value.</value>
             internal PropertyDef? SourceProperty { get; }
 
+            /// <summary>
+            /// Gets source field.
+            /// </summary>
+            /// <value>The source field value.</value>
             internal FieldDef? SourceField { get; }
 
+            /// <summary>
+            /// Gets return conversion.
+            /// </summary>
+            /// <value>The return conversion value.</value>
             internal MethodReturnConversion ReturnConversion { get; }
 
+            /// <summary>
+            /// Executes for property.
+            /// </summary>
+            /// <param name="proxyField">The proxy field value.</param>
+            /// <param name="sourceProperty">The source property value.</param>
+            /// <param name="returnConversion">The return conversion value.</param>
+            /// <returns>The result produced by this operation.</returns>
             internal static StructCopyFieldBinding ForProperty(FieldDef proxyField, PropertyDef sourceProperty, MethodReturnConversion returnConversion)
             {
                 return new StructCopyFieldBinding(proxyField, StructCopySourceKind.Property, sourceProperty, sourceField: null, returnConversion);
             }
 
+            /// <summary>
+            /// Executes for field.
+            /// </summary>
+            /// <param name="proxyField">The proxy field value.</param>
+            /// <param name="sourceField">The source field value.</param>
+            /// <param name="returnConversion">The return conversion value.</param>
+            /// <returns>The result produced by this operation.</returns>
             internal static StructCopyFieldBinding ForField(FieldDef proxyField, FieldDef sourceField, MethodReturnConversion returnConversion)
             {
                 return new StructCopyFieldBinding(proxyField, StructCopySourceKind.Field, sourceProperty: null, sourceField, returnConversion);
             }
         }
 
+        /// <summary>
+        /// Represents forward binding.
+        /// </summary>
         private readonly struct ForwardBinding
         {
+            /// <summary>
+            /// Initializes a new instance of the <see cref="ForwardBinding"/> struct.
+            /// </summary>
+            /// <param name="kind">The kind value.</param>
+            /// <param name="proxyMethod">The proxy method value.</param>
+            /// <param name="targetMethod">The target method value.</param>
+            /// <param name="targetField">The target field value.</param>
+            /// <param name="methodBinding">The method binding value.</param>
+            /// <param name="fieldBinding">The field binding value.</param>
             private ForwardBinding(
                 ForwardBindingKind kind,
                 MethodDef proxyMethod,
@@ -3553,36 +4444,90 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 FieldBinding = fieldBinding;
             }
 
+            /// <summary>
+            /// Gets kind.
+            /// </summary>
+            /// <value>The kind value.</value>
             internal ForwardBindingKind Kind { get; }
 
+            /// <summary>
+            /// Gets proxy method.
+            /// </summary>
+            /// <value>The proxy method value.</value>
             internal MethodDef ProxyMethod { get; }
 
+            /// <summary>
+            /// Gets target method.
+            /// </summary>
+            /// <value>The target method value.</value>
             internal MethodDef? TargetMethod { get; }
 
+            /// <summary>
+            /// Gets target field.
+            /// </summary>
+            /// <value>The target field value.</value>
             internal FieldDef? TargetField { get; }
 
+            /// <summary>
+            /// Gets method binding.
+            /// </summary>
+            /// <value>The method binding value.</value>
             internal ForwardMethodBindingInfo? MethodBinding { get; }
 
+            /// <summary>
+            /// Gets field binding.
+            /// </summary>
+            /// <value>The field binding value.</value>
             internal ForwardFieldBindingInfo? FieldBinding { get; }
 
+            /// <summary>
+            /// Executes for method.
+            /// </summary>
+            /// <param name="proxyMethod">The proxy method value.</param>
+            /// <param name="targetMethod">The target method value.</param>
+            /// <param name="methodBinding">The method binding value.</param>
+            /// <returns>The result produced by this operation.</returns>
             internal static ForwardBinding ForMethod(MethodDef proxyMethod, MethodDef targetMethod, ForwardMethodBindingInfo methodBinding)
             {
                 return new ForwardBinding(ForwardBindingKind.Method, proxyMethod, targetMethod, targetField: null, methodBinding, fieldBinding: null);
             }
 
+            /// <summary>
+            /// Executes for field get.
+            /// </summary>
+            /// <param name="proxyMethod">The proxy method value.</param>
+            /// <param name="targetField">The target field value.</param>
+            /// <param name="fieldBinding">The field binding value.</param>
+            /// <returns>The result produced by this operation.</returns>
             internal static ForwardBinding ForFieldGet(MethodDef proxyMethod, FieldDef targetField, ForwardFieldBindingInfo fieldBinding)
             {
                 return new ForwardBinding(ForwardBindingKind.FieldGet, proxyMethod, targetMethod: null, targetField, methodBinding: null, fieldBinding);
             }
 
+            /// <summary>
+            /// Executes for field set.
+            /// </summary>
+            /// <param name="proxyMethod">The proxy method value.</param>
+            /// <param name="targetField">The target field value.</param>
+            /// <param name="fieldBinding">The field binding value.</param>
+            /// <returns>The result produced by this operation.</returns>
             internal static ForwardBinding ForFieldSet(MethodDef proxyMethod, FieldDef targetField, ForwardFieldBindingInfo fieldBinding)
             {
                 return new ForwardBinding(ForwardBindingKind.FieldSet, proxyMethod, targetMethod: null, targetField, methodBinding: null, fieldBinding);
             }
         }
 
+        /// <summary>
+        /// Represents forward method binding info.
+        /// </summary>
         private readonly struct ForwardMethodBindingInfo
         {
+            /// <summary>
+            /// Initializes a new instance of the <see cref="ForwardMethodBindingInfo"/> struct.
+            /// </summary>
+            /// <param name="parameterBindings">The parameter bindings value.</param>
+            /// <param name="returnConversion">The return conversion value.</param>
+            /// <param name="closedGenericMethodArguments">The closed generic method arguments value.</param>
             internal ForwardMethodBindingInfo(
                 IReadOnlyList<MethodParameterBinding> parameterBindings,
                 MethodReturnConversion returnConversion,
@@ -3593,15 +4538,42 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 ClosedGenericMethodArguments = closedGenericMethodArguments;
             }
 
+            /// <summary>
+            /// Gets parameter bindings.
+            /// </summary>
+            /// <value>The parameter bindings value.</value>
             internal IReadOnlyList<MethodParameterBinding> ParameterBindings { get; }
 
+            /// <summary>
+            /// Gets return conversion.
+            /// </summary>
+            /// <value>The return conversion value.</value>
             internal MethodReturnConversion ReturnConversion { get; }
 
+            /// <summary>
+            /// Gets closed generic method arguments.
+            /// </summary>
+            /// <value>The closed generic method arguments value.</value>
             internal IReadOnlyList<TypeSig>? ClosedGenericMethodArguments { get; }
         }
 
+        /// <summary>
+        /// Represents method parameter binding.
+        /// </summary>
         private readonly struct MethodParameterBinding
         {
+            /// <summary>
+            /// Initializes a new instance of the <see cref="MethodParameterBinding"/> struct.
+            /// </summary>
+            /// <param name="isByRef">The is by ref value.</param>
+            /// <param name="useLocalForByRef">The use local for by ref value.</param>
+            /// <param name="isOut">The is out value.</param>
+            /// <param name="proxyTypeSig">The proxy type sig value.</param>
+            /// <param name="targetTypeSig">The target type sig value.</param>
+            /// <param name="proxyByRefElementTypeSig">The proxy by ref element type sig value.</param>
+            /// <param name="targetByRefElementTypeSig">The target by ref element type sig value.</param>
+            /// <param name="preCallConversion">The pre call conversion value.</param>
+            /// <param name="postCallConversion">The post call conversion value.</param>
             private MethodParameterBinding(
                 bool isByRef,
                 bool useLocalForByRef,
@@ -3624,24 +4596,67 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 PostCallConversion = postCallConversion;
             }
 
+            /// <summary>
+            /// Gets a value indicating whether is by ref.
+            /// </summary>
+            /// <value>The is by ref value.</value>
             internal bool IsByRef { get; }
 
+            /// <summary>
+            /// Gets a value indicating whether use local for by ref.
+            /// </summary>
+            /// <value>The use local for by ref value.</value>
             internal bool UseLocalForByRef { get; }
 
+            /// <summary>
+            /// Gets a value indicating whether is out.
+            /// </summary>
+            /// <value>The is out value.</value>
             internal bool IsOut { get; }
 
+            /// <summary>
+            /// Gets proxy type sig.
+            /// </summary>
+            /// <value>The proxy type sig value.</value>
             internal TypeSig ProxyTypeSig { get; }
 
+            /// <summary>
+            /// Gets target type sig.
+            /// </summary>
+            /// <value>The target type sig value.</value>
             internal TypeSig TargetTypeSig { get; }
 
+            /// <summary>
+            /// Gets proxy by ref element type sig.
+            /// </summary>
+            /// <value>The proxy by ref element type sig value.</value>
             internal TypeSig? ProxyByRefElementTypeSig { get; }
 
+            /// <summary>
+            /// Gets target by ref element type sig.
+            /// </summary>
+            /// <value>The target by ref element type sig value.</value>
             internal TypeSig? TargetByRefElementTypeSig { get; }
 
+            /// <summary>
+            /// Gets pre call conversion.
+            /// </summary>
+            /// <value>The pre call conversion value.</value>
             internal MethodArgumentConversion PreCallConversion { get; }
 
+            /// <summary>
+            /// Gets post call conversion.
+            /// </summary>
+            /// <value>The post call conversion value.</value>
             internal MethodReturnConversion PostCallConversion { get; }
 
+            /// <summary>
+            /// Executes for standard.
+            /// </summary>
+            /// <param name="proxyTypeSig">The proxy type sig value.</param>
+            /// <param name="targetTypeSig">The target type sig value.</param>
+            /// <param name="preCallConversion">The pre call conversion value.</param>
+            /// <returns>The result produced by this operation.</returns>
             internal static MethodParameterBinding ForStandard(TypeSig proxyTypeSig, TypeSig targetTypeSig, MethodArgumentConversion preCallConversion)
             {
                 return new MethodParameterBinding(
@@ -3656,6 +4671,15 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     MethodReturnConversion.None());
             }
 
+            /// <summary>
+            /// Executes for by ref direct.
+            /// </summary>
+            /// <param name="proxyTypeSig">The proxy type sig value.</param>
+            /// <param name="targetTypeSig">The target type sig value.</param>
+            /// <param name="proxyByRefElementTypeSig">The proxy by ref element type sig value.</param>
+            /// <param name="targetByRefElementTypeSig">The target by ref element type sig value.</param>
+            /// <param name="isOut">The is out value.</param>
+            /// <returns>The result produced by this operation.</returns>
             internal static MethodParameterBinding ForByRefDirect(
                 TypeSig proxyTypeSig,
                 TypeSig targetTypeSig,
@@ -3675,6 +4699,17 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     MethodReturnConversion.None());
             }
 
+            /// <summary>
+            /// Executes for by ref with local.
+            /// </summary>
+            /// <param name="proxyTypeSig">The proxy type sig value.</param>
+            /// <param name="targetTypeSig">The target type sig value.</param>
+            /// <param name="proxyByRefElementTypeSig">The proxy by ref element type sig value.</param>
+            /// <param name="targetByRefElementTypeSig">The target by ref element type sig value.</param>
+            /// <param name="isOut">The is out value.</param>
+            /// <param name="preCallConversion">The pre call conversion value.</param>
+            /// <param name="postCallConversion">The post call conversion value.</param>
+            /// <returns>The result produced by this operation.</returns>
             internal static MethodParameterBinding ForByRefWithLocal(
                 TypeSig proxyTypeSig,
                 TypeSig targetTypeSig,
@@ -3697,56 +4732,122 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
         }
 
+        /// <summary>
+        /// Represents forward field binding info.
+        /// </summary>
         private readonly struct ForwardFieldBindingInfo
         {
+            /// <summary>
+            /// Initializes a new instance of the <see cref="ForwardFieldBindingInfo"/> struct.
+            /// </summary>
+            /// <param name="argumentConversion">The argument conversion value.</param>
+            /// <param name="returnConversion">The return conversion value.</param>
             private ForwardFieldBindingInfo(MethodArgumentConversion argumentConversion, MethodReturnConversion returnConversion)
             {
                 ArgumentConversion = argumentConversion;
                 ReturnConversion = returnConversion;
             }
 
+            /// <summary>
+            /// Gets argument conversion.
+            /// </summary>
+            /// <value>The argument conversion value.</value>
             internal MethodArgumentConversion ArgumentConversion { get; }
 
+            /// <summary>
+            /// Gets return conversion.
+            /// </summary>
+            /// <value>The return conversion value.</value>
             internal MethodReturnConversion ReturnConversion { get; }
 
+            /// <summary>
+            /// Executes none.
+            /// </summary>
+            /// <returns>The result produced by this operation.</returns>
             internal static ForwardFieldBindingInfo None()
             {
                 return new ForwardFieldBindingInfo(MethodArgumentConversion.None(), MethodReturnConversion.None());
             }
 
+            /// <summary>
+            /// Executes unwrap value with type.
+            /// </summary>
+            /// <param name="wrapperTypeSig">The wrapper type sig value.</param>
+            /// <param name="innerTypeSig">The inner type sig value.</param>
+            /// <returns>The result produced by this operation.</returns>
             internal static ForwardFieldBindingInfo UnwrapValueWithType(TypeSig wrapperTypeSig, TypeSig innerTypeSig)
             {
                 return new ForwardFieldBindingInfo(MethodArgumentConversion.UnwrapValueWithType(wrapperTypeSig, innerTypeSig), MethodReturnConversion.None());
             }
 
+            /// <summary>
+            /// Executes wrap value with type.
+            /// </summary>
+            /// <param name="wrapperTypeSig">The wrapper type sig value.</param>
+            /// <param name="innerTypeSig">The inner type sig value.</param>
+            /// <returns>The result produced by this operation.</returns>
             internal static ForwardFieldBindingInfo WrapValueWithType(TypeSig wrapperTypeSig, TypeSig innerTypeSig)
             {
                 return new ForwardFieldBindingInfo(MethodArgumentConversion.None(), MethodReturnConversion.WrapValueWithType(wrapperTypeSig, innerTypeSig));
             }
 
+            /// <summary>
+            /// Executes extract duck type instance.
+            /// </summary>
+            /// <param name="wrapperTypeSig">The wrapper type sig value.</param>
+            /// <param name="innerTypeSig">The inner type sig value.</param>
+            /// <returns>The result produced by this operation.</returns>
             internal static ForwardFieldBindingInfo ExtractDuckTypeInstance(TypeSig wrapperTypeSig, TypeSig innerTypeSig)
             {
                 return new ForwardFieldBindingInfo(MethodArgumentConversion.ExtractDuckTypeInstance(wrapperTypeSig, innerTypeSig), MethodReturnConversion.None());
             }
 
+            /// <summary>
+            /// Executes duck chain to proxy.
+            /// </summary>
+            /// <param name="wrapperTypeSig">The wrapper type sig value.</param>
+            /// <param name="innerTypeSig">The inner type sig value.</param>
+            /// <returns>The result produced by this operation.</returns>
+            /// <remarks>Emits or composes IL for generated duck-typing proxy operations.</remarks>
             internal static ForwardFieldBindingInfo DuckChainToProxy(TypeSig wrapperTypeSig, TypeSig innerTypeSig)
             {
                 return new ForwardFieldBindingInfo(MethodArgumentConversion.None(), MethodReturnConversion.DuckChainToProxy(wrapperTypeSig, innerTypeSig));
             }
 
+            /// <summary>
+            /// Executes return type conversion.
+            /// </summary>
+            /// <param name="actualTypeSig">The actual type sig value.</param>
+            /// <param name="expectedTypeSig">The expected type sig value.</param>
+            /// <returns>The result produced by this operation.</returns>
             internal static ForwardFieldBindingInfo ReturnTypeConversion(TypeSig actualTypeSig, TypeSig expectedTypeSig)
             {
                 return new ForwardFieldBindingInfo(MethodArgumentConversion.None(), MethodReturnConversion.TypeConversion(actualTypeSig, expectedTypeSig));
             }
 
+            /// <summary>
+            /// Executes type conversion.
+            /// </summary>
+            /// <param name="actualTypeSig">The actual type sig value.</param>
+            /// <param name="expectedTypeSig">The expected type sig value.</param>
+            /// <returns>The result produced by this operation.</returns>
             internal static ForwardFieldBindingInfo TypeConversion(TypeSig actualTypeSig, TypeSig expectedTypeSig)
             {
                 return new ForwardFieldBindingInfo(MethodArgumentConversion.TypeConversion(actualTypeSig, expectedTypeSig), MethodReturnConversion.None());
             }
         }
 
+        /// <summary>
+        /// Represents method argument conversion.
+        /// </summary>
         private readonly struct MethodArgumentConversion
         {
+            /// <summary>
+            /// Initializes a new instance of the <see cref="MethodArgumentConversion"/> struct.
+            /// </summary>
+            /// <param name="kind">The kind value.</param>
+            /// <param name="wrapperTypeSig">The wrapper type sig value.</param>
+            /// <param name="innerTypeSig">The inner type sig value.</param>
             private MethodArgumentConversion(MethodArgumentConversionKind kind, TypeSig? wrapperTypeSig, TypeSig? innerTypeSig)
             {
                 Kind = kind;
@@ -3754,35 +4855,78 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 InnerTypeSig = innerTypeSig;
             }
 
+            /// <summary>
+            /// Gets kind.
+            /// </summary>
+            /// <value>The kind value.</value>
             internal MethodArgumentConversionKind Kind { get; }
 
+            /// <summary>
+            /// Gets wrapper type sig.
+            /// </summary>
+            /// <value>The wrapper type sig value.</value>
             internal TypeSig? WrapperTypeSig { get; }
 
+            /// <summary>
+            /// Gets inner type sig.
+            /// </summary>
+            /// <value>The inner type sig value.</value>
             internal TypeSig? InnerTypeSig { get; }
 
+            /// <summary>
+            /// Executes none.
+            /// </summary>
+            /// <returns>The result produced by this operation.</returns>
             internal static MethodArgumentConversion None()
             {
                 return new MethodArgumentConversion(MethodArgumentConversionKind.None, wrapperTypeSig: null, innerTypeSig: null);
             }
 
+            /// <summary>
+            /// Executes unwrap value with type.
+            /// </summary>
+            /// <param name="wrapperTypeSig">The wrapper type sig value.</param>
+            /// <param name="innerTypeSig">The inner type sig value.</param>
+            /// <returns>The result produced by this operation.</returns>
             internal static MethodArgumentConversion UnwrapValueWithType(TypeSig wrapperTypeSig, TypeSig innerTypeSig)
             {
                 return new MethodArgumentConversion(MethodArgumentConversionKind.UnwrapValueWithType, wrapperTypeSig, innerTypeSig);
             }
 
+            /// <summary>
+            /// Executes extract duck type instance.
+            /// </summary>
+            /// <param name="wrapperTypeSig">The wrapper type sig value.</param>
+            /// <param name="innerTypeSig">The inner type sig value.</param>
+            /// <returns>The result produced by this operation.</returns>
             internal static MethodArgumentConversion ExtractDuckTypeInstance(TypeSig wrapperTypeSig, TypeSig innerTypeSig)
             {
                 return new MethodArgumentConversion(MethodArgumentConversionKind.ExtractDuckTypeInstance, wrapperTypeSig, innerTypeSig);
             }
 
+            /// <summary>
+            /// Executes type conversion.
+            /// </summary>
+            /// <param name="actualTypeSig">The actual type sig value.</param>
+            /// <param name="expectedTypeSig">The expected type sig value.</param>
+            /// <returns>The result produced by this operation.</returns>
             internal static MethodArgumentConversion TypeConversion(TypeSig actualTypeSig, TypeSig expectedTypeSig)
             {
                 return new MethodArgumentConversion(MethodArgumentConversionKind.TypeConversion, actualTypeSig, expectedTypeSig);
             }
         }
 
+        /// <summary>
+        /// Represents method return conversion.
+        /// </summary>
         private readonly struct MethodReturnConversion
         {
+            /// <summary>
+            /// Initializes a new instance of the <see cref="MethodReturnConversion"/> struct.
+            /// </summary>
+            /// <param name="kind">The kind value.</param>
+            /// <param name="wrapperTypeSig">The wrapper type sig value.</param>
+            /// <param name="innerTypeSig">The inner type sig value.</param>
             private MethodReturnConversion(MethodReturnConversionKind kind, TypeSig? wrapperTypeSig, TypeSig? innerTypeSig)
             {
                 Kind = kind;
@@ -3790,48 +4934,108 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 InnerTypeSig = innerTypeSig;
             }
 
+            /// <summary>
+            /// Gets kind.
+            /// </summary>
+            /// <value>The kind value.</value>
             internal MethodReturnConversionKind Kind { get; }
 
+            /// <summary>
+            /// Gets wrapper type sig.
+            /// </summary>
+            /// <value>The wrapper type sig value.</value>
             internal TypeSig? WrapperTypeSig { get; }
 
+            /// <summary>
+            /// Gets inner type sig.
+            /// </summary>
+            /// <value>The inner type sig value.</value>
             internal TypeSig? InnerTypeSig { get; }
 
+            /// <summary>
+            /// Executes none.
+            /// </summary>
+            /// <returns>The result produced by this operation.</returns>
             internal static MethodReturnConversion None()
             {
                 return new MethodReturnConversion(MethodReturnConversionKind.None, wrapperTypeSig: null, innerTypeSig: null);
             }
 
+            /// <summary>
+            /// Executes wrap value with type.
+            /// </summary>
+            /// <param name="wrapperTypeSig">The wrapper type sig value.</param>
+            /// <param name="innerTypeSig">The inner type sig value.</param>
+            /// <returns>The result produced by this operation.</returns>
             internal static MethodReturnConversion WrapValueWithType(TypeSig wrapperTypeSig, TypeSig innerTypeSig)
             {
                 return new MethodReturnConversion(MethodReturnConversionKind.WrapValueWithType, wrapperTypeSig, innerTypeSig);
             }
 
+            /// <summary>
+            /// Executes duck chain to proxy.
+            /// </summary>
+            /// <param name="wrapperTypeSig">The wrapper type sig value.</param>
+            /// <param name="innerTypeSig">The inner type sig value.</param>
+            /// <returns>The result produced by this operation.</returns>
+            /// <remarks>Emits or composes IL for generated duck-typing proxy operations.</remarks>
             internal static MethodReturnConversion DuckChainToProxy(TypeSig wrapperTypeSig, TypeSig innerTypeSig)
             {
                 return new MethodReturnConversion(MethodReturnConversionKind.DuckChainToProxy, wrapperTypeSig, innerTypeSig);
             }
 
+            /// <summary>
+            /// Executes type conversion.
+            /// </summary>
+            /// <param name="actualTypeSig">The actual type sig value.</param>
+            /// <param name="expectedTypeSig">The expected type sig value.</param>
+            /// <returns>The result produced by this operation.</returns>
             internal static MethodReturnConversion TypeConversion(TypeSig actualTypeSig, TypeSig expectedTypeSig)
             {
                 return new MethodReturnConversion(MethodReturnConversionKind.TypeConversion, actualTypeSig, expectedTypeSig);
             }
         }
 
+        /// <summary>
+        /// Represents parameter direction.
+        /// </summary>
         private readonly struct ParameterDirection
         {
+            /// <summary>
+            /// Initializes a new instance of the <see cref="ParameterDirection"/> struct.
+            /// </summary>
+            /// <param name="isOut">The is out value.</param>
+            /// <param name="isIn">The is in value.</param>
             internal ParameterDirection(bool isOut, bool isIn)
             {
                 IsOut = isOut;
                 IsIn = isIn;
             }
 
+            /// <summary>
+            /// Gets a value indicating whether is out.
+            /// </summary>
+            /// <value>The is out value.</value>
             internal bool IsOut { get; }
 
+            /// <summary>
+            /// Gets a value indicating whether is in.
+            /// </summary>
+            /// <value>The is in value.</value>
             internal bool IsIn { get; }
         }
 
+        /// <summary>
+        /// Represents by ref write back plan.
+        /// </summary>
         private readonly struct ByRefWriteBackPlan
         {
+            /// <summary>
+            /// Initializes a new instance of the <see cref="ByRefWriteBackPlan"/> struct.
+            /// </summary>
+            /// <param name="proxyParameter">The proxy parameter value.</param>
+            /// <param name="targetLocal">The target local value.</param>
+            /// <param name="parameterBinding">The parameter binding value.</param>
             internal ByRefWriteBackPlan(Parameter proxyParameter, Local targetLocal, MethodParameterBinding parameterBinding)
             {
                 ProxyParameter = proxyParameter;
@@ -3839,25 +5043,56 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 ParameterBinding = parameterBinding;
             }
 
+            /// <summary>
+            /// Gets proxy parameter.
+            /// </summary>
+            /// <value>The proxy parameter value.</value>
             internal Parameter ProxyParameter { get; }
 
+            /// <summary>
+            /// Gets target local.
+            /// </summary>
+            /// <value>The target local value.</value>
             internal Local TargetLocal { get; }
 
+            /// <summary>
+            /// Gets parameter binding.
+            /// </summary>
+            /// <value>The parameter binding value.</value>
             internal MethodParameterBinding ParameterBinding { get; }
         }
 
+        /// <summary>
+        /// Represents method compatibility failure.
+        /// </summary>
         private readonly struct MethodCompatibilityFailure
         {
+            /// <summary>
+            /// Initializes a new instance of the <see cref="MethodCompatibilityFailure"/> struct.
+            /// </summary>
+            /// <param name="detail">The detail value.</param>
+            /// <remarks>Emits or composes IL for generated duck-typing proxy operations.</remarks>
             internal MethodCompatibilityFailure(string detail)
             {
                 Detail = detail;
             }
 
+            /// <summary>
+            /// Gets detail.
+            /// </summary>
+            /// <value>The detail value.</value>
             internal string Detail { get; }
         }
 
+        /// <summary>
+        /// Represents imported members.
+        /// </summary>
         private sealed class ImportedMembers
         {
+            /// <summary>
+            /// Initializes a new instance of the <see cref="ImportedMembers"/> class.
+            /// </summary>
+            /// <param name="moduleDef">The module def value.</param>
             internal ImportedMembers(ModuleDef moduleDef)
             {
                 var getTypeFromHandleMethod = typeof(Type).GetMethod(nameof(Type.GetTypeFromHandle), new[] { typeof(RuntimeTypeHandle) });
@@ -3958,26 +5193,70 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 IgnoresAccessChecksToAttributeCtor = importedIgnoresAccessChecksToCtor;
             }
 
+            /// <summary>
+            /// Gets get type from handle method.
+            /// </summary>
+            /// <value>The get type from handle method value.</value>
             internal IMethod GetTypeFromHandleMethod { get; }
 
+            /// <summary>
+            /// Gets func object object ctor.
+            /// </summary>
+            /// <value>The func object object ctor value.</value>
             internal IMethod FuncObjectObjectCtor { get; }
 
+            /// <summary>
+            /// Gets register aot proxy method.
+            /// </summary>
+            /// <value>The register aot proxy method value.</value>
             internal IMethod RegisterAotProxyMethod { get; }
 
+            /// <summary>
+            /// Gets register aot reverse proxy method.
+            /// </summary>
+            /// <value>The register aot reverse proxy method value.</value>
             internal IMethod RegisterAotReverseProxyMethod { get; }
 
+            /// <summary>
+            /// Gets enable aot mode method.
+            /// </summary>
+            /// <value>The enable aot mode method value.</value>
             internal IMethod EnableAotModeMethod { get; }
 
+            /// <summary>
+            /// Gets validate aot registry contract method.
+            /// </summary>
+            /// <value>The validate aot registry contract method value.</value>
             internal IMethod ValidateAotRegistryContractMethod { get; }
 
+            /// <summary>
+            /// Gets object ctor.
+            /// </summary>
+            /// <value>The object ctor value.</value>
             internal IMethod ObjectCtor { get; }
 
+            /// <summary>
+            /// Gets object to string method.
+            /// </summary>
+            /// <value>The object to string method value.</value>
             internal IMethod ObjectToStringMethod { get; }
 
+            /// <summary>
+            /// Gets i duck type type.
+            /// </summary>
+            /// <value>The i duck type type value.</value>
             internal ITypeDefOrRef IDuckTypeType { get; }
 
+            /// <summary>
+            /// Gets i duck type instance getter.
+            /// </summary>
+            /// <value>The i duck type instance getter value.</value>
             internal IMethod IDuckTypeInstanceGetter { get; }
 
+            /// <summary>
+            /// Gets ignores access checks to attribute ctor.
+            /// </summary>
+            /// <value>The ignores access checks to attribute ctor value.</value>
             internal ICustomAttributeType IgnoresAccessChecksToAttributeCtor { get; }
         }
     }

@@ -17,27 +17,27 @@ namespace Datadog.Trace.DuckTyping
     internal abstract class DuckAttributeBase : Attribute
     {
         /// <summary>
-        /// Gets or sets the underlying type member name
+        /// Gets or sets name.
         /// </summary>
         public string? Name { get; set; }
 
         /// <summary>
-        /// Gets or sets the binding flags
+        /// Gets or sets binding flags.
         /// </summary>
         public BindingFlags BindingFlags { get; set; } = DuckAttribute.DefaultFlags;
 
         /// <summary>
-        /// Gets or sets the generic parameter type names definition for a generic method call (required when calling generic methods and instance type is non public)
+        /// Gets or sets generic parameter type names.
         /// </summary>
         public string[]? GenericParameterTypeNames { get; set; }
 
         /// <summary>
-        /// Gets or sets the parameter type names of the target method (optional / used to disambiguation)
+        /// Gets or sets parameter type names.
         /// </summary>
         public string[]? ParameterTypeNames { get; set; }
 
         /// <summary>
-        /// Gets or sets the explicit interface type name
+        /// Gets or sets explicit interface type name.
         /// </summary>
         public string? ExplicitInterfaceTypeName { get; set; }
     }

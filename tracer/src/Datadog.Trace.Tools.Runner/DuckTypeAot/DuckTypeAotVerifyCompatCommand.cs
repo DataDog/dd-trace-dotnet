@@ -10,6 +10,9 @@ using System.CommandLine.Invocation;
 
 namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 {
+    /// <summary>
+    /// Represents duck type aot verify compat command.
+    /// </summary>
     internal class DuckTypeAotVerifyCompatCommand : CommandWithExamples
     {
         private readonly Option<string> _compatReportOption = new("--compat-report", "Path to the generated compatibility markdown report.")
@@ -22,14 +25,45 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             IsRequired = true
         };
 
+        /// <summary>
+        /// Stores cached mapping catalog option data.
+        /// </summary>
+        /// <remarks>This field participates in shared runtime state and must remain thread-safe.</remarks>
         private readonly Option<string?> _mappingCatalogOption = new("--mapping-catalog", "Optional declared mapping inventory used to enforce required mapping/scenario coverage.");
+
+        /// <summary>
+        /// Stores manifest option.
+        /// </summary>
         private readonly Option<string?> _manifestOption = new("--manifest", "Optional generated manifest file used to validate matrix/manifest consistency.");
+
+        /// <summary>
+        /// Stores scenario inventory option.
+        /// </summary>
         private readonly Option<string?> _scenarioInventoryOption = new("--scenario-inventory", "Optional Bible scenario inventory contract used to enforce required scenario coverage.");
+
+        /// <summary>
+        /// Stores expected outcomes option.
+        /// </summary>
         private readonly Option<string?> _expectedOutcomesOption = new("--expected-outcomes", "Optional scenario expected-outcomes contract. When provided, each mapping status must match the expected status for its scenario (or the default status).");
+
+        /// <summary>
+        /// Stores known limitations option.
+        /// </summary>
         private readonly Option<string?> _knownLimitationsOption = new("--known-limitations", "Legacy alias for --expected-outcomes using known-limitations schema. Prefer --expected-outcomes.");
+
+        /// <summary>
+        /// Stores failure mode option.
+        /// </summary>
         private readonly Option<string> _failureModeOption = new("--failure-mode", () => "default", "Failure mode policy: 'default' warns on manifest fingerprint drift, 'strict' fails.");
+
+        /// <summary>
+        /// Stores strict assembly fingerprints option.
+        /// </summary>
         private readonly Option<bool> _strictAssemblyFingerprintsOption = new("--strict-assembly-fingerprints", "Treat manifest assembly fingerprint drift as an error instead of a warning.");
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DuckTypeAotVerifyCompatCommand"/> class.
+        /// </summary>
         public DuckTypeAotVerifyCompatCommand()
             : base("verify-compat", "Validate generated compatibility artifacts for Bible parity coverage")
         {
@@ -48,6 +82,13 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             this.SetHandler(Execute);
         }
 
+        /// <summary>
+        /// Attempts to try parse failure mode.
+        /// </summary>
+        /// <param name="value">The value value.</param>
+        /// <param name="failureMode">The failure mode value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
+        /// <remarks>Emits or composes IL for generated duck-typing proxy operations.</remarks>
         private static bool TryParseFailureMode(string? value, out DuckTypeAotFailureMode failureMode)
         {
             if (string.Equals(value, "default", System.StringComparison.OrdinalIgnoreCase))
@@ -66,6 +107,10 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return false;
         }
 
+        /// <summary>
+        /// Executes execute.
+        /// </summary>
+        /// <param name="context">The context value.</param>
         private void Execute(InvocationContext context)
         {
             var compatReportPath = _compatReportOption.GetValue(context);

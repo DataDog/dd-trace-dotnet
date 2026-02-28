@@ -12,8 +12,16 @@ using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 {
+    /// <summary>
+    /// Provides helper operations for duck type aot scenario inventory parser.
+    /// </summary>
     internal static class DuckTypeAotScenarioInventoryParser
     {
+        /// <summary>
+        /// Parses parse.
+        /// </summary>
+        /// <param name="path">The path value.</param>
+        /// <returns>The result produced by this operation.</returns>
         internal static DuckTypeAotScenarioInventoryParseResult Parse(string path)
         {
             var errors = new List<string>();
@@ -50,6 +58,14 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return new DuckTypeAotScenarioInventoryParseResult(requiredScenarios, errors);
         }
 
+        /// <summary>
+        /// Parses parse entries.
+        /// </summary>
+        /// <param name="entries">The entries value.</param>
+        /// <param name="path">The path value.</param>
+        /// <param name="errors">The errors value.</param>
+        /// <param name="requiredScenarios">The required scenarios value.</param>
+        /// <param name="hasAnyEntry">The has any entry value.</param>
         private static void ParseEntries(
             IReadOnlyList<string>? entries,
             string path,
@@ -88,6 +104,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
         }
 
+        /// <summary>
+        /// Determines whether is valid scenario entry.
+        /// </summary>
+        /// <param name="entry">The entry value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool IsValidScenarioEntry(string entry)
         {
             var wildcardIndex = entry.IndexOf('*');
@@ -99,11 +120,22 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return wildcardIndex == entry.Length - 1 && entry.LastIndexOf('*') == wildcardIndex;
         }
 
+        /// <summary>
+        /// Represents scenario inventory document.
+        /// </summary>
         private sealed class ScenarioInventoryDocument
         {
+            /// <summary>
+            /// Gets or sets required scenarios.
+            /// </summary>
+            /// <value>The required scenarios value.</value>
             [JsonProperty("requiredScenarios")]
             public List<string>? RequiredScenarios { get; set; }
 
+            /// <summary>
+            /// Gets or sets required scenario ids.
+            /// </summary>
+            /// <value>The required scenario ids value.</value>
             [JsonProperty("requiredScenarioIds")]
             public List<string>? RequiredScenarioIds { get; set; }
         }

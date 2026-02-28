@@ -15,8 +15,16 @@ using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 {
+    /// <summary>
+    /// Provides helper operations for duck type aot generic instantiations parser.
+    /// </summary>
     internal static class DuckTypeAotGenericInstantiationsParser
     {
+        /// <summary>
+        /// Parses parse.
+        /// </summary>
+        /// <param name="path">The path value.</param>
+        /// <returns>The result produced by this operation.</returns>
         internal static DuckTypeAotGenericInstantiationsParseResult Parse(string path)
         {
             var errors = new List<string>();
@@ -60,6 +68,13 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return new DuckTypeAotGenericInstantiationsParseResult(typeRoots.Values, errors);
         }
 
+        /// <summary>
+        /// Parses parse entries.
+        /// </summary>
+        /// <param name="entries">The entries value.</param>
+        /// <param name="path">The path value.</param>
+        /// <param name="typeRoots">The type roots value.</param>
+        /// <param name="errors">The errors value.</param>
         private static void ParseEntries(
             JArray entries,
             string path,
@@ -77,6 +92,15 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
         }
 
+        /// <summary>
+        /// Attempts to try parse entry.
+        /// </summary>
+        /// <param name="token">The token value.</param>
+        /// <param name="path">The path value.</param>
+        /// <param name="index">The index value.</param>
+        /// <param name="errors">The errors value.</param>
+        /// <param name="typeRoot">The type root value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool TryParseEntry(
             JToken token,
             string path,
@@ -138,16 +162,32 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         }
     }
 
+    /// <summary>
+    /// Represents duck type aot type reference.
+    /// </summary>
     internal sealed class DuckTypeAotTypeReference
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DuckTypeAotTypeReference"/> class.
+        /// </summary>
+        /// <param name="typeName">The type name value.</param>
+        /// <param name="assemblyName">The assembly name value.</param>
         public DuckTypeAotTypeReference(string typeName, string assemblyName)
         {
             TypeName = typeName;
             AssemblyName = DuckTypeAotNameHelpers.NormalizeAssemblyName(assemblyName);
         }
 
+        /// <summary>
+        /// Gets type name.
+        /// </summary>
+        /// <value>The type name value.</value>
         public string TypeName { get; }
 
+        /// <summary>
+        /// Gets assembly name.
+        /// </summary>
+        /// <value>The assembly name value.</value>
         public string AssemblyName { get; }
 
         public string Key =>
@@ -157,16 +197,32 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 TypeName);
     }
 
+    /// <summary>
+    /// Represents duck type aot generic instantiations parse result.
+    /// </summary>
     internal sealed class DuckTypeAotGenericInstantiationsParseResult
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DuckTypeAotGenericInstantiationsParseResult"/> class.
+        /// </summary>
+        /// <param name="typeRoots">The type roots value.</param>
+        /// <param name="errors">The errors value.</param>
         public DuckTypeAotGenericInstantiationsParseResult(IEnumerable<DuckTypeAotTypeReference> typeRoots, IReadOnlyList<string> errors)
         {
             TypeRoots = new List<DuckTypeAotTypeReference>(typeRoots);
             Errors = errors;
         }
 
+        /// <summary>
+        /// Gets type roots.
+        /// </summary>
+        /// <value>The type roots value.</value>
         public IReadOnlyList<DuckTypeAotTypeReference> TypeRoots { get; }
 
+        /// <summary>
+        /// Gets errors.
+        /// </summary>
+        /// <value>The errors value.</value>
         public IReadOnlyList<string> Errors { get; }
     }
 }

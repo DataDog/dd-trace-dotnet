@@ -19,8 +19,16 @@ using dnlib.DotNet;
 
 namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 {
+    /// <summary>
+    /// Provides helper operations for duck type aot verify compat processor.
+    /// </summary>
     internal static class DuckTypeAotVerifyCompatProcessor
     {
+        /// <summary>
+        /// Executes process.
+        /// </summary>
+        /// <param name="options">The options value.</param>
+        /// <returns>The computed numeric value.</returns>
         internal static int Process(DuckTypeAotVerifyCompatOptions options)
         {
             if (!File.Exists(options.CompatReportPath))
@@ -155,6 +163,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return 0;
         }
 
+        /// <summary>
+        /// Validates validate expected outcomes.
+        /// </summary>
+        /// <param name="matrix">The matrix value.</param>
+        /// <param name="expectedOutcomes">The expected outcomes value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool ValidateExpectedOutcomes(
             DuckTypeAotCompatibilityMatrix matrix,
             DuckTypeAotExpectedOutcomes expectedOutcomes)
@@ -210,6 +224,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return false;
         }
 
+        /// <summary>
+        /// Attempts to try read expected outcomes.
+        /// </summary>
+        /// <param name="expectedOutcomesPath">The expected outcomes path value.</param>
+        /// <param name="expectedOutcomes">The expected outcomes value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool TryReadExpectedOutcomes(string expectedOutcomesPath, out DuckTypeAotExpectedOutcomes expectedOutcomes)
         {
             expectedOutcomes = DuckTypeAotExpectedOutcomes.DefaultCompatible;
@@ -241,6 +261,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return TryBuildExpectedOutcomes(entries, defaultStatus, expectedOutcomesPath, "--expected-outcomes", out expectedOutcomes);
         }
 
+        /// <summary>
+        /// Attempts to try read legacy known limitations as expected outcomes.
+        /// </summary>
+        /// <param name="knownLimitationsPath">The known limitations path value.</param>
+        /// <param name="expectedOutcomes">The expected outcomes value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool TryReadLegacyKnownLimitationsAsExpectedOutcomes(string knownLimitationsPath, out DuckTypeAotExpectedOutcomes expectedOutcomes)
         {
             expectedOutcomes = DuckTypeAotExpectedOutcomes.DefaultCompatible;
@@ -274,6 +300,16 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return TryBuildExpectedOutcomes(entries, DuckTypeAotCompatibilityStatuses.Compatible, knownLimitationsPath, "--known-limitations", out expectedOutcomes);
         }
 
+        /// <summary>
+        /// Attempts to try build expected outcomes.
+        /// </summary>
+        /// <param name="entries">The entries value.</param>
+        /// <param name="defaultStatus">The default status value.</param>
+        /// <param name="sourcePath">The source path value.</param>
+        /// <param name="optionName">The option name value.</param>
+        /// <param name="expectedOutcomes">The expected outcomes value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
+        /// <remarks>Emits or composes IL for generated duck-typing proxy operations.</remarks>
         private static bool TryBuildExpectedOutcomes(
             IReadOnlyList<DuckTypeAotExpectedOutcomeEntry> entries,
             string defaultStatus,
@@ -326,6 +362,13 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return true;
         }
 
+        /// <summary>
+        /// Validates validate mapping catalog.
+        /// </summary>
+        /// <param name="matrix">The matrix value.</param>
+        /// <param name="mappingCatalogPath">The mapping catalog path value.</param>
+        /// <param name="expectedOutcomes">The expected outcomes value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool ValidateMappingCatalog(
             DuckTypeAotCompatibilityMatrix matrix,
             string mappingCatalogPath,
@@ -409,6 +452,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return false;
         }
 
+        /// <summary>
+        /// Validates validate scenario inventory.
+        /// </summary>
+        /// <param name="matrix">The matrix value.</param>
+        /// <param name="scenarioInventoryPath">The scenario inventory path value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool ValidateScenarioInventory(DuckTypeAotCompatibilityMatrix matrix, string scenarioInventoryPath)
         {
             var inventoryResult = DuckTypeAotScenarioInventoryParser.Parse(scenarioInventoryPath);
@@ -469,6 +518,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return false;
         }
 
+        /// <summary>
+        /// Determines whether is scenario covered by matrix.
+        /// </summary>
+        /// <param name="requiredEntry">The required entry value.</param>
+        /// <param name="matrixScenarioIds">The matrix scenario ids value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool IsScenarioCoveredByMatrix(string requiredEntry, ISet<string> matrixScenarioIds)
         {
             if (!IsWildcardScenarioEntry(requiredEntry))
@@ -488,6 +543,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return false;
         }
 
+        /// <summary>
+        /// Determines whether is scenario tracked by inventory.
+        /// </summary>
+        /// <param name="matrixScenarioId">The matrix scenario id value.</param>
+        /// <param name="requiredScenarios">The required scenarios value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool IsScenarioTrackedByInventory(string matrixScenarioId, IReadOnlyList<string> requiredScenarios)
         {
             foreach (var requiredEntry in requiredScenarios)
@@ -512,11 +573,23 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return false;
         }
 
+        /// <summary>
+        /// Determines whether is wildcard scenario entry.
+        /// </summary>
+        /// <param name="entry">The entry value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
+        /// <remarks>Emits or composes IL for generated duck-typing proxy operations.</remarks>
         private static bool IsWildcardScenarioEntry(string entry)
         {
             return entry.Length > 1 && entry[entry.Length - 1] == '*';
         }
 
+        /// <summary>
+        /// Attempts to try read manifest.
+        /// </summary>
+        /// <param name="manifestPath">The manifest path value.</param>
+        /// <param name="manifest">The manifest value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool TryReadManifest(string manifestPath, out DuckTypeAotManifest? manifest)
         {
             try
@@ -539,6 +612,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return true;
         }
 
+        /// <summary>
+        /// Validates validate manifest.
+        /// </summary>
+        /// <param name="matrix">The matrix value.</param>
+        /// <param name="manifest">The manifest value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool ValidateManifest(DuckTypeAotCompatibilityMatrix matrix, DuckTypeAotManifest manifest)
         {
             var errors = new List<string>();
@@ -637,6 +716,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return false;
         }
 
+        /// <summary>
+        /// Validates validate manifest assembly fingerprints.
+        /// </summary>
+        /// <param name="manifest">The manifest value.</param>
+        /// <param name="strictAssemblyFingerprintValidation">The strict assembly fingerprint validation value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool ValidateManifestAssemblyFingerprints(DuckTypeAotManifest manifest, bool strictAssemblyFingerprintValidation)
         {
             var issues = new List<string>();
@@ -664,6 +749,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return !strictAssemblyFingerprintValidation;
         }
 
+        /// <summary>
+        /// Validates validate manifest generated artifacts.
+        /// </summary>
+        /// <param name="manifest">The manifest value.</param>
+        /// <param name="strictAssemblyFingerprintValidation">The strict assembly fingerprint validation value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool ValidateManifestGeneratedArtifacts(DuckTypeAotManifest manifest, bool strictAssemblyFingerprintValidation)
         {
             var issues = new List<string>();
@@ -750,6 +841,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return !strictAssemblyFingerprintValidation;
         }
 
+        /// <summary>
+        /// Validates validate trimmer descriptor coupling.
+        /// </summary>
+        /// <param name="matrix">The matrix value.</param>
+        /// <param name="manifest">The manifest value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool ValidateTrimmerDescriptorCoupling(DuckTypeAotCompatibilityMatrix matrix, DuckTypeAotManifest manifest)
         {
             if (string.IsNullOrWhiteSpace(manifest.TrimmerDescriptorPath))
@@ -845,6 +942,13 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return false;
         }
 
+        /// <summary>
+        /// Attempts to try read trimmer descriptor roots.
+        /// </summary>
+        /// <param name="descriptorPath">The descriptor path value.</param>
+        /// <param name="rootsByAssembly">The roots by assembly value.</param>
+        /// <param name="error">The error value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool TryReadTrimmerDescriptorRoots(
             string descriptorPath,
             out Dictionary<string, HashSet<string>> rootsByAssembly,
@@ -914,6 +1018,14 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
         }
 
+        /// <summary>
+        /// Validates validate trimmer descriptor root.
+        /// </summary>
+        /// <param name="rootsByAssembly">The roots by assembly value.</param>
+        /// <param name="assemblyName">The assembly name value.</param>
+        /// <param name="typeName">The type name value.</param>
+        /// <param name="context">The context value.</param>
+        /// <param name="errors">The errors value.</param>
         private static void ValidateTrimmerDescriptorRoot(
             IReadOnlyDictionary<string, HashSet<string>> rootsByAssembly,
             string assemblyName,
@@ -934,6 +1046,14 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
         }
 
+        /// <summary>
+        /// Validates validate file fingerprint.
+        /// </summary>
+        /// <param name="path">The path value.</param>
+        /// <param name="expectedSha256">The expected sha256 value.</param>
+        /// <param name="artifactName">The artifact name value.</param>
+        /// <param name="issues">The issues value.</param>
+        /// <remarks>Emits or composes IL for generated duck-typing proxy operations.</remarks>
         private static void ValidateFileFingerprint(string? path, string? expectedSha256, string artifactName, ICollection<string> issues)
         {
             if (string.IsNullOrWhiteSpace(path))
@@ -962,6 +1082,14 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
         }
 
+        /// <summary>
+        /// Attempts to try build compatibility mapping key.
+        /// </summary>
+        /// <param name="mapping">The mapping value.</param>
+        /// <param name="key">The key value.</param>
+        /// <param name="error">The error value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
+        /// <remarks>Emits or composes IL for generated duck-typing proxy operations.</remarks>
         private static bool TryBuildCompatibilityMappingKey(
             DuckTypeAotCompatibilityMapping mapping,
             out string key,
@@ -1000,6 +1128,14 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return true;
         }
 
+        /// <summary>
+        /// Attempts to try build manifest mapping key.
+        /// </summary>
+        /// <param name="mapping">The mapping value.</param>
+        /// <param name="key">The key value.</param>
+        /// <param name="error">The error value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
+        /// <remarks>Emits or composes IL for generated duck-typing proxy operations.</remarks>
         private static bool TryBuildManifestMappingKey(
             DuckTypeAotManifestMapping mapping,
             out string key,
@@ -1038,6 +1174,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return true;
         }
 
+        /// <summary>
+        /// Validates validate checksum.
+        /// </summary>
+        /// <param name="value">The value value.</param>
+        /// <param name="error">The error value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool ValidateChecksum(string? value, out string error)
         {
             if (string.IsNullOrWhiteSpace(value))
@@ -1071,6 +1213,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return true;
         }
 
+        /// <summary>
+        /// Validates validate fingerprints.
+        /// </summary>
+        /// <param name="fingerprints">The fingerprints value.</param>
+        /// <param name="assemblyKind">The assembly kind value.</param>
+        /// <param name="issues">The issues value.</param>
         private static void ValidateFingerprints(
             IReadOnlyList<DuckTypeAotAssemblyFingerprint>? fingerprints,
             string assemblyKind,
@@ -1136,6 +1284,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
         }
 
+        /// <summary>
+        /// Computes compute sha256.
+        /// </summary>
+        /// <param name="filePath">The file path value.</param>
+        /// <returns>The resulting string value.</returns>
         private static string ComputeSha256(string filePath)
         {
             using var sha256 = SHA256.Create();
@@ -1150,11 +1303,22 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return sb.ToString();
         }
 
+        /// <summary>
+        /// Normalizes normalize type name for linker.
+        /// </summary>
+        /// <param name="typeName">The type name value.</param>
+        /// <returns>The resulting string value.</returns>
         private static string NormalizeTypeNameForLinker(string typeName)
         {
             return typeName.Replace('+', '/');
         }
 
+        /// <summary>
+        /// Attempts to try parse mode.
+        /// </summary>
+        /// <param name="value">The value value.</param>
+        /// <param name="mode">The mode value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool TryParseMode(string? value, out DuckTypeAotMappingMode mode)
         {
             if (string.Equals(value, "forward", StringComparison.OrdinalIgnoreCase))
@@ -1173,23 +1337,50 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return false;
         }
 
+        /// <summary>
+        /// Represents duck type aot expected outcome.
+        /// </summary>
         private readonly struct DuckTypeAotExpectedOutcome
         {
+            /// <summary>
+            /// Initializes a new instance of the <see cref="DuckTypeAotExpectedOutcome"/> struct.
+            /// </summary>
+            /// <param name="scenarioId">The scenario id value.</param>
+            /// <param name="status">The status value.</param>
             internal DuckTypeAotExpectedOutcome(string scenarioId, string status)
             {
                 ScenarioId = scenarioId;
                 Status = status;
             }
 
+            /// <summary>
+            /// Gets scenario id.
+            /// </summary>
+            /// <value>The scenario id value.</value>
             internal string ScenarioId { get; }
 
+            /// <summary>
+            /// Gets status.
+            /// </summary>
+            /// <value>The status value.</value>
             internal string Status { get; }
         }
 
+        /// <summary>
+        /// Represents duck type aot expected outcomes.
+        /// </summary>
         private sealed class DuckTypeAotExpectedOutcomes
         {
+            /// <summary>
+            /// Stores expected statuses by scenario.
+            /// </summary>
             private readonly Dictionary<string, HashSet<string>> _expectedStatusesByScenario;
 
+            /// <summary>
+            /// Initializes a new instance of the <see cref="DuckTypeAotExpectedOutcomes"/> class.
+            /// </summary>
+            /// <param name="defaultStatus">The default status value.</param>
+            /// <param name="explicitOutcomes">The explicit outcomes value.</param>
             internal DuckTypeAotExpectedOutcomes(string defaultStatus, IReadOnlyList<DuckTypeAotExpectedOutcome> explicitOutcomes)
             {
                 DefaultStatus = defaultStatus;
@@ -1207,15 +1398,33 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 }
             }
 
+            /// <summary>
+            /// Gets default compatible.
+            /// </summary>
+            /// <value>The default compatible value.</value>
             internal static DuckTypeAotExpectedOutcomes DefaultCompatible { get; } =
                 new(
                     DuckTypeAotCompatibilityStatuses.Compatible,
                     Array.Empty<DuckTypeAotExpectedOutcome>());
 
+            /// <summary>
+            /// Gets default status.
+            /// </summary>
+            /// <value>The default status value.</value>
             internal string DefaultStatus { get; }
 
+            /// <summary>
+            /// Gets explicit outcomes.
+            /// </summary>
+            /// <value>The explicit outcomes value.</value>
             internal IReadOnlyList<DuckTypeAotExpectedOutcome> ExplicitOutcomes { get; }
 
+            /// <summary>
+            /// Attempts to try get expected statuses.
+            /// </summary>
+            /// <param name="scenarioId">The scenario id value.</param>
+            /// <param name="statuses">The statuses value.</param>
+            /// <returns>true if the operation succeeds; otherwise, false.</returns>
             internal bool TryGetExpectedStatuses(string scenarioId, out IReadOnlyCollection<string> statuses)
             {
                 if (_expectedStatusesByScenario.TryGetValue(scenarioId, out var explicitStatuses))
@@ -1229,41 +1438,90 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
         }
 
+        /// <summary>
+        /// Represents duck type aot expected outcomes document.
+        /// </summary>
         private sealed class DuckTypeAotExpectedOutcomesDocument
         {
+            /// <summary>
+            /// Gets or sets schema version.
+            /// </summary>
+            /// <value>The schema version value.</value>
             [JsonProperty("schemaVersion")]
             public string? SchemaVersion { get; set; }
 
+            /// <summary>
+            /// Gets or sets default status.
+            /// </summary>
+            /// <value>The default status value.</value>
             [JsonProperty("defaultStatus")]
             public string? DefaultStatus { get; set; }
 
+            /// <summary>
+            /// Gets or sets expected outcomes.
+            /// </summary>
+            /// <value>The expected outcomes value.</value>
             [JsonProperty("expectedOutcomes")]
             public List<DuckTypeAotExpectedOutcomeEntry>? ExpectedOutcomes { get; set; }
 
+            /// <summary>
+            /// Gets or sets outcomes.
+            /// </summary>
+            /// <value>The outcomes value.</value>
             [JsonProperty("outcomes")]
             public List<DuckTypeAotExpectedOutcomeEntry>? Outcomes { get; set; }
 
+            /// <summary>
+            /// Gets or sets expected.
+            /// </summary>
+            /// <value>The expected value.</value>
             [JsonProperty("expected")]
             public List<DuckTypeAotExpectedOutcomeEntry>? Expected { get; set; }
         }
 
+        /// <summary>
+        /// Represents duck type aot known limitations document.
+        /// </summary>
         private sealed class DuckTypeAotKnownLimitationsDocument
         {
+            /// <summary>
+            /// Gets or sets known limitations.
+            /// </summary>
+            /// <value>The known limitations value.</value>
             [JsonProperty("knownLimitations")]
             public List<DuckTypeAotExpectedOutcomeEntry>? KnownLimitations { get; set; }
 
+            /// <summary>
+            /// Gets or sets approved limitations.
+            /// </summary>
+            /// <value>The approved limitations value.</value>
             [JsonProperty("approvedLimitations")]
             public List<DuckTypeAotExpectedOutcomeEntry>? ApprovedLimitations { get; set; }
 
+            /// <summary>
+            /// Gets or sets approved.
+            /// </summary>
+            /// <value>The approved value.</value>
             [JsonProperty("approved")]
             public List<DuckTypeAotExpectedOutcomeEntry>? Approved { get; set; }
         }
 
+        /// <summary>
+        /// Represents duck type aot expected outcome entry.
+        /// </summary>
         private sealed class DuckTypeAotExpectedOutcomeEntry
         {
+            /// <summary>
+            /// Gets or sets scenario id.
+            /// </summary>
+            /// <value>The scenario id value.</value>
             [JsonProperty("scenarioId")]
             public string? ScenarioId { get; set; }
 
+            /// <summary>
+            /// Gets or sets status.
+            /// </summary>
+            /// <value>The status value.</value>
             [JsonProperty("status")]
             public string? Status { get; set; }
         }

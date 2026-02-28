@@ -12,6 +12,9 @@ using System.Linq;
 
 namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 {
+    /// <summary>
+    /// Represents duck type aot generate command.
+    /// </summary>
     internal class DuckTypeAotGenerateCommand : CommandWithExamples
     {
         private readonly Option<string[]> _proxyAssemblyOption = new("--proxy-assembly", "Proxy definition assembly path. Can be provided multiple times.")
@@ -35,19 +38,56 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             AllowMultipleArgumentsPerToken = true
         };
 
+        /// <summary>
+        /// Stores cached map file option data.
+        /// </summary>
+        /// <remarks>This field participates in shared runtime state and must remain thread-safe.</remarks>
         private readonly Option<string?> _mapFileOption = new("--map-file", "Optional JSON map file with explicit mapping entries and overrides.");
+
+        /// <summary>
+        /// Stores cached mapping catalog option data.
+        /// </summary>
+        /// <remarks>This field participates in shared runtime state and must remain thread-safe.</remarks>
         private readonly Option<string?> _mappingCatalogOption = new("--mapping-catalog", "Optional declared mapping inventory for CI/release coverage enforcement.");
+
+        /// <summary>
+        /// Stores cached require mapping catalog option data.
+        /// </summary>
+        /// <remarks>This field participates in shared runtime state and must remain thread-safe.</remarks>
         private readonly Option<bool> _requireMappingCatalogOption = new("--require-mapping-catalog", "Require --mapping-catalog and fail if it is missing or empty.");
+
+        /// <summary>
+        /// Stores generic instantiations option.
+        /// </summary>
         private readonly Option<string?> _genericInstantiationsOption = new("--generic-instantiations", "Optional closed-generic roots file.");
+
+        /// <summary>
+        /// Stores assembly name option.
+        /// </summary>
         private readonly Option<string?> _assemblyNameOption = new("--assembly-name", "Optional generated assembly name.");
+
+        /// <summary>
+        /// Stores emit trimmer descriptor option.
+        /// </summary>
         private readonly Option<string?> _emitTrimmerDescriptorOption = new("--emit-trimmer-descriptor", "Optional linker descriptor output path. Defaults to <output>.linker.xml.");
+
+        /// <summary>
+        /// Stores emit props option.
+        /// </summary>
         private readonly Option<string?> _emitPropsOption = new("--emit-props", "Optional MSBuild props output path. Defaults to <output>.props.");
+
+        /// <summary>
+        /// Stores strong name key file option.
+        /// </summary>
         private readonly Option<string?> _strongNameKeyFileOption = new("--strong-name-key-file", "Optional strong-name key (.snk) file used to sign the generated registry assembly.");
         private readonly Option<string> _outputOption = new("--output", "Generated AOT registry assembly output path.")
         {
             IsRequired = true
         };
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DuckTypeAotGenerateCommand"/> class.
+        /// </summary>
         public DuckTypeAotGenerateCommand()
             : base("generate", "Generate NativeAOT DuckTyping registry artifacts")
         {
@@ -72,6 +112,10 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             this.SetHandler(Execute);
         }
 
+        /// <summary>
+        /// Executes execute.
+        /// </summary>
+        /// <param name="context">The context value.</param>
         private void Execute(InvocationContext context)
         {
             var proxyAssemblies = _proxyAssemblyOption.GetValue(context) ?? Array.Empty<string>();

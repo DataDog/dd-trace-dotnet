@@ -119,6 +119,13 @@ namespace Datadog.Trace.DuckTyping
             }
         }
 
+        /// <summary>
+        /// Executes needs duck chaining.
+        /// </summary>
+        /// <param name="targetType">The target type value.</param>
+        /// <param name="proxyType">The proxy type value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
+        /// <remarks>Emits or composes IL for generated duck-typing proxy operations.</remarks>
         private static bool NeedsDuckChaining(Type targetType, Type proxyType)
         {
             // The condition to apply duck chaining is:
