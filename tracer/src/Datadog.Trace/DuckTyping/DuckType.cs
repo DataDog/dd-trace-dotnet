@@ -178,6 +178,8 @@ namespace Datadog.Trace.DuckTyping
         /// <returns>CreateTypeResult instance</returns>
         private static CreateTypeResult GetOrCreateDynamicProxyType(Type proxyType, Type targetType)
         {
+            DuckTypeAotDiscoveryRecorder.Record(proxyType, targetType, reverse: false);
+
             return DuckTypeCache.GetOrAdd(
                 new TypesTuple(proxyType, targetType),
                 key => new Lazy<CreateTypeResult>(() =>
@@ -236,6 +238,8 @@ namespace Datadog.Trace.DuckTyping
         /// <returns>CreateTypeResult instance</returns>
         private static CreateTypeResult GetOrCreateDynamicReverseProxyType(Type typeToDeriveFrom, Type delegationType)
         {
+            DuckTypeAotDiscoveryRecorder.Record(typeToDeriveFrom, delegationType, reverse: true);
+
             return DuckTypeCache.GetOrAdd(
                 new TypesTuple(typeToDeriveFrom, delegationType),
                 key => new Lazy<CreateTypeResult>(() =>
@@ -1361,7 +1365,12 @@ namespace Datadog.Trace.DuckTyping
                 Success = proxyType != null && exceptionInfo == null;
                 if (exceptionInfo is not null)
                 {
-                    _activator = null;
+                    MethodInfo methodInfo = typeof(CreateTypeResult).GetMethod(nameof(ThrowOnError), BindingFlags.NonPublic | BindingFlags.Instance)!;
+                    _activator = methodInfo
+                        .MakeGenericMethod(proxyTypeDefinition)
+                        .CreateDelegate(
+                        typeof(CreateProxyInstance<>).MakeGenericType(proxyTypeDefinition),
+                        this);
                 }
             }
 
@@ -1418,8 +1427,6 @@ namespace Datadog.Trace.DuckTyping
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             internal object CreateInstance(object instance)
             {
-                _exceptionInfo?.Throw();
-
                 if (_untypedActivator is not null)
                 {
                     return _untypedActivator(instance)!;
@@ -1445,8 +1452,6 @@ namespace Datadog.Trace.DuckTyping
             [return: NotNull]
             private T CreateInstanceCore<T>(object? instance)
             {
-                _exceptionInfo?.Throw();
-
                 if (_activator is CreateProxyInstance<T> typedActivator)
                 {
                     return typedActivator(instance);
