@@ -68,9 +68,16 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
             WriteJson(artifactPaths.CompatibilityMatrixPath, compatibilityMatrix);
             WriteCompatibilityMarkdown(artifactPaths.CompatibilityReportPath, compatibilityMatrix);
-            WriteManifest(artifactPaths.ManifestPath, mappingResolutionResult, registryAssemblyInfo, generatedAtUtc, toolVersion);
             WriteTrimmerDescriptor(artifactPaths.TrimmerDescriptorPath, mappingResolutionResult, emissionResult);
             WritePropsFile(artifactPaths.PropsPath, artifactPaths, registryAssemblyInfo);
+            WriteManifest(
+                artifactPaths.ManifestPath,
+                artifactPaths.TrimmerDescriptorPath,
+                artifactPaths.PropsPath,
+                mappingResolutionResult,
+                registryAssemblyInfo,
+                generatedAtUtc,
+                toolVersion);
 
             return new DuckTypeAotCompatibilityArtifacts(
                 artifactPaths.CompatibilityMatrixPath,
@@ -82,11 +89,14 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
         private static void WriteManifest(
             string manifestPath,
+            string trimmerDescriptorPath,
+            string propsPath,
             DuckTypeAotMappingResolutionResult mappingResolutionResult,
             DuckTypeAotRegistryAssemblyInfo registryAssemblyInfo,
             DateTime generatedAtUtc,
             string toolVersion)
         {
+            var registryAssemblyFingerprint = CreateAssemblyFingerprint(registryAssemblyInfo.OutputAssemblyPath);
             var manifest = new DuckTypeAotManifest
             {
                 SchemaVersion = SchemaVersion,
@@ -94,8 +104,16 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 GeneratedAtUtc = generatedAtUtc.ToString("O", CultureInfo.InvariantCulture),
                 RegistryAssembly = registryAssemblyInfo.OutputAssemblyPath,
                 RegistryAssemblyName = registryAssemblyInfo.AssemblyName,
+                RegistryAssemblyVersion = registryAssemblyFingerprint.Version,
                 RegistryBootstrapType = registryAssemblyInfo.BootstrapTypeFullName,
                 RegistryMvid = registryAssemblyInfo.Mvid.ToString("D"),
+                RegistryAssemblySha256 = registryAssemblyFingerprint.Sha256,
+                RegistryStrongNameSigned = !string.IsNullOrWhiteSpace(registryAssemblyFingerprint.PublicKeyToken),
+                RegistryPublicKeyToken = registryAssemblyFingerprint.PublicKeyToken,
+                TrimmerDescriptorPath = trimmerDescriptorPath,
+                TrimmerDescriptorSha256 = ComputeSha256(trimmerDescriptorPath),
+                PropsPath = propsPath,
+                PropsSha256 = ComputeSha256(propsPath),
                 Mappings = mappingResolutionResult.Mappings
                     .OrderBy(m => m.Key, StringComparer.Ordinal)
                     .Select(mapping => new DuckTypeAotManifestMapping
@@ -140,13 +158,15 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             var fullPath = Path.GetFullPath(assemblyPath);
             var assemblyName = AssemblyName.GetAssemblyName(fullPath);
             using var module = ModuleDefMD.Load(fullPath);
+            var publicKeyTokenBytes = assemblyName.GetPublicKeyToken();
             return new DuckTypeAotAssemblyFingerprint
             {
                 Name = assemblyName.Name ?? string.Empty,
                 Version = assemblyName.Version?.ToString() ?? "0.0.0.0",
                 Path = fullPath,
                 Mvid = module.Mvid?.ToString("D") ?? string.Empty,
-                Sha256 = ComputeSha256(fullPath)
+                Sha256 = ComputeSha256(fullPath),
+                PublicKeyToken = publicKeyTokenBytes is { Length: > 0 } ? BitConverter.ToString(publicKeyTokenBytes).Replace("-", string.Empty).ToLowerInvariant() : null
             };
         }
 
@@ -451,11 +471,35 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         [JsonProperty("registryAssemblyName")]
         public string? RegistryAssemblyName { get; set; }
 
+        [JsonProperty("registryAssemblyVersion")]
+        public string? RegistryAssemblyVersion { get; set; }
+
         [JsonProperty("registryBootstrapType")]
         public string? RegistryBootstrapType { get; set; }
 
         [JsonProperty("registryMvid")]
         public string? RegistryMvid { get; set; }
+
+        [JsonProperty("registryAssemblySha256")]
+        public string? RegistryAssemblySha256 { get; set; }
+
+        [JsonProperty("registryStrongNameSigned")]
+        public bool? RegistryStrongNameSigned { get; set; }
+
+        [JsonProperty("registryPublicKeyToken")]
+        public string? RegistryPublicKeyToken { get; set; }
+
+        [JsonProperty("trimmerDescriptorPath")]
+        public string? TrimmerDescriptorPath { get; set; }
+
+        [JsonProperty("trimmerDescriptorSha256")]
+        public string? TrimmerDescriptorSha256 { get; set; }
+
+        [JsonProperty("propsPath")]
+        public string? PropsPath { get; set; }
+
+        [JsonProperty("propsSha256")]
+        public string? PropsSha256 { get; set; }
 
         [JsonProperty("mappings")]
         public List<DuckTypeAotManifestMapping> Mappings { get; set; } = new();
@@ -525,5 +569,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
         [JsonProperty("sha256")]
         public string? Sha256 { get; set; }
+
+        [JsonProperty("publicKeyToken")]
+        public string? PublicKeyToken { get; set; }
     }
 }
