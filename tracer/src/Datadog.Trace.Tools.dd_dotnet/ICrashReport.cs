@@ -23,7 +23,7 @@ internal unsafe interface ICrashReport : IUnknown
 
     void Panic();
 
-    int SetSignalInfo(int signal, IntPtr description);
+    int SetSignalInfo(int signal, int code);
 
     int ResolveStacks(int crashingThreadId, IntPtr resolveCallback, IntPtr context, out bool isSuspicious);
 
@@ -35,6 +35,8 @@ internal unsafe interface ICrashReport : IUnknown
 
     [Obsolete("You're aware it's going to crash the process, right?")]
     int CrashProcess();
+
+    int SetCrashMessage(IntPtr message);
 
     [StructLayout(LayoutKind.Sequential)]
     internal struct Tag
