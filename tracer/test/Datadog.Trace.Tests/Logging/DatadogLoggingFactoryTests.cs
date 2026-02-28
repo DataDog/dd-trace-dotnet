@@ -322,7 +322,7 @@ public class DatadogLoggingFactoryTests
             // Use an invalid path that cannot be created
             var logDirectory = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
                 ? @"Z:\nonexistent\invalid\path\that\cannot\be\created"
-                : "/root/nonexistent/invalid/path/that/cannot/be/created";
+                : "/dev/null/nonexistent/invalid/path/that/cannot/be/created";
 
             var result = DatadogLoggingFactory.TryCreateLogDirectory(logDirectory);
 
