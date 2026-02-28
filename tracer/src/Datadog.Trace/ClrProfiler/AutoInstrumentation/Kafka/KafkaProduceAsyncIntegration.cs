@@ -56,7 +56,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     scope.Span,
                     Tracer.Instance.TracerManager.DataStreamsManager,
                     partition?.Topic,
-                    message);
+                    message,
+                    instance);
                 return new CallTargetState(scope);
             }
 
@@ -100,9 +101,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     var dataStreams = Tracer.Instance.TracerManager.DataStreamsManager;
                     if (dataStreams.IsEnabled)
                     {
-                        dataStreams.TrackBacklog(
-                            $"partition:{deliveryResult.Partition.Value},topic:{deliveryResult.Topic},type:kafka_produce",
-                            deliveryResult.Offset.Value);
+                        var backlogTags = $"partition:{deliveryResult.Partition.Value},topic:{deliveryResult.Topic},type:kafka_produce";
+                        if (tags.ClusterId != null)
+                        {
+                            backlogTags = $"kafka_cluster_id:{tags.ClusterId},{backlogTags}";
+                        }
+
+                        dataStreams.TrackBacklog(backlogTags, deliveryResult.Offset.Value);
                     }
                 }
             }

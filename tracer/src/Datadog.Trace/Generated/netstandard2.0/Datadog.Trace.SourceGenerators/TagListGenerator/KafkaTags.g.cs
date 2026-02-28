@@ -38,6 +38,12 @@ namespace Datadog.Trace.Tagging
 #else
         private static readonly byte[] BootstrapServersBytes = new byte[] { 217, 33, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 107, 97, 102, 107, 97, 46, 98, 111, 111, 116, 115, 116, 114, 97, 112, 46, 115, 101, 114, 118, 101, 114, 115 };
 #endif
+        // ClusterIdBytes = MessagePack.Serialize("messaging.kafka.cluster_id");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> ClusterIdBytes => new byte[] { 186, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 107, 97, 102, 107, 97, 46, 99, 108, 117, 115, 116, 101, 114, 95, 105, 100 };
+#else
+        private static readonly byte[] ClusterIdBytes = new byte[] { 186, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 107, 97, 102, 107, 97, 46, 99, 108, 117, 115, 116, 101, 114, 95, 105, 100 };
+#endif
         // TopicBytes = MessagePack.Serialize("messaging.destination.name");
 #if NETCOREAPP
         private static ReadOnlySpan<byte> TopicBytes => new byte[] { 186, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 100, 101, 115, 116, 105, 110, 97, 116, 105, 111, 110, 46, 110, 97, 109, 101 };
@@ -76,6 +82,7 @@ namespace Datadog.Trace.Tagging
                 "span.kind" => SpanKind,
                 "component" => InstrumentationName,
                 "messaging.kafka.bootstrap.servers" => BootstrapServers,
+                "messaging.kafka.cluster_id" => ClusterId,
                 "messaging.destination.name" => Topic,
                 "kafka.partition" => Partition,
                 "kafka.offset" => Offset,
@@ -91,6 +98,9 @@ namespace Datadog.Trace.Tagging
             {
                 case "messaging.kafka.bootstrap.servers": 
                     BootstrapServers = value;
+                    break;
+                case "messaging.kafka.cluster_id": 
+                    ClusterId = value;
                     break;
                 case "messaging.destination.name": 
                     Topic = value;
@@ -132,6 +142,11 @@ namespace Datadog.Trace.Tagging
             if (BootstrapServers is not null)
             {
                 processor.Process(new TagItem<string>("messaging.kafka.bootstrap.servers", BootstrapServers, BootstrapServersBytes));
+            }
+
+            if (ClusterId is not null)
+            {
+                processor.Process(new TagItem<string>("messaging.kafka.cluster_id", ClusterId, ClusterIdBytes));
             }
 
             if (Topic is not null)
@@ -182,6 +197,13 @@ namespace Datadog.Trace.Tagging
             {
                 sb.Append("messaging.kafka.bootstrap.servers (tag):")
                   .Append(BootstrapServers)
+                  .Append(',');
+            }
+
+            if (ClusterId is not null)
+            {
+                sb.Append("messaging.kafka.cluster_id (tag):")
+                  .Append(ClusterId)
                   .Append(',');
             }
 
