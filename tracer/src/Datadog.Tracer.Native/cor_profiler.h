@@ -3,6 +3,7 @@
 
 #include "cor.h"
 #include "corprof.h"
+#include <algorithm>
 #include <atomic>
 #include <mutex>
 #include <string>
@@ -103,7 +104,30 @@ private:
     //
     // Module helper variables and internal tokens (use internal tokens only if the module_ids lock is in place)
     //
-    Synchronized<std::vector<ModuleID>> module_ids;
+    struct ModuleIdCollection
+    {
+        std::vector<ModuleID> list;
+        std::unordered_set<ModuleID> set;
+
+        void Add(ModuleID module_id)
+        {
+            list.push_back(module_id);
+            set.emplace(module_id);
+        }
+
+        void Remove(ModuleID module_id)
+        {
+            auto new_end = std::remove(list.begin(), list.end(), module_id);
+            list.erase(new_end, list.end());
+            set.erase(module_id);
+        }
+
+        bool Contains(ModuleID module_id) const
+        {
+            return set.find(module_id) != set.end();
+        }
+    };
+    Synchronized<ModuleIdCollection> module_ids;
     std::vector<ModuleID> managedInternalModules_;
     mdMethodDef getDistributedTraceMethodDef_;
     mdMethodDef getNativeTracerVersionMethodDef_;
@@ -130,7 +154,7 @@ private:
     HRESULT RewriteForTelemetry(const ModuleMetadata& module_metadata, ModuleID module_id);
     HRESULT RewriteIsManualInstrumentationOnly(const ModuleMetadata& module_metadata, ModuleID module_id);
     HRESULT EmitDistributedTracerTargetMethod(const ModuleMetadata& module_metadata, ModuleID module_id);
-    HRESULT TryRejitModule(ModuleID module_id, std::vector<ModuleID>& modules);
+    HRESULT TryRejitModule(ModuleID module_id, ModuleIdCollection& modules);
     static bool TypeNameMatchesTraceAttribute(WCHAR type_name[], DWORD type_name_len);
     static bool EnsureCallTargetBubbleUpExceptionTypeAvailable(const ModuleMetadata& module_metadata, mdTypeDef* mdTypeDefToken);
     static bool EnsureIsCallTargetBubbleUpExceptionFunctionAvailable(const ModuleMetadata& module_metadata, mdTypeDef typeDef);
