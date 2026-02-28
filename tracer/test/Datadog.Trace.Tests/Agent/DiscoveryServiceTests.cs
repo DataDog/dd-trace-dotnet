@@ -301,6 +301,7 @@ public class DiscoveryServiceTests
             eventPlatformProxyEndpoint: "eventPlatformProxyEndpoint",
             telemetryProxyEndpoint: "telemetryProxyEndpoint",
             tracerFlareEndpoint: "tracerFlareEndpoint",
+            containerTagsHash: "containerTagsHash",
             clientDropP0: false,
             spanMetaStructs: true,
             spanEvents: true);
@@ -318,6 +319,7 @@ public class DiscoveryServiceTests
             eventPlatformProxyEndpoint: "eventPlatformProxyEndpoint",
             telemetryProxyEndpoint: "telemetryProxyEndpoint",
             tracerFlareEndpoint: "tracerFlareEndpoint",
+            containerTagsHash: "containerTagsHash",
             clientDropP0: false,
             spanMetaStructs: true,
             spanEvents: true);
@@ -335,6 +337,7 @@ public class DiscoveryServiceTests
             eventPlatformProxyEndpoint: "eventPlatformProxyEndpoint",
             telemetryProxyEndpoint: "telemetryProxyEndpoint",
             tracerFlareEndpoint: "tracerFlareEndpoint",
+            containerTagsHash: "containerTagsHash",
             clientDropP0: false,
             spanMetaStructs: true,
             spanEvents: true);

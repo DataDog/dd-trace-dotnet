@@ -21,6 +21,7 @@ internal sealed record AgentConfiguration
         string? eventPlatformProxyEndpoint,
         string? telemetryProxyEndpoint,
         string? tracerFlareEndpoint,
+        string? containerTagsHash,
         bool clientDropP0,
         bool spanMetaStructs,
         bool? spanEvents)
@@ -36,6 +37,7 @@ internal sealed record AgentConfiguration
         EventPlatformProxyEndpoint = eventPlatformProxyEndpoint;
         TelemetryProxyEndpoint = telemetryProxyEndpoint;
         TracerFlareEndpoint = tracerFlareEndpoint;
+        ContainerTagsHash = containerTagsHash;
         ClientDropP0s = clientDropP0;
         SpanMetaStructs = spanMetaStructs;
         SpanEvents = spanEvents ?? false;
@@ -74,6 +76,8 @@ internal sealed record AgentConfiguration
     public string? TelemetryProxyEndpoint { get; }
 
     public string? TracerFlareEndpoint { get; }
+
+    public string? ContainerTagsHash { get; }
 
     public bool ClientDropP0s { get; }
 

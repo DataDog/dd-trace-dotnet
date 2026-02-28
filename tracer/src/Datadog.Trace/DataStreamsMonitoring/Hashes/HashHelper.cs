@@ -19,7 +19,7 @@ internal static class HashHelper
     /// Calculates the base NodeHash for a service.
     /// This can be used to create a <see cref="NodeHash"/> by calling <see cref="CalculateNodeHash"/>
     /// </summary>
-    public static NodeHashBase CalculateNodeHashBase(string service, string? env, string? primaryTag, string? processTags)
+    public static NodeHashBase CalculateNodeHashBase(string service, string? env, string? primaryTag, string? processTags, string? containerTagsHash)
     {
         var hash = FnvHash64.GenerateHash(service, HashVersion);
         if (!StringUtil.IsNullOrEmpty(env))
@@ -35,6 +35,11 @@ internal static class HashHelper
         if (!StringUtil.IsNullOrEmpty(processTags))
         {
             hash = FnvHash64.GenerateHash(processTags, HashVersion, hash);
+        }
+
+        if (!StringUtil.IsNullOrEmpty(containerTagsHash))
+        {
+            hash = FnvHash64.GenerateHash(containerTagsHash, HashVersion, hash);
         }
 
         return new NodeHashBase(hash);

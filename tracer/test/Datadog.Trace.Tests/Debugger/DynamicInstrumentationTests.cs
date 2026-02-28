@@ -109,6 +109,7 @@ public class DynamicInstrumentationTests
                     eventPlatformProxyEndpoint: "eventPlatformProxyEndpoint",
                     telemetryProxyEndpoint: "telemetryProxyEndpoint",
                     tracerFlareEndpoint: "tracerFlareEndpoint",
+                    "containerTagsHash",
                     clientDropP0: false,
                     spanMetaStructs: true,
                     spanEvents: true));
