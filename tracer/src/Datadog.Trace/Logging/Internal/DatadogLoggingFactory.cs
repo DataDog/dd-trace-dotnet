@@ -251,19 +251,17 @@ internal static class DatadogLoggingFactory
         // If _that_ fails, we just hard code it to "C:\ProgramData", which is what the native components do anyway
         var programData = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
 
-        if (StringUtil.IsNullOrEmpty(programData))
+        if (!StringUtil.IsNullOrEmpty(programData))
         {
-            // fallback #1: try reading from the env var
-            programData = EnvironmentHelpersNoLogging.ProgramData();
-
-            if (StringUtil.IsNullOrEmpty(programData))
-            {
-                // fallback #2: hard-coded
-                programData = @"C:\ProgramData";
-            }
+            return programData;
         }
 
-        return programData;
+        // fallback #1: try reading from the env var
+        // fallback #2: hard-coded
+        var envProgramData = EnvironmentHelpersNoLogging.ProgramData();
+        return StringUtil.IsNullOrEmpty(envProgramData)
+            ? @"C:\ProgramData"
+            : envProgramData;
     }
 
     [TestingAndPrivateOnly]
