@@ -1,0 +1,78 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Target Name="DatadogAfterComputeResolvedFilesToPublishList"
+          AfterTargets="ComputeResolvedFilesToPublishList"
+          Condition="'$(RemoveUnusedDatadogFiles)' == 'true'">
+    <ItemGroup>
+      <!-- These are the .NET Core/5+ runtimes we target in Datadog.Trace.dll (we handle .NET Framework separately).
+           When we add new TFMs, add them here as well. Keep these in order from oldest to newest. We will select the last compatible TFM from this list. -->
+      <DotNetCoreLibDirectories Include="netstandard2.0;netcoreapp3.1;net6.0"
+                                Condition="'$(TargetFrameworkIdentifier)' != '.NETFramework'" />
+
+      <!-- From the list in DotNetCoreLibDirectories above, select the TFMs that are compatible with TargetFramework -->
+      <CompatibleDotNetCoreLibDirectories Include="@(DotNetCoreLibDirectories)"
+                                          Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', '%(DotNetCoreLibDirectories.Identity)'))" />
+    </ItemGroup>
+
+    <PropertyGroup>
+      <!-- .NET Framework -->
+      <DatadogTargetFramework Condition="'$(DatadogTargetFramework)' == '' AND
+                                         '$(TargetFrameworkIdentifier)' == '.NETFramework' AND
+                                         $([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">net461</DatadogTargetFramework>
+
+      <!-- .NET Core/5+ -->
+      <!-- This syntax selects the last item from the CompatibleDotNetCoreLibDirectories list, so the order of DotNetCoreLibDirectories is important. -->
+      <DatadogTargetFramework Condition="'$(DatadogTargetFramework)' == '' AND
+                                         '$(TargetFrameworkIdentifier)' != '.NETFramework'">%(CompatibleDotNetCoreLibDirectories.Identity)</DatadogTargetFramework>
+
+      <!-- special DatadogRuntimeIdentifier handling for .NET Framework -->
+      <DatadogRuntimeIdentifier Condition="'$(DatadogRuntimeIdentifier)' == '' AND '$(TargetFrameworkIdentifier)' == '.NETFramework' AND '$(PlatformTarget)' == 'x64'">win-x64</DatadogRuntimeIdentifier>
+      <DatadogRuntimeIdentifier Condition="'$(DatadogRuntimeIdentifier)' == '' AND '$(TargetFrameworkIdentifier)' == '.NETFramework' AND '$(PlatformTarget)' == 'x86'">win-x86</DatadogRuntimeIdentifier>
+      <DatadogRuntimeIdentifier Condition="'$(DatadogRuntimeIdentifier)' == '' AND '$(TargetFrameworkIdentifier)' == '.NETFramework'">win-</DatadogRuntimeIdentifier>
+      <DatadogRuntimeIdentifier Condition="'$(DatadogRuntimeIdentifier)' == ''">$(RuntimeIdentifier)</DatadogRuntimeIdentifier>
+    </PropertyGroup>
+
+    <Message Importance="High"
+             Text="[Datadog.Trace.Bundle] TargetFramework: '$(TargetFramework)' => DatadogTargetFramework: '$(DatadogTargetFramework)'" />
+    <Message Importance="High"
+             Text="[Datadog.Trace.Bundle] RuntimeIdentifier: '$(RuntimeIdentifier)' => DatadogRuntimeIdentifier: '$(DatadogRuntimeIdentifier)'" />
+
+    <Error Condition="'$(DatadogTargetFramework)' == ''"
+           Text="[Datadog.Trace.Bundle] TargetFramework &quot;$(TargetFramework)&quot; is not supported. To ignore this error and include all files, set build property RemoveUnusedDatadogFiles=false. For more compatiblity details, see https://docs.datadoghq.com/tracing/trace_collection/compatibility/dotnet-core and https://docs.datadoghq.com/tracing/trace_collection/compatibility/dotnet-framework. For assistance, contact our support team at https://www.datadoghq.com/support/." />
+
+    <!-- ResolvedFileToPublish is populated in target ComputeResolvedFilesToPublishList,
+         see https://github.com/dotnet/sdk/blob/67f43d9366503d46a1063319a93a388b705ae8a5/src/Tasks/Microsoft.NET.Build.Tasks/targets/Microsoft.NET.Publish.targets#L504
+         The following lines remove the files we DON'T want published from ResolvedFileToPublish -->
+    <ItemGroup>
+      <!-- if DatadogRuntimeIdentifier is set, remove files that don't match -->
+      <!-- note: currently there are two osx directories: "osx" and "osx-x64", so we remove "osx*" instead of "osx-*" -->
+      <DatadogFilesToRemove Include="@(ResolvedFileToPublish)"
+                            Condition="'$(DatadogRuntimeIdentifier)' != '' AND
+                                         ($([System.String]::new('%(ResolvedFileToPublish.RelativePath)').ToLower().StartsWith('datadog\win-')) OR
+                                          $([System.String]::new('%(ResolvedFileToPublish.RelativePath)').ToLower().StartsWith('datadog\linux-')) OR
+                                          $([System.String]::new('%(ResolvedFileToPublish.RelativePath)').ToLower().StartsWith('datadog\osx'))) AND
+                                       !$([System.String]::new('%(ResolvedFileToPublish.RelativePath)').ToLower().StartsWith('datadog\$(DatadogRuntimeIdentifier)'))" />
+
+      <!-- if DatadogTargetFramework is set, remove the managed library directories ("net*") that don't match -->
+      <DatadogFilesToRemove Include="@(ResolvedFileToPublish)"
+                            Condition="'$(DatadogTargetFramework)' != '' AND
+                                        $([System.String]::new('%(ResolvedFileToPublish.RelativePath)').ToLower().StartsWith('datadog\net')) AND
+                                        !$([System.String]::new('%(ResolvedFileToPublish.RelativePath)').ToLower().StartsWith('datadog\$(DatadogTargetFramework)'))" />
+
+      <ResolvedFileToPublish Remove="@(DatadogFilesToRemove)" />
+
+      <!-- these items are used in the output messages below -->
+      <DatadogKeptDirectories Include="$([System.IO.Path]::GetDirectoryName('%(ResolvedFileToPublish.RelativePath)'))"
+                              Condition="$([System.String]::new('%(ResolvedFileToPublish.RelativePath)').ToLower().StartsWith('datadog\'))"
+                              Exclude="datadog"
+                              KeepDuplicates="false"/>
+      <DatadogRemovedDirectories Include="$([System.IO.Path]::GetDirectoryName('%(DatadogFilesToRemove.RelativePath)'))"
+                                 Exclude="datadog"
+                                 KeepDuplicates="false"/>
+    </ItemGroup>
+
+    <Message Importance="High"
+             Text="[Datadog.Trace.Bundle] Directory kept in Publish: '%(DatadogKeptDirectories.Identity)'" />
+    <Message Importance="High"
+             Text="[Datadog.Trace.Bundle] Directory removed from Publish: '%(DatadogRemovedDirectories.Identity)'" />
+  </Target>
+</Project>
