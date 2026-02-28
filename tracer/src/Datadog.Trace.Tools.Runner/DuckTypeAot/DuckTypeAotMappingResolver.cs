@@ -15,8 +15,16 @@ using System.Reflection;
 
 namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 {
+    /// <summary>
+    /// Provides helper operations for duck type aot mapping resolver.
+    /// </summary>
     internal static class DuckTypeAotMappingResolver
     {
+        /// <summary>
+        /// Resolves resolve.
+        /// </summary>
+        /// <param name="options">The options value.</param>
+        /// <returns>The result produced by this operation.</returns>
         internal static DuckTypeAotMappingResolutionResult Resolve(DuckTypeAotGenerateOptions options)
         {
             var warnings = new List<string>();
@@ -97,6 +105,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 errors);
         }
 
+        /// <summary>
+        /// Gets get target assembly paths.
+        /// </summary>
+        /// <param name="options">The options value.</param>
+        /// <returns>The result produced by this operation.</returns>
         private static IReadOnlyList<string> GetTargetAssemblyPaths(DuckTypeAotGenerateOptions options)
         {
             var targetAssemblyPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -119,6 +132,14 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return targetAssemblyPaths.ToList();
         }
 
+        /// <summary>
+        /// Executes build assembly path index.
+        /// </summary>
+        /// <param name="assemblyPaths">The assembly paths value.</param>
+        /// <param name="sourceName">The source name value.</param>
+        /// <param name="errors">The errors value.</param>
+        /// <returns>The result produced by this operation.</returns>
+        /// <remarks>Emits or composes IL for generated duck-typing proxy operations.</remarks>
         private static Dictionary<string, string> BuildAssemblyPathIndex(IReadOnlyList<string> assemblyPaths, string sourceName, ICollection<string> errors)
         {
             var assemblyPathByName = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -153,6 +174,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return assemblyPathByName;
         }
 
+        /// <summary>
+        /// Validates validate generic closure.
+        /// </summary>
+        /// <param name="mappings">The mappings value.</param>
+        /// <param name="errors">The errors value.</param>
         private static void ValidateGenericClosure(IEnumerable<DuckTypeAotMapping> mappings, ICollection<string> errors)
         {
             foreach (var mapping in mappings)
@@ -170,6 +196,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
         }
 
+        /// <summary>
+        /// Executes apply mapping catalog requirements.
+        /// </summary>
+        /// <param name="resolvedMappings">The resolved mappings value.</param>
+        /// <param name="requiredMappings">The required mappings value.</param>
+        /// <param name="errors">The errors value.</param>
         private static void ApplyMappingCatalogRequirements(
             IDictionary<string, DuckTypeAotMapping> resolvedMappings,
             IEnumerable<DuckTypeAotMapping> requiredMappings,
@@ -208,8 +240,20 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         }
     }
 
+    /// <summary>
+    /// Represents duck type aot mapping resolution result.
+    /// </summary>
     internal sealed class DuckTypeAotMappingResolutionResult
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DuckTypeAotMappingResolutionResult"/> class.
+        /// </summary>
+        /// <param name="mappings">The mappings value.</param>
+        /// <param name="proxyAssemblyPathsByName">The proxy assembly paths by name value.</param>
+        /// <param name="targetAssemblyPathsByName">The target assembly paths by name value.</param>
+        /// <param name="genericTypeRoots">The generic type roots value.</param>
+        /// <param name="warnings">The warnings value.</param>
+        /// <param name="errors">The errors value.</param>
         public DuckTypeAotMappingResolutionResult(
             IEnumerable<DuckTypeAotMapping> mappings,
             IReadOnlyDictionary<string, string> proxyAssemblyPathsByName,
@@ -226,16 +270,40 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             Errors = errors;
         }
 
+        /// <summary>
+        /// Gets mappings.
+        /// </summary>
+        /// <value>The mappings value.</value>
         public IReadOnlyList<DuckTypeAotMapping> Mappings { get; }
 
+        /// <summary>
+        /// Gets proxy assembly paths by name.
+        /// </summary>
+        /// <value>The proxy assembly paths by name value.</value>
         public IReadOnlyDictionary<string, string> ProxyAssemblyPathsByName { get; }
 
+        /// <summary>
+        /// Gets target assembly paths by name.
+        /// </summary>
+        /// <value>The target assembly paths by name value.</value>
         public IReadOnlyDictionary<string, string> TargetAssemblyPathsByName { get; }
 
+        /// <summary>
+        /// Gets generic type roots.
+        /// </summary>
+        /// <value>The generic type roots value.</value>
         public IReadOnlyList<DuckTypeAotTypeReference> GenericTypeRoots { get; }
 
+        /// <summary>
+        /// Gets warnings.
+        /// </summary>
+        /// <value>The warnings value.</value>
         public IReadOnlyList<string> Warnings { get; }
 
+        /// <summary>
+        /// Gets errors.
+        /// </summary>
+        /// <value>The errors value.</value>
         public IReadOnlyList<string> Errors { get; }
     }
 }

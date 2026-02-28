@@ -9,6 +9,9 @@ using System;
 
 namespace Datadog.Trace.DuckTyping
 {
+    /// <summary>
+    /// Represents types tuple.
+    /// </summary>
     internal readonly struct TypesTuple : IEquatable<TypesTuple>
     {
         /// <summary>

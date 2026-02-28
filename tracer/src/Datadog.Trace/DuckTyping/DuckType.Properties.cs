@@ -419,6 +419,14 @@ namespace Datadog.Trace.DuckTyping
             return null;
         }
 
+        /// <summary>
+        /// Gets get property get parameters types.
+        /// </summary>
+        /// <param name="typeBuilder">The type builder value.</param>
+        /// <param name="property">The property value.</param>
+        /// <param name="originalTypes">The original types value.</param>
+        /// <param name="isDynamicSignature">The is dynamic signature value.</param>
+        /// <returns>The result produced by this operation.</returns>
         private static IEnumerable<Type> GetPropertyGetParametersTypes(TypeBuilder? typeBuilder, PropertyInfo property, bool originalTypes, bool isDynamicSignature = false)
         {
             if (isDynamicSignature)
@@ -440,6 +448,14 @@ namespace Datadog.Trace.DuckTyping
             }
         }
 
+        /// <summary>
+        /// Gets get property set parameters types.
+        /// </summary>
+        /// <param name="typeBuilder">The type builder value.</param>
+        /// <param name="property">The property value.</param>
+        /// <param name="originalTypes">The original types value.</param>
+        /// <param name="isDynamicSignature">The is dynamic signature value.</param>
+        /// <returns>The result produced by this operation.</returns>
         private static IEnumerable<Type> GetPropertySetParametersTypes(TypeBuilder? typeBuilder, PropertyInfo property, bool originalTypes, bool isDynamicSignature = false)
         {
             if (isDynamicSignature)

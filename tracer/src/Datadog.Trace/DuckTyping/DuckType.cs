@@ -255,12 +255,19 @@ namespace Datadog.Trace.DuckTyping
                 .Value;
         }
 
+        /// <summary>
+        /// Determines whether is aot mode.
+        /// </summary>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static bool IsAotMode()
         {
             return RuntimeMode == DuckTypeRuntimeMode.Aot;
         }
 
+        /// <summary>
+        /// Resets reset runtime mode for tests.
+        /// </summary>
         internal static void ResetRuntimeModeForTests()
         {
             DuckTypeAotEngine.ResetForTests();
@@ -277,6 +284,10 @@ namespace Datadog.Trace.DuckTyping
             Volatile.Write(ref _runtimeModeInitialized, 0);
         }
 
+        /// <summary>
+        /// Ensures ensure runtime mode is initialized.
+        /// </summary>
+        /// <returns>The result produced by this operation.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static DuckTypeRuntimeMode EnsureRuntimeModeIsInitialized()
         {
@@ -288,6 +299,10 @@ namespace Datadog.Trace.DuckTyping
             return RuntimeMode;
         }
 
+        /// <summary>
+        /// Ensures ensure runtime mode is initialized.
+        /// </summary>
+        /// <param name="mode">The mode value.</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static void EnsureRuntimeModeIsInitialized(DuckTypeRuntimeMode mode)
         {
@@ -304,6 +319,13 @@ namespace Datadog.Trace.DuckTyping
             }
         }
 
+        /// <summary>
+        /// Creates create proxy type.
+        /// </summary>
+        /// <param name="proxyDefinitionType">The proxy definition type value.</param>
+        /// <param name="targetType">The target type value.</param>
+        /// <param name="dryRun">The dry run value.</param>
+        /// <returns>The result produced by this operation.</returns>
         private static CreateTypeResult CreateProxyType(Type proxyDefinitionType, Type targetType, bool dryRun)
         {
             // When doing normal duck typing, we create a type that derives from proxyDefinitionType (MyImplementation)
@@ -400,6 +422,13 @@ namespace Datadog.Trace.DuckTyping
             }
         }
 
+        /// <summary>
+        /// Creates create reverse proxy type.
+        /// </summary>
+        /// <param name="typeToDeriveFrom">The type to derive from value.</param>
+        /// <param name="typeToDelegateTo">The type to delegate to value.</param>
+        /// <param name="dryRun">The dry run value.</param>
+        /// <returns>The result produced by this operation.</returns>
         private static CreateTypeResult CreateReverseProxyType(Type typeToDeriveFrom, Type typeToDelegateTo, bool dryRun)
         {
             // When doing reverse duck typing, we create a type that derives from typeToDeriveFrom (Original),
@@ -487,6 +516,15 @@ namespace Datadog.Trace.DuckTyping
             }
         }
 
+        /// <summary>
+        /// Creates create type and module builder.
+        /// </summary>
+        /// <param name="typeToDeriveFrom">The type to derive from value.</param>
+        /// <param name="typeToDelegateTo">The type to delegate to value.</param>
+        /// <param name="proxyTypeBuilder">The proxy type builder value.</param>
+        /// <param name="instanceField">The instance field value.</param>
+        /// <returns>The result produced by this operation.</returns>
+        /// <remarks>Emits or composes IL for generated duck-typing proxy operations.</remarks>
         private static ModuleBuilder CreateTypeAndModuleBuilder(Type typeToDeriveFrom, Type typeToDelegateTo, out TypeBuilder proxyTypeBuilder, out FieldInfo instanceField)
         {
             // Define parent type, interface types
@@ -752,6 +790,11 @@ namespace Datadog.Trace.DuckTyping
             }
         }
 
+        /// <summary>
+        /// Gets get properties.
+        /// </summary>
+        /// <param name="proxyDefinitionType">The proxy definition type value.</param>
+        /// <returns>The result produced by this operation.</returns>
         private static List<PropertyInfo> GetProperties(Type proxyDefinitionType)
         {
             List<PropertyInfo> selectedProperties = new List<PropertyInfo>(proxyDefinitionType.IsInterface ? proxyDefinitionType.GetProperties() : GetBaseProperties(proxyDefinitionType));
@@ -775,6 +818,11 @@ namespace Datadog.Trace.DuckTyping
             }
         }
 
+        /// <summary>
+        /// Gets get reverse properties.
+        /// </summary>
+        /// <param name="proxyDefinitionType">The proxy definition type value.</param>
+        /// <returns>The result produced by this operation.</returns>
         private static List<PropertyInfo> GetReverseProperties(Type proxyDefinitionType)
         {
             List<PropertyInfo> selectedProperties = new List<PropertyInfo>();
@@ -1269,6 +1317,14 @@ namespace Datadog.Trace.DuckTyping
             return null;
         }
 
+        /// <summary>
+        /// Gets get create proxy instance delegate.
+        /// </summary>
+        /// <param name="moduleBuilder">The module builder value.</param>
+        /// <param name="proxyDefinitionType">The proxy definition type value.</param>
+        /// <param name="proxyType">The proxy type value.</param>
+        /// <param name="targetType">The target type value.</param>
+        /// <returns>The result produced by this operation.</returns>
         private static Delegate GetCreateProxyInstanceDelegate(ModuleBuilder? moduleBuilder, Type proxyDefinitionType, Type proxyType, Type targetType)
         {
             ConstructorInfo ctor = proxyType.GetConstructors()[0];
@@ -1378,6 +1434,14 @@ namespace Datadog.Trace.DuckTyping
             return null;
         }
 
+        /// <summary>
+        /// Gets get target property or index.
+        /// </summary>
+        /// <param name="targetType">The target type value.</param>
+        /// <param name="propertyName">The property name value.</param>
+        /// <param name="bindingFlags">The binding flags value.</param>
+        /// <param name="proxyPropertyInfo">The proxy property info value.</param>
+        /// <returns>The result produced by this operation.</returns>
         private static PropertyInfo? GetTargetPropertyOrIndex(Type targetType, string propertyName, BindingFlags bindingFlags, PropertyInfo proxyPropertyInfo)
         {
             if (propertyName.IndexOf(',') == -1)
@@ -1518,6 +1582,13 @@ namespace Datadog.Trace.DuckTyping
             return targetType.GetMember(propertyName, MemberTypes.Property, bindingFlags);
         }
 
+        /// <summary>
+        /// Gets get target field.
+        /// </summary>
+        /// <param name="targetType">The target type value.</param>
+        /// <param name="fieldName">The field name value.</param>
+        /// <param name="bindingFlags">The binding flags value.</param>
+        /// <returns>The result produced by this operation.</returns>
         private static FieldInfo? GetTargetField(Type targetType, string fieldName, BindingFlags bindingFlags)
         {
             if (fieldName.IndexOf(',') == -1)
@@ -1553,9 +1624,24 @@ namespace Datadog.Trace.DuckTyping
             /// </summary>
             public readonly Type? TargetType;
 
+            /// <summary>
+            /// Stores proxy type.
+            /// </summary>
             private readonly Type? _proxyType;
+
+            /// <summary>
+            /// Stores activator.
+            /// </summary>
             private readonly Delegate? _activator;
+
+            /// <summary>
+            /// Stores untyped activator.
+            /// </summary>
             private readonly Func<object?, object?>? _untypedActivator;
+
+            /// <summary>
+            /// Stores exception info.
+            /// </summary>
             private readonly ExceptionDispatchInfo? _exceptionInfo;
 
             /// <summary>
@@ -1635,6 +1721,11 @@ namespace Datadog.Trace.DuckTyping
                 return _exceptionInfo == null;
             }
 
+            /// <summary>
+            /// Creates create instance.
+            /// </summary>
+            /// <param name="instance">The instance value.</param>
+            /// <returns>The result produced by this operation.</returns>
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             internal object CreateInstance(object instance)
             {
@@ -1652,6 +1743,11 @@ namespace Datadog.Trace.DuckTyping
                 return null!;
             }
 
+            /// <summary>
+            /// Throws the exception associated with throw on error.
+            /// </summary>
+            /// <param name="instance">The instance value.</param>
+            /// <returns>The result produced by this operation.</returns>
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             private T? ThrowOnError<T>(object? instance)
             {
@@ -1659,6 +1755,11 @@ namespace Datadog.Trace.DuckTyping
                 return default;
             }
 
+            /// <summary>
+            /// Creates create instance core.
+            /// </summary>
+            /// <param name="instance">The instance value.</param>
+            /// <returns>The result produced by this operation.</returns>
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             private void ThrowCachedException()
             {
@@ -1718,7 +1819,17 @@ namespace Datadog.Trace.DuckTyping
         public static class CreateCache<T>
         {
             // Because CreateTypeResult is a struct, it needs to be boxed for safe concurrent access
+
+            /// <summary>
+            /// Stores fast path.
+            /// </summary>
+            /// <remarks>This field participates in shared runtime state and must remain thread-safe.</remarks>
             private static StrongBox<CreateTypeResult>? _fastPath;
+
+            /// <summary>
+            /// Stores cached fast path aot cache version data.
+            /// </summary>
+            /// <remarks>This field participates in shared runtime state and must remain thread-safe.</remarks>
             private static int _fastPathAotCacheVersion = -1;
 
             /// <summary>
@@ -1844,6 +1955,9 @@ namespace Datadog.Trace.DuckTyping
                 return result;
             }
 
+            /// <summary>
+            /// Executes invalidate fast path for aot registrations.
+            /// </summary>
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             private static void InvalidateFastPathForAotRegistrations()
             {

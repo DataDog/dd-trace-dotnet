@@ -14,7 +14,15 @@ namespace Datadog.Trace.DuckTyping;
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Interface, AllowMultiple = true)]
 internal sealed class DuckTypeAttribute(string targetType, string targetAssembly) : Attribute
 {
+    /// <summary>
+    /// Gets or sets target type.
+    /// </summary>
+    /// <value>The target type value.</value>
     public string? TargetType { get; set; } = targetType;
 
+    /// <summary>
+    /// Gets or sets target assembly.
+    /// </summary>
+    /// <value>The target assembly value.</value>
     public string? TargetAssembly { get; set; } = targetAssembly;
 }

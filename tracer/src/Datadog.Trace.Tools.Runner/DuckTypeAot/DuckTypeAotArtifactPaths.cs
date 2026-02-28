@@ -9,8 +9,20 @@ using System.IO;
 
 namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 {
+    /// <summary>
+    /// Represents duck type aot artifact paths.
+    /// </summary>
     internal sealed class DuckTypeAotArtifactPaths
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DuckTypeAotArtifactPaths"/> class.
+        /// </summary>
+        /// <param name="outputAssemblyPath">The output assembly path value.</param>
+        /// <param name="manifestPath">The manifest path value.</param>
+        /// <param name="compatibilityMatrixPath">The compatibility matrix path value.</param>
+        /// <param name="compatibilityReportPath">The compatibility report path value.</param>
+        /// <param name="trimmerDescriptorPath">The trimmer descriptor path value.</param>
+        /// <param name="propsPath">The props path value.</param>
         public DuckTypeAotArtifactPaths(
             string outputAssemblyPath,
             string manifestPath,
@@ -27,18 +39,47 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             PropsPath = propsPath;
         }
 
+        /// <summary>
+        /// Gets output assembly path.
+        /// </summary>
+        /// <value>The output assembly path value.</value>
         public string OutputAssemblyPath { get; }
 
+        /// <summary>
+        /// Gets manifest path.
+        /// </summary>
+        /// <value>The manifest path value.</value>
         public string ManifestPath { get; }
 
+        /// <summary>
+        /// Gets compatibility matrix path.
+        /// </summary>
+        /// <value>The compatibility matrix path value.</value>
         public string CompatibilityMatrixPath { get; }
 
+        /// <summary>
+        /// Gets compatibility report path.
+        /// </summary>
+        /// <value>The compatibility report path value.</value>
         public string CompatibilityReportPath { get; }
 
+        /// <summary>
+        /// Gets trimmer descriptor path.
+        /// </summary>
+        /// <value>The trimmer descriptor path value.</value>
         public string TrimmerDescriptorPath { get; }
 
+        /// <summary>
+        /// Gets props path.
+        /// </summary>
+        /// <value>The props path value.</value>
         public string PropsPath { get; }
 
+        /// <summary>
+        /// Creates create.
+        /// </summary>
+        /// <param name="options">The options value.</param>
+        /// <returns>The result produced by this operation.</returns>
         public static DuckTypeAotArtifactPaths Create(DuckTypeAotGenerateOptions options)
         {
             var outputAssemblyPath = Path.GetFullPath(options.OutputPath);
