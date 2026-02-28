@@ -11,7 +11,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
-using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Tools.Runner.DuckTypeAot;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
@@ -25,7 +24,6 @@ public class DuckTypeAotNativeAotPublishIntegrationTests
     public void NativeAotPublishShouldRunWithGeneratedDuckTypeRegistryAndWithoutDynamicEmit()
     {
         var runtimeIdentifier = ResolveRuntimeIdentifier();
-        var solutionDirectory = EnvironmentTools.GetSolutionDirectory();
         var tempDirectory = Path.Combine(Path.GetTempPath(), "dd-trace-ducktype-aot-nativeaot", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(tempDirectory);
 
@@ -76,6 +74,22 @@ public class DuckTypeAotNativeAotPublishIntegrationTests
                         proxyType = "SampleDuckContracts.IValueProxy",
                         proxyAssembly = "SampleDuckContracts",
                         targetType = "SampleDuckContracts.ValueTarget",
+                        targetAssembly = "SampleDuckContracts"
+                    },
+                    new
+                    {
+                        mode = "reverse",
+                        proxyType = "SampleDuckContracts.IReverseValueProxy",
+                        proxyAssembly = "SampleDuckContracts",
+                        targetType = "SampleDuckContracts.ReverseValueDelegation",
+                        targetAssembly = "SampleDuckContracts"
+                    },
+                    new
+                    {
+                        mode = "forward",
+                        proxyType = "SampleDuckContracts.ValueCopyProxy",
+                        proxyAssembly = "SampleDuckContracts",
+                        targetType = "SampleDuckContracts.ValueCopyTarget",
                         targetAssembly = "SampleDuckContracts"
                     }
                 }
@@ -167,6 +181,13 @@ public class DuckTypeAotNativeAotPublishIntegrationTests
                         publishOutputDirectory
                     ]);
 
+                if (publishDiagnostics.ExitCode != 0 &&
+                    TryGetNativeAotInfrastructureSkipReason(publishDiagnostics, out var skipReason))
+                {
+                    throw new SkipException(
+                        $"NativeAOT publish prerequisites are not available for runtime identifier '{runtimeIdentifier}'. {skipReason}");
+                }
+
                 publishDiagnostics.ExitCode.Should().Be(
                     0,
                     $"NativeAOT publish should succeed.{Environment.NewLine}STDOUT:{Environment.NewLine}{publishDiagnostics.StandardOutput}{Environment.NewLine}STDERR:{Environment.NewLine}{publishDiagnostics.StandardError}");
@@ -189,6 +210,10 @@ public class DuckTypeAotNativeAotPublishIntegrationTests
 
             runResult.StandardOutput.Should().Contain("CAN_CREATE:True");
             runResult.StandardOutput.Should().Contain("VALUE:42");
+            runResult.StandardOutput.Should().Contain("CAN_CREATE_REVERSE:True");
+            runResult.StandardOutput.Should().Contain("REVERSE_VALUE:42");
+            runResult.StandardOutput.Should().Contain("CAN_CREATE_COPY:True");
+            runResult.StandardOutput.Should().Contain("COPY_VALUE:42");
             runResult.StandardOutput.Should().Contain("DYNAMIC_CODE:False");
             runResult.StandardOutput.Should().Contain("DYNAMIC_ASSEMBLIES:0");
         }
@@ -212,25 +237,65 @@ public class DuckTypeAotNativeAotPublishIntegrationTests
     private static string BuildContractsSourceFile()
     {
         return
-            "namespace SampleDuckContracts;" + Environment.NewLine +
+            "using System;" + Environment.NewLine +
             Environment.NewLine +
-            "public interface IValueProxy" + Environment.NewLine +
+            "namespace Datadog.Trace.DuckTyping" + Environment.NewLine +
             "{" + Environment.NewLine +
-            "    int GetValue();" + Environment.NewLine +
+            "    [AttributeUsage(AttributeTargets.Struct)]" + Environment.NewLine +
+            "    public sealed class DuckCopyAttribute : Attribute" + Environment.NewLine +
+            "    {" + Environment.NewLine +
+            "    }" + Environment.NewLine +
             "}" + Environment.NewLine +
             Environment.NewLine +
-            "public sealed class ValueTarget" + Environment.NewLine +
+            "namespace SampleDuckContracts" + Environment.NewLine +
             "{" + Environment.NewLine +
-            "    private readonly int _value;" + Environment.NewLine +
-            Environment.NewLine +
-            "    public ValueTarget(int value)" + Environment.NewLine +
+            "    public interface IValueProxy" + Environment.NewLine +
             "    {" + Environment.NewLine +
-            "        _value = value;" + Environment.NewLine +
+            "        int GetValue();" + Environment.NewLine +
             "    }" + Environment.NewLine +
             Environment.NewLine +
-            "    public int GetValue()" + Environment.NewLine +
+            "    public interface IReverseValueProxy" + Environment.NewLine +
             "    {" + Environment.NewLine +
-            "        return _value;" + Environment.NewLine +
+            "        int DoubleValue(int value);" + Environment.NewLine +
+            "    }" + Environment.NewLine +
+            Environment.NewLine +
+            "    [Datadog.Trace.DuckTyping.DuckCopyAttribute]" + Environment.NewLine +
+            "    public struct ValueCopyProxy" + Environment.NewLine +
+            "    {" + Environment.NewLine +
+            "        public int Value;" + Environment.NewLine +
+            "    }" + Environment.NewLine +
+            Environment.NewLine +
+            "    public sealed class ValueTarget" + Environment.NewLine +
+            "    {" + Environment.NewLine +
+            "        private readonly int _value;" + Environment.NewLine +
+            Environment.NewLine +
+            "        public ValueTarget(int value)" + Environment.NewLine +
+            "        {" + Environment.NewLine +
+            "            _value = value;" + Environment.NewLine +
+            "        }" + Environment.NewLine +
+            Environment.NewLine +
+            "        public int GetValue()" + Environment.NewLine +
+            "        {" + Environment.NewLine +
+            "            return _value;" + Environment.NewLine +
+            "        }" + Environment.NewLine +
+            "    }" + Environment.NewLine +
+            Environment.NewLine +
+            "    public sealed class ReverseValueDelegation" + Environment.NewLine +
+            "    {" + Environment.NewLine +
+            "        public int DoubleValue(int value)" + Environment.NewLine +
+            "        {" + Environment.NewLine +
+            "            return value * 2;" + Environment.NewLine +
+            "        }" + Environment.NewLine +
+            "    }" + Environment.NewLine +
+            Environment.NewLine +
+            "    public sealed class ValueCopyTarget" + Environment.NewLine +
+            "    {" + Environment.NewLine +
+            "        public ValueCopyTarget(int value)" + Environment.NewLine +
+            "        {" + Environment.NewLine +
+            "            Value = value;" + Environment.NewLine +
+            "        }" + Environment.NewLine +
+            Environment.NewLine +
+            "        public int Value { get; set; }" + Environment.NewLine +
             "    }" + Environment.NewLine +
             "}" + Environment.NewLine;
     }
@@ -284,9 +349,31 @@ public class DuckTypeAotNativeAotPublishIntegrationTests
             "    return;" + Environment.NewLine +
             "}" + Environment.NewLine +
             Environment.NewLine +
+            "var createReverseTypeResult = DuckType.GetOrCreateReverseProxyType(typeof(IReverseValueProxy), typeof(ReverseValueDelegation));" + Environment.NewLine +
+            "if (!createReverseTypeResult.CanCreate())" + Environment.NewLine +
+            "{" + Environment.NewLine +
+            "    Console.WriteLine(\"CAN_CREATE_REVERSE:False\");" + Environment.NewLine +
+            "    Environment.ExitCode = 12;" + Environment.NewLine +
+            "    return;" + Environment.NewLine +
+            "}" + Environment.NewLine +
+            Environment.NewLine +
+            "var createCopyTypeResult = DuckType.GetOrCreateProxyType(typeof(ValueCopyProxy), typeof(ValueCopyTarget));" + Environment.NewLine +
+            "if (!createCopyTypeResult.CanCreate())" + Environment.NewLine +
+            "{" + Environment.NewLine +
+            "    Console.WriteLine(\"CAN_CREATE_COPY:False\");" + Environment.NewLine +
+            "    Environment.ExitCode = 13;" + Environment.NewLine +
+            "    return;" + Environment.NewLine +
+            "}" + Environment.NewLine +
+            Environment.NewLine +
             "var proxy = createTypeResult.CreateInstance<IValueProxy>(new ValueTarget(42));" + Environment.NewLine +
+            "var reverseProxy = (IReverseValueProxy)DuckType.CreateReverse(typeof(IReverseValueProxy), new ReverseValueDelegation());" + Environment.NewLine +
+            "var copyProxy = createCopyTypeResult.CreateInstance<ValueCopyProxy>(new ValueCopyTarget(42));" + Environment.NewLine +
             "Console.WriteLine(\"CAN_CREATE:True\");" + Environment.NewLine +
             "Console.WriteLine($\"VALUE:{proxy.GetValue()}\");" + Environment.NewLine +
+            "Console.WriteLine(\"CAN_CREATE_REVERSE:True\");" + Environment.NewLine +
+            "Console.WriteLine($\"REVERSE_VALUE:{reverseProxy.DoubleValue(21)}\");" + Environment.NewLine +
+            "Console.WriteLine(\"CAN_CREATE_COPY:True\");" + Environment.NewLine +
+            "Console.WriteLine($\"COPY_VALUE:{copyProxy.Value}\");" + Environment.NewLine +
             "Console.WriteLine($\"DYNAMIC_CODE:{RuntimeFeature.IsDynamicCodeSupported}\");" + Environment.NewLine +
             "Console.WriteLine($\"DYNAMIC_ASSEMBLIES:{dynamicAssemblyLoads}\");" + Environment.NewLine;
     }
@@ -322,6 +409,33 @@ public class DuckTypeAotNativeAotPublishIntegrationTests
         }
 
         throw new SkipException("NativeAOT integration test is only supported on Windows, Linux, and macOS.");
+    }
+
+    private static bool TryGetNativeAotInfrastructureSkipReason(CommandResult result, out string reason)
+    {
+        var combined = $"{result.StandardOutput}{Environment.NewLine}{result.StandardError}";
+        var knownInfrastructureMarkers = new[]
+        {
+            "NETSDK1183",
+            "Native compilation is not supported in this environment",
+            "Platform linker was not found",
+            "Platform linker ('clang' or 'gcc') was not found",
+            "requires Xcode",
+            "xcode-select: error",
+            "The command \"clang\" exited with code 127"
+        };
+
+        foreach (var marker in knownInfrastructureMarkers)
+        {
+            if (combined.IndexOf(marker, StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                reason = $"Detected infrastructure limitation marker '{marker}'.";
+                return true;
+            }
+        }
+
+        reason = string.Empty;
+        return false;
     }
 
     private static CommandResult RunProcess(string fileName, string workingDirectory, int timeoutMilliseconds, bool captureOutput, string[] arguments)

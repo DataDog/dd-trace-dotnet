@@ -1,4 +1,4 @@
-// <copyright file="DuckType.cs" company="Datadog">
+﻿// <copyright file="DuckType.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -1551,6 +1551,7 @@ namespace Datadog.Trace.DuckTyping
 
             private readonly Type? _proxyType;
             private readonly Delegate? _activator;
+            private readonly Func<object?, object?>? _untypedActivator;
             private readonly ExceptionDispatchInfo? _exceptionInfo;
 
             /// <summary>
@@ -1564,18 +1565,14 @@ namespace Datadog.Trace.DuckTyping
             internal CreateTypeResult(Type proxyTypeDefinition, Type? proxyType, Type targetType, Delegate? activator, ExceptionDispatchInfo? exceptionInfo)
             {
                 _activator = activator;
+                _untypedActivator = activator as Func<object?, object?>;
                 _proxyType = proxyType;
                 _exceptionInfo = exceptionInfo;
                 TargetType = targetType;
                 Success = proxyType != null && exceptionInfo == null;
                 if (exceptionInfo is not null)
                 {
-                    MethodInfo methodInfo = typeof(CreateTypeResult).GetMethod(nameof(ThrowOnError), BindingFlags.NonPublic | BindingFlags.Instance)!;
-                    _activator = methodInfo
-                        .MakeGenericMethod(proxyTypeDefinition)
-                        .CreateDelegate(
-                        typeof(CreateProxyInstance<>).MakeGenericType(proxyTypeDefinition),
-                        this);
+                    _activator = null;
                 }
             }
 
@@ -1602,12 +1599,7 @@ namespace Datadog.Trace.DuckTyping
             [return: NotNull]
             public T CreateInstance<T>(object? instance)
             {
-                if (_activator is null)
-                {
-                    ThrowHelper.ThrowNullReferenceException("The activator for this proxy type is null, check if the type can be created by calling 'CanCreate()'");
-                }
-
-                return ((CreateProxyInstance<T>)_activator)(instance);
+                return CreateInstanceCore<T>(instance);
             }
 
             /// <summary>
@@ -1621,12 +1613,7 @@ namespace Datadog.Trace.DuckTyping
             [return: NotNull]
             public T CreateInstance<T, TOriginal>(TOriginal instance)
             {
-                if (_activator is null)
-                {
-                    ThrowHelper.ThrowNullReferenceException("The activator for this proxy type is null, check if the type can be created by calling 'CanCreate()'");
-                }
-
-                return ((CreateProxyInstance<T>)_activator)(instance);
+                return CreateInstanceCore<T>(instance);
             }
 
             /// <summary>
@@ -1642,12 +1629,20 @@ namespace Datadog.Trace.DuckTyping
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             internal object CreateInstance(object instance)
             {
-                if (_activator is null)
+                ThrowCachedException();
+
+                if (_untypedActivator is not null)
                 {
-                    ThrowHelper.ThrowNullReferenceException("The activator for this proxy type is null, check if the type can be created by calling 'CanCreate()'");
+                    return _untypedActivator(instance)!;
                 }
 
-                return _activator.DynamicInvoke(instance)!;
+                if (_activator is not null)
+                {
+                    return _activator.DynamicInvoke(instance)!;
+                }
+
+                ThrowHelper.ThrowNullReferenceException("The activator for this proxy type is null, check if the type can be created by calling 'CanCreate()'");
+                return null!;
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1682,6 +1677,32 @@ namespace Datadog.Trace.DuckTyping
                 // throws no longer cause a crash. Fixed in .NET 6+.
                 ExceptionDispatchInfo.Capture(((DuckTypeException)exceptionInfo.SourceException).CloneForThrow()).Throw();
 #endif
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            [return: NotNull]
+            private T CreateInstanceCore<T>(object? instance)
+            {
+                ThrowCachedException();
+
+                if (_activator is CreateProxyInstance<T> typedActivator)
+                {
+                    return typedActivator(instance);
+                }
+
+                if (_untypedActivator is not null)
+                {
+                    var value = _untypedActivator(instance);
+                    if (value is null)
+                    {
+                        ThrowHelper.ThrowNullReferenceException("AOT duck typing activator returned null.");
+                    }
+
+                    return (T)value;
+                }
+
+                ThrowHelper.ThrowNullReferenceException("The activator for this proxy type is null, check if the type can be created by calling 'CanCreate()'");
+                return default!;
             }
         }
 

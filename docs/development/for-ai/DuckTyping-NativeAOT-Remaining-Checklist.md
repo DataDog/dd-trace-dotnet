@@ -35,5 +35,5 @@ This file is the persistent execution checklist for the remaining work from [Duc
 - Nuke now includes `RunDuckTypeAotCompatibilityGate`, wired into `BuildAndRunManagedUnitTests`, generating the map from the Bible catalog and running `ducktype-aot generate` + `verify-compat --failure-mode strict` against the checked-in inventory and expected outcomes.
 - Runtime mode isolation/immutability tests are implemented in `DuckTypeAotEngineTests` and use `DuckType.ResetRuntimeModeForTests()` for deterministic cross-test isolation.
 - Concurrency coverage is implemented in `DuckTypeAotEngineTests` for concurrent `EnableAotMode`, mixed dynamic/AOT initialization races, and concurrent duplicate AOT registrations.
-- NativeAOT publish integration coverage is implemented in `DuckTypeAotNativeAotPublishIntegrationTests` and validates generated-registry execution under `/p:PublishAot=true` with `RuntimeFeature.IsDynamicCodeSupported == false` and zero dynamic assembly loads.
+- NativeAOT publish integration coverage is implemented in `DuckTypeAotNativeAotPublishIntegrationTests` and validates generated-registry execution under `/p:PublishAot=true` for forward, reverse, and DuckCopy proxy paths, with `RuntimeFeature.IsDynamicCodeSupported == false` and zero dynamic assembly loads.
 - Ordered checklist status: all listed remaining items are complete.
