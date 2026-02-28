@@ -295,6 +295,281 @@ DuckTypeAotRegistryBootstrap.Initialize();
 
 Explicit `Initialize()` is recommended to make startup behavior unambiguous, even though module initializer exists.
 
+## Hands-On Quickstart: Create and Run an AOT DuckTyping App
+
+This section is a full from-scratch example you can copy/paste.
+
+### Prerequisites
+
+1. Repository root is available as `REPO_ROOT`.
+2. .NET 8 SDK is installed.
+3. NativeAOT toolchain prerequisites are installed for your OS (clang/Xcode build tools on macOS/Linux, C++ toolchain on Windows).
+
+### 1. Build Datadog.Trace and Runner
+
+```bash
+cd "$REPO_ROOT"
+dotnet build tracer/src/Datadog.Trace/Datadog.Trace.csproj -c Release -f net6.0
+dotnet build tracer/src/Datadog.Trace.Tools.Runner/Datadog.Trace.Tools.Runner.csproj -c Release -f net8.0
+```
+
+### 2. Create Sample Solution
+
+```bash
+WORK_DIR=/tmp/ducktype-aot-quickstart
+rm -rf "$WORK_DIR"
+mkdir -p "$WORK_DIR"
+cd "$WORK_DIR"
+
+dotnet new classlib -n SampleDuckContracts -f net8.0
+dotnet new console -n SampleDuckApp -f net8.0
+```
+
+### 3. Add Contracts/Targets/Proxies
+
+Create `SampleDuckContracts/ValueContracts.cs`:
+
+```csharp
+namespace SampleDuckContracts;
+
+public interface IValueProxy
+{
+    int GetValue();
+}
+
+public interface IReverseValueProxy
+{
+    int DoubleValue(int value);
+}
+
+public struct ValueCopyProxy
+{
+    public int Value;
+}
+
+public sealed class ValueTarget
+{
+    private readonly int _value;
+
+    public ValueTarget(int value)
+    {
+        _value = value;
+    }
+
+    public int GetValue() => _value;
+}
+
+public sealed class ReverseValueDelegation
+{
+    public int DoubleValue(int value) => value * 2;
+}
+
+public sealed class ValueCopyTarget
+{
+    public ValueCopyTarget(int value)
+    {
+        Value = value;
+    }
+
+    public int Value { get; set; }
+}
+```
+
+Build contracts:
+
+```bash
+dotnet build SampleDuckContracts/SampleDuckContracts.csproj -c Release
+```
+
+### 4. Create Mapping File
+
+Create `ducktype-aot-map.json`:
+
+```json
+{
+  "mappings": [
+    {
+      "mode": "forward",
+      "proxyType": "SampleDuckContracts.IValueProxy",
+      "proxyAssembly": "SampleDuckContracts",
+      "targetType": "SampleDuckContracts.ValueTarget",
+      "targetAssembly": "SampleDuckContracts"
+    },
+    {
+      "mode": "reverse",
+      "proxyType": "SampleDuckContracts.IReverseValueProxy",
+      "proxyAssembly": "SampleDuckContracts",
+      "targetType": "SampleDuckContracts.ReverseValueDelegation",
+      "targetAssembly": "SampleDuckContracts"
+    },
+    {
+      "mode": "forward",
+      "proxyType": "SampleDuckContracts.ValueCopyProxy",
+      "proxyAssembly": "SampleDuckContracts",
+      "targetType": "SampleDuckContracts.ValueCopyTarget",
+      "targetAssembly": "SampleDuckContracts"
+    }
+  ]
+}
+```
+
+### 5. Generate AOT Registry + Artifacts
+
+```bash
+CONTRACTS_DLL="$WORK_DIR/SampleDuckContracts/bin/Release/net8.0/SampleDuckContracts.dll"
+RUNNER_DLL="$REPO_ROOT/tracer/src/Datadog.Trace.Tools.Runner/bin/Release/Tool/net8.0/Datadog.Trace.Tools.Runner.dll"
+REGISTRY_DLL="$WORK_DIR/Datadog.Trace.DuckType.AotRegistry.Sample.dll"
+REGISTRY_PROPS="$WORK_DIR/Datadog.Trace.DuckType.AotRegistry.Sample.props"
+REGISTRY_LINKER="$WORK_DIR/Datadog.Trace.DuckType.AotRegistry.Sample.linker.xml"
+
+dotnet "$RUNNER_DLL" ducktype-aot generate \
+  --proxy-assembly "$CONTRACTS_DLL" \
+  --target-assembly "$CONTRACTS_DLL" \
+  --map-file "$WORK_DIR/ducktype-aot-map.json" \
+  --assembly-name Datadog.Trace.DuckType.AotRegistry.Sample \
+  --emit-props "$REGISTRY_PROPS" \
+  --emit-trimmer-descriptor "$REGISTRY_LINKER" \
+  --output "$REGISTRY_DLL"
+```
+
+You should now have:
+
+1. `Datadog.Trace.DuckType.AotRegistry.Sample.dll`
+2. `Datadog.Trace.DuckType.AotRegistry.Sample.dll.manifest.json`
+3. `Datadog.Trace.DuckType.AotRegistry.Sample.dll.compat.json`
+4. `Datadog.Trace.DuckType.AotRegistry.Sample.dll.compat.md`
+5. `Datadog.Trace.DuckType.AotRegistry.Sample.props`
+6. `Datadog.Trace.DuckType.AotRegistry.Sample.linker.xml`
+
+### 6. Wire Sample App Project
+
+Create `SampleDuckApp/SampleDuckApp.csproj`:
+
+```xml
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="Datadog.Trace">
+      <HintPath>__DATADOG_TRACE_DLL__</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <ProjectReference Include="../SampleDuckContracts/SampleDuckContracts.csproj" />
+  </ItemGroup>
+
+  <Import Project="$(DuckTypeAotPropsPath)"
+          Condition="'$(DuckTypeAotPropsPath)' != '' and Exists('$(DuckTypeAotPropsPath)')" />
+</Project>
+```
+
+Replace `__DATADOG_TRACE_DLL__` with:
+
+`$REPO_ROOT/tracer/src/Datadog.Trace/bin/Release/net6.0/Datadog.Trace.dll`
+
+Create `SampleDuckApp/Program.cs`:
+
+```csharp
+using System;
+using System.Runtime.CompilerServices;
+using Datadog.Trace.DuckTyping;
+using Datadog.Trace.DuckTyping.Generated;
+using SampleDuckContracts;
+
+var dynamicAssemblyLoads = 0;
+AppDomain.CurrentDomain.AssemblyLoad += (_, args) =>
+{
+    if (args.LoadedAssembly.IsDynamic)
+    {
+        dynamicAssemblyLoads++;
+    }
+};
+
+DuckTypeAotRegistryBootstrap.Initialize();
+
+var forwardResult = DuckType.GetOrCreateProxyType(typeof(IValueProxy), typeof(ValueTarget));
+var reverseResult = DuckType.GetOrCreateReverseProxyType(typeof(IReverseValueProxy), typeof(ReverseValueDelegation));
+var copyResult = DuckType.GetOrCreateProxyType(typeof(ValueCopyProxy), typeof(ValueCopyTarget));
+
+if (!forwardResult.CanCreate() || !reverseResult.CanCreate() || !copyResult.CanCreate())
+{
+    Console.WriteLine("CAN_CREATE:False");
+    Environment.ExitCode = 1;
+    return;
+}
+
+var forwardProxy = forwardResult.CreateInstance<IValueProxy>(new ValueTarget(42));
+var reverseProxy = (IReverseValueProxy)DuckType.CreateReverse(typeof(IReverseValueProxy), new ReverseValueDelegation());
+var copyProxy = copyResult.CreateInstance<ValueCopyProxy>(new ValueCopyTarget(42));
+
+Console.WriteLine("CAN_CREATE:True");
+Console.WriteLine($"VALUE:{forwardProxy.GetValue()}");
+Console.WriteLine($"REVERSE_VALUE:{reverseProxy.DoubleValue(21)}");
+Console.WriteLine($"COPY_VALUE:{copyProxy.Value}");
+Console.WriteLine($"DYNAMIC_CODE:{RuntimeFeature.IsDynamicCodeSupported}");
+Console.WriteLine($"DYNAMIC_ASSEMBLIES:{dynamicAssemblyLoads}");
+```
+
+### 7. Run as Regular .NET App (with AOT Registry)
+
+```bash
+dotnet run --project "$WORK_DIR/SampleDuckApp/SampleDuckApp.csproj" -c Release \
+  /p:DuckTypeAotPropsPath="$REGISTRY_PROPS"
+```
+
+Expected output includes:
+
+1. `CAN_CREATE:True`
+2. `VALUE:42`
+3. `REVERSE_VALUE:42`
+4. `COPY_VALUE:42`
+
+### 8. Publish and Run NativeAOT
+
+Pick RID for your machine:
+
+1. Linux x64: `linux-x64`
+2. Linux arm64: `linux-arm64`
+3. macOS arm64: `osx-arm64`
+4. macOS x64: `osx-x64`
+5. Windows x64: `win-x64`
+6. Windows arm64: `win-arm64`
+
+```bash
+RID=linux-x64
+PUBLISH_DIR="$WORK_DIR/publish"
+
+dotnet publish "$WORK_DIR/SampleDuckApp/SampleDuckApp.csproj" \
+  -c Release \
+  -r "$RID" \
+  --self-contained true \
+  /p:PublishAot=true \
+  /p:InvariantGlobalization=true \
+  /p:DuckTypeAotPropsPath="$REGISTRY_PROPS" \
+  -o "$PUBLISH_DIR"
+```
+
+Run published binary:
+
+```bash
+"$PUBLISH_DIR/SampleDuckApp"
+```
+
+On Windows:
+
+```powershell
+& "$PUBLISH_DIR\\SampleDuckApp.exe"
+```
+
+Expected output also includes:
+
+1. `DYNAMIC_CODE:False`
+2. `DYNAMIC_ASSEMBLIES:0`
+
 ## NativeAOT Publish Sample (Manual)
 
 This sample mirrors the official integration test flow.
