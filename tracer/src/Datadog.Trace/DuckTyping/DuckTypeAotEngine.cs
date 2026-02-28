@@ -9,7 +9,6 @@ using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using System.Reflection;
 using System.Runtime.ExceptionServices;
 using System.Threading;
@@ -33,15 +32,6 @@ namespace Datadog.Trace.DuckTyping
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static readonly ConcurrentDictionary<TypesTuple, DuckType.CreateTypeResult> ReverseMissCache = new();
-
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private static readonly MethodInfo? CreateTypedActivatorMethodInfo = typeof(DuckTypeAotEngine)
-            .GetMethods(BindingFlags.Static | BindingFlags.NonPublic)
-            .FirstOrDefault(method =>
-                method.Name == nameof(CreateTypedActivator) &&
-                method.IsGenericMethodDefinition &&
-                method.GetParameters().Length == 1 &&
-                method.GetParameters()[0].ParameterType == typeof(Func<object?, object?>));
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static readonly string CurrentDatadogTraceAssemblyVersion = typeof(DuckTypeAotEngine).Assembly.GetName().Version?.ToString() ?? "0.0.0.0";
@@ -175,8 +165,7 @@ namespace Datadog.Trace.DuckTyping
             }
 
             var key = new TypesTuple(proxyDefinitionType, targetType);
-            var typedActivator = CreateTypedActivator(proxyDefinitionType, activator);
-            var createTypeResult = new DuckType.CreateTypeResult(proxyDefinitionType, generatedProxyType, targetType, typedActivator, exceptionInfo: null);
+            var createTypeResult = new DuckType.CreateTypeResult(proxyDefinitionType, generatedProxyType, targetType, activator, exceptionInfo: null);
             var registration = new Registration(generatedProxyType, createTypeResult);
 
             lock (RegistrationLock)
@@ -278,43 +267,6 @@ namespace Datadog.Trace.DuckTyping
                     key.TargetType,
                     activator: null,
                     ExceptionDispatchInfo.Capture(ex));
-            }
-        }
-
-        private static Delegate CreateTypedActivator(Type proxyDefinitionType, Func<object?, object?> activator)
-        {
-            if (CreateTypedActivatorMethodInfo is null)
-            {
-                DuckTypeException.Throw("Unable to resolve typed AOT activator factory method.");
-            }
-
-            var typedDelegate = CreateTypedActivatorMethodInfo
-                               .MakeGenericMethod(proxyDefinitionType)
-                               .Invoke(null, new object[] { activator });
-
-            if (typedDelegate is Delegate del)
-            {
-                return del;
-            }
-
-            DuckTypeException.Throw("Unable to create AOT typed activator delegate.");
-            return null!;
-        }
-
-        private static CreateProxyInstance<TProxyDefinition> CreateTypedActivator<TProxyDefinition>(Func<object?, object?> activator)
-        {
-            return ProxyActivator;
-
-            [return: NotNull]
-            TProxyDefinition ProxyActivator(object? instance)
-            {
-                var value = activator(instance);
-                if (value is null)
-                {
-                    ThrowHelper.ThrowNullReferenceException("AOT duck typing activator returned null.");
-                }
-
-                return (TProxyDefinition)value;
             }
         }
 
