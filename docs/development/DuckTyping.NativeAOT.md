@@ -12,6 +12,16 @@ This document describes how to use the DuckTyping NativeAOT pipeline end-to-end:
 
 This guide is implementation-accurate for the current branch state (February 28, 2026).
 
+## Documentation Map
+
+Use this document as the entrypoint, then drill into companion docs:
+
+1. [DuckTyping.NativeAOT.BuildIntegration.md](./DuckTyping.NativeAOT.BuildIntegration.md): CI/build wiring and artifact lifecycle.
+2. [DuckTyping.NativeAOT.Spec.md](./DuckTyping.NativeAOT.Spec.md): mapping formats, generated artifact contract, and validation semantics.
+3. [DuckTyping.NativeAOT.CompatibilityMatrix.md](./DuckTyping.NativeAOT.CompatibilityMatrix.md): parity summary against dynamic DuckTyping and Bible scenario families.
+4. [DuckTyping.NativeAOT.Troubleshooting.md](./DuckTyping.NativeAOT.Troubleshooting.md): failure diagnosis and remediation playbook.
+5. [DuckTyping.NativeAOT.Testing.md](./DuckTyping.NativeAOT.Testing.md): test commands, gates, and release-readiness checks.
+
 ## Scope and Non-Goals
 
 This guide covers the NativeAOT DuckTyping path only. Dynamic (runtime IL emit) DuckTyping is documented in [DuckTyping.md](./DuckTyping.md) and [DuckTyping.Bible.md](./DuckTyping.Bible.md).
@@ -839,4 +849,9 @@ Use all of these gates together.
 
 1. Dynamic DuckTyping guide: [DuckTyping.md](./DuckTyping.md)
 2. Complete DuckTyping behavior and examples: [DuckTyping.Bible.md](./DuckTyping.Bible.md)
-3. NativeAOT parity stabilization plan: [DuckTyping-NativeAOT-Parity-Stabilization-Plan.md](./for-ai/DuckTyping-NativeAOT-Parity-Stabilization-Plan.md)
+3. NativeAOT build integration: [DuckTyping.NativeAOT.BuildIntegration.md](./DuckTyping.NativeAOT.BuildIntegration.md)
+4. NativeAOT specification: [DuckTyping.NativeAOT.Spec.md](./DuckTyping.NativeAOT.Spec.md)
+5. NativeAOT compatibility matrix: [DuckTyping.NativeAOT.CompatibilityMatrix.md](./DuckTyping.NativeAOT.CompatibilityMatrix.md)
+6. NativeAOT troubleshooting: [DuckTyping.NativeAOT.Troubleshooting.md](./DuckTyping.NativeAOT.Troubleshooting.md)
+7. NativeAOT testing playbook: [DuckTyping.NativeAOT.Testing.md](./DuckTyping.NativeAOT.Testing.md)
+8. NativeAOT parity stabilization plan: [DuckTyping-NativeAOT-Parity-Stabilization-Plan.md](./for-ai/DuckTyping-NativeAOT-Parity-Stabilization-Plan.md)

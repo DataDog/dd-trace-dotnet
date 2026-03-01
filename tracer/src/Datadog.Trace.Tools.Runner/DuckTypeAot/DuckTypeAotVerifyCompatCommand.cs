@@ -91,12 +91,14 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <remarks>Emits or composes IL for generated duck-typing proxy operations.</remarks>
         private static bool TryParseFailureMode(string? value, out DuckTypeAotFailureMode failureMode)
         {
+            // Branch: take this path when (string.Equals(value, "default", System.StringComparison.OrdinalIgnoreCase)) evaluates to true.
             if (string.Equals(value, "default", System.StringComparison.OrdinalIgnoreCase))
             {
                 failureMode = DuckTypeAotFailureMode.Default;
                 return true;
             }
 
+            // Branch: take this path when (string.Equals(value, "strict", System.StringComparison.OrdinalIgnoreCase)) evaluates to true.
             if (string.Equals(value, "strict", System.StringComparison.OrdinalIgnoreCase))
             {
                 failureMode = DuckTypeAotFailureMode.Strict;
@@ -122,6 +124,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             var knownLimitationsPath = _knownLimitationsOption.GetValue(context);
             var strictAssemblyFingerprints = _strictAssemblyFingerprintsOption.GetValue(context);
             var failureModeValue = _failureModeOption.GetValue(context);
+            // Branch: take this path when (!TryParseFailureMode(failureModeValue, out var failureMode)) evaluates to true.
             if (!TryParseFailureMode(failureModeValue, out var failureMode))
             {
                 Datadog.Trace.Tools.Runner.Utils.WriteError($"Invalid --failure-mode value '{failureModeValue}'. Allowed values are: default, strict.");
@@ -129,6 +132,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 return;
             }
 
+            // Branch: take this path when (strictAssemblyFingerprints) evaluates to true.
             if (strictAssemblyFingerprints)
             {
                 // Legacy flag implies strict mode for parity with previous behavior.

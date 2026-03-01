@@ -184,7 +184,7 @@ public class DuckTypeAotProcessorsTests
     }
 
     [Fact]
-    public void BibleExpectedOutcomesFileShouldContainApprovedNonCompatibleScenarios()
+    public void BibleExpectedOutcomesFileShouldNotContainApprovedNonCompatibleScenarios()
     {
         var expectedOutcomesPath = GetDuckTypingAotCompatibilityFilePath(BibleExpectedOutcomesFileName);
         File.Exists(expectedOutcomesPath).Should().BeTrue($"expected checked-in compatibility artifact '{expectedOutcomesPath}' to exist");
@@ -192,19 +192,7 @@ public class DuckTypeAotProcessorsTests
         var document = JsonConvert.DeserializeObject<ExpectedOutcomesTestDocument>(File.ReadAllText(expectedOutcomesPath));
         document.Should().NotBeNull();
         document!.ExpectedOutcomes.Should().NotBeNull();
-        document.ExpectedOutcomes.Should().HaveCount(4);
-        document.ExpectedOutcomes.Should().Contain(entry =>
-            string.Equals(entry.ScenarioId, "RT-2", StringComparison.Ordinal) &&
-            string.Equals(entry.Status, DuckTypeAotCompatibilityStatuses.IncompatibleMethodSignature, StringComparison.Ordinal));
-        document.ExpectedOutcomes.Should().Contain(entry =>
-            string.Equals(entry.ScenarioId, "E-39", StringComparison.Ordinal) &&
-            string.Equals(entry.Status, DuckTypeAotCompatibilityStatuses.MissingTargetMethod, StringComparison.Ordinal));
-        document.ExpectedOutcomes.Should().Contain(entry =>
-            string.Equals(entry.ScenarioId, "E-40", StringComparison.Ordinal) &&
-            string.Equals(entry.Status, DuckTypeAotCompatibilityStatuses.MissingTargetMethod, StringComparison.Ordinal));
-        document.ExpectedOutcomes.Should().Contain(entry =>
-            string.Equals(entry.ScenarioId, "E-42", StringComparison.Ordinal) &&
-            string.Equals(entry.Status, DuckTypeAotCompatibilityStatuses.UnsupportedProxyKind, StringComparison.Ordinal));
+        document.ExpectedOutcomes.Should().BeEmpty("the parity contract requires all Bible scenarios to be fully compatible");
     }
 
     [Fact]
@@ -581,6 +569,184 @@ public class DuckTypeAotProcessorsTests
             compatibilityMatrix.Should().NotBeNull();
             compatibilityMatrix!.Mappings.Should().ContainSingle();
             compatibilityMatrix.Mappings[0].Id.Should().Be("A-02");
+        }
+        finally
+        {
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
+
+    [Fact]
+    public void GenerateProcessorShouldTreatExpectCanCreateFalseAsCompatibleWhenEmitterCannotCreateProxy()
+    {
+        var tempDirectory = CreateTempDirectory();
+        try
+        {
+            var proxyAssemblyPath = typeof(DuckTypeAotProcessorsTests).Assembly.Location;
+            var targetAssemblyPath = typeof(ParityVoidMismatchTarget).Assembly.Location;
+            var proxyAssemblyName = AssemblyName.GetAssemblyName(proxyAssemblyPath).Name;
+            var targetAssemblyName = AssemblyName.GetAssemblyName(targetAssemblyPath).Name;
+
+            var outputPath = Path.Combine(tempDirectory, "Datadog.Trace.DuckType.AotRegistry.Parity.ExpectedCannotCreate.dll");
+            var mapFilePath = Path.Combine(tempDirectory, "ducktype-aot-map-parity-cannot-create.json");
+            var mappingCatalogPath = Path.Combine(tempDirectory, "ducktype-aot-mapping-catalog-parity-cannot-create.json");
+            var trimmerDescriptorPath = Path.Combine(tempDirectory, "ducktype-aot-parity-cannot-create.linker.xml");
+            var propsPath = Path.Combine(tempDirectory, "ducktype-aot-parity-cannot-create.props");
+
+            var mapDocument = new
+            {
+                mappings = new[]
+                {
+                    new
+                    {
+                        mode = "forward",
+                        proxyType = typeof(IParityVoidMismatchProxy).FullName,
+                        proxyAssembly = proxyAssemblyName,
+                        targetType = typeof(ParityVoidMismatchTarget).FullName,
+                        targetAssembly = targetAssemblyName
+                    }
+                }
+            };
+            File.WriteAllText(mapFilePath, JsonConvert.SerializeObject(mapDocument, Formatting.Indented));
+
+            var mappingCatalogDocument = new
+            {
+                requiredMappings = new[]
+                {
+                    new
+                    {
+                        scenarioId = "PX-01",
+                        mode = "forward",
+                        proxyType = typeof(IParityVoidMismatchProxy).FullName,
+                        proxyAssembly = proxyAssemblyName,
+                        targetType = typeof(ParityVoidMismatchTarget).FullName,
+                        targetAssembly = targetAssemblyName,
+                        expectCanCreate = false
+                    }
+                }
+            };
+            File.WriteAllText(mappingCatalogPath, JsonConvert.SerializeObject(mappingCatalogDocument, Formatting.Indented));
+
+            var options = new DuckTypeAotGenerateOptions(
+                proxyAssemblies: new[] { proxyAssemblyPath },
+                targetAssemblies: new[] { targetAssemblyPath },
+                targetFolders: Array.Empty<string>(),
+                targetFilters: new[] { "*.dll" },
+                mapFile: mapFilePath,
+                mappingCatalog: mappingCatalogPath,
+                genericInstantiationsFile: null,
+                outputPath: outputPath,
+                assemblyName: "Datadog.Trace.DuckType.AotRegistry.Parity.ExpectedCannotCreate",
+                trimmerDescriptorPath: trimmerDescriptorPath,
+                propsPath: propsPath,
+                requireMappingCatalog: true);
+
+            var exitCode = DuckTypeAotGenerateProcessor.Process(options);
+            exitCode.Should().Be(0);
+
+            var compatibilityMatrixPath = $"{outputPath}.compat.json";
+            var compatibilityMatrix = JsonConvert.DeserializeObject<DuckTypeAotCompatibilityMatrix>(File.ReadAllText(compatibilityMatrixPath));
+            compatibilityMatrix.Should().NotBeNull();
+            compatibilityMatrix!.Mappings.Should().ContainSingle();
+
+            var mapping = compatibilityMatrix.Mappings[0];
+            mapping.Id.Should().Be("PX-01");
+            mapping.Status.Should().Be(DuckTypeAotCompatibilityStatuses.Compatible);
+            mapping.Details.Should().Contain("Parity expectation requires cannot-create behavior");
+        }
+        finally
+        {
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
+
+    [Fact]
+    public void GenerateProcessorShouldReportParityExpectationMismatchWhenExpectCanCreateFalseButMappingIsCreatable()
+    {
+        var tempDirectory = CreateTempDirectory();
+        try
+        {
+            var proxyAssemblyPath = typeof(DuckTypeAotProcessorsTests).Assembly.Location;
+            var targetAssemblyPath = typeof(TestDuckTarget).Assembly.Location;
+            var proxyAssemblyName = AssemblyName.GetAssemblyName(proxyAssemblyPath).Name;
+            var targetAssemblyName = AssemblyName.GetAssemblyName(targetAssemblyPath).Name;
+
+            var outputPath = Path.Combine(tempDirectory, "Datadog.Trace.DuckType.AotRegistry.Parity.ExpectationMismatch.dll");
+            var mapFilePath = Path.Combine(tempDirectory, "ducktype-aot-map-parity-mismatch.json");
+            var mappingCatalogPath = Path.Combine(tempDirectory, "ducktype-aot-mapping-catalog-parity-mismatch.json");
+            var trimmerDescriptorPath = Path.Combine(tempDirectory, "ducktype-aot-parity-mismatch.linker.xml");
+            var propsPath = Path.Combine(tempDirectory, "ducktype-aot-parity-mismatch.props");
+
+            var mapDocument = new
+            {
+                mappings = new[]
+                {
+                    new
+                    {
+                        mode = "forward",
+                        proxyType = typeof(ITestDuckProxy).FullName,
+                        proxyAssembly = proxyAssemblyName,
+                        targetType = typeof(TestDuckTarget).FullName,
+                        targetAssembly = targetAssemblyName
+                    }
+                }
+            };
+            File.WriteAllText(mapFilePath, JsonConvert.SerializeObject(mapDocument, Formatting.Indented));
+
+            var mappingCatalogDocument = new
+            {
+                requiredMappings = new[]
+                {
+                    new
+                    {
+                        scenarioId = "PX-02",
+                        mode = "forward",
+                        proxyType = typeof(ITestDuckProxy).FullName,
+                        proxyAssembly = proxyAssemblyName,
+                        targetType = typeof(TestDuckTarget).FullName,
+                        targetAssembly = targetAssemblyName,
+                        expectCanCreate = false
+                    }
+                }
+            };
+            File.WriteAllText(mappingCatalogPath, JsonConvert.SerializeObject(mappingCatalogDocument, Formatting.Indented));
+
+            var options = new DuckTypeAotGenerateOptions(
+                proxyAssemblies: new[] { proxyAssemblyPath },
+                targetAssemblies: new[] { targetAssemblyPath },
+                targetFolders: Array.Empty<string>(),
+                targetFilters: new[] { "*.dll" },
+                mapFile: mapFilePath,
+                mappingCatalog: mappingCatalogPath,
+                genericInstantiationsFile: null,
+                outputPath: outputPath,
+                assemblyName: "Datadog.Trace.DuckType.AotRegistry.Parity.ExpectationMismatch",
+                trimmerDescriptorPath: trimmerDescriptorPath,
+                propsPath: propsPath,
+                requireMappingCatalog: true);
+
+            var exitCode = DuckTypeAotGenerateProcessor.Process(options);
+            exitCode.Should().Be(0);
+
+            var compatibilityReportPath = $"{outputPath}.compat.md";
+            var compatibilityMatrixPath = $"{outputPath}.compat.json";
+            var compatibilityMatrix = JsonConvert.DeserializeObject<DuckTypeAotCompatibilityMatrix>(File.ReadAllText(compatibilityMatrixPath));
+            compatibilityMatrix.Should().NotBeNull();
+            compatibilityMatrix!.Mappings.Should().ContainSingle();
+
+            var mapping = compatibilityMatrix.Mappings[0];
+            mapping.Id.Should().Be("PX-02");
+            mapping.Status.Should().Be(DuckTypeAotCompatibilityStatuses.ParityExpectationMismatch);
+            mapping.Details.Should().Contain("Parity expectation requires cannot-create behavior");
+
+            var verifyExitCode = DuckTypeAotVerifyCompatProcessor.Process(
+                new DuckTypeAotVerifyCompatOptions(
+                    compatibilityReportPath,
+                    compatibilityMatrixPath,
+                    mappingCatalogPath: null,
+                    manifestPath: null,
+                    strictAssemblyFingerprintValidation: false));
+            verifyExitCode.Should().Be(1);
         }
         finally
         {

@@ -49,11 +49,13 @@ namespace Datadog.Trace.DuckTyping
         /// <param name="reverse">The reverse value.</param>
         internal static void Record(Type proxyType, Type targetType, bool reverse)
         {
+            // Branch: take this path when (string.IsNullOrWhiteSpace(OutputPath)) evaluates to true.
             if (string.IsNullOrWhiteSpace(OutputPath))
             {
                 return;
             }
 
+            // Branch: take this path when (proxyType is null || targetType is null) evaluates to true.
             if (proxyType is null || targetType is null)
             {
                 return;
@@ -64,6 +66,7 @@ namespace Datadog.Trace.DuckTyping
             var proxyAssembly = proxyType.Assembly.GetName().Name;
             var targetAssembly = targetType.Assembly.GetName().Name;
 
+            // Branch: take this path when (string.IsNullOrWhiteSpace(proxyTypeName) || evaluates to true.
             if (string.IsNullOrWhiteSpace(proxyTypeName) ||
                 string.IsNullOrWhiteSpace(targetTypeName) ||
                 string.IsNullOrWhiteSpace(proxyAssembly) ||
@@ -93,6 +96,7 @@ namespace Datadog.Trace.DuckTyping
         /// </summary>
         private static void EnsureProcessExitHook()
         {
+            // Branch: take this path when (Interlocked.CompareExchange(ref _processExitHookRegistered, 1, 0) == 0) evaluates to true.
             if (Interlocked.CompareExchange(ref _processExitHookRegistered, 1, 0) == 0)
             {
                 AppDomain.CurrentDomain.ProcessExit += (_, _) => Flush();
@@ -106,12 +110,14 @@ namespace Datadog.Trace.DuckTyping
         {
             try
             {
+                // Branch: take this path when (string.IsNullOrWhiteSpace(OutputPath)) evaluates to true.
                 if (string.IsNullOrWhiteSpace(OutputPath))
                 {
                     return;
                 }
 
                 var directory = Path.GetDirectoryName(OutputPath);
+                // Branch: take this path when (!string.IsNullOrWhiteSpace(directory)) evaluates to true.
                 if (!string.IsNullOrWhiteSpace(directory))
                 {
                     Directory.CreateDirectory(directory);
@@ -134,6 +140,7 @@ namespace Datadog.Trace.DuckTyping
             }
             catch
             {
+                // Branch: handles any exception that reaches this handler.
                 // Best effort recorder used only for testing workflows.
             }
         }
