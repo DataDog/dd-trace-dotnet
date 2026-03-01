@@ -144,6 +144,7 @@ public abstract class TestingFrameworkRetriesTests : TestingFrameworkEvpTest
         SetEnvironmentVariable(ConfigurationKeys.Debugger.ExceptionReplayEnabled, "1");
         SetEnvironmentVariable(ConfigurationKeys.Debugger.RateLimitSeconds, "0");
         SetEnvironmentVariable(ConfigurationKeys.Debugger.UploadFlushInterval, "1000");
+        SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "1");
 
         var tests = await FlakyRetries(packageVersion);
 

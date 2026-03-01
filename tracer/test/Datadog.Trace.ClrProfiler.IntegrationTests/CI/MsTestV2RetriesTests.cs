@@ -45,7 +45,7 @@ public class MsTestV2RetriesTests : TestingFrameworkRetriesTests
     [Trait("Category", "EndToEnd")]
     [Trait("Category", "TestIntegrations")]
     [Trait("Category", "FlakyRetries")]
-    [Flaky("Under investigation", 5)]
+    // [Flaky("Under investigation", 5)]
     public override Task FlakyRetriesWithExceptionReplay(string packageVersion)
     {
         return base.FlakyRetriesWithExceptionReplay(packageVersion);
