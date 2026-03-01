@@ -49,6 +49,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
                     foreach (var type in module.GetTypes())
                     {
+                        // Branch: take this path when (type.IsGlobalModuleType) evaluates to true.
                         if (type.IsGlobalModuleType)
                         {
                             continue;
@@ -57,12 +58,14 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                         foreach (var attribute in type.CustomAttributes)
                         {
                             var attributeFullName = attribute.AttributeType?.FullName;
+                            // Branch: take this path when (!string.Equals(attributeFullName, DuckTypeAttributeFullName, StringComparison.Ordinal) && evaluates to true.
                             if (!string.Equals(attributeFullName, DuckTypeAttributeFullName, StringComparison.Ordinal) &&
                                 !string.Equals(attributeFullName, DuckCopyAttributeFullName, StringComparison.Ordinal))
                             {
                                 continue;
                             }
 
+                            // Branch: take this path when (!TryReadTargetData(attribute, out var targetTypeName, out var targetAssemblyName)) evaluates to true.
                             if (!TryReadTargetData(attribute, out var targetTypeName, out var targetAssemblyName))
                             {
                                 warnings.Add($"Skipping attribute mapping in '{proxyAssemblyPath}' for proxy type '{type.ReflectionFullName}' because target type/assembly values are missing.");
@@ -83,6 +86,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 }
                 catch (Exception ex)
                 {
+                    // Branch: handles exceptions that match Exception ex.
                     errors.Add($"Unable to read proxy assembly '{proxyAssemblyPath}': {ex.Message}");
                 }
             }
@@ -111,6 +115,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             var (targetType, typeAssemblyFromQualifiedName) = DuckTypeAotNameHelpers.ParseTypeAndAssembly(namedTargetType ?? constructorTargetType ?? string.Empty);
             var targetAssembly = DuckTypeAotNameHelpers.NormalizeAssemblyName(namedTargetAssembly ?? constructorTargetAssembly ?? typeAssemblyFromQualifiedName ?? string.Empty);
 
+            // Branch: take this path when (string.IsNullOrWhiteSpace(targetType) || string.IsNullOrWhiteSpace(targetAssembly)) evaluates to true.
             if (string.IsNullOrWhiteSpace(targetType) || string.IsNullOrWhiteSpace(targetAssembly))
             {
                 return false;
@@ -129,6 +134,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <returns>The result produced by this operation.</returns>
         private static string? TryReadStringValue(CustomAttribute attribute, int constructorArgumentIndex)
         {
+            // Branch: take this path when (attribute.ConstructorArguments.Count <= constructorArgumentIndex) evaluates to true.
             if (attribute.ConstructorArguments.Count <= constructorArgumentIndex)
             {
                 return null;
@@ -147,6 +153,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         {
             foreach (var namedArgument in attribute.NamedArguments)
             {
+                // Branch: take this path when (!string.Equals(namedArgument.Name, propertyName, StringComparison.Ordinal)) evaluates to true.
                 if (!string.Equals(namedArgument.Name, propertyName, StringComparison.Ordinal))
                 {
                     continue;

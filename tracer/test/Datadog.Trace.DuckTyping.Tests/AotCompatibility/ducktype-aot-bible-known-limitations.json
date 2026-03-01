@@ -1,25 +1,4 @@
 {
   "schemaVersion": "1",
-  "knownLimitations": [
-    {
-      "scenarioId": "RT-2",
-      "status": "incompatible_method_signature",
-      "reason": "Intentional parity failure: return type mismatch between proxy and target methods."
-    },
-    {
-      "scenarioId": "E-39",
-      "status": "missing_target_method",
-      "reason": "Intentional parity failure: reverse proxy requires method implementation that target does not expose."
-    },
-    {
-      "scenarioId": "E-40",
-      "status": "incompatible_method_signature",
-      "reason": "Intentional parity failure: reverse generic contract has incompatible arity/signature."
-    },
-    {
-      "scenarioId": "E-42",
-      "status": "unsupported_proxy_kind",
-      "reason": "Intentional parity failure: reverse proxy over struct base is unsupported by contract."
-    }
-  ]
+  "knownLimitations": []
 }

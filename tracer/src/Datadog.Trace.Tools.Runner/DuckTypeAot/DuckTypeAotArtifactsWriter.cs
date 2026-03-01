@@ -51,6 +51,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 .Select((mapping, index) =>
                 {
                     var hasResult = emissionResult.MappingResultsByKey.TryGetValue(mapping.Key, out var mappingResult);
+                    var effectiveStatus = ResolveEffectiveCompatibilityStatus(mapping, hasResult ? mappingResult : null);
                     return new DuckTypeAotCompatibilityMapping
                     {
                         Id = mapping.ScenarioId ?? $"MAP-{index + 1:D4}",
@@ -61,9 +62,9 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                         TargetType = mapping.TargetTypeName,
                         TargetAssembly = mapping.TargetAssemblyName,
                         Source = mapping.Source.ToString().ToLowerInvariant(),
-                        Status = hasResult ? mappingResult!.Status : DuckTypeAotCompatibilityStatuses.PendingProxyEmission,
+                        Status = effectiveStatus,
                         DiagnosticCode = hasResult ? mappingResult!.DiagnosticCode : null,
-                        Details = hasResult ? mappingResult!.Detail : null,
+                        Details = BuildEffectiveCompatibilityDetails(mapping, hasResult ? mappingResult : null, effectiveStatus),
                         GeneratedProxyAssembly = hasResult ? mappingResult!.GeneratedProxyAssemblyName : null,
                         GeneratedProxyType = hasResult ? mappingResult!.GeneratedProxyTypeName : null
                     };
@@ -285,6 +286,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     .Append(mapping.TargetAssembly)
                     .AppendLine(" |");
 
+                // Branch: take this path when (!string.IsNullOrWhiteSpace(mapping.GeneratedProxyType) || !string.IsNullOrWhiteSpace(mapping.GeneratedProxyAssembly)) evaluates to true.
                 if (!string.IsNullOrWhiteSpace(mapping.GeneratedProxyType) || !string.IsNullOrWhiteSpace(mapping.GeneratedProxyAssembly))
                 {
                     _ = sb.Append("|  |  |  |  |  | generated: ")
@@ -294,6 +296,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                         .AppendLine(" |  |");
                 }
 
+                // Branch: take this path when (!string.IsNullOrWhiteSpace(mapping.Details)) evaluates to true.
                 if (!string.IsNullOrWhiteSpace(mapping.Details))
                 {
                     var details = mapping.Details;
@@ -326,8 +329,15 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
             foreach (var mapping in mappingResolutionResult.Mappings.OrderBy(m => m.Key, StringComparer.Ordinal))
             {
-                if (!emissionResult.MappingResultsByKey.TryGetValue(mapping.Key, out var mappingResult) ||
-                    !string.Equals(mappingResult.Status, DuckTypeAotCompatibilityStatuses.Compatible, StringComparison.Ordinal))
+                // Branch: take this path when (!emissionResult.MappingResultsByKey.TryGetValue(mapping.Key, out var mappingResult)) evaluates to true.
+                if (!emissionResult.MappingResultsByKey.TryGetValue(mapping.Key, out var mappingResult))
+                {
+                    continue;
+                }
+
+                var effectiveStatus = ResolveEffectiveCompatibilityStatus(mapping, mappingResult);
+                // Branch: take this path when (!string.Equals(effectiveStatus, DuckTypeAotCompatibilityStatuses.Compatible, StringComparison.Ordinal)) evaluates to true.
+                if (!string.Equals(effectiveStatus, DuckTypeAotCompatibilityStatuses.Compatible, StringComparison.Ordinal))
                 {
                     continue;
                 }
@@ -335,6 +345,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 AddTypeRoot(typesByAssembly, mapping.ProxyAssemblyName, mapping.ProxyTypeName);
                 AddTypeRoot(typesByAssembly, mapping.TargetAssemblyName, mapping.TargetTypeName);
 
+                // Branch: take this path when (!string.IsNullOrWhiteSpace(mappingResult.GeneratedProxyAssemblyName) && evaluates to true.
                 if (!string.IsNullOrWhiteSpace(mappingResult.GeneratedProxyAssemblyName) &&
                     !string.IsNullOrWhiteSpace(mappingResult.GeneratedProxyTypeName))
                 {
@@ -370,6 +381,71 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         }
 
         /// <summary>
+        /// Resolves resolve effective compatibility status.
+        /// </summary>
+        /// <param name="mapping">The mapping value.</param>
+        /// <param name="mappingResult">The mapping result value.</param>
+        /// <returns>The resulting string value.</returns>
+        private static string ResolveEffectiveCompatibilityStatus(DuckTypeAotMapping mapping, DuckTypeAotMappingEmissionResult? mappingResult)
+        {
+            // Branch: take this path when (mappingResult is null) evaluates to true.
+            if (mappingResult is null)
+            {
+                return DuckTypeAotCompatibilityStatuses.PendingProxyEmission;
+            }
+
+            // Branch: take this path when (mapping.ParityExpectation != DuckTypeAotParityExpectation.CannotCreate) evaluates to true.
+            if (mapping.ParityExpectation != DuckTypeAotParityExpectation.CannotCreate)
+            {
+                return mappingResult.Status;
+            }
+
+            // Branch: take this path when (string.Equals(mappingResult.Status, DuckTypeAotCompatibilityStatuses.Compatible, StringComparison.Ordinal)) evaluates to true.
+            if (string.Equals(mappingResult.Status, DuckTypeAotCompatibilityStatuses.Compatible, StringComparison.Ordinal))
+            {
+                return DuckTypeAotCompatibilityStatuses.ParityExpectationMismatch;
+            }
+
+            return DuckTypeAotCompatibilityStatuses.Compatible;
+        }
+
+        /// <summary>
+        /// Builds build effective compatibility details.
+        /// </summary>
+        /// <param name="mapping">The mapping value.</param>
+        /// <param name="mappingResult">The mapping result value.</param>
+        /// <param name="effectiveStatus">The effective status value.</param>
+        /// <returns>The resulting string value.</returns>
+        private static string? BuildEffectiveCompatibilityDetails(
+            DuckTypeAotMapping mapping,
+            DuckTypeAotMappingEmissionResult? mappingResult,
+            string effectiveStatus)
+        {
+            var detail = mappingResult?.Detail;
+            // Branch: take this path when (mappingResult is null) evaluates to true.
+            if (mappingResult is null)
+            {
+                return detail;
+            }
+
+            // Branch: take this path when (mapping.ParityExpectation != DuckTypeAotParityExpectation.CannotCreate) evaluates to true.
+            if (mapping.ParityExpectation != DuckTypeAotParityExpectation.CannotCreate)
+            {
+                return detail;
+            }
+
+            // Branch: take this path when (string.Equals(effectiveStatus, DuckTypeAotCompatibilityStatuses.ParityExpectationMismatch, StringComparison.Ordinal)) evaluates to true.
+            if (string.Equals(effectiveStatus, DuckTypeAotCompatibilityStatuses.ParityExpectationMismatch, StringComparison.Ordinal))
+            {
+                const string message = "Parity expectation requires cannot-create behavior, but the emitter produced a creatable mapping.";
+                return string.IsNullOrWhiteSpace(detail) ? message : $"{message} {detail}";
+            }
+
+            var parityMatchMessage = $"Parity expectation requires cannot-create behavior; mapped emission status '{mappingResult.Status}' is treated as compatibility-preserving parity.";
+            return string.IsNullOrWhiteSpace(detail) ? parityMatchMessage : $"{parityMatchMessage} {detail}";
+        }
+
+        /// <summary>
         /// Adds add type root.
         /// </summary>
         /// <param name="typesByAssembly">The types by assembly value.</param>
@@ -377,11 +453,13 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <param name="typeName">The type name value.</param>
         private static void AddTypeRoot(IDictionary<string, HashSet<string>> typesByAssembly, string assemblyName, string typeName)
         {
+            // Branch: take this path when (string.IsNullOrWhiteSpace(assemblyName) || string.IsNullOrWhiteSpace(typeName)) evaluates to true.
             if (string.IsNullOrWhiteSpace(assemblyName) || string.IsNullOrWhiteSpace(typeName))
             {
                 return;
             }
 
+            // Branch: take this path when (!typesByAssembly.TryGetValue(assemblyName, out var assemblyTypes)) evaluates to true.
             if (!typesByAssembly.TryGetValue(assemblyName, out var assemblyTypes))
             {
                 assemblyTypes = new HashSet<string>(StringComparer.Ordinal);

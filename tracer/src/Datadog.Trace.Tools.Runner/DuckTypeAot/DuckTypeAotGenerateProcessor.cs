@@ -25,6 +25,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         internal static int Process(DuckTypeAotGenerateOptions options)
         {
             var validationErrors = Validate(options);
+            // Branch: take this path when (validationErrors.Count > 0) evaluates to true.
             if (validationErrors.Count > 0)
             {
                 foreach (var error in validationErrors)
@@ -41,6 +42,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 AnsiConsole.MarkupLine($"[yellow]Warning:[/] {warning}");
             }
 
+            // Branch: take this path when (mappingResolutionResult.Errors.Count > 0) evaluates to true.
             if (mappingResolutionResult.Errors.Count > 0)
             {
                 foreach (var error in mappingResolutionResult.Errors)
@@ -51,18 +53,21 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 return 1;
             }
 
+            // Branch: take this path when (mappingResolutionResult.Mappings.Count == 0) evaluates to true.
             if (mappingResolutionResult.Mappings.Count == 0)
             {
                 AnsiConsole.MarkupLine("[yellow]Warning:[/] No mappings were resolved from attributes/map file.");
             }
 
             var signingKeyFilePath = ResolveStrongNameKeyFilePath(options);
+            // Branch: take this path when (string.IsNullOrWhiteSpace(signingKeyFilePath)) evaluates to true.
             if (string.IsNullOrWhiteSpace(signingKeyFilePath))
             {
                 AnsiConsole.MarkupLine("[yellow]Warning:[/] No strong-name key configured. The generated registry assembly will be unsigned.");
             }
             else
             {
+                // Branch: fallback path when earlier branch conditions evaluate to false.
                 AnsiConsole.MarkupLine($"[green]Strong-name signing key:[/] {signingKeyFilePath}");
                 options = new DuckTypeAotGenerateOptions(
                     options.ProxyAssemblies,
@@ -100,6 +105,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 AnsiConsole.MarkupLine($"[green]Generated compatibility matrix:[/] {compatibilityArtifacts.MatrixPath}");
                 AnsiConsole.MarkupLine($"[green]Generated compatibility report:[/] {compatibilityArtifacts.ReportPath}");
 
+                // Branch: take this path when (compatibilityArtifacts.NonCompatibleMappings > 0) evaluates to true.
                 if (compatibilityArtifacts.NonCompatibleMappings > 0)
                 {
                     AnsiConsole.MarkupLine($"[yellow]Compatibility status:[/] {compatibilityArtifacts.NonCompatibleMappings}/{compatibilityArtifacts.TotalMappings} mappings are not yet compatible.");
@@ -109,6 +115,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
             catch (Exception ex)
             {
+                // Branch: handles exceptions that match Exception ex.
                 Utils.WriteError($"ducktype-aot generate failed: {ex.Message}");
                 return 1;
             }
@@ -123,16 +130,19 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         {
             var errors = new List<string>();
 
+            // Branch: take this path when (options.ProxyAssemblies.Count == 0) evaluates to true.
             if (options.ProxyAssemblies.Count == 0)
             {
                 errors.Add("At least one --proxy-assembly must be provided.");
             }
 
+            // Branch: take this path when (options.TargetAssemblies.Count == 0 && options.TargetFolders.Count == 0) evaluates to true.
             if (options.TargetAssemblies.Count == 0 && options.TargetFolders.Count == 0)
             {
                 errors.Add("At least one --target-assembly or --target-folder must be provided.");
             }
 
+            // Branch: take this path when (options.TargetFilters.Count == 0) evaluates to true.
             if (options.TargetFilters.Count == 0)
             {
                 errors.Add("At least one --target-filter must be provided.");
@@ -146,17 +156,20 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             ValidateOptionalFile(options.GenericInstantiationsFile, "--generic-instantiations", errors);
             ValidateOptionalFile(options.StrongNameKeyFile, "--strong-name-key-file", errors);
 
+            // Branch: take this path when (options.RequireMappingCatalog && string.IsNullOrWhiteSpace(options.MappingCatalog)) evaluates to true.
             if (options.RequireMappingCatalog && string.IsNullOrWhiteSpace(options.MappingCatalog))
             {
                 errors.Add("--mapping-catalog is required when --require-mapping-catalog is enabled.");
             }
 
+            // Branch: take this path when (string.IsNullOrWhiteSpace(options.OutputPath)) evaluates to true.
             if (string.IsNullOrWhiteSpace(options.OutputPath))
             {
                 errors.Add("--output cannot be empty.");
             }
 
             var environmentStrongNameKeyFile = Environment.GetEnvironmentVariable("DD_TRACE_DUCKTYPE_AOT_STRONG_NAME_KEY_FILE");
+            // Branch: take this path when (string.IsNullOrWhiteSpace(options.StrongNameKeyFile) && evaluates to true.
             if (string.IsNullOrWhiteSpace(options.StrongNameKeyFile) &&
                 !string.IsNullOrWhiteSpace(environmentStrongNameKeyFile) &&
                 !File.Exists(environmentStrongNameKeyFile))
@@ -175,12 +188,14 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <remarks>Emits or composes IL for generated duck-typing proxy operations.</remarks>
         private static string? ResolveStrongNameKeyFilePath(DuckTypeAotGenerateOptions options)
         {
+            // Branch: take this path when (!string.IsNullOrWhiteSpace(options.StrongNameKeyFile)) evaluates to true.
             if (!string.IsNullOrWhiteSpace(options.StrongNameKeyFile))
             {
                 return Path.GetFullPath(options.StrongNameKeyFile!);
             }
 
             var environmentPath = Environment.GetEnvironmentVariable("DD_TRACE_DUCKTYPE_AOT_STRONG_NAME_KEY_FILE");
+            // Branch: take this path when (string.IsNullOrWhiteSpace(environmentPath)) evaluates to true.
             if (string.IsNullOrWhiteSpace(environmentPath))
             {
                 return null;
@@ -200,6 +215,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         {
             foreach (var path in paths)
             {
+                // Branch: take this path when (!File.Exists(path)) evaluates to true.
                 if (!File.Exists(path))
                 {
                     errors.Add($"{optionName} file was not found: {path}");
@@ -217,6 +233,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         {
             foreach (var path in paths)
             {
+                // Branch: take this path when (!Directory.Exists(path)) evaluates to true.
                 if (!Directory.Exists(path))
                 {
                     errors.Add($"{optionName} directory was not found: {path}");
@@ -233,6 +250,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <remarks>Emits or composes IL for generated duck-typing proxy operations.</remarks>
         private static void ValidateOptionalFile(string? path, string optionName, List<string> errors)
         {
+            // Branch: take this path when (!string.IsNullOrWhiteSpace(path) && !File.Exists(path)) evaluates to true.
             if (!string.IsNullOrWhiteSpace(path) && !File.Exists(path))
             {
                 errors.Add($"{optionName} file was not found: {path}");
@@ -246,6 +264,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         private static void EnsureParentDirectoryExists(string path)
         {
             var parent = Path.GetDirectoryName(path);
+            // Branch: take this path when (!string.IsNullOrWhiteSpace(parent)) evaluates to true.
             if (!string.IsNullOrWhiteSpace(parent))
             {
                 Directory.CreateDirectory(parent);

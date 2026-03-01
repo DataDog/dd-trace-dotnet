@@ -27,6 +27,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             var errors = new List<string>();
             var requiredScenarios = new HashSet<string>(StringComparer.Ordinal);
 
+            // Branch: take this path when (string.IsNullOrWhiteSpace(path)) evaluates to true.
             if (string.IsNullOrWhiteSpace(path))
             {
                 return new DuckTypeAotScenarioInventoryParseResult(Array.Empty<string>(), errors);
@@ -36,6 +37,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             {
                 var json = File.ReadAllText(path);
                 var parsedFile = JsonConvert.DeserializeObject<ScenarioInventoryDocument>(json);
+                // Branch: take this path when (parsedFile is null) evaluates to true.
                 if (parsedFile is null)
                 {
                     errors.Add($"--scenario-inventory content is empty or invalid JSON: {path}");
@@ -45,6 +47,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 var hasAnyEntry = false;
                 ParseEntries(parsedFile.RequiredScenarios, path, errors, requiredScenarios, ref hasAnyEntry);
                 ParseEntries(parsedFile.RequiredScenarioIds, path, errors, requiredScenarios, ref hasAnyEntry);
+                // Branch: take this path when (!hasAnyEntry) evaluates to true.
                 if (!hasAnyEntry)
                 {
                     errors.Add($"--scenario-inventory does not contain any entries: {path}");
@@ -52,6 +55,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
             catch (Exception ex)
             {
+                // Branch: handles exceptions that match Exception ex.
                 errors.Add($"--scenario-inventory could not be parsed ({path}): {ex.Message}");
             }
 
@@ -73,6 +77,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             ISet<string> requiredScenarios,
             ref bool hasAnyEntry)
         {
+            // Branch: take this path when (entries is null) evaluates to true.
             if (entries is null)
             {
                 return;
@@ -82,6 +87,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             {
                 hasAnyEntry = true;
                 var rawEntry = entries[i];
+                // Branch: take this path when (string.IsNullOrWhiteSpace(rawEntry)) evaluates to true.
                 if (string.IsNullOrWhiteSpace(rawEntry))
                 {
                     errors.Add($"--scenario-inventory entry #{i + 1} in '{path}' is empty.");
@@ -89,6 +95,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 }
 
                 var entry = rawEntry.Trim();
+                // Branch: take this path when (!IsValidScenarioEntry(entry)) evaluates to true.
                 if (!IsValidScenarioEntry(entry))
                 {
                     errors.Add(
@@ -97,6 +104,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     continue;
                 }
 
+                // Branch: take this path when (!requiredScenarios.Add(entry)) evaluates to true.
                 if (!requiredScenarios.Add(entry))
                 {
                     errors.Add($"--scenario-inventory contains duplicate entry '{entry}' in '{path}'.");
@@ -112,6 +120,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         private static bool IsValidScenarioEntry(string entry)
         {
             var wildcardIndex = entry.IndexOf('*');
+            // Branch: take this path when (wildcardIndex < 0) evaluates to true.
             if (wildcardIndex < 0)
             {
                 return true;

@@ -30,6 +30,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             var errors = new List<string>();
             var typeRoots = new Dictionary<string, DuckTypeAotTypeReference>(StringComparer.Ordinal);
 
+            // Branch: take this path when (string.IsNullOrWhiteSpace(path)) evaluates to true.
             if (string.IsNullOrWhiteSpace(path))
             {
                 return new DuckTypeAotGenericInstantiationsParseResult(Array.Empty<DuckTypeAotTypeReference>(), errors);
@@ -39,6 +40,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             {
                 var json = File.ReadAllText(path);
                 var rootToken = JsonConvert.DeserializeObject<JToken>(json);
+                // Branch: take this path when (rootToken is null) evaluates to true.
                 if (rootToken is null)
                 {
                     errors.Add($"--generic-instantiations content is empty or invalid JSON: {path}");
@@ -52,6 +54,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     _ => null
                 };
 
+                // Branch: take this path when (entries is null) evaluates to true.
                 if (entries is null)
                 {
                     errors.Add($"--generic-instantiations must be a JSON array or a JSON object containing an 'instantiations' array: {path}");
@@ -62,6 +65,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
             catch (Exception ex)
             {
+                // Branch: handles exceptions that match Exception ex.
                 errors.Add($"--generic-instantiations could not be parsed ({path}): {ex.Message}");
             }
 
@@ -83,6 +87,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         {
             for (var i = 0; i < entries.Count; i++)
             {
+                // Branch: take this path when (!TryParseEntry(entries[i], path, i, errors, out var typeRoot)) evaluates to true.
                 if (!TryParseEntry(entries[i], path, i, errors, out var typeRoot))
                 {
                     continue;
@@ -112,9 +117,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
             string? typeName;
             string? assemblyName;
+            // Branch dispatch: select the execution path based on (token.Type).
             switch (token.Type)
             {
                 case JTokenType.String:
+                    // Branch: handles the case JTokenType.String switch case.
                 {
                     var rawTypeAndAssembly = token.Value<string>() ?? string.Empty;
                     var parsed = DuckTypeAotNameHelpers.ParseTypeAndAssembly(rawTypeAndAssembly);
@@ -124,6 +131,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 }
 
                 case JTokenType.Object:
+                    // Branch: handles the case JTokenType.Object switch case.
                 {
                     var entry = (JObject)token;
                     var rawTypeAndAssembly = entry["type"]?.ToString() ?? string.Empty;
@@ -134,10 +142,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 }
 
                 default:
+                    // Branch: fallback switch case when no explicit case label matches.
                     errors.Add($"--generic-instantiations entry #{index + 1} in '{path}' must be a string or object.");
                     return false;
             }
 
+            // Branch: take this path when (string.IsNullOrWhiteSpace(typeName) || string.IsNullOrWhiteSpace(assemblyName)) evaluates to true.
             if (string.IsNullOrWhiteSpace(typeName) || string.IsNullOrWhiteSpace(assemblyName))
             {
                 errors.Add($"--generic-instantiations entry #{index + 1} in '{path}' must provide type and assembly.");
@@ -145,12 +155,14 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
 
             assemblyName = DuckTypeAotNameHelpers.NormalizeAssemblyName(assemblyName!);
+            // Branch: take this path when (!DuckTypeAotNameHelpers.IsGenericTypeName(typeName)) evaluates to true.
             if (!DuckTypeAotNameHelpers.IsGenericTypeName(typeName))
             {
                 errors.Add($"--generic-instantiations entry #{index + 1} in '{path}' must provide a closed generic type. '{typeName}' is not generic.");
                 return false;
             }
 
+            // Branch: take this path when (!DuckTypeAotNameHelpers.IsClosedGenericTypeName(typeName)) evaluates to true.
             if (!DuckTypeAotNameHelpers.IsClosedGenericTypeName(typeName))
             {
                 errors.Add($"--generic-instantiations entry #{index + 1} in '{path}' must provide a closed generic type. '{typeName}' is open.");

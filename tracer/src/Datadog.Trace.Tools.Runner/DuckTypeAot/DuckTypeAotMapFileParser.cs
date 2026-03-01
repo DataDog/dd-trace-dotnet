@@ -30,6 +30,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             var mappings = new Dictionary<string, DuckTypeAotMapping>(StringComparer.Ordinal);
             var excludedKeys = new HashSet<string>(StringComparer.Ordinal);
 
+            // Branch: take this path when (string.IsNullOrWhiteSpace(path)) evaluates to true.
             if (string.IsNullOrWhiteSpace(path))
             {
                 return new DuckTypeAotMapFileParseResult(Array.Empty<DuckTypeAotMapping>(), excludedKeys, errors);
@@ -39,6 +40,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             {
                 var json = File.ReadAllText(path);
                 var parsedFile = JsonConvert.DeserializeObject<MapFileDocument>(json);
+                // Branch: take this path when (parsedFile is null) evaluates to true.
                 if (parsedFile is null)
                 {
                     errors.Add($"--map-file content is empty or invalid JSON: {path}");
@@ -50,6 +52,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
             catch (Exception ex)
             {
+                // Branch: handles exceptions that match Exception ex.
                 errors.Add($"--map-file could not be parsed ({path}): {ex.Message}");
             }
 
@@ -73,6 +76,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             ICollection<string> errors,
             bool forceExclude = false)
         {
+            // Branch: take this path when (entries is null) evaluates to true.
             if (entries is null)
             {
                 return;
@@ -81,11 +85,13 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             for (var i = 0; i < entries.Count; i++)
             {
                 var entry = entries[i];
+                // Branch: take this path when (!TryParseEntry(entry, path, i, errors, out var mapping, out var shouldExclude)) evaluates to true.
                 if (!TryParseEntry(entry, path, i, errors, out var mapping, out var shouldExclude))
                 {
                     continue;
                 }
 
+                // Branch: take this path when (forceExclude || shouldExclude) evaluates to true.
                 if (forceExclude || shouldExclude)
                 {
                     excludedKeys.Add(mapping.Key);
@@ -119,6 +125,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             exclude = entry.Exclude ?? false;
 
             var mode = ParseMode(entry.Mode, path, index, errors);
+            // Branch: take this path when (mode is null) evaluates to true.
             if (mode is null)
             {
                 return false;
@@ -132,6 +139,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             var proxyAssembly = DuckTypeAotNameHelpers.NormalizeAssemblyName(entry.ProxyAssembly ?? proxyAssemblyFromQualifiedName ?? string.Empty);
             var targetAssembly = DuckTypeAotNameHelpers.NormalizeAssemblyName(entry.TargetAssembly ?? targetAssemblyFromQualifiedName ?? string.Empty);
 
+            // Branch: take this path when (string.IsNullOrWhiteSpace(proxyType) || evaluates to true.
             if (string.IsNullOrWhiteSpace(proxyType) ||
                 string.IsNullOrWhiteSpace(proxyAssembly) ||
                 string.IsNullOrWhiteSpace(targetType) ||
@@ -148,7 +156,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 targetAssembly,
                 mode.Value,
                 DuckTypeAotMappingSource.MapFile,
-                entry.ScenarioId);
+                entry.ScenarioId,
+                entry.ExpectCanCreate == false ? DuckTypeAotParityExpectation.CannotCreate : DuckTypeAotParityExpectation.Creatable);
             return true;
         }
 
@@ -162,11 +171,13 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <returns>The result produced by this operation.</returns>
         private static DuckTypeAotMappingMode? ParseMode(string? mode, string path, int index, ICollection<string> errors)
         {
+            // Branch: take this path when (string.IsNullOrWhiteSpace(mode) || string.Equals(mode, "forward", StringComparison.OrdinalIgnoreCase)) evaluates to true.
             if (string.IsNullOrWhiteSpace(mode) || string.Equals(mode, "forward", StringComparison.OrdinalIgnoreCase))
             {
                 return DuckTypeAotMappingMode.Forward;
             }
 
+            // Branch: take this path when (string.Equals(mode, "reverse", StringComparison.OrdinalIgnoreCase)) evaluates to true.
             if (string.Equals(mode, "reverse", StringComparison.OrdinalIgnoreCase))
             {
                 return DuckTypeAotMappingMode.Reverse;
@@ -249,6 +260,13 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             /// <value>The scenario id value.</value>
             [JsonProperty("scenarioId")]
             public string? ScenarioId { get; set; }
+
+            /// <summary>
+            /// Gets or sets a value indicating whether expect can create.
+            /// </summary>
+            /// <value>The expect can create value.</value>
+            [JsonProperty("expectCanCreate")]
+            public bool? ExpectCanCreate { get; set; }
         }
     }
 
@@ -267,6 +285,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             var errors = new List<string>();
             var requiredMappings = new Dictionary<string, DuckTypeAotMapping>(StringComparer.Ordinal);
 
+            // Branch: take this path when (string.IsNullOrWhiteSpace(path)) evaluates to true.
             if (string.IsNullOrWhiteSpace(path))
             {
                 return new DuckTypeAotMappingCatalogParseResult(Array.Empty<DuckTypeAotMapping>(), errors);
@@ -276,6 +295,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             {
                 var json = File.ReadAllText(path);
                 var parsedFile = JsonConvert.DeserializeObject<MappingCatalogDocument>(json);
+                // Branch: take this path when (parsedFile?.RequiredMappings is null) evaluates to true.
                 if (parsedFile?.RequiredMappings is null)
                 {
                     errors.Add($"--mapping-catalog content is empty or invalid JSON: {path}");
@@ -285,6 +305,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 for (var i = 0; i < parsedFile.RequiredMappings.Count; i++)
                 {
                     var entry = parsedFile.RequiredMappings[i];
+                    // Branch: take this path when (!TryParseCatalogEntry(entry, path, i, errors, out var mapping)) evaluates to true.
                     if (!TryParseCatalogEntry(entry, path, i, errors, out var mapping))
                     {
                         continue;
@@ -295,6 +316,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
             catch (Exception ex)
             {
+                // Branch: handles exceptions that match Exception ex.
                 errors.Add($"--mapping-catalog could not be parsed ({path}): {ex.Message}");
             }
 
@@ -320,6 +342,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             mapping = null!;
 
             var mode = ParseMode(entry.Mode, path, index, errors);
+            // Branch: take this path when (mode is null) evaluates to true.
             if (mode is null)
             {
                 return false;
@@ -333,6 +356,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             var proxyAssembly = DuckTypeAotNameHelpers.NormalizeAssemblyName(entry.ProxyAssembly ?? proxyAssemblyFromQualifiedName ?? string.Empty);
             var targetAssembly = DuckTypeAotNameHelpers.NormalizeAssemblyName(entry.TargetAssembly ?? targetAssemblyFromQualifiedName ?? string.Empty);
 
+            // Branch: take this path when (string.IsNullOrWhiteSpace(proxyType) || evaluates to true.
             if (string.IsNullOrWhiteSpace(proxyType) ||
                 string.IsNullOrWhiteSpace(proxyAssembly) ||
                 string.IsNullOrWhiteSpace(targetType) ||
@@ -349,7 +373,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 targetAssembly,
                 mode.Value,
                 DuckTypeAotMappingSource.MapFile,
-                entry.ScenarioId);
+                entry.ScenarioId,
+                entry.ExpectCanCreate == false ? DuckTypeAotParityExpectation.CannotCreate : DuckTypeAotParityExpectation.Creatable);
             return true;
         }
 
@@ -363,11 +388,13 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <returns>The result produced by this operation.</returns>
         private static DuckTypeAotMappingMode? ParseMode(string? mode, string path, int index, ICollection<string> errors)
         {
+            // Branch: take this path when (string.IsNullOrWhiteSpace(mode) || string.Equals(mode, "forward", StringComparison.OrdinalIgnoreCase)) evaluates to true.
             if (string.IsNullOrWhiteSpace(mode) || string.Equals(mode, "forward", StringComparison.OrdinalIgnoreCase))
             {
                 return DuckTypeAotMappingMode.Forward;
             }
 
+            // Branch: take this path when (string.Equals(mode, "reverse", StringComparison.OrdinalIgnoreCase)) evaluates to true.
             if (string.Equals(mode, "reverse", StringComparison.OrdinalIgnoreCase))
             {
                 return DuckTypeAotMappingMode.Reverse;
@@ -436,6 +463,13 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             /// <value>The scenario id value.</value>
             [JsonProperty("scenarioId")]
             public string? ScenarioId { get; set; }
+
+            /// <summary>
+            /// Gets or sets a value indicating whether expect can create.
+            /// </summary>
+            /// <value>The expect can create value.</value>
+            [JsonProperty("expectCanCreate")]
+            public bool? ExpectCanCreate { get; set; }
         }
     }
 
