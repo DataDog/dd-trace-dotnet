@@ -4,6 +4,7 @@ using Nuke.Common;
 using Nuke.Common.IO;
 using System.Linq;
 using System.IO;
+using System.Threading.Tasks;
 using DiffMatchPatch;
 using NativeValidation;
 using Nuke.Common.Tooling;
@@ -32,8 +33,10 @@ partial class Build
     Target CompileNativeLoaderWindows => _ => _
         .Unlisted()
         .OnlyWhenStatic(() => IsWin)
-        .Executes(() =>
+        .Executes(async () =>
         {
+            await DownloadLibPolicies();
+
             // If we're building for x64, build for x86 too
             var platforms = ArchitecturesForPlatformForTracer;
 
@@ -48,6 +51,44 @@ partial class Build
                 .CombineWith(platforms, (m, platform) => m
                     .SetTargetPlatform(platform)));
         });
+
+    async Task DownloadLibPolicies()
+    {
+        var output = RootDirectory / "shared" / "src" / "native-lib" / "libpolicies";
+
+        if (Directory.Exists(output))
+        {
+            DeleteDirectory(output);
+        }
+
+        var version = "0.1.0";
+
+        var artifacts = new[]
+        {
+            (Arch: "x64", Hash: "EA3BC62B34FC834AC5EF42783D982EE00C49FEAA476A8803B79A191113230A8C"),
+            (Arch: "x86", Hash: "7BCA123BA9F463FA92A7F1FB7B4A3F22EF417696F27E3DFFFBCA8761E9662CE6"),
+        };
+
+        foreach (var artifact in artifacts)
+        {
+            var outputArch = output / artifact.Arch;
+            var url = $"https://github.com/DataDog/dd-policy-engine/releases/download/v{version}/libpolicies-win-{artifact.Arch}.zip";
+
+            var tempFile = await DownloadFile(url);
+            var actualHash = GetSha256Hash(tempFile);
+            if (!string.Equals(artifact.Hash, actualHash, StringComparison.Ordinal))
+            {
+                throw new Exception($"Downloaded file did not have expected hash. Expected hash {artifact.Hash}, actual hash {actualHash}");
+            }
+
+            Logger.Information("Hash verified: '{Hash}'", actualHash);
+
+            // Unzip to expected location
+            EnsureExistingDirectory(output);
+
+            CompressionTasks.UncompressZip(tempFile, outputArch); 
+        }
+    }
 
     Target CompileNativeLoaderTestsWindows => _ => _
         .Unlisted()

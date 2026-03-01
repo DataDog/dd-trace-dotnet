@@ -145,16 +145,16 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;X86;BIT86;_DEBUG;DATADOGNATIVELOADER_EXPORTS;_WINDOWS;_USRDLL;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>BUILD_WITH_WORKLOAD_SELECTION;WIN32;X86;BIT86;_DEBUG;DATADOGNATIVELOADER_EXPORTS;_WINDOWS;_USRDLL;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(LIB_INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(LIB_INCLUDES);$(SHARED-LIB-PATH)\libpolicies\x86\libpolicies\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>Rpcrt4.lib;..\..\src\Datadog.Trace.ClrProfiler.Native\obj\Debug\x86\*.obj;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Rpcrt4.lib;$(SHARED-LIB-PATH)\libpolicies\x86\libpolicies\lib\policies.lib;..\..\src\Datadog.Trace.ClrProfiler.Native\obj\Debug\x86\*.obj;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -163,34 +163,34 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;X86;BIT86;NDEBUG;DATADOGNATIVELOADER_EXPORTS;_WINDOWS;_USRDLL;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>BUILD_WITH_WORKLOAD_SELECTION;WIN32;X86;BIT86;NDEBUG;DATADOGNATIVELOADER_EXPORTS;_WINDOWS;_USRDLL;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <AdditionalIncludeDirectories>$(LIB_INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(LIB_INCLUDES);$(SHARED-LIB-PATH)\libpolicies\x86\libpolicies\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>Rpcrt4.lib;..\..\src\Datadog.Trace.ClrProfiler.Native\obj\Release\x86\*.obj;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Rpcrt4.lib;$(SHARED-LIB-PATH)\libpolicies\x86\libpolicies\lib\policies.lib;..\..\src\Datadog.Trace.ClrProfiler.Native\obj\Release\x86\*.obj;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>BIT64;AMD64;_DEBUG;DATADOGNATIVELOADER_EXPORTS;_WINDOWS;_USRDLL;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>BUILD_WITH_WORKLOAD_SELECTION;BIT64;AMD64;_DEBUG;DATADOGNATIVELOADER_EXPORTS;_WINDOWS;_USRDLL;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <AdditionalIncludeDirectories>$(LIB_INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(LIB_INCLUDES);$(SHARED-LIB-PATH)\libpolicies\x64\libpolicies\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>Rpcrt4.lib;..\..\src\Datadog.Trace.ClrProfiler.Native\obj\Debug\x64\*.obj;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Rpcrt4.lib;$(SHARED-LIB-PATH)\libpolicies\x64\libpolicies\lib\policies.lib;..\..\src\Datadog.Trace.ClrProfiler.Native\obj\Debug\x64\*.obj;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -199,18 +199,18 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>BIT64;AMD64;NDEBUG;DATADOGNATIVELOADER_EXPORTS;_WINDOWS;_USRDLL;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>BUILD_WITH_WORKLOAD_SELECTION;BIT64;AMD64;NDEBUG;DATADOGNATIVELOADER_EXPORTS;_WINDOWS;_USRDLL;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <AdditionalIncludeDirectories>$(LIB_INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(LIB_INCLUDES);$(SHARED-LIB-PATH)\libpolicies\x64\libpolicies\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>Rpcrt4.lib;..\..\src\Datadog.Trace.ClrProfiler.Native\obj\Release\x64\*.obj;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Rpcrt4.lib;$(SHARED-LIB-PATH)\libpolicies\x64\libpolicies\lib\policies.lib;..\..\src\Datadog.Trace.ClrProfiler.Native\obj\Release\x64\*.obj;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
@@ -256,6 +256,7 @@
     <ClCompile Include="pal_test.cpp" />
     <ClCompile Include="string_test.cpp" />
     <ClCompile Include="runtimeid_store.cpp" />
+    <ClCompile Include="workload_selection_test.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Directory.Build.props" />

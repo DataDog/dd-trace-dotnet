@@ -691,6 +691,15 @@ partial class Build
         throw new Exception("Failed to download telemetry forwarder");
     }
 
+    static string GetSha256Hash(string filePath)
+    {
+        using var sha256 = SHA256.Create();
+        using var stream = File.OpenRead(filePath);
+
+        var hashBytes = sha256.ComputeHash(stream);
+        return Convert.ToHexString(hashBytes);
+    }
+
     static string GetSha512Hash(string filePath)
     {
         using var sha512 = SHA512.Create();

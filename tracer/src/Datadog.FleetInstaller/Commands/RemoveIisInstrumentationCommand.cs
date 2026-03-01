@@ -37,7 +37,7 @@ internal sealed class RemoveIisInstrumentationCommand : CommandBase
 
     // Internal for testing
     internal static ReturnCode Execute(ILogger log)
-        => ExecuteIis(log);
+        => ExecuteGlobal(log);
 
     internal static ReturnCode ExecuteGlobal(ILogger log)
     {
