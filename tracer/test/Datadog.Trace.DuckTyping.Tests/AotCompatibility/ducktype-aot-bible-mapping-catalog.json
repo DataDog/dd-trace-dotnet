@@ -319,7 +319,8 @@
       "proxyType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+ReverseRequiredMethodBase",
       "proxyAssembly": "Datadog.Trace.DuckTyping.Tests",
       "targetType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+ReverseRequiredMethodDelegation",
-      "targetAssembly": "Datadog.Trace.DuckTyping.Tests"
+      "targetAssembly": "Datadog.Trace.DuckTyping.Tests",
+      "expectCanCreate": false
     },
     {
       "scenarioId": "E-40",
@@ -327,7 +328,8 @@
       "proxyType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+ReverseGenericContractBase",
       "proxyAssembly": "Datadog.Trace.DuckTyping.Tests",
       "targetType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+ReverseGenericMismatchDelegation",
-      "targetAssembly": "Datadog.Trace.DuckTyping.Tests"
+      "targetAssembly": "Datadog.Trace.DuckTyping.Tests",
+      "expectCanCreate": false
     },
     {
       "scenarioId": "E-41",
@@ -343,7 +345,8 @@
       "proxyType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+ReverseStructBase",
       "proxyAssembly": "Datadog.Trace.DuckTyping.Tests",
       "targetType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+ReverseStructDelegation",
-      "targetAssembly": "Datadog.Trace.DuckTyping.Tests"
+      "targetAssembly": "Datadog.Trace.DuckTyping.Tests",
+      "expectCanCreate": false
     },
     {
       "scenarioId": "FG-1",
@@ -511,7 +514,8 @@
       "proxyType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+IRt2VoidMismatchProxy",
       "proxyAssembly": "Datadog.Trace.DuckTyping.Tests",
       "targetType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+Rt2VoidMismatchTarget",
-      "targetAssembly": "Datadog.Trace.DuckTyping.Tests"
+      "targetAssembly": "Datadog.Trace.DuckTyping.Tests",
+      "expectCanCreate": false
     },
     {
       "scenarioId": "FG-7",

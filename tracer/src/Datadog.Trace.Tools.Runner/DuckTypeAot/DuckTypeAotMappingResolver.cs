@@ -44,6 +44,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 resolvedMappings[mapping.Key] = mapping;
             }
 
+            // Branch: take this path when (!string.IsNullOrWhiteSpace(options.MapFile)) evaluates to true.
             if (!string.IsNullOrWhiteSpace(options.MapFile))
             {
                 var mapFileResult = DuckTypeAotMapFileParser.Parse(options.MapFile!);
@@ -59,10 +60,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 }
             }
 
+            // Branch: take this path when (!string.IsNullOrWhiteSpace(options.MappingCatalog)) evaluates to true.
             if (!string.IsNullOrWhiteSpace(options.MappingCatalog))
             {
                 var catalogResult = DuckTypeAotMappingCatalogParser.Parse(options.MappingCatalog!);
                 errors.AddRange(catalogResult.Errors);
+                // Branch: take this path when (options.RequireMappingCatalog && catalogResult.RequiredMappings.Count == 0) evaluates to true.
                 if (options.RequireMappingCatalog && catalogResult.RequiredMappings.Count == 0)
                 {
                     errors.Add("--mapping-catalog must contain at least one entry in requiredMappings when --require-mapping-catalog is enabled.");
@@ -71,6 +74,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 ApplyMappingCatalogRequirements(resolvedMappings, catalogResult.RequiredMappings, errors);
             }
 
+            // Branch: take this path when (!string.IsNullOrWhiteSpace(options.GenericInstantiationsFile)) evaluates to true.
             if (!string.IsNullOrWhiteSpace(options.GenericInstantiationsFile))
             {
                 var genericInstantiationsResult = DuckTypeAotGenericInstantiationsParser.Parse(options.GenericInstantiationsFile!);
@@ -85,11 +89,13 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
             foreach (var mapping in resolvedMappings.Values)
             {
+                // Branch: take this path when (!proxyAssemblyPathsByName.ContainsKey(mapping.ProxyAssemblyName)) evaluates to true.
                 if (!proxyAssemblyPathsByName.ContainsKey(mapping.ProxyAssemblyName))
                 {
                     errors.Add($"Mapping proxy assembly '{mapping.ProxyAssemblyName}' could not be resolved from --proxy-assembly inputs.");
                 }
 
+                // Branch: take this path when (!targetAssemblyPathsByName.ContainsKey(mapping.TargetAssemblyName)) evaluates to true.
                 if (!targetAssemblyPathsByName.ContainsKey(mapping.TargetAssemblyName))
                 {
                     errors.Add($"Mapping target assembly '{mapping.TargetAssemblyName}' could not be resolved from --target-assembly/--target-folder inputs.");
@@ -150,15 +156,18 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 {
                     var assemblyName = AssemblyName.GetAssemblyName(assemblyPath);
                     var normalizedAssemblyName = DuckTypeAotNameHelpers.NormalizeAssemblyName(assemblyName.Name ?? string.Empty);
+                    // Branch: take this path when (string.IsNullOrWhiteSpace(normalizedAssemblyName)) evaluates to true.
                     if (string.IsNullOrWhiteSpace(normalizedAssemblyName))
                     {
                         errors.Add($"{sourceName} could not read assembly name from '{assemblyPath}'.");
                         continue;
                     }
 
+                    // Branch: take this path when (!assemblyPathByName.TryAdd(normalizedAssemblyName, assemblyPath)) evaluates to true.
                     if (!assemblyPathByName.TryAdd(normalizedAssemblyName, assemblyPath))
                     {
                         var existingPath = assemblyPathByName[normalizedAssemblyName];
+                        // Branch: take this path when (!string.Equals(existingPath, assemblyPath, StringComparison.OrdinalIgnoreCase)) evaluates to true.
                         if (!string.Equals(existingPath, assemblyPath, StringComparison.OrdinalIgnoreCase))
                         {
                             errors.Add($"{sourceName} has duplicate assembly identity '{normalizedAssemblyName}' with different paths: '{existingPath}' and '{assemblyPath}'.");
@@ -167,6 +176,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 }
                 catch (Exception ex)
                 {
+                    // Branch: handles exceptions that match Exception ex.
                     errors.Add($"{sourceName} failed to read assembly metadata for '{assemblyPath}': {ex.Message}");
                 }
             }
@@ -183,6 +193,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         {
             foreach (var mapping in mappings)
             {
+                // Branch: take this path when (!DuckTypeAotNameHelpers.IsOpenGenericTypeName(mapping.ProxyTypeName) && evaluates to true.
                 if (!DuckTypeAotNameHelpers.IsOpenGenericTypeName(mapping.ProxyTypeName) &&
                     !DuckTypeAotNameHelpers.IsOpenGenericTypeName(mapping.TargetTypeName))
                 {
@@ -209,6 +220,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         {
             foreach (var requiredMapping in requiredMappings)
             {
+                // Branch: take this path when (!resolvedMappings.TryGetValue(requiredMapping.Key, out var resolvedMapping)) evaluates to true.
                 if (!resolvedMappings.TryGetValue(requiredMapping.Key, out var resolvedMapping))
                 {
                     var scenarioSuffix = string.IsNullOrWhiteSpace(requiredMapping.ScenarioId)
@@ -219,22 +231,49 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     continue;
                 }
 
-                if (string.IsNullOrWhiteSpace(requiredMapping.ScenarioId))
+                var effectiveResolvedMapping = resolvedMapping;
+                var updatedResolvedMapping = false;
+
+                // Branch: take this path when (!string.IsNullOrWhiteSpace(requiredMapping.ScenarioId)) evaluates to true.
+                if (!string.IsNullOrWhiteSpace(requiredMapping.ScenarioId))
                 {
-                    continue;
+                    // Branch: take this path when (string.IsNullOrWhiteSpace(effectiveResolvedMapping.ScenarioId)) evaluates to true.
+                    if (string.IsNullOrWhiteSpace(effectiveResolvedMapping.ScenarioId))
+                    {
+                        effectiveResolvedMapping = effectiveResolvedMapping.WithScenarioId(requiredMapping.ScenarioId!);
+                        updatedResolvedMapping = true;
+                    }
+                    else if (!string.Equals(effectiveResolvedMapping.ScenarioId, requiredMapping.ScenarioId, StringComparison.Ordinal))
+                    {
+                        // Branch: take this path when (!string.Equals(effectiveResolvedMapping.ScenarioId, requiredMapping.ScenarioId, StringComparison.Ordinal)) evaluates to true.
+                        errors.Add(
+                            $"Scenario id mismatch for mapping '{requiredMapping.Key}'. " +
+                            $"Resolved='{effectiveResolvedMapping.ScenarioId}', catalog='{requiredMapping.ScenarioId}'.");
+                    }
                 }
 
-                if (string.IsNullOrWhiteSpace(resolvedMapping.ScenarioId))
+                // Branch: take this path when (effectiveResolvedMapping.ParityExpectation != requiredMapping.ParityExpectation) evaluates to true.
+                if (effectiveResolvedMapping.ParityExpectation != requiredMapping.ParityExpectation)
                 {
-                    resolvedMappings[requiredMapping.Key] = resolvedMapping.WithScenarioId(requiredMapping.ScenarioId!);
-                    continue;
+                    // Branch: take this path when (effectiveResolvedMapping.ParityExpectation == DuckTypeAotParityExpectation.Creatable) evaluates to true.
+                    if (effectiveResolvedMapping.ParityExpectation == DuckTypeAotParityExpectation.Creatable)
+                    {
+                        effectiveResolvedMapping = effectiveResolvedMapping.WithParityExpectation(requiredMapping.ParityExpectation);
+                        updatedResolvedMapping = true;
+                    }
+                    else
+                    {
+                        // Branch: fallback path when earlier branch conditions evaluate to false.
+                        errors.Add(
+                            $"Parity expectation mismatch for mapping '{requiredMapping.Key}'. " +
+                            $"Resolved='{effectiveResolvedMapping.ParityExpectation}', catalog='{requiredMapping.ParityExpectation}'.");
+                    }
                 }
 
-                if (!string.Equals(resolvedMapping.ScenarioId, requiredMapping.ScenarioId, StringComparison.Ordinal))
+                // Branch: take this path when (updatedResolvedMapping) evaluates to true.
+                if (updatedResolvedMapping)
                 {
-                    errors.Add(
-                        $"Scenario id mismatch for mapping '{requiredMapping.Key}'. " +
-                        $"Resolved='{resolvedMapping.ScenarioId}', catalog='{requiredMapping.ScenarioId}'.");
+                    resolvedMappings[requiredMapping.Key] = effectiveResolvedMapping;
                 }
             }
         }

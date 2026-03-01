@@ -60,5 +60,10 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// </summary>
         /// <remarks>This field participates in shared runtime state and must remain thread-safe.</remarks>
         internal const string UnsupportedClosedGenericMapping = "unsupported_closed_generic_mapping";
+
+        /// <summary>
+        /// Defines the parity expectation mismatch constant.
+        /// </summary>
+        internal const string ParityExpectationMismatch = "parity_expectation_mismatch";
     }
 }

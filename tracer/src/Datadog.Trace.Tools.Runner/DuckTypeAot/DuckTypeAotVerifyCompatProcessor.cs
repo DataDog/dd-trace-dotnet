@@ -31,42 +31,49 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <returns>The computed numeric value.</returns>
         internal static int Process(DuckTypeAotVerifyCompatOptions options)
         {
+            // Branch: take this path when (!File.Exists(options.CompatReportPath)) evaluates to true.
             if (!File.Exists(options.CompatReportPath))
             {
                 Utils.WriteError($"--compat-report file was not found: {options.CompatReportPath}");
                 return 1;
             }
 
+            // Branch: take this path when (!File.Exists(options.CompatMatrixPath)) evaluates to true.
             if (!File.Exists(options.CompatMatrixPath))
             {
                 Utils.WriteError($"--compat-matrix file was not found: {options.CompatMatrixPath}");
                 return 1;
             }
 
+            // Branch: take this path when (!string.IsNullOrWhiteSpace(options.MappingCatalogPath) && !File.Exists(options.MappingCatalogPath)) evaluates to true.
             if (!string.IsNullOrWhiteSpace(options.MappingCatalogPath) && !File.Exists(options.MappingCatalogPath))
             {
                 Utils.WriteError($"--mapping-catalog file was not found: {options.MappingCatalogPath}");
                 return 1;
             }
 
+            // Branch: take this path when (!string.IsNullOrWhiteSpace(options.ManifestPath) && !File.Exists(options.ManifestPath)) evaluates to true.
             if (!string.IsNullOrWhiteSpace(options.ManifestPath) && !File.Exists(options.ManifestPath))
             {
                 Utils.WriteError($"--manifest file was not found: {options.ManifestPath}");
                 return 1;
             }
 
+            // Branch: take this path when (!string.IsNullOrWhiteSpace(options.ScenarioInventoryPath) && !File.Exists(options.ScenarioInventoryPath)) evaluates to true.
             if (!string.IsNullOrWhiteSpace(options.ScenarioInventoryPath) && !File.Exists(options.ScenarioInventoryPath))
             {
                 Utils.WriteError($"--scenario-inventory file was not found: {options.ScenarioInventoryPath}");
                 return 1;
             }
 
+            // Branch: take this path when (!string.IsNullOrWhiteSpace(options.ExpectedOutcomesPath) && !File.Exists(options.ExpectedOutcomesPath)) evaluates to true.
             if (!string.IsNullOrWhiteSpace(options.ExpectedOutcomesPath) && !File.Exists(options.ExpectedOutcomesPath))
             {
                 Utils.WriteError($"--expected-outcomes file was not found: {options.ExpectedOutcomesPath}");
                 return 1;
             }
 
+            // Branch: take this path when (!string.IsNullOrWhiteSpace(options.KnownLimitationsPath) && !File.Exists(options.KnownLimitationsPath)) evaluates to true.
             if (!string.IsNullOrWhiteSpace(options.KnownLimitationsPath) && !File.Exists(options.KnownLimitationsPath))
             {
                 Utils.WriteError($"--known-limitations file was not found: {options.KnownLimitationsPath}");
@@ -74,8 +81,10 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
 
             DuckTypeAotManifest? manifest = null;
+            // Branch: take this path when (!string.IsNullOrWhiteSpace(options.ManifestPath)) evaluates to true.
             if (!string.IsNullOrWhiteSpace(options.ManifestPath))
             {
+                // Branch: take this path when (!TryReadManifest(options.ManifestPath!, out manifest)) evaluates to true.
                 if (!TryReadManifest(options.ManifestPath!, out manifest))
                 {
                     return 1;
@@ -89,10 +98,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
             catch (System.Exception ex)
             {
+                // Branch: handles exceptions that match System.Exception ex.
                 Utils.WriteError($"--compat-matrix file could not be parsed: {ex.Message}");
                 return 1;
             }
 
+            // Branch: take this path when (matrix?.Mappings is null || matrix.Mappings.Count == 0) evaluates to true.
             if (matrix?.Mappings is null || matrix.Mappings.Count == 0)
             {
                 Utils.WriteError("--compat-matrix does not contain any mappings.");
@@ -100,8 +111,10 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
 
             var expectedOutcomes = DuckTypeAotExpectedOutcomes.DefaultCompatible;
+            // Branch: take this path when (!string.IsNullOrWhiteSpace(options.ExpectedOutcomesPath)) evaluates to true.
             if (!string.IsNullOrWhiteSpace(options.ExpectedOutcomesPath))
             {
+                // Branch: take this path when (!TryReadExpectedOutcomes(options.ExpectedOutcomesPath!, out expectedOutcomes)) evaluates to true.
                 if (!TryReadExpectedOutcomes(options.ExpectedOutcomesPath!, out expectedOutcomes))
                 {
                     return 1;
@@ -109,51 +122,63 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
             else if (!string.IsNullOrWhiteSpace(options.KnownLimitationsPath))
             {
+                // Branch: take this path when (!string.IsNullOrWhiteSpace(options.KnownLimitationsPath)) evaluates to true.
                 Utils.WriteWarning("--known-limitations is deprecated. Use --expected-outcomes instead.");
+                // Branch: take this path when (!TryReadLegacyKnownLimitationsAsExpectedOutcomes(options.KnownLimitationsPath!, out expectedOutcomes)) evaluates to true.
                 if (!TryReadLegacyKnownLimitationsAsExpectedOutcomes(options.KnownLimitationsPath!, out expectedOutcomes))
                 {
                     return 1;
                 }
             }
 
+            // Branch: take this path when (!ValidateExpectedOutcomes(matrix, expectedOutcomes)) evaluates to true.
             if (!ValidateExpectedOutcomes(matrix, expectedOutcomes))
             {
                 return 1;
             }
 
+            // Branch: take this path when (manifest is not null) evaluates to true.
             if (manifest is not null)
             {
+                // Branch: take this path when (!ValidateManifest(matrix, manifest)) evaluates to true.
                 if (!ValidateManifest(matrix, manifest))
                 {
                     return 1;
                 }
 
+                // Branch: take this path when (!ValidateManifestAssemblyFingerprints(manifest, options.StrictAssemblyFingerprintValidation)) evaluates to true.
                 if (!ValidateManifestAssemblyFingerprints(manifest, options.StrictAssemblyFingerprintValidation))
                 {
                     return 1;
                 }
 
+                // Branch: take this path when (!ValidateManifestGeneratedArtifacts(manifest, options.StrictAssemblyFingerprintValidation)) evaluates to true.
                 if (!ValidateManifestGeneratedArtifacts(manifest, options.StrictAssemblyFingerprintValidation))
                 {
                     return 1;
                 }
 
+                // Branch: take this path when (!ValidateTrimmerDescriptorCoupling(matrix, manifest)) evaluates to true.
                 if (!ValidateTrimmerDescriptorCoupling(matrix, manifest))
                 {
                     return 1;
                 }
             }
 
+            // Branch: take this path when (!string.IsNullOrWhiteSpace(options.MappingCatalogPath)) evaluates to true.
             if (!string.IsNullOrWhiteSpace(options.MappingCatalogPath))
             {
+                // Branch: take this path when (!ValidateMappingCatalog(matrix, options.MappingCatalogPath!, expectedOutcomes)) evaluates to true.
                 if (!ValidateMappingCatalog(matrix, options.MappingCatalogPath!, expectedOutcomes))
                 {
                     return 1;
                 }
             }
 
+            // Branch: take this path when (!string.IsNullOrWhiteSpace(options.ScenarioInventoryPath)) evaluates to true.
             if (!string.IsNullOrWhiteSpace(options.ScenarioInventoryPath))
             {
+                // Branch: take this path when (!ValidateScenarioInventory(matrix, options.ScenarioInventoryPath!)) evaluates to true.
                 if (!ValidateScenarioInventory(matrix, options.ScenarioInventoryPath!))
                 {
                     return 1;
@@ -179,6 +204,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             for (var i = 0; i < matrix.Mappings.Count; i++)
             {
                 var mapping = matrix.Mappings[i];
+                // Branch: take this path when (string.IsNullOrWhiteSpace(mapping.Id)) evaluates to true.
                 if (string.IsNullOrWhiteSpace(mapping.Id))
                 {
                     errors.Add(
@@ -193,6 +219,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
                 _ = expectedOutcomes.TryGetExpectedStatuses(scenarioId, out var expectedStatuses);
 
+                // Branch: take this path when (!expectedStatuses.Contains(actualStatus)) evaluates to true.
                 if (!expectedStatuses.Contains(actualStatus))
                 {
                     errors.Add(
@@ -204,6 +231,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             foreach (var expectedOutcome in expectedOutcomes.ExplicitOutcomes)
             {
                 var expectedPair = $"{expectedOutcome.ScenarioId}|{expectedOutcome.Status}";
+                // Branch: take this path when (!observedPairs.Contains(expectedPair)) evaluates to true.
                 if (!observedPairs.Contains(expectedPair))
                 {
                     errors.Add(
@@ -211,6 +239,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 }
             }
 
+            // Branch: take this path when (errors.Count == 0) evaluates to true.
             if (errors.Count == 0)
             {
                 return true;
@@ -240,10 +269,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
             catch (Exception ex)
             {
+                // Branch: handles exceptions that match Exception ex.
                 Utils.WriteError($"--expected-outcomes file could not be parsed ({expectedOutcomesPath}): {ex.Message}");
                 return false;
             }
 
+            // Branch: take this path when (expectedOutcomesDocument is null) evaluates to true.
             if (expectedOutcomesDocument is null)
             {
                 Utils.WriteError($"--expected-outcomes file is empty or invalid JSON: {expectedOutcomesPath}");
@@ -277,10 +308,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
             catch (Exception ex)
             {
+                // Branch: handles exceptions that match Exception ex.
                 Utils.WriteError($"--known-limitations file could not be parsed ({knownLimitationsPath}): {ex.Message}");
                 return false;
             }
 
+            // Branch: take this path when (knownLimitationsDocument is null) evaluates to true.
             if (knownLimitationsDocument is null)
             {
                 Utils.WriteError($"--known-limitations file is empty or invalid JSON: {knownLimitationsPath}");
@@ -291,6 +324,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                           ?? knownLimitationsDocument.ApprovedLimitations
                           ?? knownLimitationsDocument.Approved
                           ?? new List<DuckTypeAotExpectedOutcomeEntry>();
+            // Branch: take this path when (entries.Count == 0) evaluates to true.
             if (entries.Count == 0)
             {
                 Utils.WriteError($"--known-limitations does not contain any entries: {knownLimitationsPath}");
@@ -322,6 +356,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             var normalizedEntries = new List<DuckTypeAotExpectedOutcome>(entries.Count);
             var seenEntries = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
+            // Branch: take this path when (string.IsNullOrWhiteSpace(defaultStatus)) evaluates to true.
             if (string.IsNullOrWhiteSpace(defaultStatus))
             {
                 errors.Add($"{optionName} defaultStatus must be non-empty in '{sourcePath}'.");
@@ -332,6 +367,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 var entry = entries[i];
                 var scenarioId = entry?.ScenarioId?.Trim();
                 var status = entry?.Status?.Trim();
+                // Branch: take this path when (string.IsNullOrWhiteSpace(scenarioId) || string.IsNullOrWhiteSpace(status)) evaluates to true.
                 if (string.IsNullOrWhiteSpace(scenarioId) || string.IsNullOrWhiteSpace(status))
                 {
                     errors.Add($"{optionName} entry #{i + 1} in '{sourcePath}' must include non-empty scenarioId and status.");
@@ -339,6 +375,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 }
 
                 var pairKey = $"{scenarioId}|{status}";
+                // Branch: take this path when (!seenEntries.Add(pairKey)) evaluates to true.
                 if (!seenEntries.Add(pairKey))
                 {
                     errors.Add($"{optionName} contains duplicate entry '{pairKey}' in '{sourcePath}'.");
@@ -348,6 +385,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 normalizedEntries.Add(new DuckTypeAotExpectedOutcome(scenarioId!, status!));
             }
 
+            // Branch: take this path when (errors.Count > 0) evaluates to true.
             if (errors.Count > 0)
             {
                 foreach (var error in errors)
@@ -375,6 +413,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             DuckTypeAotExpectedOutcomes expectedOutcomes)
         {
             var catalogResult = DuckTypeAotMappingCatalogParser.Parse(mappingCatalogPath);
+            // Branch: take this path when (catalogResult.Errors.Count > 0) evaluates to true.
             if (catalogResult.Errors.Count > 0)
             {
                 foreach (var error in catalogResult.Errors)
@@ -389,12 +428,14 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             var matrixMappingByKey = new Dictionary<string, DuckTypeAotCompatibilityMapping>(StringComparer.Ordinal);
             foreach (var matrixMapping in matrix.Mappings)
             {
+                // Branch: take this path when (!TryBuildCompatibilityMappingKey(matrixMapping, out var mappingKey, out var error)) evaluates to true.
                 if (!TryBuildCompatibilityMappingKey(matrixMapping, out var mappingKey, out var error))
                 {
                     errors.Add(error);
                     continue;
                 }
 
+                // Branch: take this path when (!matrixMappingByKey.TryAdd(mappingKey, matrixMapping)) evaluates to true.
                 if (!matrixMappingByKey.TryAdd(mappingKey, matrixMapping))
                 {
                     errors.Add($"--compat-matrix contains duplicate mappings for key '{mappingKey}'.");
@@ -403,6 +444,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
             foreach (var requiredMapping in catalogResult.RequiredMappings)
             {
+                // Branch: take this path when (string.IsNullOrWhiteSpace(requiredMapping.ScenarioId)) evaluates to true.
                 if (string.IsNullOrWhiteSpace(requiredMapping.ScenarioId))
                 {
                     errors.Add(
@@ -411,6 +453,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     continue;
                 }
 
+                // Branch: take this path when (!matrixMappingByKey.TryGetValue(requiredMapping.Key, out var matrixMapping)) evaluates to true.
                 if (!matrixMappingByKey.TryGetValue(requiredMapping.Key, out var matrixMapping))
                 {
                     errors.Add(
@@ -422,6 +465,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 var actualStatus = matrixMapping.Status ?? string.Empty;
                 _ = expectedOutcomes.TryGetExpectedStatuses(requiredMapping.ScenarioId!, out var expectedStatuses);
 
+                // Branch: take this path when (!expectedStatuses.Contains(actualStatus)) evaluates to true.
                 if (!expectedStatuses.Contains(actualStatus))
                 {
                     errors.Add(
@@ -430,6 +474,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                         $"expected=[{string.Join(", ", expectedStatuses)}], actual='{actualStatus}'.");
                 }
 
+                // Branch: take this path when (!string.IsNullOrWhiteSpace(requiredMapping.ScenarioId) && evaluates to true.
                 if (!string.IsNullOrWhiteSpace(requiredMapping.ScenarioId) &&
                     !string.Equals(matrixMapping.Id, requiredMapping.ScenarioId, StringComparison.Ordinal))
                 {
@@ -439,6 +484,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 }
             }
 
+            // Branch: take this path when (errors.Count == 0) evaluates to true.
             if (errors.Count == 0)
             {
                 return true;
@@ -461,6 +507,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         private static bool ValidateScenarioInventory(DuckTypeAotCompatibilityMatrix matrix, string scenarioInventoryPath)
         {
             var inventoryResult = DuckTypeAotScenarioInventoryParser.Parse(scenarioInventoryPath);
+            // Branch: take this path when (inventoryResult.Errors.Count > 0) evaluates to true.
             if (inventoryResult.Errors.Count > 0)
             {
                 foreach (var error in inventoryResult.Errors)
@@ -476,6 +523,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             for (var i = 0; i < matrix.Mappings.Count; i++)
             {
                 var mapping = matrix.Mappings[i];
+                // Branch: take this path when (string.IsNullOrWhiteSpace(mapping.Id)) evaluates to true.
                 if (string.IsNullOrWhiteSpace(mapping.Id))
                 {
                     errors.Add(
@@ -489,6 +537,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
             foreach (var requiredEntry in inventoryResult.RequiredScenarios)
             {
+                // Branch: take this path when (!IsScenarioCoveredByMatrix(requiredEntry, matrixScenarioIds)) evaluates to true.
                 if (!IsScenarioCoveredByMatrix(requiredEntry, matrixScenarioIds))
                 {
                     errors.Add($"--compat-matrix is missing required scenario from --scenario-inventory: '{requiredEntry}'.");
@@ -497,6 +546,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
             foreach (var matrixScenarioId in matrixScenarioIds)
             {
+                // Branch: take this path when (!IsScenarioTrackedByInventory(matrixScenarioId, inventoryResult.RequiredScenarios)) evaluates to true.
                 if (!IsScenarioTrackedByInventory(matrixScenarioId, inventoryResult.RequiredScenarios))
                 {
                     errors.Add(
@@ -505,6 +555,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 }
             }
 
+            // Branch: take this path when (errors.Count == 0) evaluates to true.
             if (errors.Count == 0)
             {
                 return true;
@@ -526,6 +577,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool IsScenarioCoveredByMatrix(string requiredEntry, ISet<string> matrixScenarioIds)
         {
+            // Branch: take this path when (!IsWildcardScenarioEntry(requiredEntry)) evaluates to true.
             if (!IsWildcardScenarioEntry(requiredEntry))
             {
                 return matrixScenarioIds.Contains(requiredEntry);
@@ -534,6 +586,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             var wildcardPrefix = requiredEntry.Substring(0, requiredEntry.Length - 1);
             foreach (var matrixScenarioId in matrixScenarioIds)
             {
+                // Branch: take this path when (matrixScenarioId.StartsWith(wildcardPrefix, StringComparison.Ordinal)) evaluates to true.
                 if (matrixScenarioId.StartsWith(wildcardPrefix, StringComparison.Ordinal))
                 {
                     return true;
@@ -553,8 +606,10 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         {
             foreach (var requiredEntry in requiredScenarios)
             {
+                // Branch: take this path when (!IsWildcardScenarioEntry(requiredEntry)) evaluates to true.
                 if (!IsWildcardScenarioEntry(requiredEntry))
                 {
+                    // Branch: take this path when (string.Equals(matrixScenarioId, requiredEntry, StringComparison.Ordinal)) evaluates to true.
                     if (string.Equals(matrixScenarioId, requiredEntry, StringComparison.Ordinal))
                     {
                         return true;
@@ -564,6 +619,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 }
 
                 var wildcardPrefix = requiredEntry.Substring(0, requiredEntry.Length - 1);
+                // Branch: take this path when (matrixScenarioId.StartsWith(wildcardPrefix, StringComparison.Ordinal)) evaluates to true.
                 if (matrixScenarioId.StartsWith(wildcardPrefix, StringComparison.Ordinal))
                 {
                     return true;
@@ -598,11 +654,13 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
             catch (Exception ex)
             {
+                // Branch: handles exceptions that match Exception ex.
                 Utils.WriteError($"--manifest file could not be parsed: {ex.Message}");
                 manifest = null;
                 return false;
             }
 
+            // Branch: take this path when (manifest?.Mappings is null || manifest.Mappings.Count == 0) evaluates to true.
             if (manifest?.Mappings is null || manifest.Mappings.Count == 0)
             {
                 Utils.WriteError("--manifest does not contain any mappings.");
@@ -622,6 +680,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         {
             var errors = new List<string>();
 
+            // Branch: take this path when (!string.IsNullOrWhiteSpace(matrix.SchemaVersion) && evaluates to true.
             if (!string.IsNullOrWhiteSpace(matrix.SchemaVersion) &&
                 !string.IsNullOrWhiteSpace(manifest.SchemaVersion) &&
                 !string.Equals(matrix.SchemaVersion, manifest.SchemaVersion, StringComparison.Ordinal))
@@ -632,12 +691,14 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             var matrixMappingByKey = new Dictionary<string, DuckTypeAotCompatibilityMapping>(StringComparer.Ordinal);
             foreach (var matrixMapping in matrix.Mappings)
             {
+                // Branch: take this path when (!TryBuildCompatibilityMappingKey(matrixMapping, out var mappingKey, out var error)) evaluates to true.
                 if (!TryBuildCompatibilityMappingKey(matrixMapping, out var mappingKey, out var error))
                 {
                     errors.Add(error);
                     continue;
                 }
 
+                // Branch: take this path when (!matrixMappingByKey.TryAdd(mappingKey, matrixMapping)) evaluates to true.
                 if (!matrixMappingByKey.TryAdd(mappingKey, matrixMapping))
                 {
                     errors.Add($"--compat-matrix contains duplicate mappings for key '{mappingKey}'.");
@@ -647,12 +708,14 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             var manifestMappingByKey = new Dictionary<string, DuckTypeAotManifestMapping>(StringComparer.Ordinal);
             foreach (var manifestMapping in manifest.Mappings)
             {
+                // Branch: take this path when (!TryBuildManifestMappingKey(manifestMapping, out var mappingKey, out var error)) evaluates to true.
                 if (!TryBuildManifestMappingKey(manifestMapping, out var mappingKey, out var error))
                 {
                     errors.Add(error);
                     continue;
                 }
 
+                // Branch: take this path when (!manifestMappingByKey.TryAdd(mappingKey, manifestMapping)) evaluates to true.
                 if (!manifestMappingByKey.TryAdd(mappingKey, manifestMapping))
                 {
                     errors.Add($"--manifest contains duplicate mappings for key '{mappingKey}'.");
@@ -661,24 +724,28 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
             foreach (var (mappingKey, matrixMapping) in matrixMappingByKey)
             {
+                // Branch: take this path when (!manifestMappingByKey.TryGetValue(mappingKey, out var manifestMapping)) evaluates to true.
                 if (!manifestMappingByKey.TryGetValue(mappingKey, out var manifestMapping))
                 {
                     errors.Add($"--manifest is missing mapping from --compat-matrix: key='{mappingKey}'.");
                     continue;
                 }
 
+                // Branch: take this path when (!ValidateChecksum(matrixMapping.MappingIdentityChecksum, out var matrixChecksumError)) evaluates to true.
                 if (!ValidateChecksum(matrixMapping.MappingIdentityChecksum, out var matrixChecksumError))
                 {
                     errors.Add($"--compat-matrix mapping id '{matrixMapping.Id ?? "(null)"}' has invalid mappingIdentityChecksum: {matrixChecksumError}");
                     continue;
                 }
 
+                // Branch: take this path when (!ValidateChecksum(manifestMapping.MappingIdentityChecksum, out var manifestChecksumError)) evaluates to true.
                 if (!ValidateChecksum(manifestMapping.MappingIdentityChecksum, out var manifestChecksumError))
                 {
                     errors.Add($"--manifest mapping key '{mappingKey}' has invalid mappingIdentityChecksum: {manifestChecksumError}");
                     continue;
                 }
 
+                // Branch: take this path when (!string.Equals(matrixMapping.MappingIdentityChecksum, manifestMapping.MappingIdentityChecksum, StringComparison.OrdinalIgnoreCase)) evaluates to true.
                 if (!string.Equals(matrixMapping.MappingIdentityChecksum, manifestMapping.MappingIdentityChecksum, StringComparison.OrdinalIgnoreCase))
                 {
                     errors.Add(
@@ -686,6 +753,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                         $"Matrix='{matrixMapping.MappingIdentityChecksum}', manifest='{manifestMapping.MappingIdentityChecksum}'.");
                 }
 
+                // Branch: take this path when (!string.IsNullOrWhiteSpace(manifestMapping.ScenarioId) && evaluates to true.
                 if (!string.IsNullOrWhiteSpace(manifestMapping.ScenarioId) &&
                     !string.Equals(matrixMapping.Id, manifestMapping.ScenarioId, StringComparison.Ordinal))
                 {
@@ -697,12 +765,14 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
             foreach (var mappingKey in manifestMappingByKey.Keys)
             {
+                // Branch: take this path when (!matrixMappingByKey.ContainsKey(mappingKey)) evaluates to true.
                 if (!matrixMappingByKey.ContainsKey(mappingKey))
                 {
                     errors.Add($"--compat-matrix is missing mapping from --manifest: key='{mappingKey}'.");
                 }
             }
 
+            // Branch: take this path when (errors.Count == 0) evaluates to true.
             if (errors.Count == 0)
             {
                 return true;
@@ -729,6 +799,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             ValidateFingerprints(manifest.TargetAssemblies, "target", issues);
             ValidateFingerprints(manifest.ProxyAssemblies, "proxy", issues);
 
+            // Branch: take this path when (issues.Count == 0) evaluates to true.
             if (issues.Count == 0)
             {
                 return true;
@@ -736,12 +807,14 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
             foreach (var issue in issues)
             {
+                // Branch: take this path when (strictAssemblyFingerprintValidation) evaluates to true.
                 if (strictAssemblyFingerprintValidation)
                 {
                     Utils.WriteError(issue);
                 }
                 else
                 {
+                    // Branch: fallback path when earlier branch conditions evaluate to false.
                     Utils.WriteWarning(issue);
                 }
             }
@@ -775,6 +848,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 "props file",
                 issues);
 
+            // Branch: take this path when (!string.IsNullOrWhiteSpace(manifest.RegistryAssembly) && File.Exists(manifest.RegistryAssembly)) evaluates to true.
             if (!string.IsNullOrWhiteSpace(manifest.RegistryAssembly) && File.Exists(manifest.RegistryAssembly))
             {
                 try
@@ -787,12 +861,14 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                                                    : string.Empty;
                     var actualIsStrongNameSigned = !string.IsNullOrWhiteSpace(actualPublicKeyToken);
 
+                    // Branch: take this path when (!string.IsNullOrWhiteSpace(manifest.RegistryAssemblyVersion) && evaluates to true.
                     if (!string.IsNullOrWhiteSpace(manifest.RegistryAssemblyVersion) &&
                         !string.Equals(actualVersion, manifest.RegistryAssemblyVersion, StringComparison.Ordinal))
                     {
                         issues.Add($"Manifest registry assembly version mismatch. Expected '{manifest.RegistryAssemblyVersion}', got '{actualVersion}'.");
                     }
 
+                    // Branch: take this path when (manifest.RegistryStrongNameSigned.HasValue && evaluates to true.
                     if (manifest.RegistryStrongNameSigned.HasValue &&
                         manifest.RegistryStrongNameSigned.Value != actualIsStrongNameSigned)
                     {
@@ -801,8 +877,10 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                             $"Expected '{manifest.RegistryStrongNameSigned.Value}', got '{actualIsStrongNameSigned}'.");
                     }
 
+                    // Branch: take this path when (!string.IsNullOrWhiteSpace(manifest.RegistryPublicKeyToken)) evaluates to true.
                     if (!string.IsNullOrWhiteSpace(manifest.RegistryPublicKeyToken))
                     {
+                        // Branch: take this path when (!actualIsStrongNameSigned) evaluates to true.
                         if (!actualIsStrongNameSigned)
                         {
                             issues.Add(
@@ -810,6 +888,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                         }
                         else if (!string.Equals(actualPublicKeyToken, manifest.RegistryPublicKeyToken, StringComparison.OrdinalIgnoreCase))
                         {
+                            // Branch: take this path when (!string.Equals(actualPublicKeyToken, manifest.RegistryPublicKeyToken, StringComparison.OrdinalIgnoreCase)) evaluates to true.
                             issues.Add(
                                 $"Manifest registry public key token mismatch. Expected '{manifest.RegistryPublicKeyToken}', got '{actualPublicKeyToken}'.");
                         }
@@ -817,10 +896,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 }
                 catch (Exception ex)
                 {
+                    // Branch: handles exceptions that match Exception ex.
                     issues.Add($"Manifest registry assembly metadata could not be validated: {ex.Message}");
                 }
             }
 
+            // Branch: take this path when (issues.Count == 0) evaluates to true.
             if (issues.Count == 0)
             {
                 return true;
@@ -828,12 +909,14 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
             foreach (var issue in issues)
             {
+                // Branch: take this path when (strictAssemblyFingerprintValidation) evaluates to true.
                 if (strictAssemblyFingerprintValidation)
                 {
                     Utils.WriteError(issue);
                 }
                 else
                 {
+                    // Branch: fallback path when earlier branch conditions evaluate to false.
                     Utils.WriteWarning(issue);
                 }
             }
@@ -849,11 +932,13 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool ValidateTrimmerDescriptorCoupling(DuckTypeAotCompatibilityMatrix matrix, DuckTypeAotManifest manifest)
         {
+            // Branch: take this path when (string.IsNullOrWhiteSpace(manifest.TrimmerDescriptorPath)) evaluates to true.
             if (string.IsNullOrWhiteSpace(manifest.TrimmerDescriptorPath))
             {
                 return true;
             }
 
+            // Branch: take this path when (!TryReadTrimmerDescriptorRoots(manifest.TrimmerDescriptorPath!, out var rootsByAssembly, out var readError)) evaluates to true.
             if (!TryReadTrimmerDescriptorRoots(manifest.TrimmerDescriptorPath!, out var rootsByAssembly, out var readError))
             {
                 Utils.WriteError(readError);
@@ -862,6 +947,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
             var errors = new List<string>();
 
+            // Branch: take this path when (!string.IsNullOrWhiteSpace(manifest.RegistryAssemblyName) && evaluates to true.
             if (!string.IsNullOrWhiteSpace(manifest.RegistryAssemblyName) &&
                 !string.IsNullOrWhiteSpace(manifest.RegistryBootstrapType))
             {
@@ -875,11 +961,13 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
             foreach (var mapping in matrix.Mappings)
             {
+                // Branch: take this path when (!string.Equals(mapping.Status, DuckTypeAotCompatibilityStatuses.Compatible, StringComparison.OrdinalIgnoreCase)) evaluates to true.
                 if (!string.Equals(mapping.Status, DuckTypeAotCompatibilityStatuses.Compatible, StringComparison.OrdinalIgnoreCase))
                 {
                     continue;
                 }
 
+                // Branch: take this path when (!string.IsNullOrWhiteSpace(mapping.ProxyAssembly) && !string.IsNullOrWhiteSpace(mapping.ProxyType)) evaluates to true.
                 if (!string.IsNullOrWhiteSpace(mapping.ProxyAssembly) && !string.IsNullOrWhiteSpace(mapping.ProxyType))
                 {
                     ValidateTrimmerDescriptorRoot(
@@ -890,6 +978,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                         errors);
                 }
 
+                // Branch: take this path when (!string.IsNullOrWhiteSpace(mapping.TargetAssembly) && !string.IsNullOrWhiteSpace(mapping.TargetType)) evaluates to true.
                 if (!string.IsNullOrWhiteSpace(mapping.TargetAssembly) && !string.IsNullOrWhiteSpace(mapping.TargetType))
                 {
                     ValidateTrimmerDescriptorRoot(
@@ -900,6 +989,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                         errors);
                 }
 
+                // Branch: take this path when (!string.IsNullOrWhiteSpace(mapping.GeneratedProxyAssembly) && !string.IsNullOrWhiteSpace(mapping.GeneratedProxyType)) evaluates to true.
                 if (!string.IsNullOrWhiteSpace(mapping.GeneratedProxyAssembly) && !string.IsNullOrWhiteSpace(mapping.GeneratedProxyType))
                 {
                     ValidateTrimmerDescriptorRoot(
@@ -911,10 +1001,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 }
             }
 
+            // Branch: take this path when (manifest.GenericInstantiations is not null) evaluates to true.
             if (manifest.GenericInstantiations is not null)
             {
                 foreach (var typeReference in manifest.GenericInstantiations)
                 {
+                    // Branch: take this path when (string.IsNullOrWhiteSpace(typeReference.Assembly) || string.IsNullOrWhiteSpace(typeReference.Type)) evaluates to true.
                     if (string.IsNullOrWhiteSpace(typeReference.Assembly) || string.IsNullOrWhiteSpace(typeReference.Type))
                     {
                         continue;
@@ -929,6 +1021,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 }
             }
 
+            // Branch: take this path when (errors.Count == 0) evaluates to true.
             if (errors.Count == 0)
             {
                 return true;
@@ -957,6 +1050,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             rootsByAssembly = new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase);
             error = string.Empty;
 
+            // Branch: take this path when (!File.Exists(descriptorPath)) evaluates to true.
             if (!File.Exists(descriptorPath))
             {
                 error = $"Manifest trimmer descriptor path was not found: {descriptorPath}";
@@ -967,6 +1061,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             {
                 var document = XDocument.Load(descriptorPath);
                 var linker = document.Root;
+                // Branch: take this path when (linker is null || !string.Equals(linker.Name.LocalName, "linker", StringComparison.Ordinal)) evaluates to true.
                 if (linker is null || !string.Equals(linker.Name.LocalName, "linker", StringComparison.Ordinal))
                 {
                     error = $"Trimmer descriptor is invalid (missing <linker> root): {descriptorPath}";
@@ -975,17 +1070,20 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
                 foreach (var assemblyElement in linker.Elements())
                 {
+                    // Branch: take this path when (!string.Equals(assemblyElement.Name.LocalName, "assembly", StringComparison.Ordinal)) evaluates to true.
                     if (!string.Equals(assemblyElement.Name.LocalName, "assembly", StringComparison.Ordinal))
                     {
                         continue;
                     }
 
                     var assemblyName = assemblyElement.Attribute("fullname")?.Value;
+                    // Branch: take this path when (string.IsNullOrWhiteSpace(assemblyName)) evaluates to true.
                     if (string.IsNullOrWhiteSpace(assemblyName))
                     {
                         continue;
                     }
 
+                    // Branch: take this path when (!rootsByAssembly.TryGetValue(assemblyName!, out var typeRoots)) evaluates to true.
                     if (!rootsByAssembly.TryGetValue(assemblyName!, out var typeRoots))
                     {
                         typeRoots = new HashSet<string>(StringComparer.Ordinal);
@@ -994,12 +1092,14 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
                     foreach (var typeElement in assemblyElement.Elements())
                     {
+                        // Branch: take this path when (!string.Equals(typeElement.Name.LocalName, "type", StringComparison.Ordinal)) evaluates to true.
                         if (!string.Equals(typeElement.Name.LocalName, "type", StringComparison.Ordinal))
                         {
                             continue;
                         }
 
                         var typeName = typeElement.Attribute("fullname")?.Value;
+                        // Branch: take this path when (string.IsNullOrWhiteSpace(typeName)) evaluates to true.
                         if (string.IsNullOrWhiteSpace(typeName))
                         {
                             continue;
@@ -1013,6 +1113,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
             catch (Exception ex)
             {
+                // Branch: handles exceptions that match Exception ex.
                 error = $"Failed to parse trimmer descriptor '{descriptorPath}': {ex.Message}";
                 return false;
             }
@@ -1033,6 +1134,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             string context,
             ICollection<string> errors)
         {
+            // Branch: take this path when (!rootsByAssembly.TryGetValue(assemblyName, out var typeRoots)) evaluates to true.
             if (!rootsByAssembly.TryGetValue(assemblyName, out var typeRoots))
             {
                 errors.Add($"Trimmer descriptor is missing assembly root '{assemblyName}' required for {context}.");
@@ -1040,6 +1142,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
 
             var normalizedTypeName = NormalizeTypeNameForLinker(typeName);
+            // Branch: take this path when (!typeRoots.Contains(normalizedTypeName)) evaluates to true.
             if (!typeRoots.Contains(normalizedTypeName))
             {
                 errors.Add($"Trimmer descriptor is missing type root '{normalizedTypeName}' in assembly '{assemblyName}' required for {context}.");
@@ -1056,6 +1159,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <remarks>Emits or composes IL for generated duck-typing proxy operations.</remarks>
         private static void ValidateFileFingerprint(string? path, string? expectedSha256, string artifactName, ICollection<string> issues)
         {
+            // Branch: take this path when (string.IsNullOrWhiteSpace(path)) evaluates to true.
             if (string.IsNullOrWhiteSpace(path))
             {
                 issues.Add($"Manifest {artifactName} path is missing.");
@@ -1063,12 +1167,14 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
 
             var resolvedPath = path!;
+            // Branch: take this path when (!File.Exists(resolvedPath)) evaluates to true.
             if (!File.Exists(resolvedPath))
             {
                 issues.Add($"Manifest {artifactName} path was not found: {resolvedPath}");
                 return;
             }
 
+            // Branch: take this path when (!ValidateChecksum(expectedSha256, out var checksumError)) evaluates to true.
             if (!ValidateChecksum(expectedSha256, out var checksumError))
             {
                 issues.Add($"Manifest {artifactName} has invalid sha256 for '{resolvedPath}': {checksumError}.");
@@ -1076,6 +1182,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
 
             var actualSha256 = ComputeSha256(resolvedPath);
+            // Branch: take this path when (!string.Equals(actualSha256, expectedSha256, StringComparison.OrdinalIgnoreCase)) evaluates to true.
             if (!string.Equals(actualSha256, expectedSha256, StringComparison.OrdinalIgnoreCase))
             {
                 issues.Add($"Manifest {artifactName} sha256 mismatch for '{resolvedPath}'. Expected '{expectedSha256}', got '{actualSha256}'.");
@@ -1098,12 +1205,14 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             key = string.Empty;
             error = string.Empty;
 
+            // Branch: take this path when (!TryParseMode(mapping.Mode, out var mode)) evaluates to true.
             if (!TryParseMode(mapping.Mode, out var mode))
             {
                 error = $"--compat-matrix mapping id '{mapping.Id ?? "(null)"}' has invalid mode '{mapping.Mode ?? "(null)"}'.";
                 return false;
             }
 
+            // Branch: take this path when (string.IsNullOrWhiteSpace(mapping.ProxyType) || evaluates to true.
             if (string.IsNullOrWhiteSpace(mapping.ProxyType) ||
                 string.IsNullOrWhiteSpace(mapping.ProxyAssembly) ||
                 string.IsNullOrWhiteSpace(mapping.TargetType) ||
@@ -1144,12 +1253,14 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             key = string.Empty;
             error = string.Empty;
 
+            // Branch: take this path when (!TryParseMode(mapping.Mode, out var mode)) evaluates to true.
             if (!TryParseMode(mapping.Mode, out var mode))
             {
                 error = $"--manifest mapping has invalid mode '{mapping.Mode ?? "(null)"}'.";
                 return false;
             }
 
+            // Branch: take this path when (string.IsNullOrWhiteSpace(mapping.ProxyType) || evaluates to true.
             if (string.IsNullOrWhiteSpace(mapping.ProxyType) ||
                 string.IsNullOrWhiteSpace(mapping.ProxyAssembly) ||
                 string.IsNullOrWhiteSpace(mapping.TargetType) ||
@@ -1182,6 +1293,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool ValidateChecksum(string? value, out string error)
         {
+            // Branch: take this path when (string.IsNullOrWhiteSpace(value)) evaluates to true.
             if (string.IsNullOrWhiteSpace(value))
             {
                 error = "value is empty";
@@ -1189,6 +1301,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
 
             var checksum = value!;
+            // Branch: take this path when (checksum.Length != 64) evaluates to true.
             if (checksum.Length != 64)
             {
                 error = $"value must be 64 hex chars, got length {checksum.Length}";
@@ -1198,6 +1311,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             for (var i = 0; i < checksum.Length; i++)
             {
                 var c = checksum[i];
+                // Branch: take this path when ((c >= '0' && c <= '9') || evaluates to true.
                 if ((c >= '0' && c <= '9') ||
                     (c >= 'a' && c <= 'f') ||
                     (c >= 'A' && c <= 'F'))
@@ -1224,6 +1338,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             string assemblyKind,
             ICollection<string> issues)
         {
+            // Branch: take this path when (fingerprints is null || fingerprints.Count == 0) evaluates to true.
             if (fingerprints is null || fingerprints.Count == 0)
             {
                 return;
@@ -1233,6 +1348,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             {
                 var expectedName = fingerprint.Name ?? "(unknown)";
                 var assemblyPath = fingerprint.Path;
+                // Branch: take this path when (string.IsNullOrWhiteSpace(assemblyPath)) evaluates to true.
                 if (string.IsNullOrWhiteSpace(assemblyPath))
                 {
                     issues.Add($"Manifest {assemblyKind} assembly '{expectedName}' is missing path.");
@@ -1240,6 +1356,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 }
 
                 var resolvedAssemblyPath = assemblyPath!;
+                // Branch: take this path when (!File.Exists(resolvedAssemblyPath)) evaluates to true.
                 if (!File.Exists(resolvedAssemblyPath))
                 {
                     issues.Add($"Manifest {assemblyKind} assembly '{expectedName}' path was not found: {resolvedAssemblyPath}");
@@ -1250,6 +1367,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 {
                     var assemblyName = AssemblyName.GetAssemblyName(resolvedAssemblyPath);
                     var actualName = assemblyName.Name ?? string.Empty;
+                    // Branch: take this path when (!string.IsNullOrWhiteSpace(fingerprint.Name) && evaluates to true.
                     if (!string.IsNullOrWhiteSpace(fingerprint.Name) &&
                         !string.Equals(actualName, fingerprint.Name, StringComparison.Ordinal))
                     {
@@ -1258,19 +1376,23 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
                     using var module = ModuleDefMD.Load(resolvedAssemblyPath);
                     var actualMvid = module.Mvid?.ToString("D") ?? string.Empty;
+                    // Branch: take this path when (!string.IsNullOrWhiteSpace(fingerprint.Mvid) && evaluates to true.
                     if (!string.IsNullOrWhiteSpace(fingerprint.Mvid) &&
                         !string.Equals(actualMvid, fingerprint.Mvid, StringComparison.OrdinalIgnoreCase))
                     {
                         issues.Add($"Manifest {assemblyKind} assembly MVID mismatch for '{resolvedAssemblyPath}'. Expected '{fingerprint.Mvid}', got '{actualMvid}'.");
                     }
 
+                    // Branch: take this path when (!ValidateChecksum(fingerprint.Sha256, out var checksumError)) evaluates to true.
                     if (!ValidateChecksum(fingerprint.Sha256, out var checksumError))
                     {
                         issues.Add($"Manifest {assemblyKind} assembly has invalid sha256 for '{resolvedAssemblyPath}': {checksumError}.");
                     }
                     else
                     {
+                        // Branch: fallback path when earlier branch conditions evaluate to false.
                         var actualSha256 = ComputeSha256(resolvedAssemblyPath);
+                        // Branch: take this path when (!string.Equals(actualSha256, fingerprint.Sha256, StringComparison.OrdinalIgnoreCase)) evaluates to true.
                         if (!string.Equals(actualSha256, fingerprint.Sha256, StringComparison.OrdinalIgnoreCase))
                         {
                             issues.Add($"Manifest {assemblyKind} assembly sha256 mismatch for '{resolvedAssemblyPath}'. Expected '{fingerprint.Sha256}', got '{actualSha256}'.");
@@ -1279,6 +1401,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 }
                 catch (Exception ex)
                 {
+                    // Branch: handles exceptions that match Exception ex.
                     issues.Add($"Manifest {assemblyKind} assembly '{resolvedAssemblyPath}' could not be validated: {ex.Message}");
                 }
             }
@@ -1321,12 +1444,14 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool TryParseMode(string? value, out DuckTypeAotMappingMode mode)
         {
+            // Branch: take this path when (string.Equals(value, "forward", StringComparison.OrdinalIgnoreCase)) evaluates to true.
             if (string.Equals(value, "forward", StringComparison.OrdinalIgnoreCase))
             {
                 mode = DuckTypeAotMappingMode.Forward;
                 return true;
             }
 
+            // Branch: take this path when (string.Equals(value, "reverse", StringComparison.OrdinalIgnoreCase)) evaluates to true.
             if (string.Equals(value, "reverse", StringComparison.OrdinalIgnoreCase))
             {
                 mode = DuckTypeAotMappingMode.Reverse;
@@ -1388,6 +1513,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 _expectedStatusesByScenario = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
                 foreach (var expectedOutcome in explicitOutcomes)
                 {
+                    // Branch: take this path when (!_expectedStatusesByScenario.TryGetValue(expectedOutcome.ScenarioId, out var statuses)) evaluates to true.
                     if (!_expectedStatusesByScenario.TryGetValue(expectedOutcome.ScenarioId, out var statuses))
                     {
                         statuses = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -1427,6 +1553,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             /// <returns>true if the operation succeeds; otherwise, false.</returns>
             internal bool TryGetExpectedStatuses(string scenarioId, out IReadOnlyCollection<string> statuses)
             {
+                // Branch: take this path when (_expectedStatusesByScenario.TryGetValue(scenarioId, out var explicitStatuses)) evaluates to true.
                 if (_expectedStatusesByScenario.TryGetValue(scenarioId, out var explicitStatuses))
                 {
                     statuses = explicitStatuses;

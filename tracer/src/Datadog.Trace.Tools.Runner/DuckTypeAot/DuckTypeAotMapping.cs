@@ -46,6 +46,22 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
     }
 
     /// <summary>
+    /// Defines named constants for duck type aot parity expectation.
+    /// </summary>
+    internal enum DuckTypeAotParityExpectation
+    {
+        /// <summary>
+        /// Represents creatable.
+        /// </summary>
+        Creatable,
+
+        /// <summary>
+        /// Represents cannot create.
+        /// </summary>
+        CannotCreate
+    }
+
+    /// <summary>
     /// Represents duck type aot mapping.
     /// </summary>
     internal sealed class DuckTypeAotMapping
@@ -60,6 +76,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <param name="mode">The mode value.</param>
         /// <param name="source">The source value.</param>
         /// <param name="scenarioId">The scenario id value.</param>
+        /// <param name="parityExpectation">The parity expectation value.</param>
         public DuckTypeAotMapping(
             string proxyTypeName,
             string proxyAssemblyName,
@@ -67,7 +84,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             string targetAssemblyName,
             DuckTypeAotMappingMode mode,
             DuckTypeAotMappingSource source,
-            string? scenarioId = null)
+            string? scenarioId = null,
+            DuckTypeAotParityExpectation parityExpectation = DuckTypeAotParityExpectation.Creatable)
         {
             ProxyTypeName = proxyTypeName;
             ProxyAssemblyName = DuckTypeAotNameHelpers.NormalizeAssemblyName(proxyAssemblyName);
@@ -76,6 +94,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             Mode = mode;
             Source = source;
             ScenarioId = NormalizeScenarioId(scenarioId);
+            ParityExpectation = parityExpectation;
         }
 
         /// <summary>
@@ -120,6 +139,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <value>The scenario id value.</value>
         public string? ScenarioId { get; }
 
+        /// <summary>
+        /// Gets parity expectation.
+        /// </summary>
+        /// <value>The parity expectation value.</value>
+        public DuckTypeAotParityExpectation ParityExpectation { get; }
+
         public string Key =>
             string.Concat(
                 Mode.ToString(),
@@ -146,7 +171,26 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 TargetAssemblyName,
                 Mode,
                 Source,
-                scenarioId);
+                scenarioId,
+                ParityExpectation);
+        }
+
+        /// <summary>
+        /// Executes with parity expectation.
+        /// </summary>
+        /// <param name="parityExpectation">The parity expectation value.</param>
+        /// <returns>The result produced by this operation.</returns>
+        public DuckTypeAotMapping WithParityExpectation(DuckTypeAotParityExpectation parityExpectation)
+        {
+            return new DuckTypeAotMapping(
+                ProxyTypeName,
+                ProxyAssemblyName,
+                TargetTypeName,
+                TargetAssemblyName,
+                Mode,
+                Source,
+                ScenarioId,
+                parityExpectation);
         }
 
         /// <summary>
@@ -157,6 +201,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         private static string? NormalizeScenarioId(string? scenarioId)
         {
             var trimmedScenarioId = scenarioId?.Trim();
+            // Branch: take this path when (string.IsNullOrWhiteSpace(trimmedScenarioId)) evaluates to true.
             if (string.IsNullOrWhiteSpace(trimmedScenarioId))
             {
                 return null;
@@ -178,6 +223,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <returns>The resulting string value.</returns>
         internal static string NormalizeAssemblyName(string assemblyName)
         {
+            // Branch: take this path when (string.IsNullOrWhiteSpace(assemblyName)) evaluates to true.
             if (string.IsNullOrWhiteSpace(assemblyName))
             {
                 return string.Empty;
@@ -194,12 +240,14 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <returns>The parsed type name and optional assembly name.</returns>
         internal static (string TypeName, string? AssemblyName) ParseTypeAndAssembly(string value)
         {
+            // Branch: take this path when (string.IsNullOrWhiteSpace(value)) evaluates to true.
             if (string.IsNullOrWhiteSpace(value))
             {
                 return (string.Empty, null);
             }
 
             var commaIndex = FindTopLevelComma(value);
+            // Branch: take this path when (commaIndex < 0) evaluates to true.
             if (commaIndex < 0)
             {
                 return (value.Trim(), null);
@@ -225,28 +273,33 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <returns>true if the operation succeeds; otherwise, false.</returns>
         internal static bool IsOpenGenericTypeName(string typeName)
         {
+            // Branch: take this path when (string.IsNullOrWhiteSpace(typeName)) evaluates to true.
             if (string.IsNullOrWhiteSpace(typeName))
             {
                 return false;
             }
 
+            // Branch: take this path when (typeName.IndexOf('!') >= 0) evaluates to true.
             if (typeName.IndexOf('!') >= 0)
             {
                 return true;
             }
 
+            // Branch: take this path when (typeName.IndexOf('`') < 0) evaluates to true.
             if (typeName.IndexOf('`') < 0)
             {
                 return false;
             }
 
             var genericArgumentsStart = typeName.IndexOf("[[", StringComparison.Ordinal);
+            // Branch: take this path when (genericArgumentsStart < 0) evaluates to true.
             if (genericArgumentsStart < 0)
             {
                 return true;
             }
 
             var declaredArity = CountDeclaredGenericArity(typeName, genericArgumentsStart);
+            // Branch: take this path when (declaredArity <= 0) evaluates to true.
             if (declaredArity <= 0)
             {
                 return false;
@@ -277,16 +330,19 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             for (var i = 0; i < value.Length; i++)
             {
                 var c = value[i];
+                // Branch: take this path when (c == '[') evaluates to true.
                 if (c == '[')
                 {
                     bracketDepth++;
                 }
                 else if (c == ']')
                 {
+                    // Branch: take this path when (c == ']') evaluates to true.
                     bracketDepth = Math.Max(0, bracketDepth - 1);
                 }
                 else if (c == ',' && bracketDepth == 0)
                 {
+                    // Branch: take this path when (c == ',' && bracketDepth == 0) evaluates to true.
                     return i;
                 }
             }
@@ -305,12 +361,14 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             var arity = 0;
             for (var i = 0; i < genericArgumentsStart; i++)
             {
+                // Branch: take this path when (typeName[i] != '`') evaluates to true.
                 if (typeName[i] != '`')
                 {
                     continue;
                 }
 
                 var digitsStart = i + 1;
+                // Branch: take this path when (digitsStart >= genericArgumentsStart || !char.IsDigit(typeName[digitsStart])) evaluates to true.
                 if (digitsStart >= genericArgumentsStart || !char.IsDigit(typeName[digitsStart]))
                 {
                     continue;
@@ -322,6 +380,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     digitsEnd++;
                 }
 
+                // Branch: take this path when (int.TryParse(typeName.Substring(digitsStart, digitsEnd - digitsStart), out var parsedArity)) evaluates to true.
                 if (int.TryParse(typeName.Substring(digitsStart, digitsEnd - digitsStart), out var parsedArity))
                 {
                     arity += parsedArity;
@@ -348,9 +407,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             for (var i = genericArgumentsStart; i < typeName.Length; i++)
             {
                 var current = typeName[i];
+                // Branch: take this path when (current == '[') evaluates to true.
                 if (current == '[')
                 {
                     bracketDepth++;
+                    // Branch: take this path when (bracketDepth == 2 && !hasStartedRootArgumentList) evaluates to true.
                     if (bracketDepth == 2 && !hasStartedRootArgumentList)
                     {
                         hasStartedRootArgumentList = true;
@@ -360,9 +421,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     continue;
                 }
 
+                // Branch: take this path when (current == ']') evaluates to true.
                 if (current == ']')
                 {
                     bracketDepth = Math.Max(0, bracketDepth - 1);
+                    // Branch: take this path when (hasStartedRootArgumentList && bracketDepth == 0) evaluates to true.
                     if (hasStartedRootArgumentList && bracketDepth == 0)
                     {
                         break;
@@ -371,6 +434,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     continue;
                 }
 
+                // Branch: take this path when (current == ',' && hasStartedRootArgumentList && bracketDepth == 1) evaluates to true.
                 if (current == ',' && hasStartedRootArgumentList && bracketDepth == 1)
                 {
                     argumentCount++;

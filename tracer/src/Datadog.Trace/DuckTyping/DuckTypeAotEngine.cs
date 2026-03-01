@@ -149,37 +149,44 @@ namespace Datadog.Trace.DuckTyping
         /// <param name="metadata">The metadata value.</param>
         internal static void ValidateContract(DuckTypeAotContract contract, DuckTypeAotAssemblyMetadata metadata)
         {
+            // Branch: take this path when (string.IsNullOrWhiteSpace(contract.SchemaVersion)) evaluates to true.
             if (string.IsNullOrWhiteSpace(contract.SchemaVersion))
             {
                 DuckTypeAotRegistryContractValidationException.ThrowValidation("AOT contract schema version is missing.");
             }
 
+            // Branch: take this path when (string.IsNullOrWhiteSpace(contract.DatadogTraceAssemblyVersion)) evaluates to true.
             if (string.IsNullOrWhiteSpace(contract.DatadogTraceAssemblyVersion))
             {
                 DuckTypeAotRegistryContractValidationException.ThrowValidation("AOT contract Datadog.Trace assembly version is missing.");
             }
 
+            // Branch: take this path when (string.IsNullOrWhiteSpace(contract.DatadogTraceAssemblyMvid)) evaluates to true.
             if (string.IsNullOrWhiteSpace(contract.DatadogTraceAssemblyMvid))
             {
                 DuckTypeAotRegistryContractValidationException.ThrowValidation("AOT contract Datadog.Trace assembly MVID is missing.");
             }
 
+            // Branch: take this path when (string.IsNullOrWhiteSpace(metadata.RegistryAssemblyFullName)) evaluates to true.
             if (string.IsNullOrWhiteSpace(metadata.RegistryAssemblyFullName))
             {
                 DuckTypeAotRegistryContractValidationException.ThrowValidation("AOT registry assembly full name is missing.");
             }
 
+            // Branch: take this path when (string.IsNullOrWhiteSpace(metadata.RegistryAssemblyMvid)) evaluates to true.
             if (string.IsNullOrWhiteSpace(metadata.RegistryAssemblyMvid))
             {
                 DuckTypeAotRegistryContractValidationException.ThrowValidation("AOT registry assembly MVID is missing.");
             }
 
+            // Branch: take this path when (!string.Equals(DuckTypeAotContract.CurrentSchemaVersion, contract.SchemaVersion, StringComparison.Ordinal)) evaluates to true.
             if (!string.Equals(DuckTypeAotContract.CurrentSchemaVersion, contract.SchemaVersion, StringComparison.Ordinal))
             {
                 DuckTypeAotRegistryContractValidationException.ThrowValidation(
                     $"AOT contract schema version mismatch. Expected '{DuckTypeAotContract.CurrentSchemaVersion}', got '{contract.SchemaVersion}'.");
             }
 
+            // Branch: take this path when (!string.Equals(CurrentDatadogTraceAssemblyVersion, contract.DatadogTraceAssemblyVersion, StringComparison.Ordinal) || evaluates to true.
             if (!string.Equals(CurrentDatadogTraceAssemblyVersion, contract.DatadogTraceAssemblyVersion, StringComparison.Ordinal) ||
                 !string.Equals(CurrentDatadogTraceAssemblyMvid, contract.DatadogTraceAssemblyMvid, StringComparison.OrdinalIgnoreCase))
             {
@@ -191,12 +198,14 @@ namespace Datadog.Trace.DuckTyping
             {
                 var incomingRegistryAssemblyIdentity = NormalizeRegistryAssemblyIdentity(metadata.RegistryAssemblyFullName, metadata.RegistryAssemblyMvid);
                 var currentRegistryAssemblyIdentity = _registeredRegistryAssemblyIdentity ?? _validatedRegistryAssemblyIdentity;
+                // Branch: take this path when (string.IsNullOrWhiteSpace(currentRegistryAssemblyIdentity)) evaluates to true.
                 if (string.IsNullOrWhiteSpace(currentRegistryAssemblyIdentity))
                 {
                     _validatedRegistryAssemblyIdentity = incomingRegistryAssemblyIdentity;
                     return;
                 }
 
+                // Branch: take this path when (!string.Equals(currentRegistryAssemblyIdentity, incomingRegistryAssemblyIdentity, StringComparison.Ordinal)) evaluates to true.
                 if (!string.Equals(currentRegistryAssemblyIdentity, incomingRegistryAssemblyIdentity, StringComparison.Ordinal))
                 {
                     DuckTypeAotMultipleRegistryAssembliesException.Throw(currentRegistryAssemblyIdentity!, incomingRegistryAssemblyIdentity);
@@ -230,6 +239,7 @@ namespace Datadog.Trace.DuckTyping
         private static DuckType.CreateTypeResult GetOrCreateResult(TypesTuple key, bool reverse)
         {
             var registry = reverse ? ReverseRegistry : ForwardRegistry;
+            // Branch: take this path when (registry.TryGetValue(key, out var registration)) evaluates to true.
             if (registry.TryGetValue(key, out var registration))
             {
                 return registration.CreateTypeResult;
@@ -249,11 +259,16 @@ namespace Datadog.Trace.DuckTyping
         /// <param name="reverse">The reverse value.</param>
         private static void Register(Type proxyDefinitionType, Type targetType, Type generatedProxyType, Func<object?, object?> activator, bool reverse)
         {
+            // Branch: take this path when (proxyDefinitionType is null) evaluates to true.
             if (proxyDefinitionType is null) { ThrowHelper.ThrowArgumentNullException(nameof(proxyDefinitionType)); }
+            // Branch: take this path when (targetType is null) evaluates to true.
             if (targetType is null) { ThrowHelper.ThrowArgumentNullException(nameof(targetType)); }
+            // Branch: take this path when (generatedProxyType is null) evaluates to true.
             if (generatedProxyType is null) { ThrowHelper.ThrowArgumentNullException(nameof(generatedProxyType)); }
+            // Branch: take this path when (activator is null) evaluates to true.
             if (activator is null) { ThrowHelper.ThrowArgumentNullException(nameof(activator)); }
 
+            // Branch: take this path when (!proxyDefinitionType.IsAssignableFrom(generatedProxyType)) evaluates to true.
             if (!proxyDefinitionType.IsAssignableFrom(generatedProxyType))
             {
                 DuckTypeAotGeneratedProxyTypeMismatchException.Throw(proxyDefinitionType, generatedProxyType);
@@ -268,8 +283,10 @@ namespace Datadog.Trace.DuckTyping
                 EnsureSingleRegistryAssemblyPerProcess(activator);
 
                 var registry = reverse ? ReverseRegistry : ForwardRegistry;
+                // Branch: take this path when (registry.TryGetValue(key, out var currentRegistration)) evaluates to true.
                 if (registry.TryGetValue(key, out var currentRegistration))
                 {
+                    // Branch: take this path when (currentRegistration.IsEquivalent(registration)) evaluates to true.
                     if (currentRegistration.IsEquivalent(registration))
                     {
                         return;
@@ -295,12 +312,14 @@ namespace Datadog.Trace.DuckTyping
         {
             var incomingRegistryAssemblyIdentity = ResolveRegistryAssemblyIdentity(activator);
             var currentRegistryAssemblyIdentity = _registeredRegistryAssemblyIdentity ?? _validatedRegistryAssemblyIdentity;
+            // Branch: take this path when (string.IsNullOrWhiteSpace(currentRegistryAssemblyIdentity)) evaluates to true.
             if (string.IsNullOrWhiteSpace(currentRegistryAssemblyIdentity))
             {
                 _registeredRegistryAssemblyIdentity = incomingRegistryAssemblyIdentity;
                 return;
             }
 
+            // Branch: take this path when (!string.Equals(currentRegistryAssemblyIdentity, incomingRegistryAssemblyIdentity, StringComparison.Ordinal)) evaluates to true.
             if (!string.Equals(currentRegistryAssemblyIdentity, incomingRegistryAssemblyIdentity, StringComparison.Ordinal))
             {
                 DuckTypeAotMultipleRegistryAssembliesException.Throw(currentRegistryAssemblyIdentity!, incomingRegistryAssemblyIdentity);
@@ -320,6 +339,7 @@ namespace Datadog.Trace.DuckTyping
             var assembly = module.Assembly;
 
             var assemblyFullName = assembly.FullName;
+            // Branch: take this path when (string.IsNullOrWhiteSpace(assemblyFullName)) evaluates to true.
             if (string.IsNullOrWhiteSpace(assemblyFullName))
             {
                 var assemblyName = assembly.GetName();
@@ -349,6 +369,7 @@ namespace Datadog.Trace.DuckTyping
         /// <returns>The resulting string value.</returns>
         private static string NormalizeAssemblyIdentityName(string assemblyNameOrFullName)
         {
+            // Branch: take this path when (string.IsNullOrWhiteSpace(assemblyNameOrFullName)) evaluates to true.
             if (string.IsNullOrWhiteSpace(assemblyNameOrFullName))
             {
                 return "unknown";
@@ -363,6 +384,7 @@ namespace Datadog.Trace.DuckTyping
             }
             catch
             {
+                // Branch: handles any exception that reaches this handler.
                 return assemblyNameOrFullName.Trim();
             }
         }
@@ -382,6 +404,7 @@ namespace Datadog.Trace.DuckTyping
             }
             catch (Exception ex)
             {
+                // Branch: handles exceptions that match Exception ex.
                 return new DuckType.CreateTypeResult(
                     key.ProxyDefinitionType,
                     proxyType: null,
