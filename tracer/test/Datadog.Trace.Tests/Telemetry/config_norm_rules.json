@@ -447,6 +447,7 @@
   "DD_INSTRUMENTATION_TELEMETRY_URL": "instrumentation_telemetry_agentless_url",
   "DD_INSTRUMENTATION_TELEMETRY_COMPRESSION_METHOD": "instrumentation_telemetry_compression_method",
   "DD_TELEMETRY_HEARTBEAT_INTERVAL": "instrumentation_telemetry_heartbeat_interval",
+  "DD_TELEMETRY_EXTENDED_HEARTBEAT_INTERVAL": "instrumentation_telemetry_extended_heartbeat_interval",
   "DD_TELEMETRY_DEPENDENCY_COLLECTION_ENABLED": "instrumentation_telemetry_dependency_collection_enabled",
   "DD_TELEMETRY_LOG_COLLECTION_ENABLED": "instrumentation_telemetry_log_collection_enabled",
   "DD_TELEMETRY_METRICS_ENABLED": "instrumentation_telemetry_metrics_enabled",
