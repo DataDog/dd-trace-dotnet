@@ -19,15 +19,15 @@ partial class Build
             EnsureExistingDirectory(TestDumpsDirectory);
 
             var category = SmokeTestCategory!.Value;
-            var smokeTest = SmokeTests.SmokeTestScenarios.GetScenario(category, SmokeTestScenario);
+            var scenario = SmokeTests.SmokeTestScenarios.GetScenario(category, SmokeTestScenario);
 
             var artifactsDir = ArtifactsDirectory;
             var dotnetSdkVersion = GetDotnetSdkVersion(RootDirectory);
-            var imageTags = await SmokeTests.SmokeTestBuilder.BuildImageAsync(category, smokeTest, TracerDirectory, artifactsDir, Version, dotnetSdkVersion);
+            var imageTags = await SmokeTests.SmokeTestBuilder.BuildImageAsync(scenario, TracerDirectory, artifactsDir, Version, dotnetSdkVersion);
 
             foreach (var imageTag in imageTags)
             {
-                await SmokeTests.SmokeTestBuilder.RunSmokeTestAsync(smokeTest, TracerDirectory, BuildDataDirectory, imageTag);
+                await SmokeTests.SmokeTestBuilder.RunSmokeTestAsync(scenario, TracerDirectory, BuildDataDirectory, imageTag);
             }
         });
 }
