@@ -34,12 +34,9 @@ Key design rule for NativeAOT:
 
 ## Current Bible Compatibility-Gate Baseline
 
-For the repository Bible compatibility gate (`ducktype-aot generate` + `ducktype-aot verify-compat --failure-mode strict`), four scenarios are intentionally non-compatible and declared in the mapping catalog with `expectedStatus`:
+For the repository Bible compatibility gate (`ducktype-aot generate` + `ducktype-aot verify-compat --failure-mode strict`), all required catalog mappings are expected to resolve to `compatible`.
 
-1. `RT-2`: `incompatible_method_signature`
-2. `E-39`: `missing_target_method`
-3. `E-40`: `missing_target_method`
-4. `E-42`: `unsupported_proxy_kind`
+The Bible mapping catalog keeps no per-scenario `expectedStatus` overrides.
 
 `ducktype-aot-bible-expected-outcomes.json` and `ducktype-aot-bible-known-limitations.json` remain strict-empty contracts.
 
@@ -727,7 +724,7 @@ dotnet tracer/src/Datadog.Trace.Tools.Runner/bin/Release/Tool/net8.0/Datadog.Tra
    1. `--mapping-catalog`
    2. `--scenario-inventory`
    3. `--manifest`
-3. Per-scenario non-compatible expectations are defined in `--mapping-catalog` via `expectedStatus`.
+3. Per-scenario status overrides can be declared in `--mapping-catalog` via `expectedStatus` (Bible baseline uses no overrides).
 4. Legacy options `--expected-outcomes` and `--known-limitations` are accepted only as strict-empty contracts (no scenario overrides).
 5. `--failure-mode` values:
    1. `default`: manifest fingerprint drift warns.
@@ -758,12 +755,9 @@ Current diagnostic codes emitted by generator:
 6. `DTAOT0210` `unsupported_proxy_constructor`
 7. `DTAOT0211` `unsupported_closed_generic_mapping`
 
-Bible catalog-declared non-compatible scenarios:
+Bible catalog `expectedStatus` overrides:
 
-1. `RT-2` -> `incompatible_method_signature`
-2. `E-39` -> `missing_target_method`
-3. `E-40` -> `missing_target_method`
-4. `E-42` -> `unsupported_proxy_kind`
+1. none (all required mappings default to `compatible`).
 
 ## Environment Variables Summary
 

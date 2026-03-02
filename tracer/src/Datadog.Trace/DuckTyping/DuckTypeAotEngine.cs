@@ -131,6 +131,18 @@ namespace Datadog.Trace.DuckTyping
         }
 
         /// <summary>
+        /// Executes register proxy.
+        /// </summary>
+        /// <param name="proxyDefinitionType">The proxy definition type value.</param>
+        /// <param name="targetType">The target type value.</param>
+        /// <param name="generatedProxyType">The generated proxy type value.</param>
+        /// <param name="activatorMethodHandle">The activator method handle value.</param>
+        internal static void RegisterProxy(Type proxyDefinitionType, Type targetType, Type generatedProxyType, RuntimeMethodHandle activatorMethodHandle)
+        {
+            Register(proxyDefinitionType, targetType, generatedProxyType, CreateTypedActivator(proxyDefinitionType, activatorMethodHandle), reverse: false);
+        }
+
+        /// <summary>
         /// Executes register reverse proxy.
         /// </summary>
         /// <param name="typeToDeriveFrom">The type to derive from value.</param>
@@ -140,6 +152,18 @@ namespace Datadog.Trace.DuckTyping
         internal static void RegisterReverseProxy(Type typeToDeriveFrom, Type delegationType, Type generatedProxyType, Func<object?, object?> activator)
         {
             Register(typeToDeriveFrom, delegationType, generatedProxyType, activator, reverse: true);
+        }
+
+        /// <summary>
+        /// Executes register reverse proxy.
+        /// </summary>
+        /// <param name="typeToDeriveFrom">The type to derive from value.</param>
+        /// <param name="delegationType">The delegation type value.</param>
+        /// <param name="generatedProxyType">The generated proxy type value.</param>
+        /// <param name="activatorMethodHandle">The activator method handle value.</param>
+        internal static void RegisterReverseProxy(Type typeToDeriveFrom, Type delegationType, Type generatedProxyType, RuntimeMethodHandle activatorMethodHandle)
+        {
+            Register(typeToDeriveFrom, delegationType, generatedProxyType, CreateTypedActivator(typeToDeriveFrom, activatorMethodHandle), reverse: true);
         }
 
         /// <summary>
@@ -257,7 +281,7 @@ namespace Datadog.Trace.DuckTyping
         /// <param name="generatedProxyType">The generated proxy type value.</param>
         /// <param name="activator">The activator value.</param>
         /// <param name="reverse">The reverse value.</param>
-        private static void Register(Type proxyDefinitionType, Type targetType, Type generatedProxyType, Func<object?, object?> activator, bool reverse)
+        private static void Register(Type proxyDefinitionType, Type targetType, Type generatedProxyType, Delegate activator, bool reverse)
         {
             // Branch: take this path when (proxyDefinitionType is null) evaluates to true.
             if (proxyDefinitionType is null) { ThrowHelper.ThrowArgumentNullException(nameof(proxyDefinitionType)); }
@@ -305,10 +329,86 @@ namespace Datadog.Trace.DuckTyping
         }
 
         /// <summary>
+        /// Creates create typed activator.
+        /// </summary>
+        /// <param name="proxyDefinitionType">The proxy definition type value.</param>
+        /// <param name="activatorMethodHandle">The activator method handle value.</param>
+        /// <returns>The result produced by this operation.</returns>
+        private static Delegate CreateTypedActivator(Type proxyDefinitionType, RuntimeMethodHandle activatorMethodHandle)
+        {
+            if (proxyDefinitionType is null)
+            {
+                ThrowHelper.ThrowArgumentNullException(nameof(proxyDefinitionType));
+            }
+
+            if (activatorMethodHandle.Equals(default(RuntimeMethodHandle)))
+            {
+                throw new ArgumentException("AOT duck typing activator method handle cannot be default.", nameof(activatorMethodHandle));
+            }
+
+            MethodInfo? activatorMethod;
+            try
+            {
+                activatorMethod = MethodBase.GetMethodFromHandle(activatorMethodHandle) as MethodInfo;
+            }
+            catch (Exception ex)
+            {
+                throw new ArgumentException("AOT duck typing activator method handle could not be resolved.", nameof(activatorMethodHandle), ex);
+            }
+
+            if (activatorMethod is null)
+            {
+                throw new ArgumentException("AOT duck typing activator method handle does not reference a method.", nameof(activatorMethodHandle));
+            }
+
+            if (!activatorMethod.IsStatic)
+            {
+                throw new ArgumentException(
+                    $"AOT duck typing activator method '{activatorMethod}' must be static.",
+                    nameof(activatorMethodHandle));
+            }
+
+            if (activatorMethod.ContainsGenericParameters)
+            {
+                throw new ArgumentException(
+                    $"AOT duck typing activator method '{activatorMethod}' must be closed (no open generic parameters).",
+                    nameof(activatorMethodHandle));
+            }
+
+            var parameters = activatorMethod.GetParameters();
+            if (parameters.Length != 1 || parameters[0].ParameterType != typeof(object))
+            {
+                throw new ArgumentException(
+                    $"AOT duck typing activator method '{activatorMethod}' must declare exactly one 'object' parameter.",
+                    nameof(activatorMethodHandle));
+            }
+
+            if (!proxyDefinitionType.IsAssignableFrom(activatorMethod.ReturnType))
+            {
+                throw new ArgumentException(
+                    $"AOT duck typing activator method '{activatorMethod}' return type '{activatorMethod.ReturnType}' is not assignable to proxy definition '{proxyDefinitionType}'.",
+                    nameof(activatorMethodHandle));
+            }
+
+            var delegateType = typeof(CreateProxyInstance<>).MakeGenericType(proxyDefinitionType);
+            try
+            {
+                return Delegate.CreateDelegate(delegateType, activatorMethod);
+            }
+            catch (Exception ex)
+            {
+                throw new ArgumentException(
+                    $"AOT duck typing activator method '{activatorMethod}' could not be converted to delegate '{delegateType}'.",
+                    nameof(activatorMethodHandle),
+                    ex);
+            }
+        }
+
+        /// <summary>
         /// Ensures ensure single registry assembly per process.
         /// </summary>
         /// <param name="activator">The activator value.</param>
-        private static void EnsureSingleRegistryAssemblyPerProcess(Func<object?, object?> activator)
+        private static void EnsureSingleRegistryAssemblyPerProcess(Delegate activator)
         {
             var incomingRegistryAssemblyIdentity = ResolveRegistryAssemblyIdentity(activator);
             var currentRegistryAssemblyIdentity = _registeredRegistryAssemblyIdentity ?? _validatedRegistryAssemblyIdentity;
