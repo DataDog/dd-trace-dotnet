@@ -46,5 +46,10 @@ namespace Datadog.Trace.DuckTyping
         /// Gets or sets duck kind
         /// </summary>
         public DuckKind Kind { get; set; } = DuckKind.Property;
+
+        /// <summary>
+        /// Gets or sets a value indicating whether we need look up the base types in case the member is not found in the existing type
+        /// </summary>
+        public bool FallbackToBaseTypes { get; set; } = false;
     }
 }
