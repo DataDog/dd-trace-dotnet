@@ -42,16 +42,17 @@ internal sealed class TraceExporterErrorHandle : SafeHandle
         return true;
     }
 
-    public TraceExporterException ToException()
+    public TraceExporterError ToError()
     {
-        return new TraceExporterException(Marshal.PtrToStructure<TraceExporterError>(handle));
+        return Marshal.PtrToStructure<TraceExporterError>(handle);
     }
 
     public void ThrowIfError()
     {
         if (!IsInvalid)
         {
-            throw ToException();
+            var error = ToError();
+            throw new TraceExporterException(error);
         }
     }
 }

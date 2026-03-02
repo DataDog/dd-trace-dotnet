@@ -8,6 +8,7 @@
 using System;
 using System.Runtime.InteropServices;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Vendors.MessagePack;
 
 namespace Datadog.Trace.LibDatadog.DataPipeline;
 
@@ -48,21 +49,29 @@ internal sealed class TraceExporterResponse(IntPtr handle) : SafeHandle(handle, 
             return null;
         }
 
-        var len = UIntPtr.Zero;
-        var body = NativeInterop.Exporter.GetResponseBody(this, ref len);
-        var bodyLen = (ulong)len;
-
-        if (body == IntPtr.Zero || bodyLen == 0)
+        try
         {
+            var len = UIntPtr.Zero;
+            var body = NativeInterop.Exporter.GetResponseBody(this, ref len);
+            var bodyLen = (ulong)len;
+
+            if (body == IntPtr.Zero || bodyLen == 0)
+            {
+                return null;
+            }
+
+            if (bodyLen > int.MaxValue)
+            {
+                Logger.Warning("Agent response is too large");
+                return null;
+            }
+
+            return StringEncoding.UTF8.GetString((byte*)body, (int)bodyLen);
+        }
+        catch (Exception ex)
+        {
+            Logger.Error(ex, "Failed to read response body as string");
             return null;
         }
-
-        if (bodyLen > int.MaxValue)
-        {
-            Logger.Warning("Agent response is too large");
-            return null;
-        }
-
-        return Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetString((byte*)body, (int)bodyLen);
     }
 }
