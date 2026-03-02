@@ -11,9 +11,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
 {
     internal static class MassTransitConstants
     {
+        // IntegrationName must match the enum member name for source generators
         internal const string IntegrationName = nameof(IntegrationId.MassTransit);
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.MassTransit;
 
+        // ComponentTagName is the lowercase value for the component tag
+        internal const string ComponentTagName = "masstransit";
         internal const string MessagingType = "masstransit";
 
         // Operation types for resource naming and tags

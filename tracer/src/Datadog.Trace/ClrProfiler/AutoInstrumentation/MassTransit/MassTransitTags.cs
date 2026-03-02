@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
         public override string SpanKind { get; }
 
         [Tag(Trace.Tags.InstrumentationName)]
-        public string InstrumentationName => MassTransitConstants.IntegrationName;
+        public string InstrumentationName => MassTransitConstants.ComponentTagName;
 
         [Tag(Trace.Tags.MassTransitMessagingOperation)]
         public string? MessagingOperation { get; set; }

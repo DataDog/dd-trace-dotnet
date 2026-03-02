@@ -42,6 +42,7 @@ public class MassTransit7Tests : TracingIntegrationTest
 
         SetEnvironmentVariable("RABBITMQ_HOST", rabbitHost);
         SetEnvironmentVariable("LOCALSTACK_ENDPOINT", $"http://{localStackEndpoint}");
+        SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "false");
 
         // Enable debug logging to investigate MassTransit DiagnosticSource
         SetEnvironmentVariable("DD_TRACE_DEBUG", "true");
@@ -65,7 +66,7 @@ public class MassTransit7Tests : TracingIntegrationTest
             using var s = new AssertionScope();
 
             // Filter to MassTransit spans - component tag should be "MassTransit"
-            var massTransitSpans = spans.Where(span => span.GetTag("component") == "MassTransit").ToList();
+            var massTransitSpans = spans.Where(span => span.GetTag("component") == "masstransit").ToList();
             massTransitSpans.Count.Should().BeGreaterOrEqualTo(expectedMassTransitSpanCount, $"should have at least {expectedMassTransitSpanCount} MassTransit spans");
 
             ValidateIntegrationSpans(massTransitSpans, metadataSchemaVersion: "v0", expectedServiceName: "Samples.MassTransit7", isExternalSpan: false);
@@ -88,14 +89,7 @@ public class MassTransit7Tests : TracingIntegrationTest
             var sagaQueueRegex = new Regex(@"order-state_[a-z0-9]+");
             settings.AddRegexScrubber(sagaQueueRegex, "SagaQueueName");
 
-            await VerifyHelper.VerifySpans(
-                massTransitSpans,
-                settings,
-                orderSpans: spans => spans
-                    .OrderBy(x => x.GetTag("messaging.system"))
-                    .ThenBy(x => x.GetTag("messaging.operation"))
-                    .ThenBy(x => x.Start)
-                    .ThenBy(x => x.Name))
+            await VerifyHelper.VerifySpans(massTransitSpans, settings)
                 .UseFileName(nameof(MassTransit7Tests));
 
             await telemetry.AssertIntegrationEnabledAsync(IntegrationId.MassTransit);
