@@ -23,13 +23,9 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             AllowMultipleArgumentsPerToken = true
         };
 
-        private readonly Option<string[]> _targetAssemblyOption = new("--target-assembly", "Target assembly path. Can be provided multiple times.")
-        {
-            AllowMultipleArgumentsPerToken = true
-        };
-
         private readonly Option<string[]> _targetFolderOption = new("--target-folder", "Folder containing target assemblies. Can be provided multiple times.")
         {
+            IsRequired = true,
             AllowMultipleArgumentsPerToken = true
         };
 
@@ -53,14 +49,13 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             : base("discover-mappings", "Discover mappings from type-level attributes and emit a canonical map file")
         {
             AddOption(_proxyAssemblyOption);
-            AddOption(_targetAssemblyOption);
             AddOption(_targetFolderOption);
             AddOption(_targetFilterOption);
             AddOption(_outputOption);
             AddOption(_warningsReportOption);
             AddOption(_strictOption);
 
-            AddExample("dd-trace ducktype-aot discover-mappings --proxy-assembly Datadog.Trace.DuckTyping.Tests.dll --target-assembly Datadog.Trace.DuckTyping.Tests.dll --output ducktype-aot-bible-mappings.json");
+            AddExample("dd-trace ducktype-aot discover-mappings --proxy-assembly Datadog.Trace.DuckTyping.Tests.dll --target-folder ./bin --target-filter *.dll --output ducktype-aot-bible-mappings.json");
             AddExample("dd-trace ducktype-aot discover-mappings --proxy-assembly Contracts.dll --target-folder ./bin --target-filter *.dll --output ducktype-aot-mappings.json --warnings-report ducktype-aot-discover-warnings.json");
 
             this.SetHandler(Execute);
@@ -69,7 +64,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         private void Execute(InvocationContext context)
         {
             var proxyAssemblies = _proxyAssemblyOption.GetValue(context) ?? Array.Empty<string>();
-            var targetAssemblies = _targetAssemblyOption.GetValue(context) ?? Array.Empty<string>();
             var targetFolders = _targetFolderOption.GetValue(context) ?? Array.Empty<string>();
             var targetFilters = _targetFilterOption.GetValue(context) ?? new[] { "*.dll" };
             var output = _outputOption.GetValue(context);
@@ -78,7 +72,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
             var options = new DuckTypeAotDiscoverMappingsOptions(
                 proxyAssemblies.Where(p => !string.IsNullOrWhiteSpace(p)).ToList(),
-                targetAssemblies.Where(p => !string.IsNullOrWhiteSpace(p)).ToList(),
                 targetFolders.Where(p => !string.IsNullOrWhiteSpace(p)).ToList(),
                 targetFilters.Where(p => !string.IsNullOrWhiteSpace(p)).ToList(),
                 output,
