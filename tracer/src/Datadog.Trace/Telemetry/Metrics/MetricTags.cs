@@ -288,6 +288,14 @@ internal static class MetricTags
         [Description("error_type:missing_member")]MissingMember,
     }
 
+    public enum AppSecEnabledOrigin
+    {
+        [Description("origin:app.default")] Default,
+
+        [Description("origin:env_var")] EnvVar,
+        [Description("origin:remote_config")] RemoteConfig,
+    }
+
     public enum WafAnalysis
     {
         // The generator splits on ; to add multiple tags
