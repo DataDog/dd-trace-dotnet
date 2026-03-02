@@ -5,6 +5,8 @@
 
 #if !NETFRAMEWORK
 using Datadog.Trace.PlatformHelpers;
+using Datadog.Trace.Configuration;
+using Datadog.Trace.Logging;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Internal;
@@ -15,6 +17,19 @@ namespace Datadog.Trace.Tests.PlatformHelpers
     public class AspNetCoreHttpRequestHandlerTests
     {
         public const string OriginalPath = "/somepath/Home/Index";
+
+        [Fact]
+        public void GetDefaultResourceName_ReturnsUnknownSlash_WhenRequestIsNull()
+        {
+            var handler = new AspNetCoreHttpRequestHandler(
+                DatadogLogging.GetLoggerFor<AspNetCoreHttpRequestHandlerTests>(),
+                "aspnet_core.request",
+                IntegrationId.AspNetCore);
+
+            var result = handler.GetDefaultResourceName(null);
+
+            result.Should().Be("UNKNOWN /");
+        }
 
         [Theory]
         [InlineData(null, "/somepath/Home/Index")]
