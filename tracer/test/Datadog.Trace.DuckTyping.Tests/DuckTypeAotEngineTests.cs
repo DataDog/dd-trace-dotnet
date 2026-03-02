@@ -230,6 +230,82 @@ namespace Datadog.Trace.DuckTyping.Tests
             result.CreateInstance<IForwardProxy>(target).Value.Should().Be("hello");
         }
 
+#if NET6_0_OR_GREATER
+        [Fact]
+        public void RegisterForwardProxyUsingMethodHandleAndResolve()
+        {
+            var activatorMethod = typeof(DuckTypeAotEngineTests).GetMethod(
+                nameof(CreateForwardProxyWithMethodHandle),
+                BindingFlags.NonPublic | BindingFlags.Static);
+            activatorMethod.Should().NotBeNull();
+
+            DuckTypeAotEngine.RegisterProxy(
+                typeof(IForwardProxy),
+                typeof(ForwardTarget),
+                typeof(ForwardGeneratedProxy),
+                activatorMethod!.MethodHandle);
+
+            var target = new ForwardTarget("hello");
+            var result = DuckTypeAotEngine.GetOrCreateProxyType(typeof(IForwardProxy), typeof(ForwardTarget));
+
+            result.CanCreate().Should().BeTrue();
+            result.CreateInstance<IForwardProxy>(target).Value.Should().Be("hello");
+        }
+
+        [Fact]
+        public void RegisterReverseProxyUsingMethodHandleAndResolve()
+        {
+            var activatorMethod = typeof(DuckTypeAotEngineTests).GetMethod(
+                nameof(CreateReverseProxyWithMethodHandle),
+                BindingFlags.NonPublic | BindingFlags.Static);
+            activatorMethod.Should().NotBeNull();
+
+            DuckTypeAotEngine.RegisterReverseProxy(
+                typeof(IReverseProxy),
+                typeof(ReverseTarget),
+                typeof(ReverseGeneratedProxy),
+                activatorMethod!.MethodHandle);
+
+            var result = DuckTypeAotEngine.GetOrCreateReverseProxyType(typeof(IReverseProxy), typeof(ReverseTarget));
+            result.CanCreate().Should().BeTrue();
+            result.CreateInstance<IReverseProxy>(new ReverseTarget("reverse")).Value.Should().Be("reverse");
+        }
+
+        [Fact]
+        public void RegisterForwardProxyUsingMethodHandleWithInvalidSignatureThrows()
+        {
+            var activatorMethod = typeof(DuckTypeAotEngineTests).GetMethod(
+                nameof(CreateForwardProxyWithMethodHandleAndExtraParameter),
+                BindingFlags.NonPublic | BindingFlags.Static);
+            activatorMethod.Should().NotBeNull();
+
+            Action register = () => DuckTypeAotEngine.RegisterProxy(
+                typeof(IForwardProxy),
+                typeof(ForwardTarget),
+                typeof(ForwardGeneratedProxy),
+                activatorMethod!.MethodHandle);
+
+            register.Should().Throw<ArgumentException>().WithMessage("*must declare exactly one 'object' parameter*");
+        }
+
+        [Fact]
+        public void RegisterForwardProxyUsingMethodHandleWithIncompatibleReturnTypeThrows()
+        {
+            var activatorMethod = typeof(DuckTypeAotEngineTests).GetMethod(
+                nameof(CreateSingleRegistryConflictProxyInstance),
+                BindingFlags.NonPublic | BindingFlags.Static);
+            activatorMethod.Should().NotBeNull();
+
+            Action register = () => DuckTypeAotEngine.RegisterProxy(
+                typeof(IForwardProxy),
+                typeof(ForwardTarget),
+                typeof(ForwardGeneratedProxy),
+                activatorMethod!.MethodHandle);
+
+            register.Should().Throw<ArgumentException>().WithMessage("*return type*is not assignable*");
+        }
+#endif
+
         [Fact]
         public void DuplicateRegistrationIsIdempotent()
         {
@@ -611,7 +687,22 @@ namespace Datadog.Trace.DuckTyping.Tests
             public string Value => _target.Value;
         }
 
-        public static object CreateSingleRegistryConflictProxyInstance(object? instance)
+        private static IForwardProxy CreateForwardProxyWithMethodHandle(object? instance)
+        {
+            return new ForwardGeneratedProxy((ForwardTarget)instance!);
+        }
+
+        private static IForwardProxy CreateForwardProxyWithMethodHandleAndExtraParameter(object? instance, int ignored)
+        {
+            return new ForwardGeneratedProxy((ForwardTarget)instance!);
+        }
+
+        private static IReverseProxy CreateReverseProxyWithMethodHandle(object? instance)
+        {
+            return new ReverseGeneratedProxy((ReverseTarget)instance!);
+        }
+
+        private static object CreateSingleRegistryConflictProxyInstance(object? instance)
         {
             return new SingleRegistryConflictGeneratedProxy((SingleRegistryConflictTarget)instance!);
         }
@@ -655,7 +746,7 @@ namespace Datadog.Trace.DuckTyping.Tests
 
             var bridgeMethod = typeof(DuckTypeAotEngineTests).GetMethod(
                 nameof(CreateSingleRegistryConflictProxyInstance),
-                BindingFlags.Public | BindingFlags.Static);
+                BindingFlags.NonPublic | BindingFlags.Static);
             bridgeMethod.Should().NotBeNull();
 
             var il = dynamicMethod.GetILGenerator();

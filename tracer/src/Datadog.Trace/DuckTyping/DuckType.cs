@@ -58,6 +58,19 @@ namespace Datadog.Trace.DuckTyping
         }
 
         /// <summary>
+        /// Registers an AOT-generated forward duck typing proxy using a static activator method handle.
+        /// </summary>
+        /// <param name="proxyDefinitionType">Duck typing proxy definition.</param>
+        /// <param name="targetType">Target runtime type.</param>
+        /// <param name="generatedProxyType">Generated proxy implementation type.</param>
+        /// <param name="activatorMethodHandle">Generated static activator method handle.</param>
+        public static void RegisterAotProxy(Type proxyDefinitionType, Type targetType, Type generatedProxyType, RuntimeMethodHandle activatorMethodHandle)
+        {
+            EnsureRuntimeModeIsInitialized(DuckTypeRuntimeMode.Aot);
+            DuckTypeAotEngine.RegisterProxy(proxyDefinitionType, targetType, generatedProxyType, activatorMethodHandle);
+        }
+
+        /// <summary>
         /// Registers an AOT-generated reverse duck typing proxy.
         /// </summary>
         /// <param name="typeToDeriveFrom">Type to derive the reverse proxy from.</param>
@@ -68,6 +81,19 @@ namespace Datadog.Trace.DuckTyping
         {
             EnsureRuntimeModeIsInitialized(DuckTypeRuntimeMode.Aot);
             DuckTypeAotEngine.RegisterReverseProxy(typeToDeriveFrom, delegationType, generatedProxyType, activator);
+        }
+
+        /// <summary>
+        /// Registers an AOT-generated reverse duck typing proxy using a static activator method handle.
+        /// </summary>
+        /// <param name="typeToDeriveFrom">Type to derive the reverse proxy from.</param>
+        /// <param name="delegationType">Type that provides delegated implementations.</param>
+        /// <param name="generatedProxyType">Generated reverse proxy implementation type.</param>
+        /// <param name="activatorMethodHandle">Generated static activator method handle.</param>
+        public static void RegisterAotReverseProxy(Type typeToDeriveFrom, Type delegationType, Type generatedProxyType, RuntimeMethodHandle activatorMethodHandle)
+        {
+            EnsureRuntimeModeIsInitialized(DuckTypeRuntimeMode.Aot);
+            DuckTypeAotEngine.RegisterReverseProxy(typeToDeriveFrom, delegationType, generatedProxyType, activatorMethodHandle);
         }
 
         /// <summary>
