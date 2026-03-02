@@ -15,8 +15,8 @@
     <DefineConstants>$(DefineConstants);Debug</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="WixToolset.Util.wixext" />
-    <PackageReference Include="WixToolset.UI.wixext" />
-    <PackageReference Include="WixToolset.Netfx.wixext" />
+    <PackageReference Include="WixToolset.Util.wixext" Version="5.0.2" />
+    <PackageReference Include="WixToolset.UI.wixext" Version="5.0.1" />
+    <PackageReference Include="WixToolset.Netfx.wixext" Version="5.0.2" />
   </ItemGroup>
 </Project>
