@@ -22,7 +22,9 @@ Before running tests:
 
 1. Build `Datadog.Trace` and `Datadog.Trace.Tools.Runner`.
 2. Ensure mapping/catalog/inventory/expected-outcomes test assets are present.
-3. Ensure environment variables for mode selection are set per scenario.
+3. Ensure expected-outcomes/known-limitations files remain strict-empty (no scenario overrides).
+4. Ensure mapping-catalog `expectedStatus` entries are synchronized with known compatibility divergences.
+5. Ensure environment variables for mode selection are set per scenario.
 
 ## Core Commands
 
@@ -34,7 +36,10 @@ DD_DUCKTYPE_TEST_MODE=dynamic \
   -c Release --framework net8.0
 ```
 
-### AOT suite execution with pre-generated registry
+### AOT suite execution with full-suite registry (optional diagnostics)
+
+Use this only when the registry was generated from full-suite discovery/parity inputs.
+Do not use the Bible compatibility-gate registry for this command.
 
 ```bash
 DD_DUCKTYPE_TEST_MODE=aot \
@@ -47,6 +52,7 @@ DD_DUCKTYPE_AOT_REGISTRY_PATH=/abs/path/Datadog.Trace.DuckType.AotRegistry.dll \
 
 ```bash
 DD_RUN_DUCKTYPE_AOT_FULL_SUITE_PARITY=1 \
+DD_DUCKTYPE_AOT_FULL_SUITE_PARITY_SEED=20260301 \
   dotnet test tracer/test/Datadog.Trace.Tools.Runner.Tests/Datadog.Trace.Tools.Runner.Tests.csproj \
   -c Release --framework net8.0 \
   --filter FullyQualifiedName~DuckTypeAotFullSuiteParityIntegrationTests
@@ -71,10 +77,20 @@ dotnet tracer/src/Datadog.Trace.Tools.Runner/bin/Release/Tool/net8.0/Datadog.Tra
   --compat-matrix /abs/path/Datadog.Trace.DuckType.AotRegistry.dll.compat.json \
   --mapping-catalog tracer/test/Datadog.Trace.DuckTyping.Tests/AotCompatibility/ducktype-aot-bible-mapping-catalog.json \
   --scenario-inventory tracer/test/Datadog.Trace.DuckTyping.Tests/AotCompatibility/ducktype-aot-bible-scenario-inventory.json \
-  --expected-outcomes tracer/test/Datadog.Trace.DuckTyping.Tests/AotCompatibility/ducktype-aot-bible-expected-outcomes.json \
   --manifest /abs/path/Datadog.Trace.DuckType.AotRegistry.dll.manifest.json \
   --failure-mode strict
 ```
+
+## Current Strict Bible-Gate Baseline
+
+Strict verification currently expects four scenario-level non-compatible statuses declared in the mapping catalog (`ducktype-aot-bible-mapping-catalog.json`):
+
+1. `RT-2` -> `incompatible_method_signature`
+2. `E-39` -> `missing_target_method`
+3. `E-40` -> `missing_target_method`
+4. `E-42` -> `unsupported_proxy_kind`
+
+Any additional non-compatible status should be treated as a regression until catalog expectations are intentionally updated.
 
 ## Scenario Family Coverage Expectations
 
@@ -85,7 +101,7 @@ The parity harness should cover:
 3. Bible examples `EX-01..EX-20`.
 4. Test-adapted excerpts `TX-A..TX-T`.
 
-Any newly added scenario IDs should fail CI until included in expected outcomes/policy inputs.
+Any newly added scenario IDs should fail CI until included in mapping catalog and scenario inventory contracts.
 
 ## NativeAOT Publish Validation
 
@@ -111,7 +127,7 @@ Minimum protected-branch gate:
 1. Dynamic baseline tests pass.
 2. Full parity orchestration passes.
 3. Runner AOT suite passes.
-4. Strict verify-compat passes for produced artifacts.
+4. Strict verify-compat passes for produced artifacts (including mapping-catalog `expectedStatus` assertions).
 5. NativeAOT publish integration test passes.
 
 ## Failure Triage Order
@@ -145,7 +161,7 @@ Release readiness requires all of the following:
 2. AOT parity suite green.
 3. Strict compatibility verification green.
 4. NativeAOT publish integration green.
-5. No unreviewed scenario IDs in inventory/catalog/expected outcomes.
+5. No unreviewed scenario IDs or unreviewed `expectedStatus` deltas in inventory/catalog contracts.
 
 ## Related Documents
 

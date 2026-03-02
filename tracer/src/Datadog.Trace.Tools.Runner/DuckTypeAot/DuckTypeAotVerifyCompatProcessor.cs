@@ -110,29 +110,14 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 return 1;
             }
 
-            var expectedOutcomes = DuckTypeAotExpectedOutcomes.DefaultCompatible;
-            // Branch: take this path when (!string.IsNullOrWhiteSpace(options.ExpectedOutcomesPath)) evaluates to true.
-            if (!string.IsNullOrWhiteSpace(options.ExpectedOutcomesPath))
+            // Branch: take this path when (!ValidateLegacyOverrideContractsAreStrictEmpty(options)) evaluates to true.
+            if (!ValidateLegacyOverrideContractsAreStrictEmpty(options))
             {
-                // Branch: take this path when (!TryReadExpectedOutcomes(options.ExpectedOutcomesPath!, out expectedOutcomes)) evaluates to true.
-                if (!TryReadExpectedOutcomes(options.ExpectedOutcomesPath!, out expectedOutcomes))
-                {
-                    return 1;
-                }
-            }
-            else if (!string.IsNullOrWhiteSpace(options.KnownLimitationsPath))
-            {
-                // Branch: take this path when (!string.IsNullOrWhiteSpace(options.KnownLimitationsPath)) evaluates to true.
-                Utils.WriteWarning("--known-limitations is deprecated. Use --expected-outcomes instead.");
-                // Branch: take this path when (!TryReadLegacyKnownLimitationsAsExpectedOutcomes(options.KnownLimitationsPath!, out expectedOutcomes)) evaluates to true.
-                if (!TryReadLegacyKnownLimitationsAsExpectedOutcomes(options.KnownLimitationsPath!, out expectedOutcomes))
-                {
-                    return 1;
-                }
+                return 1;
             }
 
-            // Branch: take this path when (!ValidateExpectedOutcomes(matrix, expectedOutcomes)) evaluates to true.
-            if (!ValidateExpectedOutcomes(matrix, expectedOutcomes))
+            // Branch: take this path when (string.IsNullOrWhiteSpace(options.MappingCatalogPath) && !ValidateNoNonCompatibleMappings(matrix)) evaluates to true.
+            if (string.IsNullOrWhiteSpace(options.MappingCatalogPath) && !ValidateNoNonCompatibleMappings(matrix))
             {
                 return 1;
             }
@@ -168,8 +153,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             // Branch: take this path when (!string.IsNullOrWhiteSpace(options.MappingCatalogPath)) evaluates to true.
             if (!string.IsNullOrWhiteSpace(options.MappingCatalogPath))
             {
-                // Branch: take this path when (!ValidateMappingCatalog(matrix, options.MappingCatalogPath!, expectedOutcomes)) evaluates to true.
-                if (!ValidateMappingCatalog(matrix, options.MappingCatalogPath!, expectedOutcomes))
+                // Branch: take this path when (!ValidateMappingCatalog(matrix, options.MappingCatalogPath!)) evaluates to true.
+                if (!ValidateMappingCatalog(matrix, options.MappingCatalogPath!))
                 {
                     return 1;
                 }
@@ -186,6 +171,91 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
 
             return 0;
+        }
+
+        /// <summary>
+        /// Validates legacy override contracts are strict empty.
+        /// </summary>
+        /// <param name="options">The options value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
+        private static bool ValidateLegacyOverrideContractsAreStrictEmpty(DuckTypeAotVerifyCompatOptions options)
+        {
+            // Branch: take this path when (!string.IsNullOrWhiteSpace(options.ExpectedOutcomesPath)) evaluates to true.
+            if (!string.IsNullOrWhiteSpace(options.ExpectedOutcomesPath))
+            {
+                // Branch: take this path when (!TryReadExpectedOutcomes(options.ExpectedOutcomesPath!, out var expectedOutcomes)) evaluates to true.
+                if (!TryReadExpectedOutcomes(options.ExpectedOutcomesPath!, out var expectedOutcomes))
+                {
+                    return false;
+                }
+
+                // Branch: take this path when (!string.Equals(expectedOutcomes.DefaultStatus, DuckTypeAotCompatibilityStatuses.Compatible, StringComparison.OrdinalIgnoreCase) || expectedOutcomes.ExplicitOutcomes.Count > 0) evaluates to true.
+                if (!string.Equals(expectedOutcomes.DefaultStatus, DuckTypeAotCompatibilityStatuses.Compatible, StringComparison.OrdinalIgnoreCase) ||
+                    expectedOutcomes.ExplicitOutcomes.Count > 0)
+                {
+                    Utils.WriteError("--expected-outcomes is legacy-only in strict parity mode and must remain empty with defaultStatus='compatible'.");
+                    return false;
+                }
+
+                Utils.WriteWarning("--expected-outcomes is deprecated and non-authoritative in strict parity mode.");
+            }
+
+            // Branch: take this path when (!string.IsNullOrWhiteSpace(options.KnownLimitationsPath)) evaluates to true.
+            if (!string.IsNullOrWhiteSpace(options.KnownLimitationsPath))
+            {
+                Utils.WriteWarning("--known-limitations is deprecated and non-authoritative in strict parity mode.");
+                // Branch: take this path when (!TryReadLegacyKnownLimitationsAsExpectedOutcomes(options.KnownLimitationsPath!, out var knownLimitations)) evaluates to true.
+                if (!TryReadLegacyKnownLimitationsAsExpectedOutcomes(options.KnownLimitationsPath!, out var knownLimitations))
+                {
+                    return false;
+                }
+
+                // Branch: take this path when (knownLimitations.ExplicitOutcomes.Count > 0) evaluates to true.
+                if (knownLimitations.ExplicitOutcomes.Count > 0)
+                {
+                    Utils.WriteError("--known-limitations is legacy-only in strict parity mode and must remain empty.");
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Validates no non compatible mappings.
+        /// </summary>
+        /// <param name="matrix">The matrix value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
+        private static bool ValidateNoNonCompatibleMappings(DuckTypeAotCompatibilityMatrix matrix)
+        {
+            var errors = new List<string>();
+            foreach (var mapping in matrix.Mappings)
+            {
+                var status = mapping.Status ?? string.Empty;
+                // Branch: take this path when (string.Equals(status, DuckTypeAotCompatibilityStatuses.Compatible, StringComparison.OrdinalIgnoreCase)) evaluates to true.
+                if (string.Equals(status, DuckTypeAotCompatibilityStatuses.Compatible, StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                errors.Add(
+                    "--compat-matrix contains non-compatible mapping in strict parity mode: " +
+                    $"scenario='{mapping.Id ?? "(null)"}', mode='{mapping.Mode ?? "(null)"}', " +
+                    $"proxy='{mapping.ProxyType ?? "(null)"}', target='{mapping.TargetType ?? "(null)"}', status='{status}'.");
+            }
+
+            // Branch: take this path when (errors.Count == 0) evaluates to true.
+            if (errors.Count == 0)
+            {
+                return true;
+            }
+
+            foreach (var error in errors)
+            {
+                Utils.WriteError(error);
+            }
+
+            return false;
         }
 
         /// <summary>
@@ -324,12 +394,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                           ?? knownLimitationsDocument.ApprovedLimitations
                           ?? knownLimitationsDocument.Approved
                           ?? new List<DuckTypeAotExpectedOutcomeEntry>();
-            // Branch: take this path when (entries.Count == 0) evaluates to true.
-            if (entries.Count == 0)
-            {
-                Utils.WriteError($"--known-limitations does not contain any entries: {knownLimitationsPath}");
-                return false;
-            }
 
             return TryBuildExpectedOutcomes(entries, DuckTypeAotCompatibilityStatuses.Compatible, knownLimitationsPath, "--known-limitations", out expectedOutcomes);
         }
@@ -405,12 +469,10 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// </summary>
         /// <param name="matrix">The matrix value.</param>
         /// <param name="mappingCatalogPath">The mapping catalog path value.</param>
-        /// <param name="expectedOutcomes">The expected outcomes value.</param>
         /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool ValidateMappingCatalog(
             DuckTypeAotCompatibilityMatrix matrix,
-            string mappingCatalogPath,
-            DuckTypeAotExpectedOutcomes expectedOutcomes)
+            string mappingCatalogPath)
         {
             var catalogResult = DuckTypeAotMappingCatalogParser.Parse(mappingCatalogPath);
             // Branch: take this path when (catalogResult.Errors.Count > 0) evaluates to true.
@@ -442,8 +504,9 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 }
             }
 
-            foreach (var requiredMapping in catalogResult.RequiredMappings)
+            foreach (var requiredMappingExpectation in catalogResult.RequiredMappingExpectations)
             {
+                var requiredMapping = requiredMappingExpectation.Mapping;
                 // Branch: take this path when (string.IsNullOrWhiteSpace(requiredMapping.ScenarioId)) evaluates to true.
                 if (string.IsNullOrWhiteSpace(requiredMapping.ScenarioId))
                 {
@@ -463,15 +526,13 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 }
 
                 var actualStatus = matrixMapping.Status ?? string.Empty;
-                _ = expectedOutcomes.TryGetExpectedStatuses(requiredMapping.ScenarioId!, out var expectedStatuses);
-
-                // Branch: take this path when (!expectedStatuses.Contains(actualStatus)) evaluates to true.
-                if (!expectedStatuses.Contains(actualStatus))
+                var expectedStatus = requiredMappingExpectation.ExpectedStatus;
+                // Branch: take this path when (!string.Equals(actualStatus, expectedStatus, StringComparison.OrdinalIgnoreCase)) evaluates to true.
+                if (!string.Equals(actualStatus, expectedStatus, StringComparison.OrdinalIgnoreCase))
                 {
                     errors.Add(
-                        $"Required mapping status does not match expected outcomes: " +
-                        $"key='{requiredMapping.Key}', scenario='{matrixMapping.Id ?? "(null)"}', " +
-                        $"expected=[{string.Join(", ", expectedStatuses)}], actual='{actualStatus}'.");
+                        $"Required mapping status mismatch in strict parity mode: " +
+                        $"key='{requiredMapping.Key}', scenario='{matrixMapping.Id ?? "(null)"}', expected='{expectedStatus}', actual='{actualStatus}'.");
                 }
 
                 // Branch: take this path when (!string.IsNullOrWhiteSpace(requiredMapping.ScenarioId) && evaluates to true.

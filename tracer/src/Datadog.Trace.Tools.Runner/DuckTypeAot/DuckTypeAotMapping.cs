@@ -46,22 +46,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
     }
 
     /// <summary>
-    /// Defines named constants for duck type aot parity expectation.
-    /// </summary>
-    internal enum DuckTypeAotParityExpectation
-    {
-        /// <summary>
-        /// Represents creatable.
-        /// </summary>
-        Creatable,
-
-        /// <summary>
-        /// Represents cannot create.
-        /// </summary>
-        CannotCreate
-    }
-
-    /// <summary>
     /// Represents duck type aot mapping.
     /// </summary>
     internal sealed class DuckTypeAotMapping
@@ -76,7 +60,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <param name="mode">The mode value.</param>
         /// <param name="source">The source value.</param>
         /// <param name="scenarioId">The scenario id value.</param>
-        /// <param name="parityExpectation">The parity expectation value.</param>
         public DuckTypeAotMapping(
             string proxyTypeName,
             string proxyAssemblyName,
@@ -84,8 +67,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             string targetAssemblyName,
             DuckTypeAotMappingMode mode,
             DuckTypeAotMappingSource source,
-            string? scenarioId = null,
-            DuckTypeAotParityExpectation parityExpectation = DuckTypeAotParityExpectation.Creatable)
+            string? scenarioId = null)
         {
             ProxyTypeName = proxyTypeName;
             ProxyAssemblyName = DuckTypeAotNameHelpers.NormalizeAssemblyName(proxyAssemblyName);
@@ -94,7 +76,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             Mode = mode;
             Source = source;
             ScenarioId = NormalizeScenarioId(scenarioId);
-            ParityExpectation = parityExpectation;
         }
 
         /// <summary>
@@ -139,12 +120,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <value>The scenario id value.</value>
         public string? ScenarioId { get; }
 
-        /// <summary>
-        /// Gets parity expectation.
-        /// </summary>
-        /// <value>The parity expectation value.</value>
-        public DuckTypeAotParityExpectation ParityExpectation { get; }
-
         public string Key =>
             string.Concat(
                 Mode.ToString(),
@@ -171,26 +146,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 TargetAssemblyName,
                 Mode,
                 Source,
-                scenarioId,
-                ParityExpectation);
-        }
-
-        /// <summary>
-        /// Executes with parity expectation.
-        /// </summary>
-        /// <param name="parityExpectation">The parity expectation value.</param>
-        /// <returns>The result produced by this operation.</returns>
-        public DuckTypeAotMapping WithParityExpectation(DuckTypeAotParityExpectation parityExpectation)
-        {
-            return new DuckTypeAotMapping(
-                ProxyTypeName,
-                ProxyAssemblyName,
-                TargetTypeName,
-                TargetAssemblyName,
-                Mode,
-                Source,
-                ScenarioId,
-                parityExpectation);
+                scenarioId);
         }
 
         /// <summary>

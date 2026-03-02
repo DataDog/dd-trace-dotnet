@@ -9,26 +9,36 @@ It is intended as a quick status index, while detailed behavior and examples rem
 ## Status Legend
 
 1. `Compatible`: behavior parity validated by the AOT parity harness.
-2. `Conditional`: compatible when specific mapping/build constraints are satisfied.
+2. `Compatible with Expected Divergences`: behavior is aligned except for explicit scenario-level statuses declared in mapping catalog `expectedStatus`.
 3. `Not In Scope`: intentionally outside current DuckTyping scope.
 
 ## Current Baseline
 
-As of February 28, 2026 in this repository branch state:
+Current branch baseline:
 
-1. All checklist items in `DuckTyping-NativeAOT-Remaining-Checklist.md` are marked complete.
-2. Differential parity coverage is implemented for Bible scenario families and excerpt suites.
-3. Compatibility enforcement is wired through `verify-compat` and expected outcomes inputs.
+1. Differential parity coverage is implemented for Bible families, Bible examples, and excerpt suites.
+2. Strict compatibility verification is enforced with strict-empty expected-outcomes/known-limitations contracts.
+3. Four scenario-level non-compatible statuses are intentionally declared in mapping catalog `expectedStatus`.
+4. All other cataloged scenarios are expected to be `compatible`.
+
+## Known Expected Non-Compatible Scenarios
+
+| Scenario | Mode | Expected Status | Contract Source |
+|---|---|---|---|
+| `RT-2` | forward | `incompatible_method_signature` | `ducktype-aot-bible-mapping-catalog.json` |
+| `E-39` | reverse | `missing_target_method` | `ducktype-aot-bible-mapping-catalog.json` |
+| `E-40` | reverse | `missing_target_method` | `ducktype-aot-bible-mapping-catalog.json` |
+| `E-42` | reverse | `unsupported_proxy_kind` | `ducktype-aot-bible-mapping-catalog.json` |
 
 ## Feature Family Matrix
 
 | Family | Scope | Dynamic | AOT | Status | Primary Coverage Signals |
 |---|---|---|---|---|---|
 | Forward proxies | Interface/class/abstract forwarding | Supported | Supported | Compatible | `A-01..E-42` parity inventory |
-| Reverse proxies | Delegation-based reverse implementation | Supported | Supported | Compatible | `A-01..E-42` + reverse scenarios |
+| Reverse proxies | Delegation-based reverse implementation | Supported | Supported | Compatible with Expected Divergences | `A-01..E-42` + reverse scenarios (`E-39`,`E-40`,`E-42`) |
 | DuckCopy projection | Struct copy projection | Supported | Supported | Compatible | Bible scenario set + excerpts |
 | Field/property mapping | Public/non-public mapping permutations | Supported | Supported | Compatible | `FG-*`, `FS-*`, `FF-*` |
-| Method mapping | Signatures, overload constraints, conversions | Supported | Supported | Compatible | `FM-*` and differential parity |
+| Method mapping | Signatures, overload constraints, conversions | Supported | Supported | Compatible with Expected Divergences | `FM-*`, `RT-*`, differential parity (`RT-2`) |
 | Return/argument conversion | Primitive/reference/value conversion paths | Supported | Supported | Compatible | `RT-*` scenarios |
 | Generic mapping closure | Closed generic mappings in scope | Supported | Supported | Conditional | Requires resolvable closed generic mappings |
 | Mode isolation | Dynamic vs AOT mode immutability | Supported | Supported | Compatible | `DuckTypeAotEngineTests` isolation suite |
@@ -37,12 +47,13 @@ As of February 28, 2026 in this repository branch state:
 
 ## Conditional Compatibility Notes
 
-The following are compatibility-sensitive constraints rather than behavior gaps:
+The following are compatibility-sensitive constraints:
 
 1. Mappings must be declared/resolved before runtime use.
 2. Closed generic mappings must be resolvable and supported by generator rules.
 3. Runtime must load one registry assembly identity per process.
 4. Registry/runtime contract fingerprints must match expected validation rules.
+5. Scenario-level non-compatible statuses must match mapping-catalog `expectedStatus` exactly.
 
 These constraints are enforced by build-time generation and runtime contract checks.
 
@@ -63,6 +74,7 @@ Recommended gates for any parity-sensitive change:
 2. AOT generation and compatibility verification.
 3. Differential parity orchestration.
 4. NativeAOT publish integration tests.
+5. Mapping catalog review for any `expectedStatus` additions/removals.
 
 See [DuckTyping.NativeAOT.Testing.md](./DuckTyping.NativeAOT.Testing.md) for exact commands.
 
@@ -78,8 +90,10 @@ Update this matrix when one of the following changes:
 When updating, keep this matrix synchronized with:
 
 1. `ducktype-aot-bible-scenario-inventory.json`
-2. `ducktype-aot-bible-expected-outcomes.json`
-3. `DuckTyping-NativeAOT-Remaining-Checklist.md`
+2. `ducktype-aot-bible-mapping-catalog.json` (`expectedStatus` contract)
+3. `ducktype-aot-bible-expected-outcomes.json` (strict-empty legacy contract)
+4. `ducktype-aot-bible-known-limitations.json` (strict-empty legacy contract)
+5. `DuckTyping-NativeAOT-Remaining-Checklist.md`
 
 ## Related Documents
 

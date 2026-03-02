@@ -24,6 +24,10 @@ namespace Datadog.Trace.Tools.Runner.Tests;
 public class DuckTypeAotFullSuiteParityIntegrationTests
 {
     private const string EnableParityRunEnvironmentVariable = "DD_RUN_DUCKTYPE_AOT_FULL_SUITE_PARITY";
+    private const string ParitySeedEnvironmentVariable = "DD_DUCKTYPE_AOT_FULL_SUITE_PARITY_SEED";
+    private const string KeepArtifactsEnvironmentVariable = "DD_DUCKTYPE_AOT_FULL_SUITE_PARITY_KEEP_ARTIFACTS";
+    private const string RandomSeedEnvironmentVariable = "RANDOM_SEED";
+    private const string DefaultParitySeed = "20260301";
 
     [Fact]
     public void FullDuckTypingSuiteShouldHaveMatchingOutcomesBetweenDynamicAndAotModes()
@@ -54,6 +58,10 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
         File.Exists(duckTypingTestsProjectPath).Should().BeTrue("the full-suite parity harness requires the duck typing tests project");
         File.Exists(runnerAssemblyPath).Should().BeTrue("ducktype-aot runner assembly should be available");
 
+        var paritySeed = ResolveParitySeed();
+        var keepArtifacts = ShouldKeepArtifacts();
+        var retainArtifacts = keepArtifacts;
+
         var tempDirectory = Path.Combine(Path.GetTempPath(), "dd-trace-ducktype-aot-full-suite-parity", Guid.NewGuid().ToString("N"));
         var dynamicResultsDirectory = Path.Combine(tempDirectory, "dynamic-results");
         var aotResultsDirectory = Path.Combine(tempDirectory, "aot-results");
@@ -78,7 +86,8 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
                 {
                     ["DD_DUCKTYPE_TEST_MODE"] = "dynamic",
                     ["DD_DUCKTYPE_DISCOVERY_OUTPUT_PATH"] = discoveredMapPath,
-                    ["DD_DUCKTYPE_AOT_REGISTRY_PATH"] = null
+                    ["DD_DUCKTYPE_AOT_REGISTRY_PATH"] = null,
+                    [RandomSeedEnvironmentVariable] = paritySeed
                 },
                 arguments:
                 [
@@ -141,6 +150,16 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
             var generateFailureMessage =
                 "AOT registry generation from discovered mappings should succeed." +
                 Environment.NewLine +
+                BuildParityDiagnostics(
+                    paritySeed,
+                    tempDirectory,
+                    dynamicTrxPath,
+                    aotTrxPath,
+                    discoveredMapPath,
+                    sanitizedDiscoveredMapPath,
+                    generatedRegistryPath,
+                    generateInput.ExcludedMappings) +
+                Environment.NewLine +
                 $"Excluded mappings before generation: {generateInput.ExcludedMappings.Count}" +
                 (generateInput.ExcludedMappings.Count > 0
                      ? Environment.NewLine + string.Join(Environment.NewLine, generateInput.ExcludedMappings.Take(25))
@@ -165,7 +184,8 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
                 {
                     ["DD_DUCKTYPE_TEST_MODE"] = "aot",
                     ["DD_DUCKTYPE_AOT_REGISTRY_PATH"] = generatedRegistryPath,
-                    ["DD_DUCKTYPE_DISCOVERY_OUTPUT_PATH"] = null
+                    ["DD_DUCKTYPE_DISCOVERY_OUTPUT_PATH"] = null,
+                    [RandomSeedEnvironmentVariable] = paritySeed
                 },
                 arguments:
                 [
@@ -187,6 +207,16 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
             var dynamicExitCodeMessage =
                 "the dynamic full-suite run must succeed before parity is evaluated." +
                 Environment.NewLine +
+                BuildParityDiagnostics(
+                    paritySeed,
+                    tempDirectory,
+                    dynamicTrxPath,
+                    aotTrxPath,
+                    discoveredMapPath,
+                    sanitizedDiscoveredMapPath,
+                    generatedRegistryPath,
+                    generateInput.ExcludedMappings) +
+                Environment.NewLine +
                 "STDOUT:" +
                 Environment.NewLine +
                 dynamicResult.StandardOutput +
@@ -196,6 +226,16 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
                 dynamicResult.StandardError;
             var aotExitCodeMessage =
                 "the AOT full-suite run must succeed before parity is evaluated." +
+                Environment.NewLine +
+                BuildParityDiagnostics(
+                    paritySeed,
+                    tempDirectory,
+                    dynamicTrxPath,
+                    aotTrxPath,
+                    discoveredMapPath,
+                    sanitizedDiscoveredMapPath,
+                    generatedRegistryPath,
+                    generateInput.ExcludedMappings) +
                 Environment.NewLine +
                 "STDOUT:" +
                 Environment.NewLine +
@@ -283,13 +323,80 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
             mismatches.Should().BeEmpty(
                 "all full-suite duck typing test outcomes should match between dynamic and AOT modes." +
                 Environment.NewLine +
+                BuildParityDiagnostics(
+                    paritySeed,
+                    tempDirectory,
+                    dynamicTrxPath,
+                    aotTrxPath,
+                    discoveredMapPath,
+                    sanitizedDiscoveredMapPath,
+                    generatedRegistryPath,
+                    generateInput.ExcludedMappings) +
+                Environment.NewLine +
                 string.Join(Environment.NewLine, mismatches.Take(50)) +
                 (mismatches.Count > 50 ? $"{Environment.NewLine}... ({mismatches.Count - 50} additional mismatches)" : string.Empty));
         }
+        catch
+        {
+            retainArtifacts = true;
+            throw;
+        }
         finally
         {
-            TryDeleteDirectory(tempDirectory);
+            // Branch: take this path when (retainArtifacts) evaluates to true.
+            if (retainArtifacts)
+            {
+                Console.WriteLine($"DuckType AOT full-suite parity artifacts retained at: {tempDirectory}");
+            }
+            else
+            {
+                TryDeleteDirectory(tempDirectory);
+            }
         }
+    }
+
+    private static string BuildParityDiagnostics(
+        string paritySeed,
+        string tempDirectory,
+        string dynamicTrxPath,
+        string aotTrxPath,
+        string discoveredMapPath,
+        string sanitizedDiscoveredMapPath,
+        string generatedRegistryPath,
+        IReadOnlyList<string> excludedMappings)
+    {
+        var excludedPreview = excludedMappings.Count == 0
+                                  ? "<none>"
+                                  : string.Join(Environment.NewLine, excludedMappings.Take(10));
+        return
+            $"Parity seed: {paritySeed}" + Environment.NewLine +
+            $"Temp directory: {tempDirectory}" + Environment.NewLine +
+            $"Dynamic TRX: {dynamicTrxPath}" + Environment.NewLine +
+            $"AOT TRX: {aotTrxPath}" + Environment.NewLine +
+            $"Discovered map: {discoveredMapPath}" + Environment.NewLine +
+            $"Sanitized map: {sanitizedDiscoveredMapPath}" + Environment.NewLine +
+            $"Generated registry: {generatedRegistryPath}" + Environment.NewLine +
+            $"Excluded mappings: {excludedMappings.Count}" + Environment.NewLine +
+            excludedPreview;
+    }
+
+    private static string ResolveParitySeed()
+    {
+        var configuredSeed = Environment.GetEnvironmentVariable(ParitySeedEnvironmentVariable);
+        return string.IsNullOrWhiteSpace(configuredSeed) ? DefaultParitySeed : configuredSeed.Trim();
+    }
+
+    private static bool ShouldKeepArtifacts()
+    {
+        var value = Environment.GetEnvironmentVariable(KeepArtifactsEnvironmentVariable);
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return false;
+        }
+
+        return string.Equals(value, "1", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(value, "true", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(value, "yes", StringComparison.OrdinalIgnoreCase);
     }
 
     private static Dictionary<string, TestResultSnapshot> ReadResults(string trxPath)
