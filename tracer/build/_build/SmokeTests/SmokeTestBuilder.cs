@@ -22,14 +22,6 @@ public static class SmokeTestBuilder
     const string WindowsTestAgentImage = "dd-trace-dotnet/ddapm-test-agent-windows";
     const string WindowsTestAgentDockerfile = "build/_build/docker/test-agent.windows.dockerfile";
 
-    const string SnapshotIgnoredAttrs =
-        "span_id" + ",trace_id" + ",parent_id" + ",duration" + ",start" + ",metrics.system.pid" + ",meta.runtime-id" + ","
-      + "meta.network.client.ip" + ",meta.http.client_ip" + ",metrics.process_id" + ",meta._dd.p.dm" + ","
-      + "meta._dd.p.tid" + ",meta._dd.parent_id" + ",meta._dd.appsec.s.req.params" + ","
-      + "meta._dd.appsec.s.res.body" + ",meta._dd.appsec.s.req.headers" + ","
-      + "meta._dd.appsec.s.res.headers" + ",meta._dd.appsec.fp.http.endpoint" + ","
-      + "meta._dd.appsec.fp.http.header" + ",meta._dd.appsec.fp.http.network";
-
     static readonly TimeSpan[] RetryDelays = { TimeSpan.FromMilliseconds(100), TimeSpan.FromMilliseconds(500), TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(15) };
     static int MaxRetries => RetryDelays.Length;
 
@@ -395,19 +387,13 @@ public static class SmokeTestBuilder
 
             if (scenario.IsWindows)
             {
-                var ignoredAttrs = SnapshotIgnoredAttrs;
-                if (!string.IsNullOrEmpty(scenario.ExtraSnapshotIgnoredAttrs))
-                {
-                    ignoredAttrs += "," + scenario.ExtraSnapshotIgnoredAttrs;
-                }
-
                 await BuildWindowsTestAgentImageAsync(tracerDir);
                 testAgentContainerId = await CreateAndStartContainerWithRetryAsync(
                     client, "test-agent", BuildWindowsTestAgentContainerParams(
                         networkName,
                         environment.ToHostPath(sourceSnapshotsDir),
                         environment.ToHostPath(debugSnapshotsDir),
-                        ignoredAttrs));
+                        scenario.SnapshotIgnoredAttrs));
             }
             else
             {
@@ -416,7 +402,8 @@ public static class SmokeTestBuilder
                     client, "test-agent", BuildTestAgentContainerParams(
                         networkName,
                         environment.ToHostPath(sourceSnapshotsDir),
-                        environment.ToHostPath(debugSnapshotsDir)));
+                        environment.ToHostPath(debugSnapshotsDir),
+                        scenario.SnapshotIgnoredAttrs));
             }
 
             // 4. Determine how to reach the test-agent's HTTP API
@@ -472,12 +459,7 @@ public static class SmokeTestBuilder
             // 9. Verify snapshot
             if (!scenario.IsNoop)
             {
-                var snapshotFile = scenario.SnapshotFile
-                    ?? (scenario.PublishFramework == "netcoreapp2.1"
-                        ? "smoke_test_snapshots_2_1"
-                        : "smoke_test_snapshots");
-
-                Logger.Information("Verifying snapshot {File}...", snapshotFile);
+                Logger.Information("Verifying snapshot {File}...", scenario.SnapshotFile);
 
                 // Windows containers mount snapshots at c:/snapshots, Linux at /snapshots
                 var snapshotPathPrefix = scenario.IsWindows ? "c:/snapshots" : "/snapshots";
@@ -485,9 +467,9 @@ public static class SmokeTestBuilder
                 // Retry the HTTP call itself (transport errors), but not a successful
                 // response indicating a real snapshot mismatch
                 var verifyResponse = await RetryAsync(
-                    $"Verify snapshot {snapshotFile}",
+                    $"Verify snapshot {scenario.SnapshotFile}",
                     () => httpClient.GetAsync(
-                        $"/test/session/snapshot?test_session_token={sessionToken}&file={snapshotPathPrefix}/{snapshotFile}"),
+                        $"/test/session/snapshot?test_session_token={sessionToken}&file={snapshotPathPrefix}/{scenario.SnapshotFile}"),
                     RetryDelays);
 
                 var verifyBody = await verifyResponse.Content.ReadAsStringAsync();
@@ -536,7 +518,8 @@ public static class SmokeTestBuilder
     static CreateContainerParameters BuildTestAgentContainerParams(
         string networkName,
         string snapshotsDir,
-        string debugSnapshotsDir)
+        string debugSnapshotsDir,
+        string snapshotIgnoredAttrs)
     {
         return new CreateContainerParameters
         {
@@ -545,7 +528,7 @@ public static class SmokeTestBuilder
             {
                 "ENABLED_CHECKS=trace_count_header,meta_tracer_version_header,trace_content_length",
                 "SNAPSHOT_CI=1",
-                $"SNAPSHOT_IGNORED_ATTRS={SnapshotIgnoredAttrs}",
+                $"SNAPSHOT_IGNORED_ATTRS={snapshotIgnoredAttrs}",
             },
             ExposedPorts = new Dictionary<string, EmptyStruct>
             {
