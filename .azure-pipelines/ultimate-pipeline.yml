@@ -5214,7 +5214,7 @@ stages:
 
 # Windows Fleet Installer IIS (WindowsFleetInstallerIis)
 - stage: nuke_windows_fleet_installer_iis_smoke_tests
-  dependsOn: [package_windows, generate_variables, merge_commit_id]
+  dependsOn: [generate_variables, merge_commit_id]
   pool:
     vmImage: windows-2022
   jobs:
