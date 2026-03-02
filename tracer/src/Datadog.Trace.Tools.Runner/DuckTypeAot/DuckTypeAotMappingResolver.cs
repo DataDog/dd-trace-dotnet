@@ -31,7 +31,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             var errors = new List<string>();
 
             var proxyAssemblyPathsByName = BuildAssemblyPathIndex(options.ProxyAssemblies, "--proxy-assembly", errors);
-            var targetAssemblyPathsByName = BuildAssemblyPathIndex(GetTargetAssemblyPaths(options), "--target-assembly/--target-folder", errors);
+            var targetAssemblyPathsByName = BuildAssemblyPathIndex(GetTargetAssemblyPaths(options), "--target-folder", errors);
             var genericTypeRoots = new Dictionary<string, DuckTypeAotTypeReference>(StringComparer.Ordinal);
 
             var resolvedMappings = new Dictionary<string, DuckTypeAotMapping>(StringComparer.Ordinal);
@@ -70,7 +70,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 // Branch: take this path when (!targetAssemblyPathsByName.ContainsKey(mapping.TargetAssemblyName)) evaluates to true.
                 if (!targetAssemblyPathsByName.ContainsKey(mapping.TargetAssemblyName))
                 {
-                    errors.Add($"Mapping target assembly '{mapping.TargetAssemblyName}' could not be resolved from --target-assembly/--target-folder inputs.");
+                    errors.Add($"Mapping target assembly '{mapping.TargetAssemblyName}' could not be resolved from --target-folder inputs.");
                 }
             }
 

@@ -75,7 +75,8 @@ dotnet tracer/src/Datadog.Trace.Tools.Runner/bin/Release/Tool/net8.0/Datadog.Tra
 dotnet tracer/src/Datadog.Trace.Tools.Runner/bin/Release/Tool/net8.0/Datadog.Trace.Tools.Runner.dll \
   ducktype-aot generate \
   --proxy-assembly /abs/path/My.Proxy.Contracts.dll \
-  --target-assembly /abs/path/My.Targets.dll \
+  --target-folder /abs/path \
+  --target-filter "*.dll" \
   --map-file /abs/path/ducktype-aot-map.json \
   --output /abs/path/Datadog.Trace.DuckType.AotRegistry.MyApp.dll
 ```

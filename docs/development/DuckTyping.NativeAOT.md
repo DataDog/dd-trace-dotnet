@@ -217,7 +217,8 @@ Runner assembly path (Release build):
 dotnet tracer/src/Datadog.Trace.Tools.Runner/bin/Release/Tool/net8.0/Datadog.Trace.Tools.Runner.dll \
   ducktype-aot generate \
   --proxy-assembly /abs/path/My.Proxy.Assembly.dll \
-  --target-assembly /abs/path/My.Target.Assembly.dll \
+  --target-folder /abs/path/targets \
+  --target-filter "*.dll" \
   --map-file /abs/path/ducktype-aot-map.json \
   --output /abs/path/Datadog.Trace.DuckType.AotRegistry.dll
 ```
@@ -228,7 +229,7 @@ dotnet tracer/src/Datadog.Trace.Tools.Runner/bin/Release/Tool/net8.0/Datadog.Tra
 dotnet tracer/src/Datadog.Trace.Tools.Runner/bin/Release/Tool/net8.0/Datadog.Trace.Tools.Runner.dll \
   ducktype-aot generate \
   --proxy-assembly /abs/path/My.Proxy.Assembly.dll \
-  --target-assembly /abs/path/My.Target.Assembly.dll \
+  --target-folder /abs/path/targets \
   --target-folder /abs/path/extra-targets \
   --target-filter "*.dll" \
   --map-file /abs/path/ducktype-aot-map.json \
@@ -249,7 +250,7 @@ Strong-name key can also be provided with:
 Generator fails if:
 
 1. No `--proxy-assembly` is provided.
-2. Neither `--target-assembly` nor `--target-folder` is provided.
+2. No `--target-folder` is provided.
 3. File paths do not exist.
 4. Open generic mappings remain unresolved.
 5. No compatible mappings are resolved from the canonical map file.
@@ -451,7 +452,8 @@ REGISTRY_LINKER="$WORK_DIR/Datadog.Trace.DuckType.AotRegistry.Sample.linker.xml"
 
 dotnet "$RUNNER_DLL" ducktype-aot generate \
   --proxy-assembly "$CONTRACTS_DLL" \
-  --target-assembly "$CONTRACTS_DLL" \
+  --target-folder "$(dirname "$CONTRACTS_DLL")" \
+  --target-filter "*.dll" \
   --map-file "$WORK_DIR/ducktype-aot-map.json" \
   --assembly-name Datadog.Trace.DuckType.AotRegistry.Sample \
   --emit-props "$REGISTRY_PROPS" \
@@ -607,7 +609,8 @@ This sample mirrors the official integration test flow.
 dotnet tracer/src/Datadog.Trace.Tools.Runner/bin/Release/Tool/net8.0/Datadog.Trace.Tools.Runner.dll \
   ducktype-aot generate \
   --proxy-assembly /abs/path/SampleDuckContracts.dll \
-  --target-assembly /abs/path/SampleDuckContracts.dll \
+  --target-folder /abs/path \
+  --target-filter "*.dll" \
   --map-file /abs/path/ducktype-aot-nativeaot-map.json \
   --assembly-name Datadog.Trace.DuckType.AotRegistry.NativeAotSample \
   --emit-trimmer-descriptor /abs/path/Datadog.Trace.DuckType.AotRegistry.NativeAotSample.linker.xml \
@@ -700,7 +703,8 @@ DD_DUCKTYPE_TEST_MODE=dynamic \
 dotnet tracer/src/Datadog.Trace.Tools.Runner/bin/Release/Tool/net8.0/Datadog.Trace.Tools.Runner.dll \
   ducktype-aot generate \
   --proxy-assembly /abs/path/My.Proxy.Assembly.dll \
-  --target-assembly /abs/path/My.Target.Assembly.dll \
+  --target-folder /abs/path \
+  --target-filter "*.dll" \
   --map-file /abs/path/discovered-ducktype-aot-map.json \
   --output /abs/path/Datadog.Trace.DuckType.AotRegistry.dll
 ```
@@ -844,8 +848,8 @@ Cause:
 
 Actions:
 
-1. Add missing `--proxy-assembly` or `--target-assembly`.
-2. Add `--target-folder` + `--target-filter` for assembly closure.
+1. Add missing `--proxy-assembly` or expand `--target-folder`.
+2. Add `--target-filter` for deterministic assembly closure.
 
 ## Recommended CI Gates
 
