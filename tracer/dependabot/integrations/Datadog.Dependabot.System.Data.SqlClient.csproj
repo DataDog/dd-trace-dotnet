@@ -10,8 +10,8 @@
     <!--    Assembly: System.Data -->
     <!-- Integration: System.Data.SqlClient -->
     <!--    Assembly: System.Data.SqlClient -->
-    <!-- Latest package https://www.nuget.org/packages/System.Data.SqlClient/4.9.0 -->
-    <PackageReference Include="System.Data.SqlClient" Version="4.9.0" />
+    <!-- Latest package https://www.nuget.org/packages/System.Data.SqlClient/4.9.1 -->
+    <PackageReference Include="System.Data.SqlClient" Version="4.9.1" />
   </ItemGroup>
 
 </Project>

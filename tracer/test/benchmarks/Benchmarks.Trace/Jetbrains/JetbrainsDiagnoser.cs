@@ -1,3 +1,4 @@
+#if !NETCOREAPP2_1
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -37,11 +38,11 @@ internal class JetbrainsDiagnoser : IDiagnoser
         switch (_product)
         {
             case JetbrainsProduct.Memory:
-                DotMemory.EnsurePrerequisite();
+                DotMemory.Init();
                 break;
             case JetbrainsProduct.Trace:
             case JetbrainsProduct.TimelineTrace:
-                DotTrace.EnsurePrerequisite();
+                DotTrace.Init();
                 break;
         }
     }
@@ -115,3 +116,4 @@ internal class JetbrainsDiagnoser : IDiagnoser
         return Enumerable.Empty<ValidationError>();
     }
 }
+#endif
