@@ -119,8 +119,8 @@ public static class SmokeTestBuilder
             ["RUNTIME_IMAGE"] = scenario.RuntimeImage,
             ["PUBLISH_FRAMEWORK"] = scenario.PublishFramework,
             ["TOOL_VERSION"] = toolVersion,
-            ["RELATIVE_PROFILER_PATH"] = scenario.RelativeProfilerPath!,
-            ["RELATIVE_APIWRAPPER_PATH"] = scenario.RelativeApiWrapperPath!,
+            ["RELATIVE_PROFILER_PATH"] = scenario.RelativeProfilerPath,
+            ["RELATIVE_APIWRAPPER_PATH"] = scenario.RelativeApiWrapperPath,
         };
 
         await BuildImageFromDockerfileAsync(tracerDir, dockerfilePath, scenario.DockerTag, buildArgs, artifactsDir);
@@ -131,7 +131,7 @@ public static class SmokeTestBuilder
     {
         const string dockerfilePath = "build/_build/docker/smoke.dotnet-tool.dockerfile";
 
-        var installCmd = $"./datadog-dotnet-apm-*/{scenario.DotnetToolRuntimeId}/createLogPath.sh && cp -r ./datadog-dotnet-apm-*/{scenario.DotnetToolRuntimeId} /opt/datadog";
+        var installCmd = $"./datadog-dotnet-apm-*/{scenario.RuntimeId}/createLogPath.sh && cp -r ./datadog-dotnet-apm-*/{scenario.RuntimeId} /opt/datadog";
 
         var buildArgs = new Dictionary<string, string>
         {
@@ -149,7 +149,7 @@ public static class SmokeTestBuilder
     {
         const string dockerfilePath = "build/_build/docker/smoke.dotnet-tool.nuget.dockerfile";
 
-        var installCmd = $"./datadog-dotnet-apm-*/{scenario.DotnetToolNugetRuntimeId}/createLogPath.sh && cp -r ./datadog-dotnet-apm-*/{scenario.DotnetToolNugetRuntimeId} /opt/datadog";
+        var installCmd = $"./datadog-dotnet-apm-*/{scenario.RuntimeId}/createLogPath.sh && cp -r ./datadog-dotnet-apm-*/{scenario.RuntimeId} /opt/datadog";
 
         var buildArgs = new Dictionary<string, string>
         {
@@ -190,9 +190,9 @@ public static class SmokeTestBuilder
             ["RUNTIME_IMAGE"] = scenario.RuntimeImage,
             ["PUBLISH_FRAMEWORK"] = scenario.PublishFramework,
             ["INSTALL_CMD"] = scenario.InstallCommand,
-            ["TOOL_VERSION"] = toolVersion + (scenario.TrimmingPackageVersionSuffix ?? ""),
-            ["PACKAGE_NAME"] = scenario.TrimmingPackageName,
-            ["RUNTIME_IDENTIFIER"] = scenario.TrimmingRuntimeId,
+            ["TOOL_VERSION"] = toolVersion + (scenario.PackageVersionSuffix ?? ""),
+            ["PACKAGE_NAME"] = scenario.PackageName,
+            ["RUNTIME_IDENTIFIER"] = scenario.RuntimeId,
         };
 
         await BuildImageFromDockerfileAsync(tracerDir, dockerfilePath, scenario.DockerTag, buildArgs, artifactsDir);
@@ -251,7 +251,7 @@ public static class SmokeTestBuilder
             ["PUBLISH_FRAMEWORK"] = scenario.PublishFramework,
             ["TOOL_VERSION"] = toolVersion,
             ["CHANNEL_32_BIT"] = scenario.Channel32Bit,
-            ["RELATIVE_PROFILER_PATH"] = scenario.WindowsRelativeProfilerPath,
+            ["RELATIVE_PROFILER_PATH"] = scenario.RelativeProfilerPath,
         };
 
         await BuildImageFromDockerfileAsync(tracerDir, dockerfilePath, scenario.DockerTag, buildArgs, artifactsDir);
@@ -302,7 +302,7 @@ public static class SmokeTestBuilder
             ["RUNTIME_IMAGE"] = scenario.RuntimeImage,
             ["PUBLISH_FRAMEWORK"] = scenario.PublishFramework,
             ["CHANNEL_32_BIT"] = scenario.Channel32Bit,
-            ["RELATIVE_PROFILER_PATH"] = scenario.WindowsRelativeProfilerPath,
+            ["RELATIVE_PROFILER_PATH"] = scenario.RelativeProfilerPath,
         };
 
         await BuildImageFromDockerfileAsync(tracerDir, dockerfilePath, scenario.DockerTag, buildArgs, artifactsDir);

@@ -870,7 +870,7 @@ public static class SmokeTestScenarios
                 PublishFramework = scenario.PublishFramework,
                 RuntimeTag = scenario.Tag,
                 DockerImageRepo = scenario.Image,
-                NuGetRuntimeId = runtimeId,
+                RuntimeId = runtimeId,
                 Os = os,
                 OsVersion = scenario.OsVersion,
                 RunCrashTest = scenario.RunCrashTest,
@@ -890,7 +890,7 @@ public static class SmokeTestScenarios
                 PublishFramework = scenario.PublishFramework,
                 RuntimeTag = scenario.Tag,
                 DockerImageRepo = scenario.Image,
-                DotnetToolRuntimeId = runtimeId,
+                RuntimeId = runtimeId,
                 Os = os,
                 OsVersion = scenario.OsVersion,
                 RunCrashTest = scenario.RunCrashTest,
@@ -909,7 +909,7 @@ public static class SmokeTestScenarios
                 PublishFramework = scenario.PublishFramework,
                 RuntimeTag = scenario.Tag,
                 DockerImageRepo = scenario.Image,
-                DotnetToolNugetRuntimeId = runtimeId,
+                RuntimeId = runtimeId,
                 Os = os,
                 OsVersion = scenario.OsVersion,
                 RunCrashTest = scenario.RunCrashTest,
@@ -940,9 +940,9 @@ public static class SmokeTestScenarios
                        RuntimeTag = scenario.Tag,
                        DockerImageRepo = scenario.Image,
                        InstallType = installType,
-                       TrimmingRuntimeId = runtimeId,
-                       TrimmingPackageName = package.name,
-                       TrimmingPackageVersionSuffix = package.suffix,
+                       RuntimeId = runtimeId,
+                       PackageName = package.name,
+                       PackageVersionSuffix = package.suffix,
                        Os = os,
                        OsVersion = scenario.OsVersion,
                        RunCrashTest = false,
@@ -1014,7 +1014,7 @@ public static class SmokeTestScenarios
                              OsVersion = image.OsVersion,
                              RunCrashTest = false,
                              Channel32Bit = channel32Bit,
-                             WindowsRelativeProfilerPath = $"datadog/win-{platform}/Datadog.Trace.ClrProfiler.Native.dll",
+                             RelativeProfilerPath = $"datadog/win-{platform}/Datadog.Trace.ClrProfiler.Native.dll",
                          };
         }
 
@@ -1061,7 +1061,7 @@ public static class SmokeTestScenarios
                              OsVersion = image.OsVersion,
                              RunCrashTest = false,
                              Channel32Bit = channel32Bit,
-                             WindowsRelativeProfilerPath = $"win-{platform}/Datadog.Trace.ClrProfiler.Native.dll",
+                             RelativeProfilerPath = $"win-{platform}/Datadog.Trace.ClrProfiler.Native.dll",
                          };
         }
 
