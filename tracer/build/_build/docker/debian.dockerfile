@@ -64,11 +64,11 @@ RUN sed -i '/buster\/updates/d; /buster-updates/d' /etc/apt/sources.list \
 # Install Clang
 RUN wget https://apt.llvm.org/llvm.sh && \
     chmod u+x llvm.sh && \
-    ./llvm.sh 16 all && \
-    ln -s `which clang-16` /usr/bin/clang && \
-    ln -s `which clang++-16` /usr/bin/clang++ && \
-    ln -s `which clang-tidy-16` /usr/bin/clang-tidy && \
-    ln -s `which run-clang-tidy-16` /usr/bin/run-clang-tidy
+    ./llvm.sh 20 all && \
+    ln -s `which clang-20` /usr/bin/clang && \
+    ln -s `which clang++-20` /usr/bin/clang++ && \
+    ln -s `which clang-tidy-20` /usr/bin/clang-tidy && \
+    ln -s `which run-clang-tidy-20` /usr/bin/run-clang-tidy
 
 # Install the .NET SDK
 RUN curl -sSL https://github.com/dotnet/install-scripts/raw/2bdc7f2c6e00d60be57f552b8a8aab71512dbcb2/src/dotnet-install.sh --output dotnet-install.sh  \
