@@ -96,12 +96,9 @@ public static class SmokeTestBuilder
         await BuildImageFromDockerfileAsync(tracerDir, dockerfilePath, scenario.DockerTag, buildArgs, artifactsDir, target: "installer-final");
 
         // Build the dd-dotnet entrypoint image (reuses cached layers through installer-base)
-        var ddDotnetTarget = scenario.Category switch
-        {
-            SmokeTestCategory.LinuxChiseledInstaller => "dd-dotnet-final-linux-x64",
-            SmokeTestCategory.LinuxChiseledArm64Installer => "dd-dotnet-final-linux-arm64",
-            _ => throw new InvalidOperationException($"Unexpected category for {nameof(BuildChiseledImageAsync)}: {scenario.Category}"),
-        };
+        var ddDotnetTarget = scenario.IsArm64
+            ? "dd-dotnet-final-linux-arm64"
+            : "dd-dotnet-final-linux-x64";
 
         var ddDotnetTag = scenario.DockerTag + "-dd-dotnet";
         await BuildImageFromDockerfileAsync(tracerDir, dockerfilePath, ddDotnetTag, buildArgs, artifactsDir, target: ddDotnetTarget);
