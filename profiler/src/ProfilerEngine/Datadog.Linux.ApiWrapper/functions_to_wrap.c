@@ -78,13 +78,14 @@ typedef struct crashing_data_t {
     ucontext_t* thread_context;
 } crashing_data_t;
 __attribute__((visibility("hidden")))
-crashing_data_t* crash_data = NULL;
+
+static _Atomic(crashing_data_t*) crash_data = NULL;
 
 // this function is called by the profiler
 unsigned long long dd_inside_wrapped_functions()
 {
     int app_is_crashing = 0;
-    struct crashing_data_t* current_crash_data = crash_data;
+    struct crashing_data_t* current_crash_data = atomic_load(&crash_data);
     if (current_crash_data != NULL) {
         app_is_crashing = current_crash_data->is_app_crashing;
     }
@@ -511,7 +512,7 @@ int execve(const char* pathname, char* const argv[], char* const envp[])
     }
 
     ucontext_t* thread_context = NULL;
-    struct crashing_data_t* current_crash_data = crash_data;
+    struct crashing_data_t* current_crash_data = atomic_load(&crash_data);
     if (current_crash_data != NULL) {
         current_crash_data->is_app_crashing = 1;
         thread_context = current_crash_data->thread_context;
@@ -725,8 +726,10 @@ typedef void (*sigsegv_handler_fn)(int signum, siginfo_t* info, void* context);
 static _Atomic sigsegv_handler_fn sigsegv_current_handler;
 static void dd_sigsegv_handler(int signum, siginfo_t* info, void* context)
 {
-    if (crash_data != NULL) {
-        crash_data->thread_context = (ucontext_t*)context;
+    struct crashing_data_t* current_crash_data = atomic_load(&crash_data);
+    if (current_crash_data != NULL) {
+        current_crash_data->is_app_crashing = 1;
+        current_crash_data->thread_context = (ucontext_t*)context;
     }
     sigsegv_handler_fn handler = sigsegv_current_handler;
     if (handler != NULL) {
@@ -797,10 +800,11 @@ static void init()
 #endif
     // if we failed at allocating memory for the shared variable
     // the parent process won't be notified that the app is crashing.
-    crash_data = mmap(NULL, sizeof(crashing_data_t), PROT_READ | PROT_WRITE,
-                           MAP_SHARED | MAP_ANONYMOUS, -1, 0);
-    if (crash_data != MAP_FAILED) {
-        memset(crash_data, 0, sizeof(crashing_data_t));
+    crashing_data_t* p = mmap(NULL, sizeof(crashing_data_t), PROT_READ | PROT_WRITE,
+                              MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+    atomic_store(&crash_data, p);
+    if (p != MAP_FAILED) {
+        memset(p, 0, sizeof(crashing_data_t));
     }
 }
 
