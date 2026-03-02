@@ -8,14 +8,18 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Reflection;
 using System.Web;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.AspNet;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Debugger;
+using Datadog.Trace.Debugger.SpanCodeOrigin;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 {
@@ -31,7 +35,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         MinimumVersion = "4",
         MaximumVersion = "5",
         IntegrationName = IntegrationName,
-        InstrumentationCategory = InstrumentationCategory.AppSec | InstrumentationCategory.Iast)]
+        InstrumentationCategory = InstrumentationCategory.Tracing | InstrumentationCategory.AppSec | InstrumentationCategory.Iast)]
     // ReSharper disable once InconsistentNaming
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
@@ -70,7 +74,60 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 Log.Error(ex, "Error instrumenting method {MethodName}", "System.Web.Mvc.ControllerActionInvoker.InvokeActionMethod()");
             }
 
+            try
+            {
+                var codeOrigin = DebuggerManager.Instance.CodeOrigin;
+                if (codeOrigin is { Settings.CodeOriginForSpansEnabled: true })
+                {
+                    AddSpanCodeOrigin(actionDescriptor, codeOrigin);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error adding code origin for spans in {MethodName}", "System.Web.Mvc.ControllerActionInvoker.InvokeActionMethod()");
+            }
+
             return CallTargetState.GetDefault();
+        }
+
+        private static void AddSpanCodeOrigin<TActionDescriptor>(TActionDescriptor actionDescriptor, SpanCodeOrigin codeOrigin)
+        {
+            if (actionDescriptor is null)
+            {
+                return;
+            }
+
+            var httpContext = HttpContext.Current;
+            if (SharedItems.TryPeekScope(httpContext, AspNetMvcIntegration.HttpContextKey) is not { Root.Span: { } rootSpan })
+            {
+                if (Log.IsEnabled(LogEventLevel.Debug))
+                {
+                    Log.Debug(
+                        "Code origin is enabled but scope was not found in HttpContext (key: {HttpContextKey}, httpContextNull: {HttpContextIsNull}, itemsCount: {HttpContextItemsCount}, actionDescriptorType: {ActionDescriptorType}).",
+                        AspNetMvcIntegration.HttpContextKey,
+                        httpContext is null,
+                        httpContext?.Items?.Count ?? 0,
+                        actionDescriptor.GetType());
+                }
+
+                return;
+            }
+
+            if (!actionDescriptor.TryDuckCast<ActionDescriptorWithMethodInfo>(out var reflected)
+             || reflected.MethodInfo is not { } actionMethod
+             || actionMethod.DeclaringType is not { } actionType)
+            {
+                if (Log.IsEnabled(LogEventLevel.Debug))
+                {
+                    Log.Debug(
+                        "Code origin is enabled but could not extract action from ActionDescriptor type {ActionDescriptorType} or action MethodInfo has no DeclaringType.",
+                        actionDescriptor.GetType());
+                }
+
+                return;
+            }
+
+            codeOrigin.SetCodeOriginForEntrySpan(rootSpan, actionType, actionMethod);
         }
 
         /// <summary>
