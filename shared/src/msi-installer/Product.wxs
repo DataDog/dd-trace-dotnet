@@ -3,16 +3,14 @@
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
      xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util">
   <?include $(sys.CURRENTDIR)\Config.wxi?>
-  <Product Id="*"
-           Name="$(var.ProductName)"
+  <Package Name="$(var.ProductName)"
            Language="1033"
            Version="$(var.InstallerVersion)"
            Manufacturer="$(var.ArpManufacturer)"
-           UpgradeCode="fc228e86-eae2-4c2a-ae82-135b718c269e">
-    <Package InstallerVersion="200"
-             Compressed="yes"
-             InstallScope="perMachine"
-             Description="$(var.ProductName)" />
+           UpgradeCode="fc228e86-eae2-4c2a-ae82-135b718c269e"
+           InstallerVersion="200"
+           Compressed="yes"
+           Scope="perMachine">
 
     <Icon Id="datadog.ico" SourceFile="datadog-icon.ico"/>
     <PropertyRef Id="WIX_IS_NETFRAMEWORK_461_OR_LATER_INSTALLED" />
@@ -68,51 +66,33 @@
       <ComponentGroupRef Id="Tracer.Files.Native.64"/>
       <?endif ?>
     </Feature>
-  </Product>
+  </Package>
 
   <Fragment>
-    <Directory Id="TARGETDIR" Name="SourceDir">
-      <Directory Id="$(var.PlatformProgramFilesFolder)">
-        <!-- "C:\Program Files" or "C:\Program Files (x86)"-->
-        <Directory Id="ProgramFilesFolder.Datadog" Name="$(var.Company)">
-          <!-- ".\Datadog" -->
-          <Directory Id="INSTALLFOLDER" Name="$(var.BaseProductName)">
-            <!-- ".\.NET Tracer" -->
-            <Directory Id="INSTALLFOLDER.net461" Name="net461">
-              <!-- ".\net461" -->
-            </Directory>
-            <Directory Id="INSTALLFOLDER.netstandard2.0" Name="netstandard2.0">
-              <!-- ".\netstandard2.0" -->
-            </Directory>
-            <Directory Id="INSTALLFOLDER.netcoreapp3.1" Name="netcoreapp3.1">
-                <!-- ".\netcoreapp3.1" -->
-            </Directory>
-            <Directory Id="INSTALLFOLDER.net6.0" Name="net6.0">
-              <!-- ".\net6.0" -->
-            </Directory>
-            <Directory Id="INSTALLFOLDER.net461.GAC" Name="net461.GAC">
-              <!-- Ignored as all of its components will be installed in the GAC -->
-            </Directory>
-            <Directory Id="INSTALLFOLDER.win_x86" Name="win-x86">
-              <!-- ".\win-x86" -->
-            </Directory>
-            <Directory Id="INSTALLFOLDER.win_x64" Name="win-x64">
-              <!-- ".\win-x64" -->
-            </Directory>
-          </Directory>
+    <StandardDirectory Id="$(var.PlatformProgramFilesFolder)">
+      <!-- "C:\Program Files" or "C:\Program Files (x86)"-->
+      <Directory Id="ProgramFilesFolder.Datadog" Name="$(var.Company)">
+        <!-- ".\Datadog" -->
+        <Directory Id="INSTALLFOLDER" Name="$(var.BaseProductName)">
+          <!-- ".\.NET Tracer" -->
+          <Directory Id="INSTALLFOLDER.net461" Name="net461" />
+          <Directory Id="INSTALLFOLDER.netstandard2.0" Name="netstandard2.0" />
+          <Directory Id="INSTALLFOLDER.netcoreapp3.1" Name="netcoreapp3.1" />
+          <Directory Id="INSTALLFOLDER.net6.0" Name="net6.0" />
+          <Directory Id="INSTALLFOLDER.net461.GAC" Name="net461.GAC" />
+          <Directory Id="INSTALLFOLDER.win_x86" Name="win-x86" />
+          <Directory Id="INSTALLFOLDER.win_x64" Name="win-x64" />
         </Directory>
       </Directory>
+    </StandardDirectory>
 
-      <Directory Id="CommonAppDataFolder">
-        <!-- "C:\ProgramData" -->
-        <Directory Id="CommonAppDataFolder.DatadogDotNetTracer" Name="Datadog .NET Tracer">
-          <!-- ".\Datadog .NET Tracer" -->
-          <Directory Id="CommonAppDataFolder.DatadogDotNetTracer.logs" Name="logs">
-            <!-- ".\logs" -->
-          </Directory>
-        </Directory>
+    <StandardDirectory Id="CommonAppDataFolder">
+      <!-- "C:\ProgramData" -->
+      <Directory Id="CommonAppDataFolder.DatadogDotNetTracer" Name="Datadog .NET Tracer">
+        <!-- ".\Datadog .NET Tracer" -->
+        <Directory Id="CommonAppDataFolder.DatadogDotNetTracer.logs" Name="logs" />
       </Directory>
-    </Directory>
+    </StandardDirectory>
   </Fragment>
 
   <Fragment>
@@ -129,10 +109,10 @@
       <Component Win64="$(var.Win64)">
         <CreateFolder/>
         <RegistryKey Root="HKLM" Key="Software\$(var.Company)\$(var.ProductName)">
-          <RegistryValue Type="string" Name="InstallPath" Value="[INSTALLFOLDER]" Action="write"/>
+          <RegistryValue Type="string" Name="InstallPath" Value="[INSTALLFOLDER]"/>
         </RegistryKey>
         <RegistryKey Root="HKLM" Key="Software\Microsoft\Windows\Windows Error Reporting\RuntimeExceptionHelperModules">
-          <RegistryValue Type="integer" Name="[INSTALLFOLDER.win_x64]Datadog.Trace.ClrProfiler.Native.dll" Value="1" Action="write"/>
+          <RegistryValue Type="integer" Name="[INSTALLFOLDER.win_x64]Datadog.Trace.ClrProfiler.Native.dll" Value="1"/>
         </RegistryKey>
       </Component>
     </ComponentGroup>
