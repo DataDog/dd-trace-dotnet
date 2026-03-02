@@ -2,52 +2,21 @@
   {
     TraceId: Id_1,
     SpanId: Id_2,
-    Name: masstransit.send,
-    Resource: GettingStarted send,
+    Name: masstransit.receive,
+    Resource: GettingStarted receive,
     Service: Samples.MassTransit7,
     Type: queue,
+    ParentId: Id_3,
     Tags: {
       component: masstransit,
       env: integration_tests,
       language: dotnet,
       messaging.destination.name: GettingStarted,
-      messaging.masstransit.destination_address: loopback://localhost/GettingStarted?bind=true,
-      messaging.masstransit.message_id: Guid_1,
-      messaging.masstransit.message_types: GettingStartedMessage,
-      messaging.message.conversation_id: Guid_2,
-      messaging.operation: send,
-      messaging.system: in-memory,
-      runtime-id: Guid_3,
-      span.kind: producer,
-      version: 1.0.0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_3,
-    SpanId: Id_4,
-    Name: masstransit.send,
-    Resource: GettingStarted send,
-    Service: Samples.MassTransit7,
-    Type: queue,
-    Tags: {
-      component: masstransit,
-      env: integration_tests,
-      language: dotnet,
-      messaging.destination.name: GettingStarted,
-      messaging.masstransit.destination_address: rabbitmq://localhost:00000/GettingStarted?bind=true,
-      messaging.masstransit.message_id: Guid_4,
-      messaging.masstransit.message_types: GettingStartedMessage,
-      messaging.message.conversation_id: Guid_5,
-      messaging.operation: send,
+      messaging.masstransit.input_address: rabbitmq://localhost:00000/GettingStarted,
+      messaging.operation: receive,
       messaging.system: rabbitmq,
-      runtime-id: Guid_3,
-      span.kind: producer,
+      runtime-id: Guid_1,
+      span.kind: consumer,
       version: 1.0.0
     },
     Metrics: {
@@ -58,25 +27,23 @@
     }
   },
   {
-    TraceId: Id_5,
-    SpanId: Id_6,
-    Name: masstransit.send,
-    Resource: GettingStarted send,
+    TraceId: Id_4,
+    SpanId: Id_5,
+    Name: masstransit.receive,
+    Resource: GettingStarted receive,
     Service: Samples.MassTransit7,
     Type: queue,
+    ParentId: Id_6,
     Tags: {
       component: masstransit,
       env: integration_tests,
       language: dotnet,
       messaging.destination.name: GettingStarted,
-      messaging.masstransit.destination_address: amazonsqs://us-east-1/GettingStarted,
-      messaging.masstransit.message_id: Guid_6,
-      messaging.masstransit.message_types: GettingStartedMessage,
-      messaging.message.conversation_id: Guid_7,
-      messaging.operation: send,
-      messaging.system: amazonsqs,
-      runtime-id: Guid_3,
-      span.kind: producer,
+      messaging.masstransit.input_address: rabbitmq://localhost:00000/GettingStarted,
+      messaging.operation: receive,
+      messaging.system: rabbitmq,
+      runtime-id: Guid_1,
+      span.kind: consumer,
       version: 1.0.0
     },
     Metrics: {
@@ -99,29 +66,22 @@
       env: integration_tests,
       language: dotnet,
       messaging.destination.name: GettingStarted,
-      messaging.masstransit.input_address: loopback://localhost/GettingStarted,
+      messaging.masstransit.input_address: rabbitmq://localhost:00000/GettingStarted,
       messaging.masstransit.message_types: GettingStartedMessage,
       messaging.operation: process,
-      messaging.system: in-memory,
-      runtime-id: Guid_3,
+      messaging.system: rabbitmq,
       span.kind: consumer,
       version: 1.0.0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
     }
   },
   {
-    TraceId: Id_3,
+    TraceId: Id_4,
     SpanId: Id_8,
     Name: masstransit.process,
     Resource: GettingStarted process,
     Service: Samples.MassTransit7,
     Type: queue,
-    ParentId: Id_4,
+    ParentId: Id_5,
     Tags: {
       component: masstransit,
       env: integration_tests,
@@ -131,7 +91,114 @@
       messaging.masstransit.message_types: GettingStartedMessage,
       messaging.operation: process,
       messaging.system: rabbitmq,
-      runtime-id: Guid_3,
+      span.kind: consumer,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_9,
+    SpanId: Id_10,
+    Name: masstransit.send,
+    Resource: GettingStarted send,
+    Service: Samples.MassTransit7,
+    Type: queue,
+    Tags: {
+      component: masstransit,
+      env: integration_tests,
+      language: dotnet,
+      messaging.destination.name: GettingStarted,
+      messaging.masstransit.destination_address: loopback://localhost/GettingStarted?bind=true,
+      messaging.masstransit.message_id: Guid_2,
+      messaging.masstransit.message_types: GettingStartedMessage,
+      messaging.message.conversation_id: Guid_3,
+      messaging.operation: send,
+      messaging.system: in-memory,
+      runtime-id: Guid_1,
+      span.kind: producer,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_4,
+    SpanId: Id_11,
+    Name: masstransit.send,
+    Resource: GettingStarted send,
+    Service: Samples.MassTransit7,
+    Type: queue,
+    Tags: {
+      component: masstransit,
+      env: integration_tests,
+      language: dotnet,
+      messaging.destination.name: GettingStarted,
+      messaging.masstransit.destination_address: rabbitmq://localhost:00000/GettingStarted?bind=true,
+      messaging.masstransit.message_id: Guid_4,
+      messaging.masstransit.message_types: GettingStartedMessage,
+      messaging.message.conversation_id: Guid_5,
+      messaging.operation: send,
+      messaging.system: rabbitmq,
+      runtime-id: Guid_1,
+      span.kind: producer,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_12,
+    SpanId: Id_13,
+    Name: masstransit.send,
+    Resource: GettingStarted send,
+    Service: Samples.MassTransit7,
+    Type: queue,
+    Tags: {
+      component: masstransit,
+      env: integration_tests,
+      language: dotnet,
+      messaging.destination.name: GettingStarted,
+      messaging.masstransit.destination_address: amazonsqs://us-east-1/GettingStarted,
+      messaging.masstransit.message_id: Guid_6,
+      messaging.masstransit.message_types: GettingStartedMessage,
+      messaging.message.conversation_id: Guid_7,
+      messaging.operation: send,
+      messaging.system: amazonsqs,
+      runtime-id: Guid_1,
+      span.kind: producer,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_9,
+    SpanId: Id_14,
+    Name: masstransit.receive,
+    Resource: GettingStarted receive,
+    Service: Samples.MassTransit7,
+    Type: queue,
+    ParentId: Id_10,
+    Tags: {
+      component: masstransit,
+      env: integration_tests,
+      language: dotnet,
+      messaging.destination.name: GettingStarted,
+      messaging.masstransit.input_address: loopback://localhost/GettingStarted,
+      messaging.operation: receive,
+      messaging.system: in-memory,
+      runtime-id: Guid_1,
       span.kind: consumer,
       version: 1.0.0
     },
@@ -143,13 +210,61 @@
     }
   },
   {
-    TraceId: Id_5,
-    SpanId: Id_9,
+    TraceId: Id_12,
+    SpanId: Id_15,
+    Name: masstransit.receive,
+    Resource: GettingStarted receive,
+    Service: Samples.MassTransit7,
+    Type: queue,
+    ParentId: Id_13,
+    Tags: {
+      component: masstransit,
+      env: integration_tests,
+      language: dotnet,
+      messaging.destination.name: GettingStarted,
+      messaging.masstransit.input_address: amazonsqs://us-east-1/GettingStarted,
+      messaging.operation: receive,
+      messaging.system: amazonsqs,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_9,
+    SpanId: Id_16,
     Name: masstransit.process,
     Resource: GettingStarted process,
     Service: Samples.MassTransit7,
     Type: queue,
-    ParentId: Id_6,
+    ParentId: Id_14,
+    Tags: {
+      component: masstransit,
+      env: integration_tests,
+      language: dotnet,
+      messaging.destination.name: GettingStarted,
+      messaging.masstransit.input_address: loopback://localhost/GettingStarted,
+      messaging.masstransit.message_types: GettingStartedMessage,
+      messaging.operation: process,
+      messaging.system: in-memory,
+      span.kind: consumer,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_12,
+    SpanId: Id_17,
+    Name: masstransit.process,
+    Resource: GettingStarted process,
+    Service: Samples.MassTransit7,
+    Type: queue,
+    ParentId: Id_15,
     Tags: {
       component: masstransit,
       env: integration_tests,
@@ -159,20 +274,13 @@
       messaging.masstransit.message_types: GettingStartedMessage,
       messaging.operation: process,
       messaging.system: amazonsqs,
-      runtime-id: Guid_3,
       span.kind: consumer,
       version: 1.0.0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
     }
   },
   {
-    TraceId: Id_10,
-    SpanId: Id_11,
+    TraceId: Id_18,
+    SpanId: Id_19,
     Name: masstransit.send,
     Resource: handler-failing send,
     Service: Samples.MassTransit7,
@@ -188,7 +296,7 @@
       messaging.message.conversation_id: Guid_9,
       messaging.operation: send,
       messaging.system: in-memory,
-      runtime-id: Guid_3,
+      runtime-id: Guid_1,
       span.kind: producer,
       version: 1.0.0
     },
@@ -200,13 +308,40 @@
     }
   },
   {
-    TraceId: Id_10,
-    SpanId: Id_12,
+    TraceId: Id_18,
+    SpanId: Id_20,
+    Name: masstransit.receive,
+    Resource: handler-failing receive,
+    Service: Samples.MassTransit7,
+    Type: queue,
+    ParentId: Id_19,
+    Tags: {
+      component: masstransit,
+      env: integration_tests,
+      language: dotnet,
+      messaging.destination.name: handler-failing,
+      messaging.masstransit.input_address: loopback://localhost/handler-failing,
+      messaging.operation: receive,
+      messaging.system: in-memory,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_18,
+    SpanId: Id_21,
     Name: masstransit.process,
     Resource: handler-failing process,
     Service: Samples.MassTransit7,
     Type: queue,
-    ParentId: Id_11,
+    ParentId: Id_20,
     Error: 1,
     Tags: {
       component: masstransit,
@@ -223,25 +358,18 @@ at MassTransit.Pipeline.Filters.HandlerMessageFilter`1.GreenPipes.IFilter<MassTr
       messaging.masstransit.message_types: HandlerFailingMessage,
       messaging.operation: process,
       messaging.system: in-memory,
-      runtime-id: Guid_3,
       span.kind: consumer,
       version: 1.0.0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
     }
   },
   {
-    TraceId: Id_10,
-    SpanId: Id_13,
+    TraceId: Id_18,
+    SpanId: Id_22,
     Name: masstransit.send,
     Resource: urn:message:MassTransit:Fault[[Samples.MassTransit7.Contracts:HandlerFailingMessage]] send,
     Service: Samples.MassTransit7,
     Type: queue,
-    ParentId: Id_12,
+    ParentId: Id_21,
     Tags: {
       component: masstransit,
       env: integration_tests,
@@ -258,8 +386,8 @@ at MassTransit.Pipeline.Filters.HandlerMessageFilter`1.GreenPipes.IFilter<MassTr
     }
   },
   {
-    TraceId: Id_14,
-    SpanId: Id_15,
+    TraceId: Id_23,
+    SpanId: Id_24,
     Name: masstransit.send,
     Resource: Samples_MassTransit7_Contracts-GettingStartedMessage send,
     Service: Samples.MassTransit7,
@@ -275,7 +403,7 @@ at MassTransit.Pipeline.Filters.HandlerMessageFilter`1.GreenPipes.IFilter<MassTr
       messaging.message.conversation_id: Guid_12,
       messaging.operation: send,
       messaging.system: amazonsqs,
-      runtime-id: Guid_3,
+      runtime-id: Guid_1,
       span.kind: producer,
       version: 1.0.0
     },
@@ -287,23 +415,22 @@ at MassTransit.Pipeline.Filters.HandlerMessageFilter`1.GreenPipes.IFilter<MassTr
     }
   },
   {
-    TraceId: Id_14,
-    SpanId: Id_16,
-    Name: masstransit.process,
-    Resource: GettingStarted process,
+    TraceId: Id_23,
+    SpanId: Id_25,
+    Name: masstransit.receive,
+    Resource: GettingStarted receive,
     Service: Samples.MassTransit7,
     Type: queue,
-    ParentId: Id_15,
+    ParentId: Id_24,
     Tags: {
       component: masstransit,
       env: integration_tests,
       language: dotnet,
       messaging.destination.name: GettingStarted,
       messaging.masstransit.input_address: amazonsqs://us-east-1/GettingStarted,
-      messaging.masstransit.message_types: GettingStartedMessage,
-      messaging.operation: process,
+      messaging.operation: receive,
       messaging.system: amazonsqs,
-      runtime-id: Guid_3,
+      runtime-id: Guid_1,
       span.kind: consumer,
       version: 1.0.0
     },
@@ -315,8 +442,29 @@ at MassTransit.Pipeline.Filters.HandlerMessageFilter`1.GreenPipes.IFilter<MassTr
     }
   },
   {
-    TraceId: Id_17,
-    SpanId: Id_18,
+    TraceId: Id_23,
+    SpanId: Id_26,
+    Name: masstransit.process,
+    Resource: GettingStarted process,
+    Service: Samples.MassTransit7,
+    Type: queue,
+    ParentId: Id_25,
+    Tags: {
+      component: masstransit,
+      env: integration_tests,
+      language: dotnet,
+      messaging.destination.name: GettingStarted,
+      messaging.masstransit.input_address: amazonsqs://us-east-1/GettingStarted,
+      messaging.masstransit.message_types: GettingStartedMessage,
+      messaging.operation: process,
+      messaging.system: amazonsqs,
+      span.kind: consumer,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_27,
     Name: masstransit.send,
     Resource: Samples.MassTransit7.Contracts:GettingStartedMessage send,
     Service: Samples.MassTransit7,
@@ -332,7 +480,7 @@ at MassTransit.Pipeline.Filters.HandlerMessageFilter`1.GreenPipes.IFilter<MassTr
       messaging.message.conversation_id: Guid_14,
       messaging.operation: send,
       messaging.system: rabbitmq,
-      runtime-id: Guid_3,
+      runtime-id: Guid_1,
       span.kind: producer,
       version: 1.0.0
     },
@@ -344,359 +492,8 @@ at MassTransit.Pipeline.Filters.HandlerMessageFilter`1.GreenPipes.IFilter<MassTr
     }
   },
   {
-    TraceId: Id_17,
-    SpanId: Id_19,
-    Name: masstransit.process,
-    Resource: GettingStarted process,
-    Service: Samples.MassTransit7,
-    Type: queue,
-    ParentId: Id_18,
-    Tags: {
-      component: masstransit,
-      env: integration_tests,
-      language: dotnet,
-      messaging.destination.name: GettingStarted,
-      messaging.masstransit.input_address: rabbitmq://localhost:00000/GettingStarted,
-      messaging.masstransit.message_types: GettingStartedMessage,
-      messaging.operation: process,
-      messaging.system: rabbitmq,
-      runtime-id: Guid_3,
-      span.kind: consumer,
-      version: 1.0.0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_20,
-    SpanId: Id_21,
-    Name: masstransit.receive,
-    Resource: unknown receive,
-    Service: Samples.MassTransit7,
-    Type: queue,
-    Tags: {
-      component: masstransit,
-      env: integration_tests,
-      language: dotnet,
-      messaging.destination.name: unknown,
-      messaging.operation: receive,
-      messaging.system: in-memory,
-      runtime-id: Guid_3,
-      span.kind: consumer,
-      version: 1.0.0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_22,
-    SpanId: Id_23,
-    Name: masstransit.receive,
-    Resource: unknown receive,
-    Service: Samples.MassTransit7,
-    Type: queue,
-    Tags: {
-      component: masstransit,
-      env: integration_tests,
-      language: dotnet,
-      messaging.destination.name: unknown,
-      messaging.operation: receive,
-      messaging.system: in-memory,
-      runtime-id: Guid_3,
-      span.kind: consumer,
-      version: 1.0.0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_17,
-    SpanId: Id_24,
-    Name: masstransit.receive,
-    Resource: unknown receive,
-    Service: Samples.MassTransit7,
-    Type: queue,
-    ParentId: Id_25,
-    Tags: {
-      component: masstransit,
-      env: integration_tests,
-      language: dotnet,
-      messaging.destination.name: unknown,
-      messaging.operation: receive,
-      messaging.system: in-memory,
-      runtime-id: Guid_3,
-      span.kind: consumer,
-      version: 1.0.0
-    },
-    Metrics: {
-      _dd.top_level: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_3,
-    SpanId: Id_26,
-    Name: masstransit.receive,
-    Resource: unknown receive,
-    Service: Samples.MassTransit7,
-    Type: queue,
-    ParentId: Id_27,
-    Tags: {
-      component: masstransit,
-      env: integration_tests,
-      language: dotnet,
-      messaging.destination.name: unknown,
-      messaging.operation: receive,
-      messaging.system: in-memory,
-      runtime-id: Guid_3,
-      span.kind: consumer,
-      version: 1.0.0
-    },
-    Metrics: {
-      _dd.top_level: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
     TraceId: Id_28,
     SpanId: Id_29,
-    Name: masstransit.receive,
-    Resource: unknown receive,
-    Service: Samples.MassTransit7,
-    Type: queue,
-    Tags: {
-      component: masstransit,
-      env: integration_tests,
-      language: dotnet,
-      messaging.destination.name: unknown,
-      messaging.operation: receive,
-      messaging.system: in-memory,
-      runtime-id: Guid_3,
-      span.kind: consumer,
-      version: 1.0.0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_30,
-    SpanId: Id_31,
-    Name: masstransit.receive,
-    Resource: unknown receive,
-    Service: Samples.MassTransit7,
-    Type: queue,
-    Tags: {
-      component: masstransit,
-      env: integration_tests,
-      language: dotnet,
-      messaging.destination.name: unknown,
-      messaging.operation: receive,
-      messaging.system: in-memory,
-      runtime-id: Guid_3,
-      span.kind: consumer,
-      version: 1.0.0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_32,
-    SpanId: Id_33,
-    Name: masstransit.receive,
-    Resource: unknown receive,
-    Service: Samples.MassTransit7,
-    Type: queue,
-    Tags: {
-      component: masstransit,
-      env: integration_tests,
-      language: dotnet,
-      messaging.destination.name: unknown,
-      messaging.operation: receive,
-      messaging.system: in-memory,
-      runtime-id: Guid_3,
-      span.kind: consumer,
-      version: 1.0.0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_34,
-    SpanId: Id_35,
-    Name: masstransit.receive,
-    Resource: unknown receive,
-    Service: Samples.MassTransit7,
-    Type: queue,
-    Tags: {
-      component: masstransit,
-      env: integration_tests,
-      language: dotnet,
-      messaging.destination.name: unknown,
-      messaging.operation: receive,
-      messaging.system: in-memory,
-      runtime-id: Guid_3,
-      span.kind: consumer,
-      version: 1.0.0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_36,
-    SpanId: Id_37,
-    Name: masstransit.receive,
-    Resource: unknown receive,
-    Service: Samples.MassTransit7,
-    Type: queue,
-    Tags: {
-      component: masstransit,
-      env: integration_tests,
-      language: dotnet,
-      messaging.destination.name: unknown,
-      messaging.operation: receive,
-      messaging.system: in-memory,
-      runtime-id: Guid_3,
-      span.kind: consumer,
-      version: 1.0.0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_38,
-    SpanId: Id_39,
-    Name: masstransit.receive,
-    Resource: unknown receive,
-    Service: Samples.MassTransit7,
-    Type: queue,
-    Tags: {
-      component: masstransit,
-      env: integration_tests,
-      language: dotnet,
-      messaging.destination.name: unknown,
-      messaging.operation: receive,
-      messaging.system: in-memory,
-      runtime-id: Guid_3,
-      span.kind: consumer,
-      version: 1.0.0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_40,
-    SpanId: Id_41,
-    Name: masstransit.receive,
-    Resource: unknown receive,
-    Service: Samples.MassTransit7,
-    Type: queue,
-    Tags: {
-      component: masstransit,
-      env: integration_tests,
-      language: dotnet,
-      messaging.destination.name: unknown,
-      messaging.operation: receive,
-      messaging.system: in-memory,
-      runtime-id: Guid_3,
-      span.kind: consumer,
-      version: 1.0.0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_42,
-    SpanId: Id_43,
-    Name: masstransit.receive,
-    Resource: unknown receive,
-    Service: Samples.MassTransit7,
-    Type: queue,
-    Tags: {
-      component: masstransit,
-      env: integration_tests,
-      language: dotnet,
-      messaging.destination.name: unknown,
-      messaging.operation: receive,
-      messaging.system: in-memory,
-      runtime-id: Guid_3,
-      span.kind: consumer,
-      version: 1.0.0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_44,
-    SpanId: Id_45,
-    Name: masstransit.receive,
-    Resource: unknown receive,
-    Service: Samples.MassTransit7,
-    Type: queue,
-    Tags: {
-      component: masstransit,
-      env: integration_tests,
-      language: dotnet,
-      messaging.destination.name: unknown,
-      messaging.operation: receive,
-      messaging.system: in-memory,
-      runtime-id: Guid_3,
-      span.kind: consumer,
-      version: 1.0.0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_46,
-    SpanId: Id_47,
     Name: masstransit.send,
     Resource: urn:message:Samples.MassTransit7.Contracts:FailingMessage send,
     Service: Samples.MassTransit7,
@@ -712,7 +509,7 @@ at MassTransit.Pipeline.Filters.HandlerMessageFilter`1.GreenPipes.IFilter<MassTr
       messaging.message.conversation_id: Guid_16,
       messaging.operation: send,
       messaging.system: in-memory,
-      runtime-id: Guid_3,
+      runtime-id: Guid_1,
       span.kind: producer,
       version: 1.0.0
     },
@@ -724,13 +521,40 @@ at MassTransit.Pipeline.Filters.HandlerMessageFilter`1.GreenPipes.IFilter<MassTr
     }
   },
   {
-    TraceId: Id_46,
-    SpanId: Id_48,
+    TraceId: Id_28,
+    SpanId: Id_30,
+    Name: masstransit.receive,
+    Resource: Failing receive,
+    Service: Samples.MassTransit7,
+    Type: queue,
+    ParentId: Id_29,
+    Tags: {
+      component: masstransit,
+      env: integration_tests,
+      language: dotnet,
+      messaging.destination.name: Failing,
+      messaging.masstransit.input_address: loopback://localhost/Failing,
+      messaging.operation: receive,
+      messaging.system: in-memory,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_28,
+    SpanId: Id_31,
     Name: masstransit.process,
     Resource: Failing process,
     Service: Samples.MassTransit7,
     Type: queue,
-    ParentId: Id_47,
+    ParentId: Id_30,
     Error: 1,
     Tags: {
       component: masstransit,
@@ -746,25 +570,18 @@ at Samples.MassTransit7.Consumers.FailingConsumer.Consume(ConsumeContext`1 conte
       messaging.masstransit.message_types: FailingMessage,
       messaging.operation: process,
       messaging.system: in-memory,
-      runtime-id: Guid_3,
       span.kind: consumer,
       version: 1.0.0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
     }
   },
   {
-    TraceId: Id_46,
-    SpanId: Id_49,
+    TraceId: Id_28,
+    SpanId: Id_32,
     Name: masstransit.send,
     Resource: urn:message:MassTransit:Fault[[Samples.MassTransit7.Contracts:FailingMessage]] send,
     Service: Samples.MassTransit7,
     Type: queue,
-    ParentId: Id_48,
+    ParentId: Id_31,
     Tags: {
       component: masstransit,
       env: integration_tests,
@@ -781,8 +598,8 @@ at Samples.MassTransit7.Consumers.FailingConsumer.Consume(ConsumeContext`1 conte
     }
   },
   {
-    TraceId: Id_50,
-    SpanId: Id_51,
+    TraceId: Id_33,
+    SpanId: Id_34,
     Name: masstransit.send,
     Resource: urn:message:Samples.MassTransit7.Contracts:GettingStartedMessage send,
     Service: Samples.MassTransit7,
@@ -798,7 +615,7 @@ at Samples.MassTransit7.Consumers.FailingConsumer.Consume(ConsumeContext`1 conte
       messaging.message.conversation_id: Guid_19,
       messaging.operation: send,
       messaging.system: in-memory,
-      runtime-id: Guid_3,
+      runtime-id: Guid_1,
       span.kind: producer,
       version: 1.0.0
     },
@@ -810,23 +627,22 @@ at Samples.MassTransit7.Consumers.FailingConsumer.Consume(ConsumeContext`1 conte
     }
   },
   {
-    TraceId: Id_50,
-    SpanId: Id_52,
-    Name: masstransit.process,
-    Resource: GettingStarted process,
+    TraceId: Id_33,
+    SpanId: Id_35,
+    Name: masstransit.receive,
+    Resource: GettingStarted receive,
     Service: Samples.MassTransit7,
     Type: queue,
-    ParentId: Id_51,
+    ParentId: Id_34,
     Tags: {
       component: masstransit,
       env: integration_tests,
       language: dotnet,
       messaging.destination.name: GettingStarted,
       messaging.masstransit.input_address: loopback://localhost/GettingStarted,
-      messaging.masstransit.message_types: GettingStartedMessage,
-      messaging.operation: process,
+      messaging.operation: receive,
       messaging.system: in-memory,
-      runtime-id: Guid_3,
+      runtime-id: Guid_1,
       span.kind: consumer,
       version: 1.0.0
     },
@@ -838,8 +654,29 @@ at Samples.MassTransit7.Consumers.FailingConsumer.Consume(ConsumeContext`1 conte
     }
   },
   {
-    TraceId: Id_53,
-    SpanId: Id_54,
+    TraceId: Id_33,
+    SpanId: Id_36,
+    Name: masstransit.process,
+    Resource: GettingStarted process,
+    Service: Samples.MassTransit7,
+    Type: queue,
+    ParentId: Id_35,
+    Tags: {
+      component: masstransit,
+      env: integration_tests,
+      language: dotnet,
+      messaging.destination.name: GettingStarted,
+      messaging.masstransit.input_address: loopback://localhost/GettingStarted,
+      messaging.masstransit.message_types: GettingStartedMessage,
+      messaging.operation: process,
+      messaging.system: in-memory,
+      span.kind: consumer,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_37,
+    SpanId: Id_38,
     Name: masstransit.send,
     Resource: urn:message:Samples.MassTransit7.Contracts:OrderAccepted send,
     Service: Samples.MassTransit7,
@@ -855,7 +692,7 @@ at Samples.MassTransit7.Consumers.FailingConsumer.Consume(ConsumeContext`1 conte
       messaging.message.conversation_id: Guid_21,
       messaging.operation: send,
       messaging.system: in-memory,
-      runtime-id: Guid_3,
+      runtime-id: Guid_1,
       span.kind: producer,
       version: 1.0.0
     },
@@ -867,23 +704,22 @@ at Samples.MassTransit7.Consumers.FailingConsumer.Consume(ConsumeContext`1 conte
     }
   },
   {
-    TraceId: Id_53,
-    SpanId: Id_55,
-    Name: masstransit.process,
-    Resource: OrderState process,
+    TraceId: Id_37,
+    SpanId: Id_39,
+    Name: masstransit.receive,
+    Resource: OrderState receive,
     Service: Samples.MassTransit7,
     Type: queue,
-    ParentId: Id_54,
+    ParentId: Id_38,
     Tags: {
       component: masstransit,
       env: integration_tests,
       language: dotnet,
       messaging.destination.name: OrderState,
       messaging.masstransit.input_address: loopback://localhost/OrderState,
-      messaging.masstransit.message_types: OrderAccepted,
-      messaging.operation: process,
+      messaging.operation: receive,
       messaging.system: in-memory,
-      runtime-id: Guid_3,
+      runtime-id: Guid_1,
       span.kind: consumer,
       version: 1.0.0
     },
@@ -895,13 +731,13 @@ at Samples.MassTransit7.Consumers.FailingConsumer.Consume(ConsumeContext`1 conte
     }
   },
   {
-    TraceId: Id_53,
-    SpanId: Id_56,
+    TraceId: Id_37,
+    SpanId: Id_40,
     Name: masstransit.process,
     Resource: OrderState process,
     Service: Samples.MassTransit7,
     Type: queue,
-    ParentId: Id_54,
+    ParentId: Id_39,
     Tags: {
       component: masstransit,
       env: integration_tests,
@@ -911,20 +747,13 @@ at Samples.MassTransit7.Consumers.FailingConsumer.Consume(ConsumeContext`1 conte
       messaging.masstransit.message_types: OrderState,
       messaging.operation: process,
       messaging.system: in-memory,
-      runtime-id: Guid_3,
       span.kind: consumer,
       version: 1.0.0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
     }
   },
   {
-    TraceId: Id_57,
-    SpanId: Id_58,
+    TraceId: Id_41,
+    SpanId: Id_42,
     Name: masstransit.send,
     Resource: urn:message:Samples.MassTransit7.Contracts:OrderCompleted send,
     Service: Samples.MassTransit7,
@@ -940,7 +769,7 @@ at Samples.MassTransit7.Consumers.FailingConsumer.Consume(ConsumeContext`1 conte
       messaging.message.conversation_id: Guid_23,
       messaging.operation: send,
       messaging.system: in-memory,
-      runtime-id: Guid_3,
+      runtime-id: Guid_1,
       span.kind: producer,
       version: 1.0.0
     },
@@ -952,23 +781,22 @@ at Samples.MassTransit7.Consumers.FailingConsumer.Consume(ConsumeContext`1 conte
     }
   },
   {
-    TraceId: Id_57,
-    SpanId: Id_59,
-    Name: masstransit.process,
-    Resource: OrderState process,
+    TraceId: Id_41,
+    SpanId: Id_43,
+    Name: masstransit.receive,
+    Resource: OrderState receive,
     Service: Samples.MassTransit7,
     Type: queue,
-    ParentId: Id_58,
+    ParentId: Id_42,
     Tags: {
       component: masstransit,
       env: integration_tests,
       language: dotnet,
       messaging.destination.name: OrderState,
       messaging.masstransit.input_address: loopback://localhost/OrderState,
-      messaging.masstransit.message_types: OrderCompleted,
-      messaging.operation: process,
+      messaging.operation: receive,
       messaging.system: in-memory,
-      runtime-id: Guid_3,
+      runtime-id: Guid_1,
       span.kind: consumer,
       version: 1.0.0
     },
@@ -980,13 +808,13 @@ at Samples.MassTransit7.Consumers.FailingConsumer.Consume(ConsumeContext`1 conte
     }
   },
   {
-    TraceId: Id_57,
-    SpanId: Id_60,
+    TraceId: Id_41,
+    SpanId: Id_44,
     Name: masstransit.process,
     Resource: OrderState process,
     Service: Samples.MassTransit7,
     Type: queue,
-    ParentId: Id_58,
+    ParentId: Id_43,
     Tags: {
       component: masstransit,
       env: integration_tests,
@@ -996,20 +824,13 @@ at Samples.MassTransit7.Consumers.FailingConsumer.Consume(ConsumeContext`1 conte
       messaging.masstransit.message_types: OrderState,
       messaging.operation: process,
       messaging.system: in-memory,
-      runtime-id: Guid_3,
       span.kind: consumer,
       version: 1.0.0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
     }
   },
   {
-    TraceId: Id_61,
-    SpanId: Id_62,
+    TraceId: Id_45,
+    SpanId: Id_46,
     Name: masstransit.send,
     Resource: urn:message:Samples.MassTransit7.Contracts:OrderFailed send,
     Service: Samples.MassTransit7,
@@ -1025,7 +846,7 @@ at Samples.MassTransit7.Consumers.FailingConsumer.Consume(ConsumeContext`1 conte
       messaging.message.conversation_id: Guid_25,
       messaging.operation: send,
       messaging.system: in-memory,
-      runtime-id: Guid_3,
+      runtime-id: Guid_1,
       span.kind: producer,
       version: 1.0.0
     },
@@ -1037,13 +858,13 @@ at Samples.MassTransit7.Consumers.FailingConsumer.Consume(ConsumeContext`1 conte
     }
   },
   {
-    TraceId: Id_61,
-    SpanId: Id_63,
-    Name: masstransit.process,
-    Resource: OrderState process,
+    TraceId: Id_45,
+    SpanId: Id_47,
+    Name: masstransit.receive,
+    Resource: OrderState receive,
     Service: Samples.MassTransit7,
     Type: queue,
-    ParentId: Id_62,
+    ParentId: Id_46,
     Error: 1,
     Tags: {
       component: masstransit,
@@ -1056,10 +877,9 @@ at Samples.MassTransit7.Sagas.OrderStateMachine.<>c.<.ctor>b__0_11(BehaviorConte
       language: dotnet,
       messaging.destination.name: OrderState,
       messaging.masstransit.input_address: loopback://localhost/OrderState,
-      messaging.masstransit.message_types: OrderFailed,
-      messaging.operation: process,
+      messaging.operation: receive,
       messaging.system: in-memory,
-      runtime-id: Guid_3,
+      runtime-id: Guid_1,
       span.kind: consumer,
       version: 1.0.0
     },
@@ -1071,13 +891,13 @@ at Samples.MassTransit7.Sagas.OrderStateMachine.<>c.<.ctor>b__0_11(BehaviorConte
     }
   },
   {
-    TraceId: Id_61,
-    SpanId: Id_64,
+    TraceId: Id_45,
+    SpanId: Id_48,
     Name: masstransit.process,
     Resource: OrderState process,
     Service: Samples.MassTransit7,
     Type: queue,
-    ParentId: Id_62,
+    ParentId: Id_47,
     Tags: {
       component: masstransit,
       env: integration_tests,
@@ -1087,25 +907,18 @@ at Samples.MassTransit7.Sagas.OrderStateMachine.<>c.<.ctor>b__0_11(BehaviorConte
       messaging.masstransit.message_types: OrderState,
       messaging.operation: process,
       messaging.system: in-memory,
-      runtime-id: Guid_3,
       span.kind: consumer,
       version: 1.0.0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
     }
   },
   {
-    TraceId: Id_61,
-    SpanId: Id_65,
+    TraceId: Id_45,
+    SpanId: Id_49,
     Name: masstransit.send,
     Resource: urn:message:MassTransit:Fault[[Samples.MassTransit7.Contracts:OrderFailed]] send,
     Service: Samples.MassTransit7,
     Type: queue,
-    ParentId: Id_63,
+    ParentId: Id_47,
     Tags: {
       component: masstransit,
       env: integration_tests,
@@ -1123,8 +936,8 @@ at Samples.MassTransit7.Sagas.OrderStateMachine.<>c.<.ctor>b__0_11(BehaviorConte
     }
   },
   {
-    TraceId: Id_66,
-    SpanId: Id_67,
+    TraceId: Id_50,
+    SpanId: Id_51,
     Name: masstransit.send,
     Resource: urn:message:Samples.MassTransit7.Contracts:OrderSubmitted send,
     Service: Samples.MassTransit7,
@@ -1140,7 +953,7 @@ at Samples.MassTransit7.Sagas.OrderStateMachine.<>c.<.ctor>b__0_11(BehaviorConte
       messaging.message.conversation_id: Guid_29,
       messaging.operation: send,
       messaging.system: in-memory,
-      runtime-id: Guid_3,
+      runtime-id: Guid_1,
       span.kind: producer,
       version: 1.0.0
     },
@@ -1152,8 +965,8 @@ at Samples.MassTransit7.Sagas.OrderStateMachine.<>c.<.ctor>b__0_11(BehaviorConte
     }
   },
   {
-    TraceId: Id_68,
-    SpanId: Id_69,
+    TraceId: Id_52,
+    SpanId: Id_53,
     Name: masstransit.send,
     Resource: urn:message:Samples.MassTransit7.Contracts:OrderSubmitted send,
     Service: Samples.MassTransit7,
@@ -1169,7 +982,7 @@ at Samples.MassTransit7.Sagas.OrderStateMachine.<>c.<.ctor>b__0_11(BehaviorConte
       messaging.message.conversation_id: Guid_31,
       messaging.operation: send,
       messaging.system: in-memory,
-      runtime-id: Guid_3,
+      runtime-id: Guid_1,
       span.kind: producer,
       version: 1.0.0
     },
@@ -1181,23 +994,22 @@ at Samples.MassTransit7.Sagas.OrderStateMachine.<>c.<.ctor>b__0_11(BehaviorConte
     }
   },
   {
-    TraceId: Id_66,
-    SpanId: Id_70,
-    Name: masstransit.process,
-    Resource: OrderState process,
+    TraceId: Id_50,
+    SpanId: Id_54,
+    Name: masstransit.receive,
+    Resource: OrderState receive,
     Service: Samples.MassTransit7,
     Type: queue,
-    ParentId: Id_67,
+    ParentId: Id_51,
     Tags: {
       component: masstransit,
       env: integration_tests,
       language: dotnet,
       messaging.destination.name: OrderState,
       messaging.masstransit.input_address: loopback://localhost/OrderState,
-      messaging.masstransit.message_types: OrderSubmitted,
-      messaging.operation: process,
+      messaging.operation: receive,
       messaging.system: in-memory,
-      runtime-id: Guid_3,
+      runtime-id: Guid_1,
       span.kind: consumer,
       version: 1.0.0
     },
@@ -1209,13 +1021,40 @@ at Samples.MassTransit7.Sagas.OrderStateMachine.<>c.<.ctor>b__0_11(BehaviorConte
     }
   },
   {
-    TraceId: Id_66,
-    SpanId: Id_71,
+    TraceId: Id_52,
+    SpanId: Id_55,
+    Name: masstransit.receive,
+    Resource: OrderState receive,
+    Service: Samples.MassTransit7,
+    Type: queue,
+    ParentId: Id_53,
+    Tags: {
+      component: masstransit,
+      env: integration_tests,
+      language: dotnet,
+      messaging.destination.name: OrderState,
+      messaging.masstransit.input_address: loopback://localhost/OrderState,
+      messaging.operation: receive,
+      messaging.system: in-memory,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_50,
+    SpanId: Id_56,
     Name: masstransit.process,
     Resource: OrderState process,
     Service: Samples.MassTransit7,
     Type: queue,
-    ParentId: Id_67,
+    ParentId: Id_54,
     Tags: {
       component: masstransit,
       env: integration_tests,
@@ -1225,53 +1064,18 @@ at Samples.MassTransit7.Sagas.OrderStateMachine.<>c.<.ctor>b__0_11(BehaviorConte
       messaging.masstransit.message_types: OrderState,
       messaging.operation: process,
       messaging.system: in-memory,
-      runtime-id: Guid_3,
       span.kind: consumer,
       version: 1.0.0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
     }
   },
   {
-    TraceId: Id_68,
-    SpanId: Id_72,
+    TraceId: Id_52,
+    SpanId: Id_57,
     Name: masstransit.process,
     Resource: OrderState process,
     Service: Samples.MassTransit7,
     Type: queue,
-    ParentId: Id_69,
-    Tags: {
-      component: masstransit,
-      env: integration_tests,
-      language: dotnet,
-      messaging.destination.name: OrderState,
-      messaging.masstransit.input_address: loopback://localhost/OrderState,
-      messaging.masstransit.message_types: OrderSubmitted,
-      messaging.operation: process,
-      messaging.system: in-memory,
-      runtime-id: Guid_3,
-      span.kind: consumer,
-      version: 1.0.0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_68,
-    SpanId: Id_73,
-    Name: masstransit.process,
-    Resource: OrderState process,
-    Service: Samples.MassTransit7,
-    Type: queue,
-    ParentId: Id_69,
+    ParentId: Id_55,
     Tags: {
       component: masstransit,
       env: integration_tests,
@@ -1281,15 +1085,8 @@ at Samples.MassTransit7.Sagas.OrderStateMachine.<>c.<.ctor>b__0_11(BehaviorConte
       messaging.masstransit.message_types: OrderState,
       messaging.operation: process,
       messaging.system: in-memory,
-      runtime-id: Guid_3,
       span.kind: consumer,
       version: 1.0.0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
     }
   }
 ]

@@ -13,6 +13,7 @@ using Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.DuckTypes;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Propagators;
 
 namespace Datadog.Trace.DiagnosticListeners
 {
@@ -24,29 +25,29 @@ namespace Datadog.Trace.DiagnosticListeners
     /// We create our own Datadog spans based on the diagnostic events.
     /// </summary>
     /// <remarks>
-    /// MassTransit emits the following diagnostic events:
-    /// - MassTransit.Transport.Send (Start/Stop) - When messages are sent
-    /// - MassTransit.Transport.Receive (Start/Stop) - When messages are received (NOT instrumented - too low-level)
-    /// - MassTransit.Consumer.Consume (Start/Stop) - When a consumer processes a message
-    /// - MassTransit.Consumer.Handle (Start/Stop) - When a handler processes a message
-    /// - MassTransit.Saga.Send (Start/Stop) - When a saga receives a message
-    /// - MassTransit.Saga.RaiseEvent (Start/Stop) - When a saga raises an event
-    /// - MassTransit.Saga.SendQuery (Start/Stop) - When a saga handles a query
-    /// - MassTransit.Saga.Initiate (Start/Stop) - When a saga is initiated
-    /// - MassTransit.Saga.Orchestrate (Start/Stop) - When a saga orchestrates
-    /// - MassTransit.Saga.Observe (Start/Stop) - When a saga observes
-    /// - MassTransit.Activity.Execute (Start/Stop) - When a Routing Slip activity executes
-    /// - MassTransit.Activity.Compensate (Start/Stop) - When a Routing Slip activity compensates
+    /// MassTransit 7 emits the following diagnostic events:
+    /// - MassTransit.Transport.Send (Start/Stop) - When messages are sent → Creates producer spans
+    /// - MassTransit.Transport.Receive (Start/Stop) - When messages are received (NOT instrumented)
+    /// - MassTransit.Consumer.Consume (Start/Stop) - When a consumer processes a message → Creates consumer spans
+    /// - MassTransit.Consumer.Handle (Start/Stop) - When a handler processes a message → Creates consumer spans
+    /// - MassTransit.Saga.* (Start/Stop) - When saga state machines process events → Creates consumer spans
+    /// - MassTransit.Activity.* (Start/Stop) - When Routing Slip activities execute/compensate → Creates consumer spans
     /// <para/>
-    /// We instrument all events except Receive. The Receive event fires at the transport
-    /// level before message deserialization, which would create duplicate spans alongside consumer events.
-    /// Context propagation (trace context injection/extraction) happens in Send and Consume handlers.
+    /// We do NOT instrument Receive events because:
+    /// 1. ReceiveContext properties are inaccessible via reflection (explicit interface implementation)
+    /// 2. This results in null InputAddress and no parent context extraction
+    /// 3. Creates orphaned root spans with "unknown receive" resource names
+    /// 4. Receive events fire before deserialization and would duplicate Consume/Handle spans
     /// <para/>
-    /// NOTE: MassTransit 7 does NOT emit exception information through DiagnosticSource events (Stop event arg
-    /// is always null). To capture exceptions, we use CallTarget instrumentation on BaseReceiveContext.NotifyFaulted
-    /// which stores the exception keyed by Activity.TraceId. We use TraceId instead of Activity.Id because
-    /// NotifyFaulted may be called from a child activity (Handle/Saga) while the Stop event fires on the parent
-    /// activity (Consume). The OnStop handler retrieves this exception and marks the span as an error.
+    /// Context propagation:
+    /// - Send events: Inject trace context into message headers via InjectTraceContext()
+    /// - Consume/Handle events: Extract parent context from message headers via ExtractTraceContext()
+    /// - This links consumer spans to producer spans across the message bus
+    /// <para/>
+    /// Exception handling:
+    /// MassTransit 7 does NOT emit exception information through DiagnosticSource events (Stop event arg
+    /// is always null). We use CallTarget instrumentation on BaseReceiveContext.NotifyFaulted to capture
+    /// exceptions, storing them keyed by Activity.TraceId for later retrieval in OnStop handlers.
     /// </remarks>
     internal sealed class MassTransitDiagnosticObserver : DiagnosticObserver
     {
@@ -99,16 +100,15 @@ namespace Datadog.Trace.DiagnosticListeners
                         break;
 
                     // Receive events (transport level - parent of Consume/Handle)
-                    // NOTE: Receive creates a parent span that Consume/Handle spans nest under.
-                    // This provides visibility into the full message pipeline from transport reception to processing.
+                    // For Receive events, arg IS the ReceiveContext directly (not ConsumeContext)
                     case "MassTransit.Transport.Receive.Start":
-                        OnConsumeStart(arg, "Receive");
+                        OnReceiveStart(arg);
                         break;
                     case "MassTransit.Transport.Receive.Stop":
                         OnStop("Receive");
                         break;
 
-                    // Consumer Consume events (consumer spans - child of Receive)
+                    // Consumer Consume events (consumer spans)
                     case "MassTransit.Consumer.Consume.Start":
                         OnConsumeStart(arg, "Consume");
                         break;
@@ -126,13 +126,10 @@ namespace Datadog.Trace.DiagnosticListeners
                         break;
 
                     // Saga events (for state machine sagas)
-                    // Saga.Send fires when the saga receives a message
-                    case "MassTransit.Saga.Send.Start":
-                        OnConsumeStart(arg, "SagaSend");
-                        break;
-                    case "MassTransit.Saga.Send.Stop":
-                        OnStop("SagaSend");
-                        break;
+                    // NOTE: MassTransit fires MULTIPLE events for the same saga operation:
+                    // - Saga.Send (when saga receives message) + Saga.RaiseEvent (when state machine transitions)
+                    // We only instrument RaiseEvent to avoid duplicate spans
+                    // Saga.Send.Start/Stop - SKIPPED to avoid duplicates
 
                     // Saga.RaiseEvent fires when a saga state machine raises an event
                     case "MassTransit.Saga.RaiseEvent.Start":
@@ -142,31 +139,9 @@ namespace Datadog.Trace.DiagnosticListeners
                         OnStop("SagaRaiseEvent");
                         break;
 
-                    // Additional Saga events
-                    case "MassTransit.Saga.SendQuery.Start":
-                        OnConsumeStart(arg, "SagaSendQuery");
-                        break;
-                    case "MassTransit.Saga.SendQuery.Stop":
-                        OnStop("SagaSendQuery");
-                        break;
-                    case "MassTransit.Saga.Initiate.Start":
-                        OnConsumeStart(arg, "SagaInitiate");
-                        break;
-                    case "MassTransit.Saga.Initiate.Stop":
-                        OnStop("SagaInitiate");
-                        break;
-                    case "MassTransit.Saga.Orchestrate.Start":
-                        OnConsumeStart(arg, "SagaOrchestrate");
-                        break;
-                    case "MassTransit.Saga.Orchestrate.Stop":
-                        OnStop("SagaOrchestrate");
-                        break;
-                    case "MassTransit.Saga.Observe.Start":
-                        OnConsumeStart(arg, "SagaObserve");
-                        break;
-                    case "MassTransit.Saga.Observe.Stop":
-                        OnStop("SagaObserve");
-                        break;
+                    // Additional Saga events - SKIPPED to avoid duplicates with RaiseEvent
+                    // These fire alongside RaiseEvent for specific scenarios
+                    // SendQuery, Initiate, Orchestrate, Observe.Start/Stop - SKIPPED
 
                     // Routing Slip (Courier) Activity events
                     case "MassTransit.Activity.Execute.Start":
@@ -244,6 +219,72 @@ namespace Datadog.Trace.DiagnosticListeners
             }
         }
 
+        private void OnReceiveStart(object? arg)
+        {
+            if (arg == null)
+            {
+                Log.Debug("MassTransitDiagnosticObserver.OnReceiveStart: arg is null");
+                return;
+            }
+
+            var activityId = GetCurrentActivityId();
+
+            Log.Debug(
+                "MassTransitDiagnosticObserver.OnReceiveStart: Processing ReceiveContext, ArgType={ArgType}, ActivityId={ActivityId}",
+                arg.GetType().FullName,
+                activityId);
+
+            // For Receive events, arg IS the ReceiveContext directly (e.g., InMemoryReceiveContext, RabbitMqReceiveContext)
+            // Extract InputAddress and TransportHeaders from the ReceiveContext
+            var inputAddress = MassTransitCommon.TryGetProperty<Uri>(arg, "InputAddress")?.ToString();
+            var transportHeaders = MassTransitCommon.TryGetProperty<object>(arg, "TransportHeaders");
+
+            Log.Debug(
+                "MassTransitDiagnosticObserver.OnReceiveStart: InputAddress={InputAddress}, HasTransportHeaders={HasHeaders}",
+                inputAddress ?? "null",
+                transportHeaders != null);
+
+            // Extract parent context from TransportHeaders for distributed tracing
+            // For Receive events, we need to extract from TransportHeaders, not the context directly
+            PropagationContext parentContext = default;
+            if (transportHeaders != null)
+            {
+                // Create a wrapper object that has a Headers property pointing to TransportHeaders
+                // so ExtractTraceContext can use it
+                var headersWrapper = new { Headers = transportHeaders };
+                parentContext = MassTransitCommon.ExtractTraceContext(Tracer.Instance, headersWrapper);
+
+                Log.Debug(
+                    "MassTransitDiagnosticObserver.OnReceiveStart: ExtractedParentContext, HasSpanContext={HasContext}",
+                    parentContext.SpanContext != null);
+            }
+
+            var scope = MassTransitCommon.CreateConsumerScope(
+                Tracer.Instance,
+                "receive",
+                inputAddress,
+                messageType: null, // Receive events don't have message type yet (pre-deserialization)
+                parentContext);
+
+            if (scope != null && !string.IsNullOrEmpty(activityId))
+            {
+                StoreScope("Receive", activityId, scope);
+
+                Log.Debug(
+                    "MassTransitDiagnosticObserver.OnReceiveStart: Created span TraceId={TraceId}, SpanId={SpanId}, ParentId={ParentId}",
+                    scope.Span.TraceId,
+                    scope.Span.SpanId,
+                    scope.Span.Context.ParentId);
+            }
+            else
+            {
+                Log.Debug(
+                    "MassTransitDiagnosticObserver.OnReceiveStart: Scope not created. ScopeNull={ScopeNull}, ActivityIdEmpty={ActivityIdEmpty}",
+                    scope == null,
+                    string.IsNullOrEmpty(activityId));
+            }
+        }
+
         private void OnConsumeStart(object? arg, string operationType)
         {
             if (arg == null)
@@ -290,6 +331,25 @@ namespace Datadog.Trace.DiagnosticListeners
 
             // Extract parent context from headers for distributed tracing
             var parentContext = MassTransitCommon.ExtractTraceContext(Tracer.Instance, arg);
+
+            // For Process/Consume/Handle spans, check if there's an active Receive span to use as parent
+            // If a Receive span is active, use it instead of the extracted context from headers
+            if (operationType != "Receive")
+            {
+                var activeScope = Tracer.Instance.ActiveScope;
+                if (activeScope?.Span != null &&
+                    activeScope.Span.OperationName == "masstransit.receive" &&
+                    activeScope.Span.GetTag("component") == "masstransit")
+                {
+                    // Use the active Receive span as the parent for Process/Consume spans
+                    // Cast ISpanContext to SpanContext
+                    parentContext = new PropagationContext(activeScope.Span.Context as SpanContext, Baggage.Current);
+
+                    Log.Debug(
+                        "MassTransitDiagnosticObserver.OnConsumeStart: Using active Receive span as parent, ParentSpanId={ParentSpanId}",
+                        activeScope.Span.SpanId);
+                }
+            }
 
             // Map operation type to lowercase operation name (Receive → receive, Consume → process, etc.)
             var operation = operationType.ToLowerInvariant();
