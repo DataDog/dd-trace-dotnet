@@ -556,20 +556,10 @@ partial class Build : NukeBuild
                     var allScenarios = SmokeTests.SmokeTestScenarios.GetAllScenarios()
                         .SelectMany(pair => pair.Value.Select(kv => (category: pair.Key, scenario: kv.Key, details: kv.Value)))
                         .Where(x => !IsPrerelease || !x.details.ExcludeWhenPrerelease)
-                        .Select(x => (x.category, x.scenario, x.details, entry: (object)new
+                        .Select(x => (x.category, x.scenario, entry: (object)new
                         {
                             category = x.category.ToString(),
                             scenario = x.scenario,
-                            runtimeId = x.details.RuntimeId,
-                            relativeProfilerPath = x.details.RelativeProfilerPath,
-                            relativeApiWrapperPath = x.details.RelativeApiWrapperPath,
-                            packageName = x.details.PackageName,
-                            packageVersionSuffix = x.details.PackageVersionSuffix,
-                            runCrashTest = x.details.RunCrashTest ? "true" : "false",
-                            publishFramework = x.details.PublishFramework,
-                            runtimeImage = x.details.RuntimeImage,
-                            smokeTestOs = x.details.Os,
-                            smokeTestOsVersion = x.details.OsVersion,
                         }))
                         .ToList();
 
@@ -631,7 +621,7 @@ partial class Build : NukeBuild
                     EmitMatrix("nuke_windows_fleet_installer_iis_matrix",
                         allScenarios.Where(x => x.category is SmokeTests.SmokeTestCategory.WindowsFleetInstallerIis));
 
-                    void EmitMatrix(string name, IEnumerable<(SmokeTests.SmokeTestCategory category, string scenario, SmokeTests.SmokeTestScenario details, object entry)> scenarios)
+                    void EmitMatrix(string name, IEnumerable<(SmokeTests.SmokeTestCategory category, string scenario, object entry)> scenarios)
                     {
                         var matrix = scenarios.ToDictionary(x => x.scenario, x => x.entry);
                         Logger.Information($"Nuke smoke tests matrix: {name}");
