@@ -4965,11 +4965,8 @@ stages:
         condition: always()
         displayName: Group logs
 
-      - script: npm install -g @datadog/datadog-ci || (sleep 60 && npm install -g @datadog/datadog-ci)
-        condition: always()
-        displayName: Install datadog-ci
-
       - script: |
+          npm install -g @datadog/datadog-ci && \
           datadog-ci junit upload \
             ./logs*/reportJunit.xml \
             --service system-tests \
@@ -4979,9 +4976,11 @@ stages:
         workingDirectory: system-tests
         condition: always()
         displayName: Upload test results to Test Optimization
+        retryCountOnTaskFailure: 3
+        continueOnError: true
         env:
           DATADOG_SITE: datadoghq.com
-          DATADOG_API_KEY: $(DD_API_KEY_PROD)
+          DATADOG_API_KEY: $(ddApiKey)
 
       - publish: system-tests/all_logs/
         condition: always()
