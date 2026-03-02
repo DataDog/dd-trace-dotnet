@@ -93,9 +93,14 @@ public class MassTransit7Tests : TracingIntegrationTest
                 massTransitSpans,
                 settings,
                 orderSpans: spans => spans
-                    .OrderBy(x => x.GetTag("messaging.system"))  // Order by transport
-                    .ThenBy(x => x.TraceId)                      // Group by trace
-                    .ThenBy(x => x.Start))                       // Natural chronological order
+                    .OrderBy(x => x.Resource.Split(' ')[0])  // Group by destination (Failing, GettingStarted, OrderState, etc.)
+                    .ThenBy(x => x.GetTag("messaging.operation") switch
+                    {
+                        "send" => 0,
+                        "receive" => 1,
+                        "process" => 2,
+                        _ => 3
+                    }))
                 .UseFileName(nameof(MassTransit7Tests));
 
             await telemetry.AssertIntegrationEnabledAsync(IntegrationId.MassTransit);
