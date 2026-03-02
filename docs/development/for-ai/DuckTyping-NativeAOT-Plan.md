@@ -54,7 +54,8 @@ ducktype-aot discover-mappings \
 ```bash
 ducktype-aot generate \
   --proxy-assembly <proxy.dll> \
-  --target-assembly <target.dll> \
+  --target-folder <folder-with-targets> \
+  --target-filter "*.dll" \
   --map-file <ducktype-aot-map.json> \
   --output <Datadog.Trace.DuckType.AotRegistry.dll>
 ```

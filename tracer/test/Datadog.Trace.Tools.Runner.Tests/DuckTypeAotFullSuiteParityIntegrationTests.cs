@@ -126,11 +126,14 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
                 generateArguments.Add(proxyAssemblyPath);
             }
 
-            foreach (var targetAssemblyPath in generateInput.TargetAssemblyPaths)
+            foreach (var targetFolder in generateInput.TargetFolders)
             {
-                generateArguments.Add("--target-assembly");
-                generateArguments.Add(targetAssemblyPath);
+                generateArguments.Add("--target-folder");
+                generateArguments.Add(targetFolder);
             }
+
+            generateArguments.Add("--target-filter");
+            generateArguments.Add("*.dll");
 
             generateArguments.Add("--map-file");
             generateArguments.Add(generateInput.SanitizedMapPath);
@@ -577,7 +580,21 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
         WriteSanitizedMapFile(filteredMappings, sanitizedMapPath);
         File.Exists(sanitizedMapPath).Should().BeTrue("sanitized map file should be written before generation");
 
-        return new GenerateInput(sanitizedMapPath, proxyAssemblyPaths, targetAssemblyPaths, excludedMappings);
+        var targetFolders = targetAssemblyPaths
+                           .Select(Path.GetDirectoryName)
+                           .Where(path => !string.IsNullOrWhiteSpace(path))
+                           .Distinct(StringComparer.OrdinalIgnoreCase)
+                           .Cast<string>()
+                           .ToList();
+
+        var duckTypingTestsDirectory = Path.GetDirectoryName(duckTypingTestsAssemblyPath);
+        if (!string.IsNullOrWhiteSpace(duckTypingTestsDirectory) &&
+            !targetFolders.Contains(duckTypingTestsDirectory, StringComparer.OrdinalIgnoreCase))
+        {
+            targetFolders.Insert(0, duckTypingTestsDirectory);
+        }
+
+        return new GenerateInput(sanitizedMapPath, proxyAssemblyPaths, targetFolders, excludedMappings);
     }
 
     private static Dictionary<string, string> BuildAssemblyPathIndex(IEnumerable<string> searchDirectories)
@@ -867,12 +884,12 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
         internal GenerateInput(
             string sanitizedMapPath,
             IReadOnlyList<string> proxyAssemblyPaths,
-            IReadOnlyList<string> targetAssemblyPaths,
+            IReadOnlyList<string> targetFolders,
             IReadOnlyList<string> excludedMappings)
         {
             SanitizedMapPath = sanitizedMapPath;
             ProxyAssemblyPaths = proxyAssemblyPaths;
-            TargetAssemblyPaths = targetAssemblyPaths;
+            TargetFolders = targetFolders;
             ExcludedMappings = excludedMappings;
         }
 
@@ -880,7 +897,7 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
 
         internal IReadOnlyList<string> ProxyAssemblyPaths { get; }
 
-        internal IReadOnlyList<string> TargetAssemblyPaths { get; }
+        internal IReadOnlyList<string> TargetFolders { get; }
 
         internal IReadOnlyList<string> ExcludedMappings { get; }
     }

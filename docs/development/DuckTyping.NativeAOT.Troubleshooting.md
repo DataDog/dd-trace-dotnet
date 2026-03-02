@@ -136,7 +136,7 @@ Symptoms:
 
 Likely causes:
 
-1. Required assembly not included in `--target-assembly`/`--target-folder` or proxy list.
+1. Required assembly not included in `--target-folder` scope or proxy list.
 2. Type identity typo in map file.
 3. Assembly-qualified name ambiguity.
 
