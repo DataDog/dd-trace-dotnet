@@ -684,8 +684,7 @@ public static class SmokeTestScenarios
         {
             // This is actually a mix of ubuntu and debian, but they're all in the same MS repository
             // Uses mcr.microsoft.com/dotnet/sdk (not aspnet!) as base image
-            yield return GetDotnetTool(
-                category: SmokeTestCategory.LinuxDotnetToolNuget,
+            yield return GetDotnetToolNuget(
                 shortName: "ubuntu",
                 os: "ubuntu",
                 runtimeId: "linux-x64",
@@ -702,8 +701,7 @@ public static class SmokeTestScenarios
                 },
                 excludeWhenPrerelease: TargetFramework.NETCOREAPP3_1);
 
-            yield return GetDotnetTool(
-                category: SmokeTestCategory.LinuxDotnetToolNuget,
+            yield return GetDotnetToolNuget(
                 shortName: "alpine",
                 os: "alpine",
                 runtimeId: "linux-musl-x64",
@@ -804,18 +802,19 @@ public static class SmokeTestScenarios
 
         static IEnumerable<IEnumerable<SmokeTestScenario>> LinuxSelfInstrumentScenarios()
         {
-            yield return new[]
+            yield return new SmokeTestScenario[]
             {
-                new SmokeTestScenario(
-                    Category: SmokeTestCategory.LinuxSelfInstrument,
-                    ShortName: "debian",
-                    PublishFramework: TargetFramework.NET6_0,
-                    RuntimeTag: "6.0-bullseye-slim",
-                    DockerImageRepo: "mcr.microsoft.com/dotnet/aspnet",
-                    Os: "debian",
-                    OsVersion: "bullseye",
-                    InstallType: InstallType.DebX64,
-                    RunCrashTest: true),
+                new SelfInstrumentScenario
+                {
+                    ShortName = "debian",
+                    PublishFramework = TargetFramework.NET6_0,
+                    RuntimeTag = "6.0-bullseye-slim",
+                    DockerImageRepo = "mcr.microsoft.com/dotnet/aspnet",
+                    Os = "debian",
+                    OsVersion = "bullseye",
+                    InstallType = InstallType.DebX64,
+                    RunCrashTest = true,
+                },
             };
         }
 
@@ -823,74 +822,101 @@ public static class SmokeTestScenarios
         // Helper methods for creating scenarios
         // ─────────────────────────────────────────────────────────
 
-        static IEnumerable<SmokeTestScenario> GetInstaller(
+        static IEnumerable<InstallerScenario> GetInstaller(
             SmokeTestCategory category,
             string shortName,
             string os,
             InstallType installType,
             params (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[] scenarios)
-            => scenarios.Select(scenario => new SmokeTestScenario(
-                Category: category,
-                ShortName: shortName,
-                PublishFramework: scenario.PublishFramework,
-                RuntimeTag: scenario.Tag,
-                DockerImageRepo: scenario.Image,
-                InstallType: installType,
-                Os: os,
-                OsVersion: scenario.OsVersion,
-                RunCrashTest: scenario.RunCrashTest));
+            => scenarios.Select(scenario => new InstallerScenario
+            {
+                Category = category,
+                ShortName = shortName,
+                PublishFramework = scenario.PublishFramework,
+                RuntimeTag = scenario.Tag,
+                DockerImageRepo = scenario.Image,
+                InstallType = installType,
+                Os = os,
+                OsVersion = scenario.OsVersion,
+                RunCrashTest = scenario.RunCrashTest,
+            });
 
-        static IEnumerable<SmokeTestScenario> GetChiseled(
+        static IEnumerable<ChiseledScenario> GetChiseled(
             SmokeTestCategory category,
             string shortName,
             string os,
             params (string PublishFramework, string Image, string Tag, string OsVersion)[] scenarios)
-            => scenarios.Select(scenario => new SmokeTestScenario(
-                Category: category,
-                ShortName: shortName,
-                PublishFramework: scenario.PublishFramework,
-                RuntimeTag: scenario.Tag,
-                DockerImageRepo: scenario.Image,
-                Os: os,
-                OsVersion: scenario.OsVersion));
+            => scenarios.Select(scenario => new ChiseledScenario
+            {
+                Category = category,
+                ShortName = shortName,
+                PublishFramework = scenario.PublishFramework,
+                RuntimeTag = scenario.Tag,
+                DockerImageRepo = scenario.Image,
+                Os = os,
+                OsVersion = scenario.OsVersion,
+            });
 
-        static IEnumerable<SmokeTestScenario> GetNuGet(
+        static IEnumerable<NuGetScenario> GetNuGet(
             SmokeTestCategory category,
             string shortName,
             string os,
             string runtimeId,
             params (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[] scenarios)
-            => scenarios.Select(scenario => new SmokeTestScenario(
-                Category: category,
-                ShortName: shortName,
-                PublishFramework: scenario.PublishFramework,
-                RuntimeTag: scenario.Tag,
-                DockerImageRepo: scenario.Image,
-                RuntimeId: runtimeId,
-                Os: os,
-                OsVersion: scenario.OsVersion,
-                RunCrashTest: scenario.RunCrashTest));
+            => scenarios.Select(scenario => new NuGetScenario
+            {
+                Category = category,
+                ShortName = shortName,
+                PublishFramework = scenario.PublishFramework,
+                RuntimeTag = scenario.Tag,
+                DockerImageRepo = scenario.Image,
+                NuGetRuntimeId = runtimeId,
+                Os = os,
+                OsVersion = scenario.OsVersion,
+                RunCrashTest = scenario.RunCrashTest,
+            });
 
-        static IEnumerable<SmokeTestScenario> GetDotnetTool(
+        static IEnumerable<DotnetToolScenario> GetDotnetTool(
             SmokeTestCategory category,
             string shortName,
             string os,
             string runtimeId,
             (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[] scenarios,
             string? excludeWhenPrerelease = null)
-            => scenarios.Select(scenario => new SmokeTestScenario(
-                Category: category,
-                ShortName: shortName,
-                PublishFramework: scenario.PublishFramework,
-                RuntimeTag: scenario.Tag,
-                DockerImageRepo: scenario.Image,
-                RuntimeId: runtimeId,
-                Os: os,
-                OsVersion: scenario.OsVersion,
-                RunCrashTest: scenario.RunCrashTest,
-                ExcludeWhenPrerelease: excludeWhenPrerelease is not null && scenario.PublishFramework == excludeWhenPrerelease));
+            => scenarios.Select(scenario => new DotnetToolScenario
+            {
+                Category = category,
+                ShortName = shortName,
+                PublishFramework = scenario.PublishFramework,
+                RuntimeTag = scenario.Tag,
+                DockerImageRepo = scenario.Image,
+                DotnetToolRuntimeId = runtimeId,
+                Os = os,
+                OsVersion = scenario.OsVersion,
+                RunCrashTest = scenario.RunCrashTest,
+                ExcludeWhenPrerelease = excludeWhenPrerelease is not null && scenario.PublishFramework == excludeWhenPrerelease,
+            });
 
-        static IEnumerable<SmokeTestScenario> GetTrimming(
+        static IEnumerable<DotnetToolNugetScenario> GetDotnetToolNuget(
+            string shortName,
+            string os,
+            string runtimeId,
+            (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[] scenarios,
+            string? excludeWhenPrerelease = null)
+            => scenarios.Select(scenario => new DotnetToolNugetScenario
+            {
+                ShortName = shortName,
+                PublishFramework = scenario.PublishFramework,
+                RuntimeTag = scenario.Tag,
+                DockerImageRepo = scenario.Image,
+                DotnetToolNugetRuntimeId = runtimeId,
+                Os = os,
+                OsVersion = scenario.OsVersion,
+                RunCrashTest = scenario.RunCrashTest,
+                ExcludeWhenPrerelease = excludeWhenPrerelease is not null && scenario.PublishFramework == excludeWhenPrerelease,
+            });
+
+        static IEnumerable<TrimmingScenario> GetTrimming(
             SmokeTestCategory category,
             string shortName,
             string os,
@@ -906,19 +932,21 @@ public static class SmokeTestScenarios
 
             return from scenario in scenarios
                    from package in packages
-                   select new SmokeTestScenario(
-                       Category: category,
-                       ShortName: $"{package.packageShortName}_{shortName}",
-                       PublishFramework: scenario.PublishFramework,
-                       RuntimeTag: scenario.Tag,
-                       DockerImageRepo: scenario.Image,
-                       InstallType: installType,
-                       RuntimeId: runtimeId,
-                       PackageName: package.name,
-                       PackageVersionSuffix: package.suffix,
-                       Os: os,
-                       OsVersion: scenario.OsVersion,
-                       RunCrashTest: false);
+                   select new TrimmingScenario
+                   {
+                       Category = category,
+                       ShortName = $"{package.packageShortName}_{shortName}",
+                       PublishFramework = scenario.PublishFramework,
+                       RuntimeTag = scenario.Tag,
+                       DockerImageRepo = scenario.Image,
+                       InstallType = installType,
+                       TrimmingRuntimeId = runtimeId,
+                       TrimmingPackageName = package.name,
+                       TrimmingPackageVersionSuffix = package.suffix,
+                       Os = os,
+                       OsVersion = scenario.OsVersion,
+                       RunCrashTest = false,
+                   };
         }
 
         // ─────────────────────────────────────────────────────────
@@ -953,16 +981,17 @@ public static class SmokeTestScenarios
                          let channel32Bit = platform.enable32Bit
                              ? GetInstallerChannel(image.PublishFramework)
                              : ""
-                         select new SmokeTestScenario(
-                             Category: SmokeTestCategory.WindowsMsi,
-                             ShortName: $"{platform.platform}_{(platform.enable32Bit ? "32bit" : "64bit")}",
-                             PublishFramework: image.PublishFramework,
-                             RuntimeTag: image.Tag,
-                             DockerImageRepo: "mcr.microsoft.com/dotnet/aspnet",
-                             Os: "windows",
-                             OsVersion: image.OsVersion,
-                             RunCrashTest: false,
-                             Channel32Bit: channel32Bit);
+                         select new WindowsMsiScenario
+                         {
+                             ShortName = $"{platform.platform}_{(platform.enable32Bit ? "32bit" : "64bit")}",
+                             PublishFramework = image.PublishFramework,
+                             RuntimeTag = image.Tag,
+                             DockerImageRepo = "mcr.microsoft.com/dotnet/aspnet",
+                             Os = "windows",
+                             OsVersion = image.OsVersion,
+                             RunCrashTest = false,
+                             Channel32Bit = channel32Bit,
+                         };
         }
 
         static IEnumerable<IEnumerable<SmokeTestScenario>> WindowsNuGetScenarios()
@@ -975,17 +1004,18 @@ public static class SmokeTestScenarios
                          let channel32Bit = platform == "x86"
                              ? GetInstallerChannel(image.PublishFramework)
                              : ""
-                         select new SmokeTestScenario(
-                             Category: SmokeTestCategory.WindowsNuGet,
-                             ShortName: $"{platform}",
-                             PublishFramework: image.PublishFramework,
-                             RuntimeTag: image.Tag,
-                             DockerImageRepo: "mcr.microsoft.com/dotnet/aspnet",
-                             Os: "windows",
-                             OsVersion: image.OsVersion,
-                             RunCrashTest: false,
-                             Channel32Bit: channel32Bit,
-                             WindowsRelativeProfilerPath: $"datadog/win-{platform}/Datadog.Trace.ClrProfiler.Native.dll");
+                         select new WindowsNuGetScenario
+                         {
+                             ShortName = $"{platform}",
+                             PublishFramework = image.PublishFramework,
+                             RuntimeTag = image.Tag,
+                             DockerImageRepo = "mcr.microsoft.com/dotnet/aspnet",
+                             Os = "windows",
+                             OsVersion = image.OsVersion,
+                             RunCrashTest = false,
+                             Channel32Bit = channel32Bit,
+                             WindowsRelativeProfilerPath = $"datadog/win-{platform}/Datadog.Trace.ClrProfiler.Native.dll",
+                         };
         }
 
         static IEnumerable<IEnumerable<SmokeTestScenario>> WindowsDotnetToolScenarios()
@@ -998,16 +1028,17 @@ public static class SmokeTestScenarios
                          let channel32Bit = platform == "x86"
                              ? GetInstallerChannel(image.PublishFramework)
                              : ""
-                         select new SmokeTestScenario(
-                             Category: SmokeTestCategory.WindowsDotnetTool,
-                             ShortName: $"{platform}",
-                             PublishFramework: image.PublishFramework,
-                             RuntimeTag: image.Tag,
-                             DockerImageRepo: "mcr.microsoft.com/dotnet/aspnet",
-                             Os: "windows",
-                             OsVersion: image.OsVersion,
-                             RunCrashTest: false,
-                             Channel32Bit: channel32Bit);
+                         select new WindowsDotnetToolScenario
+                         {
+                             ShortName = $"{platform}",
+                             PublishFramework = image.PublishFramework,
+                             RuntimeTag = image.Tag,
+                             DockerImageRepo = "mcr.microsoft.com/dotnet/aspnet",
+                             Os = "windows",
+                             OsVersion = image.OsVersion,
+                             RunCrashTest = false,
+                             Channel32Bit = channel32Bit,
+                         };
         }
 
         static IEnumerable<IEnumerable<SmokeTestScenario>> WindowsTracerHomeScenarios()
@@ -1020,17 +1051,18 @@ public static class SmokeTestScenarios
                          let channel32Bit = platform == "x86"
                              ? GetInstallerChannel(image.PublishFramework)
                              : ""
-                         select new SmokeTestScenario(
-                             Category: SmokeTestCategory.WindowsTracerHome,
-                             ShortName: $"{platform}",
-                             PublishFramework: image.PublishFramework,
-                             RuntimeTag: image.Tag,
-                             DockerImageRepo: "mcr.microsoft.com/dotnet/aspnet",
-                             Os: "windows",
-                             OsVersion: image.OsVersion,
-                             RunCrashTest: false,
-                             Channel32Bit: channel32Bit,
-                             WindowsRelativeProfilerPath: $"win-{platform}/Datadog.Trace.ClrProfiler.Native.dll");
+                         select new WindowsTracerHomeScenario
+                         {
+                             ShortName = $"{platform}",
+                             PublishFramework = image.PublishFramework,
+                             RuntimeTag = image.Tag,
+                             DockerImageRepo = "mcr.microsoft.com/dotnet/aspnet",
+                             Os = "windows",
+                             OsVersion = image.OsVersion,
+                             RunCrashTest = false,
+                             Channel32Bit = channel32Bit,
+                             WindowsRelativeProfilerPath = $"win-{platform}/Datadog.Trace.ClrProfiler.Native.dll",
+                         };
         }
 
         static IEnumerable<IEnumerable<SmokeTestScenario>> WindowsFleetInstallerIisScenarios()
@@ -1045,19 +1077,20 @@ public static class SmokeTestScenarios
 
             yield return from platform in platforms
                          from image in runtimeImages
-                         select new SmokeTestScenario(
-                             Category: SmokeTestCategory.WindowsFleetInstallerIis,
-                             ShortName: $"{platform}_{image.PublishFramework.ToString().Replace(".", "")}",
-                             PublishFramework: image.PublishFramework,
-                             RuntimeTag: image.Tag,
-                             DockerImageRepo: "mcr.microsoft.com/dotnet/framework/aspnet",
-                             Os: "windows",
-                             OsVersion: image.OsVersion,
-                             RunCrashTest: false,
-                             TargetPlatform: platform,
-                             FleetInstallerCommand: "enable-iis-instrumentation",
-                             SnapshotFile: "smoke_test_iis_snapshots",
-                             ExtraSnapshotIgnoredAttrs: "meta._dd.appsec.waf.version,metrics._dd.appsec.event_rules.loaded,metrics._dd.appsec.event_rules.error_count,metrics._dd.tracer_kr,metrics._sampling_priority_v1");
+                         select new WindowsFleetInstallerIisScenario
+                         {
+                             ShortName = $"{platform}_{image.PublishFramework.ToString().Replace(".", "")}",
+                             PublishFramework = image.PublishFramework,
+                             RuntimeTag = image.Tag,
+                             DockerImageRepo = "mcr.microsoft.com/dotnet/framework/aspnet",
+                             Os = "windows",
+                             OsVersion = image.OsVersion,
+                             RunCrashTest = false,
+                             TargetPlatform = platform,
+                             FleetInstallerCommand = "enable-iis-instrumentation",
+                             SnapshotFile = "smoke_test_iis_snapshots",
+                             ExtraSnapshotIgnoredAttrs = "meta._dd.appsec.waf.version,metrics._dd.appsec.event_rules.loaded,metrics._dd.appsec.event_rules.error_count,metrics._dd.tracer_kr,metrics._sampling_priority_v1",
+                         };
         }
 
     }
