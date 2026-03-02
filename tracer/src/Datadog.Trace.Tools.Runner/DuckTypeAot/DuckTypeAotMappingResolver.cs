@@ -252,24 +252,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     }
                 }
 
-                // Branch: take this path when (effectiveResolvedMapping.ParityExpectation != requiredMapping.ParityExpectation) evaluates to true.
-                if (effectiveResolvedMapping.ParityExpectation != requiredMapping.ParityExpectation)
-                {
-                    // Branch: take this path when (effectiveResolvedMapping.ParityExpectation == DuckTypeAotParityExpectation.Creatable) evaluates to true.
-                    if (effectiveResolvedMapping.ParityExpectation == DuckTypeAotParityExpectation.Creatable)
-                    {
-                        effectiveResolvedMapping = effectiveResolvedMapping.WithParityExpectation(requiredMapping.ParityExpectation);
-                        updatedResolvedMapping = true;
-                    }
-                    else
-                    {
-                        // Branch: fallback path when earlier branch conditions evaluate to false.
-                        errors.Add(
-                            $"Parity expectation mismatch for mapping '{requiredMapping.Key}'. " +
-                            $"Resolved='{effectiveResolvedMapping.ParityExpectation}', catalog='{requiredMapping.ParityExpectation}'.");
-                    }
-                }
-
                 // Branch: take this path when (updatedResolvedMapping) evaluates to true.
                 if (updatedResolvedMapping)
                 {

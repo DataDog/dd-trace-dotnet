@@ -320,7 +320,7 @@
       "proxyAssembly": "Datadog.Trace.DuckTyping.Tests",
       "targetType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+ReverseRequiredMethodDelegation",
       "targetAssembly": "Datadog.Trace.DuckTyping.Tests",
-      "expectCanCreate": false
+      "expectedStatus": "missing_target_method"
     },
     {
       "scenarioId": "E-40",
@@ -329,7 +329,7 @@
       "proxyAssembly": "Datadog.Trace.DuckTyping.Tests",
       "targetType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+ReverseGenericMismatchDelegation",
       "targetAssembly": "Datadog.Trace.DuckTyping.Tests",
-      "expectCanCreate": false
+      "expectedStatus": "missing_target_method"
     },
     {
       "scenarioId": "E-41",
@@ -346,7 +346,7 @@
       "proxyAssembly": "Datadog.Trace.DuckTyping.Tests",
       "targetType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+ReverseStructDelegation",
       "targetAssembly": "Datadog.Trace.DuckTyping.Tests",
-      "expectCanCreate": false
+      "expectedStatus": "unsupported_proxy_kind"
     },
     {
       "scenarioId": "FG-1",
@@ -515,7 +515,7 @@
       "proxyAssembly": "Datadog.Trace.DuckTyping.Tests",
       "targetType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+Rt2VoidMismatchTarget",
       "targetAssembly": "Datadog.Trace.DuckTyping.Tests",
-      "expectCanCreate": false
+      "expectedStatus": "incompatible_method_signature"
     },
     {
       "scenarioId": "FG-7",

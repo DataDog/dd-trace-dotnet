@@ -88,9 +88,28 @@ Likely causes:
 Actions:
 
 1. Review `*.compat.md` first for human-readable diagnosis.
-2. Compare `*.compat.json` with expected outcomes JSON.
+2. Compare `*.compat.json` with mapping-catalog `expectedStatus` entries first.
 3. Validate scenario IDs and catalog keys.
 4. Regenerate artifacts with matching runtime build inputs.
+
+### strict verify-compat fails with unexpected non-compatible status
+
+Symptoms:
+
+1. `verify-compat --failure-mode strict` reports non-compatible mappings not accepted by contracts.
+
+Likely causes:
+
+1. Regression introduced new non-compatible status.
+2. Scenario was renamed/retagged without updating mapping catalog.
+3. Compatibility matrix was generated from different map/catalog inputs than verification.
+
+Actions:
+
+1. Check mapping-catalog `expectedStatus` entries first.
+2. Confirm the current known expected non-compatible Bible scenarios (`RT-2`, `E-39`, `E-40`, `E-42`) still match emitted statuses.
+3. Treat any additional non-compatible mapping as a regression until explicitly reviewed and cataloged.
+4. Re-run generation and verification with identical artifact inputs.
 
 ### unsupported_closed_generic_mapping
 

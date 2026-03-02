@@ -20,6 +20,17 @@ The build integration has three explicit stages:
 
 The generated registry assembly is a build artifact and should be versioned alongside the app build output, not checked into source control.
 
+## Integration Modes
+
+There are two distinct artifact flows:
+
+1. Deployable app/service registry flow.
+2. Bible compatibility-gate flow (validation-only).
+
+Deployable flow keeps the generated registry DLL and companion files for publish/runtime consumption.
+
+Bible compatibility-gate flow intentionally removes the generated Bible-gate registry DLL after strict verification and retains compatibility artifacts only, to prevent accidental runtime wiring of the gate artifact.
+
 ## Prerequisites
 
 1. Build `Datadog.Trace.Tools.Runner` before invoking `ducktype-aot generate`.
@@ -90,7 +101,7 @@ Use this stage layout:
 
 ## Artifact Publishing Rules
 
-Publish these as a single immutable artifact set:
+For deployable app/service registries, publish these as a single immutable artifact set:
 
 1. `*.dll` registry assembly.
 2. `*.dll.manifest.json`.
@@ -100,6 +111,17 @@ Publish these as a single immutable artifact set:
 6. `*.props`.
 
 Do not publish only the registry DLL without the companion files.
+
+For Bible compatibility-gate outputs, publish compatibility artifacts only:
+
+1. `*.dll.manifest.json`
+2. `*.dll.compat.json`
+3. `*.dll.compat.md`
+4. `*.linker.xml`
+5. `*.props`
+6. generated map and gate metadata files
+
+Do not consume Bible compatibility-gate artifacts as runtime registries.
 
 ## MSBuild Consumption
 

@@ -44,12 +44,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <summary>
         /// Stores expected outcomes option.
         /// </summary>
-        private readonly Option<string?> _expectedOutcomesOption = new("--expected-outcomes", "Optional scenario expected-outcomes contract. When provided, each mapping status must match the expected status for its scenario (or the default status).");
+        private readonly Option<string?> _expectedOutcomesOption = new("--expected-outcomes", "Legacy compatibility option. When provided in strict parity mode, the file must be a strict-empty contract (no scenario overrides).");
 
         /// <summary>
         /// Stores known limitations option.
         /// </summary>
-        private readonly Option<string?> _knownLimitationsOption = new("--known-limitations", "Legacy alias for --expected-outcomes using known-limitations schema. Prefer --expected-outcomes.");
+        private readonly Option<string?> _knownLimitationsOption = new("--known-limitations", "Legacy option retained for script compatibility. In strict parity mode this file must be strict-empty.");
 
         /// <summary>
         /// Stores failure mode option.
@@ -77,7 +77,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             AddOption(_failureModeOption);
             AddOption(_strictAssemblyFingerprintsOption);
 
-            AddExample("dd-trace ducktype-aot verify-compat --compat-report ducktyping-aot-compat.md --compat-matrix ducktyping-aot-compat.json --mapping-catalog ducktyping-aot-catalog.json --scenario-inventory tracer/test/Datadog.Trace.DuckTyping.Tests/AotCompatibility/ducktype-aot-bible-scenario-inventory.json --expected-outcomes tracer/test/Datadog.Trace.DuckTyping.Tests/AotCompatibility/ducktype-aot-bible-expected-outcomes.json --manifest Datadog.Trace.DuckType.AotRegistry.dll.manifest.json --failure-mode strict");
+            AddExample("dd-trace ducktype-aot verify-compat --compat-report ducktyping-aot-compat.md --compat-matrix ducktyping-aot-compat.json --mapping-catalog ducktyping-aot-catalog.json --scenario-inventory tracer/test/Datadog.Trace.DuckTyping.Tests/AotCompatibility/ducktype-aot-bible-scenario-inventory.json --manifest Datadog.Trace.DuckType.AotRegistry.dll.manifest.json --failure-mode strict");
 
             this.SetHandler(Execute);
         }

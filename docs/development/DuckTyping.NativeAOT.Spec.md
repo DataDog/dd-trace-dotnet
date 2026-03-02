@@ -103,12 +103,20 @@ The mapping catalog is a policy input used to assert required scenario coverage.
 Expected behavior:
 
 1. Declares expected scenarios and identity tuples.
-2. Can be used with `--require-mapping-catalog` to fail when required entries are missing.
-3. Works with scenario inventory and expected outcomes in compatibility verification.
+2. Optional per-mapping `expectedStatus` declares accepted non-compatible compatibility statuses for specific scenarios.
+3. Can be used with `--require-mapping-catalog` to fail when required entries are missing.
+4. Works with scenario inventory and compatibility verification contracts.
 
 The exact catalog document in this repository is maintained under:
 
 1. `tracer/test/Datadog.Trace.DuckTyping.Tests/AotCompatibility/ducktype-aot-bible-mapping-catalog.json`
+
+Current Bible catalog baseline includes these explicit `expectedStatus` entries:
+
+1. `RT-2` -> `incompatible_method_signature`
+2. `E-39` -> `missing_target_method`
+3. `E-40` -> `missing_target_method`
+4. `E-42` -> `unsupported_proxy_kind`
 
 ## Generic Instantiations Schema (`--generic-instantiations`)
 
@@ -201,13 +209,19 @@ Optional contract inputs:
 
 1. `--mapping-catalog`
 2. `--scenario-inventory`
-3. `--expected-outcomes`
-4. `--manifest`
+3. `--expected-outcomes` (legacy strict-empty only)
+4. `--known-limitations` (legacy strict-empty only)
+5. `--manifest`
 
 Failure mode:
 
 1. `default`: warns on selected drift cases.
 2. `strict`: fails on drift cases treated as hard contract violations.
+
+Contract policy:
+
+1. Scenario-level known non-compatible statuses belong in mapping-catalog `expectedStatus`.
+2. `expected-outcomes` and `known-limitations` files are strict-empty legacy contracts and should not carry scenario overrides.
 
 ## Runtime Contract Requirements
 

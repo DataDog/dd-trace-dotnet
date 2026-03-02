@@ -10,7 +10,7 @@ This document describes how to use the DuckTyping NativeAOT pipeline end-to-end:
 4. Validate compatibility and parity.
 5. Run official DuckTyping AOT sample and parity workflows.
 
-This guide is implementation-accurate for the current branch state (February 28, 2026).
+This guide tracks the current repository implementation and CI gate behavior.
 
 ## Documentation Map
 
@@ -31,6 +31,17 @@ Key design rule for NativeAOT:
 1. No runtime proxy IL emission.
 2. Proxies are generated into a separate assembly at build time.
 3. Runtime only resolves and instantiates pre-registered proxies.
+
+## Current Bible Compatibility-Gate Baseline
+
+For the repository Bible compatibility gate (`ducktype-aot generate` + `ducktype-aot verify-compat --failure-mode strict`), four scenarios are intentionally non-compatible and declared in the mapping catalog with `expectedStatus`:
+
+1. `RT-2`: `incompatible_method_signature`
+2. `E-39`: `missing_target_method`
+3. `E-40`: `missing_target_method`
+4. `E-42`: `unsupported_proxy_kind`
+
+`ducktype-aot-bible-expected-outcomes.json` and `ducktype-aot-bible-known-limitations.json` remain strict-empty contracts.
 
 ## Architecture Overview
 
@@ -246,10 +257,9 @@ Generator fails if:
 
 1. No `--proxy-assembly` is provided.
 2. Neither `--target-assembly` nor `--target-folder` is provided.
-3. No `--target-filter` is provided.
-4. File paths do not exist.
-5. Open generic mappings remain unresolved.
-6. Required mapping catalog entries are missing (when enabled).
+3. File paths do not exist.
+4. Open generic mappings remain unresolved.
+5. Required mapping catalog entries are missing (when enabled).
 
 ## Generated Artifacts
 
@@ -267,6 +277,11 @@ Given output `X.dll`, generator emits:
 6. Props file:
    1. default `X.dll.props`, or `--emit-props` path.
    2. adds registry reference + `TrimmerRootDescriptor`.
+
+Note:
+
+1. In the managed build Bible compatibility gate, the generated `Datadog.Trace.DuckType.AotRegistry.BibleGate.dll` is intentionally deleted after verification.
+2. Compatibility artifacts are retained (`*.manifest.json`, `*.compat.json`, `*.compat.md`, props, linker descriptor, generated map) to prevent accidental runtime reuse of the Bible-gate registry.
 
 ## Application Wiring
 
@@ -641,21 +656,20 @@ This command executes:
 
 ```bash
 DD_RUN_DUCKTYPE_AOT_FULL_SUITE_PARITY=1 \
+DD_DUCKTYPE_AOT_FULL_SUITE_PARITY_SEED=20260301 \
   dotnet test tracer/test/Datadog.Trace.Tools.Runner.Tests/Datadog.Trace.Tools.Runner.Tests.csproj \
   -c Release --framework net8.0 \
   --filter FullyQualifiedName~DuckTypeAotFullSuiteParityIntegrationTests
 ```
 
-### Direct full-suite AOT run (manual)
-
-If you already have a generated registry assembly for the suite, run tests directly in AOT mode:
+Optional artifact retention for debugging:
 
 ```bash
-DD_DUCKTYPE_TEST_MODE=aot \
-DD_DUCKTYPE_AOT_REGISTRY_PATH=/abs/path/Datadog.Trace.DuckType.AotRegistry.dll \
-  dotnet test tracer/test/Datadog.Trace.DuckTyping.Tests/Datadog.Trace.DuckTyping.Tests.csproj \
-  -c Release --framework net8.0 --no-build
+DD_DUCKTYPE_AOT_FULL_SUITE_PARITY_KEEP_ARTIFACTS=1
 ```
+
+Use the full-suite parity orchestration command as the supported full-suite AOT gate.
+Do not run full-suite AOT tests with the Bible compatibility-gate registry artifact.
 
 ### AOT processor + NativeAOT integration test suite
 
@@ -702,7 +716,6 @@ dotnet tracer/src/Datadog.Trace.Tools.Runner/bin/Release/Tool/net8.0/Datadog.Tra
   --compat-matrix /abs/path/Datadog.Trace.DuckType.AotRegistry.dll.compat.json \
   --mapping-catalog tracer/test/Datadog.Trace.DuckTyping.Tests/AotCompatibility/ducktype-aot-bible-mapping-catalog.json \
   --scenario-inventory tracer/test/Datadog.Trace.DuckTyping.Tests/AotCompatibility/ducktype-aot-bible-scenario-inventory.json \
-  --expected-outcomes tracer/test/Datadog.Trace.DuckTyping.Tests/AotCompatibility/ducktype-aot-bible-expected-outcomes.json \
   --manifest /abs/path/Datadog.Trace.DuckType.AotRegistry.dll.manifest.json \
   --failure-mode strict
 ```
@@ -713,10 +726,10 @@ dotnet tracer/src/Datadog.Trace.Tools.Runner/bin/Release/Tool/net8.0/Datadog.Tra
 2. Optional contracts:
    1. `--mapping-catalog`
    2. `--scenario-inventory`
-   3. `--expected-outcomes`
-   4. `--manifest`
-3. `--known-limitations` is legacy alias for expected outcomes.
-4. `--failure-mode` values:
+   3. `--manifest`
+3. Per-scenario non-compatible expectations are defined in `--mapping-catalog` via `expectedStatus`.
+4. Legacy options `--expected-outcomes` and `--known-limitations` are accepted only as strict-empty contracts (no scenario overrides).
+5. `--failure-mode` values:
    1. `default`: manifest fingerprint drift warns.
    2. `strict`: manifest fingerprint drift fails.
 
@@ -744,6 +757,13 @@ Current diagnostic codes emitted by generator:
 5. `DTAOT0209` `incompatible_method_signature`
 6. `DTAOT0210` `unsupported_proxy_constructor`
 7. `DTAOT0211` `unsupported_closed_generic_mapping`
+
+Bible catalog-declared non-compatible scenarios:
+
+1. `RT-2` -> `incompatible_method_signature`
+2. `E-39` -> `missing_target_method`
+3. `E-40` -> `missing_target_method`
+4. `E-42` -> `unsupported_proxy_kind`
 
 ## Environment Variables Summary
 
