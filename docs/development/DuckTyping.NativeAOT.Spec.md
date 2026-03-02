@@ -157,6 +157,13 @@ The generated assembly must contain:
 2. `Datadog.Trace.DuckTyping.Generated.DuckTypeAotRegistryBootstrap` type.
 3. Bootstrap logic that enables AOT mode, validates runtime contract, and registers forward/reverse mappings.
 4. Module initializer that triggers bootstrap initialization.
+5. Forward interface proxy shape parity rules:
+   1. default interface proxy emission as value type (`System.ValueType` parent).
+   2. `[DuckAsClass]` interfaces emitted as class proxies.
+6. Bootstrap registration through `RuntimeMethodHandle` activator overloads on `DuckType` for generated mappings.
+7. Activator pair per mapping:
+   1. typed activator (`CreateProxy_XXXX(<targetType>)`).
+   2. object bridge activator (`ActivateProxy_XXXX(object)`).
 
 Consumers may still call `DuckTypeAotRegistryBootstrap.Initialize()` explicitly for deterministic startup.
 
@@ -226,6 +233,10 @@ At runtime:
 2. AOT runtime path requires pre-registered mappings.
 3. One generated registry assembly identity is allowed per process.
 4. Missing mappings result in explicit missing-registration failures rather than dynamic emit fallback.
+5. Boxing/cast operations at object/interface boundaries are expected and parity-valid:
+   1. bridge activators can use `castclass`/`unbox.any` from `object` input.
+   2. value-type proxy returned through interface/object contracts can require boxing.
+   3. `IDuckType.Instance` on value-type targets returns boxed object.
 
 ## Versioning and Compatibility Guidance
 

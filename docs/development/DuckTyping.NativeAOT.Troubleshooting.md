@@ -163,6 +163,58 @@ Actions:
 2. Compare dynamic and AOT scenario details in parity reports.
 3. Align proxy definition with target API contract.
 
+### generated interface proxy shape differs from expectation
+
+Symptoms:
+
+1. Generated forward interface proxy appears as `struct` while expecting class, or appears as class while expecting value type.
+
+Likely causes:
+
+1. Default behavior: interface proxies emit as value types for parity/perf.
+2. Proxy interface has `[DuckAsClass]`, forcing class proxy emission.
+
+Actions:
+
+1. Confirm whether `[DuckAsClass]` is present on the proxy interface.
+2. Remove `[DuckAsClass]` to get default value-type proxy, or add it when class shape is explicitly required.
+
+### ILSpy shows `get_`/`set_` methods instead of a property
+
+Symptoms:
+
+1. Decompiler shows accessor-shaped methods (`get_Name`, `set_Value`) but not a property in some generated proxies.
+
+Likely causes:
+
+1. Source proxy member is a method named like an accessor, but not a special-name property accessor in metadata.
+2. Decompiler runs with missing references and falls back to less precise rendering.
+3. Generated metadata reflects source contract shape (property metadata is emitted only when accessor metadata is available/inferable).
+
+Actions:
+
+1. Check source proxy contract: if you want property metadata, declare a real C# property instead of manual `get_`/`set_` methods.
+2. Load all referenced assemblies in ILSpy before comparing output.
+3. Validate via reflection (`Type.GetProperties`) on generated proxy type for definitive property table inspection.
+
+### ILSpy shows `castclass`/`unbox.any`/`box` in activator paths
+
+Symptoms:
+
+1. Generated bootstrap activator methods contain object casts/unboxing or boxing instructions.
+
+Likely causes:
+
+1. Registration bridge activators receive `object` by contract and must cast/unbox to typed target before calling typed activator.
+2. Returning value-type proxies through interface/object contracts requires boxing.
+3. `IDuckType.Instance` for value-type targets returns `object` and therefore boxes.
+
+Actions:
+
+1. Focus optimization checks on typed activator and generated constructor signatures first.
+2. Treat bridge-path casts/boxing as expected unless they appear in places that can stay typed end-to-end.
+3. Compare dynamic parity behavior before classifying as regression.
+
 ### NativeAOT publish linker errors
 
 Symptoms:

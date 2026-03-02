@@ -30,6 +30,7 @@ There are currently no expected non-compatible Bible scenarios.
 | Forward proxies | Interface/class/abstract forwarding | Supported | Supported | Compatible | `A-01..E-42` parity inventory |
 | Reverse proxies | Delegation-based reverse implementation | Supported | Supported | Compatible | `A-01..E-42` parity inventory |
 | DuckCopy projection | Struct copy projection | Supported | Supported | Compatible | Bible scenario set + excerpts |
+| Proxy shape + activator bridge | Interface defaults to value-type proxy, `[DuckAsClass]` forces class proxy, runtime registration via method-handle activators | Supported | Supported | Compatible | `DuckTypeAotProcessorsTests` shape/activator checks |
 | Field/property mapping | Public/non-public mapping permutations | Supported | Supported | Compatible | `FG-*`, `FS-*`, `FF-*` |
 | Method mapping | Signatures, overload constraints, conversions | Supported | Supported | Compatible | `FM-*`, `RT-*` |
 | Return/argument conversion | Primitive/reference/value conversion paths | Supported | Supported | Compatible | `RT-*` scenarios |
@@ -47,6 +48,7 @@ The following are compatibility-sensitive constraints:
 3. Runtime must load one registry assembly identity per process.
 4. Registry/runtime contract fingerprints must match expected validation rules.
 5. Any non-compatible status in strict Bible gating is treated as a regression unless explicitly approved.
+6. Some boxing/cast IL at object/interface boundaries is expected parity behavior (bridge activators, interface-return value-type proxies, `IDuckType.Instance` for value-type targets).
 
 These constraints are enforced by build-time generation and runtime contract checks.
 
