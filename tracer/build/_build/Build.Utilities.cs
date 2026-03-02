@@ -691,6 +691,14 @@ partial class Build
         throw new Exception("Failed to download telemetry forwarder");
     }
 
+    static string GetDotnetSdkVersion(AbsolutePath rootDirectory)
+    {
+        var globalJsonPath = rootDirectory / "global.json";
+        var json = JsonDocument.Parse(File.ReadAllText(globalJsonPath));
+        return json.RootElement.GetProperty("sdk").GetProperty("version").GetString()
+            ?? throw new InvalidOperationException("Could not read sdk.version from global.json");
+    }
+
     static string GetSha512Hash(string filePath)
     {
         using var sha512 = SHA512.Create();

@@ -22,7 +22,8 @@ partial class Build
             var smokeTest = SmokeTests.SmokeTestScenarios.GetScenario(category, SmokeTestScenario);
 
             var artifactsDir = ArtifactsDirectory;
-            var imageTags = await SmokeTests.SmokeTestBuilder.BuildImageAsync(category, smokeTest, TracerDirectory, artifactsDir, Version);
+            var dotnetSdkVersion = GetDotnetSdkVersion(RootDirectory);
+            var imageTags = await SmokeTests.SmokeTestBuilder.BuildImageAsync(category, smokeTest, TracerDirectory, artifactsDir, Version, dotnetSdkVersion);
 
             foreach (var imageTag in imageTags)
             {
