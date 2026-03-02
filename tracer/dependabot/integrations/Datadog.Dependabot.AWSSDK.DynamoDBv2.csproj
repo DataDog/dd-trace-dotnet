@@ -8,8 +8,8 @@
   <ItemGroup>
     <!-- Integration: AWSSDK.DynamoDBv2 -->
     <!--    Assembly: AWSSDK.DynamoDBv2 -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.DynamoDBv2/4.0.14 -->
-    <PackageReference Include="AWSSDK.DynamoDBv2" Version="4.0.14" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.DynamoDBv2/4.0.15 -->
+    <PackageReference Include="AWSSDK.DynamoDBv2" Version="4.0.15" />
   </ItemGroup>
 
 </Project>
