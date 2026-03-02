@@ -432,31 +432,102 @@ internal class CreatedumpCommand : Command
         if (signalCode.HasValue)
         {
             var code = signalCode.Value;
-            switch (code)
+
+            codeName = code switch
             {
-                case 0: codeName = "SI_USER"; break;
-                case 0x80: codeName = "SI_KERNEL"; break;
-                case -1: codeName = "SI_QUEUE"; break;
-                case -2: codeName = "SI_TIMER"; break;
-                case -3: codeName = "SI_MESGQ"; break;
-                case -4: codeName = "SI_ASYNCIO"; break;
-                case -5: codeName = "SI_SIGIO"; break;
-                case -6: codeName = "SI_TKILL"; break;
-                case -7: codeName = "SI_DETHREAD"; break;
-                default:
-                    codeName = signal switch
+                // Signal-independent codes
+                0 => "SI_USER",
+                0x80 => "SI_KERNEL",
+                -1 => "SI_QUEUE",
+                -2 => "SI_TIMER",
+                -3 => "SI_MESGQ",
+                -4 => "SI_ASYNCIO",
+                -5 => "SI_SIGIO",
+                -6 => "SI_TKILL",
+                -7 => "SI_DETHREAD",
+
+                // Signal-specific codes
+                _ => signal switch
+                {
+                    4 => code switch
                     {
-                        4 => code switch { 1 => "ILL_ILLOPC", 2 => "ILL_ILLOPN", 3 => "ILL_ILLADR", 4 => "ILL_ILLTRP", 5 => "ILL_PRVOPC", 6 => "ILL_PRVREG", 7 => "ILL_COPROC", 8 => "ILL_BADSTK", _ => "UNKNOWN" },
-                        7 => code switch { 1 => "BUS_ADRALN", 2 => "BUS_ADRERR", 3 => "BUS_OBJERR", 4 => "BUS_MCEERR_AR", 5 => "BUS_MCEERR_AO", _ => "UNKNOWN" },
-                        8 => code switch { 1 => "FPE_INTDIV", 2 => "FPE_INTOVF", 3 => "FPE_FLTDIV", 4 => "FPE_FLTOVF", 5 => "FPE_FLTUND", 6 => "FPE_FLTRES", 7 => "FPE_FLTINV", 8 => "FPE_FLTSUB", _ => "UNKNOWN" },
-                        11 => code switch { 1 => "SEGV_MAPERR", 2 => "SEGV_ACCERR", 3 => "SEGV_BNDERR", 4 => "SEGV_PKUERR", _ => "UNKNOWN" },
-                        5 => code switch { 1 => "TRAP_BRKPT", 2 => "TRAP_TRACE", 3 => "TRAP_BRANCH", 4 => "TRAP_HWBKPT", _ => "UNKNOWN" },
-                        17 => code switch { 1 => "CLD_EXITED", 2 => "CLD_KILLED", 3 => "CLD_DUMPED", 4 => "CLD_TRAPPED", 5 => "CLD_STOPPED", 6 => "CLD_CONTINUED", _ => "UNKNOWN" },
-                        29 => code switch { 1 => "POLL_IN", 2 => "POLL_OUT", 3 => "POLL_MSG", 4 => "POLL_ERR", 5 => "POLL_PRI", 6 => "POLL_HUP", _ => "UNKNOWN" },
+                        1 => "ILL_ILLOPC",
+                        2 => "ILL_ILLOPN",
+                        3 => "ILL_ILLADR",
+                        4 => "ILL_ILLTRP",
+                        5 => "ILL_PRVOPC",
+                        6 => "ILL_PRVREG",
+                        7 => "ILL_COPROC",
+                        8 => "ILL_BADSTK",
                         _ => "UNKNOWN"
-                    };
-                    break;
-            }
+                    },
+
+                    7 => code switch
+                    {
+                        1 => "BUS_ADRALN",
+                        2 => "BUS_ADRERR",
+                        3 => "BUS_OBJERR",
+                        4 => "BUS_MCEERR_AR",
+                        5 => "BUS_MCEERR_AO",
+                        _ => "UNKNOWN"
+                    },
+
+                    8 => code switch
+                    {
+                        1 => "FPE_INTDIV",
+                        2 => "FPE_INTOVF",
+                        3 => "FPE_FLTDIV",
+                        4 => "FPE_FLTOVF",
+                        5 => "FPE_FLTUND",
+                        6 => "FPE_FLTRES",
+                        7 => "FPE_FLTINV",
+                        8 => "FPE_FLTSUB",
+                        _ => "UNKNOWN"
+                    },
+
+                    11 => code switch
+                    {
+                        1 => "SEGV_MAPERR",
+                        2 => "SEGV_ACCERR",
+                        3 => "SEGV_BNDERR",
+                        4 => "SEGV_PKUERR",
+                        _ => "UNKNOWN"
+                    },
+
+                    5 => code switch
+                    {
+                        1 => "TRAP_BRKPT",
+                        2 => "TRAP_TRACE",
+                        3 => "TRAP_BRANCH",
+                        4 => "TRAP_HWBKPT",
+                        _ => "UNKNOWN"
+                    },
+
+                    17 => code switch
+                    {
+                        1 => "CLD_EXITED",
+                        2 => "CLD_KILLED",
+                        3 => "CLD_DUMPED",
+                        4 => "CLD_TRAPPED",
+                        5 => "CLD_STOPPED",
+                        6 => "CLD_CONTINUED",
+                        _ => "UNKNOWN"
+                    },
+
+                    29 => code switch
+                    {
+                        1 => "POLL_IN",
+                        2 => "POLL_OUT",
+                        3 => "POLL_MSG",
+                        4 => "POLL_ERR",
+                        5 => "POLL_PRI",
+                        6 => "POLL_HUP",
+                        _ => "UNKNOWN"
+                    },
+
+                    _ => "UNKNOWN"
+                }
+            };
         }
 
         return (name, codeName);
