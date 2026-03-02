@@ -2575,6 +2575,9 @@ partial class Build
            knownPatterns.Add(new(".*SingleStepGuardRails::ShouldForceInstrumentationOverride: Found incompatible runtime .NET Core 3.0 or lower", RegexOptions.Compiled));
            knownPatterns.Add(new(".*SingleStepGuardRails::ShouldForceInstrumentationOverride: Found incompatible runtime .NET 6.0.12 and earlier have known crashing bugs", RegexOptions.Compiled));
 
+           // The test agent cannot return an agent version, so when enabling partial flushing by default, we get this warning in smoke tests
+           knownPatterns.Add(new(".*Partial flush should only be enabled with agent.*", RegexOptions.Compiled));
+
            // Make sure we _only_ add this while .NET 10 is in preview (to make sure we don't forget in the final release)
            if (RuntimeInformation.FrameworkDescription.StartsWith(".NET 10.0.0-"))
            {
