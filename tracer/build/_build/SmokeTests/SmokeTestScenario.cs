@@ -7,10 +7,6 @@ namespace SmokeTests;
 
 public abstract record SmokeTestScenario
 {
-    // Category: set via init in derived types that need multiple categories,
-    // or overridden with a fixed value in types with a single category
-    public virtual SmokeTestCategory Category { get; init; }
-
     public required string ShortName { get; init; }
     public required string PublishFramework { get; init; }
     public required string RuntimeTag { get; init; }
@@ -25,7 +21,6 @@ public abstract record SmokeTestScenario
     public string? ExtraSnapshotIgnoredAttrs { get; init; }
 
     public string JobName => $"{ShortName}_{RuntimeTag.Replace('.', '_')}";
-    public string FullName => $"{Category}_{JobName}";
     public string DockerTag => $"dd-trace-dotnet/{JobName}-tester";
     public string RuntimeImage => $"{DockerImageRepo}:{RuntimeTag}";
     public bool IsWindows => Os == "windows";
@@ -37,7 +32,10 @@ public record InstallerScenario : SmokeTestScenario
     public string InstallCommand => InstallType.GetInstallCommand();
 }
 
-public record ChiseledScenario : SmokeTestScenario;
+public record ChiseledScenario : SmokeTestScenario
+{
+    public bool IsArm64 { get; init; }
+}
 
 public record NuGetScenario : SmokeTestScenario
 {
@@ -53,13 +51,11 @@ public record DotnetToolScenario : SmokeTestScenario
 
 public record DotnetToolNugetScenario : SmokeTestScenario
 {
-    public override SmokeTestCategory Category => SmokeTestCategory.LinuxDotnetToolNuget;
     public required string RuntimeId { get; init; }
 }
 
 public record SelfInstrumentScenario : SmokeTestScenario
 {
-    public override SmokeTestCategory Category => SmokeTestCategory.LinuxSelfInstrument;
     public required InstallType InstallType { get; init; }
     public string InstallCommand => InstallType.GetInstallCommand();
 }
@@ -75,33 +71,28 @@ public record TrimmingScenario : SmokeTestScenario
 
 public record WindowsMsiScenario : SmokeTestScenario
 {
-    public override SmokeTestCategory Category => SmokeTestCategory.WindowsMsi;
     public required string Channel32Bit { get; init; }
 }
 
 public record WindowsNuGetScenario : SmokeTestScenario
 {
-    public override SmokeTestCategory Category => SmokeTestCategory.WindowsNuGet;
     public required string Channel32Bit { get; init; }
     public required string RelativeProfilerPath { get; init; }
 }
 
 public record WindowsDotnetToolScenario : SmokeTestScenario
 {
-    public override SmokeTestCategory Category => SmokeTestCategory.WindowsDotnetTool;
     public required string Channel32Bit { get; init; }
 }
 
 public record WindowsTracerHomeScenario : SmokeTestScenario
 {
-    public override SmokeTestCategory Category => SmokeTestCategory.WindowsTracerHome;
     public required string Channel32Bit { get; init; }
     public required string RelativeProfilerPath { get; init; }
 }
 
 public record WindowsFleetInstallerIisScenario : SmokeTestScenario
 {
-    public override SmokeTestCategory Category => SmokeTestCategory.WindowsFleetInstallerIis;
     public required string TargetPlatform { get; init; }
     public required string FleetInstallerCommand { get; init; }
 }

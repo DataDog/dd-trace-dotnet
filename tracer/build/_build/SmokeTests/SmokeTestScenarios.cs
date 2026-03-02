@@ -55,7 +55,6 @@ public static class SmokeTestScenarios
             // The dotnet/aspnet image is a mix of ubuntu and debian, but they're all in the same MS repository
             // So we split them here
             yield return GetInstaller(
-                category: SmokeTestCategory.LinuxX64Installer,
                 shortName: "ubuntu",
                 os: "ubuntu",
                 installType: InstallType.DebX64,
@@ -70,7 +69,6 @@ public static class SmokeTestScenarios
                 });
 
             yield return GetInstaller(
-                category: SmokeTestCategory.LinuxX64Installer,
                 shortName: "debian",
                 os: "debian",
                 installType: InstallType.DebX64,
@@ -86,7 +84,6 @@ public static class SmokeTestScenarios
 
             // Non-lts versions of ubuntu (official Microsoft versions only provide LTS-based images)
             yield return GetInstaller(
-                category: SmokeTestCategory.LinuxX64Installer,
                 shortName: "ubuntu_interim",
                 os: "ubuntu",
                 installType: InstallType.DebX64,
@@ -99,7 +96,6 @@ public static class SmokeTestScenarios
 
             // Microsoft stopped pushing debian tags in .NET 10, so using separate repo
             yield return GetInstaller(
-                category: SmokeTestCategory.LinuxX64Installer,
                 shortName: "debian",
                 os: "debian",
                 installType: InstallType.DebX64,
@@ -113,7 +109,6 @@ public static class SmokeTestScenarios
 
             // https://github.com/andrewlock/dotnet-docker-images (fedora)
             yield return GetInstaller(
-                category: SmokeTestCategory.LinuxX64Installer,
                 shortName: "fedora",
                 os: "fedora",
                 installType: InstallType.RpmX64,
@@ -136,7 +131,6 @@ public static class SmokeTestScenarios
 
             // Alpine tests with the default package
             yield return GetInstaller(
-                category: SmokeTestCategory.LinuxX64Installer,
                 shortName: "alpine",
                 os: "alpine",
                 installType: InstallType.TarX64,
@@ -158,7 +152,6 @@ public static class SmokeTestScenarios
 
             // centos
             yield return GetInstaller(
-                category: SmokeTestCategory.LinuxX64Installer,
                 shortName: "centos",
                 os: "centos",
                 installType: InstallType.RpmX64,
@@ -174,7 +167,6 @@ public static class SmokeTestScenarios
 
             // rhel
             yield return GetInstaller(
-                category: SmokeTestCategory.LinuxX64Installer,
                 shortName: "rhel",
                 os: "rhel",
                 installType: InstallType.RpmX64,
@@ -192,7 +184,6 @@ public static class SmokeTestScenarios
 
             // centos-stream
             yield return GetInstaller(
-                category: SmokeTestCategory.LinuxX64Installer,
                 shortName: "centos-stream",
                 os: "centos-stream",
                 installType: InstallType.RpmX64,
@@ -209,7 +200,6 @@ public static class SmokeTestScenarios
 
             // opensuse
             yield return GetInstaller(
-                category: SmokeTestCategory.LinuxX64Installer,
                 shortName: "opensuse",
                 os: "opensuse",
                 installType: InstallType.RpmX64,
@@ -229,7 +219,6 @@ public static class SmokeTestScenarios
         static IEnumerable<IEnumerable<SmokeTestScenario>> LinuxMuslInstallerScenarios()
         {
             yield return GetInstaller(
-                category: SmokeTestCategory.LinuxMuslInstaller,
                 shortName: "alpine_musl",
                 os: "alpine",
                 installType: InstallType.TarMuslX64,
@@ -253,7 +242,6 @@ public static class SmokeTestScenarios
         {
             // This is actually a mix of ubuntu and debian, but they're all in the same MS repository
             yield return GetInstaller(
-                category: SmokeTestCategory.LinuxArm64Installer,
                 shortName: "ubuntu",
                 os: "ubuntu",
                 installType: InstallType.DebArm64,
@@ -272,7 +260,6 @@ public static class SmokeTestScenarios
 
             // Non-lts versions of ubuntu (official Microsoft versions only provide LTS-based images)
             yield return GetInstaller(
-                category: SmokeTestCategory.LinuxArm64Installer,
                 shortName: "ubuntu_interim",
                 os: "ubuntu",
                 installType: InstallType.DebArm64,
@@ -285,7 +272,6 @@ public static class SmokeTestScenarios
 
             // Microsoft stopped pushing debian tags in .NET 10, so using separate repo
             yield return GetInstaller(
-                category: SmokeTestCategory.LinuxArm64Installer,
                 shortName: "debian",
                 os: "debian",
                 installType: InstallType.DebArm64,
@@ -298,7 +284,6 @@ public static class SmokeTestScenarios
                 });
 
             yield return GetInstaller(
-                category: SmokeTestCategory.LinuxArm64Installer,
                 shortName: "fedora",
                 os: "fedora",
                 installType: InstallType.RpmArm64,
@@ -315,7 +300,6 @@ public static class SmokeTestScenarios
 
             // Alpine tests with the default package
             yield return GetInstaller(
-                category: SmokeTestCategory.LinuxArm64Installer,
                 shortName: "alpine",
                 os: "alpine",
                 installType: InstallType.TarArm64,
@@ -339,7 +323,7 @@ public static class SmokeTestScenarios
         static IEnumerable<IEnumerable<SmokeTestScenario>> LinuxChiseledInstallerScenarios()
         {
             yield return GetChiseled(
-                category: SmokeTestCategory.LinuxChiseledInstaller,
+                isArm64: false,
                 shortName: "debian",
                 os: "ubuntu",
 
@@ -357,7 +341,7 @@ public static class SmokeTestScenarios
         static IEnumerable<IEnumerable<SmokeTestScenario>> LinuxChiseledArm64InstallerScenarios()
         {
             yield return GetChiseled(
-                category: SmokeTestCategory.LinuxChiseledArm64Installer,
+                isArm64: true,
                 shortName: "debian",
                 os: "ubuntu",
 
@@ -379,7 +363,6 @@ public static class SmokeTestScenarios
         static IEnumerable<IEnumerable<SmokeTestScenario>> LinuxNuGetScenarios()
         {
             yield return GetNuGet(
-                category: SmokeTestCategory.LinuxNuGet,
                 shortName: "debian",
                 os: "debian",
                 runtimeId: "linux-x64",
@@ -397,7 +380,6 @@ public static class SmokeTestScenarios
                 });
 
             yield return GetNuGet(
-                category: SmokeTestCategory.LinuxNuGet,
                 shortName: "fedora",
                 os: "fedora",
                 runtimeId: "linux-x64",
@@ -413,7 +395,6 @@ public static class SmokeTestScenarios
                 });
 
             yield return GetNuGet(
-                category: SmokeTestCategory.LinuxNuGet,
                 shortName: "alpine",
                 os: "alpine",
                 runtimeId: "linux-musl-x64",
@@ -433,7 +414,6 @@ public static class SmokeTestScenarios
                 });
 
             yield return GetNuGet(
-                category: SmokeTestCategory.LinuxNuGet,
                 shortName: "centos",
                 os: "centos",
                 runtimeId: "linux-x64",
@@ -447,7 +427,6 @@ public static class SmokeTestScenarios
                 });
 
             yield return GetNuGet(
-                category: SmokeTestCategory.LinuxNuGet,
                 shortName: "opensuse",
                 os: "opensuse",
                 runtimeId: "linux-x64",
@@ -467,7 +446,6 @@ public static class SmokeTestScenarios
         {
             // This is actually a mix of ubuntu and debian, but they're all in the same MS repository
             yield return GetNuGet(
-                category: SmokeTestCategory.LinuxNuGetArm64,
                 shortName: "ubuntu",
                 os: "ubuntu",
                 runtimeId: "linux-arm64",
@@ -486,7 +464,6 @@ public static class SmokeTestScenarios
 
             // Microsoft stopped pushing debian tags in .NET 10, so using separate repo
             yield return GetNuGet(
-                category: SmokeTestCategory.LinuxNuGetArm64,
                 shortName: "debian",
                 os: "debian",
                 runtimeId: "linux-arm64",
@@ -496,7 +473,6 @@ public static class SmokeTestScenarios
                 });
 
             yield return GetNuGet(
-                category: SmokeTestCategory.LinuxNuGetArm64,
                 shortName: "alpine",
                 os: "alpine",
                 runtimeId: "linux-musl-arm64",
@@ -521,7 +497,6 @@ public static class SmokeTestScenarios
         {
             // This is actually a mix of ubuntu and debian, but they're all in the same MS repository
             yield return GetDotnetTool(
-                category: SmokeTestCategory.LinuxDotnetTool,
                 shortName: "ubuntu",
                 os: "ubuntu",
                 runtimeId: "linux-x64",
@@ -540,7 +515,6 @@ public static class SmokeTestScenarios
 
             // Microsoft stopped pushing debian tags in .NET 10, so using separate repo
             yield return GetDotnetTool(
-                category: SmokeTestCategory.LinuxDotnetTool,
                 shortName: "debian",
                 os: "debian",
                 runtimeId: "linux-x64",
@@ -550,7 +524,6 @@ public static class SmokeTestScenarios
                 });
 
             yield return GetDotnetTool(
-                category: SmokeTestCategory.LinuxDotnetTool,
                 shortName: "fedora",
                 os: "fedora",
                 runtimeId: "linux-x64",
@@ -566,7 +539,6 @@ public static class SmokeTestScenarios
                 });
 
             yield return GetDotnetTool(
-                category: SmokeTestCategory.LinuxDotnetTool,
                 shortName: "centos",
                 os: "centos",
                 runtimeId: "linux-x64",
@@ -580,7 +552,6 @@ public static class SmokeTestScenarios
                 });
 
             yield return GetDotnetTool(
-                category: SmokeTestCategory.LinuxDotnetTool,
                 shortName: "opensuse",
                 os: "opensuse",
                 runtimeId: "linux-x64",
@@ -600,7 +571,6 @@ public static class SmokeTestScenarios
         {
             // This is actually a mix of ubuntu and debian, but they're all in the same MS repository
             yield return GetDotnetTool(
-                category: SmokeTestCategory.LinuxDotnetToolArm64,
                 shortName: "ubuntu",
                 os: "ubuntu",
                 runtimeId: "linux-arm64",
@@ -618,7 +588,6 @@ public static class SmokeTestScenarios
 
             // Microsoft stopped pushing debian tags in .NET 10, so using separate repo
             yield return GetDotnetTool(
-                category: SmokeTestCategory.LinuxDotnetToolArm64,
                 shortName: "debian",
                 os: "debian",
                 runtimeId: "linux-arm64",
@@ -636,7 +605,6 @@ public static class SmokeTestScenarios
         static IEnumerable<IEnumerable<SmokeTestScenario>> LinuxMuslDotnetToolScenarios()
         {
             yield return GetDotnetTool(
-                category: SmokeTestCategory.LinuxMuslDotnetTool,
                 shortName: "alpine",
                 os: "alpine",
                 runtimeId: "linux-musl-x64",
@@ -659,7 +627,6 @@ public static class SmokeTestScenarios
         static IEnumerable<IEnumerable<SmokeTestScenario>> LinuxMuslDotnetToolArm64Scenarios()
         {
             yield return GetDotnetTool(
-                category: SmokeTestCategory.LinuxMuslDotnetToolArm64,
                 shortName: "alpine",
                 os: "alpine",
                 runtimeId: "linux-musl-arm64",
@@ -726,7 +693,6 @@ public static class SmokeTestScenarios
         {
             // This is actually a mix of ubuntu and debian, but they're all in the same MS repository
             yield return GetTrimming(
-                category: SmokeTestCategory.LinuxTrimming,
                 shortName: "ubuntu",
                 os: "ubuntu",
                 installType: InstallType.DebX64,
@@ -742,7 +708,6 @@ public static class SmokeTestScenarios
 
             // Microsoft stopped pushing debian tags in .NET 10, so using separate repo
             yield return GetTrimming(
-                category: SmokeTestCategory.LinuxTrimming,
                 shortName: "debian",
                 os: "debian",
                 installType: InstallType.DebX64,
@@ -754,7 +719,6 @@ public static class SmokeTestScenarios
                 });
 
             yield return GetTrimming(
-                category: SmokeTestCategory.LinuxTrimming,
                 shortName: "rhel",
                 os: "rhel",
                 installType: InstallType.RpmX64,
@@ -768,7 +732,6 @@ public static class SmokeTestScenarios
                 });
 
             yield return GetTrimming(
-                category: SmokeTestCategory.LinuxTrimming,
                 shortName: "opensuse",
                 os: "opensuse",
                 installType: InstallType.RpmX64,
@@ -784,7 +747,6 @@ public static class SmokeTestScenarios
         static IEnumerable<IEnumerable<SmokeTestScenario>> LinuxMuslTrimmingScenarios()
         {
             yield return GetTrimming(
-                category: SmokeTestCategory.LinuxMuslTrimming,
                 shortName: "alpine_musl",
                 os: "alpine",
                 installType: InstallType.TarMuslX64,
@@ -823,14 +785,12 @@ public static class SmokeTestScenarios
         // ─────────────────────────────────────────────────────────
 
         static IEnumerable<InstallerScenario> GetInstaller(
-            SmokeTestCategory category,
             string shortName,
             string os,
             InstallType installType,
             params (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[] scenarios)
             => scenarios.Select(scenario => new InstallerScenario
             {
-                Category = category,
                 ShortName = shortName,
                 PublishFramework = scenario.PublishFramework,
                 RuntimeTag = scenario.Tag,
@@ -842,13 +802,13 @@ public static class SmokeTestScenarios
             });
 
         static IEnumerable<ChiseledScenario> GetChiseled(
-            SmokeTestCategory category,
+            bool isArm64,
             string shortName,
             string os,
             params (string PublishFramework, string Image, string Tag, string OsVersion)[] scenarios)
             => scenarios.Select(scenario => new ChiseledScenario
             {
-                Category = category,
+                IsArm64 = isArm64,
                 ShortName = shortName,
                 PublishFramework = scenario.PublishFramework,
                 RuntimeTag = scenario.Tag,
@@ -858,14 +818,12 @@ public static class SmokeTestScenarios
             });
 
         static IEnumerable<NuGetScenario> GetNuGet(
-            SmokeTestCategory category,
             string shortName,
             string os,
             string runtimeId,
             params (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[] scenarios)
             => scenarios.Select(scenario => new NuGetScenario
             {
-                Category = category,
                 ShortName = shortName,
                 PublishFramework = scenario.PublishFramework,
                 RuntimeTag = scenario.Tag,
@@ -877,7 +835,6 @@ public static class SmokeTestScenarios
             });
 
         static IEnumerable<DotnetToolScenario> GetDotnetTool(
-            SmokeTestCategory category,
             string shortName,
             string os,
             string runtimeId,
@@ -885,7 +842,6 @@ public static class SmokeTestScenarios
             string? excludeWhenPrerelease = null)
             => scenarios.Select(scenario => new DotnetToolScenario
             {
-                Category = category,
                 ShortName = shortName,
                 PublishFramework = scenario.PublishFramework,
                 RuntimeTag = scenario.Tag,
@@ -917,7 +873,6 @@ public static class SmokeTestScenarios
             });
 
         static IEnumerable<TrimmingScenario> GetTrimming(
-            SmokeTestCategory category,
             string shortName,
             string os,
             InstallType installType,
@@ -934,7 +889,6 @@ public static class SmokeTestScenarios
                    from package in packages
                    select new TrimmingScenario
                    {
-                       Category = category,
                        ShortName = $"{package.packageShortName}_{shortName}",
                        PublishFramework = scenario.PublishFramework,
                        RuntimeTag = scenario.Tag,
