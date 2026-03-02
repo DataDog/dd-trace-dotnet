@@ -118,32 +118,21 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
                     if (sp is { } cached)
                     {
                         tagsList.SetTags(
-                            _tags.Type,
-                            "entry",
-                            _tags.Index[0],
-                            "0",
-                            _tags.Method[0],
-                            methodName,
-                            _tags.TypeName[0],
-                            typeFullName,
-                            _tags.File[0],
-                            cached.Url,
-                            _tags.Line[0],
-                            cached.Line,
-                            _tags.Column[0],
-                            cached.Column);
+                            new(_tags.Type, "entry"),
+                            new(_tags.Index[0], "0"),
+                            new(_tags.Method[0], methodName),
+                            new(_tags.TypeName[0], typeFullName),
+                            new(_tags.File[0], cached.Url),
+                            new(_tags.Line[0], cached.Line),
+                            new(_tags.Column[0], cached.Column));
                     }
                     else
                     {
                         tagsList.SetTags(
-                            _tags.Type,
-                            "entry",
-                            _tags.Index[0],
-                            "0",
-                            _tags.Method[0],
-                            methodName,
-                            _tags.TypeName[0],
-                            typeFullName);
+                            new(_tags.Type, "entry"),
+                            new(_tags.Index[0], "0"),
+                            new(_tags.Method[0], methodName),
+                            new(_tags.TypeName[0], typeFullName));
                     }
                 }
                 else

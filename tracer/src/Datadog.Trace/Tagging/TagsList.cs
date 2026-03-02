@@ -17,36 +17,52 @@ namespace Datadog.Trace.Tagging
     internal class TagsList : ITags
     {
         protected static readonly Lazy<IDatadogLogger> Logger = new(() => DatadogLogging.GetLoggerFor<TagsList>());
+        private const int DefaultCapacity = 4;
         private List<KeyValuePair<string, string>>? _tags;
         private List<KeyValuePair<string, double>>? _metrics;
         private List<KeyValuePair<string, byte[]>>? _metaStruct;
 
         private static int CountNotNull(string? value) => value is null ? 0 : 1;
 
-        private static void EnsureAdditionalCapacity<T>(List<KeyValuePair<string, T>> list, int additionalCountUpperBound)
+        private static int ComputeCapacity(int currentCapacity, int requiredCapacity)
         {
-            if (additionalCountUpperBound <= 0)
+            // start at 4, then double.
+            var newCapacity = currentCapacity == 0 ? DefaultCapacity : currentCapacity;
+
+            while (newCapacity < requiredCapacity)
+            {
+                if (newCapacity > int.MaxValue / 2)
+                {
+                    return requiredCapacity;
+                }
+
+                newCapacity *= 2;
+            }
+
+            return newCapacity;
+        }
+
+        private static void EnsureAdditionalCapacity<T>(List<KeyValuePair<string, T>> list, int additionalCapacity)
+        {
+            if (additionalCapacity == 0)
             {
                 return;
             }
 
-            var requiredCapacity = list.Count + additionalCountUpperBound;
+            var requiredCapacity = list.Count + additionalCapacity;
             if (list.Capacity < requiredCapacity)
             {
-                list.Capacity = requiredCapacity;
+                list.Capacity = ComputeCapacity(list.Capacity, requiredCapacity);
             }
         }
 
-        private List<KeyValuePair<string, string>> GetOrCreateTagsList(int additionalCountUpperBound)
+        private List<KeyValuePair<string, string>> GetOrCreateTagsList()
         {
             var tags = Volatile.Read(ref _tags);
 
             if (tags is null)
             {
-                var newTags = additionalCountUpperBound > 0
-                                  ? new List<KeyValuePair<string, string>>(additionalCountUpperBound)
-                                  : new List<KeyValuePair<string, string>>();
-
+                var newTags = new List<KeyValuePair<string, string>>();
                 tags = Interlocked.CompareExchange(ref _tags, newTags, null) ?? newTags;
             }
 
@@ -55,24 +71,17 @@ namespace Datadog.Trace.Tagging
 
         public virtual void SetTag(string key, string? value)
         {
-            // Avoid allocating the tags list when the operation is effectively a no-op
-            // (removing a tag from an uninitialized list).
-            var tags = Volatile.Read(ref _tags);
-            if (value is null)
+            var existingTags = Volatile.Read(ref _tags);
+            if (value is null && existingTags is null)
             {
-                if (tags is null)
-                {
-                    return;
-                }
+                return;
             }
-            else
-            {
-                tags = GetOrCreateTagsList(additionalCountUpperBound: 1);
-            }
+
+            var tags = existingTags ?? GetOrCreateTagsList();
 
             lock (tags)
             {
-                SetTagNoLock(tags, key, value);
+                SetTagNoLock(tags, new KeyValuePair<string, string?>(key, value));
             }
         }
 
@@ -81,27 +90,30 @@ namespace Datadog.Trace.Tagging
         /// Uses the same semantics as <see cref="SetTag"/> for each tag (replace/remove existing keys).
         /// </summary>
         public virtual void SetTags(
-            string key1,
-            string? value1,
-            string key2,
-            string? value2,
-            string key3,
-            string? value3)
+            KeyValuePair<string, string?> tag1,
+            KeyValuePair<string, string?> tag2,
+            KeyValuePair<string, string?> tag3)
         {
-            var additionalCountUpperBound =
-                CountNotNull(value1) +
-                CountNotNull(value2) +
-                CountNotNull(value3);
+            var nonNullTagsCount =
+                CountNotNull(tag1.Value) +
+                CountNotNull(tag2.Value) +
+                CountNotNull(tag3.Value);
 
-            var tags = GetOrCreateTagsList(additionalCountUpperBound);
+            var existingTags = Volatile.Read(ref _tags);
+            if (nonNullTagsCount == 0 && existingTags is null)
+            {
+                return;
+            }
+
+            var tags = existingTags ?? GetOrCreateTagsList();
 
             lock (tags)
             {
-                EnsureAdditionalCapacity(tags, additionalCountUpperBound);
+                EnsureAdditionalCapacity(tags, nonNullTagsCount);
 
-                SetTagNoLock(tags, key1, value1);
-                SetTagNoLock(tags, key2, value2);
-                SetTagNoLock(tags, key3, value3);
+                SetTagNoLock(tags, tag1);
+                SetTagNoLock(tags, tag2);
+                SetTagNoLock(tags, tag3);
             }
         }
 
@@ -110,31 +122,33 @@ namespace Datadog.Trace.Tagging
         /// Uses the same semantics as <see cref="SetTag"/> for each tag (replace/remove existing keys).
         /// </summary>
         public virtual void SetTags(
-            string key1,
-            string? value1,
-            string key2,
-            string? value2,
-            string key3,
-            string? value3,
-            string key4,
-            string? value4)
+            KeyValuePair<string, string?> tag1,
+            KeyValuePair<string, string?> tag2,
+            KeyValuePair<string, string?> tag3,
+            KeyValuePair<string, string?> tag4)
         {
-            var additionalCountUpperBound =
-                CountNotNull(value1) +
-                CountNotNull(value2) +
-                CountNotNull(value3) +
-                CountNotNull(value4);
+            var nonNullTagsCount =
+                CountNotNull(tag1.Value) +
+                CountNotNull(tag2.Value) +
+                CountNotNull(tag3.Value) +
+                CountNotNull(tag4.Value);
 
-            var tags = GetOrCreateTagsList(additionalCountUpperBound);
+            var existingTags = Volatile.Read(ref _tags);
+            if (nonNullTagsCount == 0 && existingTags is null)
+            {
+                return;
+            }
+
+            var tags = existingTags ?? GetOrCreateTagsList();
 
             lock (tags)
             {
-                EnsureAdditionalCapacity(tags, additionalCountUpperBound);
+                EnsureAdditionalCapacity(tags, nonNullTagsCount);
 
-                SetTagNoLock(tags, key1, value1);
-                SetTagNoLock(tags, key2, value2);
-                SetTagNoLock(tags, key3, value3);
-                SetTagNoLock(tags, key4, value4);
+                SetTagNoLock(tags, tag1);
+                SetTagNoLock(tags, tag2);
+                SetTagNoLock(tags, tag3);
+                SetTagNoLock(tags, tag4);
             }
         }
 
@@ -143,43 +157,42 @@ namespace Datadog.Trace.Tagging
         /// Uses the same semantics as <see cref="SetTag"/> for each tag (replace/remove existing keys).
         /// </summary>
         public virtual void SetTags(
-            string key1,
-            string? value1,
-            string key2,
-            string? value2,
-            string key3,
-            string? value3,
-            string key4,
-            string? value4,
-            string key5,
-            string? value5,
-            string key6,
-            string? value6,
-            string key7,
-            string? value7)
+            KeyValuePair<string, string?> tag1,
+            KeyValuePair<string, string?> tag2,
+            KeyValuePair<string, string?> tag3,
+            KeyValuePair<string, string?> tag4,
+            KeyValuePair<string, string?> tag5,
+            KeyValuePair<string, string?> tag6,
+            KeyValuePair<string, string?> tag7)
         {
-            var additionalCountUpperBound =
-                CountNotNull(value1) +
-                CountNotNull(value2) +
-                CountNotNull(value3) +
-                CountNotNull(value4) +
-                CountNotNull(value5) +
-                CountNotNull(value6) +
-                CountNotNull(value7);
+            var nonNullTagsCount =
+                CountNotNull(tag1.Value) +
+                CountNotNull(tag2.Value) +
+                CountNotNull(tag3.Value) +
+                CountNotNull(tag4.Value) +
+                CountNotNull(tag5.Value) +
+                CountNotNull(tag6.Value) +
+                CountNotNull(tag7.Value);
 
-            var tags = GetOrCreateTagsList(additionalCountUpperBound);
+            var existingTags = Volatile.Read(ref _tags);
+            if (nonNullTagsCount == 0 && existingTags is null)
+            {
+                return;
+            }
+
+            var tags = existingTags ?? GetOrCreateTagsList();
 
             lock (tags)
             {
-                EnsureAdditionalCapacity(tags, additionalCountUpperBound);
+                EnsureAdditionalCapacity(tags, nonNullTagsCount);
 
-                SetTagNoLock(tags, key1, value1);
-                SetTagNoLock(tags, key2, value2);
-                SetTagNoLock(tags, key3, value3);
-                SetTagNoLock(tags, key4, value4);
-                SetTagNoLock(tags, key5, value5);
-                SetTagNoLock(tags, key6, value6);
-                SetTagNoLock(tags, key7, value7);
+                SetTagNoLock(tags, tag1);
+                SetTagNoLock(tags, tag2);
+                SetTagNoLock(tags, tag3);
+                SetTagNoLock(tags, tag4);
+                SetTagNoLock(tags, tag5);
+                SetTagNoLock(tags, tag6);
+                SetTagNoLock(tags, tag7);
             }
         }
 
@@ -188,28 +201,28 @@ namespace Datadog.Trace.Tagging
         /// Callers MUST hold the lock on the specific `tags` instance for the duration of the call.
         /// See <see cref="SetTag"/> and SetTags overloads.
         /// </summary>
-        private static void SetTagNoLock(List<KeyValuePair<string, string>> tags, string key, string? value)
+        private static void SetTagNoLock(List<KeyValuePair<string, string>> tags, KeyValuePair<string, string?> tag)
         {
             for (var i = 0; i < tags.Count; i++)
             {
-                if (tags[i].Key == key)
+                if (tags[i].Key == tag.Key)
                 {
-                    if (value is null)
+                    if (tag.Value is null)
                     {
                         tags.RemoveAt(i);
                     }
                     else
                     {
-                        tags[i] = new KeyValuePair<string, string>(key, value);
+                        tags[i] = new(tag.Key, tag.Value);
                     }
 
                     return;
                 }
             }
 
-            if (value is not null)
+            if (tag.Value is not null)
             {
-                tags.Add(new KeyValuePair<string, string>(key, value));
+                tags.Add(new(tag.Key, tag.Value));
             }
         }
 

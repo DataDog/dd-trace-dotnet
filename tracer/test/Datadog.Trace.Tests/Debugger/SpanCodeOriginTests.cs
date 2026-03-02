@@ -446,20 +446,13 @@ namespace Datadog.Trace.Tests.Debugger
         {
             var tags = new TagsList();
             tags.SetTags(
-                CodeOriginTypeKey,
-                EntryValue,
-                CodeOriginFrames0IndexKey,
-                IndexValue,
-                CodeOriginFrames0MethodKey,
-                MethodValue,
-                CodeOriginFrames0TypeKey,
-                TypeValue,
-                CodeOriginFrames0FileKey,
-                FileValue,
-                CodeOriginFrames0LineKey,
-                LineValue,
-                CodeOriginFrames0ColumnKey,
-                ColumnValue);
+                new(CodeOriginTypeKey, EntryValue),
+                new(CodeOriginFrames0IndexKey, IndexValue),
+                new(CodeOriginFrames0MethodKey, MethodValue),
+                new(CodeOriginFrames0TypeKey, TypeValue),
+                new(CodeOriginFrames0FileKey, FileValue),
+                new(CodeOriginFrames0LineKey, LineValue),
+                new(CodeOriginFrames0ColumnKey, ColumnValue));
         }
     }
 #endif
