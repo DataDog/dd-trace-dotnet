@@ -29,63 +29,63 @@ namespace Datadog.Trace.DuckTyping
         private static readonly object RegistrationLock = new();
 
         /// <summary>
-        /// Stores cached forward registry data.
+        /// Forward AOT mapping registry keyed by (proxy definition type, target type).
         /// </summary>
         /// <remarks>This field participates in shared runtime state and must remain thread-safe.</remarks>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static readonly ConcurrentDictionary<TypesTuple, Registration> ForwardRegistry = new();
 
         /// <summary>
-        /// Stores cached reverse registry data.
+        /// Reverse AOT mapping registry keyed by (derive-from type, delegation type).
         /// </summary>
         /// <remarks>This field participates in shared runtime state and must remain thread-safe.</remarks>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static readonly ConcurrentDictionary<TypesTuple, Registration> ReverseRegistry = new();
 
         /// <summary>
-        /// Stores cached forward miss cache data.
+        /// Forward miss cache that stores deterministic missing-registration failures.
         /// </summary>
         /// <remarks>This field participates in shared runtime state and must remain thread-safe.</remarks>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static readonly ConcurrentDictionary<TypesTuple, DuckType.CreateTypeResult> ForwardMissCache = new();
 
         /// <summary>
-        /// Stores cached reverse miss cache data.
+        /// Reverse miss cache that stores deterministic missing-registration failures.
         /// </summary>
         /// <remarks>This field participates in shared runtime state and must remain thread-safe.</remarks>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static readonly ConcurrentDictionary<TypesTuple, DuckType.CreateTypeResult> ReverseMissCache = new();
 
         /// <summary>
-        /// Stores current datadog trace assembly version.
+        /// Datadog.Trace assembly version for the currently loaded runtime.
         /// </summary>
         /// <remarks>This field participates in shared runtime state and must remain thread-safe.</remarks>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static readonly string CurrentDatadogTraceAssemblyVersion = typeof(DuckTypeAotEngine).Assembly.GetName().Version?.ToString() ?? "0.0.0.0";
 
         /// <summary>
-        /// Stores current datadog trace assembly mvid.
+        /// Datadog.Trace module MVID for the currently loaded runtime.
         /// </summary>
         /// <remarks>This field participates in shared runtime state and must remain thread-safe.</remarks>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static readonly string CurrentDatadogTraceAssemblyMvid = typeof(DuckTypeAotEngine).Assembly.ManifestModule.ModuleVersionId.ToString("D");
 
         /// <summary>
-        /// Stores cached registered registry assembly identity data.
+        /// Registry identity captured from activator registration calls.
         /// </summary>
         /// <remarks>This field participates in shared runtime state and must remain thread-safe.</remarks>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static string? _registeredRegistryAssemblyIdentity;
 
         /// <summary>
-        /// Stores cached validated registry assembly identity data.
+        /// Registry identity captured from contract validation calls.
         /// </summary>
         /// <remarks>This field participates in shared runtime state and must remain thread-safe.</remarks>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static string? _validatedRegistryAssemblyIdentity;
 
         /// <summary>
-        /// Stores cached cache version data.
+        /// Monotonic cache version used to invalidate fast paths after registration changes.
         /// </summary>
         /// <remarks>This field participates in shared runtime state and must remain thread-safe.</remarks>
         private static int _cacheVersion;
@@ -97,120 +97,132 @@ namespace Datadog.Trace.DuckTyping
         internal static int CacheVersion => Volatile.Read(ref _cacheVersion);
 
         /// <summary>
-        /// Gets an existing get or create proxy type or creates it when it is missing.
+        /// Gets the cached forward AOT registration result for a proxy/target pair.
         /// </summary>
         /// <param name="proxyDefinitionType">The proxy definition type value.</param>
         /// <param name="targetType">The target type value.</param>
-        /// <returns>The result produced by this operation.</returns>
+        /// <returns>
+        /// A cached <see cref="DuckType.CreateTypeResult"/> containing the generated proxy type and activator,
+        /// or a cached missing-registration failure.
+        /// </returns>
         internal static DuckType.CreateTypeResult GetOrCreateProxyType(Type proxyDefinitionType, Type targetType)
         {
             return GetOrCreateResult(new TypesTuple(proxyDefinitionType, targetType), reverse: false);
         }
 
         /// <summary>
-        /// Gets an existing get or create reverse proxy type or creates it when it is missing.
+        /// Gets the cached reverse AOT registration result for a derive-from/delegation pair.
         /// </summary>
         /// <param name="typeToDeriveFrom">The type to derive from value.</param>
         /// <param name="delegationType">The delegation type value.</param>
-        /// <returns>The result produced by this operation.</returns>
+        /// <returns>
+        /// A cached <see cref="DuckType.CreateTypeResult"/> containing the generated reverse proxy type and activator,
+        /// or a cached missing-registration failure.
+        /// </returns>
         internal static DuckType.CreateTypeResult GetOrCreateReverseProxyType(Type typeToDeriveFrom, Type delegationType)
         {
             return GetOrCreateResult(new TypesTuple(typeToDeriveFrom, delegationType), reverse: true);
         }
 
         /// <summary>
-        /// Executes register proxy.
+        /// Registers a forward AOT proxy using the legacy object-based activator delegate.
         /// </summary>
         /// <param name="proxyDefinitionType">The proxy definition type value.</param>
         /// <param name="targetType">The target type value.</param>
         /// <param name="generatedProxyType">The generated proxy type value.</param>
-        /// <param name="activator">The activator value.</param>
+        /// <param name="activator">
+        /// Activator that receives the runtime instance boxed as <see cref="object"/> and returns the proxy instance.
+        /// </param>
         internal static void RegisterProxy(Type proxyDefinitionType, Type targetType, Type generatedProxyType, Func<object?, object?> activator)
         {
             Register(proxyDefinitionType, targetType, generatedProxyType, activator, reverse: false);
         }
 
         /// <summary>
-        /// Executes register proxy.
+        /// Registers a forward AOT proxy using a generated static activator method handle.
         /// </summary>
         /// <param name="proxyDefinitionType">The proxy definition type value.</param>
         /// <param name="targetType">The target type value.</param>
         /// <param name="generatedProxyType">The generated proxy type value.</param>
-        /// <param name="activatorMethodHandle">The activator method handle value.</param>
+        /// <param name="activatorMethodHandle">
+        /// Handle to a static generated activator method. The method must accept either <see cref="object"/>
+        /// or the exact target runtime type, and must return a type assignable to <paramref name="proxyDefinitionType"/>.
+        /// </param>
         internal static void RegisterProxy(Type proxyDefinitionType, Type targetType, Type generatedProxyType, RuntimeMethodHandle activatorMethodHandle)
         {
             Register(proxyDefinitionType, targetType, generatedProxyType, CreateTypedActivator(proxyDefinitionType, targetType, activatorMethodHandle), reverse: false);
         }
 
         /// <summary>
-        /// Executes register reverse proxy.
+        /// Registers a reverse AOT proxy using the legacy object-based activator delegate.
         /// </summary>
         /// <param name="typeToDeriveFrom">The type to derive from value.</param>
         /// <param name="delegationType">The delegation type value.</param>
         /// <param name="generatedProxyType">The generated proxy type value.</param>
-        /// <param name="activator">The activator value.</param>
+        /// <param name="activator">
+        /// Activator that receives the delegation instance boxed as <see cref="object"/> and returns the proxy instance.
+        /// </param>
         internal static void RegisterReverseProxy(Type typeToDeriveFrom, Type delegationType, Type generatedProxyType, Func<object?, object?> activator)
         {
             Register(typeToDeriveFrom, delegationType, generatedProxyType, activator, reverse: true);
         }
 
         /// <summary>
-        /// Executes register reverse proxy.
+        /// Registers a reverse AOT proxy using a generated static activator method handle.
         /// </summary>
         /// <param name="typeToDeriveFrom">The type to derive from value.</param>
         /// <param name="delegationType">The delegation type value.</param>
         /// <param name="generatedProxyType">The generated proxy type value.</param>
-        /// <param name="activatorMethodHandle">The activator method handle value.</param>
+        /// <param name="activatorMethodHandle">
+        /// Handle to a static generated activator method. The method must accept either <see cref="object"/>
+        /// or the exact delegation runtime type, and must return a type assignable to <paramref name="typeToDeriveFrom"/>.
+        /// </param>
         internal static void RegisterReverseProxy(Type typeToDeriveFrom, Type delegationType, Type generatedProxyType, RuntimeMethodHandle activatorMethodHandle)
         {
             Register(typeToDeriveFrom, delegationType, generatedProxyType, CreateTypedActivator(typeToDeriveFrom, delegationType, activatorMethodHandle), reverse: true);
         }
 
         /// <summary>
-        /// Validates validate contract.
+        /// Validates that generated registry contract metadata matches the currently loaded Datadog.Trace runtime.
         /// </summary>
-        /// <param name="contract">The contract value.</param>
-        /// <param name="metadata">The metadata value.</param>
+        /// <param name="contract">Contract payload emitted into the generated registry bootstrap.</param>
+        /// <param name="metadata">Registry assembly identity metadata emitted by the generator.</param>
         internal static void ValidateContract(DuckTypeAotContract contract, DuckTypeAotAssemblyMetadata metadata)
         {
-            // Branch: take this path when (string.IsNullOrWhiteSpace(contract.SchemaVersion)) evaluates to true.
+            // Contract fields must be present before any identity comparisons.
             if (string.IsNullOrWhiteSpace(contract.SchemaVersion))
             {
                 DuckTypeAotRegistryContractValidationException.ThrowValidation("AOT contract schema version is missing.");
             }
 
-            // Branch: take this path when (string.IsNullOrWhiteSpace(contract.DatadogTraceAssemblyVersion)) evaluates to true.
             if (string.IsNullOrWhiteSpace(contract.DatadogTraceAssemblyVersion))
             {
                 DuckTypeAotRegistryContractValidationException.ThrowValidation("AOT contract Datadog.Trace assembly version is missing.");
             }
 
-            // Branch: take this path when (string.IsNullOrWhiteSpace(contract.DatadogTraceAssemblyMvid)) evaluates to true.
             if (string.IsNullOrWhiteSpace(contract.DatadogTraceAssemblyMvid))
             {
                 DuckTypeAotRegistryContractValidationException.ThrowValidation("AOT contract Datadog.Trace assembly MVID is missing.");
             }
 
-            // Branch: take this path when (string.IsNullOrWhiteSpace(metadata.RegistryAssemblyFullName)) evaluates to true.
             if (string.IsNullOrWhiteSpace(metadata.RegistryAssemblyFullName))
             {
                 DuckTypeAotRegistryContractValidationException.ThrowValidation("AOT registry assembly full name is missing.");
             }
 
-            // Branch: take this path when (string.IsNullOrWhiteSpace(metadata.RegistryAssemblyMvid)) evaluates to true.
             if (string.IsNullOrWhiteSpace(metadata.RegistryAssemblyMvid))
             {
                 DuckTypeAotRegistryContractValidationException.ThrowValidation("AOT registry assembly MVID is missing.");
             }
 
-            // Branch: take this path when (!string.Equals(DuckTypeAotContract.CurrentSchemaVersion, contract.SchemaVersion, StringComparison.Ordinal)) evaluates to true.
+            // Schema version mismatch indicates contract format drift between generator and runtime.
             if (!string.Equals(DuckTypeAotContract.CurrentSchemaVersion, contract.SchemaVersion, StringComparison.Ordinal))
             {
                 DuckTypeAotRegistryContractValidationException.ThrowValidation(
                     $"AOT contract schema version mismatch. Expected '{DuckTypeAotContract.CurrentSchemaVersion}', got '{contract.SchemaVersion}'.");
             }
 
-            // Branch: take this path when (!string.Equals(CurrentDatadogTraceAssemblyVersion, contract.DatadogTraceAssemblyVersion, StringComparison.Ordinal) || evaluates to true.
+            // Runtime assembly version/MVID must match exactly to prevent stale registry consumption.
             if (!string.Equals(CurrentDatadogTraceAssemblyVersion, contract.DatadogTraceAssemblyVersion, StringComparison.Ordinal) ||
                 !string.Equals(CurrentDatadogTraceAssemblyMvid, contract.DatadogTraceAssemblyMvid, StringComparison.OrdinalIgnoreCase))
             {
@@ -222,14 +234,14 @@ namespace Datadog.Trace.DuckTyping
             {
                 var incomingRegistryAssemblyIdentity = NormalizeRegistryAssemblyIdentity(metadata.RegistryAssemblyFullName, metadata.RegistryAssemblyMvid);
                 var currentRegistryAssemblyIdentity = _registeredRegistryAssemblyIdentity ?? _validatedRegistryAssemblyIdentity;
-                // Branch: take this path when (string.IsNullOrWhiteSpace(currentRegistryAssemblyIdentity)) evaluates to true.
+                // First validated registry identity wins for this process.
                 if (string.IsNullOrWhiteSpace(currentRegistryAssemblyIdentity))
                 {
                     _validatedRegistryAssemblyIdentity = incomingRegistryAssemblyIdentity;
                     return;
                 }
 
-                // Branch: take this path when (!string.Equals(currentRegistryAssemblyIdentity, incomingRegistryAssemblyIdentity, StringComparison.Ordinal)) evaluates to true.
+                // Different registry identities in one process are not allowed.
                 if (!string.Equals(currentRegistryAssemblyIdentity, incomingRegistryAssemblyIdentity, StringComparison.Ordinal))
                 {
                     DuckTypeAotMultipleRegistryAssembliesException.Throw(currentRegistryAssemblyIdentity!, incomingRegistryAssemblyIdentity);
@@ -263,36 +275,33 @@ namespace Datadog.Trace.DuckTyping
         private static DuckType.CreateTypeResult GetOrCreateResult(TypesTuple key, bool reverse)
         {
             var registry = reverse ? ReverseRegistry : ForwardRegistry;
-            // Branch: take this path when (registry.TryGetValue(key, out var registration)) evaluates to true.
+            // Global hot path: once a mapping is registered, all future DuckType calls should resolve here without extra work.
             if (registry.TryGetValue(key, out var registration))
             {
                 return registration.CreateTypeResult;
             }
 
+            // Misses are cached too, so unsupported mappings fail deterministically across threads and repeated calls.
             var missCache = reverse ? ReverseMissCache : ForwardMissCache;
             return missCache.GetOrAdd(key, missingKey => CreateMissingResult(missingKey, reverse));
         }
 
         /// <summary>
-        /// Executes register.
+        /// Adds a mapping registration into the forward or reverse registry with conflict checks.
         /// </summary>
         /// <param name="proxyDefinitionType">The proxy definition type value.</param>
         /// <param name="targetType">The target type value.</param>
         /// <param name="generatedProxyType">The generated proxy type value.</param>
-        /// <param name="activator">The activator value.</param>
-        /// <param name="reverse">The reverse value.</param>
+        /// <param name="activator">Activator delegate used to create proxy instances for this registration.</param>
+        /// <param name="reverse">Whether the registration belongs to the reverse registry.</param>
         private static void Register(Type proxyDefinitionType, Type targetType, Type generatedProxyType, Delegate activator, bool reverse)
         {
-            // Branch: take this path when (proxyDefinitionType is null) evaluates to true.
             if (proxyDefinitionType is null) { ThrowHelper.ThrowArgumentNullException(nameof(proxyDefinitionType)); }
-            // Branch: take this path when (targetType is null) evaluates to true.
             if (targetType is null) { ThrowHelper.ThrowArgumentNullException(nameof(targetType)); }
-            // Branch: take this path when (generatedProxyType is null) evaluates to true.
             if (generatedProxyType is null) { ThrowHelper.ThrowArgumentNullException(nameof(generatedProxyType)); }
-            // Branch: take this path when (activator is null) evaluates to true.
             if (activator is null) { ThrowHelper.ThrowArgumentNullException(nameof(activator)); }
 
-            // Branch: take this path when (!proxyDefinitionType.IsAssignableFrom(generatedProxyType)) evaluates to true.
+            // Enforce that the generated proxy can always be assigned to the public proxy contract.
             if (!proxyDefinitionType.IsAssignableFrom(generatedProxyType))
             {
                 DuckTypeAotGeneratedProxyTypeMismatchException.Throw(proxyDefinitionType, generatedProxyType);
@@ -307,20 +316,21 @@ namespace Datadog.Trace.DuckTyping
                 EnsureSingleRegistryAssemblyPerProcess(activator);
 
                 var registry = reverse ? ReverseRegistry : ForwardRegistry;
-                // Branch: take this path when (registry.TryGetValue(key, out var currentRegistration)) evaluates to true.
                 if (registry.TryGetValue(key, out var currentRegistration))
                 {
-                    // Branch: take this path when (currentRegistration.IsEquivalent(registration)) evaluates to true.
+                    // Idempotent registration keeps startup resilient when bootstrap runs more than once.
                     if (currentRegistration.IsEquivalent(registration))
                     {
                         return;
                     }
 
+                    // Different proxy for the same key would make process-wide caches non-deterministic, so fail fast.
                     DuckTypeAotProxyRegistrationConflictException.Throw(proxyDefinitionType, targetType, reverse, currentRegistration.ProxyType, generatedProxyType);
                 }
 
                 registry[key] = registration;
 
+                // Registration must invalidate prior misses so the global engine can recover from earlier lookup order.
                 var missCache = reverse ? ReverseMissCache : ForwardMissCache;
                 _ = missCache.TryRemove(key, out _);
 
@@ -329,12 +339,18 @@ namespace Datadog.Trace.DuckTyping
         }
 
         /// <summary>
-        /// Creates create typed activator.
+        /// Materializes and validates a strongly typed activator delegate from a method handle.
         /// </summary>
         /// <param name="proxyDefinitionType">The proxy definition type value.</param>
         /// <param name="targetType">The target type value.</param>
         /// <param name="activatorMethodHandle">The activator method handle value.</param>
-        /// <returns>The result produced by this operation.</returns>
+        /// <returns>
+        /// A closed delegate compatible with the registration path:
+        /// <list type="bullet">
+        /// <item><description><see cref="CreateProxyInstance{T}"/> when parameter type is <see cref="object"/>.</description></item>
+        /// <item><description><see cref="Func{T1, T2}"/> when parameter type is the concrete target/delegation type.</description></item>
+        /// </list>
+        /// </returns>
         private static Delegate CreateTypedActivator(Type proxyDefinitionType, Type targetType, RuntimeMethodHandle activatorMethodHandle)
         {
             if (proxyDefinitionType is null)
@@ -367,6 +383,7 @@ namespace Datadog.Trace.DuckTyping
                 throw new ArgumentException("AOT duck typing activator method handle does not reference a method.", nameof(activatorMethodHandle));
             }
 
+            // Requiring static/closed activators keeps bootstrap deterministic and avoids runtime generic binding surprises.
             if (!activatorMethod.IsStatic)
             {
                 throw new ArgumentException(
@@ -382,6 +399,8 @@ namespace Datadog.Trace.DuckTyping
             }
 
             var parameters = activatorMethod.GetParameters();
+            // Support both generated activation models:
+            // 1) object bridge for registration entrypoints, 2) concrete typed parameter for lower-overhead paths.
             if (parameters.Length != 1 ||
                 (parameters[0].ParameterType != typeof(object) && parameters[0].ParameterType != targetType))
             {
@@ -390,6 +409,7 @@ namespace Datadog.Trace.DuckTyping
                     nameof(activatorMethodHandle));
             }
 
+            // This guarantees that cache consumers can treat activator output as the declared proxy contract everywhere.
             if (!proxyDefinitionType.IsAssignableFrom(activatorMethod.ReturnType))
             {
                 throw new ArgumentException(
@@ -397,6 +417,7 @@ namespace Datadog.Trace.DuckTyping
                     nameof(activatorMethodHandle));
             }
 
+            // Prefer typed delegates to keep AOT runtime close to dynamic behavior with fewer object-bound transitions.
             var delegateType = parameters[0].ParameterType == typeof(object)
                                    ? typeof(CreateProxyInstance<>).MakeGenericType(proxyDefinitionType)
                                    : typeof(Func<,>).MakeGenericType(targetType, proxyDefinitionType);
@@ -414,21 +435,21 @@ namespace Datadog.Trace.DuckTyping
         }
 
         /// <summary>
-        /// Ensures ensure single registry assembly per process.
+        /// Enforces the single-registry-assembly-per-process rule based on activator assembly identity.
         /// </summary>
-        /// <param name="activator">The activator value.</param>
+        /// <param name="activator">Activator delegate whose declaring assembly identifies the incoming registry.</param>
         private static void EnsureSingleRegistryAssemblyPerProcess(Delegate activator)
         {
             var incomingRegistryAssemblyIdentity = ResolveRegistryAssemblyIdentity(activator);
             var currentRegistryAssemblyIdentity = _registeredRegistryAssemblyIdentity ?? _validatedRegistryAssemblyIdentity;
-            // Branch: take this path when (string.IsNullOrWhiteSpace(currentRegistryAssemblyIdentity)) evaluates to true.
+            // The first registered identity defines the process-wide AOT registry boundary.
             if (string.IsNullOrWhiteSpace(currentRegistryAssemblyIdentity))
             {
                 _registeredRegistryAssemblyIdentity = incomingRegistryAssemblyIdentity;
                 return;
             }
 
-            // Branch: take this path when (!string.Equals(currentRegistryAssemblyIdentity, incomingRegistryAssemblyIdentity, StringComparison.Ordinal)) evaluates to true.
+            // Reject mixed registry identities to prevent cross-build mapping contamination in global caches.
             if (!string.Equals(currentRegistryAssemblyIdentity, incomingRegistryAssemblyIdentity, StringComparison.Ordinal))
             {
                 DuckTypeAotMultipleRegistryAssembliesException.Throw(currentRegistryAssemblyIdentity!, incomingRegistryAssemblyIdentity);
@@ -438,17 +459,17 @@ namespace Datadog.Trace.DuckTyping
         }
 
         /// <summary>
-        /// Resolves resolve registry assembly identity.
+        /// Resolves the normalized identity of the registry assembly that owns the activator method.
         /// </summary>
-        /// <param name="activator">The activator value.</param>
-        /// <returns>The resulting string value.</returns>
+        /// <param name="activator">Activator delegate from the generated registry.</param>
+        /// <returns>Normalized assembly identity string including module MVID.</returns>
         private static string ResolveRegistryAssemblyIdentity(Delegate activator)
         {
             var module = activator.Method.Module;
             var assembly = module.Assembly;
 
             var assemblyFullName = assembly.FullName;
-            // Branch: take this path when (string.IsNullOrWhiteSpace(assemblyFullName)) evaluates to true.
+            // Fallback path for unusual runtime contexts where Assembly.FullName is unavailable.
             if (string.IsNullOrWhiteSpace(assemblyFullName))
             {
                 var assemblyName = assembly.GetName();
@@ -459,11 +480,11 @@ namespace Datadog.Trace.DuckTyping
         }
 
         /// <summary>
-        /// Normalizes normalize registry assembly identity.
+        /// Normalizes registry identity into a deterministic format.
         /// </summary>
-        /// <param name="assemblyNameOrFullName">The assembly name or full name value.</param>
-        /// <param name="moduleMvid">The module mvid value.</param>
-        /// <returns>The resulting string value.</returns>
+        /// <param name="assemblyNameOrFullName">Assembly name or full name.</param>
+        /// <param name="moduleMvid">Module MVID associated with the registry assembly.</param>
+        /// <returns>Normalized identity string in the form <c>name, Version=x; MVID=y</c>.</returns>
         private static string NormalizeRegistryAssemblyIdentity(string assemblyNameOrFullName, string moduleMvid)
         {
             var normalizedAssemblyName = NormalizeAssemblyIdentityName(assemblyNameOrFullName);
@@ -472,13 +493,12 @@ namespace Datadog.Trace.DuckTyping
         }
 
         /// <summary>
-        /// Normalizes normalize assembly identity name.
+        /// Extracts stable assembly name/version identity used in registry matching.
         /// </summary>
-        /// <param name="assemblyNameOrFullName">The assembly name or full name value.</param>
-        /// <returns>The resulting string value.</returns>
+        /// <param name="assemblyNameOrFullName">Assembly full name or simple name.</param>
+        /// <returns>Normalized assembly identity without culture/public key details.</returns>
         private static string NormalizeAssemblyIdentityName(string assemblyNameOrFullName)
         {
-            // Branch: take this path when (string.IsNullOrWhiteSpace(assemblyNameOrFullName)) evaluates to true.
             if (string.IsNullOrWhiteSpace(assemblyNameOrFullName))
             {
                 return "unknown";
@@ -493,13 +513,13 @@ namespace Datadog.Trace.DuckTyping
             }
             catch
             {
-                // Branch: handles any exception that reaches this handler.
+                // Preserve raw identity when parsing fails (for example malformed custom assembly names).
                 return assemblyNameOrFullName.Trim();
             }
         }
 
         /// <summary>
-        /// Creates create missing result.
+        /// Creates missing result.
         /// </summary>
         /// <param name="key">The key value.</param>
         /// <param name="reverse">The reverse value.</param>
@@ -513,7 +533,7 @@ namespace Datadog.Trace.DuckTyping
             }
             catch (Exception ex)
             {
-                // Branch: handles exceptions that match Exception ex.
+                // Capture the thrown exception once and return a cached failing result for this mapping.
                 return new DuckType.CreateTypeResult(
                     key.ProxyDefinitionType,
                     proxyType: null,
@@ -552,7 +572,7 @@ namespace Datadog.Trace.DuckTyping
             internal DuckType.CreateTypeResult CreateTypeResult { get; }
 
             /// <summary>
-            /// Determines whether is equivalent.
+            /// Determines whether equivalent.
             /// </summary>
             /// <param name="other">The other value.</param>
             /// <returns>true if the operation succeeds; otherwise, false.</returns>
