@@ -14,7 +14,7 @@ It complements:
 
 The build integration has three explicit stages:
 
-1. Resolve mapping inputs.
+1. Discover and/or load canonical mapping inputs.
 2. Generate registry and companion artifacts.
 3. Consume generated props/descriptors during app build or publish.
 
@@ -42,10 +42,11 @@ Bible compatibility-gate flow intentionally removes the generated Bible-gate reg
 
 1. Build proxy definition assemblies.
 2. Build target assemblies.
-3. Run `ducktype-aot generate`.
-4. Run `ducktype-aot verify-compat`.
-5. Build/publish app with generated `.props` and linker descriptor.
-6. Execute AOT validation tests.
+3. Run `ducktype-aot discover-mappings` (or load a checked-in canonical map).
+4. Run `ducktype-aot generate`.
+5. Run `ducktype-aot verify-compat`.
+6. Build/publish app with generated `.props` and linker descriptor.
+7. Execute AOT validation tests.
 
 ## Local Developer Workflow
 
@@ -57,7 +58,17 @@ dotnet build /abs/path/My.Proxy.Contracts.csproj -c Release
 dotnet build /abs/path/My.Targets.csproj -c Release
 ```
 
-### 2. Generate registry
+### 2. Discover canonical mappings
+
+```bash
+dotnet tracer/src/Datadog.Trace.Tools.Runner/bin/Release/Tool/net8.0/Datadog.Trace.Tools.Runner.dll \
+  ducktype-aot discover-mappings \
+  --proxy-assembly /abs/path/My.Proxy.Contracts.dll \
+  --target-assembly /abs/path/My.Targets.dll \
+  --output /abs/path/ducktype-aot-map.json
+```
+
+### 3. Generate registry
 
 ```bash
 dotnet tracer/src/Datadog.Trace.Tools.Runner/bin/Release/Tool/net8.0/Datadog.Trace.Tools.Runner.dll \
@@ -68,17 +79,18 @@ dotnet tracer/src/Datadog.Trace.Tools.Runner/bin/Release/Tool/net8.0/Datadog.Tra
   --output /abs/path/Datadog.Trace.DuckType.AotRegistry.MyApp.dll
 ```
 
-### 3. Validate compatibility
+### 4. Validate compatibility
 
 ```bash
 dotnet tracer/src/Datadog.Trace.Tools.Runner/bin/Release/Tool/net8.0/Datadog.Trace.Tools.Runner.dll \
   ducktype-aot verify-compat \
   --compat-report /abs/path/Datadog.Trace.DuckType.AotRegistry.MyApp.dll.compat.md \
   --compat-matrix /abs/path/Datadog.Trace.DuckType.AotRegistry.MyApp.dll.compat.json \
+  --map-file /abs/path/ducktype-aot-map.json \
   --failure-mode strict
 ```
 
-### 4. Build app with generated props
+### 5. Build app with generated props
 
 ```bash
 dotnet publish /abs/path/MyApp.csproj \

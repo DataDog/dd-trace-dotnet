@@ -36,82 +36,47 @@ Modes:
 1. `forward`
 2. `reverse`
 
-If equivalent keys are discovered from multiple sources, later resolution can overwrite earlier entries by resolver precedence.
+The canonical map file is the single source of truth for generation and compatibility validation.
 
 ## Input Sources and Precedence
 
-Effective mappings are composed from these sources:
+Effective mappings come from one canonical source:
 
-1. Attribute discovery from proxy assemblies.
-2. Map file (`--map-file`) additions, overrides, and exclusions.
-3. Optional mapping catalog (`--mapping-catalog`) used as contract coverage validation.
+1. Map file (`--map-file`) consumed by `ducktype-aot generate` and `ducktype-aot verify-compat`.
 
-Recommended precedence model in automation:
-
-1. Start with attribute discovery.
-2. Apply map-file overlays.
-3. Apply excludes.
-4. Validate against catalog requirements.
+Attribute discovery is handled explicitly through `ducktype-aot discover-mappings`, which writes a canonical map file.
 
 ## Map File Schema (`--map-file`)
 
 Top-level object:
 
+1. `schemaVersion`: must be `"1"`.
 1. `mappings`: array of mapping entries.
-2. `excludes`: optional array of mapping keys to remove.
 
 Mapping entry fields:
 
 1. `mode`: `forward` or `reverse`; defaults to `forward` when omitted.
-2. `scenarioId`: optional identifier used for scenario tracking.
-3. `proxyType`: required proxy type full name or assembly-qualified name.
-4. `proxyAssembly`: optional when inferable from `proxyType` assembly-qualified value.
-5. `targetType`: required target type full name or assembly-qualified name.
-6. `targetAssembly`: optional when inferable from `targetType` assembly-qualified value.
-7. `exclude`: optional boolean, when `true` removes the mapping key.
+2. `proxyType`: required proxy type full name or assembly-qualified name.
+3. `proxyAssembly`: optional when inferable from `proxyType` assembly-qualified value.
+4. `targetType`: required target type full name or assembly-qualified name.
+5. `targetAssembly`: optional when inferable from `targetType` assembly-qualified value.
 
 Example:
 
 ```json
 {
+  "schemaVersion": "1",
   "mappings": [
     {
-      "scenarioId": "A-01",
       "mode": "forward",
       "proxyType": "My.Contracts.IRequestProxy",
       "proxyAssembly": "My.Contracts",
       "targetType": "ThirdParty.HttpRequest",
       "targetAssembly": "ThirdParty.Http"
     }
-  ],
-  "excludes": [
-    {
-      "mode": "forward",
-      "proxyType": "My.Contracts.ILegacyProxy",
-      "proxyAssembly": "My.Contracts",
-      "targetType": "ThirdParty.LegacyType",
-      "targetAssembly": "ThirdParty.Legacy"
-    }
   ]
 }
 ```
-
-## Mapping Catalog Schema (`--mapping-catalog`)
-
-The mapping catalog is a policy input used to assert required scenario coverage.
-
-Expected behavior:
-
-1. Declares expected scenarios and identity tuples.
-2. Optional per-mapping `expectedStatus` can override default `compatible` status for exceptional scenarios.
-3. Can be used with `--require-mapping-catalog` to fail when required entries are missing.
-4. Works with scenario inventory and compatibility verification contracts.
-
-The exact catalog document in this repository is maintained under:
-
-1. `tracer/test/Datadog.Trace.DuckTyping.Tests/AotCompatibility/ducktype-aot-bible-mapping-catalog.json`
-
-Current Bible catalog baseline includes no explicit `expectedStatus` entries (all required mappings default to `compatible`).
 
 ## Generic Instantiations Schema (`--generic-instantiations`)
 
@@ -206,14 +171,11 @@ The markdown report is human-oriented. The JSON matrix is machine-oriented for C
 
 1. `--compat-report`
 2. `--compat-matrix`
+3. `--map-file`
 
 Optional contract inputs:
 
-1. `--mapping-catalog`
-2. `--scenario-inventory`
-3. `--expected-outcomes` (legacy strict-empty only)
-4. `--known-limitations` (legacy strict-empty only)
-5. `--manifest`
+1. `--manifest`
 
 Failure mode:
 
@@ -222,8 +184,9 @@ Failure mode:
 
 Contract policy:
 
-1. Scenario-level status overrides, when unavoidable, belong in mapping-catalog `expectedStatus`.
-2. `expected-outcomes` and `known-limitations` files are strict-empty legacy contracts and should not carry scenario overrides.
+1. Every `--map-file` entry must exist in `compat-matrix`.
+2. `compat-matrix` must not contain entries that are absent from `--map-file`.
+3. Every mapped entry status must be `compatible`.
 
 ## Runtime Contract Requirements
 

@@ -33,11 +33,40 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// </summary>
         /// <param name="compatReportPath">The compat report path value.</param>
         /// <param name="compatMatrixPath">The compat matrix path value.</param>
-        /// <param name="mappingCatalogPath">The mapping catalog path value.</param>
+        /// <param name="mapFilePath">The canonical map file path value.</param>
         /// <param name="manifestPath">The manifest path value.</param>
-        /// <param name="scenarioInventoryPath">The scenario inventory path value.</param>
-        /// <param name="expectedOutcomesPath">The expected outcomes path value.</param>
-        /// <param name="knownLimitationsPath">The known limitations path value.</param>
+        /// <param name="strictAssemblyFingerprintValidation">The strict assembly fingerprint validation value.</param>
+        /// <param name="failureMode">The failure mode value.</param>
+        public DuckTypeAotVerifyCompatOptions(
+            string compatReportPath,
+            string compatMatrixPath,
+            string mapFilePath,
+            string? manifestPath,
+            bool strictAssemblyFingerprintValidation = false,
+            DuckTypeAotFailureMode failureMode = DuckTypeAotFailureMode.Default)
+        {
+            CompatReportPath = compatReportPath;
+            CompatMatrixPath = compatMatrixPath;
+            MapFilePath = mapFilePath;
+            ManifestPath = manifestPath;
+            MappingCatalogPath = null;
+            ScenarioInventoryPath = null;
+            ExpectedOutcomesPath = null;
+            KnownLimitationsPath = null;
+            FailureMode = failureMode;
+            StrictAssemblyFingerprintValidation = strictAssemblyFingerprintValidation || failureMode == DuckTypeAotFailureMode.Strict;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DuckTypeAotVerifyCompatOptions"/> class using legacy parameters.
+        /// </summary>
+        /// <param name="compatReportPath">The compat report path value.</param>
+        /// <param name="compatMatrixPath">The compat matrix path value.</param>
+        /// <param name="mappingCatalogPath">Legacy mapping catalog path. Retained for source compatibility and ignored.</param>
+        /// <param name="manifestPath">The manifest path value.</param>
+        /// <param name="scenarioInventoryPath">Legacy scenario inventory path. Retained for source compatibility and ignored.</param>
+        /// <param name="expectedOutcomesPath">Legacy expected outcomes path. Retained for source compatibility and ignored.</param>
+        /// <param name="knownLimitationsPath">Legacy known limitations path. Retained for source compatibility and ignored.</param>
         /// <param name="strictAssemblyFingerprintValidation">The strict assembly fingerprint validation value.</param>
         /// <param name="failureMode">The failure mode value.</param>
         public DuckTypeAotVerifyCompatOptions(
@@ -50,16 +79,18 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             string? knownLimitationsPath = null,
             bool strictAssemblyFingerprintValidation = false,
             DuckTypeAotFailureMode failureMode = DuckTypeAotFailureMode.Default)
+            : this(
+                compatReportPath,
+                compatMatrixPath,
+                mappingCatalogPath ?? string.Empty,
+                manifestPath,
+                strictAssemblyFingerprintValidation,
+                failureMode)
         {
-            CompatReportPath = compatReportPath;
-            CompatMatrixPath = compatMatrixPath;
             MappingCatalogPath = mappingCatalogPath;
-            ManifestPath = manifestPath;
             ScenarioInventoryPath = scenarioInventoryPath;
             ExpectedOutcomesPath = expectedOutcomesPath;
             KnownLimitationsPath = knownLimitationsPath;
-            FailureMode = failureMode;
-            StrictAssemblyFingerprintValidation = strictAssemblyFingerprintValidation || failureMode == DuckTypeAotFailureMode.Strict;
         }
 
         /// <summary>
@@ -75,10 +106,10 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         public string CompatMatrixPath { get; }
 
         /// <summary>
-        /// Gets mapping catalog path.
+        /// Gets map file path.
         /// </summary>
-        /// <value>The mapping catalog path value.</value>
-        public string? MappingCatalogPath { get; }
+        /// <value>The map file path value.</value>
+        public string MapFilePath { get; }
 
         /// <summary>
         /// Gets manifest path.
@@ -87,21 +118,23 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         public string? ManifestPath { get; }
 
         /// <summary>
-        /// Gets scenario inventory path.
+        /// Gets legacy mapping catalog path.
         /// </summary>
-        /// <value>The scenario inventory path value.</value>
+        public string? MappingCatalogPath { get; }
+
+        /// <summary>
+        /// Gets legacy scenario inventory path.
+        /// </summary>
         public string? ScenarioInventoryPath { get; }
 
         /// <summary>
-        /// Gets expected outcomes path.
+        /// Gets legacy expected outcomes path.
         /// </summary>
-        /// <value>The expected outcomes path value.</value>
         public string? ExpectedOutcomesPath { get; }
 
         /// <summary>
-        /// Gets known limitations path.
+        /// Gets legacy known limitations path.
         /// </summary>
-        /// <value>The known limitations path value.</value>
         public string? KnownLimitationsPath { get; }
 
         /// <summary>

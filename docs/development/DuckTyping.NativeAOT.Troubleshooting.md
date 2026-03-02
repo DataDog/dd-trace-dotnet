@@ -28,14 +28,14 @@ Symptoms:
 
 Likely causes:
 
-1. Mapping absent from effective map after discovery/overrides/excludes.
+1. Mapping absent from canonical map file or dropped during discovery compatibility filtering.
 2. Wrong registry assembly loaded.
 3. Bootstrap initialization did not run before first use.
 
 Actions:
 
 1. Inspect `*.compat.json` for the exact mapping key.
-2. Validate map/catalog inputs used in generation.
+2. Validate the canonical `--map-file` used in generation.
 3. Ensure generated registry assembly is referenced and initialized early.
 4. Ensure runtime process loads only the intended registry identity.
 
@@ -81,15 +81,15 @@ Symptoms:
 
 Likely causes:
 
-1. Compatibility status mismatch against expected outcomes.
-2. Scenario inventory/catalog mismatch.
+1. `compat-matrix` and `--map-file` identity-set mismatch.
+2. One or more mapped entries are non-compatible.
 3. Manifest contract drift.
 
 Actions:
 
 1. Review `*.compat.md` first for human-readable diagnosis.
-2. Compare `*.compat.json` with mapping-catalog required mappings and default `compatible` expectations.
-3. Validate scenario IDs and catalog keys.
+2. Compare `*.compat.json` against canonical `--map-file`.
+3. Check for missing, extra, or non-compatible mapped entries.
 4. Regenerate artifacts with matching runtime build inputs.
 
 ### strict verify-compat fails with unexpected non-compatible status
@@ -101,13 +101,13 @@ Symptoms:
 Likely causes:
 
 1. Regression introduced new non-compatible status.
-2. Scenario was renamed/retagged without updating mapping catalog.
-3. Compatibility matrix was generated from different map/catalog inputs than verification.
+2. Map file drift was introduced without synchronized generation.
+3. Compatibility matrix was generated from different `--map-file` inputs than verification.
 
 Actions:
 
-1. Check mapping-catalog required mappings and scenario IDs first.
-2. Confirm current baseline has no Bible `expectedStatus` overrides.
+1. Check canonical map entries first.
+2. Confirm `verify-compat` is using the same `--map-file` as `generate`.
 3. Treat any non-compatible mapping as a regression until explicitly reviewed and approved.
 4. Re-run generation and verification with identical artifact inputs.
 

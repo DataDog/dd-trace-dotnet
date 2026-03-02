@@ -16,8 +16,8 @@ It is intended as a quick status index, while detailed behavior and examples rem
 Current branch baseline:
 
 1. Differential parity coverage is implemented for Bible families, Bible examples, and excerpt suites.
-2. Strict compatibility verification is enforced with strict-empty expected-outcomes/known-limitations contracts.
-3. All cataloged scenarios are expected to be `compatible`.
+2. Strict compatibility verification is enforced against a single canonical map file contract.
+3. All canonical mappings are expected to be `compatible`.
 
 ## Known Expected Non-Compatible Scenarios
 
@@ -69,7 +69,7 @@ Recommended gates for any parity-sensitive change:
 2. AOT generation and compatibility verification.
 3. Differential parity orchestration.
 4. NativeAOT publish integration tests.
-5. Mapping catalog review for scenario coverage and any explicit status overrides.
+5. Canonical map review and discover drift check.
 
 See [DuckTyping.NativeAOT.Testing.md](./DuckTyping.NativeAOT.Testing.md) for exact commands.
 
@@ -80,15 +80,13 @@ Update this matrix when one of the following changes:
 1. New Bible feature family added.
 2. New compatibility status introduced in generator/verify tooling.
 3. New parity suite or scenario ID family is added.
-4. Expected outcomes policy changes for strict/default gating.
+4. Canonical map contract or strict verification policy changes.
 
 When updating, keep this matrix synchronized with:
 
-1. `ducktype-aot-bible-scenario-inventory.json`
-2. `ducktype-aot-bible-mapping-catalog.json`
-3. `ducktype-aot-bible-expected-outcomes.json` (strict-empty legacy contract)
-4. `ducktype-aot-bible-known-limitations.json` (strict-empty legacy contract)
-5. `DuckTyping-NativeAOT-Remaining-Checklist.md`
+1. `ducktype-aot-bible-mappings.json`
+2. `ducktype-aot discover-mappings` output for drift checks
+3. `DuckTyping-NativeAOT-Remaining-Checklist.md`
 
 ## Related Documents
 

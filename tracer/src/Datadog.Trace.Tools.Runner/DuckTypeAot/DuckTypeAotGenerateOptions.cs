@@ -22,13 +22,53 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <param name="targetFolders">The target folders value.</param>
         /// <param name="targetFilters">The target filters value.</param>
         /// <param name="mapFile">The map file value.</param>
-        /// <param name="mappingCatalog">The mapping catalog value.</param>
         /// <param name="genericInstantiationsFile">The generic instantiations file value.</param>
         /// <param name="outputPath">The output path value.</param>
         /// <param name="assemblyName">The assembly name value.</param>
         /// <param name="trimmerDescriptorPath">The trimmer descriptor path value.</param>
         /// <param name="propsPath">The props path value.</param>
-        /// <param name="requireMappingCatalog">The require mapping catalog value.</param>
+        /// <param name="strongNameKeyFile">The strong name key file value.</param>
+        public DuckTypeAotGenerateOptions(
+            IReadOnlyList<string> proxyAssemblies,
+            IReadOnlyList<string> targetAssemblies,
+            IReadOnlyList<string> targetFolders,
+            IReadOnlyList<string> targetFilters,
+            string mapFile,
+            string? genericInstantiationsFile,
+            string outputPath,
+            string? assemblyName,
+            string trimmerDescriptorPath,
+            string propsPath,
+            string? strongNameKeyFile = null)
+        {
+            ProxyAssemblies = proxyAssemblies;
+            TargetAssemblies = targetAssemblies;
+            TargetFolders = targetFolders;
+            TargetFilters = targetFilters;
+            MapFile = mapFile;
+            GenericInstantiationsFile = genericInstantiationsFile;
+            OutputPath = outputPath;
+            AssemblyName = assemblyName;
+            TrimmerDescriptorPath = trimmerDescriptorPath;
+            PropsPath = propsPath;
+            StrongNameKeyFile = strongNameKeyFile;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DuckTypeAotGenerateOptions"/> class using legacy parameters.
+        /// </summary>
+        /// <param name="proxyAssemblies">The proxy assemblies value.</param>
+        /// <param name="targetAssemblies">The target assemblies value.</param>
+        /// <param name="targetFolders">The target folders value.</param>
+        /// <param name="targetFilters">The target filters value.</param>
+        /// <param name="mapFile">The map file value.</param>
+        /// <param name="mappingCatalog">Legacy catalog path (ignored by the simplified contract).</param>
+        /// <param name="genericInstantiationsFile">The generic instantiations file value.</param>
+        /// <param name="outputPath">The output path value.</param>
+        /// <param name="assemblyName">The assembly name value.</param>
+        /// <param name="trimmerDescriptorPath">The trimmer descriptor path value.</param>
+        /// <param name="propsPath">The props path value.</param>
+        /// <param name="requireMappingCatalog">Legacy catalog requirement flag (ignored by the simplified contract).</param>
         /// <param name="strongNameKeyFile">The strong name key file value.</param>
         public DuckTypeAotGenerateOptions(
             IReadOnlyList<string> proxyAssemblies,
@@ -44,20 +84,21 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             string propsPath,
             bool requireMappingCatalog = false,
             string? strongNameKeyFile = null)
+            : this(
+                proxyAssemblies,
+                targetAssemblies,
+                targetFolders,
+                targetFilters,
+                mapFile ?? string.Empty,
+                genericInstantiationsFile,
+                outputPath,
+                assemblyName,
+                trimmerDescriptorPath,
+                propsPath,
+                strongNameKeyFile)
         {
-            ProxyAssemblies = proxyAssemblies;
-            TargetAssemblies = targetAssemblies;
-            TargetFolders = targetFolders;
-            TargetFilters = targetFilters;
-            MapFile = mapFile;
             MappingCatalog = mappingCatalog;
-            GenericInstantiationsFile = genericInstantiationsFile;
-            OutputPath = outputPath;
-            AssemblyName = assemblyName;
-            TrimmerDescriptorPath = trimmerDescriptorPath;
-            PropsPath = propsPath;
             RequireMappingCatalog = requireMappingCatalog;
-            StrongNameKeyFile = strongNameKeyFile;
         }
 
         /// <summary>
@@ -88,10 +129,10 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// Gets map file.
         /// </summary>
         /// <value>The map file value.</value>
-        public string? MapFile { get; }
+        public string MapFile { get; }
 
         /// <summary>
-        /// Gets mapping catalog.
+        /// Gets legacy mapping catalog.
         /// </summary>
         /// <value>The mapping catalog value.</value>
         public string? MappingCatalog { get; }
@@ -127,7 +168,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         public string PropsPath { get; }
 
         /// <summary>
-        /// Gets a value indicating whether require mapping catalog.
+        /// Gets a value indicating whether require mapping catalog (legacy; ignored by simplified contract).
         /// </summary>
         /// <value>The require mapping catalog value.</value>
         public bool RequireMappingCatalog { get; }
