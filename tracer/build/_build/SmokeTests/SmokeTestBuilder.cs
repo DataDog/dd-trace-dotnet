@@ -18,7 +18,6 @@ namespace SmokeTests;
 
 public static class SmokeTestBuilder
 {
-    const string DotnetSdkVersion = "10.0.100";
     const string TestAgentImage = "ghcr.io/datadog/dd-apm-test-agent/ddapm-test-agent:latest";
     const string WindowsTestAgentImage = "dd-trace-dotnet/ddapm-test-agent-windows";
     const string WindowsTestAgentDockerfile = "build/_build/docker/test-agent.windows.dockerfile";
@@ -42,7 +41,7 @@ public static class SmokeTestBuilder
     /// Builds all Docker images for the given scenario. Returns the list of image tags to test.
     /// Most categories produce a single image; chiseled categories produce two (one per entrypoint style).
     /// </summary>
-    public static async Task<string[]> BuildImageAsync(SmokeTestCategory category, SmokeTestScenario scenario, AbsolutePath tracerDir, AbsolutePath artifactsDir, string toolVersion)
+    public static async Task<string[]> BuildImageAsync(SmokeTestCategory category, SmokeTestScenario scenario, AbsolutePath tracerDir, AbsolutePath artifactsDir, string toolVersion, string dotnetSdkVersion)
     {
         LogSection($"Building image: {scenario.ShortName}");
         Logger.Information("Artifacts: {ArtifactsDir}", artifactsDir);
@@ -52,47 +51,47 @@ public static class SmokeTestBuilder
             case SmokeTestCategory.LinuxX64Installer:
             case SmokeTestCategory.LinuxArm64Installer:
             case SmokeTestCategory.LinuxMuslInstaller:
-                return await BuildInstallerImageAsync(scenario, tracerDir, artifactsDir);
+                return await BuildInstallerImageAsync(scenario, tracerDir, artifactsDir, dotnetSdkVersion);
             case SmokeTestCategory.LinuxChiseledInstaller:
             case SmokeTestCategory.LinuxChiseledArm64Installer:
-                return await BuildChiseledImageAsync(category, scenario, tracerDir, artifactsDir);
+                return await BuildChiseledImageAsync(category, scenario, tracerDir, artifactsDir, dotnetSdkVersion);
             case SmokeTestCategory.LinuxNuGet:
             case SmokeTestCategory.LinuxNuGetArm64:
-                return await BuildNuGetImageAsync(scenario, tracerDir, artifactsDir, toolVersion);
+                return await BuildNuGetImageAsync(scenario, tracerDir, artifactsDir, toolVersion, dotnetSdkVersion);
             case SmokeTestCategory.LinuxDotnetTool:
             case SmokeTestCategory.LinuxDotnetToolArm64:
             case SmokeTestCategory.LinuxMuslDotnetTool:
             case SmokeTestCategory.LinuxMuslDotnetToolArm64:
-                return await BuildDotnetToolImageAsync(scenario, tracerDir, artifactsDir);
+                return await BuildDotnetToolImageAsync(scenario, tracerDir, artifactsDir, dotnetSdkVersion);
             case SmokeTestCategory.LinuxDotnetToolNuget:
-                return await BuildDotnetToolNugetImageAsync(scenario, tracerDir, artifactsDir, toolVersion);
+                return await BuildDotnetToolNugetImageAsync(scenario, tracerDir, artifactsDir, toolVersion, dotnetSdkVersion);
             case SmokeTestCategory.LinuxSelfInstrument:
-                return await BuildSelfInstrumentImageAsync(scenario, tracerDir, artifactsDir);
+                return await BuildSelfInstrumentImageAsync(scenario, tracerDir, artifactsDir, dotnetSdkVersion);
             case SmokeTestCategory.LinuxTrimming:
             case SmokeTestCategory.LinuxMuslTrimming:
-                return await BuildTrimmingImageAsync(scenario, tracerDir, artifactsDir, toolVersion);
+                return await BuildTrimmingImageAsync(scenario, tracerDir, artifactsDir, toolVersion, dotnetSdkVersion);
             case SmokeTestCategory.WindowsMsi:
-                return await BuildWindowsMsiImageAsync(scenario, tracerDir, artifactsDir);
+                return await BuildWindowsMsiImageAsync(scenario, tracerDir, artifactsDir, dotnetSdkVersion);
             case SmokeTestCategory.WindowsNuGet:
-                return await BuildWindowsNuGetImageAsync(scenario, tracerDir, artifactsDir, toolVersion);
+                return await BuildWindowsNuGetImageAsync(scenario, tracerDir, artifactsDir, toolVersion, dotnetSdkVersion);
             case SmokeTestCategory.WindowsDotnetTool:
-                return await BuildWindowsDotnetToolImageAsync(scenario, tracerDir, artifactsDir);
+                return await BuildWindowsDotnetToolImageAsync(scenario, tracerDir, artifactsDir, dotnetSdkVersion);
             case SmokeTestCategory.WindowsTracerHome:
-                return await BuildWindowsTracerHomeImageAsync(scenario, tracerDir, artifactsDir);
+                return await BuildWindowsTracerHomeImageAsync(scenario, tracerDir, artifactsDir, dotnetSdkVersion);
             case SmokeTestCategory.WindowsFleetInstallerIis:
-                return await BuildWindowsFleetInstallerIisImageAsync(scenario, tracerDir, artifactsDir);
+                return await BuildWindowsFleetInstallerIisImageAsync(scenario, tracerDir, artifactsDir, dotnetSdkVersion);
             default:
                 throw new InvalidOperationException($"Unknown smoke test scenario: {category}");
         }
     }
 
-    static async Task<string[]> BuildInstallerImageAsync(SmokeTestScenario scenario, AbsolutePath tracerDir, AbsolutePath artifactsDir)
+    static async Task<string[]> BuildInstallerImageAsync(SmokeTestScenario scenario, AbsolutePath tracerDir, AbsolutePath artifactsDir, string dotnetSdkVersion)
     {
         const string dockerfilePath = "build/_build/docker/smoke.dockerfile";
 
         var buildArgs = new Dictionary<string, string>
         {
-            ["DOTNETSDK_VERSION"] = DotnetSdkVersion,
+            ["DOTNETSDK_VERSION"] = dotnetSdkVersion,
             ["RUNTIME_IMAGE"] = scenario.RuntimeImage,
             ["PUBLISH_FRAMEWORK"] = scenario.PublishFramework,
             ["INSTALL_CMD"] = scenario.InstallCommand!,
@@ -103,13 +102,13 @@ public static class SmokeTestBuilder
         return new[] { scenario.DockerTag };
     }
 
-    static async Task<string[]> BuildChiseledImageAsync(SmokeTestCategory category, SmokeTestScenario scenario, AbsolutePath tracerDir, AbsolutePath artifactsDir)
+    static async Task<string[]> BuildChiseledImageAsync(SmokeTestCategory category, SmokeTestScenario scenario, AbsolutePath tracerDir, AbsolutePath artifactsDir, string dotnetSdkVersion)
     {
         const string dockerfilePath = "build/_build/docker/smoke.chiseled.dockerfile";
 
         var buildArgs = new Dictionary<string, string>
         {
-            ["DOTNETSDK_VERSION"] = DotnetSdkVersion,
+            ["DOTNETSDK_VERSION"] = dotnetSdkVersion,
             ["RUNTIME_IMAGE"] = scenario.RuntimeImage,
             ["PUBLISH_FRAMEWORK"] = scenario.PublishFramework,
         };
@@ -131,13 +130,13 @@ public static class SmokeTestBuilder
         return new[] { scenario.DockerTag, ddDotnetTag };
     }
 
-    static async Task<string[]> BuildNuGetImageAsync(SmokeTestScenario scenario, AbsolutePath tracerDir, AbsolutePath artifactsDir, string toolVersion)
+    static async Task<string[]> BuildNuGetImageAsync(SmokeTestScenario scenario, AbsolutePath tracerDir, AbsolutePath artifactsDir, string toolVersion, string dotnetSdkVersion)
     {
         const string dockerfilePath = "build/_build/docker/smoke.nuget.dockerfile";
 
         var buildArgs = new Dictionary<string, string>
         {
-            ["DOTNETSDK_VERSION"] = DotnetSdkVersion,
+            ["DOTNETSDK_VERSION"] = dotnetSdkVersion,
             ["RUNTIME_IMAGE"] = scenario.RuntimeImage,
             ["PUBLISH_FRAMEWORK"] = scenario.PublishFramework,
             ["TOOL_VERSION"] = toolVersion,
@@ -149,7 +148,7 @@ public static class SmokeTestBuilder
         return new[] {scenario.DockerTag};
     }
 
-    static async Task<string[]> BuildDotnetToolImageAsync(SmokeTestScenario scenario, AbsolutePath tracerDir, AbsolutePath artifactsDir)
+    static async Task<string[]> BuildDotnetToolImageAsync(SmokeTestScenario scenario, AbsolutePath tracerDir, AbsolutePath artifactsDir, string dotnetSdkVersion)
     {
         const string dockerfilePath = "build/_build/docker/smoke.dotnet-tool.dockerfile";
 
@@ -157,7 +156,7 @@ public static class SmokeTestBuilder
 
         var buildArgs = new Dictionary<string, string>
         {
-            ["DOTNETSDK_VERSION"] = DotnetSdkVersion,
+            ["DOTNETSDK_VERSION"] = dotnetSdkVersion,
             ["RUNTIME_IMAGE"] = scenario.RuntimeImage,
             ["PUBLISH_FRAMEWORK"] = scenario.PublishFramework,
             ["INSTALL_CMD"] = installCmd,
@@ -167,7 +166,7 @@ public static class SmokeTestBuilder
         return new[] {scenario.DockerTag};
     }
 
-    static async Task<string[]> BuildDotnetToolNugetImageAsync(SmokeTestScenario scenario, AbsolutePath tracerDir, AbsolutePath artifactsDir, string toolVersion)
+    static async Task<string[]> BuildDotnetToolNugetImageAsync(SmokeTestScenario scenario, AbsolutePath tracerDir, AbsolutePath artifactsDir, string toolVersion, string dotnetSdkVersion)
     {
         const string dockerfilePath = "build/_build/docker/smoke.dotnet-tool.nuget.dockerfile";
 
@@ -175,7 +174,7 @@ public static class SmokeTestBuilder
 
         var buildArgs = new Dictionary<string, string>
         {
-            ["DOTNETSDK_VERSION"] = DotnetSdkVersion,
+            ["DOTNETSDK_VERSION"] = dotnetSdkVersion,
             ["RUNTIME_IMAGE"] = scenario.RuntimeImage,
             ["PUBLISH_FRAMEWORK"] = scenario.PublishFramework,
             ["INSTALL_CMD"] = installCmd,
@@ -186,13 +185,13 @@ public static class SmokeTestBuilder
         return new[] {scenario.DockerTag};
     }
 
-    static async Task<string[]> BuildSelfInstrumentImageAsync(SmokeTestScenario scenario, AbsolutePath tracerDir, AbsolutePath artifactsDir)
+    static async Task<string[]> BuildSelfInstrumentImageAsync(SmokeTestScenario scenario, AbsolutePath tracerDir, AbsolutePath artifactsDir, string dotnetSdkVersion)
     {
         const string dockerfilePath = "build/_build/docker/smoke.dotnet-tool.self-instrument.dockerfile";
 
         var buildArgs = new Dictionary<string, string>
         {
-            ["DOTNETSDK_VERSION"] = DotnetSdkVersion,
+            ["DOTNETSDK_VERSION"] = dotnetSdkVersion,
             ["RUNTIME_IMAGE"] = scenario.RuntimeImage,
             ["PUBLISH_FRAMEWORK"] = scenario.PublishFramework,
             ["INSTALL_CMD"] = scenario.InstallCommand!,
@@ -202,13 +201,13 @@ public static class SmokeTestBuilder
         return new[] { scenario.DockerTag };
     }
 
-    static async Task<string[]> BuildTrimmingImageAsync(SmokeTestScenario scenario, AbsolutePath tracerDir, AbsolutePath artifactsDir, string toolVersion)
+    static async Task<string[]> BuildTrimmingImageAsync(SmokeTestScenario scenario, AbsolutePath tracerDir, AbsolutePath artifactsDir, string toolVersion, string dotnetSdkVersion)
     {
         const string dockerfilePath = "build/_build/docker/smoke.trimming.dockerfile";
 
         var buildArgs = new Dictionary<string, string>
         {
-            ["DOTNETSDK_VERSION"] = DotnetSdkVersion,
+            ["DOTNETSDK_VERSION"] = dotnetSdkVersion,
             ["RUNTIME_IMAGE"] = scenario.RuntimeImage,
             ["PUBLISH_FRAMEWORK"] = scenario.PublishFramework,
             ["INSTALL_CMD"] = scenario.InstallCommand!,
@@ -232,7 +231,7 @@ public static class SmokeTestBuilder
         await BuildImageFromDockerfileAsync(tracerDir, WindowsTestAgentDockerfile, WindowsTestAgentImage, buildArgs, null);
     }
 
-    static async Task<string[]> BuildWindowsMsiImageAsync(SmokeTestScenario scenario, AbsolutePath tracerDir, AbsolutePath artifactsDir)
+    static async Task<string[]> BuildWindowsMsiImageAsync(SmokeTestScenario scenario, AbsolutePath tracerDir, AbsolutePath artifactsDir, string dotnetSdkVersion)
     {
         // The Dockerfile expects the MSI file to be named "datadog-apm.msi"
         // Rename any *.msi file in the artifacts directory
@@ -242,7 +241,7 @@ public static class SmokeTestBuilder
         const string dockerfilePath = "build/_build/docker/smoke.windows.dockerfile";
         var buildArgs = new Dictionary<string, string>
         {
-            ["DOTNETSDK_VERSION"] = DotnetSdkVersion,
+            ["DOTNETSDK_VERSION"] = dotnetSdkVersion,
             ["RUNTIME_IMAGE"] = scenario.RuntimeImage,
             ["PUBLISH_FRAMEWORK"] = scenario.PublishFramework,
             ["CHANNEL_32_BIT"] = scenario.Channel32Bit ?? "",
@@ -255,7 +254,7 @@ public static class SmokeTestBuilder
         var ddDotnetTag = scenario.DockerTag + "-dd-dotnet";
         var ddDotnetBuildArgs = new Dictionary<string, string>
         {
-            ["DOTNETSDK_VERSION"] = DotnetSdkVersion,
+            ["DOTNETSDK_VERSION"] = dotnetSdkVersion,
             ["RUNTIME_IMAGE"] = scenario.RuntimeImage,
             ["PUBLISH_FRAMEWORK"] = scenario.PublishFramework,
             ["CHANNEL_32_BIT"] = "",
@@ -266,13 +265,13 @@ public static class SmokeTestBuilder
         return new[] { scenario.DockerTag, ddDotnetTag };
     }
 
-    static async Task<string[]> BuildWindowsNuGetImageAsync(SmokeTestScenario scenario, AbsolutePath tracerDir, AbsolutePath artifactsDir, string toolVersion)
+    static async Task<string[]> BuildWindowsNuGetImageAsync(SmokeTestScenario scenario, AbsolutePath tracerDir, AbsolutePath artifactsDir, string toolVersion, string dotnetSdkVersion)
     {
         // Build the standard NuGet image
         const string dockerfilePath = "build/_build/docker/smoke.windows.nuget.dockerfile";
         var buildArgs = new Dictionary<string, string>
         {
-            ["DOTNETSDK_VERSION"] = DotnetSdkVersion,
+            ["DOTNETSDK_VERSION"] = dotnetSdkVersion,
             ["RUNTIME_IMAGE"] = scenario.RuntimeImage,
             ["PUBLISH_FRAMEWORK"] = scenario.PublishFramework,
             ["TOOL_VERSION"] = toolVersion,
@@ -287,7 +286,7 @@ public static class SmokeTestBuilder
         var ddDotnetTag = scenario.DockerTag + "-dd-dotnet";
         var ddDotnetBuildArgs = new Dictionary<string, string>
         {
-            ["DOTNETSDK_VERSION"] = DotnetSdkVersion,
+            ["DOTNETSDK_VERSION"] = dotnetSdkVersion,
             ["RUNTIME_IMAGE"] = scenario.RuntimeImage,
             ["PUBLISH_FRAMEWORK"] = scenario.PublishFramework,
             ["TOOL_VERSION"] = toolVersion,
@@ -299,7 +298,7 @@ public static class SmokeTestBuilder
         return new[] { scenario.DockerTag, ddDotnetTag };
     }
 
-    static async Task<string[]> BuildWindowsDotnetToolImageAsync(SmokeTestScenario scenario, AbsolutePath tracerDir, AbsolutePath artifactsDir)
+    static async Task<string[]> BuildWindowsDotnetToolImageAsync(SmokeTestScenario scenario, AbsolutePath tracerDir, AbsolutePath artifactsDir, string dotnetSdkVersion)
     {
         // The Dockerfile expects "dd-trace-win.zip"
         RenameArtifact(artifactsDir, "dd-trace-win-*.zip", "dd-trace-win.zip");
@@ -308,7 +307,7 @@ public static class SmokeTestBuilder
 
         var buildArgs = new Dictionary<string, string>
         {
-            ["DOTNETSDK_VERSION"] = DotnetSdkVersion,
+            ["DOTNETSDK_VERSION"] = dotnetSdkVersion,
             ["RUNTIME_IMAGE"] = scenario.RuntimeImage,
             ["PUBLISH_FRAMEWORK"] = scenario.PublishFramework,
             ["CHANNEL_32_BIT"] = scenario.Channel32Bit ?? "",
@@ -318,13 +317,13 @@ public static class SmokeTestBuilder
         return new[] { scenario.DockerTag };
     }
 
-    static async Task<string[]> BuildWindowsTracerHomeImageAsync(SmokeTestScenario scenario, AbsolutePath tracerDir, AbsolutePath artifactsDir)
+    static async Task<string[]> BuildWindowsTracerHomeImageAsync(SmokeTestScenario scenario, AbsolutePath tracerDir, AbsolutePath artifactsDir, string dotnetSdkVersion)
     {
         const string dockerfilePath = "build/_build/docker/smoke.windows.tracer-home.dockerfile";
 
         var buildArgs = new Dictionary<string, string>
         {
-            ["DOTNETSDK_VERSION"] = DotnetSdkVersion,
+            ["DOTNETSDK_VERSION"] = dotnetSdkVersion,
             ["RUNTIME_IMAGE"] = scenario.RuntimeImage,
             ["PUBLISH_FRAMEWORK"] = scenario.PublishFramework,
             ["CHANNEL_32_BIT"] = scenario.Channel32Bit ?? "",
@@ -335,7 +334,7 @@ public static class SmokeTestBuilder
         return new[] { scenario.DockerTag };
     }
 
-    static async Task<string[]> BuildWindowsFleetInstallerIisImageAsync(SmokeTestScenario scenario, AbsolutePath tracerDir, AbsolutePath artifactsDir)
+    static async Task<string[]> BuildWindowsFleetInstallerIisImageAsync(SmokeTestScenario scenario, AbsolutePath tracerDir, AbsolutePath artifactsDir, string dotnetSdkVersion)
     {
         const string dockerfilePath = "build/_build/docker/smoke.windows.iis.fleet-installer.dockerfile";
 
@@ -345,7 +344,7 @@ public static class SmokeTestBuilder
 
         var buildArgs = new Dictionary<string, string>
         {
-            ["DOTNETSDK_VERSION"] = DotnetSdkVersion,
+            ["DOTNETSDK_VERSION"] = dotnetSdkVersion,
             ["RUNTIME_IMAGE"] = scenario.RuntimeImage,
             ["PUBLISH_FRAMEWORK"] = scenario.PublishFramework,
             ["CHANNEL"] = channel,
