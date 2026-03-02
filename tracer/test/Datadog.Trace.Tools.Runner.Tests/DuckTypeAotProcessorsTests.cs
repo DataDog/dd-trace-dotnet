@@ -323,6 +323,10 @@ public class DuckTypeAotProcessorsTests
             generatedProxyType.FindMethod("get_Instance").Should().NotBeNull();
             generatedProxyType.FindMethod("get_Type").Should().NotBeNull();
             generatedProxyType.FindMethod("GetInternalDuckTypedInstance").Should().NotBeNull();
+            var generatedCtor = generatedProxyType.FindMethod(".ctor");
+            generatedCtor.Should().NotBeNull();
+            generatedCtor!.MethodSig.Params.Should().ContainSingle();
+            generatedCtor.MethodSig.Params[0].FullName.Should().Be(typeof(TestDuckTarget).FullName);
 
             var initializeMethod = bootstrapType!.FindMethod("Initialize");
             initializeMethod.Should().NotBeNull();
@@ -360,8 +364,16 @@ public class DuckTypeAotProcessorsTests
                 instruction =>
                     instruction.OpCode == OpCodes.Ldtoken &&
                     instruction.Operand is IMethod method &&
-                    method.Name.StartsWith("CreateProxy_", StringComparison.Ordinal));
+                    (method.Name.StartsWith("CreateProxy_", StringComparison.Ordinal) ||
+                     method.Name.StartsWith("ActivateProxy_", StringComparison.Ordinal)));
             loadsActivatorMethodHandle.Should().BeTrue();
+
+            var activatorMethod = bootstrapType.Methods.Single(method =>
+                method.Name.StartsWith("CreateProxy_", StringComparison.Ordinal));
+            activatorMethod.MethodSig.Params.Should().ContainSingle();
+            activatorMethod.MethodSig.Params[0].FullName.Should().Be(typeof(TestDuckTarget).FullName);
+            activatorMethod.Body.Should().NotBeNull();
+            activatorMethod.Body!.Instructions.Should().NotContain(instruction => instruction.OpCode == OpCodes.Castclass || instruction.OpCode == OpCodes.Unbox_Any);
 
             var moduleInitializer = generatedModule.GlobalType.FindMethod(".cctor");
             moduleInitializer.Should().NotBeNull();
@@ -2403,7 +2415,7 @@ public class DuckTypeAotProcessorsTests
                 var generatedProxyType = generatedAssembly.GetTypes().Single(type =>
                     string.Equals(type.Namespace, "Datadog.Trace.DuckTyping.Generated.Proxies", StringComparison.Ordinal) &&
                     type.GetInterfaces().Any(@interface => string.Equals(@interface.FullName, typeof(ITestDuckProxy).FullName, StringComparison.Ordinal)));
-                var constructor = generatedProxyType.GetConstructor([typeof(object)]);
+                var constructor = GetDuckProxyConstructor(generatedProxyType);
                 constructor.Should().NotBeNull();
 
                 var targetInstance = new TestDuckTarget();
@@ -3066,8 +3078,8 @@ public class DuckTypeAotProcessorsTests
                     type.GetInterfaces().Any(@interface => string.Equals(@interface.FullName, typeof(ITestDuckReverseChainProxy).FullName, StringComparison.Ordinal)));
                 var generatedInnerProxyType = generatedProxyTypes.Single(type =>
                     type.GetInterfaces().Any(@interface => string.Equals(@interface.FullName, typeof(ITestDuckReverseChainInnerProxy).FullName, StringComparison.Ordinal)));
-                var outerConstructor = generatedOuterProxyType.GetConstructor([typeof(object)]);
-                var innerConstructor = generatedInnerProxyType.GetConstructor([typeof(object)]);
+                var outerConstructor = GetDuckProxyConstructor(generatedOuterProxyType);
+                var innerConstructor = GetDuckProxyConstructor(generatedInnerProxyType);
                 outerConstructor.Should().NotBeNull();
                 innerConstructor.Should().NotBeNull();
 
@@ -3298,7 +3310,7 @@ public class DuckTypeAotProcessorsTests
                 var generatedAssembly = loadContext.LoadFromAssemblyPath(outputPath);
                 var generatedProxyType = generatedAssembly.GetTypes().Single(type =>
                     string.Equals(type.Namespace, "Datadog.Trace.DuckTyping.Generated.Proxies", StringComparison.Ordinal));
-                var constructor = generatedProxyType.GetConstructor([typeof(object)]);
+                var constructor = GetDuckProxyConstructor(generatedProxyType);
                 constructor.Should().NotBeNull();
 
                 var targetInstance = new TestDuckInternalTarget();
@@ -3373,7 +3385,7 @@ public class DuckTypeAotProcessorsTests
                 var generatedAssembly = loadContext.LoadFromAssemblyPath(outputPath);
                 var generatedProxyType = generatedAssembly.GetTypes().Single(type =>
                     string.Equals(type.Namespace, "Datadog.Trace.DuckTyping.Generated.Proxies", StringComparison.Ordinal));
-                var constructor = generatedProxyType.GetConstructor([typeof(object)]);
+                var constructor = GetDuckProxyConstructor(generatedProxyType);
                 constructor.Should().NotBeNull();
 
                 var targetInstance = new TestDuckPrivateTarget();
@@ -3448,7 +3460,7 @@ public class DuckTypeAotProcessorsTests
                 var generatedAssembly = loadContext.LoadFromAssemblyPath(outputPath);
                 var generatedProxyType = generatedAssembly.GetTypes().Single(type =>
                     string.Equals(type.Namespace, "Datadog.Trace.DuckTyping.Generated.Proxies", StringComparison.Ordinal));
-                var constructor = generatedProxyType.GetConstructor([typeof(object)]);
+                var constructor = GetDuckProxyConstructor(generatedProxyType);
                 constructor.Should().NotBeNull();
 
                 var targetInstance = new TestDuckTarget();
@@ -3544,7 +3556,7 @@ public class DuckTypeAotProcessorsTests
                 var generatedAssembly = loadContext.LoadFromAssemblyPath(outputPath);
                 var generatedProxyType = generatedAssembly.GetTypes().Single(type =>
                     string.Equals(type.Namespace, "Datadog.Trace.DuckTyping.Generated.Proxies", StringComparison.Ordinal));
-                var constructor = generatedProxyType.GetConstructor([typeof(object)]);
+                var constructor = GetDuckProxyConstructor(generatedProxyType);
                 constructor.Should().NotBeNull();
 
                 var targetInstance = new TestDuckNamedMethodTarget();
@@ -3644,7 +3656,7 @@ public class DuckTypeAotProcessorsTests
                 var generatedAssembly = loadContext.LoadFromAssemblyPath(outputPath);
                 var generatedProxyType = generatedAssembly.GetTypes().Single(type =>
                     string.Equals(type.Namespace, "Datadog.Trace.DuckTyping.Generated.Proxies", StringComparison.Ordinal));
-                var constructor = generatedProxyType.GetConstructor([typeof(object)]);
+                var constructor = GetDuckProxyConstructor(generatedProxyType);
                 constructor.Should().NotBeNull();
 
                 var targetInstance = new TestDuckNamedPropertyTarget { Actual = "before" };
@@ -3725,7 +3737,7 @@ public class DuckTypeAotProcessorsTests
                 var generatedAssembly = loadContext.LoadFromAssemblyPath(outputPath);
                 var generatedProxyType = generatedAssembly.GetTypes().Single(type =>
                     string.Equals(type.Namespace, "Datadog.Trace.DuckTyping.Generated.Proxies", StringComparison.Ordinal));
-                var constructor = generatedProxyType.GetConstructor([typeof(object)]);
+                var constructor = GetDuckProxyConstructor(generatedProxyType);
                 constructor.Should().NotBeNull();
 
                 var targetInstance = new TestDuckFieldTarget();
@@ -3807,7 +3819,7 @@ public class DuckTypeAotProcessorsTests
                 var generatedAssembly = loadContext.LoadFromAssemblyPath(outputPath);
                 var generatedProxyType = generatedAssembly.GetTypes().Single(type =>
                     string.Equals(type.Namespace, "Datadog.Trace.DuckTyping.Generated.Proxies", StringComparison.Ordinal));
-                var constructor = generatedProxyType.GetConstructor([typeof(object)]);
+                var constructor = GetDuckProxyConstructor(generatedProxyType);
                 constructor.Should().NotBeNull();
 
                 var targetInstance = new TestDuckFieldValueWithTypeTarget();
@@ -3948,8 +3960,8 @@ public class DuckTypeAotProcessorsTests
                 var generatedInnerProxyType = generatedProxyTypes.Single(type =>
                     type.GetInterfaces().Any(@interface => string.Equals(@interface.FullName, typeof(ITestDuckChainFieldInnerProxy).FullName, StringComparison.Ordinal)));
 
-                var fieldProxyConstructor = generatedFieldProxyType.GetConstructor([typeof(object)]);
-                var innerProxyConstructor = generatedInnerProxyType.GetConstructor([typeof(object)]);
+                var fieldProxyConstructor = GetDuckProxyConstructor(generatedFieldProxyType);
+                var innerProxyConstructor = GetDuckProxyConstructor(generatedInnerProxyType);
                 fieldProxyConstructor.Should().NotBeNull();
                 innerProxyConstructor.Should().NotBeNull();
 
@@ -4039,7 +4051,7 @@ public class DuckTypeAotProcessorsTests
                 var generatedAssembly = loadContext.LoadFromAssemblyPath(outputPath);
                 var generatedProxyType = generatedAssembly.GetTypes().Single(type =>
                     string.Equals(type.Namespace, "Datadog.Trace.DuckTyping.Generated.Proxies", StringComparison.Ordinal));
-                var constructor = generatedProxyType.GetConstructor([typeof(object)]);
+                var constructor = GetDuckProxyConstructor(generatedProxyType);
                 constructor.Should().NotBeNull();
 
                 var targetInstance = new TestDuckPropertyOrFieldTarget();
@@ -4169,8 +4181,8 @@ public class DuckTypeAotProcessorsTests
                 var generatedInnerProxyType = generatedProxyTypes.Single(type =>
                     type.GetInterfaces().Any(@interface => string.Equals(@interface.FullName, typeof(ITestDuckChainPropertyInnerProxy).FullName, StringComparison.Ordinal)));
 
-                var propertyProxyConstructor = generatedPropertyProxyType.GetConstructor([typeof(object)]);
-                var innerProxyConstructor = generatedInnerProxyType.GetConstructor([typeof(object)]);
+                var propertyProxyConstructor = GetDuckProxyConstructor(generatedPropertyProxyType);
+                var innerProxyConstructor = GetDuckProxyConstructor(generatedInnerProxyType);
                 propertyProxyConstructor.Should().NotBeNull();
                 innerProxyConstructor.Should().NotBeNull();
 
@@ -4260,7 +4272,7 @@ public class DuckTypeAotProcessorsTests
                 var generatedAssembly = loadContext.LoadFromAssemblyPath(outputPath);
                 var generatedProxyType = generatedAssembly.GetTypes().Single(type =>
                     string.Equals(type.Namespace, "Datadog.Trace.DuckTyping.Generated.Proxies", StringComparison.Ordinal));
-                var constructor = generatedProxyType.GetConstructor([typeof(object)]);
+                var constructor = GetDuckProxyConstructor(generatedProxyType);
                 constructor.Should().NotBeNull();
 
                 var targetInstance = new TestDuckPropertyOrFieldTarget();
@@ -4347,7 +4359,7 @@ public class DuckTypeAotProcessorsTests
                 var generatedAssembly = loadContext.LoadFromAssemblyPath(outputPath);
                 var generatedProxyType = generatedAssembly.GetTypes().Single(type =>
                     string.Equals(type.Namespace, "Datadog.Trace.DuckTyping.Generated.Proxies", StringComparison.Ordinal));
-                var constructor = generatedProxyType.GetConstructor([typeof(object)]);
+                var constructor = GetDuckProxyConstructor(generatedProxyType);
                 constructor.Should().NotBeNull();
 
                 var targetInstance = new TestDuckStaticFieldTarget();
@@ -4431,7 +4443,7 @@ public class DuckTypeAotProcessorsTests
                 var generatedAssembly = loadContext.LoadFromAssemblyPath(outputPath);
                 var generatedProxyType = generatedAssembly.GetTypes().Single(type =>
                     string.Equals(type.Namespace, "Datadog.Trace.DuckTyping.Generated.Proxies", StringComparison.Ordinal));
-                var constructor = generatedProxyType.GetConstructor([typeof(object)]);
+                var constructor = GetDuckProxyConstructor(generatedProxyType);
                 constructor.Should().NotBeNull();
 
                 var targetInstance = new TestDuckStaticFieldTarget();
@@ -4588,7 +4600,7 @@ public class DuckTypeAotProcessorsTests
                 var generatedAssembly = loadContext.LoadFromAssemblyPath(outputPath);
                 var generatedProxyType = generatedAssembly.GetTypes().Single(type =>
                     string.Equals(type.Namespace, "Datadog.Trace.DuckTyping.Generated.Proxies", StringComparison.Ordinal));
-                var constructor = generatedProxyType.GetConstructor([typeof(object)]);
+                var constructor = GetDuckProxyConstructor(generatedProxyType);
                 constructor.Should().NotBeNull();
 
                 var targetInstance = new TestDuckPropertyPreferredTarget();
@@ -4673,7 +4685,7 @@ public class DuckTypeAotProcessorsTests
                 var generatedAssembly = loadContext.LoadFromAssemblyPath(outputPath);
                 var generatedProxyType = generatedAssembly.GetTypes().Single(type =>
                     string.Equals(type.Namespace, "Datadog.Trace.DuckTyping.Generated.Proxies", StringComparison.Ordinal));
-                var constructor = generatedProxyType.GetConstructor([typeof(object)]);
+                var constructor = GetDuckProxyConstructor(generatedProxyType);
                 constructor.Should().NotBeNull();
 
                 var targetInstance = new TestDuckStaticMethodTarget();
@@ -4749,7 +4761,7 @@ public class DuckTypeAotProcessorsTests
                 var generatedAssembly = loadContext.LoadFromAssemblyPath(outputPath);
                 var generatedProxyType = generatedAssembly.GetTypes().Single(type =>
                     string.Equals(type.Namespace, "Datadog.Trace.DuckTyping.Generated.Proxies", StringComparison.Ordinal));
-                var constructor = generatedProxyType.GetConstructor([typeof(object)]);
+                var constructor = GetDuckProxyConstructor(generatedProxyType);
                 constructor.Should().NotBeNull();
 
                 var targetInstance = new TestDuckStaticPropertyTarget();
@@ -4833,7 +4845,7 @@ public class DuckTypeAotProcessorsTests
                 var generatedAssembly = loadContext.LoadFromAssemblyPath(outputPath);
                 var generatedProxyType = generatedAssembly.GetTypes().Single(type =>
                     string.Equals(type.Namespace, "Datadog.Trace.DuckTyping.Generated.Proxies", StringComparison.Ordinal));
-                var constructor = generatedProxyType.GetConstructor([typeof(object)]);
+                var constructor = GetDuckProxyConstructor(generatedProxyType);
                 constructor.Should().NotBeNull();
 
                 var targetInstance = new TestDuckStaticPropertyTarget();
@@ -4926,7 +4938,7 @@ public class DuckTypeAotProcessorsTests
                 var generatedAssembly = loadContext.LoadFromAssemblyPath(outputPath);
                 var generatedProxyType = generatedAssembly.GetTypes().Single(type =>
                     string.Equals(type.Namespace, "Datadog.Trace.DuckTyping.Generated.Proxies", StringComparison.Ordinal));
-                var constructor = generatedProxyType.GetConstructor([typeof(object)]);
+                var constructor = GetDuckProxyConstructor(generatedProxyType);
                 constructor.Should().NotBeNull();
 
                 var generatedInstance = constructor!.Invoke([new TestDuckByRefTarget()]);
@@ -5045,7 +5057,7 @@ public class DuckTypeAotProcessorsTests
                     string.Equals(type.Namespace, "Datadog.Trace.DuckTyping.Generated.Proxies", StringComparison.Ordinal) &&
                     type.GetInterfaces().Any(@interface => string.Equals(@interface.FullName, typeof(ITestDuckByRefConversionProxy).FullName, StringComparison.Ordinal)));
 
-                var constructor = generatedOuterProxyType.GetConstructor([typeof(object)]);
+                var constructor = GetDuckProxyConstructor(generatedOuterProxyType);
                 constructor.Should().NotBeNull();
 
                 var generatedInstance = constructor!.Invoke([new TestDuckByRefConversionTarget()]);
@@ -5196,7 +5208,7 @@ public class DuckTypeAotProcessorsTests
                 var generatedProxyType = generatedAssembly.GetTypes().Single(type =>
                     string.Equals(type.Namespace, "Datadog.Trace.DuckTyping.Generated.Proxies", StringComparison.Ordinal) &&
                     type.GetInterfaces().Any(@interface => string.Equals(@interface.FullName, typeof(ITestDuckTypeConversionProxy).FullName, StringComparison.Ordinal)));
-                var constructor = generatedProxyType.GetConstructor([typeof(object)]);
+                var constructor = GetDuckProxyConstructor(generatedProxyType);
                 constructor.Should().NotBeNull();
 
                 var generatedInstance = constructor!.Invoke([new TestDuckTypeConversionTarget()]);
@@ -5436,7 +5448,7 @@ public class DuckTypeAotProcessorsTests
                 var generatedAssembly = loadContext.LoadFromAssemblyPath(outputPath);
                 var generatedProxyType = generatedAssembly.GetTypes().Single(type =>
                     string.Equals(type.Namespace, "Datadog.Trace.DuckTyping.Generated.Proxies", StringComparison.Ordinal));
-                var constructor = generatedProxyType.GetConstructor([typeof(object)]);
+                var constructor = GetDuckProxyConstructor(generatedProxyType);
                 constructor.Should().NotBeNull();
 
                 var targetInstance = new TestDuckValueWithTypeTarget();
@@ -5578,8 +5590,8 @@ public class DuckTypeAotProcessorsTests
                 var generatedInnerProxyType = generatedProxyTypes.Single(type =>
                     type.GetInterfaces().Any(@interface => string.Equals(@interface.FullName, typeof(ITestDuckChainInnerProxy).FullName, StringComparison.Ordinal)));
 
-                var outerConstructor = generatedOuterProxyType.GetConstructor([typeof(object)]);
-                var innerConstructor = generatedInnerProxyType.GetConstructor([typeof(object)]);
+                var outerConstructor = GetDuckProxyConstructor(generatedOuterProxyType);
+                var innerConstructor = GetDuckProxyConstructor(generatedInnerProxyType);
                 outerConstructor.Should().NotBeNull();
                 innerConstructor.Should().NotBeNull();
 
@@ -5721,7 +5733,7 @@ public class DuckTypeAotProcessorsTests
                 var targetInstance = Activator.CreateInstance(targetType);
                 targetInstance.Should().NotBeNull();
 
-                var constructor = generatedOuterProxyType.GetConstructor([typeof(object)]);
+                var constructor = GetDuckProxyConstructor(generatedOuterProxyType);
                 constructor.Should().NotBeNull();
                 var outerProxyInstance = constructor!.Invoke([targetInstance]);
 
@@ -5837,7 +5849,7 @@ public class DuckTypeAotProcessorsTests
                 var generatedProxyType = generatedAssembly.GetTypes().Single(type =>
                     string.Equals(type.Namespace, "Datadog.Trace.DuckTyping.Generated.Proxies", StringComparison.Ordinal) &&
                     type.GetInterfaces().Any(@interface => string.Equals(@interface.FullName, typeof(ITestDuckGenericMethodProxy).FullName, StringComparison.Ordinal)));
-                var constructor = generatedProxyType.GetConstructor([typeof(object)]);
+                var constructor = GetDuckProxyConstructor(generatedProxyType);
                 constructor.Should().NotBeNull();
 
                 var proxyInstance = constructor!.Invoke([new TestDuckGenericMethodTarget()]);
@@ -5935,7 +5947,7 @@ public class DuckTypeAotProcessorsTests
                 var generatedProxyType = generatedAssembly.GetTypes().Single(type =>
                     string.Equals(type.Namespace, "Datadog.Trace.DuckTyping.Generated.Proxies", StringComparison.Ordinal) &&
                     type.GetInterfaces().Any(@interface => string.Equals(@interface.FullName, typeof(ITestDuckGenericConstraintMethodProxy).FullName, StringComparison.Ordinal)));
-                var constructor = generatedProxyType.GetConstructor([typeof(object)]);
+                var constructor = GetDuckProxyConstructor(generatedProxyType);
                 constructor.Should().NotBeNull();
 
                 var proxyInstance = constructor!.Invoke([new TestDuckGenericConstraintMethodTarget()]);
@@ -6019,7 +6031,7 @@ public class DuckTypeAotProcessorsTests
                 var generatedProxyType = generatedAssembly.GetTypes().Single(type =>
                     string.Equals(type.Namespace, "Datadog.Trace.DuckTyping.Generated.Proxies", StringComparison.Ordinal) &&
                     type.GetInterfaces().Any(@interface => string.Equals(@interface.FullName, typeof(ITestDuckStructTargetProxy).FullName, StringComparison.Ordinal)));
-                var constructor = generatedProxyType.GetConstructor([typeof(object)]);
+                var constructor = GetDuckProxyConstructor(generatedProxyType);
                 constructor.Should().NotBeNull();
 
                 var targetType = contextTestAssembly.GetType(typeof(TestDuckStructTarget).FullName!, throwOnError: true)!;
@@ -6107,7 +6119,7 @@ public class DuckTypeAotProcessorsTests
                 var generatedProxyType = generatedAssembly.GetTypes().Single(type =>
                     string.Equals(type.Namespace, "Datadog.Trace.DuckTyping.Generated.Proxies", StringComparison.Ordinal) &&
                     type.GetInterfaces().Any(@interface => string.Equals(@interface.FullName, typeof(ITestDuckFieldProxy).FullName, StringComparison.Ordinal)));
-                var constructor = generatedProxyType.GetConstructor([typeof(object)]);
+                var constructor = GetDuckProxyConstructor(generatedProxyType);
                 constructor.Should().NotBeNull();
 
                 var targetType = contextTestAssembly.GetType(typeof(TestDuckStructFieldTarget).FullName!, throwOnError: true)!;
@@ -6224,7 +6236,7 @@ public class DuckTypeAotProcessorsTests
                 var generatedProxyType = generatedAssembly.GetTypes().Single(type =>
                     string.Equals(type.Namespace, "Datadog.Trace.DuckTyping.Generated.Proxies", StringComparison.Ordinal) &&
                     type.GetInterfaces().Any(@interface => string.Equals(@interface.FullName, typeof(ITestDuckStructInterfaceMethodProxy).FullName, StringComparison.Ordinal)));
-                var constructor = generatedProxyType.GetConstructor([typeof(object)]);
+                var constructor = GetDuckProxyConstructor(generatedProxyType);
                 constructor.Should().NotBeNull();
 
                 var targetType = contextTestAssembly.GetType(typeof(TestDuckStructInterfaceMethodTarget).FullName!, throwOnError: true)!;
@@ -6328,7 +6340,7 @@ public class DuckTypeAotProcessorsTests
                 var generatedProxyType = generatedAssembly.GetTypes().Single(type =>
                     string.Equals(type.Namespace, "Datadog.Trace.DuckTyping.Generated.Proxies", StringComparison.Ordinal) &&
                     type.GetInterfaces().Any(@interface => string.Equals(@interface.FullName, typeof(ITestDuckStructToStringProxy).FullName, StringComparison.Ordinal)));
-                var constructor = generatedProxyType.GetConstructor([typeof(object)]);
+                var constructor = GetDuckProxyConstructor(generatedProxyType);
                 constructor.Should().NotBeNull();
 
                 var targetType = contextTestAssembly.GetType(typeof(TestDuckStructToStringTarget).FullName!, throwOnError: true)!;
@@ -6428,6 +6440,9 @@ public class DuckTypeAotProcessorsTests
                     instruction.Operand is ITypeDefOrRef type &&
                     string.Equals(type.FullName, typeof(TestDuckStructCopyProxy).FullName, StringComparison.Ordinal));
                 boxesStructCopyProxy.Should().BeFalse();
+                activatorMethod.MethodSig.Params.Should().ContainSingle();
+                activatorMethod.MethodSig.Params[0].FullName.Should().Be(typeof(TestDuckStructCopyTarget).FullName);
+                activatorMethod.Body!.Instructions.Should().NotContain(instruction => instruction.OpCode == OpCodes.Castclass || instruction.OpCode == OpCodes.Unbox_Any);
             }
 
             var loadContext = new AssemblyLoadContext("DuckTypeAotProcessorsTests-StructCopy", isCollectible: true);
@@ -6561,6 +6576,12 @@ public class DuckTypeAotProcessorsTests
         var tempDirectory = Path.Combine(Path.GetTempPath(), "dd-trace-ducktype-aot-tests", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(tempDirectory);
         return tempDirectory;
+    }
+
+    private static ConstructorInfo? GetDuckProxyConstructor(Type proxyType)
+    {
+        return proxyType.GetConstructors(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+                        .SingleOrDefault(constructor => constructor.GetParameters().Length == 1);
     }
 
     private static string ComputeMappingIdentityChecksumForTest(string key)

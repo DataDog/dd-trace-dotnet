@@ -1498,6 +1498,11 @@ namespace Datadog.Trace.DuckTyping
             {
                 _activator = activator;
                 _untypedActivator = activator as Func<object?, object?>;
+                if (_untypedActivator is null && activator is not null)
+                {
+                    _untypedActivator = instance => activator.DynamicInvoke(instance)!;
+                }
+
                 _proxyType = proxyType;
                 _exceptionInfo = exceptionInfo;
                 TargetType = targetType;
@@ -1550,6 +1555,13 @@ namespace Datadog.Trace.DuckTyping
             [return: NotNull]
             public T CreateInstance<T, TOriginal>(TOriginal instance)
             {
+                if (_activator is Func<TOriginal, T> typedActivator)
+                {
+#pragma warning disable CS8607
+                    return typedActivator(instance);
+#pragma warning restore CS8607
+                }
+
                 return CreateInstanceCore<T>(instance);
             }
 
