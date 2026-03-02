@@ -67,13 +67,9 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 var discoveredMapPath = Path.Combine(temporaryDirectory, "discovered.map.json");
                 WriteCanonicalMap(discoveryResult.Mappings, discoveredMapPath);
 
-                var resolutionTargetAssemblies = options.TargetAssemblies.Count == 0 && options.TargetFolders.Count == 0
-                                                     ? options.ProxyAssemblies
-                                                     : options.TargetAssemblies;
-
                 var generateOptions = new DuckTypeAotGenerateOptions(
                     options.ProxyAssemblies,
-                    resolutionTargetAssemblies,
+                    Array.Empty<string>(),
                     options.TargetFolders,
                     options.TargetFilters,
                     discoveredMapPath,
@@ -185,20 +181,17 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 }
             }
 
-            foreach (var targetAssembly in options.TargetAssemblies)
-            {
-                if (!File.Exists(targetAssembly))
-                {
-                    errors.Add($"--target-assembly file was not found: {targetAssembly}");
-                }
-            }
-
             foreach (var targetFolder in options.TargetFolders)
             {
                 if (!Directory.Exists(targetFolder))
                 {
                     errors.Add($"--target-folder directory was not found: {targetFolder}");
                 }
+            }
+
+            if (options.TargetFolders.Count == 0)
+            {
+                errors.Add("At least one --target-folder must be provided.");
             }
 
             if (options.TargetFilters.Count == 0)

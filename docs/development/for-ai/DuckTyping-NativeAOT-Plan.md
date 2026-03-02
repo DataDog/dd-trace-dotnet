@@ -46,7 +46,8 @@ Notes:
 ```bash
 ducktype-aot discover-mappings \
   --proxy-assembly <proxy.dll> \
-  --target-assembly <target.dll> \
+  --target-folder <folder-with-targets> \
+  --target-filter "*.dll" \
   --output <ducktype-aot-map.json>
 ```
 2. Generate registry/artifacts:
