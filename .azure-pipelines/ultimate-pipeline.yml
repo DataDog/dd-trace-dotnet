@@ -6295,6 +6295,81 @@ stages:
           env:
             DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
+- stage: fleet_installer_smoke_tests
+  dependsOn: [package_windows, generate_variables, merge_commit_id]
+  variables:
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+    dockerComposePath: 'C:/docker-compose/docker-compose.exe'
+  jobs:
+    - template: steps/update-github-status-jobs.yml
+      parameters:
+        jobs: [windows]
+
+    - job: windows
+      timeoutInMinutes: 45 # should take ~15 mins as large Windows docker files
+      strategy:
+        matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.fleet_installer_windows_smoke_tests_matrix'] ]
+      variables:
+        smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
+      pool:
+        vmImage: windows-2022
+
+      steps:
+        - template: steps/install-docker-compose-v1.yml
+          parameters:
+            dockerComposePath: $(dockerComposePath)
+
+        - template: steps/clone-repo.yml
+          parameters:
+            targetShaId: $(targetShaId)
+            targetBranch: $(targetBranch)
+
+        - template: steps/download-artifact.yml
+          parameters:
+            artifact: windows-tracer-home.zip
+            path: $(smokeTestAppDir)/artifacts
+
+        - template: steps/download-artifact.yml
+          parameters:
+            artifact: fleet-installer
+            path: $(smokeTestAppDir)/artifacts/installer
+
+        - powershell: |
+            ls $(smokeTestAppDir)/artifacts
+            ls $(smokeTestAppDir)/artifacts/installer
+            mkdir -p artifacts/build_data/snapshots
+            mkdir -p artifacts/build_data/logs
+          displayName: Create test data directories
+
+        - bash: |
+            $(dockerComposePath) -f docker-compose.windows.yml -p $(DockerComposeProjectName) build \
+              --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
+              --build-arg RUNTIME_IMAGE=$(runtimeImage) \
+              --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
+              --build-arg CHANNEL_32_BIT="$(channel32Bit)" \
+              fleet-installer-smoke-tests.windows
+          env:
+            dockerTag: $(dockerTag)
+          displayName: docker-compose build smoke-tests
+          retryCountOnTaskFailure: 3
+
+        - template: steps/run-snapshot-test.yml
+          parameters:
+            target: 'fleet-installer-smoke-tests.windows'
+            snapshotPrefix: "smoke_test"
+            isLinux: false
+            dockerComposePath: $(dockerComposePath)
+
+        - publish: artifacts/build_data
+          artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
+          condition: always()
+          continueOnError: true
+
+        - template: steps/install-latest-dotnet-sdk.yml
+        - script: tracer\build.cmd CheckSmokeTestsForErrors
+          displayName: CheckSmokeTestsForErrors
+
 - stage: dotnet_tool_nuget_smoke_tests_macos
   condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
   dependsOn: [dotnet_tool, generate_variables, merge_commit_id]
