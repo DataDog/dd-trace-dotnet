@@ -146,6 +146,7 @@ Reverse mappings are supported and are typically declared with type-level `[Duck
 ## Mapping Sources
 
 `ducktype-aot discover-mappings` discovers mappings from proxy assembly type-level attributes (`[DuckType]`, `[DuckCopy]`, `[DuckReverse]`) and writes a canonical map.
+Discovery resolves target types from `--target-folder` inputs (plus `--target-filter`) and requires at least one `--target-folder`.
 
 `ducktype-aot generate` consumes only `--map-file`.
 

@@ -64,7 +64,8 @@ dotnet build /abs/path/My.Targets.csproj -c Release
 dotnet tracer/src/Datadog.Trace.Tools.Runner/bin/Release/Tool/net8.0/Datadog.Trace.Tools.Runner.dll \
   ducktype-aot discover-mappings \
   --proxy-assembly /abs/path/My.Proxy.Contracts.dll \
-  --target-assembly /abs/path/My.Targets.dll \
+  --target-folder /abs/path \
+  --target-filter "*.dll" \
   --output /abs/path/ducktype-aot-map.json
 ```
 

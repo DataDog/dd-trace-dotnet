@@ -18,7 +18,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// Initializes a new instance of the <see cref="DuckTypeAotDiscoverMappingsOptions"/> class.
         /// </summary>
         /// <param name="proxyAssemblies">Proxy definition assembly paths.</param>
-        /// <param name="targetAssemblies">Explicit target assembly paths.</param>
         /// <param name="targetFolders">Target assembly search folders.</param>
         /// <param name="targetFilters">Target assembly file globs.</param>
         /// <param name="outputPath">Canonical map output file path.</param>
@@ -26,7 +25,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <param name="strict">Whether to fail when any discovered mapping is dropped.</param>
         public DuckTypeAotDiscoverMappingsOptions(
             IReadOnlyList<string> proxyAssemblies,
-            IReadOnlyList<string> targetAssemblies,
             IReadOnlyList<string> targetFolders,
             IReadOnlyList<string> targetFilters,
             string outputPath,
@@ -34,7 +32,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             bool strict)
         {
             ProxyAssemblies = proxyAssemblies;
-            TargetAssemblies = targetAssemblies;
             TargetFolders = targetFolders;
             TargetFilters = targetFilters;
             OutputPath = outputPath;
@@ -46,11 +43,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// Gets proxy assemblies.
         /// </summary>
         public IReadOnlyList<string> ProxyAssemblies { get; }
-
-        /// <summary>
-        /// Gets target assemblies.
-        /// </summary>
-        public IReadOnlyList<string> TargetAssemblies { get; }
 
         /// <summary>
         /// Gets target folders.
