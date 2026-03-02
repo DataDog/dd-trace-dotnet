@@ -31,13 +31,19 @@ namespace Datadog.Trace.Configuration
 
         /// <summary>
         /// Backing field for AzureFunctionsGeneratedTracesPipeName.
+        /// Initialized statically by checking environment variables directly.
+        /// Only generates a name when running in Azure Functions without AAS Site Extension
+        /// and without an explicit DD_TRACE_PIPE_NAME configuration.
         /// </summary>
-        private static string? _azureFunctionsGeneratedTracesPipeName;
+        private static readonly string? _azureFunctionsGeneratedTracesPipeName = InitAzureFunctionsTracesPipeName();
 
         /// <summary>
         /// Backing field for AzureFunctionsGeneratedMetricsPipeName.
+        /// Initialized statically by checking environment variables directly.
+        /// Only generates a name when running in Azure Functions without AAS Site Extension
+        /// and without an explicit DD_DOGSTATSD_PIPE_NAME configuration.
         /// </summary>
-        private static string? _azureFunctionsGeneratedMetricsPipeName;
+        private static readonly string? _azureFunctionsGeneratedMetricsPipeName = InitAzureFunctionsMetricsPipeName();
 
         /// <summary>
         /// Allows overriding of file system access for tests.
@@ -100,28 +106,10 @@ namespace Datadog.Trace.Configuration
 
             ValidationWarnings = new List<string>();
 
-            // Generate unique pipe names for Azure Functions (when not using AAS Site Extension) if not explicitly configured
-            // This ensures multi-function scenarios don't conflict when using the compat layer
-            // If names are explicitly configured, use them as-is
-            var tracesPipeName = rawSettings.TracesPipeName;
-            var metricsPipeName = rawSettings.MetricsPipeName;
-
-            if (Util.EnvironmentHelpers.IsAzureFunctions() && !Util.EnvironmentHelpers.IsUsingAzureAppServicesSiteExtension())
-            {
-                if (string.IsNullOrEmpty(tracesPipeName))
-                {
-                    tracesPipeName = GenerateUniquePipeName("dd_trace");
-                    _azureFunctionsGeneratedTracesPipeName = tracesPipeName;
-                    Log.Information("Azure Functions environment detected with no explicit trace pipe name. Generated unique pipe name: {TracesPipeName}", tracesPipeName);
-                }
-
-                if (string.IsNullOrEmpty(metricsPipeName))
-                {
-                    metricsPipeName = GenerateUniquePipeName("dd_dogstatsd");
-                    _azureFunctionsGeneratedMetricsPipeName = metricsPipeName;
-                    Log.Information("Azure Functions environment detected with no explicit metrics pipe name. Generated unique pipe name: {MetricsPipeName}", metricsPipeName);
-                }
-            }
+            // Use statically-generated pipe names for Azure Functions if no explicit config was provided.
+            // The static fields are initialized once at type-load time via InitAzureFunctions*PipeName().
+            var tracesPipeName = !string.IsNullOrEmpty(rawSettings.TracesPipeName) ? rawSettings.TracesPipeName : _azureFunctionsGeneratedTracesPipeName;
+            var metricsPipeName = !string.IsNullOrEmpty(rawSettings.MetricsPipeName) ? rawSettings.MetricsPipeName : _azureFunctionsGeneratedMetricsPipeName;
 
             var traceSettings = GetTraceTransport(
                 agentUri: rawSettings.TraceAgentUri,
@@ -265,6 +253,34 @@ namespace Datadog.Trace.Configuration
             // the UDS path set for it, and the DnsSafeHost returns "".
             var traceHostname = agentUri.DnsSafeHost;
             return string.IsNullOrEmpty(traceHostname) ? DefaultDogstatsdHostname : traceHostname;
+        }
+
+        private static string? InitAzureFunctionsTracesPipeName()
+        {
+            if (Util.EnvironmentHelpers.IsAzureFunctions()
+                && !Util.EnvironmentHelpers.IsUsingAzureAppServicesSiteExtension()
+                && string.IsNullOrEmpty(Util.EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.TracesPipeName)))
+            {
+                var name = GenerateUniquePipeName("dd_trace");
+                Log.Information("Azure Functions environment detected with no explicit trace pipe name. Generated unique pipe name: {TracesPipeName}", name);
+                return name;
+            }
+
+            return null;
+        }
+
+        private static string? InitAzureFunctionsMetricsPipeName()
+        {
+            if (Util.EnvironmentHelpers.IsAzureFunctions()
+                && !Util.EnvironmentHelpers.IsUsingAzureAppServicesSiteExtension()
+                && string.IsNullOrEmpty(Util.EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.MetricsPipeName)))
+            {
+                var name = GenerateUniquePipeName("dd_dogstatsd");
+                Log.Information("Azure Functions environment detected with no explicit metrics pipe name. Generated unique pipe name: {MetricsPipeName}", name);
+                return name;
+            }
+
+            return null;
         }
 
         /// <summary>
