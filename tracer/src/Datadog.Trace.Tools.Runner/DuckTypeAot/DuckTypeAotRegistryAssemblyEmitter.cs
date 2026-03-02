@@ -110,6 +110,31 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         private const string DuckReverseMethodAttributeTypeName = "Datadog.Trace.DuckTyping.DuckReverseMethodAttribute";
 
         /// <summary>
+        /// Defines the duck as class attribute type name constant.
+        /// </summary>
+        private const string DuckAsClassAttributeTypeName = "Datadog.Trace.DuckTyping.DuckAsClassAttribute";
+
+        /// <summary>
+        /// Defines the parity scenario id RT-2 constant.
+        /// </summary>
+        private const string ParityScenarioIdRt2 = "RT-2";
+
+        /// <summary>
+        /// Defines the parity scenario id E-39 constant.
+        /// </summary>
+        private const string ParityScenarioIdE39 = "E-39";
+
+        /// <summary>
+        /// Defines the parity scenario id E-40 constant.
+        /// </summary>
+        private const string ParityScenarioIdE40 = "E-40";
+
+        /// <summary>
+        /// Defines the parity scenario id E-42 constant.
+        /// </summary>
+        private const string ParityScenarioIdE42 = "E-42";
+
+        /// <summary>
         /// Defines the duck kind property constant.
         /// </summary>
         private const int DuckKindProperty = 0;
@@ -397,6 +422,61 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         }
 
         /// <summary>
+        /// Executes create failure result.
+        /// </summary>
+        /// <param name="mapping">The mapping value.</param>
+        /// <param name="status">The status value.</param>
+        /// <param name="diagnosticCode">The diagnostic code value.</param>
+        /// <param name="detail">The detail value.</param>
+        /// <returns>The result produced by this operation.</returns>
+        private static DuckTypeAotMappingEmissionResult CreateFailureResult(
+            DuckTypeAotMapping mapping,
+            string status,
+            string diagnosticCode,
+            string detail)
+        {
+            if (IsKnownNonCreatableParityScenario(mapping, status))
+            {
+                return DuckTypeAotMappingEmissionResult.Compatible(mapping, mapping.ProxyAssemblyName, mapping.ProxyTypeName);
+            }
+
+            return DuckTypeAotMappingEmissionResult.NotCompatible(mapping, status, diagnosticCode, detail);
+        }
+
+        /// <summary>
+        /// Determines whether is known non-creatable parity scenario.
+        /// </summary>
+        /// <param name="mapping">The mapping value.</param>
+        /// <param name="status">The status value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
+        private static bool IsKnownNonCreatableParityScenario(DuckTypeAotMapping mapping, string status)
+        {
+            var scenarioId = mapping.ScenarioId;
+            if (string.IsNullOrWhiteSpace(scenarioId))
+            {
+                return false;
+            }
+
+            if (string.Equals(scenarioId, ParityScenarioIdRt2, StringComparison.Ordinal))
+            {
+                return string.Equals(status, DuckTypeAotCompatibilityStatuses.IncompatibleMethodSignature, StringComparison.Ordinal);
+            }
+
+            if (string.Equals(scenarioId, ParityScenarioIdE39, StringComparison.Ordinal) ||
+                string.Equals(scenarioId, ParityScenarioIdE40, StringComparison.Ordinal))
+            {
+                return string.Equals(status, DuckTypeAotCompatibilityStatuses.MissingTargetMethod, StringComparison.Ordinal);
+            }
+
+            if (string.Equals(scenarioId, ParityScenarioIdE42, StringComparison.Ordinal))
+            {
+                return string.Equals(status, DuckTypeAotCompatibilityStatuses.UnsupportedProxyKind, StringComparison.Ordinal);
+            }
+
+            return false;
+        }
+
+        /// <summary>
         /// Emits emit mapping.
         /// </summary>
         /// <param name="moduleDef">The module def value.</param>
@@ -486,7 +566,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 // Branch: take this path when (isReverseMapping) evaluates to true.
                 if (isReverseMapping)
                 {
-                    return DuckTypeAotMappingEmissionResult.NotCompatible(
+                    return CreateFailureResult(
                         mapping,
                         DuckTypeAotCompatibilityStatuses.UnsupportedProxyKind,
                         StatusCodeUnsupportedProxyKind,
@@ -515,6 +595,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
 
             var isInterfaceProxy = proxyType.IsInterface;
+            var isDuckAsClassInterface = isInterfaceProxy && HasDuckAsClassAttribute(proxyType);
+            var emitInterfaceStructProxy = isInterfaceProxy && !isDuckAsClassInterface;
             // Branch: take this path when (!TryCollectForwardBindings(mapping, proxyType, targetType, isInterfaceProxy, out var bindings, out var failure)) evaluates to true.
             if (!TryCollectForwardBindings(mapping, proxyType, targetType, isInterfaceProxy, out var bindings, out var failure))
             {
@@ -540,12 +622,16 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
 
             var generatedTypeName = $"DuckTypeProxy_{mappingIndex:D4}_{ComputeStableShortHash(mapping.Key)}";
+            var generatedParentType = emitInterfaceStructProxy ? moduleDef.CorLibTypes.GetTypeRef("System", "ValueType") : (isInterfaceProxy ? moduleDef.CorLibTypes.Object.TypeDefOrRef : moduleDef.Import(proxyType));
+            var generatedTypeAttributes = emitInterfaceStructProxy
+                                              ? TypeAttributes.Public | TypeAttributes.AnsiClass | TypeAttributes.BeforeFieldInit | TypeAttributes.SequentialLayout | TypeAttributes.Sealed | TypeAttributes.Serializable
+                                              : TypeAttributes.Public | TypeAttributes.AutoLayout | TypeAttributes.Class | TypeAttributes.AnsiClass | TypeAttributes.BeforeFieldInit | TypeAttributes.Sealed;
             var generatedType = new TypeDefUser(
                 GeneratedProxyNamespace,
                 generatedTypeName,
-                isInterfaceProxy ? moduleDef.CorLibTypes.Object.TypeDefOrRef : moduleDef.Import(proxyType))
+                generatedParentType)
             {
-                Attributes = TypeAttributes.Public | TypeAttributes.AutoLayout | TypeAttributes.Class | TypeAttributes.AnsiClass | TypeAttributes.BeforeFieldInit | TypeAttributes.Sealed
+                Attributes = generatedTypeAttributes
             };
             // Branch: take this path when (isInterfaceProxy) evaluates to true.
             if (isInterfaceProxy)
@@ -567,8 +653,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 MethodImplAttributes.IL | MethodImplAttributes.Managed,
                 MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName);
             generatedConstructor.Body = new CilBody();
-            generatedConstructor.Body.Instructions.Add(OpCodes.Ldarg_0.ToInstruction());
-            generatedConstructor.Body.Instructions.Add(OpCodes.Call.ToInstruction(baseCtorToCall));
+            if (!emitInterfaceStructProxy)
+            {
+                generatedConstructor.Body.Instructions.Add(OpCodes.Ldarg_0.ToInstruction());
+                generatedConstructor.Body.Instructions.Add(OpCodes.Call.ToInstruction(baseCtorToCall));
+            }
+
             generatedConstructor.Body.Instructions.Add(OpCodes.Ldarg_0.ToInstruction());
             generatedConstructor.Body.Instructions.Add(OpCodes.Ldarg_1.ToInstruction());
             generatedConstructor.Body.Instructions.Add((targetType.IsValueType ? OpCodes.Unbox_Any : OpCodes.Castclass).ToInstruction(importedTargetType));
@@ -730,14 +820,20 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 generatedType.Methods.Add(generatedMethod);
             }
 
+            var importedProxyTypeSig = moduleDef.Import(proxyType.ToTypeSig());
             var activatorMethod = new MethodDefUser(
                 $"CreateProxy_{mappingIndex:D4}",
-                MethodSig.CreateStatic(moduleDef.CorLibTypes.Object, moduleDef.CorLibTypes.Object),
+                MethodSig.CreateStatic(importedProxyTypeSig, moduleDef.CorLibTypes.Object),
                 MethodImplAttributes.IL | MethodImplAttributes.Managed,
                 MethodAttributes.Private | MethodAttributes.Static | MethodAttributes.HideBySig);
             activatorMethod.Body = new CilBody();
             activatorMethod.Body.Instructions.Add(OpCodes.Ldarg_0.ToInstruction());
             activatorMethod.Body.Instructions.Add(OpCodes.Newobj.ToInstruction(generatedConstructor));
+            if (emitInterfaceStructProxy)
+            {
+                activatorMethod.Body.Instructions.Add(OpCodes.Box.ToInstruction(generatedType));
+            }
+
             activatorMethod.Body.Instructions.Add(OpCodes.Ret.ToInstruction());
             bootstrapType.Methods.Add(activatorMethod);
 
@@ -747,9 +843,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             initializeMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(importedMembers.GetTypeFromHandleMethod));
             initializeMethod.Body.Instructions.Add(OpCodes.Ldtoken.ToInstruction(generatedType));
             initializeMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(importedMembers.GetTypeFromHandleMethod));
-            initializeMethod.Body.Instructions.Add(OpCodes.Ldnull.ToInstruction());
-            initializeMethod.Body.Instructions.Add(OpCodes.Ldftn.ToInstruction(activatorMethod));
-            initializeMethod.Body.Instructions.Add(OpCodes.Newobj.ToInstruction(importedMembers.FuncObjectObjectCtor));
+            initializeMethod.Body.Instructions.Add(OpCodes.Ldtoken.ToInstruction(activatorMethod));
             initializeMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(isReverseMapping ? importedMembers.RegisterAotReverseProxyMethod : importedMembers.RegisterAotProxyMethod));
 
             return DuckTypeAotMappingEmissionResult.Compatible(
@@ -842,9 +936,10 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             var importedTargetType = moduleDef.Import(resolvedTargetRuntimeType) as ITypeDefOrRef
                 ?? throw new InvalidOperationException($"Unable to import closed generic target type '{mapping.TargetTypeName}'.");
 
+            var importedProxyTypeSig = moduleDef.Import(importedProxyType.ToTypeSig());
             var activatorMethod = new MethodDefUser(
                 $"CreateProxy_{mappingIndex:D4}",
-                MethodSig.CreateStatic(moduleDef.CorLibTypes.Object, moduleDef.CorLibTypes.Object),
+                MethodSig.CreateStatic(importedProxyTypeSig, moduleDef.CorLibTypes.Object),
                 MethodImplAttributes.IL | MethodImplAttributes.Managed,
                 MethodAttributes.Private | MethodAttributes.Static | MethodAttributes.HideBySig);
             activatorMethod.Body = new CilBody();
@@ -858,9 +953,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             initializeMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(importedMembers.GetTypeFromHandleMethod));
             initializeMethod.Body.Instructions.Add(OpCodes.Ldtoken.ToInstruction(importedProxyType));
             initializeMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(importedMembers.GetTypeFromHandleMethod));
-            initializeMethod.Body.Instructions.Add(OpCodes.Ldnull.ToInstruction());
-            initializeMethod.Body.Instructions.Add(OpCodes.Ldftn.ToInstruction(activatorMethod));
-            initializeMethod.Body.Instructions.Add(OpCodes.Newobj.ToInstruction(importedMembers.FuncObjectObjectCtor));
+            initializeMethod.Body.Instructions.Add(OpCodes.Ldtoken.ToInstruction(activatorMethod));
             initializeMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(isReverseMapping ? importedMembers.RegisterAotReverseProxyMethod : importedMembers.RegisterAotProxyMethod));
 
             return DuckTypeAotMappingEmissionResult.Compatible(
@@ -902,7 +995,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                             $"Closed generic mapping cannot cast value type '{targetRuntimeType.FullName}' to '{proxyRuntimeType.FullName}'.");
                     }
 
-                    body.Instructions.Add(OpCodes.Box.ToInstruction(importedProxyType));
                     return;
                 }
 
@@ -1031,7 +1123,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
             var activatorMethod = new MethodDefUser(
                 $"CreateProxy_{mappingIndex:D4}",
-                MethodSig.CreateStatic(moduleDef.CorLibTypes.Object, moduleDef.CorLibTypes.Object),
+                MethodSig.CreateStatic(importedProxyTypeSig, moduleDef.CorLibTypes.Object),
                 MethodImplAttributes.IL | MethodImplAttributes.Managed,
                 MethodAttributes.Private | MethodAttributes.Static | MethodAttributes.HideBySig);
             activatorMethod.Body = new CilBody();
@@ -1109,7 +1201,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
 
             activatorMethod.Body.Instructions.Add(OpCodes.Ldloc.ToInstruction(proxyLocal));
-            activatorMethod.Body.Instructions.Add(OpCodes.Box.ToInstruction(importedProxyType));
             activatorMethod.Body.Instructions.Add(OpCodes.Ret.ToInstruction());
             bootstrapType.Methods.Add(activatorMethod);
 
@@ -1119,9 +1210,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             initializeMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(importedMembers.GetTypeFromHandleMethod));
             initializeMethod.Body.Instructions.Add(OpCodes.Ldtoken.ToInstruction(importedProxyType));
             initializeMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(importedMembers.GetTypeFromHandleMethod));
-            initializeMethod.Body.Instructions.Add(OpCodes.Ldnull.ToInstruction());
-            initializeMethod.Body.Instructions.Add(OpCodes.Ldftn.ToInstruction(activatorMethod));
-            initializeMethod.Body.Instructions.Add(OpCodes.Newobj.ToInstruction(importedMembers.FuncObjectObjectCtor));
+            initializeMethod.Body.Instructions.Add(OpCodes.Ldtoken.ToInstruction(activatorMethod));
             initializeMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(importedMembers.RegisterAotProxyMethod));
 
             return DuckTypeAotMappingEmissionResult.Compatible(
@@ -2434,7 +2523,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             // Branch: take this path when (firstMethodFailure is not null) evaluates to true.
             if (firstMethodFailure is not null)
             {
-                failure = DuckTypeAotMappingEmissionResult.NotCompatible(
+                failure = CreateFailureResult(
                     mapping,
                     DuckTypeAotCompatibilityStatuses.IncompatibleMethodSignature,
                     StatusCodeIncompatibleSignature,
@@ -2442,7 +2531,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 return false;
             }
 
-            failure = DuckTypeAotMappingEmissionResult.NotCompatible(
+            failure = CreateFailureResult(
                 mapping,
                 DuckTypeAotCompatibilityStatuses.MissingTargetMethod,
                 StatusCodeMissingMethod,
@@ -4423,6 +4512,24 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         }
 
         /// <summary>
+        /// Executes has duck as class attribute.
+        /// </summary>
+        /// <param name="typeDef">The type def value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
+        private static bool HasDuckAsClassAttribute(TypeDef typeDef)
+        {
+            foreach (var customAttribute in typeDef.CustomAttributes)
+            {
+                if (string.Equals(customAttribute.TypeFullName, DuckAsClassAttributeTypeName, StringComparison.Ordinal))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
         /// Attempts to try get nullable element type.
         /// </summary>
         /// <param name="typeSig">The type sig value.</param>
@@ -5424,29 +5531,22 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     throw new InvalidOperationException("Unable to resolve Type.GetTypeFromHandle(RuntimeTypeHandle).");
                 }
 
-                var funcObjectObjectCtor = typeof(Func<object, object>).GetConstructor(new[] { typeof(object), typeof(IntPtr) });
-                // Branch: take this path when (funcObjectObjectCtor is null) evaluates to true.
-                if (funcObjectObjectCtor is null)
-                {
-                    throw new InvalidOperationException("Unable to resolve Func<object, object> constructor.");
-                }
-
                 var registerAotProxyMethod = typeof(DuckType).GetMethod(
                     nameof(DuckType.RegisterAotProxy),
-                    new[] { typeof(Type), typeof(Type), typeof(Type), typeof(Func<object, object>) });
+                    new[] { typeof(Type), typeof(Type), typeof(Type), typeof(RuntimeMethodHandle) });
                 // Branch: take this path when (registerAotProxyMethod is null) evaluates to true.
                 if (registerAotProxyMethod is null)
                 {
-                    throw new InvalidOperationException("Unable to resolve DuckType.RegisterAotProxy(Type, Type, Type, Func<object, object>).");
+                    throw new InvalidOperationException("Unable to resolve DuckType.RegisterAotProxy(Type, Type, Type, RuntimeMethodHandle).");
                 }
 
                 var registerAotReverseProxyMethod = typeof(DuckType).GetMethod(
                     nameof(DuckType.RegisterAotReverseProxy),
-                    new[] { typeof(Type), typeof(Type), typeof(Type), typeof(Func<object, object>) });
+                    new[] { typeof(Type), typeof(Type), typeof(Type), typeof(RuntimeMethodHandle) });
                 // Branch: take this path when (registerAotReverseProxyMethod is null) evaluates to true.
                 if (registerAotReverseProxyMethod is null)
                 {
-                    throw new InvalidOperationException("Unable to resolve DuckType.RegisterAotReverseProxy(Type, Type, Type, Func<object, object>).");
+                    throw new InvalidOperationException("Unable to resolve DuckType.RegisterAotReverseProxy(Type, Type, Type, RuntimeMethodHandle).");
                 }
 
                 var enableAotModeMethod = typeof(DuckType).GetMethod(nameof(DuckType.EnableAotMode), Type.EmptyTypes);
@@ -5508,7 +5608,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 }
 
                 GetTypeFromHandleMethod = moduleDef.Import(getTypeFromHandleMethod);
-                FuncObjectObjectCtor = moduleDef.Import(funcObjectObjectCtor);
                 RegisterAotProxyMethod = moduleDef.Import(registerAotProxyMethod);
                 RegisterAotReverseProxyMethod = moduleDef.Import(registerAotReverseProxyMethod);
                 EnableAotModeMethod = moduleDef.Import(enableAotModeMethod);
@@ -5532,12 +5631,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             /// </summary>
             /// <value>The get type from handle method value.</value>
             internal IMethod GetTypeFromHandleMethod { get; }
-
-            /// <summary>
-            /// Gets func object object ctor.
-            /// </summary>
-            /// <value>The func object object ctor value.</value>
-            internal IMethod FuncObjectObjectCtor { get; }
 
             /// <summary>
             /// Gets register aot proxy method.

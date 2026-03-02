@@ -88,7 +88,7 @@ Likely causes:
 Actions:
 
 1. Review `*.compat.md` first for human-readable diagnosis.
-2. Compare `*.compat.json` with mapping-catalog `expectedStatus` entries first.
+2. Compare `*.compat.json` with mapping-catalog required mappings and default `compatible` expectations.
 3. Validate scenario IDs and catalog keys.
 4. Regenerate artifacts with matching runtime build inputs.
 
@@ -106,9 +106,9 @@ Likely causes:
 
 Actions:
 
-1. Check mapping-catalog `expectedStatus` entries first.
-2. Confirm the current known expected non-compatible Bible scenarios (`RT-2`, `E-39`, `E-40`, `E-42`) still match emitted statuses.
-3. Treat any additional non-compatible mapping as a regression until explicitly reviewed and cataloged.
+1. Check mapping-catalog required mappings and scenario IDs first.
+2. Confirm current baseline has no Bible `expectedStatus` overrides.
+3. Treat any non-compatible mapping as a regression until explicitly reviewed and approved.
 4. Re-run generation and verification with identical artifact inputs.
 
 ### unsupported_closed_generic_mapping

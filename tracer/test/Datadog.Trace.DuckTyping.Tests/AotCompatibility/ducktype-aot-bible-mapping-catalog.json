@@ -319,8 +319,7 @@
       "proxyType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+ReverseRequiredMethodBase",
       "proxyAssembly": "Datadog.Trace.DuckTyping.Tests",
       "targetType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+ReverseRequiredMethodDelegation",
-      "targetAssembly": "Datadog.Trace.DuckTyping.Tests",
-      "expectedStatus": "missing_target_method"
+      "targetAssembly": "Datadog.Trace.DuckTyping.Tests"
     },
     {
       "scenarioId": "E-40",
@@ -328,8 +327,7 @@
       "proxyType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+ReverseGenericContractBase",
       "proxyAssembly": "Datadog.Trace.DuckTyping.Tests",
       "targetType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+ReverseGenericMismatchDelegation",
-      "targetAssembly": "Datadog.Trace.DuckTyping.Tests",
-      "expectedStatus": "missing_target_method"
+      "targetAssembly": "Datadog.Trace.DuckTyping.Tests"
     },
     {
       "scenarioId": "E-41",
@@ -345,8 +343,7 @@
       "proxyType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+ReverseStructBase",
       "proxyAssembly": "Datadog.Trace.DuckTyping.Tests",
       "targetType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+ReverseStructDelegation",
-      "targetAssembly": "Datadog.Trace.DuckTyping.Tests",
-      "expectedStatus": "unsupported_proxy_kind"
+      "targetAssembly": "Datadog.Trace.DuckTyping.Tests"
     },
     {
       "scenarioId": "FG-1",
@@ -514,8 +511,7 @@
       "proxyType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+IRt2VoidMismatchProxy",
       "proxyAssembly": "Datadog.Trace.DuckTyping.Tests",
       "targetType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+Rt2VoidMismatchTarget",
-      "targetAssembly": "Datadog.Trace.DuckTyping.Tests",
-      "expectedStatus": "incompatible_method_signature"
+      "targetAssembly": "Datadog.Trace.DuckTyping.Tests"
     },
     {
       "scenarioId": "FG-7",

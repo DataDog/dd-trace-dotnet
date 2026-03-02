@@ -315,6 +315,8 @@ public class DuckTypeAotProcessorsTests
             var generatedProxyType = generatedModule.Types.SingleOrDefault(type =>
                 string.Equals(type.Namespace, "Datadog.Trace.DuckTyping.Generated.Proxies", StringComparison.Ordinal));
             generatedProxyType.Should().NotBeNull();
+            generatedProxyType!.IsValueType.Should().BeTrue();
+            generatedProxyType.BaseType!.FullName.Should().Be("System.ValueType");
             generatedProxyType!.FindMethod("Echo").Should().NotBeNull();
             generatedProxyType.Interfaces.Any(interfaceImpl =>
                 string.Equals(interfaceImpl.Interface.FullName, "Datadog.Trace.DuckTyping.IDuckType", StringComparison.Ordinal)).Should().BeTrue();
@@ -345,6 +347,21 @@ public class DuckTypeAotProcessorsTests
                     instruction.Operand is IMethod method &&
                     string.Equals(method.Name, "RegisterAotProxy", StringComparison.Ordinal));
             registerAotProxyInstruction.Should().NotBeNull();
+            ((IMethod)registerAotProxyInstruction!.Operand).MethodSig.Params.Last().FullName.Should().Be("System.RuntimeMethodHandle");
+
+            var initializesFuncDelegate = initializeMethod.Body.Instructions.Any(
+                instruction =>
+                    instruction.OpCode == OpCodes.Newobj &&
+                    instruction.Operand is IMethod method &&
+                    string.Equals(method.DeclaringType.FullName, "System.Func`2", StringComparison.Ordinal));
+            initializesFuncDelegate.Should().BeFalse();
+
+            var loadsActivatorMethodHandle = initializeMethod.Body.Instructions.Any(
+                instruction =>
+                    instruction.OpCode == OpCodes.Ldtoken &&
+                    instruction.Operand is IMethod method &&
+                    method.Name.StartsWith("CreateProxy_", StringComparison.Ordinal));
+            loadsActivatorMethodHandle.Should().BeTrue();
 
             var moduleInitializer = generatedModule.GlobalType.FindMethod(".cctor");
             moduleInitializer.Should().NotBeNull();
@@ -2767,6 +2784,73 @@ public class DuckTypeAotProcessorsTests
             generatedProxyType.FindMethod(nameof(TestDuckClassProxy.Echo)).Should().NotBeNull();
             generatedProxyType.Interfaces.Any(interfaceImpl =>
                 string.Equals(interfaceImpl.Interface.FullName, "Datadog.Trace.DuckTyping.IDuckType", StringComparison.Ordinal)).Should().BeTrue();
+        }
+        finally
+        {
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
+
+    [Fact]
+    public void GenerateProcessorShouldEmitDuckAsClassInterfaceProxyAsClass()
+    {
+        var tempDirectory = CreateTempDirectory();
+        try
+        {
+            var proxyAssemblyPath = typeof(DuckTypeAotProcessorsTests).Assembly.Location;
+            var targetAssemblyPath = typeof(TestDuckTarget).Assembly.Location;
+            var proxyAssemblyName = AssemblyName.GetAssemblyName(proxyAssemblyPath).Name;
+            var targetAssemblyName = AssemblyName.GetAssemblyName(targetAssemblyPath).Name;
+
+            var outputPath = Path.Combine(tempDirectory, "Datadog.Trace.DuckType.AotRegistry.DuckAsClassInterface.dll");
+            var mapFilePath = Path.Combine(tempDirectory, "ducktype-aot-map-duck-as-class-interface.json");
+            var trimmerDescriptorPath = Path.Combine(tempDirectory, "ducktype-aot-duck-as-class-interface.linker.xml");
+            var propsPath = Path.Combine(tempDirectory, "ducktype-aot-duck-as-class-interface.props");
+
+            var mapDocument = new
+            {
+                mappings = new[]
+                {
+                    new
+                    {
+                        mode = "forward",
+                        proxyType = typeof(ITestDuckAsClassProxy).FullName,
+                        proxyAssembly = proxyAssemblyName,
+                        targetType = typeof(TestDuckTarget).FullName,
+                        targetAssembly = targetAssemblyName
+                    }
+                }
+            };
+            File.WriteAllText(mapFilePath, JsonConvert.SerializeObject(mapDocument, Formatting.Indented));
+
+            var options = new DuckTypeAotGenerateOptions(
+                proxyAssemblies: new[] { proxyAssemblyPath },
+                targetAssemblies: new[] { targetAssemblyPath },
+                targetFolders: Array.Empty<string>(),
+                targetFilters: new[] { "*.dll" },
+                mapFile: mapFilePath,
+                mappingCatalog: null,
+                genericInstantiationsFile: null,
+                outputPath: outputPath,
+                assemblyName: "Datadog.Trace.DuckType.AotRegistry.DuckAsClassInterface",
+                trimmerDescriptorPath: trimmerDescriptorPath,
+                propsPath: propsPath);
+
+            var exitCode = DuckTypeAotGenerateProcessor.Process(options);
+            exitCode.Should().Be(0);
+
+            using var generatedModule = ModuleDefMD.Load(outputPath);
+            var generatedProxyType = generatedModule.Types.SingleOrDefault(type =>
+                string.Equals(type.Namespace, "Datadog.Trace.DuckTyping.Generated.Proxies", StringComparison.Ordinal));
+            generatedProxyType.Should().NotBeNull();
+            generatedProxyType!.IsClass.Should().BeTrue();
+            generatedProxyType.IsValueType.Should().BeFalse();
+            generatedProxyType.BaseType.Should().NotBeNull();
+            generatedProxyType.BaseType!.FullName.Should().Be("System.Object");
+            generatedProxyType.Interfaces.Any(interfaceImpl =>
+                string.Equals(interfaceImpl.Interface.FullName, typeof(ITestDuckAsClassProxy).FullName, StringComparison.Ordinal)).Should().BeTrue();
+            generatedProxyType.Interfaces.Any(interfaceImpl =>
+                string.Equals(interfaceImpl.Interface.FullName, typeof(IDuckType).FullName, StringComparison.Ordinal)).Should().BeTrue();
         }
         finally
         {
@@ -6331,6 +6415,20 @@ public class DuckTypeAotProcessorsTests
             matrix.Should().NotBeNull();
             matrix!.Mappings.Should().ContainSingle(mapping =>
                 string.Equals(mapping.Status, DuckTypeAotCompatibilityStatuses.Compatible, StringComparison.Ordinal));
+
+            using (var generatedModule = ModuleDefMD.Load(outputPath))
+            {
+                var bootstrapType = generatedModule.Find("Datadog.Trace.DuckTyping.Generated.DuckTypeAotRegistryBootstrap", isReflectionName: false);
+                bootstrapType.Should().NotBeNull();
+                var activatorMethod = bootstrapType!.Methods.Single(method =>
+                    method.Name.StartsWith("CreateProxy_", StringComparison.Ordinal));
+                activatorMethod.Body.Should().NotBeNull();
+                var boxesStructCopyProxy = activatorMethod.Body!.Instructions.Any(instruction =>
+                    instruction.OpCode == OpCodes.Box &&
+                    instruction.Operand is ITypeDefOrRef type &&
+                    string.Equals(type.FullName, typeof(TestDuckStructCopyProxy).FullName, StringComparison.Ordinal));
+                boxesStructCopyProxy.Should().BeFalse();
+            }
 
             var loadContext = new AssemblyLoadContext("DuckTypeAotProcessorsTests-StructCopy", isCollectible: true);
             try

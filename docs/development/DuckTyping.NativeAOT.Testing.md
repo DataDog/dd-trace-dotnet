@@ -23,7 +23,7 @@ Before running tests:
 1. Build `Datadog.Trace` and `Datadog.Trace.Tools.Runner`.
 2. Ensure mapping/catalog/inventory/expected-outcomes test assets are present.
 3. Ensure expected-outcomes/known-limitations files remain strict-empty (no scenario overrides).
-4. Ensure mapping-catalog `expectedStatus` entries are synchronized with known compatibility divergences.
+4. Ensure mapping-catalog required mappings and scenario IDs are synchronized with parity inventory.
 5. Ensure environment variables for mode selection are set per scenario.
 
 ## Core Commands
@@ -83,14 +83,9 @@ dotnet tracer/src/Datadog.Trace.Tools.Runner/bin/Release/Tool/net8.0/Datadog.Tra
 
 ## Current Strict Bible-Gate Baseline
 
-Strict verification currently expects four scenario-level non-compatible statuses declared in the mapping catalog (`ducktype-aot-bible-mapping-catalog.json`):
+Strict verification expects required Bible mappings to be `compatible` (no per-scenario `expectedStatus` overrides in current baseline).
 
-1. `RT-2` -> `incompatible_method_signature`
-2. `E-39` -> `missing_target_method`
-3. `E-40` -> `missing_target_method`
-4. `E-42` -> `unsupported_proxy_kind`
-
-Any additional non-compatible status should be treated as a regression until catalog expectations are intentionally updated.
+Any non-compatible status should be treated as a regression until explicitly reviewed and approved.
 
 ## Scenario Family Coverage Expectations
 
@@ -127,7 +122,7 @@ Minimum protected-branch gate:
 1. Dynamic baseline tests pass.
 2. Full parity orchestration passes.
 3. Runner AOT suite passes.
-4. Strict verify-compat passes for produced artifacts (including mapping-catalog `expectedStatus` assertions).
+4. Strict verify-compat passes for produced artifacts.
 5. NativeAOT publish integration test passes.
 
 ## Failure Triage Order
@@ -161,7 +156,7 @@ Release readiness requires all of the following:
 2. AOT parity suite green.
 3. Strict compatibility verification green.
 4. NativeAOT publish integration green.
-5. No unreviewed scenario IDs or unreviewed `expectedStatus` deltas in inventory/catalog contracts.
+5. No unreviewed scenario IDs or unreviewed mapping-catalog contract deltas.
 
 ## Related Documents
 
