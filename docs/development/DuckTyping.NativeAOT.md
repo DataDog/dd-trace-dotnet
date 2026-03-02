@@ -73,6 +73,11 @@ NativeAOT bootstrapping uses these public APIs on `DuckType`:
 
 The generated bootstrap calls all of these automatically.
 
+Current generated bootstrap behavior:
+
+1. It registers mappings using the `RuntimeMethodHandle` overloads (`RegisterAotProxy(Type, Type, Type, RuntimeMethodHandle)` and `RegisterAotReverseProxy(Type, Type, Type, RuntimeMethodHandle)`).
+2. `Func<object?, object?>` overloads remain available for manual/legacy registration paths.
+
 ## Proxy Definition Authoring
 
 You define proxies the same way as dynamic DuckTyping (see Bible for all semantics), then provide explicit mapping for AOT generation.
@@ -92,6 +97,11 @@ internal interface IHttpRequestProxy
     string? GetHeader(string name);
 }
 ```
+
+Emission behavior for interface proxies:
+
+1. By default, generated interface proxies are value types (`struct`) that implement both the proxy interface and `IDuckType`.
+2. If the proxy interface is marked with `[DuckAsClass]`, generator emits a class proxy instead.
 
 ### Forward Proxy via Class
 
@@ -266,6 +276,7 @@ Given output `X.dll`, generator emits:
    1. generated proxy types.
    2. bootstrap type `Datadog.Trace.DuckTyping.Generated.DuckTypeAotRegistryBootstrap`.
    3. module initializer that calls bootstrap `Initialize()`.
+   4. typed activators (`CreateProxy_XXXX(<targetType>)`) plus object bridge activators (`ActivateProxy_XXXX(object)`) used for registration.
 2. `X.dll.manifest.json`: build metadata, assembly fingerprints, mapping snapshot.
 3. `X.dll.compat.json`: machine-readable compatibility matrix per mapping.
 4. `X.dll.compat.md`: human-readable compatibility report.
@@ -274,6 +285,14 @@ Given output `X.dll`, generator emits:
 6. Props file:
    1. default `X.dll.props`, or `--emit-props` path.
    2. adds registry reference + `TrimmerRootDescriptor`.
+
+Allocation/IL notes for generated activators:
+
+1. Typed activators avoid constructor-time object casts (constructor receives typed target).
+2. Bridge activators may still contain `castclass`/`unbox.any` because registration entrypoint receives `object`.
+3. Boxing remains in parity-required edges such as:
+   1. returning a value-type generated proxy through an interface/object contract.
+   2. `IDuckType.Instance` when wrapped target is a value type.
 
 Note:
 
