@@ -102,7 +102,13 @@ public class MassTransit8Tests : TracingIntegrationTest
             var eventsRegex = new Regex(@"events: \[.*?\}\](?=,|\s*$)", RegexOptions.Singleline);
             settings.AddRegexScrubber(eventsRegex, "events: [scrubbed]");
 
-            await VerifyHelper.VerifySpans(massTransitSpans, settings)
+            await VerifyHelper.VerifySpans(
+                massTransitSpans,
+                settings,
+                orderSpans: spans => spans
+                    .OrderBy(x => x.GetTag("messaging.system"))  // Order by transport
+                    .ThenBy(x => x.TraceId)                      // Group by trace
+                    .ThenBy(x => x.Start))                       // Natural chronological order
                 .UseFileName(nameof(MassTransit8Tests));
 
             await telemetry.AssertIntegrationEnabledAsync(IntegrationId.MassTransit);

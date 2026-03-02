@@ -216,7 +216,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
 
             if (address.StartsWith("amazonsqs://", StringComparison.OrdinalIgnoreCase))
             {
-                return "amazonsqs";
+                return "sqs";
             }
 
             if (address.StartsWith("kafka://", StringComparison.OrdinalIgnoreCase))

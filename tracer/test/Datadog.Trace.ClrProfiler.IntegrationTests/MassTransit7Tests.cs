@@ -89,7 +89,13 @@ public class MassTransit7Tests : TracingIntegrationTest
             var sagaQueueRegex = new Regex(@"order-state_[a-z0-9]+");
             settings.AddRegexScrubber(sagaQueueRegex, "SagaQueueName");
 
-            await VerifyHelper.VerifySpans(massTransitSpans, settings)
+            await VerifyHelper.VerifySpans(
+                massTransitSpans,
+                settings,
+                orderSpans: spans => spans
+                    .OrderBy(x => x.GetTag("messaging.system"))  // Order by transport
+                    .ThenBy(x => x.TraceId)                      // Group by trace
+                    .ThenBy(x => x.Start))                       // Natural chronological order
                 .UseFileName(nameof(MassTransit7Tests));
 
             await telemetry.AssertIntegrationEnabledAsync(IntegrationId.MassTransit);
