@@ -10,7 +10,6 @@ using System;
 using System.Reflection;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Serverless;
 using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Configuration;
 using FluentAssertions;
 using Xunit;
 
@@ -198,7 +197,9 @@ public class ServerlessCompatIntegrationTests
         pipeName.Should().MatchRegex(@"^a{214}_[a-f0-9]{32}$");
     }
 
-    // Clear cached values between tests using reflection
+    // Clear cached values between tests using reflection.
+    // The integration classes cache their resolved pipe name in a static field;
+    // resetting these allows each test to start fresh.
     private static void ResetCachedPipeNames()
     {
         var traceIntegrationType = typeof(CompatibilityLayer_CalculateTracePipeName_Integration);
@@ -209,24 +210,23 @@ public class ServerlessCompatIntegrationTests
 
         traceCacheField?.SetValue(null, null);
         dogstatsdCacheField?.SetValue(null, null);
-
-        // Also clear ExporterSettings generated names (backing fields)
-        var exporterSettingsType = typeof(ExporterSettings);
-        var tracesPipeNameField = exporterSettingsType.GetField("_azureFunctionsGeneratedTracesPipeName", BindingFlags.NonPublic | BindingFlags.Static);
-        var metricsPipeNameField = exporterSettingsType.GetField("_azureFunctionsGeneratedMetricsPipeName", BindingFlags.NonPublic | BindingFlags.Static);
-
-        tracesPipeNameField?.SetValue(null, null);
-        metricsPipeNameField?.SetValue(null, null);
     }
 
+    // Pre-populate the integration cache fields directly to simulate
+    // having a pre-generated pipe name (e.g. from ExporterSettings).
+    // The ExporterSettings backing fields are static readonly and cannot be
+    // set via reflection, so we set the integration-level cache instead,
+    // which is what the integration checks first.
     private static void SetExporterSettingsGeneratedNames(string? tracePipeName, string? metricsPipeName)
     {
-        var exporterSettingsType = typeof(ExporterSettings);
-        var tracesPipeNameField = exporterSettingsType.GetField("_azureFunctionsGeneratedTracesPipeName", BindingFlags.NonPublic | BindingFlags.Static);
-        var metricsPipeNameField = exporterSettingsType.GetField("_azureFunctionsGeneratedMetricsPipeName", BindingFlags.NonPublic | BindingFlags.Static);
+        var traceIntegrationType = typeof(CompatibilityLayer_CalculateTracePipeName_Integration);
+        var dogstatsdIntegrationType = typeof(CompatibilityLayer_CalculateDogStatsDPipeName_Integration);
 
-        tracesPipeNameField?.SetValue(null, tracePipeName);
-        metricsPipeNameField?.SetValue(null, metricsPipeName);
+        var traceCacheField = traceIntegrationType.GetField("_cachedTracePipeName", BindingFlags.NonPublic | BindingFlags.Static);
+        var dogstatsdCacheField = dogstatsdIntegrationType.GetField("_cachedDogStatsDPipeName", BindingFlags.NonPublic | BindingFlags.Static);
+
+        traceCacheField?.SetValue(null, tracePipeName);
+        dogstatsdCacheField?.SetValue(null, metricsPipeName);
     }
 }
 #endif
