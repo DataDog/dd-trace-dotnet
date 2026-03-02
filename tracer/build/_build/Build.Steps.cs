@@ -1001,7 +1001,6 @@ partial class Build
                     .SetTargetPath(SharedDirectory / "src" / "msi-installer" / "WindowsInstaller.wixproj")
                     .SetConfiguration(BuildConfiguration)
                     .SetMSBuildPath()
-                    .AddProperty("RunWixToolsOutOfProc", true)
                     .SetProperty("MonitoringHomeDirectory", MonitoringHomeDirectory)
                     .SetMaxCpuCount(null)
                     .CombineWith(architectures, (o, arch) => o
