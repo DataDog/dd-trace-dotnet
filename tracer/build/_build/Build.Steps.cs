@@ -997,15 +997,13 @@ partial class Build
             // We don't produce an x86-only MSI any more
             var architectures = ArchitecturesForPlatformForTracer.Where(x => x != MSBuildTargetPlatform.x86);
 
-            MSBuild(s => s
-                    .SetTargetPath(SharedDirectory / "src" / "msi-installer" / "WindowsInstaller.wixproj")
+            DotNetBuild(s => s
+                    .SetProjectFile(SharedDirectory / "src" / "msi-installer" / "WindowsInstaller.wixproj")
                     .SetConfiguration(BuildConfiguration)
-                    .SetMSBuildPath()
                     .SetProperty("MonitoringHomeDirectory", MonitoringHomeDirectory)
-                    .SetMaxCpuCount(null)
                     .CombineWith(architectures, (o, arch) => o
                         .SetProperty("MsiOutputPath", ArtifactsDirectory / arch.ToString())
-                        .SetTargetPlatform(arch)),
+                        .SetProperty("Platform", arch.ToString())),
                 degreeOfParallelism: 2);
 
             foreach (var arch in architectures)
