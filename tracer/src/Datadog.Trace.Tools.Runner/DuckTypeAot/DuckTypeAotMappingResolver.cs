@@ -36,15 +36,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
             var resolvedMappings = new Dictionary<string, DuckTypeAotMapping>(StringComparer.Ordinal);
 
-            var attributeMappingsResult = DuckTypeAotAttributeDiscovery.Discover(options.ProxyAssemblies);
-            warnings.AddRange(attributeMappingsResult.Warnings);
-            errors.AddRange(attributeMappingsResult.Errors);
-            foreach (var mapping in attributeMappingsResult.Mappings)
-            {
-                resolvedMappings[mapping.Key] = mapping;
-            }
-
-            // Branch: take this path when (!string.IsNullOrWhiteSpace(options.MapFile)) evaluates to true.
             if (!string.IsNullOrWhiteSpace(options.MapFile))
             {
                 var mapFileResult = DuckTypeAotMapFileParser.Parse(options.MapFile!);
@@ -53,25 +44,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 {
                     resolvedMappings[mapping.Key] = mapping;
                 }
-
-                foreach (var excludedKey in mapFileResult.ExcludedKeys)
-                {
-                    _ = resolvedMappings.Remove(excludedKey);
-                }
-            }
-
-            // Branch: take this path when (!string.IsNullOrWhiteSpace(options.MappingCatalog)) evaluates to true.
-            if (!string.IsNullOrWhiteSpace(options.MappingCatalog))
-            {
-                var catalogResult = DuckTypeAotMappingCatalogParser.Parse(options.MappingCatalog!);
-                errors.AddRange(catalogResult.Errors);
-                // Branch: take this path when (options.RequireMappingCatalog && catalogResult.RequiredMappings.Count == 0) evaluates to true.
-                if (options.RequireMappingCatalog && catalogResult.RequiredMappings.Count == 0)
-                {
-                    errors.Add("--mapping-catalog must contain at least one entry in requiredMappings when --require-mapping-catalog is enabled.");
-                }
-
-                ApplyMappingCatalogRequirements(resolvedMappings, catalogResult.RequiredMappings, errors);
             }
 
             // Branch: take this path when (!string.IsNullOrWhiteSpace(options.GenericInstantiationsFile)) evaluates to true.
@@ -204,59 +176,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     $"Mapping '{mapping.Key}' contains an open generic type. " +
                     "NativeAOT generation requires closed proxy and target types. " +
                     "Provide closed concrete mappings in --map-file and use --generic-instantiations for additional closed-generic roots.");
-            }
-        }
-
-        /// <summary>
-        /// Executes apply mapping catalog requirements.
-        /// </summary>
-        /// <param name="resolvedMappings">The resolved mappings value.</param>
-        /// <param name="requiredMappings">The required mappings value.</param>
-        /// <param name="errors">The errors value.</param>
-        private static void ApplyMappingCatalogRequirements(
-            IDictionary<string, DuckTypeAotMapping> resolvedMappings,
-            IEnumerable<DuckTypeAotMapping> requiredMappings,
-            ICollection<string> errors)
-        {
-            foreach (var requiredMapping in requiredMappings)
-            {
-                // Branch: take this path when (!resolvedMappings.TryGetValue(requiredMapping.Key, out var resolvedMapping)) evaluates to true.
-                if (!resolvedMappings.TryGetValue(requiredMapping.Key, out var resolvedMapping))
-                {
-                    var scenarioSuffix = string.IsNullOrWhiteSpace(requiredMapping.ScenarioId)
-                                             ? string.Empty
-                                             : $", scenario={requiredMapping.ScenarioId}";
-                    errors.Add(
-                        $"Required mapping is missing: mode={requiredMapping.Mode}, proxy={requiredMapping.ProxyTypeName}, target={requiredMapping.TargetTypeName}{scenarioSuffix}.");
-                    continue;
-                }
-
-                var effectiveResolvedMapping = resolvedMapping;
-                var updatedResolvedMapping = false;
-
-                // Branch: take this path when (!string.IsNullOrWhiteSpace(requiredMapping.ScenarioId)) evaluates to true.
-                if (!string.IsNullOrWhiteSpace(requiredMapping.ScenarioId))
-                {
-                    // Branch: take this path when (string.IsNullOrWhiteSpace(effectiveResolvedMapping.ScenarioId)) evaluates to true.
-                    if (string.IsNullOrWhiteSpace(effectiveResolvedMapping.ScenarioId))
-                    {
-                        effectiveResolvedMapping = effectiveResolvedMapping.WithScenarioId(requiredMapping.ScenarioId!);
-                        updatedResolvedMapping = true;
-                    }
-                    else if (!string.Equals(effectiveResolvedMapping.ScenarioId, requiredMapping.ScenarioId, StringComparison.Ordinal))
-                    {
-                        // Branch: take this path when (!string.Equals(effectiveResolvedMapping.ScenarioId, requiredMapping.ScenarioId, StringComparison.Ordinal)) evaluates to true.
-                        errors.Add(
-                            $"Scenario id mismatch for mapping '{requiredMapping.Key}'. " +
-                            $"Resolved='{effectiveResolvedMapping.ScenarioId}', catalog='{requiredMapping.ScenarioId}'.");
-                    }
-                }
-
-                // Branch: take this path when (updatedResolvedMapping) evaluates to true.
-                if (updatedResolvedMapping)
-                {
-                    resolvedMappings[requiredMapping.Key] = effectiveResolvedMapping;
-                }
             }
         }
     }

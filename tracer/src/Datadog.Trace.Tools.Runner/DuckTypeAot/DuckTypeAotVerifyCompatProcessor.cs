@@ -31,6 +31,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <returns>The computed numeric value.</returns>
         internal static int Process(DuckTypeAotVerifyCompatOptions options)
         {
+            var useCanonicalMapContract = !string.IsNullOrWhiteSpace(options.MapFilePath);
+
             // Branch: take this path when (!File.Exists(options.CompatReportPath)) evaluates to true.
             if (!File.Exists(options.CompatReportPath))
             {
@@ -45,8 +47,13 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 return 1;
             }
 
-            // Branch: take this path when (!string.IsNullOrWhiteSpace(options.MappingCatalogPath) && !File.Exists(options.MappingCatalogPath)) evaluates to true.
-            if (!string.IsNullOrWhiteSpace(options.MappingCatalogPath) && !File.Exists(options.MappingCatalogPath))
+            if (useCanonicalMapContract && !File.Exists(options.MapFilePath))
+            {
+                Utils.WriteError($"--map-file file was not found: {options.MapFilePath}");
+                return 1;
+            }
+
+            if (!useCanonicalMapContract && !string.IsNullOrWhiteSpace(options.MappingCatalogPath) && !File.Exists(options.MappingCatalogPath))
             {
                 Utils.WriteError($"--mapping-catalog file was not found: {options.MappingCatalogPath}");
                 return 1;
@@ -59,22 +66,19 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 return 1;
             }
 
-            // Branch: take this path when (!string.IsNullOrWhiteSpace(options.ScenarioInventoryPath) && !File.Exists(options.ScenarioInventoryPath)) evaluates to true.
-            if (!string.IsNullOrWhiteSpace(options.ScenarioInventoryPath) && !File.Exists(options.ScenarioInventoryPath))
+            if (!useCanonicalMapContract && !string.IsNullOrWhiteSpace(options.ScenarioInventoryPath) && !File.Exists(options.ScenarioInventoryPath))
             {
                 Utils.WriteError($"--scenario-inventory file was not found: {options.ScenarioInventoryPath}");
                 return 1;
             }
 
-            // Branch: take this path when (!string.IsNullOrWhiteSpace(options.ExpectedOutcomesPath) && !File.Exists(options.ExpectedOutcomesPath)) evaluates to true.
-            if (!string.IsNullOrWhiteSpace(options.ExpectedOutcomesPath) && !File.Exists(options.ExpectedOutcomesPath))
+            if (!useCanonicalMapContract && !string.IsNullOrWhiteSpace(options.ExpectedOutcomesPath) && !File.Exists(options.ExpectedOutcomesPath))
             {
                 Utils.WriteError($"--expected-outcomes file was not found: {options.ExpectedOutcomesPath}");
                 return 1;
             }
 
-            // Branch: take this path when (!string.IsNullOrWhiteSpace(options.KnownLimitationsPath) && !File.Exists(options.KnownLimitationsPath)) evaluates to true.
-            if (!string.IsNullOrWhiteSpace(options.KnownLimitationsPath) && !File.Exists(options.KnownLimitationsPath))
+            if (!useCanonicalMapContract && !string.IsNullOrWhiteSpace(options.KnownLimitationsPath) && !File.Exists(options.KnownLimitationsPath))
             {
                 Utils.WriteError($"--known-limitations file was not found: {options.KnownLimitationsPath}");
                 return 1;
@@ -110,16 +114,41 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 return 1;
             }
 
-            // Branch: take this path when (!ValidateLegacyOverrideContractsAreStrictEmpty(options)) evaluates to true.
-            if (!ValidateLegacyOverrideContractsAreStrictEmpty(options))
+            if (useCanonicalMapContract)
             {
-                return 1;
-            }
+                var mapFileResult = DuckTypeAotMapFileParser.Parse(options.MapFilePath);
+                if (mapFileResult.Errors.Count > 0)
+                {
+                    foreach (var error in mapFileResult.Errors)
+                    {
+                        Utils.WriteError(error);
+                    }
 
-            // Branch: take this path when (string.IsNullOrWhiteSpace(options.MappingCatalogPath) && !ValidateNoNonCompatibleMappings(matrix)) evaluates to true.
-            if (string.IsNullOrWhiteSpace(options.MappingCatalogPath) && !ValidateNoNonCompatibleMappings(matrix))
+                    return 1;
+                }
+
+                if (mapFileResult.Mappings.Count == 0)
+                {
+                    Utils.WriteError("--map-file does not contain any mappings.");
+                    return 1;
+                }
+
+                if (!ValidateMapFileContract(matrix, mapFileResult.Mappings))
+                {
+                    return 1;
+                }
+            }
+            else
             {
-                return 1;
+                if (!ValidateLegacyOverrideContractsAreStrictEmpty(options))
+                {
+                    return 1;
+                }
+
+                if (string.IsNullOrWhiteSpace(options.MappingCatalogPath) && !ValidateNoNonCompatibleMappings(matrix))
+                {
+                    return 1;
+                }
             }
 
             // Branch: take this path when (manifest is not null) evaluates to true.
@@ -150,20 +179,16 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 }
             }
 
-            // Branch: take this path when (!string.IsNullOrWhiteSpace(options.MappingCatalogPath)) evaluates to true.
-            if (!string.IsNullOrWhiteSpace(options.MappingCatalogPath))
+            if (!useCanonicalMapContract && !string.IsNullOrWhiteSpace(options.MappingCatalogPath))
             {
-                // Branch: take this path when (!ValidateMappingCatalog(matrix, options.MappingCatalogPath!)) evaluates to true.
                 if (!ValidateMappingCatalog(matrix, options.MappingCatalogPath!))
                 {
                     return 1;
                 }
             }
 
-            // Branch: take this path when (!string.IsNullOrWhiteSpace(options.ScenarioInventoryPath)) evaluates to true.
-            if (!string.IsNullOrWhiteSpace(options.ScenarioInventoryPath))
+            if (!useCanonicalMapContract && !string.IsNullOrWhiteSpace(options.ScenarioInventoryPath))
             {
-                // Branch: take this path when (!ValidateScenarioInventory(matrix, options.ScenarioInventoryPath!)) evaluates to true.
                 if (!ValidateScenarioInventory(matrix, options.ScenarioInventoryPath!))
                 {
                     return 1;
@@ -245,6 +270,85 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
 
             // Branch: take this path when (errors.Count == 0) evaluates to true.
+            if (errors.Count == 0)
+            {
+                return true;
+            }
+
+            foreach (var error in errors)
+            {
+                Utils.WriteError(error);
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Validates that the compatibility matrix exactly matches the canonical map-file contract and all mapped statuses are compatible.
+        /// </summary>
+        /// <param name="matrix">The compatibility matrix.</param>
+        /// <param name="mapMappings">The canonical map mappings.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
+        private static bool ValidateMapFileContract(
+            DuckTypeAotCompatibilityMatrix matrix,
+            IReadOnlyList<DuckTypeAotMapping> mapMappings)
+        {
+            var errors = new List<string>();
+            var matrixByKey = new Dictionary<string, DuckTypeAotCompatibilityMapping>(StringComparer.Ordinal);
+            foreach (var matrixMapping in matrix.Mappings)
+            {
+                if (!TryBuildCompatibilityMappingKey(matrixMapping, out var mappingKey, out var error))
+                {
+                    errors.Add(error);
+                    continue;
+                }
+
+                if (!matrixByKey.TryAdd(mappingKey, matrixMapping))
+                {
+                    errors.Add($"--compat-matrix contains duplicate mappings for key '{mappingKey}'.");
+                }
+            }
+
+            var mapByKey = new Dictionary<string, DuckTypeAotMapping>(StringComparer.Ordinal);
+            foreach (var mapMapping in mapMappings)
+            {
+                if (!mapByKey.TryAdd(mapMapping.Key, mapMapping))
+                {
+                    errors.Add($"--map-file contains duplicate mappings for key '{mapMapping.Key}'.");
+                }
+            }
+
+            foreach (var mapEntry in mapByKey)
+            {
+                if (!matrixByKey.TryGetValue(mapEntry.Key, out var matrixMapping))
+                {
+                    errors.Add(
+                        $"--compat-matrix is missing mapping declared in --map-file: " +
+                        $"mode={mapEntry.Value.Mode}, proxy={mapEntry.Value.ProxyTypeName}, target={mapEntry.Value.TargetTypeName}.");
+                    continue;
+                }
+
+                var status = matrixMapping.Status ?? string.Empty;
+                if (!string.Equals(status, DuckTypeAotCompatibilityStatuses.Compatible, StringComparison.OrdinalIgnoreCase))
+                {
+                    errors.Add(
+                        $"Mapped entry is not compatible: key='{mapEntry.Key}', status='{status}', " +
+                        $"diagnostic='{matrixMapping.DiagnosticCode ?? "(none)"}'.");
+                }
+            }
+
+            foreach (var matrixEntry in matrixByKey)
+            {
+                if (mapByKey.ContainsKey(matrixEntry.Key))
+                {
+                    continue;
+                }
+
+                errors.Add(
+                    $"--compat-matrix contains mapping that is not declared in --map-file: key='{matrixEntry.Key}', " +
+                    $"id='{matrixEntry.Value.Id ?? "(null)"}'.");
+            }
+
             if (errors.Count == 0)
             {
                 return true;

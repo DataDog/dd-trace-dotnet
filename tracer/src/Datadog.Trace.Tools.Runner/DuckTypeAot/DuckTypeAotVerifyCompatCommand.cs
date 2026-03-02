@@ -25,31 +25,15 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             IsRequired = true
         };
 
-        /// <summary>
-        /// Stores cached mapping catalog option data.
-        /// </summary>
-        /// <remarks>This field participates in shared runtime state and must remain thread-safe.</remarks>
-        private readonly Option<string?> _mappingCatalogOption = new("--mapping-catalog", "Optional declared mapping inventory used to enforce required mapping/scenario coverage.");
+        private readonly Option<string> _mapFileOption = new("--map-file", "Canonical mapping contract file used by generation and compatibility verification.")
+        {
+            IsRequired = true
+        };
 
         /// <summary>
         /// Stores manifest option.
         /// </summary>
         private readonly Option<string?> _manifestOption = new("--manifest", "Optional generated manifest file used to validate matrix/manifest consistency.");
-
-        /// <summary>
-        /// Stores scenario inventory option.
-        /// </summary>
-        private readonly Option<string?> _scenarioInventoryOption = new("--scenario-inventory", "Optional Bible scenario inventory contract used to enforce required scenario coverage.");
-
-        /// <summary>
-        /// Stores expected outcomes option.
-        /// </summary>
-        private readonly Option<string?> _expectedOutcomesOption = new("--expected-outcomes", "Legacy compatibility option. When provided in strict parity mode, the file must be a strict-empty contract (no scenario overrides).");
-
-        /// <summary>
-        /// Stores known limitations option.
-        /// </summary>
-        private readonly Option<string?> _knownLimitationsOption = new("--known-limitations", "Legacy option retained for script compatibility. In strict parity mode this file must be strict-empty.");
 
         /// <summary>
         /// Stores failure mode option.
@@ -69,15 +53,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         {
             AddOption(_compatReportOption);
             AddOption(_compatMatrixOption);
-            AddOption(_mappingCatalogOption);
+            AddOption(_mapFileOption);
             AddOption(_manifestOption);
-            AddOption(_scenarioInventoryOption);
-            AddOption(_expectedOutcomesOption);
-            AddOption(_knownLimitationsOption);
             AddOption(_failureModeOption);
             AddOption(_strictAssemblyFingerprintsOption);
 
-            AddExample("dd-trace ducktype-aot verify-compat --compat-report ducktyping-aot-compat.md --compat-matrix ducktyping-aot-compat.json --mapping-catalog ducktyping-aot-catalog.json --scenario-inventory tracer/test/Datadog.Trace.DuckTyping.Tests/AotCompatibility/ducktype-aot-bible-scenario-inventory.json --manifest Datadog.Trace.DuckType.AotRegistry.dll.manifest.json --failure-mode strict");
+            AddExample("dd-trace ducktype-aot verify-compat --compat-report ducktyping-aot-compat.md --compat-matrix ducktyping-aot-compat.json --map-file ducktype-aot-mappings.json --manifest Datadog.Trace.DuckType.AotRegistry.dll.manifest.json --failure-mode strict");
 
             this.SetHandler(Execute);
         }
@@ -91,14 +72,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <remarks>Emits or composes IL for generated duck-typing proxy operations.</remarks>
         private static bool TryParseFailureMode(string? value, out DuckTypeAotFailureMode failureMode)
         {
-            // Branch: take this path when (string.Equals(value, "default", System.StringComparison.OrdinalIgnoreCase)) evaluates to true.
             if (string.Equals(value, "default", System.StringComparison.OrdinalIgnoreCase))
             {
                 failureMode = DuckTypeAotFailureMode.Default;
                 return true;
             }
 
-            // Branch: take this path when (string.Equals(value, "strict", System.StringComparison.OrdinalIgnoreCase)) evaluates to true.
             if (string.Equals(value, "strict", System.StringComparison.OrdinalIgnoreCase))
             {
                 failureMode = DuckTypeAotFailureMode.Strict;
@@ -117,14 +96,10 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         {
             var compatReportPath = _compatReportOption.GetValue(context);
             var compatMatrixPath = _compatMatrixOption.GetValue(context);
-            var mappingCatalogPath = _mappingCatalogOption.GetValue(context);
+            var mapFilePath = _mapFileOption.GetValue(context);
             var manifestPath = _manifestOption.GetValue(context);
-            var scenarioInventoryPath = _scenarioInventoryOption.GetValue(context);
-            var expectedOutcomesPath = _expectedOutcomesOption.GetValue(context);
-            var knownLimitationsPath = _knownLimitationsOption.GetValue(context);
             var strictAssemblyFingerprints = _strictAssemblyFingerprintsOption.GetValue(context);
             var failureModeValue = _failureModeOption.GetValue(context);
-            // Branch: take this path when (!TryParseFailureMode(failureModeValue, out var failureMode)) evaluates to true.
             if (!TryParseFailureMode(failureModeValue, out var failureMode))
             {
                 Datadog.Trace.Tools.Runner.Utils.WriteError($"Invalid --failure-mode value '{failureModeValue}'. Allowed values are: default, strict.");
@@ -132,21 +107,16 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 return;
             }
 
-            // Branch: take this path when (strictAssemblyFingerprints) evaluates to true.
             if (strictAssemblyFingerprints)
             {
-                // Legacy flag implies strict mode for parity with previous behavior.
                 failureMode = DuckTypeAotFailureMode.Strict;
             }
 
             var options = new DuckTypeAotVerifyCompatOptions(
                 compatReportPath,
                 compatMatrixPath,
-                mappingCatalogPath,
+                mapFilePath,
                 manifestPath,
-                scenarioInventoryPath,
-                expectedOutcomesPath,
-                knownLimitationsPath,
                 strictAssemblyFingerprints,
                 failureMode);
             context.ExitCode = DuckTypeAotVerifyCompatProcessor.Process(options);

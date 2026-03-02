@@ -38,23 +38,10 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             AllowMultipleArgumentsPerToken = true
         };
 
-        /// <summary>
-        /// Stores cached map file option data.
-        /// </summary>
-        /// <remarks>This field participates in shared runtime state and must remain thread-safe.</remarks>
-        private readonly Option<string?> _mapFileOption = new("--map-file", "Optional JSON map file with explicit mapping entries and overrides.");
-
-        /// <summary>
-        /// Stores cached mapping catalog option data.
-        /// </summary>
-        /// <remarks>This field participates in shared runtime state and must remain thread-safe.</remarks>
-        private readonly Option<string?> _mappingCatalogOption = new("--mapping-catalog", "Optional declared mapping inventory for CI/release coverage enforcement.");
-
-        /// <summary>
-        /// Stores cached require mapping catalog option data.
-        /// </summary>
-        /// <remarks>This field participates in shared runtime state and must remain thread-safe.</remarks>
-        private readonly Option<bool> _requireMappingCatalogOption = new("--require-mapping-catalog", "Require --mapping-catalog and fail if it is missing or empty.");
+        private readonly Option<string> _mapFileOption = new("--map-file", "Canonical JSON map file used as the sole mapping contract.")
+        {
+            IsRequired = true
+        };
 
         /// <summary>
         /// Stores generic instantiations option.
@@ -96,8 +83,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             AddOption(_targetFolderOption);
             AddOption(_targetFilterOption);
             AddOption(_mapFileOption);
-            AddOption(_mappingCatalogOption);
-            AddOption(_requireMappingCatalogOption);
             AddOption(_genericInstantiationsOption);
             AddOption(_assemblyNameOption);
             AddOption(_emitTrimmerDescriptorOption);
@@ -105,9 +90,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             AddOption(_strongNameKeyFileOption);
             AddOption(_outputOption);
 
-            AddExample("dd-trace ducktype-aot generate --proxy-assembly My.Proxy.dll --target-assembly ThirdParty.dll --output Datadog.Trace.DuckType.AotRegistry.dll");
-            AddExample("dd-trace ducktype-aot generate --proxy-assembly My.Proxy.dll --target-folder ./bin --target-filter *.dll --output Datadog.Trace.DuckType.AotRegistry.dll");
-            AddExample("dd-trace ducktype-aot generate --proxy-assembly My.Proxy.dll --target-assembly ThirdParty.dll --mapping-catalog ducktype-aot-catalog.json --require-mapping-catalog --output Datadog.Trace.DuckType.AotRegistry.dll");
+            AddExample("dd-trace ducktype-aot generate --proxy-assembly My.Proxy.dll --target-assembly ThirdParty.dll --map-file ducktype-aot-mappings.json --output Datadog.Trace.DuckType.AotRegistry.dll");
+            AddExample("dd-trace ducktype-aot generate --proxy-assembly My.Proxy.dll --target-folder ./bin --target-filter *.dll --map-file ducktype-aot-mappings.json --output Datadog.Trace.DuckType.AotRegistry.dll");
 
             this.SetHandler(Execute);
         }
@@ -125,8 +109,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
             var outputPath = _outputOption.GetValue(context);
             var mapFile = _mapFileOption.GetValue(context);
-            var mappingCatalog = _mappingCatalogOption.GetValue(context);
-            var requireMappingCatalog = _requireMappingCatalogOption.GetValue(context);
             var genericInstantiations = _genericInstantiationsOption.GetValue(context);
             var assemblyName = _assemblyNameOption.GetValue(context);
             var trimmerDescriptorPath = _emitTrimmerDescriptorOption.GetValue(context) ?? $"{outputPath}.linker.xml";
@@ -138,15 +120,13 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 targetAssemblies.Where(p => !string.IsNullOrWhiteSpace(p)).ToList(),
                 targetFolders.Where(p => !string.IsNullOrWhiteSpace(p)).ToList(),
                 targetFilters.Where(p => !string.IsNullOrWhiteSpace(p)).ToList(),
-                mapFile,
-                mappingCatalog,
-                genericInstantiations,
-                outputPath,
-                assemblyName,
-                trimmerDescriptorPath,
-                propsPath,
-                requireMappingCatalog,
-                strongNameKeyFile);
+                mapFile: mapFile,
+                genericInstantiationsFile: genericInstantiations,
+                outputPath: outputPath,
+                assemblyName: assemblyName,
+                trimmerDescriptorPath: trimmerDescriptorPath,
+                propsPath: propsPath,
+                strongNameKeyFile: strongNameKeyFile);
 
             context.ExitCode = DuckTypeAotGenerateProcessor.Process(options);
         }

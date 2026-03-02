@@ -1856,6 +1856,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             aotResult.CanCreate().Should().BeFalse($"scenario {scenarioId} must be non-creatable in AOT mode");
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+ForwardValueTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IForwardValueProxy
         {
             string Value { get; }
@@ -1883,6 +1884,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             public string Value => _target.Value;
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+ForwardMathTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IForwardMathProxy
         {
             int Add(int left, int right);
@@ -1911,6 +1913,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+ForwardMutableValueTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IForwardMutableValueProxy
         {
             string Value { get; set; }
@@ -1937,6 +1940,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+RefOutMathTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IRefOutMathProxy
         {
             void Normalize(ref int value, out int doubled);
@@ -1966,6 +1970,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+AliasMethodTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IAliasMethodProxy
         {
             [Duck(Name = "ComputeSum")]
@@ -1995,6 +2000,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+NullableValueTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface INullableValueProxy
         {
             int? Maybe(int value);
@@ -2023,6 +2029,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+GenericEchoTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IGenericEchoProxy
         {
             T Echo<T>(T value);
@@ -2051,6 +2058,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+StaticMathTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IStaticMathProxy
         {
             int Triple(int value);
@@ -2077,6 +2085,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+OverloadTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IOverloadIntProxy
         {
             [Duck(Name = "Compute", ParameterTypeNames = new[] { "System.Int32" })]
@@ -2111,6 +2120,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+VisibilityAccessTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IVisibilityAccessProxy
         {
             [DuckField(Name = "PublicCount")]
@@ -2170,6 +2180,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+IgnoreFeatureTarget", "Datadog.Trace.DuckTyping.Tests")]
         private abstract class IgnoreFeatureProxyBase
         {
             public abstract string Value { get; }
@@ -2203,6 +2214,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             public override string Value => _target.Value;
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+IncludeHashTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IEmptyIncludeProxy
         {
         }
@@ -2231,6 +2243,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+NoIncludeHashTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IEmptyNoIncludeProxy
         {
         }
@@ -2251,6 +2264,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+ToStringTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IEmptyToStringProxy
         {
         }
@@ -2278,6 +2292,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+StructMutationGuardTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IStructMutationGuardProxy
         {
             int Count { get; set; }
@@ -2288,6 +2303,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             public int Count { get; set; }
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+FieldCountTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IFieldCountProxy
         {
             [DuckPropertyOrField]
@@ -2315,6 +2331,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+DuckFieldCountTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IDuckFieldCountProxy
         {
             [DuckField(Name = "CountField")]
@@ -2342,6 +2359,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+OptionalParameterTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IOptionalParameterProxy
         {
             [Duck(Name = "Add")]
@@ -2371,6 +2389,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+RefOutConversionTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IRefOutConversionProxy
         {
             void Normalize(ref int value, out int doubled);
@@ -2400,6 +2419,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+ParameterTypeNamesTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IParameterTypeNamesProxy
         {
             [Duck(Name = "Compute", ParameterTypeNames = new[] { "System.Int64" })]
@@ -2434,6 +2454,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+GenericWrapTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IGenericWrapProxy
         {
             Tuple<TLeft, TRight> Wrap<TLeft, TRight>(TLeft left, TRight right);
@@ -2462,6 +2483,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+NonPublicGenericBindingTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface INonPublicGenericBindingProxy
         {
             [Duck(Name = "GetDefault", GenericParameterTypeNames = new[] { "System.Int32" })]
@@ -2509,6 +2531,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+GenericNonPublicMethodTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IGenericNonPublicMethodProxy
         {
             T GetDefault<T>();
@@ -2537,6 +2560,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+ExplicitMathTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IExplicitMathProxy
         {
             [Duck(Name = "Compute", ExplicitInterfaceTypeName = "*")]
@@ -2571,6 +2595,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+AmbiguousMethodTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IAmbiguousMethodProxy
         {
             void Add(string key, object value);
@@ -2593,6 +2618,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+PrivateFieldTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IPrivateFieldProxy
         {
             [DuckField(Name = "_count")]
@@ -2629,6 +2655,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+ChainInnerTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IChainInnerProxy
         {
             string Name { get; }
@@ -2656,6 +2683,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             public string Name => _target.Name;
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+ChainOuterTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IChainOuterProxy
         {
             IChainInnerProxy Inner { get; }
@@ -2683,6 +2711,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             public IChainInnerProxy Inner => new ChainInnerAotProxy(_target.Inner);
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+ChainNullableOuterTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IChainNullableOuterProxy
         {
             IChainInnerProxy? Inner { get; }
@@ -2710,6 +2739,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             public IChainInnerProxy? Inner => _target.Inner is null ? null : new ChainInnerAotProxy(_target.Inner);
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+ChainMethodOuterTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IChainMethodOuterProxy
         {
             IChainInnerProxy GetInner();
@@ -2751,6 +2781,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             public int Number;
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+NullableDuckChainTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface INullableDuckChainProxy
         {
             [Duck(Name = "TryGetInner")]
@@ -2796,6 +2827,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+ValueWithTypeTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IValueWithTypeProxy
         {
             [Duck(Name = "Count")]
@@ -2823,6 +2855,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+EnumConversionTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IEnumConversionProxy
         {
             EnumConversionValue Echo(EnumConversionValue value);
@@ -2858,6 +2891,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+Fg1GetterTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IFg1GetterProxy
         {
             string Name { get; }
@@ -2885,6 +2919,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             public string Name => _target.Name;
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+Fs1SetterTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IFs1SetterProxy
         {
             int Count { get; set; }
@@ -2911,6 +2946,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+Ff1FieldTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IFf1FieldProxy
         {
             [DuckField(Name = "_value")]
@@ -2959,6 +2995,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+Fm1MethodTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IFm1MethodProxy
         {
             string Join(string right);
@@ -2994,6 +3031,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+Rt1VoidTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IRt1VoidProxy
         {
             void Touch(int delta);
@@ -3036,6 +3074,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+Fg2GetterTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IFg2GetterProxy
         {
             int Count { get; }
@@ -3063,6 +3102,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             public int Count => _target.Count;
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+Fs5StaticSetterTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IFs5StaticSetterProxy
         {
             [Duck(Name = "GlobalCount")]
@@ -3088,6 +3128,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+Ff2StaticFieldTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IFf2StaticFieldProxy
         {
             [DuckField(Name = "GlobalValue")]
@@ -3113,6 +3154,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+Fm8OptionalTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IFm8OptionalProxy
         {
             int AddWithDefault(int left, int right = 7);
@@ -3141,6 +3183,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+Rt3ReturnConversionTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IRt3ReturnConversionProxy
         {
             object GetCount();
@@ -3169,6 +3212,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+Fg3NonPublicGetterTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IFg3NonPublicGetterProxy
         {
             [Duck(Name = "Secret")]
@@ -3217,6 +3261,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+Fg4StaticGetterTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IFg4StaticGetterProxy
         {
             [Duck(Name = "Global")]
@@ -3238,6 +3283,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             public int Global => Fg4StaticGetterTarget.Global;
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+Fg5ValueWithTypeGetterTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IFg5ValueWithTypeGetterProxy
         {
             [Duck(Name = "Count")]
@@ -3293,6 +3339,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             public string Name => _target.Name;
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+Fg6ChainOuterTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IFg6ChainOuterProxy
         {
             [Duck(Name = "Inner")]
@@ -3321,6 +3368,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             public IFg6ChainInnerProxy Inner => new Fg6ChainInnerAotProxy(_target.Inner);
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+Fg9FallbackGetterTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IFg9FallbackGetterProxy
         {
             [Duck(Name = "Hidden")]
@@ -3369,6 +3417,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+Fs2NonPublicSetterTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IFs2NonPublicSetterProxy
         {
             [Duck(Name = "Hidden")]
@@ -3415,6 +3464,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+Fs6FallbackSetterTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IFs6FallbackSetterProxy
         {
             [Duck(Name = "Hidden")]
@@ -3461,6 +3511,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+Ff3InstanceFieldSetTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IFf3InstanceFieldSetProxy
         {
             [DuckField(Name = "_value")]
@@ -3499,6 +3550,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+Ff4StaticFieldSetTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IFf4StaticFieldSetProxy
         {
             [DuckField(Name = "_global")]
@@ -3541,6 +3593,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+Ff5FallbackFieldTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IFf5FallbackFieldProxy
         {
             [DuckField(Name = "_hidden")]
@@ -3587,6 +3640,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+Rt2VoidMismatchTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IRt2VoidMismatchProxy
         {
             void Ping();
@@ -3600,6 +3654,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        [DuckReverse("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+Fg7ReverseGetterDelegation", "Datadog.Trace.DuckTyping.Tests")]
         private interface IFg7ReverseGetterProxy
         {
             string Name { get; }
@@ -3657,6 +3712,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             public int Number => _target.Number;
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+Fg8IndexerTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IFg8IndexerProxy
         {
             IFg8IndexerInnerProxy this[int index] { get; }
@@ -3711,6 +3767,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             internal Fs3SetterInnerTarget Target => _target;
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+Fs3SetterDuckExtractTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IFs3SetterDuckExtractProxy
         {
             [Duck(Name = "Inner")]
@@ -3759,6 +3816,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+Fs4SetterDuckCreateTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IFs4SetterDuckCreateProxy
         {
             [Duck(Name = "Inner")]
@@ -3834,6 +3892,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+Fm2ValueReceiverTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IFm2ValueReceiverProxy
         {
             int Increment(int value);
@@ -3864,6 +3923,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+Fm3StaticMethodTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IFm3StaticMethodProxy
         {
             [Duck(Name = "Multiply")]
@@ -3891,6 +3951,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+Fm4NonPublicMethodTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IFm4NonPublicMethodProxy
         {
             [Duck(Name = "Add")]
@@ -3927,6 +3988,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+Fm5GenericMethodTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IFm5GenericMethodProxy
         {
             T Echo<T>(T value);
@@ -3955,6 +4017,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+Fm6FallbackMethodTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IFm6FallbackMethodProxy
         {
             [Duck(Name = "Compute")]
@@ -3991,6 +4054,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+Fm7RefOutMismatchTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IFm7RefOutMismatchProxy
         {
             void Normalize(ref object value, out object doubled);
@@ -4050,6 +4114,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             public int Number => _target.Number;
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+Rt4DuckChainReturnTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IRt4DuckChainReturnProxy
         {
             IRt4DuckChainInnerProxy GetInner();
@@ -4085,6 +4150,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+Rt5ValueWithTypeReturnTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IRt5ValueWithTypeReturnProxy
         {
             [Duck(Name = "GetCount")]
@@ -4114,6 +4180,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        [DuckReverse("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+ReverseGreetingDelegation", "Datadog.Trace.DuckTyping.Tests")]
         private interface IReverseGreetingProxy
         {
             string Greet();
@@ -4150,6 +4217,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        [DuckReverse("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+ReverseStateDelegation", "Datadog.Trace.DuckTyping.Tests")]
         private interface IReverseStateProxy
         {
             int State { get; set; }
@@ -4177,6 +4245,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        [DuckReverse("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+ReverseMathDelegation", "Datadog.Trace.DuckTyping.Tests")]
         private interface IReverseMathProxy
         {
             int Multiply(int left, int right);
@@ -4206,6 +4275,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        [DuckReverse("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+ReverseB27Delegation", "Datadog.Trace.DuckTyping.Tests")]
         private interface IReverseB27Proxy
         {
             int Increment(int value);
@@ -4235,6 +4305,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        [DuckReverse("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+ReverseRefOutDelegation", "Datadog.Trace.DuckTyping.Tests")]
         private interface IReverseRefOutProxy
         {
             void Normalize(ref int value, out int doubled);
@@ -4265,6 +4336,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        [DuckReverse("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+ReverseAbstractDelegation", "Datadog.Trace.DuckTyping.Tests")]
         private abstract class ReverseAbstractBase
         {
             public abstract int Compute(int left, int right);
@@ -4294,6 +4366,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        [DuckReverse("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+ReverseRequiredMethodDelegation", "Datadog.Trace.DuckTyping.Tests")]
         private abstract class ReverseRequiredMethodBase
         {
             public abstract int Required(int value);
@@ -4303,6 +4376,7 @@ namespace Datadog.Trace.DuckTyping.Tests
         {
         }
 
+        [DuckReverse("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+ReverseGenericMismatchDelegation", "Datadog.Trace.DuckTyping.Tests")]
         private abstract class ReverseGenericContractBase
         {
             public abstract T Echo<T>(T value);
@@ -4328,6 +4402,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             public string Marker { get; }
         }
 
+        [DuckReverse("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+ReverseAttributeCopyDelegation", "Datadog.Trace.DuckTyping.Tests")]
         private interface IReverseAttributeCopyProxy
         {
             int Bump(int value);

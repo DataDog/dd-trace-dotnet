@@ -21,10 +21,9 @@ The testing strategy has five layers:
 Before running tests:
 
 1. Build `Datadog.Trace` and `Datadog.Trace.Tools.Runner`.
-2. Ensure mapping/catalog/inventory/expected-outcomes test assets are present.
-3. Ensure expected-outcomes/known-limitations files remain strict-empty (no scenario overrides).
-4. Ensure mapping-catalog required mappings and scenario IDs are synchronized with parity inventory.
-5. Ensure environment variables for mode selection are set per scenario.
+2. Ensure canonical map test assets are present (`ducktype-aot-bible-mappings.json`).
+3. Ensure discovered mappings and canonical map remain in sync.
+4. Ensure environment variables for mode selection are set per scenario.
 
 ## Core Commands
 
@@ -75,8 +74,7 @@ dotnet tracer/src/Datadog.Trace.Tools.Runner/bin/Release/Tool/net8.0/Datadog.Tra
   ducktype-aot verify-compat \
   --compat-report /abs/path/Datadog.Trace.DuckType.AotRegistry.dll.compat.md \
   --compat-matrix /abs/path/Datadog.Trace.DuckType.AotRegistry.dll.compat.json \
-  --mapping-catalog tracer/test/Datadog.Trace.DuckTyping.Tests/AotCompatibility/ducktype-aot-bible-mapping-catalog.json \
-  --scenario-inventory tracer/test/Datadog.Trace.DuckTyping.Tests/AotCompatibility/ducktype-aot-bible-scenario-inventory.json \
+  --map-file tracer/test/Datadog.Trace.DuckTyping.Tests/AotCompatibility/ducktype-aot-bible-mappings.json \
   --manifest /abs/path/Datadog.Trace.DuckType.AotRegistry.dll.manifest.json \
   --failure-mode strict
 ```
@@ -156,7 +154,7 @@ Release readiness requires all of the following:
 2. AOT parity suite green.
 3. Strict compatibility verification green.
 4. NativeAOT publish integration green.
-5. No unreviewed scenario IDs or unreviewed mapping-catalog contract deltas.
+5. No unreviewed canonical map deltas.
 
 ## Related Documents
 

@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using dnlib.DotNet;
 
 #pragma warning disable SA1402 // File may only contain a single type
@@ -15,7 +16,7 @@ using dnlib.DotNet;
 namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 {
     /// <summary>
-    /// Provides helper operations for duck type aot attribute discovery.
+    /// Discovers AOT mapping contracts declared via type-level duck-typing attributes.
     /// </summary>
     internal static class DuckTypeAotAttributeDiscovery
     {
@@ -30,7 +31,27 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         private const string DuckCopyAttributeFullName = "Datadog.Trace.DuckTyping.DuckCopyAttribute";
 
         /// <summary>
-        /// Executes discover.
+        /// Defines the duck reverse attribute full name constant.
+        /// </summary>
+        private const string DuckReverseAttributeFullName = "Datadog.Trace.DuckTyping.DuckReverseAttribute";
+
+        /// <summary>
+        /// Defines the duck attribute namespace prefix constant.
+        /// </summary>
+        private const string DuckAttributeNamespacePrefix = "Datadog.Trace.DuckTyping.";
+
+        /// <summary>
+        /// Defines the duck attribute name prefix constant.
+        /// </summary>
+        private const string DuckAttributeNamePrefix = "Duck";
+
+        /// <summary>
+        /// Defines the attribute suffix constant.
+        /// </summary>
+        private const string AttributeSuffix = "Attribute";
+
+        /// <summary>
+        /// Discovers mappings from the provided proxy assemblies.
         /// </summary>
         /// <param name="proxyAssemblyPaths">The proxy assembly paths value.</param>
         /// <returns>The result produced by this operation.</returns>
@@ -49,26 +70,31 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
                     foreach (var type in module.GetTypes())
                     {
-                        // Branch: take this path when (type.IsGlobalModuleType) evaluates to true.
                         if (type.IsGlobalModuleType)
                         {
                             continue;
                         }
 
+                        var hasTypeLevelMappingAttribute = false;
                         foreach (var attribute in type.CustomAttributes)
                         {
                             var attributeFullName = attribute.AttributeType?.FullName;
-                            // Branch: take this path when (!string.Equals(attributeFullName, DuckTypeAttributeFullName, StringComparison.Ordinal) && evaluates to true.
-                            if (!string.Equals(attributeFullName, DuckTypeAttributeFullName, StringComparison.Ordinal) &&
-                                !string.Equals(attributeFullName, DuckCopyAttributeFullName, StringComparison.Ordinal))
+                            if (!TryResolveMappingMode(attributeFullName, out var mappingMode))
                             {
                                 continue;
                             }
 
-                            // Branch: take this path when (!TryReadTargetData(attribute, out var targetTypeName, out var targetAssemblyName)) evaluates to true.
+                            hasTypeLevelMappingAttribute = true;
                             if (!TryReadTargetData(attribute, out var targetTypeName, out var targetAssemblyName))
                             {
-                                warnings.Add($"Skipping attribute mapping in '{proxyAssemblyPath}' for proxy type '{type.ReflectionFullName}' because target type/assembly values are missing.");
+                                warnings.Add(
+                                    $"Skipping type-level mapping attribute '{attributeFullName}' in '{proxyAssemblyPath}' for proxy type '{type.ReflectionFullName}' because target type/assembly values are missing or invalid.");
+                                continue;
+                            }
+
+                            if (string.IsNullOrWhiteSpace(type.ReflectionFullName))
+                            {
+                                warnings.Add($"Skipping type-level mapping attribute '{attributeFullName}' in '{proxyAssemblyPath}' because the proxy type full name is empty.");
                                 continue;
                             }
 
@@ -77,10 +103,17 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                                 proxyAssemblyName,
                                 targetTypeName,
                                 targetAssemblyName,
-                                DuckTypeAotMappingMode.Forward,
+                                mappingMode,
                                 DuckTypeAotMappingSource.Attribute);
 
                             mappings[mapping.Key] = mapping;
+                        }
+
+                        if (!hasTypeLevelMappingAttribute && HasDuckMemberAttributeUsage(type))
+                        {
+                            warnings.Add(
+                                $"Type '{type.ReflectionFullName}' in '{proxyAssemblyPath}' uses duck member attributes but does not declare a type-level mapping attribute. " +
+                                "Add [DuckType], [DuckCopy], or [DuckReverse] metadata.");
                         }
                     }
                 }
@@ -92,6 +125,31 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
 
             return new DuckTypeAotAttributeDiscoveryResult(mappings.Values, warnings, errors);
+        }
+
+        /// <summary>
+        /// Attempts to resolve a mapping mode from an attribute full name.
+        /// </summary>
+        /// <param name="attributeFullName">The attribute full name value.</param>
+        /// <param name="mode">The resolved mode value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
+        private static bool TryResolveMappingMode(string? attributeFullName, out DuckTypeAotMappingMode mode)
+        {
+            if (string.Equals(attributeFullName, DuckTypeAttributeFullName, StringComparison.Ordinal) ||
+                string.Equals(attributeFullName, DuckCopyAttributeFullName, StringComparison.Ordinal))
+            {
+                mode = DuckTypeAotMappingMode.Forward;
+                return true;
+            }
+
+            if (string.Equals(attributeFullName, DuckReverseAttributeFullName, StringComparison.Ordinal))
+            {
+                mode = DuckTypeAotMappingMode.Reverse;
+                return true;
+            }
+
+            mode = DuckTypeAotMappingMode.Forward;
+            return false;
         }
 
         /// <summary>
@@ -179,6 +237,69 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 null => null,
                 _ => value.ToString()
             };
+        }
+
+        /// <summary>
+        /// Determines whether the type uses duck-typing member-level attributes.
+        /// </summary>
+        /// <param name="type">The type value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
+        private static bool HasDuckMemberAttributeUsage(TypeDef type)
+        {
+            if (ContainsDuckMemberAttribute(type.Fields.SelectMany(field => field.CustomAttributes)))
+            {
+                return true;
+            }
+
+            foreach (var method in type.Methods)
+            {
+                if (ContainsDuckMemberAttribute(method.CustomAttributes))
+                {
+                    return true;
+                }
+            }
+
+            if (ContainsDuckMemberAttribute(type.Properties.SelectMany(property => property.CustomAttributes)))
+            {
+                return true;
+            }
+
+            return ContainsDuckMemberAttribute(type.Events.SelectMany(eventDef => eventDef.CustomAttributes));
+        }
+
+        /// <summary>
+        /// Determines whether the provided custom attributes include member-level duck attributes.
+        /// </summary>
+        /// <param name="attributes">The attributes value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
+        private static bool ContainsDuckMemberAttribute(IEnumerable<CustomAttribute> attributes)
+        {
+            foreach (var attribute in attributes)
+            {
+                var fullName = attribute.AttributeType?.FullName;
+                if (string.IsNullOrWhiteSpace(fullName))
+                {
+                    continue;
+                }
+
+                if (!fullName.StartsWith(DuckAttributeNamespacePrefix, StringComparison.Ordinal) ||
+                    !fullName.EndsWith(AttributeSuffix, StringComparison.Ordinal) ||
+                    fullName.IndexOf(DuckAttributeNamePrefix, StringComparison.Ordinal) < 0)
+                {
+                    continue;
+                }
+
+                if (string.Equals(fullName, DuckTypeAttributeFullName, StringComparison.Ordinal) ||
+                    string.Equals(fullName, DuckCopyAttributeFullName, StringComparison.Ordinal) ||
+                    string.Equals(fullName, DuckReverseAttributeFullName, StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                return true;
+            }
+
+            return false;
         }
     }
 
