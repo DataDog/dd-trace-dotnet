@@ -4965,6 +4965,23 @@ stages:
         condition: always()
         displayName: Group logs
 
+      - script: |
+          npm install -g @datadog/datadog-ci && \
+          datadog-ci junit upload \
+            ./logs*/reportJunit.xml \
+            --service system-tests \
+            --env ci \
+            --verbose \
+            --xpath-tag "test.codeowners=/testcase/properties/property[@name='test.codeowners']"
+        workingDirectory: system-tests
+        condition: always()
+        displayName: Upload test results to Test Optimization
+        retryCountOnTaskFailure: 3
+        continueOnError: true
+        env:
+          DATADOG_SITE: datadoghq.com
+          DATADOG_API_KEY: $(ddApiKey)
+
       - publish: system-tests/all_logs/
         condition: always()
         displayName: System tests logs
