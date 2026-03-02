@@ -1042,8 +1042,6 @@ public static class SmokeTestScenarios
                              RunCrashTest = false,
                              TargetPlatform = platform,
                              FleetInstallerCommand = "enable-iis-instrumentation",
-                             SnapshotFile = "smoke_test_iis_snapshots",
-                             ExtraSnapshotIgnoredAttrs = "meta._dd.appsec.waf.version,metrics._dd.appsec.event_rules.loaded,metrics._dd.appsec.event_rules.error_count,metrics._dd.tracer_kr,metrics._sampling_priority_v1",
                          };
         }
 
