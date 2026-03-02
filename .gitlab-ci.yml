@@ -193,7 +193,7 @@ benchmark-serverless:
   needs:
     - benchmark-serverless-trigger
   script:
-    -- curl -OL "binaries.ddbuild.io/dd-source/authanywhere/LATEST/authanywhere-linux-amd64" 
+    - curl -OL "binaries.ddbuild.io/dd-source/authanywhere/LATEST/authanywhere-linux-amd64" 
     - mv "authanywhere-linux-amd64" /bin/authanywhere 
     - chmod +x /bin/authanywhere
     - BTI_CI_API_TOKEN=$(authanywhere --audience rapid-devex-ci)
