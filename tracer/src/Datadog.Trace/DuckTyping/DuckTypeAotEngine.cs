@@ -139,7 +139,7 @@ namespace Datadog.Trace.DuckTyping
         /// <param name="activatorMethodHandle">The activator method handle value.</param>
         internal static void RegisterProxy(Type proxyDefinitionType, Type targetType, Type generatedProxyType, RuntimeMethodHandle activatorMethodHandle)
         {
-            Register(proxyDefinitionType, targetType, generatedProxyType, CreateTypedActivator(proxyDefinitionType, activatorMethodHandle), reverse: false);
+            Register(proxyDefinitionType, targetType, generatedProxyType, CreateTypedActivator(proxyDefinitionType, targetType, activatorMethodHandle), reverse: false);
         }
 
         /// <summary>
@@ -163,7 +163,7 @@ namespace Datadog.Trace.DuckTyping
         /// <param name="activatorMethodHandle">The activator method handle value.</param>
         internal static void RegisterReverseProxy(Type typeToDeriveFrom, Type delegationType, Type generatedProxyType, RuntimeMethodHandle activatorMethodHandle)
         {
-            Register(typeToDeriveFrom, delegationType, generatedProxyType, CreateTypedActivator(typeToDeriveFrom, activatorMethodHandle), reverse: true);
+            Register(typeToDeriveFrom, delegationType, generatedProxyType, CreateTypedActivator(typeToDeriveFrom, delegationType, activatorMethodHandle), reverse: true);
         }
 
         /// <summary>
@@ -332,13 +332,19 @@ namespace Datadog.Trace.DuckTyping
         /// Creates create typed activator.
         /// </summary>
         /// <param name="proxyDefinitionType">The proxy definition type value.</param>
+        /// <param name="targetType">The target type value.</param>
         /// <param name="activatorMethodHandle">The activator method handle value.</param>
         /// <returns>The result produced by this operation.</returns>
-        private static Delegate CreateTypedActivator(Type proxyDefinitionType, RuntimeMethodHandle activatorMethodHandle)
+        private static Delegate CreateTypedActivator(Type proxyDefinitionType, Type targetType, RuntimeMethodHandle activatorMethodHandle)
         {
             if (proxyDefinitionType is null)
             {
                 ThrowHelper.ThrowArgumentNullException(nameof(proxyDefinitionType));
+            }
+
+            if (targetType is null)
+            {
+                ThrowHelper.ThrowArgumentNullException(nameof(targetType));
             }
 
             if (activatorMethodHandle.Equals(default(RuntimeMethodHandle)))
@@ -376,10 +382,11 @@ namespace Datadog.Trace.DuckTyping
             }
 
             var parameters = activatorMethod.GetParameters();
-            if (parameters.Length != 1 || parameters[0].ParameterType != typeof(object))
+            if (parameters.Length != 1 ||
+                (parameters[0].ParameterType != typeof(object) && parameters[0].ParameterType != targetType))
             {
                 throw new ArgumentException(
-                    $"AOT duck typing activator method '{activatorMethod}' must declare exactly one 'object' parameter.",
+                    $"AOT duck typing activator method '{activatorMethod}' must declare exactly one parameter of type '{targetType}' or 'object'.",
                     nameof(activatorMethodHandle));
             }
 
@@ -390,7 +397,9 @@ namespace Datadog.Trace.DuckTyping
                     nameof(activatorMethodHandle));
             }
 
-            var delegateType = typeof(CreateProxyInstance<>).MakeGenericType(proxyDefinitionType);
+            var delegateType = parameters[0].ParameterType == typeof(object)
+                                   ? typeof(CreateProxyInstance<>).MakeGenericType(proxyDefinitionType)
+                                   : typeof(Func<,>).MakeGenericType(targetType, proxyDefinitionType);
             try
             {
                 return Delegate.CreateDelegate(delegateType, activatorMethod);

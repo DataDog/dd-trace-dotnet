@@ -649,7 +649,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
             var generatedConstructor = new MethodDefUser(
                 ".ctor",
-                MethodSig.CreateInstance(moduleDef.CorLibTypes.Void, moduleDef.CorLibTypes.Object),
+                MethodSig.CreateInstance(moduleDef.CorLibTypes.Void, importedTargetTypeSig),
                 MethodImplAttributes.IL | MethodImplAttributes.Managed,
                 MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName);
             generatedConstructor.Body = new CilBody();
@@ -661,12 +661,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
             generatedConstructor.Body.Instructions.Add(OpCodes.Ldarg_0.ToInstruction());
             generatedConstructor.Body.Instructions.Add(OpCodes.Ldarg_1.ToInstruction());
-            generatedConstructor.Body.Instructions.Add((targetType.IsValueType ? OpCodes.Unbox_Any : OpCodes.Castclass).ToInstruction(importedTargetType));
             generatedConstructor.Body.Instructions.Add(OpCodes.Stfld.ToInstruction(targetField));
             generatedConstructor.Body.Instructions.Add(OpCodes.Ret.ToInstruction());
             generatedType.Methods.Add(generatedConstructor);
 
             EmitIDuckTypeImplementation(moduleDef, generatedType, importedTargetType, targetField, importedMembers, targetType.IsValueType);
+            var generatedInterfaceProperties = new Dictionary<string, PropertyDef>(StringComparer.Ordinal);
 
             foreach (var binding in bindings!)
             {
@@ -818,12 +818,13 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
                 generatedMethod.Body.Instructions.Add(OpCodes.Ret.ToInstruction());
                 generatedType.Methods.Add(generatedMethod);
+                EnsureInterfacePropertyMetadata(moduleDef, generatedType, proxyMethod, generatedMethod, generatedInterfaceProperties);
             }
 
             var importedProxyTypeSig = moduleDef.Import(proxyType.ToTypeSig());
             var activatorMethod = new MethodDefUser(
                 $"CreateProxy_{mappingIndex:D4}",
-                MethodSig.CreateStatic(importedProxyTypeSig, moduleDef.CorLibTypes.Object),
+                MethodSig.CreateStatic(importedProxyTypeSig, importedTargetTypeSig),
                 MethodImplAttributes.IL | MethodImplAttributes.Managed,
                 MethodAttributes.Private | MethodAttributes.Static | MethodAttributes.HideBySig);
             activatorMethod.Body = new CilBody();
@@ -837,13 +838,25 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             activatorMethod.Body.Instructions.Add(OpCodes.Ret.ToInstruction());
             bootstrapType.Methods.Add(activatorMethod);
 
+            var registrationActivatorMethod = new MethodDefUser(
+                $"ActivateProxy_{mappingIndex:D4}",
+                MethodSig.CreateStatic(importedProxyTypeSig, moduleDef.CorLibTypes.Object),
+                MethodImplAttributes.IL | MethodImplAttributes.Managed,
+                MethodAttributes.Private | MethodAttributes.Static | MethodAttributes.HideBySig);
+            registrationActivatorMethod.Body = new CilBody();
+            registrationActivatorMethod.Body.Instructions.Add(OpCodes.Ldarg_0.ToInstruction());
+            registrationActivatorMethod.Body.Instructions.Add((targetType.IsValueType ? OpCodes.Unbox_Any : OpCodes.Castclass).ToInstruction(importedTargetType));
+            registrationActivatorMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(activatorMethod));
+            registrationActivatorMethod.Body.Instructions.Add(OpCodes.Ret.ToInstruction());
+            bootstrapType.Methods.Add(registrationActivatorMethod);
+
             initializeMethod.Body.Instructions.Add(OpCodes.Ldtoken.ToInstruction(moduleDef.Import(proxyType)));
             initializeMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(importedMembers.GetTypeFromHandleMethod));
             initializeMethod.Body.Instructions.Add(OpCodes.Ldtoken.ToInstruction(importedTargetType));
             initializeMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(importedMembers.GetTypeFromHandleMethod));
             initializeMethod.Body.Instructions.Add(OpCodes.Ldtoken.ToInstruction(generatedType));
             initializeMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(importedMembers.GetTypeFromHandleMethod));
-            initializeMethod.Body.Instructions.Add(OpCodes.Ldtoken.ToInstruction(activatorMethod));
+            initializeMethod.Body.Instructions.Add(OpCodes.Ldtoken.ToInstruction(registrationActivatorMethod));
             initializeMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(isReverseMapping ? importedMembers.RegisterAotReverseProxyMethod : importedMembers.RegisterAotProxyMethod));
 
             return DuckTypeAotMappingEmissionResult.Compatible(
@@ -935,11 +948,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 ?? throw new InvalidOperationException($"Unable to import closed generic proxy type '{mapping.ProxyTypeName}'.");
             var importedTargetType = moduleDef.Import(resolvedTargetRuntimeType) as ITypeDefOrRef
                 ?? throw new InvalidOperationException($"Unable to import closed generic target type '{mapping.TargetTypeName}'.");
+            var importedTargetTypeSig = moduleDef.Import(importedTargetType.ToTypeSig());
 
             var importedProxyTypeSig = moduleDef.Import(importedProxyType.ToTypeSig());
             var activatorMethod = new MethodDefUser(
                 $"CreateProxy_{mappingIndex:D4}",
-                MethodSig.CreateStatic(importedProxyTypeSig, moduleDef.CorLibTypes.Object),
+                MethodSig.CreateStatic(importedProxyTypeSig, importedTargetTypeSig),
                 MethodImplAttributes.IL | MethodImplAttributes.Managed,
                 MethodAttributes.Private | MethodAttributes.Static | MethodAttributes.HideBySig);
             activatorMethod.Body = new CilBody();
@@ -947,13 +961,25 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             activatorMethod.Body.Instructions.Add(OpCodes.Ret.ToInstruction());
             bootstrapType.Methods.Add(activatorMethod);
 
+            var registrationActivatorMethod = new MethodDefUser(
+                $"ActivateProxy_{mappingIndex:D4}",
+                MethodSig.CreateStatic(importedProxyTypeSig, moduleDef.CorLibTypes.Object),
+                MethodImplAttributes.IL | MethodImplAttributes.Managed,
+                MethodAttributes.Private | MethodAttributes.Static | MethodAttributes.HideBySig);
+            registrationActivatorMethod.Body = new CilBody();
+            registrationActivatorMethod.Body.Instructions.Add(OpCodes.Ldarg_0.ToInstruction());
+            registrationActivatorMethod.Body.Instructions.Add((resolvedTargetRuntimeType.IsValueType ? OpCodes.Unbox_Any : OpCodes.Castclass).ToInstruction(importedTargetType));
+            registrationActivatorMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(activatorMethod));
+            registrationActivatorMethod.Body.Instructions.Add(OpCodes.Ret.ToInstruction());
+            bootstrapType.Methods.Add(registrationActivatorMethod);
+
             initializeMethod.Body.Instructions.Add(OpCodes.Ldtoken.ToInstruction(importedProxyType));
             initializeMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(importedMembers.GetTypeFromHandleMethod));
             initializeMethod.Body.Instructions.Add(OpCodes.Ldtoken.ToInstruction(importedTargetType));
             initializeMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(importedMembers.GetTypeFromHandleMethod));
             initializeMethod.Body.Instructions.Add(OpCodes.Ldtoken.ToInstruction(importedProxyType));
             initializeMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(importedMembers.GetTypeFromHandleMethod));
-            initializeMethod.Body.Instructions.Add(OpCodes.Ldtoken.ToInstruction(activatorMethod));
+            initializeMethod.Body.Instructions.Add(OpCodes.Ldtoken.ToInstruction(registrationActivatorMethod));
             initializeMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(isReverseMapping ? importedMembers.RegisterAotReverseProxyMethod : importedMembers.RegisterAotProxyMethod));
 
             return DuckTypeAotMappingEmissionResult.Compatible(
@@ -983,8 +1009,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             // Branch: take this path when (targetRuntimeType.IsValueType) evaluates to true.
             if (targetRuntimeType.IsValueType)
             {
-                body.Instructions.Add(OpCodes.Unbox_Any.ToInstruction(importedTargetType));
-
                 // Branch: take this path when (proxyRuntimeType.IsValueType) evaluates to true.
                 if (proxyRuntimeType.IsValueType)
                 {
@@ -1003,7 +1027,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 return;
             }
 
-            body.Instructions.Add(OpCodes.Castclass.ToInstruction(importedTargetType));
             // Branch: take this path when (proxyRuntimeType.IsValueType) evaluates to true.
             if (proxyRuntimeType.IsValueType)
             {
@@ -1123,7 +1146,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
             var activatorMethod = new MethodDefUser(
                 $"CreateProxy_{mappingIndex:D4}",
-                MethodSig.CreateStatic(importedProxyTypeSig, moduleDef.CorLibTypes.Object),
+                MethodSig.CreateStatic(importedProxyTypeSig, importedTargetTypeSig),
                 MethodImplAttributes.IL | MethodImplAttributes.Managed,
                 MethodAttributes.Private | MethodAttributes.Static | MethodAttributes.HideBySig);
             activatorMethod.Body = new CilBody();
@@ -1135,7 +1158,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             activatorMethod.Body.Variables.Add(proxyLocal);
 
             activatorMethod.Body.Instructions.Add(OpCodes.Ldarg_0.ToInstruction());
-            activatorMethod.Body.Instructions.Add((targetType.IsValueType ? OpCodes.Unbox_Any : OpCodes.Castclass).ToInstruction(importedTargetType));
             activatorMethod.Body.Instructions.Add(OpCodes.Stloc.ToInstruction(targetLocal));
 
             activatorMethod.Body.Instructions.Add(OpCodes.Ldloca.ToInstruction(proxyLocal));
@@ -1204,13 +1226,25 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             activatorMethod.Body.Instructions.Add(OpCodes.Ret.ToInstruction());
             bootstrapType.Methods.Add(activatorMethod);
 
+            var registrationActivatorMethod = new MethodDefUser(
+                $"ActivateProxy_{mappingIndex:D4}",
+                MethodSig.CreateStatic(importedProxyTypeSig, moduleDef.CorLibTypes.Object),
+                MethodImplAttributes.IL | MethodImplAttributes.Managed,
+                MethodAttributes.Private | MethodAttributes.Static | MethodAttributes.HideBySig);
+            registrationActivatorMethod.Body = new CilBody();
+            registrationActivatorMethod.Body.Instructions.Add(OpCodes.Ldarg_0.ToInstruction());
+            registrationActivatorMethod.Body.Instructions.Add((targetType.IsValueType ? OpCodes.Unbox_Any : OpCodes.Castclass).ToInstruction(importedTargetType));
+            registrationActivatorMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(activatorMethod));
+            registrationActivatorMethod.Body.Instructions.Add(OpCodes.Ret.ToInstruction());
+            bootstrapType.Methods.Add(registrationActivatorMethod);
+
             initializeMethod.Body.Instructions.Add(OpCodes.Ldtoken.ToInstruction(importedProxyType));
             initializeMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(importedMembers.GetTypeFromHandleMethod));
             initializeMethod.Body.Instructions.Add(OpCodes.Ldtoken.ToInstruction(importedTargetType));
             initializeMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(importedMembers.GetTypeFromHandleMethod));
             initializeMethod.Body.Instructions.Add(OpCodes.Ldtoken.ToInstruction(importedProxyType));
             initializeMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(importedMembers.GetTypeFromHandleMethod));
-            initializeMethod.Body.Instructions.Add(OpCodes.Ldtoken.ToInstruction(activatorMethod));
+            initializeMethod.Body.Instructions.Add(OpCodes.Ldtoken.ToInstruction(registrationActivatorMethod));
             initializeMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(importedMembers.RegisterAotProxyMethod));
 
             return DuckTypeAotMappingEmissionResult.Compatible(
@@ -2126,6 +2160,277 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 toStringMethod.Body.Instructions.Add(OpCodes.Ret.ToInstruction());
                 generatedType.Methods.Add(toStringMethod);
             }
+        }
+
+        /// <summary>
+        /// Ensures interface property metadata for emitted accessor methods.
+        /// </summary>
+        /// <param name="moduleDef">The module definition.</param>
+        /// <param name="generatedType">The generated type.</param>
+        /// <param name="proxyMethod">The source proxy method.</param>
+        /// <param name="generatedMethod">The generated accessor method.</param>
+        /// <param name="generatedPropertiesByKey">The generated properties cache by key.</param>
+        private static void EnsureInterfacePropertyMetadata(
+            ModuleDef moduleDef,
+            TypeDef generatedType,
+            MethodDef proxyMethod,
+            MethodDef generatedMethod,
+            IDictionary<string, PropertyDef> generatedPropertiesByKey)
+        {
+            // Branch: take this path when (!proxyMethod.IsSpecialName) evaluates to true.
+            if (!proxyMethod.IsSpecialName)
+            {
+                return;
+            }
+
+            var accessorName = proxyMethod.Name;
+            var isGetter = accessorName.StartsWith("get_", StringComparison.Ordinal);
+            var isSetter = accessorName.StartsWith("set_", StringComparison.Ordinal);
+            // Branch: take this path when (!isGetter && !isSetter) evaluates to true.
+            if (!isGetter && !isSetter)
+            {
+                return;
+            }
+
+            var proxyProperty = FindPropertyFromAccessor(proxyMethod);
+            string propertyKey;
+            string propertyName;
+            PropertySig importedPropertySig;
+            // Branch: take this path when (proxyProperty is not null) evaluates to true.
+            if (proxyProperty is not null)
+            {
+                importedPropertySig = CreateImportedPropertySig(moduleDef, proxyProperty.PropertySig);
+                propertyName = proxyProperty.Name;
+                propertyKey = proxyProperty.FullName;
+            }
+            else
+            {
+                // Branch: fallback path when earlier branch conditions evaluate to false.
+                // Branch: take this path when (!TryInferPropertyMetadataFromAccessor(moduleDef, proxyMethod, out propertyName, out importedPropertySig, out propertyKey)) evaluates to true.
+                if (!TryInferPropertyMetadataFromAccessor(moduleDef, proxyMethod, out propertyName, out importedPropertySig, out propertyKey))
+                {
+                    return;
+                }
+            }
+
+            // Branch: take this path when (!generatedPropertiesByKey.TryGetValue(propertyKey, out var generatedProperty)) evaluates to true.
+            if (!generatedPropertiesByKey.TryGetValue(propertyKey, out var generatedProperty))
+            {
+                generatedProperty = new PropertyDefUser(propertyName, importedPropertySig);
+                generatedType.Properties.Add(generatedProperty);
+                generatedPropertiesByKey[propertyKey] = generatedProperty;
+            }
+
+            // Branch dispatch: select the execution path based on (isGetter).
+            if (isGetter)
+            {
+                generatedProperty.GetMethod ??= generatedMethod;
+            }
+            else
+            {
+                // Branch: fallback path when earlier branch conditions evaluate to false.
+                generatedProperty.SetMethod ??= generatedMethod;
+            }
+        }
+
+        /// <summary>
+        /// Finds the property that declares the specified accessor.
+        /// </summary>
+        /// <param name="accessorMethod">The accessor method definition.</param>
+        /// <returns>The declaring property when found; otherwise null.</returns>
+        private static PropertyDef? FindPropertyFromAccessor(MethodDef accessorMethod)
+        {
+            var declaringType = accessorMethod.DeclaringType;
+            // Branch: take this path when (declaringType is null) evaluates to true.
+            if (declaringType is null)
+            {
+                return null;
+            }
+
+            var visitedTypes = new HashSet<string>(StringComparer.Ordinal);
+            var typesToInspect = new Stack<TypeDef>();
+            typesToInspect.Push(declaringType);
+
+            while (typesToInspect.Count > 0)
+            {
+                var currentType = typesToInspect.Pop();
+                // Branch: take this path when (!visitedTypes.Add(currentType.FullName)) evaluates to true.
+                if (!visitedTypes.Add(currentType.FullName))
+                {
+                    continue;
+                }
+
+                foreach (var property in currentType.Properties)
+                {
+                    // Branch: take this path when (AccessorMatches(property.GetMethod, accessorMethod) || AccessorMatches(property.SetMethod, accessorMethod)) evaluates to true.
+                    if (AccessorMatches(property.GetMethod, accessorMethod) || AccessorMatches(property.SetMethod, accessorMethod))
+                    {
+                        return property;
+                    }
+                }
+
+                var baseType = currentType.BaseType?.ResolveTypeDef();
+                // Branch: take this path when (baseType is not null) evaluates to true.
+                if (baseType is not null)
+                {
+                    typesToInspect.Push(baseType);
+                }
+
+                foreach (var interfaceImpl in currentType.Interfaces)
+                {
+                    var resolvedInterface = interfaceImpl.Interface.ResolveTypeDef();
+                    // Branch: take this path when (resolvedInterface is not null) evaluates to true.
+                    if (resolvedInterface is not null)
+                    {
+                        typesToInspect.Push(resolvedInterface);
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Determines whether a candidate accessor matches a generated accessor source method.
+        /// </summary>
+        /// <param name="candidate">The candidate accessor method.</param>
+        /// <param name="accessorMethod">The source accessor method.</param>
+        /// <returns>true when accessors match; otherwise false.</returns>
+        private static bool AccessorMatches(MethodDef? candidate, MethodDef accessorMethod)
+        {
+            // Branch: take this path when (candidate is null) evaluates to true.
+            if (candidate is null)
+            {
+                return false;
+            }
+
+            // Branch: take this path when (MethodsMatch(candidate, accessorMethod)) evaluates to true.
+            if (MethodsMatch(candidate, accessorMethod))
+            {
+                return true;
+            }
+
+            // Branch: take this path when (!string.Equals(candidate.Name, accessorMethod.Name, StringComparison.Ordinal)) evaluates to true.
+            if (!string.Equals(candidate.Name, accessorMethod.Name, StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            return string.Equals(candidate.MethodSig.ToString(), accessorMethod.MethodSig.ToString(), StringComparison.Ordinal);
+        }
+
+        /// <summary>
+        /// Attempts to infer property metadata directly from an accessor signature.
+        /// </summary>
+        /// <param name="moduleDef">The destination module definition.</param>
+        /// <param name="accessorMethod">The accessor method.</param>
+        /// <param name="propertyName">The inferred property name.</param>
+        /// <param name="propertySig">The inferred property signature.</param>
+        /// <param name="propertyKey">The inferred property key.</param>
+        /// <returns>true when property metadata can be inferred; otherwise false.</returns>
+        private static bool TryInferPropertyMetadataFromAccessor(
+            ModuleDef moduleDef,
+            MethodDef accessorMethod,
+            out string propertyName,
+            out PropertySig propertySig,
+            out string propertyKey)
+        {
+            propertyName = string.Empty;
+            propertySig = null!;
+            propertyKey = string.Empty;
+
+            var accessorName = accessorMethod.Name;
+            // Branch: take this path when (accessorName.StartsWith("get_", StringComparison.Ordinal)) evaluates to true.
+            if (accessorName.StartsWith("get_", StringComparison.Ordinal))
+            {
+                // Branch: take this path when (accessorMethod.MethodSig.RetType.ElementType == ElementType.Void) evaluates to true.
+                if (accessorMethod.MethodSig.RetType.ElementType == ElementType.Void)
+                {
+                    return false;
+                }
+
+                propertyName = accessorName.Substring(4);
+                var importedReturnType = moduleDef.Import(accessorMethod.MethodSig.RetType);
+                var importedParameterTypes = accessorMethod.MethodSig.Params.Select(moduleDef.Import).ToArray();
+                propertySig = new PropertySig(hasThis: true, importedReturnType, importedParameterTypes);
+                propertyKey = $"{accessorMethod.DeclaringType?.FullName ?? string.Empty}::{propertyName}::{propertySig}";
+                return true;
+            }
+
+            // Branch: take this path when (!accessorName.StartsWith("set_", StringComparison.Ordinal)) evaluates to true.
+            if (!accessorName.StartsWith("set_", StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            // Branch: take this path when (accessorMethod.MethodSig.RetType.ElementType != ElementType.Void || accessorMethod.MethodSig.Params.Count == 0) evaluates to true.
+            if (accessorMethod.MethodSig.RetType.ElementType != ElementType.Void || accessorMethod.MethodSig.Params.Count == 0)
+            {
+                return false;
+            }
+
+            propertyName = accessorName.Substring(4);
+            var valueType = moduleDef.Import(accessorMethod.MethodSig.Params[accessorMethod.MethodSig.Params.Count - 1]);
+            var importedIndexParameters = accessorMethod.MethodSig.Params
+                                            .Take(accessorMethod.MethodSig.Params.Count - 1)
+                                            .Select(moduleDef.Import)
+                                            .ToArray();
+            propertySig = new PropertySig(hasThis: true, valueType, importedIndexParameters);
+            propertyKey = $"{accessorMethod.DeclaringType?.FullName ?? string.Empty}::{propertyName}::{propertySig}";
+            return true;
+        }
+
+        /// <summary>
+        /// Determines whether the two method definitions represent the same accessor.
+        /// </summary>
+        /// <param name="left">The left method definition.</param>
+        /// <param name="right">The right method definition.</param>
+        /// <returns>true when both method definitions match; otherwise false.</returns>
+        private static bool MethodsMatch(MethodDef? left, MethodDef right)
+        {
+            // Branch: take this path when (left is null) evaluates to true.
+            if (left is null)
+            {
+                return false;
+            }
+
+            // Branch: take this path when (ReferenceEquals(left, right)) evaluates to true.
+            if (ReferenceEquals(left, right))
+            {
+                return true;
+            }
+
+            // Branch: take this path when (left.MDToken.Raw != 0 && left.MDToken.Raw == right.MDToken.Raw) evaluates to true.
+            if (left.MDToken.Raw != 0 && left.MDToken.Raw == right.MDToken.Raw)
+            {
+                return true;
+            }
+
+            return string.Equals(left.FullName, right.FullName, StringComparison.Ordinal);
+        }
+
+        /// <summary>
+        /// Creates an imported property signature for the generated module.
+        /// </summary>
+        /// <param name="moduleDef">The destination module definition.</param>
+        /// <param name="sourcePropertySig">The source property signature.</param>
+        /// <returns>The imported property signature.</returns>
+        private static PropertySig CreateImportedPropertySig(ModuleDef moduleDef, PropertySig sourcePropertySig)
+        {
+            var importedReturnType = moduleDef.Import(sourcePropertySig.RetType);
+            // Branch: take this path when (sourcePropertySig.Params.Count == 0) evaluates to true.
+            if (sourcePropertySig.Params.Count == 0)
+            {
+                return new PropertySig(hasThis: sourcePropertySig.HasThis, importedReturnType);
+            }
+
+            var importedParameterTypes = new TypeSig[sourcePropertySig.Params.Count];
+            for (var index = 0; index < sourcePropertySig.Params.Count; index++)
+            {
+                importedParameterTypes[index] = moduleDef.Import(sourcePropertySig.Params[index]);
+            }
+
+            return new PropertySig(hasThis: sourcePropertySig.HasThis, importedReturnType, importedParameterTypes);
         }
 
         /// <summary>
