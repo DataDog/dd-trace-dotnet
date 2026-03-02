@@ -1,4 +1,4 @@
-﻿// <copyright file="SpanCodeOrigin.cs" company="Datadog">
+// <copyright file="SpanCodeOrigin.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -8,12 +8,14 @@
 using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Globalization;
 using System.Reflection;
 using Datadog.Trace.Debugger.Caching;
 using Datadog.Trace.Debugger.Symbols;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Pdb;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Debugger.SpanCodeOrigin
 {
@@ -106,20 +108,57 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
                     return;
                 }
 
+                var sp = GetPdbInfo(assembly, method);
+
                 // Add code origin tags to entry span
                 // Adds 4 tags always (type, index, method, typename) + 3 tags if PDB available (file, line, column)
                 // Size: ~210-300 bytes without PDB, ~250-500 bytes with PDB
-                span.Tags.SetTag(_tags.Type, "entry");
-                span.Tags.SetTag(_tags.Index[0], "0");
-                span.Tags.SetTag(_tags.Method[0], methodName);
-                span.Tags.SetTag(_tags.TypeName[0], typeFullName);
-
-                var sp = GetPdbInfo(assembly, method!);
-                if (sp != null)
+                if (span.Tags is TagsList tagsList)
                 {
-                    span.Tags.SetTag(_tags.File[0], sp.Value.URL);
-                    span.Tags.SetTag(_tags.Line[0], sp.Value.StartLine.ToString());
-                    span.Tags.SetTag(_tags.Column[0], sp.Value.StartColumn.ToString());
+                    if (sp is { } cached)
+                    {
+                        tagsList.SetTags(
+                            _tags.Type,
+                            "entry",
+                            _tags.Index[0],
+                            "0",
+                            _tags.Method[0],
+                            methodName,
+                            _tags.TypeName[0],
+                            typeFullName,
+                            _tags.File[0],
+                            cached.Url,
+                            _tags.Line[0],
+                            cached.Line,
+                            _tags.Column[0],
+                            cached.Column);
+                    }
+                    else
+                    {
+                        tagsList.SetTags(
+                            _tags.Type,
+                            "entry",
+                            _tags.Index[0],
+                            "0",
+                            _tags.Method[0],
+                            methodName,
+                            _tags.TypeName[0],
+                            typeFullName);
+                    }
+                }
+                else
+                {
+                    span.Tags.SetTag(_tags.Type, "entry");
+                    span.Tags.SetTag(_tags.Index[0], "0");
+                    span.Tags.SetTag(_tags.Method[0], methodName);
+                    span.Tags.SetTag(_tags.TypeName[0], typeFullName);
+
+                    if (sp is { } cached)
+                    {
+                        span.Tags.SetTag(_tags.File[0], cached.Url);
+                        span.Tags.SetTag(_tags.Line[0], cached.Line);
+                        span.Tags.SetTag(_tags.Column[0], cached.Column);
+                    }
                 }
             }
             catch (Exception ex)
@@ -128,7 +167,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
             }
         }
 
-        private DatadogMetadataReader.DatadogSequencePoint? GetPdbInfo(Assembly assembly, MethodInfo method)
+        private CachedSequencePoint? GetPdbInfo(Assembly assembly, MethodInfo method)
         {
             // Design Decision: Read ALL endpoint sequence points upfront per assembly
             //
@@ -161,14 +200,36 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
 
                         // Build dictionary of sequence points for ALL detected endpoint methods in one pass
                         // This avoids reopening the PDB file on subsequent endpoint calls
-                        var builder = ImmutableDictionary.CreateBuilder<int, DatadogMetadataReader.DatadogSequencePoint?>();
+                        var builder = ImmutableDictionary.CreateBuilder<int, CachedSequencePoint?>();
 
                         foreach (var token in endpointMethodTokens)
                         {
                             try
                             {
                                 var sequencePoint = reader.GetMethodSourceLocation(token);
-                                builder.Add(token, sequencePoint);
+                                if (sequencePoint is { } sp)
+                                {
+                                    // If we don't have a source URL, the sequence point isn't useful for code origin tags
+                                    // (line/column without a file doesn't provide actionable info).
+                                    if (StringUtil.IsNullOrEmpty(sp.URL))
+                                    {
+                                        builder.Add(token, null);
+                                        continue;
+                                    }
+
+                                    // Precompute string representations once during per-assembly cache population (stored per endpoint token)
+                                    // to avoid per-span allocations (ToString()) for line/column.
+                                    builder.Add(
+                                        token,
+                                        new CachedSequencePoint(
+                                            sp.URL,
+                                            sp.StartLine.ToString(CultureInfo.InvariantCulture),
+                                            sp.StartColumn.ToString(CultureInfo.InvariantCulture)));
+                                }
+                                else
+                                {
+                                    builder.Add(token, null);
+                                }
                             }
                             catch (Exception ex)
                             {
@@ -187,7 +248,18 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
                     }
                 });
 
-            return pdbInfo?.MethodSequencePoints.GetValueOrDefault<DatadogMetadataReader.DatadogSequencePoint?>(method.MetadataToken);
+            int metadataToken;
+            try
+            {
+                metadataToken = method.MetadataToken;
+            }
+            catch
+            {
+                // Some MethodInfo implementations do not support MetadataToken.
+                return null;
+            }
+
+            return pdbInfo?.MethodSequencePoints.GetValueOrDefault<CachedSequencePoint?>(metadataToken);
         }
 
         private void AddExitSpanTags(Span span)
@@ -290,9 +362,11 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
 
         private readonly record struct FrameInfo(int FrameIndex, StackFrame Frame);
 
-        private sealed class AssemblyPdbInfo(ImmutableDictionary<int, DatadogMetadataReader.DatadogSequencePoint?> sequencePoints)
+        private readonly record struct CachedSequencePoint(string Url, string Line, string Column);
+
+        private sealed class AssemblyPdbInfo(ImmutableDictionary<int, CachedSequencePoint?> sequencePoints)
         {
-            public ImmutableDictionary<int, DatadogMetadataReader.DatadogSequencePoint?> MethodSequencePoints { get; } = sequencePoints;
+            public ImmutableDictionary<int, CachedSequencePoint?> MethodSequencePoints { get; } = sequencePoints;
         }
 
         /// <summary>
