@@ -352,11 +352,6 @@ public class CreatedumpTests : ConsoleTestHelper
         SkipOn.Platform(SkipOn.PlatformValue.MacOs);
         SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Windows, SkipOn.ArchitectureValue.X86);
 
-        if (Utils.IsAlpine())
-        {
-            throw new SkipException("Signal unwinding does not work correctly on Alpine");
-        }
-
         using var reportFile = new TemporaryFile();
 
         using var helper = await StartConsoleWithArgs(

@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Diagnostics;
 using FluentAssertions;
 using Xunit;
@@ -12,13 +13,14 @@ namespace Datadog.Trace.Tools.dd_dotnet.Tests;
 public class CreatedumpTests
 {
     [SkippableTheory]
-    [InlineData("invalid", false, 0, null, null)]
-    [InlineData("--crashthread 5 --blabla 100 --signal 3 --aaaaaa", true, 100, 3, 5)]
-    [InlineData("--crashthread 5 --blabla 99999 --signal 3 --aaaaaa 99998", false, 0, 3, 5)] // Two potential PIDs, that probably don't exist
-    [InlineData("10", true, 10, null, null)]
-    public void ParseCommandLine(string commandLine, bool expectedResult, int expectedPid, int? expectedSignal, int? expectedCrashThread)
+    [InlineData("invalid", false, 0, null, null, null)]
+    [InlineData("--crashthread 5 --blabla 100 --signal 3 --aaaaaa --threadcontext 1234567890", true, 100, 3, 5, 1234567890)]
+    [InlineData("--crashthread 5 --blabla 100 --signal 3 --aaaaaa --threadcontext aabbccddeeff", true, 100, 3, 5, null)]
+    [InlineData("--crashthread 5 --blabla 99999 --signal 3 --aaaaaa 99998 --threadcontext 123456aabb", false, 0, 3, 5, 0x123456aabb)] // Two potential PIDs, that probably don't exist
+    [InlineData("10", true, 10, null, null, null)]
+    public void ParseCommandLine(string commandLine, bool expectedResult, int expectedPid, int? expectedSignal, int? expectedCrashThread, IntPtr? expectedThreadContextAddress)
     {
-        var result = CreatedumpCommand.ParseArguments(commandLine.Split(' '), out var pid, out var signal, out var crashThread);
+        var result = CreatedumpCommand.ParseArguments(commandLine.Split(' '), out var pid, out var signal, out var crashThread, out var threadContextAddress);
 
         result.Should().Be(expectedResult);
 
@@ -27,6 +29,7 @@ public class CreatedumpTests
             pid.Should().Be(expectedPid);
             signal.Should().Be(expectedSignal);
             crashThread.Should().Be(expectedCrashThread);
+            threadContextAddress.Should().Be(expectedThreadContextAddress);
         }
     }
 
@@ -37,11 +40,12 @@ public class CreatedumpTests
         var currentPid = Process.GetCurrentProcess().Id;
         var commandLine = $"999999 999998 {currentPid} 999997";
 
-        var result = CreatedumpCommand.ParseArguments(commandLine.Split(' '), out var pid, out var signal, out var crashThread);
+        var result = CreatedumpCommand.ParseArguments(commandLine.Split(' '), out var pid, out var signal, out var crashThread, out var threadContextAddress);
 
         result.Should().Be(true);
         pid.Should().Be(currentPid);
         signal.Should().BeNull();
         crashThread.Should().BeNull();
+        threadContextAddress.Should().BeNull();
     }
 }

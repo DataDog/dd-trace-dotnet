@@ -216,7 +216,7 @@ int32_t CrashReporting::SetSignalInfo(int32_t signal, const char* description)
     return 0;
 }
 
-int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, ResolveManagedCallstack resolveCallback, void* context, bool* isSuspicious)
+int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, void* crashingThreadContext, ResolveManagedCallstack resolveCallback, void* context, bool* isSuspicious)
 {
     auto threads = GetThreads();
 
@@ -226,16 +226,17 @@ int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, ResolveManagedCa
 
     for (auto const& [threadId, threadName] : threads)
     {
-        auto frames = GetThreadFrames(threadId, resolveCallback, context);
+        auto currentIsCrashingThread = threadId == crashingThreadId;
+        auto threadContext = currentIsCrashingThread ? crashingThreadContext : nullptr;
+        auto frames = GetThreadFrames(threadId, threadContext, resolveCallback, context);
 
         auto [stackTrace, succeeded] = ExtractResult(ddog_crasht_StackTrace_new());
 
         if (!succeeded)
         {
-            return 1;
+            return 12;
         }
 
-        auto currentIsCrashingThread = threadId == crashingThreadId;
         // GetThreadFrames returns the frames in reverse order, so we need to iterate in reverse
         for (auto it = frames.rbegin(); it != frames.rend(); it++)
         {
@@ -243,7 +244,7 @@ int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, ResolveManagedCa
 
             if (!succeeded)
             {
-                return 1;
+                return 13;
             }
 
             auto const& currentFrame = *it;
@@ -305,7 +306,7 @@ int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, ResolveManagedCa
 
     if (successfulThreads != threads.size())
     {
-        return 1;
+        return 14;
     }
 
     return 0;
