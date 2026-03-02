@@ -51,7 +51,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 .Select((mapping, index) =>
                 {
                     var hasResult = emissionResult.MappingResultsByKey.TryGetValue(mapping.Key, out var mappingResult);
-                    var effectiveStatus = ResolveEffectiveCompatibilityStatus(mapping, hasResult ? mappingResult : null);
+                    var effectiveStatus = ResolveEffectiveCompatibilityStatus(hasResult ? mappingResult : null);
                     return new DuckTypeAotCompatibilityMapping
                     {
                         Id = mapping.ScenarioId ?? $"MAP-{index + 1:D4}",
@@ -64,7 +64,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                         Source = mapping.Source.ToString().ToLowerInvariant(),
                         Status = effectiveStatus,
                         DiagnosticCode = hasResult ? mappingResult!.DiagnosticCode : null,
-                        Details = BuildEffectiveCompatibilityDetails(mapping, hasResult ? mappingResult : null, effectiveStatus),
+                        Details = BuildEffectiveCompatibilityDetails(hasResult ? mappingResult : null),
                         GeneratedProxyAssembly = hasResult ? mappingResult!.GeneratedProxyAssemblyName : null,
                         GeneratedProxyType = hasResult ? mappingResult!.GeneratedProxyTypeName : null
                     };
@@ -335,7 +335,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     continue;
                 }
 
-                var effectiveStatus = ResolveEffectiveCompatibilityStatus(mapping, mappingResult);
+                var effectiveStatus = ResolveEffectiveCompatibilityStatus(mappingResult);
                 // Branch: take this path when (!string.Equals(effectiveStatus, DuckTypeAotCompatibilityStatuses.Compatible, StringComparison.Ordinal)) evaluates to true.
                 if (!string.Equals(effectiveStatus, DuckTypeAotCompatibilityStatuses.Compatible, StringComparison.Ordinal))
                 {
@@ -383,10 +383,9 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <summary>
         /// Resolves resolve effective compatibility status.
         /// </summary>
-        /// <param name="mapping">The mapping value.</param>
         /// <param name="mappingResult">The mapping result value.</param>
         /// <returns>The resulting string value.</returns>
-        private static string ResolveEffectiveCompatibilityStatus(DuckTypeAotMapping mapping, DuckTypeAotMappingEmissionResult? mappingResult)
+        private static string ResolveEffectiveCompatibilityStatus(DuckTypeAotMappingEmissionResult? mappingResult)
         {
             // Branch: take this path when (mappingResult is null) evaluates to true.
             if (mappingResult is null)
@@ -394,55 +393,17 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 return DuckTypeAotCompatibilityStatuses.PendingProxyEmission;
             }
 
-            // Branch: take this path when (mapping.ParityExpectation != DuckTypeAotParityExpectation.CannotCreate) evaluates to true.
-            if (mapping.ParityExpectation != DuckTypeAotParityExpectation.CannotCreate)
-            {
-                return mappingResult.Status;
-            }
-
-            // Branch: take this path when (string.Equals(mappingResult.Status, DuckTypeAotCompatibilityStatuses.Compatible, StringComparison.Ordinal)) evaluates to true.
-            if (string.Equals(mappingResult.Status, DuckTypeAotCompatibilityStatuses.Compatible, StringComparison.Ordinal))
-            {
-                return DuckTypeAotCompatibilityStatuses.ParityExpectationMismatch;
-            }
-
-            return DuckTypeAotCompatibilityStatuses.Compatible;
+            return mappingResult.Status;
         }
 
         /// <summary>
         /// Builds build effective compatibility details.
         /// </summary>
-        /// <param name="mapping">The mapping value.</param>
         /// <param name="mappingResult">The mapping result value.</param>
-        /// <param name="effectiveStatus">The effective status value.</param>
         /// <returns>The resulting string value.</returns>
-        private static string? BuildEffectiveCompatibilityDetails(
-            DuckTypeAotMapping mapping,
-            DuckTypeAotMappingEmissionResult? mappingResult,
-            string effectiveStatus)
+        private static string? BuildEffectiveCompatibilityDetails(DuckTypeAotMappingEmissionResult? mappingResult)
         {
-            var detail = mappingResult?.Detail;
-            // Branch: take this path when (mappingResult is null) evaluates to true.
-            if (mappingResult is null)
-            {
-                return detail;
-            }
-
-            // Branch: take this path when (mapping.ParityExpectation != DuckTypeAotParityExpectation.CannotCreate) evaluates to true.
-            if (mapping.ParityExpectation != DuckTypeAotParityExpectation.CannotCreate)
-            {
-                return detail;
-            }
-
-            // Branch: take this path when (string.Equals(effectiveStatus, DuckTypeAotCompatibilityStatuses.ParityExpectationMismatch, StringComparison.Ordinal)) evaluates to true.
-            if (string.Equals(effectiveStatus, DuckTypeAotCompatibilityStatuses.ParityExpectationMismatch, StringComparison.Ordinal))
-            {
-                const string message = "Parity expectation requires cannot-create behavior, but the emitter produced a creatable mapping.";
-                return string.IsNullOrWhiteSpace(detail) ? message : $"{message} {detail}";
-            }
-
-            var parityMatchMessage = $"Parity expectation requires cannot-create behavior; mapped emission status '{mappingResult.Status}' is treated as compatibility-preserving parity.";
-            return string.IsNullOrWhiteSpace(detail) ? parityMatchMessage : $"{parityMatchMessage} {detail}";
+            return mappingResult?.Detail;
         }
 
         /// <summary>
