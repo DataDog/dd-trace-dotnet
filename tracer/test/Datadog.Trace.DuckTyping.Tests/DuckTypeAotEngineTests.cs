@@ -285,7 +285,7 @@ namespace Datadog.Trace.DuckTyping.Tests
                 typeof(ForwardGeneratedProxy),
                 activatorMethod!.MethodHandle);
 
-            register.Should().Throw<ArgumentException>().WithMessage("*must declare exactly one 'object' parameter*");
+            register.Should().Throw<ArgumentException>().WithMessage("*must declare exactly one parameter*");
         }
 
         [Fact]
@@ -687,9 +687,9 @@ namespace Datadog.Trace.DuckTyping.Tests
             public string Value => _target.Value;
         }
 
-        private static IForwardProxy CreateForwardProxyWithMethodHandle(object? instance)
+        private static IForwardProxy CreateForwardProxyWithMethodHandle(ForwardTarget instance)
         {
-            return new ForwardGeneratedProxy((ForwardTarget)instance!);
+            return new ForwardGeneratedProxy(instance);
         }
 
         private static IForwardProxy CreateForwardProxyWithMethodHandleAndExtraParameter(object? instance, int ignored)
@@ -697,9 +697,9 @@ namespace Datadog.Trace.DuckTyping.Tests
             return new ForwardGeneratedProxy((ForwardTarget)instance!);
         }
 
-        private static IReverseProxy CreateReverseProxyWithMethodHandle(object? instance)
+        private static IReverseProxy CreateReverseProxyWithMethodHandle(ReverseTarget instance)
         {
-            return new ReverseGeneratedProxy((ReverseTarget)instance!);
+            return new ReverseGeneratedProxy(instance);
         }
 
         private static object CreateSingleRegistryConflictProxyInstance(object? instance)
