@@ -6,7 +6,10 @@
 #nullable enable
 
 using System;
+using System.Linq;
 using System.Reflection;
+using Datadog.Trace.Activity;
+using Datadog.Trace.Activity.DuckTypes;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.CallTarget;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.DuckTypes;
 using Datadog.Trace.Configuration;
@@ -14,6 +17,7 @@ using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
 {
@@ -536,6 +540,149 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
             catch (Exception ex)
             {
                 Log.Error(ex, "MassTransitCommon.CloseScope: Error closing scope for {OperationType}", operationType);
+            }
+        }
+
+        /// <summary>
+        /// Gets the ActivityKind for MassTransit operations based on the operation name.
+        /// </summary>
+        internal static ActivityKind GetActivityKind(IActivity5 activity)
+        {
+            var operationName = activity.OperationName;
+
+            // Check messaging.operation tag which MassTransit sets
+            var messagingOperation = activity.Tags.FirstOrDefault(kv => kv.Key == "messaging.operation").Value;
+
+            if (!StringUtil.IsNullOrWhiteSpace(messagingOperation))
+            {
+                return messagingOperation switch
+                {
+                    "send" => ActivityKind.Producer,
+                    "receive" => ActivityKind.Consumer,
+                    "process" => ActivityKind.Consumer,
+                    _ => activity.Kind
+                };
+            }
+
+            // Fallback to operation name analysis (case-insensitive using ToLowerInvariant for .NET Framework compatibility)
+            if (operationName is not null)
+            {
+                var lowerOperationName = operationName.ToLowerInvariant();
+
+                if (lowerOperationName.Contains("send"))
+                {
+                    return ActivityKind.Producer;
+                }
+
+                if (lowerOperationName.Contains("receive") ||
+                    lowerOperationName.Contains("consume") ||
+                    lowerOperationName.Contains("handle") ||
+                    lowerOperationName.Contains("process") ||
+                    lowerOperationName.Contains("saga") ||
+                    lowerOperationName.Contains("activity"))
+                {
+                    return ActivityKind.Consumer;
+                }
+            }
+
+            return activity.Kind;
+        }
+
+        /// <summary>
+        /// Sets the ActivityKind for MassTransit operations.
+        /// </summary>
+        internal static void SetActivityKind(IActivity5 activity)
+        {
+            ActivityListener.SetActivityKind(activity, GetActivityKind(activity));
+        }
+
+        /// <summary>
+        /// Creates a resource name for MassTransit operations based on destination and operation.
+        /// </summary>
+        internal static string CreateResourceName(string? destination, string? operation)
+        {
+            var cleanDestination = MassTransitIntegration.ExtractDestinationName(destination);
+            if (StringUtil.IsNullOrWhiteSpace(cleanDestination))
+            {
+                cleanDestination = "unknown";
+            }
+
+            if (StringUtil.IsNullOrWhiteSpace(operation))
+            {
+                return cleanDestination;
+            }
+
+            return $"{cleanDestination} {operation}";
+        }
+
+        /// <summary>
+        /// Enhances MassTransit Activity metadata by updating DisplayName (resource name) and OperationName.
+        /// This is called from ActivityHandler (MassTransit 8.x) and DiagnosticObserver (MassTransit 7.x).
+        /// Supports both OTEL semantic convention tags (MassTransit 8.x) and legacy tags (MassTransit 7.x).
+        /// </summary>
+        internal static void EnhanceActivityMetadata(IActivity5 activity)
+        {
+            // Add component tag to identify this as a MassTransit span
+            activity.AddTag(Tags.InstrumentationName, "masstransit");
+
+            // Preserve the original operation name
+            var originalOperationName = activity.OperationName ?? string.Empty;
+            if (!StringUtil.IsNullOrWhiteSpace(originalOperationName))
+            {
+                activity.AddTag("operation.name", originalOperationName);
+            }
+
+            // Try MassTransit 8.x OTEL semantic convention tag names first
+            var destination = activity.Tags.FirstOrDefault(kv => kv.Key == "messaging.destination.name").Value;
+            var operation = activity.Tags.FirstOrDefault(kv => kv.Key == "messaging.operation").Value;
+            var messagingSystem = activity.Tags.FirstOrDefault(kv => kv.Key == "messaging.system").Value;
+
+            // Fallback to MassTransit 7.x tag names if OTEL tags not found
+            if (StringUtil.IsNullOrWhiteSpace(destination))
+            {
+                var peerAddress = activity.Tags.FirstOrDefault(kv => kv.Key == "peer.address").Value;
+                destination = peerAddress?.TrimStart('/');
+            }
+
+            if (StringUtil.IsNullOrWhiteSpace(operation))
+            {
+                var peerService = activity.Tags.FirstOrDefault(kv => kv.Key == "peer.service").Value;
+                operation = peerService;
+            }
+
+            if (StringUtil.IsNullOrWhiteSpace(messagingSystem))
+            {
+                var destinationAddress = activity.Tags.FirstOrDefault(kv => kv.Key == "destination-address").Value;
+                messagingSystem = DetermineMessagingSystem(destinationAddress);
+            }
+
+            // Add messaging.operation tag if not already present
+            if (!StringUtil.IsNullOrWhiteSpace(operation))
+            {
+                activity.AddTag(Tags.MessagingOperation, operation!.ToLowerInvariant());
+            }
+
+            // Add messaging.system tag if not already present
+            if (!StringUtil.IsNullOrWhiteSpace(messagingSystem))
+            {
+                activity.AddTag(Tags.MessagingSystem, messagingSystem!);
+            }
+
+            // Update DisplayName (resource name)
+            if (!StringUtil.IsNullOrWhiteSpace(destination))
+            {
+                var resourceName = CreateResourceName(destination, operation);
+
+                // Update DisplayName for resource name
+                activity.DisplayName = resourceName;
+
+                Log.Debug(
+                    "MassTransitCommon.EnhanceActivityMetadata: Updated DisplayName to '{DisplayName}'",
+                    activity.DisplayName);
+            }
+            else
+            {
+                Log.Debug("Unable to update MassTransit Activity's resource name: destination not found in tags.");
             }
         }
     }

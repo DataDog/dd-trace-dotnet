@@ -98,11 +98,17 @@ namespace Datadog.Trace.DiagnosticListeners
                         OnStop("Send");
                         break;
 
-                    // NOTE: We intentionally do NOT instrument Receive events.
-                    // Receive fires at the transport level before message deserialization,
-                    // which would create duplicate spans alongside Consume events.
+                    // Receive events (transport level - parent of Consume/Handle)
+                    // NOTE: Receive creates a parent span that Consume/Handle spans nest under.
+                    // This provides visibility into the full message pipeline from transport reception to processing.
+                    case "MassTransit.Transport.Receive.Start":
+                        OnConsumeStart(arg, "Receive");
+                        break;
+                    case "MassTransit.Transport.Receive.Stop":
+                        OnStop("Receive");
+                        break;
 
-                    // Consumer Consume events (consumer spans)
+                    // Consumer Consume events (consumer spans - child of Receive)
                     case "MassTransit.Consumer.Consume.Start":
                         OnConsumeStart(arg, "Consume");
                         break;
