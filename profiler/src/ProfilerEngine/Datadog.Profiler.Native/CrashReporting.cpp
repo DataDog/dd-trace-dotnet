@@ -234,7 +234,7 @@ int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, void* crashingTh
 
         if (!succeeded)
         {
-            return 1;
+            return 12;
         }
 
         // GetThreadFrames returns the frames in reverse order, so we need to iterate in reverse
@@ -244,7 +244,7 @@ int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, void* crashingTh
 
             if (!succeeded)
             {
-                return 1;
+                return 13;
             }
 
             auto const& currentFrame = *it;
@@ -306,7 +306,7 @@ int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, void* crashingTh
 
     if (successfulThreads != threads.size())
     {
-        return 1;
+        return 14;
     }
 
     return 0;
