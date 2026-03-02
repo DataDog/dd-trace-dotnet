@@ -135,10 +135,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 errors.Add("At least one --proxy-assembly must be provided.");
             }
 
-            // Branch: take this path when (options.TargetAssemblies.Count == 0 && options.TargetFolders.Count == 0) evaluates to true.
-            if (options.TargetAssemblies.Count == 0 && options.TargetFolders.Count == 0)
+            // Keep processor compatibility for direct API callers that still pass explicit target assemblies.
+            // The CLI now only surfaces --target-folder, but tests and programmatic usage may still provide TargetAssemblies.
+            if (options.TargetFolders.Count == 0 && options.TargetAssemblies.Count == 0)
             {
-                errors.Add("At least one --target-assembly or --target-folder must be provided.");
+                errors.Add("At least one target resolution source must be provided (target folder).");
             }
 
             // Branch: take this path when (options.TargetFilters.Count == 0) evaluates to true.
@@ -148,7 +149,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
 
             ValidateFileInputs(options.ProxyAssemblies, "--proxy-assembly", errors);
-            ValidateFileInputs(options.TargetAssemblies, "--target-assembly", errors);
+            ValidateFileInputs(options.TargetAssemblies, "target assembly", errors);
             ValidateDirectoryInputs(options.TargetFolders, "--target-folder", errors);
             if (string.IsNullOrWhiteSpace(options.MapFile))
             {
