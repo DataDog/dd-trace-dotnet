@@ -48,8 +48,19 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     return new DuckTypeAotMapFileParseResult(Array.Empty<DuckTypeAotMapping>(), excludedKeys, errors);
                 }
 
+                if (!string.IsNullOrWhiteSpace(parsedFile.SchemaVersion) &&
+                    !string.Equals(parsedFile.SchemaVersion, "1", StringComparison.Ordinal))
+                {
+                    errors.Add($"--map-file schemaVersion must be '1'. Actual value: '{parsedFile.SchemaVersion}'.");
+                }
+
+                if (parsedFile.Mappings is null)
+                {
+                    errors.Add($"--map-file must contain a 'mappings' array: {path}");
+                    return new DuckTypeAotMapFileParseResult(Array.Empty<DuckTypeAotMapping>(), excludedKeys, errors);
+                }
+
                 ParseEntries(parsedFile.Mappings, path, mappings, excludedKeys, errors);
-                ParseEntries(parsedFile.Excludes, path, mappings, excludedKeys, errors, forceExclude: true);
             }
             catch (Exception ex)
             {
@@ -74,8 +85,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             string path,
             IDictionary<string, DuckTypeAotMapping> mappings,
             ISet<string> excludedKeys,
-            ICollection<string> errors,
-            bool forceExclude = false)
+            ICollection<string> errors)
         {
             // Branch: take this path when (entries is null) evaluates to true.
             if (entries is null)
@@ -86,17 +96,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             for (var i = 0; i < entries.Count; i++)
             {
                 var entry = entries[i];
-                // Branch: take this path when (!TryParseEntry(entry, path, i, errors, out var mapping, out var shouldExclude)) evaluates to true.
-                if (!TryParseEntry(entry, path, i, errors, out var mapping, out var shouldExclude))
+                if (!TryParseEntry(entry, path, i, errors, out var mapping))
                 {
-                    continue;
-                }
-
-                // Branch: take this path when (forceExclude || shouldExclude) evaluates to true.
-                if (forceExclude || shouldExclude)
-                {
-                    excludedKeys.Add(mapping.Key);
-                    _ = mappings.Remove(mapping.Key);
                     continue;
                 }
 
@@ -112,18 +113,15 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <param name="index">The index value.</param>
         /// <param name="errors">The errors value.</param>
         /// <param name="mapping">The mapping value.</param>
-        /// <param name="exclude">The exclude value.</param>
         /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool TryParseEntry(
             MapEntry entry,
             string path,
             int index,
             ICollection<string> errors,
-            out DuckTypeAotMapping mapping,
-            out bool exclude)
+            out DuckTypeAotMapping mapping)
         {
             mapping = null!;
-            exclude = entry.Exclude ?? false;
 
             var mode = ParseMode(entry.Mode, path, index, errors);
             // Branch: take this path when (mode is null) evaluates to true.
@@ -150,10 +148,9 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 return false;
             }
 
-            // Branch: take this path when (ContainsDeprecatedExpectCanCreate(entry.AdditionalProperties)) evaluates to true.
-            if (ContainsDeprecatedExpectCanCreate(entry.AdditionalProperties))
+            if (ContainsForbiddenMapContractFields(entry.AdditionalProperties, out var forbiddenFieldName))
             {
-                errors.Add($"--map-file entry #{index + 1} in '{path}' uses deprecated field 'expectCanCreate'. Strict parity mode requires removing this override field.");
+                errors.Add($"--map-file entry #{index + 1} in '{path}' uses unsupported field '{forbiddenFieldName}'. The canonical map contract allows only mode/proxy/target fields.");
                 return false;
             }
 
@@ -163,8 +160,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 targetType,
                 targetAssembly,
                 mode.Value,
-                DuckTypeAotMappingSource.MapFile,
-                entry.ScenarioId);
+                DuckTypeAotMappingSource.MapFile);
             return true;
         }
 
@@ -195,27 +191,35 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         }
 
         /// <summary>
-        /// Determines whether contains deprecated expect can create.
+        /// Determines whether map entry includes fields from legacy contracts that are not part of the canonical schema.
         /// </summary>
         /// <param name="additionalProperties">The additional properties value.</param>
+        /// <param name="fieldName">The first forbidden field name when present.</param>
         /// <returns>true if the operation succeeds; otherwise, false.</returns>
-        private static bool ContainsDeprecatedExpectCanCreate(IDictionary<string, JToken>? additionalProperties)
+        private static bool ContainsForbiddenMapContractFields(IDictionary<string, JToken>? additionalProperties, out string fieldName)
         {
-            // Branch: take this path when (additionalProperties is null || additionalProperties.Count == 0) evaluates to true.
             if (additionalProperties is null || additionalProperties.Count == 0)
             {
+                fieldName = string.Empty;
                 return false;
             }
 
+            var forbiddenFields = new[] { "expectCanCreate", "exclude", "scenarioId", "expectedStatus" };
             foreach (var key in additionalProperties.Keys)
             {
-                // Branch: take this path when (string.Equals(key, "expectCanCreate", StringComparison.OrdinalIgnoreCase)) evaluates to true.
-                if (string.Equals(key, "expectCanCreate", StringComparison.OrdinalIgnoreCase))
+                foreach (var forbiddenField in forbiddenFields)
                 {
+                    if (!string.Equals(key, forbiddenField, StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+
+                    fieldName = key;
                     return true;
                 }
             }
 
+            fieldName = string.Empty;
             return false;
         }
 
@@ -225,18 +229,17 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         private sealed class MapFileDocument
         {
             /// <summary>
+            /// Gets or sets schema version.
+            /// </summary>
+            [JsonProperty("schemaVersion")]
+            public string? SchemaVersion { get; set; }
+
+            /// <summary>
             /// Gets or sets mappings.
             /// </summary>
             /// <value>The mappings value.</value>
             [JsonProperty("mappings")]
             public List<MapEntry>? Mappings { get; set; }
-
-            /// <summary>
-            /// Gets or sets excludes.
-            /// </summary>
-            /// <value>The excludes value.</value>
-            [JsonProperty("excludes")]
-            public List<MapEntry>? Excludes { get; set; }
         }
 
         /// <summary>
@@ -278,20 +281,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             /// <value>The mode value.</value>
             [JsonProperty("mode")]
             public string? Mode { get; set; }
-
-            /// <summary>
-            /// Gets or sets a value indicating whether exclude.
-            /// </summary>
-            /// <value>The exclude value.</value>
-            [JsonProperty("exclude")]
-            public bool? Exclude { get; set; }
-
-            /// <summary>
-            /// Gets or sets scenario id.
-            /// </summary>
-            /// <value>The scenario id value.</value>
-            [JsonProperty("scenarioId")]
-            public string? ScenarioId { get; set; }
 
             /// <summary>
             /// Gets or sets additional properties.

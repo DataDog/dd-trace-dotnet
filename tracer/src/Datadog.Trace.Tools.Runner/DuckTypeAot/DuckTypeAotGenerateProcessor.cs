@@ -39,7 +39,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             var mappingResolutionResult = DuckTypeAotMappingResolver.Resolve(options);
             foreach (var warning in mappingResolutionResult.Warnings)
             {
-                AnsiConsole.MarkupLine($"[yellow]Warning:[/] {warning}");
+                AnsiConsole.MarkupLine($"[yellow]Warning:[/] {warning.EscapeMarkup()}");
             }
 
             // Branch: take this path when (mappingResolutionResult.Errors.Count > 0) evaluates to true.
@@ -56,7 +56,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             // Branch: take this path when (mappingResolutionResult.Mappings.Count == 0) evaluates to true.
             if (mappingResolutionResult.Mappings.Count == 0)
             {
-                AnsiConsole.MarkupLine("[yellow]Warning:[/] No mappings were resolved from attributes/map file.");
+                Utils.WriteError("No mappings were resolved from --map-file.");
+                return 1;
             }
 
             var signingKeyFilePath = ResolveStrongNameKeyFilePath(options);
@@ -68,21 +69,19 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             else
             {
                 // Branch: fallback path when earlier branch conditions evaluate to false.
-                AnsiConsole.MarkupLine($"[green]Strong-name signing key:[/] {signingKeyFilePath}");
+                AnsiConsole.MarkupLine($"[green]Strong-name signing key:[/] {signingKeyFilePath.EscapeMarkup()}");
                 options = new DuckTypeAotGenerateOptions(
                     options.ProxyAssemblies,
                     options.TargetAssemblies,
                     options.TargetFolders,
                     options.TargetFilters,
-                    options.MapFile,
-                    options.MappingCatalog,
-                    options.GenericInstantiationsFile,
-                    options.OutputPath,
-                    options.AssemblyName,
-                    options.TrimmerDescriptorPath,
-                    options.PropsPath,
-                    options.RequireMappingCatalog,
-                    signingKeyFilePath);
+                    mapFile: options.MapFile,
+                    genericInstantiationsFile: options.GenericInstantiationsFile,
+                    outputPath: options.OutputPath,
+                    assemblyName: options.AssemblyName,
+                    trimmerDescriptorPath: options.TrimmerDescriptorPath,
+                    propsPath: options.PropsPath,
+                    strongNameKeyFile: signingKeyFilePath);
             }
 
             var artifactPaths = DuckTypeAotArtifactPaths.Create(options);
@@ -98,12 +97,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 var emissionResult = DuckTypeAotRegistryAssemblyEmitter.Emit(options, artifactPaths, mappingResolutionResult);
                 var compatibilityArtifacts = DuckTypeAotArtifactsWriter.WriteAll(artifactPaths, mappingResolutionResult, emissionResult);
 
-                AnsiConsole.MarkupLine($"[green]Generated registry assembly:[/] {artifactPaths.OutputAssemblyPath}");
-                AnsiConsole.MarkupLine($"[green]Generated manifest:[/] {artifactPaths.ManifestPath}");
-                AnsiConsole.MarkupLine($"[green]Generated trimmer descriptor:[/] {artifactPaths.TrimmerDescriptorPath}");
-                AnsiConsole.MarkupLine($"[green]Generated props file:[/] {artifactPaths.PropsPath}");
-                AnsiConsole.MarkupLine($"[green]Generated compatibility matrix:[/] {compatibilityArtifacts.MatrixPath}");
-                AnsiConsole.MarkupLine($"[green]Generated compatibility report:[/] {compatibilityArtifacts.ReportPath}");
+                AnsiConsole.MarkupLine($"[green]Generated registry assembly:[/] {artifactPaths.OutputAssemblyPath.EscapeMarkup()}");
+                AnsiConsole.MarkupLine($"[green]Generated manifest:[/] {artifactPaths.ManifestPath.EscapeMarkup()}");
+                AnsiConsole.MarkupLine($"[green]Generated trimmer descriptor:[/] {artifactPaths.TrimmerDescriptorPath.EscapeMarkup()}");
+                AnsiConsole.MarkupLine($"[green]Generated props file:[/] {artifactPaths.PropsPath.EscapeMarkup()}");
+                AnsiConsole.MarkupLine($"[green]Generated compatibility matrix:[/] {compatibilityArtifacts.MatrixPath.EscapeMarkup()}");
+                AnsiConsole.MarkupLine($"[green]Generated compatibility report:[/] {compatibilityArtifacts.ReportPath.EscapeMarkup()}");
 
                 // Branch: take this path when (compatibilityArtifacts.NonCompatibleMappings > 0) evaluates to true.
                 if (compatibilityArtifacts.NonCompatibleMappings > 0)
@@ -151,16 +150,17 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             ValidateFileInputs(options.ProxyAssemblies, "--proxy-assembly", errors);
             ValidateFileInputs(options.TargetAssemblies, "--target-assembly", errors);
             ValidateDirectoryInputs(options.TargetFolders, "--target-folder", errors);
-            ValidateOptionalFile(options.MapFile, "--map-file", errors);
-            ValidateOptionalFile(options.MappingCatalog, "--mapping-catalog", errors);
+            if (string.IsNullOrWhiteSpace(options.MapFile))
+            {
+                errors.Add("--map-file is required.");
+            }
+            else
+            {
+                ValidateOptionalFile(options.MapFile, "--map-file", errors);
+            }
+
             ValidateOptionalFile(options.GenericInstantiationsFile, "--generic-instantiations", errors);
             ValidateOptionalFile(options.StrongNameKeyFile, "--strong-name-key-file", errors);
-
-            // Branch: take this path when (options.RequireMappingCatalog && string.IsNullOrWhiteSpace(options.MappingCatalog)) evaluates to true.
-            if (options.RequireMappingCatalog && string.IsNullOrWhiteSpace(options.MappingCatalog))
-            {
-                errors.Add("--mapping-catalog is required when --require-mapping-catalog is enabled.");
-            }
 
             // Branch: take this path when (string.IsNullOrWhiteSpace(options.OutputPath)) evaluates to true.
             if (string.IsNullOrWhiteSpace(options.OutputPath))

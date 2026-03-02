@@ -403,7 +403,7 @@ public class DuckTypeAotProcessorsTests
     }
 
     [Fact]
-    public void GenerateProcessorShouldUseScenarioIdFromMapFileInCompatibilityArtifacts()
+    public void GenerateProcessorShouldAssignDeterministicMappingIdWhenMapFileDoesNotProvideScenarioIds()
     {
         var tempDirectory = CreateTempDirectory();
         try
@@ -424,7 +424,6 @@ public class DuckTypeAotProcessorsTests
                 {
                     new
                     {
-                        scenarioId = "A-01",
                         mode = "forward",
                         proxyType = typeof(ITestDuckProxy).FullName,
                         proxyAssembly = proxyAssemblyName,
@@ -455,14 +454,14 @@ public class DuckTypeAotProcessorsTests
             var compatibilityMatrix = JsonConvert.DeserializeObject<DuckTypeAotCompatibilityMatrix>(File.ReadAllText(compatibilityMatrixPath));
             compatibilityMatrix.Should().NotBeNull();
             compatibilityMatrix!.Mappings.Should().ContainSingle();
-            compatibilityMatrix.Mappings[0].Id.Should().Be("A-01");
+            compatibilityMatrix.Mappings[0].Id.Should().Be("MAP-0001");
             compatibilityMatrix.Mappings[0].MappingIdentityChecksum.Should().NotBeNullOrWhiteSpace();
 
             var manifestPath = $"{outputPath}.manifest.json";
             var manifest = JsonConvert.DeserializeObject<DuckTypeAotManifest>(File.ReadAllText(manifestPath));
             manifest.Should().NotBeNull();
             manifest!.Mappings.Should().ContainSingle();
-            manifest.Mappings[0].ScenarioId.Should().Be("A-01");
+            manifest.Mappings[0].ScenarioId.Should().BeNull();
             manifest.Mappings[0].MappingIdentityChecksum.Should().NotBeNullOrWhiteSpace();
         }
         finally
@@ -551,7 +550,7 @@ public class DuckTypeAotProcessorsTests
     }
 
     [Fact]
-    public void GenerateProcessorShouldApplyScenarioIdFromMappingCatalog()
+    public void GenerateProcessorShouldIgnoreCatalogScenarioIdWhenMapFileIsCanonicalSourceOfTruth()
     {
         var tempDirectory = CreateTempDirectory();
         try
@@ -621,7 +620,7 @@ public class DuckTypeAotProcessorsTests
             var compatibilityMatrix = JsonConvert.DeserializeObject<DuckTypeAotCompatibilityMatrix>(File.ReadAllText(compatibilityMatrixPath));
             compatibilityMatrix.Should().NotBeNull();
             compatibilityMatrix!.Mappings.Should().ContainSingle();
-            compatibilityMatrix.Mappings[0].Id.Should().Be("A-02");
+            compatibilityMatrix.Mappings[0].Id.Should().Be("MAP-0001");
         }
         finally
         {
@@ -630,7 +629,7 @@ public class DuckTypeAotProcessorsTests
     }
 
     [Fact]
-    public void GenerateProcessorShouldFailWhenMappingCatalogContainsDeprecatedExpectCanCreate()
+    public void GenerateProcessorShouldIgnoreDeprecatedExpectCanCreateFieldInMappingCatalog()
     {
         var tempDirectory = CreateTempDirectory();
         try
@@ -695,7 +694,7 @@ public class DuckTypeAotProcessorsTests
                 requireMappingCatalog: true);
 
             var exitCode = DuckTypeAotGenerateProcessor.Process(options);
-            exitCode.Should().Be(1);
+            exitCode.Should().Be(0);
         }
         finally
         {
@@ -778,7 +777,7 @@ public class DuckTypeAotProcessorsTests
     }
 
     [Fact]
-    public void GenerateProcessorShouldAllowScenarioIdToGroupMultipleMappings()
+    public void GenerateProcessorShouldAssignUniqueDeterministicMappingIdsForMultipleMappings()
     {
         var tempDirectory = CreateTempDirectory();
         try
@@ -799,7 +798,6 @@ public class DuckTypeAotProcessorsTests
                 {
                     new
                     {
-                        scenarioId = "A-03",
                         mode = "forward",
                         proxyType = typeof(ITestDuckProxy).FullName,
                         proxyAssembly = proxyAssemblyName,
@@ -808,7 +806,6 @@ public class DuckTypeAotProcessorsTests
                     },
                     new
                     {
-                        scenarioId = "A-03",
                         mode = "forward",
                         proxyType = typeof(ITestDuckNamedMethodProxy).FullName,
                         proxyAssembly = proxyAssemblyName,
@@ -840,7 +837,7 @@ public class DuckTypeAotProcessorsTests
             var compatibilityMatrix = JsonConvert.DeserializeObject<DuckTypeAotCompatibilityMatrix>(File.ReadAllText(compatibilityMatrixPath));
             compatibilityMatrix.Should().NotBeNull();
             compatibilityMatrix!.Mappings.Should().HaveCount(2);
-            compatibilityMatrix.Mappings.Select(mapping => mapping.Id).Should().OnlyContain(id => string.Equals(id, "A-03", StringComparison.Ordinal));
+            compatibilityMatrix.Mappings.Select(mapping => mapping.Id).Should().BeEquivalentTo(new[] { "MAP-0001", "MAP-0002" });
         }
         finally
         {
@@ -1499,14 +1496,14 @@ public class DuckTypeAotProcessorsTests
     }
 
     [Fact]
-    public void VerifyCompatProcessorShouldSucceedWhenCatalogMatchesCompatibilityMatrix()
+    public void VerifyCompatProcessorShouldSucceedWhenMapFileMatchesCompatibilityMatrix()
     {
         var tempDirectory = CreateTempDirectory();
         try
         {
             var reportPath = Path.Combine(tempDirectory, "ducktyping-aot-compat.md");
             var matrixPath = Path.Combine(tempDirectory, "ducktyping-aot-compat.json");
-            var mappingCatalogPath = Path.Combine(tempDirectory, "ducktyping-aot-mapping-catalog.json");
+            var mapFilePath = Path.Combine(tempDirectory, "ducktyping-aot-mappings.json");
 
             File.WriteAllText(reportPath, "# Compatibility Report");
             var matrix = new DuckTypeAotCompatibilityMatrix
@@ -1527,13 +1524,12 @@ public class DuckTypeAotProcessorsTests
             };
             File.WriteAllText(matrixPath, JsonConvert.SerializeObject(matrix));
 
-            var catalog = new
+            var mapFile = new
             {
-                requiredMappings = new[]
+                mappings = new[]
                 {
                     new
                     {
-                        scenarioId = "A-01",
                         mode = "forward",
                         proxyType = "Datadog.Trace.Tools.Runner.Tests.ITestDuckProxy",
                         proxyAssembly = "Datadog.Trace.Tools.Runner.Tests",
@@ -1542,9 +1538,15 @@ public class DuckTypeAotProcessorsTests
                     }
                 }
             };
-            File.WriteAllText(mappingCatalogPath, JsonConvert.SerializeObject(catalog, Formatting.Indented));
+            File.WriteAllText(mapFilePath, JsonConvert.SerializeObject(mapFile, Formatting.Indented));
 
-            var result = DuckTypeAotVerifyCompatProcessor.Process(new DuckTypeAotVerifyCompatOptions(reportPath, matrixPath, mappingCatalogPath, manifestPath: null, strictAssemblyFingerprintValidation: false));
+            var result = DuckTypeAotVerifyCompatProcessor.Process(
+                new DuckTypeAotVerifyCompatOptions(
+                    reportPath,
+                    matrixPath,
+                    mapFilePath: mapFilePath,
+                    manifestPath: null,
+                    strictAssemblyFingerprintValidation: false));
             result.Should().Be(0);
         }
         finally
@@ -1677,7 +1679,13 @@ public class DuckTypeAotProcessorsTests
             };
             File.WriteAllText(mappingCatalogPath, JsonConvert.SerializeObject(catalog, Formatting.Indented));
 
-            var result = DuckTypeAotVerifyCompatProcessor.Process(new DuckTypeAotVerifyCompatOptions(reportPath, matrixPath, mappingCatalogPath, manifestPath: null, strictAssemblyFingerprintValidation: false));
+            var result = DuckTypeAotVerifyCompatProcessor.Process(
+                new DuckTypeAotVerifyCompatOptions(
+                    reportPath,
+                    matrixPath,
+                    mapFilePath: mappingCatalogPath,
+                    manifestPath: null,
+                    strictAssemblyFingerprintValidation: false));
             result.Should().Be(1);
         }
         finally
@@ -1731,7 +1739,13 @@ public class DuckTypeAotProcessorsTests
             };
             File.WriteAllText(mappingCatalogPath, JsonConvert.SerializeObject(catalog, Formatting.Indented));
 
-            var result = DuckTypeAotVerifyCompatProcessor.Process(new DuckTypeAotVerifyCompatOptions(reportPath, matrixPath, mappingCatalogPath, manifestPath: null, strictAssemblyFingerprintValidation: false));
+            var result = DuckTypeAotVerifyCompatProcessor.Process(
+                new DuckTypeAotVerifyCompatOptions(
+                    reportPath,
+                    matrixPath,
+                    mapFilePath: mappingCatalogPath,
+                    manifestPath: null,
+                    strictAssemblyFingerprintValidation: false));
             result.Should().Be(1);
         }
         finally

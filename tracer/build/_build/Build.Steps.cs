@@ -1485,21 +1485,14 @@ partial class Build
                 frameworkPreferences);
 
             var compatibilityDirectory = duckTypingTestsProject.Directory / "AotCompatibility";
-            var mappingCatalogPath = compatibilityDirectory / "ducktype-aot-bible-mapping-catalog.json";
-            var scenarioInventoryPath = compatibilityDirectory / "ducktype-aot-bible-scenario-inventory.json";
-            var expectedOutcomesPath = compatibilityDirectory / "ducktype-aot-bible-expected-outcomes.json";
-            var knownLimitationsPath = compatibilityDirectory / "ducktype-aot-bible-known-limitations.json";
-
-            EnsureFileExists(mappingCatalogPath, "DuckType AOT mapping catalog");
-            EnsureFileExists(scenarioInventoryPath, "DuckType AOT scenario inventory");
-            EnsureFileExists(expectedOutcomesPath, "DuckType AOT expected outcomes");
-            EnsureFileExists(knownLimitationsPath, "DuckType AOT known limitations");
+            var canonicalMapFilePath = compatibilityDirectory / "ducktype-aot-bible-mappings.json";
+            EnsureFileExists(canonicalMapFilePath, "DuckType AOT canonical map file");
 
             var gateOutputDirectory = BuildDataDirectory / "ducktype-aot-compatibility-gate";
             EnsureCleanDirectory(gateOutputDirectory);
 
-            var generatedMapFilePath = gateOutputDirectory / "ducktype-aot-bible-map.generated.json";
-            WriteDuckTypeAotMapFileFromCatalog(mappingCatalogPath, generatedMapFilePath);
+            var discoveredCompatibleMapFilePath = gateOutputDirectory / "ducktype-aot-bible-mappings.discovered.json";
+            var discoverWarningsPath = gateOutputDirectory / "ducktype-aot-bible-mappings.discover-warnings.json";
 
             var outputAssemblyPath = gateOutputDirectory / "Datadog.Trace.DuckType.AotRegistry.BibleGate.dll";
             var trimmerDescriptorPath = gateOutputDirectory / "ducktype-aot-bible-gate.linker.xml";
@@ -1514,12 +1507,28 @@ partial class Build
                 duckTypingTestsAssemblyPath);
 
             RunRunnerCommand(
+                $"ducktype-aot discover-mappings " +
+                $"--proxy-assembly {QuotePath(duckTypingTestsAssemblyPath)} " +
+                $"--target-assembly {QuotePath(duckTypingTestsAssemblyPath)} " +
+                $"--output {QuotePath(discoveredCompatibleMapFilePath)} " +
+                $"--warnings-report {QuotePath(discoverWarningsPath)}");
+
+            var canonicalNormalized = NormalizeDuckTypeAotMapFile(canonicalMapFilePath);
+            var discoveredNormalized = NormalizeDuckTypeAotMapFile(discoveredCompatibleMapFilePath);
+            if (!string.Equals(canonicalNormalized, discoveredNormalized, StringComparison.Ordinal))
+            {
+                throw new Exception(
+                    "DuckType AOT canonical map drift detected. " +
+                    $"Checked-in map: {canonicalMapFilePath}. " +
+                    $"Discovered map: {discoveredCompatibleMapFilePath}. " +
+                    $"Diagnostics: {discoverWarningsPath}.");
+            }
+
+            RunRunnerCommand(
                 $"ducktype-aot generate " +
                 $"--proxy-assembly {QuotePath(duckTypingTestsAssemblyPath)} " +
                 $"--target-assembly {QuotePath(duckTypingTestsAssemblyPath)} " +
-                $"--map-file {QuotePath(generatedMapFilePath)} " +
-                $"--mapping-catalog {QuotePath(mappingCatalogPath)} " +
-                "--require-mapping-catalog " +
+                $"--map-file {QuotePath(canonicalMapFilePath)} " +
                 $"--output {QuotePath(outputAssemblyPath)} " +
                 $"--emit-trimmer-descriptor {QuotePath(trimmerDescriptorPath)} " +
                 $"--emit-props {QuotePath(propsPath)}");
@@ -1528,14 +1537,11 @@ partial class Build
                 $"ducktype-aot verify-compat " +
                 $"--compat-report {QuotePath(compatibilityReportPath)} " +
                 $"--compat-matrix {QuotePath(compatibilityMatrixPath)} " +
-                $"--mapping-catalog {QuotePath(mappingCatalogPath)} " +
+                $"--map-file {QuotePath(canonicalMapFilePath)} " +
                 $"--manifest {QuotePath(manifestPath)} " +
-                $"--scenario-inventory {QuotePath(scenarioInventoryPath)} " +
-                $"--expected-outcomes {QuotePath(expectedOutcomesPath)} " +
-                $"--known-limitations {QuotePath(knownLimitationsPath)} " +
                 "--failure-mode strict");
 
-            // The Bible compatibility gate registry is intentionally catalog-scoped and not valid as a full-suite test registry.
+            // The Bible compatibility gate registry is intentionally gate-scoped and not valid as a full-suite test registry.
             // Keep compatibility outputs, but remove the generated gate registry assembly to avoid accidental reuse in full-suite AOT test runs.
             if (File.Exists(outputAssemblyPath))
             {
@@ -2888,7 +2894,7 @@ partial class Build
         }
     }
 
-    private static void WriteDuckTypeAotMapFileFromCatalog(AbsolutePath mappingCatalogPath, AbsolutePath mapFilePath)
+    private static string NormalizeDuckTypeAotMapFile(AbsolutePath mapFilePath)
     {
         var deserializeOptions = new JsonSerializerOptions
         {
@@ -2897,23 +2903,32 @@ partial class Build
             ReadCommentHandling = JsonCommentHandling.Skip,
         };
 
-        var catalog = JsonSerializer.Deserialize<DuckTypeAotGateMappingCatalogDocument>(File.ReadAllText(mappingCatalogPath), deserializeOptions);
-        if (catalog is null || catalog.RequiredMappings.Count == 0)
+        var map = JsonSerializer.Deserialize<DuckTypeAotGateMapFileDocument>(File.ReadAllText(mapFilePath), deserializeOptions);
+        if (map is null || map.Mappings.Count == 0)
         {
-            throw new Exception($"DuckType AOT mapping catalog does not contain requiredMappings entries: {mappingCatalogPath}");
+            throw new Exception($"DuckType AOT map file does not contain mappings entries: {mapFilePath}");
         }
 
-        var mapFileDocument = new DuckTypeAotGateMapFileDocument
-        {
-            Mappings = catalog.RequiredMappings,
-        };
+        map.Mappings = map.Mappings
+                         .OrderBy(mapping => string.Concat(
+                             mapping.Mode ?? string.Empty,
+                             "|",
+                             mapping.ProxyAssembly ?? string.Empty,
+                             "|",
+                             mapping.ProxyType ?? string.Empty,
+                             "|",
+                             mapping.TargetAssembly ?? string.Empty,
+                             "|",
+                             mapping.TargetType ?? string.Empty), StringComparer.Ordinal)
+                         .ToList();
+
         var serializeOptions = new JsonSerializerOptions
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
             WriteIndented = true,
         };
 
-        File.WriteAllText(mapFilePath, JsonSerializer.Serialize(mapFileDocument, serializeOptions));
+        return JsonSerializer.Serialize(map, serializeOptions);
     }
 
     private DotNetTestSettings ConfigureCodeCoverage(DotNetTestSettings settings)
@@ -3085,13 +3100,10 @@ partial class Build
         }
     }
 
-    private sealed class DuckTypeAotGateMappingCatalogDocument
-    {
-        public List<DuckTypeAotGateMappingEntry> RequiredMappings { get; set; } = new();
-    }
-
     private sealed class DuckTypeAotGateMapFileDocument
     {
+        public string SchemaVersion { get; set; } = "1";
+
         public List<DuckTypeAotGateMappingEntry> Mappings { get; set; } = new();
     }
 
@@ -3106,8 +3118,6 @@ partial class Build
         public string TargetAssembly { get; set; } = string.Empty;
 
         public string Mode { get; set; } = string.Empty;
-
-        public string ScenarioId { get; set; } = string.Empty;
     }
 
     public static class LibdatadogLogParser

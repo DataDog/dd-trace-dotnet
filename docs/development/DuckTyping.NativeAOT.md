@@ -34,18 +34,18 @@ Key design rule for NativeAOT:
 
 ## Current Bible Compatibility-Gate Baseline
 
-For the repository Bible compatibility gate (`ducktype-aot generate` + `ducktype-aot verify-compat --failure-mode strict`), all required catalog mappings are expected to resolve to `compatible`.
+For the repository Bible compatibility gate (`ducktype-aot discover-mappings` + `ducktype-aot generate` + `ducktype-aot verify-compat --failure-mode strict`), all canonical map mappings are expected to resolve to `compatible`.
 
-The Bible mapping catalog keeps no per-scenario `expectedStatus` overrides.
+The gate contract is a single checked-in canonical map file:
 
-`ducktype-aot-bible-expected-outcomes.json` and `ducktype-aot-bible-known-limitations.json` remain strict-empty contracts.
+`tracer/test/Datadog.Trace.DuckTyping.Tests/AotCompatibility/ducktype-aot-bible-mappings.json`.
 
 ## Architecture Overview
 
 NativeAOT DuckTyping has two phases.
 
 1. Build-time phase (`ducktype-aot generate`):
-   1. Discover mappings from proxy attributes and/or map file.
+   1. Resolve mappings from canonical `--map-file`.
    2. Resolve proxy and target types from provided assemblies.
    3. Emit a registry assembly containing generated proxy types and bootstrap code.
    4. Emit companion artifacts (`manifest`, `compat`, linker descriptor, props).
@@ -131,7 +131,7 @@ internal struct RoutePatternProxy
 
 ### Reverse Proxy
 
-Reverse mappings are supported, but are declared through map/discovery entries with `mode = "reverse"`.
+Reverse mappings are supported and are typically declared with type-level `[DuckReverse]` attributes, then materialized into the canonical map through `ducktype-aot discover-mappings`.
 
 ```json
 {
@@ -145,23 +145,19 @@ Reverse mappings are supported, but are declared through map/discovery entries w
 
 ## Mapping Sources
 
-`ducktype-aot generate` composes mappings from:
+`ducktype-aot discover-mappings` discovers mappings from proxy assembly type-level attributes (`[DuckType]`, `[DuckCopy]`, `[DuckReverse]`) and writes a canonical map.
 
-1. Proxy assembly attribute discovery (`[DuckType]`, `[DuckCopy]`).
-2. Optional map file (`--map-file`) for additions/overrides/exclusions.
-3. Optional mapping catalog (`--mapping-catalog`) for required coverage enforcement.
-
-If the same mapping key appears multiple times, later resolution overwrites previous entries. `excludes`/`exclude=true` removes keys.
+`ducktype-aot generate` consumes only `--map-file`.
 
 ## Map File Schema
 
-`--map-file` accepts JSON with `mappings` and optional `excludes`.
+`--map-file` accepts JSON with `schemaVersion` and `mappings`.
 
 ```json
 {
+  "schemaVersion": "1",
   "mappings": [
     {
-      "scenarioId": "MY-01",
       "mode": "forward",
       "proxyType": "My.Namespace.IProxy",
       "proxyAssembly": "My.Proxy.Assembly",
@@ -169,20 +165,10 @@ If the same mapping key appears multiple times, later resolution overwrites prev
       "targetAssembly": "My.Target.Assembly"
     },
     {
-      "scenarioId": "MY-02",
       "mode": "reverse",
       "proxyType": "My.Namespace.IReverseProxy",
       "proxyAssembly": "My.Proxy.Assembly",
       "targetType": "My.Namespace.ReverseDelegation",
-      "targetAssembly": "My.Target.Assembly"
-    }
-  ],
-  "excludes": [
-    {
-      "mode": "forward",
-      "proxyType": "My.Namespace.IOldProxy",
-      "proxyAssembly": "My.Proxy.Assembly",
-      "targetType": "My.Namespace.OldTarget",
       "targetAssembly": "My.Target.Assembly"
     }
   ]
@@ -231,6 +217,7 @@ dotnet tracer/src/Datadog.Trace.Tools.Runner/bin/Release/Tool/net8.0/Datadog.Tra
   ducktype-aot generate \
   --proxy-assembly /abs/path/My.Proxy.Assembly.dll \
   --target-assembly /abs/path/My.Target.Assembly.dll \
+  --map-file /abs/path/ducktype-aot-map.json \
   --output /abs/path/Datadog.Trace.DuckType.AotRegistry.dll
 ```
 
@@ -244,8 +231,6 @@ dotnet tracer/src/Datadog.Trace.Tools.Runner/bin/Release/Tool/net8.0/Datadog.Tra
   --target-folder /abs/path/extra-targets \
   --target-filter "*.dll" \
   --map-file /abs/path/ducktype-aot-map.json \
-  --mapping-catalog /abs/path/ducktype-aot-catalog.json \
-  --require-mapping-catalog \
   --generic-instantiations /abs/path/ducktype-aot-generic-instantiations.json \
   --assembly-name Datadog.Trace.DuckType.AotRegistry.MyService \
   --emit-trimmer-descriptor /abs/path/Datadog.Trace.DuckType.AotRegistry.MyService.linker.xml \
@@ -266,7 +251,7 @@ Generator fails if:
 2. Neither `--target-assembly` nor `--target-folder` is provided.
 3. File paths do not exist.
 4. Open generic mappings remain unresolved.
-5. Required mapping catalog entries are missing (when enabled).
+5. No compatible mappings are resolved from the canonical map file.
 
 ## Generated Artifacts
 
@@ -730,22 +715,17 @@ dotnet tracer/src/Datadog.Trace.Tools.Runner/bin/Release/Tool/net8.0/Datadog.Tra
   ducktype-aot verify-compat \
   --compat-report /abs/path/Datadog.Trace.DuckType.AotRegistry.dll.compat.md \
   --compat-matrix /abs/path/Datadog.Trace.DuckType.AotRegistry.dll.compat.json \
-  --mapping-catalog tracer/test/Datadog.Trace.DuckTyping.Tests/AotCompatibility/ducktype-aot-bible-mapping-catalog.json \
-  --scenario-inventory tracer/test/Datadog.Trace.DuckTyping.Tests/AotCompatibility/ducktype-aot-bible-scenario-inventory.json \
+  --map-file tracer/test/Datadog.Trace.DuckTyping.Tests/AotCompatibility/ducktype-aot-bible-mappings.json \
   --manifest /abs/path/Datadog.Trace.DuckType.AotRegistry.dll.manifest.json \
   --failure-mode strict
 ```
 
 ### Verify-compat Inputs
 
-1. `--compat-report` and `--compat-matrix` are required.
-2. Optional contracts:
-   1. `--mapping-catalog`
-   2. `--scenario-inventory`
-   3. `--manifest`
-3. Per-scenario status overrides can be declared in `--mapping-catalog` via `expectedStatus` (Bible baseline uses no overrides).
-4. Legacy options `--expected-outcomes` and `--known-limitations` are accepted only as strict-empty contracts (no scenario overrides).
-5. `--failure-mode` values:
+1. `--compat-report`, `--compat-matrix`, and `--map-file` are required.
+2. Optional contract:
+   1. `--manifest`
+3. `--failure-mode` values:
    1. `default`: manifest fingerprint drift warns.
    2. `strict`: manifest fingerprint drift fails.
 

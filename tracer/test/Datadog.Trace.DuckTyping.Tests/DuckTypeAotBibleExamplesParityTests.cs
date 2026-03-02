@@ -555,6 +555,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             return result.CreateInstance<IEx13ProjectionProxy>(instance);
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExamplesParityTests+Ex01HttpTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IEx01HttpProxy
         {
             string Url { get; }
@@ -589,6 +590,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             public int StatusCode => _target.StatusCode;
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExamplesParityTests+Ex02ConnectionStringTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IEx02ConnectionStringProxy
         {
             [DuckField(Name = "_connectionString")]
@@ -620,6 +622,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             public string ConnectionString => (string)(ConnectionStringField.GetValue(_target) ?? string.Empty);
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExamplesParityTests+Ex03DataTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IEx03DataProxy
         {
             [DuckPropertyOrField(Name = "Data,_data")]
@@ -645,6 +648,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             public object Data => _target.Data;
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExamplesParityTests+Ex04SerializeTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IEx04SerializeProxy
         {
             [Duck(Name = "Serialize", ParameterTypeNames = new[] { "System.String", "System.Int32" })]
@@ -679,6 +683,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExamplesParityTests+Ex05GenericBindingTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IEx05GenericBindingProxy
         {
             [Duck(Name = "Create", GenericParameterTypeNames = new[] { "System.Int32", "System.String" })]
@@ -713,6 +718,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             string MoveNext();
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExamplesParityTests+Ex06ExplicitTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IEx06ExplicitProxy
         {
             [Duck(Name = "MoveNext", ExplicitInterfaceTypeName = "*")]
@@ -742,6 +748,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExamplesParityTests+Ex07ExecutorTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IEx07ExecutorProxy
         {
             [DuckField(Name = "_executor,_methodExecutor")]
@@ -772,6 +779,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExamplesParityTests+Ex08ValueWithTypeTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IEx08ValueWithTypeProxy
         {
             [Duck(Name = "Payload")]
@@ -800,7 +808,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             public ValueWithType<object> Payload => ValueWithType<object>.Create(_target.Payload, typeof(object));
         }
 
-        [DuckCopy]
+        [DuckCopy("Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExamplesParityTests+Ex09RoutePatternTarget", "Datadog.Trace.DuckTyping.Tests")]
         private struct Ex09RoutePatternStruct
         {
             public string RawText;
@@ -820,6 +828,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             public object Defaults { get; }
         }
 
+        [DuckReverse("Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExamplesParityTests+Ex10ReverseDelegation", "Datadog.Trace.DuckTyping.Tests")]
         private abstract class Ex10ReverseContract
         {
             public abstract string GetName();
@@ -856,6 +865,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        [DuckReverse("Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExamplesParityTests+Ex11ReversePropertyDelegation", "Datadog.Trace.DuckTyping.Tests")]
         private abstract class Ex11ReversePropertyContract
         {
             public abstract int Count { get; set; }
@@ -883,6 +893,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExamplesParityTests+Ex12ProbeTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IEx12ProbeProxy
         {
             int Value { get; }
@@ -915,6 +926,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             public int Value => _target.Value;
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExamplesParityTests+Ex13ProjectionTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IEx13ProjectionProxy
         {
             string Name { get; }
@@ -942,6 +954,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             public string Name => _target.Name;
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExamplesParityTests+Ex14DuckTypeTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IEx14DuckTypeProxy : IDuckType
         {
             string Name { get; }
@@ -1010,6 +1023,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             public int Number => _target.Number;
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExamplesParityTests+Ex15TransformTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IEx15TransformProxy
         {
             IEx15InnerProxy Transform(ref int value);
@@ -1039,6 +1053,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExamplesParityTests+Ex16OptionalTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IEx16OptionalProxy
         {
             string Add(string left, string right = "default");
@@ -1067,6 +1082,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExamplesParityTests+Ex17StaticFieldTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IEx17StaticFieldProxy
         {
             [DuckField(Name = "GlobalCounter")]
@@ -1092,6 +1108,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExamplesParityTests+Ex18DuckAsClassTarget", "Datadog.Trace.DuckTyping.Tests")]
         [DuckAsClass]
         private interface IEx18DuckAsClassProxy
         {
@@ -1120,6 +1137,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             public string Name => _target.Name;
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExamplesParityTests+Ex19IgnoreTarget", "Datadog.Trace.DuckTyping.Tests")]
         private abstract class Ex19IgnoreProxyBase
         {
             public abstract string Name { get; }
@@ -1152,6 +1170,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             public override string Name => _target.Name;
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExamplesParityTests+Ex20IncludeTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IEx20IncludeProxy
         {
             [DuckInclude]

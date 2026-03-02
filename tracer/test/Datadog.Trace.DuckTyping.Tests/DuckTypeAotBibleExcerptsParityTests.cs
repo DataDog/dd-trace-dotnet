@@ -607,6 +607,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             aotResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in AOT mode");
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExcerptsParityTests+TxATarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface ITxADefaultProxy
         {
             string SayHi();
@@ -647,7 +648,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             public string SayHi() => _target.SayHi();
         }
 
-        [DuckCopy]
+        [DuckCopy("Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExcerptsParityTests+TxBTarget", "Datadog.Trace.DuckTyping.Tests")]
         private struct TxBProxy
         {
             [DuckPropertyOrField(Name = "Value,_value")]
@@ -661,6 +662,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             public int Value => 7;
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExcerptsParityTests+TxCTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface ITxCProxy
         {
             [Duck(Name = "Primary,Secondary")]
@@ -702,6 +704,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             string ITxDTargetContract.SayHiWithWildcard() => "wildcard";
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExcerptsParityTests+TxDTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface ITxDProxy
         {
             [Duck(ExplicitInterfaceTypeName = "Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExcerptsParityTests+ITxDTargetContract")]
@@ -725,6 +728,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             public string SayHiWithWildcard() => ((ITxDTargetContract)_target).SayHiWithWildcard();
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExcerptsParityTests+TxETarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface ITxEProxy
         {
             [DuckInclude]
@@ -748,6 +752,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             public override int GetHashCode() => _target.GetHashCode();
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExcerptsParityTests+TxFTarget", "Datadog.Trace.DuckTyping.Tests")]
         private abstract class TxFProxyBase
         {
             public abstract string Value { get; }
@@ -778,6 +783,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             public override string Value => _target.Value;
         }
 
+        [DuckReverse("Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExcerptsParityTests+TxGReverseDelegation", "Datadog.Trace.DuckTyping.Tests")]
         private interface ITxGReverseContract
         {
             void Enrich(string logEvent, int propertyFactory);
@@ -833,6 +839,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             public string Value { get; }
         }
 
+        [DuckReverse("Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExcerptsParityTests+TxHReverseDelegation", "Datadog.Trace.DuckTyping.Tests")]
         private interface ITxHReverseContract
         {
             string Value { get; set; }
@@ -868,7 +875,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             public string Name;
         }
 
-        [DuckCopy]
+        [DuckCopy("Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExcerptsParityTests+TxIRootTarget", "Datadog.Trace.DuckTyping.Tests")]
         private struct TxIRootCopy
         {
             public TxIInnerCopy? Value;
@@ -894,6 +901,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             public TxIInnerTarget? Value { get; }
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExcerptsParityTests+TxJValueWithTypeTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface ITxJValueWithTypeProxy
         {
             [Duck(Name = "Sum")]
@@ -938,6 +946,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             public string Value { get; }
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExcerptsParityTests+TxKMethodTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface ITxKMethodProxy
         {
             void Pow2(ref int value);
@@ -1028,6 +1037,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExcerptsParityTests+TxLOverloadTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface ITxLOverloadProxy
         {
             [Duck(Name = "Add", ParameterTypeNames = new[] { "System.String", "System.Object" })]
@@ -1087,6 +1097,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExcerptsParityTests+TxMFieldTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface ITxMFieldProxy
         {
             [DuckField(Name = "_publicStaticReadonlyValueTypeField")]
@@ -1148,6 +1159,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExcerptsParityTests+TxNPropertyTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface ITxNPropertyProxy
         {
             string PublicGetSetReferenceType { get; set; }
@@ -1197,6 +1209,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExcerptsParityTests+TxONullTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface ITxONullProxy
         {
             string Value { get; }
@@ -1224,6 +1237,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             public string Value => _target.Value;
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExcerptsParityTests+TxPTypeNameNesting+TxPMyTargetTypeThatHasAReallyReallyReallyReallyReallyReallyReallyReallyReallyReallyReallyReallyReallyReallyReallyReallyReallyReallyReallyReallyReallyReallyReallyReallyReallyReallyReallyLongName", "Datadog.Trace.DuckTyping.Tests")]
         private interface ITxPLongNameProxy
         {
             string Value { get; }
@@ -1252,6 +1266,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             public string Value => (string)(ValueProperty.GetValue(_target) ?? string.Empty);
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExcerptsParityTests+TxQDeepGenericTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface ITxQDeepGenericProxy
         {
             ITxQDeepGenericInnerProxy Method { get; }
@@ -1305,6 +1320,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             public ITxQDeepGenericInnerProxy Method => new TxQDeepGenericInnerAotProxy(MethodProperty.GetValue(_target)!);
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExcerptsParityTests+TxRTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface ITxRToStringProxy
         {
             string ToString();
@@ -1331,6 +1347,7 @@ namespace Datadog.Trace.DuckTyping.Tests
         {
         }
 
+        [DuckReverse("Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExcerptsParityTests+TxSReversePropertyDelegation", "Datadog.Trace.DuckTyping.Tests")]
         private interface ITxSReversePropertyContract
         {
             TxSTestValue Value { get; set; }
@@ -1367,6 +1384,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotBibleExcerptsParityTests+TxTOptionalTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface ITxTOptionalProxy
         {
             void Add(string name, string obj = "none");
