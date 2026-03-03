@@ -1,28 +1,67 @@
 parameters:
   - name: timeoutSeconds
     type: number
-    default: 120
+    default: 300
+  - name: maxRestarts
+    type: number
+    default: 3
 
 steps:
 - powershell: |
     $timeout = ${{ parameters.timeoutSeconds }}
+    $maxRestarts = ${{ parameters.maxRestarts }}
     $interval = 10
     $elapsed = 0
-    Write-Host "Waiting up to ${timeout}s for Docker daemon..."
+    $restartCount = 0
+
+    Write-Host "Waiting up to ${timeout}s for Docker daemon (will attempt up to ${maxRestarts} service restarts)..."
+
+    # Log initial service state for diagnostics
+    $svc = Get-Service docker -ErrorAction SilentlyContinue
+    if ($svc) {
+        Write-Host "Docker service initial state: $($svc.Status)"
+    } else {
+        Write-Host "##vso[task.logissue type=error]Docker service not found on this agent"
+        exit 1
+    }
+
     while ($elapsed -lt $timeout) {
-        try {
-            docker version 2>&1 | Out-Null
-            if ($LASTEXITCODE -eq 0) {
-                Write-Host "Docker daemon is ready (waited ${elapsed}s)"
-                docker info
-                exit 0
+        # Check if Docker responds
+        docker version 2>&1 | Out-Null
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "Docker daemon is ready (waited ${elapsed}s, ${restartCount} restart(s) performed)"
+            docker info
+            exit 0
+        }
+
+        # If the service is not running, attempt a restart
+        $svc = Get-Service docker -ErrorAction SilentlyContinue
+        if ($svc -and $svc.Status -ne 'Running') {
+            if ($restartCount -lt $maxRestarts) {
+                $restartCount++
+                Write-Host "Docker service is $($svc.Status). Attempting restart ${restartCount}/${maxRestarts}..."
+                try {
+                    Restart-Service docker -Force -ErrorAction Stop
+                    Write-Host "Restart-Service completed, waiting for daemon to initialize..."
+                } catch {
+                    Write-Host "##vso[task.logissue type=warning]Restart-Service failed: $_"
+                }
+            } else {
+                Write-Host "##vso[task.logissue type=warning]Docker service is $($svc.Status) but max restarts (${maxRestarts}) exhausted"
             }
-        } catch {}
-        Write-Host "Docker not ready yet (${elapsed}s elapsed), retrying in ${interval}s..."
+        }
+
+        Write-Host "Docker not ready yet (${elapsed}s elapsed, service: $($svc.Status)), retrying in ${interval}s..."
         Start-Sleep -Seconds $interval
         $elapsed += $interval
     }
-    Write-Host "##vso[task.logissue type=error]Docker daemon did not become ready within ${timeout}s"
+
+    # Final diagnostics before failing
+    Write-Host "--- Final diagnostics ---"
+    Get-Service docker | Format-List *
+    Get-EventLog -LogName Application -Source 'docker' -Newest 20 -ErrorAction SilentlyContinue | Format-Table TimeGenerated, EntryType, Message -AutoSize
+
+    Write-Host "##vso[task.logissue type=error]Docker daemon did not become ready within ${timeout}s after ${restartCount} restart(s)"
     exit 1
   displayName: Ensure Docker daemon is ready
   condition: eq(variables['Agent.OS'], 'Windows_NT')
