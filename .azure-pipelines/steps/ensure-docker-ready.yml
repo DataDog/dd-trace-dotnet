@@ -8,6 +8,9 @@ parameters:
 
 steps:
 - powershell: |
+    # Prevent PowerShell from treating native command stderr as a terminating error
+    $ErrorActionPreference = 'Continue'
+
     $timeout = ${{ parameters.timeoutSeconds }}
     $maxRestarts = ${{ parameters.maxRestarts }}
     $interval = 10
@@ -26,8 +29,8 @@ steps:
     }
 
     while ($elapsed -lt $timeout) {
-        # Check if Docker responds
-        docker version 2>&1 | Out-Null
+        # Check if Docker responds (suppress stderr to avoid NativeCommandError)
+        $null = docker version 2>&1
         if ($LASTEXITCODE -eq 0) {
             Write-Host "Docker daemon is ready (waited ${elapsed}s, ${restartCount} restart(s) performed)"
             docker info
