@@ -767,7 +767,7 @@ public static class SmokeTestBuilder
         }
         catch (Exception ex)
         {
-            Logger.Debug(ex, "Could not join network {Network} (likely running on host)", networkName);
+            Logger.Debug(ex, "Could not join network {Network} (This is expected when running on the host)", networkName);
             return new DockerEnvironment(null, path => path);
         }
     }
