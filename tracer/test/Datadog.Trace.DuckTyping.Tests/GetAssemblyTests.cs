@@ -14,6 +14,9 @@ namespace Datadog.Trace.DuckTyping.Tests
     [Collection(nameof(GetAssemblyTestsCollection))]
     public class GetAssemblyTests
     {
+        private const string TestModeEnvironmentVariable = "DD_DUCKTYPE_TEST_MODE";
+        private const string AotModeValue = "aot";
+
         [Fact]
         public void GetAssemblyTest()
         {
@@ -47,6 +50,13 @@ namespace Datadog.Trace.DuckTyping.Tests
             // This test is primarily meaningful in full-suite execution, where many duck types
             // have already been generated. In isolated/filter runs there may be none.
             if (asmDuckTypes == 0)
+            {
+                return;
+            }
+
+            // In AOT mode we load a generated registry assembly instead of creating thousands of
+            // dynamic ducktype assemblies, so this lower-bound assertion is not meaningful.
+            if (string.Equals(Environment.GetEnvironmentVariable(TestModeEnvironmentVariable), AotModeValue, StringComparison.OrdinalIgnoreCase))
             {
                 return;
             }

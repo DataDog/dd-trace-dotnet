@@ -1293,6 +1293,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
             var hasFieldOnlyAttribute = false;
             var allowFieldFallback = false;
+            var allowPrivateBaseMembers = IsFallbackToBaseTypesEnabled(proxyField.CustomAttributes);
             foreach (var attribute in proxyField.CustomAttributes)
             {
                 if (!IsDuckAttribute(attribute))
@@ -1324,7 +1325,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
             // Prefer property source binding when field-only mode is not requested and a matching property exists.
             if (!hasFieldOnlyAttribute &&
-                TryFindStructCopyTargetProperty(targetType, candidateNames, out var targetProperty))
+                TryFindStructCopyTargetProperty(targetType, candidateNames, allowPrivateBaseMembers, out var targetProperty))
             {
                 if (!TryCreateReturnConversion(proxyField.FieldSig.Type, targetProperty!.PropertySig.RetType, out var returnConversion))
                 {
@@ -1342,7 +1343,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
             if (hasFieldOnlyAttribute || allowFieldFallback)
             {
-                if (TryFindStructCopyTargetField(targetType, candidateNames, out var targetField))
+                if (TryFindStructCopyTargetField(targetType, candidateNames, allowPrivateBaseMembers, out var targetField))
                 {
                     if (!TryCreateReturnConversion(proxyField.FieldSig.Type, targetField!.FieldSig.Type, out var returnConversion))
                     {
@@ -1372,9 +1373,10 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// </summary>
         /// <param name="targetType">The target type value.</param>
         /// <param name="candidateNames">The candidate names value.</param>
+        /// <param name="allowPrivateBaseMembers">The allow private base members value.</param>
         /// <param name="targetProperty">The target property value.</param>
         /// <returns>true if the operation succeeds; otherwise, false.</returns>
-        private static bool TryFindStructCopyTargetProperty(TypeDef targetType, IReadOnlyList<string> candidateNames, out PropertyDef? targetProperty)
+        private static bool TryFindStructCopyTargetProperty(TypeDef targetType, IReadOnlyList<string> candidateNames, bool allowPrivateBaseMembers, out PropertyDef? targetProperty)
         {
             foreach (var candidateName in candidateNames)
             {
@@ -1389,6 +1391,13 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                         }
 
                         if (property.GetMethod is null || property.GetMethod.MethodSig.Params.Count != 0)
+                        {
+                            continue;
+                        }
+
+                        if (!allowPrivateBaseMembers &&
+                            !ReferenceEquals(current, targetType) &&
+                            property.GetMethod.IsPrivate)
                         {
                             continue;
                         }
@@ -1410,9 +1419,10 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// </summary>
         /// <param name="targetType">The target type value.</param>
         /// <param name="candidateNames">The candidate names value.</param>
+        /// <param name="allowPrivateBaseMembers">The allow private base members value.</param>
         /// <param name="targetField">The target field value.</param>
         /// <returns>true if the operation succeeds; otherwise, false.</returns>
-        private static bool TryFindStructCopyTargetField(TypeDef targetType, IReadOnlyList<string> candidateNames, out FieldDef? targetField)
+        private static bool TryFindStructCopyTargetField(TypeDef targetType, IReadOnlyList<string> candidateNames, bool allowPrivateBaseMembers, out FieldDef? targetField)
         {
             foreach (var candidateName in candidateNames)
             {
@@ -1421,11 +1431,20 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 {
                     foreach (var field in current.Fields)
                     {
-                        if (string.Equals(field.Name, candidateName, StringComparison.Ordinal))
+                        if (!string.Equals(field.Name, candidateName, StringComparison.Ordinal))
                         {
-                            targetField = field;
-                            return true;
+                            continue;
                         }
+
+                        if (!allowPrivateBaseMembers &&
+                            !ReferenceEquals(current, targetType) &&
+                            field.IsPrivate)
+                        {
+                            continue;
+                        }
+
+                        targetField = field;
+                        return true;
                     }
 
                     current = current.BaseType?.ResolveTypeDef();
@@ -2640,6 +2659,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             var fieldResolutionMode = GetFieldResolutionMode(proxyMethod);
             var fieldOnly = fieldResolutionMode == FieldResolutionMode.FieldOnly;
             var allowFieldFallback = fieldResolutionMode != FieldResolutionMode.Disabled;
+            var allowPrivateBaseMembers = IsFallbackToBaseTypesEnabled(proxyMethod);
+            // Dynamic ducktyping only applies FallbackToBaseTypes semantics to property/field binding paths.
+            // In AOT, property bindings are represented as accessor methods, so keep private-base fallback
+            // enabled only for accessor method resolution to preserve runtime parity.
+            var allowPrivateBaseMethodCandidates = allowPrivateBaseMembers && IsPropertyAccessorMethod(proxyMethod);
             MethodCompatibilityFailure? firstMethodFailure = null;
             if (!TryResolveForwardClosedGenericMethodArguments(targetType, proxyMethod, out var closedGenericMethodArguments, out var closedGenericMethodArgumentsFailureReason))
             {
@@ -2653,7 +2677,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
             if (!fieldOnly)
             {
-                foreach (var targetMethod in FindForwardTargetMethodCandidates(mapping, targetType, proxyMethod, closedGenericMethodArguments))
+                foreach (var targetMethod in FindForwardTargetMethodCandidates(mapping, targetType, proxyMethod, closedGenericMethodArguments, allowPrivateBaseMethodCandidates))
                 {
                     if (TryCreateForwardMethodBinding(proxyMethod, targetMethod, closedGenericMethodArguments, out var methodBinding, out var methodFailure))
                     {
@@ -2681,7 +2705,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 }
                 else
                 {
-                    if (TryFindForwardTargetField(targetType, proxyMethod, fieldAccessorKind, out var targetField, out var fieldBinding, out var fieldFailureReason))
+                    if (TryFindForwardTargetField(targetType, proxyMethod, fieldAccessorKind, allowPrivateBaseMembers, out var targetField, out var fieldBinding, out var fieldFailureReason))
                     {
                         binding = fieldAccessorKind == FieldAccessorKind.Getter
                                       ? ForwardBinding.ForFieldGet(proxyMethod, targetField!, fieldBinding)
@@ -2726,12 +2750,14 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <param name="targetType">The target type value.</param>
         /// <param name="proxyMethod">The proxy method value.</param>
         /// <param name="closedGenericMethodArguments">The closed generic method arguments value.</param>
+        /// <param name="allowPrivateBaseMembers">The allow private base members value.</param>
         /// <returns>The result produced by this operation.</returns>
         private static IEnumerable<MethodDef> FindForwardTargetMethodCandidates(
             DuckTypeAotMapping mapping,
             TypeDef targetType,
             MethodDef proxyMethod,
-            IReadOnlyList<TypeSig>? closedGenericMethodArguments)
+            IReadOnlyList<TypeSig>? closedGenericMethodArguments,
+            bool allowPrivateBaseMembers)
         {
             _ = TryGetForwardExplicitInterfaceTypeNames(
                 proxyMethod,
@@ -2747,7 +2773,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                              proxyMethod,
                              explicitInterfaceTypeNames,
                              useRelaxedNameComparison,
-                             expectedGenericArity))
+                             expectedGenericArity,
+                             allowPrivateBaseMembers: true))
                 {
                     var candidateKey = GetMethodCandidateKey(candidate);
                     if (emittedCandidates.Add(candidateKey))
@@ -2780,7 +2807,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                          proxyMethod,
                          explicitInterfaceTypeNames,
                          useRelaxedNameComparison,
-                         expectedGenericArity))
+                         expectedGenericArity,
+                         allowPrivateBaseMembers))
             {
                 yield return candidate;
             }
@@ -2794,13 +2822,15 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <param name="explicitInterfaceTypeNames">The explicit interface type names value.</param>
         /// <param name="useRelaxedNameComparison">The use relaxed name comparison value.</param>
         /// <param name="expectedGenericArity">The expected generic arity value.</param>
+        /// <param name="allowPrivateBaseMembers">The allow private base members value.</param>
         /// <returns>The result produced by this operation.</returns>
         private static IEnumerable<MethodDef> FindDefaultTargetMethodCandidates(
             TypeDef targetType,
             MethodDef proxyMethod,
             IReadOnlyList<string> explicitInterfaceTypeNames,
             bool useRelaxedNameComparison,
-            int expectedGenericArity)
+            int expectedGenericArity,
+            bool allowPrivateBaseMembers)
         {
             var candidateMethodNames = GetForwardTargetMethodNames(proxyMethod);
             foreach (var candidateMethodName in candidateMethodNames)
@@ -2824,6 +2854,13 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                         // Signature shape prefilter: generic arity and parameter count must match proxy method.
                         if (candidate.MethodSig.GenParamCount != expectedGenericArity ||
                             candidate.MethodSig.Params.Count != proxyMethod.MethodSig.Params.Count)
+                        {
+                            continue;
+                        }
+
+                        if (!allowPrivateBaseMembers &&
+                            !ReferenceEquals(current, targetType) &&
+                            candidate.IsPrivate)
                         {
                             continue;
                         }
@@ -3572,6 +3609,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <param name="targetType">The target type value.</param>
         /// <param name="proxyMethod">The proxy method value.</param>
         /// <param name="accessorKind">The accessor kind value.</param>
+        /// <param name="allowPrivateBaseMembers">The allow private base members value.</param>
         /// <param name="targetField">The target field value.</param>
         /// <param name="fieldBinding">The field binding value.</param>
         /// <param name="failureReason">The failure reason value.</param>
@@ -3580,6 +3618,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             TypeDef targetType,
             MethodDef proxyMethod,
             FieldAccessorKind accessorKind,
+            bool allowPrivateBaseMembers,
             out FieldDef? targetField,
             out ForwardFieldBindingInfo fieldBinding,
             out string? failureReason)
@@ -3597,6 +3636,13 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     foreach (var candidate in current.Fields)
                     {
                         if (!string.Equals(candidate.Name, candidateFieldName, StringComparison.Ordinal))
+                        {
+                            continue;
+                        }
+
+                        if (!allowPrivateBaseMembers &&
+                            !ReferenceEquals(current, targetType) &&
+                            candidate.IsPrivate)
                         {
                             continue;
                         }
@@ -3686,6 +3732,17 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// Determines whether the method represents a property accessor.
+        /// </summary>
+        /// <param name="proxyMethod">The proxy method value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
+        private static bool IsPropertyAccessorMethod(MethodDef proxyMethod)
+        {
+            var methodName = proxyMethod.Name.String ?? proxyMethod.Name.ToString();
+            return TryGetAccessorPropertyName(methodName, out _);
         }
 
         /// <summary>
@@ -3799,6 +3856,70 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
 
             return mode;
+        }
+
+        /// <summary>
+        /// Determines whether fallback to base types is enabled for a method mapping.
+        /// </summary>
+        /// <param name="proxyMethod">The proxy method value.</param>
+        /// <returns>true if fallback to base types is enabled; otherwise, false.</returns>
+        private static bool IsFallbackToBaseTypesEnabled(MethodDef proxyMethod)
+        {
+            foreach (var duckAttribute in EnumerateDuckAttributes(proxyMethod))
+            {
+                if (IsFallbackToBaseTypesEnabled(duckAttribute))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Determines whether fallback to base types is enabled for a custom-attribute set.
+        /// </summary>
+        /// <param name="customAttributes">The custom attributes value.</param>
+        /// <returns>true if fallback to base types is enabled; otherwise, false.</returns>
+        private static bool IsFallbackToBaseTypesEnabled(IList<CustomAttribute> customAttributes)
+        {
+            foreach (var customAttribute in customAttributes)
+            {
+                if (!IsDuckAttribute(customAttribute))
+                {
+                    continue;
+                }
+
+                if (IsFallbackToBaseTypesEnabled(customAttribute))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Determines whether fallback to base types is enabled for a Duck attribute.
+        /// </summary>
+        /// <param name="customAttribute">The custom attribute value.</param>
+        /// <returns>true if fallback to base types is enabled; otherwise, false.</returns>
+        private static bool IsFallbackToBaseTypesEnabled(CustomAttribute customAttribute)
+        {
+            foreach (var namedArgument in customAttribute.NamedArguments)
+            {
+                if (!string.Equals(namedArgument.Name.String, "FallbackToBaseTypes", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                if (TryGetBoolArgument(namedArgument.Argument.Value, out var fallbackToBaseTypes))
+                {
+                    return fallbackToBaseTypes;
+                }
+            }
+
+            return false;
         }
 
         /// <summary>
@@ -4325,6 +4446,37 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
 
             return parsedValues.Count > 0;
+        }
+
+        /// <summary>
+        /// Attempts to get int argument.
+        /// </summary>
+        /// <param name="value">The value value.</param>
+        /// <param name="boolValue">The bool value value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
+        private static bool TryGetBoolArgument(object? value, out bool boolValue)
+        {
+            switch (value)
+            {
+                case bool typedBool:
+                    boolValue = typedBool;
+                    return true;
+                case byte byteValue when byteValue is 0 or 1:
+                    boolValue = byteValue != 0;
+                    return true;
+                case sbyte signedByteValue when signedByteValue is 0 or 1:
+                    boolValue = signedByteValue != 0;
+                    return true;
+                case short int16Value when int16Value is 0 or 1:
+                    boolValue = int16Value != 0;
+                    return true;
+                case int int32Value when int32Value is 0 or 1:
+                    boolValue = int32Value != 0;
+                    return true;
+                default:
+                    boolValue = default;
+                    return false;
+            }
         }
 
         /// <summary>

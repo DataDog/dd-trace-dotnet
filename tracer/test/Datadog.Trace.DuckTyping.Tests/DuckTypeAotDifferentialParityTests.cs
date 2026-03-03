@@ -752,6 +752,19 @@ namespace Datadog.Trace.DuckTyping.Tests
                 typeof(NullableDuckChainTarget),
                 typeof(NullableDuckChainAotProxy),
                 instance => new NullableDuckChainAotProxy((NullableDuckChainTarget)instance!));
+            DuckTypeAotEngine.RegisterProxy(
+                typeof(NullableInnerDuckCopy),
+                typeof(NullableDuckChainInnerTarget),
+                typeof(NullableInnerDuckCopy),
+                instance =>
+                {
+                    if (instance is NullableDuckChainInnerTarget inner)
+                    {
+                        return new NullableInnerDuckCopy { Number = inner.Number };
+                    }
+
+                    return default(NullableInnerDuckCopy);
+                });
 
             var dynamicResult = InvokeDynamicForward(typeof(INullableDuckChainProxy), typeof(NullableDuckChainTarget));
             var aotResult = DuckTypeAotEngine.GetOrCreateProxyType(typeof(INullableDuckChainProxy), typeof(NullableDuckChainTarget));
@@ -1371,6 +1384,28 @@ namespace Datadog.Trace.DuckTyping.Tests
         }
 
         [Fact]
+        public void DifferentialParityFG10PropertyGetterPrivateBaseFallbackShouldMatchBetweenDynamicAndAot()
+        {
+            const string scenarioId = "FG-10";
+            DuckTypeAotEngine.RegisterProxy(
+                typeof(IFg10BasePrivateFallbackGetterProxy),
+                typeof(Fg10FallbackDerivedTarget),
+                typeof(Fg10BasePrivateFallbackGetterAotProxy),
+                instance => new Fg10BasePrivateFallbackGetterAotProxy((Fg10FallbackDerivedTarget)instance!));
+
+            var dynamicResult = InvokeDynamicForward(typeof(IFg10BasePrivateFallbackGetterProxy), typeof(Fg10FallbackDerivedTarget));
+            var aotResult = DuckTypeAotEngine.GetOrCreateProxyType(typeof(IFg10BasePrivateFallbackGetterProxy), typeof(Fg10FallbackDerivedTarget));
+
+            dynamicResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in dynamic mode");
+            aotResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in AOT mode");
+
+            var dynamicProxy = dynamicResult.CreateInstance<IFg10BasePrivateFallbackGetterProxy>(new Fg10FallbackDerivedTarget(87));
+            var aotProxy = aotResult.CreateInstance<IFg10BasePrivateFallbackGetterProxy>(new Fg10FallbackDerivedTarget(87));
+
+            aotProxy.Hidden.Should().Be(dynamicProxy.Hidden, $"scenario {scenarioId} should preserve private-base getter fallback behavior");
+        }
+
+        [Fact]
         public void DifferentialParityFS2PropertySetterNonPublicShouldMatchBetweenDynamicAndAot()
         {
             const string scenarioId = "FS-2";
@@ -1422,6 +1457,33 @@ namespace Datadog.Trace.DuckTyping.Tests
             aotProxy.Hidden = 48;
 
             aotProxy.Read().Should().Be(dynamicProxy.Read(), $"scenario {scenarioId} should preserve fallback setter behavior");
+        }
+
+        [Fact]
+        public void DifferentialParityFS7PropertySetterPrivateBaseFallbackShouldMatchBetweenDynamicAndAot()
+        {
+            const string scenarioId = "FS-7";
+            DuckTypeAotEngine.RegisterProxy(
+                typeof(IFs7BasePrivateFallbackSetterProxy),
+                typeof(Fs7FallbackDerivedTarget),
+                typeof(Fs7BasePrivateFallbackSetterAotProxy),
+                instance => new Fs7BasePrivateFallbackSetterAotProxy((Fs7FallbackDerivedTarget)instance!));
+
+            var dynamicResult = InvokeDynamicForward(typeof(IFs7BasePrivateFallbackSetterProxy), typeof(Fs7FallbackDerivedTarget));
+            var aotResult = DuckTypeAotEngine.GetOrCreateProxyType(typeof(IFs7BasePrivateFallbackSetterProxy), typeof(Fs7FallbackDerivedTarget));
+
+            dynamicResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in dynamic mode");
+            aotResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in AOT mode");
+
+            var dynamicTarget = new Fs7FallbackDerivedTarget();
+            var aotTarget = new Fs7FallbackDerivedTarget();
+            var dynamicProxy = dynamicResult.CreateInstance<IFs7BasePrivateFallbackSetterProxy>(dynamicTarget);
+            var aotProxy = aotResult.CreateInstance<IFs7BasePrivateFallbackSetterProxy>(aotTarget);
+
+            dynamicProxy.Hidden = 53;
+            aotProxy.Hidden = 53;
+
+            aotProxy.Read().Should().Be(dynamicProxy.Read(), $"scenario {scenarioId} should preserve private-base setter fallback behavior");
         }
 
         [Fact]
@@ -1501,6 +1563,28 @@ namespace Datadog.Trace.DuckTyping.Tests
             var aotProxy = aotResult.CreateInstance<IFf5FallbackFieldProxy>(new Ff5FallbackFieldTarget(99));
 
             aotProxy.Hidden.Should().Be(dynamicProxy.Hidden, $"scenario {scenarioId} should preserve fallback field getter behavior");
+        }
+
+        [Fact]
+        public void DifferentialParityFF6FieldGetterPrivateBaseFallbackShouldMatchBetweenDynamicAndAot()
+        {
+            const string scenarioId = "FF-6";
+            DuckTypeAotEngine.RegisterProxy(
+                typeof(IFf6BasePrivateFallbackFieldProxy),
+                typeof(Ff6FallbackDerivedTarget),
+                typeof(Ff6BasePrivateFallbackFieldAotProxy),
+                instance => new Ff6BasePrivateFallbackFieldAotProxy((Ff6FallbackDerivedTarget)instance!));
+
+            var dynamicResult = InvokeDynamicForward(typeof(IFf6BasePrivateFallbackFieldProxy), typeof(Ff6FallbackDerivedTarget));
+            var aotResult = DuckTypeAotEngine.GetOrCreateProxyType(typeof(IFf6BasePrivateFallbackFieldProxy), typeof(Ff6FallbackDerivedTarget));
+
+            dynamicResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in dynamic mode");
+            aotResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in AOT mode");
+
+            var dynamicProxy = dynamicResult.CreateInstance<IFf6BasePrivateFallbackFieldProxy>(new Ff6FallbackDerivedTarget(103));
+            var aotProxy = aotResult.CreateInstance<IFf6BasePrivateFallbackFieldProxy>(new Ff6FallbackDerivedTarget(103));
+
+            aotProxy.Hidden.Should().Be(dynamicProxy.Hidden, $"scenario {scenarioId} should preserve private-base field fallback behavior");
         }
 
         [Fact]
@@ -3417,6 +3501,63 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+Fg10FallbackDerivedTarget", "Datadog.Trace.DuckTyping.Tests")]
+        private interface IFg10BasePrivateFallbackGetterProxy
+        {
+            [Duck(Name = "Hidden", FallbackToBaseTypes = true)]
+            int Hidden { get; }
+        }
+
+        private class Fg10FallbackBaseTarget
+        {
+            private readonly int _hidden;
+
+            protected Fg10FallbackBaseTarget(int hidden)
+            {
+                _hidden = hidden;
+            }
+
+            private int Hidden => _hidden;
+        }
+
+        private class Fg10FallbackDerivedTarget : Fg10FallbackBaseTarget
+        {
+            public Fg10FallbackDerivedTarget(int hidden)
+                : base(hidden)
+            {
+            }
+        }
+
+        private class Fg10BasePrivateFallbackGetterAotProxy : IFg10BasePrivateFallbackGetterProxy
+        {
+            private static readonly PropertyInfo HiddenProperty = GetHiddenProperty();
+            private readonly Fg10FallbackDerivedTarget _target;
+
+            public Fg10BasePrivateFallbackGetterAotProxy(Fg10FallbackDerivedTarget target)
+            {
+                _target = target;
+            }
+
+            public int Hidden
+            {
+                get
+                {
+                    if (HiddenProperty.GetValue(_target) is int value)
+                    {
+                        return value;
+                    }
+
+                    return default;
+                }
+            }
+
+            private static PropertyInfo GetHiddenProperty()
+            {
+                return typeof(Fg10FallbackBaseTarget).GetProperty("Hidden", BindingFlags.Instance | BindingFlags.NonPublic)
+                    ?? throw new InvalidOperationException("Unable to resolve fallback base property Hidden.");
+            }
+        }
+
         [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+Fs2NonPublicSetterTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IFs2NonPublicSetterProxy
         {
@@ -3508,6 +3649,57 @@ namespace Datadog.Trace.DuckTyping.Tests
             {
                 return typeof(Fs6FallbackSetterTarget).GetProperty("Hidden", BindingFlags.Instance | BindingFlags.NonPublic)
                     ?? throw new InvalidOperationException("Unable to resolve fallback setter property Hidden.");
+            }
+        }
+
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+Fs7FallbackDerivedTarget", "Datadog.Trace.DuckTyping.Tests")]
+        private interface IFs7BasePrivateFallbackSetterProxy
+        {
+            [Duck(Name = "Hidden", FallbackToBaseTypes = true)]
+            int Hidden { set; }
+
+            [Duck(Name = "Read")]
+            int Read();
+        }
+
+        private class Fs7FallbackBaseTarget
+        {
+            private int Hidden { get; set; }
+
+            public int Read()
+            {
+                return Hidden;
+            }
+        }
+
+        private class Fs7FallbackDerivedTarget : Fs7FallbackBaseTarget
+        {
+        }
+
+        private class Fs7BasePrivateFallbackSetterAotProxy : IFs7BasePrivateFallbackSetterProxy
+        {
+            private static readonly PropertyInfo HiddenProperty = GetHiddenProperty();
+            private readonly Fs7FallbackDerivedTarget _target;
+
+            public Fs7BasePrivateFallbackSetterAotProxy(Fs7FallbackDerivedTarget target)
+            {
+                _target = target;
+            }
+
+            public int Hidden
+            {
+                set => HiddenProperty.SetValue(_target, value);
+            }
+
+            public int Read()
+            {
+                return _target.Read();
+            }
+
+            private static PropertyInfo GetHiddenProperty()
+            {
+                return typeof(Fs7FallbackBaseTarget).GetProperty("Hidden", BindingFlags.Instance | BindingFlags.NonPublic)
+                    ?? throw new InvalidOperationException("Unable to resolve fallback base setter property Hidden.");
             }
         }
 
@@ -3637,6 +3829,61 @@ namespace Datadog.Trace.DuckTyping.Tests
             {
                 return typeof(Ff5FallbackFieldTarget).GetField("_hidden", BindingFlags.Instance | BindingFlags.NonPublic)
                     ?? throw new InvalidOperationException("Unable to resolve fallback field _hidden.");
+            }
+        }
+
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+Ff6FallbackDerivedTarget", "Datadog.Trace.DuckTyping.Tests")]
+        private interface IFf6BasePrivateFallbackFieldProxy
+        {
+            [DuckField(Name = "_hidden", FallbackToBaseTypes = true)]
+            int Hidden { get; }
+        }
+
+        private class Ff6FallbackBaseTarget
+        {
+            private readonly int _hidden;
+
+            protected Ff6FallbackBaseTarget(int hidden)
+            {
+                _hidden = hidden;
+            }
+        }
+
+        private class Ff6FallbackDerivedTarget : Ff6FallbackBaseTarget
+        {
+            public Ff6FallbackDerivedTarget(int hidden)
+                : base(hidden)
+            {
+            }
+        }
+
+        private class Ff6BasePrivateFallbackFieldAotProxy : IFf6BasePrivateFallbackFieldProxy
+        {
+            private static readonly FieldInfo HiddenField = GetHiddenField();
+            private readonly Ff6FallbackDerivedTarget _target;
+
+            public Ff6BasePrivateFallbackFieldAotProxy(Ff6FallbackDerivedTarget target)
+            {
+                _target = target;
+            }
+
+            public int Hidden
+            {
+                get
+                {
+                    if (HiddenField.GetValue(_target) is int value)
+                    {
+                        return value;
+                    }
+
+                    return default;
+                }
+            }
+
+            private static FieldInfo GetHiddenField()
+            {
+                return typeof(Ff6FallbackBaseTarget).GetField("_hidden", BindingFlags.Instance | BindingFlags.NonPublic)
+                    ?? throw new InvalidOperationException("Unable to resolve fallback base field _hidden.");
             }
         }
 
