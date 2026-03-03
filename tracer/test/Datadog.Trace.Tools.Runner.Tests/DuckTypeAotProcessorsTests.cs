@@ -147,11 +147,14 @@ public class DuckTypeAotProcessorsTests
         scenarioIds.Should().Contain("FG-5");
         scenarioIds.Should().Contain("FG-6");
         scenarioIds.Should().Contain("FG-9");
+        scenarioIds.Should().Contain("FG-10");
         scenarioIds.Should().Contain("FS-2");
         scenarioIds.Should().Contain("FS-6");
+        scenarioIds.Should().Contain("FS-7");
         scenarioIds.Should().Contain("FF-3");
         scenarioIds.Should().Contain("FF-4");
         scenarioIds.Should().Contain("FF-5");
+        scenarioIds.Should().Contain("FF-6");
         scenarioIds.Should().Contain("RT-2");
         scenarioIds.Should().Contain("FG-7");
         scenarioIds.Should().Contain("FG-8");
@@ -4553,6 +4556,821 @@ public class DuckTypeAotProcessorsTests
             mapping.DiagnosticCode.Should().Be("DTAOT0209");
             mapping.Details.Should().NotBeNull();
             mapping.Details!.Should().Contain("readonly");
+        }
+        finally
+        {
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
+
+    [Fact]
+    public void GenerateProcessorShouldReportPrivateBasePropertyWithoutFallbackAsMissingTargetMember()
+    {
+        var tempDirectory = CreateTempDirectory();
+        try
+        {
+            var proxyAssemblyPath = typeof(DuckTypeAotProcessorsTests).Assembly.Location;
+            var targetAssemblyPath = typeof(TestDuckBasePrivatePropertyTarget).Assembly.Location;
+            var proxyAssemblyName = AssemblyName.GetAssemblyName(proxyAssemblyPath).Name;
+            var targetAssemblyName = AssemblyName.GetAssemblyName(targetAssemblyPath).Name;
+
+            var outputPath = Path.Combine(tempDirectory, "Datadog.Trace.DuckType.AotRegistry.BasePrivateProperty.NoFallback.dll");
+            var mapFilePath = Path.Combine(tempDirectory, "ducktype-aot-map-base-private-property-no-fallback.json");
+            var trimmerDescriptorPath = Path.Combine(tempDirectory, "ducktype-aot-base-private-property-no-fallback.linker.xml");
+            var propsPath = Path.Combine(tempDirectory, "ducktype-aot-base-private-property-no-fallback.props");
+
+            var mapDocument = new
+            {
+                mappings = new[]
+                {
+                    new
+                    {
+                        mode = "forward",
+                        proxyType = typeof(ITestDuckBasePrivatePropertyNoFallbackProxy).FullName,
+                        proxyAssembly = proxyAssemblyName,
+                        targetType = typeof(TestDuckBasePrivatePropertyTarget).FullName,
+                        targetAssembly = targetAssemblyName
+                    }
+                }
+            };
+            File.WriteAllText(mapFilePath, JsonConvert.SerializeObject(mapDocument, Formatting.Indented));
+
+            var options = new DuckTypeAotGenerateOptions(
+                proxyAssemblies: new[] { proxyAssemblyPath },
+                targetAssemblies: new[] { targetAssemblyPath },
+                targetFolders: Array.Empty<string>(),
+                targetFilters: new[] { "*.dll" },
+                mapFile: mapFilePath,
+                mappingCatalog: null,
+                genericInstantiationsFile: null,
+                outputPath: outputPath,
+                assemblyName: "Datadog.Trace.DuckType.AotRegistry.BasePrivateProperty.NoFallback",
+                trimmerDescriptorPath: trimmerDescriptorPath,
+                propsPath: propsPath);
+
+            var exitCode = DuckTypeAotGenerateProcessor.Process(options);
+            exitCode.Should().Be(0);
+
+            var compatibilityMatrixPath = $"{outputPath}.compat.json";
+            var matrix = JsonConvert.DeserializeObject<DuckTypeAotCompatibilityMatrix>(File.ReadAllText(compatibilityMatrixPath));
+            matrix.Should().NotBeNull();
+            matrix!.Mappings.Should().ContainSingle();
+
+            var mapping = matrix.Mappings[0];
+            mapping.Status.Should().BeOneOf(
+                DuckTypeAotCompatibilityStatuses.MissingTargetMethod,
+                DuckTypeAotCompatibilityStatuses.IncompatibleMethodSignature);
+            mapping.Details.Should().NotBeNull();
+            mapping.Details!.Should().Contain("not found");
+        }
+        finally
+        {
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
+
+    [Fact]
+    public void GenerateProcessorShouldSupportPrivateBasePropertyWhenFallbackToBaseTypesIsEnabled()
+    {
+        var tempDirectory = CreateTempDirectory();
+        try
+        {
+            var proxyAssemblyPath = typeof(DuckTypeAotProcessorsTests).Assembly.Location;
+            var targetAssemblyPath = typeof(TestDuckBasePrivatePropertyTarget).Assembly.Location;
+            var proxyAssemblyName = AssemblyName.GetAssemblyName(proxyAssemblyPath).Name;
+            var targetAssemblyName = AssemblyName.GetAssemblyName(targetAssemblyPath).Name;
+
+            var outputPath = Path.Combine(tempDirectory, "Datadog.Trace.DuckType.AotRegistry.BasePrivateProperty.Fallback.dll");
+            var mapFilePath = Path.Combine(tempDirectory, "ducktype-aot-map-base-private-property-fallback.json");
+            var trimmerDescriptorPath = Path.Combine(tempDirectory, "ducktype-aot-base-private-property-fallback.linker.xml");
+            var propsPath = Path.Combine(tempDirectory, "ducktype-aot-base-private-property-fallback.props");
+
+            var mapDocument = new
+            {
+                mappings = new[]
+                {
+                    new
+                    {
+                        mode = "forward",
+                        proxyType = typeof(ITestDuckBasePrivatePropertyFallbackProxy).FullName,
+                        proxyAssembly = proxyAssemblyName,
+                        targetType = typeof(TestDuckBasePrivatePropertyTarget).FullName,
+                        targetAssembly = targetAssemblyName
+                    }
+                }
+            };
+            File.WriteAllText(mapFilePath, JsonConvert.SerializeObject(mapDocument, Formatting.Indented));
+
+            var options = new DuckTypeAotGenerateOptions(
+                proxyAssemblies: new[] { proxyAssemblyPath },
+                targetAssemblies: new[] { targetAssemblyPath },
+                targetFolders: Array.Empty<string>(),
+                targetFilters: new[] { "*.dll" },
+                mapFile: mapFilePath,
+                mappingCatalog: null,
+                genericInstantiationsFile: null,
+                outputPath: outputPath,
+                assemblyName: "Datadog.Trace.DuckType.AotRegistry.BasePrivateProperty.Fallback",
+                trimmerDescriptorPath: trimmerDescriptorPath,
+                propsPath: propsPath);
+
+            var exitCode = DuckTypeAotGenerateProcessor.Process(options);
+            exitCode.Should().Be(0);
+
+            var compatibilityMatrixPath = $"{outputPath}.compat.json";
+            var matrix = JsonConvert.DeserializeObject<DuckTypeAotCompatibilityMatrix>(File.ReadAllText(compatibilityMatrixPath));
+            matrix.Should().NotBeNull();
+            matrix!.Mappings.Should().ContainSingle(mapping =>
+                string.Equals(mapping.Status, DuckTypeAotCompatibilityStatuses.Compatible, StringComparison.Ordinal));
+
+            var loadContext = new AssemblyLoadContext("DuckTypeAotProcessorsTests-BasePrivateProperty-Fallback", isCollectible: true);
+            try
+            {
+                var generatedAssembly = loadContext.LoadFromAssemblyPath(outputPath);
+                var contextTestAssembly = loadContext.LoadFromAssemblyPath(proxyAssemblyPath);
+
+                var generatedProxyType = generatedAssembly.GetTypes().Single(type =>
+                    string.Equals(type.Namespace, "Datadog.Trace.DuckTyping.Generated.Proxies", StringComparison.Ordinal) &&
+                    type.GetInterfaces().Any(@interface => string.Equals(@interface.FullName, typeof(ITestDuckBasePrivatePropertyFallbackProxy).FullName, StringComparison.Ordinal)));
+                var constructor = GetDuckProxyConstructor(generatedProxyType);
+                constructor.Should().NotBeNull();
+
+                var targetType = contextTestAssembly.GetType(typeof(TestDuckBasePrivatePropertyTarget).FullName!, throwOnError: true)!;
+                var targetCtor = targetType.GetConstructor(
+                    BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic,
+                    binder: null,
+                    types: [typeof(int), typeof(int)],
+                    modifiers: null);
+                targetCtor.Should().NotBeNull();
+                var targetInstance = targetCtor!.Invoke([41, 5]);
+
+                var proxyInstance = constructor!.Invoke([targetInstance]);
+                var getHiddenMethod = generatedProxyType.GetMethod("get_Hidden", Type.EmptyTypes);
+                var setHiddenMethod = generatedProxyType.GetMethod("set_Hidden", [typeof(int)]);
+                getHiddenMethod.Should().NotBeNull();
+                setHiddenMethod.Should().NotBeNull();
+
+                var before = getHiddenMethod!.Invoke(proxyInstance, Array.Empty<object>());
+                before.Should().Be(41);
+
+                _ = setHiddenMethod!.Invoke(proxyInstance, [73]);
+
+                var after = getHiddenMethod.Invoke(proxyInstance, Array.Empty<object>());
+                after.Should().Be(73);
+
+                var readHiddenMethod = targetType.GetMethod("ReadHidden", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+                readHiddenMethod.Should().NotBeNull();
+                var targetHidden = readHiddenMethod!.Invoke(targetInstance, Array.Empty<object>());
+                targetHidden.Should().Be(73);
+            }
+            finally
+            {
+                loadContext.Unload();
+            }
+        }
+        finally
+        {
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
+
+    [Fact]
+    public void GenerateProcessorShouldReportPrivateBaseFieldWithoutFallbackAsMissingTargetMember()
+    {
+        var tempDirectory = CreateTempDirectory();
+        try
+        {
+            var proxyAssemblyPath = typeof(DuckTypeAotProcessorsTests).Assembly.Location;
+            var targetAssemblyPath = typeof(TestDuckBasePrivateFieldTarget).Assembly.Location;
+            var proxyAssemblyName = AssemblyName.GetAssemblyName(proxyAssemblyPath).Name;
+            var targetAssemblyName = AssemblyName.GetAssemblyName(targetAssemblyPath).Name;
+
+            var outputPath = Path.Combine(tempDirectory, "Datadog.Trace.DuckType.AotRegistry.BasePrivateField.NoFallback.dll");
+            var mapFilePath = Path.Combine(tempDirectory, "ducktype-aot-map-base-private-field-no-fallback.json");
+            var trimmerDescriptorPath = Path.Combine(tempDirectory, "ducktype-aot-base-private-field-no-fallback.linker.xml");
+            var propsPath = Path.Combine(tempDirectory, "ducktype-aot-base-private-field-no-fallback.props");
+
+            var mapDocument = new
+            {
+                mappings = new[]
+                {
+                    new
+                    {
+                        mode = "forward",
+                        proxyType = typeof(ITestDuckBasePrivateFieldNoFallbackProxy).FullName,
+                        proxyAssembly = proxyAssemblyName,
+                        targetType = typeof(TestDuckBasePrivateFieldTarget).FullName,
+                        targetAssembly = targetAssemblyName
+                    }
+                }
+            };
+            File.WriteAllText(mapFilePath, JsonConvert.SerializeObject(mapDocument, Formatting.Indented));
+
+            var options = new DuckTypeAotGenerateOptions(
+                proxyAssemblies: new[] { proxyAssemblyPath },
+                targetAssemblies: new[] { targetAssemblyPath },
+                targetFolders: Array.Empty<string>(),
+                targetFilters: new[] { "*.dll" },
+                mapFile: mapFilePath,
+                mappingCatalog: null,
+                genericInstantiationsFile: null,
+                outputPath: outputPath,
+                assemblyName: "Datadog.Trace.DuckType.AotRegistry.BasePrivateField.NoFallback",
+                trimmerDescriptorPath: trimmerDescriptorPath,
+                propsPath: propsPath);
+
+            var exitCode = DuckTypeAotGenerateProcessor.Process(options);
+            exitCode.Should().Be(0);
+
+            var compatibilityMatrixPath = $"{outputPath}.compat.json";
+            var matrix = JsonConvert.DeserializeObject<DuckTypeAotCompatibilityMatrix>(File.ReadAllText(compatibilityMatrixPath));
+            matrix.Should().NotBeNull();
+            matrix!.Mappings.Should().ContainSingle();
+
+            var mapping = matrix.Mappings[0];
+            mapping.Status.Should().BeOneOf(
+                DuckTypeAotCompatibilityStatuses.MissingTargetMethod,
+                DuckTypeAotCompatibilityStatuses.IncompatibleMethodSignature);
+            mapping.Details.Should().NotBeNull();
+            mapping.Details!.Should().Contain("not found");
+        }
+        finally
+        {
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
+
+    [Fact]
+    public void GenerateProcessorShouldSupportPrivateBaseFieldWhenFallbackToBaseTypesIsEnabled()
+    {
+        var tempDirectory = CreateTempDirectory();
+        try
+        {
+            var proxyAssemblyPath = typeof(DuckTypeAotProcessorsTests).Assembly.Location;
+            var targetAssemblyPath = typeof(TestDuckBasePrivateFieldTarget).Assembly.Location;
+            var proxyAssemblyName = AssemblyName.GetAssemblyName(proxyAssemblyPath).Name;
+            var targetAssemblyName = AssemblyName.GetAssemblyName(targetAssemblyPath).Name;
+
+            var outputPath = Path.Combine(tempDirectory, "Datadog.Trace.DuckType.AotRegistry.BasePrivateField.Fallback.dll");
+            var mapFilePath = Path.Combine(tempDirectory, "ducktype-aot-map-base-private-field-fallback.json");
+            var trimmerDescriptorPath = Path.Combine(tempDirectory, "ducktype-aot-base-private-field-fallback.linker.xml");
+            var propsPath = Path.Combine(tempDirectory, "ducktype-aot-base-private-field-fallback.props");
+
+            var mapDocument = new
+            {
+                mappings = new[]
+                {
+                    new
+                    {
+                        mode = "forward",
+                        proxyType = typeof(ITestDuckBasePrivateFieldFallbackProxy).FullName,
+                        proxyAssembly = proxyAssemblyName,
+                        targetType = typeof(TestDuckBasePrivateFieldTarget).FullName,
+                        targetAssembly = targetAssemblyName
+                    }
+                }
+            };
+            File.WriteAllText(mapFilePath, JsonConvert.SerializeObject(mapDocument, Formatting.Indented));
+
+            var options = new DuckTypeAotGenerateOptions(
+                proxyAssemblies: new[] { proxyAssemblyPath },
+                targetAssemblies: new[] { targetAssemblyPath },
+                targetFolders: Array.Empty<string>(),
+                targetFilters: new[] { "*.dll" },
+                mapFile: mapFilePath,
+                mappingCatalog: null,
+                genericInstantiationsFile: null,
+                outputPath: outputPath,
+                assemblyName: "Datadog.Trace.DuckType.AotRegistry.BasePrivateField.Fallback",
+                trimmerDescriptorPath: trimmerDescriptorPath,
+                propsPath: propsPath);
+
+            var exitCode = DuckTypeAotGenerateProcessor.Process(options);
+            exitCode.Should().Be(0);
+
+            var compatibilityMatrixPath = $"{outputPath}.compat.json";
+            var matrix = JsonConvert.DeserializeObject<DuckTypeAotCompatibilityMatrix>(File.ReadAllText(compatibilityMatrixPath));
+            matrix.Should().NotBeNull();
+            matrix!.Mappings.Should().ContainSingle(mapping =>
+                string.Equals(mapping.Status, DuckTypeAotCompatibilityStatuses.Compatible, StringComparison.Ordinal));
+
+            var loadContext = new AssemblyLoadContext("DuckTypeAotProcessorsTests-BasePrivateField-Fallback", isCollectible: true);
+            try
+            {
+                var generatedAssembly = loadContext.LoadFromAssemblyPath(outputPath);
+                var contextTestAssembly = loadContext.LoadFromAssemblyPath(proxyAssemblyPath);
+
+                var generatedProxyType = generatedAssembly.GetTypes().Single(type =>
+                    string.Equals(type.Namespace, "Datadog.Trace.DuckTyping.Generated.Proxies", StringComparison.Ordinal) &&
+                    type.GetInterfaces().Any(@interface => string.Equals(@interface.FullName, typeof(ITestDuckBasePrivateFieldFallbackProxy).FullName, StringComparison.Ordinal)));
+                var constructor = GetDuckProxyConstructor(generatedProxyType);
+                constructor.Should().NotBeNull();
+
+                var targetType = contextTestAssembly.GetType(typeof(TestDuckBasePrivateFieldTarget).FullName!, throwOnError: true)!;
+                var targetCtor = targetType.GetConstructor(
+                    BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic,
+                    binder: null,
+                    types: [typeof(int)],
+                    modifiers: null);
+                targetCtor.Should().NotBeNull();
+                var targetInstance = targetCtor!.Invoke([59]);
+
+                var proxyInstance = constructor!.Invoke([targetInstance]);
+                var getHiddenMethod = generatedProxyType.GetMethod("get_Hidden", Type.EmptyTypes);
+                var setHiddenMethod = generatedProxyType.GetMethod("set_Hidden", [typeof(int)]);
+                getHiddenMethod.Should().NotBeNull();
+                setHiddenMethod.Should().NotBeNull();
+
+                var before = getHiddenMethod!.Invoke(proxyInstance, Array.Empty<object>());
+                before.Should().Be(59);
+
+                _ = setHiddenMethod!.Invoke(proxyInstance, [101]);
+
+                var after = getHiddenMethod.Invoke(proxyInstance, Array.Empty<object>());
+                after.Should().Be(101);
+
+                var readHiddenMethod = targetType.GetMethod("ReadHidden", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+                readHiddenMethod.Should().NotBeNull();
+                var targetHidden = readHiddenMethod!.Invoke(targetInstance, Array.Empty<object>());
+                targetHidden.Should().Be(101);
+            }
+            finally
+            {
+                loadContext.Unload();
+            }
+        }
+        finally
+        {
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
+
+    [Fact]
+    public void GenerateProcessorShouldResolveInheritedNonPrivateBasePropertyWithoutFallback()
+    {
+        var tempDirectory = CreateTempDirectory();
+        try
+        {
+            var proxyAssemblyPath = typeof(DuckTypeAotProcessorsTests).Assembly.Location;
+            var targetAssemblyPath = typeof(TestDuckBasePrivatePropertyTarget).Assembly.Location;
+            var proxyAssemblyName = AssemblyName.GetAssemblyName(proxyAssemblyPath).Name;
+            var targetAssemblyName = AssemblyName.GetAssemblyName(targetAssemblyPath).Name;
+
+            var outputPath = Path.Combine(tempDirectory, "Datadog.Trace.DuckType.AotRegistry.BaseInheritedProperty.NoFallback.dll");
+            var mapFilePath = Path.Combine(tempDirectory, "ducktype-aot-map-base-inherited-property-no-fallback.json");
+            var trimmerDescriptorPath = Path.Combine(tempDirectory, "ducktype-aot-base-inherited-property-no-fallback.linker.xml");
+            var propsPath = Path.Combine(tempDirectory, "ducktype-aot-base-inherited-property-no-fallback.props");
+
+            var mapDocument = new
+            {
+                mappings = new[]
+                {
+                    new
+                    {
+                        mode = "forward",
+                        proxyType = typeof(ITestDuckInheritedNonPrivatePropertyProxy).FullName,
+                        proxyAssembly = proxyAssemblyName,
+                        targetType = typeof(TestDuckBasePrivatePropertyTarget).FullName,
+                        targetAssembly = targetAssemblyName
+                    }
+                }
+            };
+            File.WriteAllText(mapFilePath, JsonConvert.SerializeObject(mapDocument, Formatting.Indented));
+
+            var options = new DuckTypeAotGenerateOptions(
+                proxyAssemblies: new[] { proxyAssemblyPath },
+                targetAssemblies: new[] { targetAssemblyPath },
+                targetFolders: Array.Empty<string>(),
+                targetFilters: new[] { "*.dll" },
+                mapFile: mapFilePath,
+                mappingCatalog: null,
+                genericInstantiationsFile: null,
+                outputPath: outputPath,
+                assemblyName: "Datadog.Trace.DuckType.AotRegistry.BaseInheritedProperty.NoFallback",
+                trimmerDescriptorPath: trimmerDescriptorPath,
+                propsPath: propsPath);
+
+            var exitCode = DuckTypeAotGenerateProcessor.Process(options);
+            exitCode.Should().Be(0);
+
+            var compatibilityMatrixPath = $"{outputPath}.compat.json";
+            var matrix = JsonConvert.DeserializeObject<DuckTypeAotCompatibilityMatrix>(File.ReadAllText(compatibilityMatrixPath));
+            matrix.Should().NotBeNull();
+            matrix!.Mappings.Should().ContainSingle(mapping =>
+                string.Equals(mapping.Status, DuckTypeAotCompatibilityStatuses.Compatible, StringComparison.Ordinal));
+
+            var loadContext = new AssemblyLoadContext("DuckTypeAotProcessorsTests-BaseInheritedProperty-NoFallback", isCollectible: true);
+            try
+            {
+                var generatedAssembly = loadContext.LoadFromAssemblyPath(outputPath);
+                var contextTestAssembly = loadContext.LoadFromAssemblyPath(proxyAssemblyPath);
+
+                var generatedProxyType = generatedAssembly.GetTypes().Single(type =>
+                    string.Equals(type.Namespace, "Datadog.Trace.DuckTyping.Generated.Proxies", StringComparison.Ordinal) &&
+                    type.GetInterfaces().Any(@interface => string.Equals(@interface.FullName, typeof(ITestDuckInheritedNonPrivatePropertyProxy).FullName, StringComparison.Ordinal)));
+                var constructor = GetDuckProxyConstructor(generatedProxyType);
+                constructor.Should().NotBeNull();
+
+                var targetType = contextTestAssembly.GetType(typeof(TestDuckBasePrivatePropertyTarget).FullName!, throwOnError: true)!;
+                var targetCtor = targetType.GetConstructor(
+                    BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic,
+                    binder: null,
+                    types: [typeof(int), typeof(int)],
+                    modifiers: null);
+                targetCtor.Should().NotBeNull();
+                var targetInstance = targetCtor!.Invoke([13, 37]);
+
+                var proxyInstance = constructor!.Invoke([targetInstance]);
+                var getInheritedMethod = generatedProxyType.GetMethod("get_InheritedVisible", Type.EmptyTypes);
+                var setInheritedMethod = generatedProxyType.GetMethod("set_InheritedVisible", [typeof(int)]);
+                getInheritedMethod.Should().NotBeNull();
+                setInheritedMethod.Should().NotBeNull();
+
+                var before = getInheritedMethod!.Invoke(proxyInstance, Array.Empty<object>());
+                before.Should().Be(37);
+
+                _ = setInheritedMethod!.Invoke(proxyInstance, [91]);
+
+                var after = getInheritedMethod.Invoke(proxyInstance, Array.Empty<object>());
+                after.Should().Be(91);
+
+                var readInheritedMethod = targetType.GetMethod("ReadInheritedVisible", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+                readInheritedMethod.Should().NotBeNull();
+                var targetValue = readInheritedMethod!.Invoke(targetInstance, Array.Empty<object>());
+                targetValue.Should().Be(91);
+            }
+            finally
+            {
+                loadContext.Unload();
+            }
+        }
+        finally
+        {
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
+
+    [Fact]
+    public void GenerateProcessorShouldNotSupportPrivateBaseMethodEvenWhenFallbackToBaseTypesIsEnabled()
+    {
+        var tempDirectory = CreateTempDirectory();
+        try
+        {
+            var proxyAssemblyPath = typeof(DuckTypeAotProcessorsTests).Assembly.Location;
+            var targetAssemblyPath = typeof(TestDuckBasePrivateMethodTarget).Assembly.Location;
+            var proxyAssemblyName = AssemblyName.GetAssemblyName(proxyAssemblyPath).Name;
+            var targetAssemblyName = AssemblyName.GetAssemblyName(targetAssemblyPath).Name;
+
+            var outputPath = Path.Combine(tempDirectory, "Datadog.Trace.DuckType.AotRegistry.BasePrivateMethod.Fallback.dll");
+            var mapFilePath = Path.Combine(tempDirectory, "ducktype-aot-map-base-private-method-fallback.json");
+            var trimmerDescriptorPath = Path.Combine(tempDirectory, "ducktype-aot-base-private-method-fallback.linker.xml");
+            var propsPath = Path.Combine(tempDirectory, "ducktype-aot-base-private-method-fallback.props");
+
+            var mapDocument = new
+            {
+                mappings = new[]
+                {
+                    new
+                    {
+                        mode = "forward",
+                        proxyType = typeof(ITestDuckBasePrivateMethodFallbackProxy).FullName,
+                        proxyAssembly = proxyAssemblyName,
+                        targetType = typeof(TestDuckBasePrivateMethodTarget).FullName,
+                        targetAssembly = targetAssemblyName
+                    }
+                }
+            };
+            File.WriteAllText(mapFilePath, JsonConvert.SerializeObject(mapDocument, Formatting.Indented));
+
+            var options = new DuckTypeAotGenerateOptions(
+                proxyAssemblies: new[] { proxyAssemblyPath },
+                targetAssemblies: new[] { targetAssemblyPath },
+                targetFolders: Array.Empty<string>(),
+                targetFilters: new[] { "*.dll" },
+                mapFile: mapFilePath,
+                mappingCatalog: null,
+                genericInstantiationsFile: null,
+                outputPath: outputPath,
+                assemblyName: "Datadog.Trace.DuckType.AotRegistry.BasePrivateMethod.Fallback",
+                trimmerDescriptorPath: trimmerDescriptorPath,
+                propsPath: propsPath);
+
+            var exitCode = DuckTypeAotGenerateProcessor.Process(options);
+            exitCode.Should().Be(0);
+
+            var compatibilityMatrixPath = $"{outputPath}.compat.json";
+            var matrix = JsonConvert.DeserializeObject<DuckTypeAotCompatibilityMatrix>(File.ReadAllText(compatibilityMatrixPath));
+            matrix.Should().NotBeNull();
+            matrix!.Mappings.Should().ContainSingle();
+
+            var mapping = matrix.Mappings[0];
+            mapping.Status.Should().BeOneOf(
+                DuckTypeAotCompatibilityStatuses.MissingTargetMethod,
+                DuckTypeAotCompatibilityStatuses.IncompatibleMethodSignature);
+            mapping.Details.Should().NotBeNull();
+            mapping.Details!.Should().Contain("not found");
+        }
+        finally
+        {
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
+
+    [Fact]
+    public void GenerateProcessorShouldReportDuckCopyPrivateBasePropertyWithoutFallbackAsMissingTargetMember()
+    {
+        var tempDirectory = CreateTempDirectory();
+        try
+        {
+            var proxyAssemblyPath = typeof(DuckTypeAotProcessorsTests).Assembly.Location;
+            var targetAssemblyPath = typeof(TestDuckBasePrivatePropertyTarget).Assembly.Location;
+            var proxyAssemblyName = AssemblyName.GetAssemblyName(proxyAssemblyPath).Name;
+            var targetAssemblyName = AssemblyName.GetAssemblyName(targetAssemblyPath).Name;
+
+            var outputPath = Path.Combine(tempDirectory, "Datadog.Trace.DuckType.AotRegistry.StructCopy.BasePrivateProperty.NoFallback.dll");
+            var mapFilePath = Path.Combine(tempDirectory, "ducktype-aot-map-struct-copy-base-private-property-no-fallback.json");
+            var trimmerDescriptorPath = Path.Combine(tempDirectory, "ducktype-aot-struct-copy-base-private-property-no-fallback.linker.xml");
+            var propsPath = Path.Combine(tempDirectory, "ducktype-aot-struct-copy-base-private-property-no-fallback.props");
+
+            var mapDocument = new
+            {
+                mappings = new[]
+                {
+                    new
+                    {
+                        mode = "forward",
+                        proxyType = typeof(TestDuckStructCopyBasePrivatePropertyNoFallbackProxy).FullName,
+                        proxyAssembly = proxyAssemblyName,
+                        targetType = typeof(TestDuckBasePrivatePropertyTarget).FullName,
+                        targetAssembly = targetAssemblyName
+                    }
+                }
+            };
+            File.WriteAllText(mapFilePath, JsonConvert.SerializeObject(mapDocument, Formatting.Indented));
+
+            var options = new DuckTypeAotGenerateOptions(
+                proxyAssemblies: new[] { proxyAssemblyPath },
+                targetAssemblies: new[] { targetAssemblyPath },
+                targetFolders: Array.Empty<string>(),
+                targetFilters: new[] { "*.dll" },
+                mapFile: mapFilePath,
+                mappingCatalog: null,
+                genericInstantiationsFile: null,
+                outputPath: outputPath,
+                assemblyName: "Datadog.Trace.DuckType.AotRegistry.StructCopy.BasePrivateProperty.NoFallback",
+                trimmerDescriptorPath: trimmerDescriptorPath,
+                propsPath: propsPath);
+
+            var exitCode = DuckTypeAotGenerateProcessor.Process(options);
+            exitCode.Should().Be(0);
+
+            var compatibilityMatrixPath = $"{outputPath}.compat.json";
+            var matrix = JsonConvert.DeserializeObject<DuckTypeAotCompatibilityMatrix>(File.ReadAllText(compatibilityMatrixPath));
+            matrix.Should().NotBeNull();
+            matrix!.Mappings.Should().ContainSingle();
+
+            var mapping = matrix.Mappings[0];
+            mapping.Status.Should().BeOneOf(
+                DuckTypeAotCompatibilityStatuses.MissingTargetMethod,
+                DuckTypeAotCompatibilityStatuses.IncompatibleMethodSignature);
+            mapping.Details.Should().NotBeNull();
+            mapping.Details!.Should().Contain("not found");
+        }
+        finally
+        {
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
+
+    [Fact]
+    public void GenerateProcessorShouldSupportDuckCopyPrivateBasePropertyWhenFallbackToBaseTypesIsEnabled()
+    {
+        var tempDirectory = CreateTempDirectory();
+        try
+        {
+            var proxyAssemblyPath = typeof(DuckTypeAotProcessorsTests).Assembly.Location;
+            var targetAssemblyPath = typeof(TestDuckBasePrivatePropertyTarget).Assembly.Location;
+            var proxyAssemblyName = AssemblyName.GetAssemblyName(proxyAssemblyPath).Name;
+            var targetAssemblyName = AssemblyName.GetAssemblyName(targetAssemblyPath).Name;
+
+            var outputPath = Path.Combine(tempDirectory, "Datadog.Trace.DuckType.AotRegistry.StructCopy.BasePrivateProperty.Fallback.dll");
+            var mapFilePath = Path.Combine(tempDirectory, "ducktype-aot-map-struct-copy-base-private-property-fallback.json");
+            var trimmerDescriptorPath = Path.Combine(tempDirectory, "ducktype-aot-struct-copy-base-private-property-fallback.linker.xml");
+            var propsPath = Path.Combine(tempDirectory, "ducktype-aot-struct-copy-base-private-property-fallback.props");
+
+            var mapDocument = new
+            {
+                mappings = new[]
+                {
+                    new
+                    {
+                        mode = "forward",
+                        proxyType = typeof(TestDuckStructCopyBasePrivatePropertyFallbackProxy).FullName,
+                        proxyAssembly = proxyAssemblyName,
+                        targetType = typeof(TestDuckBasePrivatePropertyTarget).FullName,
+                        targetAssembly = targetAssemblyName
+                    }
+                }
+            };
+            File.WriteAllText(mapFilePath, JsonConvert.SerializeObject(mapDocument, Formatting.Indented));
+
+            var options = new DuckTypeAotGenerateOptions(
+                proxyAssemblies: new[] { proxyAssemblyPath },
+                targetAssemblies: new[] { targetAssemblyPath },
+                targetFolders: Array.Empty<string>(),
+                targetFilters: new[] { "*.dll" },
+                mapFile: mapFilePath,
+                mappingCatalog: null,
+                genericInstantiationsFile: null,
+                outputPath: outputPath,
+                assemblyName: "Datadog.Trace.DuckType.AotRegistry.StructCopy.BasePrivateProperty.Fallback",
+                trimmerDescriptorPath: trimmerDescriptorPath,
+                propsPath: propsPath);
+
+            var exitCode = DuckTypeAotGenerateProcessor.Process(options);
+            exitCode.Should().Be(0);
+
+            var compatibilityMatrixPath = $"{outputPath}.compat.json";
+            var matrix = JsonConvert.DeserializeObject<DuckTypeAotCompatibilityMatrix>(File.ReadAllText(compatibilityMatrixPath));
+            matrix.Should().NotBeNull();
+            matrix!.Mappings.Should().ContainSingle(mapping =>
+                string.Equals(mapping.Status, DuckTypeAotCompatibilityStatuses.Compatible, StringComparison.Ordinal));
+
+            var loadContext = new AssemblyLoadContext("DuckTypeAotProcessorsTests-StructCopy-BasePrivateProperty-Fallback", isCollectible: true);
+            try
+            {
+                var generatedAssembly = loadContext.LoadFromAssemblyPath(outputPath);
+                var bootstrapType = generatedAssembly.GetType("Datadog.Trace.DuckTyping.Generated.DuckTypeAotRegistryBootstrap");
+                bootstrapType.Should().NotBeNull();
+                var initializeMethod = bootstrapType!.GetMethod("Initialize", BindingFlags.Public | BindingFlags.Static);
+                initializeMethod.Should().NotBeNull();
+                _ = initializeMethod!.Invoke(obj: null, parameters: null);
+
+                var copyObject = DuckType.Create(
+                    typeof(TestDuckStructCopyBasePrivatePropertyFallbackProxy),
+                    new TestDuckBasePrivatePropertyTarget(41, 5));
+                copyObject.Should().NotBeNull();
+
+                var hiddenField = typeof(TestDuckStructCopyBasePrivatePropertyFallbackProxy)
+                                 .GetField(nameof(TestDuckStructCopyBasePrivatePropertyFallbackProxy.Hidden));
+                hiddenField.Should().NotBeNull();
+                hiddenField!.GetValue(copyObject).Should().Be(41);
+            }
+            finally
+            {
+                loadContext.Unload();
+            }
+        }
+        finally
+        {
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
+
+    [Fact]
+    public void GenerateProcessorShouldReportDuckCopyPrivateBaseFieldWithoutFallbackAsMissingTargetMember()
+    {
+        var tempDirectory = CreateTempDirectory();
+        try
+        {
+            var proxyAssemblyPath = typeof(DuckTypeAotProcessorsTests).Assembly.Location;
+            var targetAssemblyPath = typeof(TestDuckBasePrivateFieldTarget).Assembly.Location;
+            var proxyAssemblyName = AssemblyName.GetAssemblyName(proxyAssemblyPath).Name;
+            var targetAssemblyName = AssemblyName.GetAssemblyName(targetAssemblyPath).Name;
+
+            var outputPath = Path.Combine(tempDirectory, "Datadog.Trace.DuckType.AotRegistry.StructCopy.BasePrivateField.NoFallback.dll");
+            var mapFilePath = Path.Combine(tempDirectory, "ducktype-aot-map-struct-copy-base-private-field-no-fallback.json");
+            var trimmerDescriptorPath = Path.Combine(tempDirectory, "ducktype-aot-struct-copy-base-private-field-no-fallback.linker.xml");
+            var propsPath = Path.Combine(tempDirectory, "ducktype-aot-struct-copy-base-private-field-no-fallback.props");
+
+            var mapDocument = new
+            {
+                mappings = new[]
+                {
+                    new
+                    {
+                        mode = "forward",
+                        proxyType = typeof(TestDuckStructCopyBasePrivateFieldNoFallbackProxy).FullName,
+                        proxyAssembly = proxyAssemblyName,
+                        targetType = typeof(TestDuckBasePrivateFieldTarget).FullName,
+                        targetAssembly = targetAssemblyName
+                    }
+                }
+            };
+            File.WriteAllText(mapFilePath, JsonConvert.SerializeObject(mapDocument, Formatting.Indented));
+
+            var options = new DuckTypeAotGenerateOptions(
+                proxyAssemblies: new[] { proxyAssemblyPath },
+                targetAssemblies: new[] { targetAssemblyPath },
+                targetFolders: Array.Empty<string>(),
+                targetFilters: new[] { "*.dll" },
+                mapFile: mapFilePath,
+                mappingCatalog: null,
+                genericInstantiationsFile: null,
+                outputPath: outputPath,
+                assemblyName: "Datadog.Trace.DuckType.AotRegistry.StructCopy.BasePrivateField.NoFallback",
+                trimmerDescriptorPath: trimmerDescriptorPath,
+                propsPath: propsPath);
+
+            var exitCode = DuckTypeAotGenerateProcessor.Process(options);
+            exitCode.Should().Be(0);
+
+            var compatibilityMatrixPath = $"{outputPath}.compat.json";
+            var matrix = JsonConvert.DeserializeObject<DuckTypeAotCompatibilityMatrix>(File.ReadAllText(compatibilityMatrixPath));
+            matrix.Should().NotBeNull();
+            matrix!.Mappings.Should().ContainSingle();
+
+            var mapping = matrix.Mappings[0];
+            mapping.Status.Should().BeOneOf(
+                DuckTypeAotCompatibilityStatuses.MissingTargetMethod,
+                DuckTypeAotCompatibilityStatuses.IncompatibleMethodSignature);
+            mapping.Details.Should().NotBeNull();
+            mapping.Details!.Should().Contain("not found");
+        }
+        finally
+        {
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
+
+    [Fact]
+    public void GenerateProcessorShouldSupportDuckCopyPrivateBaseFieldWhenFallbackToBaseTypesIsEnabled()
+    {
+        var tempDirectory = CreateTempDirectory();
+        try
+        {
+            var proxyAssemblyPath = typeof(DuckTypeAotProcessorsTests).Assembly.Location;
+            var targetAssemblyPath = typeof(TestDuckBasePrivateFieldTarget).Assembly.Location;
+            var proxyAssemblyName = AssemblyName.GetAssemblyName(proxyAssemblyPath).Name;
+            var targetAssemblyName = AssemblyName.GetAssemblyName(targetAssemblyPath).Name;
+
+            var outputPath = Path.Combine(tempDirectory, "Datadog.Trace.DuckType.AotRegistry.StructCopy.BasePrivateField.Fallback.dll");
+            var mapFilePath = Path.Combine(tempDirectory, "ducktype-aot-map-struct-copy-base-private-field-fallback.json");
+            var trimmerDescriptorPath = Path.Combine(tempDirectory, "ducktype-aot-struct-copy-base-private-field-fallback.linker.xml");
+            var propsPath = Path.Combine(tempDirectory, "ducktype-aot-struct-copy-base-private-field-fallback.props");
+
+            var mapDocument = new
+            {
+                mappings = new[]
+                {
+                    new
+                    {
+                        mode = "forward",
+                        proxyType = typeof(TestDuckStructCopyBasePrivateFieldFallbackProxy).FullName,
+                        proxyAssembly = proxyAssemblyName,
+                        targetType = typeof(TestDuckBasePrivateFieldTarget).FullName,
+                        targetAssembly = targetAssemblyName
+                    }
+                }
+            };
+            File.WriteAllText(mapFilePath, JsonConvert.SerializeObject(mapDocument, Formatting.Indented));
+
+            var options = new DuckTypeAotGenerateOptions(
+                proxyAssemblies: new[] { proxyAssemblyPath },
+                targetAssemblies: new[] { targetAssemblyPath },
+                targetFolders: Array.Empty<string>(),
+                targetFilters: new[] { "*.dll" },
+                mapFile: mapFilePath,
+                mappingCatalog: null,
+                genericInstantiationsFile: null,
+                outputPath: outputPath,
+                assemblyName: "Datadog.Trace.DuckType.AotRegistry.StructCopy.BasePrivateField.Fallback",
+                trimmerDescriptorPath: trimmerDescriptorPath,
+                propsPath: propsPath);
+
+            var exitCode = DuckTypeAotGenerateProcessor.Process(options);
+            exitCode.Should().Be(0);
+
+            var compatibilityMatrixPath = $"{outputPath}.compat.json";
+            var matrix = JsonConvert.DeserializeObject<DuckTypeAotCompatibilityMatrix>(File.ReadAllText(compatibilityMatrixPath));
+            matrix.Should().NotBeNull();
+            matrix!.Mappings.Should().ContainSingle(mapping =>
+                string.Equals(mapping.Status, DuckTypeAotCompatibilityStatuses.Compatible, StringComparison.Ordinal));
+
+            var loadContext = new AssemblyLoadContext("DuckTypeAotProcessorsTests-StructCopy-BasePrivateField-Fallback", isCollectible: true);
+            try
+            {
+                var generatedAssembly = loadContext.LoadFromAssemblyPath(outputPath);
+                var bootstrapType = generatedAssembly.GetType("Datadog.Trace.DuckTyping.Generated.DuckTypeAotRegistryBootstrap");
+                bootstrapType.Should().NotBeNull();
+                var initializeMethod = bootstrapType!.GetMethod("Initialize", BindingFlags.Public | BindingFlags.Static);
+                initializeMethod.Should().NotBeNull();
+                _ = initializeMethod!.Invoke(obj: null, parameters: null);
+
+                var copyObject = DuckType.Create(
+                    typeof(TestDuckStructCopyBasePrivateFieldFallbackProxy),
+                    new TestDuckBasePrivateFieldTarget(59));
+                copyObject.Should().NotBeNull();
+
+                var hiddenField = typeof(TestDuckStructCopyBasePrivateFieldFallbackProxy)
+                                 .GetField(nameof(TestDuckStructCopyBasePrivateFieldFallbackProxy.Hidden));
+                hiddenField.Should().NotBeNull();
+                hiddenField!.GetValue(copyObject).Should().Be(59);
+            }
+            finally
+            {
+                loadContext.Unload();
+            }
         }
         finally
         {
