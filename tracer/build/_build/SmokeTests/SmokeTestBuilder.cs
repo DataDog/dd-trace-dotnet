@@ -1241,7 +1241,7 @@ public static class SmokeTestBuilder
             // The Dockerfile does: COPY --from=builder /src/artifacts /app/install
             // Since the test app is COPYd to /src, the artifacts must be at /src/artifacts,
             // i.e. inside the test app directory as "artifacts/".
-            if (Directory.Exists(artifactsDir))
+            if (artifactsDir is not null && Directory.Exists(artifactsDir))
             {
                 var artifactsTarPath = $"{testAppRelPath}/artifacts";
                 var artifactFiles = Directory.GetFiles(artifactsDir, "*", SearchOption.AllDirectories);
@@ -1253,7 +1253,7 @@ public static class SmokeTestBuilder
 
                 AddDirectoryToTar(tarWriter, artifactsDir, artifactsTarPath);
             }
-            else
+            else if (artifactsDir is not null)
             {
                 Logger.Warning("Artifacts directory {ArtifactsDir} does not exist — image build will likely fail at COPY --from=builder /src/artifacts", artifactsDir);
             }
