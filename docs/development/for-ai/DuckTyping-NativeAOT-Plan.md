@@ -59,6 +59,16 @@ ducktype-aot generate \
   --map-file <ducktype-aot-map.json> \
   --output <Datadog.Trace.DuckType.AotRegistry.dll>
 ```
+   Optional one-step mode:
+```bash
+ducktype-aot generate \
+  --discover-mappings \
+  --proxy-assembly <proxy.dll> \
+  --target-folder <folder-with-targets> \
+  --target-filter "*.dll" \
+  --map-file <ducktype-aot-map.json> \
+  --output <Datadog.Trace.DuckType.AotRegistry.dll>
+```
 3. Verify strict compatibility:
 ```bash
 ducktype-aot verify-compat \

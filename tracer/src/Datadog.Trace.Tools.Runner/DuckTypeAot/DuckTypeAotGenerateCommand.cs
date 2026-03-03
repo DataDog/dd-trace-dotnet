@@ -39,6 +39,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             IsRequired = true
         };
 
+        private readonly Option<bool> _discoverMappingsOption = new("--discover-mappings", "Discover compatible mappings and write --map-file before generating artifacts.");
+
         /// <summary>
         /// Stores generic instantiations option.
         /// </summary>
@@ -78,6 +80,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             AddOption(_targetFolderOption);
             AddOption(_targetFilterOption);
             AddOption(_mapFileOption);
+            AddOption(_discoverMappingsOption);
             AddOption(_genericInstantiationsOption);
             AddOption(_assemblyNameOption);
             AddOption(_emitTrimmerDescriptorOption);
@@ -87,6 +90,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
             AddExample("dd-trace ducktype-aot generate --proxy-assembly My.Proxy.dll --target-folder ./bin --target-filter *.dll --map-file ducktype-aot-mappings.json --output Datadog.Trace.DuckType.AotRegistry.dll");
             AddExample("dd-trace ducktype-aot generate --proxy-assembly My.Proxy.dll --target-folder ./bin --target-folder ./deps --target-filter *.dll --map-file ducktype-aot-mappings.json --output Datadog.Trace.DuckType.AotRegistry.dll");
+            AddExample("dd-trace ducktype-aot generate --discover-mappings --proxy-assembly My.Proxy.dll --target-folder ./bin --target-filter *.dll --map-file ducktype-aot-mappings.json --output Datadog.Trace.DuckType.AotRegistry.dll");
 
             this.SetHandler(Execute);
         }
@@ -103,6 +107,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
             var outputPath = _outputOption.GetValue(context);
             var mapFile = _mapFileOption.GetValue(context);
+            var discoverMappings = _discoverMappingsOption.GetValue(context);
             var genericInstantiations = _genericInstantiationsOption.GetValue(context);
             var assemblyName = _assemblyNameOption.GetValue(context);
             var trimmerDescriptorPath = _emitTrimmerDescriptorOption.GetValue(context) ?? $"{outputPath}.linker.xml";
@@ -120,7 +125,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 assemblyName: assemblyName,
                 trimmerDescriptorPath: trimmerDescriptorPath,
                 propsPath: propsPath,
-                strongNameKeyFile: strongNameKeyFile);
+                strongNameKeyFile: strongNameKeyFile,
+                discoverMappings: discoverMappings);
 
             context.ExitCode = DuckTypeAotGenerateProcessor.Process(options);
         }
