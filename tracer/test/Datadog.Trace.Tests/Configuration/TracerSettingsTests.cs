@@ -155,10 +155,17 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData("A", "otlp", false)]
         [InlineData("", "none", false)]
         [InlineData("", "otlp", false)]
+#if NET6_0_OR_GREATER
+        [InlineData(null, "none", true)]
+        [InlineData(null, "random", true)]
+        [InlineData(null, "otlp", true)]
+        [InlineData(null, null, true)]
+#else
         [InlineData(null, "none", false)]
         [InlineData(null, "random", false)]
         [InlineData(null, "otlp", false)]
         [InlineData(null, null, false)]
+#endif
         public void RuntimeMetricsEnabled(string value, string otelValue, bool expected)
         {
             var source = CreateConfigurationSource(
@@ -179,6 +186,43 @@ namespace Datadog.Trace.Tests.Configuration
 
             errorLog.ShouldHaveExpectedOtelMetric(metric, ConfigurationKeys.OpenTelemetry.MetricsExporter.ToLowerInvariant(), ConfigurationKeys.RuntimeMetricsEnabled.ToLowerInvariant());
         }
+
+#if NET6_0_OR_GREATER
+        [Fact]
+        public void RuntimeMetrics_DefaultsToDignosticsOnNet6Plus_WhenNotExplicitlySet()
+        {
+            var source = CreateConfigurationSource();
+            var settings = new TracerSettings(source);
+
+            settings.RuntimeMetricsEnabled.Should().BeTrue();
+            settings.RuntimeMetricsDiagnosticsMetricsApiEnabled.Should().BeTrue();
+        }
+
+        [Theory]
+        [InlineData("true", null, false)]
+        [InlineData("true", "true", true)]
+        [InlineData("true", "false", false)]
+        public void RuntimeMetrics_ExplicitEnable_RespectsDignosticsFlag(string runtimeMetrics, string diagnosticsApi, bool expectedDiagnostics)
+        {
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.RuntimeMetricsEnabled, runtimeMetrics),
+                (ConfigurationKeys.RuntimeMetricsDiagnosticsMetricsApiEnabled, diagnosticsApi));
+            var settings = new TracerSettings(source);
+
+            settings.RuntimeMetricsEnabled.Should().BeTrue();
+            settings.RuntimeMetricsDiagnosticsMetricsApiEnabled.Should().Be(expectedDiagnostics);
+        }
+
+        [Fact]
+        public void RuntimeMetrics_ExplicitDisable_OverridesDefault()
+        {
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.RuntimeMetricsEnabled, "false"));
+            var settings = new TracerSettings(source);
+
+            settings.RuntimeMetricsEnabled.Should().BeFalse();
+        }
+#endif
 
         [Theory]
         [InlineData("glob", SamplingRulesFormat.Glob)]     // exact match

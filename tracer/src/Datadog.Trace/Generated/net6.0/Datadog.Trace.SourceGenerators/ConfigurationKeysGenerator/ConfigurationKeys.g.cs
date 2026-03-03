@@ -227,17 +227,20 @@ internal static partial class ConfigurationKeys
     public const string MaxTracesSubmittedPerSecond = "DD_MAX_TRACES_PER_SECOND";
 
     /// <summary>
-    /// Enables an experimental runtime metrics collector which uses the 
+    /// Enables a runtime metrics collector which uses the 
     /// <a href="https://learn.microsoft.com/en-us/dotnet/core/diagnostics/metrics">System.Diagnostics.Metrics</a> API.
-    /// This collector can only be enabled when using .NET 6+, and will only include ASP.NET Core metrics
-    /// when using .NET 8+.
+    /// Automatically enabled when runtime metrics are enabled by default on .NET 6+.
+    /// When <c>DD_RUNTIME_METRICS_ENABLED</c> is explicitly set to <c>true</c>, this controls
+    /// whether the Diagnostics or EventListener collector is used. Only includes ASP.NET Core
+    /// metrics when using .NET 8+.
     /// Default value is <c>false</c> (disabled).
     /// </summary>
     public const string RuntimeMetricsDiagnosticsMetricsApiEnabled = "DD_RUNTIME_METRICS_DIAGNOSTICS_METRICS_API_ENABLED";
 
     /// <summary>
     /// Configuration key for enabling or disabling runtime metrics sent to DogStatsD.
-    /// Default value is <c>false</c> (disabled).
+    /// Default value is <c>false</c> (disabled) on .NET Framework, or <c>true</c> (enabled)
+    /// on .NET 6+ using the System.Diagnostics.Metrics-based collector.
     /// </summary>
     public const string RuntimeMetricsEnabled = "DD_RUNTIME_METRICS_ENABLED";
 

@@ -177,11 +177,29 @@ namespace Datadog.Trace.Configuration
                 ErrorLog.LogInvalidConfiguration(ConfigurationKeys.OpenTelemetry.MetricsExporter);
             }
 
+#if NET6_0_OR_GREATER
+            var runtimeMetricsExplicitlySet = runtimeMetricsEnabledResult.ConfigurationResult.IsPresent;
+
+            if (!runtimeMetricsExplicitlySet)
+            {
+                // When runtime metrics are not explicitly configured on .NET 6+, enable by default
+                // using the Diagnostics listener to avoid EventPipe crash/leak issues
+                // (dotnet/runtime#103480, dotnet/runtime#111368)
+                RuntimeMetricsEnabled = true;
+                RuntimeMetricsDiagnosticsMetricsApiEnabled = true;
+                telemetry.Record(ConfigurationKeys.RuntimeMetricsEnabled, true, ConfigurationOrigins.Calculated);
+                telemetry.Record(ConfigurationKeys.RuntimeMetricsDiagnosticsMetricsApiEnabled, true, ConfigurationOrigins.Calculated);
+            }
+            else
+            {
+                RuntimeMetricsEnabled = runtimeMetricsEnabledResult.WithDefault(false);
+                RuntimeMetricsDiagnosticsMetricsApiEnabled = config.WithKeys(ConfigurationKeys.RuntimeMetricsDiagnosticsMetricsApiEnabled).AsBool(false);
+            }
+#else
             RuntimeMetricsEnabled = runtimeMetricsEnabledResult.WithDefault(false);
 
             RuntimeMetricsDiagnosticsMetricsApiEnabled = config.WithKeys(ConfigurationKeys.RuntimeMetricsDiagnosticsMetricsApiEnabled).AsBool(false);
 
-#if !NET6_0_OR_GREATER
             if (RuntimeMetricsEnabled && RuntimeMetricsDiagnosticsMetricsApiEnabled)
             {
                 Log.Warning(
