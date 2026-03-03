@@ -19,7 +19,7 @@ namespace Datadog.Trace.Vendors.StatsdClient.Transport
 
         public NamedPipeTransport(string pipeName, TimeSpan? timeout = null)
         {
-            _namedPipe = new NamedPipeClientStream(".", pipeName, PipeDirection.Out, PipeOptions.Asynchronous);
+            _namedPipe = new NamedPipeClientStream(".", pipeName, PipeDirection.Out, PipeOptions.None);
             _timeout = timeout ?? TimeSpan.FromSeconds(2);
         }
 

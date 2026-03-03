@@ -238,6 +238,7 @@ internal sealed class StatsdManager : IStatsdManager
     {
         private const int ClosingBit = 1 << 31;  // sign bit = closing
 
+        // Bridges sync ref-counted disposal (Release/MarkClosing) with async shutdown (StatsdManager.DisposeAsync)
         private readonly TaskCompletionSource<bool> _disposalComplete = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
         // Logically, _state represents two values we need to check:
@@ -337,7 +338,6 @@ internal sealed class StatsdManager : IStatsdManager
             {
                 if (Client is DogStatsdService dogStatsd)
                 {
-                    dogStatsd.Flush();
                     await dogStatsd.DisposeAsync().ConfigureAwait(false);
                 }
                 else
