@@ -18,33 +18,48 @@ namespace Samples.Wcf.Client
             var calculatorServiceBaseAddress = new Uri(baseAddress, "CalculatorService");
             var address = new EndpointAddress(calculatorServiceBaseAddress);
             int exceptionsSeen = 0;
+            var useOtelClientInstrumentation = Environment.GetEnvironmentVariable("USE_OTEL_CLIENT_INSTRUMENTATION") == "1";
 
             // Create an OpenTelemetry TracerProvider with WCF client instrumentation
             // This causes the TelemetryEndpointBehavior to create Activities for each WCF client call
-            using var tracerProvider = Sdk.CreateTracerProviderBuilder()
-                .AddWcfInstrumentation()
-                .Build();
-
-            using (var calculator = new CalculatorClient(binding, address))
+            TracerProvider tracerProvider = null;
+            if (useOtelClientInstrumentation)
             {
-                // Add OpenTelemetry WCF client instrumentation FIRST to create Activities before other inspectors run
-                calculator.ChannelFactory.Endpoint.EndpointBehaviors.Add(new TelemetryEndpointBehavior());
-
-                // Add the CustomEndpointBehavior / ClientMessageInspector SECOND to inject correct trace context
-                calculator.ChannelFactory.Endpoint.EndpointBehaviors.Add(new CustomEndpointBehavior());
-
-                exceptionsSeen += await Invoke_ServerSyncAdd_Endpoints(calculator);
-                exceptionsSeen += await Invoke_ServerTaskAdd_Endpoints(calculator);
-                exceptionsSeen += await Invoke_ServerAsyncAdd_Endpoints(calculator);
+                tracerProvider = Sdk.CreateTracerProviderBuilder()
+                                    .AddWcfInstrumentation()
+                                    .Build();
             }
 
-            if (exceptionsSeen != expectedExceptionCount)
+            try
             {
-                throw new Exception($"The test encountered an unexpected number of exceptions: {expectedExceptionCount} expected, {exceptionsSeen} actual");
+                using (var calculator = new CalculatorClient(binding, address))
+                {
+                    if (useOtelClientInstrumentation)
+                    {
+                        // Add OpenTelemetry WCF client instrumentation FIRST to create Activities before other inspectors run
+                        calculator.ChannelFactory.Endpoint.EndpointBehaviors.Add(new TelemetryEndpointBehavior());
+                    }
+
+                    // Add the CustomEndpointBehavior / ClientMessageInspector SECOND to inject correct trace context
+                    calculator.ChannelFactory.Endpoint.EndpointBehaviors.Add(new CustomEndpointBehavior());
+
+                    exceptionsSeen += await Invoke_ServerSyncAdd_Endpoints(calculator);
+                    exceptionsSeen += await Invoke_ServerTaskAdd_Endpoints(calculator);
+                    exceptionsSeen += await Invoke_ServerAsyncAdd_Endpoints(calculator);
+                }
+
+                if (exceptionsSeen != expectedExceptionCount)
+                {
+                    throw new Exception($"The test encountered an unexpected number of exceptions: {expectedExceptionCount} expected, {exceptionsSeen} actual");
+                }
+                else
+                {
+                    LoggingHelper.WriteLineWithDate($"[Client] The test encountered the expected number of exceptions: {expectedExceptionCount}");
+                }
             }
-            else
+            finally
             {
-                LoggingHelper.WriteLineWithDate($"[Client] The test encountered the expected number of exceptions: {expectedExceptionCount}");
+                tracerProvider?.Dispose();
             }
         }
 

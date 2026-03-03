@@ -57,7 +57,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             [MetadataSchemaVersionData] string metadataSchemaVersion,
             [CombinatorialValues("WSHttpBinding", "BasicHttpBinding", "NetTcpBinding", "Custom")] string binding,
             bool enableNewWcfInstrumentation,
-            bool enableWcfObfuscation)
+            bool enableWcfObfuscation,
+            bool useOtelClientInstrumentation)
         {
             // skip invalid combinations
             if (binding == "Custom" && !(enableNewWcfInstrumentation && enableWcfObfuscation))
@@ -70,6 +71,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             SetEnvironmentVariable("DD_TRACE_DELAY_WCF_INSTRUMENTATION_ENABLED", enableNewWcfInstrumentation ? "true" : "false");
             SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.WcfObfuscationEnabled, enableWcfObfuscation ? "true" : "false");
+
+            if (useOtelClientInstrumentation)
+            {
+                SetEnvironmentVariable("USE_OTEL_CLIENT_INSTRUMENTATION", "1");
+            }
 
             Output.WriteLine("Starting WcfTests.SubmitsTraces. Starting the Samples.Wcf requires ADMIN privileges");
 
@@ -91,7 +97,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var spans = await agent.WaitForSpansAsync(expectedSpanCount);
                 ValidateIntegrationSpans(spans.Where(s => s.Type == SpanTypes.Web), metadataSchemaVersion, expectedServiceName: "Samples.Wcf", isExternalSpan: false);
 
-                var settings = VerifyHelper.GetSpanVerifierSettings(metadataSchemaVersion, binding, enableNewWcfInstrumentation, enableWcfObfuscation);
+                var settings = VerifyHelper.GetSpanVerifierSettings(metadataSchemaVersion, binding, enableNewWcfInstrumentation, enableWcfObfuscation, useOtelClientInstrumentation);
 
                 await VerifyHelper.VerifySpans(spans, settings)
                                   .UseMethodName("_");
