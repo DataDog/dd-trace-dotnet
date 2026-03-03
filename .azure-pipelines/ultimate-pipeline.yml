@@ -4997,7 +4997,7 @@ stages:
   pool:
     name: $(linuxX64SmokePool)
   jobs:
-  - template: steps/nuke-smoke-test-stage.yml
+  - template: steps/run-smoke-tests-linux.yml
     parameters:
       matrixVariable: nuke_installer_x64_matrix
       artifacts:
@@ -5009,7 +5009,7 @@ stages:
   pool:
     name: $(linuxArm64Pool)
   jobs:
-  - template: steps/nuke-smoke-test-stage.yml
+  - template: steps/run-smoke-tests-linux.yml
     parameters:
       matrixVariable: nuke_installer_arm64_matrix
       artifacts:
@@ -5021,7 +5021,7 @@ stages:
   pool:
     name: $(linuxX64SmokePool)
   jobs:
-  - template: steps/nuke-smoke-test-stage.yml
+  - template: steps/run-smoke-tests-linux.yml
     parameters:
       matrixVariable: nuke_installer_musl_matrix
       artifacts:
@@ -5034,7 +5034,7 @@ stages:
   pool:
     name: $(linuxX64SmokePool)
   jobs:
-  - template: steps/nuke-smoke-test-stage.yml
+  - template: steps/run-smoke-tests-linux.yml
     parameters:
       matrixVariable: nuke_nuget_x64_matrix
       artifacts:
@@ -5048,7 +5048,7 @@ stages:
   pool:
     name: $(linuxArm64Pool)
   jobs:
-  - template: steps/nuke-smoke-test-stage.yml
+  - template: steps/run-smoke-tests-linux.yml
     parameters:
       matrixVariable: nuke_nuget_arm64_matrix
       artifacts:
@@ -5062,7 +5062,7 @@ stages:
   pool:
     name: $(linuxX64SmokePool)
   jobs:
-  - template: steps/nuke-smoke-test-stage.yml
+  - template: steps/run-smoke-tests-linux.yml
     parameters:
       matrixVariable: nuke_dotnet_tool_x64_matrix
       artifacts:
@@ -5075,7 +5075,7 @@ stages:
   pool:
     name: $(linuxArm64Pool)
   jobs:
-  - template: steps/nuke-smoke-test-stage.yml
+  - template: steps/run-smoke-tests-linux.yml
     parameters:
       matrixVariable: nuke_dotnet_tool_arm64_matrix
       artifacts:
@@ -5088,7 +5088,7 @@ stages:
   pool:
     name: $(linuxX64SmokePool)
   jobs:
-  - template: steps/nuke-smoke-test-stage.yml
+  - template: steps/run-smoke-tests-linux.yml
     parameters:
       matrixVariable: nuke_dotnet_tool_nuget_matrix
       artifacts:
@@ -5101,7 +5101,7 @@ stages:
   pool:
     name: $(linuxX64SmokePool)
   jobs:
-  - template: steps/nuke-smoke-test-stage.yml
+  - template: steps/run-smoke-tests-linux.yml
     parameters:
       matrixVariable: nuke_dotnet_tool_musl_x64_matrix
       artifacts:
@@ -5114,7 +5114,7 @@ stages:
   pool:
     name: $(linuxArm64Pool)
   jobs:
-  - template: steps/nuke-smoke-test-stage.yml
+  - template: steps/run-smoke-tests-linux.yml
     parameters:
       matrixVariable: nuke_dotnet_tool_musl_arm64_matrix
       artifacts:
@@ -5126,7 +5126,7 @@ stages:
   pool:
     name: $(linuxX64SmokePool)
   jobs:
-  - template: steps/nuke-smoke-test-stage.yml
+  - template: steps/run-smoke-tests-linux.yml
     parameters:
       matrixVariable: nuke_trimming_matrix
       artifacts:
@@ -5139,7 +5139,7 @@ stages:
   pool:
     name: $(linuxX64SmokePool)
   jobs:
-  - template: steps/nuke-smoke-test-stage.yml
+  - template: steps/run-smoke-tests-linux.yml
     parameters:
       matrixVariable: nuke_trimming_musl_matrix
       artifacts:
@@ -5153,7 +5153,7 @@ stages:
   pool:
     name: $(linuxX64SmokePool)
   jobs:
-  - template: steps/nuke-smoke-test-stage.yml
+  - template: steps/run-smoke-tests-linux.yml
     parameters:
       matrixVariable: nuke_self_instrument_matrix
       artifacts:
@@ -5167,7 +5167,7 @@ stages:
   pool:
     vmImage: windows-2022
   jobs:
-  - template: steps/nuke-smoke-test-stage-windows.yml
+  - template: steps/run-smoke-tests-windows.yml
     parameters:
       matrixVariable: nuke_windows_msi_matrix
       artifacts:
@@ -5180,7 +5180,7 @@ stages:
   pool:
     vmImage: windows-2022
   jobs:
-  - template: steps/nuke-smoke-test-stage-windows.yml
+  - template: steps/run-smoke-tests-windows.yml
     parameters:
       matrixVariable: nuke_windows_nuget_matrix
       artifacts:
@@ -5194,7 +5194,7 @@ stages:
   pool:
     vmImage: windows-2022
   jobs:
-  - template: steps/nuke-smoke-test-stage-windows.yml
+  - template: steps/run-smoke-tests-windows.yml
     parameters:
       matrixVariable: nuke_windows_dotnet_tool_matrix
       artifacts:
@@ -5206,7 +5206,7 @@ stages:
   pool:
     vmImage: windows-2022
   jobs:
-  - template: steps/nuke-smoke-test-stage-windows.yml
+  - template: steps/run-smoke-tests-windows.yml
     parameters:
       matrixVariable: nuke_windows_tracer_home_matrix
       artifacts:
@@ -5218,1350 +5218,13 @@ stages:
   pool:
     vmImage: windows-2022
   jobs:
-  - template: steps/nuke-smoke-test-stage-windows.yml
+  - template: steps/run-smoke-tests-windows.yml
     parameters:
       matrixVariable: nuke_windows_fleet_installer_iis_matrix
       artifacts:
         - windows-tracer-home.zip
         - fleet-installer
         - fleet-installer-telemetry-forwarder
-
-- stage: installer_smoke_tests
-  dependsOn: [package_linux, generate_variables, merge_commit_id]
-  variables:
-    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
-    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
-  jobs:
-  - template: steps/update-github-status-jobs.yml
-    parameters:
-      jobs: [linux]
-
-  - job: linux
-    timeoutInMinutes: 45 # should take ~5 mins
-    strategy:
-      matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.installer_smoke_tests_matrix'] ]
-    variables:
-      smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
-    pool:
-      name: $(linuxX64SmokePool)
-
-    steps:
-    - template: steps/clone-repo.yml
-      parameters:
-        targetShaId: $(targetShaId)
-        targetBranch: $(targetBranch)
-    - template: steps/download-artifact.yml
-      parameters:
-        artifact: $(linuxArtifacts)
-        path: $(smokeTestAppDir)/artifacts
-
-    - script: |
-        mkdir -p artifacts/build_data/snapshots
-        mkdir -p artifacts/build_data/logs
-      displayName: create test data directories
-
-    # Run the "normal" installer smoke tests
-    - script: |
-        docker-compose -p $(DockerComposeProjectName) build \
-          --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
-          --build-arg RUNTIME_IMAGE=$(runtimeImage) \
-          --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
-          --build-arg INSTALL_CMD="$(installCmd)" \
-          smoke-tests
-      env:
-        dockerTag: $(dockerTag)
-        DD_LOGGER_DD_API_KEY: $(ddApiKey)
-      displayName: docker-compose build smoke-tests
-      retryCountOnTaskFailure: 3
-
-    - template: steps/run-snapshot-test.yml
-      parameters:
-        target: 'smoke-tests'
-        snapshotPrefix: "smoke_test"
-
-    # Run the "dd-dotnet" installer smoke tests
-    - script: |
-        docker-compose -p $(DockerComposeProjectName) build \
-          --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
-          --build-arg RUNTIME_IMAGE=$(runtimeImage) \
-          --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
-          --build-arg INSTALL_CMD="$(installCmd)" \
-          dd-dotnet-smoke-tests
-      env:
-        dockerTag: $(dockerTag)
-      displayName: docker-compose build dd-dotnet-smoke-tests
-      retryCountOnTaskFailure: 3
-
-    - template: steps/run-snapshot-test.yml
-      parameters:
-        target: 'dd-dotnet-smoke-tests'
-        snapshotPrefix: "smoke_test"
-    - publish: artifacts/build_data
-      artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: always()
-      continueOnError: true
-
-    - template: steps/run-in-docker.yml
-      parameters:
-        build: true
-        baseImage: alpine
-        command: "CheckSmokeTestsForErrors ExtractMetricsFromLogs"
-        apikey: $(DD_LOGGER_DD_API_KEY)
-
-- stage: installer_chiseled_smoke_tests
-  dependsOn: [package_linux, generate_variables, merge_commit_id]
-  variables:
-    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
-    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
-  jobs:
-    - template: steps/update-github-status-jobs.yml
-      parameters:
-        jobs: [linux]
-
-    - job: linux
-      timeoutInMinutes: 45 # should take ~5 mins
-      strategy:
-        matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.installer_chiseled_smoke_tests_matrix'] ]
-      variables:
-        smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
-      pool:
-        name: $(linuxX64SmokePool)
-
-      steps:
-        - template: steps/clone-repo.yml
-          parameters:
-            targetShaId: $(targetShaId)
-            targetBranch: $(targetBranch)
-
-        - template: steps/download-artifact.yml
-          parameters:
-            artifact: $(linuxArtifacts)
-            path: $(smokeTestAppDir)/artifacts
-
-        # Run the "normal" installer smoke tests
-        - script: |
-            docker-compose -p $(DockerComposeProjectName) build \
-              --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
-              --build-arg RUNTIME_IMAGE=$(runtimeImage) \
-              --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
-              chiseled-smoke-tests
-          env:
-            dockerTag: $(dockerTag)
-            DD_LOGGER_DD_API_KEY: $(ddApiKey)
-          displayName: docker-compose build chiseled-smoke-tests
-          retryCountOnTaskFailure: 3
-
-        - template: steps/run-snapshot-test.yml
-          parameters:
-            target: 'chiseled-smoke-tests'
-            snapshotPrefix: "smoke_test"
-
-        # Run the "dd-dotnet" installer smoke tests
-        - script: |
-            docker-compose -p $(DockerComposeProjectName) build \
-              --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
-              --build-arg RUNTIME_IMAGE=$(runtimeImage) \
-              --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
-              --build-arg RUNTIME_ID="$(runtimeId)" \
-              dd-dotnet-chiseled-smoke-tests
-          env:
-            dockerTag: $(dockerTag)
-            dockerTarget: $(runtimeId)
-          displayName: docker-compose build dd-dotnet-chiseled-smoke-tests
-          retryCountOnTaskFailure: 3
-
-        - template: steps/run-snapshot-test.yml
-          parameters:
-            target: 'dd-dotnet-chiseled-smoke-tests'
-            snapshotPrefix: "smoke_test"
-
-        - publish: artifacts/build_data
-          artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-          condition: always()
-          continueOnError: true
-
-        - template: steps/run-in-docker.yml
-          parameters:
-            build: true
-            baseImage: alpine
-            command: "CheckSmokeTestsForErrors ExtractMetricsFromLogs"
-
-- stage: nuget_installer_smoke_tests
-  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
-  dependsOn: [dotnet_tool, package_windows, generate_variables, merge_commit_id]
-  variables:
-    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
-    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
-  jobs:
-  - template: steps/update-github-status-jobs.yml
-    parameters:
-      jobs: [linux]
-
-  - job: linux
-    timeoutInMinutes: 45 # should take ~5 mins
-    strategy:
-      matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.nuget_installer_linux_smoke_tests_matrix'] ]
-    variables:
-      smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
-    pool:
-      name: $(linuxX64SmokePool)
-
-    steps:
-    - template: steps/clone-repo.yml
-      parameters:
-        targetShaId: $(targetShaId)
-        targetBranch: $(targetBranch)
-
-    - template: steps/download-artifact.yml
-      parameters:
-        artifact: bundle-nuget-package
-        path: $(smokeTestAppDir)/artifacts
-
-    - template: steps/download-artifact.yml
-      parameters:
-        artifact: nuget-packages
-        path: $(smokeTestAppDir)/artifacts
-
-    - script: |
-        mkdir -p artifacts/build_data/snapshots
-        mkdir -p artifacts/build_data/logs
-      displayName: create test data directories
-
-    - script: |
-        docker-compose -p $(DockerComposeProjectName) build \
-          --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
-          --build-arg RUNTIME_IMAGE=$(runtimeImage) \
-          --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
-          --build-arg TOOL_VERSION=$(ToolVersion) \
-          --build-arg RELATIVE_PROFILER_PATH="$(relativeProfilerPath)" \
-          --build-arg RELATIVE_APIWRAPPER_PATH="$(relativeApiWrapperPath)" \
-          nuget-smoke-tests
-      env:
-        dockerTag: $(dockerTag)
-      displayName: docker-compose build nuget-smoke-tests
-      retryCountOnTaskFailure: 3
-
-    - template: steps/run-snapshot-test.yml
-      parameters:
-        target: 'nuget-smoke-tests'
-        snapshotPrefix: "smoke_test"
-
-    - script: |
-        docker-compose -p $(DockerComposeProjectName) build \
-          --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
-          --build-arg RUNTIME_IMAGE=$(runtimeImage) \
-          --build-arg TOOL_VERSION=$(ToolVersion) \
-          --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
-          --build-arg RELATIVE_PROFILER_PATH="$(relativeProfilerPath)" \
-          --build-arg RELATIVE_APIWRAPPER_PATH="$(relativeApiWrapperPath)" \
-          nuget-dddotnet-smoke-tests
-      env:
-        dockerTag: $(dockerTag)
-      displayName: docker-compose build nuget-dddotnet-smoke-tests
-      retryCountOnTaskFailure: 3
-
-    - template: steps/run-snapshot-test.yml
-      parameters:
-        target: 'nuget-dddotnet-smoke-tests'
-        snapshotPrefix: "smoke_test"
-
-    - publish: artifacts/build_data
-      artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: always()
-      continueOnError: true
-
-    - template: steps/run-in-docker.yml
-      parameters:
-        build: true
-        baseImage: alpine
-        command: "CheckSmokeTestsForErrors ExtractMetricsFromLogs"
-
-- stage: trimmed_installer_smoke_tests
-  dependsOn: [package_windows, package_linux, generate_variables, merge_commit_id]
-  variables:
-    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
-    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
-  jobs:
-    - template: steps/update-github-status-jobs.yml
-      parameters:
-        jobs: [linux]
-
-    - job: linux
-      timeoutInMinutes: 45 # should take ~5 mins
-      strategy:
-        matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.trimming_installer_linux_smoke_tests_matrix'] ]
-      variables:
-        smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
-      pool:
-        name: $(linuxX64SmokePool)
-
-      steps:
-        - template: steps/clone-repo.yml
-          parameters:
-            targetShaId: $(targetShaId)
-            targetBranch: $(targetBranch)
-
-        - template: steps/download-artifact.yml
-          parameters:
-            artifact: $(linuxArtifacts)
-            path: $(smokeTestAppDir)/artifacts
-
-        - template: steps/download-artifact.yml
-          parameters:
-            artifact: nuget-packages
-            itemPattern: "$(packageName).$(ToolVersion)$(packageVersionSuffix).nupkg"
-            path: $(smokeTestAppDir)/artifacts
-
-        - script: |
-            mkdir -p artifacts/build_data/snapshots
-            mkdir -p artifacts/build_data/logs
-          displayName: create test data directories
-
-        - script: |
-            docker-compose -p $(DockerComposeProjectName) build \
-              --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
-              --build-arg RUNTIME_IMAGE=$(runtimeImage) \
-              --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
-              --build-arg INSTALL_CMD="$(installCmd)" \
-              --build-arg PACKAGE_NAME=$(packageName) \
-              --build-arg RUNTIME_IDENTIFIER=$(runtimeId) \
-              --build-arg TOOL_VERSION=$(ToolVersion)$(packageVersionSuffix) \
-              trimming-smoke-tests
-          env:
-            dockerTag: $(dockerTag)
-          displayName: docker-compose build trimming-smoke-tests
-          retryCountOnTaskFailure: 3
-
-        - template: steps/run-snapshot-test.yml
-          parameters:
-            target: 'trimming-smoke-tests'
-            snapshotPrefix: "smoke_test"
-
-        - publish: artifacts/build_data
-          artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-          condition: always()
-          continueOnError: true
-
-        - template: steps/run-in-docker.yml
-          parameters:
-            build: true
-            baseImage: alpine
-            command: "CheckSmokeTestsForErrors ExtractMetricsFromLogs"
-
-- stage: dotnet_tool_nuget_smoke_tests_linux
-  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
-  dependsOn: [dotnet_tool, generate_variables, merge_commit_id]
-  variables:
-    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
-    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
-  jobs:
-  - template: steps/update-github-status-jobs.yml
-    parameters:
-      jobs: [linux]
-
-  - job: linux
-    timeoutInMinutes: 45 # should take ~5 mins
-    strategy:
-      matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.dotnet_tool_nuget_installer_linux_smoke_tests_matrix'] ]
-    variables:
-      smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
-    pool:
-      name: $(linuxX64SmokePool)
-
-    steps:
-    - template: steps/clone-repo.yml
-      parameters:
-        targetShaId: $(targetShaId)
-        targetBranch: $(targetBranch)
-
-    - template: steps/download-artifact.yml
-      parameters:
-        artifact: runner-dotnet-tool
-        path: $(smokeTestAppDir)/artifacts
-
-    - script: |
-        mkdir -p artifacts/build_data/snapshots
-        mkdir -p artifacts/build_data/logs
-      displayName: create test data directories
-
-    - script: |
-        docker-compose -p $(DockerComposeProjectName) build \
-          --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
-          --build-arg RUNTIME_IMAGE=$(runtimeImage) \
-          --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
-          --build-arg TOOL_VERSION=$(ToolVersion) \
-          dotnet-tool-nuget-smoke-tests
-      env:
-        dockerTag: $(dockerTag)
-      displayName: docker-compose build  dotnet-tool-nuget-smoke-tests
-      retryCountOnTaskFailure: 3
-
-    - template: steps/run-snapshot-test.yml
-      parameters:
-        target: 'dotnet-tool-nuget-smoke-tests'
-        snapshotPrefix: "smoke_test"
-
-    - publish: artifacts/build_data
-      artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: always()
-      continueOnError: true
-
-    - template: steps/run-in-docker.yml
-      parameters:
-        build: true
-        baseImage: alpine
-        command: "CheckSmokeTestsForErrors ExtractMetricsFromLogs"
-
-- stage: dotnet_tool_smoke_tests_linux
-  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
-  dependsOn: [dotnet_tool, generate_variables, merge_commit_id]
-  variables:
-    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
-    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
-  jobs:
-  - template: steps/update-github-status-jobs.yml
-    parameters:
-      jobs: [linux]
-
-  - job: linux
-    timeoutInMinutes: 45 # should take ~5 mins
-    strategy:
-      matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.dotnet_tool_installer_linux_smoke_tests_matrix'] ]
-    variables:
-      smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
-    pool:
-      name: $(linuxX64SmokePool)
-
-    steps:
-    - template: steps/clone-repo.yml
-      parameters:
-        targetShaId: $(targetShaId)
-        targetBranch: $(targetBranch)
-
-    - template: steps/download-artifact.yml
-      parameters:
-        artifact: runner-standalone-$(platformSuffix)
-        patterns: "*.tar.gz"
-        path: $(Agent.TempDirectory)
-
-    - script: |
-        mkdir -p artifacts/build_data/snapshots
-        mkdir -p artifacts/build_data/logs
-        mkdir -p $(smokeTestAppDir)/artifacts
-        tar -xf $(Agent.TempDirectory)/dd-trace-$(platformSuffix).tar.gz -C $(smokeTestAppDir)/artifacts
-        chmod +x $(smokeTestAppDir)/artifacts/dd-trace
-      displayName: create test data directories and extract tool
-
-    - script: |
-        docker-compose -p $(DockerComposeProjectName) build \
-          --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
-          --build-arg RUNTIME_IMAGE=$(runtimeImage) \
-          --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
-          --build-arg TOOL_VERSION=$(ToolVersion) \
-          dotnet-tool-smoke-tests
-      env:
-        dockerTag: $(dockerTag)
-      displayName: docker-compose build smoke-tests
-      retryCountOnTaskFailure: 3
-
-    - template: steps/run-snapshot-test.yml
-      parameters:
-        target: 'dotnet-tool-smoke-tests'
-        snapshotPrefix: "smoke_test"
-
-    - publish: artifacts/build_data
-      artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: always()
-      continueOnError: true
-
-    - template: steps/run-in-docker.yml
-      parameters:
-        build: true
-        baseImage: alpine
-        command: "CheckSmokeTestsForErrors ExtractMetricsFromLogs"
-
-- stage: dotnet_tool_self_instrument_smoke_tests_linux
-  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
-  dependsOn: [dotnet_tool, generate_variables, merge_commit_id]
-  variables:
-    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
-    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
-  jobs:
-  - template: steps/update-github-status-jobs.yml
-    parameters:
-      jobs: [linux]
-
-  - job: linux
-    timeoutInMinutes: 45 # should take ~5 mins
-    variables:
-      smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
-      publishFramework: net6.0
-      platformSuffix: linux-x64
-      dockerTag: debian_net6
-      runtimeImage: "mcr.microsoft.com/dotnet/aspnet:6.0-bullseye-slim"
-      installCmd: "dpkg -i ./datadog-dotnet-apm*_amd64.deb"
-      linuxArtifacts: "linux-packages-linux-x64"
-    pool:
-      name: $(linuxX64SmokePool)
-
-    steps:
-    - template: steps/clone-repo.yml
-      parameters:
-        targetShaId: $(targetShaId)
-        targetBranch: $(targetBranch)
-
-    - template: steps/download-artifact.yml
-      parameters:
-        artifact: $(linuxArtifacts)
-        path: $(smokeTestAppDir)/artifacts
-
-    - template: steps/download-artifact.yml
-      parameters:
-        artifact: runner-standalone-$(platformSuffix)
-        patterns: "*.tar.gz"
-        path: $(Agent.TempDirectory)
-
-    - script: |
-        mkdir -p artifacts/build_data/snapshots
-        mkdir -p artifacts/build_data/logs
-        tar -xf $(Agent.TempDirectory)/dd-trace-$(platformSuffix).tar.gz -C $(smokeTestAppDir)/artifacts
-        chmod +x $(smokeTestAppDir)/artifacts/dd-trace
-      displayName: create test data directories and extract tool
-
-    - script: |
-        docker-compose -p $(DockerComposeProjectName) build \
-          --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
-          --build-arg RUNTIME_IMAGE=$(runtimeImage) \
-          --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
-          --build-arg TOOL_VERSION=$(ToolVersion) \
-          --build-arg INSTALL_CMD="$(installCmd)" \
-          dotnet-tool-self-instrument-smoke-tests
-      env:
-        dockerTag: $(dockerTag)
-      displayName: docker-compose build dotnet-tool-self-instrument-smoke-tests
-      retryCountOnTaskFailure: 3
-
-    - template: steps/run-snapshot-test.yml
-      parameters:
-        target: 'dotnet-tool-self-instrument-smoke-tests'
-        snapshotPrefix: "smoke_test"
-
-    - publish: artifacts/build_data
-      artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: always()
-      continueOnError: true
-
-    - template: steps/run-in-docker.yml
-      parameters:
-        build: true
-        baseImage: alpine
-        command: "CheckSmokeTestsForErrors ExtractMetricsFromLogs"
-
-- stage: installer_smoke_tests_arm64
-  dependsOn: [package_arm64, generate_variables, merge_commit_id]
-  variables:
-    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
-    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
-  jobs:
-    - template: steps/update-github-status-jobs.yml
-      parameters:
-        jobs: [linux]
-
-    - job: linux
-      timeoutInMinutes: 45 # should take ~15 mins
-      strategy:
-        matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.installer_smoke_tests_arm64_matrix'] ]
-      variables:
-        smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
-      pool:
-        name: $(linuxArm64Pool)
-
-      steps:
-        - template: steps/clone-repo.yml
-          parameters:
-            targetShaId: $(targetShaId)
-            targetBranch: $(targetBranch)
-
-        - template: steps/download-artifact.yml
-          parameters:
-            artifact: $(linuxArtifacts)
-            path: $(smokeTestAppDir)/artifacts
-
-        - script: |
-            mkdir -p artifacts/build_data/snapshots
-            mkdir -p artifacts/build_data/logs
-          displayName: create test data directories
-
-        # Run the "normal" installer smoke tests
-        - script: |
-            docker-compose -p $(DockerComposeProjectName) build \
-              --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
-              --build-arg RUNTIME_IMAGE=$(runtimeImage) \
-              --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
-              --build-arg INSTALL_CMD="$(installCmd)" \
-              smoke-tests
-          env:
-            dockerTag: $(dockerTag)
-          displayName: docker-compose build smoke-tests
-          retryCountOnTaskFailure: 3
-
-        - template: steps/run-snapshot-test.yml
-          parameters:
-            target: 'smoke-tests'
-            snapshotPrefix: "smoke_test"
-
-        # Run the "dd-dotnet" installer smoke tests
-        - script: |
-            docker-compose -p $(DockerComposeProjectName) build \
-              --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
-              --build-arg RUNTIME_IMAGE=$(runtimeImage) \
-              --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
-              --build-arg INSTALL_CMD="$(installCmd)" \
-              dd-dotnet-smoke-tests
-          env:
-            dockerTag: $(dockerTag)
-          displayName: docker-compose build dd-dotnet-smoke-tests
-          retryCountOnTaskFailure: 3
-
-        - template: steps/run-snapshot-test.yml
-          parameters:
-            target: 'dd-dotnet-smoke-tests'
-            snapshotPrefix: "smoke_test"
-
-        - publish: artifacts/build_data
-          artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-          condition: always()
-          continueOnError: true
-
-        - template: steps/run-in-docker.yml
-          parameters:
-            build: true
-            baseImage: alpine
-            command: "CheckSmokeTestsForErrors ExtractMetricsFromLogs"
-
-- stage: installer_chiseled_smoke_tests_arm64
-  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
-  dependsOn: [package_arm64, generate_variables, merge_commit_id]
-  variables:
-    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
-    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
-  jobs:
-    - template: steps/update-github-status-jobs.yml
-      parameters:
-        jobs: [linux]
-
-    - job: linux
-      timeoutInMinutes: 45 # should take ~15 mins
-      strategy:
-        matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.installer_chiseled_smoke_tests_arm64_matrix'] ]
-      variables:
-        smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
-      pool:
-        name: $(linuxArm64Pool)
-
-      steps:
-        - template: steps/clone-repo.yml
-          parameters:
-            targetShaId: $(targetShaId)
-            targetBranch: $(targetBranch)
-
-        - template: steps/download-artifact.yml
-          parameters:
-            artifact: $(linuxArtifacts)
-            path: $(smokeTestAppDir)/artifacts
-
-        # Run the "normal" installer smoke tests
-        - script: |
-            docker-compose -p $(DockerComposeProjectName) build \
-              --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
-              --build-arg RUNTIME_IMAGE=$(runtimeImage) \
-              --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
-              chiseled-smoke-tests
-          env:
-            dockerTag: $(dockerTag)
-            DD_LOGGER_DD_API_KEY: $(ddApiKey)
-          displayName: docker-compose build chiseled-smoke-tests
-          retryCountOnTaskFailure: 3
-
-        - template: steps/run-snapshot-test.yml
-          parameters:
-            target: 'chiseled-smoke-tests'
-            snapshotPrefix: "smoke_test"
-
-        # Run the "dd-dotnet" installer smoke tests
-        - script: |
-            docker-compose -p $(DockerComposeProjectName) build \
-              --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
-              --build-arg RUNTIME_IMAGE=$(runtimeImage) \
-              --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
-              --build-arg RUNTIME_ID="$(runtimeId)" \
-              dd-dotnet-chiseled-arm64-smoke-tests
-          env:
-            dockerTag: $(dockerTag)
-            dockerTarget: $(runtimeId)
-          displayName: docker-compose build dd-dotnet-chiseled-arm64-smoke-tests
-          retryCountOnTaskFailure: 3
-
-        - template: steps/run-snapshot-test.yml
-          parameters:
-            target: 'dd-dotnet-chiseled-arm64-smoke-tests'
-            snapshotPrefix: "smoke_test"
-
-        - publish: artifacts/build_data
-          artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-          condition: always()
-          continueOnError: true
-
-        - template: steps/run-in-docker.yml
-          parameters:
-            build: true
-            baseImage: alpine
-            command: "CheckSmokeTestsForErrors ExtractMetricsFromLogs"
-
-- stage: nuget_installer_smoke_tests_arm64
-  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
-  dependsOn: [dotnet_tool, package_windows, generate_variables, merge_commit_id]
-  variables:
-    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
-    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
-  jobs:
-  - template: steps/update-github-status-jobs.yml
-    parameters:
-      jobs: [linux]
-
-  - job: linux
-    timeoutInMinutes: 45 # should take ~15 mins
-    strategy:
-      matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.nuget_installer_linux_smoke_tests_arm64_matrix'] ]
-    variables:
-      smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
-    pool:
-      name: $(linuxArm64Pool)
-
-    steps:
-    - template: steps/clone-repo.yml
-      parameters:
-        targetShaId: $(targetShaId)
-        targetBranch: $(targetBranch)
-
-    - template: steps/download-artifact.yml
-      parameters:
-        artifact: bundle-nuget-package
-        path: $(smokeTestAppDir)/artifacts
-
-    - template: steps/download-artifact.yml
-      parameters:
-        artifact: nuget-packages
-        path: $(smokeTestAppDir)/artifacts
-
-    - script: |
-        mkdir -p artifacts/build_data/snapshots
-        mkdir -p artifacts/build_data/logs
-      displayName: create test data directories
-
-    - script: |
-        docker-compose -p $(DockerComposeProjectName) build \
-          --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
-          --build-arg RUNTIME_IMAGE=$(runtimeImage) \
-          --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
-          --build-arg TOOL_VERSION=$(ToolVersion) \
-          --build-arg RELATIVE_PROFILER_PATH="$(relativeProfilerPath)" \
-          --build-arg RELATIVE_APIWRAPPER_PATH="$(relativeApiWrapperPath)" \
-          nuget-smoke-tests
-      env:
-        dockerTag: $(dockerTag)
-      displayName: docker-compose build nuget-smoke-tests
-      retryCountOnTaskFailure: 3
-
-    - template: steps/run-snapshot-test.yml
-      parameters:
-        target: 'nuget-smoke-tests'
-        snapshotPrefix: "smoke_test"
-
-    - script: |
-        docker-compose -p $(DockerComposeProjectName) build \
-          --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
-          --build-arg RUNTIME_IMAGE=$(runtimeImage) \
-          --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
-          --build-arg TOOL_VERSION=$(ToolVersion) \
-          --build-arg RELATIVE_PROFILER_PATH="$(relativeProfilerPath)" \
-          --build-arg RELATIVE_APIWRAPPER_PATH="$(relativeApiWrapperPath)" \
-          nuget-dddotnet-smoke-tests
-      env:
-        dockerTag: $(dockerTag)
-      displayName: docker-compose build smoke-tests dd-dotnet
-      retryCountOnTaskFailure: 3
-
-    - template: steps/run-snapshot-test.yml
-      parameters:
-        target: 'nuget-dddotnet-smoke-tests'
-        snapshotPrefix: "smoke_test"
-
-    - publish: artifacts/build_data
-      artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: always()
-      continueOnError: true
-
-    - template: steps/run-in-docker.yml
-      parameters:
-        build: true
-        baseImage: alpine
-        command: "CheckSmokeTestsForErrors ExtractMetricsFromLogs"
-
-- stage: dotnet_tool_smoke_tests_arm64
-  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
-  dependsOn: [dotnet_tool, generate_variables, merge_commit_id]
-  variables:
-    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
-    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
-  jobs:
-  - template: steps/update-github-status-jobs.yml
-    parameters:
-      jobs: [linux]
-
-  - job: linux
-    timeoutInMinutes: 45 # should take ~15 mins
-    strategy:
-      matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.dotnet_tool_installer_smoke_tests_arm64_matrix'] ]
-    variables:
-      smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
-    pool:
-      name: $(linuxArm64Pool)
-
-    steps:
-    - template: steps/download-artifact.yml
-      parameters:
-        artifact: runner-standalone-$(platformSuffix)
-        patterns: "*.tar.gz"
-        path: $(Agent.TempDirectory)
-
-    - script: |
-        mkdir -p artifacts/build_data/snapshots
-        mkdir -p artifacts/build_data/logs
-        mkdir -p $(smokeTestAppDir)/artifacts
-        tar -xf $(Agent.TempDirectory)/dd-trace-$(platformSuffix).tar.gz -C $(smokeTestAppDir)/artifacts
-        chmod +x $(smokeTestAppDir)/artifacts/dd-trace
-      displayName: create test data directories and extract tool
-
-    - script: |
-        docker-compose -p $(DockerComposeProjectName) build \
-          --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
-          --build-arg RUNTIME_IMAGE=$(runtimeImage) \
-          --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
-          --build-arg TOOL_VERSION=$(ToolVersion) \
-          dotnet-tool-smoke-tests
-      env:
-        dockerTag: $(dockerTag)
-      displayName: docker-compose build smoke-tests
-      retryCountOnTaskFailure: 3
-
-    - template: steps/run-snapshot-test.yml
-      parameters:
-        target: 'dotnet-tool-smoke-tests'
-        snapshotPrefix: "smoke_test"
-
-    - publish: artifacts/build_data
-      artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: always()
-      continueOnError: true
-
-    - template: steps/run-in-docker.yml
-      parameters:
-        build: true
-        baseImage: alpine
-        command: "CheckSmokeTestsForErrors ExtractMetricsFromLogs"
-
-- stage: nuget_installer_smoke_tests_windows
-  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
-  dependsOn: [dotnet_tool, package_windows, generate_variables, merge_commit_id]
-  variables:
-    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
-    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
-    dockerComposePath: 'C:/docker-compose/docker-compose.exe'
-  jobs:
-  - template: steps/update-github-status-jobs.yml
-    parameters:
-      jobs: [windows]
-
-  - job: windows
-    timeoutInMinutes: 45 # should take ~15 mins as large Windows docker files
-    strategy:
-      matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.nuget_installer_windows_smoke_tests_matrix'] ]
-    variables:
-      smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
-    pool:
-      vmImage: windows-2022
-
-    steps:
-    - template: steps/install-docker-compose-v1.yml
-      parameters:
-        dockerComposePath: $(dockerComposePath)
-
-    - template: steps/ensure-docker-ready.yml
-
-    - template: steps/clone-repo.yml
-      parameters:
-        targetShaId: $(targetShaId)
-        targetBranch: $(targetBranch)
-
-    - template: steps/download-artifact.yml
-      parameters:
-        artifact: bundle-nuget-package
-        path: $(smokeTestAppDir)/artifacts
-
-    - template: steps/download-artifact.yml
-      parameters:
-        artifact: nuget-packages
-        path: $(smokeTestAppDir)/artifacts
-
-    - powershell: |
-        mkdir -p artifacts/build_data/snapshots
-        mkdir -p artifacts/build_data/logs
-      displayName: create test data directories
-
-    - bash: |
-        $(dockerComposePath) -f docker-compose.windows.yml -p $(DockerComposeProjectName) build \
-          --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
-          --build-arg RUNTIME_IMAGE=$(runtimeImage) \
-          --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
-          --build-arg TOOL_VERSION=$(ToolVersion) \
-          --build-arg CHANNEL_32_BIT="$(channel32Bit)" \
-          --build-arg RELATIVE_PROFILER_PATH="$(relativeProfilerPath)" \
-          nuget-smoke-tests.windows
-      env:
-        dockerTag: $(dockerTag)
-      displayName: docker-compose build smoke-tests
-      retryCountOnTaskFailure: 3
-
-    - template: steps/run-snapshot-test.yml
-      parameters:
-        target: 'nuget-smoke-tests.windows'
-        snapshotPrefix: "smoke_test"
-        isLinux: false
-        dockerComposePath: $(dockerComposePath)
-
-    - bash: |
-        $(dockerComposePath) -f docker-compose.windows.yml -p $(DockerComposeProjectName) build \
-          --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
-          --build-arg RUNTIME_IMAGE=$(runtimeImage) \
-          --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
-          --build-arg TOOL_VERSION=$(ToolVersion) \
-          --build-arg CHANNEL_32_BIT="$(channel32Bit)" \
-          --build-arg RELATIVE_PROFILER_PATH="$(relativeProfilerPath)" \
-          nuget-dddotnet-smoke-tests.windows
-      env:
-        dockerTag: $(dockerTag)
-      displayName: docker-compose build smoke-tests dd-dotnet
-      retryCountOnTaskFailure: 3
-
-    - template: steps/run-snapshot-test.yml
-      parameters:
-        target: 'nuget-dddotnet-smoke-tests.windows'
-        snapshotPrefix: "smoke_test"
-        isLinux: false
-        dockerComposePath: $(dockerComposePath)
-
-    - publish: artifacts/build_data
-      artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: always()
-      continueOnError: true
-
-    - template: steps/install-latest-dotnet-sdk.yml
-    - script: tracer\build.cmd CheckSmokeTestsForErrors ExtractMetricsFromLogs
-      displayName: CheckSmokeTestsForErrors ExtractMetricsFromLogs
-      env:
-        DD_LOGGER_DD_API_KEY: $(ddApiKey)
-
-- stage: dotnet_tool_smoke_tests_windows
-  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
-  dependsOn: [dotnet_tool, package_windows, generate_variables, merge_commit_id]
-  variables:
-    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
-    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
-    dockerComposePath: 'C:/docker-compose/docker-compose.exe'
-  jobs:
-  - template: steps/update-github-status-jobs.yml
-    parameters:
-      jobs: [windows]
-
-  - job: windows
-    timeoutInMinutes: 45 # should take ~15 mins as large Windows docker files
-    strategy:
-      matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.dotnet_tool_installer_windows_smoke_tests_matrix'] ]
-    variables:
-      smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
-    pool:
-      vmImage: windows-2022
-
-    steps:
-    - template: steps/install-docker-compose-v1.yml
-      parameters:
-        dockerComposePath: $(dockerComposePath)
-
-    - template: steps/ensure-docker-ready.yml
-
-    - template: steps/clone-repo.yml
-      parameters:
-        targetShaId: $(targetShaId)
-        targetBranch: $(targetBranch)
-
-    - template: steps/download-artifact.yml
-      parameters:
-        artifact: runner-standalone-win-x64
-        patterns: "dd-trace-win-x64.zip"
-        path: $(Agent.TempDirectory)
-
-    - powershell: |
-        mkdir -f -p artifacts/build_data/snapshots
-        mkdir -f -p artifacts/build_data/logs
-        mkdir -f -p $(smokeTestAppDir)/artifacts
-        mv $(Agent.TempDirectory)/*.zip $(smokeTestAppDir)/artifacts/dd-trace-win.zip
-      displayName: Create test data directories
-
-    - bash: |
-        $(dockerComposePath) -f docker-compose.windows.yml -p $(DockerComposeProjectName) build \
-          --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
-          --build-arg RUNTIME_IMAGE=$(runtimeImage) \
-          --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
-          --build-arg TOOL_VERSION=$(ToolVersion) \
-          --build-arg CHANNEL_32_BIT="$(channel32Bit)" \
-          dotnet-tool-smoke-tests.windows
-      env:
-        dockerTag: $(dockerTag)
-      displayName: docker-compose build smoke-tests
-      retryCountOnTaskFailure: 3
-
-    - template: steps/run-snapshot-test.yml
-      parameters:
-        target: 'dotnet-tool-smoke-tests.windows'
-        snapshotPrefix: "smoke_test"
-        isLinux: false
-        dockerComposePath: $(dockerComposePath)
-
-    - publish: artifacts/build_data
-      artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: always()
-      continueOnError: true
-
-    - template: steps/install-latest-dotnet-sdk.yml
-    - script: tracer\build.cmd CheckSmokeTestsForErrors ExtractMetricsFromLogs
-      displayName: CheckSmokeTestsForErrors ExtractMetricsFromLogs
-      env:
-        DD_LOGGER_DD_API_KEY: $(ddApiKey)
-
-- stage: msi_installer_smoke_tests
-  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
-  dependsOn: [package_windows, generate_variables, merge_commit_id]
-  variables:
-    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
-    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
-    dockerComposePath: 'C:/docker-compose/docker-compose.exe'
-  jobs:
-  - template: steps/update-github-status-jobs.yml
-    parameters:
-      jobs: [windows]
-
-  - job: windows
-    timeoutInMinutes: 45 # should take ~15 mins as large Windows docker files
-    strategy:
-      matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.msi_installer_windows_smoke_tests_matrix'] ]
-    variables:
-      smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
-    pool:
-      vmImage: windows-2022
-
-    steps:
-    - template: steps/install-docker-compose-v1.yml
-      parameters:
-        dockerComposePath: $(dockerComposePath)
-
-    - template: steps/ensure-docker-ready.yml
-
-    - template: steps/clone-repo.yml
-      parameters:
-        targetShaId: $(targetShaId)
-        targetBranch: $(targetBranch)
-
-    - template: steps/download-artifact.yml
-      parameters:
-        artifact: windows-msi-$(targetPlatform)
-        patterns: '**/*-$(targetPlatform).msi'
-        path: $(Agent.TempDirectory)
-
-    - powershell: |
-        mkdir -p artifacts/build_data/snapshots
-        mkdir -p artifacts/build_data/logs
-        mkdir -p $(smokeTestAppDir)/artifacts
-        mv $(Agent.TempDirectory)/*.msi $(smokeTestAppDir)/artifacts/datadog-apm.msi
-      displayName: Create test data directories
-
-    - bash: |
-        $(dockerComposePath) -f docker-compose.windows.yml -p $(DockerComposeProjectName) build \
-          --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
-          --build-arg RUNTIME_IMAGE=$(runtimeImage) \
-          --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
-          --build-arg CHANNEL_32_BIT="$(channel32Bit)" \
-          smoke-tests.windows
-      env:
-        dockerTag: $(dockerTag)
-      displayName: docker-compose build smoke-tests
-      retryCountOnTaskFailure: 3
-
-    - template: steps/run-snapshot-test.yml
-      parameters:
-        target: 'smoke-tests.windows'
-        snapshotPrefix: "smoke_test"
-        isLinux: false
-        dockerComposePath: $(dockerComposePath)
-
-    - publish: artifacts/build_data
-      artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: always()
-      continueOnError: true
-
-    - template: steps/install-latest-dotnet-sdk.yml
-    - script: tracer\build.cmd CheckSmokeTestsForErrors ExtractMetricsFromLogs
-      displayName: CheckSmokeTestsForErrors ExtractMetricsFromLogs
-      env:
-        DD_LOGGER_DD_API_KEY: $(ddApiKey)
-
-- stage: dd_dotnet_msi_installer_smoke_tests
-  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
-  dependsOn: [package_windows, generate_variables, merge_commit_id]
-  variables:
-    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
-    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
-    dockerComposePath: 'C:/docker-compose/docker-compose.exe'
-  jobs:
-    - template: steps/update-github-status-jobs.yml
-      parameters:
-        jobs: [windows]
-
-    - job: windows
-      timeoutInMinutes: 45 # should take ~15 mins as large Windows docker files
-      strategy:
-        # Uses the same matrix as msi_installer_smoke_tests
-        matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.msi_installer_windows_smoke_tests_matrix'] ]
-      variables:
-        smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
-      pool:
-        vmImage: windows-2022
-
-      steps:
-        - template: steps/install-docker-compose-v1.yml
-          parameters:
-            dockerComposePath: $(dockerComposePath)
-
-        - template: steps/ensure-docker-ready.yml
-
-        - template: steps/clone-repo.yml
-          parameters:
-            targetShaId: $(targetShaId)
-            targetBranch: $(targetBranch)
-
-        - template: steps/download-artifact.yml
-          parameters:
-            artifact: windows-msi-$(targetPlatform)
-            patterns: '**/*-$(targetPlatform).msi'
-            path: $(Agent.TempDirectory)
-
-        - powershell: |
-            mkdir -p artifacts/build_data/snapshots
-            mkdir -p artifacts/build_data/logs
-            mkdir -p $(smokeTestAppDir)/artifacts
-            mv $(Agent.TempDirectory)/*.msi $(smokeTestAppDir)/artifacts/datadog-apm.msi
-          displayName: Create test data directories
-
-        - bash: |
-            $(dockerComposePath) -f docker-compose.windows.yml -p $(DockerComposeProjectName) build \
-              --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
-              --build-arg RUNTIME_IMAGE=$(runtimeImage) \
-              --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
-              --build-arg CHANNEL_32_BIT="" \
-              dd-dotnet-smoke-tests.windows
-          env:
-            dockerTag: $(dockerTag)
-          displayName: docker-compose build smoke-tests
-          retryCountOnTaskFailure: 3
-
-        - template: steps/run-snapshot-test.yml
-          parameters:
-            target: 'dd-dotnet-smoke-tests.windows'
-            snapshotPrefix: "smoke_test"
-            isLinux: false
-            dockerComposePath: $(dockerComposePath)
-
-        - publish: artifacts/build_data
-          artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-          condition: always()
-          continueOnError: true
-
-        - template: steps/install-latest-dotnet-sdk.yml
-        - script: tracer\build.cmd CheckSmokeTestsForErrors ExtractMetricsFromLogs
-          displayName: CheckSmokeTestsForErrors ExtractMetricsFromLogs
-          env:
-            DD_LOGGER_DD_API_KEY: $(ddApiKey)
-
-- stage: tracer_home_smoke_tests
-  dependsOn: [package_windows, generate_variables, merge_commit_id]
-  variables:
-    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
-    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
-    dockerComposePath: 'C:/docker-compose/docker-compose.exe'
-  jobs:
-  - template: steps/update-github-status-jobs.yml
-    parameters:
-      jobs: [windows]
-
-  - job: windows
-    timeoutInMinutes: 45 # should take ~15 mins as large Windows docker files
-    strategy:
-      matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.tracer_home_installer_windows_smoke_tests_matrix'] ]
-    variables:
-      smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
-    pool:
-      vmImage: windows-2022
-
-    steps:
-    - template: steps/install-docker-compose-v1.yml
-      parameters:
-        dockerComposePath: $(dockerComposePath)
-
-    - template: steps/ensure-docker-ready.yml
-
-    - template: steps/clone-repo.yml
-      parameters:
-        targetShaId: $(targetShaId)
-        targetBranch: $(targetBranch)
-
-    - powershell: |
-        mkdir -p artifacts/build_data/snapshots
-        mkdir -p artifacts/build_data/logs
-        mkdir -p $(smokeTestAppDir)/artifacts
-      displayName: Create test data directories
-
-    - template: steps/download-artifact.yml
-      parameters:
-        artifact: windows-tracer-home.zip
-        path: $(smokeTestAppDir)/artifacts
-
-    - bash: |
-        $(dockerComposePath) -f docker-compose.windows.yml -p $(DockerComposeProjectName) build \
-          --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
-          --build-arg RUNTIME_IMAGE=$(runtimeImage) \
-          --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
-          --build-arg CHANNEL_32_BIT="$(channel32Bit)" \
-          --build-arg RELATIVE_PROFILER_PATH="$(relativeProfilerPath)" \
-          tracer-home-smoke-tests.windows
-      env:
-        dockerTag: $(dockerTag)
-      displayName: docker-compose build smoke-tests
-      retryCountOnTaskFailure: 3
-
-    - template: steps/run-snapshot-test.yml
-      parameters:
-        target: 'tracer-home-smoke-tests.windows'
-        snapshotPrefix: "smoke_test"
-        isLinux: false
-        dockerComposePath: $(dockerComposePath)
-
-    - publish: artifacts/build_data
-      artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: always()
-      continueOnError: true
-
-    - template: steps/install-latest-dotnet-sdk.yml
-    - script: tracer\build.cmd CheckSmokeTestsForErrors ExtractMetricsFromLogs
-      displayName: CheckSmokeTestsForErrors ExtractMetricsFromLogs
-      env:
-        DD_LOGGER_DD_API_KEY: $(ddApiKey)
-
-- stage: fleet_installer_iis_smoke_tests
-  dependsOn: [package_windows, generate_variables, merge_commit_id]
-  variables:
-    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
-    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
-    dockerComposePath: 'C:/docker-compose/docker-compose.exe'
-  jobs:
-    - template: steps/update-github-status-jobs.yml
-      parameters:
-        jobs: [windows]
-
-    - job: windows
-      timeoutInMinutes: 45 # should take ~15 mins as large Windows docker files
-      strategy:
-        matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.fleet_installer_windows_iis_smoke_tests_matrix'] ]
-      variables:
-        smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
-      pool:
-        vmImage: windows-2022
-
-      steps:
-        - template: steps/install-docker-compose-v1.yml
-          parameters:
-            dockerComposePath: $(dockerComposePath)
-
-        - template: steps/ensure-docker-ready.yml
-
-        - template: steps/clone-repo.yml
-          parameters:
-            targetShaId: $(targetShaId)
-            targetBranch: $(targetBranch)
-
-        - template: steps/download-artifact.yml
-          parameters:
-            artifact: windows-tracer-home.zip
-            path: $(smokeTestAppDir)/artifacts
-
-        - template: steps/download-artifact.yml
-          parameters:
-            artifact: fleet-installer
-            path: $(smokeTestAppDir)/artifacts/installer
-
-        - template: steps/download-artifact.yml
-          parameters:
-            artifact: fleet-installer-telemetry-forwarder
-            path: $(smokeTestAppDir)/artifacts/installer
-
-        - powershell: |
-            ls $(smokeTestAppDir)/artifacts
-            ls $(smokeTestAppDir)/artifacts/installer
-            mkdir -p artifacts/build_data/snapshots
-            mkdir -p artifacts/build_data/logs
-          displayName: Create test data directories
-
-        - bash: |
-            $(dockerComposePath) -f docker-compose.windows.yml -p $(DockerComposeProjectName) build \
-              --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
-              --build-arg RUNTIME_IMAGE=$(runtimeImage) \
-              --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
-              --build-arg CHANNEL="$(channel)" \
-              --build-arg TARGET_PLATFORM="$(targetPlatform)" \
-              --build-arg INSTALL_COMMAND="$(installCommand)" \
-              fleet-installer-smoke-tests-iis.windows
-          env:
-            dockerTag: $(dockerTag)
-          displayName: docker-compose build smoke-tests
-          retryCountOnTaskFailure: 3
-
-        - template: steps/run-snapshot-test.yml
-          parameters:
-            target: 'fleet-installer-smoke-tests-iis.windows'
-            testAgentTarget: 'test-agent.iis.windows'
-            snapshotPrefix: "smoke_test_iis"
-            isLinux: false
-            dockerComposePath: $(dockerComposePath)
-
-        - publish: artifacts/build_data
-          artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-          condition: always()
-          continueOnError: true
-
-        - template: steps/install-latest-dotnet-sdk.yml
-        - script: tracer\build.cmd CheckSmokeTestsForErrors ExtractMetricsFromLogs
-          displayName: CheckSmokeTestsForErrors ExtractMetricsFromLogs
-          env:
-            DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
 - stage: dotnet_tool_nuget_smoke_tests_macos
   condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
@@ -6700,7 +5363,7 @@ stages:
           condition: succeededOrFailed()
           continueOnError: true
 
-- stage: dd_dotnet_installer_failure_tests_linux
+- stage: dd_dotnet_installer_failure_tests
   dependsOn: [generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
@@ -6708,77 +5371,15 @@ stages:
   jobs:
     - template: steps/update-github-status-jobs.yml
       parameters:
-        jobs: [linux]
+        jobs: [test]
 
-    - job: linux
-      timeoutInMinutes: 45 # should take ~5 mins
+    - job: test
+      timeoutInMinutes: 20
       strategy:
-        # This uses the same matrix as installer_smoke_tests
-        matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.installer_smoke_tests_matrix'] ]
-      variables:
-        smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
+        matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.dd_dotnet_failure_matrix'] ]
       pool:
-        vmImage: ubuntu-latest
-
-      steps:
-        - template: steps/clone-repo.yml
-          parameters:
-            targetShaId: $(targetShaId)
-            targetBranch: $(targetBranch)
-
-        - script: |
-            if docker image inspect "$(runtimeImage)" > /dev/null 2>&1; then
-              echo "Image already exists locally, skipping pull"
-            else
-              echo "Image not found — pulling"
-              docker pull "$(runtimeImage)"
-            fi
-          displayName: Pull missing images
-          retryCountOnTaskFailure: 3
-
-        - script: |
-            echo "Expecting path: $(expectedPath)"
-            echo "Expected installer: $(expectedInstaller)"
-
-            cd tracer/build/artifacts
-            result=$(docker run --rm -v ${PWD}:/app --entrypoint /app/dd-dotnet.sh $(runtimeImage))
-            if [[ "$result" != *$(expectedPath)* ]]; then
-              echo "Incorrect message. Expected '$(expectedPath)', but found:"
-              echo $result
-              exit 1
-            fi
-
-            if [[ "$result" != *$(expectedInstaller)* ]]; then
-              echo "Incorrect message. Expected '$(expectedInstaller)', but found:"
-              echo $result
-              exit 1
-            fi
-
-            echo "Received expected response:"
-            echo $result
-
-          displayName: Run artifact test (expecting failure)
-
-- stage: dd_dotnet_installer_failure_tests_linux_arm64
-  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
-  dependsOn: [generate_variables, merge_commit_id]
-  variables:
-    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
-    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
-  jobs:
-    - template: steps/update-github-status-jobs.yml
-      parameters:
-        jobs: [linux]
-
-    - job: linux
-      timeoutInMinutes: 45 # should take ~15 mins
-      strategy:
-        # This uses the same matrix as installer_smoke_tests_arm64
-        matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.installer_smoke_tests_arm64_matrix'] ]
-      variables:
-        smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
-      pool:
-        name: $(linuxArm64Pool)
+        name: $(poolName)
+        vmImage: $(poolVmImage)
 
       steps:
         - template: steps/clone-repo.yml
