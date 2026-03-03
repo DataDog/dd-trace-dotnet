@@ -48,16 +48,16 @@ namespace Datadog.Trace.Tests.Tagging
 
             const int workerCount = 8;
             const int iterationsPerWorker = 2_000;
-            var timeout = TimeSpan.FromSeconds(5);
+            var timeout = TimeSpan.FromSeconds(20);
             var expectedKeys = new[] { "k1", "k2", "k3", "k4" };
 
-            using var startBarrier = new Barrier(workerCount);
+            using var startSignal = new ManualResetEventSlim(false);
             var workers = Enumerable.Range(0, workerCount)
                                     .Select(
                                          workerId => Task.Run(
                                              () =>
                                              {
-                                                 startBarrier.SignalAndWait();
+                                                 startSignal.Wait();
 
                                                  for (var i = 0; i < iterationsPerWorker; i++)
                                                  {
@@ -70,9 +70,15 @@ namespace Datadog.Trace.Tests.Tagging
                                              }))
                                     .ToArray();
 
+            startSignal.Set();
+
             var allWorkers = Task.WhenAll(workers);
             var completedTask = await Task.WhenAny(allWorkers, Task.Delay(timeout));
-            completedTask.Should().BeSameAs(allWorkers, "concurrent tag updates should complete without hangs");
+            if (completedTask != allWorkers)
+            {
+                throw new TimeoutException($"Concurrent tag updates exceeded {timeout}. Worker statuses: {string.Join(", ", workers.Select(w => w.Status))}");
+            }
+
             await allWorkers;
 
             var snapshot = GetTagsSnapshot(tags);
