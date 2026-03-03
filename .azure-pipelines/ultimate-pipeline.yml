@@ -5240,7 +5240,7 @@ stages:
     - job: macos
       timeoutInMinutes: 45 # should take ~5 mins
       strategy:
-        matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.dotnet_tool_nuget_installer_macos_smoke_tests_matrix'] ]
+        matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.smoke_macos_tool_matrix'] ]
       variables:
         smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
         snapshotSrcDir: "$(System.DefaultWorkingDirectory)/tracer/build/smoke_test_snapshots"
