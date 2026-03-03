@@ -24,45 +24,13 @@ namespace Datadog.Trace.Tagging
 
         private static int CountNotNull(string? value) => value is null ? 0 : 1;
 
-        private static int ComputeCapacity(int currentCapacity, int requiredCapacity)
-        {
-            // start at 4, then double.
-            var newCapacity = currentCapacity == 0 ? DefaultCapacity : currentCapacity;
-
-            while (newCapacity < requiredCapacity)
-            {
-                if (newCapacity > int.MaxValue / 2)
-                {
-                    return requiredCapacity;
-                }
-
-                newCapacity *= 2;
-            }
-
-            return newCapacity;
-        }
-
-        private static void EnsureAdditionalCapacity<T>(List<KeyValuePair<string, T>> list, int additionalCapacity)
-        {
-            if (additionalCapacity == 0)
-            {
-                return;
-            }
-
-            var requiredCapacity = list.Count + additionalCapacity;
-            if (list.Capacity < requiredCapacity)
-            {
-                list.Capacity = ComputeCapacity(list.Capacity, requiredCapacity);
-            }
-        }
-
         private List<KeyValuePair<string, string>> GetOrCreateTagsList()
         {
             var tags = Volatile.Read(ref _tags);
 
             if (tags is null)
             {
-                var newTags = new List<KeyValuePair<string, string>>();
+                var newTags = new List<KeyValuePair<string, string>>(DefaultCapacity);
                 tags = Interlocked.CompareExchange(ref _tags, newTags, null) ?? newTags;
             }
 
@@ -109,8 +77,6 @@ namespace Datadog.Trace.Tagging
 
             lock (tags)
             {
-                EnsureAdditionalCapacity(tags, nonNullTagsCount);
-
                 SetTagNoLock(tags, tag1);
                 SetTagNoLock(tags, tag2);
                 SetTagNoLock(tags, tag3);
@@ -143,8 +109,6 @@ namespace Datadog.Trace.Tagging
 
             lock (tags)
             {
-                EnsureAdditionalCapacity(tags, nonNullTagsCount);
-
                 SetTagNoLock(tags, tag1);
                 SetTagNoLock(tags, tag2);
                 SetTagNoLock(tags, tag3);
@@ -184,8 +148,6 @@ namespace Datadog.Trace.Tagging
 
             lock (tags)
             {
-                EnsureAdditionalCapacity(tags, nonNullTagsCount);
-
                 SetTagNoLock(tags, tag1);
                 SetTagNoLock(tags, tag2);
                 SetTagNoLock(tags, tag3);
