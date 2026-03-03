@@ -199,10 +199,9 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        [InlineData("true", null, false)]
         [InlineData("true", "true", true)]
         [InlineData("true", "false", false)]
-        public void RuntimeMetrics_ExplicitEnable_RespectsDignosticsFlag(string runtimeMetrics, string diagnosticsApi, bool expectedDiagnostics)
+        public void RuntimeMetrics_ExplicitEnable_RespectsExplicitDiagnosticsFlag(string runtimeMetrics, string diagnosticsApi, bool expectedDiagnostics)
         {
             var source = CreateConfigurationSource(
                 (ConfigurationKeys.RuntimeMetricsEnabled, runtimeMetrics),
@@ -212,6 +211,30 @@ namespace Datadog.Trace.Tests.Configuration
             settings.RuntimeMetricsEnabled.Should().BeTrue();
             settings.RuntimeMetricsDiagnosticsMetricsApiEnabled.Should().Be(expectedDiagnostics);
         }
+
+#if NET8_0_OR_GREATER
+        [Fact]
+        public void RuntimeMetrics_ExplicitEnable_DefaultsToDiagnosticsOnNet8Plus()
+        {
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.RuntimeMetricsEnabled, "true"));
+            var settings = new TracerSettings(source);
+
+            settings.RuntimeMetricsEnabled.Should().BeTrue();
+            settings.RuntimeMetricsDiagnosticsMetricsApiEnabled.Should().BeTrue();
+        }
+#else
+        [Fact]
+        public void RuntimeMetrics_ExplicitEnable_DefaultsToEventListenerOnNet6And7()
+        {
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.RuntimeMetricsEnabled, "true"));
+            var settings = new TracerSettings(source);
+
+            settings.RuntimeMetricsEnabled.Should().BeTrue();
+            settings.RuntimeMetricsDiagnosticsMetricsApiEnabled.Should().BeFalse();
+        }
+#endif
 
         [Fact]
         public void RuntimeMetrics_ExplicitDisable_OverridesDefault()

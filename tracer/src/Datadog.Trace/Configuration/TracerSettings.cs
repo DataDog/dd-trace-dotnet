@@ -178,28 +178,33 @@ namespace Datadog.Trace.Configuration
             }
 
 #if NET6_0_OR_GREATER
+            // On .NET 6+, runtime metrics are enabled by default when not explicitly configured
             var runtimeMetricsExplicitlySet = runtimeMetricsEnabledResult.ConfigurationResult.IsPresent;
-
-            if (!runtimeMetricsExplicitlySet)
-            {
-                // When runtime metrics are not explicitly configured on .NET 6+, enable by default
-                // using the Diagnostics listener to avoid EventPipe crash/leak issues
-                // (dotnet/runtime#103480, dotnet/runtime#111368)
-                RuntimeMetricsEnabled = true;
-                RuntimeMetricsDiagnosticsMetricsApiEnabled = true;
-                telemetry.Record(ConfigurationKeys.RuntimeMetricsEnabled, true, ConfigurationOrigins.Calculated);
-                telemetry.Record(ConfigurationKeys.RuntimeMetricsDiagnosticsMetricsApiEnabled, true, ConfigurationOrigins.Calculated);
-            }
-            else
-            {
-                RuntimeMetricsEnabled = runtimeMetricsEnabledResult.WithDefault(false);
-                RuntimeMetricsDiagnosticsMetricsApiEnabled = config.WithKeys(ConfigurationKeys.RuntimeMetricsDiagnosticsMetricsApiEnabled).AsBool(false);
-            }
+            RuntimeMetricsEnabled = runtimeMetricsExplicitlySet
+                ? runtimeMetricsEnabledResult.WithDefault(false)
+                : true;
 #else
             RuntimeMetricsEnabled = runtimeMetricsEnabledResult.WithDefault(false);
+#endif
 
-            RuntimeMetricsDiagnosticsMetricsApiEnabled = config.WithKeys(ConfigurationKeys.RuntimeMetricsDiagnosticsMetricsApiEnabled).AsBool(false);
+            var runtimeMetricsDiagnosticsMetricsApiEnabledResult = config
+                                                                  .WithKeys(ConfigurationKeys.RuntimeMetricsDiagnosticsMetricsApiEnabled)
+                                                                  .AsBoolResult();
 
+#if NET6_0_OR_GREATER
+            // On .NET 8+, default to Diagnostics for all users (full metric coverage including ASP.NET Core meters).
+            // On .NET 6/7, default to Diagnostics only when runtime metrics were not explicitly configured,
+            // to avoid EventPipe crash/leak issues (dotnet/runtime#103480, dotnet/runtime#111368).
+            // Explicit DD_RUNTIME_METRICS_ENABLED=true users on .NET 6/7 keep EventListener
+            // to preserve ASP.NET Core EventCounter metrics not available via Diagnostics on < .NET 8.
+            var diagnosticsDefault = !runtimeMetricsExplicitlySet || Environment.Version.Major >= 8;
+            RuntimeMetricsDiagnosticsMetricsApiEnabled = runtimeMetricsDiagnosticsMetricsApiEnabledResult.WithDefault(diagnosticsDefault);
+#else
+            // System.Diagnostics.Metrics is not available before .NET 6, keep disabled by default
+            RuntimeMetricsDiagnosticsMetricsApiEnabled = runtimeMetricsDiagnosticsMetricsApiEnabledResult.WithDefault(false);
+#endif
+
+#if !NET6_0_OR_GREATER
             if (RuntimeMetricsEnabled && RuntimeMetricsDiagnosticsMetricsApiEnabled)
             {
                 Log.Warning(
@@ -207,6 +212,7 @@ namespace Datadog.Trace.Configuration
                 telemetry.Record(ConfigurationKeys.RuntimeMetricsDiagnosticsMetricsApiEnabled, false, ConfigurationOrigins.Calculated);
             }
 #endif
+
             OtelMetricExportIntervalMs = config
                             .WithKeys(ConfigurationKeys.OpenTelemetry.MetricExportIntervalMs)
                             .AsInt32(defaultValue: 10_000);

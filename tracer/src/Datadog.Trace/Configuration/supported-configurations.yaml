@@ -1412,10 +1412,12 @@ supportedConfigurations:
     documentation: |-
       Enables a runtime metrics collector which uses the 
       <a href="https://learn.microsoft.com/en-us/dotnet/core/diagnostics/metrics">System.Diagnostics.Metrics</a> API.
-      Automatically enabled when runtime metrics are enabled by default on .NET 6+.
-      When <c>DD_RUNTIME_METRICS_ENABLED</c> is explicitly set to <c>true</c>, this controls
-      whether the Diagnostics or EventListener collector is used. Only includes ASP.NET Core
-      metrics when using .NET 8+.
+      Automatically enabled when runtime metrics are enabled by default on .NET 6+
+      (i.e. <c>DD_RUNTIME_METRICS_ENABLED</c> is not set). Also defaults to <c>true</c>
+      on .NET 8+ even when <c>DD_RUNTIME_METRICS_ENABLED</c> is explicitly set to <c>true</c>,
+      since the Diagnostics listener has full metric coverage on .NET 8+.
+      On .NET 6/7 with explicit <c>DD_RUNTIME_METRICS_ENABLED=true</c>, defaults to
+      <c>false</c> (EventListener) to preserve ASP.NET Core EventCounter metrics.
       Default value is <c>false</c> (disabled).
   DD_SERVICE:
   - implementation: D
