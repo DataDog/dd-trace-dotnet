@@ -9,12 +9,14 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
 using Xunit.Sdk;
+using SkipException = Xunit.SkipException;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
@@ -29,39 +31,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             SetServiceVersion(ServiceVersion);
             EnvironmentHelper.DebugModeEnabled = true;
-        }
-
-        public static string[] Bindings =>
-        [
-            "WSHttpBinding",
-            "BasicHttpBinding",
-            "NetTcpBinding",
-            "Custom"
-        ];
-
-        public static IEnumerable<object[]> GetData()
-        {
-            foreach (var binding in Bindings)
-            {
-                // When using the binding example, it is expected that Old WCF fails,
-                // so only test New WCF
-                if (binding == "Custom")
-                {
-                    yield return new object[] { "v0", binding, true, true };
-                    yield return new object[] { "v1", binding, true, true };
-                    continue;
-                }
-
-                yield return new object[] { "v0", binding, false, true };
-                yield return new object[] { "v0", binding, false, false };
-                yield return new object[] { "v0", binding, true, true };
-                yield return new object[] { "v0", binding, true, false };
-
-                yield return new object[] { "v1", binding, false, true };
-                yield return new object[] { "v1", binding, false, false };
-                yield return new object[] { "v1", binding, true, true };
-                yield return new object[] { "v1", binding, true, false };
-            }
         }
 
         public static TheoryData<string, bool, bool> GetWebHttpData() => new()
@@ -83,9 +52,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [SkippableTheory]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        [MemberData(nameof(GetData))]
-        public async Task SubmitsTraces(string metadataSchemaVersion, string binding, bool enableNewWcfInstrumentation, bool enableWcfObfuscation)
+        [CombinatorialOrPairwiseData]
+        public async Task SubmitsTraces(
+            [MetadataSchemaVersionData] string metadataSchemaVersion,
+            [CombinatorialValues("WSHttpBinding", "BasicHttpBinding", "NetTcpBinding", "Custom")] string binding,
+            bool enableNewWcfInstrumentation,
+            bool enableWcfObfuscation)
         {
+            // skip invalid combinations
+            if (binding == "Custom" && !(enableNewWcfInstrumentation && enableWcfObfuscation))
+            {
+                throw new SkipException("Custom binding sample only supports 'New' WCF");
+            }
+
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
             SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
 
