@@ -45,30 +45,7 @@ namespace Samples.Wcf.Client
                 request.Properties.Add(HttpRequestMessageProperty.Name, httpRequestMessage);
             }
 
-            // Remove stale Datadog headers from SOAP messages that were injected by
-            // CalculatorService.InjectScope before the WCF pipeline (and before the OTel Activity
-            // was created). The OTel WCF client instrumentation injects correct W3C trace context
-            // headers (traceparent/tracestate) at the channel level, so removing stale Datadog
-            // headers allows the server to extract from the W3C headers instead.
-            // WebHttp (REST) messages use EnvelopeVersion.None and don't support message headers.
-            if (request.Version.Envelope != EnvelopeVersion.None)
-            {
-                RemoveDatadogHeaders(request.Headers);
-            }
-
             return null;
-        }
-
-        private static void RemoveDatadogHeaders(MessageHeaders headers)
-        {
-            const string ns = "datadog";
-            for (int i = headers.Count - 1; i >= 0; i--)
-            {
-                if (headers[i].Namespace == ns)
-                {
-                    headers.RemoveAt(i);
-                }
-            }
         }
 
         /// <summary>
