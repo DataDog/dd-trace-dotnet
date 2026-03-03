@@ -63,74 +63,74 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
                 string? userAgent = null;
                 string? httpMethod = null;
                 WebHeadersCollection? headers = null;
+                var requestProperties = requestMessage.Properties;
 
-                IDictionary<string, object?>? requestProperties = requestMessage.Properties;
-                if (requestProperties is not null
-                 && requestProperties.TryGetValue("httpRequest", out var httpRequestProperty)
-                 && httpRequestProperty?.GetType().FullName != null
-                 && httpRequestProperty.GetType().FullName!.Equals(HttpRequestMessagePropertyTypeName, StringComparison.OrdinalIgnoreCase))
+                if (tracer.ActiveScope is { } activeScope)
                 {
-                    var httpRequestPropertyProxy = httpRequestProperty.DuckCast<HttpRequestMessagePropertyStruct>();
-                    var webHeaderCollection = httpRequestPropertyProxy.Headers;
-
-                    // we're using an http transport
-                    host = webHeaderCollection[HttpRequestHeader.Host];
-                    userAgent = webHeaderCollection[HttpRequestHeader.UserAgent];
-                    httpMethod = httpRequestPropertyProxy.Method?.ToUpperInvariant();
-
-                    // try to extract propagated context values from http headers
-                    if (tracer.ActiveScope is { } activeScope)
+                    Log.Warning("Skipped extracting headers due to existing scope: {ActiveScope}", activeScope.Span);
+                }
+                else
+                {
+                    if (requestProperties is not null
+                     && requestProperties.TryGetValue("httpRequest", out var httpRequestProperty)
+                     && httpRequestProperty?.GetType().FullName != null
+                     && httpRequestProperty.GetType().FullName!.Equals(HttpRequestMessagePropertyTypeName, StringComparison.OrdinalIgnoreCase))
                     {
-                        Log.Warning("Skipped extracting headers due to existing scope: {ActiveScope}", activeScope.Span);
-                    }
-                    else
-                    {
+                        var httpRequestPropertyProxy = httpRequestProperty.DuckCast<HttpRequestMessagePropertyStruct>();
+                        var webHeaderCollection = httpRequestPropertyProxy.Headers;
+
+                        // we're using an http transport
+                        host = webHeaderCollection[HttpRequestHeader.Host];
+                        userAgent = webHeaderCollection[HttpRequestHeader.UserAgent];
+                        httpMethod = httpRequestPropertyProxy.Method?.ToUpperInvariant();
+
+                        // try to extract propagated context values from http headers
                         try
                         {
                             headers = webHeaderCollection.Wrap();
 
                             extractedContext = tracer.TracerManager.SpanContextPropagator
-                                                                    .Extract(headers.Value)
-                                                                    .MergeBaggageInto(Baggage.Current);
+                                                     .Extract(headers.Value)
+                                                     .MergeBaggageInto(Baggage.Current);
                         }
                         catch (Exception ex)
                         {
                             Log.Error(ex, "Error extracting propagated HTTP headers.");
                         }
                     }
-                }
 
-                if (extractedContext.SpanContext is null && requestMessage.Headers is { } messageHeaders)
-                {
-                    Log.Debug("Extracting from WCF headers if any as http headers hadn't been found.");
-                    try
+                    if (extractedContext.SpanContext is null && requestMessage.Headers is { } messageHeaders)
                     {
-                        extractedContext = tracer.TracerManager.SpanContextPropagator
-                                                                .Extract(messageHeaders, GetHeaderValues)
-                                                                .MergeBaggageInto(Baggage.Current);
-
-                        static IEnumerable<string?> GetHeaderValues(IMessageHeaders headers, string name)
+                        Log.Debug("Extracting from WCF headers if any as http headers hadn't been found.");
+                        try
                         {
-                            try
-                            {
-                                const string ns = "datadog";
-                                var index = headers.FindHeader(name, ns);
-                                if (index >= 0)
-                                {
-                                    return [headers.GetHeader<string>(name, ns)];
-                                }
-                            }
-                            catch (Exception ex)
-                            {
-                                Log.Error(ex, "Error extracting propagated WCF headers.");
-                            }
+                            extractedContext = tracer.TracerManager.SpanContextPropagator
+                                                                    .Extract(messageHeaders, GetHeaderValues)
+                                                                    .MergeBaggageInto(Baggage.Current);
 
-                            return [];
+                            static IEnumerable<string?> GetHeaderValues(IMessageHeaders headers, string name)
+                            {
+                                try
+                                {
+                                    const string ns = "datadog";
+                                    var index = headers.FindHeader(name, ns);
+                                    if (index >= 0)
+                                    {
+                                        return [headers.GetHeader<string>(name, ns)];
+                                    }
+                                }
+                                catch (Exception ex)
+                                {
+                                    Log.Error(ex, "Error extracting propagated WCF headers.");
+                                }
+
+                                return [];
+                            }
                         }
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Error(ex, "Error extracting propagated WCF headers.");
+                        catch (Exception ex)
+                        {
+                            Log.Error(ex, "Error extracting propagated WCF headers.");
+                        }
                     }
                 }
 
