@@ -1,4 +1,4 @@
-﻿// <copyright company="Datadog">
+// <copyright company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -227,17 +227,22 @@ internal static partial class ConfigurationKeys
     public const string MaxTracesSubmittedPerSecond = "DD_MAX_TRACES_PER_SECOND";
 
     /// <summary>
-    /// Enables an experimental runtime metrics collector which uses the 
+    /// Enables a runtime metrics collector which uses the 
     /// <a href="https://learn.microsoft.com/en-us/dotnet/core/diagnostics/metrics">System.Diagnostics.Metrics</a> API.
-    /// This collector can only be enabled when using .NET 6+, and will only include ASP.NET Core metrics
-    /// when using .NET 8+.
+    /// Automatically enabled when runtime metrics are enabled by default on .NET 6+
+    /// (i.e. <c>DD_RUNTIME_METRICS_ENABLED</c> is not set). Also defaults to <c>true</c>
+    /// on .NET 8+ even when <c>DD_RUNTIME_METRICS_ENABLED</c> is explicitly set to <c>true</c>,
+    /// since the Diagnostics listener has full metric coverage on .NET 8+.
+    /// On .NET 6/7 with explicit <c>DD_RUNTIME_METRICS_ENABLED=true</c>, defaults to
+    /// <c>false</c> (EventListener) to preserve ASP.NET Core EventCounter metrics.
     /// Default value is <c>false</c> (disabled).
     /// </summary>
     public const string RuntimeMetricsDiagnosticsMetricsApiEnabled = "DD_RUNTIME_METRICS_DIAGNOSTICS_METRICS_API_ENABLED";
 
     /// <summary>
     /// Configuration key for enabling or disabling runtime metrics sent to DogStatsD.
-    /// Default value is <c>false</c> (disabled).
+    /// Default value is <c>false</c> (disabled) on .NET Framework, or <c>true</c> (enabled)
+    /// on .NET 6+ using the System.Diagnostics.Metrics-based collector.
     /// </summary>
     public const string RuntimeMetricsEnabled = "DD_RUNTIME_METRICS_ENABLED";
 
