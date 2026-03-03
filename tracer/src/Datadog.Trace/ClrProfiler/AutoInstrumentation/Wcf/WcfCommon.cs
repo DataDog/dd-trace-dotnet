@@ -65,26 +65,26 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
                 WebHeadersCollection? headers = null;
                 var requestProperties = requestMessage.Properties;
 
-                if (tracer.ActiveScope is { } activeScope)
+                if (requestProperties is not null
+                 && requestProperties.TryGetValue("httpRequest", out var httpRequestProperty)
+                 && httpRequestProperty?.GetType().FullName != null
+                 && httpRequestProperty.GetType().FullName!.Equals(HttpRequestMessagePropertyTypeName, StringComparison.OrdinalIgnoreCase))
                 {
-                    Log.Warning("Skipped extracting headers due to existing scope: {ActiveScope}", activeScope.Span);
-                }
-                else
-                {
-                    if (requestProperties is not null
-                     && requestProperties.TryGetValue("httpRequest", out var httpRequestProperty)
-                     && httpRequestProperty?.GetType().FullName != null
-                     && httpRequestProperty.GetType().FullName!.Equals(HttpRequestMessagePropertyTypeName, StringComparison.OrdinalIgnoreCase))
+                    var httpRequestPropertyProxy = httpRequestProperty.DuckCast<HttpRequestMessagePropertyStruct>();
+                    var webHeaderCollection = httpRequestPropertyProxy.Headers;
+
+                    // we're using an http transport
+                    host = webHeaderCollection[HttpRequestHeader.Host];
+                    userAgent = webHeaderCollection[HttpRequestHeader.UserAgent];
+                    httpMethod = httpRequestPropertyProxy.Method?.ToUpperInvariant();
+
+                    // try to extract propagated context values from http headers
+                    if (tracer.ActiveScope is { } activeScope)
                     {
-                        var httpRequestPropertyProxy = httpRequestProperty.DuckCast<HttpRequestMessagePropertyStruct>();
-                        var webHeaderCollection = httpRequestPropertyProxy.Headers;
-
-                        // we're using an http transport
-                        host = webHeaderCollection[HttpRequestHeader.Host];
-                        userAgent = webHeaderCollection[HttpRequestHeader.UserAgent];
-                        httpMethod = httpRequestPropertyProxy.Method?.ToUpperInvariant();
-
-                        // try to extract propagated context values from http headers
+                        Log.Warning("Skipped extracting headers due to existing scope: {ActiveScope}", activeScope.Span);
+                    }
+                    else
+                    {
                         try
                         {
                             headers = webHeaderCollection.Wrap();
@@ -98,15 +98,22 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
                             Log.Error(ex, "Error extracting propagated HTTP headers.");
                         }
                     }
+                }
 
-                    if (extractedContext.SpanContext is null && requestMessage.Headers is { } messageHeaders)
+                if (extractedContext.SpanContext is null && requestMessage.Headers is { } messageHeaders)
+                {
+                    if (tracer.ActiveScope is { } activeScope)
+                    {
+                        Log.Warning("Skipped extracting headers due to existing scope: {ActiveScope}", activeScope.Span);
+                    }
+                    else
                     {
                         Log.Debug("Extracting from WCF headers if any as http headers hadn't been found.");
                         try
                         {
                             extractedContext = tracer.TracerManager.SpanContextPropagator
-                                                                    .Extract(messageHeaders, GetHeaderValues)
-                                                                    .MergeBaggageInto(Baggage.Current);
+                                                     .Extract(messageHeaders, GetHeaderValues)
+                                                     .MergeBaggageInto(Baggage.Current);
 
                             static IEnumerable<string?> GetHeaderValues(IMessageHeaders headers, string name)
                             {
