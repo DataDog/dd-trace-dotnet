@@ -112,11 +112,20 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
                             {
                                 try
                                 {
-                                    const string ns = "datadog";
-                                    var index = headers.FindHeader(name, ns);
+                                    const string datadogNs = "datadog";
+                                    var index = headers.FindHeader(name, datadogNs);
                                     if (index >= 0)
                                     {
-                                        return [headers.GetHeader<string>(name, ns)];
+                                        return [headers.GetHeader<string>(name, datadogNs)];
+                                    }
+
+                                    // Also check the W3C trace context namespace for headers injected
+                                    // by OpenTelemetry WCF client instrumentation (e.g. traceparent, tracestate)
+                                    const string w3CNs = "https://www.w3.org/TR/trace-context/";
+                                    index = headers.FindHeader(name, w3CNs);
+                                    if (index >= 0)
+                                    {
+                                        return [headers.GetHeader<string>(name, w3CNs)];
                                     }
                                 }
                                 catch (Exception ex)
