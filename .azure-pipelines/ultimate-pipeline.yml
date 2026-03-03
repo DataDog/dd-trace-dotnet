@@ -31,12 +31,12 @@ pr:
       - .devcontainer/
       - .vscode/
       - docs/
-      - tracer/README.MD
       - tracer/samples/
-      - tracer/tools/Build-AzureFunctionsNuget.ps1
+      - tracer/tools/*.ps1
       - AGENTS.md
       - LICENSE
       - NOTICE
+      - "**/README.md"
 
 schedules:
   - cron: "0 3 * * *"
@@ -97,6 +97,7 @@ variables:
   Verify_DisableClipboard: true
   DiffEngine_Disabled: true
   OriginalCommitId: $[coalesce(variables['System.PullRequest.SourceCommitId'], variables['Build.SourceVersion'])]
+  TESTCONTAINERS_RYUK_DISABLED: true
   NUGET_ENABLE_EXPERIMENTAL_HTTP_RETRY: true
   NUGET_EXPERIMENTAL_CHAIN_BUILD_RETRY_POLICY: 3,1000
   # Retry parameters for network operations to improve CI resilency
@@ -144,7 +145,7 @@ variables:
   DD_LOGGER_DD_TAGS: test.configuration.job:$(System.JobDisplayName)
   DD_LOGGER_ENABLED: true
   DD_COLLECTOR_CPU_USAGE: true
-  ToolVersion: 3.38.0
+  ToolVersion: 3.39.0
   # .NET SDK performance optimization variables
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
   DOTNET_CLI_TELEMETRY_OPTOUT: 1
