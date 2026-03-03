@@ -1025,6 +1025,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <param name="typeName">The type name value.</param>
         /// <param name="runtimeType">The runtime type value.</param>
         /// <returns>true if the operation succeeds; otherwise, false.</returns>
+        [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "The ducktype AOT runner executes as a build-time tool and intentionally resolves runtime metadata from discovered assemblies.")]
+        [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2057", Justification = "Type names come from explicit mapping metadata and assembly inspection performed by the tool at build time.")]
         private static bool TryResolveRuntimeType(string assemblyName, string assemblyPath, string typeName, out Type? runtimeType)
         {
             runtimeType = null;
@@ -1879,6 +1881,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// </summary>
         /// <param name="typeSig">The type sig value.</param>
         /// <returns>The result produced by this operation.</returns>
+        [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2057", Justification = "The tool resolves type names from dnlib metadata to validate and emit mappings; this is not a trimmed app execution path.")]
         private static Type? TryResolveRuntimeTypeFromTypeDefOrRef(TypeSig typeSig)
         {
             var typeDefOrRef = typeSig.ToTypeDefOrRef();
@@ -4003,6 +4006,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <param name="typeName">The type name value.</param>
         /// <param name="runtimeType">The runtime type value.</param>
         /// <returns>true if the operation succeeds; otherwise, false.</returns>
+        [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "The ducktype AOT runner reflects over loaded assemblies as part of build-time compatibility analysis.")]
+        [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2057", Justification = "Type names are supplied by mapping metadata and validated by discovery before emission.")]
         private static bool TryResolveRuntimeTypeByName(string typeName, out Type? runtimeType)
         {
             runtimeType = Type.GetType(typeName, throwOnError: false);
