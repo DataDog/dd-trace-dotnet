@@ -564,61 +564,61 @@ partial class Build : NukeBuild
                         .ToList();
 
                     // Emit per-stage matrices grouped by download pattern and pool
-                    EmitMatrix("nuke_installer_x64_matrix",
+                    EmitMatrix("smoke_x64_installer_matrix",
                         allScenarios.Where(x => x.category is SmokeTests.SmokeTestCategory.LinuxX64Installer
                                               or SmokeTests.SmokeTestCategory.LinuxChiseledInstaller));
 
-                    EmitMatrix("nuke_installer_arm64_matrix",
+                    EmitMatrix("smoke_arm64_installer_matrix",
                         allScenarios.Where(x => x.category is SmokeTests.SmokeTestCategory.LinuxArm64Installer
                                               or SmokeTests.SmokeTestCategory.LinuxChiseledArm64Installer));
 
-                    EmitMatrix("nuke_nuget_x64_matrix",
+                    EmitMatrix("smoke_x64_nuget_matrix",
                         allScenarios.Where(x => x.category is SmokeTests.SmokeTestCategory.LinuxNuGet));
 
-                    EmitMatrix("nuke_nuget_arm64_matrix",
+                    EmitMatrix("smoke_arm64_nuget_matrix",
                         allScenarios.Where(x => x.category is SmokeTests.SmokeTestCategory.LinuxNuGetArm64));
 
-                    EmitMatrix("nuke_dotnet_tool_x64_matrix",
+                    EmitMatrix("smoke_x64_tool_matrix",
                         allScenarios.Where(x => x.category is SmokeTests.SmokeTestCategory.LinuxDotnetTool));
 
-                    EmitMatrix("nuke_dotnet_tool_arm64_matrix",
+                    EmitMatrix("smoke_arm64_tool_matrix",
                         allScenarios.Where(x => x.category is SmokeTests.SmokeTestCategory.LinuxDotnetToolArm64));
 
-                    EmitMatrix("nuke_dotnet_tool_nuget_matrix",
+                    EmitMatrix("smoke_x64_tool_nuget_matrix",
                         allScenarios.Where(x => x.category is SmokeTests.SmokeTestCategory.LinuxDotnetToolNuget));
 
-                    EmitMatrix("nuke_trimming_matrix",
+                    EmitMatrix("smoke_x64_trimming_matrix",
                         allScenarios.Where(x => x.category is SmokeTests.SmokeTestCategory.LinuxTrimming));
 
-                    EmitMatrix("nuke_installer_musl_matrix",
+                    EmitMatrix("smoke_musl_x64_installer_matrix",
                         allScenarios.Where(x => x.category is SmokeTests.SmokeTestCategory.LinuxMuslInstaller));
 
-                    EmitMatrix("nuke_dotnet_tool_musl_x64_matrix",
+                    EmitMatrix("smoke_musl_x64_tool_matrix",
                         allScenarios.Where(x => x.category is SmokeTests.SmokeTestCategory.LinuxMuslDotnetTool));
 
-                    EmitMatrix("nuke_dotnet_tool_musl_arm64_matrix",
+                    EmitMatrix("smoke_musl_arm64_tool_matrix",
                         allScenarios.Where(x => x.category is SmokeTests.SmokeTestCategory.LinuxMuslDotnetToolArm64));
 
-                    EmitMatrix("nuke_trimming_musl_matrix",
+                    EmitMatrix("smoke_musl_x64_trimming_matrix",
                         allScenarios.Where(x => x.category is SmokeTests.SmokeTestCategory.LinuxMuslTrimming));
 
-                    EmitMatrix("nuke_self_instrument_matrix",
+                    EmitMatrix("smoke_x64_self_instrument_matrix",
                         allScenarios.Where(x => x.category is SmokeTests.SmokeTestCategory.LinuxSelfInstrument));
 
                     // Windows categories
-                    EmitMatrix("nuke_windows_msi_matrix",
+                    EmitMatrix("smoke_win_msi_matrix",
                         allScenarios.Where(x => x.category is SmokeTests.SmokeTestCategory.WindowsMsi));
 
-                    EmitMatrix("nuke_windows_nuget_matrix",
+                    EmitMatrix("smoke_win_nuget_matrix",
                         allScenarios.Where(x => x.category is SmokeTests.SmokeTestCategory.WindowsNuGet));
 
-                    EmitMatrix("nuke_windows_dotnet_tool_matrix",
+                    EmitMatrix("smoke_win_tool_matrix",
                         allScenarios.Where(x => x.category is SmokeTests.SmokeTestCategory.WindowsDotnetTool));
 
-                    EmitMatrix("nuke_windows_tracer_home_matrix",
+                    EmitMatrix("smoke_win_tracer_home_matrix",
                         allScenarios.Where(x => x.category is SmokeTests.SmokeTestCategory.WindowsTracerHome));
 
-                    EmitMatrix("nuke_windows_fleet_installer_iis_matrix",
+                    EmitMatrix("smoke_win_fleet_matrix",
                         allScenarios.Where(x => x.category is SmokeTests.SmokeTestCategory.WindowsFleetInstallerIis));
 
                     void EmitMatrix(string name, IEnumerable<(SmokeTests.SmokeTestCategory category, string scenario, object entry)> scenarios)
@@ -650,7 +650,7 @@ partial class Build : NukeBuild
 
                     Logger.Information("dd_dotnet failure tests matrix");
                     Logger.Information(JsonConvert.SerializeObject(matrix, Formatting.Indented));
-                    AzurePipelines.Instance.SetOutputVariable("dd_dotnet_failure_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
+                    AzurePipelines.Instance.SetOutputVariable("smoke_linux_dd_dotnet_failure_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
                 }
             }
 
