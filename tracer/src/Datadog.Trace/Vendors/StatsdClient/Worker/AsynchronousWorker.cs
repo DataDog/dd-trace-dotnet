@@ -99,6 +99,26 @@ namespace Datadog.Trace.Vendors.StatsdClient.Worker
             }
         }
 
+        public async Task DisposeAsync()
+        {
+            if (!_terminate)
+            {
+                Flush();
+                _terminate = true;
+                try
+                {
+                    await Task.WhenAll(_workers).ConfigureAwait(false);
+                    _flushEvent.Dispose();
+                }
+                catch (Exception e)
+                {
+                    Debug.WriteLine(e.Message);
+                }
+
+                _workers.Clear();
+            }
+        }
+
         private void Dequeue()
         {
             var waitDuration = MinWaitDuration;

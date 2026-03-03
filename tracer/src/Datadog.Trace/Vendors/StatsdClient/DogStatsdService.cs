@@ -4,6 +4,7 @@
 //------------------------------------------------------------------------------
 using System;
 using System.Globalization;
+using System.Threading.Tasks;
 using Datadog.Trace.Vendors.StatsdClient.Bufferize;
 
 namespace Datadog.Trace.Vendors.StatsdClient
@@ -262,6 +263,19 @@ namespace Datadog.Trace.Vendors.StatsdClient
         {
             _statsdData?.Dispose();
             _statsdData = null;
+        }
+
+        /// <summary>
+        /// Asynchronously disposes an instance of DogStatsdService.
+        /// Flushes all metrics without blocking on worker tasks.
+        /// </summary>
+        public async Task DisposeAsync()
+        {
+            if (_statsdData is not null)
+            {
+                await _statsdData.DisposeAsync().ConfigureAwait(false);
+                _statsdData = null;
+            }
         }
     }
 }

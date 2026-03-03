@@ -1,4 +1,4 @@
-﻿// <copyright file="StatsdManager.cs" company="Datadog">
+// <copyright file="StatsdManager.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -164,6 +164,24 @@ internal sealed class StatsdManager : IStatsdManager
         EnsureClient(ensureCreated: false, forceRecreate: true);
     }
 
+    public async Task DisposeAsync()
+    {
+        _settingSubscription.Dispose();
+
+        StatsdClientHolder? previous;
+        lock (_lock)
+        {
+            previous = _current;
+            _current = null;
+        }
+
+        if (previous is not null)
+        {
+            previous.MarkClosing();
+            await previous.WaitForDisposalAsync().ConfigureAwait(false);
+        }
+    }
+
     // Internal for testing
     internal static bool HasImpactingChanges(TracerSettings.SettingsManager.SettingChanges changes)
     {
@@ -219,6 +237,8 @@ internal sealed class StatsdManager : IStatsdManager
     internal sealed class StatsdClientHolder(IDogStatsd client)
     {
         private const int ClosingBit = 1 << 31;  // sign bit = closing
+
+        private readonly TaskCompletionSource<bool> _disposalComplete = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
         // Logically, _state represents two values we need to check:
         // - Was MarkClosing() called?
@@ -300,23 +320,38 @@ internal sealed class StatsdManager : IStatsdManager
             }
         }
 
+        public Task WaitForDisposalAsync() => _disposalComplete.Task;
+
         private void Dispose()
         {
             if (Interlocked.Exchange(ref _disposed, 1) == 0)
             {
                 Log.Debug("Disposing DogStatsdService");
+                _ = DisposeClientAsync();
+            }
+        }
 
-                // We push this all to a background thread to avoid the disposes running in-line
-                // the DogStatsdService does sync-over-async, and this can cause thread exhaustion
-                _ = Task.Run(() =>
+        private async Task DisposeClientAsync()
+        {
+            try
+            {
+                if (Client is DogStatsdService dogStatsd)
                 {
-                    if (Client is DogStatsdService dogStatsd)
-                    {
-                        dogStatsd.Flush();
-                    }
-
+                    dogStatsd.Flush();
+                    await dogStatsd.DisposeAsync().ConfigureAwait(false);
+                }
+                else
+                {
                     Client.Dispose();
-                });
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error disposing DogStatsdService");
+            }
+            finally
+            {
+                _disposalComplete.TrySetResult(true);
             }
         }
     }

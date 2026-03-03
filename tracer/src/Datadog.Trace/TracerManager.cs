@@ -774,7 +774,16 @@ namespace Datadog.Trace
                     }
 
                     instance.RuntimeMetrics?.Dispose();
-                    instance.Statsd?.Dispose();
+
+                    Log.Debug("Disposing StatsD.");
+                    if (instance.Statsd is StatsdManager statsdManager)
+                    {
+                        await statsdManager.DisposeAsync().ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        instance.Statsd?.Dispose();
+                    }
 
                     Log.Debug("Finished waiting for disposals.");
                 }
