@@ -60,6 +60,8 @@ public class ConfigurationTests
                 "DD_INSTRUMENTATION_INSTALL_TIME",
                 "DD_INJECTION_ENABLED",
                 "DD_INJECT_FORCE",
+                // Internal test-only key used by ducktype-aot parity tooling
+                "DD_DUCKTYPE_DISCOVERY_OUTPUT_PATH",
                 // deprecated alias
                 "DATADOG_TRACE_AGENT_HOSTNAME_OPTIMIZED"
             }
