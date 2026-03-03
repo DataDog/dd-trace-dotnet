@@ -548,11 +548,11 @@ partial class Build : NukeBuild
 
             void GenerateSmokeTestsMatrices()
             {
-                GenerateNukeSmokeTestsMatrix();
-                GenerateDdDotnetFailureTestsMatrices();
+                GenerateNukeSmokeTestsMatricies();
+                GenerateDdDotnetFailureTestsMatrix();
                 GenerateMacosSmokeTestsMatrix();
 
-                void GenerateNukeSmokeTestsMatrix()
+                void GenerateNukeSmokeTestsMatricies()
                 {
                     var allScenarios = SmokeTests.SmokeTestScenarios.GetAllScenarios()
                         .SelectMany(pair => pair.Value.Select(kv => (category: pair.Key, scenario: kv.Key, details: kv.Value)))
@@ -635,7 +635,7 @@ partial class Build : NukeBuild
                 // Uses a small representative set of images (one per package format)
                 // to verify dd-dotnet.sh outputs the correct error message per platform.
                 // Pool info is included so a single job can target both x64 and arm64.
-                void GenerateDdDotnetFailureTestsMatrices()
+                void GenerateDdDotnetFailureTestsMatrix()
                 {
                     var matrix = new Dictionary<string, object>
                     {
