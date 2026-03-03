@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Runtime.InteropServices;
 using System.Text;
 using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.DataStreamsMonitoring;
@@ -430,39 +431,41 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     return null;
                 }
 
-                var builderType = Type.GetType("Confluent.Kafka.DependentAdminClientBuilder, Confluent.Kafka");
-                if (builderType is null)
+                if (!handle.TryDuckCast<ILibrdkafkaHandle>(out var librdkafkaHandle))
                 {
                     return null;
                 }
 
-                var builder = Activator.CreateInstance(builderType, new object[] { handle });
-                if (!builder.TryDuckCast<IAdminClientBuilder>(out var adminBuilder))
+                var safeHandle = librdkafkaHandle.LibrdkafkaHandle;
+                if (safeHandle is null || safeHandle.IsInvalid || safeHandle.IsClosed)
                 {
                     return null;
                 }
 
-                var adminClientObj = adminBuilder.Build();
-                if (adminClientObj is null)
+                var nativeHandle = safeHandle.DangerousGetHandle();
+                if (nativeHandle == IntPtr.Zero)
                 {
                     return null;
                 }
 
-                if (!adminClientObj.TryDuckCast<IAdminClient>(out var adminClient))
+                // rd_kafka_clusterid reads a cached value from librdkafka's metadata,
+                // populated automatically during broker connection. No network call.
+                // timeout_ms=0 means non-blocking: return cached value or null.
+                var clusterIdPtr = Interop.ClusterId(nativeHandle, timeout_ms: 0);
+                if (clusterIdPtr == IntPtr.Zero)
                 {
-                    (adminClientObj as IDisposable)?.Dispose();
                     return null;
                 }
 
                 try
                 {
-                    var clusterId = DescribeClusterWithTimeout(adminClient);
+                    var clusterId = Marshal.PtrToStringAnsi(clusterIdPtr);
                     ClusterIdCache.TryAdd(bootstrapServers!, clusterId);
                     return clusterId;
                 }
                 finally
                 {
-                    adminClient.Dispose();
+                    Interop.MemFree(nativeHandle, clusterIdPtr);
                 }
             }
             catch (Exception ex)
@@ -470,22 +473,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 Log.Debug(ex, "Error extracting cluster_id from Kafka metadata");
                 return null;
             }
-        }
-
-        private static string? DescribeClusterWithTimeout(IAdminClient adminClient)
-        {
-            object? options = null;
-            var optionsType = Type.GetType("Confluent.Kafka.Admin.DescribeClusterOptions, Confluent.Kafka");
-            if (optionsType is not null)
-            {
-                options = Activator.CreateInstance(optionsType);
-                var requestTimeoutProp = optionsType.GetProperty("RequestTimeout");
-                requestTimeoutProp?.SetValue(options, TimeSpan.FromSeconds(2));
-            }
-
-            var duckTask = adminClient.DescribeClusterAsync(options);
-            var describeResult = duckTask.GetAwaiter().GetResult();
-            return describeResult?.ClusterId;
         }
 
         internal static void DisableHeadersIfUnsupportedBroker(Exception exception)
@@ -499,6 +486,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
                 Log.Error(exception, "Kafka Broker responded with UNKNOWN_SERVER_ERROR (-1). Please look at broker logs for more information. Tracer message header injection for Kafka is disabled.");
             }
+        }
+
+        private static class Interop
+        {
+            [DllImport("librdkafka", CallingConvention = CallingConvention.Cdecl, EntryPoint = "rd_kafka_clusterid")]
+            internal static extern IntPtr ClusterId(IntPtr rk, int timeout_ms);
+
+            [DllImport("librdkafka", CallingConvention = CallingConvention.Cdecl, EntryPoint = "rd_kafka_mem_free")]
+            internal static extern void MemFree(IntPtr rk, IntPtr ptr);
         }
     }
 }
