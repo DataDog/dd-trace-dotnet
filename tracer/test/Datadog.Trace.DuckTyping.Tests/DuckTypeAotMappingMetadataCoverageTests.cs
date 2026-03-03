@@ -10,8 +10,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Text.Json;
 using FluentAssertions;
+using Newtonsoft.Json;
 using Xunit;
 
 namespace Datadog.Trace.DuckTyping.Tests;
@@ -29,9 +29,7 @@ public class DuckTypeAotMappingMetadataCoverageTests
         var mapPath = ResolveCanonicalMapPath();
         File.Exists(mapPath).Should().BeTrue($"canonical map file should exist at '{mapPath}'");
 
-        var document = JsonSerializer.Deserialize<MapDocument>(
-            File.ReadAllText(mapPath),
-            new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        var document = JsonConvert.DeserializeObject<MapDocument>(File.ReadAllText(mapPath));
         document.Should().NotBeNull();
         document!.Mappings.Should().NotBeEmpty();
 
