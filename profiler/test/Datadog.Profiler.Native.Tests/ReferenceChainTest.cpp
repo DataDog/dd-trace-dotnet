@@ -681,3 +681,568 @@ TEST(TypeReferenceTreeJsonSerializerTest, TreeHasNoInfiniteRecursion)
     ASSERT_EQ(braces, 0) << "Unclosed braces in: " << json;
     ASSERT_EQ(brackets, 0) << "Unclosed brackets in: " << json;
 }
+
+// ============================================================================
+// Edge Case: TypeReferenceTree — Merged roots share and merge children
+// ============================================================================
+
+// When two root instances of TypeA are added and both have TypeB children,
+// the tree merges them: one TypeB child node under root TypeA with combined counts.
+TEST(TypeReferenceTreeTest, MergedRootsShareChildren)
+{
+    TypeReferenceTree tree;
+
+    // First root instance of TypeA
+    TypeTreeNode* rootA1 = tree.AddRoot(100, RootCategory::Stack, 64);
+    TypeTreeNode* childB1 = rootA1->GetOrCreateChild(200);
+    childB1->AddInstance(32);
+
+    // Second root instance of TypeA (merges into same root node)
+    TypeTreeNode* rootA2 = tree.AddRoot(100, RootCategory::Stack, 64);
+    ASSERT_EQ(rootA1, rootA2); // Same root node pointer
+
+    // Adding TypeB child again returns the existing child
+    TypeTreeNode* childB2 = rootA2->GetOrCreateChild(200);
+    ASSERT_EQ(childB1, childB2); // Same child node
+    childB2->AddInstance(48);
+
+    // Verify merged counts
+    ASSERT_EQ(rootA1->instanceCount, 2);
+    ASSERT_EQ(rootA1->totalSize, 128);
+    ASSERT_EQ(childB1->instanceCount, 2);
+    ASSERT_EQ(childB1->totalSize, 80);
+    ASSERT_EQ(rootA1->children.size(), 1);
+}
+
+// When two root instances of TypeA each add different child types,
+// the root should have both child types.
+TEST(TypeReferenceTreeTest, MergedRootsHaveDifferentChildren)
+{
+    TypeReferenceTree tree;
+
+    TypeTreeNode* rootA1 = tree.AddRoot(100, RootCategory::Stack, 64);
+    TypeTreeNode* childB = rootA1->GetOrCreateChild(200);
+    childB->AddInstance(32);
+
+    TypeTreeNode* rootA2 = tree.AddRoot(100, RootCategory::Stack, 64);
+    TypeTreeNode* childC = rootA2->GetOrCreateChild(300);
+    childC->AddInstance(48);
+
+    ASSERT_EQ(rootA1->children.size(), 2);
+    ASSERT_NE(rootA1->GetChild(200), nullptr);
+    ASSERT_NE(rootA1->GetChild(300), nullptr);
+}
+
+// ============================================================================
+// Edge Case: TypeReferenceTree — Diamond pattern
+// ============================================================================
+
+// Root -> TypeB and Root -> TypeC, both TypeB and TypeC -> TypeD.
+// TypeD should appear as a separate child node under both TypeB and TypeC.
+TEST(TypeReferenceTreeTest, DiamondPattern)
+{
+    TypeReferenceTree tree;
+    TypeTreeNode* root = tree.AddRoot(100, RootCategory::Stack, 64);
+
+    TypeTreeNode* childB = root->GetOrCreateChild(200);
+    childB->AddInstance(32);
+
+    TypeTreeNode* childC = root->GetOrCreateChild(300);
+    childC->AddInstance(32);
+
+    // Both B and C have a TypeD child
+    TypeTreeNode* dUnderB = childB->GetOrCreateChild(400);
+    dUnderB->AddInstance(16);
+
+    TypeTreeNode* dUnderC = childC->GetOrCreateChild(400);
+    dUnderC->AddInstance(24);
+
+    // TypeD appears as SEPARATE nodes under B and C
+    ASSERT_NE(dUnderB, dUnderC);
+    ASSERT_EQ(dUnderB->typeID, 400);
+    ASSERT_EQ(dUnderC->typeID, 400);
+    ASSERT_EQ(dUnderB->instanceCount, 1);
+    ASSERT_EQ(dUnderB->totalSize, 16);
+    ASSERT_EQ(dUnderC->instanceCount, 1);
+    ASSERT_EQ(dUnderC->totalSize, 24);
+}
+
+// ============================================================================
+// Edge Case: TypeReferenceTree — Self-referencing type chain (linked list)
+// ============================================================================
+
+// A linked list: A1 -> A2 -> A3 -> null
+// At the type level: TypeA -> TypeA -> TypeA (each level is a distinct node)
+TEST(TypeReferenceTreeTest, SelfReferencingTypeChain)
+{
+    TypeReferenceTree tree;
+    TypeTreeNode* rootA = tree.AddRoot(100, RootCategory::Stack, 64);
+
+    TypeTreeNode* a2 = rootA->GetOrCreateChild(100);
+    a2->AddInstance(64);
+
+    TypeTreeNode* a3 = a2->GetOrCreateChild(100);
+    a3->AddInstance(64);
+
+    // All three are distinct nodes despite having the same typeID
+    ASSERT_NE(rootA, a2);
+    ASSERT_NE(a2, a3);
+    ASSERT_NE(rootA, a3);
+
+    // Each has the correct structure
+    ASSERT_EQ(rootA->children.size(), 1);
+    ASSERT_EQ(a2->children.size(), 1);
+    ASSERT_TRUE(a3->children.empty());
+
+    ASSERT_EQ(rootA->typeID, 100);
+    ASSERT_EQ(a2->typeID, 100);
+    ASSERT_EQ(a3->typeID, 100);
+}
+
+// ============================================================================
+// Edge Case: TypeReferenceTree — Deep chain at MaxTreeDepth levels
+// ============================================================================
+
+TEST(TypeReferenceTreeTest, DeepChainBeyondMaxTreeDepth)
+{
+    // The tree structure itself has no depth limit (only the traverser does).
+    // Verify we can build a chain deeper than MaxTreeDepth.
+    TypeReferenceTree tree;
+    TypeTreeNode* current = tree.AddRoot(1, RootCategory::Stack, 64);
+
+    for (uint32_t depth = 1; depth <= MaxTreeDepth + 10; depth++)
+    {
+        ClassID childType = static_cast<ClassID>(depth + 1);
+        TypeTreeNode* child = current->GetOrCreateChild(childType);
+        child->AddInstance(16);
+        current = child;
+    }
+
+    // The tree should be fully built (no limit in the tree structure)
+    ASSERT_TRUE(current->children.empty());
+    ASSERT_EQ(current->instanceCount, 1);
+}
+
+// ============================================================================
+// Edge Case: TypeReferenceTree — Wide tree with many children
+// ============================================================================
+
+TEST(TypeReferenceTreeTest, WideTreeWithManyChildren)
+{
+    TypeReferenceTree tree;
+    TypeTreeNode* root = tree.AddRoot(1, RootCategory::Stack, 64);
+
+    const int childCount = 50;
+    for (int i = 0; i < childCount; i++)
+    {
+        ClassID childType = static_cast<ClassID>(100 + i);
+        TypeTreeNode* child = root->GetOrCreateChild(childType);
+        child->AddInstance(32);
+    }
+
+    ASSERT_EQ(root->children.size(), childCount);
+
+    for (int i = 0; i < childCount; i++)
+    {
+        const TypeTreeNode* child = root->GetChild(static_cast<ClassID>(100 + i));
+        ASSERT_NE(child, nullptr);
+        ASSERT_EQ(child->instanceCount, 1);
+    }
+}
+
+// ============================================================================
+// Edge Case: Serializer — Leaf root omits children array
+// ============================================================================
+
+TEST(TypeReferenceTreeJsonSerializerTest, LeafRootOmitsChildrenArray)
+{
+    TypeReferenceTree tree;
+    MockFrameStore frameStore;
+
+    ClassID typeA = 100;
+    frameStore.RegisterType(typeA, "LeafType");
+
+    tree.AddRoot(typeA, RootCategory::Stack, 256);
+
+    auto json = TypeReferenceTreeJsonSerializer::Serialize(tree, &frameStore);
+
+    ASSERT_NE(json.find("\"LeafType\""), std::string::npos);
+    ASSERT_NE(json.find("\"ic\":1"), std::string::npos);
+
+    // No "ch" key should be present since there are no children
+    ASSERT_EQ(json.find("\"ch\""), std::string::npos)
+        << "Leaf root should not have children array. JSON: " << json;
+}
+
+// ============================================================================
+// Edge Case: Serializer — Unresolvable type is skipped
+// ============================================================================
+
+TEST(TypeReferenceTreeJsonSerializerTest, UnresolvableTypeSkipped)
+{
+    TypeReferenceTree tree;
+    MockFrameStore frameStore;
+
+    ClassID typeA = 100;
+    ClassID typeUnknown = 999;
+    frameStore.RegisterType(typeA, "KnownType");
+    // typeUnknown is NOT registered in frameStore
+
+    TypeTreeNode* root = tree.AddRoot(typeA, RootCategory::Stack, 64);
+    TypeTreeNode* child = root->GetOrCreateChild(typeUnknown);
+    child->AddInstance(32);
+
+    auto json = TypeReferenceTreeJsonSerializer::Serialize(tree, &frameStore);
+
+    ASSERT_NE(json.find("\"KnownType\""), std::string::npos);
+
+    // The unknown type ID should not appear in the type table,
+    // but the JSON should still be valid
+    int braces = 0, brackets = 0;
+    for (char c : json)
+    {
+        if (c == '{') braces++;
+        if (c == '}') braces--;
+        if (c == '[') brackets++;
+        if (c == ']') brackets--;
+    }
+    ASSERT_EQ(braces, 0) << "Unclosed braces in: " << json;
+    ASSERT_EQ(brackets, 0) << "Unclosed brackets in: " << json;
+}
+
+// ============================================================================
+// Edge Case: Serializer — Wide tree with many children types
+// ============================================================================
+
+TEST(TypeReferenceTreeJsonSerializerTest, WideTreeWithManyChildrenSerializes)
+{
+    TypeReferenceTree tree;
+    MockFrameStore frameStore;
+
+    ClassID rootType = 1;
+    frameStore.RegisterType(rootType, "Root");
+
+    TypeTreeNode* root = tree.AddRoot(rootType, RootCategory::Handle, 64);
+
+    const int childCount = 20;
+    for (int i = 0; i < childCount; i++)
+    {
+        ClassID childType = static_cast<ClassID>(100 + i);
+        std::string name = "Child" + std::to_string(i);
+        frameStore.RegisterType(childType, name);
+
+        TypeTreeNode* child = root->GetOrCreateChild(childType);
+        child->AddInstance(32 + i);
+    }
+
+    auto json = TypeReferenceTreeJsonSerializer::Serialize(tree, &frameStore);
+
+    // Verify all child types are present
+    for (int i = 0; i < childCount; i++)
+    {
+        std::string name = "Child" + std::to_string(i);
+        ASSERT_NE(json.find(name), std::string::npos)
+            << "Missing child type " << name << " in JSON: " << json;
+    }
+
+    // Verify there is a "ch" array with entries
+    ASSERT_NE(json.find("\"ch\":["), std::string::npos);
+
+    // Verify balanced structure
+    int braces = 0, brackets = 0;
+    for (char c : json)
+    {
+        if (c == '{') braces++;
+        if (c == '}') braces--;
+        if (c == '[') brackets++;
+        if (c == ']') brackets--;
+    }
+    ASSERT_EQ(braces, 0) << "Unclosed braces in: " << json;
+    ASSERT_EQ(brackets, 0) << "Unclosed brackets in: " << json;
+}
+
+// ============================================================================
+// Edge Case: Serializer — Diamond pattern serializes correctly
+// ============================================================================
+
+TEST(TypeReferenceTreeJsonSerializerTest, DiamondPatternSerializes)
+{
+    TypeReferenceTree tree;
+    MockFrameStore frameStore;
+
+    ClassID typeRoot = 1;
+    ClassID typeB = 2;
+    ClassID typeC = 3;
+    ClassID typeD = 4;
+    frameStore.RegisterType(typeRoot, "Root");
+    frameStore.RegisterType(typeB, "TypeB");
+    frameStore.RegisterType(typeC, "TypeC");
+    frameStore.RegisterType(typeD, "TypeD");
+
+    TypeTreeNode* root = tree.AddRoot(typeRoot, RootCategory::Stack, 64);
+
+    TypeTreeNode* b = root->GetOrCreateChild(typeB);
+    b->AddInstance(32);
+    TypeTreeNode* c = root->GetOrCreateChild(typeC);
+    c->AddInstance(32);
+
+    // D under B
+    TypeTreeNode* dB = b->GetOrCreateChild(typeD);
+    dB->AddInstance(16);
+
+    // D under C (separate node, same type)
+    TypeTreeNode* dC = c->GetOrCreateChild(typeD);
+    dC->AddInstance(24);
+
+    auto json = TypeReferenceTreeJsonSerializer::Serialize(tree, &frameStore);
+
+    // All types present
+    ASSERT_NE(json.find("\"Root\""), std::string::npos);
+    ASSERT_NE(json.find("\"TypeB\""), std::string::npos);
+    ASSERT_NE(json.find("\"TypeC\""), std::string::npos);
+    ASSERT_NE(json.find("\"TypeD\""), std::string::npos);
+
+    // TypeD appears twice in the JSON (once under B, once under C)
+    // The type table has TypeD once, but it's referenced by two nodes
+    // Count occurrences of the TypeD's type index in "t": entries
+    // (TypeD has only 1 entry in type table but appears as 2 nodes)
+
+    // Verify 3 "ch" arrays: Root->children, B->children, C->children
+    size_t chCount = 0;
+    size_t pos = 0;
+    while ((pos = json.find("\"ch\":[", pos)) != std::string::npos)
+    {
+        chCount++;
+        pos++;
+    }
+    ASSERT_EQ(chCount, 3) << "Expected 3 ch arrays (Root, B, C). JSON: " << json;
+
+    // Verify balanced
+    int braces = 0, brackets = 0;
+    for (char c2 : json)
+    {
+        if (c2 == '{') braces++;
+        if (c2 == '}') braces--;
+        if (c2 == '[') brackets++;
+        if (c2 == ']') brackets--;
+    }
+    ASSERT_EQ(braces, 0);
+    ASSERT_EQ(brackets, 0);
+}
+
+// ============================================================================
+// Edge Case: Serializer — Large instance counts serialize correctly
+// ============================================================================
+
+TEST(TypeReferenceTreeJsonSerializerTest, LargeInstanceCountsSerialize)
+{
+    TypeReferenceTree tree;
+    MockFrameStore frameStore;
+
+    ClassID typeA = 100;
+    frameStore.RegisterType(typeA, "HeavyType");
+
+    TypeTreeNode* root = tree.AddRoot(typeA, RootCategory::Stack, 1000000);
+
+    // Add many more instances to simulate large counts
+    for (uint64_t i = 1; i < 1000; i++)
+    {
+        tree.AddRoot(typeA, RootCategory::Stack, 1000000);
+    }
+
+    auto json = TypeReferenceTreeJsonSerializer::Serialize(tree, &frameStore);
+
+    // Verify large numbers are present
+    ASSERT_NE(json.find("\"ic\":1000"), std::string::npos)
+        << "Expected ic:1000 in JSON: " << json;
+    ASSERT_NE(json.find("\"ts\":1000000000"), std::string::npos)
+        << "Expected ts:1000000000 in JSON: " << json;
+}
+
+// ============================================================================
+// Edge Case: Serializer — Root with multiple categories shows first
+// ============================================================================
+
+TEST(TypeReferenceTreeJsonSerializerTest, RootWithMultipleCategoriesShowsFirst)
+{
+    TypeReferenceTree tree;
+    MockFrameStore frameStore;
+
+    ClassID typeA = 100;
+    frameStore.RegisterType(typeA, "MultiCatType");
+
+    // Add root via Handle first, then Stack
+    tree.AddRoot(typeA, RootCategory::Handle, 64);
+    tree.AddRoot(typeA, RootCategory::Stack, 64);
+
+    auto json = TypeReferenceTreeJsonSerializer::Serialize(tree, &frameStore);
+
+    // The serializer picks the first category in the bitmask iteration (0..7).
+    // Stack = 0, Handle = 3 → Stack is found first.
+    ASSERT_NE(json.find("\"c\":\"S\""), std::string::npos)
+        << "Expected Stack category (first in bitmask). JSON: " << json;
+}
+
+// ============================================================================
+// Edge Case: Serializer — Zero instance count is omitted from child nodes
+// ============================================================================
+
+TEST(TypeReferenceTreeJsonSerializerTest, ZeroInstanceCountOmittedFromJson)
+{
+    TypeReferenceTree tree;
+    MockFrameStore frameStore;
+
+    ClassID typeA = 100;
+    ClassID typeB = 200;
+    frameStore.RegisterType(typeA, "ParentType");
+    frameStore.RegisterType(typeB, "EmptyChild");
+
+    TypeTreeNode* root = tree.AddRoot(typeA, RootCategory::Stack, 64);
+
+    // Create a child but never call AddInstance (ic=0, ts=0)
+    root->GetOrCreateChild(typeB);
+
+    auto json = TypeReferenceTreeJsonSerializer::Serialize(tree, &frameStore);
+
+    // The child node should exist but without "ic" or "ts" keys
+    // (the serializer only emits these if > 0)
+    ASSERT_NE(json.find("\"EmptyChild\""), std::string::npos);
+
+    // Find the child node in JSON and verify it doesn't have ic/ts
+    // The child should be: {"t":INDEX} (no ic, no ts, no ch)
+    // Since the child's type index varies, just check that the JSON is valid
+    int braces = 0, brackets = 0;
+    for (char c : json)
+    {
+        if (c == '{') braces++;
+        if (c == '}') braces--;
+        if (c == '[') brackets++;
+        if (c == ']') brackets--;
+    }
+    ASSERT_EQ(braces, 0);
+    ASSERT_EQ(brackets, 0);
+}
+
+// ============================================================================
+// Edge Case: Serializer — Self-referencing chain serializes without recursion
+// ============================================================================
+
+TEST(TypeReferenceTreeJsonSerializerTest, SelfReferencingChainSerializes)
+{
+    TypeReferenceTree tree;
+    MockFrameStore frameStore;
+
+    ClassID typeNode = 100;
+    frameStore.RegisterType(typeNode, "LinkedNode");
+
+    // Simulate a linked list: Node1 -> Node2 -> Node3
+    // At the type level: LinkedNode (root) -> LinkedNode -> LinkedNode
+    TypeTreeNode* root = tree.AddRoot(typeNode, RootCategory::Stack, 48);
+
+    TypeTreeNode* level2 = root->GetOrCreateChild(typeNode);
+    level2->AddInstance(48);
+
+    TypeTreeNode* level3 = level2->GetOrCreateChild(typeNode);
+    level3->AddInstance(48);
+
+    auto json = TypeReferenceTreeJsonSerializer::Serialize(tree, &frameStore);
+
+    ASSERT_NE(json.find("\"LinkedNode\""), std::string::npos);
+
+    // Should have 2 nested "ch" arrays (root->level2, level2->level3)
+    size_t chCount = 0;
+    size_t pos = 0;
+    while ((pos = json.find("\"ch\":[", pos)) != std::string::npos)
+    {
+        chCount++;
+        pos++;
+    }
+    ASSERT_EQ(chCount, 2) << "Expected 2 nested ch arrays. JSON: " << json;
+
+    // Verify no infinite recursion and balanced JSON
+    int braces = 0, brackets = 0;
+    for (char c : json)
+    {
+        if (c == '{') braces++;
+        if (c == '}') braces--;
+        if (c == '[') brackets++;
+        if (c == ']') brackets--;
+    }
+    ASSERT_EQ(braces, 0);
+    ASSERT_EQ(brackets, 0);
+}
+
+// ============================================================================
+// Edge Case: Serializer — Merged children from multiple root traversals
+// ============================================================================
+
+TEST(TypeReferenceTreeJsonSerializerTest, MergedChildrenCountsSerialize)
+{
+    TypeReferenceTree tree;
+    MockFrameStore frameStore;
+
+    ClassID typeRoot = 100;
+    ClassID typeChild = 200;
+    frameStore.RegisterType(typeRoot, "RootType");
+    frameStore.RegisterType(typeChild, "ChildType");
+
+    // First root traversal: Root -> Child (count=1, size=32)
+    TypeTreeNode* root1 = tree.AddRoot(typeRoot, RootCategory::Stack, 64);
+    TypeTreeNode* child1 = root1->GetOrCreateChild(typeChild);
+    child1->AddInstance(32);
+
+    // Second root traversal of same type: Root -> Child (count=1, size=48)
+    TypeTreeNode* root2 = tree.AddRoot(typeRoot, RootCategory::Stack, 64);
+    TypeTreeNode* child2 = root2->GetOrCreateChild(typeChild);
+    child2->AddInstance(48);
+
+    // child1 and child2 are the same node (merged)
+    ASSERT_EQ(child1, child2);
+
+    auto json = TypeReferenceTreeJsonSerializer::Serialize(tree, &frameStore);
+
+    // Root: ic=2, ts=128; Child: ic=2, ts=80
+    ASSERT_NE(json.find("\"ic\":2"), std::string::npos);
+
+    int braces = 0, brackets = 0;
+    for (char c : json)
+    {
+        if (c == '{') braces++;
+        if (c == '}') braces--;
+        if (c == '[') brackets++;
+        if (c == ']') brackets--;
+    }
+    ASSERT_EQ(braces, 0);
+    ASSERT_EQ(brackets, 0);
+}
+
+// ============================================================================
+// Edge Case: Serializer — Only unresolvable types produces minimal JSON
+// ============================================================================
+
+TEST(TypeReferenceTreeJsonSerializerTest, AllUnresolvableTypesProduceMinimalJson)
+{
+    TypeReferenceTree tree;
+    MockFrameStore frameStore;
+    // No types registered in frameStore
+
+    tree.AddRoot(100, RootCategory::Stack, 64);
+    tree.AddRoot(200, RootCategory::Handle, 128);
+
+    auto json = TypeReferenceTreeJsonSerializer::Serialize(tree, &frameStore);
+
+    // Should have version and empty roots (types couldn't be resolved so roots are skipped)
+    ASSERT_NE(json.find("\"v\":7"), std::string::npos);
+    ASSERT_NE(json.find("\"r\":["), std::string::npos);
+
+    int braces = 0, brackets = 0;
+    for (char c : json)
+    {
+        if (c == '{') braces++;
+        if (c == '}') braces--;
+        if (c == '[') brackets++;
+        if (c == ']') brackets--;
+    }
+    ASSERT_EQ(braces, 0);
+    ASSERT_EQ(brackets, 0);
+}

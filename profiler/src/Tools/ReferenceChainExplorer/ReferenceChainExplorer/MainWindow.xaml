@@ -1,0 +1,296 @@
+<Window x:Class="ReferenceChainExplorer.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:converters="clr-namespace:ReferenceChainExplorer.Converters"
+        xmlns:vm="clr-namespace:ReferenceChainExplorer.ViewModels"
+        xmlns:model="clr-namespace:ReferenceChainModel;assembly=ReferenceChainModel"
+        Title="Reference Chains"
+        Width="1000" Height="700"
+        WindowStartupLocation="CenterScreen"
+        Icon="pack://application:,,,/ReferenceChainExplorer;component/Assets/ReferenceChainExplorer-icon.png">
+
+    <Window.DataContext>
+        <vm:MainViewModel />
+    </Window.DataContext>
+
+    <Window.Resources>
+        <converters:TypeIndexToNameConverter x:Key="TypeNameConverter" />
+        <converters:CategoryCodeToNameConverter x:Key="CategoryNameConverter" />
+        <BooleanToVisibilityConverter x:Key="BoolToVisConverter" />
+
+        <!-- Template for reverse chain tree nodes -->
+        <HierarchicalDataTemplate DataType="{x:Type model:ReverseChainNode}"
+                                  ItemsSource="{Binding Parents}">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="{Binding TypeIndex, Converter={StaticResource TypeNameConverter}}" FontWeight="SemiBold" />
+                <TextBlock Text=" (" Foreground="Gray" />
+                <TextBlock Text="{Binding InstanceCount, StringFormat={}{0:N0}}" Foreground="Gray" />
+                <TextBlock Text=" instances, " Foreground="Gray" />
+                <TextBlock Text="{Binding TotalSize, StringFormat={}{0:N0}}" Foreground="Gray" />
+                <TextBlock Text=" bytes)" Foreground="Gray" />
+                <TextBlock Text=" [" Foreground="DarkGreen"
+                           Visibility="{Binding IsRoot, Converter={StaticResource BoolToVisConverter}}" />
+                <TextBlock Text="{Binding CategoryCode, Converter={StaticResource CategoryNameConverter}}"
+                           Foreground="DarkGreen" FontWeight="Bold"
+                           Visibility="{Binding IsRoot, Converter={StaticResource BoolToVisConverter}}" />
+                <TextBlock Text="]" Foreground="DarkGreen"
+                           Visibility="{Binding IsRoot, Converter={StaticResource BoolToVisConverter}}" />
+            </StackPanel>
+        </HierarchicalDataTemplate>
+
+        <!-- Template for forward tree nodes -->
+        <HierarchicalDataTemplate DataType="{x:Type model:ForwardTreeNode}"
+                                  ItemsSource="{Binding Children}">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="{Binding CategoryCode, Converter={StaticResource CategoryNameConverter}}"
+                           FontWeight="SemiBold">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Kind}" Value="{x:Static model:ForwardTreeNodeKind.Category}">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+                <TextBlock Text="{Binding TypeIndex, Converter={StaticResource TypeNameConverter}}"
+                           FontWeight="SemiBold">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Kind}" Value="{x:Static model:ForwardTreeNodeKind.Root}">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Kind}" Value="{x:Static model:ForwardTreeNodeKind.Child}">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+                <TextBlock Text=" [" Foreground="DarkGreen">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Kind}" Value="{x:Static model:ForwardTreeNodeKind.Root}">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+                <TextBlock Text="{Binding CategoryCode, Converter={StaticResource CategoryNameConverter}}"
+                           Foreground="DarkGreen" FontWeight="Bold">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Kind}" Value="{x:Static model:ForwardTreeNodeKind.Root}">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+                <TextBlock Text="]" Foreground="DarkGreen">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Kind}" Value="{x:Static model:ForwardTreeNodeKind.Root}">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+                <TextBlock Text=" (" Foreground="Gray">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Kind}" Value="{x:Static model:ForwardTreeNodeKind.Root}">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Kind}" Value="{x:Static model:ForwardTreeNodeKind.Child}">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+                <TextBlock Text="{Binding InstanceCount, StringFormat={}{0:N0}}" Foreground="Gray">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Kind}" Value="{x:Static model:ForwardTreeNodeKind.Root}">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Kind}" Value="{x:Static model:ForwardTreeNodeKind.Child}">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+                <TextBlock Text=" instances, " Foreground="Gray">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Kind}" Value="{x:Static model:ForwardTreeNodeKind.Root}">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Kind}" Value="{x:Static model:ForwardTreeNodeKind.Child}">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+                <TextBlock Text="{Binding TotalSize, StringFormat={}{0:N0}}" Foreground="Gray">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Kind}" Value="{x:Static model:ForwardTreeNodeKind.Root}">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Kind}" Value="{x:Static model:ForwardTreeNodeKind.Child}">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+                <TextBlock Text=" bytes)" Foreground="Gray">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Kind}" Value="{x:Static model:ForwardTreeNodeKind.Root}">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Kind}" Value="{x:Static model:ForwardTreeNodeKind.Child}">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+            </StackPanel>
+        </HierarchicalDataTemplate>
+    </Window.Resources>
+
+    <DockPanel>
+        <!-- Menu bar -->
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="_File">
+                <MenuItem Header="_Load..." Command="{Binding LoadCommand}" InputGestureText="Ctrl+O" />
+                <Separator />
+                <MenuItem Header="E_xit" Command="{Binding ExitCommand}" />
+            </MenuItem>
+            <MenuItem Header="_About" Click="About_Click" />
+        </Menu>
+
+        <!-- Status bar -->
+        <StatusBar DockPanel.Dock="Bottom">
+            <StatusBarItem>
+                <TextBlock Text="{Binding StatusText}" />
+            </StatusBarItem>
+        </StatusBar>
+
+        <!-- Main content: tabs -->
+        <TabControl Margin="0">
+            <TabItem Header="Type Summary">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="2*" MinHeight="100" />
+                        <RowDefinition Height="5" />
+                        <RowDefinition Height="*" MinHeight="100" />
+                    </Grid.RowDefinitions>
+
+                    <!-- Search -->
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="4,4,4,2">
+                        <TextBlock Text="Search:" VerticalAlignment="Center" Margin="0,0,8,0" />
+                        <TextBox MinWidth="200"
+                                 Padding="6,4"
+                                 FontSize="13"
+                                 Text="{Binding TypeSearchText, UpdateSourceTrigger=PropertyChanged}" />
+                    </StackPanel>
+
+                    <!-- Master: Type list -->
+                    <DataGrid Grid.Row="1"
+                      x:Name="TypeGrid"
+                      ItemsSource="{Binding TypeSummaries}"
+                      SelectedItem="{Binding SelectedType}"
+                      AutoGenerateColumns="False"
+                      IsReadOnly="True"
+                      SelectionMode="Single"
+                      CanUserSortColumns="True"
+                      GridLinesVisibility="None"
+                      AlternatingRowBackground="#F8F8F8"
+                      Sorting="TypeGrid_Sorting">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Type Name" Width="*"
+                                        Binding="{Binding TypeIndex, Converter={StaticResource TypeNameConverter}, ConverterParameter=short}"
+                                        SortMemberPath="TypeIndex" />
+                    <DataGridTextColumn Header="Count" Width="120"
+                                        Binding="{Binding TotalInstanceCount, StringFormat={}{0:N0}}"
+                                        SortMemberPath="TotalInstanceCount">
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="TextAlignment" Value="Right" />
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Header="Size (bytes)" Width="120"
+                                        Binding="{Binding TotalSize, StringFormat={}{0:N0}}"
+                                        SortMemberPath="TotalSize">
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="TextAlignment" Value="Right" />
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
+                </DataGrid.Columns>
+            </DataGrid>
+
+            <!-- Splitter -->
+            <GridSplitter Grid.Row="2"
+                          HorizontalAlignment="Stretch"
+                          Background="#CCCCCC"
+                          ShowsPreview="True" />
+
+            <!-- Detail: Reverse chains -->
+            <DockPanel Grid.Row="3">
+                <TextBlock DockPanel.Dock="Top"
+                           Margin="8,4"
+                           FontSize="13"
+                           FontWeight="SemiBold">
+                    <Run Text="Reverse chains for: " />
+                    <Run Text="{Binding SelectedType.TypeIndex, Converter={StaticResource TypeNameConverter}, Mode=OneWay, FallbackValue='(select a type)'}" />
+                </TextBlock>
+
+                <TreeView ItemsSource="{Binding ReverseChains}"
+                          Margin="4"
+                          BorderThickness="1"
+                          BorderBrush="#CCCCCC" />
+            </DockPanel>
+                </Grid>
+            </TabItem>
+            <TabItem Header="Forward Reference Tree">
+                <TreeView ItemsSource="{Binding ForwardTreeRoots}"
+                          Margin="4"
+                          BorderThickness="1"
+                          BorderBrush="#CCCCCC" />
+            </TabItem>
+        </TabControl>
+    </DockPanel>
+</Window>

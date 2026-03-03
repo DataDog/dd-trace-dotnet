@@ -99,6 +99,36 @@ namespace Samples.Computer01
         public string Value { get; set; }
     }
 
+    // Linked list type (self-referencing chain without cycles)
+    public class LinkedNode
+    {
+        public LinkedNode Next { get; set; }
+        public string Value { get; set; }
+    }
+
+    // Shared references types
+    public class SharedHolder
+    {
+        public SharedPayload Shared { get; set; }
+        public string Label { get; set; }
+    }
+
+    public class SharedPayload
+    {
+        public byte[] Data { get; set; }
+        public string Tag { get; set; }
+    }
+
+    // Null fields type
+    public class SparseObject
+    {
+        public Customer FilledRef { get; set; }
+        public Product NullRef1 { get; set; }
+        public Address NullRef2 { get; set; }
+        public Order NullRef3 { get; set; }
+        public string Name { get; set; }
+    }
+
     // Mixed structure types
     public class Container
     {
@@ -157,6 +187,15 @@ namespace Samples.Computer01
                     break;
                 case 7:
                     RunLargeScale();
+                    break;
+                case 8:
+                    RunSharedReferences();
+                    break;
+                case 9:
+                    RunLinkedList();
+                    break;
+                case 10:
+                    RunNullFields();
                     break;
                 default:
                     RunSimpleChain();
@@ -495,6 +534,103 @@ namespace Samples.Computer01
             }
 
             _roots.Add(deepChains);
+        }
+
+        /// <summary>
+        /// Scenario 8: Shared References (~500 objects)
+        /// Multiple parent objects reference the same shared child.
+        /// Tests that shared objects are correctly traversed from each root
+        /// (VisitedObjectSet is per-root, so the same object appears in multiple paths).
+        /// </summary>
+        private void RunSharedReferences()
+        {
+            Console.WriteLine("ReferenceChain Scenario 8: Shared References");
+            var holders = new List<SharedHolder>();
+
+            // Create shared payloads that will be referenced by multiple holders
+            var sharedPayloads = new List<SharedPayload>();
+            for (int i = 0; i < 10; i++)
+            {
+                sharedPayloads.Add(new SharedPayload
+                {
+                    Data = new byte[256],
+                    Tag = $"shared-payload-{i}"
+                });
+            }
+
+            // Each holder references one of the shared payloads (many-to-one)
+            for (int i = 0; i < 100; i++)
+            {
+                holders.Add(new SharedHolder
+                {
+                    Shared = sharedPayloads[i % sharedPayloads.Count],
+                    Label = $"holder-{i}"
+                });
+            }
+
+            _roots.Add(holders);
+            _roots.Add(sharedPayloads);
+        }
+
+        /// <summary>
+        /// Scenario 9: Linked List / Self-Referencing Chain (~1K objects)
+        /// LinkedNode -> LinkedNode -> LinkedNode -> ... -> null
+        /// Same type at every level: tests the type tree's ability to represent
+        /// TypeA -> TypeA -> TypeA as distinct tree nodes at each depth.
+        /// </summary>
+        private void RunLinkedList()
+        {
+            Console.WriteLine("ReferenceChain Scenario 9: Linked List");
+            var chains = new List<LinkedNode>();
+
+            for (int i = 0; i < 50; i++)
+            {
+                // Build a chain of 20 nodes
+                LinkedNode head = null;
+                for (int j = 19; j >= 0; j--)
+                {
+                    head = new LinkedNode
+                    {
+                        Value = $"node-{i}-{j}",
+                        Next = head
+                    };
+                }
+
+                chains.Add(head);
+            }
+
+            _roots.Add(chains);
+        }
+
+        /// <summary>
+        /// Scenario 10: Null Fields (~500 objects)
+        /// Objects with many reference fields intentionally left null.
+        /// Tests that null references are correctly skipped without errors.
+        /// Only the non-null field (FilledRef) should produce children in the tree.
+        /// </summary>
+        private void RunNullFields()
+        {
+            Console.WriteLine("ReferenceChain Scenario 10: Null Fields");
+            var sparseObjects = new List<SparseObject>();
+
+            for (int i = 0; i < 100; i++)
+            {
+                sparseObjects.Add(new SparseObject
+                {
+                    // Only FilledRef is set; NullRef1, NullRef2, NullRef3 are all null
+                    FilledRef = new Customer
+                    {
+                        Name = $"customer-{i}",
+                        Address = (i % 3 == 0) ? new Address { Street = $"street-{i}", City = $"city-{i}" } : null
+                    },
+                    NullRef1 = null,
+                    NullRef2 = null,
+                    NullRef3 = null,
+                    Name = $"sparse-{i}"
+                });
+            }
+
+            _roots.Add(sparseObjects);
         }
     }
 }
