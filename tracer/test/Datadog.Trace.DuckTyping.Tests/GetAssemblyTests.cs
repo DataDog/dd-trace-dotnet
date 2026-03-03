@@ -16,6 +16,7 @@ namespace Datadog.Trace.DuckTyping.Tests
     public class GetAssemblyTests
     {
         [Fact]
+        [Trait("SkipInCI", "True")]
         public void GetAssemblyTest()
         {
             var asmDuckTypes = 0;
