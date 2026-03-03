@@ -901,6 +901,17 @@ namespace Datadog.Trace.DuckTyping
                     case DuckKind.Property:
                     case DuckKind.PropertyOrField:
                         PropertyInfo? targetProperty = GetTargetPropertyOrIndex(targetType, duckAttribute.Name, duckAttribute.BindingFlags, proxyProperty);
+
+                        if (duckAttribute.FallbackToBaseTypes)
+                        {
+                            var currentType = targetType;
+                            while (targetProperty is null && currentType is { IsValueType: false, BaseType: not null } && currentType.BaseType != typeof(object))
+                            {
+                                currentType = currentType.BaseType;
+                                targetProperty = GetTargetPropertyOrIndex(currentType, duckAttribute.Name, duckAttribute.BindingFlags, proxyProperty);
+                            }
+                        }
+
                         if (targetProperty is null)
                         {
                             if (duckAttribute.Kind == DuckKind.PropertyOrField)
@@ -987,6 +998,17 @@ namespace Datadog.Trace.DuckTyping
 
                     case DuckKind.Field:
                         FieldInfo? targetField = GetTargetField(targetType, duckAttribute.Name, duckAttribute.BindingFlags);
+
+                        if (duckAttribute.FallbackToBaseTypes)
+                        {
+                            var currentType = targetType;
+                            while (targetField is null && currentType is { IsValueType: false, BaseType: not null } && currentType.BaseType != typeof(object))
+                            {
+                                currentType = currentType.BaseType;
+                                targetField = GetTargetField(currentType, duckAttribute.Name, duckAttribute.BindingFlags);
+                            }
+                        }
+
                         if (targetField is null)
                         {
                             DuckTypePropertyOrFieldNotFoundException.Throw(proxyProperty.Name, duckAttribute.Name, targetType);
@@ -1186,6 +1208,17 @@ namespace Datadog.Trace.DuckTyping
                     case DuckKind.Property:
                     case DuckKind.PropertyOrField:
                         PropertyInfo? targetProperty = GetTargetProperty(targetType, duckAttribute.Name, duckAttribute.BindingFlags);
+
+                        if (duckAttribute.FallbackToBaseTypes)
+                        {
+                            var currentType = targetType;
+                            while (targetProperty is null && currentType is { IsValueType: false, BaseType: not null } && currentType.BaseType != typeof(object))
+                            {
+                                currentType = currentType.BaseType;
+                                targetProperty = GetTargetProperty(currentType, duckAttribute.Name, duckAttribute.BindingFlags);
+                            }
+                        }
+
                         if (targetProperty is null)
                         {
                             if (duckAttribute.Kind == DuckKind.PropertyOrField)
@@ -1223,6 +1256,17 @@ namespace Datadog.Trace.DuckTyping
 
                     case DuckKind.Field:
                         FieldInfo? targetField = GetTargetField(targetType, duckAttribute.Name, duckAttribute.BindingFlags);
+
+                        if (duckAttribute.FallbackToBaseTypes)
+                        {
+                            var currentType = targetType;
+                            while (targetField is null && currentType is { IsValueType: false, BaseType: not null } && currentType.BaseType != typeof(object))
+                            {
+                                currentType = currentType.BaseType;
+                                targetField = GetTargetField(currentType, duckAttribute.Name, duckAttribute.BindingFlags);
+                            }
+                        }
+
                         if (targetField is null)
                         {
                             DuckTypePropertyOrFieldNotFoundException.Throw(proxyFieldInfo.Name, duckAttribute.Name, targetType);

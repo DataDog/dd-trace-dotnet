@@ -7,77 +7,77 @@ namespace Datadog.Trace.DuckTyping.Tests.Fields.ValueType.ProxiesDefinitions
 {
     public class ObscureDuckTypeVirtualClass
     {
-        [DuckField(Name = "_publicStaticReadonlyValueTypeField")]
+        [DuckField(Name = "_publicStaticReadonlyValueTypeField", FallbackToBaseTypes = true)]
         public virtual int PublicStaticReadonlyValueTypeField { get; }
 
-        [DuckField(Name = "_internalStaticReadonlyValueTypeField")]
+        [DuckField(Name = "_internalStaticReadonlyValueTypeField", FallbackToBaseTypes = true)]
         public virtual int InternalStaticReadonlyValueTypeField { get; }
 
-        [DuckField(Name = "_protectedStaticReadonlyValueTypeField")]
+        [DuckField(Name = "_protectedStaticReadonlyValueTypeField", FallbackToBaseTypes = true)]
         public virtual int ProtectedStaticReadonlyValueTypeField { get; }
 
-        [DuckField(Name = "_privateStaticReadonlyValueTypeField")]
+        [DuckField(Name = "_privateStaticReadonlyValueTypeField", FallbackToBaseTypes = true)]
         public virtual int PrivateStaticReadonlyValueTypeField { get; }
 
         // *
 
-        [DuckField(Name = "_publicStaticValueTypeField")]
+        [DuckField(Name = "_publicStaticValueTypeField", FallbackToBaseTypes = true)]
         public virtual int PublicStaticValueTypeField { get; set; }
 
-        [DuckField(Name = "_internalStaticValueTypeField")]
+        [DuckField(Name = "_internalStaticValueTypeField", FallbackToBaseTypes = true)]
         public virtual int InternalStaticValueTypeField { get; set; }
 
-        [DuckField(Name = "_protectedStaticValueTypeField")]
+        [DuckField(Name = "_protectedStaticValueTypeField", FallbackToBaseTypes = true)]
         public virtual int ProtectedStaticValueTypeField { get; set; }
 
-        [DuckField(Name = "_privateStaticValueTypeField")]
+        [DuckField(Name = "_privateStaticValueTypeField", FallbackToBaseTypes = true)]
         public virtual int PrivateStaticValueTypeField { get; set; }
 
         // *
 
-        [DuckField(Name = "_publicReadonlyValueTypeField")]
+        [DuckField(Name = "_publicReadonlyValueTypeField", FallbackToBaseTypes = true)]
         public virtual int PublicReadonlyValueTypeField { get; }
 
-        [DuckField(Name = "_internalReadonlyValueTypeField")]
+        [DuckField(Name = "_internalReadonlyValueTypeField", FallbackToBaseTypes = true)]
         public virtual int InternalReadonlyValueTypeField { get; }
 
-        [DuckField(Name = "_protectedReadonlyValueTypeField")]
+        [DuckField(Name = "_protectedReadonlyValueTypeField", FallbackToBaseTypes = true)]
         public virtual int ProtectedReadonlyValueTypeField { get; }
 
-        [DuckField(Name = "_privateReadonlyValueTypeField")]
+        [DuckField(Name = "_privateReadonlyValueTypeField", FallbackToBaseTypes = true)]
         public virtual int PrivateReadonlyValueTypeField { get; }
 
         // *
 
-        [DuckField(Name = "_publicValueTypeField")]
+        [DuckField(Name = "_publicValueTypeField", FallbackToBaseTypes = true)]
         public virtual int PublicValueTypeField { get; set; }
 
-        [DuckField(Name = "_internalValueTypeField")]
+        [DuckField(Name = "_internalValueTypeField", FallbackToBaseTypes = true)]
         public virtual int InternalValueTypeField { get; set; }
 
-        [DuckField(Name = "_protectedValueTypeField")]
+        [DuckField(Name = "_protectedValueTypeField", FallbackToBaseTypes = true)]
         public virtual int ProtectedValueTypeField { get; set; }
 
-        [DuckField(Name = "_privateValueTypeField")]
+        [DuckField(Name = "_privateValueTypeField", FallbackToBaseTypes = true)]
         public virtual int PrivateValueTypeField { get; set; }
 
         // *
 
-        [DuckField(Name = "_publicStaticNullableIntField")]
+        [DuckField(Name = "_publicStaticNullableIntField", FallbackToBaseTypes = true)]
         public virtual int? PublicStaticNullableIntField { get; set; }
 
-        [DuckField(Name = "_privateStaticNullableIntField")]
+        [DuckField(Name = "_privateStaticNullableIntField", FallbackToBaseTypes = true)]
         public virtual int? PrivateStaticNullableIntField { get; set; }
 
-        [DuckField(Name = "_publicNullableIntField")]
+        [DuckField(Name = "_publicNullableIntField", FallbackToBaseTypes = true)]
         public virtual int? PublicNullableIntField { get; set; }
 
-        [DuckField(Name = "_privateNullableIntField")]
+        [DuckField(Name = "_privateNullableIntField", FallbackToBaseTypes = true)]
         public virtual int? PrivateNullableIntField { get; set; }
 
         // *
 
-        [DuckField(Name = "_publicStaticNullableIntField")]
+        [DuckField(Name = "_publicStaticNullableIntField", FallbackToBaseTypes = true)]
         public virtual ValueWithType<int?> PublicStaticNullableIntFieldWithType { get; set; }
     }
 }
