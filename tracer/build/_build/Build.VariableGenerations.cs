@@ -550,6 +550,7 @@ partial class Build : NukeBuild
             {
                 GenerateNukeSmokeTestsMatrix();
                 GenerateDdDotnetFailureTestsMatrices();
+                GenerateMacosSmokeTestsMatrix();
 
                 void GenerateNukeSmokeTestsMatrix()
                 {
@@ -651,6 +652,43 @@ partial class Build : NukeBuild
                     Logger.Information("dd_dotnet failure tests matrix");
                     Logger.Information(JsonConvert.SerializeObject(matrix, Formatting.Indented));
                     AzurePipelines.Instance.SetOutputVariable("smoke_linux_dd_dotnet_failure_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
+                }
+
+                // macOS smoke tests run natively (no Docker), so the matrix
+                // provides the vmImage for pool selection and the TFM to publish.
+                void GenerateMacosSmokeTestsMatrix()
+                {
+                    var images = new (TargetFramework PublishFramework, string VmImage)[]
+                    {
+                        // macos-11/12/13 environments are no longer available in Azure DevOps
+                        (TargetFramework.NETCOREAPP3_1, "macos-14"),
+                        (TargetFramework.NET5_0, "macos-14"),
+                        (TargetFramework.NET6_0, "macos-14"),
+                        (TargetFramework.NET7_0, "macos-14"),
+                        (TargetFramework.NET8_0, "macos-14"),
+                        (TargetFramework.NET9_0, "macos-14"),
+                        (TargetFramework.NET10_0, "macos-14"),
+                        (TargetFramework.NET6_0, "macos-15"),
+                        (TargetFramework.NET8_0, "macos-15"),
+                        (TargetFramework.NET9_0, "macos-15"),
+                        (TargetFramework.NET10_0, "macos-15"),
+                        (TargetFramework.NET6_0, "macOS-15-arm64"),
+                        (TargetFramework.NET10_0, "macOS-15-arm64"),
+                    };
+
+                    var matrix = images.ToDictionary(
+                        x => $"{x.VmImage}_{x.PublishFramework}",
+                        x => (object)new
+                        {
+                            publishFramework = x.PublishFramework,
+                            vmImage = x.VmImage,
+                            smokeTestOs = "macos",
+                            smokeTestOsVersion = x.VmImage.Replace("macos-", "").Replace("macOS-", "").Replace("-arm64", ""),
+                        });
+
+                    Logger.Information("macOS smoke tests matrix");
+                    Logger.Information(JsonConvert.SerializeObject(matrix, Formatting.Indented));
+                    AzurePipelines.Instance.SetOutputVariable("smoke_macos_tool_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
                 }
             }
 
