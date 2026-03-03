@@ -9,7 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text.Json;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Spectre.Console;
 
 namespace Datadog.Trace.Tools.Runner.DuckTypeAot
@@ -231,13 +231,9 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 Directory.CreateDirectory(outputDirectory);
             }
 
-            var json = JsonSerializer.Serialize(
+            var json = JsonConvert.SerializeObject(
                 canonical,
-                new JsonSerializerOptions
-                {
-                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                    WriteIndented = true
-                });
+                Formatting.Indented);
             File.WriteAllText(outputPath, json);
         }
 
@@ -267,13 +263,9 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 Directory.CreateDirectory(directory);
             }
 
-            var json = JsonSerializer.Serialize(
+            var json = JsonConvert.SerializeObject(
                 report,
-                new JsonSerializerOptions
-                {
-                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                    WriteIndented = true
-                });
+                Formatting.Indented);
             File.WriteAllText(warningsReportPath!, json);
         }
 
@@ -294,32 +286,43 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
         private sealed class CanonicalMapDocument
         {
+            [JsonProperty("schemaVersion")]
             public string SchemaVersion { get; set; } = "1";
 
+            [JsonProperty("mappings")]
             public List<CanonicalMapEntry> Mappings { get; set; } = new();
         }
 
         private sealed class CanonicalMapEntry
         {
+            [JsonProperty("mode")]
             public string Mode { get; set; } = "forward";
 
+            [JsonProperty("proxyType")]
             public string ProxyType { get; set; } = string.Empty;
 
+            [JsonProperty("proxyAssembly")]
             public string ProxyAssembly { get; set; } = string.Empty;
 
+            [JsonProperty("targetType")]
             public string TargetType { get; set; } = string.Empty;
 
+            [JsonProperty("targetAssembly")]
             public string TargetAssembly { get; set; } = string.Empty;
         }
 
         private sealed class DiscoverWarningsReport
         {
+            [JsonProperty("discoveredMappings")]
             public int DiscoveredMappings { get; set; }
 
+            [JsonProperty("compatibleMappings")]
             public int CompatibleMappings { get; set; }
 
+            [JsonProperty("droppedMappings")]
             public List<DiscoverDroppedMapping> DroppedMappings { get; set; } = new();
 
+            [JsonProperty("warnings")]
             public List<string> Warnings { get; set; } = new();
         }
 
@@ -337,12 +340,16 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 Details = details;
             }
 
+            [JsonProperty("mapping")]
             public DuckTypeAotMapping Mapping { get; }
 
+            [JsonProperty("status")]
             public string Status { get; }
 
+            [JsonProperty("diagnosticCode")]
             public string? DiagnosticCode { get; }
 
+            [JsonProperty("details")]
             public string? Details { get; }
         }
     }

@@ -276,8 +276,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         {
             foreach (var attribute in attributes)
             {
-                var fullName = attribute.AttributeType?.FullName;
-                if (string.IsNullOrWhiteSpace(fullName))
+                var fullName = attribute.AttributeType?.FullName ?? string.Empty;
+                if (fullName.Length == 0)
                 {
                     continue;
                 }
