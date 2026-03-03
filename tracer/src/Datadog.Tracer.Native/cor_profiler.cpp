@@ -2012,6 +2012,10 @@ long CorProfiler::EnableCallTargetDefinitions(UINT32 enabledCategories)
         auto _ = trace::Stats::Instance()->InitializeProfilerMeasure();
         Logger::Info("EnableCallTargetDefinitions: enabledCategories: ", enabledCategories, " from managed side.");
 
+        // Hold module_ids lock while iterating and mutating integration_definitions_
+        // to prevent concurrent modification from ModuleLoadFinished or RegisterCallTargetDefinitions
+        auto modules = module_ids.Get();
+
         std::vector<IntegrationDefinition> affectedDefinitions;
         for (auto& integration : integration_definitions_)
         {
@@ -2023,7 +2027,6 @@ long CorProfiler::EnableCallTargetDefinitions(UINT32 enabledCategories)
 
         if (affectedDefinitions.size() > 0)
         {
-            auto modules = module_ids.Get();
             auto promise = std::make_shared<std::promise<ULONG>>();
             std::future<ULONG> future = promise->get_future();
             tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(modules.Ref(), affectedDefinitions,
@@ -2044,6 +2047,10 @@ long CorProfiler::DisableCallTargetDefinitions(UINT32 disabledCategories)
         auto _ = trace::Stats::Instance()->InitializeProfilerMeasure();
         Logger::Info("DisableCallTargetDefinitions: enabledCategories: ", disabledCategories, " from managed side.");
 
+        // Hold module_ids lock while iterating and mutating integration_definitions_
+        // to prevent concurrent modification from ModuleLoadFinished or RegisterCallTargetDefinitions
+        auto modules = module_ids.Get();
+
         std::vector<IntegrationDefinition> affectedDefinitions;
         for (auto& integration : integration_definitions_)
         {
@@ -2055,7 +2062,6 @@ long CorProfiler::DisableCallTargetDefinitions(UINT32 disabledCategories)
 
         if (affectedDefinitions.size() > 0)
         {
-            auto modules = module_ids.Get();
             auto promise = std::make_shared<std::promise<ULONG>>();
             std::future<ULONG> future = promise->get_future();
             tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(modules.Ref(), affectedDefinitions, promise);
