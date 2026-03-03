@@ -10,8 +10,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
-using Newtonsoft.Json;
 using Xunit;
 
 namespace Datadog.Trace.DuckTyping.Tests;
