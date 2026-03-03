@@ -36,6 +36,24 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 return 1;
             }
 
+            if (options.DiscoverMappings)
+            {
+                AnsiConsole.MarkupLine("[green]Discover step:[/] discovering and filtering compatible mappings before generation.");
+                var discoveryExitCode = DuckTypeAotDiscoverMappingsProcessor.Process(
+                    new DuckTypeAotDiscoverMappingsOptions(
+                        options.ProxyAssemblies,
+                        options.TargetFolders,
+                        options.TargetFilters,
+                        options.MapFile,
+                        warningsReportPath: null,
+                        strict: false));
+                if (discoveryExitCode != 0)
+                {
+                    Utils.WriteError("ducktype-aot generate failed during discovery pre-step.");
+                    return 1;
+                }
+            }
+
             var mappingResolutionResult = DuckTypeAotMappingResolver.Resolve(options);
             foreach (var warning in mappingResolutionResult.Warnings)
             {
@@ -81,7 +99,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     assemblyName: options.AssemblyName,
                     trimmerDescriptorPath: options.TrimmerDescriptorPath,
                     propsPath: options.PropsPath,
-                    strongNameKeyFile: signingKeyFilePath);
+                    strongNameKeyFile: signingKeyFilePath,
+                    discoverMappings: options.DiscoverMappings);
             }
 
             var artifactPaths = DuckTypeAotArtifactPaths.Create(options);
@@ -155,7 +174,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             {
                 errors.Add("--map-file is required.");
             }
-            else
+            else if (!options.DiscoverMappings)
             {
                 ValidateOptionalFile(options.MapFile, "--map-file", errors);
             }

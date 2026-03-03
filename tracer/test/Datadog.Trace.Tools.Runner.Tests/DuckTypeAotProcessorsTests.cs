@@ -6585,6 +6585,51 @@ public class DuckTypeAotProcessorsTests
         }
     }
 
+    [Fact]
+    public void GenerateProcessorShouldDiscoverMappingsWhenEnabled()
+    {
+        var tempDirectory = CreateTempDirectory();
+        try
+        {
+            var proxyAssemblyPath = typeof(DuckTypeAotProcessorsTests).Assembly.Location;
+            var targetFolderPath = Path.GetDirectoryName(typeof(TestDuckTarget).Assembly.Location);
+            targetFolderPath.Should().NotBeNullOrWhiteSpace();
+
+            var outputPath = Path.Combine(tempDirectory, "Datadog.Trace.DuckType.AotRegistry.DiscoverInGenerate.dll");
+            var mapFilePath = Path.Combine(tempDirectory, "ducktype-aot-map-discover-in-generate.json");
+            var trimmerDescriptorPath = Path.Combine(tempDirectory, "ducktype-aot-discover-in-generate.linker.xml");
+            var propsPath = Path.Combine(tempDirectory, "ducktype-aot-discover-in-generate.props");
+
+            var options = new DuckTypeAotGenerateOptions(
+                proxyAssemblies: new[] { proxyAssemblyPath },
+                targetAssemblies: Array.Empty<string>(),
+                targetFolders: new[] { targetFolderPath! },
+                targetFilters: new[] { Path.GetFileName(proxyAssemblyPath) },
+                mapFile: mapFilePath,
+                mappingCatalog: null,
+                genericInstantiationsFile: null,
+                outputPath: outputPath,
+                assemblyName: "Datadog.Trace.DuckType.AotRegistry.DiscoverInGenerate",
+                trimmerDescriptorPath: trimmerDescriptorPath,
+                propsPath: propsPath,
+                discoverMappings: true);
+
+            var exitCode = DuckTypeAotGenerateProcessor.Process(options);
+            exitCode.Should().Be(0);
+
+            File.Exists(outputPath).Should().BeTrue();
+            File.Exists(mapFilePath).Should().BeTrue();
+
+            var parseResult = DuckTypeAotMapFileParser.Parse(mapFilePath);
+            parseResult.Errors.Should().BeEmpty();
+            parseResult.Mappings.Should().NotBeEmpty();
+        }
+        finally
+        {
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
+
     private static string CreateTempDirectory()
     {
         var tempDirectory = Path.Combine(Path.GetTempPath(), "dd-trace-ducktype-aot-tests", Guid.NewGuid().ToString("N"));

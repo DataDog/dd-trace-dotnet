@@ -149,6 +149,7 @@ Reverse mappings are supported and are typically declared with type-level `[Duck
 Discovery resolves target types from `--target-folder` inputs (plus `--target-filter`) and requires at least one `--target-folder`.
 
 `ducktype-aot generate` consumes only `--map-file`.
+When `--discover-mappings` is set, generate performs discovery first (same proxy/target inputs), writes `--map-file`, then continues generation in the same invocation.
 
 ## Map File Schema
 
@@ -223,6 +224,19 @@ dotnet tracer/src/Datadog.Trace.Tools.Runner/bin/Release/Tool/net8.0/Datadog.Tra
   --output /abs/path/Datadog.Trace.DuckType.AotRegistry.dll
 ```
 
+### One-step Command (discover + generate)
+
+```bash
+dotnet tracer/src/Datadog.Trace.Tools.Runner/bin/Release/Tool/net8.0/Datadog.Trace.Tools.Runner.dll \
+  ducktype-aot generate \
+  --discover-mappings \
+  --proxy-assembly /abs/path/My.Proxy.Assembly.dll \
+  --target-folder /abs/path/targets \
+  --target-filter "*.dll" \
+  --map-file /abs/path/ducktype-aot-map.json \
+  --output /abs/path/Datadog.Trace.DuckType.AotRegistry.dll
+```
+
 ### Full Command (recommended)
 
 ```bash
@@ -251,7 +265,7 @@ Generator fails if:
 
 1. No `--proxy-assembly` is provided.
 2. No `--target-folder` is provided.
-3. File paths do not exist.
+3. Required file/directory paths do not exist (except `--map-file` when `--discover-mappings` is set).
 4. Open generic mappings remain unresolved.
 5. No compatible mappings are resolved from the canonical map file.
 
@@ -451,6 +465,21 @@ REGISTRY_PROPS="$WORK_DIR/Datadog.Trace.DuckType.AotRegistry.Sample.props"
 REGISTRY_LINKER="$WORK_DIR/Datadog.Trace.DuckType.AotRegistry.Sample.linker.xml"
 
 dotnet "$RUNNER_DLL" ducktype-aot generate \
+  --proxy-assembly "$CONTRACTS_DLL" \
+  --target-folder "$(dirname "$CONTRACTS_DLL")" \
+  --target-filter "*.dll" \
+  --map-file "$WORK_DIR/ducktype-aot-map.json" \
+  --assembly-name Datadog.Trace.DuckType.AotRegistry.Sample \
+  --emit-props "$REGISTRY_PROPS" \
+  --emit-trimmer-descriptor "$REGISTRY_LINKER" \
+  --output "$REGISTRY_DLL"
+```
+
+Single-step alternative:
+
+```bash
+dotnet "$RUNNER_DLL" ducktype-aot generate \
+  --discover-mappings \
   --proxy-assembly "$CONTRACTS_DLL" \
   --target-folder "$(dirname "$CONTRACTS_DLL")" \
   --target-filter "*.dll" \
@@ -708,6 +737,8 @@ dotnet tracer/src/Datadog.Trace.Tools.Runner/bin/Release/Tool/net8.0/Datadog.Tra
   --map-file /abs/path/discovered-ducktype-aot-map.json \
   --output /abs/path/Datadog.Trace.DuckType.AotRegistry.dll
 ```
+
+Shortcut: use a single command by adding `--discover-mappings` to `ducktype-aot generate` and providing the same `--map-file` output path.
 
 Note: discovery may include runtime-generated dynamic assembly identities in some workloads. Sanitize those entries before generation if needed.
 

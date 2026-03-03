@@ -28,6 +28,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <param name="trimmerDescriptorPath">The trimmer descriptor path value.</param>
         /// <param name="propsPath">The props path value.</param>
         /// <param name="strongNameKeyFile">The strong name key file value.</param>
+        /// <param name="discoverMappings">Whether generate should discover and write compatible mappings to <paramref name="mapFile"/> before emitting artifacts.</param>
         public DuckTypeAotGenerateOptions(
             IReadOnlyList<string> proxyAssemblies,
             IReadOnlyList<string> targetAssemblies,
@@ -39,7 +40,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             string? assemblyName,
             string trimmerDescriptorPath,
             string propsPath,
-            string? strongNameKeyFile = null)
+            string? strongNameKeyFile = null,
+            bool discoverMappings = false)
         {
             ProxyAssemblies = proxyAssemblies;
             TargetAssemblies = targetAssemblies;
@@ -52,6 +54,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             TrimmerDescriptorPath = trimmerDescriptorPath;
             PropsPath = propsPath;
             StrongNameKeyFile = strongNameKeyFile;
+            DiscoverMappings = discoverMappings;
         }
 
         /// <summary>
@@ -70,6 +73,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <param name="propsPath">The props path value.</param>
         /// <param name="requireMappingCatalog">Legacy catalog requirement flag (ignored by the simplified contract).</param>
         /// <param name="strongNameKeyFile">The strong name key file value.</param>
+        /// <param name="discoverMappings">Whether generate should discover compatible mappings into the provided map file before emitting artifacts.</param>
         public DuckTypeAotGenerateOptions(
             IReadOnlyList<string> proxyAssemblies,
             IReadOnlyList<string> targetAssemblies,
@@ -83,7 +87,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             string trimmerDescriptorPath,
             string propsPath,
             bool requireMappingCatalog = false,
-            string? strongNameKeyFile = null)
+            string? strongNameKeyFile = null,
+            bool discoverMappings = false)
             : this(
                 proxyAssemblies,
                 targetAssemblies,
@@ -95,7 +100,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 assemblyName,
                 trimmerDescriptorPath,
                 propsPath,
-                strongNameKeyFile)
+                strongNameKeyFile,
+                discoverMappings)
         {
             MappingCatalog = mappingCatalog;
             RequireMappingCatalog = requireMappingCatalog;
@@ -178,5 +184,10 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// </summary>
         /// <value>The strong name key file value.</value>
         public string? StrongNameKeyFile { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether generate should discover compatible mappings into <see cref="MapFile"/> before emitting artifacts.
+        /// </summary>
+        public bool DiscoverMappings { get; }
     }
 }

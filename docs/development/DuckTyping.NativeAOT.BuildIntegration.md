@@ -43,7 +43,7 @@ Bible compatibility-gate flow intentionally removes the generated Bible-gate reg
 1. Build proxy definition assemblies.
 2. Build target assemblies.
 3. Run `ducktype-aot discover-mappings` (or load a checked-in canonical map).
-4. Run `ducktype-aot generate`.
+4. Run `ducktype-aot generate` (or use `ducktype-aot generate --discover-mappings` as a one-step flow).
 5. Run `ducktype-aot verify-compat`.
 6. Build/publish app with generated `.props` and linker descriptor.
 7. Execute AOT validation tests.
@@ -74,6 +74,19 @@ dotnet tracer/src/Datadog.Trace.Tools.Runner/bin/Release/Tool/net8.0/Datadog.Tra
 ```bash
 dotnet tracer/src/Datadog.Trace.Tools.Runner/bin/Release/Tool/net8.0/Datadog.Trace.Tools.Runner.dll \
   ducktype-aot generate \
+  --proxy-assembly /abs/path/My.Proxy.Contracts.dll \
+  --target-folder /abs/path \
+  --target-filter "*.dll" \
+  --map-file /abs/path/ducktype-aot-map.json \
+  --output /abs/path/Datadog.Trace.DuckType.AotRegistry.MyApp.dll
+```
+
+One-step alternative (discover + generate):
+
+```bash
+dotnet tracer/src/Datadog.Trace.Tools.Runner/bin/Release/Tool/net8.0/Datadog.Trace.Tools.Runner.dll \
+  ducktype-aot generate \
+  --discover-mappings \
   --proxy-assembly /abs/path/My.Proxy.Contracts.dll \
   --target-folder /abs/path \
   --target-filter "*.dll" \
