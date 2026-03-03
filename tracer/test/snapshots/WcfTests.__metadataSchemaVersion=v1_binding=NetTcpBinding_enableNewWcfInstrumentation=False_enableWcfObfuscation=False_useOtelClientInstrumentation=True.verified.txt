@@ -2,43 +2,6 @@
   {
     TraceId: Id_1,
     SpanId: Id_2,
-    Name: http.server.request,
-    Resource: /WcfSample/123,123/CalculatorService,
-    Service: Samples.Wcf,
-    Type: web,
-    Tags: {
-      component: Wcf,
-      custom-tag: DispatchMessageInspector,
-      env: integration_tests,
-      http.url: net.tcp://localhost:00000/WcfSample/123,123/CalculatorService,
-      language: dotnet,
-      runtime-id: Guid_1,
-      span.kind: server,
-      version: 1.0.0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_3,
-    Name: ServerEmptyActionAdd,
-    Resource: ServerEmptyActionAdd,
-    Service: Samples.Wcf,
-    ParentId: Id_2,
-    Tags: {
-      env: integration_tests,
-      language: dotnet,
-      version: 1.0.0
-    }
-  },
-  {
-    TraceId: Id_4,
-    SpanId: Id_5,
     Name: Begin_ServerAsyncAdd_false_false,
     Resource: Begin_ServerAsyncAdd_false_false,
     Service: Samples.Wcf,
@@ -56,13 +19,13 @@
     }
   },
   {
-    TraceId: Id_4,
-    SpanId: Id_6,
+    TraceId: Id_1,
+    SpanId: Id_3,
     Name: dotnet_wcf.client.request,
     Resource: WcfSample/ICalculator/ServerAsyncAdd,
     Service: Samples.Wcf,
     Type: http,
-    ParentId: Id_5,
+    ParentId: Id_2,
     Tags: {
       env: integration_tests,
       language: dotnet,
@@ -89,8 +52,46 @@
     }
   },
   {
-    TraceId: Id_7,
-    SpanId: Id_8,
+    TraceId: Id_1,
+    SpanId: Id_4,
+    Name: http.server.request,
+    Resource: WcfSample/ICalculator/ServerAsyncAdd,
+    Service: Samples.Wcf,
+    Type: web,
+    ParentId: Id_3,
+    Tags: {
+      component: Wcf,
+      custom-tag: DispatchMessageInspector,
+      env: integration_tests,
+      http.url: net.tcp://localhost:00000/WcfSample/123,123/CalculatorService,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: server,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_5,
+    Name: BeginServerAsyncAdd,
+    Resource: BeginServerAsyncAdd,
+    Service: Samples.Wcf,
+    ParentId: Id_4,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_6,
+    SpanId: Id_7,
     Name: Begin_ServerAsyncAdd_false_true,
     Resource: Begin_ServerAsyncAdd_false_true,
     Service: Samples.Wcf,
@@ -108,13 +109,13 @@
     }
   },
   {
-    TraceId: Id_7,
-    SpanId: Id_9,
+    TraceId: Id_6,
+    SpanId: Id_8,
     Name: dotnet_wcf.client.request,
     Resource: WcfSample/ICalculator/ServerAsyncAdd,
     Service: Samples.Wcf,
     Type: http,
-    ParentId: Id_8,
+    ParentId: Id_7,
     Tags: {
       env: integration_tests,
       language: dotnet,
@@ -141,8 +142,59 @@
     }
   },
   {
-    TraceId: Id_10,
+    TraceId: Id_6,
+    SpanId: Id_9,
+    Name: http.server.request,
+    Resource: WcfSample/ICalculator/ServerAsyncAdd,
+    Service: Samples.Wcf,
+    Type: web,
+    ParentId: Id_8,
+    Tags: {
+      component: Wcf,
+      custom-tag: DispatchMessageInspector,
+      env: integration_tests,
+      http.url: net.tcp://localhost:00000/WcfSample/123,123/CalculatorService,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: server,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_6,
+    SpanId: Id_10,
+    Name: BeginServerAsyncAdd,
+    Resource: BeginServerAsyncAdd,
+    Service: Samples.Wcf,
+    ParentId: Id_9,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_6,
     SpanId: Id_11,
+    Name: EndServerAsyncAdd,
+    Resource: EndServerAsyncAdd,
+    Service: Samples.Wcf,
+    ParentId: Id_9,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_12,
+    SpanId: Id_13,
     Name: Begin_ServerAsyncAdd_true_false,
     Resource: Begin_ServerAsyncAdd_true_false,
     Service: Samples.Wcf,
@@ -160,13 +212,13 @@
     }
   },
   {
-    TraceId: Id_10,
-    SpanId: Id_12,
+    TraceId: Id_12,
+    SpanId: Id_14,
     Name: dotnet_wcf.client.request,
     Resource: WcfSample/ICalculator/ServerAsyncAdd,
     Service: Samples.Wcf,
     Type: http,
-    ParentId: Id_11,
+    ParentId: Id_13,
     Error: 1,
     Tags: {
       env: integration_tests,
@@ -194,8 +246,46 @@
     }
   },
   {
-    TraceId: Id_13,
-    SpanId: Id_14,
+    TraceId: Id_12,
+    SpanId: Id_15,
+    Name: http.server.request,
+    Resource: WcfSample/ICalculator/ServerAsyncAdd,
+    Service: Samples.Wcf,
+    Type: web,
+    ParentId: Id_14,
+    Tags: {
+      component: Wcf,
+      custom-tag: DispatchMessageInspector,
+      env: integration_tests,
+      http.url: net.tcp://localhost:00000/WcfSample/123,123/CalculatorService,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: server,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_12,
+    SpanId: Id_16,
+    Name: BeginServerAsyncAdd,
+    Resource: BeginServerAsyncAdd,
+    Service: Samples.Wcf,
+    ParentId: Id_15,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_17,
+    SpanId: Id_18,
     Name: Begin_ServerAsyncAdd_true_true,
     Resource: Begin_ServerAsyncAdd_true_true,
     Service: Samples.Wcf,
@@ -213,13 +303,13 @@
     }
   },
   {
-    TraceId: Id_13,
-    SpanId: Id_15,
+    TraceId: Id_17,
+    SpanId: Id_19,
     Name: dotnet_wcf.client.request,
     Resource: WcfSample/ICalculator/ServerAsyncAdd,
     Service: Samples.Wcf,
     Type: http,
-    ParentId: Id_14,
+    ParentId: Id_18,
     Error: 1,
     Tags: {
       env: integration_tests,
@@ -247,8 +337,46 @@
     }
   },
   {
-    TraceId: Id_16,
-    SpanId: Id_17,
+    TraceId: Id_17,
+    SpanId: Id_20,
+    Name: http.server.request,
+    Resource: WcfSample/ICalculator/ServerAsyncAdd,
+    Service: Samples.Wcf,
+    Type: web,
+    ParentId: Id_19,
+    Tags: {
+      component: Wcf,
+      custom-tag: DispatchMessageInspector,
+      env: integration_tests,
+      http.url: net.tcp://localhost:00000/WcfSample/123,123/CalculatorService,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: server,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_17,
+    SpanId: Id_21,
+    Name: BeginServerAsyncAdd,
+    Resource: BeginServerAsyncAdd,
+    Service: Samples.Wcf,
+    ParentId: Id_20,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_22,
+    SpanId: Id_23,
     Name: BeginEnd_ServerSyncAdd,
     Resource: BeginEnd_ServerSyncAdd,
     Service: Samples.Wcf,
@@ -266,13 +394,13 @@
     }
   },
   {
-    TraceId: Id_16,
-    SpanId: Id_18,
+    TraceId: Id_22,
+    SpanId: Id_24,
     Name: dotnet_wcf.client.request,
     Resource: WcfSample/ICalculator/ServerSyncAdd,
     Service: Samples.Wcf,
     Type: http,
-    ParentId: Id_17,
+    ParentId: Id_23,
     Tags: {
       env: integration_tests,
       language: dotnet,
@@ -299,8 +427,46 @@
     }
   },
   {
-    TraceId: Id_19,
-    SpanId: Id_20,
+    TraceId: Id_22,
+    SpanId: Id_25,
+    Name: http.server.request,
+    Resource: WcfSample/ICalculator/ServerSyncAdd,
+    Service: Samples.Wcf,
+    Type: web,
+    ParentId: Id_24,
+    Tags: {
+      component: Wcf,
+      custom-tag: DispatchMessageInspector,
+      env: integration_tests,
+      http.url: net.tcp://localhost:00000/WcfSample/123,123/CalculatorService,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: server,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_22,
+    SpanId: Id_26,
+    Name: ServerSyncAdd,
+    Resource: ServerSyncAdd,
+    Service: Samples.Wcf,
+    ParentId: Id_25,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_27,
+    SpanId: Id_28,
     Name: BeginEnd_ServerTaskAdd,
     Resource: BeginEnd_ServerTaskAdd,
     Service: Samples.Wcf,
@@ -318,13 +484,13 @@
     }
   },
   {
-    TraceId: Id_19,
-    SpanId: Id_21,
+    TraceId: Id_27,
+    SpanId: Id_29,
     Name: dotnet_wcf.client.request,
     Resource: WcfSample/ICalculator/ServerTaskAdd,
     Service: Samples.Wcf,
     Type: http,
-    ParentId: Id_20,
+    ParentId: Id_28,
     Tags: {
       env: integration_tests,
       language: dotnet,
@@ -351,15 +517,21 @@
     }
   },
   {
-    TraceId: Id_22,
-    SpanId: Id_23,
-    Name: EndServerAsyncAdd,
-    Resource: EndServerAsyncAdd,
+    TraceId: Id_27,
+    SpanId: Id_30,
+    Name: http.server.request,
+    Resource: WcfSample/ICalculator/ServerTaskAdd,
     Service: Samples.Wcf,
+    Type: web,
+    ParentId: Id_29,
     Tags: {
+      component: Wcf,
+      custom-tag: DispatchMessageInspector,
       env: integration_tests,
+      http.url: net.tcp://localhost:00000/WcfSample/123,123/CalculatorService,
       language: dotnet,
       runtime-id: Guid_1,
+      span.kind: server,
       version: 1.0.0
     },
     Metrics: {
@@ -370,65 +542,97 @@
     }
   },
   {
-    TraceId: Id_24,
-    SpanId: Id_25,
-    Name: EndServerAsyncAdd,
-    Resource: EndServerAsyncAdd,
-    Service: Samples.Wcf,
-    Tags: {
-      env: integration_tests,
-      language: dotnet,
-      runtime-id: Guid_1,
-      version: 1.0.0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_26,
-    SpanId: Id_27,
-    Name: EndServerAsyncAdd,
-    Resource: EndServerAsyncAdd,
-    Service: Samples.Wcf,
-    Tags: {
-      env: integration_tests,
-      language: dotnet,
-      runtime-id: Guid_1,
-      version: 1.0.0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_28,
-    SpanId: Id_29,
-    Name: EndServerAsyncAdd,
-    Resource: EndServerAsyncAdd,
-    Service: Samples.Wcf,
-    Tags: {
-      env: integration_tests,
-      language: dotnet,
-      runtime-id: Guid_1,
-      version: 1.0.0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_30,
+    TraceId: Id_27,
     SpanId: Id_31,
+    Name: ServerTaskAdd,
+    Resource: ServerTaskAdd,
+    Service: Samples.Wcf,
+    ParentId: Id_30,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_32,
+    SpanId: Id_33,
+    Name: EndServerAsyncAdd,
+    Resource: EndServerAsyncAdd,
+    Service: Samples.Wcf,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_34,
+    SpanId: Id_35,
+    Name: EndServerAsyncAdd,
+    Resource: EndServerAsyncAdd,
+    Service: Samples.Wcf,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_36,
+    SpanId: Id_37,
+    Name: EndServerAsyncAdd,
+    Resource: EndServerAsyncAdd,
+    Service: Samples.Wcf,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_38,
+    SpanId: Id_39,
+    Name: EndServerAsyncAdd,
+    Resource: EndServerAsyncAdd,
+    Service: Samples.Wcf,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_40,
+    SpanId: Id_41,
     Name: ServerEmptyActionAdd,
     Resource: ServerEmptyActionAdd,
     Service: Samples.Wcf,
@@ -446,13 +650,13 @@
     }
   },
   {
-    TraceId: Id_30,
-    SpanId: Id_32,
+    TraceId: Id_40,
+    SpanId: Id_42,
     Name: dotnet_wcf.client.request,
     Resource: OpenTelemetry.Instrumentation.Wcf.OutgoingRequest,
     Service: Samples.Wcf,
     Type: http,
-    ParentId: Id_31,
+    ParentId: Id_41,
     Tags: {
       env: integration_tests,
       language: dotnet,
@@ -479,8 +683,46 @@
     }
   },
   {
-    TraceId: Id_33,
-    SpanId: Id_34,
+    TraceId: Id_40,
+    SpanId: Id_43,
+    Name: http.server.request,
+    Resource: /WcfSample/123,123/CalculatorService,
+    Service: Samples.Wcf,
+    Type: web,
+    ParentId: Id_42,
+    Tags: {
+      component: Wcf,
+      custom-tag: DispatchMessageInspector,
+      env: integration_tests,
+      http.url: net.tcp://localhost:00000/WcfSample/123,123/CalculatorService,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: server,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_40,
+    SpanId: Id_44,
+    Name: ServerEmptyActionAdd,
+    Resource: ServerEmptyActionAdd,
+    Service: Samples.Wcf,
+    ParentId: Id_43,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_45,
+    SpanId: Id_46,
     Name: Sync_ServerAsyncAdd,
     Resource: Sync_ServerAsyncAdd,
     Service: Samples.Wcf,
@@ -498,13 +740,13 @@
     }
   },
   {
-    TraceId: Id_33,
-    SpanId: Id_35,
+    TraceId: Id_45,
+    SpanId: Id_47,
     Name: dotnet_wcf.client.request,
     Resource: WcfSample/ICalculator/ServerAsyncAdd,
     Service: Samples.Wcf,
     Type: http,
-    ParentId: Id_34,
+    ParentId: Id_46,
     Tags: {
       env: integration_tests,
       language: dotnet,
@@ -531,8 +773,46 @@
     }
   },
   {
-    TraceId: Id_36,
-    SpanId: Id_37,
+    TraceId: Id_45,
+    SpanId: Id_48,
+    Name: http.server.request,
+    Resource: WcfSample/ICalculator/ServerAsyncAdd,
+    Service: Samples.Wcf,
+    Type: web,
+    ParentId: Id_47,
+    Tags: {
+      component: Wcf,
+      custom-tag: DispatchMessageInspector,
+      env: integration_tests,
+      http.url: net.tcp://localhost:00000/WcfSample/123,123/CalculatorService,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: server,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_45,
+    SpanId: Id_49,
+    Name: BeginServerAsyncAdd,
+    Resource: BeginServerAsyncAdd,
+    Service: Samples.Wcf,
+    ParentId: Id_48,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_50,
+    SpanId: Id_51,
     Name: Sync_ServerSyncAdd,
     Resource: Sync_ServerSyncAdd,
     Service: Samples.Wcf,
@@ -550,13 +830,13 @@
     }
   },
   {
-    TraceId: Id_36,
-    SpanId: Id_38,
+    TraceId: Id_50,
+    SpanId: Id_52,
     Name: dotnet_wcf.client.request,
     Resource: WcfSample/ICalculator/ServerSyncAdd,
     Service: Samples.Wcf,
     Type: http,
-    ParentId: Id_37,
+    ParentId: Id_51,
     Tags: {
       env: integration_tests,
       language: dotnet,
@@ -583,8 +863,46 @@
     }
   },
   {
-    TraceId: Id_39,
-    SpanId: Id_40,
+    TraceId: Id_50,
+    SpanId: Id_53,
+    Name: http.server.request,
+    Resource: WcfSample/ICalculator/ServerSyncAdd,
+    Service: Samples.Wcf,
+    Type: web,
+    ParentId: Id_52,
+    Tags: {
+      component: Wcf,
+      custom-tag: DispatchMessageInspector,
+      env: integration_tests,
+      http.url: net.tcp://localhost:00000/WcfSample/123,123/CalculatorService,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: server,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_50,
+    SpanId: Id_54,
+    Name: ServerSyncAdd,
+    Resource: ServerSyncAdd,
+    Service: Samples.Wcf,
+    ParentId: Id_53,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_55,
+    SpanId: Id_56,
     Name: Sync_ServerTaskAdd,
     Resource: Sync_ServerTaskAdd,
     Service: Samples.Wcf,
@@ -602,13 +920,13 @@
     }
   },
   {
-    TraceId: Id_39,
-    SpanId: Id_41,
+    TraceId: Id_55,
+    SpanId: Id_57,
     Name: dotnet_wcf.client.request,
     Resource: WcfSample/ICalculator/ServerTaskAdd,
     Service: Samples.Wcf,
     Type: http,
-    ParentId: Id_40,
+    ParentId: Id_56,
     Tags: {
       env: integration_tests,
       language: dotnet,
@@ -635,8 +953,46 @@
     }
   },
   {
-    TraceId: Id_42,
-    SpanId: Id_43,
+    TraceId: Id_55,
+    SpanId: Id_58,
+    Name: http.server.request,
+    Resource: WcfSample/ICalculator/ServerTaskAdd,
+    Service: Samples.Wcf,
+    Type: web,
+    ParentId: Id_57,
+    Tags: {
+      component: Wcf,
+      custom-tag: DispatchMessageInspector,
+      env: integration_tests,
+      http.url: net.tcp://localhost:00000/WcfSample/123,123/CalculatorService,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: server,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_55,
+    SpanId: Id_59,
+    Name: ServerTaskAdd,
+    Resource: ServerTaskAdd,
+    Service: Samples.Wcf,
+    ParentId: Id_58,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_60,
+    SpanId: Id_61,
     Name: Task_ServerAsyncAdd,
     Resource: Task_ServerAsyncAdd,
     Service: Samples.Wcf,
@@ -654,13 +1010,13 @@
     }
   },
   {
-    TraceId: Id_42,
-    SpanId: Id_44,
+    TraceId: Id_60,
+    SpanId: Id_62,
     Name: dotnet_wcf.client.request,
     Resource: WcfSample/ICalculator/ServerAsyncAdd,
     Service: Samples.Wcf,
     Type: http,
-    ParentId: Id_43,
+    ParentId: Id_61,
     Tags: {
       env: integration_tests,
       language: dotnet,
@@ -687,8 +1043,46 @@
     }
   },
   {
-    TraceId: Id_45,
-    SpanId: Id_46,
+    TraceId: Id_60,
+    SpanId: Id_63,
+    Name: http.server.request,
+    Resource: WcfSample/ICalculator/ServerAsyncAdd,
+    Service: Samples.Wcf,
+    Type: web,
+    ParentId: Id_62,
+    Tags: {
+      component: Wcf,
+      custom-tag: DispatchMessageInspector,
+      env: integration_tests,
+      http.url: net.tcp://localhost:00000/WcfSample/123,123/CalculatorService,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: server,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_60,
+    SpanId: Id_64,
+    Name: BeginServerAsyncAdd,
+    Resource: BeginServerAsyncAdd,
+    Service: Samples.Wcf,
+    ParentId: Id_63,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_65,
+    SpanId: Id_66,
     Name: Task_ServerSyncAdd,
     Resource: Task_ServerSyncAdd,
     Service: Samples.Wcf,
@@ -706,13 +1100,13 @@
     }
   },
   {
-    TraceId: Id_45,
-    SpanId: Id_47,
+    TraceId: Id_65,
+    SpanId: Id_67,
     Name: dotnet_wcf.client.request,
     Resource: WcfSample/ICalculator/ServerSyncAdd,
     Service: Samples.Wcf,
     Type: http,
-    ParentId: Id_46,
+    ParentId: Id_66,
     Tags: {
       env: integration_tests,
       language: dotnet,
@@ -739,8 +1133,46 @@
     }
   },
   {
-    TraceId: Id_48,
-    SpanId: Id_49,
+    TraceId: Id_65,
+    SpanId: Id_68,
+    Name: http.server.request,
+    Resource: WcfSample/ICalculator/ServerSyncAdd,
+    Service: Samples.Wcf,
+    Type: web,
+    ParentId: Id_67,
+    Tags: {
+      component: Wcf,
+      custom-tag: DispatchMessageInspector,
+      env: integration_tests,
+      http.url: net.tcp://localhost:00000/WcfSample/123,123/CalculatorService,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: server,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_65,
+    SpanId: Id_69,
+    Name: ServerSyncAdd,
+    Resource: ServerSyncAdd,
+    Service: Samples.Wcf,
+    ParentId: Id_68,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_70,
+    SpanId: Id_71,
     Name: Task_ServerTaskAdd,
     Resource: Task_ServerTaskAdd,
     Service: Samples.Wcf,
@@ -758,13 +1190,13 @@
     }
   },
   {
-    TraceId: Id_48,
-    SpanId: Id_50,
+    TraceId: Id_70,
+    SpanId: Id_72,
     Name: dotnet_wcf.client.request,
     Resource: WcfSample/ICalculator/ServerTaskAdd,
     Service: Samples.Wcf,
     Type: http,
-    ParentId: Id_49,
+    ParentId: Id_71,
     Tags: {
       env: integration_tests,
       language: dotnet,
@@ -791,295 +1223,13 @@
     }
   },
   {
-    TraceId: Id_51,
-    SpanId: Id_52,
-    Name: http.server.request,
-    Resource: WcfSample/ICalculator/ServerAsyncAdd,
-    Service: Samples.Wcf,
-    Type: web,
-    Tags: {
-      component: Wcf,
-      custom-tag: DispatchMessageInspector,
-      env: integration_tests,
-      http.url: net.tcp://localhost:00000/WcfSample/123,123/CalculatorService,
-      language: dotnet,
-      runtime-id: Guid_1,
-      span.kind: server,
-      version: 1.0.0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_53,
-    SpanId: Id_54,
-    Name: http.server.request,
-    Resource: WcfSample/ICalculator/ServerAsyncAdd,
-    Service: Samples.Wcf,
-    Type: web,
-    Tags: {
-      component: Wcf,
-      custom-tag: DispatchMessageInspector,
-      env: integration_tests,
-      http.url: net.tcp://localhost:00000/WcfSample/123,123/CalculatorService,
-      language: dotnet,
-      runtime-id: Guid_1,
-      span.kind: server,
-      version: 1.0.0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_55,
-    SpanId: Id_56,
-    Name: http.server.request,
-    Resource: WcfSample/ICalculator/ServerAsyncAdd,
-    Service: Samples.Wcf,
-    Type: web,
-    Tags: {
-      component: Wcf,
-      custom-tag: DispatchMessageInspector,
-      env: integration_tests,
-      http.url: net.tcp://localhost:00000/WcfSample/123,123/CalculatorService,
-      language: dotnet,
-      runtime-id: Guid_1,
-      span.kind: server,
-      version: 1.0.0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_57,
-    SpanId: Id_58,
-    Name: http.server.request,
-    Resource: WcfSample/ICalculator/ServerAsyncAdd,
-    Service: Samples.Wcf,
-    Type: web,
-    Tags: {
-      component: Wcf,
-      custom-tag: DispatchMessageInspector,
-      env: integration_tests,
-      http.url: net.tcp://localhost:00000/WcfSample/123,123/CalculatorService,
-      language: dotnet,
-      runtime-id: Guid_1,
-      span.kind: server,
-      version: 1.0.0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_59,
-    SpanId: Id_60,
-    Name: http.server.request,
-    Resource: WcfSample/ICalculator/ServerAsyncAdd,
-    Service: Samples.Wcf,
-    Type: web,
-    Tags: {
-      component: Wcf,
-      custom-tag: DispatchMessageInspector,
-      env: integration_tests,
-      http.url: net.tcp://localhost:00000/WcfSample/123,123/CalculatorService,
-      language: dotnet,
-      runtime-id: Guid_1,
-      span.kind: server,
-      version: 1.0.0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_61,
-    SpanId: Id_62,
-    Name: http.server.request,
-    Resource: WcfSample/ICalculator/ServerAsyncAdd,
-    Service: Samples.Wcf,
-    Type: web,
-    Tags: {
-      component: Wcf,
-      custom-tag: DispatchMessageInspector,
-      env: integration_tests,
-      http.url: net.tcp://localhost:00000/WcfSample/123,123/CalculatorService,
-      language: dotnet,
-      runtime-id: Guid_1,
-      span.kind: server,
-      version: 1.0.0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_51,
-    SpanId: Id_63,
-    Name: BeginServerAsyncAdd,
-    Resource: BeginServerAsyncAdd,
-    Service: Samples.Wcf,
-    ParentId: Id_52,
-    Tags: {
-      env: integration_tests,
-      language: dotnet,
-      version: 1.0.0
-    }
-  },
-  {
-    TraceId: Id_53,
-    SpanId: Id_64,
-    Name: BeginServerAsyncAdd,
-    Resource: BeginServerAsyncAdd,
-    Service: Samples.Wcf,
-    ParentId: Id_54,
-    Tags: {
-      env: integration_tests,
-      language: dotnet,
-      version: 1.0.0
-    }
-  },
-  {
-    TraceId: Id_55,
-    SpanId: Id_65,
-    Name: BeginServerAsyncAdd,
-    Resource: BeginServerAsyncAdd,
-    Service: Samples.Wcf,
-    ParentId: Id_56,
-    Tags: {
-      env: integration_tests,
-      language: dotnet,
-      version: 1.0.0
-    }
-  },
-  {
-    TraceId: Id_57,
-    SpanId: Id_66,
-    Name: BeginServerAsyncAdd,
-    Resource: BeginServerAsyncAdd,
-    Service: Samples.Wcf,
-    ParentId: Id_58,
-    Tags: {
-      env: integration_tests,
-      language: dotnet,
-      version: 1.0.0
-    }
-  },
-  {
-    TraceId: Id_57,
-    SpanId: Id_67,
-    Name: EndServerAsyncAdd,
-    Resource: EndServerAsyncAdd,
-    Service: Samples.Wcf,
-    ParentId: Id_58,
-    Tags: {
-      env: integration_tests,
-      language: dotnet,
-      version: 1.0.0
-    }
-  },
-  {
-    TraceId: Id_59,
-    SpanId: Id_68,
-    Name: BeginServerAsyncAdd,
-    Resource: BeginServerAsyncAdd,
-    Service: Samples.Wcf,
-    ParentId: Id_60,
-    Tags: {
-      env: integration_tests,
-      language: dotnet,
-      version: 1.0.0
-    }
-  },
-  {
-    TraceId: Id_61,
-    SpanId: Id_69,
-    Name: BeginServerAsyncAdd,
-    Resource: BeginServerAsyncAdd,
-    Service: Samples.Wcf,
-    ParentId: Id_62,
-    Tags: {
-      env: integration_tests,
-      language: dotnet,
-      version: 1.0.0
-    }
-  },
-  {
     TraceId: Id_70,
-    SpanId: Id_71,
-    Name: http.server.request,
-    Resource: WcfSample/ICalculator/ServerSyncAdd,
-    Service: Samples.Wcf,
-    Type: web,
-    Tags: {
-      component: Wcf,
-      custom-tag: DispatchMessageInspector,
-      env: integration_tests,
-      http.url: net.tcp://localhost:00000/WcfSample/123,123/CalculatorService,
-      language: dotnet,
-      runtime-id: Guid_1,
-      span.kind: server,
-      version: 1.0.0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_72,
     SpanId: Id_73,
     Name: http.server.request,
-    Resource: WcfSample/ICalculator/ServerSyncAdd,
+    Resource: WcfSample/ICalculator/ServerTaskAdd,
     Service: Samples.Wcf,
     Type: web,
-    Tags: {
-      component: Wcf,
-      custom-tag: DispatchMessageInspector,
-      env: integration_tests,
-      http.url: net.tcp://localhost:00000/WcfSample/123,123/CalculatorService,
-      language: dotnet,
-      runtime-id: Guid_1,
-      span.kind: server,
-      version: 1.0.0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_74,
-    SpanId: Id_75,
-    Name: http.server.request,
-    Resource: WcfSample/ICalculator/ServerSyncAdd,
-    Service: Samples.Wcf,
-    Type: web,
+    ParentId: Id_72,
     Tags: {
       component: Wcf,
       custom-tag: DispatchMessageInspector,
@@ -1099,148 +1249,11 @@
   },
   {
     TraceId: Id_70,
-    SpanId: Id_76,
-    Name: ServerSyncAdd,
-    Resource: ServerSyncAdd,
-    Service: Samples.Wcf,
-    ParentId: Id_71,
-    Tags: {
-      env: integration_tests,
-      language: dotnet,
-      version: 1.0.0
-    }
-  },
-  {
-    TraceId: Id_72,
-    SpanId: Id_77,
-    Name: ServerSyncAdd,
-    Resource: ServerSyncAdd,
+    SpanId: Id_74,
+    Name: ServerTaskAdd,
+    Resource: ServerTaskAdd,
     Service: Samples.Wcf,
     ParentId: Id_73,
-    Tags: {
-      env: integration_tests,
-      language: dotnet,
-      version: 1.0.0
-    }
-  },
-  {
-    TraceId: Id_74,
-    SpanId: Id_78,
-    Name: ServerSyncAdd,
-    Resource: ServerSyncAdd,
-    Service: Samples.Wcf,
-    ParentId: Id_75,
-    Tags: {
-      env: integration_tests,
-      language: dotnet,
-      version: 1.0.0
-    }
-  },
-  {
-    TraceId: Id_79,
-    SpanId: Id_80,
-    Name: http.server.request,
-    Resource: WcfSample/ICalculator/ServerTaskAdd,
-    Service: Samples.Wcf,
-    Type: web,
-    Tags: {
-      component: Wcf,
-      custom-tag: DispatchMessageInspector,
-      env: integration_tests,
-      http.url: net.tcp://localhost:00000/WcfSample/123,123/CalculatorService,
-      language: dotnet,
-      runtime-id: Guid_1,
-      span.kind: server,
-      version: 1.0.0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_81,
-    SpanId: Id_82,
-    Name: http.server.request,
-    Resource: WcfSample/ICalculator/ServerTaskAdd,
-    Service: Samples.Wcf,
-    Type: web,
-    Tags: {
-      component: Wcf,
-      custom-tag: DispatchMessageInspector,
-      env: integration_tests,
-      http.url: net.tcp://localhost:00000/WcfSample/123,123/CalculatorService,
-      language: dotnet,
-      runtime-id: Guid_1,
-      span.kind: server,
-      version: 1.0.0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_83,
-    SpanId: Id_84,
-    Name: http.server.request,
-    Resource: WcfSample/ICalculator/ServerTaskAdd,
-    Service: Samples.Wcf,
-    Type: web,
-    Tags: {
-      component: Wcf,
-      custom-tag: DispatchMessageInspector,
-      env: integration_tests,
-      http.url: net.tcp://localhost:00000/WcfSample/123,123/CalculatorService,
-      language: dotnet,
-      runtime-id: Guid_1,
-      span.kind: server,
-      version: 1.0.0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_79,
-    SpanId: Id_85,
-    Name: ServerTaskAdd,
-    Resource: ServerTaskAdd,
-    Service: Samples.Wcf,
-    ParentId: Id_80,
-    Tags: {
-      env: integration_tests,
-      language: dotnet,
-      version: 1.0.0
-    }
-  },
-  {
-    TraceId: Id_81,
-    SpanId: Id_86,
-    Name: ServerTaskAdd,
-    Resource: ServerTaskAdd,
-    Service: Samples.Wcf,
-    ParentId: Id_82,
-    Tags: {
-      env: integration_tests,
-      language: dotnet,
-      version: 1.0.0
-    }
-  },
-  {
-    TraceId: Id_83,
-    SpanId: Id_87,
-    Name: ServerTaskAdd,
-    Resource: ServerTaskAdd,
-    Service: Samples.Wcf,
-    ParentId: Id_84,
     Tags: {
       env: integration_tests,
       language: dotnet,
