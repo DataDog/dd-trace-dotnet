@@ -3,6 +3,9 @@ using System.ServiceModel;
 using System.ServiceModel.Channels;
 using System.Threading.Tasks;
 using ActivitySampleHelper;
+using OpenTelemetry;
+using OpenTelemetry.Instrumentation.Wcf;
+using OpenTelemetry.Trace;
 
 namespace Samples.Wcf.Client
 {
@@ -15,9 +18,19 @@ namespace Samples.Wcf.Client
             var calculatorServiceBaseAddress = new Uri(baseAddress, "CalculatorService");
             var address = new EndpointAddress(calculatorServiceBaseAddress);
             int exceptionsSeen = 0;
+
+            // Create an OpenTelemetry TracerProvider with WCF client instrumentation
+            // This causes the TelemetryEndpointBehavior to create Activities for each WCF client call
+            using var tracerProvider = Sdk.CreateTracerProviderBuilder()
+                .AddWcfInstrumentation()
+                .Build();
+
             using (var calculator = new CalculatorClient(binding, address))
             {
-                // Add the CustomEndpointBehavior / ClientMessageInspector to add headers on calls to the service
+                // Add OpenTelemetry WCF client instrumentation FIRST to create Activities before other inspectors run
+                calculator.ChannelFactory.Endpoint.EndpointBehaviors.Add(new TelemetryEndpointBehavior());
+
+                // Add the CustomEndpointBehavior / ClientMessageInspector SECOND to inject correct trace context
                 calculator.ChannelFactory.Endpoint.EndpointBehaviors.Add(new CustomEndpointBehavior());
 
                 exceptionsSeen += await Invoke_ServerSyncAdd_Endpoints(calculator);
