@@ -93,6 +93,7 @@
     <ClCompile Include="TagsTest.cpp" />
     <ClCompile Include="TagsHelperTest.cpp" />
     <ClCompile Include="ProviderTest.cpp" />
+    <ClCompile Include="ReferenceChainTest.cpp" />
     <ClCompile Include="ThreadsCpuManagerHelper.cpp" />
     <ClCompile Include="ChronoHelperTest.cpp" />
     <ClInclude Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\SecurityDescriptorHelpers.h" />

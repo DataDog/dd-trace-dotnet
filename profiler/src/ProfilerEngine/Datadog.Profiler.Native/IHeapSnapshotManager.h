@@ -12,4 +12,5 @@ public:
 
     virtual void SetRuntimeSessionParameters(uint64_t keywords, uint32_t verbosity) = 0;
     virtual std::string GetAndClearHeapSnapshotText() = 0;
+    virtual std::string GetAndClearReferenceTreeJson() = 0;
 };

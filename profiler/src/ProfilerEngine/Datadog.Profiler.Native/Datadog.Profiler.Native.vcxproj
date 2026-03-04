@@ -254,8 +254,14 @@
     <ClInclude Include="ExporterBuilder.h" />
     <ClInclude Include="FileHelper.h" />
     <ClInclude Include="FrameworkThreadInfo.h" />
+    <ClInclude Include="ClassLayoutCache.h" />
     <ClInclude Include="HeapSnapshotManager.h" />
     <ClInclude Include="IGCDumpListener.h" />
+    <ClInclude Include="ReferenceChainTraverser.h" />
+    <ClInclude Include="ReferenceChainTypes.h" />
+    <ClInclude Include="TypeReferenceTree.h" />
+    <ClInclude Include="TypeReferenceTreeJsonSerializer.h" />
+    <ClInclude Include="VisitedObjectSet.h" />
     <ClInclude Include="IGcSettingsProvider.h" />
     <ClInclude Include="IHeapSnapshotManager.h" />
     <ClInclude Include="INativeThreadList.h" />
@@ -414,7 +420,10 @@
     <ClCompile Include="ExporterBuilder.cpp" />
     <ClCompile Include="FileHelper.cpp" />
     <ClCompile Include="FrameworkThreadInfo.cpp" />
+    <ClCompile Include="ClassLayoutCache.cpp" />
     <ClCompile Include="HeapSnapshotManager.cpp" />
+    <ClCompile Include="ReferenceChainTraverser.cpp" />
+    <ClCompile Include="TypeReferenceTreeJsonSerializer.cpp" />
     <ClCompile Include="MemoryResourceManager.cpp" />
     <ClCompile Include="NativeThreadList.cpp" />
     <ClCompile Include="NetworkActivity.cpp" />

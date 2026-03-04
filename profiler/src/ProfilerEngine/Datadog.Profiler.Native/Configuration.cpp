@@ -123,6 +123,7 @@ Configuration::Configuration()
     _heapSnapshotInterval = ExtractHeapSnapshotInterval();
     _heapSnapshotCheckInterval = ExtractHeapSnapshotCheckInterval();
     _heapSnapshotMemoryPressureThreshold = GetEnvironmentValue(EnvironmentVariables::HeapSnapshotMemoryPressureThreshold, 85);
+    _testHeapSnapshotInterval = ExtractTestHeapSnapshotInterval();
     _heapHandleLimit = ExtractHeapHandleLimit();
     bool defaultUseManagedCodeCache =
     #if ARM64
@@ -867,7 +868,7 @@ std::chrono::milliseconds Configuration::ExtractHeapSnapshotCheckInterval() cons
         return std::chrono::milliseconds(interval);
     }
 
-    return 250ms;
+    return 500ms;
 }
 
 std::chrono::milliseconds Configuration::GetHeapSnapshotCheckInterval() const
@@ -878,6 +879,23 @@ std::chrono::milliseconds Configuration::GetHeapSnapshotCheckInterval() const
 uint32_t Configuration::GetHeapSnapshotMemoryPressureThreshold() const
 {
     return _heapSnapshotMemoryPressureThreshold;
+}
+
+std::chrono::seconds Configuration::ExtractTestHeapSnapshotInterval() const
+{
+    auto r = shared::GetEnvironmentValue(EnvironmentVariables::TestHeapSnapshotInterval);
+    int32_t interval;
+    if (TryParse(r, interval) && interval > 0)
+    {
+        return std::chrono::seconds(interval);
+    }
+
+    return 0s;
+}
+
+std::chrono::seconds Configuration::GetTestHeapSnapshotInterval() const
+{
+    return _testHeapSnapshotInterval;
 }
 
 int32_t Configuration::ExtractHeapHandleLimit() const
