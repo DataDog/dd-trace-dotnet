@@ -6889,7 +6889,7 @@ public class DuckTypeAotProcessorsTests
     }
 
     [Fact]
-    public void GenerateProcessorShouldSupportFieldAccessorsOnValueTypeTargets()
+    public void GenerateProcessorShouldReportFieldAccessorsOnValueTypeTargetsAsIncompatible()
     {
         var tempDirectory = CreateTempDirectory();
         try
@@ -6939,43 +6939,10 @@ public class DuckTypeAotProcessorsTests
             var compatibilityMatrixPath = $"{outputPath}.compat.json";
             var matrix = JsonConvert.DeserializeObject<DuckTypeAotCompatibilityMatrix>(File.ReadAllText(compatibilityMatrixPath));
             matrix.Should().NotBeNull();
-            matrix!.Mappings.Should().ContainSingle(mapping =>
-                string.Equals(mapping.Status, DuckTypeAotCompatibilityStatuses.Compatible, StringComparison.Ordinal));
-
-            var loadContext = new AssemblyLoadContext("DuckTypeAotProcessorsTests-ValueTypeTarget-Field", isCollectible: true);
-            try
-            {
-                var generatedAssembly = loadContext.LoadFromAssemblyPath(outputPath);
-                var contextTestAssembly = loadContext.LoadFromAssemblyPath(proxyAssemblyPath);
-
-                var generatedProxyType = generatedAssembly.GetTypes().Single(type =>
-                    string.Equals(type.Namespace, "Datadog.Trace.DuckTyping.Generated.Proxies", StringComparison.Ordinal) &&
-                    type.GetInterfaces().Any(@interface => string.Equals(@interface.FullName, typeof(ITestDuckFieldProxy).FullName, StringComparison.Ordinal)));
-                var constructor = GetDuckProxyConstructor(generatedProxyType);
-                constructor.Should().NotBeNull();
-
-                var targetType = contextTestAssembly.GetType(typeof(TestDuckStructFieldTarget).FullName!, throwOnError: true)!;
-                var targetCtor = targetType.GetConstructor(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, binder: null, types: [typeof(string)], modifiers: null);
-                targetCtor.Should().NotBeNull();
-                var targetInstance = targetCtor!.Invoke(["initial"]);
-
-                var proxyInstance = constructor!.Invoke([targetInstance]);
-                var getValueMethod = generatedProxyType.GetMethod("get_Value", Type.EmptyTypes);
-                getValueMethod.Should().NotBeNull();
-                var before = getValueMethod!.Invoke(proxyInstance, Array.Empty<object>());
-                before.Should().Be("initial");
-
-                var setValueMethod = generatedProxyType.GetMethod("set_Value", [typeof(string)]);
-                setValueMethod.Should().NotBeNull();
-                _ = setValueMethod!.Invoke(proxyInstance, ["after"]);
-
-                var after = getValueMethod.Invoke(proxyInstance, Array.Empty<object>());
-                after.Should().Be("after");
-            }
-            finally
-            {
-                loadContext.Unload();
-            }
+            var mapping = matrix!.Mappings.Should().ContainSingle().Subject;
+            mapping.Status.Should().Be(DuckTypeAotCompatibilityStatuses.IncompatibleMethodSignature);
+            mapping.Details.Should().Contain("belongs to value type");
+            mapping.Details.Should().Contain(typeof(TestDuckStructFieldTarget).FullName!);
         }
         finally
         {
@@ -7391,6 +7358,130 @@ public class DuckTypeAotProcessorsTests
                 var valueCopy = (TestDuckNullableStructCopyProxy)valueCopyObject!;
                 valueCopy.Value.Should().NotBeNull();
                 valueCopy.Value!.Value.Name.Should().Be("beta");
+            }
+            finally
+            {
+                loadContext.Unload();
+            }
+        }
+        finally
+        {
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
+
+    [Fact]
+    public void GenerateProcessorShouldBoxNullableValueTypeBeforeDuckChainCreateCallInStructCopy()
+    {
+        var tempDirectory = CreateTempDirectory();
+        try
+        {
+            var proxyAssemblyPath = typeof(DuckTypeAotProcessorsTests).Assembly.Location;
+            var targetAssemblyPath = typeof(TestDuckNullableValueTypeStructCopyTarget).Assembly.Location;
+            var proxyAssemblyName = AssemblyName.GetAssemblyName(proxyAssemblyPath).Name;
+            var targetAssemblyName = AssemblyName.GetAssemblyName(targetAssemblyPath).Name;
+
+            var outputPath = Path.Combine(tempDirectory, "Datadog.Trace.DuckType.AotRegistry.StructCopy.NullableValueType.dll");
+            var mapFilePath = Path.Combine(tempDirectory, "ducktype-aot-map-struct-copy-nullable-value-type.json");
+            var trimmerDescriptorPath = Path.Combine(tempDirectory, "ducktype-aot-struct-copy-nullable-value-type.linker.xml");
+            var propsPath = Path.Combine(tempDirectory, "ducktype-aot-struct-copy-nullable-value-type.props");
+
+            var mapDocument = new
+            {
+                mappings = new[]
+                {
+                    new
+                    {
+                        mode = "forward",
+                        proxyType = typeof(TestDuckNullableInnerProxy).FullName,
+                        proxyAssembly = proxyAssemblyName,
+                        targetType = typeof(TestDuckNullableValueTypeInnerTarget).FullName,
+                        targetAssembly = targetAssemblyName
+                    },
+                    new
+                    {
+                        mode = "forward",
+                        proxyType = typeof(TestDuckNullableValueTypeStructCopyProxy).FullName,
+                        proxyAssembly = proxyAssemblyName,
+                        targetType = typeof(TestDuckNullableValueTypeStructCopyTarget).FullName,
+                        targetAssembly = targetAssemblyName
+                    }
+                }
+            };
+            File.WriteAllText(mapFilePath, JsonConvert.SerializeObject(mapDocument, Formatting.Indented));
+
+            var options = new DuckTypeAotGenerateOptions(
+                proxyAssemblies: new[] { proxyAssemblyPath },
+                targetAssemblies: new[] { targetAssemblyPath },
+                targetFolders: Array.Empty<string>(),
+                targetFilters: new[] { "*.dll" },
+                mapFile: mapFilePath,
+                mappingCatalog: null,
+                genericInstantiationsFile: null,
+                outputPath: outputPath,
+                assemblyName: "Datadog.Trace.DuckType.AotRegistry.StructCopy.NullableValueType",
+                trimmerDescriptorPath: trimmerDescriptorPath,
+                propsPath: propsPath);
+
+            var exitCode = DuckTypeAotGenerateProcessor.Process(options);
+            exitCode.Should().Be(0);
+
+            var compatibilityMatrixPath = $"{outputPath}.compat.json";
+            var matrix = JsonConvert.DeserializeObject<DuckTypeAotCompatibilityMatrix>(File.ReadAllText(compatibilityMatrixPath));
+            matrix.Should().NotBeNull();
+            matrix!.Mappings.Should().OnlyContain(mapping =>
+                string.Equals(mapping.Status, DuckTypeAotCompatibilityStatuses.Compatible, StringComparison.Ordinal));
+
+            using (var generatedModule = ModuleDefMD.Load(outputPath))
+            {
+                var bootstrapType = generatedModule.Find("Datadog.Trace.DuckTyping.Generated.DuckTypeAotRegistryBootstrap", isReflectionName: false);
+                bootstrapType.Should().NotBeNull();
+
+                var activatorMethod = bootstrapType!.Methods.Single(method =>
+                    method.Name.StartsWith("CreateProxy_", StringComparison.Ordinal) &&
+                    method.MethodSig.Params.Count == 1 &&
+                    string.Equals(method.MethodSig.Params[0].FullName, typeof(TestDuckNullableValueTypeStructCopyTarget).FullName, StringComparison.Ordinal));
+
+                activatorMethod.Body.Should().NotBeNull();
+                var instructions = activatorMethod.Body!.Instructions.ToList();
+
+                var callIndex = instructions.FindIndex(instruction =>
+                    instruction.OpCode == OpCodes.Call &&
+                    instruction.Operand is IMethod method &&
+                    method.MethodSig.Params.Count == 1 &&
+                    method.MethodSig.Params[0].ElementType == ElementType.Object);
+
+                callIndex.Should().BeGreaterThanOrEqualTo(0);
+
+                var previousInstruction = instructions.Take(callIndex).Last(instruction => instruction.OpCode != OpCodes.Nop);
+                previousInstruction.OpCode.Should().Be(OpCodes.Box);
+                previousInstruction.Operand.Should().BeAssignableTo<ITypeDefOrRef>();
+                var boxedType = ((ITypeDefOrRef)previousInstruction.Operand!).FullName;
+                boxedType.Should().Contain("System.Nullable`1");
+                boxedType.Should().Contain(typeof(TestDuckNullableValueTypeInnerTarget).FullName);
+            }
+
+            var loadContext = new AssemblyLoadContext("DuckTypeAotProcessorsTests-StructCopy-NullableValueType", isCollectible: true);
+            try
+            {
+                var generatedAssembly = loadContext.LoadFromAssemblyPath(outputPath);
+                var bootstrapType = generatedAssembly.GetType("Datadog.Trace.DuckTyping.Generated.DuckTypeAotRegistryBootstrap");
+                bootstrapType.Should().NotBeNull();
+                var initializeMethod = bootstrapType!.GetMethod("Initialize", BindingFlags.Public | BindingFlags.Static);
+                initializeMethod.Should().NotBeNull();
+                _ = initializeMethod!.Invoke(obj: null, parameters: null);
+
+                var nullCopyObject = DuckType.Create(typeof(TestDuckNullableValueTypeStructCopyProxy), new TestDuckNullableValueTypeStructCopyTarget(value: null));
+                nullCopyObject.Should().NotBeNull();
+                var nullCopy = (TestDuckNullableValueTypeStructCopyProxy)nullCopyObject!;
+                nullCopy.Value.Name.Should().BeNull();
+
+                var valueCopyObject = DuckType.Create(
+                    typeof(TestDuckNullableValueTypeStructCopyProxy),
+                    new TestDuckNullableValueTypeStructCopyTarget(new TestDuckNullableValueTypeInnerTarget("gamma")));
+                valueCopyObject.Should().NotBeNull();
+                var valueCopy = (TestDuckNullableValueTypeStructCopyProxy)valueCopyObject!;
+                valueCopy.Value.Name.Should().Be("gamma");
             }
             finally
             {

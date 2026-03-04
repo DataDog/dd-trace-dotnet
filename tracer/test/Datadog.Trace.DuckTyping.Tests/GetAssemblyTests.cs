@@ -16,6 +16,7 @@ namespace Datadog.Trace.DuckTyping.Tests
     {
         private const string TestModeEnvironmentVariable = "DD_DUCKTYPE_TEST_MODE";
         private const string AotModeValue = "aot";
+        private const string DynamicModeValue = "dynamic";
 
         [Fact]
         public void GetAssemblyTest()
@@ -56,7 +57,9 @@ namespace Datadog.Trace.DuckTyping.Tests
 
             // In AOT mode we load a generated registry assembly instead of creating thousands of
             // dynamic ducktype assemblies, so this lower-bound assertion is not meaningful.
-            if (string.Equals(Environment.GetEnvironmentVariable(TestModeEnvironmentVariable), AotModeValue, StringComparison.OrdinalIgnoreCase))
+            var testMode = Environment.GetEnvironmentVariable(TestModeEnvironmentVariable);
+            if (string.Equals(testMode, AotModeValue, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(testMode, DynamicModeValue, StringComparison.OrdinalIgnoreCase))
             {
                 return;
             }
