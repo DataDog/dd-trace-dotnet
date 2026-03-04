@@ -127,6 +127,27 @@ namespace Datadog.Trace.Tests.Debugger
                 span.GetTag($"{CodeOriginTag}.frames.0.type").Should().Be(type.FullName);
             }
 
+#if !NETFRAMEWORK
+            [Fact]
+            public void SetCodeOriginForEntrySpan_WithAspNetCoreTags_ShouldSetCorrectTags()
+            {
+                // Arrange
+                SpanCodeOrigin spanCodeOrigin = CreateSpanCodeOrigin();
+                var span = CreateAspNetCoreSpan();
+                var controllerType = typeof(TestController);
+                var method = controllerType.GetMethod(nameof(TestController.Get));
+
+                // Act
+                spanCodeOrigin.SetCodeOriginForEntrySpan(span, controllerType, method);
+
+                // Assert
+                span.GetTag("_dd.code_origin.type").Should().Be("entry");
+                span.GetTag("_dd.code_origin.frames.0.method").Should().Be(nameof(TestController.Get));
+                span.GetTag("_dd.code_origin.frames.0.type").Should().Be("Datadog.Trace.Tests.Debugger.SpanCodeOriginTests+TestController");
+                span.GetTag($"{CodeOriginTag}.frames.{0}.file").Should().EndWithEquivalentOf("SpanCodeOriginTests.cs");
+            }
+#endif
+
             [Fact]
             public void SetCodeOriginForEntrySpan_WithThirdPartyAssembly_ShouldNotSetTags()
             {
@@ -228,6 +249,12 @@ namespace Datadog.Trace.Tests.Debugger
             {
                 var spanContext = new SpanContext(1234, 5678);
                 return new Span(spanContext, DateTimeOffset.UtcNow, new WebTags());
+            }
+
+            private Span CreateAspNetCoreSpan()
+            {
+                var spanContext = new SpanContext(1234, 5678);
+                return new Span(spanContext, DateTimeOffset.UtcNow, new AspNetCoreTags());
             }
 
             private int TestMethod() => 42;

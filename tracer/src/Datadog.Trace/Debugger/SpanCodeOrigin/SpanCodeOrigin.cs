@@ -113,6 +113,24 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
                 // Add code origin tags to entry span
                 // Adds 4 tags always (type, index, method, typename) + 3 tags if PDB available (file, line, column)
                 // Size: ~210-300 bytes without PDB, ~250-500 bytes with PDB
+                if (span.Tags is AspNetCoreTags aspNetCoreTags)
+                {
+                    aspNetCoreTags.CodeOriginType = "entry";
+                    aspNetCoreTags.CodeOriginFrameIndex = "0";
+                    aspNetCoreTags.CodeOriginFrameMethod = methodName;
+                    aspNetCoreTags.CodeOriginFrameType = typeFullName;
+
+                    if (sp is { } cached)
+                    {
+                        aspNetCoreTags.SetTags(
+                            new(_tags.File[0], cached.Url),
+                            new(_tags.Line[0], cached.Line),
+                            new(_tags.Column[0], cached.Column));
+                    }
+
+                    return;
+                }
+
                 if (span.Tags is TagsList tagsList)
                 {
                     if (sp is { } cached)
