@@ -19,7 +19,7 @@ using Xunit;
 namespace Datadog.Trace.DuckTyping.Tests
 {
     [Collection(nameof(GetAssemblyTestsCollection))]
-    public class DuckTypeAotBibleExcerptsParityTests
+    public class DuckTypeAotBibleExcerptsParityTests : IDisposable
     {
         private static readonly MethodInfo? DynamicForwardFactory = typeof(DuckType).GetMethod("GetOrCreateDynamicProxyType", BindingFlags.NonPublic | BindingFlags.Static);
         private static readonly MethodInfo? DynamicReverseFactory = typeof(DuckType).GetMethod("GetOrCreateDynamicReverseProxyType", BindingFlags.NonPublic | BindingFlags.Static);
@@ -27,6 +27,12 @@ namespace Datadog.Trace.DuckTyping.Tests
         public DuckTypeAotBibleExcerptsParityTests()
         {
             DuckTypeAotEngine.ResetForTests();
+        }
+
+        public void Dispose()
+        {
+            DuckType.ResetRuntimeModeForTests();
+            DuckTypeTestRuntimeBootstrap.ReinitializeAotRegistryForTests();
         }
 
         [Fact]
@@ -237,6 +243,16 @@ namespace Datadog.Trace.DuckTyping.Tests
         {
             const string scenarioId = "TX-I";
             DuckTypeAotEngine.RegisterProxy(
+                typeof(TxIInnerCopy),
+                typeof(TxIInnerTarget),
+                typeof(TxIInnerCopy),
+                instance =>
+                {
+                    var target = (TxIInnerTarget)instance!;
+                    return new TxIInnerCopy { Name = target.Name };
+                });
+
+            DuckTypeAotEngine.RegisterProxy(
                 typeof(TxIRootCopy),
                 typeof(TxIRootTarget),
                 typeof(TxIRootCopy),
@@ -291,6 +307,12 @@ namespace Datadog.Trace.DuckTyping.Tests
         public void DifferentialParityTXKRefOutObjectBridgeShouldMatchBetweenDynamicAndAot()
         {
             const string scenarioId = "TX-K";
+            DuckTypeAotEngine.RegisterProxy(
+                typeof(ITxKInnerProxy),
+                typeof(TxKInnerTarget),
+                typeof(TxKInnerAotProxy),
+                instance => new TxKInnerAotProxy((TxKInnerTarget)instance!));
+
             DuckTypeAotEngine.RegisterProxy(
                 typeof(ITxKMethodProxy),
                 typeof(TxKMethodTarget),
@@ -472,6 +494,16 @@ namespace Datadog.Trace.DuckTyping.Tests
         public void DifferentialParityTXQDeepGenericPrivateTypeGraphShouldMatchBetweenDynamicAndAot()
         {
             const string scenarioId = "TX-Q";
+            var innerTargetType = typeof(TxQDeepGenericTarget)
+                                 .GetProperty("Method", BindingFlags.Instance | BindingFlags.NonPublic)!
+                                 .PropertyType;
+
+            DuckTypeAotEngine.RegisterProxy(
+                typeof(ITxQDeepGenericInnerProxy),
+                innerTargetType,
+                typeof(TxQDeepGenericInnerAotProxy),
+                instance => new TxQDeepGenericInnerAotProxy(instance!));
+
             DuckTypeAotEngine.RegisterProxy(
                 typeof(ITxQDeepGenericProxy),
                 typeof(TxQDeepGenericTarget),

@@ -11,6 +11,7 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Runtime.ExceptionServices;
+using System.Runtime.Serialization;
 using System.Threading;
 using Datadog.Trace.Util;
 
@@ -41,6 +42,20 @@ namespace Datadog.Trace.DuckTyping
         /// <remarks>This field participates in shared runtime state and must remain thread-safe.</remarks>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static readonly ConcurrentDictionary<TypesTuple, Registration> ReverseRegistry = new();
+
+        /// <summary>
+        /// Forward AOT failure registry keyed by (proxy definition type, target type).
+        /// </summary>
+        /// <remarks>This field participates in shared runtime state and must remain thread-safe.</remarks>
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private static readonly ConcurrentDictionary<TypesTuple, DuckType.CreateTypeResult> ForwardFailureRegistry = new();
+
+        /// <summary>
+        /// Reverse AOT failure registry keyed by (derive-from type, delegation type).
+        /// </summary>
+        /// <remarks>This field participates in shared runtime state and must remain thread-safe.</remarks>
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private static readonly ConcurrentDictionary<TypesTuple, DuckType.CreateTypeResult> ReverseFailureRegistry = new();
 
         /// <summary>
         /// Forward miss cache that stores deterministic missing-registration failures.
@@ -183,6 +198,28 @@ namespace Datadog.Trace.DuckTyping
         }
 
         /// <summary>
+        /// Registers a forward AOT mapping failure that should rethrow a dynamic-equivalent ducktyping exception.
+        /// </summary>
+        /// <param name="proxyDefinitionType">The proxy definition type value.</param>
+        /// <param name="targetType">The target type value.</param>
+        /// <param name="exceptionType">The exception type to rethrow when the mapping is requested.</param>
+        internal static void RegisterProxyFailure(Type proxyDefinitionType, Type targetType, Type exceptionType)
+        {
+            RegisterFailure(proxyDefinitionType, targetType, exceptionType, reverse: false);
+        }
+
+        /// <summary>
+        /// Registers a reverse AOT mapping failure that should rethrow a dynamic-equivalent ducktyping exception.
+        /// </summary>
+        /// <param name="typeToDeriveFrom">The type to derive from value.</param>
+        /// <param name="delegationType">The delegation type value.</param>
+        /// <param name="exceptionType">The exception type to rethrow when the mapping is requested.</param>
+        internal static void RegisterReverseProxyFailure(Type typeToDeriveFrom, Type delegationType, Type exceptionType)
+        {
+            RegisterFailure(typeToDeriveFrom, delegationType, exceptionType, reverse: true);
+        }
+
+        /// <summary>
         /// Validates that generated registry contract metadata matches the currently loaded Datadog.Trace runtime.
         /// </summary>
         /// <param name="contract">Contract payload emitted into the generated registry bootstrap.</param>
@@ -258,6 +295,8 @@ namespace Datadog.Trace.DuckTyping
             {
                 ForwardRegistry.Clear();
                 ReverseRegistry.Clear();
+                ForwardFailureRegistry.Clear();
+                ReverseFailureRegistry.Clear();
                 ForwardMissCache.Clear();
                 ReverseMissCache.Clear();
                 _registeredRegistryAssemblyIdentity = null;
@@ -281,9 +320,79 @@ namespace Datadog.Trace.DuckTyping
                 return registration.CreateTypeResult;
             }
 
+            var failureRegistry = reverse ? ReverseFailureRegistry : ForwardFailureRegistry;
+            if (failureRegistry.TryGetValue(key, out var failureResult))
+            {
+                return failureResult;
+            }
+
+            if (TryResolveForwardFallbackResult(key, reverse, registry, failureRegistry, out var fallbackResult))
+            {
+                return fallbackResult;
+            }
+
             // Misses are cached too, so unsupported mappings fail deterministically across threads and repeated calls.
             var missCache = reverse ? ReverseMissCache : ForwardMissCache;
             return missCache.GetOrAdd(key, missingKey => CreateMissingResult(missingKey, reverse));
+        }
+
+        /// <summary>
+        /// Attempts to resolve a forward mapping from compatible fallback target types.
+        /// </summary>
+        /// <param name="key">The key value.</param>
+        /// <param name="reverse">The reverse value.</param>
+        /// <param name="registry">The registry value.</param>
+        /// <param name="failureRegistry">The failure registry value.</param>
+        /// <param name="result">The result value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
+        private static bool TryResolveForwardFallbackResult(
+            TypesTuple key,
+            bool reverse,
+            ConcurrentDictionary<TypesTuple, Registration> registry,
+            ConcurrentDictionary<TypesTuple, DuckType.CreateTypeResult> failureRegistry,
+            out DuckType.CreateTypeResult result)
+        {
+            result = default;
+            if (reverse)
+            {
+                return false;
+            }
+
+            var proxyDefinitionType = key.ProxyDefinitionType;
+            for (var baseType = key.TargetType.BaseType; baseType is not null; baseType = baseType.BaseType)
+            {
+                var baseKey = new TypesTuple(proxyDefinitionType, baseType);
+                if (registry.TryGetValue(baseKey, out var baseRegistration))
+                {
+                    result = baseRegistration.CreateTypeResult;
+                    return true;
+                }
+
+                if (failureRegistry.TryGetValue(baseKey, out var baseFailureResult))
+                {
+                    result = baseFailureResult;
+                    return true;
+                }
+            }
+
+            if (key.TargetType.IsValueType && Nullable.GetUnderlyingType(key.TargetType) is null)
+            {
+                var nullableTargetType = typeof(Nullable<>).MakeGenericType(key.TargetType);
+                var nullableKey = new TypesTuple(proxyDefinitionType, nullableTargetType);
+                if (registry.TryGetValue(nullableKey, out var nullableRegistration))
+                {
+                    result = nullableRegistration.CreateTypeResult;
+                    return true;
+                }
+
+                if (failureRegistry.TryGetValue(nullableKey, out var nullableFailureResult))
+                {
+                    result = nullableFailureResult;
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         /// <summary>
@@ -331,11 +440,123 @@ namespace Datadog.Trace.DuckTyping
                 registry[key] = registration;
 
                 // Registration must invalidate prior misses so the global engine can recover from earlier lookup order.
+                var failureRegistry = reverse ? ReverseFailureRegistry : ForwardFailureRegistry;
+                _ = failureRegistry.TryRemove(key, out _);
+
                 var missCache = reverse ? ReverseMissCache : ForwardMissCache;
                 _ = missCache.TryRemove(key, out _);
 
                 Interlocked.Increment(ref _cacheVersion);
             }
+        }
+
+        /// <summary>
+        /// Adds a failure registration into the forward or reverse failure registry.
+        /// </summary>
+        /// <param name="proxyDefinitionType">The proxy definition type value.</param>
+        /// <param name="targetType">The target type value.</param>
+        /// <param name="exceptionType">The exception type to rethrow for this mapping.</param>
+        /// <param name="reverse">Whether the registration belongs to the reverse registry.</param>
+        private static void RegisterFailure(Type proxyDefinitionType, Type targetType, Type exceptionType, bool reverse)
+        {
+            if (proxyDefinitionType is null) { ThrowHelper.ThrowArgumentNullException(nameof(proxyDefinitionType)); }
+            if (targetType is null) { ThrowHelper.ThrowArgumentNullException(nameof(targetType)); }
+            if (exceptionType is null) { ThrowHelper.ThrowArgumentNullException(nameof(exceptionType)); }
+            if (!typeof(Exception).IsAssignableFrom(exceptionType))
+            {
+                throw new ArgumentException($"Failure exception type '{exceptionType}' must derive from Exception.", nameof(exceptionType));
+            }
+
+            var key = new TypesTuple(proxyDefinitionType, targetType);
+            var exceptionInfo = ExceptionDispatchInfo.Capture(CreateRegisteredFailureException(exceptionType));
+            var createTypeResult = new DuckType.CreateTypeResult(proxyDefinitionType, proxyType: null, targetType, activator: null, exceptionInfo);
+
+            lock (RegistrationLock)
+            {
+                var registry = reverse ? ReverseRegistry : ForwardRegistry;
+                // A concrete registration always takes precedence over a failure registration.
+                if (registry.ContainsKey(key))
+                {
+                    return;
+                }
+
+                var failureRegistry = reverse ? ReverseFailureRegistry : ForwardFailureRegistry;
+                if (failureRegistry.ContainsKey(key))
+                {
+                    return;
+                }
+
+                failureRegistry[key] = createTypeResult;
+
+                var missCache = reverse ? ReverseMissCache : ForwardMissCache;
+                _ = missCache.TryRemove(key, out _);
+
+                Interlocked.Increment(ref _cacheVersion);
+            }
+        }
+
+        /// <summary>
+        /// Creates an exception instance for a registered AOT failure mapping.
+        /// </summary>
+        /// <param name="exceptionType">The exception type value.</param>
+        /// <returns>The resulting exception value.</returns>
+        private static Exception CreateRegisteredFailureException(Type exceptionType)
+        {
+            if (exceptionType == typeof(DuckTypePropertyCantBeWrittenException))
+            {
+                var sentinelProperty = typeof(string).GetProperty(nameof(string.Length), BindingFlags.Public | BindingFlags.Instance);
+                if (sentinelProperty is null)
+                {
+                    throw new InvalidOperationException("Unable to resolve sentinel property for DuckTypePropertyCantBeWrittenException.");
+                }
+
+                try
+                {
+                    DuckTypePropertyCantBeWrittenException.Throw(sentinelProperty);
+                }
+                catch (Exception ex)
+                {
+                    return ex;
+                }
+            }
+
+            if (exceptionType == typeof(DuckTypeFieldIsReadonlyException))
+            {
+                var sentinelField = typeof(string).GetField(nameof(string.Empty), BindingFlags.Public | BindingFlags.Static);
+                if (sentinelField is null)
+                {
+                    throw new InvalidOperationException("Unable to resolve sentinel field for DuckTypeFieldIsReadonlyException.");
+                }
+
+                try
+                {
+                    DuckTypeFieldIsReadonlyException.Throw(sentinelField);
+                }
+                catch (Exception ex)
+                {
+                    return ex;
+                }
+            }
+
+#if NET6_0_OR_GREATER
+#pragma warning disable SYSLIB0050 // Formatter-based uninitialized exception creation is used only for parity-compatible AOT failure replay.
+#endif
+            try
+            {
+                if (FormatterServices.GetUninitializedObject(exceptionType) is Exception uninitializedException)
+                {
+                    return uninitializedException;
+                }
+            }
+            catch (Exception ex)
+            {
+                return new InvalidOperationException($"AOT duck typing failure exception type '{exceptionType}' could not be created.", ex);
+            }
+#if NET6_0_OR_GREATER
+#pragma warning restore SYSLIB0050
+#endif
+
+            return new InvalidOperationException($"AOT duck typing failure exception type '{exceptionType}' is not supported.");
         }
 
         /// <summary>

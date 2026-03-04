@@ -50,7 +50,22 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
 
             DuckType.ResetRuntimeModeForTests();
+            InitializeAotRegistryFromEnvironmentPath();
+        }
 
+        internal static void ReinitializeAotRegistryForTests()
+        {
+            var mode = Environment.GetEnvironmentVariable(TestModeEnvironmentVariable);
+            if (!string.Equals(mode, AotModeValue, StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            InitializeAotRegistryFromEnvironmentPath();
+        }
+
+        private static void InitializeAotRegistryFromEnvironmentPath()
+        {
             var registryPath = Environment.GetEnvironmentVariable(AotRegistryPathEnvironmentVariable);
             if (string.IsNullOrWhiteSpace(registryPath))
             {

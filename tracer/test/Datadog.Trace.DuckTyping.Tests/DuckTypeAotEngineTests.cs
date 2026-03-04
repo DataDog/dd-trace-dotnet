@@ -20,11 +20,17 @@ using Xunit;
 namespace Datadog.Trace.DuckTyping.Tests
 {
     [Collection(nameof(GetAssemblyTestsCollection))]
-    public class DuckTypeAotEngineTests
+    public class DuckTypeAotEngineTests : IDisposable
     {
         public DuckTypeAotEngineTests()
         {
             DuckType.ResetRuntimeModeForTests();
+        }
+
+        public void Dispose()
+        {
+            DuckType.ResetRuntimeModeForTests();
+            DuckTypeTestRuntimeBootstrap.ReinitializeAotRegistryForTests();
         }
 
         [Fact]

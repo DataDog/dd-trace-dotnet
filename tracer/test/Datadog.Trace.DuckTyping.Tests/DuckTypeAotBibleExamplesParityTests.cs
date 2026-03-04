@@ -16,7 +16,7 @@ using Xunit;
 namespace Datadog.Trace.DuckTyping.Tests
 {
     [Collection(nameof(GetAssemblyTestsCollection))]
-    public class DuckTypeAotBibleExamplesParityTests
+    public class DuckTypeAotBibleExamplesParityTests : IDisposable
     {
         private static readonly MethodInfo? DynamicForwardFactory = typeof(DuckType).GetMethod("GetOrCreateDynamicProxyType", BindingFlags.NonPublic | BindingFlags.Static);
         private static readonly MethodInfo? DynamicReverseFactory = typeof(DuckType).GetMethod("GetOrCreateDynamicReverseProxyType", BindingFlags.NonPublic | BindingFlags.Static);
@@ -24,6 +24,12 @@ namespace Datadog.Trace.DuckTyping.Tests
         public DuckTypeAotBibleExamplesParityTests()
         {
             DuckTypeAotEngine.ResetForTests();
+        }
+
+        public void Dispose()
+        {
+            DuckType.ResetRuntimeModeForTests();
+            DuckTypeTestRuntimeBootstrap.ReinitializeAotRegistryForTests();
         }
 
         [Fact]
@@ -357,6 +363,11 @@ namespace Datadog.Trace.DuckTyping.Tests
                 typeof(Ex15TransformTarget),
                 typeof(Ex15TransformAotProxy),
                 instance => new Ex15TransformAotProxy((Ex15TransformTarget)instance!));
+            DuckTypeAotEngine.RegisterProxy(
+                typeof(IEx15InnerProxy),
+                typeof(Ex15InnerTarget),
+                typeof(Ex15InnerAotProxy),
+                instance => new Ex15InnerAotProxy((Ex15InnerTarget)instance!));
 
             var dynamicResult = InvokeDynamicForward(typeof(IEx15TransformProxy), typeof(Ex15TransformTarget));
             var aotResult = DuckTypeAotEngine.GetOrCreateProxyType(typeof(IEx15TransformProxy), typeof(Ex15TransformTarget));
