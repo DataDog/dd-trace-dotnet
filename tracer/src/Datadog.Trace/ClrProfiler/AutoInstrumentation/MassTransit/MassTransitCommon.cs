@@ -198,16 +198,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
         /// </summary>
         internal static string DetermineMessagingSystem(string? address)
         {
-            if (string.IsNullOrEmpty(address))
+            if (StringUtil.IsNullOrWhiteSpace(address))
             {
-                return "in-memory";
+                Log.Debug("The address is null or empty. Unable to determine the messaging system");
+                return "unknown";
             }
 
-            if (address!.StartsWith("rabbitmq://", StringComparison.OrdinalIgnoreCase))
+            if (address.StartsWith("rabbitmq://", StringComparison.OrdinalIgnoreCase))
             {
                 return "rabbitmq";
             }
 
+            // this scenario is untested
             if (address.StartsWith("sb://", StringComparison.OrdinalIgnoreCase) ||
                 address.IndexOf("servicebus", StringComparison.OrdinalIgnoreCase) >= 0)
             {
@@ -229,7 +231,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
                 return "in-memory";
             }
 
-            return "in-memory";
+            Log.Debug("Unable to determine messaging system for address: {DestinationAddress}", address);
+            return "unknown";
         }
 
         /// <summary>
@@ -301,15 +304,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
             conversationId = context?.ConversationId;
             correlationId = context?.CorrelationId;
         }
-
-        /// <summary>
-        /// Tries to get a property value from an object using reflection.
-        /// Searches both direct properties and interface properties.
-        /// </summary>
-        /// <remarks>
-        /// MassTransit's MessageConsumeContext{T} only has 'Message' as direct property,
-        /// other properties like DestinationAddress come from interfaces.
-        /// </remarks>
 
         /// <summary>
         /// Helper method to get a property value using reflection.
