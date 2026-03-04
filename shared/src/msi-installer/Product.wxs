@@ -14,15 +14,15 @@
 
     <Icon Id="datadog.ico" SourceFile="datadog-icon.ico"/>
     <PropertyRef Id="WIX_IS_NETFRAMEWORK_461_OR_LATER_INSTALLED" />
-    <Property Id="ARPPRODUCTICON">datadog.ico</Property>
-    <Property Id="ARPURLINFOABOUT">https://datadoghq.com/</Property>
-    <Property Id="ARPHELPLINK">https://datadoghq.com/support/</Property>
+    <Property Id="ARPPRODUCTICON" Value="datadog.ico" />
+    <Property Id="ARPURLINFOABOUT" Value="https://datadoghq.com/" />
+    <Property Id="ARPHELPLINK" Value="https://datadoghq.com/support/" />
     <Property Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER"/>
     <Property Id="PATHSHORTCUT" Value="1" />
     <Property Id="DD_DOTNET_LINK" Value="https://docs.datadoghq.com/tracing/troubleshooting/dotnet_diagnostic_tool/" />
       
       <Property Id="INSTALLFOLDER">
-      <RegistrySearch Id="RegistrySearch" Type="raw" Root="HKLM" Win64="$(var.Win64)" Key="Software\$(var.Company)\$(var.ProductName)" Name="InstallPath"/>
+      <RegistrySearch Id="RegistrySearch" Type="raw" Root="HKLM" Key="Software\$(var.Company)\$(var.ProductName)" Name="InstallPath"/>
     </Property>
 
     <UIRef Id="WixUI_InstallDir_Custom"/>
