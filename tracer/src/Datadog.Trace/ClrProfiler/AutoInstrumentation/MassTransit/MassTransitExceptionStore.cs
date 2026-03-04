@@ -12,38 +12,35 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
 {
     /// <summary>
     /// Stores exceptions captured from MassTransit NotifyFaulted calls.
-    /// The exceptions are keyed by Activity.TraceId so they can be retrieved
-    /// when the DiagnosticObserver receives the Stop event. We use TraceId instead
-    /// of Activity.Id because NotifyFaulted may be called from a child activity
-    /// (e.g., Handle or Saga) while the DiagnosticObserver Stop event fires on
-    /// the parent activity (Consume).
+    /// The exceptions are keyed by the Datadog span ID of the active scope at the time
+    /// NotifyFaulted is called, so they can be retrieved when OnStop closes that span.
     /// </summary>
     internal static class MassTransitExceptionStore
     {
-        private static readonly ConcurrentDictionary<string, Exception> Exceptions = new();
+        private static readonly ConcurrentDictionary<ulong, Exception> Exceptions = new();
 
         /// <summary>
-        /// Stores an exception for the given trace ID.
+        /// Stores an exception for the given span ID.
         /// </summary>
-        internal static void StoreException(string traceId, Exception exception)
+        internal static void StoreException(ulong spanId, Exception exception)
         {
-            if (!string.IsNullOrEmpty(traceId) && exception != null)
+            if (spanId != 0 && exception != null)
             {
-                Exceptions[traceId] = exception;
+                Exceptions[spanId] = exception;
             }
         }
 
         /// <summary>
-        /// Tries to retrieve and remove an exception for the given trace ID.
+        /// Tries to retrieve and remove an exception for the given span ID.
         /// </summary>
-        internal static Exception? TryGetAndRemoveException(string traceId)
+        internal static Exception? TryGetAndRemoveException(ulong spanId)
         {
-            if (string.IsNullOrEmpty(traceId))
+            if (spanId == 0)
             {
                 return null;
             }
 
-            if (Exceptions.TryRemove(traceId, out var exception))
+            if (Exceptions.TryRemove(spanId, out var exception))
             {
                 return exception;
             }

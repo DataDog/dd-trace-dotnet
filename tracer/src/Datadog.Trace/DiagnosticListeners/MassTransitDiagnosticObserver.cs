@@ -326,9 +326,6 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private void OnStop(string operationType)
         {
-            var activity = System.Diagnostics.Activity.Current;
-            var traceId = MassTransitCommon.ExtractTraceIdFromActivity(activity);
-
             // Datadog scopes use AsyncLocal, so ActiveScope at Stop time is exactly the scope
             // created at Start time for this operation (MassTransit fires Stop events in LIFO order).
             var scope = Tracer.Instance.ActiveScope as Scope;
@@ -352,24 +349,19 @@ namespace Datadog.Trace.DiagnosticListeners
                 return;
             }
 
-            // Check for exceptions captured by NotifyFaultedIntegration (CallTarget)
+            // Check for exceptions captured by NotifyFaultedIntegration (CallTarget).
             // MassTransit 7 does not expose exceptions through DiagnosticSource events,
-            // so we use bytecode instrumentation to capture them from NotifyFaulted calls.
-            // We use TraceId to look up exceptions because NotifyFaulted may be called
-            // from a child activity (Handle/Saga) while this Stop event fires on the
-            // parent activity (Consume).
-            if (!StringUtil.IsNullOrWhiteSpace(traceId))
+            // so we use bytecode instrumentation to capture them from NotifyFaulted calls,
+            // keyed by the Datadog span ID of the active scope.
+            var exception = MassTransitExceptionStore.TryGetAndRemoveException(scope.Span.SpanId);
+            if (exception != null)
             {
-                var exception = MassTransitExceptionStore.TryGetAndRemoveException(traceId!);
-                if (exception != null)
-                {
-                    MassTransitCommon.SetException(scope, exception);
-                    Log.Debug(
-                        "MassTransitDiagnosticObserver.OnStop: Set exception for {OperationType} (TraceId={TraceId}): {ExceptionType}",
-                        operationType,
-                        traceId,
-                        exception.GetType().Name);
-                }
+                MassTransitCommon.SetException(scope, exception);
+                Log.Debug(
+                    "MassTransitDiagnosticObserver.OnStop: Set exception for {OperationType} (SpanId={SpanId}): {ExceptionType}",
+                    operationType,
+                    scope.Span.SpanId,
+                    exception.GetType().Name);
             }
 
             MassTransitCommon.CloseScope(scope, operationType);

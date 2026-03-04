@@ -52,20 +52,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.CallTarget
                 return CallTargetState.GetDefault();
             }
 
-            // Get the trace ID from the current Activity to use as a key for storing the exception.
-            // We use TraceId instead of Activity.Id because NotifyFaulted may be called
-            // from a child activity (e.g., Handle or Saga) while the DiagnosticObserver
-            // Stop event fires on the parent activity (Consume). TraceId is shared across
-            // the entire activity hierarchy.
-            var activity = System.Diagnostics.Activity.Current;
-            var traceId = MassTransitCommon.ExtractTraceIdFromActivity(activity);
+            // Key by the active Datadog span ID so OnStop can retrieve it via the same scope.
+            var spanId = Tracer.Instance.ActiveScope?.Span.SpanId ?? 0;
 
-            if (!StringUtil.IsNullOrEmpty(traceId) && exception != null)
+            if (spanId != 0 && exception != null)
             {
-                MassTransitExceptionStore.StoreException(traceId, exception);
+                MassTransitExceptionStore.StoreException(spanId, exception);
                 Log.Debug(
-                    "NotifyFaultedIntegration.OnMethodBegin: Stored exception for TraceId={TraceId}, ExceptionType={ExceptionType}",
-                    traceId,
+                    "NotifyFaultedIntegration.OnMethodBegin: Stored exception for SpanId={SpanId}, ExceptionType={ExceptionType}",
+                    spanId,
                     exception.GetType().Name);
             }
 
