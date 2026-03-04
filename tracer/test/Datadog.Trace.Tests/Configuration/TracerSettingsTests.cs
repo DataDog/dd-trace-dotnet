@@ -682,7 +682,7 @@ namespace Datadog.Trace.Tests.Configuration
         {
             var telemetry = new ConfigurationTelemetry();
             var tracerSettings = new TracerSettings(NullConfigurationSource.Instance, telemetry);
-            var data = telemetry.GetData();
+            var data = telemetry.GetIncrementalData();
             var value = data
                        .GroupBy(x => x.Name)
                        .Should()
