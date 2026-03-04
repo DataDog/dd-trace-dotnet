@@ -109,6 +109,30 @@ namespace Datadog.Trace.DuckTyping
         }
 
         /// <summary>
+        /// Registers an AOT forward mapping failure so runtime behavior matches dynamic exception semantics.
+        /// </summary>
+        /// <param name="proxyDefinitionType">Duck typing proxy definition.</param>
+        /// <param name="targetType">Target runtime type.</param>
+        /// <param name="exceptionType">Exception type that should be thrown when this mapping is requested.</param>
+        public static void RegisterAotProxyFailure(Type proxyDefinitionType, Type targetType, Type exceptionType)
+        {
+            EnsureRuntimeModeIsInitialized(DuckTypeRuntimeMode.Aot);
+            DuckTypeAotEngine.RegisterProxyFailure(proxyDefinitionType, targetType, exceptionType);
+        }
+
+        /// <summary>
+        /// Registers an AOT reverse mapping failure so runtime behavior matches dynamic exception semantics.
+        /// </summary>
+        /// <param name="typeToDeriveFrom">Type to derive the reverse proxy from.</param>
+        /// <param name="delegationType">Type that provides delegated implementations.</param>
+        /// <param name="exceptionType">Exception type that should be thrown when this mapping is requested.</param>
+        public static void RegisterAotReverseProxyFailure(Type typeToDeriveFrom, Type delegationType, Type exceptionType)
+        {
+            EnsureRuntimeModeIsInitialized(DuckTypeRuntimeMode.Aot);
+            DuckTypeAotEngine.RegisterReverseProxyFailure(typeToDeriveFrom, delegationType, exceptionType);
+        }
+
+        /// <summary>
         /// Validates AOT-generated registry metadata against the current Datadog.Trace runtime contract.
         /// </summary>
         /// <param name="schemaVersion">AOT contract schema version.</param>

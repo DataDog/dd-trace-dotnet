@@ -16,7 +16,7 @@ using Xunit;
 namespace Datadog.Trace.DuckTyping.Tests
 {
     [Collection(nameof(GetAssemblyTestsCollection))]
-    public class DuckTypeAotDifferentialParityTests
+    public class DuckTypeAotDifferentialParityTests : IDisposable
     {
         private static readonly MethodInfo? DynamicForwardFactory = typeof(DuckType).GetMethod("GetOrCreateDynamicProxyType", BindingFlags.NonPublic | BindingFlags.Static);
         private static readonly MethodInfo? DynamicReverseFactory = typeof(DuckType).GetMethod("GetOrCreateDynamicReverseProxyType", BindingFlags.NonPublic | BindingFlags.Static);
@@ -24,6 +24,12 @@ namespace Datadog.Trace.DuckTyping.Tests
         public DuckTypeAotDifferentialParityTests()
         {
             DuckTypeAotEngine.ResetForTests();
+        }
+
+        public void Dispose()
+        {
+            DuckType.ResetRuntimeModeForTests();
+            DuckTypeTestRuntimeBootstrap.ReinitializeAotRegistryForTests();
         }
 
         [Fact]
