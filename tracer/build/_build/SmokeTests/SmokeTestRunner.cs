@@ -247,8 +247,9 @@ public static partial class SmokeTestRunner
             },
             HostConfig = new HostConfig
             {
-                // No Init on Windows (Linux-only feature)
+                // No Init or SYS_PTRACE on Windows (Linux-only features)
                 Init = !isWindowsScenario,
+                CapAdd = isWindowsScenario ? null : new List<string> { "SYS_PTRACE" },
                 Binds = isWindowsScenario
                     ? new List<string>
                     {
