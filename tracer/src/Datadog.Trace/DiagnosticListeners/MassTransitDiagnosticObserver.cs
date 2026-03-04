@@ -7,7 +7,6 @@
 
 #if !NETFRAMEWORK
 using System;
-using System.Collections.Concurrent;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.DuckTypes;
 using Datadog.Trace.Configuration;
@@ -33,16 +32,16 @@ namespace Datadog.Trace.DiagnosticListeners
     /// - MassTransit.Saga.* (Start/Stop) - When saga state machines process events → Creates consumer spans
     /// - MassTransit.Activity.* (Start/Stop) - When Routing Slip activities execute/compensate → Creates consumer spans
     /// <para/>
-    /// We do NOT instrument Receive events because:
-    /// 1. ReceiveContext properties are inaccessible via reflection (explicit interface implementation)
-    /// 2. This results in null InputAddress and no parent context extraction
-    /// 3. Creates orphaned root spans with "unknown receive" resource names
-    /// 4. Receive events fire before deserialization and would duplicate Consume/Handle spans
-    /// <para/>
     /// Context propagation:
     /// - Send events: Inject trace context into message headers via InjectTraceContext()
     /// - Consume/Handle events: Extract parent context from message headers via ExtractTraceContext()
     /// - This links consumer spans to producer spans across the message bus
+    /// <para/>
+    /// Scope lifecycle:
+    /// Datadog scopes use AsyncLocal, so the active scope at Stop time is exactly the scope created
+    /// at Start time for that operation, provided MassTransit fires events in proper order
+    /// (which it does: Consume.Stop fires before Receive.Stop). OnStop validates the active scope
+    /// is a MassTransit span before closing it to guard against ordering issues.
     /// <para/>
     /// Exception handling:
     /// MassTransit 7 does NOT emit exception information through DiagnosticSource events (Stop event arg
@@ -53,9 +52,6 @@ namespace Datadog.Trace.DiagnosticListeners
     {
         private const string DiagnosticListenerName = "MassTransit";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<MassTransitDiagnosticObserver>();
-
-        // Store active scopes keyed by Activity.Id to match Start/Stop events
-        private readonly ConcurrentDictionary<string, Scope> _activeScopes = new();
 
         protected override string ListenerName => DiagnosticListenerName;
 
@@ -168,28 +164,12 @@ namespace Datadog.Trace.DiagnosticListeners
             }
         }
 
-        // Returns the ID of the Activity that MassTransit creates for the current operation.
-        // MassTransit calls activity.Start() before firing each diagnostic event, so Activity.Current
-        // is MassTransit's own activity — NOT a Datadog/OTEL activity.
-        // This ID is stable between Start and Stop events and serves as the correlation key.
-        private static string GetMassTransitActivityId()
-        {
-            var activity = System.Diagnostics.Activity.Current;
-            return activity?.Id ?? string.Empty;
-        }
-
-        /// <summary>
-        /// Extracts the trace ID from an Activity. Handles both W3C format (00-{traceId}-{spanId}-{flags})
-        /// and hierarchical format (uses RootId).
-        /// </summary>
         private void OnProduceStart(object? arg)
         {
             if (arg == null)
             {
                 return;
             }
-
-            var currentSpanId = GetMassTransitActivityId();
 
             // Extract metadata from SendContext using duck typing
             MassTransitCommon.ExtractSendContextMetadata(arg, out var destinationAddress, out var messageId, out var conversationId, out var correlationId);
@@ -202,10 +182,8 @@ namespace Datadog.Trace.DiagnosticListeners
 
             var scope = MassTransitCommon.CreateProduceSpan(Tracer.Instance, destinationAddress, messageType);
 
-            if (scope != null && !string.IsNullOrEmpty(currentSpanId))
+            if (scope is not null)
             {
-                StoreScope("Send", currentSpanId, scope);
-
                 // Set additional context tags
                 MassTransitCommon.SetContextTags(scope, messageId, conversationId, correlationId);
 
@@ -227,12 +205,9 @@ namespace Datadog.Trace.DiagnosticListeners
                 return;
             }
 
-            var activityId = GetMassTransitActivityId();
-
             Log.Debug(
-                "MassTransitDiagnosticObserver.OnReceiveStart: Processing ReceiveContext, ArgType={ArgType}, ActivityId={ActivityId}",
-                arg.GetType().FullName,
-                activityId);
+                "MassTransitDiagnosticObserver.OnReceiveStart: Processing ReceiveContext, ArgType={ArgType}",
+                arg.GetType().FullName);
 
             // For Receive events, arg IS the ReceiveContext directly (e.g., InMemoryReceiveContext, RabbitMqReceiveContext)
             // Extract InputAddress and TransportHeaders from the ReceiveContext
@@ -261,10 +236,8 @@ namespace Datadog.Trace.DiagnosticListeners
 
             var scope = MassTransitCommon.CreateReceiveSpan(Tracer.Instance, inputAddress, parentContext);
 
-            if (scope != null && !string.IsNullOrEmpty(activityId))
+            if (scope != null)
             {
-                StoreScope("Receive", activityId, scope);
-
                 Log.Debug(
                     "MassTransitDiagnosticObserver.OnReceiveStart: Created span TraceId={TraceId}, SpanId={SpanId}, ParentId={ParentId}",
                     scope.Span.TraceId,
@@ -273,10 +246,7 @@ namespace Datadog.Trace.DiagnosticListeners
             }
             else
             {
-                Log.Debug(
-                    "MassTransitDiagnosticObserver.OnReceiveStart: Scope not created. ScopeNull={ScopeNull}, ActivityIdEmpty={ActivityIdEmpty}",
-                    scope == null,
-                    string.IsNullOrEmpty(activityId));
+                Log.Debug("MassTransitDiagnosticObserver.OnReceiveStart: Scope not created");
             }
         }
 
@@ -286,8 +256,6 @@ namespace Datadog.Trace.DiagnosticListeners
             {
                 return;
             }
-
-            var activityId = GetMassTransitActivityId();
 
             // For consume, we get a ConsumeContext
             // MT8 OTEL uses InputAddress (the queue name) for consumer spans, not DestinationAddress
@@ -329,29 +297,23 @@ namespace Datadog.Trace.DiagnosticListeners
 
             // For Process/Consume/Handle spans, check if there's an active Receive span to use as parent
             // If a Receive span is active, use it instead of the extracted context from headers
-            if (operationType != "Receive")
+            var activeScope = Tracer.Instance.ActiveScope;
+            if (activeScope?.Span != null &&
+                activeScope.Span.OperationName == "masstransit.receive" &&
+                activeScope.Span.GetTag("component") == MassTransitConstants.ComponentTagName)
             {
-                var activeScope = Tracer.Instance.ActiveScope;
-                if (activeScope?.Span != null &&
-                    activeScope.Span.OperationName == "masstransit.receive" &&
-                    activeScope.Span.GetTag("component") == "masstransit")
-                {
-                    // Use the active Receive span as the parent for Process/Consume spans
-                    // Cast ISpanContext to SpanContext
-                    parentContext = new PropagationContext(activeScope.Span.Context as SpanContext, Baggage.Current);
+                // Use the active Receive span as the parent for Process/Consume spans
+                parentContext = new PropagationContext(activeScope.Span.Context as SpanContext, Baggage.Current);
 
-                    Log.Debug(
-                        "MassTransitDiagnosticObserver.OnConsumeStart: Using active Receive span as parent, ParentSpanId={ParentSpanId}",
-                        activeScope.Span.SpanId);
-                }
+                Log.Debug(
+                    "MassTransitDiagnosticObserver.OnConsumeStart: Using active Receive span as parent, ParentSpanId={ParentSpanId}",
+                    activeScope.Span.SpanId);
             }
 
             var scope = MassTransitCommon.CreateProcessSpan(Tracer.Instance, inputAddress, messageType, parentContext);
 
-            if (scope != null && !string.IsNullOrEmpty(activityId))
+            if (scope != null)
             {
-                StoreScope(operationType, activityId, scope);
-
                 // Note: MT8 OTEL instrumentation does not set messageId/conversationId/correlationId tags
                 // on consumer "process" spans, only on "receive" spans. We match that behavior.
 
@@ -365,54 +327,53 @@ namespace Datadog.Trace.DiagnosticListeners
         private void OnStop(string operationType)
         {
             var activity = System.Diagnostics.Activity.Current;
-            var activityId = activity?.Id;
             var traceId = MassTransitCommon.ExtractTraceIdFromActivity(activity);
 
-            if (string.IsNullOrEmpty(activityId))
+            // Datadog scopes use AsyncLocal, so ActiveScope at Stop time is exactly the scope
+            // created at Start time for this operation (MassTransit fires Stop events in LIFO order).
+            var scope = Tracer.Instance.ActiveScope as Scope;
+
+            if (scope == null)
             {
-                Log.Debug("MassTransitDiagnosticObserver.OnStop: No activity ID for {OperationType}", operationType);
+                Log.Debug("MassTransitDiagnosticObserver.OnStop: No active scope for {OperationType}", operationType);
                 return;
             }
 
-            var key = $"{operationType}:{activityId}";
-            if (_activeScopes.TryRemove(key, out var scope))
+            // Guard: verify this is a MassTransit span before closing, to avoid silently closing
+            // an unrelated span if MT event ordering is unexpected.
+            if (scope.Span.GetTag("component") != MassTransitConstants.ComponentTagName)
             {
-                // Check for exceptions captured by NotifyFaultedIntegration (CallTarget)
-                // MassTransit 7 does not expose exceptions through DiagnosticSource events,
-                // so we use bytecode instrumentation to capture them from NotifyFaulted calls.
-                // We use TraceId to look up exceptions because NotifyFaulted may be called
-                // from a child activity (Handle/Saga) while this Stop event fires on the
-                // parent activity (Consume).
-                if (!string.IsNullOrEmpty(traceId))
+                Log.Warning(
+                    "MassTransitDiagnosticObserver.OnStop: Active scope is not a MassTransit span " +
+                    "(component={Component}, operation={Operation}) — skipping close for {OperationType}",
+                    scope.Span.GetTag("component"),
+                    scope.Span.OperationName,
+                    operationType);
+                return;
+            }
+
+            // Check for exceptions captured by NotifyFaultedIntegration (CallTarget)
+            // MassTransit 7 does not expose exceptions through DiagnosticSource events,
+            // so we use bytecode instrumentation to capture them from NotifyFaulted calls.
+            // We use TraceId to look up exceptions because NotifyFaulted may be called
+            // from a child activity (Handle/Saga) while this Stop event fires on the
+            // parent activity (Consume).
+            if (!StringUtil.IsNullOrWhiteSpace(traceId))
+            {
+                var exception = MassTransitExceptionStore.TryGetAndRemoveException(traceId!);
+                if (exception != null)
                 {
-                    var exception = MassTransitExceptionStore.TryGetAndRemoveException(traceId!);
-                    if (exception != null)
-                    {
-                        MassTransitCommon.SetException(scope, exception);
-                        Log.Debug(
-                            "MassTransitDiagnosticObserver.OnStop: Set exception for key '{Key}' (TraceId={TraceId}): {ExceptionType}",
-                            key,
-                            traceId,
-                            exception.GetType().Name);
-                    }
+                    MassTransitCommon.SetException(scope, exception);
+                    Log.Debug(
+                        "MassTransitDiagnosticObserver.OnStop: Set exception for {OperationType} (TraceId={TraceId}): {ExceptionType}",
+                        operationType,
+                        traceId,
+                        exception.GetType().Name);
                 }
-
-                MassTransitCommon.CloseScope(scope, operationType);
-                Log.Debug("MassTransitDiagnosticObserver.OnStop: Closed scope for key '{Key}'", key);
             }
-            else
-            {
-                Log.Debug(
-                    "MassTransitDiagnosticObserver.OnStop: No scope found for key '{Key}'",
-                    key);
-            }
-        }
 
-        private void StoreScope(string operationType, string activityId, Scope scope)
-        {
-            var key = $"{operationType}:{activityId}";
-            _activeScopes[key] = scope;
-            Log.Debug("MassTransitDiagnosticObserver.StoreScope: Stored scope with key '{Key}'", key);
+            MassTransitCommon.CloseScope(scope, operationType);
+            Log.Debug("MassTransitDiagnosticObserver.OnStop: Closed scope for {OperationType}", operationType);
         }
     }
 }
