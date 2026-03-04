@@ -22,6 +22,30 @@ namespace Datadog.Trace.Tagging
 
         // HttpRouteBytes = MessagePack.Serialize("http.route");
         private static ReadOnlySpan<byte> HttpRouteBytes => [170, 104, 116, 116, 112, 46, 114, 111, 117, 116, 101];
+        // CodeOriginTypeBytes = MessagePack.Serialize("_dd.code_origin.type");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> CodeOriginTypeBytes => new byte[] { 180, 95, 100, 100, 46, 99, 111, 100, 101, 95, 111, 114, 105, 103, 105, 110, 46, 116, 121, 112, 101 };
+#else
+        private static readonly byte[] CodeOriginTypeBytes = new byte[] { 180, 95, 100, 100, 46, 99, 111, 100, 101, 95, 111, 114, 105, 103, 105, 110, 46, 116, 121, 112, 101 };
+#endif
+        // CodeOriginFrameIndexBytes = MessagePack.Serialize("_dd.code_origin.frames.0.index");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> CodeOriginFrameIndexBytes => new byte[] { 190, 95, 100, 100, 46, 99, 111, 100, 101, 95, 111, 114, 105, 103, 105, 110, 46, 102, 114, 97, 109, 101, 115, 46, 48, 46, 105, 110, 100, 101, 120 };
+#else
+        private static readonly byte[] CodeOriginFrameIndexBytes = new byte[] { 190, 95, 100, 100, 46, 99, 111, 100, 101, 95, 111, 114, 105, 103, 105, 110, 46, 102, 114, 97, 109, 101, 115, 46, 48, 46, 105, 110, 100, 101, 120 };
+#endif
+        // CodeOriginFrameMethodBytes = MessagePack.Serialize("_dd.code_origin.frames.0.method");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> CodeOriginFrameMethodBytes => new byte[] { 191, 95, 100, 100, 46, 99, 111, 100, 101, 95, 111, 114, 105, 103, 105, 110, 46, 102, 114, 97, 109, 101, 115, 46, 48, 46, 109, 101, 116, 104, 111, 100 };
+#else
+        private static readonly byte[] CodeOriginFrameMethodBytes = new byte[] { 191, 95, 100, 100, 46, 99, 111, 100, 101, 95, 111, 114, 105, 103, 105, 110, 46, 102, 114, 97, 109, 101, 115, 46, 48, 46, 109, 101, 116, 104, 111, 100 };
+#endif
+        // CodeOriginFrameTypeBytes = MessagePack.Serialize("_dd.code_origin.frames.0.type");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> CodeOriginFrameTypeBytes => new byte[] { 189, 95, 100, 100, 46, 99, 111, 100, 101, 95, 111, 114, 105, 103, 105, 110, 46, 102, 114, 97, 109, 101, 115, 46, 48, 46, 116, 121, 112, 101 };
+#else
+        private static readonly byte[] CodeOriginFrameTypeBytes = new byte[] { 189, 95, 100, 100, 46, 99, 111, 100, 101, 95, 111, 114, 105, 103, 105, 110, 46, 102, 114, 97, 109, 101, 115, 46, 48, 46, 116, 121, 112, 101 };
+#endif
 
         public override string? GetTag(string key)
         {
@@ -30,6 +54,10 @@ namespace Datadog.Trace.Tagging
                 "component" => InstrumentationName,
                 "aspnet_core.route" => AspNetCoreRoute,
                 "http.route" => HttpRoute,
+                "_dd.code_origin.type" => CodeOriginType,
+                "_dd.code_origin.frames.0.index" => CodeOriginFrameIndex,
+                "_dd.code_origin.frames.0.method" => CodeOriginFrameMethod,
+                "_dd.code_origin.frames.0.type" => CodeOriginFrameType,
                 _ => base.GetTag(key),
             };
         }
@@ -43,6 +71,18 @@ namespace Datadog.Trace.Tagging
                     break;
                 case "aspnet_core.route": 
                     AspNetCoreRoute = value;
+                    break;
+                case "_dd.code_origin.type": 
+                    CodeOriginType = value;
+                    break;
+                case "_dd.code_origin.frames.0.index": 
+                    CodeOriginFrameIndex = value;
+                    break;
+                case "_dd.code_origin.frames.0.method": 
+                    CodeOriginFrameMethod = value;
+                    break;
+                case "_dd.code_origin.frames.0.type": 
+                    CodeOriginFrameType = value;
                     break;
                 case "http.route": 
                     Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(AspNetCoreTags));
@@ -70,6 +110,26 @@ namespace Datadog.Trace.Tagging
                 processor.Process(new TagItem<string>("http.route", HttpRoute, HttpRouteBytes));
             }
 
+            if (CodeOriginType is not null)
+            {
+                processor.Process(new TagItem<string>("_dd.code_origin.type", CodeOriginType, CodeOriginTypeBytes));
+            }
+
+            if (CodeOriginFrameIndex is not null)
+            {
+                processor.Process(new TagItem<string>("_dd.code_origin.frames.0.index", CodeOriginFrameIndex, CodeOriginFrameIndexBytes));
+            }
+
+            if (CodeOriginFrameMethod is not null)
+            {
+                processor.Process(new TagItem<string>("_dd.code_origin.frames.0.method", CodeOriginFrameMethod, CodeOriginFrameMethodBytes));
+            }
+
+            if (CodeOriginFrameType is not null)
+            {
+                processor.Process(new TagItem<string>("_dd.code_origin.frames.0.type", CodeOriginFrameType, CodeOriginFrameTypeBytes));
+            }
+
             base.EnumerateTags(ref processor);
         }
 
@@ -93,6 +153,34 @@ namespace Datadog.Trace.Tagging
             {
                 sb.Append("http.route (tag):")
                   .Append(HttpRoute)
+                  .Append(',');
+            }
+
+            if (CodeOriginType is not null)
+            {
+                sb.Append("_dd.code_origin.type (tag):")
+                  .Append(CodeOriginType)
+                  .Append(',');
+            }
+
+            if (CodeOriginFrameIndex is not null)
+            {
+                sb.Append("_dd.code_origin.frames.0.index (tag):")
+                  .Append(CodeOriginFrameIndex)
+                  .Append(',');
+            }
+
+            if (CodeOriginFrameMethod is not null)
+            {
+                sb.Append("_dd.code_origin.frames.0.method (tag):")
+                  .Append(CodeOriginFrameMethod)
+                  .Append(',');
+            }
+
+            if (CodeOriginFrameType is not null)
+            {
+                sb.Append("_dd.code_origin.frames.0.type (tag):")
+                  .Append(CodeOriginFrameType)
                   .Append(',');
             }
 

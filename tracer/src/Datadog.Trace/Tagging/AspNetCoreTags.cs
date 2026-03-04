@@ -20,5 +20,17 @@ namespace Datadog.Trace.Tagging
 
         [Tag(Tags.HttpRoute)]
         public string HttpRoute => AspNetCoreRoute;
+
+        [Tag(Tags.CodeOriginType)]
+        public string CodeOriginType { get; set; }
+
+        [Tag(Tags.CodeOriginFrameIndex)]
+        public string CodeOriginFrameIndex { get; set; }
+
+        [Tag(Tags.CodeOriginFrameMethod)]
+        public string CodeOriginFrameMethod { get; set; }
+
+        [Tag(Tags.CodeOriginFrameType)]
+        public string CodeOriginFrameType { get; set; }
     }
 }
