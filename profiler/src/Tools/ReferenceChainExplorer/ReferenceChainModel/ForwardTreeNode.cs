@@ -24,13 +24,15 @@ public class ForwardTreeNode
         string? categoryCode,
         long instanceCount,
         long totalSize,
-        IReadOnlyList<ForwardTreeNode> children)
+        IReadOnlyList<ForwardTreeNode> children,
+        string? fieldName = null)
     {
         Kind = kind;
         TypeIndex = typeIndex;
         CategoryCode = categoryCode;
         InstanceCount = instanceCount;
         TotalSize = totalSize;
+        FieldName = fieldName;
         _children = children;
         _childrenFactory = null;
     }
@@ -44,13 +46,15 @@ public class ForwardTreeNode
         string? categoryCode,
         long instanceCount,
         long totalSize,
-        Func<IReadOnlyList<ForwardTreeNode>> childrenFactory)
+        Func<IReadOnlyList<ForwardTreeNode>> childrenFactory,
+        string? fieldName = null)
     {
         Kind = kind;
         TypeIndex = typeIndex;
         CategoryCode = categoryCode;
         InstanceCount = instanceCount;
         TotalSize = totalSize;
+        FieldName = fieldName;
         _childrenFactory = childrenFactory;
     }
 
@@ -68,6 +72,12 @@ public class ForwardTreeNode
     /// Root category code for Category and Root nodes (e.g., "S", "H").
     /// </summary>
     public string? CategoryCode { get; }
+
+    /// <summary>
+    /// For static root nodes: the name of the static field (e.g., "_staticOrders").
+    /// Null for non-static roots and child nodes.
+    /// </summary>
+    public string? FieldName { get; }
 
     public long InstanceCount { get; }
 

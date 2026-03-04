@@ -57,8 +57,15 @@ public:
 private:
     ClassLayoutData BuildLayout(ClassID classID);
     bool IsReferenceType(ClassID classID, mdTypeDef typeDef, ModuleID moduleID);
+    bool IsClassIDReferenceType(ClassID classID);
     void GetParentClassFields(ClassID parentClassID, std::vector<FieldInfo>& fields);
-    bool IsFieldReferenceType(mdFieldDef fieldToken, ModuleID moduleID, IMetaDataImport* pMetadataImport);
+    bool IsFieldReferenceType(
+        mdFieldDef fieldToken,
+        ModuleID moduleID,
+        IMetaDataImport* pMetadataImport,
+        const std::vector<ClassID>& typeArgs);
+
+    std::string GetClassName(ClassID classID) const;
 
     ICorProfilerInfo12* _pCorProfilerInfo;
     IFrameStore* _pFrameStore;

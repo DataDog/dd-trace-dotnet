@@ -21,7 +21,8 @@ public static class ReverseChainBuilder
         var parentMap = new Dictionary<int, List<ParentInfo>>();
         foreach (var root in tree.Roots)
         {
-            CollectParents(root, parentMap, isRoot: true, ((ReferenceRootNode)root).CategoryCode);
+            var rootNode = (ReferenceRootNode)root;
+            CollectParents(root, parentMap, isRoot: true, rootNode.CategoryCode, rootNode.FieldName);
         }
 
         // Check if the type is a root with no parents referencing it
@@ -31,6 +32,7 @@ public static class ReverseChainBuilder
             {
                 if (root.TypeIndex == selectedTypeIndex)
                 {
+                    var rootNode = (ReferenceRootNode)root;
                     return
                     [
                         new ReverseChainNode(
@@ -38,8 +40,9 @@ public static class ReverseChainBuilder
                             root.InstanceCount,
                             root.TotalSize,
                             isRoot: true,
-                            ((ReferenceRootNode)root).CategoryCode,
-                            parents: Array.Empty<ReverseChainNode>())
+                            rootNode.CategoryCode,
+                            parents: Array.Empty<ReverseChainNode>(),
+                            rootNode.FieldName)
                     ];
                 }
             }
@@ -56,7 +59,8 @@ public static class ReverseChainBuilder
         ReferenceNode node,
         Dictionary<int, List<ParentInfo>> parentMap,
         bool isRoot,
-        string? categoryCode)
+        string? categoryCode,
+        string? fieldName)
     {
         foreach (var child in node.Children)
         {
@@ -66,31 +70,48 @@ public static class ReverseChainBuilder
                 parentMap[child.TypeIndex] = parents;
             }
 
-            // Avoid duplicate parent entries for the same parent type at this level
-            bool alreadyRecorded = false;
-            foreach (var existing in parents)
+            // Avoid duplicate parent entries for the same parent type.
+            // When a type appears as both a root and a non-root parent (e.g.,
+            // ReferenceChainScenarios is a direct root AND a child of ComputerService),
+            // prefer the non-root entry because its reverse chain will provide the
+            // full path up to the actual root.
+            int existingIdx = -1;
+            for (int i = 0; i < parents.Count; i++)
             {
-                if (existing.TypeIndex == node.TypeIndex &&
-                    existing.IsRoot == isRoot &&
-                    existing.CategoryCode == categoryCode)
+                if (parents[i].TypeIndex == node.TypeIndex)
                 {
-                    alreadyRecorded = true;
+                    existingIdx = i;
                     break;
                 }
             }
 
-            if (!alreadyRecorded)
+            if (existingIdx >= 0)
+            {
+                if (parents[existingIdx].IsRoot && !isRoot)
+                {
+                    // Replace root entry with non-root entry (richer chain context)
+                    parents[existingIdx] = new ParentInfo(
+                        node.TypeIndex,
+                        node.InstanceCount,
+                        node.TotalSize,
+                        isRoot,
+                        categoryCode,
+                        fieldName);
+                }
+            }
+            else
             {
                 parents.Add(new ParentInfo(
                     node.TypeIndex,
                     node.InstanceCount,
                     node.TotalSize,
                     isRoot,
-                    categoryCode));
+                    categoryCode,
+                    fieldName));
             }
 
             // Recurse into children (they are not roots)
-            CollectParents(child, parentMap, isRoot: false, categoryCode: null);
+            CollectParents(child, parentMap, isRoot: false, categoryCode: null, fieldName: null);
         }
     }
 
@@ -147,7 +168,8 @@ public static class ReverseChainBuilder
                         parentInfo.TotalSize,
                         isRoot: true,
                         parentInfo.CategoryCode,
-                        parents: Array.Empty<ReverseChainNode>()));
+                        parents: Array.Empty<ReverseChainNode>(),
+                        parentInfo.FieldName));
                 }
                 else
                 {
@@ -176,5 +198,6 @@ public static class ReverseChainBuilder
         long InstanceCount,
         long TotalSize,
         bool IsRoot,
-        string? CategoryCode);
+        string? CategoryCode,
+        string? FieldName);
 }

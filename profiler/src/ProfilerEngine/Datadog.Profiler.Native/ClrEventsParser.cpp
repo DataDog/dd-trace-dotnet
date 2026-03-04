@@ -300,8 +300,12 @@ ClrEventsParser::ParseGcEvent(std::chrono::nanoseconds timestamp, DWORD id, DWOR
             ULONG offset = 0;
             if (!EventsParserHelper::Read<GCBulkRootEdgePayload>(payload, pEventData, cbEventData, offset))
             {
+                Log::Debug("[EVENT] GCBulkRootEdge: Read payload failed, cbEventData=", cbEventData);
                 return;
             }
+
+            Log::Debug("[EVENT] GCBulkRootEdge received: index=", payload.Index,
+                       " count=", payload.Count, " cbEventData=", cbEventData);
 
             _pGCDumpListener->OnBulkRootEdges(
                 payload.Index,
@@ -338,10 +342,10 @@ ClrEventsParser::ParseGcEvent(std::chrono::nanoseconds timestamp, DWORD id, DWOR
                 // Skip the null-terminated UTF-16 variable name that follows each entry
                 auto fieldName = EventsParserHelper::ReadWideString(pEventData, cbEventData, &offset);
 
-                // TODO: log the field name ; need to convert from UTF-16 encoding before logging
-                LogGcEvent("    field= ", shared::ToString(fieldName));
+                auto fieldNameStr = shared::ToString(fieldName);
+                LogGcEvent("    field= ", fieldNameStr);
 
-                _pGCDumpListener->OnBulkRootStaticVar(value);
+                _pGCDumpListener->OnBulkRootStaticVar(value, fieldNameStr);
             }
         }
     }

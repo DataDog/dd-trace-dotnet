@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <string>
+
 #pragma pack(1)
 
 struct GCBulkNodeValue
@@ -118,7 +120,8 @@ public:
         GCBulkRootEdgeValue* pRoots) = 0;
 
     virtual void OnBulkRootStaticVar(
-        const GCBulkRootStaticVarValue& root) = 0;
+        const GCBulkRootStaticVarValue& root,
+        const std::string& fieldName) = 0;
 
     virtual ~IGCDumpListener() = default;
 };

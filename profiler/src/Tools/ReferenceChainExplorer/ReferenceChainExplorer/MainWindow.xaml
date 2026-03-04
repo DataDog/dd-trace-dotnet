@@ -18,11 +18,17 @@
         <converters:CategoryCodeToNameConverter x:Key="CategoryNameConverter" />
         <BooleanToVisibilityConverter x:Key="BoolToVisConverter" />
 
+        <converters:NullToVisibilityConverter x:Key="NullToVisConverter" />
+
         <!-- Template for reverse chain tree nodes -->
         <HierarchicalDataTemplate DataType="{x:Type model:ReverseChainNode}"
                                   ItemsSource="{Binding Parents}">
             <StackPanel Orientation="Horizontal">
                 <TextBlock Text="{Binding TypeIndex, Converter={StaticResource TypeNameConverter}}" FontWeight="SemiBold" />
+                <TextBlock Text="." Foreground="DarkOrange" FontWeight="SemiBold"
+                           Visibility="{Binding FieldName, Converter={StaticResource NullToVisConverter}}" />
+                <TextBlock Text="{Binding FieldName}" Foreground="DarkOrange" FontWeight="SemiBold"
+                           Visibility="{Binding FieldName, Converter={StaticResource NullToVisConverter}}" />
                 <TextBlock Text=" (" Foreground="Gray" />
                 <TextBlock Text="{Binding InstanceCount, StringFormat={}{0:N0}}" Foreground="Gray" />
                 <TextBlock Text=" instances, " Foreground="Gray" />
@@ -71,6 +77,10 @@
                         </Style>
                     </TextBlock.Style>
                 </TextBlock>
+                <TextBlock Text="." Foreground="DarkOrange" FontWeight="SemiBold"
+                           Visibility="{Binding FieldName, Converter={StaticResource NullToVisConverter}}" />
+                <TextBlock Text="{Binding FieldName}" Foreground="DarkOrange" FontWeight="SemiBold"
+                           Visibility="{Binding FieldName, Converter={StaticResource NullToVisConverter}}" />
                 <TextBlock Text=" [" Foreground="DarkGreen">
                     <TextBlock.Style>
                         <Style TargetType="TextBlock">
@@ -227,62 +237,62 @@
 
                     <!-- Master: Type list -->
                     <DataGrid Grid.Row="1"
-                      x:Name="TypeGrid"
-                      ItemsSource="{Binding TypeSummaries}"
-                      SelectedItem="{Binding SelectedType}"
-                      AutoGenerateColumns="False"
-                      IsReadOnly="True"
-                      SelectionMode="Single"
-                      CanUserSortColumns="True"
-                      GridLinesVisibility="None"
-                      AlternatingRowBackground="#F8F8F8"
-                      Sorting="TypeGrid_Sorting">
-                <DataGrid.Columns>
-                    <DataGridTextColumn Header="Type Name" Width="*"
-                                        Binding="{Binding TypeIndex, Converter={StaticResource TypeNameConverter}, ConverterParameter=short}"
-                                        SortMemberPath="TypeIndex" />
-                    <DataGridTextColumn Header="Count" Width="120"
-                                        Binding="{Binding TotalInstanceCount, StringFormat={}{0:N0}}"
-                                        SortMemberPath="TotalInstanceCount">
-                        <DataGridTextColumn.ElementStyle>
-                            <Style TargetType="TextBlock">
-                                <Setter Property="TextAlignment" Value="Right" />
-                            </Style>
-                        </DataGridTextColumn.ElementStyle>
-                    </DataGridTextColumn>
-                    <DataGridTextColumn Header="Size (bytes)" Width="120"
-                                        Binding="{Binding TotalSize, StringFormat={}{0:N0}}"
-                                        SortMemberPath="TotalSize">
-                        <DataGridTextColumn.ElementStyle>
-                            <Style TargetType="TextBlock">
-                                <Setter Property="TextAlignment" Value="Right" />
-                            </Style>
-                        </DataGridTextColumn.ElementStyle>
-                    </DataGridTextColumn>
-                </DataGrid.Columns>
-            </DataGrid>
+                              x:Name="TypeGrid"
+                              ItemsSource="{Binding TypeSummaries}"
+                              SelectedItem="{Binding SelectedType}"
+                              AutoGenerateColumns="False"
+                              IsReadOnly="True"
+                              SelectionMode="Single"
+                              CanUserSortColumns="True"
+                              GridLinesVisibility="None"
+                              AlternatingRowBackground="#F8F8F8"
+                              Sorting="TypeGrid_Sorting">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Type Name" Width="*"
+                                                Binding="{Binding TypeIndex, Converter={StaticResource TypeNameConverter}, ConverterParameter=short}"
+                                                SortMemberPath="TypeIndex" />
+                            <DataGridTextColumn Header="Count" Width="120"
+                                                Binding="{Binding TotalInstanceCount, StringFormat={}{0:N0}}"
+                                                SortMemberPath="TotalInstanceCount">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="TextAlignment" Value="Right" />
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Header="Size (bytes)" Width="120"
+                                                Binding="{Binding TotalSize, StringFormat={}{0:N0}}"
+                                                SortMemberPath="TotalSize">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="TextAlignment" Value="Right" />
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
 
-            <!-- Splitter -->
-            <GridSplitter Grid.Row="2"
-                          HorizontalAlignment="Stretch"
-                          Background="#CCCCCC"
-                          ShowsPreview="True" />
+                    <!-- Splitter -->
+                    <GridSplitter Grid.Row="2"
+                                  HorizontalAlignment="Stretch"
+                                  Background="#CCCCCC"
+                                  ShowsPreview="True" />
 
-            <!-- Detail: Reverse chains -->
-            <DockPanel Grid.Row="3">
-                <TextBlock DockPanel.Dock="Top"
-                           Margin="8,4"
-                           FontSize="13"
-                           FontWeight="SemiBold">
-                    <Run Text="Reverse chains for: " />
-                    <Run Text="{Binding SelectedType.TypeIndex, Converter={StaticResource TypeNameConverter}, Mode=OneWay, FallbackValue='(select a type)'}" />
-                </TextBlock>
+                    <!-- Detail: Reverse chains -->
+                    <DockPanel Grid.Row="3">
+                        <TextBlock DockPanel.Dock="Top"
+                                   Margin="8,4"
+                                   FontSize="13"
+                                   FontWeight="SemiBold">
+                            <Run Text="Reverse chains for: " />
+                            <Run Text="{Binding SelectedType.TypeIndex, Converter={StaticResource TypeNameConverter}, Mode=OneWay, FallbackValue='(select a type)'}" />
+                        </TextBlock>
 
-                <TreeView ItemsSource="{Binding ReverseChains}"
-                          Margin="4"
-                          BorderThickness="1"
-                          BorderBrush="#CCCCCC" />
-            </DockPanel>
+                        <TreeView ItemsSource="{Binding ReverseChains}"
+                                  Margin="4"
+                                  BorderThickness="1"
+                                  BorderBrush="#CCCCCC" />
+                    </DockPanel>
                 </Grid>
             </TabItem>
             <TabItem Header="Forward Reference Tree">

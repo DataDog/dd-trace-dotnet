@@ -76,7 +76,8 @@ public static class ForwardTreeBuilder
             root.CategoryCode,
             root.InstanceCount,
             root.TotalSize,
-            () => root.Children.Select(WrapNode).ToList());
+            () => root.Children.Select(WrapNode).ToList(),
+            root.FieldName);
     }
 
     private static ForwardTreeNode WrapNode(ReferenceNode node)

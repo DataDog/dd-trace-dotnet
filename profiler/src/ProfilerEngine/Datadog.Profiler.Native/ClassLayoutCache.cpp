@@ -78,13 +78,37 @@ ClassLayoutCache::ClassLayoutData ClassLayoutCache::BuildLayout(ClassID classID)
     ModuleID moduleID;
     mdTypeDef typeDef;
     ClassID parentClassID;
+    ULONG32 numTypeArgs = 0;
 
     hr = _pCorProfilerInfo->GetClassIDInfo2(
-        classID, &moduleID, &typeDef, &parentClassID, 0, nullptr, nullptr);
+        classID, &moduleID, &typeDef, &parentClassID, 0, &numTypeArgs, nullptr);
 
     if (FAILED(hr))
     {
         return layout;
+    }
+
+    // For generic types, retrieve the concrete type arguments so we can resolve
+    // ELEMENT_TYPE_VAR fields (e.g., TValue in Dictionary<int, Order>.Entry).
+    std::vector<ClassID> typeArgs;
+    if (numTypeArgs > 0)
+    {
+        typeArgs.resize(numTypeArgs);
+        hr = _pCorProfilerInfo->GetClassIDInfo2(
+            classID, nullptr, nullptr, nullptr, numTypeArgs, &numTypeArgs, typeArgs.data());
+        if (FAILED(hr))
+        {
+            Log::Debug("BuildLayout: GetClassIDInfo2 (type args) failed for '", GetClassName(classID), "' hr=", hr);
+            typeArgs.clear();
+        }
+        else
+        {
+            Log::Debug("BuildLayout: '", GetClassName(classID), "' has ", numTypeArgs, " type args");
+            for (ULONG32 t = 0; t < numTypeArgs; t++)
+            {
+                Log::Debug("BuildLayout:   typeArgs[", t, "] = '", GetClassName(typeArgs[t]), "'");
+            }
+        }
     }
 
     // Get class size and field count
@@ -94,7 +118,6 @@ ClassLayoutCache::ClassLayoutData ClassLayoutCache::BuildLayout(ClassID classID)
 
     if (FAILED(hr) || fieldCount == 0)
     {
-        // Get parent class fields if any
         if (parentClassID != 0)
         {
             GetParentClassFields(parentClassID, layout.fields);
@@ -124,19 +147,20 @@ ClassLayoutCache::ClassLayoutData ClassLayoutCache::BuildLayout(ClassID classID)
     }
 
     // Process each field
+    Log::Debug("BuildLayout: '", GetClassName(classID), "' classSize=", layout.classSize, " fieldCount=", fieldCount);
+
     for (ULONG i = 0; i < fieldCount; i++)
     {
         FieldInfo fieldInfo;
         fieldInfo.offset = fieldOffsets[i].ulOffset;
         fieldInfo.fieldToken = fieldOffsets[i].ridOfField;
 
-        // Check if field is a reference type
         fieldInfo.isReferenceType = IsFieldReferenceType(
-            fieldInfo.fieldToken, moduleID, pMetadataImport.Get());
+            fieldInfo.fieldToken, moduleID, pMetadataImport.Get(), typeArgs);
 
-        // If it's a reference type, try to get the field type ClassID
-        // (This would require parsing the signature, which is complex)
-        // For now, we'll determine the type during traversal by reading the actual field value
+        Log::Debug("BuildLayout:   field[", i, "] offset=", fieldInfo.offset,
+                   " token=", fieldInfo.fieldToken,
+                   " isRef=", fieldInfo.isReferenceType ? "true" : "false");
 
         layout.fields.push_back(fieldInfo);
     }
@@ -150,7 +174,11 @@ ClassLayoutCache::ClassLayoutData ClassLayoutCache::BuildLayout(ClassID classID)
     return layout;
 }
 
-bool ClassLayoutCache::IsFieldReferenceType(mdFieldDef fieldToken, ModuleID moduleID, IMetaDataImport* pMetadataImport)
+bool ClassLayoutCache::IsFieldReferenceType(
+    mdFieldDef fieldToken,
+    ModuleID moduleID,
+    IMetaDataImport* pMetadataImport,
+    const std::vector<ClassID>& typeArgs)
 {
     if (pMetadataImport == nullptr || fieldToken == 0)
     {
@@ -184,24 +212,22 @@ bool ClassLayoutCache::IsFieldReferenceType(mdFieldDef fieldToken, ModuleID modu
     }
 
     // Skip optional custom modifiers (CMOD_OPT, CMOD_REQD) and PINNED/BYREF prefixes.
-    // These can appear before the actual element type in the signature.
     while (idx < signatureSize)
     {
         CorElementType prefix = static_cast<CorElementType>(pSignature[idx]);
         if (prefix == ELEMENT_TYPE_CMOD_OPT || prefix == ELEMENT_TYPE_CMOD_REQD)
         {
-            idx++; // skip the CMOD byte
-            // skip the compressed token that follows the CMOD
+            idx++;
             mdToken token;
             idx += CorSigUncompressToken(&pSignature[idx], &token);
             continue;
         }
         if (prefix == ELEMENT_TYPE_PINNED || prefix == ELEMENT_TYPE_BYREF)
         {
-            idx++; // skip the prefix byte
+            idx++;
             continue;
         }
-        break; // actual element type reached
+        break;
     }
 
     if (idx >= signatureSize)
@@ -209,10 +235,12 @@ bool ClassLayoutCache::IsFieldReferenceType(mdFieldDef fieldToken, ModuleID modu
         return false;
     }
 
-    // Read the actual element type
     CorElementType elementType = static_cast<CorElementType>(pSignature[idx]);
 
-    // Direct reference types
+    Log::Debug("IsFieldReferenceType: fieldToken=", fieldToken,
+               " elementType=", static_cast<int>(elementType),
+               " typeArgs.size=", typeArgs.size());
+
     if (elementType == ELEMENT_TYPE_CLASS ||
         elementType == ELEMENT_TYPE_STRING ||
         elementType == ELEMENT_TYPE_OBJECT ||
@@ -223,8 +251,6 @@ bool ClassLayoutCache::IsFieldReferenceType(mdFieldDef fieldToken, ModuleID modu
     }
 
     // Generic instantiation: GENERICINST (CLASS | VALUETYPE) token arg_count args...
-    // If the generic is instantiated over CLASS, it's a reference type (e.g., List<string>).
-    // If over VALUETYPE, it's a value type (e.g., Nullable<int>).
     if (elementType == ELEMENT_TYPE_GENERICINST)
     {
         idx++;
@@ -233,15 +259,65 @@ bool ClassLayoutCache::IsFieldReferenceType(mdFieldDef fieldToken, ModuleID modu
             return false;
         }
         CorElementType genericBase = static_cast<CorElementType>(pSignature[idx]);
+        Log::Debug("IsFieldReferenceType: GENERICINST base=", static_cast<int>(genericBase));
         return (genericBase == ELEMENT_TYPE_CLASS);
     }
 
-    // ELEMENT_TYPE_VAR / ELEMENT_TYPE_MVAR are generic type/method parameters.
-    // At the type level we can't tell if T is a reference or value type without
-    // resolving the concrete instantiation. Skip for safety (conservative: treat as non-reference).
+    // Generic type parameter: resolve against the concrete type arguments.
+    if (elementType == ELEMENT_TYPE_VAR)
+    {
+        idx++;
+        if (idx >= signatureSize || typeArgs.empty())
+        {
+            Log::Debug("IsFieldReferenceType: ELEMENT_TYPE_VAR but no type args or signature too short");
+            return false;
+        }
+        ULONG varIndex;
+        CorSigUncompressData(&pSignature[idx], &varIndex);
 
-    // Value types (ELEMENT_TYPE_VALUETYPE, primitives, etc.) are not references.
+        Log::Debug("IsFieldReferenceType: ELEMENT_TYPE_VAR index=", varIndex);
+
+        if (varIndex < static_cast<ULONG>(typeArgs.size()))
+        {
+            bool isRef = IsClassIDReferenceType(typeArgs[varIndex]);
+            Log::Debug("IsFieldReferenceType: VAR(", varIndex, ") -> '", GetClassName(typeArgs[varIndex]),
+                       "' isRef=", isRef ? "true" : "false");
+            return isRef;
+        }
+        Log::Debug("IsFieldReferenceType: VAR index ", varIndex, " out of range (size=", typeArgs.size(), ")");
+        return false;
+    }
+
+    Log::Debug("IsFieldReferenceType: unhandled elementType=", static_cast<int>(elementType), " -> false");
     return false;
+}
+
+bool ClassLayoutCache::IsClassIDReferenceType(ClassID classID)
+{
+    if (classID == 0)
+    {
+        return false;
+    }
+
+    // Arrays are always reference types
+    CorElementType et;
+    ClassID elemID;
+    ULONG rank;
+    if (_pCorProfilerInfo->IsArrayClass(classID, &et, &elemID, &rank) == S_OK)
+    {
+        return true;
+    }
+
+    ModuleID moduleID;
+    mdTypeDef typeDef;
+    HRESULT hr = _pCorProfilerInfo->GetClassIDInfo2(
+        classID, &moduleID, &typeDef, nullptr, 0, nullptr, nullptr);
+    if (FAILED(hr))
+    {
+        return true;
+    }
+
+    return IsReferenceType(classID, typeDef, moduleID);
 }
 
 void ClassLayoutCache::GetParentClassFields(ClassID parentClassID, std::vector<FieldInfo>& fields)
@@ -253,6 +329,16 @@ void ClassLayoutCache::GetParentClassFields(ClassID parentClassID, std::vector<F
         // Append parent fields (they come before child fields in memory)
         fields.insert(fields.begin(), parentLayout->fields.begin(), parentLayout->fields.end());
     }
+}
+
+std::string ClassLayoutCache::GetClassName(ClassID classID) const
+{
+    std::string name;
+    if (_pFrameStore != nullptr && _pFrameStore->GetTypeName(classID, name))
+    {
+        return name;
+    }
+    return "<classID=" + std::to_string(classID) + ">";
 }
 
 bool ClassLayoutCache::IsReferenceType(ClassID classID, mdTypeDef typeDef, ModuleID moduleID)

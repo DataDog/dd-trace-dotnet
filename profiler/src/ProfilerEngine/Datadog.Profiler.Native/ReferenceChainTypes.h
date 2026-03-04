@@ -4,6 +4,7 @@
 #pragma once
 
 #include "corprof.h"
+#include <string>
 
 // Root category enumeration
 // Follow Perfview categories for consistency
@@ -19,6 +20,21 @@ enum class RootCategory : uint8_t
     Unknown = 7
 };
 
+inline const char* RootCategoryToString(RootCategory category)
+{
+    switch (category)
+    {
+        case RootCategory::Stack:              return "Stack";
+        case RootCategory::StaticVariable:     return "StaticVariable";
+        case RootCategory::Finalizer:          return "Finalizer";
+        case RootCategory::Handle:             return "Handle";
+        case RootCategory::Pinning:            return "Pinning";
+        case RootCategory::ConditionalWeakTable: return "ConditionalWeakTable";
+        case RootCategory::COM:                return "COM";
+        default:                               return "Unknown";
+    }
+}
+
 // Root information for collection
 struct RootInfo
 {
@@ -31,12 +47,17 @@ struct RootInfo
     ClassID classID;
     uint64_t objectSize;
 
-    RootInfo(uintptr_t addr, RootCategory cat, ClassID typeID, uint64_t size)
+    // For static roots: the name of the static field (e.g., "_staticOrders").
+    // Empty for non-static roots.
+    std::string fieldName;
+
+    RootInfo(uintptr_t addr, RootCategory cat, ClassID typeID, uint64_t size, std::string field = "")
         :
         address(addr),
         category(cat),
         classID(typeID),
-        objectSize(size)
+        objectSize(size),
+        fieldName(std::move(field))
     {
     }
 };

@@ -116,7 +116,8 @@ protected:
         uint32_t count,
         GCBulkRootEdgeValue* pRoots) override;
     void OnBulkRootStaticVar(
-        const GCBulkRootStaticVarValue& root) override;
+        const GCBulkRootStaticVarValue& root,
+        const std::string& fieldName) override;
 
     // Inherited via ServiceBase
     bool StartImpl() override;
@@ -131,9 +132,10 @@ private:
     void StartAsyncSnapshotIfNeeded();
 
 private:
-    std::chrono::minutes _heapDumpInterval;
+    std::chrono::seconds _heapDumpInterval;
     std::chrono::milliseconds _snapshotCheckInterval;
     uint32_t _memPressureThreshold;
+    bool _delayFirstSnapshot;
     uint64_t _runtimeSessionKeywords;
     uint32_t _runtimeSessionVerbosity;
 

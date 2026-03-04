@@ -8,6 +8,7 @@
 #include "ReferenceChainTypes.h"
 #include <unordered_map>
 #include <memory>
+#include <string>
 #include <cstdint>
 
 // Maximum depth for tree traversal to prevent pathological cases
@@ -68,15 +69,20 @@ struct TypeRootNode
 {
     TypeTreeNode node;
     uint8_t rootCategories;  // Bitmask of RootCategory values
+    std::string fieldName;   // For static roots: the declaring field name (e.g., "_staticOrders")
 
     TypeRootNode(ClassID typeID) : node(typeID), rootCategories(0)
     {
     }
 
-    void AddRoot(RootCategory category, uint64_t size)
+    void AddRoot(RootCategory category, uint64_t size, const std::string& field = "")
     {
         node.AddInstance(size);
         rootCategories |= (1 << static_cast<uint8_t>(category));
+        if (!field.empty() && fieldName.empty())
+        {
+            fieldName = field;
+        }
     }
 
     bool HasRootCategory(RootCategory category) const
@@ -98,16 +104,16 @@ public:
 
     // Add or update a root.
     // Returns a pointer to the root's TypeTreeNode for use during traversal.
-    TypeTreeNode* AddRoot(ClassID typeID, RootCategory category, uint64_t size)
+    TypeTreeNode* AddRoot(ClassID typeID, RootCategory category, uint64_t size, const std::string& fieldName = "")
     {
         auto it = _roots.find(typeID);
         if (it != _roots.end())
         {
-            it->second->AddRoot(category, size);
+            it->second->AddRoot(category, size, fieldName);
             return &it->second->node;
         }
         auto root = std::make_unique<TypeRootNode>(typeID);
-        root->AddRoot(category, size);
+        root->AddRoot(category, size, fieldName);
         auto* nodePtr = &root->node;
         _roots[typeID] = std::move(root);
         return nodePtr;

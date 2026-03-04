@@ -15,10 +15,12 @@ public class ReferenceRootNode : ReferenceNode
         long instanceCount,
         long totalSize,
         string categoryCode,
+        string? fieldName,
         IReadOnlyList<ReferenceNode> children)
         : base(typeIndex, instanceCount, totalSize, children)
     {
         CategoryCode = categoryCode;
+        FieldName = fieldName;
     }
 
     /// <summary>
@@ -26,4 +28,10 @@ public class ReferenceRootNode : ReferenceNode
     /// "H" (Handle), "P" (Pinning), "W" (ConditionalWeakTable), "R" (COM), "?" (Unknown).
     /// </summary>
     public string CategoryCode { get; }
+
+    /// <summary>
+    /// For static roots: the name of the declaring static field (e.g., "_staticOrders").
+    /// Null for non-static roots.
+    /// </summary>
+    public string? FieldName { get; }
 }

@@ -17,7 +17,8 @@ public class ReverseChainNode
         long totalSize,
         bool isRoot,
         string? categoryCode,
-        IReadOnlyList<ReverseChainNode> parents)
+        IReadOnlyList<ReverseChainNode> parents,
+        string? fieldName = null)
     {
         TypeIndex = typeIndex;
         InstanceCount = instanceCount;
@@ -25,6 +26,7 @@ public class ReverseChainNode
         IsRoot = isRoot;
         CategoryCode = categoryCode;
         Parents = parents;
+        FieldName = fieldName;
     }
 
     /// <summary>
@@ -46,6 +48,11 @@ public class ReverseChainNode
     /// Root category code ("S", "H", etc.), only set when <see cref="IsRoot"/> is true.
     /// </summary>
     public string? CategoryCode { get; }
+
+    /// <summary>
+    /// For static roots: the name of the declaring static field (e.g., "_staticOrders").
+    /// </summary>
+    public string? FieldName { get; }
 
     /// <summary>
     /// Parent nodes in the reverse chain (who references this type).

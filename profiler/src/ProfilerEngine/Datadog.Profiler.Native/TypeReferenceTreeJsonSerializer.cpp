@@ -31,7 +31,7 @@ std::string TypeReferenceTreeJsonSerializer::Serialize(const TypeReferenceTree& 
     ss << std::fixed;  // No scientific notation
 
     // Output version
-    ss << "{\"v\":7";
+    ss << "{\"v\":1";
 
     // Output type table
     if (!typeTable.empty())
@@ -85,6 +85,11 @@ std::string TypeReferenceTreeJsonSerializer::Serialize(const TypeReferenceTree& 
            << ",\"c\":\"" << categoryCode << "\""
            << ",\"ic\":" << rootNode->node.instanceCount
            << ",\"ts\":" << rootNode->node.totalSize;
+
+        if (!rootNode->fieldName.empty())
+        {
+            ss << ",\"fn\":\"" << EscapeJson(rootNode->fieldName) << "\"";
+        }
 
         // Output children
         if (!rootNode->node.children.empty())

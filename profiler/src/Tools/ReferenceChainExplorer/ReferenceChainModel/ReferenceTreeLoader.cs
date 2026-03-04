@@ -74,10 +74,11 @@ public static class ReferenceTreeLoader
         string categoryCode = element.TryGetProperty("c", out var cProp) ? (cProp.GetString() ?? "?") : "?";
         long instanceCount = element.TryGetProperty("ic", out var icProp) ? icProp.GetInt64() : 0;
         long totalSize = element.TryGetProperty("ts", out var tsProp) ? tsProp.GetInt64() : 0;
+        string? fieldName = element.TryGetProperty("fn", out var fnProp) ? fnProp.GetString() : null;
 
         var children = ParseChildren(element);
 
-        return new ReferenceRootNode(typeIndex, instanceCount, totalSize, categoryCode, children);
+        return new ReferenceRootNode(typeIndex, instanceCount, totalSize, categoryCode, fieldName, children);
     }
 
     private static ReferenceNode ParseNode(JsonElement element)

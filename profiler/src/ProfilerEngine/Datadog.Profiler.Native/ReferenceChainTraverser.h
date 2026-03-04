@@ -9,6 +9,7 @@
 #include "TypeReferenceTree.h"
 #include "VisitedObjectSet.h"
 #include "ReferenceChainTypes.h"
+#include <string>
 #include <vector>
 
 // Forward declarations
@@ -48,7 +49,8 @@ private:
 
     // Traverse array elements using GetArrayObjectInfo.
     // Handles all array types: single-dimension (SZArray), jagged (arrays of arrays),
-    // and multi-dimensional (matrices).
+    // and multi-dimensional (matrices). Also handles value type arrays whose element
+    // struct contains reference fields (e.g., Dictionary<K,V>.Entry[]).
     void TraverseArray(
         uintptr_t arrayAddress,
         ClassID arrayClassID,
@@ -57,7 +59,19 @@ private:
         TypeTreeNode* currentNode,
         uint32_t depth);
 
+    // Traverse inline value type elements in an array, following their reference fields.
+    // Value types are stored inline (no per-element MethodTable pointer), so field offsets
+    // from GetClassLayout are applied directly to each element's base address.
+    void TraverseValueTypeArrayElements(
+        BYTE* pData,
+        uint64_t totalElements,
+        const ClassLayoutCache::ClassLayoutData& elementLayout,
+        VisitedObjectSet& visited,
+        TypeTreeNode* currentNode,
+        uint32_t depth);
+
     bool IsValidObjectAddress(uintptr_t address) const;
+    std::string GetClassName(ClassID classID) const;
 
     // Read a reference field from an object.
     // objectAddress: ObjectID (points to the MethodTable pointer at offset 0)
@@ -76,4 +90,5 @@ private:
     // Statistics
     uint64_t _objectsTraversed;
     uint64_t _rootsProcessed;
+    uint64_t _rootCategoryCounts[8] = {};
 };

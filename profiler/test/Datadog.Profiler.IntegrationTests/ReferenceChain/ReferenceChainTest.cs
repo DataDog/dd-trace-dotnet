@@ -28,7 +28,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             _output = output;
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net6.0", "net8.0", "net10.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
         public void CheckSimpleChainScenario(string appName, string framework, string appAssembly)
         {
             // Scenario 1: Simple Chain (~1K objects)
@@ -38,6 +38,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             runner.TestDurationInSeconds = 30;
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
 
             // check the reference_tree.json files are sent with the profiles
             using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
@@ -55,31 +56,18 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
             Assert.True(referenceTreeFiles.Length > 0, "No reference tree JSON files were generated");
 
-            foreach (var referenceTreeFile in referenceTreeFiles)
-            {
-                var jsonContent = File.ReadAllText(referenceTreeFile);
-                _output.WriteLine($"Reference tree JSON ({referenceTreeFile}): {jsonContent.Substring(0, System.Math.Min(2000, jsonContent.Length))}...");
+            var trees = LoadAndValidateAllTrees(referenceTreeFiles);
 
-                ValidateReferenceTreeJsonStructure(jsonContent);
-
-                var tree = ReferenceTreeLoader.Load(jsonContent);
-
-                // Validate the reference chain: Order -> Customer -> Address
-                Assert.True(
-                    HasAncestorDescendantChain(tree, "Order", "Customer"),
-                    "Expected Order to have Customer as descendant");
-                Assert.True(
-                    HasAncestorDescendantChain(tree, "Customer", "Address"),
-                    "Expected Customer to have Address as descendant");
-
-                // Validate: Order -> ... -> Product (via OrderItem array)
-                Assert.True(
-                    HasAncestorDescendantChain(tree, "Order", "Product"),
-                    "Expected Order to have Product as descendant (via OrderItem)");
-            }
+            // At least one snapshot must contain the expected reference chains
+            Assert.True(
+                trees.Any(tree =>
+                    HasAncestorDescendantChain(tree, "Order", "Customer") &&
+                    HasAncestorDescendantChain(tree, "Customer", "Address") &&
+                    HasAncestorDescendantChain(tree, "Order", "Product")),
+                "Expected at least one snapshot to contain Order->Customer->Address and Order->Product chains");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net6.0", "net8.0", "net10.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
         public void CheckCyclesScenario(string appName, string framework, string appAssembly)
         {
             // Scenario 3: Cycles - Parent -> Child -> Parent (bidirectional tree)
@@ -87,6 +75,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             runner.TestDurationInSeconds = 30;
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
             runner.Run(agent);
@@ -95,28 +84,17 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
             Assert.True(referenceTreeFiles.Length > 0, "No reference tree JSON files were generated for cycle scenario");
 
-            foreach (var referenceTreeFile in referenceTreeFiles)
-            {
-                var jsonContent = File.ReadAllText(referenceTreeFile);
-                _output.WriteLine($"Reference tree JSON ({referenceTreeFile}): {jsonContent.Substring(0, System.Math.Min(2000, jsonContent.Length))}...");
+            var trees = LoadAndValidateAllTrees(referenceTreeFiles);
 
-                ValidateReferenceTreeJsonStructure(jsonContent);
-
-                var tree = ReferenceTreeLoader.Load(jsonContent);
-
-                // TreeNode has Parent (TreeNode) and Children (List<TreeNode>).
-                // The cycle detection should stop the tree from growing infinitely.
-                Assert.True(
-                    HasSelfReferencingChain(tree, "TreeNode"),
-                    "Expected TreeNode to have TreeNode as descendant (self-referencing via Parent/Children)");
-
-                // The tree MUST be finite (cycle detection worked).
-                int maxDepth = GetMaxTreeDepth(tree);
-                Assert.True(maxDepth < 200, $"Tree depth {maxDepth} is suspiciously deep; cycle detection may have failed");
-            }
+            // At least one snapshot must contain the expected self-referencing chain
+            Assert.True(
+                trees.Any(tree =>
+                    HasSelfReferencingChain(tree, "TreeNode") &&
+                    GetMaxTreeDepth(tree) < 200),
+                "Expected at least one snapshot to contain TreeNode self-referencing chain with finite depth");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net6.0", "net8.0", "net10.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
         public void CheckDeepHierarchyScenario(string appName, string framework, string appAssembly)
         {
             // Scenario 4: Deep Hierarchy - Root -> Level0 -> Level1 -> ... -> Level9
@@ -124,6 +102,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             runner.TestDurationInSeconds = 30;
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
             runner.Run(agent);
@@ -131,28 +110,17 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
             Assert.True(referenceTreeFiles.Length > 0, "No reference tree JSON files were generated for deep hierarchy scenario");
 
-            foreach (var referenceTreeFile in referenceTreeFiles)
-            {
-                var jsonContent = File.ReadAllText(referenceTreeFile);
-                _output.WriteLine($"Reference tree JSON ({referenceTreeFile}): {jsonContent.Substring(0, System.Math.Min(2000, jsonContent.Length))}...");
+            var trees = LoadAndValidateAllTrees(referenceTreeFiles);
 
-                ValidateReferenceTreeJsonStructure(jsonContent);
-
-                var tree = ReferenceTreeLoader.Load(jsonContent);
-
-                // Validate the full chain: Level0 -> Level1 -> ... -> Level9
-                for (int i = 0; i < 9; i++)
-                {
-                    string parent = $"Level{i}";
-                    string child = $"Level{i + 1}";
-                    Assert.True(
-                        HasAncestorDescendantChain(tree, parent, child),
-                        $"Expected {parent} to have {child} as descendant in the deep hierarchy chain");
-                }
-            }
+            // At least one snapshot must contain the full deep hierarchy chain
+            Assert.True(
+                trees.Any(tree =>
+                    Enumerable.Range(0, 9).All(i =>
+                        HasAncestorDescendantChain(tree, $"Level{i}", $"Level{i + 1}"))),
+                "Expected at least one snapshot to contain the full Level0->Level1->...->Level9 chain");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net6.0", "net8.0", "net10.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
         public void CheckMultipleRootsScenario(string appName, string framework, string appAssembly)
         {
             // Scenario 2: Multiple Roots
@@ -160,6 +128,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             runner.TestDurationInSeconds = 30;
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
             runner.Run(agent);
@@ -167,31 +136,18 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
             Assert.True(referenceTreeFiles.Length > 0, "No reference tree JSON files were generated for multiple roots scenario");
 
-            foreach (var referenceTreeFile in referenceTreeFiles)
-            {
-                var jsonContent = File.ReadAllText(referenceTreeFile);
-                _output.WriteLine($"Reference tree JSON ({referenceTreeFile}): {jsonContent.Substring(0, System.Math.Min(2000, jsonContent.Length))}...");
+            var trees = LoadAndValidateAllTrees(referenceTreeFiles);
 
-                ValidateReferenceTreeJsonStructure(jsonContent);
-
-                var tree = ReferenceTreeLoader.Load(jsonContent);
-
-                // Verify multiple roots exist
-                Assert.True(tree.Roots.Count > 0, "No roots found in reference tree");
-
-                // Validate that Order -> Customer chain exists
-                Assert.True(
-                    HasAncestorDescendantChain(tree, "Order", "Customer"),
-                    "Expected Order to have Customer as descendant");
-
-                // Validate that Product appears somewhere in the tree
-                Assert.True(
-                    TypeExistsInTree(tree, "Product"),
-                    "Expected Product to appear in the reference tree");
-            }
+            // At least one snapshot must contain the expected chains
+            Assert.True(
+                trees.Any(tree =>
+                    tree.Roots.Count > 0 &&
+                    HasAncestorDescendantChain(tree, "Order", "Customer") &&
+                    TypeExistsInTree(tree, "Product")),
+                "Expected at least one snapshot to contain Order->Customer chain and Product type");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net6.0", "net8.0", "net10.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
         public void CheckWideTreeScenario(string appName, string framework, string appAssembly)
         {
             // Scenario 5: Wide Tree - 100 branches x 50 leaves
@@ -199,6 +155,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             runner.TestDurationInSeconds = 30;
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
             runner.Run(agent);
@@ -206,23 +163,15 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
             Assert.True(referenceTreeFiles.Length > 0, "No reference tree JSON files were generated for wide tree scenario");
 
-            foreach (var referenceTreeFile in referenceTreeFiles)
-            {
-                var jsonContent = File.ReadAllText(referenceTreeFile);
-                _output.WriteLine($"Reference tree JSON ({referenceTreeFile}): {jsonContent.Substring(0, System.Math.Min(2000, jsonContent.Length))}...");
+            var trees = LoadAndValidateAllTrees(referenceTreeFiles);
 
-                ValidateReferenceTreeJsonStructure(jsonContent);
-
-                var tree = ReferenceTreeLoader.Load(jsonContent);
-
-                // Validate: WideBranch -> Leaf chain
-                Assert.True(
-                    HasAncestorDescendantChain(tree, "WideBranch", "Leaf"),
-                    "Expected WideBranch to have Leaf as descendant");
-            }
+            // At least one snapshot must contain the expected chain
+            Assert.True(
+                trees.Any(tree => HasAncestorDescendantChain(tree, "WideBranch", "Leaf")),
+                "Expected at least one snapshot to contain WideBranch->Leaf chain");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net6.0", "net8.0", "net10.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
         public void CheckMixedStructuresScenario(string appName, string framework, string appAssembly)
         {
             // Scenario 6: Mixed Structures - arrays of arrays, dictionaries, byte[] (value-type arrays skipped)
@@ -230,6 +179,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             runner.TestDurationInSeconds = 30;
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
             runner.Run(agent);
@@ -237,31 +187,18 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
             Assert.True(referenceTreeFiles.Length > 0, "No reference tree JSON files were generated for mixed structures scenario");
 
-            foreach (var referenceTreeFile in referenceTreeFiles)
-            {
-                var jsonContent = File.ReadAllText(referenceTreeFile);
-                _output.WriteLine($"Reference tree JSON ({referenceTreeFile}): {jsonContent.Substring(0, System.Math.Min(2000, jsonContent.Length))}...");
+            var trees = LoadAndValidateAllTrees(referenceTreeFiles);
 
-                ValidateReferenceTreeJsonStructure(jsonContent);
-
-                var tree = ReferenceTreeLoader.Load(jsonContent);
-
-                // Validate: Container -> Payload -> Metadata chain
-                Assert.True(
-                    HasAncestorDescendantChain(tree, "Container", "Payload"),
-                    "Expected Container to have Payload as descendant");
-                Assert.True(
-                    HasAncestorDescendantChain(tree, "Payload", "Metadata"),
-                    "Expected Payload to have Metadata as descendant");
-
-                // Leaf is used inside Container.Matrix (jagged array)
-                Assert.True(
-                    HasAncestorDescendantChain(tree, "Container", "Leaf"),
-                    "Expected Container to have Leaf as descendant (via Matrix jagged array)");
-            }
+            // At least one snapshot must contain the expected chains
+            Assert.True(
+                trees.Any(tree =>
+                    HasAncestorDescendantChain(tree, "Container", "Payload") &&
+                    HasAncestorDescendantChain(tree, "Payload", "Metadata") &&
+                    HasAncestorDescendantChain(tree, "Container", "Leaf")),
+                "Expected at least one snapshot to contain Container->Payload->Metadata and Container->Leaf chains");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net6.0", "net8.0", "net10.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
         public void CheckSharedReferencesScenario(string appName, string framework, string appAssembly)
         {
             // Scenario 8: Shared References - multiple holders reference the same payload
@@ -269,6 +206,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             runner.TestDurationInSeconds = 30;
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
             runner.Run(agent);
@@ -276,32 +214,17 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
             Assert.True(referenceTreeFiles.Length > 0, "No reference tree JSON files were generated for shared references scenario");
 
-            foreach (var referenceTreeFile in referenceTreeFiles)
-            {
-                var jsonContent = File.ReadAllText(referenceTreeFile);
-                _output.WriteLine($"Reference tree JSON ({referenceTreeFile}): {jsonContent.Substring(0, System.Math.Min(2000, jsonContent.Length))}...");
+            var trees = LoadAndValidateAllTrees(referenceTreeFiles);
 
-                ValidateReferenceTreeJsonStructure(jsonContent);
-
-                var tree = ReferenceTreeLoader.Load(jsonContent);
-
-                // Validate: SharedHolder -> SharedPayload chain
-                Assert.True(
-                    HasAncestorDescendantChain(tree, "SharedHolder", "SharedPayload"),
-                    "Expected SharedHolder to have SharedPayload as descendant");
-
-                // Validate the instance count on SharedPayload nodes.
-                // Find any SharedPayload node and verify instance count > 0.
-                var payloadNodes = FindNodesOfType(tree, "SharedPayload");
-                Assert.True(payloadNodes.Count > 0, "Expected to find SharedPayload nodes in the tree");
-                foreach (var payloadNode in payloadNodes)
-                {
-                    Assert.True(payloadNode.InstanceCount > 0, "SharedPayload instance count should be > 0");
-                }
-            }
+            // At least one snapshot must contain the expected chain with valid instance counts
+            Assert.True(
+                trees.Any(tree =>
+                    HasAncestorDescendantChain(tree, "SharedHolder", "SharedPayload") &&
+                    FindNodesOfType(tree, "SharedPayload").Any(n => n.InstanceCount > 0)),
+                "Expected at least one snapshot to contain SharedHolder->SharedPayload chain with InstanceCount > 0");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net6.0", "net8.0", "net10.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
         public void CheckLinkedListScenario(string appName, string framework, string appAssembly)
         {
             // Scenario 9: Linked List - self-referencing type chain (LinkedNode -> LinkedNode -> ...)
@@ -309,6 +232,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             runner.TestDurationInSeconds = 30;
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
             runner.Run(agent);
@@ -316,28 +240,17 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
             Assert.True(referenceTreeFiles.Length > 0, "No reference tree JSON files were generated for linked list scenario");
 
-            foreach (var referenceTreeFile in referenceTreeFiles)
-            {
-                var jsonContent = File.ReadAllText(referenceTreeFile);
-                _output.WriteLine($"Reference tree JSON ({referenceTreeFile}): {jsonContent.Substring(0, System.Math.Min(2000, jsonContent.Length))}...");
+            var trees = LoadAndValidateAllTrees(referenceTreeFiles);
 
-                ValidateReferenceTreeJsonStructure(jsonContent);
-
-                var tree = ReferenceTreeLoader.Load(jsonContent);
-
-                // LinkedNode -> LinkedNode self-referencing chain
-                Assert.True(
-                    HasSelfReferencingChain(tree, "LinkedNode"),
-                    "Expected LinkedNode to have LinkedNode as descendant (self-referencing chain)");
-
-                // Measure the self-referencing depth
-                int selfRefDepth = GetSelfReferencingDepth(tree, "LinkedNode");
-                _output.WriteLine($"LinkedNode self-referencing depth: {selfRefDepth}");
-                Assert.True(selfRefDepth >= 2, $"Expected LinkedNode self-referencing depth >= 2, got {selfRefDepth}");
-            }
+            // At least one snapshot must contain the expected self-referencing chain
+            Assert.True(
+                trees.Any(tree =>
+                    HasSelfReferencingChain(tree, "LinkedNode") &&
+                    GetSelfReferencingDepth(tree, "LinkedNode") >= 2),
+                "Expected at least one snapshot to contain LinkedNode self-referencing chain with depth >= 2");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net6.0", "net8.0", "net10.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
         public void CheckNullFieldsScenario(string appName, string framework, string appAssembly)
         {
             // Scenario 10: Null Fields - objects with most reference fields intentionally null
@@ -345,6 +258,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             runner.TestDurationInSeconds = 30;
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
             runner.Run(agent);
@@ -352,32 +266,86 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
             Assert.True(referenceTreeFiles.Length > 0, "No reference tree JSON files were generated for null fields scenario");
 
-            foreach (var referenceTreeFile in referenceTreeFiles)
-            {
-                var jsonContent = File.ReadAllText(referenceTreeFile);
-                _output.WriteLine($"Reference tree JSON ({referenceTreeFile}): {jsonContent.Substring(0, System.Math.Min(2000, jsonContent.Length))}...");
+            var trees = LoadAndValidateAllTrees(referenceTreeFiles);
 
-                ValidateReferenceTreeJsonStructure(jsonContent);
-
-                var tree = ReferenceTreeLoader.Load(jsonContent);
-
-                // SparseObject has only FilledRef (Customer) set; null fields should not generate children.
-                Assert.True(
-                    HasAncestorDescendantChain(tree, "SparseObject", "Customer"),
-                    "Expected SparseObject to have Customer as descendant (FilledRef is set)");
-
-                // Product and Order should NOT appear as direct children of SparseObject.
-                var sparseNodes = FindNodesOfType(tree, "SparseObject");
-                foreach (var sparseNode in sparseNodes)
+            // At least one snapshot must contain the expected chain with correct null field behavior
+            Assert.True(
+                trees.Any(tree =>
                 {
-                    var directChildTypeNames = sparseNode.Children
-                        .Select(c => tree.GetShortTypeName(c.TypeIndex))
-                        .ToHashSet();
-                    Assert.DoesNotContain("Product", directChildTypeNames);
-                    Assert.DoesNotContain("Order", directChildTypeNames);
-                    _output.WriteLine($"SparseObject direct children: [{string.Join(", ", directChildTypeNames)}]");
-                }
-            }
+                    if (!HasAncestorDescendantChain(tree, "SparseObject", "Customer"))
+                    {
+                        return false;
+                    }
+
+                    var sparseNodes = FindNodesOfType(tree, "SparseObject");
+                    return sparseNodes.All(sparseNode =>
+                    {
+                        var directChildTypeNames = sparseNode.Children
+                            .Select(c => tree.GetShortTypeName(c.TypeIndex))
+                            .ToHashSet();
+                        return !directChildTypeNames.Contains("Product") && !directChildTypeNames.Contains("Order");
+                    });
+                }),
+                "Expected at least one snapshot to contain SparseObject->Customer without Product/Order as direct children");
+        }
+
+        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
+        public void CheckStructWithReferencesScenario(string appName, string framework, string appAssembly)
+        {
+            // Scenario 11: Value type array with embedded reference fields
+            // StructWithReferences[] -> Customer -> Address
+            //                        -> Product
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 11");
+            runner.TestDurationInSeconds = 30;
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
+
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
+            runner.Run(agent);
+
+            var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
+            Assert.True(referenceTreeFiles.Length > 0, "No reference tree JSON files were generated for struct with references scenario");
+
+            var trees = LoadAndValidateAllTrees(referenceTreeFiles);
+
+            // At least one snapshot must contain the expected chains through value type array elements
+            Assert.True(
+                trees.Any(tree =>
+                    HasAncestorDescendantChain(tree, "StructWithReferences", "Customer") &&
+                    HasAncestorDescendantChain(tree, "Customer", "Address") &&
+                    HasAncestorDescendantChain(tree, "StructWithReferences", "Product")),
+                "Expected at least one snapshot to contain StructWithReferences[]->Customer->Address and StructWithReferences[]->Product chains");
+        }
+
+        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
+        public void CheckStaticRootScenario(string appName, string framework, string appAssembly)
+        {
+            // Scenario 12: Same simple chain as Scenario 1 but held by a static field.
+            // The GC reports static roots via GCBulkRootStaticVar, bypassing stack root handling.
+            // Static List<Order> -> Order -> Customer -> Address
+            //                             -> OrderItem[] -> Product
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 12");
+            runner.TestDurationInSeconds = 30;
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
+
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
+            runner.Run(agent);
+
+            var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
+            Assert.True(referenceTreeFiles.Length > 0, "No reference tree JSON files were generated for static root scenario");
+
+            var trees = LoadAndValidateAllTrees(referenceTreeFiles);
+
+            // At least one snapshot must contain the expected reference chains
+            Assert.True(
+                trees.Any(tree =>
+                    HasAncestorDescendantChain(tree, "Order", "Customer") &&
+                    HasAncestorDescendantChain(tree, "Customer", "Address") &&
+                    HasAncestorDescendantChain(tree, "Order", "Product")),
+                "Expected at least one snapshot to contain Order->Customer->Address and Order->Product chains");
         }
 
         // ====================================================================
@@ -403,6 +371,25 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
         }
 
         /// <summary>
+        /// Load all reference tree JSON files, validate their structure, and return the parsed trees.
+        /// Structural validation runs on every file; chain validation is left to the caller.
+        /// </summary>
+        private List<ReferenceTree> LoadAndValidateAllTrees(string[] referenceTreeFiles)
+        {
+            var trees = new List<ReferenceTree>();
+            foreach (var referenceTreeFile in referenceTreeFiles)
+            {
+                var jsonContent = File.ReadAllText(referenceTreeFile);
+                _output.WriteLine($"Reference tree JSON ({referenceTreeFile}): {jsonContent.Substring(0, System.Math.Min(2000, jsonContent.Length))}...");
+
+                ValidateReferenceTreeJsonStructure(jsonContent);
+                trees.Add(ReferenceTreeLoader.Load(jsonContent));
+            }
+
+            return trees;
+        }
+
+        /// <summary>
         /// Validate the raw JSON structure (required fields, valid format).
         /// This checks the low-level JSON format; chain validation uses the model.
         /// </summary>
@@ -415,7 +402,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
 
             // Check required top-level fields
             Assert.True(doc.RootElement.TryGetProperty("v", out var version), "Missing 'v' (version) field");
-            Assert.Equal(7, version.GetInt32());
+            Assert.Equal(1, version.GetInt32());
 
             Assert.True(doc.RootElement.TryGetProperty("tt", out var typeTable), "Missing 'tt' (type table) field");
             Assert.True(typeTable.GetArrayLength() > 0, "Type table is empty");

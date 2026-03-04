@@ -129,6 +129,18 @@ namespace Samples.Computer01
         public string Name { get; set; }
     }
 
+    // Value type (struct) with reference fields — used to test traversal of
+    // value type arrays such as Dictionary<K,V>.Entry[] whose elements contain
+    // references to heap-allocated objects.
+#pragma warning disable SA1502 // Element should not be on a single line
+    public struct StructWithReferences
+    {
+        public Customer Customer { get; set; }
+        public Product Product { get; set; }
+        public int Id { get; set; }
+    }
+#pragma warning restore SA1502 // Element should not be on a single line
+
     // Mixed structure types
     public class Container
     {
@@ -156,7 +168,21 @@ namespace Samples.Computer01
     public class ReferenceChainScenarios : ScenarioBase
     {
         private readonly int _scenarioNumber;
-        private readonly List<object> _roots = new List<object>();
+
+        private Dictionary<int, Order> _orderMap;
+        private Dictionary<string, List<Order>> _ordersByCustomer;
+        private List<Product> _allProducts;
+        private List<TreeNode> _treeNodes;
+        private List<Level0> _deepChains;
+        private List<WideBranch> _branches;
+        private List<Container> _containers;
+        private List<SharedHolder> _holders;
+        private List<SharedPayload> _sharedPayloads;
+        private List<LinkedNode> _linkedChains;
+        private List<SparseObject> _sparseObjects;
+        private StructWithReferences[] _structEntries;
+
+        private static List<Order> _staticOrders;
 
         public ReferenceChainScenarios(int scenarioNumber)
         {
@@ -196,6 +222,12 @@ namespace Samples.Computer01
                     break;
                 case 10:
                     RunNullFields();
+                    break;
+                case 11:
+                    RunStructWithReferences();
+                    break;
+                case 12:
+                    RunStaticRootSimpleChain();
                     break;
                 default:
                     RunSimpleChain();
@@ -251,7 +283,7 @@ namespace Samples.Computer01
                 orders[i] = order;
             }
 
-            _roots.Add(orders);
+            _orderMap = orders;
         }
 
         /// <summary>
@@ -293,8 +325,8 @@ namespace Samples.Computer01
                 ordersByCustomer[$"Customer-{i}"] = orders;
             }
 
-            _roots.Add(ordersByCustomer);
-            _roots.Add(allProducts);
+            _ordersByCustomer = ordersByCustomer;
+            _allProducts = allProducts;
         }
 
         /// <summary>
@@ -321,7 +353,7 @@ namespace Samples.Computer01
                 rootNodes.Add(root);
             }
 
-            _roots.Add(rootNodes);
+            _treeNodes = rootNodes;
         }
 
         /// <summary>
@@ -377,7 +409,7 @@ namespace Samples.Computer01
                 });
             }
 
-            _roots.Add(chains);
+            _deepChains = chains;
         }
 
         /// <summary>
@@ -394,7 +426,7 @@ namespace Samples.Computer01
                 branches.Add(new WideBranch($"Branch-{i}", 50));
             }
 
-            _roots.Add(branches);
+            _branches = branches;
         }
 
         /// <summary>
@@ -436,7 +468,7 @@ namespace Samples.Computer01
                 containers.Add(container);
             }
 
-            _roots.Add(containers);
+            _containers = containers;
         }
 
         /// <summary>
@@ -466,7 +498,7 @@ namespace Samples.Computer01
                 };
             }
 
-            _roots.Add(orderMap);
+            _orderMap = orderMap;
 
             // Root 2: Tree with cycles
             var forest = new List<TreeNode>();
@@ -485,7 +517,7 @@ namespace Samples.Computer01
                 forest.Add(tree);
             }
 
-            _roots.Add(forest);
+            _treeNodes = forest;
 
             // Root 3: Deep chains
             var deepChains = new List<Level0>();
@@ -533,7 +565,7 @@ namespace Samples.Computer01
                 });
             }
 
-            _roots.Add(deepChains);
+            _deepChains = deepChains;
         }
 
         /// <summary>
@@ -568,8 +600,8 @@ namespace Samples.Computer01
                 });
             }
 
-            _roots.Add(holders);
-            _roots.Add(sharedPayloads);
+            _holders = holders;
+            _sharedPayloads = sharedPayloads;
         }
 
         /// <summary>
@@ -599,7 +631,7 @@ namespace Samples.Computer01
                 chains.Add(head);
             }
 
-            _roots.Add(chains);
+            _linkedChains = chains;
         }
 
         /// <summary>
@@ -630,7 +662,83 @@ namespace Samples.Computer01
                 });
             }
 
-            _roots.Add(sparseObjects);
+            _sparseObjects = sparseObjects;
+        }
+
+        /// <summary>
+        /// Scenario 11: Struct with References (~300 objects)
+        /// An array of value types (structs) whose fields hold references to
+        /// heap-allocated objects. This exercises traversal of value type arrays
+        /// where the struct layout contains reference fields — the same pattern
+        /// used by Dictionary&lt;K,V&gt;.Entry[].
+        /// StructWithReferences[] → Customer → Address
+        ///                        → Product
+        /// </summary>
+        private void RunStructWithReferences()
+        {
+            Console.WriteLine("ReferenceChain Scenario 11: Struct with References");
+            var entries = new StructWithReferences[100];
+
+            for (int i = 0; i < entries.Length; i++)
+            {
+                entries[i] = new StructWithReferences
+                {
+                    Customer = new Customer
+                    {
+                        Name = $"Customer-{i}",
+                        Address = new Address { Street = $"Street-{i}", City = $"City-{i}" }
+                    },
+                    Product = new Product { Name = $"Product-{i}", Price = i * 10 },
+                    Id = i
+                };
+            }
+
+            _structEntries = entries;
+        }
+
+        /// <summary>
+        /// Scenario 12: Static Root Simple Chain
+        /// Same object graph as Scenario 1 but held by a static field so the GC
+        /// reports it through GCBulkRootStaticVar instead of a stack/handle root.
+        /// Static List&lt;Order&gt; → Order → Customer → Address
+        ///                                → OrderItem[] → Product
+        /// </summary>
+        private void RunStaticRootSimpleChain()
+        {
+            Console.WriteLine("ReferenceChain Scenario 12: Static Root Simple Chain");
+            var orders = new List<Order>();
+
+            for (int i = 0; i < 100; i++)
+            {
+                orders.Add(new Order
+                {
+                    Description = $"Order-{i}",
+                    Customer = new Customer
+                    {
+                        Name = $"Customer-{i}",
+                        Address = new Address
+                        {
+                            Street = $"Street-{i}",
+                            City = $"City-{i}"
+                        }
+                    },
+                    Items = new List<OrderItem>
+                    {
+                        new OrderItem
+                        {
+                            Product = new Product { Name = $"Product-{i}-A", Price = i * 10 },
+                            Quantity = i + 1
+                        },
+                        new OrderItem
+                        {
+                            Product = new Product { Name = $"Product-{i}-B", Price = i * 20 },
+                            Quantity = i + 2
+                        }
+                    }
+                });
+            }
+
+            _staticOrders = orders;
         }
     }
 }

@@ -32,8 +32,14 @@ ReferenceChainTraverser::ReferenceChainTraverser(
 
 void ReferenceChainTraverser::TraverseFromSingleRoot(const RootInfo& root)
 {
+    Log::Debug("[ROOT] type='", GetClassName(root.classID),
+               "' category=", RootCategoryToString(root.category),
+               " address=", root.address, " size=", root.objectSize);
+
+    _rootCategoryCounts[static_cast<int>(root.category)]++;
+
     // Add the root to the tree and get the tree node to navigate from
-    TypeTreeNode* rootNode = _tree.AddRoot(root.classID, root.category, root.objectSize);
+    TypeTreeNode* rootNode = _tree.AddRoot(root.classID, root.category, root.objectSize, root.fieldName);
 
     // Fresh visited set for this root: detects cycles within this root's graph
     // while allowing the same object to be reached from different roots
@@ -52,6 +58,15 @@ void ReferenceChainTraverser::LogStats() const
     Log::Debug("Reference chain traversal completed: ",
                _rootsProcessed, " roots, ",
                _objectsTraversed, " objects traversed");
+
+    for (int i = 0; i <= static_cast<int>(RootCategory::Unknown); i++)
+    {
+        auto cat = static_cast<RootCategory>(i);
+        if (_rootCategoryCounts[i] > 0)
+        {
+            Log::Debug("  ", RootCategoryToString(cat), " roots: ", _rootCategoryCounts[i]);
+        }
+    }
 }
 
 void ReferenceChainTraverser::TraverseObject(
@@ -166,14 +181,58 @@ void ReferenceChainTraverser::TraverseArray(
     TypeTreeNode* currentNode,
     uint32_t depth)
 {
-    // Check if array element type is a reference type
-    if (layout.arrayElementType != ELEMENT_TYPE_CLASS &&
-        layout.arrayElementType != ELEMENT_TYPE_STRING &&
-        layout.arrayElementType != ELEMENT_TYPE_OBJECT &&
-        layout.arrayElementType != ELEMENT_TYPE_SZARRAY &&
-        layout.arrayElementType != ELEMENT_TYPE_ARRAY)
+    bool isReferenceTypeArray =
+        layout.arrayElementType == ELEMENT_TYPE_CLASS ||
+        layout.arrayElementType == ELEMENT_TYPE_STRING ||
+        layout.arrayElementType == ELEMENT_TYPE_OBJECT ||
+        layout.arrayElementType == ELEMENT_TYPE_SZARRAY ||
+        layout.arrayElementType == ELEMENT_TYPE_ARRAY;
+
+    bool isValueTypeArray = (layout.arrayElementType == ELEMENT_TYPE_VALUETYPE);
+
+    if (!isReferenceTypeArray && !isValueTypeArray)
     {
-        return;  // Array of value types, no references to follow
+        Log::Debug("TraverseArray: skipping array with elementType=", static_cast<int>(layout.arrayElementType),
+                   " (not reference or value type)");
+        return;
+    }
+
+    // For value type arrays, check if the element struct has any reference fields.
+    // If not (e.g., Point[] with only int fields), there's nothing to traverse.
+    const ClassLayoutCache::ClassLayoutData* elementLayout = nullptr;
+    if (isValueTypeArray)
+    {
+        Log::Debug("TraverseArray: value type array detected, element='", GetClassName(layout.arrayElementClassID), "'");
+
+        elementLayout = _layoutCache.GetLayout(layout.arrayElementClassID);
+        if (elementLayout == nullptr || elementLayout->classSize == 0)
+        {
+            Log::Debug("TraverseArray: GetLayout returned null or classSize=0 for element='", GetClassName(layout.arrayElementClassID), "'");
+            return;
+        }
+
+        Log::Debug("TraverseArray: element layout classSize=", elementLayout->classSize,
+                   ", fieldCount=", elementLayout->fields.size());
+
+        bool hasReferenceFields = false;
+        for (const auto& field : elementLayout->fields)
+        {
+            Log::Debug("TraverseArray:   field offset=", field.offset,
+                       ", isRef=", field.isReferenceType ? "true" : "false",
+                       ", token=", field.fieldToken);
+            if (field.isReferenceType)
+            {
+                hasReferenceFields = true;
+            }
+        }
+
+        if (!hasReferenceFields)
+        {
+            Log::Debug("TraverseArray: no reference fields in value type element, skipping");
+            return;
+        }
+
+        Log::Debug("TraverseArray: value type element has reference fields, proceeding with traversal");
     }
 
     ULONG32 rank = layout.arrayRank;
@@ -211,8 +270,13 @@ void ReferenceChainTraverser::TraverseArray(
         return;  // Empty array
     }
 
-    // pData points to the first element.
-    // For reference type arrays, each element is a pointer-sized reference.
+    if (isValueTypeArray)
+    {
+        TraverseValueTypeArrayElements(pData, totalElements, *elementLayout, visited, currentNode, depth);
+        return;
+    }
+
+    // Reference type array: each element is a pointer-sized reference.
     uintptr_t* pElements = reinterpret_cast<uintptr_t*>(pData);
 
     for (uint64_t i = 0; i < totalElements; i++)
@@ -255,6 +319,106 @@ void ReferenceChainTraverser::TraverseArray(
         // Recursively traverse the element
         TraverseObject(elementAddress, visited, childNode, depth + 1);
     }
+}
+
+void ReferenceChainTraverser::TraverseValueTypeArrayElements(
+    BYTE* pData,
+    uint64_t totalElements,
+    const ClassLayoutCache::ClassLayoutData& elementLayout,
+    VisitedObjectSet& visited,
+    TypeTreeNode* currentNode,
+    uint32_t depth)
+{
+    ULONG elementSize = elementLayout.classSize;
+
+    int refFieldCount = 0;
+    for (const auto& f : elementLayout.fields)
+    {
+        if (f.isReferenceType) refFieldCount++;
+    }
+    Log::Debug("TraverseValueTypeArrayElements: totalElements=", totalElements,
+               ", elementSize=", elementSize,
+               ", refFields=", refFieldCount);
+
+    uint64_t refsFound = 0;
+    uint64_t refsTraversed = 0;
+
+    for (uint64_t i = 0; i < totalElements; i++)
+    {
+        uintptr_t elementBase = reinterpret_cast<uintptr_t>(pData) + i * elementSize;
+
+        for (const auto& field : elementLayout.fields)
+        {
+            if (!field.isReferenceType)
+            {
+                continue;
+            }
+
+            if (static_cast<SIZE_T>(field.offset) + sizeof(uintptr_t) > elementSize)
+            {
+                if (i == 0)
+                {
+                    Log::Debug("TraverseValueTypeArrayElements: field offset=", field.offset,
+                               " + ptr exceeds elementSize=", elementSize, " (element 0)");
+                }
+                continue;
+            }
+
+            uintptr_t* pField = reinterpret_cast<uintptr_t*>(elementBase + field.offset);
+            uintptr_t fieldValue = *pField;
+
+            if (fieldValue == 0 || !IsValidObjectAddress(fieldValue))
+            {
+                continue;
+            }
+
+            refsFound++;
+
+            if (visited.IsVisited(fieldValue))
+            {
+                continue;
+            }
+
+            ClassID targetClassID = 0;
+            HRESULT hr = _pCorProfilerInfo->GetClassFromObject(fieldValue, &targetClassID);
+            if (FAILED(hr) || targetClassID == 0)
+            {
+                if (refsFound <= 3)
+                {
+                    Log::Debug("TraverseValueTypeArrayElements: GetClassFromObject failed for address=",
+                               fieldValue, " at element ", i, " field offset=", field.offset, " hr=", hr);
+                }
+                continue;
+            }
+
+            SIZE_T targetSize = 0;
+            _pCorProfilerInfo->GetObjectSize2(fieldValue, &targetSize);
+
+            if (refsTraversed < 3)
+            {
+                Log::Debug("TraverseValueTypeArrayElements: element[", i, "] field offset=", field.offset,
+                           " -> '", GetClassName(targetClassID), "' size=", targetSize);
+            }
+
+            TypeTreeNode* childNode = currentNode->GetOrCreateChild(targetClassID);
+            childNode->AddInstance(targetSize);
+
+            refsTraversed++;
+            TraverseObject(fieldValue, visited, childNode, depth + 1);
+        }
+    }
+
+    Log::Debug("TraverseValueTypeArrayElements: done, refsFound=", refsFound, ", refsTraversed=", refsTraversed);
+}
+
+std::string ReferenceChainTraverser::GetClassName(ClassID classID) const
+{
+    std::string name;
+    if (_pFrameStore != nullptr && _pFrameStore->GetTypeName(classID, name))
+    {
+        return name;
+    }
+    return "<classID=" + std::to_string(classID) + ">";
 }
 
 bool ReferenceChainTraverser::IsValidObjectAddress(uintptr_t address) const
