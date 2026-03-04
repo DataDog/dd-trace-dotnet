@@ -5,7 +5,6 @@
 
 #nullable enable
 
-#if !NETFRAMEWORK
 using System;
 using Datadog.Trace.Logging;
 
@@ -42,9 +41,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Serverless
             var guid = Guid.NewGuid().ToString("N"); // "N" format removes hyphens (32 chars)
             var uniqueName = $"{baseName}_{guid}";
 
-            Log.Information("ServerlessCompat integration: Generated unique {PipeType} pipe name: {PipeName}", pipeType, uniqueName);
             return uniqueName;
         }
     }
 }
-#endif
