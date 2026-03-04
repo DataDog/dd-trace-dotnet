@@ -351,8 +351,9 @@ namespace Datadog.Trace.DiagnosticListeners
 
             // Check for exceptions captured by NotifyFaultedIntegration (CallTarget).
             // MassTransit 7 does not expose exceptions through DiagnosticSource events,
-            // so we use bytecode instrumentation to capture them from NotifyFaulted calls,
-            // keyed by the Datadog span ID of the active scope.
+            // so we use bytecode instrumentation on NotifyFaulted to capture them.
+            // AsyncLocal ensures ActiveScope here matches ActiveScope when NotifyFaulted fired,
+            // so the SpanId key correctly correlates the exception to this scope.
             var exception = MassTransitExceptionStore.TryGetAndRemoveException(scope.Span.SpanId);
             if (exception != null)
             {
