@@ -196,11 +196,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 destinationAddress,
                 messageType);
 
-            var scope = MassTransitCommon.CreateProducerScope(
-                Tracer.Instance,
-                MassTransitConstants.OperationSend,
-                destinationAddress,
-                messageType);
+            var scope = MassTransitCommon.CreateProduceSpan(Tracer.Instance, destinationAddress, messageType);
 
             if (scope != null && !string.IsNullOrEmpty(currentSpanId))
             {
@@ -259,12 +255,7 @@ namespace Datadog.Trace.DiagnosticListeners
                     parentContext.SpanContext != null);
             }
 
-            var scope = MassTransitCommon.CreateConsumerScope(
-                Tracer.Instance,
-                "receive",
-                inputAddress,
-                messageType: null, // Receive events don't have message type yet (pre-deserialization)
-                parentContext);
+            var scope = MassTransitCommon.CreateReceiveSpan(Tracer.Instance, inputAddress, parentContext);
 
             if (scope != null && !string.IsNullOrEmpty(activityId))
             {
@@ -358,12 +349,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 operation = "process"; // Consume, Handle, Saga, and Activity operations map to "process"
             }
 
-            var scope = MassTransitCommon.CreateConsumerScope(
-                Tracer.Instance,
-                operation,
-                inputAddress,
-                messageType,
-                parentContext);
+            var scope = MassTransitCommon.CreateProcessSpan(Tracer.Instance, inputAddress, messageType, parentContext);
 
             if (scope != null && !string.IsNullOrEmpty(activityId))
             {

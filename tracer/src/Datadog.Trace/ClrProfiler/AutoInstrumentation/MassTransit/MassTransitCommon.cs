@@ -25,6 +25,24 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(MassTransitCommon));
 
         /// <summary>
+        /// Creates a produce (send) span for an outbound message.
+        /// </summary>
+        internal static Scope? CreateProduceSpan(Tracer tracer, string? destinationAddress, string? messageType)
+            => CreateProducerScope(tracer, MassTransitConstants.OperationSend, destinationAddress, messageType);
+
+        /// <summary>
+        /// Creates a receive span for an inbound message at the transport level.
+        /// </summary>
+        internal static Scope? CreateReceiveSpan(Tracer tracer, string? inputAddress, PropagationContext parentContext)
+            => CreateConsumerScope(tracer, MassTransitConstants.OperationReceive, inputAddress, messageType: null, parentContext);
+
+        /// <summary>
+        /// Creates a process span for message processing by a consumer, handler, or saga.
+        /// </summary>
+        internal static Scope? CreateProcessSpan(Tracer tracer, string? inputAddress, string? messageType, PropagationContext parentContext)
+            => CreateConsumerScope(tracer, MassTransitConstants.OperationProcess, inputAddress, messageType, parentContext);
+
+        /// <summary>
         /// Creates a producer/send scope for outbound messages.
         /// </summary>
         internal static Scope? CreateProducerScope(
