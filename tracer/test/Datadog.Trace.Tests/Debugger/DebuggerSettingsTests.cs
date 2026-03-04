@@ -197,12 +197,9 @@ namespace Datadog.Trace.Tests.Debugger
         public class DebuggerSettingsCodeOriginTests
         {
             [Theory]
-            [InlineData("")]
             [InlineData("False")]
             [InlineData("false")]
             [InlineData("0")]
-            [InlineData("2")]
-            [InlineData(null)]
             public void CodeOriginEnabled_False(string value)
             {
                 var settings = new DebuggerSettings(
@@ -210,6 +207,19 @@ namespace Datadog.Trace.Tests.Debugger
                     NullConfigurationTelemetry.Instance);
 
                 settings.CodeOriginForSpansEnabled.Should().BeFalse();
+            }
+
+            [Theory]
+            [InlineData("")]
+            [InlineData("2")]
+            [InlineData(null)]
+            public void CodeOriginEnabled_DefaultsToTrue_WhenMissingOrInvalid(string value)
+            {
+                var settings = new DebuggerSettings(
+                    new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.CodeOriginForSpansEnabled, value }, }),
+                    NullConfigurationTelemetry.Instance);
+
+                settings.CodeOriginForSpansEnabled.Should().BeTrue();
             }
 
             [Theory]
