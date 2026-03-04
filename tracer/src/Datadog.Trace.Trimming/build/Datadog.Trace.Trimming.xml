@@ -163,6 +163,7 @@
       <type fullname="System.Collections.Generic.SortedDictionary`2" />
       <type fullname="System.Collections.Generic.SortedList`2" />
       <type fullname="System.Collections.Generic.SortedSet`1" />
+      <type fullname="System.Collections.Generic.SortedSet`1/Enumerator" />
       <type fullname="System.Collections.Generic.Stack`1" />
       <type fullname="System.Collections.Generic.Stack`1/Enumerator" />
    </assembly>
@@ -526,6 +527,7 @@
       <type fullname="System.ArgumentOutOfRangeException" />
       <type fullname="System.Array" />
       <type fullname="System.ArraySegment`1" />
+      <type fullname="System.ArrayTypeMismatchException" />
       <type fullname="System.AssemblyLoadEventArgs" />
       <type fullname="System.AssemblyLoadEventHandler" />
       <type fullname="System.AsyncCallback" />
@@ -560,12 +562,14 @@
       <type fullname="System.Collections.Generic.KeyValuePair`2" />
       <type fullname="System.Collections.Hashtable" />
       <type fullname="System.Collections.ICollection" />
+      <type fullname="System.Collections.IComparer" />
       <type fullname="System.Collections.IDictionary" />
       <type fullname="System.Collections.IDictionaryEnumerator" />
       <type fullname="System.Collections.IEnumerable" />
       <type fullname="System.Collections.IEnumerator" />
       <type fullname="System.Collections.IEqualityComparer" />
       <type fullname="System.Collections.IList" />
+      <type fullname="System.Collections.IStructuralComparable" />
       <type fullname="System.Collections.IStructuralEquatable" />
       <type fullname="System.Collections.ObjectModel.Collection`1" />
       <type fullname="System.Collections.ObjectModel.ReadOnlyCollection`1" />
@@ -579,6 +583,7 @@
       <type fullname="System.DateTime" />
       <type fullname="System.DateTimeKind" />
       <type fullname="System.DateTimeOffset" />
+      <type fullname="System.DayOfWeek" />
       <type fullname="System.Decimal" />
       <type fullname="System.Delegate" />
       <type fullname="System.Diagnostics.CodeAnalysis.AllowNullAttribute" />
@@ -588,6 +593,7 @@
       <type fullname="System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes" />
       <type fullname="System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute" />
       <type fullname="System.Diagnostics.CodeAnalysis.MaybeNullAttribute" />
+      <type fullname="System.Diagnostics.CodeAnalysis.MaybeNullWhenAttribute" />
       <type fullname="System.Diagnostics.CodeAnalysis.MemberNotNullAttribute" />
       <type fullname="System.Diagnostics.CodeAnalysis.MemberNotNullWhenAttribute" />
       <type fullname="System.Diagnostics.CodeAnalysis.NotNullAttribute" />
@@ -1079,6 +1085,7 @@
       <type fullname="System.Threading.Mutex" />
       <type fullname="System.Threading.ReaderWriterLockSlim" />
       <type fullname="System.Threading.SemaphoreSlim" />
+      <type fullname="System.Threading.SpinLock" />
       <type fullname="System.Threading.SynchronizationContext" />
       <type fullname="System.Threading.ThreadLocal`1" />
       <type fullname="System.Threading.Volatile" />
