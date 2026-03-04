@@ -106,7 +106,7 @@
     </ComponentGroup>
 
     <ComponentGroup Id="Product.Registry" Directory="INSTALLFOLDER">
-      <Component Win64="$(var.Win64)">
+      <Component>
         <CreateFolder/>
         <RegistryKey Root="HKLM" Key="Software\$(var.Company)\$(var.ProductName)">
           <RegistryValue Type="string" Name="InstallPath" Value="[INSTALLFOLDER]"/>

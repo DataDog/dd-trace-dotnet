@@ -9,13 +9,13 @@
 
     <?if $(var.Win64) = yes ?>
     <ComponentGroup Id="Tracer.Files.Native.64" Directory="INSTALLFOLDER.win_x64">
-      <Component Win64="yes">
+      <Component>
         <File Id="Datadog.Tracer.Native"
               Source="$(var.MonitoringHomeDirectory)\win-x64\Datadog.Tracer.Native.dll"
               Checksum="yes">
         </File>
       </Component>
-      <Component Win64="yes">
+      <Component>
         <File Id="LibDdwaf"
               Source="$(var.MonitoringHomeDirectory)\win-x64\ddwaf.dll"
               Checksum="yes">
@@ -26,7 +26,7 @@
 
     <!-- Always install the 32-bit binaries, even for the 64-bit installer -->
     <ComponentGroup Id="Tracer.Files.Native.32" Directory="INSTALLFOLDER.win_x86">
-      <Component Win64="$(var.Win64)" Id="Datadog.Tracer.Native.32">
+      <Component Id="Datadog.Tracer.Native.32">
         <File Id="Datadog.Tracer.Native.32"
               Source="$(var.MonitoringHomeDirectory)\win-x86\Datadog.Tracer.Native.dll"
               Checksum="yes">

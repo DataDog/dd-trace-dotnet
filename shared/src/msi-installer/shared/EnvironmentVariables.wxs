@@ -5,7 +5,7 @@
   <?include $(sys.CURRENTDIR)\Config.wxi?>
   <Fragment>
     <ComponentGroup Id="Shared.EnvironmentVariables.Machine" Directory="INSTALLFOLDER">
-      <Component Id="EnvironmentVariablesShared" Guid="{C314A305-9C24-4E46-9ECF-E5EEA703BDEA}" Win64="$(var.Win64)">
+      <Component Id="EnvironmentVariablesShared" Guid="{C314A305-9C24-4E46-9ECF-E5EEA703BDEA}">
         <CreateFolder/>
         <Environment Id="DD_INSTRUMENTATION_INSTALL_TYPE" Name="DD_INSTRUMENTATION_INSTALL_TYPE" Action="set" Permanent="no" System="yes" Value="dotnet_msi" Part="all" />
         <Environment Id="COR_PROFILER" Name="COR_PROFILER" Action="set" Permanent="no" System="yes" Value="$(var.ProfilerCLSID)" Part="all" />
@@ -19,8 +19,7 @@
         <?endif ?>
       </Component>
       <?if $(var.Win64) = yes ?>
-      <Component Id="EnvironmentVariablePath" Guid="{5804E0CA-7126-4774-A715-42AE37B9E421}" Win64="$(var.Win64)">
-        <Condition>PATHSHORTCUT = 1</Condition>
+      <Component Id="EnvironmentVariablePath" Guid="{5804E0CA-7126-4774-A715-42AE37B9E421}" Condition="PATHSHORTCUT = 1">
         <CreateFolder/>
         <Environment Id="PATH" Name="PATH" Action="set" Permanent="no" System="yes" Value="[INSTALLFOLDER]win-x64" Part="last" />        
       </Component>
@@ -28,7 +27,7 @@
     </ComponentGroup>
   
     <ComponentGroup Id="Shared.EnvironmentVariables.IIS" Directory="INSTALLFOLDER">
-      <Component Id="Shared.Registry.EnvironmentVariables.W3SVC" Guid="{702DB265-F33E-47F4-A6B0-E21FA0FC21C1}" Win64="$(var.Win64)">
+      <Component Id="Shared.Registry.EnvironmentVariables.W3SVC" Guid="{702DB265-F33E-47F4-A6B0-E21FA0FC21C1}">
         <CreateFolder/>
         <RegistryKey Root="HKLM"
                      Key="System\CurrentControlSet\Services\W3SVC">
@@ -36,7 +35,7 @@
         </RegistryKey>
       </Component>
 
-      <Component Id="Shared.Registry.EnvironmentVariables.WAS" Guid="{6CF8AB88-240E-4A0A-B630-43119C064AD4}" Win64="$(var.Win64)">
+      <Component Id="Shared.Registry.EnvironmentVariables.WAS" Guid="{6CF8AB88-240E-4A0A-B630-43119C064AD4}">
         <RegistryKey Root="HKLM"
                      Key="System\CurrentControlSet\Services\WAS">
           <RegistryValue Type="multiString" Name="Environment" Value="COR_ENABLE_PROFILING=1[~]COR_PROFILER=$(var.ProfilerCLSID)[~]CORECLR_ENABLE_PROFILING=1[~]CORECLR_PROFILER=$(var.ProfilerCLSID)" Action="append"/>
