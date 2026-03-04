@@ -13,6 +13,7 @@ using System.Threading;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Shared;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 
@@ -139,7 +140,7 @@ public sealed class ServiceBusReceiverReceiveMessagesAsyncIntegration
         tags.MessagingOperation = "receive";
         tags.MessagingSystem = "servicebus";
 
-        string serviceName = tracer.CurrentTraceSettings.Schema.Messaging.GetServiceName("azureservicebus");
+        string serviceName = tracer.CurrentTraceSettings.Schema.Messaging.GetServiceName(MessagingSchema.ServiceType.AzureServiceBus);
         var scope = tracer.StartActiveInternal(
             OperationName,
             links: spanLinks,

@@ -8,6 +8,7 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
 
@@ -18,7 +19,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
         private const string DatadogAwsSnsServiceName = "aws-sns";
         private const string SnsRequestOperationName = "sns.request";
         private const string SnsServiceName = "SNS";
-        private const string SnsOperationName = "aws.sns";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AwsSnsCommon));
 
         internal const string IntegrationName = nameof(Configuration.IntegrationId.AwsSns);
@@ -84,9 +84,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
 
             return spanKind switch
             {
-                SpanKinds.Consumer => tracer.CurrentTraceSettings.Schema.Messaging.GetInboundOperationName(SnsOperationName),
-                SpanKinds.Producer => tracer.CurrentTraceSettings.Schema.Messaging.GetOutboundOperationName(SnsOperationName),
-                _ => $"{SnsOperationName}.request"
+                SpanKinds.Consumer => tracer.CurrentTraceSettings.Schema.Messaging.GetInboundOperationName(MessagingSchema.OperationType.AwsSns),
+                SpanKinds.Producer => tracer.CurrentTraceSettings.Schema.Messaging.GetOutboundOperationName(MessagingSchema.OperationType.AwsSns),
+                _ => "aws.sns.request"
             };
         }
     }

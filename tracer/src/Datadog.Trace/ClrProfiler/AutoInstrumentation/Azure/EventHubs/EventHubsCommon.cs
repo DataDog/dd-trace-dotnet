@@ -10,6 +10,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
@@ -86,7 +87,7 @@ internal static class EventHubsCommon
             tags.MessagingDestinationName = eventHubName;
             tags.MessagingOperation = operationName;
 
-            string serviceName = tracer.CurrentTraceSettings.Schema.Messaging.GetServiceName("azureeventhubs");
+            string serviceName = tracer.CurrentTraceSettings.Schema.Messaging.GetServiceName(MessagingSchema.ServiceType.AzureEventHubs);
             scope = tracer.StartActiveInternal("azure_eventhubs." + operationName, tags: tags, serviceName: serviceName, links: spanLinks);
             var span = scope.Span;
 

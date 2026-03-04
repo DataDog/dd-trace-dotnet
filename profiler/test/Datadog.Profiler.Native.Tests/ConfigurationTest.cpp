@@ -1469,3 +1469,39 @@ TEST_F(ConfigurationTest, CheckMemoryFootprintIsDisabledIfEnvVarSetToFalse)
     auto configuration = Configuration{};
     ASSERT_THAT(configuration.IsMemoryFootprintEnabled(), false);
 }
+
+TEST_F(ConfigurationTest, CheckIfUseManagedCodeCacheIsEnabledWhenEnvVariableIsSetToTrue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::UseManagedCodeCache, WStr("1"));
+    auto configuration = Configuration{};
+    ASSERT_TRUE(configuration.UseManagedCodeCache());
+}
+
+TEST_F(ConfigurationTest, CheckIfUseManagedCodeCacheIsDisabledWhenEnvVariableIsSetToFalse)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::UseManagedCodeCache, WStr("0"));
+    auto configuration = Configuration{};
+    ASSERT_FALSE(configuration.UseManagedCodeCache());
+}
+
+TEST_F(ConfigurationTest, CheckIfUseManagedCodeCacheIsDisabledWhenEnvVariableIsSetEmptyString)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::UseManagedCodeCache, WStr(""));
+    auto configuration = Configuration{};
+    #ifdef ARM64
+        ASSERT_TRUE(configuration.UseManagedCodeCache());
+    #else
+        ASSERT_FALSE(configuration.UseManagedCodeCache());
+    #endif
+}
+
+TEST_F(ConfigurationTest, CheckIfUseManagedCodeCacheUsesDefaultWhenVariableIsNotSet)
+{
+    unsetenv(EnvironmentVariables::UseManagedCodeCache);
+    auto configuration = Configuration{};
+#ifdef ARM64
+    ASSERT_TRUE(configuration.UseManagedCodeCache());
+#else
+    ASSERT_FALSE(configuration.UseManagedCodeCache());
+#endif
+}
