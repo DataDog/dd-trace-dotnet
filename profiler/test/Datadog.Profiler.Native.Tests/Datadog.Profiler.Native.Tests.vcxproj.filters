@@ -196,9 +196,14 @@
     <ClCompile Include="CpuSampleProviderTest.cpp">
       <Filter>Tests</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\DbgHelpParser.cpp" />
+    <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\DbgHelpParser.cpp">
+      <Filter>External Sources</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\SymPdbParser.cpp">
       <Filter>External Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="ManagedThreadInfoTest.cpp">
+      <Filter>Tests</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -157,6 +157,43 @@ namespace Datadog.Trace.Tests.Debugger
             settings.UploadFlushIntervalMilliseconds.Should().Be(0);
         }
 
+        [Fact]
+        public void MaxProbesPerType_DefaultUsed_WhenNotSet()
+        {
+            var settings = new DebuggerSettings(
+                new NameValueConfigurationSource(new()),
+                NullConfigurationTelemetry.Instance);
+
+            settings.MaxProbesPerType.Should().Be(0);
+        }
+
+        [Theory]
+        [InlineData("0", 0)]
+        [InlineData("1", 1)]
+        [InlineData("100", 100)]
+        public void MaxProbesPerType_UsesProvidedValue_WhenValid(string value, int expected)
+        {
+            var settings = new DebuggerSettings(
+                new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.InternalDynamicInstrumentationMaxProbesPerType, value }, }),
+                NullConfigurationTelemetry.Instance);
+
+            settings.MaxProbesPerType.Should().Be(expected);
+        }
+
+        [Theory]
+        [InlineData("-1")]
+        [InlineData("")]
+        [InlineData("abc")]
+        [InlineData(null)]
+        public void MaxProbesPerType_DefaultUsed_WhenInvalid(string value)
+        {
+            var settings = new DebuggerSettings(
+                new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.InternalDynamicInstrumentationMaxProbesPerType, value }, }),
+                NullConfigurationTelemetry.Instance);
+
+            settings.MaxProbesPerType.Should().Be(0);
+        }
+
         public class DebuggerSettingsCodeOriginTests
         {
             [Theory]

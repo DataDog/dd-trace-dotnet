@@ -2,9 +2,21 @@
 
 Reference guide for categorizing and troubleshooting common CI failures in dd-trace-dotnet.
 
+## Table of Contents
+
+- [Infrastructure Failures](#infrastructure-failures) — Docker rate limiting, network issues, timeouts, disk space
+- [Flaky Tests](#flaky-tests) — Stack walking, auto-retried tests, single-runtime failures, ASM init
+- [Real Failures](#real-failures) — Assertion failures, snapshot mismatches, compilation errors, segfaults, missing deps
+- [Platform-Specific Patterns](#platform-specific-patterns) — Windows-only, Linux-only, ARM64
+- [Framework-Specific Patterns](#framework-specific-patterns) — .NET Framework, .NET 6/7/8
+- [Test-Specific Patterns](#test-specific-patterns) — Azure Functions, integration tests, smoke tests
+- [Categorization Decision Tree](#categorization-decision-tree) — Flowchart for classifying failures
+- [Quick Reference Table](#quick-reference-table) — Pattern → Category → Action lookup
+- [When to Investigate vs Retry](#when-to-investigate-vs-retry)
+
 ## Infrastructure Failures
 
-These are typically transient issues with CI infrastructure, not code problems. **Recommendation: Retry the build.**
+These are typically transient issues with CI infrastructure, not code problems. **Recommendation: Retry the build. Alert #apm-dotnet if persistent after retries.**
 
 ### Docker Rate Limiting
 
@@ -55,7 +67,33 @@ Test run timed out after 600000 ms
 
 **Solution**:
 - Retry the build
-- If persistent, investigate test performance
+- If persistent, investigate test performance and alert **#apm-dotnet** on Slack
+
+#### Timeout via Cancellation
+
+**Detection**: Jobs with `result == "canceled"` and duration >= 55 minutes
+
+**Why not "failed"?**: Azure DevOps marks timed-out jobs as "canceled" rather than "failed".
+
+**Differentiation**:
+| Duration | Classification | Likely Cause |
+|----------|---------------|--------------|
+| >= 55 min | Timeout | Azure DevOps 60-min limit exceeded |
+| < 5 min | Collateral | Parent stage failure triggered cascade cancellation |
+| 5-55 min | Unknown | Could be manual cancellation or other cause |
+
+**Example**: Build 195486
+- Stage: `integration_tests_linux` - result: "failed"
+- Job: `DockerTest alpine_netcoreapp3.0_group1` - result: "canceled", duration: 60.3 min
+- Diagnosis: Job timed out, causing stage to fail
+- Action: Retry once; if persistent, investigate and alert **#apm-dotnet** on Slack (check test performance, resource contention)
+
+**Solution**:
+- Retry the build (may be transient infrastructure slowness)
+- If persistent after 2 runs, investigate and alert **#apm-dotnet** on Slack:
+  - Check job logs for stuck tests or infinite loops
+  - Look for resource contention (CPU, memory, I/O)
+  - Compare with successful runs to identify anomalies
 
 ---
 
@@ -78,7 +116,7 @@ out of disk space
 
 ## Flaky Tests
 
-Tests that intermittently fail, often passing on retry. **Recommendation: Retry, then investigate if persistent.**
+Tests that intermittently fail, often passing on retry. **Recommendation: Retry, then investigate and alert #apm-dotnet if persistent.**
 
 ### Stack Walking Failures (Alpine/musl)
 
@@ -109,7 +147,27 @@ Failed to walk N stacks for sampled exception: E_FAIL
 **Solution**:
 - Likely flaky test
 - Check if it passed on retry
-- If still failing after retries, investigate deeper
+- If still failing after retries, investigate deeper and alert **#apm-dotnet** on Slack
+
+---
+
+### Single-Runtime Failures
+
+**Pattern**: Same test passes on most .NET runtimes but fails on only one (especially net6 and above).
+
+**Example**:
+| Runtime | Result |
+|---------|--------|
+| net6.0 | Pass |
+| net8.0 | Pass |
+| net10.0 | **Fail** |
+
+**Cause**: Timing-sensitive behavior, runtime-specific quirks, or transient environment issues affecting a single runtime variant.
+
+**Solution**:
+- Likely flaky — retry the build
+- If persistent on the same runtime after 2 retries, investigate runtime-specific behavior and alert **#apm-dotnet** on Slack
+- A real regression would typically fail across all runtimes, not just one
 
 ---
 
@@ -128,7 +186,7 @@ Failed to initialize security
 **Solution**:
 - Check if also failing in master
 - Retry if isolated to PR
-- If persistent across master and PR, may need investigation
+- If persistent across master and PR, investigate and alert **#apm-dotnet** on Slack
 
 **Example Build**: 195137 (failed on both PR and master)
 
@@ -159,6 +217,33 @@ Xunit.Sdk.EqualException
 **Example**:
 - `AzureFunctionsTests+IsolatedRuntimeV4.SubmitsTraces` (Build 195137)
 - Expected 21 spans, got 14 → Missing spans in worker process
+
+---
+
+### Snapshot Mismatches
+
+**Patterns**:
+```
+Received file does not match the verified file
+*.received.* vs *.verified.*
+Verify assertion failure
+```
+
+**Common test names**: `*.SubmitsTraces` and other integration tests in `Datadog.Trace.ClrProfiler.IntegrationTests` — but only when the error is a snapshot content diff, not a span count mismatch.
+
+**Important**: `SubmitsTraces` tests typically assert on span count first (`Expected N spans but got M`), then compare snapshots. A span count mismatch indicates missing/extra instrumentation and is a **Test Assertion Failure** (see above), not a snapshot problem. Updating snapshots won't help in that case.
+
+**Cause**: Code changes affected trace output (span tags, names, ordering, etc.). The actual output (`.received.txt`) no longer matches the expected snapshots (`.verified.txt` files in `tracer/test/snapshots/`).
+
+**Solution**:
+- If the changes are **intentional**, update snapshots:
+  - **Windows**: `./tracer/build.ps1 UpdateSnapshotsFromBuild --BuildId <BUILD_ID>`
+  - **Linux/macOS**: `./tracer/build.sh UpdateSnapshotsFromBuild --BuildId <BUILD_ID>`
+  - This downloads `.received.txt` artifacts from the CI build and replaces local `.verified.txt` files
+  - The build must have run far enough to produce snapshot artifacts (even if tests failed)
+- If the changes are **unintentional**, investigate the code change that caused the regression
+
+**Example**: Integration test `HttpClientTests.HttpClient_GetAsync_SubmitsTraces` fails because a new span tag was added, changing the snapshot output.
 
 ---
 
@@ -257,6 +342,7 @@ cannot execute binary file
 - Missing ARM64 native binaries
 - Emulation issues
 - Architecture-specific bugs
+- **Flaky infrastructure**: ARM64 CI agents are more prone to transient issues (slow startup, timeouts, resource contention)
 
 **Example Patterns**:
 ```
@@ -265,6 +351,29 @@ Could not load native library for ARM64
 ```
 
 **Note**: ARM64 support is newer, check if native components are built for ARM64
+
+#### ARM64 Single-Runtime Timeout (Flaky Infrastructure)
+
+**Pattern**: In a `unit_tests_arm64` (or similar ARM64 stage), one runtime job times out (~60 min) while all other runtimes complete normally (~14 min).
+
+**Example**:
+| Job | Duration | Result |
+|-----|----------|--------|
+| test glibc_net5.0 | ~60 min | ❌ Cancelled (timeout) |
+| test musl_net5.0 | ~14 min | ✅ Pass |
+| test glibc_net6.0 | ~14 min | ✅ Pass |
+| test musl_net6.0 | ~14 min | ✅ Pass |
+| ... (all others) | ~14 min | ✅ Pass |
+
+**Indicators**:
+- Only one platform/runtime failed in an ARM64 stage
+- The failed job was cancelled (not "failed") after ~60 minutes
+- All other runtimes in the same stage completed in ~14 minutes
+- The failing runtime is not consistently the same across multiple runs
+
+**Cause**: Transient ARM64 infrastructure issue — the agent likely timed out waiting for something (container startup, package download, slow I/O), not a code problem. A real regression would fail across multiple runtimes or consistently on the same runtime.
+
+**Solution**: Retry the build. This is almost certainly a flaky CI infrastructure issue, not a code regression.
 
 ---
 
@@ -359,15 +468,26 @@ Expected tracer log but found none
 ## Categorization Decision Tree
 
 ```
-Is the failure in this PR only (not in master)?
-├─ Yes → **Real Failure** (investigate)
-└─ No → Is it an infrastructure issue?
+Are there canceled jobs?
+├─ Yes → Check duration:
+│   ├─ >= 55 min → **Timeout** (infrastructure, retry)
+│   ├─ < 5 min → **Collateral Cancellation** (check parent failure)
+│   └─ 5-55 min → **Unknown** (review manually, could be manual cancellation)
+│
+└─ No canceled jobs or after classifying them →
+    Is it an infrastructure issue (network, rate limit, disk)?
     ├─ Yes → **Infrastructure** (retry)
-    └─ No → Does it have previousAttempts > 0?
-        ├─ Yes → **Flaky** (retry, monitor)
-        └─ No → Is it a known flaky test?
+    └─ No → Is it an ARM64 stage where only one runtime timed out (~60 min) while others passed (~14 min)?
+        ├─ Yes → **Flaky Infrastructure** (retry — transient ARM64 agent issue)
+        └─ No → Does the test fail on only one runtime but pass on others?
+        ├─ Yes → **Flaky** (retry, alert #apm-dotnet if persistent)
+        └─ No → Does it have previousAttempts > 0 or is it a known flaky test?
             ├─ Yes → **Flaky** (retry, monitor)
-            └─ No → **Pre-existing Real Failure** (investigate, may be blocking)
+            └─ No → Is the error a snapshot content diff (*.received.* vs *.verified.*)?
+                ├─ Yes → **Snapshot Mismatch** (update snapshots if intentional, investigate if not)
+                └─ No → **Real Failure** (investigate)
+                    Note: SubmitsTraces tests with span count mismatches are real failures, not snapshot issues
+
 ```
 
 ---
@@ -379,12 +499,16 @@ Is the failure in this PR only (not in master)?
 | `toomanyrequests`, `rate limit` | Infrastructure | Retry | Low |
 | `TLS handshake`, `Connection reset` | Infrastructure | Retry | Low |
 | `maximum execution time` | Infrastructure | Retry | Medium |
+| Canceled job, duration >= 55 min | Infrastructure (Timeout) | Retry, alert #apm-dotnet if persistent | Medium |
+| Canceled job, duration < 5 min | Collateral | Check parent failure cause | None |
 | `Failed to walk N stacks` | Flaky | Retry, monitor | Low |
 | `previousAttempts > 0` | Flaky | Retry | Low |
-| `Expected X but got Y` (new) | Real | Investigate | **High** |
+| ARM64 stage: 1 runtime timeout (~60 min), all others pass (~14 min) | Flaky Infrastructure | Retry | Low |
+| Fails on 1 runtime, passes on others | Flaky | Retry, alert #apm-dotnet if persistent | Low |
+| `Expected X but got Y` | Real | Investigate | **High** |
+| `Received file does not match` | Real (Snapshot) | Update snapshots or investigate | **High** |
 | `error CS`, `MSB` | Real | Fix code | **High** |
 | `SIGSEGV`, `Access Violation` | Real | Investigate urgently | **Critical** |
-| `Expected X but got Y` (also in master) | Pre-existing | Investigate if blocking | Medium |
 
 ---
 
@@ -394,44 +518,17 @@ Is the failure in this PR only (not in master)?
 - Infrastructure failures (network, rate limiting, disk)
 - Tests with `previousAttempts > 0`
 - Known flaky tests (Alpine stack walking)
-- Failures also present in recent master builds
+- Tests failing on only one runtime but passing on others
 
-### Investigate Immediately
-- **New failures** introduced in the PR (not in master)
+### Investigate Immediately (and Alert #apm-dotnet)
 - Compilation errors
 - Segmentation faults / access violations
+- Tests failing consistently across all runtimes
 - Consistent failures after 2 retries
 
 ### Monitor
-- Pre-existing failures also in master (may need separate fix)
 - Flaky tests that are becoming more frequent
 - Platform-specific issues that don't block all platforms
-
----
-
-## Useful Commands for Investigation
-
-### Get Recent Master Builds
-```bash
-curl -s "https://dev.azure.com/datadoghq/a51c4863-3eb4-4c5d-878a-58b41a049e4e/_apis/build/builds?branchName=refs/heads/master&\$top=5" | jq '.value[] | {id, result, finishTime}'
-```
-
-### Download Specific Test Logs
-```bash
-# Get timeline to find log ID
-curl -s "https://dev.azure.com/datadoghq/.../builds/<BUILD_ID>/timeline" | jq '.records[] | select(.result == "failed")'
-
-# Download log
-curl -s "https://dev.azure.com/datadoghq/.../builds/<BUILD_ID>/logs/<LOG_ID>" > test.log
-```
-
-### Search for Common Patterns
-```bash
-# In downloaded log
-grep -i "\[FAIL\]" test.log
-grep -i "Expected" test.log
-grep -i "error\|exception" test.log -A 5
-```
 
 ---
 

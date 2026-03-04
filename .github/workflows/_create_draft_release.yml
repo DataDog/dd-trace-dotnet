@@ -19,7 +19,7 @@ on:
     secrets:
       AZURE_DEVOPS_TOKEN:
         required: true
-      NUGET_API_KEY:
+      NUGET_TRUSTED_PUBLISHING_USERNAME:
         required: true
       GH_APP_ID:
         required: true
@@ -49,6 +49,7 @@ jobs:
       contents: write # create release
       actions: read # read secrets
       issues: write # change milestones 
+      id-token: write  # enable GitHub OIDC token issuance for this job
     env:
       # Have to use external token with explicit workflow permissions because we are creating
       # a release from an arbitrary SHA. For "reasons", the built-in token does not _always_
@@ -82,6 +83,14 @@ jobs:
           git config user.name "${{ github.actor }}"
           git config user.email "${{ github.actor }}@users.noreply.github.com"
 
+      # Use the ambient GitHub token to login to NuGet and retrieve an API key
+      - name: NuGet login (OIDC → temp API key)
+        uses: NuGet/login@d22cc5f58ff5b88bf9bd452535b4335137e24544 # v1.0.0
+        id: nuget_login
+        with:
+          # Secret is your NuGet username (not email), e.g. andrewlock
+          user: ${{ secrets.NUGET_TRUSTED_PUBLISHING_USERNAME }}
+
       - name: "Check NuGet token validity"
         run: |
           echo "Downloading test package"
@@ -91,11 +100,14 @@ jobs:
           fi
 
           echo "Pushing package to test NuGet API key validity"
-          if ! dotnet nuget push "Datadog.Trace.Annotations.1.0.0.nupkg" --api-key ${{ secrets.NUGET_API_KEY }} --skip-duplicate --source https://api.nuget.org/v3/index.json; then
-            echo "Push failed - the API key is likely not valid" >&2
-            echo "Create a new NuGet api key at nuget.org, with glob permissions * to push to the Datadog org and" >&2
-            echo "replace the NUGET_API_KEY GitHub secret with the new key at https://github.com/DataDog/dd-trace-dotnet/settings/secrets/actions " >&2
-            echo "and then try running this release again" >&2
+          if ! dotnet nuget push "Datadog.Trace.Annotations.1.0.0.nupkg" --api-key "${{ steps.nuget_login.outputs.NUGET_API_KEY }}" --skip-duplicate --source https://api.nuget.org/v3/index.json; then
+           echo "Push failed - there is likely an issue with authentication." >&2
+           echo "This workflow uses Trusted Publishing: https://learn.microsoft.com/en-us/nuget/nuget-org/trusted-publishing" >&2
+           echo "The NUGET_TRUSTED_PUBLISHING_USERNAME contains the username that should have the trusted policy configured on nuget.org." >&2
+           echo "If this user is no longer part of the datadog organisation on nuget.org: create a new trusted policy using your nuget user " >&2
+           echo "  1. Create a new trusted policy using your nuget user. Follow the example in https://github.com/DataDog/dd-trace-dotnet/pull/8209" >&2
+           echo "  2. Replace the NUGET_TRUSTED_PUBLISHING_USERNAME GitHub secret with your nuget.org username (not email) at https://github.com/DataDog/dd-trace-dotnet/settings/secrets/actions " >&2
+           echo "  3. Try running this release again" >&2
             exit 1
           fi
           
@@ -166,7 +178,7 @@ jobs:
       - name: "Publish nuget packages to nuget.org"
         working-directory: ${{steps.assets.outputs.artifacts_path}}
         run: |
-          dotnet nuget push "*.${{steps.versions.outputs.full_version}}*.nupkg" --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json
+          dotnet nuget push "*.nupkg" --skip-duplicate --api-key "${{ steps.nuget_login.outputs.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json
 
       - name: "Copy gitlab artifacts to artifacts_path"
         run: cp "${{steps.assets.outputs.gitlab_artifacts_path}}/"*.zip "${{steps.assets.outputs.artifacts_path}}/"

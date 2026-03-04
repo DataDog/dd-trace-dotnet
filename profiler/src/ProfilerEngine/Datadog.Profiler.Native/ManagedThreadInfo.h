@@ -220,7 +220,7 @@ inline void ManagedThreadInfo::ReleaseLock()
 inline std::string ManagedThreadInfo::BuildProfileThreadId()
 {
     std::stringstream builder;
-    builder << "<" << std::dec << _profilerThreadInfoId << "> [#" << _osThreadId << "]";
+    builder << std::dec << _osThreadId;
 
     return builder.str();
 }
@@ -231,13 +231,10 @@ inline std::string ManagedThreadInfo::BuildProfileThreadName()
     auto threadName = _threadName;
     if (threadName.empty())
     {
-        nameBuilder << "Managed thread (name unknown)";
+        return "";
     }
-    else
-    {
-        nameBuilder << shared::ToString(std::move(threadName));
-    }
-    nameBuilder << " [#" << _osThreadId << "]";
+
+    nameBuilder << shared::ToString(std::move(threadName));
 
     return nameBuilder.str();
 }

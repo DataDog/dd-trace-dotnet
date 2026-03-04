@@ -206,11 +206,6 @@ std::vector<StackFrame> CrashReportingWindows::GetThreadFrames(int32_t tid, Reso
     return MergeFrames(frames, managedFrames);
 }
 
-std::string CrashReportingWindows::GetSignalInfo(int32_t signal)
-{
-    return std::string();
-}
-
 std::vector<ModuleInfo> CrashReportingWindows::GetModules()
 {
     std::vector<ModuleInfo> modules;
