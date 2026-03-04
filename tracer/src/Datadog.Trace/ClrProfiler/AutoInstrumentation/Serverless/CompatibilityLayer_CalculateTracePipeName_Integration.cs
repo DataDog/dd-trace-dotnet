@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Serverless
         TypeName = "Datadog.Serverless.CompatibilityLayer",
         MethodName = "CalculateTracePipeName",
         ReturnTypeName = ClrNames.String,
-        ParameterTypeNames = new string[0],
+        ParameterTypeNames = [],
         MinimumVersion = "0.0.0",
         MaximumVersion = "2.*.*",
         IntegrationName = nameof(IntegrationId.ServerlessCompat),
