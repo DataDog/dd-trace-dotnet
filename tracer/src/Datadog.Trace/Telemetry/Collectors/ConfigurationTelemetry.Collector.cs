@@ -166,7 +166,10 @@ namespace Datadog.Trace.Configuration.Telemetry
             }
 
             // clears any saved data
-            _allData.Clear();
+            lock (_allData)
+            {
+                _allData.Clear();
+            }
         }
 
         private sealed class ListOfListOfConfigurationKeyValue : ICollection<ConfigurationKeyValue>
