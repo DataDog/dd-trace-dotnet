@@ -19,7 +19,7 @@ internal static partial class ConfigurationKeys
     {
         /// <summary>
         /// Configuration key to enable tag code origin for span.
-        /// Default value is false.
+        /// Default value is true.
         /// </summary>
         public const string CodeOriginForSpansEnabled = "DD_CODE_ORIGIN_FOR_SPANS_ENABLED";
 

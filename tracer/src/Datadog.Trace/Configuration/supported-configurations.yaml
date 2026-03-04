@@ -505,12 +505,12 @@ supportedConfigurations:
   DD_CODE_ORIGIN_FOR_SPANS_ENABLED:
   - implementation: B
     type: boolean
-    default: 'false'
+    default: 'true'
     product: Debugger
     const_name: CodeOriginForSpansEnabled
     documentation: |-
       Configuration key to enable tag code origin for span.
-      Default value is false.
+      Default value is true.
   DD_CODE_ORIGIN_FOR_SPANS_MAX_USER_FRAMES:
   - implementation: A
     type: int
