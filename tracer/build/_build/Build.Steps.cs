@@ -54,7 +54,6 @@ partial class Build
     AbsolutePath BuildDataDirectory => BuildArtifactsDirectory / "build_data";
     AbsolutePath MsbuildDebugPath => TestLogsDirectory / "msbuild";
     AbsolutePath TestLogsDirectory => BuildDataDirectory / "logs";
-    AbsolutePath TestDumpsDirectory => BuildDataDirectory / "dumps";
     AbsolutePath ToolSourceDirectory => ToolSource ?? (OutputDirectory / "runnerTool");
     AbsolutePath ToolInstallDirectory => ToolDestination ?? (ToolSourceDirectory / "install");
 

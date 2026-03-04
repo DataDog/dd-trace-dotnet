@@ -16,18 +16,13 @@ partial class Build
         .Requires(() => SmokeTestScenario)
         .Executes(async () =>
         {
-            EnsureExistingDirectory(TestDumpsDirectory);
-
-            var category = SmokeTestCategory!.Value;
-            var scenario = SmokeTests.SmokeTestScenarios.GetScenario(category, SmokeTestScenario);
-
-            var artifactsDir = ArtifactsDirectory;
-            var dotnetSdkVersion = GetDotnetSdkVersion(RootDirectory);
-            var imageTags = await SmokeTests.SmokeTestBuilder.BuildImageAsync(scenario, TracerDirectory, artifactsDir, Version, dotnetSdkVersion);
-
-            foreach (var imageTag in imageTags)
-            {
-                await SmokeTests.SmokeTestBuilder.RunSmokeTestAsync(scenario, TracerDirectory, BuildDataDirectory, imageTag);
-            }
+            await SmokeTests.SmokeTestRunner.RunSmokeTestAsync(
+                SmokeTestCategory!.Value,
+                SmokeTestScenario,
+                TracerDirectory,
+                ArtifactsDirectory,
+                BuildDataDirectory,
+                Version,
+                GetDotnetSdkVersion(RootDirectory));
         });
 }
