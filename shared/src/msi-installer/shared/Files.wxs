@@ -9,10 +9,10 @@
 
     <?if $(var.Win64) = yes ?>
     <ComponentGroup Id="Shared.Files.NativeLoader.64" Directory="INSTALLFOLDER.win_x64">
-      <Component Win64="yes">
+      <Component>
         <File Id="loader.conf.x64" Source="$(var.MonitoringHomeDirectory)\win-x64\loader.conf" />
       </Component>
-      <Component Win64="yes">
+      <Component>
         <File Id="Datadog.Trace.ClrProfiler.Native"
               Source="$(var.MonitoringHomeDirectory)\win-x64\Datadog.Trace.ClrProfiler.Native.dll"
               Checksum="yes">
@@ -25,10 +25,10 @@
 
     <!-- Always install the 32-bit binaries, even for the 64-bit installer -->
     <ComponentGroup Id="Shared.Files.NativeLoader.32" Directory="INSTALLFOLDER.win_x86">
-      <Component Win64="$(var.Win64)">
+      <Component>
         <File Id="loader.conf.x86" Source="$(var.MonitoringHomeDirectory)\win-x86\loader.conf" />
       </Component>
-      <Component Win64="$(var.Win64)">
+      <Component>
         <File Id="Datadog.Trace.ClrProfiler.Native.32"
               Source="$(var.MonitoringHomeDirectory)\win-x86\Datadog.Trace.ClrProfiler.Native.dll"
               Checksum="yes">
@@ -39,7 +39,7 @@
 
     <?if $(var.Win64) = yes ?>
     <ComponentGroup Id="Shared.Files.Libdatadog.64" Directory="INSTALLFOLDER.win_x64">
-      <Component Win64="yes">
+      <Component>
         <File Id="libdatadog"
               Source="$(var.MonitoringHomeDirectory)\win-x64\datadog_profiling_ffi.dll"
               Checksum="yes">
@@ -51,7 +51,7 @@
 
     <!-- Always install the 32-bit binaries, even for the 64-bit installer -->
     <ComponentGroup Id="Shared.Files.Libdatadog.32" Directory="INSTALLFOLDER.win_x86">
-      <Component Win64="$(var.Win64)">
+      <Component>
         <File Id="libdatadog.32"
               Source="$(var.MonitoringHomeDirectory)\win-x86\datadog_profiling_ffi.dll"
               Checksum="yes">
