@@ -168,7 +168,11 @@ namespace Datadog.Trace.DiagnosticListeners
             }
         }
 
-        private static string GetCurrentActivityId()
+        // Returns the ID of the Activity that MassTransit creates for the current operation.
+        // MassTransit calls activity.Start() before firing each diagnostic event, so Activity.Current
+        // is MassTransit's own activity — NOT a Datadog/OTEL activity.
+        // This ID is stable between Start and Stop events and serves as the correlation key.
+        private static string GetMassTransitActivityId()
         {
             var activity = System.Diagnostics.Activity.Current;
             return activity?.Id ?? string.Empty;
@@ -185,7 +189,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 return;
             }
 
-            var currentSpanId = GetCurrentActivityId();
+            var currentSpanId = GetMassTransitActivityId();
 
             // Extract metadata from SendContext using duck typing
             MassTransitCommon.ExtractSendContextMetadata(arg, out var destinationAddress, out var messageId, out var conversationId, out var correlationId);
@@ -223,7 +227,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 return;
             }
 
-            var activityId = GetCurrentActivityId();
+            var activityId = GetMassTransitActivityId();
 
             Log.Debug(
                 "MassTransitDiagnosticObserver.OnReceiveStart: Processing ReceiveContext, ArgType={ArgType}, ActivityId={ActivityId}",
@@ -283,7 +287,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 return;
             }
 
-            var activityId = GetCurrentActivityId();
+            var activityId = GetMassTransitActivityId();
 
             // For consume, we get a ConsumeContext
             // MT8 OTEL uses InputAddress (the queue name) for consumer spans, not DestinationAddress
@@ -340,13 +344,6 @@ namespace Datadog.Trace.DiagnosticListeners
                         "MassTransitDiagnosticObserver.OnConsumeStart: Using active Receive span as parent, ParentSpanId={ParentSpanId}",
                         activeScope.Span.SpanId);
                 }
-            }
-
-            // Map operation type to lowercase operation name (Receive → receive, Consume → process, etc.)
-            var operation = operationType.ToLowerInvariant();
-            if (operation == "consume" || operation == "handle" || operation.StartsWith("saga") || operation.StartsWith("activity"))
-            {
-                operation = "process"; // Consume, Handle, Saga, and Activity operations map to "process"
             }
 
             var scope = MassTransitCommon.CreateProcessSpan(Tracer.Instance, inputAddress, messageType, parentContext);
