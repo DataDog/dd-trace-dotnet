@@ -15,6 +15,7 @@ namespace Datadog.Trace.Tests.Telemetry;
 public class TelemetryControllerSchedulerTests
 {
     private static readonly TimeSpan FlushInterval = TimeSpan.FromSeconds(60);
+    private static readonly TimeSpan ExtendedHeartbeatInterval = TimeSpan.FromHours(24);
     private static readonly TimeSpan FiveSeconds = TimeSpan.FromSeconds(5);
     private static readonly Task NeverComplete = Task.Delay(Timeout.Infinite);
     private readonly TaskCompletionSource<bool> _processExit = new();
@@ -24,7 +25,7 @@ public class TelemetryControllerSchedulerTests
 
     public TelemetryControllerSchedulerTests()
     {
-        _scheduler = new TelemetryController.Scheduler(FlushInterval, () => NeverComplete, _processExit, _clock, _delayFactory);
+        _scheduler = new TelemetryController.Scheduler(FlushInterval, ExtendedHeartbeatInterval, () => NeverComplete, _processExit, _clock, _delayFactory);
     }
 
     [Fact]
@@ -287,8 +288,73 @@ public class TelemetryControllerSchedulerTests
         _scheduler.ShouldFlushTelemetry.Should().BeTrue();
     }
 
+    [Fact]
+    public async Task SetsExtendedHeartbeatAfterExtendedInterval()
+    {
+        var extendedInterval = TimeSpan.FromSeconds(180); // 3 flush intervals
+        _scheduler = new TelemetryController.Scheduler(FlushInterval, extendedInterval, () => NeverComplete, _processExit, _clock, _delayFactory);
+
+        // t = 0; should not send initially
+        _scheduler.ShouldSendExtendedHeartbeat.Should().BeFalse();
+
+        // initialize and trigger first flush
+        using var mutex = new ManualResetEventSlim();
+        _delayFactory.Task = delay =>
+        {
+            _clock.UtcNow += FiveSeconds;
+            mutex.Set();
+            return NeverComplete;
+        };
+
+        var waitTask = _scheduler.WaitForNextInterval();
+        _scheduler.SetTracerInitialized();
+        mutex.Wait();
+        await waitTask;
+
+        // t = 5s; initialization flush — not enough time for extended heartbeat
+        _scheduler.ShouldFlushTelemetry.Should().BeTrue();
+        _scheduler.ShouldSendExtendedHeartbeat.Should().BeFalse();
+
+        // advance through regular flush intervals (60s each)
+        _delayFactory.Task = delay =>
+        {
+            _clock.UtcNow += delay;
+            return Task.CompletedTask;
+        };
+
+        // t = 65s; second flush — still not enough for extended heartbeat (need 180s)
+        await _scheduler.WaitForNextInterval();
+        _scheduler.ShouldFlushTelemetry.Should().BeTrue();
+        _scheduler.ShouldSendExtendedHeartbeat.Should().BeFalse();
+
+        // t = 125s; third flush — still not enough
+        await _scheduler.WaitForNextInterval();
+        _scheduler.ShouldFlushTelemetry.Should().BeTrue();
+        _scheduler.ShouldSendExtendedHeartbeat.Should().BeFalse();
+
+        // t = 185s; fourth flush — extended interval (180s) has elapsed since t=0
+        await _scheduler.WaitForNextInterval();
+        _scheduler.ShouldFlushTelemetry.Should().BeTrue();
+        _scheduler.ShouldSendExtendedHeartbeat.Should().BeTrue();
+
+        // t = 245s; fifth flush — extended heartbeat should NOT trigger again yet (need 180s since last)
+        await _scheduler.WaitForNextInterval();
+        _scheduler.ShouldFlushTelemetry.Should().BeTrue();
+        _scheduler.ShouldSendExtendedHeartbeat.Should().BeFalse();
+
+        // t = 305s; sixth flush — still not enough (only 120s since last extended at t=185)
+        await _scheduler.WaitForNextInterval();
+        _scheduler.ShouldFlushTelemetry.Should().BeTrue();
+        _scheduler.ShouldSendExtendedHeartbeat.Should().BeFalse();
+
+        // t = 365s; seventh flush — extended interval elapsed again (180s since t=185)
+        await _scheduler.WaitForNextInterval();
+        _scheduler.ShouldFlushTelemetry.Should().BeTrue();
+        _scheduler.ShouldSendExtendedHeartbeat.Should().BeTrue();
+    }
+
     private TelemetryController.Scheduler GetScheduler(QueueTaskGenerator queueTaskGenerator = null)
-        => new(FlushInterval, (queueTaskGenerator ?? new()).GetTask, _processExit, _clock, _delayFactory);
+        => new(FlushInterval, ExtendedHeartbeatInterval, (queueTaskGenerator ?? new()).GetTask, _processExit, _clock, _delayFactory);
 
     private class DelayFactory : TelemetryController.Scheduler.IDelayFactory
     {
