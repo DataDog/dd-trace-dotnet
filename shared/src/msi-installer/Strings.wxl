@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<WixLocalization Culture="en-us" xmlns="http://schemas.microsoft.com/wix/2006/localization">
+<WixLocalization Culture="en-us" xmlns="http://wixtoolset.org/schemas/v4/wxl">
   <!-- add the product version to the window title bar -->
   <String Id="PrepareDlg_Title">[ProductName] [ProductVersion] Setup</String>
   <String Id="WelcomeDlg_Title">[ProductName] [ProductVersion] Setup</String>
