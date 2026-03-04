@@ -60,9 +60,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.CallTarget
             var activity = System.Diagnostics.Activity.Current;
             var traceId = MassTransitCommon.ExtractTraceIdFromActivity(activity);
 
-            if (!string.IsNullOrEmpty(traceId) && exception != null)
+            if (!StringUtil.IsNullOrEmpty(traceId) && exception != null)
             {
-                MassTransitExceptionStore.StoreException(traceId!, exception);
+                MassTransitExceptionStore.StoreException(traceId, exception);
                 Log.Debug(
                     "NotifyFaultedIntegration.OnMethodBegin: Stored exception for TraceId={TraceId}, ExceptionType={ExceptionType}",
                     traceId,

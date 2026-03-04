@@ -7,17 +7,13 @@
 
 using System;
 using System.Linq;
-using System.Reflection;
 using Datadog.Trace.Activity;
 using Datadog.Trace.Activity.DuckTypes;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.CallTarget;
+
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.DuckTypes;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
-using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
 {
@@ -75,7 +71,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(MassTransitConstants.IntegrationId);
 
                 // Set resource name
-                var cleanDestination = MassTransitIntegration.ExtractDestinationName(destinationAddress);
+                var cleanDestination = ExtractDestinationName(destinationAddress);
                 if (string.IsNullOrEmpty(cleanDestination))
                 {
                     cleanDestination = "unknown";
@@ -159,7 +155,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(MassTransitConstants.IntegrationId);
 
                 // Set resource name
-                var cleanDestination = MassTransitIntegration.ExtractDestinationName(inputAddress);
+                var cleanDestination = ExtractDestinationName(inputAddress);
                 if (string.IsNullOrEmpty(cleanDestination))
                 {
                     cleanDestination = "unknown";
@@ -595,7 +591,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
         /// </summary>
         internal static string CreateResourceName(string? destination, string? operation)
         {
-            var cleanDestination = MassTransitIntegration.ExtractDestinationName(destination);
+            var cleanDestination = ExtractDestinationName(destination);
             if (StringUtil.IsNullOrWhiteSpace(cleanDestination))
             {
                 cleanDestination = "unknown";
@@ -614,6 +610,63 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
         /// This is called from ActivityHandler (MassTransit 8.x) and DiagnosticObserver (MassTransit 7.x).
         /// Supports both OTEL semantic convention tags (MassTransit 8.x) and legacy tags (MassTransit 7.x).
         /// </summary>
+        /// <summary>
+        /// Extracts a clean destination name from a MassTransit address URI.
+        /// For URN format destinations, keeps the full URN.
+        /// For queue/endpoint destinations, extracts just the name.
+        /// Special endpoints are normalized: "_bus_xxx" -> "bus", "_endpoint_xxx" -> "endpoint"
+        /// </summary>
+        internal static string ExtractDestinationName(string? fullAddress)
+        {
+            if (StringUtil.IsNullOrWhiteSpace(fullAddress))
+            {
+                return "unknown";
+            }
+
+            // Handle direct URN format (urn:message:Namespace:MessageType)
+            if (fullAddress!.StartsWith("urn:message:", StringComparison.OrdinalIgnoreCase))
+            {
+                return fullAddress;
+            }
+
+            string entityName = fullAddress;
+            try
+            {
+                if (Uri.TryCreate(fullAddress, UriKind.Absolute, out var uri))
+                {
+                    var path = uri.AbsolutePath.TrimStart('/');
+                    if (!StringUtil.IsNullOrWhiteSpace(path))
+                    {
+                        if (path.StartsWith("urn:message:", StringComparison.OrdinalIgnoreCase))
+                        {
+                            return path;
+                        }
+
+                        var lastSlash = path.LastIndexOf('/');
+                        entityName = lastSlash >= 0 && lastSlash < path.Length - 1
+                            ? path.Substring(lastSlash + 1)
+                            : path;
+                    }
+                }
+            }
+            catch
+            {
+                // Continue with fullAddress as entityName
+            }
+
+            if (entityName.StartsWith("urn:message:", StringComparison.OrdinalIgnoreCase))
+            {
+                return entityName;
+            }
+
+            if (entityName.IndexOf("_bus_", StringComparison.Ordinal) >= 0) { return "bus"; }
+            if (entityName.IndexOf("_endpoint_", StringComparison.Ordinal) >= 0) { return "endpoint"; }
+            if (entityName.IndexOf("_signalr_", StringComparison.Ordinal) >= 0) { return "signalr"; }
+            if (entityName.StartsWith("Instance_", StringComparison.Ordinal)) { return "instance"; }
+
+            return entityName;
+        }
+
         internal static void EnhanceActivityMetadata(IActivity5 activity)
         {
             // Add component tag to identify this as a MassTransit span
