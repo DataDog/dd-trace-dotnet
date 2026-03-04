@@ -69,8 +69,9 @@ namespace Datadog.Trace.Configuration.Telemetry
                 }
 
                 // we have multiple collections to report
+                var skipCount = _reportedCount;
                 _reportedCount = _allData.Count;
-                return new ListOfListOfConfigurationKeyValue(_allData, _reportedCount);
+                return new ListOfListOfConfigurationKeyValue(_allData, skipCount);
             }
         }
 
