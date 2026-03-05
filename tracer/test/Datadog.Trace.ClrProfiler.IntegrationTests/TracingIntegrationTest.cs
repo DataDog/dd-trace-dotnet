@@ -16,13 +16,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         protected TracingIntegrationTest(string sampleAppName, ITestOutputHelper output)
             : base(sampleAppName, output)
         {
-            SetEnvironmentVariable(ConfigurationKeys.Debugger.CodeOriginForSpansEnabled, "false");
         }
 
         protected TracingIntegrationTest(string sampleAppName, string samplePathOverrides, ITestOutputHelper output)
             : base(sampleAppName, samplePathOverrides, output)
         {
-            SetEnvironmentVariable(ConfigurationKeys.Debugger.CodeOriginForSpansEnabled, "false");
         }
 
         public abstract Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion);
