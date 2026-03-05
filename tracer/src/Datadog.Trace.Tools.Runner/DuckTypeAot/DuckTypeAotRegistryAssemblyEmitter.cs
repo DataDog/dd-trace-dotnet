@@ -390,6 +390,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             var importedMembers = new ImportedMembers(moduleDef);
             var assemblyReferences = new Dictionary<string, AssemblyRef>(StringComparer.OrdinalIgnoreCase);
             var mappingResults = new Dictionary<string, DuckTypeAotMappingEmissionResult>(StringComparer.Ordinal);
+            var emissionWarnings = new List<string>();
 
             foreach (var proxyAssemblyPath in mappingResolutionResult.ProxyAssemblyPathsByName.Values.OrderBy(path => path, StringComparer.OrdinalIgnoreCase))
             {
@@ -450,7 +451,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                         proxyModulesByAssemblyName,
                         targetModulesByAssemblyName,
                         mappingResolutionResult.ProxyAssemblyPathsByName,
-                        mappingResolutionResult.TargetAssemblyPathsByName);
+                        mappingResolutionResult.TargetAssemblyPathsByName,
+                        emissionWarnings);
                 }
             }
             finally
@@ -493,7 +495,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 Path.GetFullPath(artifactPaths.OutputAssemblyPath),
                 deterministicMvid);
 
-            return new DuckTypeAotRegistryEmissionResult(registryInfo, mappingResults);
+            return new DuckTypeAotRegistryEmissionResult(registryInfo, mappingResults, emissionWarnings);
         }
 
         /// <summary>
@@ -574,6 +576,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <param name="failure">The failure value.</param>
         /// <param name="proxyAssemblyPathsByName">The proxy assembly paths by name value.</param>
         /// <param name="targetAssemblyPathsByName">The target assembly paths by name value.</param>
+        /// <param name="emissionWarnings">The emission warnings value.</param>
         /// <returns>true when a failure registration was emitted; otherwise, false.</returns>
         private static bool TryEmitKnownFailureRegistration(
             ModuleDef moduleDef,
@@ -584,9 +587,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             ITypeDefOrRef targetType,
             DuckTypeAotMappingEmissionResult failure,
             IReadOnlyDictionary<string, string> proxyAssemblyPathsByName,
-            IReadOnlyDictionary<string, string> targetAssemblyPathsByName)
+            IReadOnlyDictionary<string, string> targetAssemblyPathsByName,
+            ICollection<string>? emissionWarnings = null)
         {
             ITypeDefOrRef? exceptionType = null;
+            string? resolvedExceptionTypeName = null;
             if (TryResolveDynamicFailureExceptionType(
                     moduleDef,
                     mapping,
@@ -595,6 +600,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     out var dynamicFailureExceptionType))
             {
                 exceptionType = moduleDef.Import(dynamicFailureExceptionType!) as ITypeDefOrRef;
+                resolvedExceptionTypeName = dynamicFailureExceptionType!.FullName;
             }
 
             if (exceptionType is null &&
@@ -602,6 +608,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             {
                 return false;
             }
+
+            resolvedExceptionTypeName ??= exceptionType!.FullName;
 
             var importedProxyType = moduleDef.Import(proxyType) as ITypeDefOrRef
                                     ?? throw new InvalidOperationException($"Unable to import proxy type '{proxyType.FullName}' for failure registration.");
@@ -615,6 +623,14 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 importedProxyType,
                 importedTargetType,
                 exceptionType!);
+
+            if (emissionWarnings is not null)
+            {
+                var diagnosticCode = string.IsNullOrWhiteSpace(failure.DiagnosticCode) ? "n/a" : failure.DiagnosticCode!;
+                var detail = string.IsNullOrWhiteSpace(failure.Detail) ? "No additional details." : failure.Detail!;
+                emissionWarnings.Add(
+                    $"Registered AOT failure mapping '{mapping.Key}' to throw '{resolvedExceptionTypeName}' ({diagnosticCode}): {detail}");
+            }
 
             return true;
         }
@@ -870,6 +886,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <param name="targetModulesByAssemblyName">The target modules by assembly name value.</param>
         /// <param name="proxyAssemblyPathsByName">The proxy assembly paths by name value.</param>
         /// <param name="targetAssemblyPathsByName">The target assembly paths by name value.</param>
+        /// <param name="emissionWarnings">The emission warnings value.</param>
         /// <returns>The result produced by this operation.</returns>
         /// <remarks>Emits or composes IL for generated duck-typing proxy operations.</remarks>
         private static DuckTypeAotMappingEmissionResult EmitMapping(
@@ -882,7 +899,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             IReadOnlyDictionary<string, ModuleDefMD> proxyModulesByAssemblyName,
             IReadOnlyDictionary<string, ModuleDefMD> targetModulesByAssemblyName,
             IReadOnlyDictionary<string, string> proxyAssemblyPathsByName,
-            IReadOnlyDictionary<string, string> targetAssemblyPathsByName)
+            IReadOnlyDictionary<string, string> targetAssemblyPathsByName,
+            ICollection<string> emissionWarnings)
         {
             var isReverseMapping = mapping.Mode == DuckTypeAotMappingMode.Reverse;
             // Closed-generic mappings use a stricter emission path so their compatibility outcomes stay deterministic.
@@ -900,7 +918,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     proxyModulesByAssemblyName,
                     targetModulesByAssemblyName,
                     proxyAssemblyPathsByName,
-                    targetAssemblyPathsByName);
+                    targetAssemblyPathsByName,
+                    emissionWarnings);
             }
 
             // Early resolution failures are emitted as explicit matrix diagnostics instead of partial proxy generation.
@@ -960,7 +979,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                         targetType,
                         reverseValueTypeFailure,
                         proxyAssemblyPathsByName,
-                        targetAssemblyPathsByName);
+                        targetAssemblyPathsByName,
+                        emissionWarnings);
 
                     return reverseValueTypeFailure;
                 }
@@ -986,7 +1006,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                         targetType,
                         structCopyResult,
                         proxyAssemblyPathsByName,
-                        targetAssemblyPathsByName);
+                        targetAssemblyPathsByName,
+                        emissionWarnings);
                 }
 
                 return structCopyResult;
@@ -1018,7 +1039,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     targetType,
                     reverseProxyImplementorFailure,
                     proxyAssemblyPathsByName,
-                    targetAssemblyPathsByName);
+                    targetAssemblyPathsByName,
+                    emissionWarnings);
                 return reverseProxyImplementorFailure;
             }
 
@@ -1038,7 +1060,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     targetType,
                     failure!,
                     proxyAssemblyPathsByName,
-                    targetAssemblyPathsByName);
+                    targetAssemblyPathsByName,
+                    emissionWarnings);
                 return failure!;
             }
 
@@ -1092,7 +1115,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     targetType,
                     reverseCustomAttributeFailure!,
                     proxyAssemblyPathsByName,
-                    targetAssemblyPathsByName);
+                    targetAssemblyPathsByName,
+                    emissionWarnings);
                 return reverseCustomAttributeFailure!;
             }
 
@@ -1329,6 +1353,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <param name="closedGenericTargetTypeArguments">The closed generic target type arguments value.</param>
         /// <param name="proxyAssemblyPathsByName">The proxy assembly paths by name value.</param>
         /// <param name="targetAssemblyPathsByName">The target assembly paths by name value.</param>
+        /// <param name="emissionWarnings">The emission warnings value.</param>
         /// <returns>The result produced by this operation.</returns>
         private static DuckTypeAotMappingEmissionResult EmitResolvedTypeMapping(
             ModuleDef moduleDef,
@@ -1345,7 +1370,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             bool targetIsValueType,
             IReadOnlyList<TypeSig>? closedGenericTargetTypeArguments,
             IReadOnlyDictionary<string, string> proxyAssemblyPathsByName,
-            IReadOnlyDictionary<string, string> targetAssemblyPathsByName)
+            IReadOnlyDictionary<string, string> targetAssemblyPathsByName,
+            ICollection<string> emissionWarnings)
         {
             // Value-type proxy definitions are DuckCopy projections and must follow the dedicated struct-copy emitter.
             if (proxyType.IsValueType)
@@ -1367,7 +1393,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                         importedTargetType,
                         reverseValueTypeFailure,
                         proxyAssemblyPathsByName,
-                        targetAssemblyPathsByName);
+                        targetAssemblyPathsByName,
+                        emissionWarnings);
 
                     return reverseValueTypeFailure;
                 }
@@ -1397,7 +1424,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                         importedTargetType,
                         structCopyResult,
                         proxyAssemblyPathsByName,
-                        targetAssemblyPathsByName);
+                        targetAssemblyPathsByName,
+                        emissionWarnings);
                 }
 
                 return structCopyResult;
@@ -1429,7 +1457,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     importedTargetType,
                     reverseProxyImplementorFailure,
                     proxyAssemblyPathsByName,
-                    targetAssemblyPathsByName);
+                    targetAssemblyPathsByName,
+                    emissionWarnings);
                 return reverseProxyImplementorFailure;
             }
 
@@ -1449,7 +1478,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     importedTargetType,
                     failure!,
                     proxyAssemblyPathsByName,
-                    targetAssemblyPathsByName);
+                    targetAssemblyPathsByName,
+                    emissionWarnings);
                 return failure!;
             }
 
@@ -1504,7 +1534,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     importedTargetType,
                     reverseCustomAttributeFailure!,
                     proxyAssemblyPathsByName,
-                    targetAssemblyPathsByName);
+                    targetAssemblyPathsByName,
+                    emissionWarnings);
                 return reverseCustomAttributeFailure!;
             }
 
@@ -1730,8 +1761,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <param name="mapping">The mapping value.</param>
         /// <param name="mappingIndex">The mapping index value.</param>
         /// <param name="isReverseMapping">The is reverse mapping value.</param>
+        /// <param name="proxyModulesByAssemblyName">The proxy modules by assembly name value.</param>
+        /// <param name="targetModulesByAssemblyName">The target modules by assembly name value.</param>
         /// <param name="proxyAssemblyPathsByName">The proxy assembly paths by name value.</param>
         /// <param name="targetAssemblyPathsByName">The target assembly paths by name value.</param>
+        /// <param name="emissionWarnings">The emission warnings value.</param>
         /// <returns>The result produced by this operation.</returns>
         /// <remarks>Emits or composes IL for generated duck-typing proxy operations.</remarks>
         private static DuckTypeAotMappingEmissionResult EmitClosedGenericMapping(
@@ -1745,7 +1779,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             IReadOnlyDictionary<string, ModuleDefMD> proxyModulesByAssemblyName,
             IReadOnlyDictionary<string, ModuleDefMD> targetModulesByAssemblyName,
             IReadOnlyDictionary<string, string> proxyAssemblyPathsByName,
-            IReadOnlyDictionary<string, string> targetAssemblyPathsByName)
+            IReadOnlyDictionary<string, string> targetAssemblyPathsByName,
+            ICollection<string> emissionWarnings)
         {
             if (!proxyAssemblyPathsByName.TryGetValue(mapping.ProxyAssemblyName, out var proxyAssemblyPath))
             {
@@ -1862,7 +1897,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     closedTargetRuntimeType.IsValueType,
                     closedGenericTargetTypeArguments,
                     proxyAssemblyPathsByName,
-                    targetAssemblyPathsByName);
+                    targetAssemblyPathsByName,
+                    emissionWarnings);
             }
 
             var resolvedProxyRuntimeType = proxyRuntimeType!;
