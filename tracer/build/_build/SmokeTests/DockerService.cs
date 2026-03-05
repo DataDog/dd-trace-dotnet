@@ -158,52 +158,59 @@ public class DockerService
     /// </summary>
     public static async Task<DockerEnvironment> DetectEnvironmentAsync(string networkName)
     {
-        try
-        {
-            using var client = CreateDockerClient();
-            var buildContainerId = Environment.MachineName;
-            await client.Networks.ConnectNetworkAsync(
-                networkName,
-                new NetworkConnectParameters { Container = buildContainerId });
-            Logger.Information("Joined network {Network} as {Id} — running in container", networkName, buildContainerId);
-
-            // Inspect our own container to discover mount mappings (container path → host path)
-            var inspection = await client.Containers.InspectContainerAsync(buildContainerId);
-            var mounts = inspection.Mounts
-                .Where(m => !string.IsNullOrEmpty(m.Destination) && !string.IsNullOrEmpty(m.Source))
-                .OrderByDescending(m => m.Destination.Length) // longest prefix first
-                .ToList();
-
-            foreach (var m in mounts)
+        return await RetryAsync(
+            $"Detect environment",
+            async () =>
             {
-                Logger.Debug("Mount: {Source} -> {Destination} (Type: {Type})", m.Source, m.Destination, m.Type);
-            }
-
-            string ToHostPath(string containerPath)
-            {
-                foreach (var mount in mounts)
+                try
                 {
-                    var dest = mount.Destination.TrimEnd('/');
-                    if (containerPath == dest || containerPath.StartsWith(dest + "/", StringComparison.Ordinal))
+                    using var client = CreateDockerClient();
+                    var buildContainerId = Environment.MachineName;
+                    await client.Networks.ConnectNetworkAsync(
+                        networkName,
+                        new NetworkConnectParameters {Container = buildContainerId});
+                    Logger.Information("Joined network {Network} as {Id} — running in container", networkName, buildContainerId);
+
+                    // Inspect our own container to discover mount mappings (container path → host path)
+                    var inspection = await client.Containers.InspectContainerAsync(buildContainerId);
+                    var mounts = inspection.Mounts
+                        .Where(m => !string.IsNullOrEmpty(m.Destination) && !string.IsNullOrEmpty(m.Source))
+                        .OrderByDescending(m => m.Destination.Length) // longest prefix first
+                        .ToList();
+
+                    foreach (var m in mounts)
                     {
-                        var relativePart = containerPath.Substring(dest.Length);
-                        var hostPath = mount.Source.TrimEnd('/') + relativePart;
-                        Logger.Debug("Translated path {Container} -> {Host}", containerPath, hostPath);
-                        return hostPath;
+                        Logger.Debug("Mount: {Source} -> {Destination} (Type: {Type})", m.Source, m.Destination, m.Type);
+                    }
+
+                    return new DockerEnvironment(buildContainerId, ToHostPath);
+
+                    string ToHostPath(string containerPath)
+                    {
+                        foreach (var mount in mounts)
+                        {
+                            var dest = mount.Destination.TrimEnd('/');
+                            if (containerPath == dest || containerPath.StartsWith(dest + "/", StringComparison.Ordinal))
+                            {
+                                var relativePart = containerPath.Substring(dest.Length);
+                                var hostPath = mount.Source.TrimEnd('/') + relativePart;
+                                Logger.Debug("Translated path {Container} -> {Host}", containerPath, hostPath);
+                                return hostPath;
+                            }
+                        }
+
+                        Logger.Warning("No mount found for path {Path}, using as-is", containerPath);
+                        return containerPath;
                     }
                 }
-
-                Logger.Warning("No mount found for path {Path}, using as-is", containerPath);
-                return containerPath;
-            }
-
-            return new DockerEnvironment(buildContainerId, ToHostPath);
-        }
-        catch (Exception ex)
-        {
-            Logger.Debug(ex, "Could not join network {Network} (This is expected when running on the host)", networkName);
-            return new DockerEnvironment(null, path => path);
-        }
+                catch (DockerNetworkNotFoundException ex)
+                {
+                    // ConnectNetworkAsync should catch a 404 and throw a DockerNetworkNotFoundException when it's not running in a container
+                    Logger.Debug(ex, "Could not join network {Network} (This is expected when running on the host)", networkName);
+                    return new DockerEnvironment(null, path => path);
+                }
+            },
+            RetryDelays);
     }
 
     /// <summary>
