@@ -233,24 +233,24 @@ Component:
     Condition: ''
     Directory_: CommonAppDataFolder.DatadogDotNetTracer.logs
     KeyPath: ''
-  reg94290E163033D1A6292B7FADE992B182:
+  regKT3eEzbVD_g1Ie_yyxYAzbfsgFE:
     Attributes: 260
-    ComponentId: '{654CF61C-A987-594E-8CA2-F557D14FC07A}'
+    ComponentId: '{6947D52D-0DBC-5A15-9EF1-B9FF9BBCB805}'
     Condition: ''
     Directory_: INSTALLFOLDER
-    KeyPath: reg94290E163033D1A6292B7FADE992B182
+    KeyPath: regKT3eEzbVD_g1Ie_yyxYAzbfsgFE
   Shared.Registry.EnvironmentVariables.W3SVC:
     Attributes: 260
     ComponentId: '{702DB265-F33E-47F4-A6B0-E21FA0FC21C1}'
     Condition: ''
     Directory_: INSTALLFOLDER
-    KeyPath: regECC40E80FEA89C7AEBDA265451E9F819
+    KeyPath: rege2h9jndLEPFgGjLvymf4UjKNF_c
   Shared.Registry.EnvironmentVariables.WAS:
     Attributes: 260
     ComponentId: '{6CF8AB88-240E-4A0A-B630-43119C064AD4}'
     Condition: ''
     Directory_: INSTALLFOLDER
-    KeyPath: reg80B45DAEBA0157AC960E82560BB58F64
+    KeyPath: reg9M52BwzMr2XiXnErxQyVPpfiS.Q
   Tracer.EnvironmentVariablesShared:
     Attributes: 256
     ComponentId: '{3BBBC152-D016-489D-B811-E85412F8AFCF}'
@@ -258,53 +258,53 @@ Component:
     Directory_: INSTALLFOLDER
     KeyPath: ''
 CustomAction:
-  ExecSecureObjects_64:
-    ExtendedType: ''
-    Source: WixCA_x64
-    Target: ExecSecureObjects
-    Type: 11265
-  ExecSecureObjectsRollback_64:
-    ExtendedType: ''
-    Source: WixCA_x64
-    Target: ExecSecureObjectsRollback
-    Type: 11521
-  SchedSecureObjects_x64:
-    ExtendedType: ''
-    Source: WixCA_x64
-    Target: SchedSecureObjects
-    Type: 1
-  SchedSecureObjectsRollback_x64:
-    ExtendedType: ''
-    Source: WixCA_x64
-    Target: SchedSecureObjectsRollback
-    Type: 1
   SetWIX_IS_NETFRAMEWORK_461_OR_LATER_INSTALLED:
     ExtendedType: ''
     Source: WIX_IS_NETFRAMEWORK_461_OR_LATER_INSTALLED
     Target: 1
     Type: 51
-  WixUIPrintEula:
+  Wix4ExecSecureObjects_X64:
     ExtendedType: ''
-    Source: WixUIWixca
+    Source: Wix4UtilCA_X64
+    Target: ExecSecureObjects
+    Type: 11265
+  Wix4ExecSecureObjectsRollback_X64:
+    ExtendedType: ''
+    Source: Wix4UtilCA_X64
+    Target: ExecSecureObjectsRollback
+    Type: 11521
+  Wix4SchedSecureObjects_X64:
+    ExtendedType: ''
+    Source: Wix4UtilCA_X64
+    Target: SchedSecureObjects
+    Type: 1
+  Wix4SchedSecureObjectsRollback_X64:
+    ExtendedType: ''
+    Source: Wix4UtilCA_X64
+    Target: SchedSecureObjectsRollback
+    Type: 1
+  WixUIPrintEula_X64:
+    ExtendedType: ''
+    Source: WixUiCa_X64
     Target: PrintEula
     Type: 65
-  WixUIValidatePath:
+  WixUIValidatePath_X64:
     ExtendedType: ''
-    Source: WixUIWixca
+    Source: WixUiCa_X64
     Target: ValidatePath
     Type: 65
 Directory:
   CommonAppDataFolder:
-    DefaultDir: .
+    DefaultDir: CommApp
     Directory_Parent: TARGETDIR
   CommonAppDataFolder.DatadogDotNetTracer:
-    DefaultDir: owjbdgl5|Datadog .NET Tracer
+    DefaultDir: 4zxrvyn0|Datadog .NET Tracer
     Directory_Parent: CommonAppDataFolder
   CommonAppDataFolder.DatadogDotNetTracer.logs:
     DefaultDir: logs
     Directory_Parent: CommonAppDataFolder.DatadogDotNetTracer
   INSTALLFOLDER:
-    DefaultDir: qxh9m9qb|.NET Tracer
+    DefaultDir: bpba-kvy|.NET Tracer
     Directory_Parent: ProgramFilesFolder.Datadog
   INSTALLFOLDER.net461:
     DefaultDir: net461
@@ -316,10 +316,10 @@ Directory:
     DefaultDir: net6.0
     Directory_Parent: INSTALLFOLDER
   INSTALLFOLDER.netcoreapp3.1:
-    DefaultDir: a031eqx-|netcoreapp3.1
+    DefaultDir: 8k70tj_k|netcoreapp3.1
     Directory_Parent: INSTALLFOLDER
   INSTALLFOLDER.netstandard2.0:
-    DefaultDir: py0ohri_|netstandard2.0
+    DefaultDir: fhw-ei71|netstandard2.0
     Directory_Parent: INSTALLFOLDER
   INSTALLFOLDER.win_x64:
     DefaultDir: win-x64
@@ -328,7 +328,7 @@ Directory:
     DefaultDir: win-x86
     Directory_Parent: INSTALLFOLDER
   ProgramFiles64Folder:
-    DefaultDir: .
+    DefaultDir: PFiles64
     Directory_Parent: TARGETDIR
   ProgramFilesFolder.Datadog:
     DefaultDir: Datadog
@@ -386,61 +386,61 @@ File:
   Datadog.Profiler.Native:
     Attributes: 1536
     Component_: Datadog.Profiler.Native
-    FileName: twcnvmgg.dll|Datadog.Profiler.Native.dll
+    FileName: fx0-blnb.dll|Datadog.Profiler.Native.dll
     Language: 1033
     Version: FOUR_PART_VERSION
   Datadog.Profiler.Native.32:
     Attributes: 1536
     Component_: Datadog.Profiler.Native.32
-    FileName: g9wf1bwd.dll|Datadog.Profiler.Native.dll
+    FileName: zhnlix9w.dll|Datadog.Profiler.Native.dll
     Language: 1033
     Version: FOUR_PART_VERSION
   Datadog.Trace.ClrProfiler.Native:
     Attributes: 1536
     Component_: Datadog.Trace.ClrProfiler.Native
-    FileName: xy-lihfv.dll|Datadog.Trace.ClrProfiler.Native.dll
+    FileName: nlbt519e.dll|Datadog.Trace.ClrProfiler.Native.dll
     Language: 1033
     Version: FOUR_PART_VERSION
   Datadog.Trace.ClrProfiler.Native.32:
     Attributes: 1536
     Component_: Datadog.Trace.ClrProfiler.Native.32
-    FileName: pnpxjiwm.dll|Datadog.Trace.ClrProfiler.Native.dll
+    FileName: wupbuiwk.dll|Datadog.Trace.ClrProfiler.Native.dll
     Language: 1033
     Version: FOUR_PART_VERSION
   Datadog.Tracer.Native:
     Attributes: 1536
     Component_: Datadog.Tracer.Native
-    FileName: 3fgyj9aq.dll|Datadog.Tracer.Native.dll
+    FileName: -jdj0aut.dll|Datadog.Tracer.Native.dll
     Language: 1033
     Version: FOUR_PART_VERSION
   Datadog.Tracer.Native.32:
     Attributes: 1536
     Component_: Datadog.Tracer.Native.32
-    FileName: 70fzpwnj.dll|Datadog.Tracer.Native.dll
+    FileName: qznoua_u.dll|Datadog.Tracer.Native.dll
     Language: 1033
     Version: FOUR_PART_VERSION
   dd_dotnet.cmd:
     Attributes: 1536
     Component_: dd_dotnet.cmd
-    FileName: qzw57yrm.cmd|dd-dotnet.cmd
+    FileName: p1xu5gt7.cmd|dd-dotnet.cmd
     Language: ''
     Version: ''
   dd_dotnet.exe:
     Attributes: 1536
     Component_: dd_dotnet.exe
-    FileName: 1zltfrls.exe|dd-dotnet.exe
+    FileName: t2hlp681.exe|dd-dotnet.exe
     Language: 0
     Version: FOUR_PART_VERSION
   libdatadog:
     Attributes: 1536
     Component_: libdatadog
-    FileName: 0ucykihs.dll|datadog_profiling_ffi.dll
+    FileName: ceb4q7zl.dll|datadog_profiling_ffi.dll
     Language: ''
     Version: ''
   libdatadog.32:
     Attributes: 1536
     Component_: libdatadog.32
-    FileName: vksekk-v.dll|datadog_profiling_ffi.dll
+    FileName: lk7zloue.dll|datadog_profiling_ffi.dll
     Language: ''
     Version: ''
   LibDdwaf:
@@ -458,151 +458,151 @@ File:
   loader.conf.x64:
     Attributes: 512
     Component_: loader.conf.x64
-    FileName: mbfbroqk.con|loader.conf
+    FileName: zdnnmeoc.con|loader.conf
     Language: ''
     Version: ''
   loader.conf.x86:
     Attributes: 512
     Component_: loader.conf.x86
-    FileName: arcu9rk-.con|loader.conf
+    FileName: it-kdmwu.con|loader.conf
     Language: ''
     Version: ''
   net461_Datadog.Trace.dll:
     Attributes: 1536
     Component_: net461_Datadog.Trace.dll
-    FileName: fjl1yrae.dll|Datadog.Trace.dll
+    FileName: lhbu1ztg.dll|Datadog.Trace.dll
     Language: 0
     Version: FOUR_PART_VERSION
   net461_Datadog.Trace.MSBuild.dll:
     Attributes: 1536
     Component_: net461_Datadog.Trace.MSBuild.dll
-    FileName: f8ymz5zj.dll|Datadog.Trace.MSBuild.dll
+    FileName: 83qawzde.dll|Datadog.Trace.MSBuild.dll
     Language: 0
     Version: FOUR_PART_VERSION
   net461_Datadog.Trace.MSBuild.pdb:
     Attributes: 1536
     Component_: net461_Datadog.Trace.MSBuild.pdb
-    FileName: 681izxtb.pdb|Datadog.Trace.MSBuild.pdb
+    FileName: khulwnd8.pdb|Datadog.Trace.MSBuild.pdb
     Language: ''
     Version: ''
   net461_Datadog.Trace.pdb:
     Attributes: 1536
     Component_: net461_Datadog.Trace.pdb
-    FileName: vs0ngh8e.pdb|Datadog.Trace.pdb
+    FileName: nxtyvdhj.pdb|Datadog.Trace.pdb
     Language: ''
     Version: ''
   net461_GAC_Datadog.Trace.dll:
     Attributes: 1536
     Component_: net461_GAC_Datadog.Trace.dll
-    FileName: icxsdo10.dll|Datadog.Trace.dll
+    FileName: yp97nyhv.dll|Datadog.Trace.dll
     Language: 0
     Version: FOUR_PART_VERSION
   net461_GAC_Datadog.Trace.MSBuild.dll:
     Attributes: 1536
     Component_: net461_GAC_Datadog.Trace.MSBuild.dll
-    FileName: _2cye_2p.dll|Datadog.Trace.MSBuild.dll
+    FileName: 7dzhixvn.dll|Datadog.Trace.MSBuild.dll
     Language: 0
     Version: FOUR_PART_VERSION
   net60_Datadog.Trace.dll:
     Attributes: 1536
     Component_: net60_Datadog.Trace.dll
-    FileName: e1f6nhry.dll|Datadog.Trace.dll
+    FileName: fm0jrzji.dll|Datadog.Trace.dll
     Language: 0
     Version: FOUR_PART_VERSION
   net60_Datadog.Trace.MSBuild.dll:
     Attributes: 1536
     Component_: net60_Datadog.Trace.MSBuild.dll
-    FileName: vpjcavif.dll|Datadog.Trace.MSBuild.dll
+    FileName: dyjmoe7w.dll|Datadog.Trace.MSBuild.dll
     Language: 0
     Version: FOUR_PART_VERSION
   net60_Datadog.Trace.MSBuild.pdb:
     Attributes: 1536
     Component_: net60_Datadog.Trace.MSBuild.pdb
-    FileName: gja0ydqd.pdb|Datadog.Trace.MSBuild.pdb
+    FileName: t8z8gvhl.pdb|Datadog.Trace.MSBuild.pdb
     Language: ''
     Version: ''
   net60_Datadog.Trace.pdb:
     Attributes: 1536
     Component_: net60_Datadog.Trace.pdb
-    FileName: cez3d9b_.pdb|Datadog.Trace.pdb
+    FileName: 9geldyu4.pdb|Datadog.Trace.pdb
     Language: ''
     Version: ''
   netcoreapp31_Datadog.Trace.dll:
     Attributes: 1536
     Component_: netcoreapp31_Datadog.Trace.dll
-    FileName: sltx78r2.dll|Datadog.Trace.dll
+    FileName: -7_gjinw.dll|Datadog.Trace.dll
     Language: 0
     Version: FOUR_PART_VERSION
   netcoreapp31_Datadog.Trace.MSBuild.dll:
     Attributes: 1536
     Component_: netcoreapp31_Datadog.Trace.MSBuild.dll
-    FileName: tqqebgkm.dll|Datadog.Trace.MSBuild.dll
+    FileName: cvawkxx1.dll|Datadog.Trace.MSBuild.dll
     Language: 0
     Version: FOUR_PART_VERSION
   netcoreapp31_Datadog.Trace.MSBuild.pdb:
     Attributes: 1536
     Component_: netcoreapp31_Datadog.Trace.MSBuild.pdb
-    FileName: jqr9bcxr.pdb|Datadog.Trace.MSBuild.pdb
+    FileName: im4ktg_q.pdb|Datadog.Trace.MSBuild.pdb
     Language: ''
     Version: ''
   netcoreapp31_Datadog.Trace.pdb:
     Attributes: 1536
     Component_: netcoreapp31_Datadog.Trace.pdb
-    FileName: 11usnbfu.pdb|Datadog.Trace.pdb
+    FileName: oo0ncndn.pdb|Datadog.Trace.pdb
     Language: ''
     Version: ''
   netstandard20_Datadog.Trace.dll:
     Attributes: 1536
     Component_: netstandard20_Datadog.Trace.dll
-    FileName: gxppu_sn.dll|Datadog.Trace.dll
+    FileName: yrz8x6xz.dll|Datadog.Trace.dll
     Language: 0
     Version: FOUR_PART_VERSION
   netstandard20_Datadog.Trace.MSBuild.dll:
     Attributes: 1536
     Component_: netstandard20_Datadog.Trace.MSBuild.dll
-    FileName: rqgvp1w7.dll|Datadog.Trace.MSBuild.dll
+    FileName: cn62sjxk.dll|Datadog.Trace.MSBuild.dll
     Language: 0
     Version: FOUR_PART_VERSION
   netstandard20_Datadog.Trace.MSBuild.pdb:
     Attributes: 1536
     Component_: netstandard20_Datadog.Trace.MSBuild.pdb
-    FileName: pk90w2pj.pdb|Datadog.Trace.MSBuild.pdb
+    FileName: utzfis4h.pdb|Datadog.Trace.MSBuild.pdb
     Language: ''
     Version: ''
   netstandard20_Datadog.Trace.pdb:
     Attributes: 1536
     Component_: netstandard20_Datadog.Trace.pdb
-    FileName: 98hstxgk.pdb|Datadog.Trace.pdb
+    FileName: fetmlbyb.pdb|Datadog.Trace.pdb
     Language: ''
     Version: ''
   netstandard20_System.Diagnostics.DiagnosticSource.dll:
     Attributes: 1536
     Component_: netstandard20_System.Diagnostics.DiagnosticSource.dll
-    FileName: u2qa3qpv.dll|System.Diagnostics.DiagnosticSource.dll
+    FileName: kexmubkx.dll|System.Diagnostics.DiagnosticSource.dll
     Language: 0
     Version: 4.6.25519.3
   netstandard20_System.Reflection.Emit.dll:
     Attributes: 1536
     Component_: netstandard20_System.Reflection.Emit.dll
-    FileName: r4ixpoll.dll|System.Reflection.Emit.dll
+    FileName: lgfe6xky.dll|System.Reflection.Emit.dll
     Language: 0
     Version: 4.6.24705.1
   netstandard20_System.Reflection.Emit.ILGeneration.dll:
     Attributes: 1536
     Component_: netstandard20_System.Reflection.Emit.ILGeneration.dll
-    FileName: moubxvpa.dll|System.Reflection.Emit.ILGeneration.dll
+    FileName: rliotjd0.dll|System.Reflection.Emit.ILGeneration.dll
     Language: 0
     Version: 4.6.24705.1
   netstandard20_System.Reflection.Emit.Lightweight.dll:
     Attributes: 1536
     Component_: netstandard20_System.Reflection.Emit.Lightweight.dll
-    FileName: gtky5ry_.dll|System.Reflection.Emit.Lightweight.dll
+    FileName: rb3ggl3n.dll|System.Reflection.Emit.Lightweight.dll
     Language: 0
     Version: 4.6.24705.1
   netstandard20_System.Threading.dll:
     Attributes: 1536
     Component_: netstandard20_System.Threading.dll
-    FileName: ihqlewos.dll|System.Threading.dll
+    FileName: lbb1oawi.dll|System.Threading.dll
     Language: 0
     Version: 4.6.24705.1
 InstallExecuteSequence:
@@ -681,12 +681,6 @@ InstallExecuteSequence:
   RemoveRegistryValues:
     Condition: ''
     Sequence: 2600
-  SchedSecureObjects_x64:
-    Condition: NOT REMOVE~="ALL" AND VersionNT > 400
-    Sequence: 5801
-  SchedSecureObjectsRollback_x64:
-    Condition: VersionNT > 400
-    Sequence: 1801
   SetWIX_IS_NETFRAMEWORK_461_OR_LATER_INSTALLED:
     Condition: WIXNETFX4RELEASEINSTALLED >= "#394254"
     Sequence: 51
@@ -696,6 +690,12 @@ InstallExecuteSequence:
   ValidateProductID:
     Condition: ''
     Sequence: 700
+  Wix4SchedSecureObjects_X64:
+    Condition: NOT REMOVE~="ALL" AND VersionNT > 400
+    Sequence: 5801
+  Wix4SchedSecureObjectsRollback_X64:
+    Condition: VersionNT > 400
+    Sequence: 1801
   WriteEnvironmentStrings:
     Condition: ''
     Sequence: 5200
@@ -712,57 +712,57 @@ Property:
   DefaultUIFont: WixUI_Font_Normal
   ErrorDialog: ErrorDlg
   Manufacturer: Datadog, Inc.
-  MsiHiddenProperties: ExecSecureObjects_64;ExecSecureObjectsRollback_64
+  MsiHiddenProperties: Wix4ExecSecureObjects_X64;Wix4ExecSecureObjectsRollback_X64
   PATHSHORTCUT: 1
   ProductCode: PRODUCT_CODE
   ProductLanguage: 1033
   ProductName: Datadog .NET Tracer 64-bit
   ProductVersion: THREE_PART_VERSION
-  SecureCustomProperties: WIX_DOWNGRADE_DETECTED;WIX_IS_NETFRAMEWORK_461_OR_LATER_INSTALLED;WIX_UPGRADE_DETECTED;WIXNETFX4RELEASEINSTALLED
+  SecureCustomProperties: BURNMSIMODIFY;BURNMSIREPAIR;BURNMSIUNINSTALL;WIX_DOWNGRADE_DETECTED;WIX_IS_NETFRAMEWORK_461_OR_LATER_INSTALLED;WIX_UPGRADE_DETECTED;WIXNETFX4RELEASEINSTALLED
   UpgradeCode: '{FC228E86-EAE2-4C2A-AE82-135B718C269E}'
   WIXUI_INSTALLDIR: INSTALLFOLDER
   WixUI_Mode: InstallDir
   WixUIRMOption: UseRM
 Registry:
-  reg68BF43301FE831E98E5F0E33DA33AA62:
-    Component_: Datadog.Trace.ClrProfiler.Native.32
-    Key: CLSID\{846F5F1C-F9AE-4B07-969E-05C26BC060D8}\InprocServer32
-    Name: ''
-    Root: 0
-    Value: '[#Datadog.Trace.ClrProfiler.Native.32]'
-  reg80B45DAEBA0157AC960E82560BB58F64:
+  reg.nnMFaR87a.uzU2QDT9G6QO9Vbs:
+    Component_: regKT3eEzbVD_g1Ie_yyxYAzbfsgFE
+    Key: Software\Microsoft\Windows\Windows Error Reporting\RuntimeExceptionHelperModules
+    Name: '[INSTALLFOLDER.win_x64]Datadog.Trace.ClrProfiler.Native.dll'
+    Root: 2
+    Value: '#1'
+  reg9M52BwzMr2XiXnErxQyVPpfiS.Q:
     Component_: Shared.Registry.EnvironmentVariables.WAS
     Key: System\CurrentControlSet\Services\WAS
     Name: Environment
     Root: 2
     Value: '[~]COR_ENABLE_PROFILING=1[~]COR_PROFILER={846F5F1C-F9AE-4B07-969E-05C26BC060D8}[~]CORECLR_ENABLE_PROFILING=1[~]CORECLR_PROFILER={846F5F1C-F9AE-4B07-969E-05C26BC060D8}'
-  reg8F500FE0B8E6A851EC972DD03FEB1820:
-    Component_: Datadog.Trace.ClrProfiler.Native.32
-    Key: CLSID\{846F5F1C-F9AE-4B07-969E-05C26BC060D8}
-    Name: ''
-    Root: 0
-    Value: Datadog .NET Tracer
-  reg94290E163033D1A6292B7FADE992B182:
-    Component_: reg94290E163033D1A6292B7FADE992B182
-    Key: Software\Datadog\Datadog .NET Tracer 64-bit
-    Name: InstallPath
-    Root: 2
-    Value: '[INSTALLFOLDER]'
-  regC964D8215E7034AA2E6C571D3A88D7A0:
-    Component_: reg94290E163033D1A6292B7FADE992B182
-    Key: Software\Microsoft\Windows\Windows Error Reporting\RuntimeExceptionHelperModules
-    Name: '[INSTALLFOLDER.win_x64]Datadog.Trace.ClrProfiler.Native.dll'
-    Root: 2
-    Value: '#1'
-  regCECC4904027E17038A132DE31980039A:
-    Component_: Datadog.Trace.ClrProfiler.Native.32
-    Key: CLSID\{846F5F1C-F9AE-4B07-969E-05C26BC060D8}\InprocServer32
-    Name: ThreadingModel
-    Root: 0
-    Value: Both
-  regECC40E80FEA89C7AEBDA265451E9F819:
+  rege2h9jndLEPFgGjLvymf4UjKNF_c:
     Component_: Shared.Registry.EnvironmentVariables.W3SVC
     Key: System\CurrentControlSet\Services\W3SVC
     Name: Environment
     Root: 2
     Value: '[~]COR_ENABLE_PROFILING=1[~]COR_PROFILER={846F5F1C-F9AE-4B07-969E-05C26BC060D8}[~]CORECLR_ENABLE_PROFILING=1[~]CORECLR_PROFILER={846F5F1C-F9AE-4B07-969E-05C26BC060D8}'
+  regKT3eEzbVD_g1Ie_yyxYAzbfsgFE:
+    Component_: regKT3eEzbVD_g1Ie_yyxYAzbfsgFE
+    Key: Software\Datadog\Datadog .NET Tracer 64-bit
+    Name: InstallPath
+    Root: 2
+    Value: '[INSTALLFOLDER]'
+  regOgftUFQDRnsDRvQ8tukfH4kDj5k:
+    Component_: Datadog.Trace.ClrProfiler.Native.32
+    Key: CLSID\{846F5F1C-F9AE-4B07-969E-05C26BC060D8}\InprocServer32
+    Name: ''
+    Root: 0
+    Value: '[#Datadog.Trace.ClrProfiler.Native.32]'
+  regSbyB2E8nAYVNaNYvDvRzkLE50ww:
+    Component_: Datadog.Trace.ClrProfiler.Native.32
+    Key: CLSID\{846F5F1C-F9AE-4B07-969E-05C26BC060D8}\InprocServer32
+    Name: ThreadingModel
+    Root: 0
+    Value: Both
+  regybVi1IuiBkCFpLVM.1zy61yn1pc:
+    Component_: Datadog.Trace.ClrProfiler.Native.32
+    Key: CLSID\{846F5F1C-F9AE-4B07-969E-05C26BC060D8}
+    Name: ''
+    Root: 0
+    Value: Datadog .NET Tracer
