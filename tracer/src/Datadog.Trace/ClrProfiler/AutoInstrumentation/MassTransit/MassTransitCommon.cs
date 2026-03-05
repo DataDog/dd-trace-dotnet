@@ -688,7 +688,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
         internal static void EnhanceActivityMetadata(IActivity5 activity)
         {
             // Add component tag to identify this as a MassTransit span
-            activity.AddTag(Tags.InstrumentationName, "masstransit");
+            activity.AddTag(Tags.InstrumentationName, MassTransitConstants.ComponentTagName);
 
             // Preserve the original operation name
             var originalOperationName = activity.OperationName ?? string.Empty;

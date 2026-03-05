@@ -45,8 +45,8 @@ namespace Datadog.Trace.DiagnosticListeners
     /// <para/>
     /// Exception handling:
     /// MassTransit 7 does NOT emit exception information through DiagnosticSource events (Stop event arg
-    /// is always null). We use CallTarget instrumentation on BaseReceiveContext.NotifyFaulted to capture
-    /// exceptions, storing them keyed by Activity.TraceId for later retrieval in OnStop handlers.
+    /// is always null). We use CallTarget instrumentation on BaseReceiveContext.NotifyFaulted to set
+    /// error tags directly on the active span — AsyncLocal ensures it is the correct span.
     /// </remarks>
     internal sealed class MassTransitDiagnosticObserver : DiagnosticObserver
     {
@@ -347,22 +347,6 @@ namespace Datadog.Trace.DiagnosticListeners
                     scope.Span.OperationName,
                     operationType);
                 return;
-            }
-
-            // Check for exceptions captured by NotifyFaultedIntegration (CallTarget).
-            // MassTransit 7 does not expose exceptions through DiagnosticSource events,
-            // so we use bytecode instrumentation on NotifyFaulted to capture them.
-            // AsyncLocal ensures ActiveScope here matches ActiveScope when NotifyFaulted fired,
-            // so the SpanId key correctly correlates the exception to this scope.
-            var exception = MassTransitExceptionStore.TryGetAndRemoveException(scope.Span.SpanId);
-            if (exception != null)
-            {
-                MassTransitCommon.SetException(scope, exception);
-                Log.Debug(
-                    "MassTransitDiagnosticObserver.OnStop: Set exception for {OperationType} (SpanId={SpanId}): {ExceptionType}",
-                    operationType,
-                    scope.Span.SpanId,
-                    exception.GetType().Name);
             }
 
             MassTransitCommon.CloseScope(scope, operationType);

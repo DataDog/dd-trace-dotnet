@@ -52,15 +52,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.CallTarget
                 return CallTargetState.GetDefault();
             }
 
-            // Key by the active Datadog span ID so OnStop can retrieve it via the same scope.
-            var spanId = Tracer.Instance.ActiveScope?.Span.SpanId ?? 0;
+            // Set the exception directly on the active scope — AsyncLocal ensures it is exactly
+            // the scope for the faulted operation.
+            var scope = Tracer.Instance.ActiveScope as Scope;
 
-            if (spanId != 0 && exception != null)
+            if (scope != null && exception != null)
             {
-                MassTransitExceptionStore.StoreException(spanId, exception);
+                MassTransitCommon.SetException(scope, exception);
                 Log.Debug(
-                    "NotifyFaultedIntegration.OnMethodBegin: Stored exception for SpanId={SpanId}, ExceptionType={ExceptionType}",
-                    spanId,
+                    "NotifyFaultedIntegration.OnMethodBegin: Set exception on span SpanId={SpanId}, ExceptionType={ExceptionType}",
+                    scope.Span.SpanId,
                     exception.GetType().Name);
             }
 
