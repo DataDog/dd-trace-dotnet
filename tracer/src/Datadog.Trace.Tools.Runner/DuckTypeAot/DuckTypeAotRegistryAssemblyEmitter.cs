@@ -49,6 +49,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         private const string GeneratedProxyNamespace = "Datadog.Trace.DuckTyping.Generated.Proxies";
 
         /// <summary>
+        /// Splits bootstrap registration IL into smaller methods to avoid runtime/JIT stack issues on older TFMs.
+        /// </summary>
+        private const int BootstrapMappingsPerMethod = 128;
+
+        /// <summary>
         /// Defines datadog trace assembly name constant.
         /// </summary>
         private const string DatadogTraceAssemblyName = "Datadog.Trace";
@@ -225,6 +230,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             typeof(DuckType.CreateTypeResult).GetProperty(
                 nameof(DuckType.CreateTypeResult.ProxyType),
                 BindingFlags.Public | BindingFlags.Instance);
+
+        /// <summary>
+        /// Stores runtime assembly paths used by metadata-to-runtime type resolution during emission.
+        /// </summary>
+        private static IReadOnlyDictionary<string, string>? runtimeTypeResolutionAssemblyPathsByName;
 
         /// <summary>
         /// Defines named constants for forward binding kind.
@@ -440,16 +450,33 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
             var proxyModulesByAssemblyName = LoadModules(mappingResolutionResult.ProxyAssemblyPathsByName);
             var targetModulesByAssemblyName = LoadModules(mappingResolutionResult.TargetAssemblyPathsByName);
+            runtimeTypeResolutionAssemblyPathsByName = BuildRuntimeTypeResolutionAssemblyPathMap(
+                mappingResolutionResult.ProxyAssemblyPathsByName,
+                mappingResolutionResult.TargetAssemblyPathsByName);
+            var bootstrapRegistrationMethods = new List<MethodDef>();
             try
             {
                 var sortedMappings = mappingResolutionResult.Mappings.OrderBy(mapping => mapping.Key, StringComparer.Ordinal).ToList();
                 for (var i = 0; i < sortedMappings.Count; i++)
                 {
+                    var registrationMethodIndex = i / BootstrapMappingsPerMethod;
+                    while (bootstrapRegistrationMethods.Count <= registrationMethodIndex)
+                    {
+                        var registrationMethod = new MethodDefUser(
+                            $"RegisterMappingsChunk_{bootstrapRegistrationMethods.Count + 1:D4}",
+                            MethodSig.CreateStatic(moduleDef.CorLibTypes.Void),
+                            MethodImplAttributes.IL | MethodImplAttributes.Managed,
+                            MethodAttributes.Private | MethodAttributes.Static | MethodAttributes.HideBySig);
+                        registrationMethod.Body = new CilBody();
+                        bootstrapType.Methods.Add(registrationMethod);
+                        bootstrapRegistrationMethods.Add(registrationMethod);
+                    }
+
                     var mapping = sortedMappings[i];
                     mappingResults[mapping.Key] = EmitMapping(
                         moduleDef,
                         bootstrapType,
-                        initializeMethod,
+                        bootstrapRegistrationMethods[registrationMethodIndex],
                         importedMembers,
                         mapping,
                         i + 1,
@@ -471,6 +498,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 {
                     module.Dispose();
                 }
+            }
+
+            foreach (var bootstrapRegistrationMethod in bootstrapRegistrationMethods)
+            {
+                bootstrapRegistrationMethod.Body.Instructions.Add(OpCodes.Ret.ToInstruction());
+                initializeMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(bootstrapRegistrationMethod));
             }
 
             initializeMethod.Body.Instructions.Add(OpCodes.Ret.ToInstruction());
@@ -528,6 +561,48 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
 
             return typeof(Datadog.Trace.Tracer).Assembly.Location;
+        }
+
+        /// <summary>
+        /// Builds a combined assembly-path index for runtime type probing across proxy and target sets.
+        /// </summary>
+        /// <param name="proxyAssemblyPathsByName">The proxy assembly paths value.</param>
+        /// <param name="targetAssemblyPathsByName">The target assembly paths value.</param>
+        /// <returns>The resulting path map keyed by normalized assembly name.</returns>
+        private static IReadOnlyDictionary<string, string> BuildRuntimeTypeResolutionAssemblyPathMap(
+            IReadOnlyDictionary<string, string> proxyAssemblyPathsByName,
+            IReadOnlyDictionary<string, string> targetAssemblyPathsByName)
+        {
+            var combinedPaths = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var entry in proxyAssemblyPathsByName)
+            {
+                var normalizedAssemblyName = DuckTypeAotNameHelpers.NormalizeAssemblyName(entry.Key);
+                if (string.IsNullOrWhiteSpace(normalizedAssemblyName) ||
+                    string.IsNullOrWhiteSpace(entry.Value) ||
+                    !File.Exists(entry.Value) ||
+                    combinedPaths.ContainsKey(normalizedAssemblyName))
+                {
+                    continue;
+                }
+
+                combinedPaths[normalizedAssemblyName] = entry.Value;
+            }
+
+            foreach (var entry in targetAssemblyPathsByName)
+            {
+                var normalizedAssemblyName = DuckTypeAotNameHelpers.NormalizeAssemblyName(entry.Key);
+                if (string.IsNullOrWhiteSpace(normalizedAssemblyName) ||
+                    string.IsNullOrWhiteSpace(entry.Value) ||
+                    !File.Exists(entry.Value))
+                {
+                    continue;
+                }
+
+                combinedPaths[normalizedAssemblyName] = entry.Value;
+            }
+
+            return combinedPaths;
         }
 
         /// <summary>
@@ -1345,7 +1420,9 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             initializeMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(importedMembers.GetTypeFromHandleMethod));
             initializeMethod.Body.Instructions.Add(OpCodes.Ldtoken.ToInstruction(importedTargetType));
             initializeMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(importedMembers.GetTypeFromHandleMethod));
-            initializeMethod.Body.Instructions.Add(OpCodes.Ldtoken.ToInstruction(generatedType));
+            // Avoid forcing eager load of every generated proxy type during bootstrap on older runtimes.
+            // The activator still creates the generated implementation when the mapping is actually used.
+            initializeMethod.Body.Instructions.Add(OpCodes.Ldtoken.ToInstruction(moduleDef.Import(proxyType)));
             initializeMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(importedMembers.GetTypeFromHandleMethod));
             initializeMethod.Body.Instructions.Add(OpCodes.Ldtoken.ToInstruction(registrationActivatorMethod));
             initializeMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(isReverseMapping ? importedMembers.RegisterAotReverseProxyMethod : importedMembers.RegisterAotProxyMethod));
@@ -1761,7 +1838,9 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             initializeMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(importedMembers.GetTypeFromHandleMethod));
             initializeMethod.Body.Instructions.Add(OpCodes.Ldtoken.ToInstruction(importedTargetType));
             initializeMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(importedMembers.GetTypeFromHandleMethod));
-            initializeMethod.Body.Instructions.Add(OpCodes.Ldtoken.ToInstruction(generatedType));
+            // Avoid forcing eager load of every generated proxy type during bootstrap on older runtimes.
+            // The activator still creates the generated implementation when the mapping is actually used.
+            initializeMethod.Body.Instructions.Add(OpCodes.Ldtoken.ToInstruction(moduleDef.Import(proxyType)));
             initializeMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(importedMembers.GetTypeFromHandleMethod));
             initializeMethod.Body.Instructions.Add(OpCodes.Ldtoken.ToInstruction(registrationActivatorMethod));
             initializeMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(isReverseMapping ? importedMembers.RegisterAotReverseProxyMethod : importedMembers.RegisterAotProxyMethod));
@@ -2055,43 +2134,60 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             runtimeType = null;
             try
             {
-                runtimeType = Type.GetType(typeName, throwOnError: false);
+                if (TryResolveRuntimeTypeByName(typeName, out runtimeType))
+                {
+                    return true;
+                }
+
+                var normalizedAssemblyName = DuckTypeAotNameHelpers.NormalizeAssemblyName(assemblyName);
+                var candidateAssembly = TryResolvePreferredRuntimeAssembly(normalizedAssemblyName, assemblyPath);
+                runtimeType = candidateAssembly?.GetType(typeName, throwOnError: false, ignoreCase: false);
                 if (runtimeType is not null)
                 {
                     return true;
                 }
 
-                Assembly? candidateAssembly = null;
-                foreach (var loadedAssembly in AppDomain.CurrentDomain.GetAssemblies())
+                foreach (var assemblyQualifiedTypeName in EnumerateAssemblyQualifiedTypeNames(typeName, normalizedAssemblyName, candidateAssembly))
                 {
-                    var loadedAssemblyName = DuckTypeAotNameHelpers.NormalizeAssemblyName(loadedAssembly.GetName().Name ?? string.Empty);
-                    if (string.Equals(loadedAssemblyName, assemblyName, StringComparison.OrdinalIgnoreCase))
-                    {
-                        candidateAssembly = loadedAssembly;
-                        break;
-                    }
-                }
-
-                candidateAssembly ??= Assembly.LoadFrom(assemblyPath);
-                runtimeType = candidateAssembly.GetType(typeName, throwOnError: false, ignoreCase: false);
-                if (runtimeType is not null)
-                {
-                    return true;
-                }
-
-                var candidateAssemblyName = candidateAssembly.GetName().Name;
-                if (!string.IsNullOrWhiteSpace(candidateAssemblyName))
-                {
-                    runtimeType = Type.GetType($"{typeName}, {candidateAssemblyName}", throwOnError: false);
+                    runtimeType = Type.GetType(assemblyQualifiedTypeName, throwOnError: false);
                     if (runtimeType is not null)
                     {
                         return true;
                     }
                 }
 
-                if (!string.IsNullOrWhiteSpace(candidateAssembly.FullName))
+                foreach (var assemblyQualifiedTypeName in EnumerateAssemblyQualifiedTypeNames(typeName, normalizedAssemblyName, candidateAssembly))
                 {
-                    runtimeType = Type.GetType($"{typeName}, {candidateAssembly.FullName}", throwOnError: false);
+                    runtimeType = Type.GetType(
+                        assemblyQualifiedTypeName,
+                        requestedAssemblyName => ResolveRuntimeTypeAssembly(requestedAssemblyName, normalizedAssemblyName, assemblyPath, candidateAssembly),
+                        (requestedAssembly, requestedTypeName, ignoreCase) =>
+                        {
+                            if (requestedAssembly is not null)
+                            {
+                                var resolvedFromRequestedAssembly = requestedAssembly.GetType(requestedTypeName, throwOnError: false, ignoreCase: ignoreCase);
+                                if (resolvedFromRequestedAssembly is not null)
+                                {
+                                    return resolvedFromRequestedAssembly;
+                                }
+                            }
+
+                            foreach (var loadedAssembly in AppDomain.CurrentDomain.GetAssemblies())
+                            {
+                                var resolvedFromLoadedAssembly = loadedAssembly.GetType(requestedTypeName, throwOnError: false, ignoreCase: ignoreCase);
+                                if (resolvedFromLoadedAssembly is not null)
+                                {
+                                    return resolvedFromLoadedAssembly;
+                                }
+                            }
+
+                            return null;
+                        },
+                        throwOnError: false);
+                    if (runtimeType is not null)
+                    {
+                        return true;
+                    }
                 }
             }
             catch
@@ -2100,6 +2196,164 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// Attempts to resolve preferred runtime assembly for metadata-to-runtime bridging.
+        /// </summary>
+        /// <param name="normalizedAssemblyName">The normalized assembly name value.</param>
+        /// <param name="assemblyPath">The assembly path value.</param>
+        /// <returns>The resolved assembly when available; otherwise, null.</returns>
+        private static Assembly? TryResolvePreferredRuntimeAssembly(string normalizedAssemblyName, string assemblyPath)
+        {
+            // Prefer the explicit path from mapping resolution to avoid cross-TFM collisions with already-loaded assemblies.
+            if (!string.IsNullOrWhiteSpace(assemblyPath) && File.Exists(assemblyPath))
+            {
+                try
+                {
+                    return Assembly.LoadFrom(assemblyPath);
+                }
+                catch
+                {
+                    // Continue with loaded-assembly fallback.
+                }
+            }
+
+            foreach (var loadedAssembly in AppDomain.CurrentDomain.GetAssemblies())
+            {
+                var loadedAssemblyName = DuckTypeAotNameHelpers.NormalizeAssemblyName(loadedAssembly.GetName().Name ?? string.Empty);
+                if (string.Equals(loadedAssemblyName, normalizedAssemblyName, StringComparison.OrdinalIgnoreCase))
+                {
+                    return loadedAssembly;
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Enumerates assembly-qualified type-name candidates used for runtime resolution probes.
+        /// </summary>
+        /// <param name="typeName">The type name value.</param>
+        /// <param name="normalizedAssemblyName">The normalized assembly name value.</param>
+        /// <param name="candidateAssembly">The candidate assembly value.</param>
+        /// <returns>The resulting type-name sequence.</returns>
+        private static IEnumerable<string> EnumerateAssemblyQualifiedTypeNames(
+            string typeName,
+            string normalizedAssemblyName,
+            Assembly? candidateAssembly)
+        {
+            var seen = new HashSet<string>(StringComparer.Ordinal);
+
+            if (!string.IsNullOrWhiteSpace(normalizedAssemblyName))
+            {
+                var candidate = $"{typeName}, {normalizedAssemblyName}";
+                if (seen.Add(candidate))
+                {
+                    yield return candidate;
+                }
+            }
+
+            var candidateAssemblySimpleName = candidateAssembly?.GetName().Name;
+            if (!string.IsNullOrWhiteSpace(candidateAssemblySimpleName))
+            {
+                var candidate = $"{typeName}, {candidateAssemblySimpleName}";
+                if (seen.Add(candidate))
+                {
+                    yield return candidate;
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(candidateAssembly?.FullName))
+            {
+                var candidate = $"{typeName}, {candidateAssembly!.FullName}";
+                if (seen.Add(candidate))
+                {
+                    yield return candidate;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Resolves runtime assemblies requested by Type.GetType generic-name parsing.
+        /// </summary>
+        /// <param name="requestedAssemblyName">The requested assembly name value.</param>
+        /// <param name="normalizedAssemblyName">The normalized assembly name value.</param>
+        /// <param name="assemblyPath">The preferred assembly path value.</param>
+        /// <param name="candidateAssembly">The candidate assembly value.</param>
+        /// <returns>The resolved assembly when available; otherwise, null.</returns>
+        private static Assembly? ResolveRuntimeTypeAssembly(
+            AssemblyName requestedAssemblyName,
+            string normalizedAssemblyName,
+            string assemblyPath,
+            Assembly? candidateAssembly)
+        {
+            var requestedSimpleName = DuckTypeAotNameHelpers.NormalizeAssemblyName(requestedAssemblyName.Name ?? string.Empty);
+            if (string.IsNullOrWhiteSpace(requestedSimpleName))
+            {
+                return null;
+            }
+
+            if (candidateAssembly is not null)
+            {
+                var candidateSimpleName = DuckTypeAotNameHelpers.NormalizeAssemblyName(candidateAssembly.GetName().Name ?? string.Empty);
+                if (string.Equals(candidateSimpleName, requestedSimpleName, StringComparison.OrdinalIgnoreCase))
+                {
+                    return candidateAssembly;
+                }
+            }
+
+            foreach (var loadedAssembly in AppDomain.CurrentDomain.GetAssemblies())
+            {
+                var loadedAssemblyName = DuckTypeAotNameHelpers.NormalizeAssemblyName(loadedAssembly.GetName().Name ?? string.Empty);
+                if (string.Equals(loadedAssemblyName, requestedSimpleName, StringComparison.OrdinalIgnoreCase))
+                {
+                    return loadedAssembly;
+                }
+            }
+
+            var preferredDirectory = Path.GetDirectoryName(assemblyPath);
+            if (!string.IsNullOrWhiteSpace(preferredDirectory))
+            {
+                var requestedAssemblyPath = Path.Combine(preferredDirectory!, requestedSimpleName + ".dll");
+                if (File.Exists(requestedAssemblyPath))
+                {
+                    try
+                    {
+                        return Assembly.LoadFrom(requestedAssemblyPath);
+                    }
+                    catch
+                    {
+                        // Continue with additional fallback probes.
+                    }
+                }
+            }
+
+            try
+            {
+                return Assembly.Load(requestedAssemblyName);
+            }
+            catch
+            {
+                // Best-effort probe only.
+            }
+
+            // Last-resort compatibility probe for malformed/partially-qualified names.
+            if (string.Equals(requestedSimpleName, normalizedAssemblyName, StringComparison.OrdinalIgnoreCase) &&
+                !string.IsNullOrWhiteSpace(assemblyPath) &&
+                File.Exists(assemblyPath))
+            {
+                try
+                {
+                    return Assembly.LoadFrom(assemblyPath);
+                }
+                catch
+                {
+                    // Ignore.
+                }
+            }
+
+            return null;
         }
 
         /// <summary>
@@ -3077,6 +3331,20 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 {
                     return resolvedFromAssembly;
                 }
+
+                if (runtimeTypeResolutionAssemblyPathsByName is not null &&
+                    runtimeTypeResolutionAssemblyPathsByName.TryGetValue(assemblyName, out var assemblyPath) &&
+                    TryResolveRuntimeType(assemblyName, assemblyPath, reflectionName, out var resolvedFromKnownAssemblyPath) &&
+                    resolvedFromKnownAssemblyPath is not null)
+                {
+                    return resolvedFromKnownAssemblyPath;
+                }
+            }
+
+            if (TryResolveRuntimeTypeByName(reflectionName, out var resolvedByName) &&
+                resolvedByName is not null)
+            {
+                return resolvedByName;
             }
 
             return Type.GetType(reflectionName, throwOnError: false);
@@ -5090,33 +5358,33 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         {
             var proxyRuntimeType = TryResolveRuntimeType(proxyParameterType);
             var targetRuntimeType = TryResolveRuntimeType(targetParameterType);
-            if (proxyRuntimeType is null || targetRuntimeType is null)
-            {
-                // Keep unresolved signatures permissive to avoid rejecting analyzable metadata-only cases.
-                return true;
-            }
 
-            if (targetRuntimeType.IsGenericParameter)
+            if (targetRuntimeType is not null && targetRuntimeType.IsGenericParameter)
             {
                 return true;
             }
 
             // Dynamic selector requires exact matches for non-enum value-type parameters.
-            if (proxyRuntimeType.IsValueType && !proxyRuntimeType.IsEnum)
+            if (proxyRuntimeType is not null && targetRuntimeType is not null)
             {
-                return proxyRuntimeType == targetRuntimeType;
+                if (proxyRuntimeType.IsValueType && !proxyRuntimeType.IsEnum)
+                {
+                    return proxyRuntimeType == targetRuntimeType;
+                }
+
+                // For concrete reference types (except object), dynamic selector requires assignability to the target parameter.
+                if (proxyRuntimeType.IsClass &&
+                    !proxyRuntimeType.IsAbstract &&
+                    proxyRuntimeType != typeof(object))
+                {
+                    return MatchesDynamicConcreteClassParameterSelectionRule(proxyRuntimeType, targetRuntimeType);
+                }
+
+                // Interfaces/abstract/object remain eligible for duck-chaining/type adaptation.
+                return true;
             }
 
-            // For concrete reference types (except object), dynamic selector requires assignability to the target parameter.
-            if (proxyRuntimeType.IsClass &&
-                !proxyRuntimeType.IsAbstract &&
-                proxyRuntimeType != typeof(object))
-            {
-                return MatchesDynamicConcreteClassParameterSelectionRule(proxyRuntimeType, targetRuntimeType);
-            }
-
-            // Interfaces/abstract/object remain eligible for duck-chaining/type adaptation.
-            return true;
+            return MatchesDynamicMethodParameterSelectionRuleFromMetadata(proxyParameterType, targetParameterType, proxyRuntimeType, targetRuntimeType);
         }
 
         /// <summary>
@@ -5188,6 +5456,185 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
 
             return true;
+        }
+
+        /// <summary>
+        /// Applies dynamic-equivalent method-selection rules when runtime type resolution is incomplete.
+        /// </summary>
+        /// <param name="proxyParameterType">The proxy parameter type value.</param>
+        /// <param name="targetParameterType">The target parameter type value.</param>
+        /// <param name="proxyRuntimeType">The proxy runtime type value.</param>
+        /// <param name="targetRuntimeType">The target runtime type value.</param>
+        /// <returns>true when metadata-only rules permit the candidate; otherwise, false.</returns>
+        private static bool MatchesDynamicMethodParameterSelectionRuleFromMetadata(
+            TypeSig proxyParameterType,
+            TypeSig targetParameterType,
+            Type? proxyRuntimeType,
+            Type? targetRuntimeType)
+        {
+            if (targetParameterType.IsGenericParameter || targetRuntimeType?.IsGenericParameter == true)
+            {
+                return true;
+            }
+
+            if (IsNonEnumValueTypeForMethodSelection(proxyParameterType, proxyRuntimeType))
+            {
+                return AreTypesEquivalent(proxyParameterType, targetParameterType);
+            }
+
+            if (!IsConcreteClassForMethodSelection(proxyParameterType, proxyRuntimeType))
+            {
+                return true;
+            }
+
+            return MatchesDynamicConcreteClassParameterSelectionRuleFromMetadata(
+                proxyParameterType,
+                targetParameterType,
+                proxyRuntimeType,
+                targetRuntimeType);
+        }
+
+        /// <summary>
+        /// Applies dynamic-equivalent concrete-class parameter selection when runtime resolution is incomplete.
+        /// </summary>
+        /// <param name="proxyParameterType">The proxy parameter type value.</param>
+        /// <param name="targetParameterType">The target parameter type value.</param>
+        /// <param name="proxyRuntimeType">The proxy runtime type value.</param>
+        /// <param name="targetRuntimeType">The target runtime type value.</param>
+        /// <returns>true when the candidate should remain eligible; otherwise, false.</returns>
+        private static bool MatchesDynamicConcreteClassParameterSelectionRuleFromMetadata(
+            TypeSig proxyParameterType,
+            TypeSig targetParameterType,
+            Type? proxyRuntimeType,
+            Type? targetRuntimeType)
+        {
+            if (proxyRuntimeType is not null && targetRuntimeType is not null)
+            {
+                return MatchesDynamicConcreteClassParameterSelectionRule(proxyRuntimeType, targetRuntimeType);
+            }
+
+            if (IsObjectTypeSig(targetParameterType))
+            {
+                return true;
+            }
+
+            if (IsTypeAssignableFrom(targetParameterType, proxyParameterType))
+            {
+                return true;
+            }
+
+            if (AreTypesEquivalent(proxyParameterType, targetParameterType))
+            {
+                return true;
+            }
+
+            if (proxyParameterType is not GenericInstSig proxyGenericInst ||
+                targetParameterType is not GenericInstSig targetGenericInst)
+            {
+                return false;
+            }
+
+            if (string.Equals(targetGenericInst.ToString(), proxyGenericInst.ToString(), StringComparison.Ordinal))
+            {
+                return true;
+            }
+
+            if (targetGenericInst.GenericArguments.Count != proxyGenericInst.GenericArguments.Count)
+            {
+                return false;
+            }
+
+            for (var i = 0; i < targetGenericInst.GenericArguments.Count; i++)
+            {
+                var targetGenericArgument = targetGenericInst.GenericArguments[i];
+                var proxyGenericArgument = proxyGenericInst.GenericArguments[i];
+
+                if (targetGenericArgument.ElementType == ElementType.ByRef || proxyGenericArgument.ElementType == ElementType.ByRef)
+                {
+                    if (!TryGetByRefElementType(targetGenericArgument, out var targetByRefElementType) ||
+                        !TryGetByRefElementType(proxyGenericArgument, out var proxyByRefElementType))
+                    {
+                        return false;
+                    }
+
+                    targetGenericArgument = targetByRefElementType!;
+                    proxyGenericArgument = proxyByRefElementType!;
+                }
+
+                if (targetGenericArgument.IsGenericParameter)
+                {
+                    continue;
+                }
+
+                var proxyGenericArgumentRuntimeType = TryResolveRuntimeType(proxyGenericArgument);
+                if (IsNonEnumValueTypeForMethodSelection(proxyGenericArgument, proxyGenericArgumentRuntimeType) &&
+                    !AreTypesEquivalent(proxyGenericArgument, targetGenericArgument))
+                {
+                    return false;
+                }
+
+                if (IsConcreteClassForMethodSelection(proxyGenericArgument, proxyGenericArgumentRuntimeType) &&
+                    !IsTypeAssignableFrom(targetGenericArgument, proxyGenericArgument) &&
+                    !AreTypesEquivalent(proxyGenericArgument, targetGenericArgument))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Determines whether parameter type should be treated as a non-enum value type for method-selection parity.
+        /// </summary>
+        /// <param name="parameterType">The parameter type value.</param>
+        /// <param name="runtimeType">The runtime type value.</param>
+        /// <returns>true when the parameter is a non-enum value type; otherwise, false.</returns>
+        private static bool IsNonEnumValueTypeForMethodSelection(TypeSig parameterType, Type? runtimeType)
+        {
+            if (runtimeType is not null)
+            {
+                return runtimeType.IsValueType && !runtimeType.IsEnum;
+            }
+
+            if (!parameterType.IsValueType)
+            {
+                return false;
+            }
+
+            var parameterTypeDef = parameterType.ToTypeDefOrRef()?.ResolveTypeDef();
+            // Only enforce strict non-enum value-type matching when metadata can prove enum status.
+            // Unknown metadata should stay permissive to match dynamic resolver behavior.
+            return parameterTypeDef is not null && parameterTypeDef.IsValueType && !parameterTypeDef.IsEnum;
+        }
+
+        /// <summary>
+        /// Determines whether parameter type should be treated as a concrete class for method-selection parity.
+        /// </summary>
+        /// <param name="parameterType">The parameter type value.</param>
+        /// <param name="runtimeType">The runtime type value.</param>
+        /// <returns>true when the parameter is a non-abstract concrete class excluding object; otherwise, false.</returns>
+        private static bool IsConcreteClassForMethodSelection(TypeSig parameterType, Type? runtimeType)
+        {
+            if (runtimeType is not null)
+            {
+                return runtimeType.IsClass &&
+                       !runtimeType.IsAbstract &&
+                       runtimeType != typeof(object);
+            }
+
+            if (IsObjectTypeSig(parameterType))
+            {
+                return false;
+            }
+
+            if (parameterType.ElementType == ElementType.String)
+            {
+                return true;
+            }
+
+            var parameterTypeDef = parameterType.ToTypeDefOrRef()?.ResolveTypeDef();
+            return parameterTypeDef?.IsClass == true && !parameterTypeDef.IsAbstract;
         }
 
         /// <summary>
