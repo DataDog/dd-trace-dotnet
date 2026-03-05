@@ -146,6 +146,25 @@ namespace Datadog.Trace.Tests.Debugger
                 span.GetTag("_dd.code_origin.frames.0.type").Should().Be("Datadog.Trace.Tests.Debugger.SpanCodeOriginTests+TestController");
                 span.GetTag($"{CodeOriginTag}.frames.{0}.file").Should().EndWithEquivalentOf("SpanCodeOriginTests.cs");
             }
+
+            [Fact]
+            public void SetCodeOriginForEntrySpan_WithAspNetCoreSingleSpanTags_ShouldSetCorrectTags()
+            {
+                // Arrange
+                SpanCodeOrigin spanCodeOrigin = CreateSpanCodeOrigin();
+                var span = CreateAspNetCoreSingleSpanSpan();
+                var controllerType = typeof(TestController);
+                var method = controllerType.GetMethod(nameof(TestController.Get));
+
+                // Act
+                spanCodeOrigin.SetCodeOriginForEntrySpan(span, controllerType, method);
+
+                // Assert
+                span.GetTag("_dd.code_origin.type").Should().Be("entry");
+                span.GetTag("_dd.code_origin.frames.0.method").Should().Be(nameof(TestController.Get));
+                span.GetTag("_dd.code_origin.frames.0.type").Should().Be("Datadog.Trace.Tests.Debugger.SpanCodeOriginTests+TestController");
+                span.GetTag($"{CodeOriginTag}.frames.{0}.file").Should().EndWithEquivalentOf("SpanCodeOriginTests.cs");
+            }
 #endif
 
             [Fact]
@@ -242,7 +261,7 @@ namespace Datadog.Trace.Tests.Debugger
             private Span CreateSpan()
             {
                 var spanContext = new SpanContext(1234, 5678);
-                return new Span(spanContext, DateTimeOffset.UtcNow);
+                return new Span(spanContext, DateTimeOffset.UtcNow, new AspNetCoreTags());
             }
 
             private Span CreateWebSpan()
@@ -255,6 +274,12 @@ namespace Datadog.Trace.Tests.Debugger
             {
                 var spanContext = new SpanContext(1234, 5678);
                 return new Span(spanContext, DateTimeOffset.UtcNow, new AspNetCoreTags());
+            }
+
+            private Span CreateAspNetCoreSingleSpanSpan()
+            {
+                var spanContext = new SpanContext(1234, 5678);
+                return new Span(spanContext, DateTimeOffset.UtcNow, new AspNetCoreSingleSpanTags());
             }
 
             private int TestMethod() => 42;
