@@ -16,6 +16,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry;
+using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Internal;
 using static Datadog.Trace.Telemetry.Metrics.MetricTags;
 
 namespace Datadog.Trace.AppSec.Rasp;
@@ -448,14 +449,35 @@ internal static class RaspModule
 
     private static void AddBody(IHttpContent content, Dictionary<string, object> wafArgs, string wafAddress, long bodySizeLimit)
     {
-        if (content?.Instance is not null && content.TryComputeLength(out var len) && len > 0 && len < bodySizeLimit)
+        try
         {
-            content.LoadIntoBufferAsync().SafeWait();
-            var body = content.ReadAsStringAsync().SafeGetResult();
-            if (BodyParser.Parse(body) is { } parsedBody)
+            if (content?.Instance is not null)
             {
-                wafArgs[AddressesConstants.DownstreamRequestBody] = parsedBody;
+                var contentType = content.Headers?.ContentType?.MediaType;
+                if (contentType is "application/json" or "text/plain")
+                {
+                    content.LoadIntoBufferAsync().SafeWait();
+                    var len = 0L;
+                    var stream = content.ReadAsStreamAsync().SafeGetResult();
+                    if (stream != null)
+                    {
+                        len = stream.Length;
+                    }
+
+                    if (len > 0 && len < bodySizeLimit)
+                    {
+                        var body = content.ReadAsStringAsync().SafeGetResult();
+                        if (BodyParser.Parse(body) is { } parsedBody)
+                        {
+                            wafArgs[AddressesConstants.DownstreamRequestBody] = parsedBody;
+                        }
+                    }
+                }
             }
+        }
+        catch (Exception ex) when (ex is not BlockException)
+        {
+            Log.Error(ex, "RASP: Error while parsing body.");
         }
     }
 #endif
