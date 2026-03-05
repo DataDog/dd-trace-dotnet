@@ -53,7 +53,7 @@ internal class CreatedumpCommand : Command
         this.SetHandler(Execute);
     }
 
-    internal static bool ParseArguments(string[] arguments, out int pid, out int? signal, out int? signalCode, out int? crashThread, out uint? nativeExceptionCode, IntPtr? threadContextAddress)
+    internal static bool ParseArguments(string[] arguments, out int pid, out int? signal, out int? signalCode, out int? crashThread, out uint? nativeExceptionCode, out IntPtr? threadContextAddress)
     {
         pid = default;
         signal = default;
@@ -186,16 +186,12 @@ internal class CreatedumpCommand : Command
             crashThread = crashThreadValue;
         }
 
-<<<<<<< HEAD
         if (parsedArguments.TryGetValue("--dd-native-exception-code", out var rawNativeExceptionCode) && uint.TryParse(rawNativeExceptionCode, out var nativeExceptionCodeValue))
         {
             nativeExceptionCode = nativeExceptionCodeValue;
         }
 
-        if (parsedArguments.TryGetValue("--threadcontext", out var rawThreadContextAddress) && IntPtr.TryParse(rawThreadContextAddress, out var threadContextAddressValue))
-=======
         if (parsedArguments.TryGetValue("--dd-thread-context", out var rawThreadContextAddress) && IntPtr.TryParse(rawThreadContextAddress, out var threadContextAddressValue))
->>>>>>> be99586574 (Capture thread context (ucontext_t) and pass it to dd-dotnet)
         {
             threadContextAddress = threadContextAddressValue;
         }
