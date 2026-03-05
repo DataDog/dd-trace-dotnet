@@ -7,13 +7,18 @@ namespace ReferenceChainModel;
 
 /// <summary>
 /// Builds reverse reference chains from the forward tree for a selected type.
-/// Given a forward tree A → B → C, selecting C produces: C ← B ← A [root].
+/// Given chains A → B → C and F → G → C, selecting C produces:
+/// C
+/// ├── B → A [root]
+/// └── G → F [root]
 /// </summary>
 public static class ReverseChainBuilder
 {
+    private static readonly string[] CategoryDisplayOrder = ["P", "H", "F", "S", "s", "W", "R", "?"];
+
     /// <summary>
     /// Build reverse chains for the given type index.
-    /// Returns one <see cref="ReverseChainNode"/> per unique path position where the type appears.
+    /// Returns one <see cref="ReverseChainNode"/> with all chains that reach the selected type, reversed.
     /// </summary>
     public static IReadOnlyList<ReverseChainNode> Build(ReferenceTree tree, int selectedTypeIndex)
     {
@@ -28,30 +33,45 @@ public static class ReverseChainBuilder
         // Check if the type is a root with no parents referencing it
         if (!parentMap.ContainsKey(selectedTypeIndex))
         {
+            var categoryCodes = new HashSet<string>(StringComparer.Ordinal);
+            string? fieldName = null;
+            long totalCount = 0;
+            long totalSize = 0;
+
             foreach (var root in tree.Roots)
             {
                 if (root.TypeIndex == selectedTypeIndex)
                 {
                     var rootNode = (ReferenceRootNode)root;
-                    return
-                    [
-                        new ReverseChainNode(
-                            selectedTypeIndex,
-                            root.InstanceCount,
-                            root.TotalSize,
-                            isRoot: true,
-                            rootNode.CategoryCode,
-                            parents: Array.Empty<ReverseChainNode>(),
-                            rootNode.FieldName)
-                    ];
+                    categoryCodes.Add(rootNode.CategoryCode);
+                    fieldName ??= rootNode.FieldName;
+                    totalCount += root.InstanceCount;
+                    totalSize += root.TotalSize;
                 }
+            }
+
+            if (categoryCodes.Count > 0)
+            {
+                var allCategories = string.Join(",", OrderCategoriesForDisplay(categoryCodes));
+                return
+                [
+                    new ReverseChainNode(
+                        selectedTypeIndex,
+                        totalCount,
+                        totalSize,
+                        isRoot: true,
+                        allCategories,
+                        parents: Array.Empty<ReverseChainNode>(),
+                        fieldName)
+                ];
             }
 
             return Array.Empty<ReverseChainNode>();
         }
 
         var visited = new HashSet<int>();
-        var reverseNode = BuildReverseNode(selectedTypeIndex, parentMap, tree, visited);
+        var cache = new Dictionary<int, ReverseChainNode>();
+        var reverseNode = BuildReverseNode(selectedTypeIndex, parentMap, tree, visited, cache);
         return reverseNode is not null ? [reverseNode] : Array.Empty<ReverseChainNode>();
     }
 
@@ -119,38 +139,54 @@ public static class ReverseChainBuilder
         int typeIndex,
         Dictionary<int, List<ParentInfo>> parentMap,
         ReferenceTree tree,
-        HashSet<int> visited)
+        HashSet<int> visited,
+        Dictionary<int, ReverseChainNode> cache)
     {
+        // Cycle guard: type already in current path
         if (!visited.Add(typeIndex))
         {
-            // Cycle guard: already expanding this type in the current reverse chain
             return null;
         }
 
-        // Check if this type is itself a root
+        // Memoization: reuse cached node if safe (would not create a cycle)
+        if (cache.TryGetValue(typeIndex, out var cached))
+        {
+            visited.Remove(typeIndex);
+            if (!SubtreeContainsAny(cached, visited))
+            {
+                return cached;
+            }
+
+            visited.Add(typeIndex); // Restore for build path
+        }
+
+        // Check if this type is itself a root (may have multiple categories: Pinning, StaticVariable, etc.)
         long instanceCount = 0;
         long totalSize = 0;
         bool isRoot = false;
-        string? categoryCode = null;
+        var categoryCodes = new HashSet<string>(StringComparer.Ordinal);
 
         foreach (var root in tree.Roots)
         {
             if (root.TypeIndex == typeIndex)
             {
                 isRoot = true;
-                categoryCode = ((ReferenceRootNode)root).CategoryCode;
+                categoryCodes.Add(((ReferenceRootNode)root).CategoryCode);
                 instanceCount += root.InstanceCount;
                 totalSize += root.TotalSize;
             }
         }
 
-        // Build parent chain
+        var categoryCode = categoryCodes.Count > 0 ? string.Join(",", OrderCategoriesForDisplay(categoryCodes)) : null;
+
+        // Build parent chain: one node per unique parent type (DAG, not tree)
         var parentNodes = new List<ReverseChainNode>();
+        var seenNonRootTypes = new HashSet<int>();
+
         if (parentMap.TryGetValue(typeIndex, out var parentInfos))
         {
             if (instanceCount == 0 && totalSize == 0)
             {
-                // Not a root — aggregate from parent references
                 foreach (var p in parentInfos)
                 {
                     instanceCount += p.InstanceCount;
@@ -171,9 +207,9 @@ public static class ReverseChainBuilder
                         parents: Array.Empty<ReverseChainNode>(),
                         parentInfo.FieldName));
                 }
-                else
+                else if (seenNonRootTypes.Add(parentInfo.TypeIndex))
                 {
-                    var parentNode = BuildReverseNode(parentInfo.TypeIndex, parentMap, tree, visited);
+                    var parentNode = BuildReverseNode(parentInfo.TypeIndex, parentMap, tree, visited, cache);
                     if (parentNode is not null)
                     {
                         parentNodes.Add(parentNode);
@@ -182,15 +218,50 @@ public static class ReverseChainBuilder
             }
         }
 
-        visited.Remove(typeIndex); // Allow same type in different branches
+        visited.Remove(typeIndex);
 
-        return new ReverseChainNode(
+        var node = new ReverseChainNode(
             typeIndex,
             instanceCount,
             totalSize,
             isRoot,
             categoryCode,
             parentNodes);
+        cache[typeIndex] = node;
+        return node;
+    }
+
+    /// <summary>
+    /// Order category codes for display: Pinning, Handle, Finalizer, Stack, StaticVariable, etc.
+    /// </summary>
+    private static IEnumerable<string> OrderCategoriesForDisplay(IEnumerable<string> codes)
+    {
+        return codes.OrderBy(c =>
+        {
+            var idx = Array.IndexOf(CategoryDisplayOrder, c);
+            return idx >= 0 ? idx : int.MaxValue;
+        });
+    }
+
+    /// <summary>
+    /// Returns true if the node's subtree (including self and all descendants) contains any type in the set.
+    /// </summary>
+    private static bool SubtreeContainsAny(ReverseChainNode node, HashSet<int> types)
+    {
+        if (types.Contains(node.TypeIndex))
+        {
+            return true;
+        }
+
+        foreach (var parent in node.Parents)
+        {
+            if (SubtreeContainsAny(parent, types))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private readonly record struct ParentInfo(

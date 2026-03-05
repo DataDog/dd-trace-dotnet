@@ -5,6 +5,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
+using System.Threading;
+using System.Threading.Tasks;
 
 #pragma warning disable SA1402 // File may only contain a single type
 #pragma warning disable SA1649 // File name should match first type name
@@ -160,6 +163,115 @@ namespace Samples.Computer01
         public string[] Tags { get; set; }
     }
 
+    // Scenario 13: Event handler leak
+    public class EventPublisher
+    {
+        public event EventHandler<EventArgs> DataReceived;
+
+        public void Raise()
+        {
+            DataReceived?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
+    public class EventSubscriber
+    {
+        public LeakedPayload Payload { get; }
+
+        public EventSubscriber(LeakedPayload payload)
+        {
+            Payload = payload;
+        }
+
+        public void OnDataReceived(object sender, EventArgs e)
+        {
+        }
+    }
+
+    public class LeakedPayload
+    {
+        public byte[] Data { get; } = new byte[1024];
+    }
+
+    // Scenario 14: Closure / captured variable leak
+    public class ClosureHolder
+    {
+        public List<Func<string>> Callbacks { get; } = new List<Func<string>>();
+    }
+
+    public class ExpensiveResource
+    {
+        public byte[] Buffer { get; } = new byte[4096];
+
+        public override string ToString() => "resource";
+    }
+
+    // Scenario 15: Timer / callback leak
+    public class TimerOwner
+    {
+        private readonly Timer _timer;
+
+        public TimerOwner(MonitoredService service)
+        {
+            Service = service;
+            _timer = new Timer(_ => Service.Check(), null, 0, Timeout.Infinite);
+        }
+
+        public MonitoredService Service { get; }
+    }
+
+    public class MonitoredService
+    {
+        public ServiceMetrics Metrics { get; } = new ServiceMetrics();
+
+        public void Check()
+        {
+        }
+    }
+
+    public class ServiceMetrics
+    {
+        public long[] Samples { get; } = new long[256];
+    }
+
+    // Scenario 16: Strong GCHandle leak
+    public class HandleTarget
+    {
+        public InteropPayload Payload { get; } = new InteropPayload();
+    }
+
+    public class InteropPayload
+    {
+        public byte[] NativeBuffer { get; } = new byte[2048];
+    }
+
+    // Scenario 19: Async state machine leak
+    public class AsyncLeakSource
+    {
+        public List<Task> PendingTasks { get; } = new List<Task>();
+
+        public void StartLeakingOperation(HeavyContext context)
+        {
+            var tcs = new TaskCompletionSource<bool>();
+            PendingTasks.Add(ProcessAsync(tcs.Task, context));
+        }
+
+        private async Task ProcessAsync(Task<bool> gate, HeavyContext ctx)
+        {
+            await gate;
+            ctx.Process();
+        }
+    }
+
+    public class HeavyContext
+    {
+        public byte[] Buffer { get; } = new byte[8192];
+
+        public void Process()
+        {
+        }
+    }
+
     /// <summary>
     /// Reference chain test scenarios for heap snapshot testing.
     /// Each scenario creates specific object graph patterns to validate
@@ -183,6 +295,14 @@ namespace Samples.Computer01
         private StructWithReferences[] _structEntries;
 
         private static List<Order> _staticOrders;
+
+        // Scenarios 13-19: Memory leak patterns
+        private EventPublisher _eventPublisher;
+        private ClosureHolder _closureHolder;
+        private List<TimerOwner> _timerOwners;
+        private List<GCHandle> _gcHandles;
+        private List<GCHandle> _pinnedHandles;
+        private AsyncLeakSource _asyncLeakSource;
 
         public ReferenceChainScenarios(int scenarioNumber)
         {
@@ -228,6 +348,24 @@ namespace Samples.Computer01
                     break;
                 case 12:
                     RunStaticRootSimpleChain();
+                    break;
+                case 13:
+                    RunEventHandlerLeak();
+                    break;
+                case 14:
+                    RunClosureLeak();
+                    break;
+                case 15:
+                    RunTimerLeak();
+                    break;
+                case 16:
+                    RunGCHandleLeak();
+                    break;
+                case 18:
+                    RunPinnedLeak();
+                    break;
+                case 19:
+                    RunAsyncLeak();
                     break;
                 default:
                     RunSimpleChain();
@@ -739,6 +877,112 @@ namespace Samples.Computer01
             }
 
             _staticOrders = orders;
+        }
+
+        /// <summary>
+        /// Scenario 13: Event Handler Leak
+        /// Publisher holds subscribers alive via event delegate invocation list.
+        /// EventPublisher -> (delegate) -> EventSubscriber -> LeakedPayload
+        /// </summary>
+        private void RunEventHandlerLeak()
+        {
+            Console.WriteLine("ReferenceChain Scenario 13: Event Handler Leak");
+            var publisher = new EventPublisher();
+            var payload = new LeakedPayload();
+            var subscriber = new EventSubscriber(payload);
+            publisher.DataReceived += subscriber.OnDataReceived;
+
+            _eventPublisher = publisher;
+        }
+
+        /// <summary>
+        /// Scenario 14: Closure / Captured Variable Leak
+        /// Lambdas capturing expensive objects via compiler-generated display classes.
+        /// ClosureHolder -> List of Func -> DisplayClass -> ExpensiveResource
+        /// </summary>
+        private void RunClosureLeak()
+        {
+            Console.WriteLine("ReferenceChain Scenario 14: Closure Leak");
+            var holder = new ClosureHolder();
+            for (int i = 0; i < 50; i++)
+            {
+                var resource = new ExpensiveResource();
+                holder.Callbacks.Add(() => resource.ToString());
+            }
+
+            _closureHolder = holder;
+        }
+
+        /// <summary>
+        /// Scenario 15: Timer / Callback Leak
+        /// System.Threading.Timer keeping callback targets alive.
+        /// Timer -> TimerCallback -> TimerOwner -> MonitoredService -> ServiceMetrics
+        /// </summary>
+        private void RunTimerLeak()
+        {
+            Console.WriteLine("ReferenceChain Scenario 15: Timer Leak");
+            var owners = new List<TimerOwner>();
+            for (int i = 0; i < 20; i++)
+            {
+                var service = new MonitoredService();
+                owners.Add(new TimerOwner(service));
+            }
+
+            _timerOwners = owners;
+        }
+
+        /// <summary>
+        /// Scenario 16: Strong GCHandle Leak (Handle root kind)
+        /// GCHandle.Alloc without Free() - tests Handle root category.
+        /// [Handle root] -> HandleTarget -> InteropPayload
+        /// </summary>
+        private void RunGCHandleLeak()
+        {
+            Console.WriteLine("ReferenceChain Scenario 16: GCHandle Leak");
+            var handles = new List<GCHandle>();
+            for (int i = 0; i < 50; i++)
+            {
+                var target = new HandleTarget();
+                handles.Add(GCHandle.Alloc(target, GCHandleType.Normal));
+            }
+
+            _gcHandles = handles;
+        }
+
+        /// <summary>
+        /// Scenario 18: Pinned Handle (Pinning root kind)
+        /// GCHandle.Alloc with Pinned - tests Pinning root category.
+        /// </summary>
+        private void RunPinnedLeak()
+        {
+            Console.WriteLine("ReferenceChain Scenario 18: Pinned Leak");
+            var handles = new List<GCHandle>();
+            for (int i = 0; i < 20; i++)
+            {
+                var buffer = new byte[4096];
+                buffer[0] = 1; // Prevent optimization - ensure buffer is considered used
+                handles.Add(GCHandle.Alloc(buffer, GCHandleType.Pinned));
+            }
+
+            _pinnedHandles = handles;
+        }
+
+        /// <summary>
+        /// Scenario 19: Async State Machine Leak
+        /// Async methods awaiting never-completing Task keep state machine and captured locals alive.
+        /// AsyncLeakSource -> List of Task -> Task -> HeavyContext
+        /// </summary>
+        private void RunAsyncLeak()
+        {
+            Console.WriteLine("ReferenceChain Scenario 19: Async Leak");
+            var source = new AsyncLeakSource();
+            for (int i = 0; i < 10; i++)
+            {
+                var context = new HeavyContext();
+                source.StartLeakingOperation(context);
+            }
+
+            _asyncLeakSource = source;
         }
     }
 }

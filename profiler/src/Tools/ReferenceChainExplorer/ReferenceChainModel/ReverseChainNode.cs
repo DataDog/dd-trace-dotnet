@@ -45,7 +45,8 @@ public class ReverseChainNode
     public bool IsRoot { get; }
 
     /// <summary>
-    /// Root category code ("S", "H", etc.), only set when <see cref="IsRoot"/> is true.
+    /// Root category code(s): single ("P") or comma-separated ("P,s") when the type is a root in multiple categories.
+    /// Only set when <see cref="IsRoot"/> is true.
     /// </summary>
     public string? CategoryCode { get; }
 

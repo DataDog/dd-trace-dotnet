@@ -18,7 +18,9 @@ public class CategoryCodeToNameConverter : IValueConverter
     {
         if (value is string code)
         {
-            return RootCategoryHelper.GetCategoryName(code);
+            return code.Contains(',')
+                ? RootCategoryHelper.GetCategoryNamesForDisplay(code)
+                : RootCategoryHelper.GetCategoryName(code);
         }
 
         return string.Empty;

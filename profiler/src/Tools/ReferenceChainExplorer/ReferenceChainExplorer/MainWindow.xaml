@@ -9,6 +9,10 @@
         WindowStartupLocation="CenterScreen"
         Icon="pack://application:,,,/ReferenceChainExplorer;component/Assets/ReferenceChainExplorer-icon.png">
 
+    <Window.InputBindings>
+        <KeyBinding Key="O" Modifiers="Ctrl" Command="{Binding LoadCommand}" />
+    </Window.InputBindings>
+
     <Window.DataContext>
         <vm:MainViewModel />
     </Window.DataContext>

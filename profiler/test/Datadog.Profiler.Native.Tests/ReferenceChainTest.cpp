@@ -51,6 +51,16 @@ public:
         return false;
     }
 
+
+    // IMemoryFootprintProvider
+    size_t GetMemorySize() const override
+    {
+        return 0;
+    }
+    void LogMemoryBreakdown() const override
+    {
+    }
+
 private:
     std::unordered_map<ClassID, std::string> _typeNames;
 };
@@ -199,37 +209,32 @@ TEST(TypeTreeNodeTest, GetChildReturnsNullForMissing)
 
 TEST(TypeRootNodeTest, InitialState)
 {
-    TypeRootNode root(100);
+    TypeRootNode root(100, RootCategory::Stack);
     ASSERT_EQ(root.node.typeID, 100);
     ASSERT_EQ(root.node.instanceCount, 0);
-    ASSERT_EQ(root.rootCategories, 0);
+    ASSERT_EQ(root.category, RootCategory::Stack);
 }
 
-TEST(TypeRootNodeTest, AddRootUpdatesAllFields)
+TEST(TypeRootNodeTest, AddInstanceUpdatesCounts)
 {
-    TypeRootNode root(100);
-    root.AddRoot(RootCategory::Stack, 64);
+    TypeRootNode root(100, RootCategory::Stack);
+    root.AddInstance(64);
 
     ASSERT_EQ(root.node.instanceCount, 1);
     ASSERT_EQ(root.node.totalSize, 64);
-    ASSERT_TRUE(root.HasRootCategory(RootCategory::Stack));
-    ASSERT_FALSE(root.HasRootCategory(RootCategory::Handle));
 }
 
-TEST(TypeRootNodeTest, MultipleCategoriesBitmask)
+TEST(TypeRootNodeTest, SameTypeDifferentCategoriesCreateSeparateNodes)
 {
-    TypeRootNode root(100);
-    root.AddRoot(RootCategory::Stack, 100);
-    root.AddRoot(RootCategory::Handle, 200);
-    root.AddRoot(RootCategory::Pinning, 300);
+    TypeRootNode rootStack(100, RootCategory::Stack);
+    TypeRootNode rootHandle(100, RootCategory::Handle);
+    rootStack.AddInstance(100);
+    rootHandle.AddInstance(200);
 
-    ASSERT_EQ(root.node.instanceCount, 3);
-    ASSERT_EQ(root.node.totalSize, 600);
-    ASSERT_TRUE(root.HasRootCategory(RootCategory::Stack));
-    ASSERT_TRUE(root.HasRootCategory(RootCategory::Handle));
-    ASSERT_TRUE(root.HasRootCategory(RootCategory::Pinning));
-    ASSERT_FALSE(root.HasRootCategory(RootCategory::Finalizer));
-    ASSERT_FALSE(root.HasRootCategory(RootCategory::COM));
+    ASSERT_EQ(rootStack.node.instanceCount, 1);
+    ASSERT_EQ(rootStack.node.totalSize, 100);
+    ASSERT_EQ(rootHandle.node.instanceCount, 1);
+    ASSERT_EQ(rootHandle.node.totalSize, 200);
 }
 
 // ============================================================================
@@ -254,22 +259,32 @@ TEST(TypeReferenceTreeTest, AddRootMakesNonEmpty)
     ASSERT_EQ(node->totalSize, 64);
 }
 
-TEST(TypeReferenceTreeTest, AddRootSameTypeMerges)
+TEST(TypeReferenceTreeTest, AddRootSameTypeDifferentCategoriesCreatesSeparateRoots)
 {
     TypeReferenceTree tree;
     TypeTreeNode* node1 = tree.AddRoot(100, RootCategory::Stack, 64);
     TypeTreeNode* node2 = tree.AddRoot(100, RootCategory::Handle, 128);
 
-    // Same root node, merged
+    // Different categories => separate root entries
+    ASSERT_NE(node1, node2);
+    ASSERT_EQ(node1->instanceCount, 1);
+    ASSERT_EQ(node1->totalSize, 64);
+    ASSERT_EQ(node2->instanceCount, 1);
+    ASSERT_EQ(node2->totalSize, 128);
+    ASSERT_EQ(tree._roots.size(), 2);
+}
+
+TEST(TypeReferenceTreeTest, AddRootSameTypeSameCategoryMerges)
+{
+    TypeReferenceTree tree;
+    TypeTreeNode* node1 = tree.AddRoot(100, RootCategory::Stack, 64);
+    TypeTreeNode* node2 = tree.AddRoot(100, RootCategory::Stack, 128);
+
+    // Same (type, category) => merged
     ASSERT_EQ(node1, node2);
     ASSERT_EQ(node1->instanceCount, 2);
     ASSERT_EQ(node1->totalSize, 192);
-
-    // Both categories recorded
-    auto it = tree._roots.find(100);
-    ASSERT_NE(it, tree._roots.end());
-    ASSERT_TRUE(it->second->HasRootCategory(RootCategory::Stack));
-    ASSERT_TRUE(it->second->HasRootCategory(RootCategory::Handle));
+    ASSERT_EQ(tree._roots.size(), 1);
 }
 
 TEST(TypeReferenceTreeTest, AddRootDifferentTypesCreatesSeparateRoots)
@@ -353,7 +368,7 @@ TEST(TypeReferenceTreeJsonSerializerTest, EmptyTreeReturnsEmptyJson)
     auto json = TypeReferenceTreeJsonSerializer::Serialize(tree, &frameStore);
 
     // Should have version and empty roots
-    ASSERT_NE(json.find("\"v\":7"), std::string::npos);
+    ASSERT_NE(json.find("\"v\":1"), std::string::npos);
     ASSERT_NE(json.find("\"r\":[]"), std::string::npos);
 }
 
@@ -377,7 +392,7 @@ TEST(TypeReferenceTreeJsonSerializerTest, SingleRootSerializes)
     auto json = TypeReferenceTreeJsonSerializer::Serialize(tree, &frameStore);
 
     // Check version
-    ASSERT_NE(json.find("\"v\":7"), std::string::npos);
+    ASSERT_NE(json.find("\"v\":1"), std::string::npos);
 
     // Check type table contains System.String
     ASSERT_NE(json.find("\"System.String\""), std::string::npos);
@@ -1232,7 +1247,7 @@ TEST(TypeReferenceTreeJsonSerializerTest, AllUnresolvableTypesProduceMinimalJson
     auto json = TypeReferenceTreeJsonSerializer::Serialize(tree, &frameStore);
 
     // Should have version and empty roots (types couldn't be resolved so roots are skipped)
-    ASSERT_NE(json.find("\"v\":7"), std::string::npos);
+    ASSERT_NE(json.find("\"v\":1"), std::string::npos);
     ASSERT_NE(json.find("\"r\":["), std::string::npos);
 
     int braces = 0, brackets = 0;

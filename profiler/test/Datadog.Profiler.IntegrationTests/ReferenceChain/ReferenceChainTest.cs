@@ -58,13 +58,14 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
 
             var trees = LoadAndValidateAllTrees(referenceTreeFiles);
 
-            // At least one snapshot must contain the expected reference chains
+            // At least one snapshot must contain the expected reference chains and Stack root
             Assert.True(
                 trees.Any(tree =>
+                    HasRootOfCategory(tree, "S") &&
                     HasAncestorDescendantChain(tree, "Order", "Customer") &&
                     HasAncestorDescendantChain(tree, "Customer", "Address") &&
                     HasAncestorDescendantChain(tree, "Order", "Product")),
-                "Expected at least one snapshot to contain Order->Customer->Address and Order->Product chains");
+                "Expected at least one snapshot to contain Stack root and Order->Customer->Address and Order->Product chains");
         }
 
         [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
@@ -339,13 +340,161 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
 
             var trees = LoadAndValidateAllTrees(referenceTreeFiles);
 
-            // At least one snapshot must contain the expected reference chains
+            // At least one snapshot must contain the expected reference chains and static root with field name
             Assert.True(
                 trees.Any(tree =>
+                    HasRootOfCategory(tree, "s") &&
+                    tree.Roots.Any(r => r.CategoryCode == "s" && !string.IsNullOrEmpty(r.FieldName)) &&
                     HasAncestorDescendantChain(tree, "Order", "Customer") &&
                     HasAncestorDescendantChain(tree, "Customer", "Address") &&
                     HasAncestorDescendantChain(tree, "Order", "Product")),
-                "Expected at least one snapshot to contain Order->Customer->Address and Order->Product chains");
+                "Expected at least one snapshot to contain StaticVariable root with field name and Order->Customer->Address and Order->Product chains");
+        }
+
+        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
+        public void CheckEventHandlerLeakScenario(string appName, string framework, string appAssembly)
+        {
+            // Scenario 13: Event handler leak - publisher holds subscribers via event delegate
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 13");
+            runner.TestDurationInSeconds = 30;
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
+
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
+            runner.Run(agent);
+
+            var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
+            Assert.True(referenceTreeFiles.Length > 0, "No reference tree JSON files were generated for event handler leak scenario");
+
+            var trees = LoadAndValidateAllTrees(referenceTreeFiles);
+
+            Assert.True(
+                trees.Any(tree =>
+                    HasAncestorDescendantChain(tree, "EventSubscriber", "LeakedPayload") &&
+                    TypeExistsInTree(tree, "EventPublisher")),
+                "Expected at least one snapshot to contain EventSubscriber->LeakedPayload chain and EventPublisher type");
+        }
+
+        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
+        public void CheckClosureLeakScenario(string appName, string framework, string appAssembly)
+        {
+            // Scenario 14: Closure / captured variable leak - lambdas capturing expensive objects
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 14");
+            runner.TestDurationInSeconds = 30;
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
+
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
+            runner.Run(agent);
+
+            var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
+            Assert.True(referenceTreeFiles.Length > 0, "No reference tree JSON files were generated for closure leak scenario");
+
+            var trees = LoadAndValidateAllTrees(referenceTreeFiles);
+
+            Assert.True(
+                trees.Any(tree => HasAncestorDescendantChain(tree, "ClosureHolder", "ExpensiveResource")),
+                "Expected at least one snapshot to contain ClosureHolder->ExpensiveResource chain");
+        }
+
+        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
+        public void CheckTimerLeakScenario(string appName, string framework, string appAssembly)
+        {
+            // Scenario 15: Timer callback leak - Timer keeping callback targets alive
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 15");
+            runner.TestDurationInSeconds = 30;
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
+
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
+            runner.Run(agent);
+
+            var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
+            Assert.True(referenceTreeFiles.Length > 0, "No reference tree JSON files were generated for timer leak scenario");
+
+            var trees = LoadAndValidateAllTrees(referenceTreeFiles);
+
+            Assert.True(
+                trees.Any(tree =>
+                    HasAncestorDescendantChain(tree, "MonitoredService", "ServiceMetrics") &&
+                    TypeExistsInTree(tree, "TimerOwner")),
+                "Expected at least one snapshot to contain MonitoredService->ServiceMetrics chain and TimerOwner type");
+        }
+
+        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
+        public void CheckGCHandleLeakScenario(string appName, string framework, string appAssembly)
+        {
+            // Scenario 16: Strong GCHandle leak - tests Handle root category
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 16");
+            runner.TestDurationInSeconds = 30;
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
+
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
+            runner.Run(agent);
+
+            var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
+            Assert.True(referenceTreeFiles.Length > 0, "No reference tree JSON files were generated for GCHandle leak scenario");
+
+            var trees = LoadAndValidateAllTrees(referenceTreeFiles);
+
+            Assert.True(
+                trees.Any(tree =>
+                    HasRootOfCategory(tree, "H") &&
+                    HasAncestorDescendantChain(tree, "HandleTarget", "InteropPayload")),
+                "Expected at least one snapshot to contain Handle root and HandleTarget->InteropPayload chain");
+        }
+
+        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
+        public void CheckPinnedLeakScenario(string appName, string framework, string appAssembly)
+        {
+            // Scenario 18: Pinned handle - tests Pinning root category
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 18");
+            runner.TestDurationInSeconds = 30;
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
+
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
+            runner.Run(agent);
+
+            var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
+            Assert.True(referenceTreeFiles.Length > 0, "No reference tree JSON files were generated for pinned leak scenario");
+
+            var trees = LoadAndValidateAllTrees(referenceTreeFiles);
+
+            Assert.True(
+                trees.Any(tree => HasRootOfCategory(tree, "P")),
+                "Expected at least one snapshot to contain Pinning root");
+        }
+
+        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
+        public void CheckAsyncLeakScenario(string appName, string framework, string appAssembly)
+        {
+            // Scenario 19: Async state machine leak - never-completing Task capturing HeavyContext
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 19");
+            runner.TestDurationInSeconds = 30;
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
+
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
+            runner.Run(agent);
+
+            var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
+            Assert.True(referenceTreeFiles.Length > 0, "No reference tree JSON files were generated for async leak scenario");
+
+            var trees = LoadAndValidateAllTrees(referenceTreeFiles);
+
+            Assert.True(
+                trees.Any(tree =>
+                    TypeExistsInTree(tree, "AsyncLeakSource") &&
+                    TypeExistsInTree(tree, "HeavyContext")),
+                "Expected at least one snapshot to contain AsyncLeakSource and HeavyContext types");
         }
 
         // ====================================================================
@@ -492,6 +641,25 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
         private static bool TypeExistsInTree(ReferenceTree tree, string targetTypeName)
         {
             return FindNodesOfType(tree, targetTypeName).Count > 0;
+        }
+
+        /// <summary>
+        /// Check if any root in the tree has the given category code.
+        /// Category codes: "S" (Stack), "s" (StaticVariable), "F" (Finalizer), "H" (Handle), "P" (Pinning), etc.
+        /// </summary>
+        private static bool HasRootOfCategory(ReferenceTree tree, string categoryCode)
+        {
+            return tree.Roots.Any(r => r.CategoryCode == categoryCode);
+        }
+
+        /// <summary>
+        /// Check if any root has the given category code and type name.
+        /// </summary>
+        private static bool HasRootOfCategoryAndType(ReferenceTree tree, string categoryCode, string typeName)
+        {
+            return tree.Roots.Any(r =>
+                r.CategoryCode == categoryCode &&
+                TypeNameMatches(tree.GetTypeName(r.TypeIndex), typeName));
         }
 
         /// <summary>

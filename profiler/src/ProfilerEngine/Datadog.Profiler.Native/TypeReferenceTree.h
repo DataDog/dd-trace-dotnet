@@ -63,59 +63,75 @@ struct TypeTreeNode
 };
 
 
+// Key for roots: (type, category) so the same type can appear as distinct roots per category
+struct RootKey
+{
+    ClassID typeID;
+    RootCategory category;
+
+    bool operator==(const RootKey& o) const
+    {
+        return typeID == o.typeID && category == o.category;
+    }
+};
+
+struct RootKeyHash
+{
+    size_t operator()(const RootKey& k) const
+    {
+        size_t h1 = std::hash<ClassID>{}(k.typeID);
+        size_t h2 = std::hash<uint8_t>{}(static_cast<uint8_t>(k.category));
+        return h1 ^ (h2 << 16);
+    }
+};
+
 // A root node in the reference tree.
-// Extends TypeTreeNode with root-specific metadata (category bitmask).
+// Each root is uniquely identified by (type, category) so byte[] as Pinning
+// and byte[] as Stack are distinct entries.
 struct TypeRootNode
 {
     TypeTreeNode node;
-    uint8_t rootCategories;  // Bitmask of RootCategory values
-    std::string fieldName;   // For static roots: the declaring field name (e.g., "_staticOrders")
+    RootCategory category;
+    std::string fieldName;  // For static roots: the declaring field name (e.g., "_staticOrders")
 
-    TypeRootNode(ClassID typeID) : node(typeID), rootCategories(0)
+    TypeRootNode(ClassID typeID, RootCategory cat) : node(typeID), category(cat)
     {
     }
 
-    void AddRoot(RootCategory category, uint64_t size, const std::string& field = "")
+    void AddInstance(uint64_t size, const std::string& field = "")
     {
         node.AddInstance(size);
-        rootCategories |= (1 << static_cast<uint8_t>(category));
         if (!field.empty() && fieldName.empty())
         {
             fieldName = field;
         }
     }
-
-    bool HasRootCategory(RootCategory category) const
-    {
-        return (rootCategories & (1 << static_cast<uint8_t>(category))) != 0;
-    }
 };
 
 
 // Complete type reference tree.
-// Roots are the top-level entries; each root has a tree of children
-// representing the type-level reference chains from that root.
+// Roots are keyed by (ClassID, RootCategory) so the same type can appear
+// as distinct roots for different categories (e.g. byte[] as Pinning vs Stack).
 class TypeReferenceTree
 {
 public:
-    // Root nodes indexed by ClassID.
-    // Multiple root instances of the same type merge into one TypeRootNode.
-    std::unordered_map<ClassID, std::unique_ptr<TypeRootNode>> _roots;
+    std::unordered_map<RootKey, std::unique_ptr<TypeRootNode>, RootKeyHash> _roots;
 
-    // Add or update a root.
+    // Add or update a root for the given (type, category).
     // Returns a pointer to the root's TypeTreeNode for use during traversal.
     TypeTreeNode* AddRoot(ClassID typeID, RootCategory category, uint64_t size, const std::string& fieldName = "")
     {
-        auto it = _roots.find(typeID);
+        RootKey key{typeID, category};
+        auto it = _roots.find(key);
         if (it != _roots.end())
         {
-            it->second->AddRoot(category, size, fieldName);
+            it->second->AddInstance(size, fieldName);
             return &it->second->node;
         }
-        auto root = std::make_unique<TypeRootNode>(typeID);
-        root->AddRoot(category, size, fieldName);
+        auto root = std::make_unique<TypeRootNode>(typeID, category);
+        root->AddInstance(size, fieldName);
         auto* nodePtr = &root->node;
-        _roots[typeID] = std::move(root);
+        _roots[key] = std::move(root);
         return nodePtr;
     }
 

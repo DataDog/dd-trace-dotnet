@@ -144,7 +144,7 @@ public partial class MainWindow : Window
 
         var text = new TextBlock
         {
-            Text = "Reference Chain Explorer\n\nNavigate reference chains from\nprofiler heap snapshots.\n\nDatadog, Inc.",
+            Text = "Reference Chain Explorer\n\nNavigate reference chains from\nprofiler heap snapshots.",
             VerticalAlignment = VerticalAlignment.Center,
             FontSize = 13,
         };

@@ -91,6 +91,7 @@ public:
     std::chrono::seconds GetTestHeapSnapshotInterval() const override;
     uint32_t GetHeapHandleLimit() const override;
     bool UseManagedCodeCache() const override;
+    bool IsMemoryFootprintEnabled() const override;
 
 private:
     static tags ExtractUserTags();
@@ -207,4 +208,5 @@ private:
     uint32_t _heapSnapshotMemoryPressureThreshold; // in % of used memory
     std::chrono::seconds _testHeapSnapshotInterval;
     bool _useManagedCodeCache;
+    bool _isMemoryFootprintEnabled;
 };

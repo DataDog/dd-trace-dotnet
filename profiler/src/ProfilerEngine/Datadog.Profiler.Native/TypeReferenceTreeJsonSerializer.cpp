@@ -4,8 +4,9 @@
 #include "TypeReferenceTreeJsonSerializer.h"
 #include "Log.h"
 #include "OpSysTools.h"
-#include <sstream>
 #include <algorithm>
+#include <cstdio>
+#include <sstream>
 
 std::string TypeReferenceTreeJsonSerializer::Serialize(const TypeReferenceTree& tree, IFrameStore* pFrameStore)
 {
@@ -22,7 +23,7 @@ std::string TypeReferenceTreeJsonSerializer::Serialize(const TypeReferenceTree& 
     std::vector<std::string> typeTable;
     uint32_t nextIndex = 0;
 
-    for (const auto& [typeID, rootNode] : tree._roots)
+    for (const auto& [key, rootNode] : tree._roots)
     {
         CollectTypes(rootNode->node, typeToIndex, typeTable, nextIndex, pFrameStore);
     }
@@ -52,9 +53,9 @@ std::string TypeReferenceTreeJsonSerializer::Serialize(const TypeReferenceTree& 
     ss << ",\"r\":[";
 
     bool firstRoot = true;
-    for (const auto& [typeID, rootNode] : tree._roots)
+    for (const auto& [key, rootNode] : tree._roots)
     {
-        auto it = typeToIndex.find(typeID);
+        auto it = typeToIndex.find(key.typeID);
         if (it == typeToIndex.end())
         {
             continue;  // Type not in table (GetTypeName failed)
@@ -67,19 +68,7 @@ std::string TypeReferenceTreeJsonSerializer::Serialize(const TypeReferenceTree& 
         firstRoot = false;
 
         uint32_t typeIndex = it->second;
-
-        // Find first root category
-        uint8_t categoryIndex = 0;
-        for (int cat = 0; cat < 8; cat++)
-        {
-            if (rootNode->HasRootCategory(static_cast<RootCategory>(cat)))
-            {
-                categoryIndex = cat;
-                break;
-            }
-        }
-
-        const char* categoryCode = GetRootCategoryCode(static_cast<RootCategory>(categoryIndex));
+        const char* categoryCode = GetRootCategoryCode(rootNode->category);
 
         ss << "{\"t\":" << typeIndex
            << ",\"c\":\"" << categoryCode << "\""
@@ -183,7 +172,16 @@ void TypeReferenceTreeJsonSerializer::CollectTypes(
         if (pFrameStore->GetTypeName(node.typeID, typeName))
         {
             typeToIndex[node.typeID] = nextIndex++;
-            typeTable.push_back(typeName);
+            typeTable.push_back(std::move(typeName));
+        }
+        else
+        {
+            // Fallback: include root even when GetTypeName fails
+            // so we don't silently drop roots (use unique placeholder per type)
+            char buf[32];
+            snprintf(buf, sizeof(buf), "?0x%llx", static_cast<unsigned long long>(node.typeID));
+            typeToIndex[node.typeID] = nextIndex++;
+            typeTable.push_back(buf);
         }
     }
 
