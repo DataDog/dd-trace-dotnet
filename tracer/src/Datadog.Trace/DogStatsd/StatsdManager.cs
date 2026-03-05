@@ -160,17 +160,10 @@ internal sealed class StatsdManager : IStatsdManager
     public async Task DisposeAsync()
     {
         _settingSubscription.Dispose();
-
-        StatsdClientHolder? previous;
-        lock (_lock)
-        {
-            previous = _current;
-            _current = null;
-        }
+        EnsureClient(ensureCreated: false, forceRecreate: true, out var previous);
 
         if (previous is not null)
         {
-            previous.MarkClosing();
             await previous.WaitForDisposalAsync().ConfigureAwait(false);
         }
     }
@@ -199,8 +192,10 @@ internal sealed class StatsdManager : IStatsdManager
     }
 
     private void EnsureClient(bool ensureCreated, bool forceRecreate)
+        => EnsureClient(ensureCreated, forceRecreate, out _);
+
+    private void EnsureClient(bool ensureCreated, bool forceRecreate, out StatsdClientHolder? previous)
     {
-        StatsdClientHolder? previous;
         Log.Debug("Recreating statsdClient: Create new client: {CreateClient}, Force recreate: {ForceRecreate}", ensureCreated, forceRecreate);
 
         lock (_lock)
@@ -208,7 +203,7 @@ internal sealed class StatsdManager : IStatsdManager
             previous = _current;
             if (ensureCreated && previous != null && !forceRecreate)
             {
-                // Already created
+                previous = null;
                 return;
             }
 

@@ -255,9 +255,10 @@ public class StatsdManagerTests
         var manager = new StatsdManager(new TracerSettings(), (_, _, _) => holder);
         manager.SetRequired(StatsdConsumer.RuntimeMetricsWriter, true);
 
-        using var lease = manager.TryGetClientLease();
+        var lease = manager.TryGetClientLease();
 
         lease.Client.Should().BeSameAs(holder.Client);
+        lease.Dispose();
         await manager.DisposeAsync();
     }
 
@@ -268,13 +269,16 @@ public class StatsdManagerTests
         var manager = new StatsdManager(new TracerSettings(), (_, _, _) => holder);
         manager.SetRequired(StatsdConsumer.RuntimeMetricsWriter, true);
 
-        using var lease1 = manager.TryGetClientLease();
-        using var lease2 = manager.TryGetClientLease();
-        using var lease3 = manager.TryGetClientLease();
+        var lease1 = manager.TryGetClientLease();
+        var lease2 = manager.TryGetClientLease();
+        var lease3 = manager.TryGetClientLease();
 
         lease1.Client.Should().BeSameAs(holder.Client);
         lease2.Client.Should().BeSameAs(holder.Client);
         lease3.Client.Should().BeSameAs(holder.Client);
+        lease1.Dispose();
+        lease2.Dispose();
+        lease3.Dispose();
         await manager.DisposeAsync();
     }
 
@@ -354,14 +358,14 @@ public class StatsdManagerTests
         manager.SetRequired(StatsdConsumer.RuntimeMetricsWriter, true);
 
         var lease = manager.TryGetClientLease();
-        await manager.DisposeAsync(); // note _manager_ disposed
+        var disposeTask = manager.DisposeAsync();
 
         holder.IsDisposed.Should().BeFalse("client should not be disposed while lease is active");
 
-        // Dispose the lease
         lease.Dispose();
 
-        // Now it should be disposed
+        await disposeTask;
+
         holder.IsDisposed.Should().BeTrue("client should be disposed after lease is released");
     }
 
