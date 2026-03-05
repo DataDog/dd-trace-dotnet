@@ -151,16 +151,21 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData("false", "otlp", false)]
         [InlineData("false", "random", false)]
         [InlineData("false", null, false)]
-        [InlineData("A", "none", false)]
-        [InlineData("A", "otlp", false)]
-        [InlineData("", "none", false)]
-        [InlineData("", "otlp", false)]
+        // Runtime metrics are enabled by default on .NET 6+
 #if NET6_0_OR_GREATER
+        [InlineData("A", "none", true)]
+        [InlineData("A", "otlp", true)]
+        [InlineData("", "none", true)]
+        [InlineData("", "otlp", true)]
         [InlineData(null, "none", true)]
         [InlineData(null, "random", true)]
         [InlineData(null, "otlp", true)]
         [InlineData(null, null, true)]
 #else
+        [InlineData("A", "none", false)]
+        [InlineData("A", "otlp", false)]
+        [InlineData("", "none", false)]
+        [InlineData("", "otlp", false)]
         [InlineData(null, "none", false)]
         [InlineData(null, "random", false)]
         [InlineData(null, "otlp", false)]
@@ -189,7 +194,7 @@ namespace Datadog.Trace.Tests.Configuration
 
 #if NET6_0_OR_GREATER
         [Fact]
-        public void RuntimeMetrics_DefaultsToDignosticsOnNet6Plus_WhenNotExplicitlySet()
+        public void RuntimeMetrics_DefaultsToDiagnosticsOnNet6Plus_WhenNotExplicitlySet()
         {
             var source = CreateConfigurationSource();
             var settings = new TracerSettings(source);
@@ -236,6 +241,8 @@ namespace Datadog.Trace.Tests.Configuration
         }
 #endif
 
+#endif
+
         [Fact]
         public void RuntimeMetrics_ExplicitDisable_OverridesDefault()
         {
@@ -245,7 +252,6 @@ namespace Datadog.Trace.Tests.Configuration
 
             settings.RuntimeMetricsEnabled.Should().BeFalse();
         }
-#endif
 
         [Theory]
         [InlineData("glob", SamplingRulesFormat.Glob)]     // exact match

@@ -178,11 +178,7 @@ namespace Datadog.Trace.Configuration
             }
 
 #if NET6_0_OR_GREATER
-            // On .NET 6+, runtime metrics are enabled by default when not explicitly configured
-            var runtimeMetricsExplicitlySet = runtimeMetricsEnabledResult.ConfigurationResult.IsPresent;
-            RuntimeMetricsEnabled = runtimeMetricsExplicitlySet
-                ? runtimeMetricsEnabledResult.WithDefault(false)
-                : true;
+            RuntimeMetricsEnabled = runtimeMetricsEnabledResult.WithDefault(true);
 #else
             RuntimeMetricsEnabled = runtimeMetricsEnabledResult.WithDefault(false);
 #endif
@@ -197,14 +193,12 @@ namespace Datadog.Trace.Configuration
             // to avoid EventPipe crash/leak issues (dotnet/runtime#103480, dotnet/runtime#111368).
             // Explicit DD_RUNTIME_METRICS_ENABLED=true users on .NET 6/7 keep EventListener
             // to preserve ASP.NET Core EventCounter metrics not available via Diagnostics on < .NET 8.
-            var diagnosticsDefault = !runtimeMetricsExplicitlySet || Environment.Version.Major >= 8;
+            var diagnosticsDefault = !runtimeMetricsEnabledResult.ConfigurationResult.IsPresent || FrameworkDescription.Instance.RuntimeVersion.Major >= 8;
             RuntimeMetricsDiagnosticsMetricsApiEnabled = runtimeMetricsDiagnosticsMetricsApiEnabledResult.WithDefault(diagnosticsDefault);
 #else
             // System.Diagnostics.Metrics is not available before .NET 6, keep disabled by default
             RuntimeMetricsDiagnosticsMetricsApiEnabled = runtimeMetricsDiagnosticsMetricsApiEnabledResult.WithDefault(false);
-#endif
-
-#if !NET6_0_OR_GREATER
+            
             if (RuntimeMetricsEnabled && RuntimeMetricsDiagnosticsMetricsApiEnabled)
             {
                 Log.Warning(
