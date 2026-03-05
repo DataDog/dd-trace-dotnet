@@ -73,6 +73,10 @@ public:
 
     SymbolDebugInfo Get(ModuleID moduleId, mdMethodDef methodDef);
 
+    // Memory measurement (IMemoryFootprintProvider)
+    size_t GetMemorySize() const override;
+    void LogMemoryBreakdown() const override;
+
     // for tests
     void ParseModuleDebugInfo(ModuleID moduleId, const std::string& pdbFilename, const std::string& moduleFilename, ModuleDebugInfo& moduleInfo);
 
@@ -122,6 +126,26 @@ private:
     bool TryLoadSymbolsWithSym(ModuleID moduleId, const std::string& pdbFile, const std::string& moduleFile, ModuleDebugInfo& moduleInfo);
 #endif
 
+    struct MemoryStats
+    {
+        size_t baseSize;
+        size_t modulesMapSize;
+        size_t moduleCount;
+        size_t modulesMapBuckets;
+        size_t moduleInfosSize;
+
+        size_t GetTotal() const
+        {
+            return baseSize + modulesMapSize + moduleInfosSize;
+        }
+    };
+
+    MemoryStats ComputeMemoryStats() const;
+
+    // Incremental memory tracking: track sum of item sizes
+    mutable std::atomic<size_t> _cachedItemsSize;
+
+
     // we need to support both Portable PDB (Windows and Linux) and Windows PDB (Windows only for old .NET Framework scenarios)
     // - portable PDB: we can use directly the RID from the methodDef token to lookup the debug info
     // - windows PDB: we need to use the RVA to find the correct method
@@ -130,5 +154,7 @@ private:
 
     ICorProfilerInfo4* _profilerInfo;
     bool _isEnabled;
-    std::mutex _modulesMutex;
+
+// mutable to allow locking in const methods (e.g., GetMemorySize, LogMemoryBreakdown)
+    mutable std::mutex _modulesMutex;
 };
