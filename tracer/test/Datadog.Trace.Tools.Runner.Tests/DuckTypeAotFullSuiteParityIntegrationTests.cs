@@ -24,10 +24,30 @@ namespace Datadog.Trace.Tools.Runner.Tests;
 public class DuckTypeAotFullSuiteParityIntegrationTests
 {
     private const string EnableParityRunEnvironmentVariable = "DD_RUN_DUCKTYPE_AOT_FULL_SUITE_PARITY";
+    private const string EnableParityMatrixRunEnvironmentVariable = "DD_RUN_DUCKTYPE_AOT_FULL_SUITE_PARITY_MATRIX";
+    private const string MatrixFrameworksEnvironmentVariable = "DD_DUCKTYPE_AOT_FULL_SUITE_PARITY_FRAMEWORKS";
     private const string ParitySeedEnvironmentVariable = "DD_DUCKTYPE_AOT_FULL_SUITE_PARITY_SEED";
     private const string KeepArtifactsEnvironmentVariable = "DD_DUCKTYPE_AOT_FULL_SUITE_PARITY_KEEP_ARTIFACTS";
     private const string RandomSeedEnvironmentVariable = "RANDOM_SEED";
+    private const string DotNetX64Path = "/usr/local/share/dotnet/x64/dotnet";
+    private const string DotNetX64Root = "/usr/local/share/dotnet/x64";
     private const string DefaultParitySeed = "20260301";
+
+    private static readonly string[] DefaultMatrixFrameworks =
+    [
+        "net10.0",
+        "net9.0",
+        "net8.0",
+        "net7.0",
+        "net6.0",
+        "net5.0",
+        "netcoreapp3.1",
+        "netcoreapp3.0",
+        "netcoreapp2.1"
+    ];
+
+    private static readonly object RuntimeInventoryLock = new();
+    private static readonly Dictionary<string, DotNetRuntimeInventory> RuntimeInventories = new(StringComparer.Ordinal);
 
     [Fact]
     public void FullDuckTypingSuiteShouldHaveMatchingOutcomesBetweenDynamicAndAotModes()
@@ -37,6 +57,57 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
             return;
         }
 
+        RunFullSuiteParityForFramework("net8.0", ResolveDotNetExecutableOrThrow("net8.0"));
+    }
+
+    [Fact]
+    public void FullDuckTypingSuiteMatrixShouldHaveMatchingOutcomesBetweenDynamicAndAotModes()
+    {
+        if (!string.Equals(Environment.GetEnvironmentVariable(EnableParityMatrixRunEnvironmentVariable), "1", StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        var unresolvedFrameworks = new List<string>();
+        var frameworkSelections = new List<(string Framework, string DotNetExecutable)>();
+        foreach (var framework in ResolveRequestedMatrixFrameworks())
+        {
+            var dotNetExecutable = SelectDotNetExecutableForFramework(framework);
+            if (string.IsNullOrWhiteSpace(dotNetExecutable))
+            {
+                unresolvedFrameworks.Add(framework);
+                continue;
+            }
+
+            frameworkSelections.Add((framework, dotNetExecutable));
+        }
+
+        unresolvedFrameworks.Should().BeEmpty(
+            "the matrix run requires a compatible dotnet runtime for each requested framework." +
+            Environment.NewLine +
+            BuildRuntimeResolutionDiagnostics(unresolvedFrameworks));
+
+        var failures = new List<string>();
+        foreach (var (framework, dotNetExecutable) in frameworkSelections)
+        {
+            try
+            {
+                RunFullSuiteParityForFramework(framework, dotNetExecutable);
+            }
+            catch (Exception ex)
+            {
+                failures.Add($"[{framework}] dotnet='{dotNetExecutable}' => {ex}");
+            }
+        }
+
+        failures.Should().BeEmpty(
+            "all requested full-suite parity matrix lanes should pass." +
+            Environment.NewLine +
+            string.Join(Environment.NewLine, failures));
+    }
+
+    private static void RunFullSuiteParityForFramework(string framework, string dotNetExecutable)
+    {
         var repositoryRoot = FindRepositoryRoot();
         var duckTypingTestsProjectPath = Path.Combine(
             repositoryRoot,
@@ -44,6 +115,12 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
             "test",
             "Datadog.Trace.DuckTyping.Tests",
             "Datadog.Trace.DuckTyping.Tests.csproj");
+        var runnerProjectPath = Path.Combine(
+            repositoryRoot,
+            "tracer",
+            "src",
+            "Datadog.Trace.Tools.Runner",
+            "Datadog.Trace.Tools.Runner.csproj");
         var duckTypingTestsAssemblyPath = Path.Combine(
             repositoryRoot,
             "tracer",
@@ -51,25 +128,39 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
             "Datadog.Trace.DuckTyping.Tests",
             "bin",
             "Release",
-            "net8.0",
+            framework,
             "Datadog.Trace.DuckTyping.Tests.dll");
-        var runnerAssemblyPath = typeof(DuckTypeAotGenerateProcessor).Assembly.Location;
+        var runnerAssemblyPath = Path.Combine(
+            repositoryRoot,
+            "tracer",
+            "src",
+            "Datadog.Trace.Tools.Runner",
+            "bin",
+            "Release",
+            "Tool",
+            framework,
+            "Datadog.Trace.Tools.Runner.dll");
 
         File.Exists(duckTypingTestsProjectPath).Should().BeTrue("the full-suite parity harness requires the duck typing tests project");
-        File.Exists(runnerAssemblyPath).Should().BeTrue("ducktype-aot runner assembly should be available");
+        File.Exists(runnerProjectPath).Should().BeTrue("the full-suite parity harness requires the runner project");
 
         var paritySeed = ResolveParitySeed();
         var keepArtifacts = ShouldKeepArtifacts();
         var retainArtifacts = keepArtifacts;
 
-        var tempDirectory = Path.Combine(Path.GetTempPath(), "dd-trace-ducktype-aot-full-suite-parity", Guid.NewGuid().ToString("N"));
+        var tempDirectory = Path.Combine(
+            Path.GetTempPath(),
+            "dd-trace-ducktype-aot-full-suite-parity",
+            NormalizeFrameworkToken(framework),
+            Guid.NewGuid().ToString("N"));
         var dynamicResultsDirectory = Path.Combine(tempDirectory, "dynamic-results");
         var aotResultsDirectory = Path.Combine(tempDirectory, "aot-results");
         var dynamicTrxPath = Path.Combine(dynamicResultsDirectory, "dynamic.trx");
         var aotTrxPath = Path.Combine(aotResultsDirectory, "aot.trx");
         var discoveredMapPath = Path.Combine(tempDirectory, "ducktype-aot-discovered-map.json");
         var sanitizedDiscoveredMapPath = Path.Combine(tempDirectory, "ducktype-aot-discovered-map-sanitized.json");
-        var generatedRegistryPath = Path.Combine(tempDirectory, "Datadog.Trace.DuckType.AotRegistry.FullSuiteParity.dll");
+        var registryAssemblyName = $"Datadog.Trace.DuckType.AotRegistry.FullSuiteParity.{NormalizeFrameworkToken(framework)}";
+        var generatedRegistryPath = Path.Combine(tempDirectory, $"{registryAssemblyName}.dll");
 
         Directory.CreateDirectory(tempDirectory);
         Directory.CreateDirectory(dynamicResultsDirectory);
@@ -77,18 +168,56 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
 
         try
         {
+            if (!File.Exists(runnerAssemblyPath))
+            {
+                var buildRunnerResult = RunProcess(
+                    fileName: dotNetExecutable,
+                    workingDirectory: repositoryRoot,
+                    timeoutMilliseconds: 600_000,
+                    captureOutput: true,
+                    environmentVariables: BuildDotNetProcessEnvironment(dotNetExecutable, additionalEnvironmentVariables: null),
+                    arguments:
+                    [
+                        "build",
+                        runnerProjectPath,
+                        "-c",
+                        "Release",
+                        "--framework",
+                        framework
+                    ]);
+                var buildRunnerFailureMessage =
+                    "runner build must succeed before full-suite parity execution." +
+                    Environment.NewLine +
+                    $"framework: {framework}" +
+                    Environment.NewLine +
+                    $"dotnet: {dotNetExecutable}" +
+                    Environment.NewLine +
+                    "STDOUT:" +
+                    Environment.NewLine +
+                    buildRunnerResult.StandardOutput +
+                    Environment.NewLine +
+                    "STDERR:" +
+                    Environment.NewLine +
+                    buildRunnerResult.StandardError;
+                buildRunnerResult.ExitCode.Should().Be(0, buildRunnerFailureMessage);
+            }
+
+            File.Exists(runnerAssemblyPath).Should().BeTrue("the runner assembly should be available before registry generation");
+
             var dynamicResult = RunProcess(
-                fileName: "dotnet",
+                fileName: dotNetExecutable,
                 workingDirectory: repositoryRoot,
                 timeoutMilliseconds: 600_000,
                 captureOutput: true,
-                environmentVariables: new Dictionary<string, string?>
-                {
-                    ["DD_DUCKTYPE_TEST_MODE"] = "dynamic",
-                    ["DD_DUCKTYPE_DISCOVERY_OUTPUT_PATH"] = discoveredMapPath,
-                    ["DD_DUCKTYPE_AOT_REGISTRY_PATH"] = null,
-                    [RandomSeedEnvironmentVariable] = paritySeed
-                },
+                environmentVariables: BuildDotNetProcessEnvironment(
+                    dotNetExecutable,
+                    new Dictionary<string, string?>
+                    {
+                        ["DD_DUCKTYPE_TEST_MODE"] = "dynamic",
+                        ["DD_DUCKTYPE_DISCOVERY_OUTPUT_PATH"] = discoveredMapPath,
+                        ["DD_DUCKTYPE_AOT_REGISTRY_PATH"] = null,
+                        [RandomSeedEnvironmentVariable] = paritySeed
+                    }),
                 arguments:
                 [
                     "test",
@@ -96,22 +225,54 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
                     "-c",
                     "Release",
                     "--framework",
-                    "net8.0",
+                    framework,
                     "--logger",
                     "trx;LogFileName=dynamic.trx",
                     "--results-directory",
                     dynamicResultsDirectory
                 ]);
 
-            File.Exists(duckTypingTestsAssemblyPath).Should().BeTrue("the test assembly should be produced by the dynamic test run");
+            var dynamicExitCodeMessage =
+                "the dynamic full-suite run must succeed before parity is evaluated." +
+                Environment.NewLine +
+                BuildParityDiagnostics(
+                    framework,
+                    dotNetExecutable,
+                    paritySeed,
+                    tempDirectory,
+                    dynamicTrxPath,
+                    aotTrxPath,
+                    discoveredMapPath,
+                    sanitizedDiscoveredMapPath,
+                    generatedRegistryPath,
+                    excludedMappings: Array.Empty<string>()) +
+                Environment.NewLine +
+                "STDOUT:" +
+                Environment.NewLine +
+                dynamicResult.StandardOutput +
+                Environment.NewLine +
+                "STDERR:" +
+                Environment.NewLine +
+                dynamicResult.StandardError;
+            dynamicResult.ExitCode.Should().Be(
+                0,
+                dynamicExitCodeMessage);
+
+            File.Exists(duckTypingTestsAssemblyPath).Should().BeTrue("the test assembly should be produced by the dynamic run");
             File.Exists(dynamicTrxPath).Should().BeTrue("dynamic run should produce a trx report");
             File.Exists(discoveredMapPath).Should().BeTrue("dynamic discovery should produce a ducktype-aot map file");
+            var includeCurrentProcessAssemblies =
+                string.Equals(framework, "net8.0", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(dotNetExecutable, DotNetX64Path, StringComparison.Ordinal);
             var generateInput = PrepareGenerateInput(
                 discoveredMapPath,
                 sanitizedDiscoveredMapPath,
                 duckTypingTestsAssemblyPath,
                 runnerAssemblyPath,
-                repositoryRoot);
+                repositoryRoot,
+                framework,
+                dotNetExecutable,
+                includeCurrentProcessAssemblies);
 
             var generateArguments = new List<string>
             {
@@ -140,20 +301,22 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
             generateArguments.Add("--output");
             generateArguments.Add(generatedRegistryPath);
             generateArguments.Add("--assembly-name");
-            generateArguments.Add("Datadog.Trace.DuckType.AotRegistry.FullSuiteParity");
+            generateArguments.Add(registryAssemblyName);
 
             var generateResult = RunProcess(
-                fileName: "dotnet",
+                fileName: dotNetExecutable,
                 workingDirectory: tempDirectory,
                 timeoutMilliseconds: 300_000,
                 captureOutput: true,
-                environmentVariables: null,
+                environmentVariables: BuildDotNetProcessEnvironment(dotNetExecutable, additionalEnvironmentVariables: null),
                 arguments: generateArguments.ToArray());
 
             var generateFailureMessage =
                 "AOT registry generation from discovered mappings should succeed." +
                 Environment.NewLine +
                 BuildParityDiagnostics(
+                    framework,
+                    dotNetExecutable,
                     paritySeed,
                     tempDirectory,
                     dynamicTrxPath,
@@ -179,17 +342,19 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
             File.Exists(generatedRegistryPath).Should().BeTrue("registry generation should emit an assembly for the AOT-mode run");
 
             var aotResult = RunProcess(
-                fileName: "dotnet",
+                fileName: dotNetExecutable,
                 workingDirectory: repositoryRoot,
                 timeoutMilliseconds: 600_000,
                 captureOutput: true,
-                environmentVariables: new Dictionary<string, string?>
-                {
-                    ["DD_DUCKTYPE_TEST_MODE"] = "aot",
-                    ["DD_DUCKTYPE_AOT_REGISTRY_PATH"] = generatedRegistryPath,
-                    ["DD_DUCKTYPE_DISCOVERY_OUTPUT_PATH"] = null,
-                    [RandomSeedEnvironmentVariable] = paritySeed
-                },
+                environmentVariables: BuildDotNetProcessEnvironment(
+                    dotNetExecutable,
+                    new Dictionary<string, string?>
+                    {
+                        ["DD_DUCKTYPE_TEST_MODE"] = "aot",
+                        ["DD_DUCKTYPE_AOT_REGISTRY_PATH"] = generatedRegistryPath,
+                        ["DD_DUCKTYPE_DISCOVERY_OUTPUT_PATH"] = null,
+                        [RandomSeedEnvironmentVariable] = paritySeed
+                    }),
                 arguments:
                 [
                     "test",
@@ -197,7 +362,7 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
                     "-c",
                     "Release",
                     "--framework",
-                    "net8.0",
+                    framework,
                     "--no-build",
                     "--logger",
                     "trx;LogFileName=aot.trx",
@@ -205,32 +370,12 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
                     aotResultsDirectory
                 ]);
 
-            File.Exists(aotTrxPath).Should().BeTrue("AOT run should produce a trx report");
-
-            var dynamicExitCodeMessage =
-                "the dynamic full-suite run must succeed before parity is evaluated." +
-                Environment.NewLine +
-                BuildParityDiagnostics(
-                    paritySeed,
-                    tempDirectory,
-                    dynamicTrxPath,
-                    aotTrxPath,
-                    discoveredMapPath,
-                    sanitizedDiscoveredMapPath,
-                    generatedRegistryPath,
-                    generateInput.ExcludedMappings) +
-                Environment.NewLine +
-                "STDOUT:" +
-                Environment.NewLine +
-                dynamicResult.StandardOutput +
-                Environment.NewLine +
-                "STDERR:" +
-                Environment.NewLine +
-                dynamicResult.StandardError;
             var aotExitCodeMessage =
                 "the AOT full-suite run must succeed before parity is evaluated." +
                 Environment.NewLine +
                 BuildParityDiagnostics(
+                    framework,
+                    dotNetExecutable,
                     paritySeed,
                     tempDirectory,
                     dynamicTrxPath,
@@ -248,13 +393,10 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
                 Environment.NewLine +
                 aotResult.StandardError;
 
-            dynamicResult.ExitCode.Should().Be(
-                0,
-                dynamicExitCodeMessage);
-
             aotResult.ExitCode.Should().Be(
                 0,
                 aotExitCodeMessage);
+            File.Exists(aotTrxPath).Should().BeTrue("AOT run should produce a trx report");
 
             var dynamicOutcomes = ReadResults(dynamicTrxPath);
             var aotOutcomes = ReadResults(aotTrxPath);
@@ -327,6 +469,8 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
                 "all full-suite duck typing test outcomes should match between dynamic and AOT modes." +
                 Environment.NewLine +
                 BuildParityDiagnostics(
+                    framework,
+                    dotNetExecutable,
                     paritySeed,
                     tempDirectory,
                     dynamicTrxPath,
@@ -359,6 +503,8 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
     }
 
     private static string BuildParityDiagnostics(
+        string framework,
+        string dotNetExecutable,
         string paritySeed,
         string tempDirectory,
         string dynamicTrxPath,
@@ -372,6 +518,8 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
                                   ? "<none>"
                                   : string.Join(Environment.NewLine, excludedMappings.Take(10));
         return
+            $"Framework: {framework}" + Environment.NewLine +
+            $"Dotnet executable: {dotNetExecutable}" + Environment.NewLine +
             $"Parity seed: {paritySeed}" + Environment.NewLine +
             $"Temp directory: {tempDirectory}" + Environment.NewLine +
             $"Dynamic TRX: {dynamicTrxPath}" + Environment.NewLine +
@@ -400,6 +548,247 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
         return string.Equals(value, "1", StringComparison.OrdinalIgnoreCase) ||
                string.Equals(value, "true", StringComparison.OrdinalIgnoreCase) ||
                string.Equals(value, "yes", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string ResolveDotNetExecutableOrThrow(string framework)
+    {
+        var dotNetExecutable = SelectDotNetExecutableForFramework(framework);
+        dotNetExecutable.Should().NotBeNullOrWhiteSpace(
+            "a compatible dotnet runtime is required for the selected framework." +
+            Environment.NewLine +
+            BuildRuntimeResolutionDiagnostics([framework]));
+        return dotNetExecutable!;
+    }
+
+    private static IReadOnlyList<string> ResolveRequestedMatrixFrameworks()
+    {
+        var configured = Environment.GetEnvironmentVariable(MatrixFrameworksEnvironmentVariable);
+        if (string.IsNullOrWhiteSpace(configured))
+        {
+            return DefaultMatrixFrameworks;
+        }
+
+        var frameworks = configured.Split([',', ';', ' ', '\t', '\r', '\n'], StringSplitOptions.RemoveEmptyEntries)
+                                   .Select(item => item.Trim())
+                                   .Where(item => !string.IsNullOrWhiteSpace(item))
+                                   .Distinct(StringComparer.OrdinalIgnoreCase)
+                                   .ToList();
+        frameworks.Should().NotBeEmpty(
+            $"environment variable '{MatrixFrameworksEnvironmentVariable}' must contain at least one framework token.");
+        return frameworks;
+    }
+
+    private static string NormalizeFrameworkToken(string framework)
+    {
+        return framework.Replace('.', '_')
+                        .Replace('-', '_')
+                        .Replace('+', '_');
+    }
+
+    private static string? SelectDotNetExecutableForFramework(string framework)
+    {
+        var requiredRuntimePrefix = GetFrameworkRuntimePrefix(framework);
+        foreach (var candidate in GetDotNetExecutableCandidates())
+        {
+            var inventory = GetRuntimeInventory(candidate);
+            if (inventory.NetCoreRuntimeVersionPrefixes.Contains(requiredRuntimePrefix, StringComparer.Ordinal))
+            {
+                return candidate;
+            }
+        }
+
+        return null;
+    }
+
+    private static string BuildRuntimeResolutionDiagnostics(IReadOnlyCollection<string> unresolvedFrameworks)
+    {
+        var lines = new List<string>
+        {
+            $"Unresolved frameworks: {string.Join(", ", unresolvedFrameworks.OrderBy(item => item, StringComparer.OrdinalIgnoreCase))}"
+        };
+
+        foreach (var candidate in GetDotNetExecutableCandidates())
+        {
+            var inventory = GetRuntimeInventory(candidate);
+            lines.Add($"dotnet candidate: {candidate}");
+            lines.Add($"  exit code: {inventory.ExitCode}");
+            lines.Add(
+                "  Microsoft.NETCore.App prefixes: " +
+                (inventory.NetCoreRuntimeVersionPrefixes.Count == 0
+                     ? "<none>"
+                     : string.Join(
+                         ", ",
+                         inventory.NetCoreRuntimeVersionPrefixes.OrderBy(item => item, StringComparer.OrdinalIgnoreCase))));
+            if (inventory.ExitCode != 0 && !string.IsNullOrWhiteSpace(inventory.StandardError))
+            {
+                lines.Add($"  stderr: {inventory.StandardError.Trim()}");
+            }
+        }
+
+        return string.Join(Environment.NewLine, lines);
+    }
+
+    private static IReadOnlyList<string> GetDotNetExecutableCandidates()
+    {
+        var candidates = new List<string> { "dotnet" };
+        if (File.Exists(DotNetX64Path))
+        {
+            candidates.Add(DotNetX64Path);
+        }
+
+        return candidates.Distinct(StringComparer.Ordinal).ToList();
+    }
+
+    private static string GetFrameworkRuntimePrefix(string framework)
+    {
+        if (framework.StartsWith("netcoreapp", StringComparison.OrdinalIgnoreCase))
+        {
+            return framework.Substring("netcoreapp".Length);
+        }
+
+        if (framework.StartsWith("net", StringComparison.OrdinalIgnoreCase))
+        {
+            return framework.Substring("net".Length);
+        }
+
+        throw new ArgumentOutOfRangeException(nameof(framework), framework, "Unsupported framework moniker format.");
+    }
+
+    private static IReadOnlyDictionary<string, string?>? BuildDotNetProcessEnvironment(
+        string dotNetExecutable,
+        IReadOnlyDictionary<string, string?>? additionalEnvironmentVariables)
+    {
+        Dictionary<string, string?>? environmentVariables = new(StringComparer.Ordinal)
+        {
+            // Ensure nested dotnet invocations keep using the selected host.
+            ["DOTNET_HOST_PATH"] = dotNetExecutable,
+            // Prevent stale outer-process overrides from forcing a mismatched msbuild host.
+            ["MSBUILD_EXE_PATH"] = null,
+            ["MSBuildSDKsPath"] = null,
+            ["MSBuildExtensionsPath"] = null,
+            ["MSBuildExtensionsPath32"] = null,
+            ["MSBuildExtensionsPath64"] = null
+        };
+
+        if (string.Equals(dotNetExecutable, DotNetX64Path, StringComparison.Ordinal))
+        {
+            environmentVariables["DOTNET_ROOT"] = DotNetX64Root;
+            environmentVariables["DOTNET_ROOT_X64"] = DotNetX64Root;
+            environmentVariables["DOTNET_ROOT_ARM64"] = null;
+            environmentVariables["DOTNET_MULTILEVEL_LOOKUP"] = "0";
+        }
+
+        if (additionalEnvironmentVariables is null || additionalEnvironmentVariables.Count == 0)
+        {
+            return environmentVariables.Count == 0 ? null : environmentVariables;
+        }
+
+        foreach (var (key, value) in additionalEnvironmentVariables)
+        {
+            environmentVariables[key] = value;
+        }
+
+        return environmentVariables.Count == 0 ? null : environmentVariables;
+    }
+
+    private static DotNetRuntimeInventory GetRuntimeInventory(string dotNetExecutable)
+    {
+        lock (RuntimeInventoryLock)
+        {
+            if (RuntimeInventories.TryGetValue(dotNetExecutable, out var cached))
+            {
+                return cached;
+            }
+        }
+
+        DotNetRuntimeInventory inventory;
+        try
+        {
+            var result = RunProcess(
+                fileName: dotNetExecutable,
+                workingDirectory: Path.GetTempPath(),
+                timeoutMilliseconds: 60_000,
+                captureOutput: true,
+                environmentVariables: BuildDotNetProcessEnvironment(dotNetExecutable, additionalEnvironmentVariables: null),
+                arguments: ["--list-runtimes"]);
+
+            var runtimePrefixes = new HashSet<string>(StringComparer.Ordinal);
+            var runtimeDirectoriesByPrefix = new Dictionary<string, string>(StringComparer.Ordinal);
+            foreach (var line in result.StandardOutput.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+            {
+                var trimmed = line.Trim();
+                if (!trimmed.StartsWith("Microsoft.NETCore.App ", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                var tokens = trimmed.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                if (tokens.Length < 2)
+                {
+                    continue;
+                }
+
+                if (TryExtractMajorMinorVersionPrefix(tokens[1], out var prefix))
+                {
+                    runtimePrefixes.Add(prefix);
+
+                    var runtimeDirectoryStart = trimmed.LastIndexOf('[');
+                    var runtimeDirectoryEnd = trimmed.LastIndexOf(']');
+                    if (runtimeDirectoryStart >= 0 && runtimeDirectoryEnd > runtimeDirectoryStart)
+                    {
+                        var runtimeDirectory = trimmed.Substring(runtimeDirectoryStart + 1, runtimeDirectoryEnd - runtimeDirectoryStart - 1);
+                        if (!string.IsNullOrWhiteSpace(runtimeDirectory))
+                        {
+                            var normalizedRuntimeDirectory = runtimeDirectory;
+                            var versionedRuntimeDirectory = Path.Combine(runtimeDirectory, tokens[1]);
+                            if (Directory.Exists(versionedRuntimeDirectory))
+                            {
+                                normalizedRuntimeDirectory = versionedRuntimeDirectory;
+                            }
+
+                            if (Directory.Exists(normalizedRuntimeDirectory))
+                            {
+                                runtimeDirectoriesByPrefix[prefix] = normalizedRuntimeDirectory;
+                            }
+                        }
+                    }
+                }
+            }
+
+            inventory = new DotNetRuntimeInventory(result.ExitCode, result.StandardError, runtimePrefixes, runtimeDirectoriesByPrefix);
+        }
+        catch (Exception ex)
+        {
+            inventory = new DotNetRuntimeInventory(
+                exitCode: -1,
+                standardError: ex.Message,
+                netCoreRuntimeVersionPrefixes: [],
+                runtimeDirectoriesByPrefix: new Dictionary<string, string>(StringComparer.Ordinal));
+        }
+
+        lock (RuntimeInventoryLock)
+        {
+            RuntimeInventories[dotNetExecutable] = inventory;
+            return inventory;
+        }
+    }
+
+    private static bool TryExtractMajorMinorVersionPrefix(string version, out string prefix)
+    {
+        prefix = string.Empty;
+        if (string.IsNullOrWhiteSpace(version))
+        {
+            return false;
+        }
+
+        var segments = version.Split('.', StringSplitOptions.RemoveEmptyEntries);
+        if (segments.Length < 2)
+        {
+            return false;
+        }
+
+        prefix = $"{segments[0]}.{segments[1]}";
+        return true;
     }
 
     private static Dictionary<string, TestResultSnapshot> ReadResults(string trxPath)
@@ -464,7 +853,10 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
         string sanitizedMapPath,
         string duckTypingTestsAssemblyPath,
         string runnerAssemblyPath,
-        string repositoryRoot)
+        string repositoryRoot,
+        string framework,
+        string dotNetExecutable,
+        bool includeCurrentProcessAssemblies)
     {
         var parseResult = DuckTypeAotMapFileParser.Parse(discoveredMapPath);
         parseResult.Errors.Should().BeEmpty("dynamic discovery output should always be parseable by ducktype-aot map parser");
@@ -473,9 +865,63 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
         var assemblyPathIndex = BuildAssemblyPathIndex(
         [
             Path.GetDirectoryName(duckTypingTestsAssemblyPath) ?? string.Empty,
-            Path.GetDirectoryName(runnerAssemblyPath) ?? string.Empty,
-            AppContext.BaseDirectory
-        ]);
+            Path.GetDirectoryName(runnerAssemblyPath) ?? string.Empty
+        ],
+        includeCurrentProcessAssemblies);
+        var isolatedRuntimeAssemblyDirectory = Path.Combine(
+            Path.GetDirectoryName(sanitizedMapPath) ?? Path.GetTempPath(),
+            "resolved-runtime-assemblies");
+
+        bool TryEnsureAssemblyResolved(string assemblyName)
+        {
+            if (assemblyPathIndex.ContainsKey(assemblyName))
+            {
+                return true;
+            }
+
+            if (ShouldAttemptRepositoryAssemblyResolution(assemblyName))
+            {
+                var resolvedRepositoryPath = TryResolveAssemblyPathFromRepository(repositoryRoot, framework, assemblyName);
+                if (!string.IsNullOrWhiteSpace(resolvedRepositoryPath))
+                {
+                    TryAddAssemblyPath(assemblyPathIndex, resolvedRepositoryPath);
+                    if (!assemblyPathIndex.ContainsKey(assemblyName))
+                    {
+                        var normalizedAssemblyName = DuckTypeAotNameHelpers.NormalizeAssemblyName(assemblyName);
+                        if (!string.IsNullOrWhiteSpace(normalizedAssemblyName))
+                        {
+                            assemblyPathIndex[normalizedAssemblyName] = resolvedRepositoryPath;
+                        }
+                    }
+
+                    if (assemblyPathIndex.ContainsKey(assemblyName))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            var resolvedRuntimePath = TryResolveAssemblyPathFromDotNetRuntime(dotNetExecutable, framework, assemblyName);
+            if (!string.IsNullOrWhiteSpace(resolvedRuntimePath))
+            {
+                Directory.CreateDirectory(isolatedRuntimeAssemblyDirectory);
+                var isolatedAssemblyPath = Path.Combine(isolatedRuntimeAssemblyDirectory, $"{assemblyName}.dll");
+                File.Copy(resolvedRuntimePath, isolatedAssemblyPath, overwrite: true);
+                TryAddAssemblyPath(assemblyPathIndex, isolatedAssemblyPath);
+                if (!assemblyPathIndex.ContainsKey(assemblyName))
+                {
+                    // System.Private.CoreLib (especially from older runtimes) can fail AssemblyName metadata reads.
+                    // Keep parity-generation orchestration resilient by indexing this known-resolved path by map name.
+                    var normalizedAssemblyName = DuckTypeAotNameHelpers.NormalizeAssemblyName(assemblyName);
+                    if (!string.IsNullOrWhiteSpace(normalizedAssemblyName))
+                    {
+                        assemblyPathIndex[normalizedAssemblyName] = isolatedAssemblyPath;
+                    }
+                }
+            }
+
+            return assemblyPathIndex.ContainsKey(assemblyName);
+        }
 
         var filteredMappings = new List<DuckTypeAotMapping>();
         var excludedMappings = new List<string>();
@@ -495,13 +941,13 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
                 continue;
             }
 
-            if (!assemblyPathIndex.ContainsKey(mapping.ProxyAssemblyName))
+            if (!TryEnsureAssemblyResolved(mapping.ProxyAssemblyName))
             {
                 excludedMappings.Add($"proxy-assembly-unresolved: {mapping.Key}");
                 continue;
             }
 
-            if (!assemblyPathIndex.ContainsKey(mapping.TargetAssemblyName))
+            if (!TryEnsureAssemblyResolved(mapping.TargetAssemblyName))
             {
                 excludedMappings.Add($"target-assembly-unresolved: {mapping.Key}");
                 continue;
@@ -544,15 +990,9 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
                                                                       .ToList();
         foreach (var targetAssemblyName in requiredAttributeTargetAssemblies)
         {
-            if (assemblyPathIndex.ContainsKey(targetAssemblyName))
+            if (TryEnsureAssemblyResolved(targetAssemblyName))
             {
                 continue;
-            }
-
-            var resolvedPath = TryResolveAssemblyPathFromRepository(repositoryRoot, targetAssemblyName);
-            if (!string.IsNullOrWhiteSpace(resolvedPath))
-            {
-                TryAddAssemblyPath(assemblyPathIndex, resolvedPath);
             }
         }
 
@@ -597,7 +1037,7 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
         return new GenerateInput(sanitizedMapPath, proxyAssemblyPaths, targetFolders, excludedMappings);
     }
 
-    private static Dictionary<string, string> BuildAssemblyPathIndex(IEnumerable<string> searchDirectories)
+    private static Dictionary<string, string> BuildAssemblyPathIndex(IEnumerable<string> searchDirectories, bool includeCurrentProcessAssemblies)
     {
         var assemblyPathsByName = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
@@ -612,6 +1052,11 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
             {
                 TryAddAssemblyPath(assemblyPathsByName, candidatePath);
             }
+        }
+
+        if (!includeCurrentProcessAssemblies)
+        {
+            return assemblyPathsByName;
         }
 
         var trustedPlatformAssemblies = AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES") as string;
@@ -661,18 +1106,25 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
         }
         catch
         {
-            // Best-effort indexing for integration-test orchestration.
+            // Fallback for runtime assemblies where metadata name reads can fail (for example, older System.Private.CoreLib).
+            var fileName = Path.GetFileNameWithoutExtension(candidatePath);
+            var normalizedName = DuckTypeAotNameHelpers.NormalizeAssemblyName(fileName ?? string.Empty);
+            if (!string.IsNullOrWhiteSpace(normalizedName) && !assemblyPathsByName.ContainsKey(normalizedName))
+            {
+                assemblyPathsByName[normalizedName] = candidatePath;
+            }
         }
     }
 
-    private static string? TryResolveAssemblyPathFromRepository(string repositoryRoot, string assemblyName)
+    private static string? TryResolveAssemblyPathFromRepository(string repositoryRoot, string framework, string assemblyName)
     {
-        if (string.IsNullOrWhiteSpace(repositoryRoot) || string.IsNullOrWhiteSpace(assemblyName))
+        if (string.IsNullOrWhiteSpace(repositoryRoot) || string.IsNullOrWhiteSpace(framework) || string.IsNullOrWhiteSpace(assemblyName))
         {
             return null;
         }
 
         var candidateFileName = $"{assemblyName}.dll";
+        var frameworkMarker = $"{Path.DirectorySeparatorChar}{framework}{Path.DirectorySeparatorChar}";
         var rootSearchDirectories = new[]
         {
             Path.Combine(repositoryRoot, "tracer", "src"),
@@ -687,12 +1139,66 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
             }
 
             var preferredPath = Directory.EnumerateFiles(rootSearchDirectory, candidateFileName, SearchOption.AllDirectories)
+                                         .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}Console{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase))
                                          .OrderByDescending(path => path.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}Release{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase))
+                                         .ThenByDescending(path => path.Contains(frameworkMarker, StringComparison.OrdinalIgnoreCase))
+                                         .ThenByDescending(path => path.Contains($"{Path.DirectorySeparatorChar}netstandard2.0{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase))
                                          .ThenByDescending(path => path.Contains($"{Path.DirectorySeparatorChar}net8.0{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase))
                                          .FirstOrDefault();
             if (!string.IsNullOrWhiteSpace(preferredPath))
             {
                 return preferredPath;
+            }
+        }
+
+        return null;
+    }
+
+    private static bool ShouldAttemptRepositoryAssemblyResolution(string assemblyName)
+    {
+        if (string.IsNullOrWhiteSpace(assemblyName))
+        {
+            return false;
+        }
+
+        return assemblyName.StartsWith("Datadog.", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string? TryResolveAssemblyPathFromDotNetRuntime(string dotNetExecutable, string framework, string assemblyName)
+    {
+        if (string.IsNullOrWhiteSpace(dotNetExecutable) ||
+            string.IsNullOrWhiteSpace(framework) ||
+            string.IsNullOrWhiteSpace(assemblyName))
+        {
+            return null;
+        }
+
+        var runtimePrefix = GetFrameworkRuntimePrefix(framework);
+        var runtimeInventory = GetRuntimeInventory(dotNetExecutable);
+        if (!runtimeInventory.RuntimeDirectoriesByPrefix.TryGetValue(runtimePrefix, out var runtimeDirectory))
+        {
+            return null;
+        }
+
+        var candidatePath = Path.Combine(runtimeDirectory, $"{assemblyName}.dll");
+        if (File.Exists(candidatePath))
+        {
+            return candidatePath;
+        }
+
+        var normalizedAssemblyName = DuckTypeAotNameHelpers.NormalizeAssemblyName(assemblyName);
+        foreach (var runtimeAssemblyPath in Directory.EnumerateFiles(runtimeDirectory, "*.dll", SearchOption.TopDirectoryOnly))
+        {
+            var runtimeAssemblyName = Path.GetFileNameWithoutExtension(runtimeAssemblyPath);
+            if (string.IsNullOrWhiteSpace(runtimeAssemblyName))
+            {
+                continue;
+            }
+
+            var normalizedRuntimeAssemblyName = DuckTypeAotNameHelpers.NormalizeAssemblyName(runtimeAssemblyName);
+            if (string.Equals(normalizedRuntimeAssemblyName, normalizedAssemblyName, StringComparison.OrdinalIgnoreCase))
+            {
+                return runtimeAssemblyPath;
             }
         }
 
@@ -848,6 +1354,29 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
         {
             // Best-effort cleanup.
         }
+    }
+
+    private readonly struct DotNetRuntimeInventory
+    {
+        internal DotNetRuntimeInventory(
+            int exitCode,
+            string standardError,
+            IReadOnlyCollection<string> netCoreRuntimeVersionPrefixes,
+            IReadOnlyDictionary<string, string> runtimeDirectoriesByPrefix)
+        {
+            ExitCode = exitCode;
+            StandardError = standardError;
+            NetCoreRuntimeVersionPrefixes = netCoreRuntimeVersionPrefixes;
+            RuntimeDirectoriesByPrefix = runtimeDirectoriesByPrefix;
+        }
+
+        internal int ExitCode { get; }
+
+        internal string StandardError { get; }
+
+        internal IReadOnlyCollection<string> NetCoreRuntimeVersionPrefixes { get; }
+
+        internal IReadOnlyDictionary<string, string> RuntimeDirectoriesByPrefix { get; }
     }
 
     private readonly struct CommandResult
