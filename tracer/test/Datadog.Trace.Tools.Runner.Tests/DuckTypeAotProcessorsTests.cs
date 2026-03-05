@@ -395,6 +395,98 @@ public class DuckTypeAotProcessorsTests
     }
 
     [Fact]
+    public void GenerateProcessorShouldUseResolvedDatadogTraceAssemblyForContractMetadata()
+    {
+        var tempDirectory = CreateTempDirectory();
+        try
+        {
+            var proxyAssemblyPath = typeof(DuckTypeAotProcessorsTests).Assembly.Location;
+            var targetAssemblyPath = typeof(TestDuckTarget).Assembly.Location;
+            var proxyAssemblyName = AssemblyName.GetAssemblyName(proxyAssemblyPath).Name;
+            var targetAssemblyName = AssemblyName.GetAssemblyName(targetAssemblyPath).Name;
+
+            var datadogTraceNetStandardPath = GetDatadogTraceNetStandardAssemblyPath();
+            File.Exists(datadogTraceNetStandardPath).Should().BeTrue("expected Datadog.Trace netstandard build artifact to exist for contract metadata selection tests");
+
+            var expectedDatadogTraceVersion = AssemblyName.GetAssemblyName(datadogTraceNetStandardPath).Version?.ToString() ?? "0.0.0.0";
+            var expectedDatadogTraceMvid = ResolveAssemblyMvidForTest(datadogTraceNetStandardPath);
+            var runtimeDatadogTraceMvid = ResolveAssemblyMvidForTest(typeof(Datadog.Trace.Tracer).Assembly.Location);
+            expectedDatadogTraceMvid.Should().NotBe(
+                runtimeDatadogTraceMvid,
+                "this test must use a Datadog.Trace assembly artifact that differs from the runner runtime assembly");
+
+            var outputPath = Path.Combine(tempDirectory, "Datadog.Trace.DuckType.AotRegistry.ContractMetadataSelection.dll");
+            var mapFilePath = Path.Combine(tempDirectory, "ducktype-aot-map-contract-metadata-selection.json");
+            var trimmerDescriptorPath = Path.Combine(tempDirectory, "ducktype-aot-contract-metadata-selection.linker.xml");
+            var propsPath = Path.Combine(tempDirectory, "ducktype-aot-contract-metadata-selection.props");
+
+            var mapDocument = new
+            {
+                mappings = new[]
+                {
+                    new
+                    {
+                        mode = "forward",
+                        proxyType = typeof(ITestDuckProxy).FullName,
+                        proxyAssembly = proxyAssemblyName,
+                        targetType = typeof(TestDuckTarget).FullName,
+                        targetAssembly = targetAssemblyName
+                    }
+                }
+            };
+            File.WriteAllText(mapFilePath, JsonConvert.SerializeObject(mapDocument, Formatting.Indented));
+
+            var options = new DuckTypeAotGenerateOptions(
+                proxyAssemblies: new[] { proxyAssemblyPath },
+                targetAssemblies: new[] { targetAssemblyPath, datadogTraceNetStandardPath },
+                targetFolders: Array.Empty<string>(),
+                targetFilters: new[] { "*.dll" },
+                mapFile: mapFilePath,
+                mappingCatalog: null,
+                genericInstantiationsFile: null,
+                outputPath: outputPath,
+                assemblyName: "Datadog.Trace.DuckType.AotRegistry.ContractMetadataSelection",
+                trimmerDescriptorPath: trimmerDescriptorPath,
+                propsPath: propsPath);
+
+            var exitCode = DuckTypeAotGenerateProcessor.Process(options);
+            exitCode.Should().Be(0);
+
+            using var generatedModule = ModuleDefMD.Load(outputPath);
+            var bootstrapType = generatedModule.Find("Datadog.Trace.DuckTyping.Generated.DuckTypeAotRegistryBootstrap", isReflectionName: false);
+            bootstrapType.Should().NotBeNull();
+            var initializeMethod = bootstrapType!.FindMethod("Initialize");
+            initializeMethod.Should().NotBeNull();
+            initializeMethod!.Body.Should().NotBeNull();
+
+            var instructions = initializeMethod.Body!.Instructions.ToList();
+            var validateCallIndex = instructions.FindIndex(
+                instruction =>
+                    instruction.OpCode == OpCodes.Call &&
+                    instruction.Operand is IMethod method &&
+                    string.Equals(method.Name, "ValidateAotRegistryContract", StringComparison.Ordinal));
+            validateCallIndex.Should().BeGreaterThan(0);
+
+            var contractArguments = instructions
+                                   .Take(validateCallIndex)
+                                   .Reverse()
+                                   .Where(instruction => instruction.OpCode == OpCodes.Ldstr && instruction.Operand is string)
+                                   .Take(5)
+                                   .Select(instruction => (string)instruction.Operand!)
+                                   .Reverse()
+                                   .ToList();
+
+            contractArguments.Should().HaveCount(5);
+            contractArguments[1].Should().Be(expectedDatadogTraceVersion);
+            contractArguments[2].Should().Be(expectedDatadogTraceMvid);
+        }
+        finally
+        {
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
+
+    [Fact]
     public void ParseTypeAndAssemblyShouldHandleAssemblyQualifiedGenericType()
     {
         const string typeName = "System.Collections.Generic.Dictionary`2[[System.String, System.Private.CoreLib],[System.Int32, System.Private.CoreLib]]";
@@ -7608,6 +7700,30 @@ public class DuckTypeAotProcessorsTests
                 "Vendors",
                 "StatsdClient",
                 "StatsdClient.snk"));
+    }
+
+    private static string GetDatadogTraceNetStandardAssemblyPath([CallerFilePath] string sourceFilePath = "")
+    {
+        var testsDirectory = Path.GetDirectoryName(sourceFilePath);
+        testsDirectory.Should().NotBeNullOrWhiteSpace();
+
+        return Path.GetFullPath(
+            Path.Combine(
+                testsDirectory!,
+                "..",
+                "..",
+                "src",
+                "Datadog.Trace",
+                "bin",
+                "Release",
+                "netstandard2.0",
+                "Datadog.Trace.dll"));
+    }
+
+    private static string ResolveAssemblyMvidForTest(string assemblyPath)
+    {
+        using var module = ModuleDefMD.Load(assemblyPath);
+        return module.Mvid?.ToString("D") ?? string.Empty;
     }
 
     private static void TryDeleteDirectory(string directory)

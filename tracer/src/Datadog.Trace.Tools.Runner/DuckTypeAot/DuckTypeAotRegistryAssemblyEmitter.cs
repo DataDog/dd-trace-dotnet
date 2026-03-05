@@ -49,6 +49,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         private const string GeneratedProxyNamespace = "Datadog.Trace.DuckTyping.Generated.Proxies";
 
         /// <summary>
+        /// Defines datadog trace assembly name constant.
+        /// </summary>
+        private const string DatadogTraceAssemblyName = "Datadog.Trace";
+
+        /// <summary>
         /// Defines the aot contract schema version constant.
         /// </summary>
         private const string AotContractSchemaVersion = "1";
@@ -402,8 +407,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 AddAssemblyReference(moduleDef, assemblyReferences, targetAssemblyPath);
             }
 
-            var datadogTraceAssemblyPath = typeof(Datadog.Trace.Tracer).Assembly.Location;
-            var datadogTraceAssemblyVersion = typeof(Datadog.Trace.Tracer).Assembly.GetName().Version?.ToString() ?? "0.0.0.0";
+            var datadogTraceAssemblyPath = ResolveDatadogTraceAssemblyPath(mappingResolutionResult.TargetAssemblyPathsByName);
+            var datadogTraceAssemblyVersion = AssemblyName.GetAssemblyName(datadogTraceAssemblyPath).Version?.ToString() ?? "0.0.0.0";
             var datadogTraceAssemblyMvid = ResolveAssemblyMvid(datadogTraceAssemblyPath);
             _ = AddAssemblyReference(moduleDef, assemblyReferences, datadogTraceAssemblyPath);
             AddIgnoresAccessChecksToAttributes(assemblyDef, moduleDef, importedMembers.IgnoresAccessChecksToAttributeCtor, mappingResolutionResult);
@@ -507,6 +512,22 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         {
             using var module = ModuleDefMD.Load(assemblyPath);
             return module.Mvid?.ToString("D") ?? string.Empty;
+        }
+
+        /// <summary>
+        /// Resolves datadog trace assembly path for contract metadata.
+        /// </summary>
+        /// <param name="targetAssemblyPathsByName">The target assembly paths by name value.</param>
+        /// <returns>The resulting string value.</returns>
+        private static string ResolveDatadogTraceAssemblyPath(IReadOnlyDictionary<string, string> targetAssemblyPathsByName)
+        {
+            if (targetAssemblyPathsByName.TryGetValue(DatadogTraceAssemblyName, out var datadogTraceAssemblyPath) &&
+                File.Exists(datadogTraceAssemblyPath))
+            {
+                return datadogTraceAssemblyPath;
+            }
+
+            return typeof(Datadog.Trace.Tracer).Assembly.Location;
         }
 
         /// <summary>
