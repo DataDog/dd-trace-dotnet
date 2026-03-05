@@ -14,8 +14,8 @@ public class CreatedumpTests
 {
     [SkippableTheory]
     [InlineData("invalid", false, 0, null, null, null, null, null)]
-    [InlineData("--crashthread 5 --blabla 100 --signal 3 --aaaaaa --code 4 --dd-native-exception-code 3221225477 --threadcontext 1234567890", true, 100, 3, 4, 5, 0xC0000005, 1234567890)]
-    [InlineData("--crashthread 5 --blabla 99999 --signal 3 --aaaaaa 99998 --code 4 --dd-native-exception-code 3221225477 --threadcontext 123456aabb", false, 0, 3, 4, 5, 0xC0000005, 0x123456aabb)] // Two potential PIDs, that probably don't exist
+    [InlineData("--crashthread 5 --blabla 100 --signal 3 --aaaaaa --code 4 --dd-native-exception-code 3221225477 --dd-thread-context 1234567890", true, 100, 3, 4, 5, 0xC0000005, 1234567890)]
+    [InlineData("--crashthread 5 --blabla 99999 --signal 3 --aaaaaa 99998 --code 4 --dd-native-exception-code 3221225477 --dd-thread-context 123456aabb", false, 0, 3, 4, 5, 0xC0000005, 0x123456aabb)] // Two potential PIDs, that probably don't exist
     [InlineData("10", true, 10, null, null, null, null, null)]
     public void ParseCommandLine(string commandLine, bool expectedResult, int expectedPid, int? expectedSignal, int? expectedSignalCode, int? expectedCrashThread, uint? expectedExceptionCode, IntPtr? expectedThreadContextAddress)
     {
