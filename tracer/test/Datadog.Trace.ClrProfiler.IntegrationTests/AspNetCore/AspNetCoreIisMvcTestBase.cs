@@ -61,7 +61,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
             span.Name switch
             {
-                "aspnet_core.request" => span.IsAspNetCore(metadataSchemaVersion),
+                "aspnet_core.request" => span.Tags?.TryGetValue("http.status_code", out var statusCode) == true && statusCode == "404"
+                    ? span.IsAspNetCore404(metadataSchemaVersion)
+                    : span.IsAspNetCore(metadataSchemaVersion),
                 "aspnet_core_mvc.request" => span.IsAspNetCoreMvc(metadataSchemaVersion),
                 _ => Result.DefaultSuccess,
             };

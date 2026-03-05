@@ -69,7 +69,14 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.code_origin.frames.0.column: 9,
+      _dd.code_origin.frames.0.file: tracer\test\test-applications\integrations\Samples.AspNetCoreMvc21\Controllers\ApiController.cs,
+      _dd.code_origin.frames.0.index: 0,
+      _dd.code_origin.frames.0.line: 16,
+      _dd.code_origin.frames.0.method: Delay,
+      _dd.code_origin.frames.0.type: Samples.AspNetCoreMvc.Controllers.ApiController,
+      _dd.code_origin.type: entry
     },
     Metrics: {
       process_id: 0,
