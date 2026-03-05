@@ -1,10 +1,11 @@
-﻿// <copyright file="DatadogContextPropagator.cs" company="Datadog">
+// <copyright file="DatadogContextPropagator.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 #nullable enable
 
+using System;
 using System.Globalization;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Telemetry;
@@ -57,6 +58,11 @@ namespace Datadog.Trace.Propagators
             {
                 carrierSetter.Set(carrier, HttpHeaderNames.PropagatedTags, propagatedTagsHeader!);
             }
+
+            if (!StringUtil.IsNullOrEmpty(spanContext.OrganizationPropagationMarker))
+            {
+                carrierSetter.Set(carrier, HttpHeaderNames.OrganizationPropagationMarker, spanContext.OrganizationPropagationMarker);
+            }
         }
 
         public bool TryExtract<TCarrier, TCarrierGetter>(TCarrier carrier, TCarrierGetter carrierGetter, out PropagationContext context)
@@ -76,6 +82,7 @@ namespace Datadog.Trace.Propagators
             var samplingPriority = ParseUtility.ParseInt32(carrier, carrierGetter, HttpHeaderNames.SamplingPriority);
             var origin = ParseUtility.ParseString(carrier, carrierGetter, HttpHeaderNames.Origin);
             var propagatedTraceTags = ParseUtility.ParseString(carrier, carrierGetter, HttpHeaderNames.PropagatedTags);
+            var organizationPropagationMarker = ParseUtility.ParseString(carrier, carrierGetter, HttpHeaderNames.OrganizationPropagationMarker);
 
             var traceTags = TagPropagation.ParseHeader(propagatedTraceTags);
 
@@ -86,6 +93,7 @@ namespace Datadog.Trace.Propagators
             var spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, origin, isRemote: true)
                               {
                                   PropagatedTags = traceTags,
+                                  OrganizationPropagationMarker = organizationPropagationMarker,
                               };
 
             context = new PropagationContext(spanContext, baggage: null);
