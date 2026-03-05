@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.Collections.Generic;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -16,11 +17,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             : base(sampleAppName, output)
         {
             SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
+			SetEnvironmentVariable(ConfigurationKeys.Debugger.CodeOriginForSpansEnabled, "false");
         }
 
         protected TracingIntegrationTest(string sampleAppName, string samplePathOverrides, ITestOutputHelper output)
             : base(sampleAppName, samplePathOverrides, output)
         {
+            SetEnvironmentVariable(ConfigurationKeys.Debugger.CodeOriginForSpansEnabled, "false");
         }
 
         public abstract Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion);
