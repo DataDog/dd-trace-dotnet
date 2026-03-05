@@ -271,7 +271,10 @@ namespace Datadog.Trace
                 if (oldManager.Statsd != newManager.Statsd)
                 {
                     statsdReplaced = true;
-                    oldManager.Statsd?.Dispose();
+                    if (oldManager.Statsd is not null)
+                    {
+                        await oldManager.Statsd.DisposeAsync().ConfigureAwait(false);
+                    }
                 }
 
                 var discoveryReplaced = false;
@@ -776,13 +779,9 @@ namespace Datadog.Trace
                     instance.RuntimeMetrics?.Dispose();
 
                     Log.Debug("Disposing StatsD.");
-                    if (instance.Statsd is StatsdManager statsdManager)
+                    if (instance.Statsd is not null)
                     {
-                        await statsdManager.DisposeAsync().ConfigureAwait(false);
-                    }
-                    else
-                    {
-                        instance.Statsd?.Dispose();
+                        await instance.Statsd.DisposeAsync().ConfigureAwait(false);
                     }
 
                     Log.Debug("Finished waiting for disposals.");

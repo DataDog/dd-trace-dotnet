@@ -13,7 +13,7 @@ namespace Datadog.Trace.Vendors.StatsdClient
     /// DogStatsdService is a <a href="https://docs.datadoghq.com/developers/dogstatsd/?tab=net">DogStatsD client</a>.
     /// Dispose must be called to flush all the metrics.
     /// </summary>
-    internal class DogStatsdService : IDogStatsd, IDisposable
+    internal class DogStatsdService : IDogStatsd
     {
         private StatsdBuilder _statsdBuilder = new StatsdBuilder(new StatsBufferizeFactory());
         private MetricsSender _metricsSender;
@@ -253,16 +253,6 @@ namespace Datadog.Trace.Vendors.StatsdClient
         public void Flush()
         {
             _statsdData?.Flush();
-        }
-
-        /// <summary>
-        /// Disposes an instance of DogStatsdService.
-        /// Flushes all metrics.
-        /// </summary>
-        public void Dispose()
-        {
-            _statsdData?.Dispose();
-            _statsdData = null;
         }
 
         /// <summary>

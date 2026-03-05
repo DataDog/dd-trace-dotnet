@@ -157,13 +157,6 @@ internal sealed class StatsdManager : IStatsdManager
         }
     }
 
-    public void Dispose()
-    {
-        _settingSubscription.Dispose();
-        // We swap out the client to make sure we do any flushes.
-        EnsureClient(ensureCreated: false, forceRecreate: true);
-    }
-
     public async Task DisposeAsync()
     {
         _settingSubscription.Dispose();
@@ -328,7 +321,7 @@ internal sealed class StatsdManager : IStatsdManager
             if (Interlocked.Exchange(ref _disposed, 1) == 0)
             {
                 Log.Debug("Disposing DogStatsdService");
-                _ = DisposeClientAsync();
+                _ = Task.Run(DisposeClientAsync);
             }
         }
 
@@ -336,14 +329,7 @@ internal sealed class StatsdManager : IStatsdManager
         {
             try
             {
-                if (Client is DogStatsdService dogStatsd)
-                {
-                    await dogStatsd.DisposeAsync().ConfigureAwait(false);
-                }
-                else
-                {
-                    Client.Dispose();
-                }
+                await Client.DisposeAsync().ConfigureAwait(false);
             }
             catch (Exception ex)
             {
