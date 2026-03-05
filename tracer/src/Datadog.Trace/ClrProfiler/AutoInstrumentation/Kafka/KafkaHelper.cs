@@ -262,7 +262,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                         // write the _new_ pathway (the "consume" checkpoint that we just set above) to the headers as a way to pass its value to an eventual
                         // call to SpanContextExtractor.Extract by a user who'd like to re-pair pathways after a batch consume.
                         // Note that this header only exists on the consume side, and Kafka never sees it.
-                        var base64PathwayContext = Convert.ToBase64String(BitConverter.GetBytes(span.Context.PathwayContext.Value.Hash.Value));
+                        var base64PathwayContext = Convert.ToBase64String(PathwayContextEncoder.Encode(span.Context.PathwayContext.Value));
                         message.Headers.Add(DataStreamsPropagationHeaders.TemporaryBase64PathwayContext, Encoding.UTF8.GetBytes(base64PathwayContext));
                     }
                 }
