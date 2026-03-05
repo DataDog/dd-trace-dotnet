@@ -4,6 +4,7 @@
 // </copyright>
 
 #nullable enable
+using System.IO;
 using System.Threading.Tasks;
 using Datadog.Trace.DuckTyping;
 
@@ -21,4 +22,6 @@ internal interface IHttpContent : IDuckType
     Task LoadIntoBufferAsync();
 
     Task<string> ReadAsStringAsync();
+
+    Task<Stream> ReadAsStreamAsync();
 }

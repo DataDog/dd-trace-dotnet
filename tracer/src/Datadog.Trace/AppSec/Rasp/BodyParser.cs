@@ -27,14 +27,22 @@ internal static class BodyParser
 
         using var stringReader = new StringReader(json);
         using var jsonReader = new JsonTextReader(stringReader);
+        jsonReader.MaxDepth = null; // disable built-in limit; we enforce MaxDepth ourselves
 
         if (!jsonReader.Read())
         {
             return null;
         }
 
-        State state = new();
-        return ReadValue(jsonReader, ref state, 0);
+        try
+        {
+            State state = new(MaxElements);
+            return ReadValue(jsonReader, ref state, 0);
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
     }
 
     private static object? ReadValue(JsonTextReader r, ref State state, int depth)
