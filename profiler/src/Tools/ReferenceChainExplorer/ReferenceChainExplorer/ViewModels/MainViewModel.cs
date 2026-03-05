@@ -8,6 +8,7 @@ using System.ComponentModel;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
+using System.Windows.Threading;
 using ReferenceChainExplorer.Settings;
 using ReferenceChainModel;
 
@@ -24,6 +25,8 @@ public class MainViewModel : INotifyPropertyChanged
     private string _statusText = "No file loaded";
     private string? _lastLoadedDirectory;
     private string _typeSearchText = string.Empty;
+    private string _forwardTreeFilterText = string.Empty;
+    private DispatcherTimer? _forwardTreeFilterDebounce;
 
     public MainViewModel()
     {
@@ -120,6 +123,24 @@ public class MainViewModel : INotifyPropertyChanged
     }
 
     /// <summary>
+    /// Filter text for the forward reference tree. Only paths containing a matching type are shown.
+    /// Match is case-insensitive on short type names. Applied after 300ms debounce.
+    /// </summary>
+    public string ForwardTreeFilterText
+    {
+        get => _forwardTreeFilterText;
+        set
+        {
+            if (_forwardTreeFilterText != value)
+            {
+                _forwardTreeFilterText = value ?? string.Empty;
+                OnPropertyChanged();
+                DebounceForwardTreeUpdate();
+            }
+        }
+    }
+
+    /// <summary>
     /// Gets the forward reference tree rooted by category (Stack, Handle, etc.).
     /// Replaced when a new file is loaded.
     /// </summary>
@@ -158,9 +179,10 @@ public class MainViewModel : INotifyPropertyChanged
             ReverseChains.Clear();
             _selectedType = null;
             TypeSearchText = string.Empty;
+            ForwardTreeFilterText = string.Empty;
             OnPropertyChanged(nameof(SelectedType));
 
-            ForwardTreeRoots = ForwardTreeBuilder.Build(_tree);
+            UpdateForwardTree();
 
             var summaries = TypeSummary.BuildFromTree(_tree);
             foreach (var summary in summaries.OrderByDescending(s => s.TotalInstanceCount))
@@ -201,6 +223,37 @@ public class MainViewModel : INotifyPropertyChanged
         {
             ReverseChains.Add(node);
         }
+    }
+
+    private void DebounceForwardTreeUpdate()
+    {
+        _forwardTreeFilterDebounce?.Stop();
+
+        _forwardTreeFilterDebounce = new DispatcherTimer(DispatcherPriority.ApplicationIdle)
+        {
+            Interval = TimeSpan.FromMilliseconds(300),
+        };
+        _forwardTreeFilterDebounce.Tick += (_, _) =>
+        {
+            _forwardTreeFilterDebounce.Stop();
+            _forwardTreeFilterDebounce = null;
+            UpdateForwardTree();
+        };
+        _forwardTreeFilterDebounce.Start();
+    }
+
+    private void UpdateForwardTree()
+    {
+        _forwardTreeFilterDebounce?.Stop();
+        _forwardTreeFilterDebounce = null;
+
+        if (_tree is null)
+        {
+            return;
+        }
+
+        var filter = string.IsNullOrWhiteSpace(_forwardTreeFilterText) ? null : _forwardTreeFilterText;
+        ForwardTreeRoots = ForwardTreeBuilder.BuildFiltered(_tree, filter);
     }
 
     private void OnPropertyChanged([CallerMemberName] string? propertyName = null)

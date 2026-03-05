@@ -300,10 +300,24 @@
                 </Grid>
             </TabItem>
             <TabItem Header="Forward Reference Tree">
-                <TreeView ItemsSource="{Binding ForwardTreeRoots}"
-                          Margin="4"
-                          BorderThickness="1"
-                          BorderBrush="#CCCCCC" />
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="4,4,4,2">
+                        <TextBlock Text="Filter (show only paths containing type):" VerticalAlignment="Center" Margin="0,0,8,0" />
+                        <TextBox MinWidth="200"
+                                 Padding="6,4"
+                                 FontSize="13"
+                                 Text="{Binding ForwardTreeFilterText, UpdateSourceTrigger=PropertyChanged}" />
+                    </StackPanel>
+                    <TreeView Grid.Row="1"
+                              ItemsSource="{Binding ForwardTreeRoots}"
+                              Margin="4"
+                              BorderThickness="1"
+                              BorderBrush="#CCCCCC" />
+                </Grid>
             </TabItem>
         </TabControl>
     </DockPanel>
