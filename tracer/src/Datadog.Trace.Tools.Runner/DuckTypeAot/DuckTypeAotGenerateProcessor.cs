@@ -114,6 +114,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             try
             {
                 var emissionResult = DuckTypeAotRegistryAssemblyEmitter.Emit(options, artifactPaths, mappingResolutionResult);
+                foreach (var warning in emissionResult.Warnings)
+                {
+                    AnsiConsole.MarkupLine($"[yellow]Warning:[/] {warning.EscapeMarkup()}");
+                }
+
                 var compatibilityArtifacts = DuckTypeAotArtifactsWriter.WriteAll(artifactPaths, mappingResolutionResult, emissionResult);
 
                 AnsiConsole.MarkupLine($"[green]Generated registry assembly:[/] {artifactPaths.OutputAssemblyPath.EscapeMarkup()}");
