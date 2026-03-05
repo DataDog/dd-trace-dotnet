@@ -47,6 +47,10 @@ public:
 
     std::list<UpscalingInfo> GetInfos() override;
 
+    // Memory measurement
+    size_t GetMemorySize() const;
+    void LogMemoryBreakdown() const;
+
 private:
     struct ExceptionBucket
     {
@@ -55,6 +59,23 @@ private:
     };
 
 private:
+    struct MemoryStats
+    {
+        size_t baseSize;
+        size_t exceptionTypesMapSize;
+        size_t exceptionTypesCount;
+        size_t exceptionTypesBuckets;
+        size_t exceptionTypesStringsSize;
+        size_t samplerSize;
+
+        size_t GetTotal() const
+        {
+            return baseSize + exceptionTypesMapSize + exceptionTypesStringsSize + samplerSize;
+        }
+    };
+
+    MemoryStats ComputeMemoryStats() const;
+
     bool LoadExceptionMetadata();
     bool GetExceptionType(ClassID classId, std::string& exceptionType);
 
@@ -72,7 +93,8 @@ private:
     ClassID _exceptionClassId;
     bool _loggedMscorlibError;
     std::unordered_map<ClassID, std::string> _exceptionTypes;
-    std::mutex _exceptionTypesLock;
+    // mutable to allow locking in const methods (e.g., GetMemorySize, LogMemoryBreakdown)
+    mutable std::mutex _exceptionTypesLock;
     GroupSampler<std::string> _sampler;
     IConfiguration const* const _pConfiguration;
     std::shared_ptr<CounterMetric> _exceptionsCountMetric;

@@ -29,7 +29,8 @@ FrameStore::FrameStore(ICorProfilerInfo4* pCorProfilerInfo,
     ManagedCodeCache* pManagedCodeCache) :
     _pCorProfilerInfo{pCorProfilerInfo},
     _pDebugInfoStore{debugInfoStore},
-    _pManagedCodeCache{pManagedCodeCache}
+    _pManagedCodeCache{pManagedCodeCache},
+    _cachedItemsSize(0)
 {
     if (_pManagedCodeCache == nullptr)
     {
@@ -208,6 +209,11 @@ FrameInfoView FrameStore::GetManagedFrame(FunctionID functionId)
             std::stringstream builder;
             builder << UnknownManagedType << " |fn:" << std::move(methodName) << " |fg:" << std::move(methodGenericParameters) << " |sg:" << std::move(signature);
             value = {UnknownManagedAssembly, builder.str(), "", 0};
+
+            // Incrementally track item size
+            size_t itemSize = value.ModuleName.capacity() + value.Frame.capacity();
+            _cachedItemsSize.fetch_add(itemSize, std::memory_order_relaxed);
+
             return value;
         }
 
@@ -236,6 +242,11 @@ FrameInfoView FrameStore::GetManagedFrame(FunctionID functionId)
 
         // store it into the function cache and return an iterator to the stored elements
         auto [it, _] = _methods.emplace(functionId, FrameInfo{pTypeDesc->Assembly, managedFrame, debugInfo.File, debugInfo.StartLine});
+
+        // Incrementally track item size
+        size_t itemSize = it->second.ModuleName.capacity() + it->second.Frame.capacity();
+        _cachedItemsSize.fetch_add(itemSize, std::memory_order_relaxed);
+
         // first is the key, second is the associated value
         return it->second;
     }
@@ -296,6 +307,9 @@ bool FrameStore::GetTypeName(ClassID classId, std::string_view& name)
     auto& entry = _fullTypeNames[classId];
     entry = pTypeDesc->Type + pTypeDesc->Parameters;
     name = {entry.data(), entry.size()};
+
+    // Incrementally track item size
+    _cachedItemsSize.fetch_add(entry.capacity(), std::memory_order_relaxed);
 
     return true;
 }
@@ -412,6 +426,11 @@ bool FrameStore::GetTypeDesc(ClassID classId, TypeDesc*& pTypeDesc)
             }
 
             pTypeDesc = &(_types[originalClassId] = typeDesc);
+
+            // Incrementally track item size
+            size_t itemSize = pTypeDesc->Assembly.capacity() + pTypeDesc->Namespace.capacity() +
+                              pTypeDesc->Type.capacity() + pTypeDesc->Parameters.capacity();
+            _cachedItemsSize.fetch_add(itemSize, std::memory_order_relaxed);
         }
         else
         {
@@ -1527,4 +1546,110 @@ PCCOR_SIGNATURE ParseByte(PCCOR_SIGNATURE pbSig, BYTE* pByte)
 {
     *pByte = *pbSig++;
     return pbSig;
+}
+
+FrameStore::MemoryStats FrameStore::ComputeMemoryStats() const
+{
+    MemoryStats stats{};
+    stats.baseSize = sizeof(FrameStore);
+
+    // Calculate memory for _methods cache
+    {
+        std::lock_guard<std::mutex> lock(_methodsLock);
+        stats.methodsBuckets = _methods.bucket_count();
+        stats.methodsCount = _methods.size();
+        stats.methodsCacheSize = stats.methodsBuckets * (sizeof(FunctionID) + sizeof(FrameInfo) + sizeof(void*));
+        for (const auto& [key, frameInfo] : _methods)
+        {
+            stats.methodsCacheSize += frameInfo.ModuleName.capacity();
+            stats.methodsCacheSize += frameInfo.Frame.capacity();
+            // Filename is a string_view, no additional memory
+        }
+    }
+
+    // Calculate memory for _types cache
+    {
+        std::lock_guard<std::mutex> lock(_typesLock);
+        stats.typesBuckets = _types.bucket_count();
+        stats.typesCount = _types.size();
+        stats.typesCacheSize = stats.typesBuckets * (sizeof(ClassID) + sizeof(TypeDesc) + sizeof(void*));
+        for (const auto& [key, typeDesc] : _types)
+        {
+            stats.typesCacheSize += typeDesc.Assembly.capacity();
+            stats.typesCacheSize += typeDesc.Namespace.capacity();
+            stats.typesCacheSize += typeDesc.Type.capacity();
+            stats.typesCacheSize += typeDesc.Parameters.capacity();
+        }
+    }
+
+    // Calculate memory for _framePerNativeModule cache
+    {
+        std::lock_guard<std::mutex> lock(_nativeLock);
+        stats.nativeFramesBuckets = _framePerNativeModule.bucket_count();
+        stats.nativeFramesCount = _framePerNativeModule.size();
+        stats.nativeFramesCacheSize = stats.nativeFramesBuckets * (sizeof(std::string) + sizeof(std::string) + sizeof(void*));
+        for (const auto& [key, value] : _framePerNativeModule)
+        {
+            stats.nativeFramesCacheSize += key.capacity();
+            stats.nativeFramesCacheSize += value.capacity();
+        }
+    }
+
+    // Calculate memory for _fullTypeNames cache
+    {
+        std::lock_guard<std::mutex> lock(_fullTypeNamesLock);
+        stats.fullTypeNamesBuckets = _fullTypeNames.bucket_count();
+        stats.fullTypeNamesCount = _fullTypeNames.size();
+        stats.fullTypeNamesCacheSize = stats.fullTypeNamesBuckets * (sizeof(ClassID) + sizeof(std::string) + sizeof(void*));
+        for (const auto& [key, value] : _fullTypeNames)
+        {
+            stats.fullTypeNamesCacheSize += value.capacity();
+        }
+    }
+
+    return stats;
+}
+
+size_t FrameStore::GetMemorySize() const
+{
+    size_t totalSize = sizeof(FrameStore);
+
+    // Calculate container overhead on-demand
+    {
+        std::lock_guard<std::mutex> lock(_methodsLock);
+        totalSize += _methods.bucket_count() * (sizeof(FunctionID) + sizeof(FrameInfo) + sizeof(void*));
+    }
+
+    {
+        std::lock_guard<std::mutex> lock(_typesLock);
+        totalSize += _types.bucket_count() * (sizeof(ClassID) + sizeof(TypeDesc) + sizeof(void*));
+    }
+
+    {
+        std::lock_guard<std::mutex> lock(_nativeLock);
+        totalSize += _framePerNativeModule.bucket_count() * (sizeof(std::string) * 2 + sizeof(void*));
+    }
+
+    {
+        std::lock_guard<std::mutex> lock(_fullTypeNamesLock);
+        totalSize += _fullTypeNames.bucket_count() * (sizeof(ClassID) + sizeof(std::string) + sizeof(void*));
+    }
+
+    // Add cached items size (updated incrementally at add time)
+    totalSize += _cachedItemsSize.load(std::memory_order_relaxed);
+
+    return totalSize;
+}
+
+void FrameStore::LogMemoryBreakdown() const
+{
+    auto stats = ComputeMemoryStats();
+
+    Log::Debug("FrameStore Memory Breakdown:");
+    Log::Debug("  Base object size:        ", stats.baseSize, " bytes");
+    Log::Debug("  Methods cache:           ", stats.methodsCacheSize, " bytes (", stats.methodsCount, " entries, ", stats.methodsBuckets, " buckets)");
+    Log::Debug("  Types cache:             ", stats.typesCacheSize, " bytes (", stats.typesCount, " entries, ", stats.typesBuckets, " buckets)");
+    Log::Debug("  Native frames cache:     ", stats.nativeFramesCacheSize, " bytes (", stats.nativeFramesCount, " entries, ", stats.nativeFramesBuckets, " buckets)");
+    Log::Debug("  Full type names cache:   ", stats.fullTypeNamesCacheSize, " bytes (", stats.fullTypeNamesCount, " entries, ", stats.fullTypeNamesBuckets, " buckets)");
+    Log::Debug("  Total memory:            ", stats.GetTotal(), " bytes (", (stats.GetTotal() / 1024.0), " KB)");
 }
