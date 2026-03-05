@@ -13,12 +13,26 @@ namespace Datadog.Trace.Propagators
 {
     internal static class SpanContextPropagatorFactory
     {
-        public static SpanContextPropagator GetSpanContextPropagator(string[] requestedInjectors, string[] requestedExtractors, bool propagationExtractFirst, ExtractBehavior extractBehavior = default)
+        public static SpanContextPropagator GetSpanContextPropagator(
+            string[] requestedInjectors,
+            string[] requestedExtractors,
+            bool propagationExtractFirst,
+            ExtractBehavior extractBehavior = default,
+            bool orgGuardEnforce = false,
+            string? orgPropagationMarker = null,
+            string[]? trustedOrgPropagationMarkers = null)
         {
             var injectors = GetPropagators<IContextInjector>(requestedInjectors);
             var extractors = GetPropagators<IContextExtractor>(requestedExtractors);
 
-            return new SpanContextPropagator(injectors, extractors, propagationExtractFirst, extractBehavior);
+            return new SpanContextPropagator(
+                injectors,
+                extractors,
+                propagationExtractFirst,
+                extractBehavior,
+                orgGuardEnforce,
+                orgPropagationMarker,
+                trustedOrgPropagationMarkers);
         }
 
         public static IEnumerable<TPropagator> GetPropagators<TPropagator>(string[] headerStyles)

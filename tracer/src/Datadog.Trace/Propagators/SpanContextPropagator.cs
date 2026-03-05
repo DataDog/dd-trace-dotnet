@@ -1,4 +1,4 @@
-﻿// <copyright file="SpanContextPropagator.cs" company="Datadog">
+// <copyright file="SpanContextPropagator.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -28,17 +28,26 @@ namespace Datadog.Trace.Propagators
         private readonly IContextExtractor[] _extractors;
         private readonly bool _propagationExtractFirstOnly;
         private readonly ExtractBehavior _extractBehavior;
+        private readonly bool _orgGuardEnforce;
+        private readonly string? _orgPropagationMarker;
+        private readonly string[] _trustedOrgPropagationMarkers;
 
         internal SpanContextPropagator(
             IEnumerable<IContextInjector>? injectors,
             IEnumerable<IContextExtractor>? extractors,
             bool propagationExtractFirstValue,
-            ExtractBehavior extractBehavior = default)
+            ExtractBehavior extractBehavior = default,
+            bool orgGuardEnforce = false,
+            string? orgPropagationMarker = null,
+            string[]? trustedOrgPropagationMarkers = null)
         {
             _propagationExtractFirstOnly = propagationExtractFirstValue;
             _extractBehavior = extractBehavior;
             _injectors = injectors?.ToArray() ?? [];
             _extractors = extractors?.ToArray() ?? [];
+            _orgGuardEnforce = orgGuardEnforce;
+            _orgPropagationMarker = orgPropagationMarker;
+            _trustedOrgPropagationMarkers = trustedOrgPropagationMarkers ?? [];
         }
 
         /// <summary>
