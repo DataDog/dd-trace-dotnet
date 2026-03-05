@@ -8,12 +8,8 @@
 namespace Datadog.Trace.DuckTyping
 {
     /// <summary>
-    /// Marks a member inside a reverse duck-typing contract for reverse method binding metadata.
+    /// Duck reverse method attribute
     /// </summary>
-    /// <remarks>
-    /// This member-level attribute is independent from <see cref="DuckReverseAttribute"/>, which declares
-    /// type-level reverse target mapping metadata used by AOT discovery.
-    /// </remarks>
     internal sealed class DuckReverseMethodAttribute : DuckAttributeBase
     {
     }

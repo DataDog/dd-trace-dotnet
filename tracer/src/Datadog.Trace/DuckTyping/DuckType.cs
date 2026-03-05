@@ -21,11 +21,11 @@ using Datadog.Trace.Util;
 namespace Datadog.Trace.DuckTyping
 {
     /// <summary>
-    /// Delegate used by DuckType caches to create a proxy instance from an object input.
+    /// Create struct proxy instance delegate
     /// </summary>
     /// <typeparam name="T">Type of struct</typeparam>
     /// <param name="instance">Object instance</param>
-    /// <returns>Proxy instance typed as <typeparamref name="T"/>.</returns>
+    /// <returns>Proxy instance</returns>
     [return: NotNull]
     internal delegate T CreateProxyInstance<T>(object? instance);
 
@@ -36,123 +36,6 @@ namespace Datadog.Trace.DuckTyping
     [EditorBrowsable(EditorBrowsableState.Never)]
     public static partial class DuckType
     {
-        /// <summary>
-        /// Enables the isolated NativeAOT duck typing engine.
-        /// </summary>
-        public static void EnableAotMode()
-        {
-            EnsureRuntimeModeIsInitialized(DuckTypeRuntimeMode.Aot);
-        }
-
-        /// <summary>
-        /// Registers an AOT-generated forward duck typing proxy.
-        /// </summary>
-        /// <param name="proxyDefinitionType">Duck typing proxy definition.</param>
-        /// <param name="targetType">Target runtime type.</param>
-        /// <param name="generatedProxyType">Generated proxy implementation type.</param>
-        /// <param name="activator">
-        /// Activator delegate used to create the generated proxy from an <see cref="object"/> runtime instance.
-        /// This overload is maintained for compatibility with existing manual registration flows.
-        /// </param>
-        public static void RegisterAotProxy(Type proxyDefinitionType, Type targetType, Type generatedProxyType, Func<object?, object?> activator)
-        {
-            EnsureRuntimeModeIsInitialized(DuckTypeRuntimeMode.Aot);
-            DuckTypeAotEngine.RegisterProxy(proxyDefinitionType, targetType, generatedProxyType, activator);
-        }
-
-        /// <summary>
-        /// Registers an AOT-generated forward duck typing proxy using a static activator method handle.
-        /// </summary>
-        /// <param name="proxyDefinitionType">Duck typing proxy definition.</param>
-        /// <param name="targetType">Target runtime type.</param>
-        /// <param name="generatedProxyType">Generated proxy implementation type.</param>
-        /// <param name="activatorMethodHandle">
-        /// Method handle of the generated static activator. This is the preferred overload for generated registries
-        /// because it avoids building <see cref="Func{T, TResult}"/> delegates in bootstrap IL.
-        /// </param>
-        public static void RegisterAotProxy(Type proxyDefinitionType, Type targetType, Type generatedProxyType, RuntimeMethodHandle activatorMethodHandle)
-        {
-            EnsureRuntimeModeIsInitialized(DuckTypeRuntimeMode.Aot);
-            DuckTypeAotEngine.RegisterProxy(proxyDefinitionType, targetType, generatedProxyType, activatorMethodHandle);
-        }
-
-        /// <summary>
-        /// Registers an AOT-generated reverse duck typing proxy.
-        /// </summary>
-        /// <param name="typeToDeriveFrom">Type to derive the reverse proxy from.</param>
-        /// <param name="delegationType">Type that provides delegated implementations.</param>
-        /// <param name="generatedProxyType">Generated reverse proxy implementation type.</param>
-        /// <param name="activator">
-        /// Activator delegate used to create the generated reverse proxy from an <see cref="object"/> delegation instance.
-        /// This overload is maintained for compatibility with existing manual registration flows.
-        /// </param>
-        public static void RegisterAotReverseProxy(Type typeToDeriveFrom, Type delegationType, Type generatedProxyType, Func<object?, object?> activator)
-        {
-            EnsureRuntimeModeIsInitialized(DuckTypeRuntimeMode.Aot);
-            DuckTypeAotEngine.RegisterReverseProxy(typeToDeriveFrom, delegationType, generatedProxyType, activator);
-        }
-
-        /// <summary>
-        /// Registers an AOT-generated reverse duck typing proxy using a static activator method handle.
-        /// </summary>
-        /// <param name="typeToDeriveFrom">Type to derive the reverse proxy from.</param>
-        /// <param name="delegationType">Type that provides delegated implementations.</param>
-        /// <param name="generatedProxyType">Generated reverse proxy implementation type.</param>
-        /// <param name="activatorMethodHandle">
-        /// Method handle of the generated static reverse activator. This is the preferred overload for generated registries
-        /// because it preserves typed activator paths during registration.
-        /// </param>
-        public static void RegisterAotReverseProxy(Type typeToDeriveFrom, Type delegationType, Type generatedProxyType, RuntimeMethodHandle activatorMethodHandle)
-        {
-            EnsureRuntimeModeIsInitialized(DuckTypeRuntimeMode.Aot);
-            DuckTypeAotEngine.RegisterReverseProxy(typeToDeriveFrom, delegationType, generatedProxyType, activatorMethodHandle);
-        }
-
-        /// <summary>
-        /// Registers an AOT forward mapping failure so runtime behavior matches dynamic exception semantics.
-        /// </summary>
-        /// <param name="proxyDefinitionType">Duck typing proxy definition.</param>
-        /// <param name="targetType">Target runtime type.</param>
-        /// <param name="exceptionType">Exception type that should be thrown when this mapping is requested.</param>
-        public static void RegisterAotProxyFailure(Type proxyDefinitionType, Type targetType, Type exceptionType)
-        {
-            EnsureRuntimeModeIsInitialized(DuckTypeRuntimeMode.Aot);
-            DuckTypeAotEngine.RegisterProxyFailure(proxyDefinitionType, targetType, exceptionType);
-        }
-
-        /// <summary>
-        /// Registers an AOT reverse mapping failure so runtime behavior matches dynamic exception semantics.
-        /// </summary>
-        /// <param name="typeToDeriveFrom">Type to derive the reverse proxy from.</param>
-        /// <param name="delegationType">Type that provides delegated implementations.</param>
-        /// <param name="exceptionType">Exception type that should be thrown when this mapping is requested.</param>
-        public static void RegisterAotReverseProxyFailure(Type typeToDeriveFrom, Type delegationType, Type exceptionType)
-        {
-            EnsureRuntimeModeIsInitialized(DuckTypeRuntimeMode.Aot);
-            DuckTypeAotEngine.RegisterReverseProxyFailure(typeToDeriveFrom, delegationType, exceptionType);
-        }
-
-        /// <summary>
-        /// Validates AOT-generated registry metadata against the current Datadog.Trace runtime contract.
-        /// </summary>
-        /// <param name="schemaVersion">AOT contract schema version.</param>
-        /// <param name="datadogTraceAssemblyVersion">Datadog.Trace assembly version used by the generator.</param>
-        /// <param name="datadogTraceAssemblyMvid">Datadog.Trace assembly MVID used by the generator.</param>
-        /// <param name="registryAssemblyFullName">Generated registry assembly full name.</param>
-        /// <param name="registryAssemblyMvid">Generated registry assembly module MVID.</param>
-        public static void ValidateAotRegistryContract(
-            string schemaVersion,
-            string datadogTraceAssemblyVersion,
-            string datadogTraceAssemblyMvid,
-            string registryAssemblyFullName,
-            string registryAssemblyMvid)
-        {
-            EnsureRuntimeModeIsInitialized(DuckTypeRuntimeMode.Aot);
-            DuckTypeAotEngine.ValidateContract(
-                new DuckTypeAotContract(schemaVersion, datadogTraceAssemblyVersion, datadogTraceAssemblyMvid),
-                new DuckTypeAotAssemblyMetadata(registryAssemblyFullName, registryAssemblyMvid));
-        }
-
         /// <summary>
         /// Create duck type proxy using a base type
         /// </summary>
@@ -186,7 +69,7 @@ namespace Datadog.Trace.DuckTyping
         }
 
         /// <summary>
-        /// Determines whether a proxy can be created.
+        /// Gets if a proxy can be created
         /// </summary>
         /// <param name="instance">Instance object</param>
         /// <typeparam name="T">Duck type</typeparam>
@@ -198,7 +81,7 @@ namespace Datadog.Trace.DuckTyping
         }
 
         /// <summary>
-        /// Determines whether a proxy can be created.
+        /// Gets if a proxy can be created
         /// </summary>
         /// <param name="proxyType">Duck type</param>
         /// <param name="instance">Instance object</param>
@@ -230,31 +113,6 @@ namespace Datadog.Trace.DuckTyping
             }
 
             return GetOrCreateDynamicProxyType(proxyType, targetType);
-        }
-
-        /// <summary>
-        /// Gets or create a new proxy type for ducktyping
-        /// </summary>
-        /// <param name="proxyType">ProxyType interface</param>
-        /// <param name="targetType">Target type</param>
-        /// <returns>CreateTypeResult instance</returns>
-        private static CreateTypeResult GetOrCreateDynamicProxyType(Type proxyType, Type targetType)
-        {
-            DuckTypeAotDiscoveryRecorder.Record(proxyType, targetType, reverse: false);
-
-            return DuckTypeCache.GetOrAdd(
-                new TypesTuple(proxyType, targetType),
-                key => new Lazy<CreateTypeResult>(() =>
-                {
-                    var dryResult = CreateProxyType(key.ProxyDefinitionType, key.TargetType, true);
-                    if (dryResult.CanCreate())
-                    {
-                        return CreateProxyType(key.ProxyDefinitionType, key.TargetType, false);
-                    }
-
-                    return dryResult;
-                }))
-                .Value;
         }
 
         /// <summary>
@@ -292,102 +150,6 @@ namespace Datadog.Trace.DuckTyping
             return GetOrCreateDynamicReverseProxyType(typeToDeriveFrom, delegationType);
         }
 
-        /// <summary>
-        /// Gets or create a new reverse proxy type for ducktyping
-        /// </summary>
-        /// <param name="typeToDeriveFrom">The type to derive from</param>
-        /// <param name="delegationType">The type to delegate additional implementations to</param>
-        /// <returns>CreateTypeResult instance</returns>
-        private static CreateTypeResult GetOrCreateDynamicReverseProxyType(Type typeToDeriveFrom, Type delegationType)
-        {
-            DuckTypeAotDiscoveryRecorder.Record(typeToDeriveFrom, delegationType, reverse: true);
-
-            return DuckTypeCache.GetOrAdd(
-                new TypesTuple(typeToDeriveFrom, delegationType),
-                key => new Lazy<CreateTypeResult>(() =>
-                {
-                    var dryResult = CreateReverseProxyType(key.ProxyDefinitionType, key.TargetType, true);
-                    if (dryResult.CanCreate())
-                    {
-                        return CreateReverseProxyType(key.ProxyDefinitionType, key.TargetType, false);
-                    }
-
-                    return dryResult;
-                }))
-                .Value;
-        }
-
-        /// <summary>
-        /// Determines whether aot mode.
-        /// </summary>
-        /// <returns>true if the operation succeeds; otherwise, false.</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static bool IsAotMode()
-        {
-            return RuntimeMode == DuckTypeRuntimeMode.Aot;
-        }
-
-        /// <summary>
-        /// Resets reset runtime mode for tests.
-        /// </summary>
-        internal static void ResetRuntimeModeForTests()
-        {
-            DuckTypeAotEngine.ResetForTests();
-            DuckTypeCache.Clear();
-            lock (Locker)
-            {
-                ActiveBuilders.Clear();
-                IgnoresAccessChecksToAssembliesSetDictionary.Clear();
-                _assemblyCount = 0;
-                _typeCount = 0;
-            }
-
-            Volatile.Write(ref _runtimeMode, (int)DuckTypeRuntimeMode.Dynamic);
-            Volatile.Write(ref _runtimeModeInitialized, 0);
-        }
-
-        /// <summary>
-        /// Ensures ensure runtime mode is initialized.
-        /// </summary>
-        /// <returns>The result produced by this operation.</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static DuckTypeRuntimeMode EnsureRuntimeModeIsInitialized()
-        {
-            if (Volatile.Read(ref _runtimeModeInitialized) == 0)
-            {
-                _ = Interlocked.CompareExchange(ref _runtimeModeInitialized, 1, 0);
-            }
-
-            return RuntimeMode;
-        }
-
-        /// <summary>
-        /// Ensures ensure runtime mode is initialized.
-        /// </summary>
-        /// <param name="mode">The mode value.</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static void EnsureRuntimeModeIsInitialized(DuckTypeRuntimeMode mode)
-        {
-            if (Interlocked.CompareExchange(ref _runtimeModeInitialized, 1, 0) == 0)
-            {
-                Volatile.Write(ref _runtimeMode, (int)mode);
-                return;
-            }
-
-            var currentMode = RuntimeMode;
-            if (currentMode != mode)
-            {
-                DuckTypeRuntimeModeConflictException.Throw(currentMode, mode);
-            }
-        }
-
-        /// <summary>
-        /// Creates proxy type.
-        /// </summary>
-        /// <param name="proxyDefinitionType">The proxy definition type value.</param>
-        /// <param name="targetType">The target type value.</param>
-        /// <param name="dryRun">The dry run value.</param>
-        /// <returns>The result produced by this operation.</returns>
         private static CreateTypeResult CreateProxyType(Type proxyDefinitionType, Type targetType, bool dryRun)
         {
             // When doing normal duck typing, we create a type that derives from proxyDefinitionType (MyImplementation)
@@ -484,13 +246,6 @@ namespace Datadog.Trace.DuckTyping
             }
         }
 
-        /// <summary>
-        /// Creates reverse proxy type.
-        /// </summary>
-        /// <param name="typeToDeriveFrom">The type to derive from value.</param>
-        /// <param name="typeToDelegateTo">The type to delegate to value.</param>
-        /// <param name="dryRun">The dry run value.</param>
-        /// <returns>The result produced by this operation.</returns>
         private static CreateTypeResult CreateReverseProxyType(Type typeToDeriveFrom, Type typeToDelegateTo, bool dryRun)
         {
             // When doing reverse duck typing, we create a type that derives from typeToDeriveFrom (Original),
@@ -578,15 +333,6 @@ namespace Datadog.Trace.DuckTyping
             }
         }
 
-        /// <summary>
-        /// Creates type and module builder.
-        /// </summary>
-        /// <param name="typeToDeriveFrom">The type to derive from value.</param>
-        /// <param name="typeToDelegateTo">The type to delegate to value.</param>
-        /// <param name="proxyTypeBuilder">The proxy type builder value.</param>
-        /// <param name="instanceField">The instance field value.</param>
-        /// <returns>The result produced by this operation.</returns>
-        /// <remarks>Emits or composes IL for generated duck-typing proxy operations.</remarks>
         private static ModuleBuilder CreateTypeAndModuleBuilder(Type typeToDeriveFrom, Type typeToDelegateTo, out TypeBuilder proxyTypeBuilder, out FieldInfo instanceField)
         {
             // Define parent type, interface types
@@ -852,11 +598,6 @@ namespace Datadog.Trace.DuckTyping
             }
         }
 
-        /// <summary>
-        /// Gets properties.
-        /// </summary>
-        /// <param name="proxyDefinitionType">The proxy definition type value.</param>
-        /// <returns>The result produced by this operation.</returns>
         private static List<PropertyInfo> GetProperties(Type proxyDefinitionType)
         {
             List<PropertyInfo> selectedProperties = new List<PropertyInfo>(proxyDefinitionType.IsInterface ? proxyDefinitionType.GetProperties() : GetBaseProperties(proxyDefinitionType));
@@ -880,11 +621,6 @@ namespace Datadog.Trace.DuckTyping
             }
         }
 
-        /// <summary>
-        /// Gets reverse properties.
-        /// </summary>
-        /// <param name="proxyDefinitionType">The proxy definition type value.</param>
-        /// <returns>The result produced by this operation.</returns>
         private static List<PropertyInfo> GetReverseProperties(Type proxyDefinitionType)
         {
             List<PropertyInfo> selectedProperties = new List<PropertyInfo>();
@@ -1379,14 +1115,6 @@ namespace Datadog.Trace.DuckTyping
             return null;
         }
 
-        /// <summary>
-        /// Gets create proxy instance delegate.
-        /// </summary>
-        /// <param name="moduleBuilder">The module builder value.</param>
-        /// <param name="proxyDefinitionType">The proxy definition type value.</param>
-        /// <param name="proxyType">The proxy type value.</param>
-        /// <param name="targetType">The target type value.</param>
-        /// <returns>The result produced by this operation.</returns>
         private static Delegate GetCreateProxyInstanceDelegate(ModuleBuilder? moduleBuilder, Type proxyDefinitionType, Type proxyType, Type targetType)
         {
             ConstructorInfo ctor = proxyType.GetConstructors()[0];
@@ -1496,14 +1224,6 @@ namespace Datadog.Trace.DuckTyping
             return null;
         }
 
-        /// <summary>
-        /// Gets target property or index.
-        /// </summary>
-        /// <param name="targetType">The target type value.</param>
-        /// <param name="propertyName">The property name value.</param>
-        /// <param name="bindingFlags">The binding flags value.</param>
-        /// <param name="proxyPropertyInfo">The proxy property info value.</param>
-        /// <returns>The result produced by this operation.</returns>
         private static PropertyInfo? GetTargetPropertyOrIndex(Type targetType, string propertyName, BindingFlags bindingFlags, PropertyInfo proxyPropertyInfo)
         {
             if (propertyName.IndexOf(',') == -1)
@@ -1644,13 +1364,6 @@ namespace Datadog.Trace.DuckTyping
             return targetType.GetMember(propertyName, MemberTypes.Property, bindingFlags);
         }
 
-        /// <summary>
-        /// Gets target field.
-        /// </summary>
-        /// <param name="targetType">The target type value.</param>
-        /// <param name="fieldName">The field name value.</param>
-        /// <param name="bindingFlags">The binding flags value.</param>
-        /// <returns>The result produced by this operation.</returns>
         private static FieldInfo? GetTargetField(Type targetType, string fieldName, BindingFlags bindingFlags)
         {
             if (fieldName.IndexOf(',') == -1)
@@ -1672,38 +1385,23 @@ namespace Datadog.Trace.DuckTyping
         }
 
         /// <summary>
-        /// Represents the cached result of resolving or creating a duck-typing proxy mapping.
+        /// Struct to store the result of creating a proxy type
         /// </summary>
         public readonly struct CreateTypeResult
         {
             /// <summary>
-            /// Indicates whether proxy type creation succeeded.
+            /// Gets if the proxy type creation was successful
             /// </summary>
             public readonly bool Success;
 
             /// <summary>
-            /// Gets the target type associated with this result.
+            /// Target type
             /// </summary>
             public readonly Type? TargetType;
 
-            /// <summary>
-            /// Resolved proxy implementation type.
-            /// </summary>
             private readonly Type? _proxyType;
-
-            /// <summary>
-            /// Cached activator delegate used to construct proxy instances.
-            /// </summary>
             private readonly Delegate? _activator;
-
-            /// <summary>
-            /// Object-based activator fallback for callers that only have boxed instances.
-            /// </summary>
             private readonly Func<object?, object?>? _untypedActivator;
-
-            /// <summary>
-            /// Captured creation/registration error propagated by this result.
-            /// </summary>
             private readonly ExceptionDispatchInfo? _exceptionInfo;
 
             /// <summary>
@@ -1718,7 +1416,6 @@ namespace Datadog.Trace.DuckTyping
             {
                 _activator = activator;
                 _untypedActivator = activator as Func<object?, object?>;
-                // Keep an untyped fallback path for callers that only have object instances.
                 if (_untypedActivator is null && activator is not null)
                 {
                     _untypedActivator = instance => activator.DynamicInvoke(instance)!;
@@ -1728,7 +1425,6 @@ namespace Datadog.Trace.DuckTyping
                 _exceptionInfo = exceptionInfo;
                 TargetType = targetType;
                 Success = proxyType != null && exceptionInfo == null;
-                // For failed results, replace activator with a typed delegate that always rethrows the captured exception.
                 if (exceptionInfo is not null)
                 {
                     MethodInfo methodInfo = typeof(CreateTypeResult).GetMethod(nameof(ThrowOnError), BindingFlags.NonPublic | BindingFlags.Instance)!;
@@ -1754,7 +1450,7 @@ namespace Datadog.Trace.DuckTyping
             }
 
             /// <summary>
-            /// Creates a proxy instance from a boxed target instance.
+            /// Create a new proxy instance from a target instance
             /// </summary>
             /// <typeparam name="T">Type of the return value</typeparam>
             /// <param name="instance">Target instance value</param>
@@ -1767,7 +1463,7 @@ namespace Datadog.Trace.DuckTyping
             }
 
             /// <summary>
-            /// Creates a proxy instance from a typed target instance.
+            /// Create a new proxy instance from a target instance
             /// </summary>
             /// <typeparam name="T">Type of the return value</typeparam>
             /// <typeparam name="TOriginal">Type of the original value</typeparam>
@@ -1797,11 +1493,6 @@ namespace Datadog.Trace.DuckTyping
                 return _exceptionInfo == null;
             }
 
-            /// <summary>
-            /// Creates instance.
-            /// </summary>
-            /// <param name="instance">The instance value.</param>
-            /// <returns>The result produced by this operation.</returns>
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             internal object CreateInstance(object instance)
             {
@@ -1819,11 +1510,6 @@ namespace Datadog.Trace.DuckTyping
                 return null!;
             }
 
-            /// <summary>
-            /// Throws the exception associated with throw on error.
-            /// </summary>
-            /// <param name="instance">The instance value.</param>
-            /// <returns>The result produced by this operation.</returns>
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             private T? ThrowOnError<T>(object? instance)
             {
@@ -1831,11 +1517,6 @@ namespace Datadog.Trace.DuckTyping
                 return default;
             }
 
-            /// <summary>
-            /// Creates instance core.
-            /// </summary>
-            /// <param name="instance">The instance value.</param>
-            /// <returns>The result produced by this operation.</returns>
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             private void ThrowCachedException()
             {
@@ -1895,17 +1576,7 @@ namespace Datadog.Trace.DuckTyping
         public static class CreateCache<T>
         {
             // Because CreateTypeResult is a struct, it needs to be boxed for safe concurrent access
-
-            /// <summary>
-            /// Fast-path cache entry for the most recently resolved mapping in this generic cache.
-            /// </summary>
-            /// <remarks>This field participates in shared runtime state and must remain thread-safe.</remarks>
             private static StrongBox<CreateTypeResult>? _fastPath;
-
-            /// <summary>
-            /// AOT cache version associated with the current fast-path entry.
-            /// </summary>
-            /// <remarks>This field participates in shared runtime state and must remain thread-safe.</remarks>
             private static int _fastPathAotCacheVersion = -1;
 
             /// <summary>
@@ -2031,9 +1702,6 @@ namespace Datadog.Trace.DuckTyping
                 return result;
             }
 
-            /// <summary>
-            /// Invalidates the fast-path cache when AOT registrations change.
-            /// </summary>
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             private static void InvalidateFastPathForAotRegistrations()
             {
