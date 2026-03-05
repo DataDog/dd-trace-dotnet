@@ -9,6 +9,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <iostream>
 
 #include "FfiHelper.h"
 #include <fstream>
@@ -142,8 +143,10 @@ std::vector<ModuleInfo> CrashReportingLinux::GetModules()
 
 #define SET_REG(cursor, reg, value, fallback)             \
     do {                                                  \
+        std::cerr << "[native] Setting register " << #reg << " to " << (value) << std::endl; \
         if (unw_set_reg(&(cursor), (reg), (value)) != 0)  \
         {                                                 \
+            std::cerr << "[native] Failed to set register " << #reg << " to " << (value) << std::endl; \
             return {(fallback)};                          \
         }                                                 \
     } while (0)
@@ -153,11 +156,13 @@ std::optional<unw_cursor_t> create_cursor_from_context(uint32_t pid, unw_addr_sp
     unw_cursor_t cursor;
     if (unw_init_remote(&cursor, addressSpace, libunwindContext) != 0)
     {
+        std::cerr << "Failed to initialize remote cursor" << std::endl;
         return std::nullopt;
     }
 
     if (threadContext == nullptr)
     {
+        std::cerr << "[native] Thread context is not provided" << std::endl;
         return {cursor};
     }
 
@@ -167,7 +172,10 @@ std::optional<unw_cursor_t> create_cursor_from_context(uint32_t pid, unw_addr_sp
     struct iovec local  = { .iov_base = &remoteCtx, .iov_len = sizeof(remoteCtx) };
     struct iovec remote = { .iov_base = threadContext, .iov_len = sizeof(remoteCtx) };
 
-    if (process_vm_readv(pid, &local, 1, &remote, 1, 0) == sizeof(remoteCtx)) {
+    std::cerr << "[native] Reading thread context" << std::endl;
+    if (process_vm_readv(pid, &local, 1, &remote, 1, 0) == sizeof(remoteCtx))
+    {
+        std::cerr << "[native] Thread context read successfully" << std::endl;
         unw_cursor_t newCursor = cursor;
 
         // Override cursor with the register state from the crash point.
@@ -204,6 +212,7 @@ std::optional<unw_cursor_t> create_cursor_from_context(uint32_t pid, unw_addr_sp
 #endif
         return {newCursor};
     }
+    std::cerr << "[native] Failed to read thread context. Returning original cursor" << std::endl;
     return {cursor};
 }
 
@@ -213,10 +222,12 @@ std::vector<StackFrame> CrashReportingLinux::GetThreadFrames(int32_t tid, void* 
 
     auto libunwindContext = _UPT_create(tid);
 
+    std::cerr << "[native] Creating cursor from context" << std::endl;
     auto cursorOpt = create_cursor_from_context(tid, _addressSpace, libunwindContext, threadContext);
 
     if (!cursorOpt.has_value())
     {
+        std::cerr << "[native] Failed to create cursor from context" << std::endl;
         return frames;
     }
     
@@ -226,6 +237,7 @@ std::vector<StackFrame> CrashReportingLinux::GetThreadFrames(int32_t tid, void* 
     ResolveMethodData* managedCallstack;
     int32_t numberOfManagedFrames;
 
+    std::cerr << "[native] Resolving managed callstack" << std::endl;
     auto resolved = resolveManagedCallstack(tid, context, &managedCallstack, &numberOfManagedFrames);
 
     std::vector<StackFrame> managedFrames;
@@ -252,11 +264,16 @@ std::vector<StackFrame> CrashReportingLinux::GetThreadFrames(int32_t tid, void* 
 
     unw_word_t ip;
     unw_word_t sp;
-
+    bool first = true;
     // Walk the stack
     do
     {
         unw_get_reg(&cursor, UNW_REG_IP, &ip);
+        if (first)
+        {
+            first = false;  
+            std::cerr << "[native] Retrieved IP from cursor: " << std::hex << ip << std::endl;
+        }
         unw_get_reg(&cursor, UNW_REG_SP, &sp);
 
         StackFrame stackFrame{};

@@ -566,6 +566,7 @@ int execve(const char* pathname, char* const argv[], char* const envp[])
         ptr_to_decimal(context_addr, (unsigned long)thread_context);
         newArgv[new_idx++] = "--dd-thread-context";
         newArgv[new_idx++] = context_addr;
+        fprintf(stderr, "[wrapper] Thread context: %s %p\n", context_addr, thread_context);
     }
 
     newArgv[new_idx] = NULL;  // NULL terminate the array

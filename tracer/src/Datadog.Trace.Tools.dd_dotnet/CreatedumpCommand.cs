@@ -196,6 +196,15 @@ internal class CreatedumpCommand : Command
             threadContextAddress = threadContextAddressValue;
         }
 
+        if (threadContextAddress != null)
+        {
+            AnsiConsole.WriteLine($"Thread context address is {threadContextAddress}");
+        }
+        else
+        {
+            AnsiConsole.WriteLine("Thread context is not provided");
+        }
+
         // Have we found the pid?
         if (pidCandidates.Count == 1)
         {

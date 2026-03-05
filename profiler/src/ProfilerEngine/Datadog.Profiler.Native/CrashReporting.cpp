@@ -301,15 +301,24 @@ int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, void* crashingTh
 
     for (auto const& [threadId, threadName] : threads)
     {
-        auto currentIsCrashingThread = threadId == crashingThreadId;
-        auto threadContext = currentIsCrashingThread ? crashingThreadContext : nullptr;
+        auto isCrashingThread = threadId == crashingThreadId;
+        auto threadContext = isCrashingThread ? crashingThreadContext : nullptr;
+        if (!isCrashingThread)
+        {
+            continue;
+        }
+        if (threadContext == nullptr)
+        {
+            continue;
+        }
+
         auto frames = GetThreadFrames(threadId, threadContext, resolveCallback, context);
 
         auto [stackTrace, succeeded] = ExtractResult(ddog_crasht_StackTrace_new());
 
         if (!succeeded)
         {
-            return 12;
+            return 1;
         }
 
         // GetThreadFrames returns the frames in reverse order, so we need to iterate in reverse
@@ -319,12 +328,12 @@ int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, void* crashingTh
 
             if (!succeeded)
             {
-                return 13;
+                return 1;
             }
 
             auto const& currentFrame = *it;
 
-            if (currentIsCrashingThread)
+            if (isCrashingThread)
             {
                 // Mark the callstack as suspicious if one of the frames is suspicious
                 // or the thread name begins with DD_
@@ -369,7 +378,7 @@ int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, void* crashingTh
         auto threadIdStr = std::to_string(threadId);
         // stackTrace is consumed by the API, meaning that we *MUST* not use this handle
         auto thread = ddog_crasht_ThreadData{
-            .crashed = currentIsCrashingThread,
+            .crashed = isCrashingThread,
             .name = {threadIdStr.data(), threadIdStr.size()},
             .stack = stackTrace,
             .state = {nullptr, 0}
@@ -381,7 +390,7 @@ int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, void* crashingTh
 
     if (successfulThreads != threads.size())
     {
-        return 14;
+        return 1;
     }
 
     return 0;
