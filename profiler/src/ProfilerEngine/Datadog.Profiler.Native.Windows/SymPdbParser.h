@@ -36,7 +36,7 @@ public:
     bool LoadPdbFile(IMetaDataImport* pMetaDataImport, ModuleDebugInfo* pModuleInfo, const std::string& pdbFilePath, const std::string& moduleFilePath);
 
 private:
-    size_t DEFAULT_RESERVE_SIZE = 1024;
+    const size_t DEFAULT_RESERVE_SIZE = 1024;
 
 private:
     bool GetSymReader(IMetaDataImport* pMetaDataImport, const std::string& moduleFilePath, CComPtr<ISymUnmanagedReader>& pReader);

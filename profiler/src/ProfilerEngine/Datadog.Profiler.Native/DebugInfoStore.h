@@ -81,7 +81,7 @@ public:
     void ParseModuleDebugInfo(ModuleID moduleId, const std::string& pdbFilename, const std::string& moduleFilename, ModuleDebugInfo& moduleInfo);
 
 private:
-    size_t DEFAULT_RESERVE_SIZE = 1024;
+    const size_t DEFAULT_RESERVE_SIZE = 1024;
 
 private:
     void ParseModuleDebugInfo(ModuleID moduleID);

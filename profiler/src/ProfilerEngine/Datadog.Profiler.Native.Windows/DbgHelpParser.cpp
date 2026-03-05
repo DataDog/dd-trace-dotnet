@@ -2,6 +2,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
 #include "DbgHelpParser.h"
+#include "ScopeFinalizer.h"
 
 #include <algorithm>
 #include <sstream>
@@ -67,9 +68,22 @@ bool DbgHelpParser::LoadPdbFile(ModuleDebugInfo* pModuleInfo, const std::string&
         0
     );
 
+    // don't forget to cleanup
+    on_leave
+    {
+        if (hProcess != 0)
+        {
+            if (context.baseAddress != 0)
+            {
+                SymUnloadModule64(hProcess, context.baseAddress);
+            }
+
+            SymCleanup(hProcess);
+        }
+    };
+
     if (context.baseAddress == 0)
     {
-        SymCleanup(hProcess);
         return false;
     }
 
@@ -77,24 +91,18 @@ bool DbgHelpParser::LoadPdbFile(ModuleDebugInfo* pModuleInfo, const std::string&
     moduleInfo.SizeOfStruct = sizeof(IMAGEHLP_MODULE64);
     if (!SymGetModuleInfo64(hProcess, context.baseAddress, &moduleInfo))
     {
-        SymUnloadModule64(hProcess, context.baseAddress);
-        SymCleanup(hProcess);
         return false;
     }
 
     // Compute method info
     if (!ComputeMethodsInfo(hProcess, context.baseAddress, pModuleInfo, context))
     {
-        SymUnloadModule64(hProcess, context.baseAddress);
-        SymCleanup(hProcess);
         return false;
     }
 
     // if no symbol was found, consider the pdb loading failed
     if (context.sourceFileMap.empty())
     {
-        SymUnloadModule64(hProcess, context.baseAddress);
-        SymCleanup(hProcess);
         return false;
     }
 
@@ -121,10 +129,6 @@ bool DbgHelpParser::LoadPdbFile(ModuleDebugInfo* pModuleInfo, const std::string&
                   pModuleInfo->Files.size(), " files, ",
                   pModuleInfo->RidToDebugInfo.size(), " methods)");
     }
-
-    // Cleanup
-    SymUnloadModule64(hProcess, context.baseAddress);
-    SymCleanup(hProcess);
 
     return true;
 }

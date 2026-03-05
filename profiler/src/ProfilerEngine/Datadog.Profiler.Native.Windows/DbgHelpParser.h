@@ -50,6 +50,6 @@ private:
     std::string_view FindOrAddSourceFile(const char* filePath, ModuleDebugInfo* pModuleInfo, DbgHelpParsingContext& context);
 
 private:
-    size_t DEFAULT_RESERVE_SIZE = 1024;
+    const size_t DEFAULT_RESERVE_SIZE = 1024;
 };
 
