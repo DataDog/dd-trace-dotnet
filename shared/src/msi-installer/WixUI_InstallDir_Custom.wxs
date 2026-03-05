@@ -83,6 +83,7 @@ Patch dialog sequence:
 
       <Publish Dialog="LicenseAgreementDlg" Control="Back" Event="NewDialog" Value="WelcomeDlg" Condition="1" />
       <Publish Dialog="LicenseAgreementDlg" Control="Next" Event="NewDialog" Value="MyInstallDirDlg" Condition="LicenseAccepted = &quot;1&quot;" />
+      <Publish Dialog="LicenseAgreementDlg" Control="Print" Event="DoAction" Value="WixUIPrintEula_$(var.WIXUIARCH)" Condition="1" />
 
       <Publish Dialog="MyInstallDirDlg" Control="Back" Event="NewDialog" Value="LicenseAgreementDlg" Condition="1" />
       <Publish Dialog="MyInstallDirDlg" Control="Next" Event="SetTargetPath" Value="[WIXUI_INSTALLDIR]" Order="1" Condition="1" />
