@@ -50,7 +50,11 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.code_origin.frames.0.index: 0,
+      _dd.code_origin.frames.0.method: StatusCodeTest,
+      _dd.code_origin.frames.0.type: Samples.AspNetCoreMvc.Controllers.HomeController,
+      _dd.code_origin.type: entry
     },
     Metrics: {
       process_id: 0,
