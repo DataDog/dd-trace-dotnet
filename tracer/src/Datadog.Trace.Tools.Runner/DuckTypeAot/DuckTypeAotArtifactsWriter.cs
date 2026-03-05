@@ -26,6 +26,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
     internal static class DuckTypeAotArtifactsWriter
     {
         /// <summary>
+        /// Defines datadog trace assembly name constant.
+        /// </summary>
+        private const string DatadogTraceAssemblyName = "Datadog.Trace";
+
+        /// <summary>
         /// Defines the schema version constant.
         /// </summary>
         private const string SchemaVersion = "1";
@@ -162,7 +167,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     .ToList(),
                 ProxyAssemblies = CreateAssemblyFingerprints(mappingResolutionResult.ProxyAssemblyPathsByName.Values),
                 TargetAssemblies = CreateAssemblyFingerprints(mappingResolutionResult.TargetAssemblyPathsByName.Values),
-                DatadogTraceAssembly = CreateAssemblyFingerprint(typeof(Datadog.Trace.Tracer).Assembly.Location)
+                DatadogTraceAssembly = CreateAssemblyFingerprint(ResolveDatadogTraceAssemblyPath(mappingResolutionResult))
             };
 
             WriteJson(manifestPath, manifest);
@@ -180,6 +185,22 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
                 .Select(CreateAssemblyFingerprint)
                 .ToList();
+        }
+
+        /// <summary>
+        /// Resolves datadog trace assembly path for manifest fingerprints.
+        /// </summary>
+        /// <param name="mappingResolutionResult">The mapping resolution result value.</param>
+        /// <returns>The resulting string value.</returns>
+        private static string ResolveDatadogTraceAssemblyPath(DuckTypeAotMappingResolutionResult mappingResolutionResult)
+        {
+            if (mappingResolutionResult.TargetAssemblyPathsByName.TryGetValue(DatadogTraceAssemblyName, out var datadogTraceAssemblyPath) &&
+                File.Exists(datadogTraceAssemblyPath))
+            {
+                return datadogTraceAssemblyPath;
+            }
+
+            return typeof(Datadog.Trace.Tracer).Assembly.Location;
         }
 
         /// <summary>
