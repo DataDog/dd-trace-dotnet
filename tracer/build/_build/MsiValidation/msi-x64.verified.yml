@@ -387,297 +387,223 @@ File:
     Attributes: 1536
     Component_: Datadog.Profiler.Native
     FileName: twcnvmgg.dll|Datadog.Profiler.Native.dll
-    FileSize: 1374208
     Language: 1033
-    Sequence: 1
     Version: FOUR_PART_VERSION
   Datadog.Profiler.Native.32:
     Attributes: 1536
     Component_: Datadog.Profiler.Native.32
     FileName: g9wf1bwd.dll|Datadog.Profiler.Native.dll
-    FileSize: 1200640
     Language: 1033
-    Sequence: 2
     Version: FOUR_PART_VERSION
   Datadog.Trace.ClrProfiler.Native:
     Attributes: 1536
     Component_: Datadog.Trace.ClrProfiler.Native
     FileName: xy-lihfv.dll|Datadog.Trace.ClrProfiler.Native.dll
-    FileSize: 1179648
     Language: 1033
-    Sequence: 3
     Version: FOUR_PART_VERSION
   Datadog.Trace.ClrProfiler.Native.32:
     Attributes: 1536
     Component_: Datadog.Trace.ClrProfiler.Native.32
     FileName: pnpxjiwm.dll|Datadog.Trace.ClrProfiler.Native.dll
-    FileSize: 1041920
     Language: 1033
-    Sequence: 4
     Version: FOUR_PART_VERSION
   Datadog.Tracer.Native:
     Attributes: 1536
     Component_: Datadog.Tracer.Native
     FileName: 3fgyj9aq.dll|Datadog.Tracer.Native.dll
-    FileSize: 2942976
     Language: 1033
-    Sequence: 5
     Version: FOUR_PART_VERSION
   Datadog.Tracer.Native.32:
     Attributes: 1536
     Component_: Datadog.Tracer.Native.32
     FileName: 70fzpwnj.dll|Datadog.Tracer.Native.dll
-    FileSize: 2477568
     Language: 1033
-    Sequence: 6
     Version: FOUR_PART_VERSION
   dd_dotnet.cmd:
     Attributes: 1536
     Component_: dd_dotnet.cmd
     FileName: qzw57yrm.cmd|dd-dotnet.cmd
-    FileSize: 42
     Language: ''
-    Sequence: 7
     Version: ''
   dd_dotnet.exe:
     Attributes: 1536
     Component_: dd_dotnet.exe
     FileName: 1zltfrls.exe|dd-dotnet.exe
-    FileSize: 3522560
     Language: 0
-    Sequence: 8
     Version: FOUR_PART_VERSION
   libdatadog:
     Attributes: 1536
     Component_: libdatadog
     FileName: 0ucykihs.dll|datadog_profiling_ffi.dll
-    FileSize: 6721024
     Language: ''
-    Sequence: 9
     Version: ''
   libdatadog.32:
     Attributes: 1536
     Component_: libdatadog.32
     FileName: vksekk-v.dll|datadog_profiling_ffi.dll
-    FileSize: 5165056
     Language: ''
-    Sequence: 10
     Version: ''
   LibDdwaf:
     Attributes: 1536
     Component_: LibDdwaf
     FileName: ddwaf.dll
-    FileSize: 4101632
     Language: ''
-    Sequence: 11
     Version: ''
   LibDdwaf.32:
     Attributes: 1536
     Component_: Datadog.Tracer.Native.32
     FileName: ddwaf.dll
-    FileSize: 3368448
     Language: ''
-    Sequence: 12
     Version: ''
   loader.conf.x64:
     Attributes: 512
     Component_: loader.conf.x64
     FileName: mbfbroqk.con|loader.conf
-    FileSize: 1341
     Language: ''
-    Sequence: 13
     Version: ''
   loader.conf.x86:
     Attributes: 512
     Component_: loader.conf.x86
     FileName: arcu9rk-.con|loader.conf
-    FileSize: 1341
     Language: ''
-    Sequence: 14
     Version: ''
   net461_Datadog.Trace.dll:
     Attributes: 1536
     Component_: net461_Datadog.Trace.dll
     FileName: fjl1yrae.dll|Datadog.Trace.dll
-    FileSize: 8615936
     Language: 0
-    Sequence: 15
     Version: FOUR_PART_VERSION
   net461_Datadog.Trace.MSBuild.dll:
     Attributes: 1536
     Component_: net461_Datadog.Trace.MSBuild.dll
     FileName: f8ymz5zj.dll|Datadog.Trace.MSBuild.dll
-    FileSize: 20992
     Language: 0
-    Sequence: 16
     Version: FOUR_PART_VERSION
   net461_Datadog.Trace.MSBuild.pdb:
     Attributes: 1536
     Component_: net461_Datadog.Trace.MSBuild.pdb
     FileName: 681izxtb.pdb|Datadog.Trace.MSBuild.pdb
-    FileSize: 5932
     Language: ''
-    Sequence: 17
     Version: ''
   net461_Datadog.Trace.pdb:
     Attributes: 1536
     Component_: net461_Datadog.Trace.pdb
     FileName: vs0ngh8e.pdb|Datadog.Trace.pdb
-    FileSize: 3045076
     Language: ''
-    Sequence: 18
     Version: ''
   net461_GAC_Datadog.Trace.dll:
     Attributes: 1536
     Component_: net461_GAC_Datadog.Trace.dll
     FileName: icxsdo10.dll|Datadog.Trace.dll
-    FileSize: 8615936
     Language: 0
-    Sequence: 19
     Version: FOUR_PART_VERSION
   net461_GAC_Datadog.Trace.MSBuild.dll:
     Attributes: 1536
     Component_: net461_GAC_Datadog.Trace.MSBuild.dll
     FileName: _2cye_2p.dll|Datadog.Trace.MSBuild.dll
-    FileSize: 20992
     Language: 0
-    Sequence: 20
     Version: FOUR_PART_VERSION
   net60_Datadog.Trace.dll:
     Attributes: 1536
     Component_: net60_Datadog.Trace.dll
     FileName: e1f6nhry.dll|Datadog.Trace.dll
-    FileSize: 8193024
     Language: 0
-    Sequence: 21
     Version: FOUR_PART_VERSION
   net60_Datadog.Trace.MSBuild.dll:
     Attributes: 1536
     Component_: net60_Datadog.Trace.MSBuild.dll
     FileName: vpjcavif.dll|Datadog.Trace.MSBuild.dll
-    FileSize: 21504
     Language: 0
-    Sequence: 22
     Version: FOUR_PART_VERSION
   net60_Datadog.Trace.MSBuild.pdb:
     Attributes: 1536
     Component_: net60_Datadog.Trace.MSBuild.pdb
     FileName: gja0ydqd.pdb|Datadog.Trace.MSBuild.pdb
-    FileSize: 14404
     Language: ''
-    Sequence: 23
     Version: ''
   net60_Datadog.Trace.pdb:
     Attributes: 1536
     Component_: net60_Datadog.Trace.pdb
     FileName: cez3d9b_.pdb|Datadog.Trace.pdb
-    FileSize: 2806132
     Language: ''
-    Sequence: 24
     Version: ''
   netcoreapp31_Datadog.Trace.dll:
     Attributes: 1536
     Component_: netcoreapp31_Datadog.Trace.dll
     FileName: sltx78r2.dll|Datadog.Trace.dll
-    FileSize: 8103936
     Language: 0
-    Sequence: 25
     Version: FOUR_PART_VERSION
   netcoreapp31_Datadog.Trace.MSBuild.dll:
     Attributes: 1536
     Component_: netcoreapp31_Datadog.Trace.MSBuild.dll
     FileName: tqqebgkm.dll|Datadog.Trace.MSBuild.dll
-    FileSize: 20992
     Language: 0
-    Sequence: 26
     Version: FOUR_PART_VERSION
   netcoreapp31_Datadog.Trace.MSBuild.pdb:
     Attributes: 1536
     Component_: netcoreapp31_Datadog.Trace.MSBuild.pdb
     FileName: jqr9bcxr.pdb|Datadog.Trace.MSBuild.pdb
-    FileSize: 13880
     Language: ''
-    Sequence: 27
     Version: ''
   netcoreapp31_Datadog.Trace.pdb:
     Attributes: 1536
     Component_: netcoreapp31_Datadog.Trace.pdb
     FileName: 11usnbfu.pdb|Datadog.Trace.pdb
-    FileSize: 2787112
     Language: ''
-    Sequence: 28
     Version: ''
   netstandard20_Datadog.Trace.dll:
     Attributes: 1536
     Component_: netstandard20_Datadog.Trace.dll
     FileName: gxppu_sn.dll|Datadog.Trace.dll
-    FileSize: 8424960
     Language: 0
-    Sequence: 29
     Version: FOUR_PART_VERSION
   netstandard20_Datadog.Trace.MSBuild.dll:
     Attributes: 1536
     Component_: netstandard20_Datadog.Trace.MSBuild.dll
     FileName: rqgvp1w7.dll|Datadog.Trace.MSBuild.dll
-    FileSize: 20992
     Language: 0
-    Sequence: 30
     Version: FOUR_PART_VERSION
   netstandard20_Datadog.Trace.MSBuild.pdb:
     Attributes: 1536
     Component_: netstandard20_Datadog.Trace.MSBuild.pdb
     FileName: pk90w2pj.pdb|Datadog.Trace.MSBuild.pdb
-    FileSize: 12040
     Language: ''
-    Sequence: 31
     Version: ''
   netstandard20_Datadog.Trace.pdb:
     Attributes: 1536
     Component_: netstandard20_Datadog.Trace.pdb
     FileName: 98hstxgk.pdb|Datadog.Trace.pdb
-    FileSize: 2952236
     Language: ''
-    Sequence: 32
     Version: ''
   netstandard20_System.Diagnostics.DiagnosticSource.dll:
     Attributes: 1536
     Component_: netstandard20_System.Diagnostics.DiagnosticSource.dll
     FileName: u2qa3qpv.dll|System.Diagnostics.DiagnosticSource.dll
-    FileSize: 43952
     Language: 0
-    Sequence: 33
     Version: 4.6.25519.3
   netstandard20_System.Reflection.Emit.dll:
     Attributes: 1536
     Component_: netstandard20_System.Reflection.Emit.dll
     FileName: r4ixpoll.dll|System.Reflection.Emit.dll
-    FileSize: 22392
     Language: 0
-    Sequence: 34
     Version: 4.6.24705.1
   netstandard20_System.Reflection.Emit.ILGeneration.dll:
     Attributes: 1536
     Component_: netstandard20_System.Reflection.Emit.ILGeneration.dll
     FileName: moubxvpa.dll|System.Reflection.Emit.ILGeneration.dll
-    FileSize: 22960
     Language: 0
-    Sequence: 35
     Version: 4.6.24705.1
   netstandard20_System.Reflection.Emit.Lightweight.dll:
     Attributes: 1536
     Component_: netstandard20_System.Reflection.Emit.Lightweight.dll
     FileName: gtky5ry_.dll|System.Reflection.Emit.Lightweight.dll
-    FileSize: 22952
     Language: 0
-    Sequence: 36
     Version: 4.6.24705.1
   netstandard20_System.Threading.dll:
     Attributes: 1536
     Component_: netstandard20_System.Threading.dll
     FileName: ihqlewos.dll|System.Threading.dll
-    FileSize: 50016
     Language: 0
-    Sequence: 37
     Version: 4.6.24705.1
 InstallExecuteSequence:
   AppSearch:
@@ -788,7 +714,7 @@ Property:
   Manufacturer: Datadog, Inc.
   MsiHiddenProperties: ExecSecureObjects_64;ExecSecureObjectsRollback_64
   PATHSHORTCUT: 1
-  ProductCode: '{4DA23C4E-32F8-4B44-A49F-82C76D605976}'
+  ProductCode: PRODUCT_CODE
   ProductLanguage: 1033
   ProductName: Datadog .NET Tracer 64-bit
   ProductVersion: THREE_PART_VERSION

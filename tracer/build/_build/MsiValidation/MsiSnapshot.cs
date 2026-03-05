@@ -20,6 +20,12 @@ static class MsiSnapshot
         "Feature", "File", "InstallExecuteSequence", "Property", "Registry"
     };
 
+    // Columns to exclude per table (unstable between builds, not behaviorally significant)
+    static readonly Dictionary<string, HashSet<string>> ExcludedColumns = new()
+    {
+        {"File", new() {"FileSize", "Sequence"}},
+    };
+
     public static void ValidateMsiSnapshot(AbsolutePath msiPath, AbsolutePath verifiedPath, string threePartVersion, string fullVersion)
     {
         Logger.Information("Comparing snapshot of MSI for {MsiPath} using {Path}...", msiPath, verifiedPath);
@@ -84,7 +90,15 @@ static class MsiSnapshot
                     if (columns.Count == 2)
                     {
                         // Simple key=value table (e.g., Property)
-                        entries[key] = sanitizer.GetSanitizedString(record, columns[1].Name);
+                        var value = sanitizer.GetSanitizedString(record, columns[1].Name);
+
+                        // ProductCode is auto-generated per build; sanitize to placeholder
+                        if (key == "ProductCode")
+                        {
+                            value = "PRODUCT_CODE";
+                        }
+
+                        entries[key] = value;
                     }
                     else
                     {
@@ -94,6 +108,11 @@ static class MsiSnapshot
                         {
                             var col = columns[i];
                             if (col.Name == primaryKey)
+                            {
+                                continue;
+                            }
+
+                            if (ExcludedColumns.TryGetValue(table, out var excluded) && excluded.Contains(col.Name))
                             {
                                 continue;
                             }
