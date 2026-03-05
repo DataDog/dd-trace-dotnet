@@ -209,7 +209,7 @@ public class DebuggerManagerDynamicTests : TestHelper
     }
 
     private async Task RunDynamicConfigurationTest(
-        bool startEnabled,
+        bool debuggerStartEnabled,
         Action<MemoryAssertions> initialMemoryAssertions,
         object remoteConfig,
         string logToWaitAfterRc,
@@ -233,7 +233,7 @@ public class DebuggerManagerDynamicTests : TestHelper
         using var sample = await StartSample(agent, $"--test-name {testType.TestType}", string.Empty, aspNetCorePort: 5000);
 
         // Wait for initial setup and verify initial state (products should be enabled)
-        if (startEnabled)
+        if (debuggerStartEnabled)
         {
             await logEntryWatcher.WaitForLogEntry(DebuggerConfigurationInitialized);
         }
