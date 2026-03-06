@@ -33,8 +33,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         {
             var useCanonicalMapContract = !string.IsNullOrWhiteSpace(options.MapFilePath);
 
-            // Branch: take this path when (!File.Exists(options.CompatReportPath)) evaluates to true.
-            if (!File.Exists(options.CompatReportPath))
+            // Branch: take this path when a compat report path was supplied but the file does not exist.
+            if (!string.IsNullOrWhiteSpace(options.CompatReportPath) && !File.Exists(options.CompatReportPath))
             {
                 Utils.WriteError($"--compat-report file was not found: {options.CompatReportPath}");
                 return 1;

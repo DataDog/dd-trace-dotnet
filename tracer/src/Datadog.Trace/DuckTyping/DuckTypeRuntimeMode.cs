@@ -13,11 +13,11 @@ namespace Datadog.Trace.DuckTyping
         /// <summary>
         /// Represents dynamic.
         /// </summary>
-        Dynamic = 0,
+        Dynamic = 1,
 
         /// <summary>
         /// Represents aot.
         /// </summary>
-        Aot = 1
+        Aot = 2
     }
 }

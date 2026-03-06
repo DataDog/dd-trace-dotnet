@@ -11,7 +11,6 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Runtime.ExceptionServices;
-using System.Runtime.Serialization;
 using System.Threading;
 using Datadog.Trace.Util;
 
@@ -209,6 +208,17 @@ namespace Datadog.Trace.DuckTyping
         }
 
         /// <summary>
+        /// Registers a forward AOT mapping failure using a static thrower method.
+        /// </summary>
+        /// <param name="proxyDefinitionType">The proxy definition type value.</param>
+        /// <param name="targetType">The target type value.</param>
+        /// <param name="throwerMethodHandle">The static failure thrower method handle.</param>
+        internal static void RegisterProxyFailure(Type proxyDefinitionType, Type targetType, RuntimeMethodHandle throwerMethodHandle)
+        {
+            RegisterFailure(proxyDefinitionType, targetType, throwerMethodHandle, reverse: false);
+        }
+
+        /// <summary>
         /// Registers a reverse AOT mapping failure that should rethrow a dynamic-equivalent ducktyping exception.
         /// </summary>
         /// <param name="typeToDeriveFrom">The type to derive from value.</param>
@@ -217,6 +227,17 @@ namespace Datadog.Trace.DuckTyping
         internal static void RegisterReverseProxyFailure(Type typeToDeriveFrom, Type delegationType, Type exceptionType)
         {
             RegisterFailure(typeToDeriveFrom, delegationType, exceptionType, reverse: true);
+        }
+
+        /// <summary>
+        /// Registers a reverse AOT mapping failure using a static thrower method.
+        /// </summary>
+        /// <param name="typeToDeriveFrom">The type to derive from value.</param>
+        /// <param name="delegationType">The delegation type value.</param>
+        /// <param name="throwerMethodHandle">The static failure thrower method handle.</param>
+        internal static void RegisterReverseProxyFailure(Type typeToDeriveFrom, Type delegationType, RuntimeMethodHandle throwerMethodHandle)
+        {
+            RegisterFailure(typeToDeriveFrom, delegationType, throwerMethodHandle, reverse: true);
         }
 
         /// <summary>
@@ -326,73 +347,9 @@ namespace Datadog.Trace.DuckTyping
                 return failureResult;
             }
 
-            if (TryResolveForwardFallbackResult(key, reverse, registry, failureRegistry, out var fallbackResult))
-            {
-                return fallbackResult;
-            }
-
             // Misses are cached too, so unsupported mappings fail deterministically across threads and repeated calls.
             var missCache = reverse ? ReverseMissCache : ForwardMissCache;
             return missCache.GetOrAdd(key, missingKey => CreateMissingResult(missingKey, reverse));
-        }
-
-        /// <summary>
-        /// Attempts to resolve a forward mapping from compatible fallback target types.
-        /// </summary>
-        /// <param name="key">The key value.</param>
-        /// <param name="reverse">The reverse value.</param>
-        /// <param name="registry">The registry value.</param>
-        /// <param name="failureRegistry">The failure registry value.</param>
-        /// <param name="result">The result value.</param>
-        /// <returns>true if the operation succeeds; otherwise, false.</returns>
-        private static bool TryResolveForwardFallbackResult(
-            TypesTuple key,
-            bool reverse,
-            ConcurrentDictionary<TypesTuple, Registration> registry,
-            ConcurrentDictionary<TypesTuple, DuckType.CreateTypeResult> failureRegistry,
-            out DuckType.CreateTypeResult result)
-        {
-            result = default;
-            if (reverse)
-            {
-                return false;
-            }
-
-            var proxyDefinitionType = key.ProxyDefinitionType;
-            for (var baseType = key.TargetType.BaseType; baseType is not null; baseType = baseType.BaseType)
-            {
-                var baseKey = new TypesTuple(proxyDefinitionType, baseType);
-                if (registry.TryGetValue(baseKey, out var baseRegistration))
-                {
-                    result = baseRegistration.CreateTypeResult;
-                    return true;
-                }
-
-                if (failureRegistry.TryGetValue(baseKey, out var baseFailureResult))
-                {
-                    result = baseFailureResult;
-                    return true;
-                }
-            }
-
-            if (key.TargetType.IsValueType && Nullable.GetUnderlyingType(key.TargetType) is null)
-            {
-                var nullableTargetType = typeof(Nullable<>).MakeGenericType(key.TargetType);
-                var nullableKey = new TypesTuple(proxyDefinitionType, nullableTargetType);
-                if (registry.TryGetValue(nullableKey, out var nullableRegistration))
-                {
-                    result = nullableRegistration.CreateTypeResult;
-                    return true;
-                }
-
-                if (failureRegistry.TryGetValue(nullableKey, out var nullableFailureResult))
-                {
-                    result = nullableFailureResult;
-                    return true;
-                }
-            }
-
-            return false;
         }
 
         /// <summary>
@@ -467,8 +424,34 @@ namespace Datadog.Trace.DuckTyping
                 throw new ArgumentException($"Failure exception type '{exceptionType}' must derive from Exception.", nameof(exceptionType));
             }
 
+            RegisterFailure(proxyDefinitionType, targetType, ExceptionDispatchInfo.Capture(CreateRegisteredFailureException(exceptionType)), reverse);
+        }
+
+        /// <summary>
+        /// Adds a failure registration into the forward or reverse failure registry.
+        /// </summary>
+        /// <param name="proxyDefinitionType">The proxy definition type value.</param>
+        /// <param name="targetType">The target type value.</param>
+        /// <param name="throwerMethodHandle">The failure thrower method handle.</param>
+        /// <param name="reverse">Whether the registration belongs to the reverse registry.</param>
+        private static void RegisterFailure(Type proxyDefinitionType, Type targetType, RuntimeMethodHandle throwerMethodHandle, bool reverse)
+        {
+            if (proxyDefinitionType is null) { ThrowHelper.ThrowArgumentNullException(nameof(proxyDefinitionType)); }
+            if (targetType is null) { ThrowHelper.ThrowArgumentNullException(nameof(targetType)); }
+
+            RegisterFailure(proxyDefinitionType, targetType, ExceptionDispatchInfo.Capture(CreateRegisteredFailureException(throwerMethodHandle)), reverse);
+        }
+
+        /// <summary>
+        /// Adds a failure registration into the forward or reverse failure registry.
+        /// </summary>
+        /// <param name="proxyDefinitionType">The proxy definition type value.</param>
+        /// <param name="targetType">The target type value.</param>
+        /// <param name="exceptionInfo">The captured exception info for the failure.</param>
+        /// <param name="reverse">Whether the registration belongs to the reverse registry.</param>
+        private static void RegisterFailure(Type proxyDefinitionType, Type targetType, ExceptionDispatchInfo exceptionInfo, bool reverse)
+        {
             var key = new TypesTuple(proxyDefinitionType, targetType);
-            var exceptionInfo = ExceptionDispatchInfo.Capture(CreateRegisteredFailureException(exceptionType));
             var createTypeResult = new DuckType.CreateTypeResult(proxyDefinitionType, proxyType: null, targetType, activator: null, exceptionInfo);
 
             lock (RegistrationLock)
@@ -538,25 +521,73 @@ namespace Datadog.Trace.DuckTyping
                 }
             }
 
-#if NET6_0_OR_GREATER
-#pragma warning disable SYSLIB0050 // Formatter-based uninitialized exception creation is used only for parity-compatible AOT failure replay.
-#endif
+            return DuckTypeAotRegisteredFailureException.Create(exceptionType.FullName ?? exceptionType.Name ?? "unknown", detail: string.Empty);
+        }
+
+        /// <summary>
+        /// Creates an exception instance for a registered AOT failure mapping using a generated thrower.
+        /// </summary>
+        /// <param name="throwerMethodHandle">The thrower method handle value.</param>
+        /// <returns>The resulting exception value.</returns>
+        private static Exception CreateRegisteredFailureException(RuntimeMethodHandle throwerMethodHandle)
+        {
+            if (throwerMethodHandle.Equals(default(RuntimeMethodHandle)))
+            {
+                throw new ArgumentException("AOT duck typing failure thrower method handle cannot be default.", nameof(throwerMethodHandle));
+            }
+
+            MethodInfo? throwerMethod;
             try
             {
-                if (FormatterServices.GetUninitializedObject(exceptionType) is Exception uninitializedException)
-                {
-                    return uninitializedException;
-                }
+                throwerMethod = MethodBase.GetMethodFromHandle(throwerMethodHandle) as MethodInfo;
             }
             catch (Exception ex)
             {
-                return new InvalidOperationException($"AOT duck typing failure exception type '{exceptionType}' could not be created.", ex);
+                throw new ArgumentException("AOT duck typing failure thrower method handle could not be resolved.", nameof(throwerMethodHandle), ex);
             }
-#if NET6_0_OR_GREATER
-#pragma warning restore SYSLIB0050
-#endif
 
-            return new InvalidOperationException($"AOT duck typing failure exception type '{exceptionType}' is not supported.");
+            if (throwerMethod is null)
+            {
+                throw new ArgumentException("AOT duck typing failure thrower method handle does not reference a method.", nameof(throwerMethodHandle));
+            }
+
+            if (!throwerMethod.IsStatic)
+            {
+                throw new ArgumentException(
+                    $"AOT duck typing failure thrower method '{throwerMethod}' must be static.",
+                    nameof(throwerMethodHandle));
+            }
+
+            if (throwerMethod.ContainsGenericParameters)
+            {
+                throw new ArgumentException(
+                    $"AOT duck typing failure thrower method '{throwerMethod}' must be closed (no open generic parameters).",
+                    nameof(throwerMethodHandle));
+            }
+
+            if (throwerMethod.ReturnType != typeof(void) || throwerMethod.GetParameters().Length != 0)
+            {
+                throw new ArgumentException(
+                    $"AOT duck typing failure thrower method '{throwerMethod}' must declare no parameters and return void.",
+                    nameof(throwerMethodHandle));
+            }
+
+            try
+            {
+                throwerMethod.Invoke(obj: null, parameters: null);
+            }
+            catch (TargetInvocationException ex) when (ex.InnerException is not null)
+            {
+                return ex.InnerException;
+            }
+            catch (Exception ex)
+            {
+                return ex;
+            }
+
+            throw new ArgumentException(
+                $"AOT duck typing failure thrower method '{throwerMethod}' must throw an exception.",
+                nameof(throwerMethodHandle));
         }
 
         /// <summary>

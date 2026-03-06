@@ -99,7 +99,6 @@ dotnet tracer/src/Datadog.Trace.Tools.Runner/bin/Release/Tool/net8.0/Datadog.Tra
 ```bash
 dotnet tracer/src/Datadog.Trace.Tools.Runner/bin/Release/Tool/net8.0/Datadog.Trace.Tools.Runner.dll \
   ducktype-aot verify-compat \
-  --compat-report /abs/path/Datadog.Trace.DuckType.AotRegistry.MyApp.dll.compat.md \
   --compat-matrix /abs/path/Datadog.Trace.DuckType.AotRegistry.MyApp.dll.compat.json \
   --map-file /abs/path/ducktype-aot-map.json \
   --failure-mode strict
@@ -125,6 +124,7 @@ Use this stage layout:
 3. `verify-ducktype-aot`: runs `verify-compat --failure-mode strict`.
 4. `publish-nativeaot`: publishes app using `DuckTypeAotPropsPath`.
 5. `aot-smoke`: runs generated binary and validates key output.
+6. `ducktype-aot-full-parity`: runs the full `Datadog.Trace.DuckTyping.Tests` suite in dynamic and AOT mode across the supported TFM matrix and fails on any mismatch.
 
 ## Artifact Publishing Rules
 
@@ -145,8 +145,7 @@ For Bible compatibility-gate outputs, publish compatibility artifacts only:
 2. `*.dll.compat.json`
 3. `*.dll.compat.md`
 4. `*.linker.xml`
-5. `*.props`
-6. generated map and gate metadata files
+5. generated map and gate metadata files
 
 Do not consume Bible compatibility-gate artifacts as runtime registries.
 

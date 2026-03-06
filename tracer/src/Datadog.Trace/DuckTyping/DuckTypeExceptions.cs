@@ -622,4 +622,29 @@ namespace Datadog.Trace.DuckTyping
             throw new DuckTypeAotRegistryContractValidationException(detail);
         }
     }
+
+    /// <summary>
+    /// Represents a deterministic registered AOT failure replay.
+    /// </summary>
+    internal sealed class DuckTypeAotRegisteredFailureException : DuckTypeException
+    {
+        private DuckTypeAotRegisteredFailureException(string failureTypeName, string detail)
+            : base(string.IsNullOrWhiteSpace(detail)
+                       ? $"AOT duck typing registered failure '{failureTypeName}' was replayed."
+                       : $"AOT duck typing registered failure '{failureTypeName}' was replayed. {detail}")
+        {
+        }
+
+        internal static Exception Create(string failureTypeName, string detail)
+        {
+            return new DuckTypeAotRegisteredFailureException(failureTypeName, detail);
+        }
+
+        [DebuggerHidden]
+        [DoesNotReturn]
+        internal static void Throw(string failureTypeName, string detail)
+        {
+            throw new DuckTypeAotRegisteredFailureException(failureTypeName, detail);
+        }
+    }
 }

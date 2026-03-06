@@ -16,10 +16,14 @@ namespace Datadog.Trace.DuckTyping
     /// </summary>
     public static partial class DuckType
     {
-        private static int _runtimeMode;
-        private static int _runtimeModeInitialized;
+        private const string ManualRegistrationObsoleteMessage = "Reserved for generated NativeAOT registry bootstrap. Manual registration and registry mixing are unsupported.";
+        private const int RuntimeModeStateUninitialized = 0;
 
-        internal static DuckTypeRuntimeMode RuntimeMode => (DuckTypeRuntimeMode)Volatile.Read(ref _runtimeMode);
+        private static int _runtimeModeState;
+
+        internal static DuckTypeRuntimeMode RuntimeMode => Volatile.Read(ref _runtimeModeState) == (int)DuckTypeRuntimeMode.Aot
+                                                               ? DuckTypeRuntimeMode.Aot
+                                                               : DuckTypeRuntimeMode.Dynamic;
 
         /// <summary>
         /// Enables NativeAOT runtime mode.
@@ -36,6 +40,7 @@ namespace Datadog.Trace.DuckTyping
         /// <param name="targetType">Runtime target type.</param>
         /// <param name="generatedProxyType">Generated proxy implementation type.</param>
         /// <param name="activator">Activator used to create proxy instances.</param>
+        [Obsolete(ManualRegistrationObsoleteMessage, error: false)]
         public static void RegisterAotProxy(Type proxyDefinitionType, Type targetType, Type generatedProxyType, Func<object?, object?> activator)
         {
             EnsureRuntimeModeIsInitialized(DuckTypeRuntimeMode.Aot);
@@ -49,6 +54,7 @@ namespace Datadog.Trace.DuckTyping
         /// <param name="targetType">Runtime target type.</param>
         /// <param name="generatedProxyType">Generated proxy implementation type.</param>
         /// <param name="activatorMethodHandle">Static activator method handle.</param>
+        [Obsolete(ManualRegistrationObsoleteMessage, error: false)]
         public static void RegisterAotProxy(Type proxyDefinitionType, Type targetType, Type generatedProxyType, RuntimeMethodHandle activatorMethodHandle)
         {
             EnsureRuntimeModeIsInitialized(DuckTypeRuntimeMode.Aot);
@@ -62,6 +68,7 @@ namespace Datadog.Trace.DuckTyping
         /// <param name="delegationType">Type that provides delegated implementations.</param>
         /// <param name="generatedProxyType">Generated reverse proxy implementation type.</param>
         /// <param name="activator">Activator used to create reverse proxy instances.</param>
+        [Obsolete(ManualRegistrationObsoleteMessage, error: false)]
         public static void RegisterAotReverseProxy(Type typeToDeriveFrom, Type delegationType, Type generatedProxyType, Func<object?, object?> activator)
         {
             EnsureRuntimeModeIsInitialized(DuckTypeRuntimeMode.Aot);
@@ -75,6 +82,7 @@ namespace Datadog.Trace.DuckTyping
         /// <param name="delegationType">Type that provides delegated implementations.</param>
         /// <param name="generatedProxyType">Generated reverse proxy implementation type.</param>
         /// <param name="activatorMethodHandle">Static reverse activator method handle.</param>
+        [Obsolete(ManualRegistrationObsoleteMessage, error: false)]
         public static void RegisterAotReverseProxy(Type typeToDeriveFrom, Type delegationType, Type generatedProxyType, RuntimeMethodHandle activatorMethodHandle)
         {
             EnsureRuntimeModeIsInitialized(DuckTypeRuntimeMode.Aot);
@@ -87,10 +95,24 @@ namespace Datadog.Trace.DuckTyping
         /// <param name="proxyDefinitionType">Duck typing proxy definition type.</param>
         /// <param name="targetType">Runtime target type.</param>
         /// <param name="exceptionType">Exception type to throw for this mapping.</param>
+        [Obsolete(ManualRegistrationObsoleteMessage, error: false)]
         public static void RegisterAotProxyFailure(Type proxyDefinitionType, Type targetType, Type exceptionType)
         {
             EnsureRuntimeModeIsInitialized(DuckTypeRuntimeMode.Aot);
             DuckTypeAotEngine.RegisterProxyFailure(proxyDefinitionType, targetType, exceptionType);
+        }
+
+        /// <summary>
+        /// Registers a forward mapping failure in AOT mode using a generated thrower.
+        /// </summary>
+        /// <param name="proxyDefinitionType">Duck typing proxy definition type.</param>
+        /// <param name="targetType">Runtime target type.</param>
+        /// <param name="throwerMethodHandle">Static failure thrower method handle.</param>
+        [Obsolete(ManualRegistrationObsoleteMessage, error: false)]
+        public static void RegisterAotProxyFailure(Type proxyDefinitionType, Type targetType, RuntimeMethodHandle throwerMethodHandle)
+        {
+            EnsureRuntimeModeIsInitialized(DuckTypeRuntimeMode.Aot);
+            DuckTypeAotEngine.RegisterProxyFailure(proxyDefinitionType, targetType, throwerMethodHandle);
         }
 
         /// <summary>
@@ -99,10 +121,24 @@ namespace Datadog.Trace.DuckTyping
         /// <param name="typeToDeriveFrom">Type to derive the reverse proxy from.</param>
         /// <param name="delegationType">Type that provides delegated implementations.</param>
         /// <param name="exceptionType">Exception type to throw for this mapping.</param>
+        [Obsolete(ManualRegistrationObsoleteMessage, error: false)]
         public static void RegisterAotReverseProxyFailure(Type typeToDeriveFrom, Type delegationType, Type exceptionType)
         {
             EnsureRuntimeModeIsInitialized(DuckTypeRuntimeMode.Aot);
             DuckTypeAotEngine.RegisterReverseProxyFailure(typeToDeriveFrom, delegationType, exceptionType);
+        }
+
+        /// <summary>
+        /// Registers a reverse mapping failure in AOT mode using a generated thrower.
+        /// </summary>
+        /// <param name="typeToDeriveFrom">Type to derive the reverse proxy from.</param>
+        /// <param name="delegationType">Type that provides delegated implementations.</param>
+        /// <param name="throwerMethodHandle">Static reverse failure thrower method handle.</param>
+        [Obsolete(ManualRegistrationObsoleteMessage, error: false)]
+        public static void RegisterAotReverseProxyFailure(Type typeToDeriveFrom, Type delegationType, RuntimeMethodHandle throwerMethodHandle)
+        {
+            EnsureRuntimeModeIsInitialized(DuckTypeRuntimeMode.Aot);
+            DuckTypeAotEngine.RegisterReverseProxyFailure(typeToDeriveFrom, delegationType, throwerMethodHandle);
         }
 
         /// <summary>
@@ -150,31 +186,36 @@ namespace Datadog.Trace.DuckTyping
                 _typeCount = 0;
             }
 
-            Volatile.Write(ref _runtimeMode, (int)DuckTypeRuntimeMode.Dynamic);
-            Volatile.Write(ref _runtimeModeInitialized, 0);
+            Volatile.Write(ref _runtimeModeState, RuntimeModeStateUninitialized);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static DuckTypeRuntimeMode EnsureRuntimeModeIsInitialized()
         {
-            if (Volatile.Read(ref _runtimeModeInitialized) == 0)
+            var currentState = Volatile.Read(ref _runtimeModeState);
+            if (currentState == RuntimeModeStateUninitialized)
             {
-                _ = Interlocked.CompareExchange(ref _runtimeModeInitialized, 1, 0);
+                currentState = Interlocked.CompareExchange(ref _runtimeModeState, (int)DuckTypeRuntimeMode.Dynamic, RuntimeModeStateUninitialized);
+                if (currentState == RuntimeModeStateUninitialized)
+                {
+                    currentState = (int)DuckTypeRuntimeMode.Dynamic;
+                }
             }
 
-            return RuntimeMode;
+            return currentState == (int)DuckTypeRuntimeMode.Aot ? DuckTypeRuntimeMode.Aot : DuckTypeRuntimeMode.Dynamic;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static void EnsureRuntimeModeIsInitialized(DuckTypeRuntimeMode mode)
         {
-            if (Interlocked.CompareExchange(ref _runtimeModeInitialized, 1, 0) == 0)
+            var requestedState = (int)mode;
+            var currentState = Interlocked.CompareExchange(ref _runtimeModeState, requestedState, RuntimeModeStateUninitialized);
+            if (currentState == RuntimeModeStateUninitialized)
             {
-                Volatile.Write(ref _runtimeMode, (int)mode);
                 return;
             }
 
-            var currentMode = RuntimeMode;
+            var currentMode = currentState == (int)DuckTypeRuntimeMode.Aot ? DuckTypeRuntimeMode.Aot : DuckTypeRuntimeMode.Dynamic;
             if (currentMode != mode)
             {
                 DuckTypeRuntimeModeConflictException.Throw(currentMode, mode);

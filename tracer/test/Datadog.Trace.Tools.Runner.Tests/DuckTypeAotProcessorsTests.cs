@@ -26,6 +26,8 @@ using dnlib.DotNet.Emit;
 using FluentAssertions;
 using Xunit;
 
+#pragma warning disable SA1201 // Elements should appear in the correct order
+
 namespace Datadog.Trace.Tools.Runner.Tests;
 
 public class DuckTypeAotProcessorsTests
@@ -37,6 +39,7 @@ public class DuckTypeAotProcessorsTests
 
     public DuckTypeAotProcessorsTests()
     {
+        DuckType.ResetRuntimeModeForTests();
         DuckTypeAotEngine.ResetForTests();
     }
 
@@ -390,6 +393,88 @@ public class DuckTypeAotProcessorsTests
         }
         finally
         {
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
+
+    [Fact]
+    public void GenerateProcessorShouldEmitAssignableAliasRegistrationsForDerivedRuntimeTargets()
+    {
+        var tempDirectory = CreateTempDirectory();
+        try
+        {
+            DuckType.ResetRuntimeModeForTests();
+
+            var assemblyPath = typeof(DuckTypeAotProcessorsTests).Assembly.Location;
+            var assemblyName = AssemblyName.GetAssemblyName(assemblyPath).Name;
+            assemblyName.Should().NotBeNullOrWhiteSpace();
+
+            var outputPath = Path.Combine(tempDirectory, "Datadog.Trace.DuckType.AotRegistry.Alias.Runtime.dll");
+            var mapFilePath = Path.Combine(tempDirectory, "ducktype-aot-alias-map.json");
+            var trimmerDescriptorPath = Path.Combine(tempDirectory, "ducktype-aot-alias.linker.xml");
+            var propsPath = Path.Combine(tempDirectory, "ducktype-aot-alias.props");
+
+            var mapDocument = new
+            {
+                mappings = new[]
+                {
+                    new
+                    {
+                        mode = "forward",
+                        proxyType = typeof(IAliasForwardProxy).FullName,
+                        proxyAssembly = assemblyName,
+                        targetType = typeof(AliasForwardBaseTarget).FullName,
+                        targetAssembly = assemblyName
+                    }
+                }
+            };
+
+            File.WriteAllText(mapFilePath, JsonConvert.SerializeObject(mapDocument, Formatting.Indented));
+
+            var options = new DuckTypeAotGenerateOptions(
+                proxyAssemblies: new[] { assemblyPath },
+                targetAssemblies: new[] { assemblyPath },
+                targetFolders: Array.Empty<string>(),
+                targetFilters: new[] { "*.dll" },
+                mapFile: mapFilePath,
+                mappingCatalog: null,
+                genericInstantiationsFile: null,
+                outputPath: outputPath,
+                assemblyName: "Datadog.Trace.DuckType.AotRegistry.Alias.Runtime",
+                trimmerDescriptorPath: trimmerDescriptorPath,
+                propsPath: propsPath);
+
+            var exitCode = DuckTypeAotGenerateProcessor.Process(options);
+            exitCode.Should().Be(0);
+
+            var manifestPath = $"{outputPath}.manifest.json";
+            var manifest = JsonConvert.DeserializeObject<DuckTypeAotManifest>(File.ReadAllText(manifestPath));
+            manifest.Should().NotBeNull();
+            manifest!.AliasRegistrations.Should().BeGreaterThan(0);
+            manifest.TotalRuntimeRegistrations.Should().BeGreaterThan(manifest.Mappings.Count);
+
+            var loadContext = new AssemblyLoadContext("DuckTypeAotProcessorsTests-Alias-Runtime", isCollectible: true);
+            try
+            {
+                var generatedAssembly = loadContext.LoadFromAssemblyPath(outputPath);
+                var bootstrapType = generatedAssembly.GetType("Datadog.Trace.DuckTyping.Generated.DuckTypeAotRegistryBootstrap");
+                bootstrapType.Should().NotBeNull();
+                var initializeMethod = bootstrapType!.GetMethod("Initialize", BindingFlags.Public | BindingFlags.Static);
+                initializeMethod.Should().NotBeNull();
+                _ = initializeMethod!.Invoke(obj: null, parameters: null);
+
+                var proxy = DuckType.Create<IAliasForwardProxy>(new AliasForwardDerivedTarget("alias"));
+                proxy.Should().NotBeNull();
+                proxy!.Value.Should().Be("alias");
+            }
+            finally
+            {
+                loadContext.Unload();
+            }
+        }
+        finally
+        {
+            DuckType.ResetRuntimeModeForTests();
             TryDeleteDirectory(tempDirectory);
         }
     }
@@ -1334,6 +1419,37 @@ public class DuckTypeAotProcessorsTests
             File.WriteAllText(matrixPath, JsonConvert.SerializeObject(matrix));
 
             var result = DuckTypeAotVerifyCompatProcessor.Process(new DuckTypeAotVerifyCompatOptions(reportPath, matrixPath, mappingCatalogPath: null, manifestPath: null, strictAssemblyFingerprintValidation: false));
+            result.Should().Be(0);
+        }
+        finally
+        {
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
+
+    [Fact]
+    public void VerifyCompatProcessorShouldAllowMissingCompatReportWhenAllMappingsAreCompatible()
+    {
+        var tempDirectory = CreateTempDirectory();
+        try
+        {
+            var matrixPath = Path.Combine(tempDirectory, "ducktyping-aot-compat.json");
+
+            var matrix = new DuckTypeAotCompatibilityMatrix
+            {
+                Mappings = new List<DuckTypeAotCompatibilityMapping>
+                {
+                    new()
+                    {
+                        Id = "MAP-0001",
+                        Status = DuckTypeAotCompatibilityStatuses.Compatible
+                    }
+                }
+            };
+            File.WriteAllText(matrixPath, JsonConvert.SerializeObject(matrix));
+
+            var result = DuckTypeAotVerifyCompatProcessor.Process(
+                new DuckTypeAotVerifyCompatOptions(string.Empty, matrixPath, mappingCatalogPath: null, manifestPath: null, strictAssemblyFingerprintValidation: false));
             result.Should().Be(0);
         }
         finally
@@ -7724,6 +7840,29 @@ public class DuckTypeAotProcessorsTests
     {
         using var module = ModuleDefMD.Load(assemblyPath);
         return module.Mvid?.ToString("D") ?? string.Empty;
+    }
+
+    private interface IAliasForwardProxy
+    {
+        string Value { get; }
+    }
+
+    private class AliasForwardBaseTarget
+    {
+        public AliasForwardBaseTarget(string value)
+        {
+            Value = value;
+        }
+
+        public virtual string Value { get; }
+    }
+
+    private sealed class AliasForwardDerivedTarget : AliasForwardBaseTarget
+    {
+        public AliasForwardDerivedTarget(string value)
+            : base(value)
+        {
+        }
     }
 
     private static void TryDeleteDirectory(string directory)
