@@ -17,3 +17,4 @@ dotnet_diagnostic.CA1814.severity = error # Prefer jagged arrays over multidimen
 dotnet_diagnostic.CA1821.severity = error # Remove empty finalizers - Whenever you can, avoid finalizers because of the additional performance overhead that's involved in tracking object lifetime.
 # dotnet_diagnostic.CA1822.severity = error # Mark members as static - Too many violations (~322)
 # dotnet_diagnostic.CA1823.severity = error # Avoid unused private fields - Too many violations (~28)
+dotnet_diagnostic.CA1824.severity = error # Mark assemblies with NeutralResourcesLanguageAttribute - The NeutralResourcesLanguage attribute informs the resource manager of the language that was used to display the resources of a neutral culture for an assembly.
