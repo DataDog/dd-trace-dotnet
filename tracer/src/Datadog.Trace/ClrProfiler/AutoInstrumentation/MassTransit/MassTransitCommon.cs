@@ -746,64 +746,28 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
             // Add component tag to identify this as a MassTransit span
             activity.AddTag(Tags.InstrumentationName, MassTransitConstants.ComponentTagName);
 
-            // Preserve the original operation name
+            // Preserve the original MT8 activity operation name (e.g. "MassTransit.Transport.Send")
             var originalOperationName = activity.OperationName ?? string.Empty;
             if (!StringUtil.IsNullOrWhiteSpace(originalOperationName))
             {
                 activity.AddTag("operation.name", originalOperationName);
             }
 
-            // Try MassTransit 8.x OTEL semantic convention tag names first
+            // Read destination — MT8 sets messaging.destination.name for receive/send spans.
+            // For process/consume spans, fall back to peer.address which contains the message type name.
             var destination = activity.Tags.FirstOrDefault(kv => kv.Key == "messaging.destination.name").Value;
-            var operation = activity.Tags.FirstOrDefault(kv => kv.Key == "messaging.operation").Value;
-            var messagingSystem = activity.Tags.FirstOrDefault(kv => kv.Key == "messaging.system").Value;
-
-            // Fallback to MassTransit 7.x tag names if OTEL tags not found
             if (StringUtil.IsNullOrWhiteSpace(destination))
             {
                 var peerAddress = activity.Tags.FirstOrDefault(kv => kv.Key == "peer.address").Value;
                 destination = peerAddress?.TrimStart('/');
             }
 
-            if (StringUtil.IsNullOrWhiteSpace(operation))
-            {
-                var peerService = activity.Tags.FirstOrDefault(kv => kv.Key == "peer.service").Value;
-                operation = peerService;
-            }
+            var operation = activity.Tags.FirstOrDefault(kv => kv.Key == "messaging.operation").Value;
 
-            if (StringUtil.IsNullOrWhiteSpace(messagingSystem))
-            {
-                var destinationAddress = activity.Tags.FirstOrDefault(kv => kv.Key == "destination-address").Value;
-                messagingSystem = DetermineMessagingSystem(destinationAddress);
-            }
-
-            // Add messaging.operation tag if not already present
-            if (!StringUtil.IsNullOrWhiteSpace(operation))
-            {
-                activity.AddTag(Tags.MessagingOperation, operation!.ToLowerInvariant());
-            }
-
-            // Add messaging.system tag if not already present
-            if (!StringUtil.IsNullOrWhiteSpace(messagingSystem))
-            {
-                activity.AddTag(Tags.MessagingSystem, messagingSystem!);
-            }
-
-            // Update DisplayName (resource name)
+            // Update DisplayName (resource name) from destination + operation
             if (!StringUtil.IsNullOrWhiteSpace(destination))
             {
-                var resourceName = CreateResourceName(destination, operation);
-
-                // Update DisplayName for resource name
-                activity.DisplayName = resourceName;
-
-                Log.Debug(
-                    "MassTransitCommon.EnhanceActivityMetadata: Updated DisplayName to '{DisplayName}'",
-                    activity.DisplayName);
-            }
-            else
-            {
-                Log.Debug("Unable to update MassTransit Activity's resource name: destination not found in tags.");
+                activity.DisplayName = CreateResourceName(destination, operation);
             }
         }
     }

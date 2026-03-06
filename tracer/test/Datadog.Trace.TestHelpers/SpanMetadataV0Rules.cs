@@ -650,7 +650,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("component", "masstransit")
                 .MatchesOneOf("span.kind", "consumer", "producer")
                 .IsPresent("messaging.operation")
-                .IsPresent("messaging.system")
+                .IsOptional("messaging.system")
                 .IsOptional("messaging.destination.name")
                 .IsOptional("messaging.masstransit.message_id")
                 .IsOptional("messaging.masstransit.message_types")
