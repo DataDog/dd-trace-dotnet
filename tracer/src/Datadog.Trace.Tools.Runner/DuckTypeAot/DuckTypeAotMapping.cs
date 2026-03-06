@@ -46,6 +46,27 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
     }
 
     /// <summary>
+    /// Defines named constants for runtime registration kind.
+    /// </summary>
+    internal enum DuckTypeAotRuntimeRegistrationKind
+    {
+        /// <summary>
+        /// Represents a canonical mapping registration.
+        /// </summary>
+        Canonical,
+
+        /// <summary>
+        /// Represents an assignable alias registration.
+        /// </summary>
+        AssignableAlias,
+
+        /// <summary>
+        /// Represents a nullable alias registration.
+        /// </summary>
+        NullableAlias
+    }
+
+    /// <summary>
     /// Represents duck type aot mapping.
     /// </summary>
     internal sealed class DuckTypeAotMapping
@@ -165,6 +186,45 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
             return trimmedScenarioId;
         }
+    }
+
+    /// <summary>
+    /// Represents a runtime registration emitted into the generated AOT registry.
+    /// </summary>
+    internal sealed class DuckTypeAotRuntimeRegistration
+    {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DuckTypeAotRuntimeRegistration"/> class.
+        /// </summary>
+        /// <param name="mapping">The runtime mapping value.</param>
+        /// <param name="canonicalMappingKey">The canonical mapping key value.</param>
+        /// <param name="kind">The registration kind value.</param>
+        public DuckTypeAotRuntimeRegistration(DuckTypeAotMapping mapping, string canonicalMappingKey, DuckTypeAotRuntimeRegistrationKind kind)
+        {
+            Mapping = mapping;
+            CanonicalMappingKey = canonicalMappingKey;
+            Kind = kind;
+        }
+
+        /// <summary>
+        /// Gets runtime mapping.
+        /// </summary>
+        public DuckTypeAotMapping Mapping { get; }
+
+        /// <summary>
+        /// Gets canonical mapping key.
+        /// </summary>
+        public string CanonicalMappingKey { get; }
+
+        /// <summary>
+        /// Gets registration kind.
+        /// </summary>
+        public DuckTypeAotRuntimeRegistrationKind Kind { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the registration is canonical.
+        /// </summary>
+        public bool IsCanonical => Kind == DuckTypeAotRuntimeRegistrationKind.Canonical;
     }
 
     /// <summary>

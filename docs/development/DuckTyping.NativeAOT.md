@@ -47,12 +47,13 @@ NativeAOT DuckTyping has two phases.
 1. Build-time phase (`ducktype-aot generate`):
    1. Resolve mappings from canonical `--map-file`.
    2. Resolve proxy and target types from provided assemblies.
-   3. Emit a registry assembly containing generated proxy types and bootstrap code.
-   4. Emit companion artifacts (`manifest`, `compat`, linker descriptor, props).
+   3. Expand the runtime registration set for known compatible concrete target/delegation types discovered from the provided assemblies.
+   4. Emit a registry assembly containing generated proxy types and bootstrap code.
+   5. Emit companion artifacts (`manifest`, `compat`, linker descriptor, props).
 2. Runtime phase:
    1. Bootstrap initializes AOT mode and validates contract.
    2. Bootstrap registers forward/reverse mappings.
-   3. `DuckType.GetOrCreateProxyType` and `DuckType.GetOrCreateReverseProxyType` resolve from AOT registry.
+   3. `DuckType.GetOrCreateProxyType` and `DuckType.GetOrCreateReverseProxyType` resolve by exact key from the emitted AOT registry.
 
 ### Runtime Isolation Rules
 
@@ -61,6 +62,7 @@ DuckType runtime mode is immutable per process.
 1. First mode wins (`dynamic` or `aot`).
 2. Switching mode later throws `DuckTypeRuntimeModeConflictException`.
 3. AOT runtime allows a single generated registry assembly identity per process.
+4. AOT runtime does not fall back to runtime IL emission, interpreted expression trees, or reflection-based compatibility scans.
 
 ## NativeAOT Runtime APIs
 
@@ -76,7 +78,8 @@ The generated bootstrap calls all of these automatically.
 Current generated bootstrap behavior:
 
 1. It registers mappings using the `RuntimeMethodHandle` overloads (`RegisterAotProxy(Type, Type, Type, RuntimeMethodHandle)` and `RegisterAotReverseProxy(Type, Type, Type, RuntimeMethodHandle)`).
-2. `Func<object?, object?>` overloads remain available for manual/legacy registration paths.
+2. Failure registrations are emitted as generated throwers and registered through `RuntimeMethodHandle`.
+3. The public manual registration overloads remain for compatibility but are deprecated for application code. The supported model is generated bootstrap only.
 
 ## Proxy Definition Authoring
 
@@ -150,6 +153,7 @@ Discovery resolves target types from `--target-folder` inputs (plus `--target-fi
 
 `ducktype-aot generate` consumes only `--map-file`.
 When `--discover-mappings` is set, generate performs discovery first (same proxy/target inputs), writes `--map-file`, then continues generation in the same invocation.
+Generation may emit additional runtime registrations for known compatible concrete types, but those aliases are internal to the generated registry and do not change the canonical map file or compatibility matrix contract.
 
 ## Map File Schema
 

@@ -1597,6 +1597,8 @@ partial class Build
             var compatibilityDirectory = duckTypingTestsProject.Directory / "AotCompatibility";
             var canonicalMapFilePath = compatibilityDirectory / "ducktype-aot-bible-mappings.json";
             EnsureFileExists(canonicalMapFilePath, "DuckType AOT canonical map file");
+            var duckTypingTestsOutputDirectory = (AbsolutePath)Path.GetDirectoryName(duckTypingTestsAssemblyPath)!;
+            var duckTypingTestsAssemblyFileName = Path.GetFileName(duckTypingTestsAssemblyPath);
 
             var gateOutputDirectory = BuildDataDirectory / "ducktype-aot-compatibility-gate";
             EnsureCleanDirectory(gateOutputDirectory);
@@ -1619,7 +1621,8 @@ partial class Build
             RunRunnerCommand(
                 $"ducktype-aot discover-mappings " +
                 $"--proxy-assembly {QuotePath(duckTypingTestsAssemblyPath)} " +
-                $"--target-assembly {QuotePath(duckTypingTestsAssemblyPath)} " +
+                $"--target-folder {QuotePath(duckTypingTestsOutputDirectory)} " +
+                $"--target-filter {QuoteArgument(duckTypingTestsAssemblyFileName)} " +
                 $"--output {QuotePath(discoveredCompatibleMapFilePath)} " +
                 $"--warnings-report {QuotePath(discoverWarningsPath)}");
 
@@ -1637,7 +1640,8 @@ partial class Build
             RunRunnerCommand(
                 $"ducktype-aot generate " +
                 $"--proxy-assembly {QuotePath(duckTypingTestsAssemblyPath)} " +
-                $"--target-assembly {QuotePath(duckTypingTestsAssemblyPath)} " +
+                $"--target-folder {QuotePath(duckTypingTestsOutputDirectory)} " +
+                $"--target-filter {QuoteArgument(duckTypingTestsAssemblyFileName)} " +
                 $"--map-file {QuotePath(canonicalMapFilePath)} " +
                 $"--output {QuotePath(outputAssemblyPath)} " +
                 $"--emit-trimmer-descriptor {QuotePath(trimmerDescriptorPath)} " +
@@ -1650,13 +1654,6 @@ partial class Build
                 $"--map-file {QuotePath(canonicalMapFilePath)} " +
                 $"--manifest {QuotePath(manifestPath)} " +
                 "--failure-mode strict");
-
-            // The Bible compatibility gate registry is intentionally gate-scoped and not valid as a full-suite test registry.
-            // Keep compatibility outputs, but remove the generated gate registry assembly to avoid accidental reuse in full-suite AOT test runs.
-            if (File.Exists(outputAssemblyPath))
-            {
-                File.Delete(outputAssemblyPath);
-            }
 
             Logger.Information("DuckType AOT compatibility gate passed. Compatibility artifacts are available at '{OutputDirectory}'.", gateOutputDirectory);
 
@@ -1671,7 +1668,13 @@ partial class Build
             }
 
             static string QuotePath(AbsolutePath path) => $"\"{path}\"";
+            static string QuoteArgument(string value) => $"\"{value}\"";
         });
+
+    Target RunDuckTypeAotGates => _ => _
+        .Unlisted()
+        .DependsOn(RunDuckTypeAotCompatibilityGate)
+        .DependsOn(RunDuckTypeAotFullSuiteParityGate);
 
     Target RunDuckTypeAotFullSuiteParityGate => _ => _
         .Unlisted()
@@ -1695,7 +1698,7 @@ partial class Build
                 .SetProjectFile(parityTestsProjectPath)
                 .SetFramework("net8.0")
                 .SetFilter(parityFilter)
-                .SetProcessEnvironmentVariable("DD_RUN_DUCKTYPE_AOT_FULL_SUITE_PARITY", "1")
+                .SetProcessEnvironmentVariable("DD_RUN_DUCKTYPE_AOT_FULL_SUITE_PARITY_MATRIX", "1")
                 .SetProcessEnvironmentVariable("DD_DUCKTYPE_AOT_FULL_SUITE_PARITY_SEED", paritySeed)
                 .SetProcessEnvironmentVariable("RANDOM_SEED", paritySeed)
                 .WithDatadogLogger());
