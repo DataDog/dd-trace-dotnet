@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using Spectre.Console;
 
@@ -17,6 +18,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
     /// </summary>
     internal static class DuckTypeAotGenerateProcessor
     {
+        private const string ProfilingEnvironmentVariable = "DD_TRACE_DUCKTYPE_AOT_PROFILE";
+
         /// <summary>
         /// Executes process.
         /// </summary>
@@ -24,6 +27,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <returns>The computed numeric value.</returns>
         internal static int Process(DuckTypeAotGenerateOptions options)
         {
+            var profilingEnabled = IsProfilingEnabled();
+            var totalStopwatch = profilingEnabled ? Stopwatch.StartNew() : null;
             var validationErrors = Validate(options);
             // Branch: take this path when (validationErrors.Count > 0) evaluates to true.
             if (validationErrors.Count > 0)
@@ -54,7 +59,14 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 }
             }
 
+            var resolveStopwatch = profilingEnabled ? Stopwatch.StartNew() : null;
             var mappingResolutionResult = DuckTypeAotMappingResolver.Resolve(options);
+            if (resolveStopwatch is not null)
+            {
+                resolveStopwatch.Stop();
+                WriteProfileMetric($"resolve={resolveStopwatch.Elapsed.TotalSeconds:F3}s mappings={mappingResolutionResult.Mappings.Count} proxyAssemblies={mappingResolutionResult.ProxyAssemblyPathsByName.Count} targetAssemblies={mappingResolutionResult.TargetAssemblyPathsByName.Count}");
+            }
+
             foreach (var warning in mappingResolutionResult.Warnings)
             {
                 AnsiConsole.MarkupLine($"[yellow]Warning:[/] {warning.EscapeMarkup()}");
@@ -113,13 +125,26 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
             try
             {
+                var emitStopwatch = profilingEnabled ? Stopwatch.StartNew() : null;
                 var emissionResult = DuckTypeAotRegistryAssemblyEmitter.Emit(options, artifactPaths, mappingResolutionResult);
+                if (emitStopwatch is not null)
+                {
+                    emitStopwatch.Stop();
+                    WriteProfileMetric($"emit={emitStopwatch.Elapsed.TotalSeconds:F3}s canonicalMappings={mappingResolutionResult.Mappings.Count} runtimeRegistrations={emissionResult.RuntimeRegistrations.Count}");
+                }
+
                 foreach (var warning in emissionResult.Warnings)
                 {
                     AnsiConsole.MarkupLine($"[yellow]Warning:[/] {warning.EscapeMarkup()}");
                 }
 
+                var artifactsStopwatch = profilingEnabled ? Stopwatch.StartNew() : null;
                 var compatibilityArtifacts = DuckTypeAotArtifactsWriter.WriteAll(artifactPaths, mappingResolutionResult, emissionResult);
+                if (artifactsStopwatch is not null)
+                {
+                    artifactsStopwatch.Stop();
+                    WriteProfileMetric($"artifacts={artifactsStopwatch.Elapsed.TotalSeconds:F3}s totalMappings={compatibilityArtifacts.TotalMappings} nonCompatible={compatibilityArtifacts.NonCompatibleMappings}");
+                }
 
                 AnsiConsole.MarkupLine($"[green]Generated registry assembly:[/] {artifactPaths.OutputAssemblyPath.EscapeMarkup()}");
                 AnsiConsole.MarkupLine($"[green]Generated manifest:[/] {artifactPaths.ManifestPath.EscapeMarkup()}");
@@ -134,6 +159,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     AnsiConsole.MarkupLine($"[yellow]Compatibility status:[/] {compatibilityArtifacts.NonCompatibleMappings}/{compatibilityArtifacts.TotalMappings} mappings are not yet compatible.");
                 }
 
+                if (totalStopwatch is not null)
+                {
+                    totalStopwatch.Stop();
+                    WriteProfileMetric($"total={totalStopwatch.Elapsed.TotalSeconds:F3}s");
+                }
+
                 return 0;
             }
             catch (Exception ex)
@@ -142,6 +173,18 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 Utils.WriteError($"ducktype-aot generate failed: {ex.Message}");
                 return 1;
             }
+        }
+
+        private static bool IsProfilingEnabled()
+        {
+            var value = Environment.GetEnvironmentVariable(ProfilingEnvironmentVariable);
+            return string.Equals(value, "1", StringComparison.Ordinal) ||
+                   string.Equals(value, "true", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static void WriteProfileMetric(string message)
+        {
+            AnsiConsole.MarkupLine($"[blue]ducktype-aot profile:[/] {message.EscapeMarkup()}");
         }
 
         /// <summary>
