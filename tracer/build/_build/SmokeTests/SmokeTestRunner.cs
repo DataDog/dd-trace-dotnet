@@ -133,7 +133,8 @@ public static partial class SmokeTestRunner
                     networkName: networkName,
                     logsDir: environment.ToHostPath(logsDir),
                     dumpsDir: environment.ToHostPath(dumpsDir),
-                    isWindowsScenario: scenario.IsWindows));
+                    isWindowsScenario: scenario.IsWindows,
+                    isCrashTest: false));
 
             if (await DockerService.WaitForContainerAsync("Smoke test", smokeTestContainerId) is var statusCode and not 0)
             {
@@ -228,17 +229,30 @@ public static partial class SmokeTestRunner
         string networkName,
         string logsDir,
         string dumpsDir,
-        bool isWindowsScenario)
+        bool isWindowsScenario,
+        bool isCrashTest)
     {
-        return new CreateContainerParameters
-        {
-            Image = imageTag,
-            Env = new List<string>
+        var env = isCrashTest
+            ? new List<string>
+            {
+                $"DD_TRACE_AGENT_URL=http://{TestAgentAlias}:8126",
+                "DD_PROFILING_ENABLED=0",
+                "CRASH_APP_ON_STARTUP=1",
+                "DD_CRASHTRACKING_INTERNAL_LOG_TO_CONSOLE=1",
+                "COMPlus_DbgEnableMiniDump=0",
+                $"dockerTag={imageTag}",
+            }
+            : new List<string>
             {
                 $"DD_TRACE_AGENT_URL=http://{TestAgentAlias}:8126",
                 "DD_PROFILING_ENABLED=1",
                 $"dockerTag={imageTag}",
-            },
+            };
+
+        return new CreateContainerParameters
+        {
+            Image = imageTag,
+            Env = env,
             HostConfig = new HostConfig
             {
                 // No Init or SYS_PTRACE on Windows (Linux-only features)
@@ -254,43 +268,6 @@ public static partial class SmokeTestRunner
                         $"{logsDir}:/var/log/datadog/dotnet",
                         $"{dumpsDir}:/dumps",
                     }
-            },
-            NetworkingConfig = new NetworkingConfig
-            {
-                EndpointsConfig = new Dictionary<string, EndpointSettings>
-                {
-                    [networkName] = new(),
-                },
-            },
-        };
-    }
-
-    static CreateContainerParameters BuildCrashTestContainerParams(
-        string imageTag,
-        string networkName,
-        string logsDir,
-        string dumpsDir)
-    {
-        return new CreateContainerParameters
-        {
-            Image = imageTag,
-            Env = new List<string>
-            {
-                $"DD_TRACE_AGENT_URL=http://{TestAgentAlias}:8126",
-                "DD_PROFILING_ENABLED=0",
-                "CRASH_APP_ON_STARTUP=1",
-                "DD_CRASHTRACKING_INTERNAL_LOG_TO_CONSOLE=1",
-                "COMPlus_DbgEnableMiniDump=0",
-                $"dockerTag={imageTag}",
-            },
-            HostConfig = new HostConfig
-            {
-                Init = true,
-                Binds = new List<string>
-                {
-                    $"{logsDir}:/var/log/datadog/dotnet",
-                    $"{dumpsDir}:/dumps",
-                },
             },
             NetworkingConfig = new NetworkingConfig
             {
@@ -410,8 +387,15 @@ public static partial class SmokeTestRunner
         using var crashCts = new CancellationTokenSource(TimeSpan.FromMinutes(4));
         var ct = crashCts.Token;
 
+        var containerParams = BuildSmokeTestAppContainerParams(
+            imageTag: imageTag,
+            networkName: networkName,
+            logsDir: logsDir,
+            dumpsDir: dumpsDir,
+            isWindowsScenario: false, // We don't yet support windows crash-tests
+            isCrashTest: true);
         var containerId = await DockerService.CreateAndStartContainerWithRetryAsync(
-            "crash-test", BuildCrashTestContainerParams(imageTag, networkName, logsDir, dumpsDir), ct);
+            "crash-test", containerParams, ct);
 
         // Wait for the container to exit (non-zero exit is expected)
         var statusCode = await DockerService.WaitForContainerAsync("Crash test", containerId, ct);
