@@ -23,8 +23,19 @@ namespace Datadog.Trace.Configuration.Schema
             "mongodb.query",
         ];
 
+        private static readonly string[] IntegrationSourceNames =
+        [
+            "aerospike",
+            "cosmosdb",
+            "couchbase",
+            "elasticsearch",
+            "mongodb",
+            "redis",
+        ];
+
         private readonly bool _useV0Tags;
-        private readonly ServiceNameMetadata[] _serviceNameMetadata;
+        private readonly string[] _serviceNames;
+        private readonly string?[] _serviceNameSources;
 
         public DatabaseSchema(SchemaVersion version, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled, string defaultServiceName, IReadOnlyDictionary<string, string>? serviceNameMappings)
         {
@@ -42,6 +53,32 @@ namespace Datadog.Trace.Configuration.Schema
                 ServiceNameMetadata.Resolve("mongodb", defaultServiceName, serviceNameMappings, useSuffix),
                 ServiceNameMetadata.Resolve("redis", defaultServiceName, serviceNameMappings, useSuffix),
             ];
+
+            if (serviceNameMappings is not null)
+            {
+                TryApplyMapping(_serviceNames, serviceNameMappings, "aerospike", ServiceType.Aerospike);
+                TryApplyMapping(_serviceNames, serviceNameMappings, "couchbase", ServiceType.Couchbase);
+                TryApplyMapping(_serviceNames, serviceNameMappings, "cosmosdb", ServiceType.CosmosDb);
+                TryApplyMapping(_serviceNames, serviceNameMappings, "elasticsearch", ServiceType.Elasticsearch);
+                TryApplyMapping(_serviceNames, serviceNameMappings, "mongodb", ServiceType.MongoDb);
+                TryApplyMapping(_serviceNames, serviceNameMappings, "redis", ServiceType.Redis);
+            }
+
+            // Calculate service name sources: non-null when service name differs from default
+            _serviceNameSources = new string[_serviceNames.Length];
+            for (var i = 0; i < _serviceNames.Length; i++)
+            {
+                _serviceNameSources[i] = _serviceNames[i] != defaultServiceName ? IntegrationSourceNames[i] : null;
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            static void TryApplyMapping(string[] serviceNames, IReadOnlyDictionary<string, string> mappings, string key, ServiceType dbType)
+            {
+                if (mappings.TryGetValue(key, out var mappedName))
+                {
+                    serviceNames[(int)dbType] = mappedName;
+                }
+            }
         }
 
         /// <summary>
@@ -73,6 +110,8 @@ namespace Datadog.Trace.Configuration.Schema
         public string GetOperationName(OperationType databaseType) => OperationNames[(int)databaseType];
 
         public ServiceNameMetadata GetServiceNameMetadata(ServiceType databaseType) => _serviceNameMetadata[(int)databaseType];
+
+        public string? GetServiceNameSource(ServiceType databaseType) => _serviceNameSources[(int)databaseType];
 
         public CouchbaseTags CreateCouchbaseTags()
             => _useV0Tags ? new CouchbaseTags() : new CouchbaseV1Tags();

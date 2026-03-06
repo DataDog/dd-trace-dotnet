@@ -33,7 +33,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
             try
             {
                 string operationName = GetOperationName(tracer, spanKind);
-                var (serviceName, serviceNameSource) = perTraceSettings.Schema.Messaging.GetServiceNameMetadata(MessagingSchema.ServiceType.Msmq);
+                string serviceName = perTraceSettings.Schema.Messaging.GetServiceName(MessagingSchema.ServiceType.Msmq);
+                string? serviceNameSource = perTraceSettings.Schema.Messaging.GetServiceNameSource(MessagingSchema.ServiceType.Msmq);
                 MsmqTags tags = perTraceSettings.Schema.Messaging.CreateMsmqTags(spanKind);
 
                 tags.Command = command;

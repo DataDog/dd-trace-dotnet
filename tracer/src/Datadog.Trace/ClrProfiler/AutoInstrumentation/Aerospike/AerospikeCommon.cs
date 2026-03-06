@@ -34,7 +34,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike
 
             try
             {
-                var (serviceName, serviceNameSource) = perTraceSettings.Schema.Database.GetServiceNameMetadata(DatabaseSchema.ServiceType.Aerospike);
+                var serviceName = perTraceSettings.Schema.Database.GetServiceName(DatabaseSchema.ServiceType.Aerospike);
+                var serviceNameSource = perTraceSettings.Schema.Database.GetServiceNameSource(DatabaseSchema.ServiceType.Aerospike);
                 var tags = perTraceSettings.Schema.Database.CreateAerospikeTags();
 
                 scope = tracer.StartActiveInternal(OperationName, tags: tags, serviceName: serviceName, serviceNameSource: serviceNameSource);

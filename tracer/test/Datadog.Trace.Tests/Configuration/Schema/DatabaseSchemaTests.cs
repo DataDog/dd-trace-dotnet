@@ -200,63 +200,37 @@ namespace Datadog.Trace.Tests.Configuration.Schema
 
         [Theory]
         [CombinatorialData]
-        public void GetServiceNameMetadata_SourceSupportsAllEnumValues([CombinatorialValues(0, 1)]int schemaVersion, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
+        public void GetServiceNameSource_SupportsAllEnumValues([CombinatorialValues(0, 1)]int schemaVersion, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
         {
             var namingSchema = new NamingSchema((SchemaVersion)schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, new Dictionary<string, string>(), new Dictionary<string, string>());
             foreach (var value in Enum.GetValues(typeof(DatabaseSchema.ServiceType)).Cast<DatabaseSchema.ServiceType>())
             {
                 // Should not throw IndexOutOfRangeException
-                var action = () => namingSchema.Database.GetServiceNameMetadata(value).Source;
+                var action = () => namingSchema.Database.GetServiceNameSource(value);
                 action.Should().NotThrow();
             }
         }
 
         [Fact]
-        public void GetServiceNameMetadata_SourceReturnsNonNull_WhenServiceNameDiffersFromDefault()
+        public void GetServiceNameSource_ReturnsNonNull_WhenServiceNameDiffersFromDefault()
         {
             // V0 without removeClientServiceNames: service names have suffixes, so source should be set
             var namingSchema = new NamingSchema(SchemaVersion.V0, peerServiceTagsEnabled: false, removeClientServiceNamesEnabled: false, DefaultServiceName, new Dictionary<string, string>(), new Dictionary<string, string>());
             foreach (var value in Enum.GetValues(typeof(DatabaseSchema.ServiceType)).Cast<DatabaseSchema.ServiceType>())
             {
-                namingSchema.Database.GetServiceNameMetadata(value).Source.Should().NotBeNull($"ServiceType.{value} should have a corresponding IntegrationSourceNames entry");
+                namingSchema.Database.GetServiceNameSource(value).Should().NotBeNull($"ServiceType.{value} should have a corresponding IntegrationSourceNames entry");
             }
         }
 
         [Fact]
-        public void GetServiceNameMetadata_SourceReturnsNull_WhenServiceNameIsDefault()
+        public void GetServiceNameSource_ReturnsNull_WhenServiceNameIsDefault()
         {
             // V1: service names equal default, so source should be null
             var namingSchema = new NamingSchema(SchemaVersion.V1, peerServiceTagsEnabled: false, removeClientServiceNamesEnabled: false, DefaultServiceName, new Dictionary<string, string>(), new Dictionary<string, string>());
             foreach (var value in Enum.GetValues(typeof(DatabaseSchema.ServiceType)).Cast<DatabaseSchema.ServiceType>())
             {
-                namingSchema.Database.GetServiceNameMetadata(value).Source.Should().BeNull();
+                namingSchema.Database.GetServiceNameSource(value).Should().BeNull();
             }
-        }
-
-        [Fact]
-        public void GetServiceNameMetadata_SourceReturnsIntegrationKey_WhenV0Suffix()
-        {
-            // V0 without mappings: source should be the integration key
-            var namingSchema = new NamingSchema(SchemaVersion.V0, peerServiceTagsEnabled: false, removeClientServiceNamesEnabled: false, DefaultServiceName, new Dictionary<string, string>(), new Dictionary<string, string>());
-            namingSchema.Database.GetServiceNameMetadata(DatabaseSchema.ServiceType.Redis).Source.Should().Be("redis");
-            namingSchema.Database.GetServiceNameMetadata(DatabaseSchema.ServiceType.Elasticsearch).Source.Should().Be("elasticsearch");
-        }
-
-        [Fact]
-        public void GetServiceNameMetadata_SourceReturnsOptServiceMapping_WhenMapped()
-        {
-            // When a mapping is configured, source should be "opt.service_mapping"
-            var namingSchema = new NamingSchema(SchemaVersion.V0, peerServiceTagsEnabled: false, removeClientServiceNamesEnabled: false, DefaultServiceName, _mappings, new Dictionary<string, string>());
-            namingSchema.Database.GetServiceNameMetadata(DatabaseSchema.ServiceType.MongoDb).Source.Should().Be(ServiceNameMetadata.OptServiceMapping);
-        }
-
-        [Fact]
-        public void GetServiceNameMetadata_SourceReturnsOptServiceMapping_WhenMappedToDefault()
-        {
-            // Even when mapped value equals default service name, source should still be "opt.service_mapping"
-            var mappings = new Dictionary<string, string> { { "redis", DefaultServiceName } };
-            var namingSchema = new NamingSchema(SchemaVersion.V0, peerServiceTagsEnabled: false, removeClientServiceNamesEnabled: false, DefaultServiceName, mappings, new Dictionary<string, string>());
-            namingSchema.Database.GetServiceNameMetadata(DatabaseSchema.ServiceType.Redis).Source.Should().Be(ServiceNameMetadata.OptServiceMapping);
         }
     }
 }
