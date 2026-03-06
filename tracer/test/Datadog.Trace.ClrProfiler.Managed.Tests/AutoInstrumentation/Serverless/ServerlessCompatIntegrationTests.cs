@@ -22,8 +22,8 @@ public class ServerlessCompatIntegrationTests
     {
         // Arrange
         ResetCachedPipeNames();
-        const string preGeneratedName = "dd_trace_test123";
-        const string compatLayerName = "dd_trace_compat456";
+        const string preGeneratedName = "dd_trace_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+        const string compatLayerName = "dd_trace_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
         SetExporterSettingsGeneratedNames(preGeneratedName, null);
 
         // Act
@@ -42,7 +42,7 @@ public class ServerlessCompatIntegrationTests
     {
         // Arrange
         ResetCachedPipeNames();
-        const string compatLayerName = "dd_trace_compat456";
+        const string compatLayerName = "dd_trace_00000000000000000000000000000000";
         SetExporterSettingsGeneratedNames(null, null);
 
         // Act
@@ -88,8 +88,8 @@ public class ServerlessCompatIntegrationTests
     {
         // Arrange
         ResetCachedPipeNames();
-        const string preGeneratedName = "dd_dogstatsd_test123";
-        const string compatLayerName = "dd_dogstatsd_compat456";
+        const string preGeneratedName = "dd_dogstatsd_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+        const string compatLayerName = "dd_dogstatsd_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
         SetExporterSettingsGeneratedNames(null, preGeneratedName);
 
         // Act
@@ -108,7 +108,7 @@ public class ServerlessCompatIntegrationTests
     {
         // Arrange
         ResetCachedPipeNames();
-        const string compatLayerName = "dd_dogstatsd_compat456";
+        const string compatLayerName = "dd_dogstatsd_00000000000000000000000000000000";
         SetExporterSettingsGeneratedNames(null, null);
 
         // Act
