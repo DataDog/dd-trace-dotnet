@@ -19,7 +19,6 @@
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: postgres
-      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -44,7 +43,6 @@
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: postgres
       _dd.svc_src: postgres
     },
     Metrics: {
@@ -71,7 +69,6 @@
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: postgres
-      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -96,7 +93,6 @@
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: postgres
       _dd.svc_src: postgres
     },
     Metrics: {
@@ -123,7 +119,6 @@
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: postgres
-      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -148,7 +143,6 @@
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: postgres
       _dd.svc_src: postgres
     },
     Metrics: {
@@ -175,7 +169,6 @@
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: postgres
-      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -200,7 +193,6 @@
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: postgres
       _dd.svc_src: postgres
     },
     Metrics: {
@@ -227,7 +219,6 @@
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: postgres
-      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -252,7 +243,6 @@
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: postgres
       _dd.svc_src: postgres
     },
     Metrics: {
@@ -279,7 +269,6 @@
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: postgres
-      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -304,7 +293,6 @@
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: postgres
       _dd.svc_src: postgres
     },
     Metrics: {
@@ -331,7 +319,6 @@
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: postgres
-      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -356,7 +343,6 @@
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: postgres
       _dd.svc_src: postgres
     },
     Metrics: {
@@ -383,7 +369,6 @@
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: postgres
-      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -408,7 +393,6 @@
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: postgres
       _dd.svc_src: postgres
     },
     Metrics: {
@@ -435,7 +419,6 @@
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: postgres
-      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -460,7 +443,6 @@
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: postgres
       _dd.svc_src: postgres
     },
     Metrics: {
@@ -487,7 +469,6 @@
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: postgres
-      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -512,7 +493,6 @@
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: postgres
       _dd.svc_src: postgres
     },
     Metrics: {
@@ -539,7 +519,6 @@
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: postgres
-      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -564,7 +543,6 @@
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: postgres
       _dd.svc_src: postgres
     },
     Metrics: {
@@ -591,7 +569,6 @@
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: postgres
-      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -616,7 +593,6 @@
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: postgres
       _dd.svc_src: postgres
     },
     Metrics: {
@@ -643,7 +619,6 @@
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: postgres
-      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -668,7 +643,6 @@
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: postgres
       _dd.svc_src: postgres
     },
     Metrics: {
@@ -695,7 +669,6 @@
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: postgres
-      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -720,7 +693,6 @@
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: postgres
       _dd.svc_src: postgres
     },
     Metrics: {
@@ -747,7 +719,6 @@
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: postgres
-      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -772,7 +743,6 @@
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: postgres
       _dd.svc_src: postgres
     },
     Metrics: {
@@ -799,7 +769,6 @@
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: postgres
-      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -824,7 +793,6 @@
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: postgres
       _dd.svc_src: postgres
     },
     Metrics: {
@@ -851,7 +819,6 @@
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: postgres
-      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -876,7 +843,6 @@
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: postgres
       _dd.svc_src: postgres
     },
     Metrics: {
@@ -903,7 +869,6 @@
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: postgres
-      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -928,7 +893,6 @@
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: postgres
       _dd.svc_src: postgres
     },
     Metrics: {
@@ -955,7 +919,6 @@
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: postgres
-      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -980,7 +943,6 @@
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: postgres
       _dd.svc_src: postgres
     },
     Metrics: {
@@ -1007,7 +969,6 @@
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: postgres
-      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1032,7 +993,6 @@
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: postgres
       _dd.svc_src: postgres
     },
     Metrics: {
@@ -1059,7 +1019,6 @@
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: postgres
-      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1084,7 +1043,6 @@
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: postgres
       _dd.svc_src: postgres
     },
     Metrics: {
@@ -1111,7 +1069,6 @@
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: postgres
-      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1136,7 +1093,6 @@
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: postgres
       _dd.svc_src: postgres
     },
     Metrics: {
@@ -1163,7 +1119,6 @@
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: postgres
-      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1188,7 +1143,6 @@
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: postgres
       _dd.svc_src: postgres
     },
     Metrics: {
@@ -1215,7 +1169,6 @@
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: postgres
-      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1240,7 +1193,6 @@
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: postgres
       _dd.svc_src: postgres
     },
     Metrics: {
@@ -1267,7 +1219,6 @@
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: postgres
-      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1292,7 +1243,6 @@
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: postgres
       _dd.svc_src: postgres
     },
     Metrics: {
@@ -1319,7 +1269,6 @@
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: postgres
-      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1344,7 +1293,6 @@
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: postgres
       _dd.svc_src: postgres
     },
     Metrics: {
@@ -1371,7 +1319,6 @@
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: postgres
-      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1396,7 +1343,6 @@
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: postgres
       _dd.svc_src: postgres
     },
     Metrics: {
@@ -1423,7 +1369,6 @@
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: postgres
-      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1448,7 +1393,6 @@
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: postgres
       _dd.svc_src: postgres
     },
     Metrics: {
@@ -1475,7 +1419,6 @@
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: postgres
-      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1500,7 +1443,6 @@
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: postgres
       _dd.svc_src: postgres
     },
     Metrics: {
@@ -1527,7 +1469,6 @@
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: postgres
-      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1552,7 +1493,6 @@
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: postgres
       _dd.svc_src: postgres
     },
     Metrics: {
@@ -1579,7 +1519,6 @@
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: postgres
-      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1604,7 +1543,6 @@
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: postgres
       _dd.svc_src: postgres
     },
     Metrics: {
@@ -1631,7 +1569,6 @@
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: postgres
-      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1656,7 +1593,6 @@
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: postgres
       _dd.svc_src: postgres
     },
     Metrics: {
@@ -1683,7 +1619,6 @@
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: postgres
-      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1708,7 +1643,6 @@
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: postgres
       _dd.svc_src: postgres
     },
     Metrics: {
@@ -1735,7 +1669,6 @@
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: postgres
-      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1760,7 +1693,6 @@
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: postgres
       _dd.svc_src: postgres
     },
     Metrics: {
@@ -1787,7 +1719,6 @@
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: postgres
-      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1812,7 +1743,6 @@
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: postgres
       _dd.svc_src: postgres
     },
     Metrics: {
@@ -1839,7 +1769,6 @@
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: postgres
-      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1864,7 +1793,6 @@
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: postgres
       _dd.svc_src: postgres
     },
     Metrics: {
@@ -1891,7 +1819,6 @@
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: postgres
-      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1916,7 +1843,6 @@
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: postgres
       _dd.svc_src: postgres
     },
     Metrics: {
@@ -1943,7 +1869,6 @@
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: postgres
-      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1968,7 +1893,6 @@
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: postgres
       _dd.svc_src: postgres
     },
     Metrics: {
@@ -1995,7 +1919,6 @@
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: postgres
-      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2020,7 +1943,6 @@
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: postgres
       _dd.svc_src: postgres
     },
     Metrics: {
@@ -2047,7 +1969,6 @@
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: postgres
-      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2072,7 +1993,6 @@
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: postgres
       _dd.svc_src: postgres
     },
     Metrics: {
@@ -2099,7 +2019,6 @@
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: postgres
-      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2124,7 +2043,6 @@
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: postgres
       _dd.svc_src: postgres
     },
     Metrics: {
@@ -2151,7 +2069,6 @@
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: postgres
-      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2176,7 +2093,6 @@
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: postgres
       _dd.svc_src: postgres
     },
     Metrics: {
@@ -2203,7 +2119,6 @@
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: postgres
-      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2228,7 +2143,6 @@
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: postgres
       _dd.svc_src: postgres
     },
     Metrics: {
@@ -2255,7 +2169,6 @@
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: postgres
-      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2280,7 +2193,6 @@
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: postgres
       _dd.svc_src: postgres
     },
     Metrics: {
@@ -2307,7 +2219,6 @@
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: postgres
-      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2332,7 +2243,6 @@
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: postgres
       _dd.svc_src: postgres
     },
     Metrics: {
@@ -2359,7 +2269,6 @@
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: postgres
-      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2384,7 +2293,6 @@
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: postgres
       _dd.svc_src: postgres
     },
     Metrics: {
@@ -2411,7 +2319,6 @@
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: postgres
-      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2436,7 +2343,6 @@
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: postgres
       _dd.svc_src: postgres
     },
     Metrics: {
@@ -2463,7 +2369,6 @@
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: postgres
-      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2488,7 +2393,6 @@
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: postgres
       _dd.svc_src: postgres
     },
     Metrics: {
@@ -2515,7 +2419,6 @@
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: postgres
-      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2540,7 +2443,6 @@
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: postgres
       _dd.svc_src: postgres
     },
     Metrics: {
@@ -2567,7 +2469,6 @@
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: postgres
-      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2592,7 +2493,6 @@
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: postgres
       _dd.svc_src: postgres
     },
     Metrics: {
@@ -2619,7 +2519,6 @@
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: postgres
-      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2644,7 +2543,6 @@
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: postgres
       _dd.svc_src: postgres
     },
     Metrics: {
@@ -2671,7 +2569,6 @@
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: postgres
-      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2696,7 +2593,6 @@
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: postgres
       _dd.svc_src: postgres
     },
     Metrics: {
@@ -2723,7 +2619,6 @@
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: postgres
-      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2748,7 +2643,6 @@
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: postgres
       _dd.svc_src: postgres
     },
     Metrics: {
@@ -2775,7 +2669,6 @@
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: postgres
-      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2800,7 +2693,6 @@
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: postgres
       _dd.svc_src: postgres
     },
     Metrics: {
@@ -2827,7 +2719,6 @@
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: postgres
-      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2852,7 +2743,6 @@
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: postgres
       _dd.svc_src: postgres
     },
     Metrics: {
@@ -2879,7 +2769,6 @@
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: postgres
-      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2904,7 +2793,6 @@
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: postgres
       _dd.svc_src: postgres
     },
     Metrics: {
@@ -2931,7 +2819,6 @@
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: postgres
-      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2956,7 +2843,6 @@
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: postgres
       _dd.svc_src: postgres
     },
     Metrics: {
@@ -2983,7 +2869,6 @@
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: postgres
-      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3008,7 +2893,6 @@
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: postgres
       _dd.svc_src: postgres
     },
     Metrics: {
@@ -3035,7 +2919,6 @@
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: postgres
-      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3060,7 +2943,6 @@
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: postgres
       _dd.svc_src: postgres
     },
     Metrics: {
@@ -3087,7 +2969,6 @@
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: postgres
-      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3112,7 +2993,6 @@
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: postgres
       _dd.svc_src: postgres
     },
     Metrics: {
@@ -3139,7 +3019,6 @@
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: postgres
-      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3164,7 +3043,6 @@
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: postgres
       _dd.svc_src: postgres
     },
     Metrics: {
@@ -3191,7 +3069,6 @@
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: postgres
-      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3216,7 +3093,6 @@
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: postgres
       _dd.svc_src: postgres
     },
     Metrics: {
@@ -3243,7 +3119,6 @@
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: postgres
-      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3268,7 +3143,6 @@
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: postgres
       _dd.svc_src: postgres
     },
     Metrics: {
@@ -3295,7 +3169,6 @@
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: postgres
-      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3320,7 +3193,6 @@
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: postgres
       _dd.svc_src: postgres
     },
     Metrics: {
@@ -3347,7 +3219,6 @@
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: postgres
-      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3372,7 +3243,6 @@
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: postgres
       _dd.svc_src: postgres
     },
     Metrics: {
@@ -3399,7 +3269,6 @@
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: postgres
-      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3424,7 +3293,6 @@
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: postgres
       _dd.svc_src: postgres
     },
     Metrics: {
@@ -3451,7 +3319,6 @@
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: postgres
-      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3476,7 +3343,6 @@
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: postgres
       _dd.svc_src: postgres
     },
     Metrics: {
@@ -3503,7 +3369,6 @@
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: postgres
-      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3528,7 +3393,6 @@
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: postgres
       _dd.svc_src: postgres
     },
     Metrics: {
@@ -3555,7 +3419,6 @@
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: postgres
-      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3580,7 +3443,6 @@
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: postgres
       _dd.svc_src: postgres
     },
     Metrics: {
@@ -3607,7 +3469,6 @@
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: postgres
-      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3632,7 +3493,6 @@
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: postgres
       _dd.svc_src: postgres
     },
     Metrics: {
@@ -3659,7 +3519,6 @@
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: postgres
-      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3684,7 +3543,6 @@
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: postgres
       _dd.svc_src: postgres
     },
     Metrics: {
@@ -3711,7 +3569,6 @@
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: postgres
-      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3736,7 +3593,6 @@
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: postgres
       _dd.svc_src: postgres
     },
     Metrics: {
@@ -3763,7 +3619,6 @@
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: postgres
-      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3789,7 +3644,6 @@
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: postgres
-      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3814,7 +3668,6 @@
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: postgres
       _dd.svc_src: postgres
     },
     Metrics: {
