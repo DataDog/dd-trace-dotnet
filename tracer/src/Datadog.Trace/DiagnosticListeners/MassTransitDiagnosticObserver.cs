@@ -7,10 +7,9 @@
 
 #if !NETFRAMEWORK
 using System;
+using System.Collections.Concurrent;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.DuckTypes;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 
@@ -52,6 +51,14 @@ namespace Datadog.Trace.DiagnosticListeners
     {
         private const string DiagnosticListenerName = "MassTransit";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<MassTransitDiagnosticObserver>();
+
+        // Stores span context keyed by MessageId (Guid) for in-process child propagation across the
+        // in-memory (loopback) transport. The loopback transport never leaves the process, so the
+        // receive span is an in-process child of the send span — correct semantics for in-memory messaging.
+        // MT7.3+ copies SendContext.Headers to InMemoryTransportMessage.Headers natively (SetHeaders()),
+        // but we skip that path for loopback to ensure consistent in-process child behavior across all versions.
+        // Entries are removed on retrieval (TryRemove) to prevent memory leaks.
+        private static readonly ConcurrentDictionary<Guid, SpanContext> InMemoryContextByMessageId = new();
 
         protected override string ListenerName => DiagnosticListenerName;
 
@@ -190,6 +197,15 @@ namespace Datadog.Trace.DiagnosticListeners
                 // Inject trace context into message headers for distributed tracing
                 MassTransitCommon.InjectTraceContext(Tracer.Instance, arg, scope);
 
+                // Store span context by MessageId for in-process child propagation across the loopback transport.
+                if (messageId.HasValue && scope.Span.Context is SpanContext spanContext)
+                {
+                    InMemoryContextByMessageId[messageId.Value] = spanContext;
+                    Log.Debug(
+                        "MassTransitDiagnosticObserver.OnProduceStart: Stored context for MessageId={MessageId}",
+                        messageId.Value);
+                }
+
                 Log.Debug(
                     "MassTransitDiagnosticObserver.OnProduceStart: Created span TraceId={TraceId}, SpanId={SpanId}",
                     scope.Span.TraceId,
@@ -219,20 +235,45 @@ namespace Datadog.Trace.DiagnosticListeners
                 inputAddress ?? "null",
                 transportHeaders != null);
 
-            // Extract parent context from TransportHeaders for distributed tracing
-            // For Receive events, we need to extract from TransportHeaders, not the context directly
+            // For loopback (in-memory) transport, skip header-based extraction entirely — the receive
+            // span is an in-process child of the send span. We use the ConcurrentDictionary path below
+            // for all MT7 versions to ensure consistent behavior (MT7.3+ would otherwise find the
+            // headers via SetHeaders() and produce a distributed entry point instead of a child span).
+            var isLoopback = inputAddress != null
+                && inputAddress.StartsWith("loopback://", StringComparison.OrdinalIgnoreCase);
+
             PropagationContext parentContext = default;
-            if (transportHeaders != null)
+            if (!isLoopback && transportHeaders != null)
             {
-                // Create a wrapper object that has a Headers property pointing to TransportHeaders
-                // so ExtractTraceContext can use it
                 var headersWrapper = new { Headers = transportHeaders };
                 parentContext = MassTransitCommon.ExtractTraceContext(Tracer.Instance, headersWrapper);
-
-                Log.Debug(
-                    "MassTransitDiagnosticObserver.OnReceiveStart: ExtractedParentContext, HasSpanContext={HasContext}",
-                    parentContext.SpanContext != null);
             }
+
+            if (!isLoopback && parentContext.SpanContext == null)
+            {
+                // TransportHeaders didn't contain trace context — fall back to message-level Headers.
+                parentContext = MassTransitCommon.ExtractTraceContext(Tracer.Instance, arg);
+            }
+
+            // For loopback: retrieve the stored SpanContext keyed by MessageId.
+            // MessageId is always present in InMemoryTransportMessage.Headers.
+            if (parentContext.SpanContext == null && transportHeaders != null)
+            {
+                var msgIdStr = MassTransitCommon.TryGetHeaderValue(transportHeaders, "MessageId");
+                if (msgIdStr != null
+                    && Guid.TryParse(msgIdStr, out var msgId)
+                    && InMemoryContextByMessageId.TryRemove(msgId, out var storedContext))
+                {
+                    parentContext = new PropagationContext(storedContext, Baggage.Current);
+                    Log.Debug(
+                        "MassTransitDiagnosticObserver.OnReceiveStart: Restored context from MessageId store for MessageId={MessageId}",
+                        msgId);
+                }
+            }
+
+            Log.Debug(
+                "MassTransitDiagnosticObserver.OnReceiveStart: ExtractedParentContext, HasSpanContext={HasContext}",
+                parentContext.SpanContext != null);
 
             var scope = MassTransitCommon.CreateReceiveSpan(Tracer.Instance, inputAddress, parentContext);
 

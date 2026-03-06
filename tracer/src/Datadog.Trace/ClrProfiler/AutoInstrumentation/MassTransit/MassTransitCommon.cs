@@ -392,6 +392,53 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
         }
 
         /// <summary>
+        /// Calls TryGetHeader(key, out value) via reflection on a headers object (e.g. JsonTransportHeaders).
+        /// Used to read MessageId from TransportHeaders for in-memory transport context propagation.
+        /// </summary>
+        internal static string? TryGetHeaderValue(object? headers, string key)
+        {
+            if (headers is null)
+            {
+                return null;
+            }
+
+            try
+            {
+                var type = headers.GetType();
+                var method = type.GetMethod("TryGetHeader", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+
+                // Search interfaces if not found directly (explicit interface implementation)
+                if (method == null)
+                {
+                    foreach (var iface in type.GetInterfaces())
+                    {
+                        method = iface.GetMethod("TryGetHeader");
+                        if (method != null)
+                        {
+                            break;
+                        }
+                    }
+                }
+
+                if (method != null)
+                {
+                    var args = new object?[] { key, null };
+                    var found = (bool?)method.Invoke(headers, args);
+                    if (found == true)
+                    {
+                        return args[1]?.ToString();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "MassTransitCommon.TryGetHeaderValue: Failed to get header '{Key}'", key);
+            }
+
+            return null;
+        }
+
+        /// <summary>
         /// Extracts the trace ID from an Activity for exception tracking.
         /// Uses the standard pattern from the tracer: duck typing to IW3CActivity for W3C format,
         /// fallback to IActivity.RootId for hierarchical format.
@@ -507,6 +554,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
                 // Duck typing fails for MessageConsumeContext (most common type) due to explicit interface implementation
                 var headers = TryGetProperty<object>(receiveContext, "Headers");
 
+                Log.Debug(
+                    "MassTransitCommon.ExtractTraceContext: ContextType={ContextType}, HeadersType={HeadersType}",
+                    receiveContext.GetType().FullName,
+                    headers?.GetType().FullName ?? "null");
+
                 if (headers is null)
                 {
                     return default;
@@ -515,6 +567,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
                 // Extract trace context from incoming message headers (consumer side)
                 var extractHeadersAdapter = new ContextPropagationExtractAdapter(headers);
                 var extractedContext = tracer.TracerManager.SpanContextPropagator.Extract(extractHeadersAdapter);
+
+                Log.Debug(
+                    "MassTransitCommon.ExtractTraceContext: HasSpanContext={HasSpanContext}",
+                    extractedContext.SpanContext != null);
 
                 return extractedContext;
             }

@@ -5,9 +5,9 @@ namespace Samples.MassTransit7.Contracts;
 /// </summary>
 public record OrderSubmitted
 {
-    public Guid OrderId { get; init; }
-    public string CustomerName { get; init; } = string.Empty;
-    public decimal Amount { get; init; }
+    public Guid OrderId { get; set; }
+    public string CustomerName { get; set; } = string.Empty;
+    public decimal Amount { get; set; }
 }
 
 /// <summary>
@@ -15,7 +15,7 @@ public record OrderSubmitted
 /// </summary>
 public record OrderAccepted
 {
-    public Guid OrderId { get; init; }
+    public Guid OrderId { get; set; }
 }
 
 /// <summary>
@@ -23,7 +23,7 @@ public record OrderAccepted
 /// </summary>
 public record OrderCompleted
 {
-    public Guid OrderId { get; init; }
+    public Guid OrderId { get; set; }
 }
 
 /// <summary>
@@ -31,6 +31,6 @@ public record OrderCompleted
 /// </summary>
 public record OrderFailed
 {
-    public Guid OrderId { get; init; }
-    public string Reason { get; init; } = string.Empty;
+    public Guid OrderId { get; set; }
+    public string Reason { get; set; } = string.Empty;
 }

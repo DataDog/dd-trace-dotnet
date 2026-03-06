@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -28,13 +29,16 @@ public class MassTransit7Tests : TracingIntegrationTest
         SetServiceVersion("1.0.0");
     }
 
+    public static IEnumerable<object[]> GetData() => PackageVersions.MassTransit7;
+
     public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
         span.IsMassTransit(metadataSchemaVersion);
 
-    [SkippableFact]
+    [SkippableTheory]
+    [MemberData(nameof(GetData))]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
-    public async Task SubmitsTraces()
+    public async Task SubmitsTraces(string packageVersion)
     {
         // Set environment variables for RabbitMQ and LocalStack (for SQS/SNS)
         var rabbitHost = Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? "localhost";
@@ -50,7 +54,7 @@ public class MassTransit7Tests : TracingIntegrationTest
 
         using (var telemetry = this.ConfigureTelemetry())
         using (var agent = EnvironmentHelper.GetMockAgent())
-        using (await RunSampleAndWaitForExit(agent))
+        using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
         {
             // Wait for spans to arrive
             // The sample tests:
@@ -72,6 +76,11 @@ public class MassTransit7Tests : TracingIntegrationTest
             ValidateIntegrationSpans(massTransitSpans, metadataSchemaVersion: "v0", expectedServiceName: "Samples.MassTransit7", isExternalSpan: false);
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
+
+            // // Ignore Metrics — values vary across library versions (e.g. _sampling_priority_v1 and
+            // // _dd.top_level differ depending on whether the span is a local root or in-process child,
+            // // which changes between MT7 versions due to in-memory transport header propagation differences).
+            // settings.ModifySerialization(s => s.IgnoreMember<MockSpan>(x => x.Metrics));
 
             // Scrub dynamic bus endpoint names (e.g., COMPFC3GTGXWHN_SamplesMassTransit7_bus_sf3yyyf1sq3y63brbdxf8pr6na)
             var busEndpointRegex = new Regex(@"[A-Z0-9]+_SamplesMassTransit7_bus_[a-z0-9]+");

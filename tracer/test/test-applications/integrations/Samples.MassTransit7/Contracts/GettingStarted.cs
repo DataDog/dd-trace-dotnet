@@ -2,12 +2,12 @@ namespace Samples.MassTransit7.Contracts;
 
 public record GettingStartedMessage
 {
-    public string Value { get; init; } = string.Empty;
+    public string Value { get; set; } = string.Empty;
 }
 
 public record FailingMessage
 {
-    public string Value { get; init; } = string.Empty;
+    public string Value { get; set; } = string.Empty;
 }
 
 /// <summary>
@@ -15,5 +15,5 @@ public record FailingMessage
 /// </summary>
 public record HandlerFailingMessage
 {
-    public string Value { get; init; } = string.Empty;
+    public string Value { get; set; } = string.Empty;
 }
