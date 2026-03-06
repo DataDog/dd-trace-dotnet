@@ -34,12 +34,14 @@ namespace Datadog.Trace.DuckTyping
         /// </summary>
         /// <remarks>This field participates in shared runtime state and must remain thread-safe.</remarks>
         private static readonly ConcurrentDictionary<string, MapEntry> Mappings = new(StringComparer.Ordinal);
+        private static readonly object FlushLock = new();
 
         /// <summary>
         /// Stores process exit hook registered.
         /// </summary>
         /// <remarks>This field participates in shared runtime state and must remain thread-safe.</remarks>
         private static int _processExitHookRegistered;
+        private static int _recordsSinceLastFlush;
 
         /// <summary>
         /// Executes record.
@@ -79,7 +81,7 @@ namespace Datadog.Trace.DuckTyping
 
             var mode = reverse ? "reverse" : "forward";
             var key = string.Concat(mode, "|", proxyTypeName, "|", proxyAssembly, "|", targetTypeName, "|", targetAssembly);
-            _ = Mappings.TryAdd(
+            if (!Mappings.TryAdd(
                 key,
                 new MapEntry
                 {
@@ -88,7 +90,15 @@ namespace Datadog.Trace.DuckTyping
                     ProxyAssembly = proxyAssembly,
                     TargetType = targetTypeName,
                     TargetAssembly = targetAssembly
-                });
+                }))
+            {
+                return;
+            }
+
+            if ((Interlocked.Increment(ref _recordsSinceLastFlush) % 256) == 0)
+            {
+                Flush();
+            }
         }
 
         /// <summary>
@@ -100,6 +110,7 @@ namespace Datadog.Trace.DuckTyping
             if (Interlocked.CompareExchange(ref _processExitHookRegistered, 1, 0) == 0)
             {
                 AppDomain.CurrentDomain.ProcessExit += (_, _) => Flush();
+                AppDomain.CurrentDomain.DomainUnload += (_, _) => Flush();
             }
         }
 
@@ -123,20 +134,27 @@ namespace Datadog.Trace.DuckTyping
                     Directory.CreateDirectory(directory);
                 }
 
-                var document = new MapDocument
+                lock (FlushLock)
                 {
-                    Mappings = Mappings
-                              .Values
-                              .OrderBy(mapping => mapping.Mode, StringComparer.Ordinal)
-                              .ThenBy(mapping => mapping.ProxyAssembly, StringComparer.Ordinal)
-                              .ThenBy(mapping => mapping.ProxyType, StringComparer.Ordinal)
-                              .ThenBy(mapping => mapping.TargetAssembly, StringComparer.Ordinal)
-                              .ThenBy(mapping => mapping.TargetType, StringComparer.Ordinal)
-                              .ToList()
-                };
+                    var document = new MapDocument
+                    {
+                        Mappings = Mappings
+                                  .Values
+                                  .OrderBy(mapping => mapping.Mode, StringComparer.Ordinal)
+                                  .ThenBy(mapping => mapping.ProxyAssembly, StringComparer.Ordinal)
+                                  .ThenBy(mapping => mapping.ProxyType, StringComparer.Ordinal)
+                                  .ThenBy(mapping => mapping.TargetAssembly, StringComparer.Ordinal)
+                                  .ThenBy(mapping => mapping.TargetType, StringComparer.Ordinal)
+                                  .ToList()
+                    };
 
-                var json = JsonConvert.SerializeObject(document, Formatting.Indented);
-                File.WriteAllText(OutputPath, json);
+                    var json = JsonConvert.SerializeObject(document, Formatting.Indented);
+                    var temporaryOutputPath = OutputPath + ".tmp";
+                    File.WriteAllText(temporaryOutputPath, json);
+                    File.Copy(temporaryOutputPath, OutputPath, overwrite: true);
+                    File.Delete(temporaryOutputPath);
+                    _ = Interlocked.Exchange(ref _recordsSinceLastFlush, 0);
+                }
             }
             catch
             {

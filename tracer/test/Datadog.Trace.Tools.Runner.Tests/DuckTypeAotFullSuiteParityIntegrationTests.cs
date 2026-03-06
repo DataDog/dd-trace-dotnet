@@ -13,6 +13,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using Datadog.Trace.Tools.Runner.DuckTypeAot;
@@ -47,7 +48,9 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
     ];
 
     private static readonly object RuntimeInventoryLock = new();
+    private static readonly object RepositoryAssemblyIndexLock = new();
     private static readonly Dictionary<string, DotNetRuntimeInventory> RuntimeInventories = new(StringComparer.Ordinal);
+    private static readonly Dictionary<string, IReadOnlyDictionary<string, string>> RepositoryAssemblyIndexesByFramework = new(StringComparer.OrdinalIgnoreCase);
 
     [Fact]
     public void FullDuckTypingSuiteShouldHaveMatchingOutcomesBetweenDynamicAndAotModes()
@@ -161,6 +164,8 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
         var sanitizedDiscoveredMapPath = Path.Combine(tempDirectory, "ducktype-aot-discovered-map-sanitized.json");
         var registryAssemblyName = $"Datadog.Trace.DuckType.AotRegistry.FullSuiteParity.{NormalizeFrameworkToken(framework)}";
         var generatedRegistryPath = Path.Combine(tempDirectory, $"{registryAssemblyName}.dll");
+        var dynamicRunSettingsPath = Path.Combine(tempDirectory, "ducktype-dynamic.runsettings");
+        var aotRunSettingsPath = Path.Combine(tempDirectory, "ducktype-aot.runsettings");
 
         Directory.CreateDirectory(tempDirectory);
         Directory.CreateDirectory(dynamicResultsDirectory);
@@ -203,6 +208,15 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
             }
 
             File.Exists(runnerAssemblyPath).Should().BeTrue("the runner assembly should be available before registry generation");
+            File.Exists(duckTypingTestsAssemblyPath).Should().BeTrue("the duck typing test assembly should already be built before full-suite parity execution");
+
+            WriteRunSettingsFile(
+                dynamicRunSettingsPath,
+                new Dictionary<string, string>(StringComparer.Ordinal)
+                {
+                    ["DD_DUCKTYPE_TEST_MODE"] = "dynamic",
+                    ["DD_DUCKTYPE_DISCOVERY_OUTPUT_PATH"] = discoveredMapPath
+                });
 
             var dynamicResult = RunProcess(
                 fileName: dotNetExecutable,
@@ -226,6 +240,10 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
                     "Release",
                     "--framework",
                     framework,
+                    "--no-build",
+                    "--no-restore",
+                    "--settings",
+                    dynamicRunSettingsPath,
                     "--logger",
                     "trx;LogFileName=dynamic.trx",
                     "--results-directory",
@@ -258,6 +276,7 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
                 0,
                 dynamicExitCodeMessage);
 
+            WaitForFileToExistAndStabilize(discoveredMapPath, timeoutMilliseconds: 10_000);
             File.Exists(duckTypingTestsAssemblyPath).Should().BeTrue("the test assembly should be produced by the dynamic run");
             File.Exists(dynamicTrxPath).Should().BeTrue("dynamic run should produce a trx report");
             File.Exists(discoveredMapPath).Should().BeTrue("dynamic discovery should produce a ducktype-aot map file");
@@ -293,8 +312,11 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
                 generateArguments.Add(targetFolder);
             }
 
-            generateArguments.Add("--target-filter");
-            generateArguments.Add("*.dll");
+            foreach (var targetFilter in generateInput.TargetFilters)
+            {
+                generateArguments.Add("--target-filter");
+                generateArguments.Add(targetFilter);
+            }
 
             generateArguments.Add("--map-file");
             generateArguments.Add(generateInput.SanitizedMapPath);
@@ -306,7 +328,7 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
             var generateResult = RunProcess(
                 fileName: dotNetExecutable,
                 workingDirectory: tempDirectory,
-                timeoutMilliseconds: 300_000,
+                timeoutMilliseconds: 900_000,
                 captureOutput: true,
                 environmentVariables: BuildDotNetProcessEnvironment(dotNetExecutable, additionalEnvironmentVariables: null),
                 arguments: generateArguments.ToArray());
@@ -341,6 +363,14 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
             generateResult.ExitCode.Should().Be(0, generateFailureMessage);
             File.Exists(generatedRegistryPath).Should().BeTrue("registry generation should emit an assembly for the AOT-mode run");
 
+            WriteRunSettingsFile(
+                aotRunSettingsPath,
+                new Dictionary<string, string>(StringComparer.Ordinal)
+                {
+                    ["DD_DUCKTYPE_TEST_MODE"] = "aot",
+                    ["DD_DUCKTYPE_AOT_REGISTRY_PATH"] = generatedRegistryPath
+                });
+
             var aotResult = RunProcess(
                 fileName: dotNetExecutable,
                 workingDirectory: repositoryRoot,
@@ -364,6 +394,9 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
                     "--framework",
                     framework,
                     "--no-build",
+                    "--no-restore",
+                    "--settings",
+                    aotRunSettingsPath,
                     "--logger",
                     "trx;LogFileName=aot.trx",
                     "--results-directory",
@@ -858,6 +891,7 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
         string dotNetExecutable,
         bool includeCurrentProcessAssemblies)
     {
+        WaitForFileToExistAndStabilize(discoveredMapPath, timeoutMilliseconds: 10_000);
         var parseResult = DuckTypeAotMapFileParser.Parse(discoveredMapPath);
         parseResult.Errors.Should().BeEmpty("dynamic discovery output should always be parseable by ducktype-aot map parser");
         parseResult.Mappings.Should().NotBeEmpty("full-suite dynamic discovery should produce at least one mapping");
@@ -871,6 +905,9 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
         var isolatedRuntimeAssemblyDirectory = Path.Combine(
             Path.GetDirectoryName(sanitizedMapPath) ?? Path.GetTempPath(),
             "resolved-runtime-assemblies");
+        var isolatedTargetAssemblyDirectory = Path.Combine(
+            Path.GetDirectoryName(sanitizedMapPath) ?? Path.GetTempPath(),
+            "resolved-target-assemblies");
 
         bool TryEnsureAssemblyResolved(string assemblyName)
         {
@@ -1004,37 +1041,61 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
             Environment.NewLine +
             string.Join(Environment.NewLine, unresolvedAttributeTargetAssemblies));
 
-        var targetAssemblyPaths = filteredMappings
-                                 .Select(mapping => mapping.TargetAssemblyName)
-                                 .Concat(requiredAttributeTargetAssemblies)
-                                 .Distinct(StringComparer.OrdinalIgnoreCase)
-                                 .Select(name => assemblyPathIndex[name])
-                                 .Distinct(StringComparer.OrdinalIgnoreCase)
-                                 .ToList();
-
-        if (!targetAssemblyPaths.Contains(duckTypingTestsAssemblyPath, StringComparer.OrdinalIgnoreCase))
+        var referencedTypeAssemblies = filteredMappings
+                                      .SelectMany(mapping => EnumerateReferencedAssemblyNames(mapping.ProxyTypeName)
+                                          .Concat(EnumerateReferencedAssemblyNames(mapping.TargetTypeName)))
+                                      .Distinct(StringComparer.OrdinalIgnoreCase)
+                                      .ToList();
+        foreach (var referencedAssemblyName in referencedTypeAssemblies)
         {
-            targetAssemblyPaths.Insert(0, duckTypingTestsAssemblyPath);
+            _ = TryEnsureAssemblyResolved(referencedAssemblyName);
         }
+
+        var unresolvedReferencedTypeAssemblies = referencedTypeAssemblies
+                                                .Where(name => !assemblyPathIndex.ContainsKey(name))
+                                                .ToList();
+        unresolvedReferencedTypeAssemblies.Should().BeEmpty(
+            "closed generic parity inputs should have every referenced assembly resolved before generation." +
+            Environment.NewLine +
+            string.Join(Environment.NewLine, unresolvedReferencedTypeAssemblies));
+
+        var duckTypingTestsDirectory = Path.GetDirectoryName(duckTypingTestsAssemblyPath);
+        duckTypingTestsDirectory.Should().NotBeNullOrWhiteSpace("the duck typing tests output directory should be known for parity generation");
+
+        var requiredTargetAssemblyNames = filteredMappings
+                                         .Select(mapping => mapping.TargetAssemblyName)
+                                         .Concat(requiredAttributeTargetAssemblies)
+                                         .Concat(referencedTypeAssemblies)
+                                         .Distinct(StringComparer.OrdinalIgnoreCase)
+                                         .ToList();
+
+        var targetAssemblyPaths = Directory.EnumerateFiles(duckTypingTestsDirectory!, "*.dll", SearchOption.TopDirectoryOnly)
+                                           .Concat(
+                                                requiredTargetAssemblyNames
+                                                   .Where(name => assemblyPathIndex.ContainsKey(name))
+                                                   .Select(name => assemblyPathIndex[name]))
+                                           .Distinct(StringComparer.OrdinalIgnoreCase)
+                                           .ToList();
+
+        var targetFilters = requiredTargetAssemblyNames
+                           .Select(name => $"{DuckTypeAotNameHelpers.NormalizeAssemblyName(name)}.dll")
+                           .Distinct(StringComparer.OrdinalIgnoreCase)
+                           .OrderBy(name => name, StringComparer.OrdinalIgnoreCase)
+                           .ToList();
 
         WriteSanitizedMapFile(filteredMappings, sanitizedMapPath);
         File.Exists(sanitizedMapPath).Should().BeTrue("sanitized map file should be written before generation");
 
-        var targetFolders = targetAssemblyPaths
-                           .Select(Path.GetDirectoryName)
-                           .Where(path => !string.IsNullOrWhiteSpace(path))
-                           .Distinct(StringComparer.OrdinalIgnoreCase)
-                           .Cast<string>()
-                           .ToList();
-
-        var duckTypingTestsDirectory = Path.GetDirectoryName(duckTypingTestsAssemblyPath);
-        if (!string.IsNullOrWhiteSpace(duckTypingTestsDirectory) &&
-            !targetFolders.Contains(duckTypingTestsDirectory, StringComparer.OrdinalIgnoreCase))
+        Directory.CreateDirectory(isolatedTargetAssemblyDirectory);
+        foreach (var targetAssemblyPath in targetAssemblyPaths)
         {
-            targetFolders.Insert(0, duckTypingTestsDirectory);
+            var destinationPath = Path.Combine(isolatedTargetAssemblyDirectory, Path.GetFileName(targetAssemblyPath));
+            File.Copy(targetAssemblyPath, destinationPath, overwrite: true);
         }
 
-        return new GenerateInput(sanitizedMapPath, proxyAssemblyPaths, targetFolders, excludedMappings);
+        var targetFolders = new List<string> { isolatedTargetAssemblyDirectory };
+
+        return new GenerateInput(sanitizedMapPath, proxyAssemblyPaths, targetFolders, targetFilters, excludedMappings);
     }
 
     private static Dictionary<string, string> BuildAssemblyPathIndex(IEnumerable<string> searchDirectories, bool includeCurrentProcessAssemblies)
@@ -1123,35 +1184,71 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
             return null;
         }
 
-        var candidateFileName = $"{assemblyName}.dll";
-        var frameworkMarker = $"{Path.DirectorySeparatorChar}{framework}{Path.DirectorySeparatorChar}";
-        var rootSearchDirectories = new[]
-        {
-            Path.Combine(repositoryRoot, "tracer", "src"),
-            Path.Combine(repositoryRoot, "tracer", "test")
-        };
+        var repositoryIndex = GetRepositoryAssemblyIndex(repositoryRoot, framework);
+        return repositoryIndex.TryGetValue(DuckTypeAotNameHelpers.NormalizeAssemblyName(assemblyName), out var resolvedPath) ? resolvedPath : null;
+    }
 
-        foreach (var rootSearchDirectory in rootSearchDirectories)
+    private static IReadOnlyDictionary<string, string> GetRepositoryAssemblyIndex(string repositoryRoot, string framework)
+    {
+        var cacheKey = $"{repositoryRoot}|{framework}";
+        lock (RepositoryAssemblyIndexLock)
         {
-            if (!Directory.Exists(rootSearchDirectory))
+            if (RepositoryAssemblyIndexesByFramework.TryGetValue(cacheKey, out var cachedIndex))
             {
-                continue;
+                return cachedIndex;
             }
 
-            var preferredPath = Directory.EnumerateFiles(rootSearchDirectory, candidateFileName, SearchOption.AllDirectories)
-                                         .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}Console{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase))
-                                         .OrderByDescending(path => path.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}Release{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase))
-                                         .ThenByDescending(path => path.Contains(frameworkMarker, StringComparison.OrdinalIgnoreCase))
-                                         .ThenByDescending(path => path.Contains($"{Path.DirectorySeparatorChar}netstandard2.0{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase))
-                                         .ThenByDescending(path => path.Contains($"{Path.DirectorySeparatorChar}net8.0{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase))
-                                         .FirstOrDefault();
-            if (!string.IsNullOrWhiteSpace(preferredPath))
+            var frameworkMarker = $"{Path.DirectorySeparatorChar}{framework}{Path.DirectorySeparatorChar}";
+            var rootSearchDirectories = new[]
             {
-                return preferredPath;
+                Path.Combine(repositoryRoot, "tracer", "src"),
+                Path.Combine(repositoryRoot, "tracer", "test")
+            };
+            var candidatePathsByAssemblyName = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var rootSearchDirectory in rootSearchDirectories)
+            {
+                if (!Directory.Exists(rootSearchDirectory))
+                {
+                    continue;
+                }
+
+                foreach (var candidatePath in Directory.EnumerateFiles(rootSearchDirectory, "*.dll", SearchOption.AllDirectories))
+                {
+                    if (candidatePath.Contains($"{Path.DirectorySeparatorChar}Console{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+
+                    var assemblyName = DuckTypeAotNameHelpers.NormalizeAssemblyName(Path.GetFileNameWithoutExtension(candidatePath) ?? string.Empty);
+                    if (string.IsNullOrWhiteSpace(assemblyName))
+                    {
+                        continue;
+                    }
+
+                    if (!candidatePathsByAssemblyName.TryGetValue(assemblyName, out var candidates))
+                    {
+                        candidates = new List<string>();
+                        candidatePathsByAssemblyName[assemblyName] = candidates;
+                    }
+
+                    candidates.Add(candidatePath);
+                }
             }
+
+            var resolvedIndex = candidatePathsByAssemblyName.ToDictionary(
+                entry => entry.Key,
+                entry => entry.Value
+                    .OrderByDescending(path => path.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}Release{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase))
+                    .ThenByDescending(path => path.Contains(frameworkMarker, StringComparison.OrdinalIgnoreCase))
+                    .ThenByDescending(path => path.Contains($"{Path.DirectorySeparatorChar}netstandard2.0{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase))
+                    .ThenByDescending(path => path.Contains($"{Path.DirectorySeparatorChar}net8.0{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase))
+                    .First(),
+                StringComparer.OrdinalIgnoreCase);
+
+            RepositoryAssemblyIndexesByFramework[cacheKey] = resolvedIndex;
+            return resolvedIndex;
         }
-
-        return null;
     }
 
     private static bool ShouldAttemptRepositoryAssemblyResolution(string assemblyName)
@@ -1162,6 +1259,86 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
         }
 
         return assemblyName.StartsWith("Datadog.", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static IReadOnlyCollection<string> EnumerateReferencedAssemblyNames(string typeName)
+    {
+        var assemblyNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        CollectReferencedAssemblyNames(typeName, assemblyNames);
+        return assemblyNames;
+    }
+
+    private static void CollectReferencedAssemblyNames(string typeName, ISet<string> assemblyNames)
+    {
+        var (parsedTypeName, assemblyName) = DuckTypeAotNameHelpers.ParseTypeAndAssembly(typeName);
+        if (!string.IsNullOrWhiteSpace(assemblyName))
+        {
+            _ = assemblyNames.Add(assemblyName);
+        }
+
+        if (!TrySplitClosedGenericArgumentTypeNames(parsedTypeName, out var genericArgumentTypeNames))
+        {
+            return;
+        }
+
+        foreach (var genericArgumentTypeName in genericArgumentTypeNames)
+        {
+            CollectReferencedAssemblyNames(genericArgumentTypeName, assemblyNames);
+        }
+    }
+
+    private static bool TrySplitClosedGenericArgumentTypeNames(string typeName, out IReadOnlyList<string> genericArgumentTypeNames)
+    {
+        genericArgumentTypeNames = Array.Empty<string>();
+        if (string.IsNullOrWhiteSpace(typeName))
+        {
+            return false;
+        }
+
+        var genericArgumentsStart = typeName.IndexOf("[[", StringComparison.Ordinal);
+        if (genericArgumentsStart < 0)
+        {
+            return false;
+        }
+
+        var arguments = new List<string>();
+        var bracketDepth = 0;
+        var argumentStart = -1;
+
+        for (var i = genericArgumentsStart; i < typeName.Length; i++)
+        {
+            var current = typeName[i];
+            if (current == '[')
+            {
+                bracketDepth++;
+                if (bracketDepth == 2)
+                {
+                    argumentStart = i + 1;
+                }
+
+                continue;
+            }
+
+            if (current != ']')
+            {
+                continue;
+            }
+
+            if (bracketDepth == 2 && argumentStart >= 0)
+            {
+                arguments.Add(typeName.Substring(argumentStart, i - argumentStart));
+                argumentStart = -1;
+            }
+
+            bracketDepth--;
+            if (bracketDepth == 0)
+            {
+                genericArgumentTypeNames = arguments;
+                return arguments.Count > 0;
+            }
+        }
+
+        return false;
     }
 
     private static string? TryResolveAssemblyPathFromDotNetRuntime(string dotNetExecutable, string framework, string assemblyName)
@@ -1341,6 +1518,66 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
         return new CommandResult(process.ExitCode, standardOutputTask!.Result, standardErrorTask!.Result);
     }
 
+    private static void WaitForFileToExistAndStabilize(string path, int timeoutMilliseconds)
+    {
+        var deadline = DateTime.UtcNow.AddMilliseconds(timeoutMilliseconds);
+        long? lastLength = null;
+        var stableObservations = 0;
+
+        while (DateTime.UtcNow < deadline)
+        {
+            if (File.Exists(path))
+            {
+                try
+                {
+                    var length = new FileInfo(path).Length;
+                    if (length > 0 && lastLength == length)
+                    {
+                        stableObservations++;
+                        if (stableObservations >= 3)
+                        {
+                            return;
+                        }
+                    }
+                    else
+                    {
+                        stableObservations = 0;
+                        lastLength = length;
+                    }
+                }
+                catch
+                {
+                    stableObservations = 0;
+                    lastLength = null;
+                }
+            }
+
+            Thread.Sleep(100);
+        }
+    }
+
+    private static void WriteRunSettingsFile(string path, IReadOnlyDictionary<string, string> environmentVariables)
+    {
+        var directory = Path.GetDirectoryName(path);
+        if (!string.IsNullOrWhiteSpace(directory))
+        {
+            Directory.CreateDirectory(directory);
+        }
+
+        var document = new XDocument(
+            new XElement(
+                "RunSettings",
+                new XElement(
+                    "RunConfiguration",
+                    new XElement(
+                        "EnvironmentVariables",
+                        environmentVariables
+                           .Where(entry => !string.IsNullOrWhiteSpace(entry.Key) && entry.Value is not null)
+                           .Select(entry => new XElement(entry.Key, entry.Value))))));
+
+        document.Save(path);
+    }
+
     private static void TryDeleteDirectory(string path)
     {
         try
@@ -1414,11 +1651,13 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
             string sanitizedMapPath,
             IReadOnlyList<string> proxyAssemblyPaths,
             IReadOnlyList<string> targetFolders,
+            IReadOnlyList<string> targetFilters,
             IReadOnlyList<string> excludedMappings)
         {
             SanitizedMapPath = sanitizedMapPath;
             ProxyAssemblyPaths = proxyAssemblyPaths;
             TargetFolders = targetFolders;
+            TargetFilters = targetFilters;
             ExcludedMappings = excludedMappings;
         }
 
@@ -1427,6 +1666,8 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
         internal IReadOnlyList<string> ProxyAssemblyPaths { get; }
 
         internal IReadOnlyList<string> TargetFolders { get; }
+
+        internal IReadOnlyList<string> TargetFilters { get; }
 
         internal IReadOnlyList<string> ExcludedMappings { get; }
     }
