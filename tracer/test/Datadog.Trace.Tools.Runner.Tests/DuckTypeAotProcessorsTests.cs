@@ -337,21 +337,25 @@ public class DuckTypeAotProcessorsTests
             var initializeMethod = bootstrapType!.FindMethod("Initialize");
             initializeMethod.Should().NotBeNull();
             initializeMethod!.Body.Should().NotBeNull();
-            var enableAotModeInstruction = initializeMethod.Body!.Instructions.SingleOrDefault(
+            var bootstrapInstructions = bootstrapType.Methods
+                .Where(method => method.Body is not null)
+                .SelectMany(method => method.Body!.Instructions)
+                .ToList();
+            var enableAotModeInstruction = bootstrapInstructions.SingleOrDefault(
                 instruction =>
                     instruction.OpCode == OpCodes.Call &&
                     instruction.Operand is IMethod method &&
                     string.Equals(method.Name, "EnableAotMode", StringComparison.Ordinal));
             enableAotModeInstruction.Should().NotBeNull();
 
-            var validateAotRegistryContractInstruction = initializeMethod.Body.Instructions.SingleOrDefault(
+            var validateAotRegistryContractInstruction = bootstrapInstructions.SingleOrDefault(
                 instruction =>
                     instruction.OpCode == OpCodes.Call &&
                     instruction.Operand is IMethod method &&
                     string.Equals(method.Name, "ValidateAotRegistryContract", StringComparison.Ordinal));
             validateAotRegistryContractInstruction.Should().NotBeNull();
 
-            var registerAotProxyInstruction = initializeMethod.Body.Instructions.SingleOrDefault(
+            var registerAotProxyInstruction = bootstrapInstructions.SingleOrDefault(
                 instruction =>
                     instruction.OpCode == OpCodes.Call &&
                     instruction.Operand is IMethod method &&
@@ -359,14 +363,14 @@ public class DuckTypeAotProcessorsTests
             registerAotProxyInstruction.Should().NotBeNull();
             ((IMethod)registerAotProxyInstruction!.Operand).MethodSig.Params.Last().FullName.Should().Be("System.RuntimeMethodHandle");
 
-            var initializesFuncDelegate = initializeMethod.Body.Instructions.Any(
+            var initializesFuncDelegate = bootstrapInstructions.Any(
                 instruction =>
                     instruction.OpCode == OpCodes.Newobj &&
                     instruction.Operand is IMethod method &&
                     string.Equals(method.DeclaringType.FullName, "System.Func`2", StringComparison.Ordinal));
             initializesFuncDelegate.Should().BeFalse();
 
-            var loadsActivatorMethodHandle = initializeMethod.Body.Instructions.Any(
+            var loadsActivatorMethodHandle = bootstrapInstructions.Any(
                 instruction =>
                     instruction.OpCode == OpCodes.Ldtoken &&
                     instruction.Operand is IMethod method &&
@@ -2623,9 +2627,10 @@ public class DuckTypeAotProcessorsTests
             {
                 var bootstrapType = generatedModule.Find("Datadog.Trace.DuckTyping.Generated.DuckTypeAotRegistryBootstrap", isReflectionName: false);
                 bootstrapType.Should().NotBeNull();
-                var initializeMethod = bootstrapType!.FindMethod("Initialize");
-                initializeMethod.Should().NotBeNull();
-                var registerAotReverseInstruction = initializeMethod!.Body!.Instructions.SingleOrDefault(
+                var registerAotReverseInstruction = bootstrapType!.Methods
+                    .Where(method => method.Body is not null)
+                    .SelectMany(method => method.Body!.Instructions)
+                    .SingleOrDefault(
                     instruction =>
                         instruction.OpCode == OpCodes.Call &&
                         instruction.Operand is IMethod method &&
@@ -3213,9 +3218,10 @@ public class DuckTypeAotProcessorsTests
             using var generatedModule = ModuleDefMD.Load(outputPath);
             var bootstrapType = generatedModule.Find("Datadog.Trace.DuckTyping.Generated.DuckTypeAotRegistryBootstrap", isReflectionName: false);
             bootstrapType.Should().NotBeNull();
-            var initializeMethod = bootstrapType!.FindMethod("Initialize");
-            initializeMethod.Should().NotBeNull();
-            var registerAotReverseInstruction = initializeMethod!.Body!.Instructions.SingleOrDefault(
+            var registerAotReverseInstruction = bootstrapType!.Methods
+                .Where(method => method.Body is not null)
+                .SelectMany(method => method.Body!.Instructions)
+                .SingleOrDefault(
                 instruction =>
                     instruction.OpCode == OpCodes.Call &&
                     instruction.Operand is IMethod method &&
@@ -3409,11 +3415,12 @@ public class DuckTypeAotProcessorsTests
                 string.Equals(mapping.Status, DuckTypeAotCompatibilityStatuses.Compatible, StringComparison.Ordinal));
 
             using var generatedModule = ModuleDefMD.Load(outputPath);
-            var ignoresAccessChecksAttribute = generatedModule.Assembly.CustomAttributes.FirstOrDefault(attribute =>
-                string.Equals(attribute.AttributeType.FullName, "System.Runtime.CompilerServices.IgnoresAccessChecksToAttribute", StringComparison.Ordinal));
-            ignoresAccessChecksAttribute.Should().NotBeNull();
-            ignoresAccessChecksAttribute!.ConstructorArguments.Should().HaveCount(1);
-            ignoresAccessChecksAttribute.ConstructorArguments[0].Value!.ToString().Should().Be(targetAssemblyName);
+            var ignoresAccessChecksTargets = generatedModule.Assembly.CustomAttributes
+                .Where(attribute => string.Equals(attribute.AttributeType.FullName, "System.Runtime.CompilerServices.IgnoresAccessChecksToAttribute", StringComparison.Ordinal))
+                .Select(attribute => attribute.ConstructorArguments[0].Value!.ToString())
+                .ToList();
+            ignoresAccessChecksTargets.Should().Contain(targetAssemblyName);
+            ignoresAccessChecksTargets.Should().Contain("Datadog.Trace");
         }
         finally
         {
