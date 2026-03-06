@@ -21,14 +21,17 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// </summary>
         /// <param name="registryAssemblyInfo">The registry assembly info value.</param>
         /// <param name="mappingResultsByKey">The mapping results by key value.</param>
+        /// <param name="runtimeRegistrations">The runtime registrations value.</param>
         /// <param name="warnings">The warnings value.</param>
         public DuckTypeAotRegistryEmissionResult(
             DuckTypeAotRegistryAssemblyInfo registryAssemblyInfo,
             IReadOnlyDictionary<string, DuckTypeAotMappingEmissionResult> mappingResultsByKey,
+            IReadOnlyList<DuckTypeAotRuntimeRegistration> runtimeRegistrations,
             IReadOnlyList<string>? warnings = null)
         {
             RegistryAssemblyInfo = registryAssemblyInfo;
             MappingResultsByKey = mappingResultsByKey;
+            RuntimeRegistrations = runtimeRegistrations;
             Warnings = warnings ?? [];
         }
 
@@ -43,6 +46,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// </summary>
         /// <value>The mapping results by key value.</value>
         public IReadOnlyDictionary<string, DuckTypeAotMappingEmissionResult> MappingResultsByKey { get; }
+
+        /// <summary>
+        /// Gets runtime registrations emitted into the generated registry.
+        /// </summary>
+        public IReadOnlyList<DuckTypeAotRuntimeRegistration> RuntimeRegistrations { get; }
 
         /// <summary>
         /// Gets generation warnings.

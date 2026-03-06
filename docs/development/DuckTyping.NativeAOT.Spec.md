@@ -129,6 +129,8 @@ The generated assembly must contain:
 7. Activator pair per mapping:
    1. typed activator (`CreateProxy_XXXX(<targetType>)`).
    2. object bridge activator (`ActivateProxy_XXXX(object)`).
+8. Generated failure throwers registered through `RuntimeMethodHandle` failure overloads on `DuckType`.
+9. Optional additional runtime registrations for compatible concrete alias types discovered during generation. These aliases are registry-internal and do not alter the canonical map contract.
 
 Consumers may still call `DuckTypeAotRegistryBootstrap.Initialize()` explicitly for deterministic startup.
 
@@ -143,6 +145,7 @@ It is expected to encode at least:
 3. Mapping snapshot summary.
 4. Input artifact fingerprints.
 5. Signing metadata when signing is configured.
+6. Total runtime registration count and alias registration count when generation expands compatible concrete types.
 
 Compatibility verification may compare manifest contract fields against runtime/descriptor expectations.
 
@@ -169,13 +172,13 @@ The markdown report is human-oriented. The JSON matrix is machine-oriented for C
 
 `ducktype-aot verify-compat` requires:
 
-1. `--compat-report`
-2. `--compat-matrix`
-3. `--map-file`
+1. `--compat-matrix`
+2. `--map-file`
 
 Optional contract inputs:
 
 1. `--manifest`
+2. `--compat-report`
 
 Failure mode:
 
@@ -195,8 +198,9 @@ At runtime:
 1. DuckType mode is process-immutable.
 2. AOT runtime path requires pre-registered mappings.
 3. One generated registry assembly identity is allowed per process.
-4. Missing mappings result in explicit missing-registration failures rather than dynamic emit fallback.
-5. Boxing/cast operations at object/interface boundaries are expected and parity-valid:
+4. Lookup is exact-match only against the emitted registry. Compatibility widening must be represented as explicit generated registrations.
+5. Missing mappings result in explicit missing-registration failures rather than dynamic emit fallback.
+6. Boxing/cast operations at object/interface boundaries are expected and parity-valid:
    1. bridge activators can use `castclass`/`unbox.any` from `object` input.
    2. value-type proxy returned through interface/object contracts can require boxing.
    3. `IDuckType.Instance` on value-type targets returns boxed object.

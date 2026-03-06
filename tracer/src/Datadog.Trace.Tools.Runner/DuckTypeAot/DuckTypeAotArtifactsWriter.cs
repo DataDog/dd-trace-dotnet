@@ -95,6 +95,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 artifactPaths.PropsPath,
                 mappingResolutionResult,
                 registryAssemblyInfo,
+                emissionResult,
                 generatedAtUtc,
                 toolVersion);
 
@@ -114,6 +115,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <param name="propsPath">The props path value.</param>
         /// <param name="mappingResolutionResult">The mapping resolution result value.</param>
         /// <param name="registryAssemblyInfo">The registry assembly info value.</param>
+        /// <param name="emissionResult">The emission result value.</param>
         /// <param name="generatedAtUtc">The generated at utc value.</param>
         /// <param name="toolVersion">The tool version value.</param>
         private static void WriteManifest(
@@ -122,10 +124,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             string propsPath,
             DuckTypeAotMappingResolutionResult mappingResolutionResult,
             DuckTypeAotRegistryAssemblyInfo registryAssemblyInfo,
+            DuckTypeAotRegistryEmissionResult emissionResult,
             DateTime generatedAtUtc,
             string toolVersion)
         {
             var registryAssemblyFingerprint = CreateAssemblyFingerprint(registryAssemblyInfo.OutputAssemblyPath);
+            var aliasRegistrationCount = emissionResult.RuntimeRegistrations.Count(registration => !registration.IsCanonical);
             var manifest = new DuckTypeAotManifest
             {
                 SchemaVersion = SchemaVersion,
@@ -143,6 +147,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 TrimmerDescriptorSha256 = ComputeSha256(trimmerDescriptorPath),
                 PropsPath = propsPath,
                 PropsSha256 = ComputeSha256(propsPath),
+                TotalRuntimeRegistrations = emissionResult.RuntimeRegistrations.Count,
+                AliasRegistrations = aliasRegistrationCount,
                 Mappings = mappingResolutionResult.Mappings
                     .OrderBy(m => m.Key, StringComparer.Ordinal)
                     .Select(mapping => new DuckTypeAotManifestMapping
@@ -827,6 +833,18 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <value>The props sha256 value.</value>
         [JsonProperty("propsSha256")]
         public string? PropsSha256 { get; set; }
+
+        /// <summary>
+        /// Gets or sets total runtime registrations.
+        /// </summary>
+        [JsonProperty("totalRuntimeRegistrations")]
+        public int TotalRuntimeRegistrations { get; set; }
+
+        /// <summary>
+        /// Gets or sets alias registrations.
+        /// </summary>
+        [JsonProperty("aliasRegistrations")]
+        public int AliasRegistrations { get; set; }
 
         /// <summary>
         /// Gets or sets mappings.

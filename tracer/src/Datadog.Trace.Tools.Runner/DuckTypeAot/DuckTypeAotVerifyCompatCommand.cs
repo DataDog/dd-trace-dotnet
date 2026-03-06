@@ -15,10 +15,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
     /// </summary>
     internal class DuckTypeAotVerifyCompatCommand : CommandWithExamples
     {
-        private readonly Option<string> _compatReportOption = new("--compat-report", "Path to the generated compatibility markdown report.")
-        {
-            IsRequired = true
-        };
+        private readonly Option<string?> _compatReportOption = new("--compat-report", "Optional path to the generated compatibility markdown report.");
 
         private readonly Option<string> _compatMatrixOption = new("--compat-matrix", "Path to the generated compatibility matrix JSON report.")
         {
@@ -94,7 +91,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <param name="context">The context value.</param>
         private void Execute(InvocationContext context)
         {
-            var compatReportPath = _compatReportOption.GetValue(context);
+            var compatReportPath = _compatReportOption.GetValue(context) ?? string.Empty;
             var compatMatrixPath = _compatMatrixOption.GetValue(context);
             var mapFilePath = _mapFileOption.GetValue(context);
             var manifestPath = _manifestOption.GetValue(context);

@@ -16,6 +16,7 @@ using FluentAssertions;
 using Xunit;
 
 #pragma warning disable SA1201 // Elements should appear in the correct order
+#pragma warning disable CS0618 // Manual AOT registration APIs are deprecated but remain covered by compatibility tests.
 
 namespace Datadog.Trace.DuckTyping.Tests
 {
@@ -221,6 +222,38 @@ namespace Datadog.Trace.DuckTyping.Tests
         }
 
         [Fact]
+        public void ForwardLookupRequiresExactMatchInAotMode()
+        {
+            DuckTypeAotEngine.RegisterProxy(
+                typeof(IForwardProxy),
+                typeof(BaseForwardTarget),
+                typeof(BaseForwardGeneratedProxy),
+                instance => new BaseForwardGeneratedProxy((BaseForwardTarget)instance!));
+
+            var result = DuckTypeAotEngine.GetOrCreateProxyType(typeof(IForwardProxy), typeof(DerivedForwardTarget));
+
+            result.CanCreate().Should().BeFalse();
+            Action getProxyType = () => _ = result.ProxyType;
+            getProxyType.Should().Throw<DuckTypeAotMissingProxyRegistrationException>();
+        }
+
+        [Fact]
+        public void ForwardLookupDoesNotUseNullableFallbackInAotMode()
+        {
+            DuckTypeAotEngine.RegisterProxy(
+                typeof(IValueProxy),
+                typeof(int?),
+                typeof(ValueNullableGeneratedProxy),
+                instance => new ValueNullableGeneratedProxy((int?)instance!));
+
+            var result = DuckTypeAotEngine.GetOrCreateProxyType(typeof(IValueProxy), typeof(int));
+
+            result.CanCreate().Should().BeFalse();
+            Action getProxyType = () => _ = result.ProxyType;
+            getProxyType.Should().Throw<DuckTypeAotMissingProxyRegistrationException>();
+        }
+
+        [Fact]
         public void RegisterForwardProxyAndResolve()
         {
             DuckTypeAotEngine.RegisterProxy(
@@ -392,6 +425,27 @@ namespace Datadog.Trace.DuckTyping.Tests
         }
 
         [Fact]
+        public void RegisterFailureUsingMethodHandleReplaysDeterministicFailure()
+        {
+            var throwerMethod = typeof(DuckTypeAotEngineTests).GetMethod(
+                nameof(ThrowKnownRegisteredFailure),
+                BindingFlags.NonPublic | BindingFlags.Static);
+            throwerMethod.Should().NotBeNull();
+
+            DuckTypeAotEngine.RegisterProxyFailure(
+                typeof(IForwardProxy),
+                typeof(ForwardTarget),
+                throwerMethod!.MethodHandle);
+
+            var result = DuckTypeAotEngine.GetOrCreateProxyType(typeof(IForwardProxy), typeof(ForwardTarget));
+
+            result.CanCreate().Should().BeFalse();
+            Action getProxyType = () => _ = result.ProxyType;
+            getProxyType.Should().Throw<DuckTypeAotRegisteredFailureException>()
+                        .WithMessage("*KnownDuckTypeFailure*missing-member*");
+        }
+
+        [Fact]
         public void RegisterProxyFromDifferentRegistryAssemblyThrows()
         {
             DuckTypeAotEngine.RegisterProxy(
@@ -504,6 +558,53 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
 
             public string Value => _target.Value;
+        }
+
+        private class BaseForwardTarget
+        {
+            public BaseForwardTarget(string value)
+            {
+                Value = value;
+            }
+
+            public virtual string Value { get; }
+        }
+
+        private class DerivedForwardTarget : BaseForwardTarget
+        {
+            public DerivedForwardTarget(string value)
+                : base(value)
+            {
+            }
+        }
+
+        private class BaseForwardGeneratedProxy : IForwardProxy
+        {
+            private readonly BaseForwardTarget _target;
+
+            public BaseForwardGeneratedProxy(BaseForwardTarget target)
+            {
+                _target = target;
+            }
+
+            public string Value => _target.Value;
+        }
+
+        private interface IValueProxy
+        {
+            int Value { get; }
+        }
+
+        private class ValueNullableGeneratedProxy : IValueProxy
+        {
+            private readonly int? _value;
+
+            public ValueNullableGeneratedProxy(int? value)
+            {
+                _value = value;
+            }
+
+            public int Value => _value ?? 0;
         }
 
         private interface IDuplicateProxy
@@ -779,6 +880,11 @@ namespace Datadog.Trace.DuckTyping.Tests
             return new DuckTypeAotAssemblyMetadata(
                 assembly.FullName ?? assembly.GetName().Name ?? "unknown",
                 assembly.ManifestModule.ModuleVersionId.ToString("D"));
+        }
+
+        private static void ThrowKnownRegisteredFailure()
+        {
+            DuckTypeAotRegisteredFailureException.Throw("KnownDuckTypeFailure", "missing-member");
         }
     }
 }
