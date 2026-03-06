@@ -272,8 +272,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                         integrationId: IntegrationId,
                         dbType: DbTypeName,
                         operationName: OperationName,
-                        serviceName: cachedServiceName,
-                        serviceNameSource: cachedServiceNameSource,
+                        serviceName: GetServiceName(tracer, DbTypeName),
+                        serviceNameSource: tracer.CurrentTraceSettings.GetServiceNameSource(DbTypeName),
                         tagsFromConnectionString: ref tagsFromConnectionString);
                 }
 
@@ -290,8 +290,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                         integrationId: integrationId.Value,
                         dbType: dbTypeName,
                         operationName: operationName,
-                        serviceName: resolvedServiceName,
-                        serviceNameSource: resolvedServiceNameSource,
+                        serviceName: GetServiceName(tracer, dbTypeName),
+                        serviceNameSource: tracer.CurrentTraceSettings.GetServiceNameSource(dbTypeName),
                         tagsFromConnectionString: ref tagsFromConnectionString);
                 }
 

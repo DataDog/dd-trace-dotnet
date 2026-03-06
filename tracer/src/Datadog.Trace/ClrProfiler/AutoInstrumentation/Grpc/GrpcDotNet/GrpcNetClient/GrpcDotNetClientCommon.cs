@@ -50,7 +50,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcNetC
                 GrpcCommon.AddGrpcTags(tags, tracer, method.GrpcType, name: method.Name, path: method.FullName, serviceName: method.ServiceName);
 
                 var operationName = clientSchema.GetOperationNameForProtocol(ClientSchema.Protocol.Grpc);
-                var (serviceName, serviceNameSource) = clientSchema.GetServiceNameMetadata(ClientSchema.Component.Grpc);
+                var serviceName = clientSchema.GetServiceName(ClientSchema.Component.Grpc);
+                var serviceNameSource = clientSchema.GetServiceNameSource(ClientSchema.Component.Grpc);
                 tracer.CurrentTraceSettings.Schema.RemapPeerService(tags);
 
                 scope = tracer.StartActiveInternal(operationName, tags: tags, serviceName: serviceName, serviceNameSource: serviceNameSource, startTime: null);

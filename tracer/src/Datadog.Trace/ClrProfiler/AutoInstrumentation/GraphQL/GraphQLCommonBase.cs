@@ -25,8 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
 
         protected static Scope CreateScopeFromExecuteAsync(Tracer tracer, IntegrationId integrationId, GraphQLTags tags, string serviceName, string queryOperationName, string source, string queryOperationType)
         {
-            var (resolvedServiceName, serviceNameSource) = tracer.CurrentTraceSettings.GetServiceNameMetadata(serviceName);
-            var scope = tracer.StartActiveInternal(ExecuteOperationName, serviceName: resolvedServiceName, serviceNameSource: serviceNameSource, tags: tags);
+            var scope = tracer.StartActiveInternal(ExecuteOperationName, serviceName: tracer.CurrentTraceSettings.GetServiceName(serviceName), serviceNameSource: tracer.CurrentTraceSettings.GetServiceNameSource(serviceName), tags: tags);
             var span = scope.Span;
             span.Type = SpanTypes.GraphQL;
             span.ResourceName = $"{queryOperationType} {queryOperationName ?? "operation"}";

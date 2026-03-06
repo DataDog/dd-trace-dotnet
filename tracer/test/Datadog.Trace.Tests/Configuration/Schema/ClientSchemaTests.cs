@@ -170,58 +170,35 @@ namespace Datadog.Trace.Tests.Configuration.Schema
 
         [Theory]
         [CombinatorialData]
-        public void GetServiceNameMetadata_SourceSupportsAllEnumValues([CombinatorialValues(0, 1)]int schemaVersion, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
+        public void GetServiceNameSource_SupportsAllEnumValues([CombinatorialValues(0, 1)]int schemaVersion, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
         {
             var namingSchema = new NamingSchema((SchemaVersion)schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, new Dictionary<string, string>(), new Dictionary<string, string>());
             foreach (var value in Enum.GetValues(typeof(ClientSchema.Component)).Cast<ClientSchema.Component>())
             {
                 // Should not throw IndexOutOfRangeException
-                var action = () => namingSchema.Client.GetServiceNameMetadata(value).Source;
+                var action = () => namingSchema.Client.GetServiceNameSource(value);
                 action.Should().NotThrow();
             }
         }
 
         [Fact]
-        public void GetServiceNameMetadata_SourceReturnsNonNull_WhenServiceNameDiffersFromDefault()
+        public void GetServiceNameSource_ReturnsNonNull_WhenServiceNameDiffersFromDefault()
         {
             var namingSchema = new NamingSchema(SchemaVersion.V0, peerServiceTagsEnabled: false, removeClientServiceNamesEnabled: false, DefaultServiceName, new Dictionary<string, string>(), new Dictionary<string, string>());
             foreach (var value in Enum.GetValues(typeof(ClientSchema.Component)).Cast<ClientSchema.Component>())
             {
-                namingSchema.Client.GetServiceNameMetadata(value).Source.Should().NotBeNull($"Component.{value} should have a corresponding IntegrationSourceNames entry");
+                namingSchema.Client.GetServiceNameSource(value).Should().NotBeNull($"Component.{value} should have a corresponding IntegrationSourceNames entry");
             }
         }
 
         [Fact]
-        public void GetServiceNameMetadata_SourceReturnsNull_WhenServiceNameIsDefault()
+        public void GetServiceNameSource_ReturnsNull_WhenServiceNameIsDefault()
         {
             var namingSchema = new NamingSchema(SchemaVersion.V1, peerServiceTagsEnabled: false, removeClientServiceNamesEnabled: false, DefaultServiceName, new Dictionary<string, string>(), new Dictionary<string, string>());
             foreach (var value in Enum.GetValues(typeof(ClientSchema.Component)).Cast<ClientSchema.Component>())
             {
-                namingSchema.Client.GetServiceNameMetadata(value).Source.Should().BeNull();
+                namingSchema.Client.GetServiceNameSource(value).Should().BeNull();
             }
-        }
-
-        [Fact]
-        public void GetServiceNameMetadata_SourceReturnsIntegrationKey_WhenV0Suffix()
-        {
-            var namingSchema = new NamingSchema(SchemaVersion.V0, peerServiceTagsEnabled: false, removeClientServiceNamesEnabled: false, DefaultServiceName, new Dictionary<string, string>(), new Dictionary<string, string>());
-            namingSchema.Client.GetServiceNameMetadata(ClientSchema.Component.Http).Source.Should().Be("http-client");
-            namingSchema.Client.GetServiceNameMetadata(ClientSchema.Component.Grpc).Source.Should().Be("grpc-client");
-        }
-
-        [Fact]
-        public void GetServiceNameMetadata_SourceReturnsOptServiceMapping_WhenMapped()
-        {
-            var namingSchema = new NamingSchema(SchemaVersion.V0, peerServiceTagsEnabled: false, removeClientServiceNamesEnabled: false, DefaultServiceName, _mappings, new Dictionary<string, string>());
-            namingSchema.Client.GetServiceNameMetadata(ClientSchema.Component.Http).Source.Should().Be(ServiceNameMetadata.OptServiceMapping);
-        }
-
-        [Fact]
-        public void GetServiceNameMetadata_SourceReturnsOptServiceMapping_WhenMappedToDefault()
-        {
-            var mappings = new Dictionary<string, string> { { "http-client", DefaultServiceName } };
-            var namingSchema = new NamingSchema(SchemaVersion.V0, peerServiceTagsEnabled: false, removeClientServiceNamesEnabled: false, DefaultServiceName, mappings, new Dictionary<string, string>());
-            namingSchema.Client.GetServiceNameMetadata(ClientSchema.Component.Http).Source.Should().Be(ServiceNameMetadata.OptServiceMapping);
         }
     }
 }
