@@ -157,6 +157,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     x => x.Tags[Tags.KafkaConsumerGroup] == "Samples.Kafka.AutoCommitConsumer1"
                       || x.Tags[Tags.KafkaConsumerGroup] == "Samples.Kafka.ManualCommitConsumer2");
 
+            // cluster_id is read via P/Invoke to librdkafka's rd_kafka_clusterid (cached from metadata, no network call)
+            // Available in all supported Confluent.Kafka versions (1.4.0+)
+            successfulProducerSpans.Should().OnlyContain(x => x.Tags.ContainsKey(Tags.KafkaClusterId) && !string.IsNullOrEmpty(x.Tags[Tags.KafkaClusterId]));
+            successfulConsumerSpans.Should().OnlyContain(x => x.Tags.ContainsKey(Tags.KafkaClusterId) && !string.IsNullOrEmpty(x.Tags[Tags.KafkaClusterId]));
+
             // Error spans are created in 1.5.3 when the broker doesn't exist yet
             // Other package versions don't error, so won't create a span,
             // so no fixed number requirement

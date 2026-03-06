@@ -63,9 +63,7 @@ public sealed class KafkaConsumerConstructorIntegration
             // Only config setting "group.id" is required, so assert that the value is non-null before adding to the ConsumerGroup cache
             if (groupId is not null)
             {
-                // Save the map between this consumer and a consumer group
-                ConsumerCache.SetConsumerGroup(instance, groupId, bootstrapServers);
-                return new CallTargetState(scope: null, state: instance);
+                return new CallTargetState(scope: null, state: new string[] { groupId, bootstrapServers });
             }
         }
 
@@ -74,11 +72,12 @@ public sealed class KafkaConsumerConstructorIntegration
 
     internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception exception, in CallTargetState state)
     {
-        // This method is called in the Consumer constructor, so if we have an exception
-        // the consumer won't be created, so no point recording it.
-        if (exception is not null && state is { State: { } consumer })
+        if (exception is null && state is { State: string[] { Length: 2 } config })
         {
-            ConsumerCache.RemoveConsumerGroup(consumer);
+            var groupId = config[0];
+            var bootstrapServers = config[1];
+            var clusterId = KafkaHelper.GetClusterId(bootstrapServers, instance) ?? string.Empty;
+            ConsumerCache.SetConsumerGroup(instance, groupId, bootstrapServers, clusterId);
         }
 
         return CallTargetReturn.GetDefault();
