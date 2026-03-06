@@ -25,6 +25,7 @@ END,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -57,6 +58,7 @@ END,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -96,6 +98,7 @@ END,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -126,6 +129,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -152,6 +156,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -178,6 +183,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -204,6 +210,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -230,6 +237,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -256,6 +264,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -283,6 +292,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -307,6 +317,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -331,6 +342,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -355,6 +367,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -379,6 +392,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -403,6 +417,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -427,6 +442,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -451,6 +467,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -475,6 +492,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -499,6 +517,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -523,6 +542,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -547,6 +567,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -571,6 +592,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -595,6 +617,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -619,6 +642,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -643,6 +667,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -667,6 +692,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -691,6 +717,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -715,6 +742,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -739,6 +767,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -763,6 +792,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -787,6 +817,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -811,6 +842,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -835,6 +867,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -859,6 +892,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -883,6 +917,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -907,6 +942,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -931,6 +967,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -955,6 +992,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -979,6 +1017,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1003,6 +1042,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1027,6 +1067,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1051,6 +1092,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1075,6 +1117,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1099,6 +1142,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1123,6 +1167,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1147,6 +1192,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1171,6 +1217,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1195,6 +1242,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1219,6 +1267,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1243,6 +1292,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1267,6 +1317,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1291,6 +1342,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1315,6 +1367,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1339,6 +1392,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1363,6 +1417,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1387,6 +1442,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1411,6 +1467,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1434,6 +1491,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1461,6 +1519,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1485,6 +1544,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1509,6 +1569,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1533,6 +1594,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1557,6 +1619,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1581,6 +1644,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1605,6 +1669,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1629,6 +1694,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1653,6 +1719,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1677,6 +1744,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1701,6 +1769,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1725,6 +1794,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1749,6 +1819,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1773,6 +1844,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1797,6 +1869,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1821,6 +1894,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1845,6 +1919,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1869,6 +1944,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1893,6 +1969,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1917,6 +1994,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1941,6 +2019,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1965,6 +2044,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1989,6 +2069,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2013,6 +2094,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2037,6 +2119,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2061,6 +2144,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2085,6 +2169,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2109,6 +2194,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2133,6 +2219,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2157,6 +2244,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2181,6 +2269,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2205,6 +2294,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2229,6 +2319,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2253,6 +2344,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2277,6 +2369,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2301,6 +2394,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2325,6 +2419,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2349,6 +2444,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2373,6 +2469,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2397,6 +2494,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2421,6 +2519,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2445,6 +2544,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2469,6 +2569,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2493,6 +2594,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2517,6 +2619,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2541,6 +2644,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2565,6 +2669,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2589,6 +2694,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2613,6 +2719,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2637,6 +2744,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2661,6 +2769,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2685,6 +2794,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2709,6 +2819,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2733,6 +2844,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2757,6 +2869,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2781,6 +2894,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2805,6 +2919,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2829,6 +2944,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2853,6 +2969,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2877,6 +2994,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2901,6 +3019,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2925,6 +3044,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2949,6 +3069,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2973,6 +3094,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2997,6 +3119,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -3021,6 +3144,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -3045,6 +3169,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -3069,6 +3194,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -3093,6 +3219,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -3117,6 +3244,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -3141,6 +3269,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -3165,6 +3294,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -3189,6 +3319,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -3213,6 +3344,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -3237,6 +3369,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -3261,6 +3394,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -3285,6 +3419,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -3309,6 +3444,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -3333,6 +3469,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -3357,6 +3494,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -3381,6 +3519,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -3405,6 +3544,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -3429,6 +3569,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -3453,6 +3594,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -3477,6 +3619,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -3501,6 +3644,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -3525,6 +3669,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -3549,6 +3694,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -3573,6 +3719,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -3597,6 +3744,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -3621,6 +3769,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -3645,6 +3794,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -3669,6 +3819,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -3693,6 +3844,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -3717,6 +3869,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -3741,6 +3894,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -3765,6 +3919,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -3789,6 +3944,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -3813,6 +3969,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -3837,6 +3994,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -3861,6 +4019,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -3885,6 +4044,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -3909,6 +4069,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -3933,6 +4094,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -3957,6 +4119,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -3981,6 +4144,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -4005,6 +4169,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -4029,6 +4194,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -4053,6 +4219,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -4077,6 +4244,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -4101,6 +4269,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -4125,6 +4294,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -4149,6 +4319,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -4173,6 +4344,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -4197,6 +4369,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -4221,6 +4394,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -4245,6 +4419,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -4269,6 +4444,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -4293,6 +4469,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -4317,6 +4494,7 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
+      _dd.svc_src: sql-server,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
