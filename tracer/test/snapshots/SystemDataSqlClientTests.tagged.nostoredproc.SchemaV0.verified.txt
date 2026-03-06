@@ -27,7 +27,6 @@ END,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -60,7 +59,6 @@ END,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -102,7 +100,6 @@ END,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -134,7 +131,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -161,7 +157,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -190,7 +185,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -217,7 +211,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -246,7 +239,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -273,7 +265,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -303,7 +294,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -328,7 +318,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -355,7 +344,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -380,7 +368,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -407,7 +394,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -432,7 +418,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -459,7 +444,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -484,7 +468,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -511,7 +494,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -536,7 +518,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -563,7 +544,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -588,7 +568,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -615,7 +594,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -640,7 +618,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -667,7 +644,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -692,7 +668,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -719,7 +694,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -744,7 +718,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -771,7 +744,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -796,7 +768,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -823,7 +794,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -848,7 +818,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -875,7 +844,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -900,7 +868,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -927,7 +894,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -952,7 +918,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -979,7 +944,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -1004,7 +968,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -1031,7 +994,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -1056,7 +1018,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -1083,7 +1044,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -1108,7 +1068,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -1135,7 +1094,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -1160,7 +1118,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -1187,7 +1144,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -1212,7 +1168,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -1239,7 +1194,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -1264,7 +1218,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -1291,7 +1244,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -1316,7 +1268,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -1343,7 +1294,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -1368,7 +1318,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -1395,7 +1344,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -1420,7 +1368,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -1447,7 +1394,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -1472,7 +1418,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -1499,7 +1444,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -1525,7 +1469,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -1549,7 +1492,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -1579,7 +1521,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -1604,7 +1545,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -1631,7 +1571,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -1656,7 +1595,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -1683,7 +1621,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -1708,7 +1645,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -1735,7 +1671,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -1760,7 +1695,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -1787,7 +1721,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -1812,7 +1745,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -1839,7 +1771,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -1864,7 +1795,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -1891,7 +1821,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -1916,7 +1845,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -1943,7 +1871,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -1968,7 +1895,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -1995,7 +1921,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -2020,7 +1945,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -2047,7 +1971,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -2072,7 +1995,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -2099,7 +2021,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -2124,7 +2045,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -2151,7 +2071,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -2176,7 +2095,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -2203,7 +2121,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -2228,7 +2145,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -2255,7 +2171,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -2280,7 +2195,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -2307,7 +2221,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -2332,7 +2245,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -2359,7 +2271,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -2384,7 +2295,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -2411,7 +2321,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -2436,7 +2345,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -2463,7 +2371,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -2488,7 +2395,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -2515,7 +2421,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -2540,7 +2445,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -2567,7 +2471,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -2592,7 +2495,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -2619,7 +2521,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -2644,7 +2545,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -2671,7 +2571,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -2696,7 +2595,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -2723,7 +2621,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -2748,7 +2645,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -2775,7 +2671,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -2800,7 +2695,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -2827,7 +2721,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -2852,7 +2745,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -2879,7 +2771,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -2904,7 +2795,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -2931,7 +2821,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -2956,7 +2845,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -2983,7 +2871,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -3008,7 +2895,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -3035,7 +2921,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -3060,7 +2945,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -3087,7 +2971,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -3112,7 +2995,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -3139,7 +3021,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -3164,7 +3045,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -3191,7 +3071,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -3216,7 +3095,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -3243,7 +3121,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -3268,7 +3145,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -3295,7 +3171,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -3320,7 +3195,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -3347,7 +3221,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -3372,7 +3245,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -3399,7 +3271,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -3424,7 +3295,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -3451,7 +3321,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -3476,7 +3345,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -3503,7 +3371,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -3528,7 +3395,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -3555,7 +3421,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -3580,7 +3445,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -3607,7 +3471,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -3632,7 +3495,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -3659,7 +3521,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -3684,7 +3545,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -3711,7 +3571,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -3736,7 +3595,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -3763,7 +3621,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -3788,7 +3645,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -3815,7 +3671,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -3840,7 +3695,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -3867,7 +3721,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -3892,7 +3745,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -3919,7 +3771,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -3944,7 +3795,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -3971,7 +3821,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -3996,7 +3845,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -4023,7 +3871,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -4048,7 +3895,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -4075,7 +3921,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -4100,7 +3945,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -4127,7 +3971,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -4152,7 +3995,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -4179,7 +4021,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -4204,7 +4045,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -4231,7 +4071,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -4256,7 +4095,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -4283,7 +4121,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -4308,7 +4145,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -4335,7 +4171,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -4360,7 +4195,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -4387,7 +4221,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -4412,7 +4245,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -4439,7 +4271,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -4464,7 +4295,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -4491,7 +4321,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -4516,7 +4345,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -4543,7 +4371,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -4568,7 +4395,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -4595,7 +4421,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -4620,7 +4445,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
@@ -4647,7 +4471,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
       _dd.svc_src: sql-server
-      _dd.svc_src: sql-server
     },
     Metrics: {
       dd.instrumentation.time_ms: 123.456,
@@ -4672,7 +4495,6 @@ DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
       span.kind: client,
       _dd.base_service: Samples.SqlServer,
       _dd.dbm_trace_injected: true,
-      _dd.svc_src: sql-server
       _dd.svc_src: sql-server
     },
     Metrics: {
