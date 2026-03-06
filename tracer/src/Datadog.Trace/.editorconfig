@@ -14,3 +14,4 @@ dotnet_diagnostic.CA1814.severity = error # Prefer jagged arrays over multidimen
 # dotnet_diagnostic.CA1815.severity = error # Override equals and operator equals on value types - Too many violations (~60)
 # dotnet_diagnostic.CA1819.severity = error # Properties should not return arrays - Instrumentation state structs intentionally use array properties
 # dotnet_diagnostic.CA1820.severity = error # Test for empty strings using string length - Too many violations (~30)
+dotnet_diagnostic.CA1821.severity = error # Remove empty finalizers - Whenever you can, avoid finalizers because of the additional performance overhead that's involved in tracking object lifetime.
