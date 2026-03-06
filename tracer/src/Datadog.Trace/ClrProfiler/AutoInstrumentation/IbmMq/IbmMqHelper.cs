@@ -68,6 +68,7 @@ internal static class IbmMqHelper
 
             var operationName = settings.Schema.Messaging.GetOutboundOperationName(MessagingSchema.OperationType.IbmMq);
             var serviceName = settings.Schema.Messaging.GetServiceName(MessagingSchema.ServiceType.IbmMq);
+            var serviceNameSource = settings.Schema.Messaging.GetServiceNameSource(MessagingSchema.ServiceType.IbmMq);
             var tags = settings.Schema.Messaging.CreateIbmMqTags(SpanKinds.Consumer);
             var queueName = SanitizeQueueName(queue.Name);
             tags.TopicName = queueName;
@@ -75,6 +76,7 @@ internal static class IbmMqHelper
             scope = tracer.StartActiveInternal(
                 operationName,
                 serviceName: serviceName,
+                serviceNameSource: serviceNameSource,
                 finishOnClose: true);
             tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId.IbmMq);
 
@@ -134,6 +136,7 @@ internal static class IbmMqHelper
             }
 
             var serviceName = settings.Schema.Messaging.GetServiceName(MessagingSchema.ServiceType.IbmMq);
+            var serviceNameSource = settings.Schema.Messaging.GetServiceNameSource(MessagingSchema.ServiceType.IbmMq);
             var tags = settings.Schema.Messaging.CreateIbmMqTags(SpanKinds.Producer);
             var queueName = SanitizeQueueName(queue.Name);
             tags.TopicName = queueName;
@@ -142,6 +145,7 @@ internal static class IbmMqHelper
                 tags: tags,
                 parent: extractedContext.SpanContext,
                 serviceName: serviceName,
+                serviceNameSource: serviceNameSource,
                 finishOnClose: true,
                 startTime: spanStartTime);
             tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId.IbmMq);

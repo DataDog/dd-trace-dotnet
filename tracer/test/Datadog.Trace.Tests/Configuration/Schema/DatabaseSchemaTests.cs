@@ -197,5 +197,40 @@ namespace Datadog.Trace.Tests.Configuration.Schema
                 namingSchema.Database.GetServiceName(value).Should().NotBeNull();
             }
         }
+
+        [Theory]
+        [CombinatorialData]
+        public void GetServiceNameSource_SupportsAllEnumValues([CombinatorialValues(0, 1)]int schemaVersion, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
+        {
+            var namingSchema = new NamingSchema((SchemaVersion)schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, new Dictionary<string, string>(), new Dictionary<string, string>());
+            foreach (var value in Enum.GetValues(typeof(DatabaseSchema.ServiceType)).Cast<DatabaseSchema.ServiceType>())
+            {
+                // Should not throw IndexOutOfRangeException
+                var action = () => namingSchema.Database.GetServiceNameSource(value);
+                action.Should().NotThrow();
+            }
+        }
+
+        [Fact]
+        public void GetServiceNameSource_ReturnsNonNull_WhenServiceNameDiffersFromDefault()
+        {
+            // V0 without removeClientServiceNames: service names have suffixes, so source should be set
+            var namingSchema = new NamingSchema(SchemaVersion.V0, peerServiceTagsEnabled: false, removeClientServiceNamesEnabled: false, DefaultServiceName, new Dictionary<string, string>(), new Dictionary<string, string>());
+            foreach (var value in Enum.GetValues(typeof(DatabaseSchema.ServiceType)).Cast<DatabaseSchema.ServiceType>())
+            {
+                namingSchema.Database.GetServiceNameSource(value).Should().NotBeNull($"ServiceType.{value} should have a corresponding IntegrationSourceNames entry");
+            }
+        }
+
+        [Fact]
+        public void GetServiceNameSource_ReturnsNull_WhenServiceNameIsDefault()
+        {
+            // V1: service names equal default, so source should be null
+            var namingSchema = new NamingSchema(SchemaVersion.V1, peerServiceTagsEnabled: false, removeClientServiceNamesEnabled: false, DefaultServiceName, new Dictionary<string, string>(), new Dictionary<string, string>());
+            foreach (var value in Enum.GetValues(typeof(DatabaseSchema.ServiceType)).Cast<DatabaseSchema.ServiceType>())
+            {
+                namingSchema.Database.GetServiceNameSource(value).Should().BeNull();
+            }
+        }
     }
 }

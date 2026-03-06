@@ -41,8 +41,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
             {
                 tags = perTraceSettings.Schema.Messaging.CreateAwsSqsTags(spanKind);
                 string serviceName = perTraceSettings.GetServiceName(DatadogAwsSqsServiceName);
+                string? serviceNameSource = perTraceSettings.GetServiceNameSource(DatadogAwsSqsServiceName);
                 string operationName = GetOperationName(tracer, spanKind);
-                scope = tracer.StartActiveInternal(operationName, parent: parentContext, tags: tags, serviceName: serviceName);
+                scope = tracer.StartActiveInternal(operationName, parent: parentContext, tags: tags, serviceName: serviceName, serviceNameSource: serviceNameSource);
                 var span = scope.Span;
 
                 span.Type = SpanTypes.Http;

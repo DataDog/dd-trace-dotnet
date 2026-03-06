@@ -72,8 +72,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
                 var tags = PopulateTags(filename, environmentVariables, useShellExecute, arguments, argumentList);
 
                 var serviceName = tracer.CurrentTraceSettings.GetServiceName(ServiceName);
+                var serviceNameSource = tracer.CurrentTraceSettings.GetServiceNameSource(ServiceName);
                 tags.SetAnalyticsSampleRate(IntegrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: false);
-                scope = tracer.StartActiveInternal(OperationName, serviceName: serviceName, tags: tags);
+                scope = tracer.StartActiveInternal(OperationName, serviceName: serviceName, serviceNameSource: serviceNameSource, tags: tags);
                 scope.Span.ResourceName = filename;
                 scope.Span.Type = SpanTypes.System;
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
