@@ -11,4 +11,5 @@ dotnet_diagnostic.CA1806.severity = error # Do not ignore method results
 dotnet_diagnostic.CA1812.severity = error # Avoid uninstantiated internal classes
 # dotnet_diagnostic.CA1813.severity = error # Avoid unsealed attributes
 dotnet_diagnostic.CA1814.severity = error # Prefer jagged arrays over multidimensional
+# dotnet_diagnostic.CA1815.severity = error # Override equals and operator equals on value types
 
