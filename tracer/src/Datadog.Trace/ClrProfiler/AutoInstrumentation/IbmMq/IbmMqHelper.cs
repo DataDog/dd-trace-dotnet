@@ -67,7 +67,8 @@ internal static class IbmMqHelper
             }
 
             var operationName = settings.Schema.Messaging.GetOutboundOperationName(MessagingSchema.OperationType.IbmMq);
-            var (serviceName, serviceNameSource) = settings.Schema.Messaging.GetServiceNameMetadata(MessagingSchema.ServiceType.IbmMq);
+            var serviceName = settings.Schema.Messaging.GetServiceName(MessagingSchema.ServiceType.IbmMq);
+            var serviceNameSource = settings.Schema.Messaging.GetServiceNameSource(MessagingSchema.ServiceType.IbmMq);
             var tags = settings.Schema.Messaging.CreateIbmMqTags(SpanKinds.Consumer);
             var queueName = SanitizeQueueName(queue.Name);
             tags.TopicName = queueName;
@@ -134,7 +135,8 @@ internal static class IbmMqHelper
                 Log.Error(ex, "Error extracting propagated headers from IbmMq message");
             }
 
-            var (serviceName, serviceNameSource) = settings.Schema.Messaging.GetServiceNameMetadata(MessagingSchema.ServiceType.IbmMq);
+            var serviceName = settings.Schema.Messaging.GetServiceName(MessagingSchema.ServiceType.IbmMq);
+            var serviceNameSource = settings.Schema.Messaging.GetServiceNameSource(MessagingSchema.ServiceType.IbmMq);
             var tags = settings.Schema.Messaging.CreateIbmMqTags(SpanKinds.Producer);
             var queueName = SanitizeQueueName(queue.Name);
             tags.TopicName = queueName;

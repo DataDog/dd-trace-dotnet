@@ -62,7 +62,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
             TryGetHostAndPort(connection, out var host, out var port);
 
             var operationName = tracer.CurrentTraceSettings.Schema.Database.GetOperationName(DatabaseSchema.OperationType.MongoDb);
-            var (serviceName, serviceNameSource) = tracer.CurrentTraceSettings.Schema.Database.GetServiceNameMetadata(DatabaseSchema.ServiceType.MongoDb);
+            var serviceName = tracer.CurrentTraceSettings.Schema.Database.GetServiceName(DatabaseSchema.ServiceType.MongoDb);
+            var serviceNameSource = tracer.CurrentTraceSettings.Schema.Database.GetServiceNameSource(DatabaseSchema.ServiceType.MongoDb);
             var tags = tracer.CurrentTraceSettings.Schema.Database.CreateMongoDbTags();
 
             Scope? scope = null;
