@@ -68,7 +68,8 @@
       span.kind: client,
       tablename: MyTableName,
       _dd.base_service: Samples.AWS.DynamoDBv2,
-      _dd.peer.service.source: tablename
+      _dd.peer.service.source: tablename,
+      _dd.svc_src: aws-dynamodb
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -99,7 +100,8 @@
       span.kind: client,
       tablename: MyTableName,
       _dd.base_service: Samples.AWS.DynamoDBv2,
-      _dd.peer.service.source: tablename
+      _dd.peer.service.source: tablename,
+      _dd.svc_src: aws-dynamodb
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -130,7 +132,8 @@
       span.kind: client,
       tablename: MyTableName,
       _dd.base_service: Samples.AWS.DynamoDBv2,
-      _dd.peer.service.source: tablename
+      _dd.peer.service.source: tablename,
+      _dd.svc_src: aws-dynamodb
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -171,7 +174,8 @@
       span.kind: client,
       tablename: MyTableName,
       _dd.base_service: Samples.AWS.DynamoDBv2,
-      _dd.peer.service.source: tablename
+      _dd.peer.service.source: tablename,
+      _dd.svc_src: aws-dynamodb
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -212,7 +216,8 @@
       span.kind: client,
       tablename: MyTableName,
       _dd.base_service: Samples.AWS.DynamoDBv2,
-      _dd.peer.service.source: tablename
+      _dd.peer.service.source: tablename,
+      _dd.svc_src: aws-dynamodb
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -243,7 +248,8 @@
       span.kind: client,
       tablename: MyTableName,
       _dd.base_service: Samples.AWS.DynamoDBv2,
-      _dd.peer.service.source: tablename
+      _dd.peer.service.source: tablename,
+      _dd.svc_src: aws-dynamodb
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -274,7 +280,8 @@
       span.kind: client,
       tablename: MyTableName,
       _dd.base_service: Samples.AWS.DynamoDBv2,
-      _dd.peer.service.source: tablename
+      _dd.peer.service.source: tablename,
+      _dd.svc_src: aws-dynamodb
     },
     Metrics: {
       _dd.top_level: 1.0

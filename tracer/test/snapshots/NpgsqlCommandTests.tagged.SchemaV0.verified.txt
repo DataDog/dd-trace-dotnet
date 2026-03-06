@@ -17,8 +17,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -42,8 +43,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -67,8 +69,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -92,8 +95,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -117,8 +121,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -142,8 +147,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -167,8 +173,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -192,8 +199,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -217,8 +225,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -242,8 +251,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -267,8 +277,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -292,8 +303,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -317,8 +329,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -342,8 +355,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -367,8 +381,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -392,8 +407,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -417,8 +433,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -442,8 +459,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -467,8 +485,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -492,8 +511,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -517,8 +537,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -542,8 +563,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -567,8 +589,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -592,8 +615,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -617,8 +641,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -642,8 +667,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -667,8 +693,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -692,8 +719,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -717,8 +745,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -742,8 +771,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -767,8 +797,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -792,8 +823,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -817,8 +849,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -842,8 +875,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -867,8 +901,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -892,8 +927,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -917,8 +953,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -942,8 +979,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -967,8 +1005,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -992,8 +1031,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1017,8 +1057,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1042,8 +1083,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1067,8 +1109,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1092,8 +1135,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1117,8 +1161,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1142,8 +1187,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1167,8 +1213,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1192,8 +1239,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1217,8 +1265,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1242,8 +1291,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1267,8 +1317,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1292,8 +1343,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1317,8 +1369,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1342,8 +1395,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1367,8 +1421,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1392,8 +1447,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1417,8 +1473,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1442,8 +1499,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1467,8 +1525,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1492,8 +1551,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1517,8 +1577,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1542,8 +1603,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1567,8 +1629,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1592,8 +1655,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1617,8 +1681,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1642,8 +1707,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1667,8 +1733,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1692,8 +1759,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1717,8 +1785,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1742,8 +1811,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1767,8 +1837,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1792,8 +1863,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1817,8 +1889,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1842,8 +1915,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1867,8 +1941,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1892,8 +1967,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1917,8 +1993,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1942,8 +2019,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1967,8 +2045,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1992,8 +2071,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2017,8 +2097,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2042,8 +2123,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2067,8 +2149,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2092,8 +2175,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2117,8 +2201,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2142,8 +2227,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2167,8 +2253,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2192,8 +2279,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2217,8 +2305,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2242,8 +2331,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2267,8 +2357,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2292,8 +2383,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2317,8 +2409,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2342,8 +2435,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2367,8 +2461,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2392,8 +2487,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2417,8 +2513,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2442,8 +2539,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2467,8 +2565,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2492,8 +2591,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2517,8 +2617,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2542,8 +2643,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2567,8 +2669,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2592,8 +2695,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2617,8 +2721,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2642,8 +2747,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2667,8 +2773,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2692,8 +2799,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2717,8 +2825,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2742,8 +2851,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2767,8 +2877,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2792,8 +2903,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2817,8 +2929,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2842,8 +2955,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2867,8 +2981,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2892,8 +3007,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2917,8 +3033,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2942,8 +3059,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2967,8 +3085,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2992,8 +3111,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3017,8 +3137,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3042,8 +3163,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3067,8 +3189,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3092,8 +3215,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3117,8 +3241,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3142,8 +3267,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3167,8 +3293,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3192,8 +3319,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3217,8 +3345,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3242,8 +3371,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3267,8 +3397,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3292,8 +3423,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3317,8 +3449,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3342,8 +3475,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3367,8 +3501,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3392,8 +3527,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3417,8 +3553,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3442,8 +3579,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3467,8 +3605,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3492,8 +3631,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3517,8 +3657,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3542,8 +3683,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3567,8 +3709,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3592,8 +3735,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3617,8 +3761,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3642,8 +3787,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3667,8 +3813,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.svc_src: postgres,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0

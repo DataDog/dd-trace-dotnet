@@ -65,7 +65,8 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.EventBridge
+      _dd.base_service: Samples.AWS.EventBridge,
+      _dd.svc_src: aws-eventbridge
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -162,7 +163,8 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.EventBridge
+      _dd.base_service: Samples.AWS.EventBridge,
+      _dd.svc_src: aws-eventbridge
     },
     Metrics: {
       _dd.top_level: 1.0

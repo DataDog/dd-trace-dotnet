@@ -68,7 +68,8 @@
       span.kind: producer,
       statemachinename: StepFunction,
       _dd.base_service: Samples.AWS.StepFunctions,
-      _dd.peer.service.source: statemachinename
+      _dd.peer.service.source: statemachinename,
+      _dd.svc_src: aws-stepfunctions
     },
     Metrics: {
       _dd.top_level: 1.0
