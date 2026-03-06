@@ -454,7 +454,7 @@ internal static class RaspModule
             if (content?.Instance is not null)
             {
                 var contentType = content.Headers?.ContentType?.MediaType;
-                if (contentType is "application/json" or "text/plain")
+                if (contentType is "application/json")
                 {
                     content.LoadIntoBufferAsync().SafeWait();
                     var len = 0L;
