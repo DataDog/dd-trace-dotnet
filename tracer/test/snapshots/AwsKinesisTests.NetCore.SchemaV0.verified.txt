@@ -68,7 +68,8 @@
       span.kind: producer,
       streamname: MyStreamName,
       _dd.base_service: Samples.AWS.Kinesis,
-      _dd.peer.service.source: streamname
+      _dd.peer.service.source: streamname,
+      _dd.svc_src: aws-kinesis
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -99,7 +100,8 @@
       span.kind: producer,
       streamname: MyStreamName,
       _dd.base_service: Samples.AWS.Kinesis,
-      _dd.peer.service.source: streamname
+      _dd.peer.service.source: streamname,
+      _dd.svc_src: aws-kinesis
     },
     Metrics: {
       _dd.top_level: 1.0
