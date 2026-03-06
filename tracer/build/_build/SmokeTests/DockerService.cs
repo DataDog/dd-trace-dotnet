@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Formats.Tar;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -39,9 +38,9 @@ public class DockerService
             ForceRemove = true,
         };
 
-        for (var attempt = 1; attempt <= MaxRetries; attempt++)
-        {
-            try
+        await RetryAsync(
+            $"Building {tag} image from {dockerfilePath}",
+            async () =>
             {
                 // Reset the context stream for each attempt
                 contextStream.Position = 0;
@@ -77,8 +76,6 @@ public class DockerService
                     }
                 });
 
-                Log.Information("Building image {Tag} using Docker API (attempt {Attempt}/{MaxRetries})...", tag, attempt, MaxRetries);
-
                 await client.Images.BuildImageFromDockerfileAsync(
                     buildParams,
                     contextStream,
@@ -92,15 +89,8 @@ public class DockerService
                 }
 
                 Log.Information("Successfully built image {Tag}", tag);
-                return;
-            }
-            catch (Exception ex) when (attempt < MaxRetries)
-            {
-                var delay = RetryDelays[attempt - 1];
-                Log.Warning(ex, "Docker build attempt {Attempt}/{MaxRetries} failed, retrying in {Delay}s...", attempt, MaxRetries, delay.TotalSeconds);
-                await Task.Delay(delay);
-            }
-        }
+            },
+            RetryDelays);
     }
 
     public static async Task PullImageAsync(string image, bool skipIfImageExists)
