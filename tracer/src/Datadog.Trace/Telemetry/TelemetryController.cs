@@ -199,7 +199,7 @@ internal sealed class TelemetryController : ITelemetryController
                 _configuration.GetFullData(),
                 _dependencies.GetFullData(),
                 _integrations.GetFullData(),
-                _appEndpoints.GetData(),
+                _appEndpoints.GetIncrementalData(),
                 metrics: null,
                 _products.GetFullData(),
                 sendAppStarted: false);
@@ -338,12 +338,12 @@ internal sealed class TelemetryController : ITelemetryController
 
             // use values from previous failed attempt if necessary
             var input = _aggregator.Combine(
-                _configuration.GetData(),
-                _dependencies.GetData(),
-                _integrations.GetData(),
-                _appEndpoints.GetData(),
+                _configuration.GetIncrementalData(),
+                _dependencies.GetIncrementalData(),
+                _integrations.GetIncrementalData(),
+                _appEndpoints.GetIncrementalData(),
                 in metrics,
-                _products.GetData());
+                _products.GetIncrementalData());
 
             var data = _dataBuilder.BuildTelemetryData(application, host, in input, _namingVersion, sendAppClosing);
 
