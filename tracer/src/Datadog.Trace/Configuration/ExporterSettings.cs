@@ -298,19 +298,21 @@ namespace Datadog.Trace.Configuration
             try
             {
                 // Named pipes are Windows-only
+#if !NETFRAMEWORK
                 if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
                     return false;
                 }
+#endif
 
                 // Check that the compat binary exists — it's what actually listens on the named pipe
                 // Check that the compat DLL exists and has a version that supports named pipes.
                 // Named pipe support was added in compat version 1.4.0 (dev builds use 0.0.0).
                 const string compatBinaryPath = @"C:\home\site\wwwroot\datadog\bin\windows-amd64\datadog-serverless-compat.exe";
-                var compatDllPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Datadog.Serverless.Compat.dll");
+                var compatDllPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory ?? string.Empty, "Datadog.Serverless.Compat.dll");
                 if (!File.Exists(compatBinaryPath) || !File.Exists(compatDllPath))
                 {
-                    Log.Debug("Did not find Serverless Compatability Layer or related DLLs.", compatDllPath);
+                    Log.Debug("Did not find Serverless Compatability Layer or related DLLs.");
                     return false;
                 }
 
