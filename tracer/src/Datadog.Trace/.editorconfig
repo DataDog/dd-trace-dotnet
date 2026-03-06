@@ -12,3 +12,4 @@ dotnet_diagnostic.CA1812.severity = error # Avoid uninstantiated internal classe
 # dotnet_diagnostic.CA1813.severity = error # Avoid unsealed attributes - .NET provides methods for retrieving custom attributes. By default, these methods search the attribute inheritance hierarchy. Sealing the attribute eliminates the search through the inheritance hierarchy and can improve performance.
 dotnet_diagnostic.CA1814.severity = error # Prefer jagged arrays over multidimensional - A jagged array is an array whose elements are arrays. The arrays that make up the elements can be of different sizes, which can result in less wasted space for some sets of data.
 # dotnet_diagnostic.CA1815.severity = error # Override equals and operator equals on value types - Too many violations (~60)
+# dotnet_diagnostic.CA1819.severity = error # Properties should not return arrays - Instrumentation state structs intentionally use array properties
