@@ -39,6 +39,8 @@ namespace Datadog.Trace.TestHelpers
             (new(@"git.commit.sha: [0-9a-f]{40}", RegOptions), "git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbb"),
             (new(@"_dd\.p\.tid: [0-9a-f]{16}", RegOptions), "_dd.p.tid: 1234567890abcdef"),
             (new(@"(_dd\.code_origin\.frames\.\d+\.file:\s*)(?:[A-Za-z]:\\)?[^,\r\n]*?(tracer\\[^,\r\n]*)", RegOptions), "$1$2"),
+            (new(@"(_dd\.code_origin\.frames\.\d+\.line:\s*)\d+", RegOptions), "${1}0"),
+            (new(@"(_dd\.code_origin\.frames\.\d+\.column:\s*)\d+", RegOptions), "${1}0"),
             (new("x-datadog-trace-id\":\\[\\[\\[8,({\"category\":\"pii\",\"type\":\"vin\"})\\]\\]", RegOptions), "x-datadog-trace-id\":[[[8]]") // api security, sometimes we can get "x-datadog-trace-id":[[[8,{"category":"pii","type":"vin"}]], and not everytime depending on the number, should be removed with waf 1.15.1, bug is fixed
         };
 
