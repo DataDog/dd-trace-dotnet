@@ -16,6 +16,7 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.Pdb;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
+using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Debugger.SpanCodeOrigin
 {
@@ -113,41 +114,70 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
                 // Add code origin tags to entry span
                 // Adds 4 tags always (type, index, method, typename) + 3 tags if PDB available (file, line, column)
                 // Size: ~210-300 bytes without PDB, ~250-500 bytes with PDB
-                if (span.Tags is TagsList tagsList)
+                if (span.Tags is AspNetCoreTags aspNetCoreTags)
                 {
-                    if (sp is { } cached)
+                    aspNetCoreTags.CodeOriginType = "entry";
+                    aspNetCoreTags.CodeOriginFrameIndex = "0";
+                    aspNetCoreTags.CodeOriginFrameMethod = methodName;
+                    aspNetCoreTags.CodeOriginFrameType = typeFullName;
+
+                    if (sp.HasValue)
                     {
-                        tagsList.SetTags(
-                            new(_tags.Type, "entry"),
-                            new(_tags.Index[0], "0"),
-                            new(_tags.Method[0], methodName),
-                            new(_tags.TypeName[0], typeFullName),
+                        var cached = sp.Value;
+                        aspNetCoreTags.SetTags(
                             new(_tags.File[0], cached.Url),
                             new(_tags.Line[0], cached.Line),
                             new(_tags.Column[0], cached.Column));
                     }
-                    else
-                    {
-                        tagsList.SetTags(
-                            new(_tags.Type, "entry"),
-                            new(_tags.Index[0], "0"),
-                            new(_tags.Method[0], methodName),
-                            new(_tags.TypeName[0], typeFullName));
-                    }
-                }
-                else
-                {
-                    span.Tags.SetTag(_tags.Type, "entry");
-                    span.Tags.SetTag(_tags.Index[0], "0");
-                    span.Tags.SetTag(_tags.Method[0], methodName);
-                    span.Tags.SetTag(_tags.TypeName[0], typeFullName);
 
-                    if (sp is { } cached)
+                    return;
+                }
+
+                if (span.Tags is AspNetCoreSingleSpanTags aspNetCoreSingleSpanTags)
+                {
+                    aspNetCoreSingleSpanTags.CodeOriginType = "entry";
+                    aspNetCoreSingleSpanTags.CodeOriginFrameIndex = "0";
+                    aspNetCoreSingleSpanTags.CodeOriginFrameMethod = methodName;
+                    aspNetCoreSingleSpanTags.CodeOriginFrameType = typeFullName;
+
+                    if (sp.HasValue)
                     {
-                        span.Tags.SetTag(_tags.File[0], cached.Url);
-                        span.Tags.SetTag(_tags.Line[0], cached.Line);
-                        span.Tags.SetTag(_tags.Column[0], cached.Column);
+                        var cached = sp.Value;
+                        aspNetCoreSingleSpanTags.SetTags(
+                            new(_tags.File[0], cached.Url),
+                            new(_tags.Line[0], cached.Line),
+                            new(_tags.Column[0], cached.Column));
                     }
+
+                    return;
+                }
+
+                if (Log.IsEnabled(LogEventLevel.Debug))
+                {
+                    Log.Debug(
+                        "Unexpected tags type for entry span {SpanID}: {TagsType}. Falling back to setting code origin tags via ITags. Operation: {OperationName}",
+                        property0: span.SpanId,
+                        property1: span.Tags?.GetType().FullName ?? "<null>",
+                        property2: span.OperationName);
+                }
+
+                var tags = span.Tags;
+                if (tags is null)
+                {
+                    return;
+                }
+
+                tags.SetTag(_tags.Type, "entry");
+                tags.SetTag(_tags.Index[0], "0");
+                tags.SetTag(_tags.Method[0], methodName);
+                tags.SetTag(_tags.TypeName[0], typeFullName);
+
+                if (sp.HasValue)
+                {
+                    var cached = sp.Value;
+                    tags.SetTag(_tags.File[0], cached.Url);
+                    tags.SetTag(_tags.Line[0], cached.Line);
+                    tags.SetTag(_tags.Column[0], cached.Column);
                 }
             }
             catch (Exception ex)

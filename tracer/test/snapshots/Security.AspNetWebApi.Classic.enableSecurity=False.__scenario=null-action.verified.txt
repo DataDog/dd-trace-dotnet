@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -9,6 +9,7 @@
     ParentId: Id_3,
     Tags: {
       aspnet.route: api/home/null-action/{pathparam}/{pathparam2},
+      component: aspnet,
       env: integration_tests,
       http.method: GET,
       http.request.headers.host: localhost:00000,
@@ -27,6 +28,7 @@
     Service: sample,
     Type: web,
     Tags: {
+      component: aspnet,
       env: integration_tests,
       http.method: GET,
       http.request.headers.host: localhost:00000,
@@ -55,6 +57,7 @@
     ParentId: Id_6,
     Tags: {
       aspnet.route: api/home/null-action-async/{pathparam}/{pathparam2},
+      component: aspnet,
       env: integration_tests,
       http.method: GET,
       http.request.headers.host: localhost:00000,
@@ -73,6 +76,7 @@
     Service: sample,
     Type: web,
     Tags: {
+      component: aspnet,
       env: integration_tests,
       http.method: GET,
       http.request.headers.host: localhost:00000,
