@@ -24,3 +24,6 @@ dotnet_diagnostic.CA1827.severity = error # Do not use Count/LongCount when Any 
 dotnet_diagnostic.CA1828.severity = error # Do not use CountAsync/LongCountAsync when AnyAsync can be used - CountAsync or LongCountAsync method was used where AnyAsync method would be more efficient.
 dotnet_diagnostic.CA1829.severity = error # Use Length/Count property instead of Enumerable.Count method - Count Linq method was used on a type that supports an equivalent, more efficient Length or Count property.
 dotnet_diagnostic.CA1830.severity = error # Prefer strongly-typed Append and Insert method overloads on StringBuilder - StringBuilder.Append and StringBuilder.Insert provide overloads for multiple types beyond System.String.
+dotnet_diagnostic.CA1831.severity = error # Use AsSpan instead of Range-based indexers for string when appropriate - Use AsSpan instead of Range-based indexers on a string to avoid creating unnecessary data copies.
+dotnet_diagnostic.CA1832.severity = error # Use AsSpan or AsMemory instead of Range-based indexers for getting ReadOnlySpan or ReadOnlyMemory portion of an array.
+dotnet_diagnostic.CA1833.severity = error # Use AsSpan or AsMemory instead of Range-based indexers for getting Span or Memory portion of an array.
