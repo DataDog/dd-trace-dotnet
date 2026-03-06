@@ -446,6 +446,28 @@ namespace Datadog.Trace.DuckTyping.Tests
         }
 
         [Fact]
+        public void RegisterFailureUsingMethodHandleReplaysKnownFailureTypeAndMessage()
+        {
+            const string expectedMessage = "The target method for the proxy method 'Void Missing()' was not found.";
+            var throwerMethod = typeof(DuckTypeAotEngineTests).GetMethod(
+                nameof(ThrowKnownTargetMethodMissingFailure),
+                BindingFlags.NonPublic | BindingFlags.Static);
+            throwerMethod.Should().NotBeNull();
+
+            DuckTypeAotEngine.RegisterProxyFailure(
+                typeof(IForwardProxy),
+                typeof(ForwardTarget),
+                throwerMethod!.MethodHandle);
+
+            var result = DuckTypeAotEngine.GetOrCreateProxyType(typeof(IForwardProxy), typeof(ForwardTarget));
+
+            result.CanCreate().Should().BeFalse();
+            Action getProxyType = () => _ = result.ProxyType;
+            getProxyType.Should().Throw<DuckTypeTargetMethodNotFoundException>()
+                        .WithMessage(expectedMessage);
+        }
+
+        [Fact]
         public void RegisterProxyFromDifferentRegistryAssemblyThrows()
         {
             DuckTypeAotEngine.RegisterProxy(
@@ -885,6 +907,13 @@ namespace Datadog.Trace.DuckTyping.Tests
         private static void ThrowKnownRegisteredFailure()
         {
             DuckTypeAotRegisteredFailureException.Throw("KnownDuckTypeFailure", "missing-member");
+        }
+
+        private static void ThrowKnownTargetMethodMissingFailure()
+        {
+            DuckTypeAotRegisteredFailureException.Throw(
+                typeof(DuckTypeTargetMethodNotFoundException).FullName!,
+                "The target method for the proxy method 'Void Missing()' was not found.");
         }
     }
 }

@@ -19,6 +19,7 @@ using System.Runtime.Loader;
 using System.Security.Cryptography;
 using System.Text;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Tools.Runner.DuckTypeAot;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using dnlib.DotNet;
@@ -1249,6 +1250,104 @@ public class DuckTypeAotProcessorsTests
                 proxy.Should().NotBeNull();
                 proxy.Should().BeAssignableTo<IReadOnlyCollection<int>>();
                 ((IReadOnlyCollection<int>)proxy!).Count.Should().Be(3);
+            }
+            finally
+            {
+                loadContext.Unload();
+            }
+        }
+        finally
+        {
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
+
+    [Fact]
+    public void GenerateProcessorShouldSupportNestedPrivateClosedGenericMappingsWithCrossAssemblyArguments()
+    {
+        var tempDirectory = CreateTempDirectory();
+        try
+        {
+            var sharedAssemblyPath = typeof(DuckTypeAotProcessorsTests).Assembly.Location;
+            var sharedAssemblyName = AssemblyName.GetAssemblyName(sharedAssemblyPath).Name;
+            var helperAssemblyPath = typeof(EnvironmentHelper).Assembly.Location;
+
+            var closedArgumentType = typeof(IEnumerable<Tuple<EnvironmentHelper, string>>);
+            var closedOuterTargetType = typeof(NestedPrivateClosedGenericTarget<>).MakeGenericType(closedArgumentType);
+            var closedInnerTargetType = closedOuterTargetType
+                                       .GetProperty("Method", BindingFlags.Instance | BindingFlags.NonPublic)
+                                       ?.PropertyType;
+
+            closedInnerTargetType.Should().NotBeNull("the nested private closed generic target type should be discoverable via reflection");
+
+            var outputPath = Path.Combine(tempDirectory, "Datadog.Trace.DuckType.AotRegistry.ClosedGeneric.NestedPrivate.dll");
+            var mapFilePath = Path.Combine(tempDirectory, "ducktype-aot-map-closed-generic-nested-private.json");
+            var trimmerDescriptorPath = Path.Combine(tempDirectory, "ducktype-aot-closed-generic-nested-private.linker.xml");
+            var propsPath = Path.Combine(tempDirectory, "ducktype-aot-closed-generic-nested-private.props");
+
+            var mapDocument = new
+            {
+                mappings = new object[]
+                {
+                    new
+                    {
+                        mode = "forward",
+                        proxyType = typeof(INestedPrivateClosedGenericProxy).FullName,
+                        proxyAssembly = sharedAssemblyName,
+                        targetType = closedOuterTargetType.FullName,
+                        targetAssembly = sharedAssemblyName
+                    },
+                    new
+                    {
+                        mode = "forward",
+                        proxyType = typeof(INestedPrivateClosedGenericInnerProxy).FullName,
+                        proxyAssembly = sharedAssemblyName,
+                        targetType = closedInnerTargetType!.FullName,
+                        targetAssembly = sharedAssemblyName
+                    }
+                }
+            };
+            File.WriteAllText(mapFilePath, JsonConvert.SerializeObject(mapDocument, Formatting.Indented));
+
+            var options = new DuckTypeAotGenerateOptions(
+                proxyAssemblies: new[] { sharedAssemblyPath },
+                targetAssemblies: new[] { sharedAssemblyPath, helperAssemblyPath },
+                targetFolders: Array.Empty<string>(),
+                targetFilters: new[] { "*.dll" },
+                mapFile: mapFilePath,
+                mappingCatalog: null,
+                genericInstantiationsFile: null,
+                outputPath: outputPath,
+                assemblyName: "Datadog.Trace.DuckType.AotRegistry.ClosedGeneric.NestedPrivate",
+                trimmerDescriptorPath: trimmerDescriptorPath,
+                propsPath: propsPath);
+
+            var exitCode = DuckTypeAotGenerateProcessor.Process(options);
+            exitCode.Should().Be(0);
+
+            var compatibilityMatrixPath = $"{outputPath}.compat.json";
+            var matrix = JsonConvert.DeserializeObject<DuckTypeAotCompatibilityMatrix>(File.ReadAllText(compatibilityMatrixPath));
+            matrix.Should().NotBeNull();
+            matrix!.Mappings.Should().OnlyContain(mapping =>
+                string.Equals(mapping.Status, DuckTypeAotCompatibilityStatuses.Compatible, StringComparison.Ordinal));
+
+            var loadContext = new AssemblyLoadContext("DuckTypeAotProcessorsTests-ClosedGeneric-NestedPrivate", isCollectible: true);
+            try
+            {
+                var generatedAssembly = loadContext.LoadFromAssemblyPath(outputPath);
+                var bootstrapType = generatedAssembly.GetType("Datadog.Trace.DuckTyping.Generated.DuckTypeAotRegistryBootstrap");
+                bootstrapType.Should().NotBeNull();
+                var initializeMethod = bootstrapType!.GetMethod("Initialize", BindingFlags.Public | BindingFlags.Static);
+                initializeMethod.Should().NotBeNull();
+                _ = initializeMethod!.Invoke(obj: null, parameters: null);
+
+                var instance = Activator.CreateInstance(closedOuterTargetType);
+                instance.Should().NotBeNull();
+
+                var proxy = DuckType.Create(typeof(INestedPrivateClosedGenericProxy), instance!);
+                proxy.Should().NotBeNull();
+                proxy.Should().BeAssignableTo<INestedPrivateClosedGenericProxy>();
+                ((INestedPrivateClosedGenericProxy)proxy!).Method.Value.Should().Contain(nameof(EnvironmentHelper));
             }
             finally
             {
@@ -7852,6 +7951,26 @@ public class DuckTypeAotProcessorsTests
     private interface IAliasForwardProxy
     {
         string Value { get; }
+    }
+
+    private interface INestedPrivateClosedGenericProxy
+    {
+        INestedPrivateClosedGenericInnerProxy Method { get; }
+    }
+
+    private interface INestedPrivateClosedGenericInnerProxy
+    {
+        string Value { get; }
+    }
+
+    private sealed class NestedPrivateClosedGenericTarget<TValue>
+    {
+        private NestedPrivateClosedGenericInner<TValue> Method { get; } = new();
+
+        private sealed class NestedPrivateClosedGenericInner<TInner>
+        {
+            public string Value => typeof(TInner).FullName ?? typeof(TInner).Name;
+        }
     }
 
     private class AliasForwardBaseTarget
