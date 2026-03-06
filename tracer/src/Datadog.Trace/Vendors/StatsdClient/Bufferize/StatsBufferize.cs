@@ -54,6 +54,11 @@ namespace Datadog.Trace.Vendors.StatsdClient.Bufferize
             this._worker.Dispose();
         }
 
+        public Task DisposeAsync()
+        {
+            return this._worker.DisposeAsync();
+        }
+
         private class WorkerHandler : IAsynchronousWorkerHandler<Stats>
         {
             private readonly StatsRouter _statsRouter;

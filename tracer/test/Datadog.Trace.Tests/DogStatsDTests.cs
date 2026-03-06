@@ -49,7 +49,7 @@ namespace Datadog.Trace.Tests
             Assert.True(spans.Count == 1, AssertionFailureMessage(1, spans));
 
             // no methods should be called on the IStatsd other than dispose
-            statsd.Verify(s => s.Dispose(), Times.Once);
+            statsd.Verify(s => s.DisposeAsync(), Times.Once);
             statsd.VerifyNoOtherCalls();
         }
 
