@@ -35,7 +35,8 @@
       out.host: aws_eventbridge,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.EventBridge
+      _dd.base_service: Samples.AWS.EventBridge,
+      _dd.svc_src: http-client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -88,7 +89,8 @@
       out.host: aws_eventbridge,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.EventBridge
+      _dd.base_service: Samples.AWS.EventBridge,
+      _dd.svc_src: http-client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -130,7 +132,8 @@
       out.host: aws_eventbridge,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.EventBridge
+      _dd.base_service: Samples.AWS.EventBridge,
+      _dd.svc_src: http-client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -183,7 +186,8 @@
       out.host: aws_eventbridge,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.EventBridge
+      _dd.base_service: Samples.AWS.EventBridge,
+      _dd.svc_src: http-client
     },
     Metrics: {
       _dd.top_level: 1.0
