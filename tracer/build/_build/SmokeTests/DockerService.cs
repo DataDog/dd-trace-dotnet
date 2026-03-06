@@ -103,8 +103,36 @@ public class DockerService
         }
     }
 
-    public static async Task PullImageAsync(string image)
+    public static async Task PullImageAsync(string image, bool skipIfImageExists)
     {
+        if (skipIfImageExists)
+        {
+            var exists = await RetryAsync(
+                $"Checking for local {image}",
+                async () =>
+                {
+                    try
+                    {
+                        using var client = CreateDockerClient();
+                        await client.Images.InspectImageAsync(image);
+                        return true;
+                    }
+                    catch (DockerImageNotFoundException)
+                    {
+                        return false;
+                    }
+                },
+                RetryDelays);
+
+            if (exists)
+            {
+                Logger.Information("Image {Image} exists locally, skipping pull...", image);
+                return;
+            }
+
+            Logger.Information("Image {Image} not found locally, pulling...", image);
+        }
+
         var parts = image.Split(':');
         var repo = parts[0];
         var tag = parts.Length > 1 ? parts[1] : "latest";

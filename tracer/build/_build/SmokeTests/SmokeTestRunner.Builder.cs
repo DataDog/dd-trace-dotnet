@@ -348,7 +348,7 @@ public static partial class SmokeTestRunner
             }
             else
             {
-                await DockerService.PullImageAsync(LinuxTestAgentImage);
+                await DockerService.PullImageAsync(LinuxTestAgentImage, skipIfImageExists: true);
                 return LinuxTestAgentImage;
             }
             static async Task BuildWindowsTestAgentImageAsync(AbsolutePath tracerDir)
