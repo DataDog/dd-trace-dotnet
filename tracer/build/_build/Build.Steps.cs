@@ -1011,12 +1011,9 @@ partial class Build
 
             foreach (var arch in architectures)
             {
-                foreach (AbsolutePath msiPath in Directory.EnumerateFiles(ArtifactsDirectory / arch, $"datadog-dotnet-apm-{Version}-{arch}.msi", SearchOption.AllDirectories))
-                {
-                    var verifiedPath = BuildProjectDirectory / nameof(MsiValidation) / $"msi-{arch}.verified.yml";
-                    MsiSnapshot.ValidateMsiSnapshot(msiPath, verifiedPath, Version, FullVersion);
-                }
-
+                var msiPath = ArtifactsDirectory / arch / "en-us" / $"datadog-dotnet-apm-{FullVersion}-{arch}.msi";
+                var verifiedPath = BuildProjectDirectory / nameof(MsiValidation) / $"msi-{arch}.verified.yml";
+                MsiSnapshot.ValidateMsiSnapshot(msiPath, verifiedPath, Version, FullVersion);
             }
         });
 
