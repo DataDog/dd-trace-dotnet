@@ -69,8 +69,7 @@ internal static partial class ConfigurationKeys
         public const string UserEventsAutomatedTracking = "DD_APPSEC_AUTOMATED_USER_EVENTS_TRACKING";
 
         /// <summary>
-        /// Configuration key for limiting the size of the request body being parsed.
-        /// Default value is 10_000_000.
+        /// Configuration key for limiting the size of the request body being parsed. Default value is 10_000_000.
         /// </summary>
         public const string AppSecBodyParsingSizeLimit = "DD_APPSEC_BODY_PARSING_SIZE_LIMIT";
 
