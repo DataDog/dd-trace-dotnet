@@ -64,7 +64,7 @@ namespace Datadog.Trace.Agent
 
             _prioritySampler = new PrioritySampler();
             _errorSampler = new ErrorSampler();
-            _rareSampler = new RareSampler(settings);
+            _rareSampler = new RareSampler(settings, _isOtlp);
             _analyticsEventSampler = new AnalyticsEventsSampler();
 
             // Create with the initial mutable settings, but be aware that this could change later
@@ -89,8 +89,15 @@ namespace Datadog.Trace.Agent
             _flushTask = Task.Run(Flush);
             _flushTask.ContinueWith(t => Log.Error(t.Exception, "Error in StatsAggregator"), TaskContinuationOptions.OnlyOnFaulted);
 
-            _discoveryService = discoveryService;
-            discoveryService.SubscribeToChanges(HandleConfigUpdate);
+            if (_isOtlp)
+            {
+                CanComputeStats = true;
+            }
+            else
+            {
+                _discoveryService = discoveryService;
+                discoveryService.SubscribeToChanges(HandleConfigUpdate);
+            }
         }
 
         /// <summary>
@@ -109,7 +116,7 @@ namespace Datadog.Trace.Agent
 
         public Task DisposeAsync()
         {
-            _discoveryService.RemoveSubscription(HandleConfigUpdate);
+            _discoveryService?.RemoveSubscription(HandleConfigUpdate);
             _processExit.TrySetResult(true);
             _settingSubscription.Dispose();
             return _flushTask;
@@ -138,6 +145,13 @@ namespace Datadog.Trace.Agent
 
         public bool ShouldKeepTrace(in SpanCollection trace)
         {
+            // For OTLP, align with the OpenTelemetry SDK behavior to export a trace based
+            // solely on its sampling decision.
+            if (_isOtlp)
+            {
+                return _prioritySampler.Sample(in trace);
+            }
+
             // Note: The RareSampler must be run before all other samplers so that
             // the first rare span in the trace chunk (if any) is marked with "_dd.rare".
             // The sampling decision is only used if no other samplers choose to keep the trace chunk.

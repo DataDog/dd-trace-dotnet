@@ -18,10 +18,10 @@ namespace Datadog.Trace.Agent.TraceSamplers
         private readonly HashSet<StatsAggregationKey> _keys = new();
         private readonly Queue<StatsAggregationKey> _cache = new();
 
-        public RareSampler(TracerSettings settings)
+        public RareSampler(TracerSettings settings, bool isOtlp)
         {
             IsEnabled = settings.IsRareSamplerEnabled;
-            IsOtlp = false; // TODO: Hook up to configuration
+            IsOtlp = isOtlp;
         }
 
         public bool IsEnabled { get; }
