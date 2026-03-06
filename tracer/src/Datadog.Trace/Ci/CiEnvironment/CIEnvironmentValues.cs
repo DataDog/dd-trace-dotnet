@@ -33,7 +33,7 @@ internal abstract class CIEnvironmentValues
     private readonly object _codeOwnersLock = new();
     private readonly HashSet<string> _codeOwnersSearchStarts = new(CodeOwnersSearchComparer);
 
-    private string? _gitSearchFolder = null;
+    private string? _gitSearchFolder;
 
     public static CIEnvironmentValues Instance => LazyInstance.Value;
 

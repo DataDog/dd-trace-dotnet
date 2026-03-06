@@ -371,7 +371,7 @@ namespace Datadog.Trace
                         // if there's an existing Activity we try to use its TraceId,
                         // but if Activity.IdFormat is not ActivityIdFormat.W3C, it may be null or unparsable
                         rawTraceId = activityTraceId;
-                        HexString.TryParseTraceId(activityTraceId, out traceId);
+                        traceId = HexString.TryParseTraceId(activityTraceId, out var r) ? r : TraceId.Zero;
                     }
                 }
             }

@@ -58,7 +58,7 @@ namespace Datadog.Trace.Tagging
 
     internal sealed partial class RabbitMQV1Tags : RabbitMQTags
     {
-        private string _peerServiceOverride = null;
+        private string _peerServiceOverride;
 
         public RabbitMQV1Tags()
             : base()

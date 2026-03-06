@@ -56,7 +56,7 @@ namespace Datadog.Trace
 
         private readonly IDisposable _settingSubscription;
         private PerTraceSettings _perTraceSettings;
-        private volatile bool _isClosing = false;
+        private volatile bool _isClosing;
 
         public TracerManager(
             TracerSettings settings,

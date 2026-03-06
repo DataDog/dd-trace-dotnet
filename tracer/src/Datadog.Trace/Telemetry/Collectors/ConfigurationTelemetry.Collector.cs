@@ -20,7 +20,7 @@ namespace Datadog.Trace.Configuration.Telemetry
     {
         private readonly List<List<ConfigurationKeyValue>> _allData = new();
         private ConcurrentQueue<ConfigurationTelemetryEntry> _backBuffer = new();
-        private int _reportedCount = 0;
+        private int _reportedCount;
 
         public bool HasChanges() => !_entries.IsEmpty || !_backBuffer.IsEmpty;
 

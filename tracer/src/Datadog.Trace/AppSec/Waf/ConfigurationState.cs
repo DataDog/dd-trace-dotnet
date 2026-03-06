@@ -43,7 +43,7 @@ internal sealed record ConfigurationState
     private readonly bool _canBeToggled;
     private readonly Dictionary<string, List<RemoteConfiguration>> _fileUpdates = new();
     private readonly Dictionary<string, List<RemoteConfigurationPath>> _fileRemoves = new();
-    private bool _defaultRulesetApplied = false;
+    private bool _defaultRulesetApplied;
 
     public ConfigurationState(SecuritySettings settings, IConfigurationTelemetry telemetry, bool wafIsNull)
     {
@@ -84,7 +84,7 @@ internal sealed record ConfigurationState
 
     public bool AppsecEnabled { get; set; }
 
-    internal string? AutoUserInstrumMode { get; set; } = null;
+    internal string? AutoUserInstrumMode { get; set; }
 
     // RC Product: ASM_FEATURES
     internal Dictionary<string, AsmFeature> AsmFeaturesByFile { get; } = new();
@@ -343,11 +343,11 @@ internal sealed record ConfigurationState
 
     internal sealed record IncomingUpdateStatus : IDisposable
     {
-        internal bool ShouldInitAppsec { get; set; } = false;
+        internal bool ShouldInitAppsec { get; set; }
 
-        internal bool ShouldUpdateAppsec { get; set; } = false;
+        internal bool ShouldUpdateAppsec { get; set; }
 
-        internal bool ShouldDisableAppsec { get; set; } = false;
+        internal bool ShouldDisableAppsec { get; set; }
 
         public void Dispose() => Reset();
 

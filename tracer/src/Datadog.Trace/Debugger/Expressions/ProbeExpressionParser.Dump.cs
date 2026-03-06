@@ -239,7 +239,7 @@ internal partial class ProbeExpressionParser<T>
             int count = 0;
             if (assignableFrom == typeof(IList))
             {
-                sb.Append("[");
+                sb.Append('[');
                 foreach (var item in (value as IList))
                 {
                     sb.Append($"{DumpObject(item, item.GetType(), null, 1)}");
@@ -252,12 +252,12 @@ internal partial class ProbeExpressionParser<T>
                     sb.Append(", ");
                 }
 
-                sb.Append("]");
+                sb.Append(']');
                 return sb.ToString();
             }
             else if (assignableFrom == typeof(IReadOnlyList<>))
             {
-                sb.Append("[");
+                sb.Append('[');
                 foreach (var item in (value as IEnumerable))
                 {
                     sb.Append($"{DumpObject(item, item.GetType(), null, 1)}");
@@ -270,12 +270,12 @@ internal partial class ProbeExpressionParser<T>
                     sb.Append(", ");
                 }
 
-                sb.Append("]");
+                sb.Append(']');
                 return sb.ToString();
             }
             else if (assignableFrom == typeof(IDictionary))
             {
-                sb.Append("{");
+                sb.Append('{');
                 foreach (DictionaryEntry entry in (value as IDictionary))
                 {
                     sb.Append($"[{DumpObject(entry.Key, entry.Key?.GetType(), null, 1)}, {DumpObject(entry.Value, entry.Value?.GetType(), null, 1)}]");
@@ -288,7 +288,7 @@ internal partial class ProbeExpressionParser<T>
                     sb.Append(", ");
                 }
 
-                sb.Append("}");
+                sb.Append('}');
                 return sb.ToString();
             }
 
