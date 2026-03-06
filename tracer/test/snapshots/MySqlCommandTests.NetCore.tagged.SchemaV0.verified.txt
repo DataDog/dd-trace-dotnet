@@ -18,8 +18,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -44,8 +45,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -70,8 +72,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -96,8 +99,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -122,8 +126,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -148,8 +153,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -174,8 +180,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -200,8 +207,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -226,8 +234,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -252,8 +261,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -278,8 +288,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -304,8 +315,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -330,8 +342,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -356,8 +369,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -382,8 +396,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -408,8 +423,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -434,8 +450,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -460,8 +477,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -486,8 +504,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -512,8 +531,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -538,8 +558,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -564,8 +585,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -590,8 +612,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -616,8 +639,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -642,8 +666,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -668,8 +693,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -694,8 +720,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -720,8 +747,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -746,8 +774,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -772,8 +801,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -798,8 +828,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -824,8 +855,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -850,8 +882,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -876,8 +909,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -902,8 +936,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -928,8 +963,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -954,8 +990,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -980,8 +1017,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1006,8 +1044,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1032,8 +1071,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1058,8 +1098,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1084,8 +1125,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1110,8 +1152,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1136,8 +1179,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1162,8 +1206,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1188,8 +1233,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1214,8 +1260,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1240,8 +1287,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1266,8 +1314,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1292,8 +1341,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1318,8 +1368,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1344,8 +1395,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1370,8 +1422,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1396,8 +1449,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1422,8 +1476,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1448,8 +1503,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1474,8 +1530,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1500,8 +1557,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1526,8 +1584,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1552,8 +1611,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1578,8 +1638,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1604,8 +1665,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1630,8 +1692,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1656,8 +1719,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1682,8 +1746,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1708,8 +1773,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1734,8 +1800,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1760,8 +1827,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1786,8 +1854,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1812,8 +1881,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1838,8 +1908,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1864,8 +1935,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1890,8 +1962,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1916,8 +1989,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1942,8 +2016,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1968,8 +2043,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1994,8 +2070,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2020,8 +2097,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2046,8 +2124,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2072,8 +2151,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2098,8 +2178,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2124,8 +2205,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2150,8 +2232,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2176,8 +2259,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2202,8 +2286,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2228,8 +2313,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2254,8 +2340,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2280,8 +2367,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2306,8 +2394,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2332,8 +2421,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2358,8 +2448,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2384,8 +2475,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2410,8 +2502,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2436,8 +2529,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2462,8 +2556,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2488,8 +2583,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2514,8 +2610,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2540,8 +2637,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2566,8 +2664,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2592,8 +2691,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2618,8 +2718,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2644,8 +2745,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2670,8 +2772,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2696,8 +2799,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2722,8 +2826,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2748,8 +2853,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2774,8 +2880,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2800,8 +2907,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2826,8 +2934,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2852,8 +2961,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2878,8 +2988,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2904,8 +3015,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2930,8 +3042,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2956,8 +3069,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2982,8 +3096,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3008,8 +3123,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3034,8 +3150,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3060,8 +3177,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3086,8 +3204,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3112,8 +3231,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3138,8 +3258,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3164,8 +3285,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3190,8 +3312,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3216,8 +3339,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3242,8 +3366,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3268,8 +3393,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3294,8 +3420,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3320,8 +3447,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3346,8 +3474,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3372,8 +3501,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3398,8 +3528,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3424,8 +3555,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3450,8 +3582,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3476,8 +3609,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3502,8 +3636,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3528,8 +3663,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3554,8 +3690,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3580,8 +3717,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3606,8 +3744,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3632,8 +3771,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3658,8 +3798,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3684,8 +3825,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3710,8 +3852,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3736,8 +3879,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3762,8 +3906,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3788,8 +3933,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3814,8 +3960,9 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.MySql,
-      _dd.svc_src: mysql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: mysql
+      _dd.svc_src: mysql
     },
     Metrics: {
       _dd.top_level: 1.0
