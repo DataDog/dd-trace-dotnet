@@ -26,7 +26,7 @@ internal static class PropagationModuleImpl
         {
             IastModule.OnExecutedSourceTelemetry((IastSourceType)source.Origin);
 
-            if (input is null || input == string.Empty)
+            if (StringUtil.IsNullOrEmpty(input))
             {
                 return;
             }
@@ -98,7 +98,7 @@ internal static class PropagationModuleImpl
     private static bool TryPropagateWholeResult(string? result, object? input, out TaintedObjects? taintedObjects)
     {
         IastModule.OnExecutedPropagationTelemetry();
-        if (result is null || input is null || result == string.Empty)
+        if (input is null || StringUtil.IsNullOrEmpty(result))
         {
             taintedObjects = null;
             return true;

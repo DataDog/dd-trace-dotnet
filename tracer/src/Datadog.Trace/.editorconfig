@@ -13,4 +13,5 @@ dotnet_diagnostic.CA1812.severity = error # Avoid uninstantiated internal classe
 dotnet_diagnostic.CA1814.severity = error # Prefer jagged arrays over multidimensional
 # dotnet_diagnostic.CA1815.severity = error # Override equals and operator equals on value types
 dotnet_diagnostic.CA1819.severity = error # Properties should not return arrays
+dotnet_diagnostic.CA1820.severity = error # Test for empty strings using string length
 

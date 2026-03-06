@@ -415,7 +415,7 @@ namespace Datadog.Trace.AppSec
                         blockingAction.SecurityResponseId = securityResponseId;
                     }
 
-                    if (location is string locationString && locationString != string.Empty)
+                    if (location is string locationString && !string.IsNullOrEmpty(locationString))
                     {
                         var statusCode = GetStatusCode(redirectInfo, 303);
                         blockingAction.StatusCode = statusCode is >= 300 and < 400 ? statusCode : 303;
