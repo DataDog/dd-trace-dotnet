@@ -30,35 +30,24 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.HttpClie
         private const string IntegrationName = nameof(Configuration.IntegrationId.HttpMessageHandler);
         private const IntegrationId IntegrationId = Configuration.IntegrationId.HttpMessageHandler;
 
-        /// <summary>
-        /// OnMethodBegin callback
-        /// </summary>
-        /// <typeparam name="TTarget">Type of the target</typeparam>
-        /// <typeparam name="TRequest">Type of the request</typeparam>
-        /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
-        /// <param name="requestMessage">HttpRequest message instance</param>
-        /// <param name="cancellationToken">CancellationToken value</param>
-        /// <returns>Calltarget state value</returns>
+#if NETCOREAPP
+        internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, System.Net.Http.HttpRequestMessage requestMessage, CancellationToken cancellationToken)
+#else
         internal static CallTargetState OnMethodBegin<TTarget, TRequest>(TTarget instance, TRequest requestMessage, CancellationToken cancellationToken)
             where TRequest : IHttpRequestMessage
+#endif
         {
             return HttpMessageHandlerCommon.OnMethodBegin(instance, requestMessage, cancellationToken, IntegrationId, implementationIntegrationId: null);
         }
 
-        /// <summary>
-        /// OnMethodEnd callback
-        /// </summary>
-        /// <typeparam name="TTarget">Type of the target</typeparam>
-        /// <typeparam name="TResponse">Type of the response</typeparam>
-        /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
-        /// <param name="responseMessage">HttpResponse message instance</param>
-        /// <param name="exception">Exception instance in case the original code threw an exception.</param>
-        /// <param name="state">Calltarget state value</param>
-        /// <returns>A response value, in an async scenario will be T of Task of T</returns>
+#if NETCOREAPP
+        internal static CallTargetReturn<System.Net.Http.HttpResponseMessage> OnMethodEnd<TTarget>(TTarget instance, System.Net.Http.HttpResponseMessage responseMessage, Exception exception, in CallTargetState state)
+#else
         internal static CallTargetReturn<TResponse> OnMethodEnd<TTarget, TResponse>(TTarget instance, TResponse responseMessage, Exception exception, in CallTargetState state)
             where TResponse : IHttpResponseMessage
+#endif
         {
-            return new CallTargetReturn<TResponse>(HttpMessageHandlerCommon.OnMethodEnd(instance, responseMessage, exception, in state));
+            return new(HttpMessageHandlerCommon.OnMethodEnd(instance, responseMessage, exception, in state));
         }
     }
 }

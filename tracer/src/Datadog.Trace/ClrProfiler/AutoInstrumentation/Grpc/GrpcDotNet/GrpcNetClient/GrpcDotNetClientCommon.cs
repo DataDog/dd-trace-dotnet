@@ -23,8 +23,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcNetC
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(GrpcDotNetClientCommon));
 
+#if NETCOREAPP
+        public static Scope? CreateClientSpan<TGrpcCall>(Tracer tracer, TGrpcCall instance, System.Net.Http.HttpRequestMessage requestMessage)
+#else
         public static Scope? CreateClientSpan<TGrpcCall, TRequest>(Tracer tracer, TGrpcCall instance, TRequest requestMessage)
             where TRequest : IHttpRequestMessage
+#endif
         {
             var settings = tracer.CurrentTraceSettings.Settings;
             if (!settings.IsIntegrationEnabled(IntegrationId.Grpc) || instance is null)
