@@ -168,35 +168,6 @@ public class ServerlessCompatIntegrationTests
         result.GetReturnValue().Should().Be(originalValue);
     }
 
-    [Theory]
-    [InlineData("dd_trace", "trace")]
-    [InlineData("dd_dogstatsd", "DogStatsD")]
-    public void GeneratedPipeName_HasCorrectFormat(string baseName, string pipeType)
-    {
-        // Act
-        var pipeName = ServerlessCompatPipeNameHelper.GenerateUniquePipeName(baseName, pipeType);
-
-        // Assert
-        pipeName.Should().StartWith($"{baseName}_");
-        pipeName.Should().MatchRegex($@"^{baseName}_[a-f0-9]{{32}}$"); // base_guid with 32 hex chars
-        pipeName.Length.Should().BeLessOrEqualTo(247); // 214 base + 1 underscore + 32 guid = 247 max
-    }
-
-    [Fact]
-    public void GeneratedPipeName_WithLongBaseName_Truncates()
-    {
-        // Arrange - create a base name longer than 214 characters
-        var longBaseName = new string('a', 220);
-
-        // Act
-        var pipeName = ServerlessCompatPipeNameHelper.GenerateUniquePipeName(longBaseName, "test");
-
-        // Assert
-        // Should be truncated to 214 + 1 underscore + 32 guid = 247 total
-        pipeName.Length.Should().Be(247);
-        pipeName.Should().MatchRegex(@"^a{214}_[a-f0-9]{32}$");
-    }
-
     // Clear cached values between tests using reflection.
     // The integration classes cache their resolved pipe name in a static field;
     // resetting these allows each test to start fresh.

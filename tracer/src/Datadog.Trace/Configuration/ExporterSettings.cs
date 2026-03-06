@@ -110,8 +110,8 @@ namespace Datadog.Trace.Configuration
 
             // Use statically-generated pipe names for Azure Functions if no explicit config was provided.
             // The static fields are initialized once at type-load time via InitAzureFunctions*PipeName().
-            var tracesPipeName = !string.IsNullOrEmpty(rawSettings.TracesPipeName) ? rawSettings.TracesPipeName : _azureFunctionsGeneratedTracesPipeName;
-            var metricsPipeName = !string.IsNullOrEmpty(rawSettings.MetricsPipeName) ? rawSettings.MetricsPipeName : _azureFunctionsGeneratedMetricsPipeName;
+            var tracesPipeName = !StringUtil.IsNullOrEmpty(rawSettings.TracesPipeName) ? rawSettings.TracesPipeName : _azureFunctionsGeneratedTracesPipeName;
+            var metricsPipeName = !StringUtil.IsNullOrEmpty(rawSettings.MetricsPipeName) ? rawSettings.MetricsPipeName : _azureFunctionsGeneratedMetricsPipeName;
 
             var traceSettings = GetTraceTransport(
                 agentUri: rawSettings.TraceAgentUri,
@@ -261,7 +261,7 @@ namespace Datadog.Trace.Configuration
         {
             if (Util.EnvironmentHelpers.IsAzureFunctions()
                 && !Util.EnvironmentHelpers.IsUsingAzureAppServicesSiteExtension()
-                && string.IsNullOrEmpty(Util.EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.TracesPipeName))
+                && StringUtil.IsNullOrEmpty(Util.EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.TracesPipeName))
                 && IsCompatLayerAvailableWithPipeSupport())
             {
                 var name = GenerateUniquePipeName("dd_trace");
@@ -276,7 +276,7 @@ namespace Datadog.Trace.Configuration
         {
             if (Util.EnvironmentHelpers.IsAzureFunctions()
                 && !Util.EnvironmentHelpers.IsUsingAzureAppServicesSiteExtension()
-                && string.IsNullOrEmpty(Util.EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.MetricsPipeName))
+                && StringUtil.IsNullOrEmpty(Util.EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.MetricsPipeName))
                 && IsCompatLayerAvailableWithPipeSupport())
             {
                 var name = GenerateUniquePipeName("dd_dogstatsd");
@@ -312,16 +312,16 @@ namespace Datadog.Trace.Configuration
                 var compatDllPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory ?? string.Empty, "Datadog.Serverless.Compat.dll");
                 if (!File.Exists(compatBinaryPath) || !File.Exists(compatDllPath))
                 {
-                    Log.Debug("Did not find Serverless Compatability Layer or related DLLs.");
+                    Log.Debug("Did not find Serverless Compatibility Layer or related DLLs.");
                     return false;
                 }
 
                 var assemblyName = AssemblyName.GetAssemblyName(compatDllPath);
                 var version = assemblyName.Version;
 
-                if (version == null)
+                if (version is null)
                 {
-                    Log.Warning("Could not read Serverless Compatability Layer details at {Path}, using fallback agent communication methods. (No Named Pipes)", compatDllPath);
+                    Log.Warning("Could not read Serverless Compatibility Layer details at {Path}, using fallback agent communication methods. (No Named Pipes)", compatDllPath);
                     return false;
                 }
 
@@ -340,7 +340,7 @@ namespace Datadog.Trace.Configuration
             }
             catch (Exception ex)
             {
-                Log.Warning(ex, "Failed to determine Serverless Compatability layer availability or Named Pipe Support.");
+                Log.Warning(ex, "Failed to determine Serverless Compatibility layer availability or Named Pipe Support.");
                 return false;
             }
         }
