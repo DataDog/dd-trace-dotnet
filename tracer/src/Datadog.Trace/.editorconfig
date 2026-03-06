@@ -13,3 +13,4 @@ dotnet_diagnostic.CA1812.severity = error # Avoid uninstantiated internal classe
 dotnet_diagnostic.CA1814.severity = error # Prefer jagged arrays over multidimensional - A jagged array is an array whose elements are arrays. The arrays that make up the elements can be of different sizes, which can result in less wasted space for some sets of data.
 # dotnet_diagnostic.CA1815.severity = error # Override equals and operator equals on value types - Too many violations (~60)
 # dotnet_diagnostic.CA1819.severity = error # Properties should not return arrays - Instrumentation state structs intentionally use array properties
+# dotnet_diagnostic.CA1820.severity = error # Test for empty strings using string length - Too many violations (~30)
