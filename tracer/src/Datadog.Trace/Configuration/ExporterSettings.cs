@@ -10,6 +10,8 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
+using System.Reflection;
+using System.Runtime.InteropServices;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration.ConfigurationSources;
 using Datadog.Trace.Configuration.Telemetry;
@@ -259,7 +261,8 @@ namespace Datadog.Trace.Configuration
         {
             if (Util.EnvironmentHelpers.IsAzureFunctions()
                 && !Util.EnvironmentHelpers.IsUsingAzureAppServicesSiteExtension()
-                && string.IsNullOrEmpty(Util.EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.TracesPipeName)))
+                && string.IsNullOrEmpty(Util.EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.TracesPipeName))
+                && IsCompatLayerAvailableWithPipeSupport())
             {
                 var name = GenerateUniquePipeName("dd_trace");
                 Log.Information("Azure Functions environment detected with no explicit trace pipe name. Generated unique pipe name: {TracesPipeName}", name);
@@ -273,7 +276,8 @@ namespace Datadog.Trace.Configuration
         {
             if (Util.EnvironmentHelpers.IsAzureFunctions()
                 && !Util.EnvironmentHelpers.IsUsingAzureAppServicesSiteExtension()
-                && string.IsNullOrEmpty(Util.EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.MetricsPipeName)))
+                && string.IsNullOrEmpty(Util.EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.MetricsPipeName))
+                && IsCompatLayerAvailableWithPipeSupport())
             {
                 var name = GenerateUniquePipeName("dd_dogstatsd");
                 Log.Information("Azure Functions environment detected with no explicit metrics pipe name. Generated unique pipe name: {MetricsPipeName}", name);
@@ -281,6 +285,62 @@ namespace Datadog.Trace.Configuration
             }
 
             return null;
+        }
+
+        /// <summary>
+        /// Checks whether the Datadog Serverless Compat layer is deployed and has a version
+        /// that supports named pipe transport. This is called during static initialization
+        /// (before the compat assembly is loaded) so it checks files on disk rather than
+        /// loaded assemblies.
+        /// </summary>
+        private static bool IsCompatLayerAvailableWithPipeSupport()
+        {
+            try
+            {
+                // Named pipes are Windows-only
+                if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    return false;
+                }
+
+                // Check that the compat binary exists — it's what actually listens on the named pipe
+                // Check that the compat DLL exists and has a version that supports named pipes.
+                // Named pipe support was added in compat version 1.4.0 (dev builds use 0.0.0).
+                const string compatBinaryPath = @"C:\home\site\wwwroot\datadog\bin\windows-amd64\datadog-serverless-compat.exe";
+                var compatDllPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Datadog.Serverless.Compat.dll");
+                if (!File.Exists(compatBinaryPath) || !File.Exists(compatDllPath))
+                {
+                    Log.Debug("Did not find Serverless Compatability Layer or related DLLs.", compatDllPath);
+                    return false;
+                }
+
+                var assemblyName = AssemblyName.GetAssemblyName(compatDllPath);
+                var version = assemblyName.Version;
+
+                if (version == null)
+                {
+                    Log.Warning("Could not read Serverless Compatability Layer details at {Path}, using fallback agent communication methods. (No Named Pipes)", compatDllPath);
+                    return false;
+                }
+
+                // Allow 0.0.0 (dev builds) or >= 1.4.0 (first release with pipe support)
+                var minVersion = new Version(1, 4, 0);
+                var devVersion = new Version(0, 0, 0);
+
+                if (version == devVersion || version >= minVersion)
+                {
+                    Log.Debug("Compat layer version {Version} supports named pipes.", version);
+                    return true;
+                }
+
+                Log.Debug("Compat layer version {Version} does not support named pipes (requires v{MinVersion} or greater. Using fallback communication methods.)", version, minVersion);
+                return false;
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Failed to determine Serverless Compatability layer availability or Named Pipe Support.");
+                return false;
+            }
         }
 
         private static string GenerateUniquePipeName(string baseName)
