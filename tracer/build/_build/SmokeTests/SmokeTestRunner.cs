@@ -171,12 +171,6 @@ public static partial class SmokeTestRunner
         }
     }
 
-    //
-    // // ──────────────────────────────────────────────────────────────
-    // // Container parameter builders
-    // // ──────────────────────────────────────────────────────────────
-    //
-
     static CreateContainerParameters BuildTestAgentContainerParams(
         string testAgentImage,
         string networkName,

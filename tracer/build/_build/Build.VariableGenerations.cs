@@ -548,11 +548,11 @@ partial class Build : NukeBuild
 
             void GenerateSmokeTestsMatrices()
             {
-                GenerateNukeSmokeTestsMatricies();
+                GenerateNukeSmokeTestsMatrices();
                 GenerateDdDotnetFailureTestsMatrix();
                 GenerateMacosSmokeTestsMatrix();
 
-                void GenerateNukeSmokeTestsMatricies()
+                void GenerateNukeSmokeTestsMatrices()
                 {
                     var allScenarios = SmokeTests.SmokeTestScenarios.GetAllScenarios()
                         .SelectMany(pair => pair.Value.Select(kv => (category: pair.Key, scenario: kv.Key, details: kv.Value)))
