@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -236,6 +237,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// </summary>
         private static IReadOnlyDictionary<string, string>? runtimeTypeResolutionAssemblyPathsByName;
 
+        [ThreadStatic]
+        private static EmitterProfile? _currentProfile;
+
+        [ThreadStatic]
+        private static EmitterExecutionContext? _currentExecutionContext;
+
         /// <summary>
         /// Defines named constants for forward binding kind.
         /// </summary>
@@ -390,6 +397,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             DuckTypeAotArtifactPaths artifactPaths,
             DuckTypeAotMappingResolutionResult mappingResolutionResult)
         {
+            _currentProfile = IsProfilingEnabled() ? new EmitterProfile() : null;
             var generatedAssemblyName = options.AssemblyName ?? Path.GetFileNameWithoutExtension(artifactPaths.OutputAssemblyPath);
             var deterministicMvid = ComputeDeterministicMvid(generatedAssemblyName, mappingResolutionResult.Mappings);
             var generatedAssemblyVersion = new Version(1, 0, 0, 0);
@@ -448,15 +456,31 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             initializeMethod.Body.Instructions.Add(OpCodes.Ldstr.ToInstruction(deterministicMvid.ToString("D")));
             initializeMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(importedMembers.ValidateAotRegistryContractMethod));
 
+            var phaseStopwatch = StartProfilePhase();
             var proxyModulesByAssemblyName = LoadModules(mappingResolutionResult.ProxyAssemblyPathsByName);
+            StopProfilePhase(phaseStopwatch, seconds => _currentProfile!.LoadProxyModulesSeconds += seconds);
+
+            phaseStopwatch = StartProfilePhase();
             var targetModulesByAssemblyName = LoadModules(mappingResolutionResult.TargetAssemblyPathsByName);
+            StopProfilePhase(phaseStopwatch, seconds => _currentProfile!.LoadTargetModulesSeconds += seconds);
+
+            phaseStopwatch = StartProfilePhase();
             runtimeTypeResolutionAssemblyPathsByName = BuildRuntimeTypeResolutionAssemblyPathMap(
                 mappingResolutionResult.ProxyAssemblyPathsByName,
                 mappingResolutionResult.TargetAssemblyPathsByName);
+            StopProfilePhase(phaseStopwatch, seconds => _currentProfile!.BuildRuntimeTypeResolutionMapSeconds += seconds);
+            phaseStopwatch = StartProfilePhase();
+            var targetTypeIndex = BuildTargetTypeIndex(targetModulesByAssemblyName);
+            StopProfilePhase(phaseStopwatch, seconds => _currentProfile!.BuildTargetTypeIndexSeconds += seconds);
             var bootstrapRegistrationMethods = new List<MethodDef>();
-            var runtimeRegistrations = BuildRuntimeRegistrations(mappingResolutionResult.Mappings, targetModulesByAssemblyName);
+            var canonicalMappingsByKey = mappingResolutionResult.Mappings.ToDictionary(mapping => mapping.Key, StringComparer.Ordinal);
+            phaseStopwatch = StartProfilePhase();
+            _currentExecutionContext = new EmitterExecutionContext(runtimeTypeResolutionAssemblyPathsByName, targetTypeIndex);
+            var runtimeRegistrations = BuildRuntimeRegistrations(mappingResolutionResult.Mappings, targetTypeIndex);
+            StopProfilePhase(phaseStopwatch, seconds => _currentProfile!.BuildRuntimeRegistrationsSeconds += seconds);
             try
             {
+                phaseStopwatch = StartProfilePhase();
                 for (var i = 0; i < runtimeRegistrations.Count; i++)
                 {
                     var registrationMethodIndex = i / BootstrapMappingsPerMethod;
@@ -474,6 +498,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
                     var runtimeRegistration = runtimeRegistrations[i];
                     var mapping = runtimeRegistration.Mapping;
+                    var emitMappingStopwatch = StartProfilePhase();
                     var emissionResult = runtimeRegistration.Kind == DuckTypeAotRuntimeRegistrationKind.NullableAlias &&
                                          TryEmitValueTypeNullableAliasRegistration(
                                              moduleDef,
@@ -481,7 +506,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                                              bootstrapRegistrationMethods[registrationMethodIndex],
                                              importedMembers,
                                              mapping,
-                                             mappingResolutionResult.Mappings.First(item => string.Equals(item.Key, runtimeRegistration.CanonicalMappingKey, StringComparison.Ordinal)),
+                                             canonicalMappingsByKey[runtimeRegistration.CanonicalMappingKey],
                                              i + 1,
                                              mappingResolutionResult.ProxyAssemblyPathsByName,
                                              mappingResolutionResult.TargetAssemblyPathsByName,
@@ -502,11 +527,20 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                                                      mappingResolutionResult.ProxyAssemblyPathsByName,
                                                      mappingResolutionResult.TargetAssemblyPathsByName,
                                                      emissionWarnings));
+                    StopProfilePhase(
+                        emitMappingStopwatch,
+                        seconds =>
+                        {
+                            _currentProfile!.EmitMappingSeconds += seconds;
+                            _currentProfile!.EmitMappingCount++;
+                        });
                     if (runtimeRegistration.IsCanonical)
                     {
                         mappingResults[mapping.Key] = emissionResult;
                     }
                 }
+
+                StopProfilePhase(phaseStopwatch, seconds => _currentProfile!.EmitLoopSeconds += seconds);
             }
             finally
             {
@@ -519,6 +553,9 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 {
                     module.Dispose();
                 }
+
+                _currentExecutionContext = null;
+                runtimeTypeResolutionAssemblyPathsByName = null;
             }
 
             foreach (var bootstrapRegistrationMethod in bootstrapRegistrationMethods)
@@ -553,8 +590,48 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 bootstrapType.FullName,
                 Path.GetFullPath(artifactPaths.OutputAssemblyPath),
                 deterministicMvid);
+            WriteProfileSummary(mappingResolutionResult, runtimeRegistrations.Count);
+            _currentProfile = null;
 
             return new DuckTypeAotRegistryEmissionResult(registryInfo, mappingResults, runtimeRegistrations, emissionWarnings);
+        }
+
+        private static bool IsProfilingEnabled()
+        {
+            var value = Environment.GetEnvironmentVariable("DD_TRACE_DUCKTYPE_AOT_PROFILE");
+            return string.Equals(value, "1", StringComparison.Ordinal) ||
+                   string.Equals(value, "true", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static Stopwatch? StartProfilePhase() => _currentProfile is null ? null : Stopwatch.StartNew();
+
+        private static void StopProfilePhase(Stopwatch? stopwatch, Action<double> record)
+        {
+            if (stopwatch is null || _currentProfile is null)
+            {
+                return;
+            }
+
+            stopwatch.Stop();
+            record(stopwatch.Elapsed.TotalSeconds);
+        }
+
+        private static void WriteProfileSummary(DuckTypeAotMappingResolutionResult mappingResolutionResult, int runtimeRegistrationCount)
+        {
+            var profile = _currentProfile;
+            if (profile is null)
+            {
+                return;
+            }
+
+            profile.Total.Stop();
+
+            Console.Error.WriteLine(
+                $"ducktype-aot emitter profile: total={profile.Total.Elapsed.TotalSeconds:F3}s canonicalMappings={mappingResolutionResult.Mappings.Count} runtimeRegistrations={runtimeRegistrationCount}");
+            Console.Error.WriteLine(
+                $"ducktype-aot emitter profile: loadProxyModules={profile.LoadProxyModulesSeconds:F3}s loadTargetModules={profile.LoadTargetModulesSeconds:F3}s runtimeTypeMap={profile.BuildRuntimeTypeResolutionMapSeconds:F3}s buildTargetTypeIndex={profile.BuildTargetTypeIndexSeconds:F3}s buildRuntimeRegistrations={profile.BuildRuntimeRegistrationsSeconds:F3}s emitLoop={profile.EmitLoopSeconds:F3}s");
+            Console.Error.WriteLine(
+                $"ducktype-aot emitter profile: emitMapping={profile.EmitMappingSeconds:F3}s count={profile.EmitMappingCount} knownFailureRegistration={profile.KnownFailureRegistrationSeconds:F3}s count={profile.KnownFailureRegistrationCount} dynamicFailureProbe={profile.DynamicFailureProbeSeconds:F3}s count={profile.DynamicFailureProbeCount}");
         }
 
         /// <summary>
@@ -649,17 +726,68 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         }
 
         /// <summary>
+        /// Builds the target-type index used to expand assignable runtime registrations without rescanning all module types per mapping.
+        /// </summary>
+        /// <param name="targetModulesByAssemblyName">The target modules by assembly name value.</param>
+        /// <returns>The resulting target-type index.</returns>
+        private static TargetTypeIndex BuildTargetTypeIndex(IReadOnlyDictionary<string, ModuleDefMD> targetModulesByAssemblyName)
+        {
+            var typeByAssemblyAndName = new Dictionary<string, TypeDef>(StringComparer.Ordinal);
+            var assignableForwardTypesByAncestor = new Dictionary<string, List<TargetTypeIndexEntry>>(StringComparer.Ordinal);
+            var assignableReverseTypesByAncestor = new Dictionary<string, List<TargetTypeIndexEntry>>(StringComparer.Ordinal);
+
+            foreach (var entry in targetModulesByAssemblyName.OrderBy(item => item.Key, StringComparer.OrdinalIgnoreCase))
+            {
+                var assemblyName = DuckTypeAotNameHelpers.NormalizeAssemblyName(entry.Key);
+                foreach (var candidateType in entry.Value.GetTypes().OrderBy(type => type.FullName, StringComparer.Ordinal))
+                {
+                    if (string.IsNullOrWhiteSpace(candidateType.FullName))
+                    {
+                        continue;
+                    }
+
+                    typeByAssemblyAndName[BuildAssemblyTypeCacheKey(assemblyName, candidateType.FullName)] = candidateType;
+                    if (!string.IsNullOrWhiteSpace(candidateType.ReflectionFullName))
+                    {
+                        typeByAssemblyAndName[BuildAssemblyTypeCacheKey(assemblyName, candidateType.ReflectionFullName)] = candidateType;
+                    }
+
+                    if (!IsAliasCandidateType(candidateType))
+                    {
+                        continue;
+                    }
+
+                    var candidateEntry = new TargetTypeIndexEntry(assemblyName, candidateType);
+                    foreach (var ancestorTypeName in EnumerateAssignableTypeNames(candidateType))
+                    {
+                        AddTargetTypeIndexEntry(assignableForwardTypesByAncestor, ancestorTypeName, candidateEntry);
+                        if (!candidateType.IsValueType)
+                        {
+                            AddTargetTypeIndexEntry(assignableReverseTypesByAncestor, ancestorTypeName, candidateEntry);
+                        }
+                    }
+                }
+            }
+
+            return new TargetTypeIndex(
+                typeByAssemblyAndName,
+                ToSortedTargetTypeIndex(assignableForwardTypesByAncestor),
+                ToSortedTargetTypeIndex(assignableReverseTypesByAncestor));
+        }
+
+        /// <summary>
         /// Builds the full runtime registration set emitted into the generated registry.
         /// </summary>
         /// <param name="canonicalMappings">The canonical mappings value.</param>
-        /// <param name="targetModulesByAssemblyName">The target modules by assembly name value.</param>
+        /// <param name="targetTypeIndex">The target type index value.</param>
         /// <returns>The resulting runtime registration set.</returns>
         private static IReadOnlyList<DuckTypeAotRuntimeRegistration> BuildRuntimeRegistrations(
             IReadOnlyList<DuckTypeAotMapping> canonicalMappings,
-            IReadOnlyDictionary<string, ModuleDefMD> targetModulesByAssemblyName)
+            TargetTypeIndex targetTypeIndex)
         {
             var registrations = new List<DuckTypeAotRuntimeRegistration>();
             var seenKeys = new HashSet<string>(StringComparer.Ordinal);
+            var aliasPlansByCanonicalTargetKey = new Dictionary<string, CanonicalTargetAliasPlan>(StringComparer.Ordinal);
 
             foreach (var mapping in canonicalMappings.OrderBy(item => item.Key, StringComparer.Ordinal))
             {
@@ -668,14 +796,44 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     registrations.Add(new DuckTypeAotRuntimeRegistration(mapping, mapping.Key, DuckTypeAotRuntimeRegistrationKind.Canonical));
                 }
 
-                foreach (var aliasRegistration in EnumerateAliasRegistrations(mapping, targetModulesByAssemblyName))
+                var canonicalTargetKey = BuildCanonicalTargetCacheKey(mapping);
+                if (!aliasPlansByCanonicalTargetKey.TryGetValue(canonicalTargetKey, out var aliasPlan))
                 {
-                    if (!seenKeys.Add(aliasRegistration.Mapping.Key))
+                    aliasPlan = BuildCanonicalTargetAliasPlan(mapping, targetTypeIndex);
+                    aliasPlansByCanonicalTargetKey[canonicalTargetKey] = aliasPlan;
+                }
+
+                if (aliasPlan.NullableAlias is not null)
+                {
+                    var nullableAlias = aliasPlan.NullableAlias;
+                    var nullableAliasMapping = new DuckTypeAotMapping(
+                        mapping.ProxyTypeName,
+                        mapping.ProxyAssemblyName,
+                        nullableAlias.TypeName,
+                        nullableAlias.AssemblyName,
+                        mapping.Mode,
+                        mapping.Source);
+                    if (seenKeys.Add(nullableAliasMapping.Key))
+                    {
+                        registrations.Add(new DuckTypeAotRuntimeRegistration(nullableAliasMapping, mapping.Key, DuckTypeAotRuntimeRegistrationKind.NullableAlias));
+                    }
+                }
+
+                foreach (var aliasTarget in aliasPlan.AssignableTargets)
+                {
+                    var aliasMapping = new DuckTypeAotMapping(
+                        mapping.ProxyTypeName,
+                        mapping.ProxyAssemblyName,
+                        aliasTarget.TypeName,
+                        aliasTarget.AssemblyName,
+                        mapping.Mode,
+                        mapping.Source);
+                    if (!seenKeys.Add(aliasMapping.Key))
                     {
                         continue;
                     }
 
-                    registrations.Add(aliasRegistration);
+                    registrations.Add(new DuckTypeAotRuntimeRegistration(aliasMapping, mapping.Key, DuckTypeAotRuntimeRegistrationKind.AssignableAlias));
                 }
             }
 
@@ -683,66 +841,44 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         }
 
         /// <summary>
-        /// Enumerates alias registrations for a canonical mapping.
+        /// Builds the cached alias plan for a canonical target mapping.
         /// </summary>
         /// <param name="mapping">The canonical mapping value.</param>
-        /// <param name="targetModulesByAssemblyName">The target modules by assembly name value.</param>
-        /// <returns>The alias registration sequence.</returns>
-        private static IEnumerable<DuckTypeAotRuntimeRegistration> EnumerateAliasRegistrations(
+        /// <param name="targetTypeIndex">The target type index value.</param>
+        /// <returns>The cached alias plan.</returns>
+        private static CanonicalTargetAliasPlan BuildCanonicalTargetAliasPlan(
             DuckTypeAotMapping mapping,
-            IReadOnlyDictionary<string, ModuleDefMD> targetModulesByAssemblyName)
+            TargetTypeIndex targetTypeIndex)
         {
+            NullableAliasTargetInfo? nullableAlias = null;
             if (mapping.Mode == DuckTypeAotMappingMode.Forward &&
-                TryCreateNullableAliasMapping(mapping, out var nullableAliasMapping))
+                TryCreateNullableAliasTargetInfo(mapping, out var nullableAliasTarget))
             {
-                yield return new DuckTypeAotRuntimeRegistration(nullableAliasMapping!, mapping.Key, DuckTypeAotRuntimeRegistrationKind.NullableAlias);
+                nullableAlias = nullableAliasTarget;
             }
 
             if (DuckTypeAotNameHelpers.IsClosedGenericTypeName(mapping.TargetTypeName))
             {
-                yield break;
+                return new CanonicalTargetAliasPlan(nullableAlias, []);
             }
 
-            if (!targetModulesByAssemblyName.TryGetValue(mapping.TargetAssemblyName, out var targetModule) ||
-                !TryResolveType(targetModule, mapping.TargetTypeName, out var targetType))
+            if (!targetTypeIndex.TryGetAssignableTargets(mapping.Mode, mapping.TargetAssemblyName, mapping.TargetTypeName, out var assignableTargets))
             {
-                yield break;
+                return new CanonicalTargetAliasPlan(nullableAlias, []);
             }
 
-            foreach (var module in targetModulesByAssemblyName.OrderBy(entry => entry.Key, StringComparer.OrdinalIgnoreCase).Select(entry => entry.Value))
-            {
-                foreach (var candidateType in module.GetTypes().OrderBy(type => type.FullName, StringComparer.Ordinal))
-                {
-                    if (!ShouldIncludeAliasCandidate(mapping.Mode, targetType, candidateType))
-                    {
-                        continue;
-                    }
-
-                    var aliasMapping = new DuckTypeAotMapping(
-                        mapping.ProxyTypeName,
-                        mapping.ProxyAssemblyName,
-                        candidateType.FullName,
-                        DuckTypeAotNameHelpers.NormalizeAssemblyName(candidateType.Module?.Assembly?.Name?.String ?? string.Empty),
-                        mapping.Mode,
-                        mapping.Source);
-
-                    yield return new DuckTypeAotRuntimeRegistration(aliasMapping, mapping.Key, DuckTypeAotRuntimeRegistrationKind.AssignableAlias);
-                }
-            }
+            return new CanonicalTargetAliasPlan(nullableAlias, assignableTargets);
         }
 
         /// <summary>
-        /// Determines whether an alias candidate should be emitted for a canonical mapping.
+        /// Determines whether a type should be indexed as an assignable alias candidate.
         /// </summary>
-        /// <param name="mode">The mapping mode value.</param>
-        /// <param name="canonicalTargetType">The canonical target type value.</param>
         /// <param name="candidateType">The candidate type value.</param>
-        /// <returns>true if the candidate should be emitted; otherwise, false.</returns>
-        private static bool ShouldIncludeAliasCandidate(DuckTypeAotMappingMode mode, TypeDef canonicalTargetType, TypeDef candidateType)
+        /// <returns>true when the type can participate as an alias candidate; otherwise, false.</returns>
+        private static bool IsAliasCandidateType(TypeDef candidateType)
         {
             if (candidateType is null ||
-                candidateType == canonicalTargetType ||
-                string.Equals(candidateType.FullName, canonicalTargetType.FullName, StringComparison.Ordinal))
+                string.IsNullOrWhiteSpace(candidateType.FullName))
             {
                 return false;
             }
@@ -752,23 +888,145 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 return false;
             }
 
-            if (mode == DuckTypeAotMappingMode.Reverse && candidateType.IsValueType)
-            {
-                return false;
-            }
-
-            return IsAssignableFrom(canonicalTargetType, candidateType);
+            return true;
         }
 
         /// <summary>
-        /// Attempts to create a nullable alias mapping for a forward canonical mapping.
+        /// Enumerates assignable type names reachable from a concrete candidate type.
+        /// </summary>
+        /// <param name="candidateType">The candidate type value.</param>
+        /// <returns>The reachable assignable type-name sequence.</returns>
+        private static IEnumerable<string> EnumerateAssignableTypeNames(TypeDef candidateType)
+        {
+            var visitedTypeNames = new HashSet<string>(StringComparer.Ordinal);
+            var typesToInspect = new Stack<TypeDef>();
+            typesToInspect.Push(candidateType);
+            while (typesToInspect.Count > 0)
+            {
+                var current = typesToInspect.Pop();
+                if (current is null ||
+                    string.IsNullOrWhiteSpace(current.FullName) ||
+                    !visitedTypeNames.Add(current.FullName))
+                {
+                    continue;
+                }
+
+                yield return current.FullName;
+                if (!string.IsNullOrWhiteSpace(current.ReflectionFullName) &&
+                    visitedTypeNames.Add(current.ReflectionFullName))
+                {
+                    yield return current.ReflectionFullName;
+                }
+
+                var baseType = current.BaseType?.ResolveTypeDef();
+                if (baseType is not null)
+                {
+                    typesToInspect.Push(baseType);
+                }
+
+                foreach (var interfaceImpl in current.Interfaces)
+                {
+                    var resolvedInterface = interfaceImpl.Interface.ResolveTypeDef();
+                    if (resolvedInterface is not null)
+                    {
+                        typesToInspect.Push(resolvedInterface);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Adds a target-type entry to an ancestor index.
+        /// </summary>
+        /// <param name="index">The ancestor index value.</param>
+        /// <param name="ancestorTypeName">The ancestor type name value.</param>
+        /// <param name="entry">The entry value.</param>
+        private static void AddTargetTypeIndexEntry(
+            IDictionary<string, List<TargetTypeIndexEntry>> index,
+            string ancestorTypeName,
+            TargetTypeIndexEntry entry)
+        {
+            if (!index.TryGetValue(ancestorTypeName, out var entries))
+            {
+                entries = [];
+                index[ancestorTypeName] = entries;
+            }
+
+            entries.Add(entry);
+        }
+
+        /// <summary>
+        /// Converts a mutable target-type ancestor index into its deterministic immutable representation.
+        /// </summary>
+        /// <param name="index">The mutable index value.</param>
+        /// <returns>The sorted target-type index.</returns>
+        private static IReadOnlyDictionary<string, IReadOnlyList<TargetAliasTargetInfo>> ToSortedTargetTypeIndex(
+            IDictionary<string, List<TargetTypeIndexEntry>> index)
+        {
+            var result = new Dictionary<string, IReadOnlyList<TargetAliasTargetInfo>>(StringComparer.Ordinal);
+            foreach (var entry in index)
+            {
+                var orderedTargets = entry.Value
+                                          .OrderBy(item => item.AssemblyName, StringComparer.OrdinalIgnoreCase)
+                                          .ThenBy(item => item.Type.FullName, StringComparer.Ordinal)
+                                          .Select(item => new TargetAliasTargetInfo(item.AssemblyName, item.Type.FullName))
+                                          .ToList();
+                result[entry.Key] = orderedTargets;
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Builds the canonical-target cache key used for alias-plan reuse.
+        /// </summary>
+        /// <param name="mapping">The mapping value.</param>
+        /// <returns>The canonical-target cache key.</returns>
+        private static string BuildCanonicalTargetCacheKey(DuckTypeAotMapping mapping)
+        {
+            return string.Concat(
+                mapping.Mode.ToString(),
+                "|",
+                mapping.TargetAssemblyName.ToUpperInvariant(),
+                "|",
+                mapping.TargetTypeName);
+        }
+
+        /// <summary>
+        /// Builds a stable assembly-type lookup key.
+        /// </summary>
+        /// <param name="assemblyName">The assembly name value.</param>
+        /// <param name="typeName">The type name value.</param>
+        /// <returns>The assembly-type cache key.</returns>
+        private static string BuildAssemblyTypeCacheKey(string assemblyName, string typeName)
+        {
+            return string.Concat(
+                DuckTypeAotNameHelpers.NormalizeAssemblyName(assemblyName).ToUpperInvariant(),
+                "|",
+                typeName);
+        }
+
+        /// <summary>
+        /// Determines whether an indexed alias target resolves to the canonical target type itself.
+        /// </summary>
+        /// <param name="canonicalTargetType">The canonical target type value.</param>
+        /// <param name="candidateTypeName">The candidate type name value.</param>
+        /// <returns>true when the candidate is the canonical target; otherwise, false.</returns>
+        private static bool IsCanonicalTargetAliasTarget(TypeDef canonicalTargetType, string candidateTypeName)
+        {
+            return string.Equals(candidateTypeName, canonicalTargetType.FullName, StringComparison.Ordinal) ||
+                   string.Equals(candidateTypeName, canonicalTargetType.ReflectionFullName, StringComparison.Ordinal);
+        }
+
+        /// <summary>
+        /// Attempts to create a nullable alias target for a forward canonical mapping.
         /// </summary>
         /// <param name="mapping">The canonical mapping value.</param>
-        /// <param name="aliasMapping">The resulting alias mapping value.</param>
+        /// <param name="aliasTarget">The resulting alias target value.</param>
         /// <returns>true if the alias mapping was created; otherwise, false.</returns>
-        private static bool TryCreateNullableAliasMapping(DuckTypeAotMapping mapping, out DuckTypeAotMapping? aliasMapping)
+        private static bool TryCreateNullableAliasTargetInfo(DuckTypeAotMapping mapping, out NullableAliasTargetInfo? aliasTarget)
         {
-            aliasMapping = null;
+            aliasTarget = null;
             if (mapping.Mode != DuckTypeAotMappingMode.Forward ||
                 !runtimeTypeResolutionAssemblyPathsByName!.TryGetValue(mapping.TargetAssemblyName, out var targetAssemblyPath) ||
                 !TryResolveRuntimeType(mapping.TargetAssemblyName, targetAssemblyPath, mapping.TargetTypeName, out var runtimeTargetType) ||
@@ -783,14 +1041,9 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 return false;
             }
 
-            aliasMapping = new DuckTypeAotMapping(
-                mapping.ProxyTypeName,
-                mapping.ProxyAssemblyName,
+            aliasTarget = new NullableAliasTargetInfo(
                 nullableUnderlyingType.FullName!,
-                DuckTypeAotNameHelpers.NormalizeAssemblyName(nullableUnderlyingType.Assembly.GetName().Name ?? string.Empty),
-                mapping.Mode,
-                mapping.Source);
-
+                DuckTypeAotNameHelpers.NormalizeAssemblyName(nullableUnderlyingType.Assembly.GetName().Name ?? string.Empty));
             return true;
         }
 
@@ -894,6 +1147,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             IReadOnlyDictionary<string, string> targetAssemblyPathsByName,
             ICollection<string>? emissionWarnings = null)
         {
+            var phaseStopwatch = StartProfilePhase();
             ITypeDefOrRef? exceptionType = null;
             string? resolvedExceptionTypeName = null;
             string? resolvedFailureMessage = null;
@@ -943,6 +1197,13 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     $"Registered AOT failure mapping '{mapping.Key}' to throw '{resolvedExceptionTypeName}' ({diagnosticCode}): {detail}");
             }
 
+            StopProfilePhase(
+                phaseStopwatch,
+                seconds =>
+                {
+                    _currentProfile!.KnownFailureRegistrationSeconds += seconds;
+                    _currentProfile!.KnownFailureRegistrationCount++;
+                });
             return true;
         }
 
@@ -1120,6 +1381,22 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             out Type? exceptionType,
             out string? exceptionMessage)
         {
+            var phaseStopwatch = StartProfilePhase();
+            var cacheKey = mapping.Key;
+            if (_currentExecutionContext?.TryGetFailureProbe(cacheKey, out var cachedFailureProbe) == true)
+            {
+                exceptionType = cachedFailureProbe.ExceptionType;
+                exceptionMessage = cachedFailureProbe.ExceptionMessage;
+                StopProfilePhase(
+                    phaseStopwatch,
+                    seconds =>
+                    {
+                        _currentProfile!.DynamicFailureProbeSeconds += seconds;
+                        _currentProfile!.DynamicFailureProbeCount++;
+                    });
+                return cachedFailureProbe.Succeeded;
+            }
+
             exceptionType = null;
             exceptionMessage = null;
             if (moduleDef is null ||
@@ -1129,12 +1406,28 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 CreateTypeResultCanCreateMethod is null ||
                 CreateTypeResultProxyTypeProperty is null)
             {
+                StopProfilePhase(
+                    phaseStopwatch,
+                    seconds =>
+                    {
+                        _currentProfile!.DynamicFailureProbeSeconds += seconds;
+                        _currentProfile!.DynamicFailureProbeCount++;
+                    });
+                _currentExecutionContext?.CacheFailureProbe(cacheKey, exceptionType: null, exceptionMessage: null, succeeded: false);
                 return false;
             }
 
             if (!proxyAssemblyPathsByName.TryGetValue(mapping.ProxyAssemblyName, out var proxyAssemblyPath) ||
                 !targetAssemblyPathsByName.TryGetValue(mapping.TargetAssemblyName, out var targetAssemblyPath))
             {
+                StopProfilePhase(
+                    phaseStopwatch,
+                    seconds =>
+                    {
+                        _currentProfile!.DynamicFailureProbeSeconds += seconds;
+                        _currentProfile!.DynamicFailureProbeCount++;
+                    });
+                _currentExecutionContext?.CacheFailureProbe(cacheKey, exceptionType: null, exceptionMessage: null, succeeded: false);
                 return false;
             }
 
@@ -1143,6 +1436,14 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 proxyRuntimeType is null ||
                 targetRuntimeType is null)
             {
+                StopProfilePhase(
+                    phaseStopwatch,
+                    seconds =>
+                    {
+                        _currentProfile!.DynamicFailureProbeSeconds += seconds;
+                        _currentProfile!.DynamicFailureProbeCount++;
+                    });
+                _currentExecutionContext?.CacheFailureProbe(cacheKey, exceptionType: null, exceptionMessage: null, succeeded: false);
                 return false;
             }
 
@@ -1155,10 +1456,27 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
             catch
             {
+                StopProfilePhase(
+                    phaseStopwatch,
+                    seconds =>
+                    {
+                        _currentProfile!.DynamicFailureProbeSeconds += seconds;
+                        _currentProfile!.DynamicFailureProbeCount++;
+                    });
+                _currentExecutionContext?.CacheFailureProbe(cacheKey, exceptionType: null, exceptionMessage: null, succeeded: false);
                 return false;
             }
 
-            return TryExtractDynamicFailureExceptionType(dryRunResult, out exceptionType, out exceptionMessage);
+            var result = TryExtractDynamicFailureExceptionType(dryRunResult, out exceptionType, out exceptionMessage);
+            _currentExecutionContext?.CacheFailureProbe(cacheKey, exceptionType, exceptionMessage, result);
+            StopProfilePhase(
+                phaseStopwatch,
+                seconds =>
+                {
+                    _currentProfile!.DynamicFailureProbeSeconds += seconds;
+                    _currentProfile!.DynamicFailureProbeCount++;
+                });
+            return result;
         }
 
         /// <summary>
@@ -2499,36 +2817,52 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 #endif
         private static bool TryResolveRuntimeType(string assemblyName, string assemblyPath, string typeName, out Type? runtimeType)
         {
+            var normalizedAssemblyPath = assemblyPath ?? string.Empty;
+            var normalizedTypeName = typeName ?? string.Empty;
+            var cacheKey = string.Concat(
+                DuckTypeAotNameHelpers.NormalizeAssemblyName(assemblyName).ToUpperInvariant(),
+                "|",
+                normalizedAssemblyPath,
+                "|",
+                normalizedTypeName);
+            if (_currentExecutionContext?.TryGetRuntimeType(cacheKey, out runtimeType) == true)
+            {
+                return runtimeType is not null;
+            }
+
             runtimeType = null;
             try
             {
-                if (TryResolveRuntimeTypeByName(typeName, out runtimeType))
+                if (TryResolveRuntimeTypeByName(normalizedTypeName, out runtimeType))
                 {
+                    _currentExecutionContext?.CacheRuntimeType(cacheKey, runtimeType);
                     return true;
                 }
 
                 var normalizedAssemblyName = DuckTypeAotNameHelpers.NormalizeAssemblyName(assemblyName);
-                var candidateAssembly = TryResolvePreferredRuntimeAssembly(normalizedAssemblyName, assemblyPath);
-                runtimeType = candidateAssembly?.GetType(typeName, throwOnError: false, ignoreCase: false);
+                var candidateAssembly = TryResolvePreferredRuntimeAssembly(normalizedAssemblyName, normalizedAssemblyPath);
+                runtimeType = candidateAssembly?.GetType(normalizedTypeName, throwOnError: false, ignoreCase: false);
                 if (runtimeType is not null)
                 {
+                    _currentExecutionContext?.CacheRuntimeType(cacheKey, runtimeType);
                     return true;
                 }
 
-                foreach (var assemblyQualifiedTypeName in EnumerateAssemblyQualifiedTypeNames(typeName, normalizedAssemblyName, candidateAssembly))
+                foreach (var assemblyQualifiedTypeName in EnumerateAssemblyQualifiedTypeNames(normalizedTypeName, normalizedAssemblyName, candidateAssembly))
                 {
                     runtimeType = Type.GetType(assemblyQualifiedTypeName, throwOnError: false);
                     if (runtimeType is not null)
                     {
+                        _currentExecutionContext?.CacheRuntimeType(cacheKey, runtimeType);
                         return true;
                     }
                 }
 
-                foreach (var assemblyQualifiedTypeName in EnumerateAssemblyQualifiedTypeNames(typeName, normalizedAssemblyName, candidateAssembly))
+                foreach (var assemblyQualifiedTypeName in EnumerateAssemblyQualifiedTypeNames(normalizedTypeName, normalizedAssemblyName, candidateAssembly))
                 {
                     runtimeType = Type.GetType(
                         assemblyQualifiedTypeName,
-                        requestedAssemblyName => ResolveRuntimeTypeAssembly(requestedAssemblyName, normalizedAssemblyName, assemblyPath, candidateAssembly),
+                        requestedAssemblyName => ResolveRuntimeTypeAssembly(requestedAssemblyName, normalizedAssemblyName, normalizedAssemblyPath, candidateAssembly),
                         (requestedAssembly, requestedTypeName, ignoreCase) =>
                         {
                             if (requestedAssembly is not null)
@@ -2554,12 +2888,14 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                         throwOnError: false);
                     if (runtimeType is not null)
                     {
+                        _currentExecutionContext?.CacheRuntimeType(cacheKey, runtimeType);
                         return true;
                     }
                 }
 
-                if (TryResolveClosedGenericRuntimeType(assemblyName, assemblyPath, typeName, out runtimeType))
+                if (TryResolveClosedGenericRuntimeType(assemblyName, normalizedAssemblyPath, normalizedTypeName, out runtimeType))
                 {
+                    _currentExecutionContext?.CacheRuntimeType(cacheKey, runtimeType);
                     return true;
                 }
             }
@@ -2568,6 +2904,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 // Type probing is best-effort; failures are handled by returning false to the caller.
             }
 
+            _currentExecutionContext?.CacheRuntimeType(cacheKey, runtimeType: null);
             return false;
         }
 
@@ -2715,12 +3052,20 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <returns>The resolved assembly when available; otherwise, null.</returns>
         private static Assembly? TryResolvePreferredRuntimeAssembly(string normalizedAssemblyName, string assemblyPath)
         {
+            var cacheKey = string.Concat(normalizedAssemblyName.ToUpperInvariant(), "|", assemblyPath ?? string.Empty);
+            if (_currentExecutionContext?.TryGetPreferredRuntimeAssembly(cacheKey, out var cachedAssembly) == true)
+            {
+                return cachedAssembly;
+            }
+
             // Prefer the explicit path from mapping resolution to avoid cross-TFM collisions with already-loaded assemblies.
             if (!string.IsNullOrWhiteSpace(assemblyPath) && File.Exists(assemblyPath))
             {
                 try
                 {
-                    return Assembly.LoadFrom(assemblyPath);
+                    var assembly = Assembly.LoadFrom(assemblyPath);
+                    _currentExecutionContext?.CachePreferredRuntimeAssembly(cacheKey, assembly);
+                    return assembly;
                 }
                 catch
                 {
@@ -2728,16 +3073,27 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 }
             }
 
-            foreach (var loadedAssembly in AppDomain.CurrentDomain.GetAssemblies())
+            foreach (var loadedAssembly in GetLoadedRuntimeAssemblies())
             {
                 var loadedAssemblyName = DuckTypeAotNameHelpers.NormalizeAssemblyName(loadedAssembly.GetName().Name ?? string.Empty);
                 if (string.Equals(loadedAssemblyName, normalizedAssemblyName, StringComparison.OrdinalIgnoreCase))
                 {
+                    _currentExecutionContext?.CachePreferredRuntimeAssembly(cacheKey, loadedAssembly);
                     return loadedAssembly;
                 }
             }
 
+            _currentExecutionContext?.CachePreferredRuntimeAssembly(cacheKey, assembly: null);
             return null;
+        }
+
+        /// <summary>
+        /// Returns the cached snapshot of currently loaded runtime assemblies for this emit pass.
+        /// </summary>
+        /// <returns>The loaded runtime assemblies.</returns>
+        private static IReadOnlyList<Assembly> GetLoadedRuntimeAssemblies()
+        {
+            return _currentExecutionContext?.LoadedRuntimeAssemblies ?? AppDomain.CurrentDomain.GetAssemblies();
         }
 
         /// <summary>
@@ -2803,20 +3159,33 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 return null;
             }
 
+            var cacheKey = string.Concat(
+                requestedSimpleName.ToUpperInvariant(),
+                "|",
+                normalizedAssemblyName.ToUpperInvariant(),
+                "|",
+                assemblyPath ?? string.Empty);
+            if (_currentExecutionContext?.TryGetResolvedRuntimeAssembly(cacheKey, out var cachedAssembly) == true)
+            {
+                return cachedAssembly;
+            }
+
             if (candidateAssembly is not null)
             {
                 var candidateSimpleName = DuckTypeAotNameHelpers.NormalizeAssemblyName(candidateAssembly.GetName().Name ?? string.Empty);
                 if (string.Equals(candidateSimpleName, requestedSimpleName, StringComparison.OrdinalIgnoreCase))
                 {
+                    _currentExecutionContext?.CacheResolvedRuntimeAssembly(cacheKey, candidateAssembly);
                     return candidateAssembly;
                 }
             }
 
-            foreach (var loadedAssembly in AppDomain.CurrentDomain.GetAssemblies())
+            foreach (var loadedAssembly in GetLoadedRuntimeAssemblies())
             {
                 var loadedAssemblyName = DuckTypeAotNameHelpers.NormalizeAssemblyName(loadedAssembly.GetName().Name ?? string.Empty);
                 if (string.Equals(loadedAssemblyName, requestedSimpleName, StringComparison.OrdinalIgnoreCase))
                 {
+                    _currentExecutionContext?.CacheResolvedRuntimeAssembly(cacheKey, loadedAssembly);
                     return loadedAssembly;
                 }
             }
@@ -2829,7 +3198,9 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 {
                     try
                     {
-                        return Assembly.LoadFrom(requestedAssemblyPath);
+                        var assembly = Assembly.LoadFrom(requestedAssemblyPath);
+                        _currentExecutionContext?.CacheResolvedRuntimeAssembly(cacheKey, assembly);
+                        return assembly;
                     }
                     catch
                     {
@@ -2840,7 +3211,9 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
             try
             {
-                return Assembly.Load(requestedAssemblyName);
+                var assembly = Assembly.Load(requestedAssemblyName);
+                _currentExecutionContext?.CacheResolvedRuntimeAssembly(cacheKey, assembly);
+                return assembly;
             }
             catch
             {
@@ -2854,7 +3227,9 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             {
                 try
                 {
-                    return Assembly.LoadFrom(assemblyPath);
+                    var assembly = Assembly.LoadFrom(assemblyPath);
+                    _currentExecutionContext?.CacheResolvedRuntimeAssembly(cacheKey, assembly);
+                    return assembly;
                 }
                 catch
                 {
@@ -2862,6 +3237,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 }
             }
 
+            _currentExecutionContext?.CacheResolvedRuntimeAssembly(cacheKey, assembly: null);
             return null;
         }
 
@@ -7058,21 +7434,29 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 #endif
         private static bool TryResolveRuntimeTypeByName(string typeName, out Type? runtimeType)
         {
+            if (_currentExecutionContext?.TryGetTypeByName(typeName, out runtimeType) == true)
+            {
+                return runtimeType is not null;
+            }
+
             runtimeType = Type.GetType(typeName, throwOnError: false);
             if (runtimeType is not null)
             {
+                _currentExecutionContext?.CacheTypeByName(typeName, runtimeType);
                 return true;
             }
 
-            foreach (var loadedAssembly in AppDomain.CurrentDomain.GetAssemblies())
+            foreach (var loadedAssembly in GetLoadedRuntimeAssemblies())
             {
                 runtimeType = loadedAssembly.GetType(typeName, throwOnError: false, ignoreCase: false);
                 if (runtimeType is not null)
                 {
+                    _currentExecutionContext?.CacheTypeByName(typeName, runtimeType);
                     return true;
                 }
             }
 
+            _currentExecutionContext?.CacheTypeByName(typeName, runtimeType: null);
             return false;
         }
 
@@ -7998,6 +8382,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool TryResolveType(ModuleDef module, string typeName, out TypeDef type)
         {
+            var typeLookup = _currentExecutionContext?.GetOrCreateTypeLookup(module);
+            if (typeLookup is not null && typeLookup.TryGetValue(typeName, out type!))
+            {
+                return true;
+            }
+
             type = module.Find(typeName, isReflectionName: true)
                 ?? module.Find(typeName, isReflectionName: false)
                 ?? module.GetTypes().FirstOrDefault(candidate =>
@@ -9220,6 +9610,286 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             /// </summary>
             /// <value>The ignores access checks to attribute ctor value.</value>
             internal ICustomAttributeType IgnoresAccessChecksToAttributeCtor { get; }
+        }
+
+        private sealed class EmitterExecutionContext
+        {
+            private readonly Dictionary<ModuleDef, IReadOnlyDictionary<string, TypeDef>> _typeLookupsByModule = new();
+            private readonly Dictionary<string, RuntimeTypeResolutionCacheEntry> _runtimeTypesByKey = new(StringComparer.Ordinal);
+            private readonly Dictionary<string, AssemblyResolutionCacheEntry> _preferredRuntimeAssembliesByKey = new(StringComparer.Ordinal);
+            private readonly Dictionary<string, AssemblyResolutionCacheEntry> _resolvedRuntimeAssembliesByKey = new(StringComparer.Ordinal);
+            private readonly Dictionary<string, RuntimeTypeResolutionCacheEntry> _typesByName = new(StringComparer.Ordinal);
+            private readonly Dictionary<string, FailureProbeCacheEntry> _failureProbesByKey = new(StringComparer.Ordinal);
+
+            internal EmitterExecutionContext(IReadOnlyDictionary<string, string> runtimeTypeResolutionAssemblyPathsByName, TargetTypeIndex targetTypeIndex)
+            {
+                RuntimeTypeResolutionAssemblyPathsByName = runtimeTypeResolutionAssemblyPathsByName;
+                TargetTypeIndex = targetTypeIndex;
+                LoadedRuntimeAssemblies = AppDomain.CurrentDomain.GetAssemblies();
+            }
+
+            internal IReadOnlyDictionary<string, string> RuntimeTypeResolutionAssemblyPathsByName { get; }
+
+            internal TargetTypeIndex TargetTypeIndex { get; }
+
+            internal IReadOnlyList<Assembly> LoadedRuntimeAssemblies { get; }
+
+            internal IReadOnlyDictionary<string, TypeDef> GetOrCreateTypeLookup(ModuleDef module)
+            {
+                if (_typeLookupsByModule.TryGetValue(module, out var cachedLookup))
+                {
+                    return cachedLookup;
+                }
+
+                var typeLookup = new Dictionary<string, TypeDef>(StringComparer.Ordinal);
+                foreach (var type in module.GetTypes())
+                {
+                    if (!string.IsNullOrWhiteSpace(type.FullName))
+                    {
+                        typeLookup[type.FullName] = type;
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(type.ReflectionFullName))
+                    {
+                        typeLookup[type.ReflectionFullName] = type;
+                    }
+                }
+
+                _typeLookupsByModule[module] = typeLookup;
+                return typeLookup;
+            }
+
+            internal bool TryGetRuntimeType(string key, out Type? runtimeType)
+            {
+                if (_runtimeTypesByKey.TryGetValue(key, out var cachedEntry))
+                {
+                    runtimeType = cachedEntry.Type;
+                    return true;
+                }
+
+                runtimeType = null;
+                return false;
+            }
+
+            internal void CacheRuntimeType(string key, Type? runtimeType)
+            {
+                _runtimeTypesByKey[key] = new RuntimeTypeResolutionCacheEntry(runtimeType);
+            }
+
+            internal bool TryGetPreferredRuntimeAssembly(string key, out Assembly? assembly)
+            {
+                if (_preferredRuntimeAssembliesByKey.TryGetValue(key, out var cachedEntry))
+                {
+                    assembly = cachedEntry.Assembly;
+                    return true;
+                }
+
+                assembly = null;
+                return false;
+            }
+
+            internal void CachePreferredRuntimeAssembly(string key, Assembly? assembly)
+            {
+                _preferredRuntimeAssembliesByKey[key] = new AssemblyResolutionCacheEntry(assembly);
+            }
+
+            internal bool TryGetResolvedRuntimeAssembly(string key, out Assembly? assembly)
+            {
+                if (_resolvedRuntimeAssembliesByKey.TryGetValue(key, out var cachedEntry))
+                {
+                    assembly = cachedEntry.Assembly;
+                    return true;
+                }
+
+                assembly = null;
+                return false;
+            }
+
+            internal void CacheResolvedRuntimeAssembly(string key, Assembly? assembly)
+            {
+                _resolvedRuntimeAssembliesByKey[key] = new AssemblyResolutionCacheEntry(assembly);
+            }
+
+            internal bool TryGetTypeByName(string typeName, out Type? runtimeType)
+            {
+                if (_typesByName.TryGetValue(typeName, out var cachedEntry))
+                {
+                    runtimeType = cachedEntry.Type;
+                    return true;
+                }
+
+                runtimeType = null;
+                return false;
+            }
+
+            internal void CacheTypeByName(string typeName, Type? runtimeType)
+            {
+                _typesByName[typeName] = new RuntimeTypeResolutionCacheEntry(runtimeType);
+            }
+
+            internal bool TryGetFailureProbe(string key, out FailureProbeCacheEntry failureProbe)
+            {
+                return _failureProbesByKey.TryGetValue(key, out failureProbe!);
+            }
+
+            internal void CacheFailureProbe(string key, Type? exceptionType, string? exceptionMessage, bool succeeded)
+            {
+                _failureProbesByKey[key] = new FailureProbeCacheEntry(exceptionType, exceptionMessage, succeeded);
+            }
+        }
+
+        private sealed class TargetTypeIndex
+        {
+            internal TargetTypeIndex(
+                IReadOnlyDictionary<string, TypeDef> typeByAssemblyAndName,
+                IReadOnlyDictionary<string, IReadOnlyList<TargetAliasTargetInfo>> assignableForwardTypesByAncestor,
+                IReadOnlyDictionary<string, IReadOnlyList<TargetAliasTargetInfo>> assignableReverseTypesByAncestor)
+            {
+                TypeByAssemblyAndName = typeByAssemblyAndName;
+                AssignableForwardTypesByAncestor = assignableForwardTypesByAncestor;
+                AssignableReverseTypesByAncestor = assignableReverseTypesByAncestor;
+            }
+
+            internal IReadOnlyDictionary<string, TypeDef> TypeByAssemblyAndName { get; }
+
+            internal IReadOnlyDictionary<string, IReadOnlyList<TargetAliasTargetInfo>> AssignableForwardTypesByAncestor { get; }
+
+            internal IReadOnlyDictionary<string, IReadOnlyList<TargetAliasTargetInfo>> AssignableReverseTypesByAncestor { get; }
+
+            internal bool TryGetAssignableTargets(DuckTypeAotMappingMode mode, string targetAssemblyName, string targetTypeName, out IReadOnlyList<TargetAliasTargetInfo> aliasTargets)
+            {
+                aliasTargets = Array.Empty<TargetAliasTargetInfo>();
+                if (!TypeByAssemblyAndName.TryGetValue(BuildAssemblyTypeCacheKey(targetAssemblyName, targetTypeName), out var canonicalTargetType))
+                {
+                    return false;
+                }
+
+                var sourceIndex = mode == DuckTypeAotMappingMode.Reverse ? AssignableReverseTypesByAncestor : AssignableForwardTypesByAncestor;
+                if (!sourceIndex.TryGetValue(targetTypeName, out var rawTargets))
+                {
+                    return false;
+                }
+
+                aliasTargets = rawTargets.Where(target => !IsCanonicalTargetAliasTarget(canonicalTargetType, target.TypeName)).ToList();
+                return aliasTargets.Count > 0;
+            }
+        }
+
+        private sealed class CanonicalTargetAliasPlan
+        {
+            internal CanonicalTargetAliasPlan(NullableAliasTargetInfo? nullableAlias, IReadOnlyList<TargetAliasTargetInfo> assignableTargets)
+            {
+                NullableAlias = nullableAlias;
+                AssignableTargets = assignableTargets;
+            }
+
+            internal NullableAliasTargetInfo? NullableAlias { get; }
+
+            internal IReadOnlyList<TargetAliasTargetInfo> AssignableTargets { get; }
+        }
+
+        private sealed class TargetTypeIndexEntry
+        {
+            internal TargetTypeIndexEntry(string assemblyName, TypeDef type)
+            {
+                AssemblyName = assemblyName;
+                Type = type;
+            }
+
+            internal string AssemblyName { get; }
+
+            internal TypeDef Type { get; }
+        }
+
+        private sealed class TargetAliasTargetInfo
+        {
+            internal TargetAliasTargetInfo(string assemblyName, string typeName)
+            {
+                AssemblyName = assemblyName;
+                TypeName = typeName;
+            }
+
+            internal string AssemblyName { get; }
+
+            internal string TypeName { get; }
+        }
+
+        private sealed class NullableAliasTargetInfo
+        {
+            internal NullableAliasTargetInfo(string typeName, string assemblyName)
+            {
+                TypeName = typeName;
+                AssemblyName = assemblyName;
+            }
+
+            internal string TypeName { get; }
+
+            internal string AssemblyName { get; }
+        }
+
+        private sealed class RuntimeTypeResolutionCacheEntry
+        {
+            internal RuntimeTypeResolutionCacheEntry(Type? type)
+            {
+                Type = type;
+            }
+
+            internal Type? Type { get; }
+        }
+
+        private sealed class AssemblyResolutionCacheEntry
+        {
+            internal AssemblyResolutionCacheEntry(Assembly? assembly)
+            {
+                Assembly = assembly;
+            }
+
+            internal Assembly? Assembly { get; }
+        }
+
+        private sealed class FailureProbeCacheEntry
+        {
+            internal FailureProbeCacheEntry(Type? exceptionType, string? exceptionMessage, bool succeeded)
+            {
+                ExceptionType = exceptionType;
+                ExceptionMessage = exceptionMessage;
+                Succeeded = succeeded;
+            }
+
+            internal Type? ExceptionType { get; }
+
+            internal string? ExceptionMessage { get; }
+
+            internal bool Succeeded { get; }
+        }
+
+        private sealed class EmitterProfile
+        {
+            internal Stopwatch Total { get; } = Stopwatch.StartNew();
+
+            internal double LoadProxyModulesSeconds { get; set; }
+
+            internal double LoadTargetModulesSeconds { get; set; }
+
+            internal double BuildRuntimeTypeResolutionMapSeconds { get; set; }
+
+            internal double BuildTargetTypeIndexSeconds { get; set; }
+
+            internal double BuildRuntimeRegistrationsSeconds { get; set; }
+
+            internal double EmitLoopSeconds { get; set; }
+
+            internal double EmitMappingSeconds { get; set; }
+
+            internal int EmitMappingCount { get; set; }
+
+            internal double DynamicFailureProbeSeconds { get; set; }
+
+            internal int DynamicFailureProbeCount { get; set; }
+
+            internal double KnownFailureRegistrationSeconds { get; set; }
+
+            internal int KnownFailureRegistrationCount { get; set; }
         }
     }
 }
