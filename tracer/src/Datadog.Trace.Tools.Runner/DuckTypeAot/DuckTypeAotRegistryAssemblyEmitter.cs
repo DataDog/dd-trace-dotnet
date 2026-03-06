@@ -474,20 +474,34 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
                     var runtimeRegistration = runtimeRegistrations[i];
                     var mapping = runtimeRegistration.Mapping;
-                    var emissionResult = NormalizeKnownNonCreatableParityResult(
-                        mapping,
-                        EmitMapping(
-                        moduleDef,
-                        bootstrapType,
-                        bootstrapRegistrationMethods[registrationMethodIndex],
-                        importedMembers,
-                        mapping,
-                        i + 1,
-                        proxyModulesByAssemblyName,
-                        targetModulesByAssemblyName,
-                        mappingResolutionResult.ProxyAssemblyPathsByName,
-                        mappingResolutionResult.TargetAssemblyPathsByName,
-                        emissionWarnings));
+                    var emissionResult = runtimeRegistration.Kind == DuckTypeAotRuntimeRegistrationKind.NullableAlias &&
+                                         TryEmitValueTypeNullableAliasRegistration(
+                                             moduleDef,
+                                             bootstrapType,
+                                             bootstrapRegistrationMethods[registrationMethodIndex],
+                                             importedMembers,
+                                             mapping,
+                                             mappingResolutionResult.Mappings.First(item => string.Equals(item.Key, runtimeRegistration.CanonicalMappingKey, StringComparison.Ordinal)),
+                                             i + 1,
+                                             mappingResolutionResult.ProxyAssemblyPathsByName,
+                                             mappingResolutionResult.TargetAssemblyPathsByName,
+                                             emissionWarnings,
+                                             out var nullableAliasEmissionResult)
+                                             ? nullableAliasEmissionResult
+                                             : NormalizeKnownNonCreatableParityResult(
+                                                 mapping,
+                                                 EmitMapping(
+                                                     moduleDef,
+                                                     bootstrapType,
+                                                     bootstrapRegistrationMethods[registrationMethodIndex],
+                                                     importedMembers,
+                                                     mapping,
+                                                     i + 1,
+                                                     proxyModulesByAssemblyName,
+                                                     targetModulesByAssemblyName,
+                                                     mappingResolutionResult.ProxyAssemblyPathsByName,
+                                                     mappingResolutionResult.TargetAssemblyPathsByName,
+                                                     emissionWarnings));
                     if (runtimeRegistration.IsCanonical)
                     {
                         mappingResults[mapping.Key] = emissionResult;
@@ -882,15 +896,18 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         {
             ITypeDefOrRef? exceptionType = null;
             string? resolvedExceptionTypeName = null;
+            string? resolvedFailureMessage = null;
             if (TryResolveDynamicFailureExceptionType(
                     moduleDef,
                     mapping,
                     proxyAssemblyPathsByName,
                     targetAssemblyPathsByName,
-                    out var dynamicFailureExceptionType))
+                    out var dynamicFailureExceptionType,
+                    out var dynamicFailureMessage))
             {
                 exceptionType = moduleDef.Import(dynamicFailureExceptionType!) as ITypeDefOrRef;
                 resolvedExceptionTypeName = dynamicFailureExceptionType!.FullName;
+                resolvedFailureMessage = dynamicFailureMessage;
             }
 
             if (exceptionType is null &&
@@ -916,7 +933,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 importedProxyType,
                 importedTargetType,
                 resolvedExceptionTypeName,
-                failure.Detail ?? string.Empty);
+                resolvedFailureMessage ?? failure.Detail ?? string.Empty);
 
             if (emissionWarnings is not null)
             {
@@ -961,6 +978,97 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     mode == DuckTypeAotMappingMode.Reverse
                         ? importedMembers.RegisterAotReverseProxyFailureMethod
                         : importedMembers.RegisterAotProxyFailureMethod));
+        }
+
+        private static bool TryEmitValueTypeNullableAliasRegistration(
+            ModuleDef moduleDef,
+            TypeDef bootstrapType,
+            MethodDef initializeMethod,
+            ImportedMembers importedMembers,
+            DuckTypeAotMapping aliasMapping,
+            DuckTypeAotMapping canonicalMapping,
+            int mappingIndex,
+            IReadOnlyDictionary<string, string> proxyAssemblyPathsByName,
+            IReadOnlyDictionary<string, string> targetAssemblyPathsByName,
+            ICollection<string>? emissionWarnings,
+            out DuckTypeAotMappingEmissionResult emissionResult)
+        {
+            emissionResult = DuckTypeAotMappingEmissionResult.NotCompatible(
+                aliasMapping,
+                DuckTypeAotCompatibilityStatuses.MissingTargetType,
+                StatusCodeMissingTargetType,
+                "Nullable alias bridge could not be emitted.");
+
+            if (aliasMapping.Mode != DuckTypeAotMappingMode.Forward ||
+                !proxyAssemblyPathsByName.TryGetValue(aliasMapping.ProxyAssemblyName, out var proxyAssemblyPath) ||
+                !targetAssemblyPathsByName.TryGetValue(canonicalMapping.TargetAssemblyName, out var canonicalTargetAssemblyPath) ||
+                !TryResolveRuntimeType(aliasMapping.ProxyAssemblyName, proxyAssemblyPath, aliasMapping.ProxyTypeName, out var proxyRuntimeType) ||
+                !TryResolveRuntimeType(canonicalMapping.TargetAssemblyName, canonicalTargetAssemblyPath, canonicalMapping.TargetTypeName, out var canonicalTargetRuntimeType) ||
+                proxyRuntimeType is null ||
+                canonicalTargetRuntimeType is null ||
+                !proxyRuntimeType.IsValueType)
+            {
+                return false;
+            }
+
+            var nullableUnderlyingType = Nullable.GetUnderlyingType(canonicalTargetRuntimeType);
+            if (nullableUnderlyingType is null ||
+                !string.Equals(nullableUnderlyingType.FullName, aliasMapping.TargetTypeName, StringComparison.Ordinal) ||
+                !string.Equals(
+                    DuckTypeAotNameHelpers.NormalizeAssemblyName(nullableUnderlyingType.Assembly.GetName().Name ?? string.Empty),
+                    aliasMapping.TargetAssemblyName,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            var importedProxyTypeSig = ImportRuntimeTypeSig(moduleDef, proxyRuntimeType);
+            var importedAliasTargetTypeSig = ImportRuntimeTypeSig(moduleDef, nullableUnderlyingType);
+            var importedCanonicalTargetTypeSig = ImportRuntimeTypeSig(moduleDef, canonicalTargetRuntimeType);
+            var importedProxyType = ResolveImportedTypeForTypeToken(moduleDef, importedProxyTypeSig, $"nullable alias proxy '{aliasMapping.ProxyTypeName}'");
+            var importedAliasTargetType = ResolveImportedTypeForTypeToken(moduleDef, importedAliasTargetTypeSig, $"nullable alias target '{aliasMapping.TargetTypeName}'");
+
+            var activatorMethod = new MethodDefUser(
+                $"CreateProxy_{mappingIndex:D4}",
+                MethodSig.CreateStatic(importedProxyTypeSig, importedAliasTargetTypeSig),
+                MethodImplAttributes.IL | MethodImplAttributes.Managed,
+                MethodAttributes.Private | MethodAttributes.Static | MethodAttributes.HideBySig);
+            activatorMethod.Body = new CilBody();
+            activatorMethod.Body.Instructions.Add(OpCodes.Ldarg_0.ToInstruction());
+            activatorMethod.Body.Instructions.Add(OpCodes.Newobj.ToInstruction(CreateNullableCtorRef(moduleDef, importedCanonicalTargetTypeSig)));
+            activatorMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(CreateDuckTypeCreateCacheCreateFromMethodRef(moduleDef, importedProxyTypeSig, importedCanonicalTargetTypeSig)));
+            activatorMethod.Body.Instructions.Add(OpCodes.Ret.ToInstruction());
+            bootstrapType.Methods.Add(activatorMethod);
+
+            var registrationActivatorMethod = new MethodDefUser(
+                $"ActivateProxy_{mappingIndex:D4}",
+                MethodSig.CreateStatic(importedProxyTypeSig, moduleDef.CorLibTypes.Object),
+                MethodImplAttributes.IL | MethodImplAttributes.Managed,
+                MethodAttributes.Private | MethodAttributes.Static | MethodAttributes.HideBySig);
+            registrationActivatorMethod.Body = new CilBody();
+            registrationActivatorMethod.Body.Instructions.Add(OpCodes.Ldarg_0.ToInstruction());
+            registrationActivatorMethod.Body.Instructions.Add(OpCodes.Unbox_Any.ToInstruction(importedAliasTargetType));
+            registrationActivatorMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(activatorMethod));
+            registrationActivatorMethod.Body.Instructions.Add(OpCodes.Ret.ToInstruction());
+            bootstrapType.Methods.Add(registrationActivatorMethod);
+
+            initializeMethod.Body.Instructions.Add(OpCodes.Ldtoken.ToInstruction(importedProxyType));
+            initializeMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(importedMembers.GetTypeFromHandleMethod));
+            initializeMethod.Body.Instructions.Add(OpCodes.Ldtoken.ToInstruction(importedAliasTargetType));
+            initializeMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(importedMembers.GetTypeFromHandleMethod));
+            initializeMethod.Body.Instructions.Add(OpCodes.Ldtoken.ToInstruction(importedProxyType));
+            initializeMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(importedMembers.GetTypeFromHandleMethod));
+            initializeMethod.Body.Instructions.Add(OpCodes.Ldtoken.ToInstruction(registrationActivatorMethod));
+            initializeMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(importedMembers.RegisterAotProxyMethod));
+
+            if (emissionWarnings is not null)
+            {
+                emissionWarnings.Add(
+                    $"Registered nullable alias bridge '{aliasMapping.Key}' via canonical nullable mapping '{canonicalMapping.Key}'.");
+            }
+
+            emissionResult = DuckTypeAotMappingEmissionResult.Compatible(aliasMapping, aliasMapping.ProxyAssemblyName, aliasMapping.ProxyTypeName);
+            return true;
         }
 
         /// <summary>
@@ -1009,9 +1117,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             DuckTypeAotMapping mapping,
             IReadOnlyDictionary<string, string> proxyAssemblyPathsByName,
             IReadOnlyDictionary<string, string> targetAssemblyPathsByName,
-            out Type? exceptionType)
+            out Type? exceptionType,
+            out string? exceptionMessage)
         {
             exceptionType = null;
+            exceptionMessage = null;
             if (moduleDef is null ||
                 mapping is null ||
                 DynamicForwardDryRunFactory is null ||
@@ -1048,7 +1158,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 return false;
             }
 
-            return TryExtractDynamicFailureExceptionType(dryRunResult, out exceptionType);
+            return TryExtractDynamicFailureExceptionType(dryRunResult, out exceptionType, out exceptionMessage);
         }
 
         /// <summary>
@@ -1056,10 +1166,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// </summary>
         /// <param name="dryRunResult">The dry run result value.</param>
         /// <param name="exceptionType">The exception type value.</param>
+        /// <param name="exceptionMessage">The exception message value.</param>
         /// <returns>true when a failure exception type was extracted; otherwise, false.</returns>
-        private static bool TryExtractDynamicFailureExceptionType(object? dryRunResult, out Type? exceptionType)
+        private static bool TryExtractDynamicFailureExceptionType(object? dryRunResult, out Type? exceptionType, out string? exceptionMessage)
         {
             exceptionType = null;
+            exceptionMessage = null;
             if (dryRunResult is null ||
                 CreateTypeResultCanCreateMethod is null ||
                 CreateTypeResultProxyTypeProperty is null)
@@ -1090,11 +1202,13 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             catch (TargetInvocationException ex) when (ex.InnerException is not null)
             {
                 exceptionType = ex.InnerException.GetType();
+                exceptionMessage = ex.InnerException.Message;
                 return true;
             }
             catch (Exception ex)
             {
                 exceptionType = ex.GetType();
+                exceptionMessage = ex.Message;
                 return true;
             }
         }
@@ -2443,10 +2557,151 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                         return true;
                     }
                 }
+
+                if (TryResolveClosedGenericRuntimeType(assemblyName, assemblyPath, typeName, out runtimeType))
+                {
+                    return true;
+                }
             }
             catch
             {
                 // Type probing is best-effort; failures are handled by returning false to the caller.
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Attempts to resolve a closed generic runtime type by recursively resolving its generic definition and arguments.
+        /// </summary>
+        /// <param name="assemblyName">The root assembly name value.</param>
+        /// <param name="assemblyPath">The preferred root assembly path value.</param>
+        /// <param name="typeName">The closed generic type name value.</param>
+        /// <param name="runtimeType">The resolved runtime type value.</param>
+        /// <returns>true when the closed generic type was resolved; otherwise, false.</returns>
+        private static bool TryResolveClosedGenericRuntimeType(string assemblyName, string assemblyPath, string typeName, out Type? runtimeType)
+        {
+            runtimeType = null;
+            if (!DuckTypeAotNameHelpers.IsClosedGenericTypeName(typeName) ||
+                !TrySplitClosedGenericTypeName(typeName, out var genericTypeDefinitionName, out var genericArgumentTypeNames))
+            {
+                return false;
+            }
+
+            if (!TryResolveRuntimeType(assemblyName, assemblyPath, genericTypeDefinitionName, out var openGenericType) ||
+                openGenericType is null)
+            {
+                return false;
+            }
+
+            if (openGenericType.IsGenericType && openGenericType.ContainsGenericParameters && !openGenericType.IsGenericTypeDefinition)
+            {
+                openGenericType = openGenericType.GetGenericTypeDefinition();
+            }
+
+            if (!openGenericType.IsGenericTypeDefinition)
+            {
+                return false;
+            }
+
+            var resolvedGenericArguments = new Type[genericArgumentTypeNames.Count];
+            var normalizedRootAssemblyName = DuckTypeAotNameHelpers.NormalizeAssemblyName(assemblyName);
+
+            for (var i = 0; i < genericArgumentTypeNames.Count; i++)
+            {
+                var (genericArgumentTypeName, genericArgumentAssemblyName) = DuckTypeAotNameHelpers.ParseTypeAndAssembly(genericArgumentTypeNames[i]);
+                var normalizedGenericArgumentAssemblyName = DuckTypeAotNameHelpers.NormalizeAssemblyName(genericArgumentAssemblyName ?? string.Empty);
+                var genericArgumentAssemblyPath = string.Empty;
+
+                if (string.IsNullOrWhiteSpace(normalizedGenericArgumentAssemblyName))
+                {
+                    normalizedGenericArgumentAssemblyName = normalizedRootAssemblyName;
+                    genericArgumentAssemblyPath = assemblyPath;
+                }
+                else if (runtimeTypeResolutionAssemblyPathsByName is not null &&
+                         runtimeTypeResolutionAssemblyPathsByName.TryGetValue(normalizedGenericArgumentAssemblyName, out var resolvedAssemblyPath))
+                {
+                    genericArgumentAssemblyPath = resolvedAssemblyPath;
+                }
+                else if (string.Equals(normalizedGenericArgumentAssemblyName, normalizedRootAssemblyName, StringComparison.OrdinalIgnoreCase))
+                {
+                    genericArgumentAssemblyPath = assemblyPath;
+                }
+
+                if (!TryResolveRuntimeType(normalizedGenericArgumentAssemblyName, genericArgumentAssemblyPath, genericArgumentTypeName, out var resolvedGenericArgumentType) ||
+                    resolvedGenericArgumentType is null)
+                {
+                    return false;
+                }
+
+                resolvedGenericArguments[i] = resolvedGenericArgumentType;
+            }
+
+            runtimeType = openGenericType.MakeGenericType(resolvedGenericArguments);
+            return true;
+        }
+
+        /// <summary>
+        /// Attempts to split a closed generic reflection name into its generic definition and top-level arguments.
+        /// </summary>
+        /// <param name="typeName">The closed generic type name value.</param>
+        /// <param name="genericTypeDefinitionName">The generic type definition name value.</param>
+        /// <param name="genericArgumentTypeNames">The top-level generic argument type names value.</param>
+        /// <returns>true when the split succeeded; otherwise, false.</returns>
+        private static bool TrySplitClosedGenericTypeName(
+            string typeName,
+            out string genericTypeDefinitionName,
+            out IReadOnlyList<string> genericArgumentTypeNames)
+        {
+            genericTypeDefinitionName = string.Empty;
+            genericArgumentTypeNames = Array.Empty<string>();
+            if (string.IsNullOrWhiteSpace(typeName))
+            {
+                return false;
+            }
+
+            var genericArgumentsStart = typeName.IndexOf("[[", StringComparison.Ordinal);
+            if (genericArgumentsStart < 0)
+            {
+                return false;
+            }
+
+            var arguments = new List<string>();
+            var bracketDepth = 0;
+            var argumentStart = -1;
+
+            for (var i = genericArgumentsStart; i < typeName.Length; i++)
+            {
+                var current = typeName[i];
+                if (current == '[')
+                {
+                    bracketDepth++;
+                    if (bracketDepth == 2)
+                    {
+                        argumentStart = i + 1;
+                    }
+
+                    continue;
+                }
+
+                if (current != ']')
+                {
+                    continue;
+                }
+
+                if (bracketDepth == 2 && argumentStart >= 0)
+                {
+                    arguments.Add(typeName.Substring(argumentStart, i - argumentStart));
+                    argumentStart = -1;
+                }
+
+                bracketDepth--;
+                if (bracketDepth == 0)
+                {
+                    genericTypeDefinitionName = typeName.Substring(0, genericArgumentsStart);
+                    genericArgumentTypeNames = arguments;
+                    return arguments.Count > 0;
+                }
             }
 
             return false;
@@ -6126,6 +6381,24 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             var createMethodSig = MethodSig.CreateStatic(new GenericVar(0), moduleDef.CorLibTypes.Object);
             var createMethodRef = new MemberRefUser(moduleDef, "Create", createMethodSig, createCacheClosedTypeSpec);
             return moduleDef.UpdateRowId(createMethodRef);
+        }
+
+        private static IMethod CreateDuckTypeCreateCacheCreateFromMethodRef(ModuleDef moduleDef, TypeSig proxyTypeSig, TypeSig targetTypeSig)
+        {
+            var importedProxyTypeSig = moduleDef.Import(proxyTypeSig);
+            var importedTargetTypeSig = moduleDef.Import(targetTypeSig);
+            var importedCreateCacheOpenType = moduleDef.Import(typeof(DuckType.CreateCache<>)) as ITypeDefOrRef
+                ?? throw new InvalidOperationException("Unable to import DuckType.CreateCache<> type.");
+
+            var importedCreateCacheOpenTypeSig = importedCreateCacheOpenType.ToTypeSig() as ClassOrValueTypeSig
+                ?? throw new InvalidOperationException("Unable to resolve DuckType.CreateCache<> signature.");
+
+            var createCacheClosedTypeSig = new GenericInstSig(importedCreateCacheOpenTypeSig, importedProxyTypeSig);
+            var createCacheClosedTypeSpec = moduleDef.UpdateRowId(new TypeSpecUser(createCacheClosedTypeSig));
+            var createFromMethodSig = MethodSig.CreateStaticGeneric(1, new GenericVar(0), new GenericMVar(0));
+            var createFromMethodRef = new MemberRefUser(moduleDef, "CreateFrom", createFromMethodSig, createCacheClosedTypeSpec);
+            var createFromMethodSpec = new MethodSpecUser(createFromMethodRef, new GenericInstMethodSig(importedTargetTypeSig));
+            return moduleDef.UpdateRowId(createFromMethodSpec);
         }
 
         /// <summary>
