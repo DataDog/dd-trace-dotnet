@@ -31,14 +31,22 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.CurlHand
         private const IntegrationId IntegrationId = Configuration.IntegrationId.HttpMessageHandler;
         private const IntegrationId CurlHandlerIntegrationId = IntegrationId.CurlHandler;
 
+#if NETCOREAPP
+        internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, System.Net.Http.HttpRequestMessage requestMessage, CancellationToken cancellationToken)
+#else
         internal static CallTargetState OnMethodBegin<TTarget, TRequest>(TTarget instance, TRequest requestMessage, CancellationToken cancellationToken)
             where TRequest : IHttpRequestMessage
+#endif
         {
             return HttpMessageHandlerCommon.OnMethodBegin(instance, requestMessage, cancellationToken, IntegrationId, implementationIntegrationId: CurlHandlerIntegrationId);
         }
 
+#if NETCOREAPP
+        internal static System.Net.Http.HttpResponseMessage OnAsyncMethodEnd<TTarget>(TTarget instance, System.Net.Http.HttpResponseMessage responseMessage, Exception exception, in CallTargetState state)
+#else
         internal static TResponse OnAsyncMethodEnd<TTarget, TResponse>(TTarget instance, TResponse responseMessage, Exception exception, in CallTargetState state)
             where TResponse : IHttpResponseMessage
+#endif
         {
             return HttpMessageHandlerCommon.OnMethodEnd(instance, responseMessage, exception, in state);
         }

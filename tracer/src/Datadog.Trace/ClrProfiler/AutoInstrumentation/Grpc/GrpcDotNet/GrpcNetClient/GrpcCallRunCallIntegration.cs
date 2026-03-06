@@ -29,8 +29,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcNetC
 [EditorBrowsable(EditorBrowsableState.Never)]
 public sealed class GrpcCallRunCallIntegration
 {
+#if NETCOREAPP
+    internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, System.Net.Http.HttpRequestMessage requestMessage, TimeSpan? timeout)
+#else
     internal static CallTargetState OnMethodBegin<TTarget, TRequest>(TTarget instance, TRequest requestMessage, TimeSpan? timeout)
         where TRequest : IHttpRequestMessage
+#endif
     {
         if (GrpcCoreApiVersionHelper.IsSupported)
         {
