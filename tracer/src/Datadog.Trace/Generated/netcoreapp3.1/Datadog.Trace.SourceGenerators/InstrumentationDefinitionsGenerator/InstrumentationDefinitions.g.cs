@@ -613,6 +613,9 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.LogsInjection.LoggerDispatchInstrumentation"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSubmission.LoggerConfigurationInstrumentation"
                     => Datadog.Trace.Configuration.IntegrationId.Serilog,
+                "Datadog.Trace.ClrProfiler.AutoInstrumentation.Serverless.CompatibilityLayer_CalculateDogStatsDPipeName_Integration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Serverless.CompatibilityLayer_CalculateTracePipeName_Integration"
+                    => Datadog.Trace.Configuration.IntegrationId.ServerlessCompat,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.ServiceStack.RedisNativeClientSendReceiveIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.ServiceStack.RedisNativeClientSendReceiveIntegration_6_2_0"
                     => Datadog.Trace.Configuration.IntegrationId.ServiceStackRedis,

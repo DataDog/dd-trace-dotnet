@@ -129,7 +129,10 @@ namespace Honeypot
             NugetPackages.Add("Datadog.Trace", new string[] { });
             NugetPackages.Add("Datadog.Trace.Manual", new string[] { });
             NugetPackages.Add("Datadog.Trace.OpenTracing", new string[] { });
-            
+
+            // Serverless
+            NugetPackages.Add("Datadog.Serverless.Compat", new string[] { });
+
             // Feature Flags
             NugetPackages.Add("Datadog.FeatureFlags.OpenFeature", new string[] { });
             NugetPackages.Add("OpenFeature", new string[] { });
