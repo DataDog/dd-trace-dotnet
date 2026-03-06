@@ -37,3 +37,5 @@ dotnet_diagnostic.CA1840.severity = error # Use Environment.CurrentManagedThread
 dotnet_diagnostic.CA1841.severity = error # Prefer Dictionary Contains methods - Calling Contains on the Keys or Values collection may often be more expensive than calling ContainsKey or ContainsValue on the dictionary itself.
 dotnet_diagnostic.CA1842.severity = error # Do not use WhenAll with a single task - Using WhenAll with a single task may result in performance loss. Await or return the task instead.
 dotnet_diagnostic.CA1843.severity = error # Do not use WhenAll with a single task - Using WaitAll with a single task may result in performance loss. Await or return the task instead.
+# dotnet_diagnostic.CA1844.severity = error # Provide memory-based overrides of async methods when subclassing Stream - Too disruptive, requires adding new method overrides
+# dotnet_diagnostic.CA1845.severity = error # Use span-based string.Concat - Requires TFM-conditional code for AsSpan
