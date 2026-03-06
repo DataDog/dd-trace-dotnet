@@ -107,7 +107,14 @@ namespace Datadog.Trace
             SpanEventsManager = spanEventsManager;
             FeatureFlags = featureFlagsModule;
 
-            SpanContextPropagator = SpanContextPropagatorFactory.GetSpanContextPropagator(settings.PropagationStyleInject, settings.PropagationStyleExtract, settings.PropagationExtractFirstOnly, settings.PropagationBehaviorExtract);
+            SpanContextPropagator = SpanContextPropagatorFactory.GetSpanContextPropagator(
+                settings.PropagationStyleInject,
+                settings.PropagationStyleExtract,
+                settings.PropagationExtractFirstOnly,
+                settings.PropagationBehaviorExtract,
+                settings.OrgPropagationGuardEnforce,
+                settings.OrgPropagationMarker,
+                settings.OrgPropagationGuardTrustedOpms);
             UpdatePerTraceSettings(settings.Manager.InitialMutableSettings);
             _settingSubscription = settings.Manager.SubscribeToChanges(changes =>
             {

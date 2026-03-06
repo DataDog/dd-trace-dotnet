@@ -1,4 +1,4 @@
-﻿// <copyright file="W3CTraceContextPropagator.cs" company="Datadog">
+// <copyright file="W3CTraceContextPropagator.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -50,6 +50,11 @@ namespace Datadog.Trace.Propagators
         // "key1=value1,dd=s:1;o:rum;p:0123456789abcdef,key2=value2"
         //                           ^
         private const string TraceStateLastParentKey = "p";
+
+        // the key used for the organization propagation marker in the key/value pairs embedded inside the "dd" value
+        // "key1=value1,dd=s:1;opm:marker,key2=value2"
+        //                     ^
+        private const string TraceStateOrganizationPropagationMarkerKey = "opm";
 
         // character bounds validation
         private const char LowerBound = '\u0020'; // decimal: 32, ' ' (space)
@@ -173,6 +178,12 @@ namespace Datadog.Trace.Propagators
                 {
                     var replacedOrigin = ReplaceCharacters(origin!, LowerBound, UpperBound, OutOfBoundsReplacement, InjectOriginReplacements);
                     sb.Append("o:").Append(replacedOrigin).Append(TraceStateDatadogPairsSeparator);
+                }
+
+                var organizationPropagationMarker = context.OrganizationPropagationMarker;
+                if (!string.IsNullOrWhiteSpace(organizationPropagationMarker))
+                {
+                    sb.Append("opm:").Append(organizationPropagationMarker).Append(TraceStateDatadogPairsSeparator);
                 }
 
                 // last parent ("p:<value>")
@@ -337,7 +348,7 @@ namespace Datadog.Trace.Propagators
             // header format: "[*,]dd=s:1;o:rum;t.dm:-4;t.usr.id:12345[,*]"
             if (string.IsNullOrWhiteSpace(header))
             {
-                return new W3CTraceState(samplingPriority: null, origin: null, lastParent: ZeroLastParent, propagatedTags: null, additionalValues: null);
+                return new W3CTraceState(samplingPriority: null, origin: null, lastParent: ZeroLastParent, propagatedTags: null, additionalValues: null, organizationPropagationMarker: null);
             }
 
             SplitTraceStateValues(header!, out var ddValues, out var additionalValues);
@@ -353,6 +364,7 @@ namespace Datadog.Trace.Propagators
             int? samplingPriority = null;
             string? origin = null;
             string? lastParent = null;
+            string? organizationPropagationMarker = null;
             var propagatedTagsBuilder = StringBuilderCache.Acquire();
 
             try
@@ -412,6 +424,10 @@ namespace Datadog.Trace.Propagators
                     {
                         lastParent = value.ToString();
                     }
+                    else if (name.Equals(TraceStateOrganizationPropagationMarkerKey, StringComparison.Ordinal))
+                    {
+                        organizationPropagationMarker = value.ToString();
+                    }
                     else if (name.StartsWith(PropagatedTagPrefix, StringComparison.Ordinal))
                     {
                         value = ReplaceCharacters(value, LowerBound, UpperBound, OutOfBoundsReplacement, ExtractPropagatedTagValueReplacements);
@@ -438,6 +454,10 @@ namespace Datadog.Trace.Propagators
                     else if (name == TraceStateLastParentKey)
                     {
                         lastParent = value;
+                    }
+                    else if (name == TraceStateOrganizationPropagationMarkerKey)
+                    {
+                        organizationPropagationMarker = value;
                     }
                     else if (name.StartsWith(PropagatedTagPrefix, StringComparison.Ordinal))
                     {
@@ -475,7 +495,7 @@ namespace Datadog.Trace.Propagators
 
                 lastParent ??= ZeroLastParent;
 
-                return new W3CTraceState(samplingPriority, origin, lastParent, propagatedTags, additionalValues);
+                return new W3CTraceState(samplingPriority, origin, lastParent, propagatedTags, additionalValues, organizationPropagationMarker);
             }
             finally
             {
@@ -658,6 +678,7 @@ namespace Datadog.Trace.Propagators
             spanContext.PropagatedTags = traceTags;
             spanContext.AdditionalW3CTraceState = traceState.AdditionalValues;
             spanContext.LastParentId = traceState.LastParent;
+            spanContext.OrganizationPropagationMarker = traceState.OrganizationPropagationMarker;
 
             context = new PropagationContext(spanContext, baggage: null);
 

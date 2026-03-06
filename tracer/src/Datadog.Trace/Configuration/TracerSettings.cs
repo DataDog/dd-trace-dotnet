@@ -501,6 +501,22 @@ namespace Datadog.Trace.Configuration
                                              },
                                              validator: null);
 
+            OrgPropagationGuardEnforce = config
+                                        .WithKeys(ConfigurationKeys.OrgPropagationGuardEnforce)
+                                        .AsBool(defaultValue: true);
+
+            OrgPropagationMarker = config
+                                  .WithKeys(ConfigurationKeys.OrgPropagationMarker)
+                                  .AsString();
+
+            var trustedOrgPropagationMarkers = config
+                                              .WithKeys(ConfigurationKeys.OrgPropagationGuardTrustedOpm)
+                                              .AsString(defaultValue: string.Empty);
+
+            OrgPropagationGuardTrustedOpms = !string.IsNullOrEmpty(trustedOrgPropagationMarkers)
+                                                 ? TrimSplitString(trustedOrgPropagationMarkers, commaSeparator)
+                                                 : [];
+
             BaggageMaximumItems = config
                                  .WithKeys(ConfigurationKeys.BaggageMaximumItems)
                                  .AsInt32(defaultValue: W3CBaggagePropagator.DefaultMaximumBaggageItems);
@@ -1050,6 +1066,21 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating the behavior when extracting propagation headers.
         /// </summary>
         internal ExtractBehavior PropagationBehaviorExtract { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether org propagation guard enforcement is enabled.
+        /// </summary>
+        internal bool OrgPropagationGuardEnforce { get; }
+
+        /// <summary>
+        /// Gets the local organization propagation marker used for guard comparisons.
+        /// </summary>
+        internal string? OrgPropagationMarker { get; }
+
+        /// <summary>
+        /// Gets the allow-list of trusted incoming organization markers.
+        /// </summary>
+        internal string[] OrgPropagationGuardTrustedOpms { get; }
 
         /// <summary>
         /// Gets the maximum number of items that can be

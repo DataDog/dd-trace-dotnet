@@ -1,4 +1,4 @@
-﻿// <copyright file="SpanContextPropagator.cs" company="Datadog">
+// <copyright file="SpanContextPropagator.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -28,17 +28,30 @@ namespace Datadog.Trace.Propagators
         private readonly IContextExtractor[] _extractors;
         private readonly bool _propagationExtractFirstOnly;
         private readonly ExtractBehavior _extractBehavior;
+        private readonly bool _orgGuardEnforce;
+        private readonly string? _orgPropagationMarker;
+        private readonly HashSet<string> _trustedOrgPropagationMarkers;
 
         internal SpanContextPropagator(
             IEnumerable<IContextInjector>? injectors,
             IEnumerable<IContextExtractor>? extractors,
             bool propagationExtractFirstValue,
-            ExtractBehavior extractBehavior = default)
+            ExtractBehavior extractBehavior = default,
+            bool orgGuardEnforce = false,
+            string? orgPropagationMarker = null,
+            string[]? trustedOrgPropagationMarkers = null)
         {
             _propagationExtractFirstOnly = propagationExtractFirstValue;
             _extractBehavior = extractBehavior;
             _injectors = injectors?.ToArray() ?? [];
             _extractors = extractors?.ToArray() ?? [];
+            _orgGuardEnforce = orgGuardEnforce;
+            _orgPropagationMarker = orgPropagationMarker;
+            _trustedOrgPropagationMarkers = new HashSet<string>(
+                (trustedOrgPropagationMarkers ?? [])
+               .Where(x => !StringUtil.IsNullOrEmpty(x))
+               .Select(x => x.Trim()),
+                StringComparer.Ordinal);
         }
 
         /// <summary>
@@ -91,6 +104,13 @@ namespace Datadog.Trace.Propagators
 
                 // trigger a sampling decision if it hasn't happened yet
                 _ = spanContext.GetOrMakeSamplingDecision();
+
+                // When we know the local marker, always propagate local identity.
+                // If we don't know it, retain any marker that came from upstream context.
+                if (!StringUtil.IsNullOrEmpty(_orgPropagationMarker))
+                {
+                    spanContext.OrganizationPropagationMarker = _orgPropagationMarker!;
+                }
             }
 
             foreach (var injector in _injectors)
@@ -162,6 +182,8 @@ namespace Datadog.Trace.Propagators
                     continue;
                 }
 
+                currentExtractedContext = EnforceOrgGuard(currentExtractedContext);
+
                 // handle extracted baggage (PropagationContext.Baggage)
                 if (currentExtractedContext.Baggage?.Count > 0)
                 {
@@ -200,6 +222,42 @@ namespace Datadog.Trace.Propagators
                 _ => new PropagationContext(cumulativeSpanContext, cumulativeBaggage, spanLinks),
 
             };
+        }
+
+        private PropagationContext EnforceOrgGuard(PropagationContext context)
+        {
+            var extractedSpanContext = context.SpanContext;
+            if (extractedSpanContext is null ||
+                !_orgGuardEnforce ||
+                StringUtil.IsNullOrEmpty(_orgPropagationMarker) ||
+                StringUtil.IsNullOrEmpty(extractedSpanContext.OrganizationPropagationMarker))
+            {
+                return context;
+            }
+
+            var inboundMarker = extractedSpanContext.OrganizationPropagationMarker!;
+            if (string.Equals(inboundMarker, _orgPropagationMarker, StringComparison.Ordinal) ||
+                _trustedOrgPropagationMarkers.Contains(inboundMarker))
+            {
+                return context;
+            }
+
+            var sanitizedSpanContext = new SpanContext(
+                traceId: extractedSpanContext.TraceId128,
+                spanId: extractedSpanContext.SpanId,
+                samplingPriority: null,
+                serviceName: null,
+                origin: null,
+                rawTraceId: extractedSpanContext.RawTraceId,
+                rawSpanId: extractedSpanContext.RawSpanId,
+                isRemote: true);
+
+            sanitizedSpanContext.PropagatedTags = new TraceTagCollection();
+            sanitizedSpanContext.AdditionalW3CTraceState = extractedSpanContext.AdditionalW3CTraceState;
+            sanitizedSpanContext.LastParentId = W3CTraceContextPropagator.ZeroLastParent;
+            sanitizedSpanContext.OrganizationPropagationMarker = extractedSpanContext.OrganizationPropagationMarker;
+
+            return new PropagationContext(sanitizedSpanContext, context.Baggage, context.Links);
         }
 
         /// <summary>
