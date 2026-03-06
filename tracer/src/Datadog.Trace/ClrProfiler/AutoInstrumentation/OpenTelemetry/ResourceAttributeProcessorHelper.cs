@@ -31,24 +31,45 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
                 return;
             }
 
-            ActivityKey key;
-            if (activityData.TryDuckCast<IW3CActivity>(out var w3cActivity) && w3cActivity.TraceId is { } traceId && w3cActivity.SpanId is { } spanId)
+            // When CallTarget-based Activity interception is enabled, look up the span via the
+            // custom property stored directly on the Activity object (no ConcurrentDictionary lookup).
+            Span? span = null;
+            if (Tracer.Instance.Settings.IsActivityInterceptionEnabled)
             {
-                key = new(traceId, spanId);
-            }
-            else
-            {
-                key = new(activity.Id);
+                if (activityData.TryDuckCast<IActivity5>(out var activity5ForInterception))
+                {
+                    span = (activity5ForInterception.GetCustomProperty("__dd_span__") as Scope)?.Span;
+                }
             }
 
-            if (key.IsValid() && ActivityHandlerCommon.ActivityMappingById.TryGetValue(key, out var activityMapping))
+            if (span is null)
+            {
+                // Fallback: legacy ConcurrentDictionary lookup for the managed ActivityListener path
+                ActivityKey key;
+                if (activityData.TryDuckCast<IW3CActivity>(out var w3cActivity) && w3cActivity.TraceId is { } traceId && w3cActivity.SpanId is { } spanId)
+                {
+                    key = new(traceId, spanId);
+                }
+                else
+                {
+                    key = new(activity.Id);
+                }
+
+                if (!key.IsValid() || !ActivityHandlerCommon.ActivityMappingById.TryGetValue(key, out var activityMapping))
+                {
+                    return;
+                }
+
+                span = activityMapping.Scope?.Span;
+            }
+
+            if (span is not null)
             {
                 if (baseProcessor.ParentProvider is not null)
                 {
                     var resourceObject = _getResourceDelegate(baseProcessor.ParentProvider);
                     if (resourceObject.TryDuckCast<IResource>(out var resource))
                     {
-                        var span = activityMapping.Scope.Span;
                         foreach (var attribute in resource.Attributes)
                         {
                             span.SetTag(attribute.Key, attribute.Value?.ToString());

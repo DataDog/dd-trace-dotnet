@@ -105,6 +105,13 @@ internal static partial class ConfigurationKeys
         public const string InjectContextIntoStoredProceduresEnabled = "DD_TRACE_INJECT_CONTEXT_INTO_STORED_PROCEDURES_ENABLED";
 
         /// <summary>
+        /// Enables CallTarget-based interception of System.Diagnostics.Activity methods (Start, Stop, AddTag,
+        /// SetTag, SetStatus, and the DisplayName setter) as a replacement for the managed ActivityListener approach.
+        /// When enabled, the managed ActivityListener is not registered. Default value is false (disabled).
+        /// </summary>
+        public const string ActivityInterceptionEnabled = "DD_TRACE_OTEL_ACTIVITY_INTERCEPTION_ENABLED";
+
+        /// <summary>
         /// Enables beta support for instrumentation via the System.Diagnostics API and the OpenTelemetry SDK.
         /// </summary>
         public const string OpenTelemetryEnabled = "DD_TRACE_OTEL_ENABLED";

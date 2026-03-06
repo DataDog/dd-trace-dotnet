@@ -31,5 +31,17 @@ namespace Datadog.Trace.Activity.DuckTypes
         IEnumerable Links { get; }
 
         object AddTag(string key, object value);
+
+        /// <summary>
+        /// Stores a named object that is associated with the current activity.
+        /// Available on DiagnosticSource 5.0+.
+        /// </summary>
+        void SetCustomProperty(string propertyName, object? propertyValue);
+
+        /// <summary>
+        /// Returns the named object that is associated with the current activity.
+        /// Available on DiagnosticSource 5.0+.
+        /// </summary>
+        object? GetCustomProperty(string propertyName);
     }
 }
