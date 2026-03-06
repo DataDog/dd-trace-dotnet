@@ -19,3 +19,6 @@ dotnet_diagnostic.CA1821.severity = error # Remove empty finalizers - Whenever y
 # dotnet_diagnostic.CA1823.severity = error # Avoid unused private fields - Too many violations (~28)
 dotnet_diagnostic.CA1824.severity = error # Mark assemblies with NeutralResourcesLanguageAttribute - The NeutralResourcesLanguage attribute informs the resource manager of the language that was used to display the resources of a neutral culture for an assembly.
 # dotnet_diagnostic.CA1825.severity = error # Avoid zero-length array allocations - Too many violations (~54)
+dotnet_diagnostic.CA1826.severity = error # Use property instead of Linq Enumerable method - Linq Enumerable method was used on a type that supports an equivalent, more efficient property.
+dotnet_diagnostic.CA1827.severity = error # Do not use Count/LongCount when Any can be used - Count or LongCount method was used where Any method would be more efficient.
+dotnet_diagnostic.CA1828.severity = error # Do not use CountAsync/LongCountAsync when AnyAsync can be used - CountAsync or LongCountAsync method was used where AnyAsync method would be more efficient.
