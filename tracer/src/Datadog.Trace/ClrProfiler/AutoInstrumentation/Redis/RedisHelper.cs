@@ -38,6 +38,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
             }
 
             string serviceName = perTraceSettings.Schema.Database.GetServiceName(DatabaseSchema.ServiceType.Redis);
+            string? serviceNameSource = perTraceSettings.Schema.Database.GetServiceNameSource(DatabaseSchema.ServiceType.Redis);
             Scope? scope = null;
 
             try
@@ -45,7 +46,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
                 var tags = perTraceSettings.Schema.Database.CreateRedisTags();
                 tags.InstrumentationName = integrationName;
 
-                scope = tracer.StartActiveInternal(OperationName, serviceName: serviceName, tags: tags);
+                scope = tracer.StartActiveInternal(OperationName, serviceName: serviceName, serviceNameSource: serviceNameSource, tags: tags);
                 int separatorIndex = rawCommand.IndexOf(' ');
                 string command;
 

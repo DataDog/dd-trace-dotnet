@@ -74,6 +74,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting
             }
 
             var serviceName = tracer.CurrentTraceSettings.GetServiceName(ServiceName);
+            var serviceNameSource = tracer.CurrentTraceSettings.GetServiceNameSource(ServiceName);
 
             Scope? scope = null;
 
@@ -81,7 +82,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting
             {
                 var clientSchema = tracer.CurrentTraceSettings.Schema.Client;
                 var tags = clientSchema.CreateRemotingClientTags();
-                scope = tracer.StartActiveInternal(ClientOperationName, serviceName: serviceName, tags: tags);
+                scope = tracer.StartActiveInternal(ClientOperationName, serviceName: serviceName, serviceNameSource: serviceNameSource, tags: tags);
                 var span = scope.Span;
 
                 var methodMessage = msg as IMethodMessage;

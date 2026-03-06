@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DbScopeFactory));
         private static bool _dbCommandCachingLogged = false;
 
-        private static Scope? CreateDbCommandScope(Tracer tracer, IDbCommand command, IntegrationId integrationId, string dbType, string operationName, string serviceName, ref DbCommandCache.TagsCacheItem tagsFromConnectionString)
+        private static Scope? CreateDbCommandScope(Tracer tracer, IDbCommand command, IntegrationId integrationId, string dbType, string operationName, string serviceName, string? serviceNameSource, ref DbCommandCache.TagsCacheItem tagsFromConnectionString)
         {
             var perTraceSettings = tracer.CurrentTraceSettings;
             if (!perTraceSettings.Settings.IsIntegrationEnabled(integrationId) || !perTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AdoNet))
@@ -64,7 +64,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 tags.SetAnalyticsSampleRate(integrationId, perTraceSettings.Settings, enabledWithGlobalSetting: false);
                 perTraceSettings.Schema.RemapPeerService(tags);
 
-                scope = tracer.StartActiveInternal(operationName, tags: tags, serviceName: serviceName);
+                scope = tracer.StartActiveInternal(operationName, tags: tags, serviceName: serviceName, serviceNameSource: serviceNameSource);
                 scope.Span.ResourceName = commandText;
                 scope.Span.Type = SpanTypes.Sql;
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(integrationId);
@@ -271,6 +271,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                         dbType: DbTypeName,
                         operationName: OperationName,
                         serviceName: GetServiceName(tracer, DbTypeName),
+                        serviceNameSource: tracer.CurrentTraceSettings.GetServiceNameSource(DbTypeName),
                         tagsFromConnectionString: ref tagsFromConnectionString);
                 }
 
@@ -287,6 +288,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                         dbType: dbTypeName,
                         operationName: operationName,
                         serviceName: GetServiceName(tracer, dbTypeName),
+                        serviceNameSource: tracer.CurrentTraceSettings.GetServiceNameSource(dbTypeName),
                         tagsFromConnectionString: ref tagsFromConnectionString);
                 }
 

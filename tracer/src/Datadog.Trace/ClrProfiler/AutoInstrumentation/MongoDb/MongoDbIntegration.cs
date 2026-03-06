@@ -63,13 +63,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
 
             var operationName = tracer.CurrentTraceSettings.Schema.Database.GetOperationName(DatabaseSchema.OperationType.MongoDb);
             var serviceName = tracer.CurrentTraceSettings.Schema.Database.GetServiceName(DatabaseSchema.ServiceType.MongoDb);
+            var serviceNameSource = tracer.CurrentTraceSettings.Schema.Database.GetServiceNameSource(DatabaseSchema.ServiceType.MongoDb);
             var tags = tracer.CurrentTraceSettings.Schema.Database.CreateMongoDbTags();
 
             Scope? scope = null;
 
             try
             {
-                scope = tracer.StartActiveInternal(operationName, serviceName: serviceName, tags: tags);
+                scope = tracer.StartActiveInternal(operationName, serviceName: serviceName, serviceNameSource: serviceNameSource, tags: tags);
                 var span = scope.Span;
                 span.Type = SpanTypes.MongoDb;
                 span.ResourceName = resourceName;
