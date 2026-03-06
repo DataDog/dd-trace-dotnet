@@ -12,10 +12,26 @@ namespace Datadog.Trace.Configuration.Schema
 {
     internal sealed class MessagingSchema
     {
+        private static readonly string[] IntegrationSourceNames =
+        [
+            "aws.eventbridge",
+            "aws.kinesis",
+            "aws.sns",
+            "aws.sqs",
+            "aws.stepfunctions",
+            "azureeventhubs",
+            "azureservicebus",
+            "ibmmq",
+            "kafka",
+            "msmq",
+            "rabbitmq",
+        ];
+
         private readonly bool _useV0Tags;
         private readonly string[] _inboundOperationNames;
         private readonly string[] _outboundOperationNames;
         private readonly string[] _serviceNames;
+        private readonly string?[] _serviceNameSources;
 
         public MessagingSchema(SchemaVersion version, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled, string defaultServiceName, IReadOnlyDictionary<string, string>? serviceNameMappings)
         {
@@ -71,6 +87,13 @@ namespace Datadog.Trace.Configuration.Schema
                     _serviceNames[(int)system] = mappedName;
                 }
             }
+
+            // Calculate service name sources: non-null when service name differs from default
+            _serviceNameSources = new string[_serviceNames.Length];
+            for (var i = 0; i < _serviceNames.Length; i++)
+            {
+                _serviceNameSources[i] = _serviceNames[i] != defaultServiceName ? IntegrationSourceNames[i] : null;
+            }
         }
 
         /// <summary>
@@ -112,6 +135,8 @@ namespace Datadog.Trace.Configuration.Schema
         public string GetOutboundOperationName(OperationType operationType) => _outboundOperationNames[(int)operationType];
 
         public string GetServiceName(ServiceType messagingSystem) => _serviceNames[(int)messagingSystem];
+
+        public string? GetServiceNameSource(ServiceType messagingSystem) => _serviceNameSources[(int)messagingSystem];
 
         public KafkaTags CreateKafkaTags(string spanKind)
             => _useV0Tags ? new KafkaTags(spanKind) : new KafkaV1Tags(spanKind);

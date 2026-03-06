@@ -47,9 +47,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcNetC
 
                 var operationName = clientSchema.GetOperationNameForProtocol(ClientSchema.Protocol.Grpc);
                 var serviceName = clientSchema.GetServiceName(ClientSchema.Component.Grpc);
+                var serviceNameSource = clientSchema.GetServiceNameSource(ClientSchema.Component.Grpc);
                 tracer.CurrentTraceSettings.Schema.RemapPeerService(tags);
 
-                scope = tracer.StartActiveInternal(operationName, tags: tags, serviceName: serviceName, startTime: null);
+                scope = tracer.StartActiveInternal(operationName, tags: tags, serviceName: serviceName, serviceNameSource: serviceNameSource, startTime: null);
 
                 var span = scope.Span;
                 span.Type = SpanTypes.Grpc;

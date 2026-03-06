@@ -82,6 +82,7 @@ namespace Datadog.Trace.Agent.MessagePack
         private readonly byte[] _originNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Origin);
         private readonly byte[] _lastParentIdBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.LastParentId);
         private readonly byte[] _baseServiceNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.BaseService);
+        private readonly byte[] _serviceNameSourceNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.ServiceNameSource);
 
         // numeric tags
         private readonly byte[] _metricsBytes = StringEncoding.UTF8.GetBytes("metrics");
@@ -608,6 +609,15 @@ namespace Datadog.Trace.Agent.MessagePack
                     offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _baseServiceNameBytes);
                     offset += MessagePackBinary.WriteRaw(ref bytes, offset, serviceNameRawBytes);
                 }
+            }
+
+            // add _dd.svc_src tag to indicate which integration set the service name
+            var serviceNameSource = span.Context.ServiceNameSource;
+            if (serviceNameSource is not null)
+            {
+                count++;
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _serviceNameSourceNameBytes);
+                offset += MessagePackBinary.WriteString(ref bytes, offset, serviceNameSource);
             }
 
             // Process tags will be sent only once per buffer/payload (one payload can contain many chunks from different traces)

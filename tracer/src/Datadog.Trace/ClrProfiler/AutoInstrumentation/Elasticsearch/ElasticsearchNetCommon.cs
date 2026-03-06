@@ -57,13 +57,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch
 
             var operationName = perTraceSettings.Schema.Database.GetOperationName(DatabaseSchema.OperationType.Elasticsearch);
             var serviceName = perTraceSettings.Schema.Database.GetServiceName(DatabaseSchema.ServiceType.Elasticsearch);
+            var serviceNameSource = perTraceSettings.Schema.Database.GetServiceNameSource(DatabaseSchema.ServiceType.Elasticsearch);
             tags = perTraceSettings.Schema.Database.CreateElasticsearchTags();
 
             Scope? scope = null;
 
             try
             {
-                scope = tracer.StartActiveInternal(operationName, serviceName: serviceName, tags: tags);
+                scope = tracer.StartActiveInternal(operationName, serviceName: serviceName, serviceNameSource: serviceNameSource, tags: tags);
                 var span = scope.Span;
                 span.ResourceName = requestName ?? operationName;
                 span.Type = SpanType;

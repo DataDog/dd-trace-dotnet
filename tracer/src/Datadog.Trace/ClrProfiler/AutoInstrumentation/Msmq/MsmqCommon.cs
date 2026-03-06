@@ -34,6 +34,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
             {
                 string operationName = GetOperationName(tracer, spanKind);
                 string serviceName = perTraceSettings.Schema.Messaging.GetServiceName(MessagingSchema.ServiceType.Msmq);
+                string? serviceNameSource = perTraceSettings.Schema.Messaging.GetServiceNameSource(MessagingSchema.ServiceType.Msmq);
                 MsmqTags tags = perTraceSettings.Schema.Messaging.CreateMsmqTags(spanKind);
 
                 tags.Command = command;
@@ -67,7 +68,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
                     tags.MessageWithTransaction = isMessagePartOfTransaction.ToString();
                 }
 
-                scope = tracer.StartActiveInternal(operationName, serviceName: serviceName, tags: tags);
+                scope = tracer.StartActiveInternal(operationName, serviceName: serviceName, serviceNameSource: serviceNameSource, tags: tags);
 
                 var span = scope.Span;
                 span.Type = SpanTypes.Queue;
