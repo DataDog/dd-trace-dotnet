@@ -2130,6 +2130,17 @@ supportedConfigurations:
       Configuration key for specifying a timeout in milliseconds to the execution of the query string obfuscation regex
       Default value is 200ms
       <seealso cref="Datadog.Trace.Configuration.TracerSettings.ObfuscationQueryStringRegexTimeout"/>
+  DD_TRACE_OTEL_ACTIVITY_INTERCEPTION_ENABLED:
+  - implementation: A
+    type: boolean
+    default: 'false'
+    product: FeatureFlags
+    const_name: ActivityInterceptionEnabled
+    documentation: |-
+      Enables CallTarget-based interception of System.Diagnostics.Activity methods (Start, Stop, AddTag,
+      SetTag, SetStatus, and the DisplayName setter) as a replacement for the managed ActivityListener approach.
+      When enabled, the managed ActivityListener is not registered, and Activity lifecycle is tracked via
+      the native CallTarget instrumentation framework. Default value is false (disabled).
   DD_TRACE_OTEL_ENABLED:
   - implementation: B
     type: boolean

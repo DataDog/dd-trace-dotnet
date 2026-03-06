@@ -123,6 +123,10 @@ namespace Datadog.Trace.Configuration
                                        .AsBoolResult()
                                        .OverrideWith(in otelActivityListenerEnabled, ErrorLog, defaultValue: false);
 
+            IsActivityInterceptionEnabled = config
+                                           .WithKeys(ConfigurationKeys.FeatureFlags.ActivityInterceptionEnabled)
+                                           .AsBool(defaultValue: false);
+
             PeerServiceTagsEnabled = config
                .WithKeys(ConfigurationKeys.PeerServiceDefaultsEnabled)
                .AsBool(defaultValue: false);
@@ -1192,6 +1196,13 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating whether the activity listener is enabled or not.
         /// </summary>
         internal bool IsActivityListenerEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether CallTarget-based Activity interception is enabled.
+        /// When true, the managed ActivityListener is skipped and Activity lifecycle is tracked
+        /// via the native CallTarget instrumentation framework instead.
+        /// </summary>
+        internal bool IsActivityInterceptionEnabled { get; }
 
         /// <summary>
         /// Gets a value indicating whether data streams monitoring is enabled or not.

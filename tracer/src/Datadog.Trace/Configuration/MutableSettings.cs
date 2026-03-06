@@ -638,9 +638,9 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         var disabledIntegrationNames = initialSettings.DisabledIntegrationNames;
         if (disabledIntegrationNameResult.ConfigurationResult is { IsValid: true, Result: var stringResult })
         {
-            // If Activity support is enabled, we shouldn't enable the OTel listener
+            // If Activity support is enabled (via managed listener or CallTarget interception), keep the OpenTelemetry integration enabled
             var disabledIntegrationNamesArray = stringResult.Split([';'], StringSplitOptions.RemoveEmptyEntries);
-            disabledIntegrationNames = tracerSettings.IsActivityListenerEnabled
+            disabledIntegrationNames = (tracerSettings.IsActivityListenerEnabled || tracerSettings.IsActivityInterceptionEnabled)
                                            ? new HashSet<string>(disabledIntegrationNamesArray, StringComparer.OrdinalIgnoreCase)
                                            : new HashSet<string>([..disabledIntegrationNamesArray, nameof(IntegrationId.OpenTelemetry)], StringComparer.OrdinalIgnoreCase);
         }
@@ -978,8 +978,8 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
                                                   .AsString()
                                                  ?.Split([';'], StringSplitOptions.RemoveEmptyEntries) ?? [];
 
-        // If Activity support is enabled, we shouldn't enable the OTel listener
-        var disabledIntegrationNames = tracerSettings.IsActivityListenerEnabled
+        // If Activity support is enabled (via managed listener or CallTarget interception), keep the OpenTelemetry integration enabled
+        var disabledIntegrationNames = (tracerSettings.IsActivityListenerEnabled || tracerSettings.IsActivityInterceptionEnabled)
                                            ? new HashSet<string>(disabledIntegrationNamesArray, StringComparer.OrdinalIgnoreCase)
                                            : new HashSet<string>([..disabledIntegrationNamesArray, nameof(IntegrationId.OpenTelemetry)], StringComparer.OrdinalIgnoreCase);
 

@@ -38,6 +38,18 @@ namespace Datadog.Trace.Activity
             AgentConvertSpan(activity, span);
         }
 
+        /// <summary>
+        /// Extracts ActivityLinks and ActivityEvents from an activity and adds them to the span.
+        /// Called from ActivityStopIntegration when using CallTarget-based Activity interception,
+        /// because links and events are typically added by the OTel SDK at stop time.
+        /// </summary>
+        internal static void ExtractLinksAndEventsFromActivity<TInner>(TInner activity5, Span span)
+            where TInner : IActivity5
+        {
+            ExtractActivityLinks(span, activity5);
+            ExtractActivityEvents(span, activity5);
+        }
+
         // See trace agent func convertSpan: https://github.com/DataDog/datadog-agent/blob/67c353cff1a6a275d7ce40059aad30fc6a3a0bc1/pkg/trace/api/otlp.go#L459
         private static void AgentConvertSpan<TInner>(TInner activity, Span span)
             where TInner : IActivity
