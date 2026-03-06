@@ -211,6 +211,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity
 
             // Bi-directional link: Activity → Scope (via custom property — zero-alloc cached delegate)
             ActivityCustomPropertyAccessor<TTarget>.SetScope(instance, scope);
+
+            // Ensure IsAllDataRequested is true so that user code guarded by
+            // `if (activity.IsAllDataRequested) { activity.AddTag(...); }` will actually run.
+            // The managed ActivityListener did this implicitly by returning AllData from its Sample
+            // callback. Since we skip the managed listener when interception is enabled, we must
+            // set it here, after Start() has populated the Activity's IDs.
+            activity5.IsAllDataRequested = true;
         }
     }
 }
