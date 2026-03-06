@@ -22,3 +22,4 @@ dotnet_diagnostic.CA1824.severity = error # Mark assemblies with NeutralResource
 dotnet_diagnostic.CA1826.severity = error # Use property instead of Linq Enumerable method - Linq Enumerable method was used on a type that supports an equivalent, more efficient property.
 dotnet_diagnostic.CA1827.severity = error # Do not use Count/LongCount when Any can be used - Count or LongCount method was used where Any method would be more efficient.
 dotnet_diagnostic.CA1828.severity = error # Do not use CountAsync/LongCountAsync when AnyAsync can be used - CountAsync or LongCountAsync method was used where AnyAsync method would be more efficient.
+dotnet_diagnostic.CA1829.severity = error # Use Length/Count property instead of Enumerable.Count method - Count Linq method was used on a type that supports an equivalent, more efficient Length or Count property.
