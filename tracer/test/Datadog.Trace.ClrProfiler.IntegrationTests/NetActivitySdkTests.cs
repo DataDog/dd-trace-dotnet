@@ -89,5 +89,47 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 await telemetry.AssertIntegrationEnabledAsync(IntegrationId.OpenTelemetry);
             }
         }
+
+        /// <summary>
+        /// Validates that CallTarget-based Activity interception produces spans identical to the
+        /// managed ActivityListener approach. Uses the same snapshot as <see cref="SubmitsTraces"/>
+        /// to assert functional equivalence between the two approaches.
+        /// </summary>
+        [SkippableFact]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        public async Task SubmitsTracesWithInterception()
+        {
+            SetEnvironmentVariable("DD_TRACE_OTEL_ACTIVITY_INTERCEPTION_ENABLED", "true");
+            SetEnvironmentVariable("DD_TRACE_DISABLED_ACTIVITY_SOURCES", "Disabled.By.ExactMatch,*.By.Glob*");
+
+            using (var telemetry = this.ConfigureTelemetry())
+            using (var agent = EnvironmentHelper.GetMockAgent())
+            using (await RunSampleAndWaitForExit(agent))
+            {
+                const int expectedSpanCount = 53;
+                var spans = await agent.WaitForSpansAsync(expectedSpanCount);
+
+                using var s = new AssertionScope();
+                spans.Count.Should().Be(expectedSpanCount);
+
+                var myServiceNameSpans = spans.Where(s => s.Service == "MyServiceName");
+
+                ValidateIntegrationSpans(myServiceNameSpans, metadataSchemaVersion: "v0", expectedServiceName: "MyServiceName", isExternalSpan: false);
+                var settings = VerifyHelper.GetSpanVerifierSettings();
+                var traceStatePRegex = new Regex("p:[0-9a-fA-F]+");
+                var traceIdRegexHigh = new Regex("TraceIdLow: [0-9]+");
+                var traceIdRegexLow = new Regex("TraceIdHigh: [0-9]+");
+                settings.AddRegexScrubber(traceStatePRegex, "p:TsParentId");
+                settings.AddRegexScrubber(traceIdRegexHigh, "TraceIdHigh: LinkIdHigh");
+                settings.AddRegexScrubber(traceIdRegexLow, "TraceIdLow: LinkIdLow");
+                settings.AddRegexScrubber(_timeUnixNanoRegex, @"time_unix_nano"":<DateTimeOffset.Now>");
+                await VerifyHelper.VerifySpans(spans, settings)
+                                  .UseFileName(nameof(NetActivitySdkTests))
+                                  .DisableRequireUniquePrefix();
+
+                await telemetry.AssertIntegrationEnabledAsync(IntegrationId.OpenTelemetry);
+            }
+        }
     }
 }
