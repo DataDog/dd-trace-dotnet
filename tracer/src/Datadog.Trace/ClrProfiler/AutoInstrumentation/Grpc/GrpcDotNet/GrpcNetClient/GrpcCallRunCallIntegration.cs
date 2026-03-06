@@ -29,15 +29,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcNetC
 [EditorBrowsable(EditorBrowsableState.Never)]
 public sealed class GrpcCallRunCallIntegration
 {
-    /// <summary>
-    /// OnMethodBegin callback
-    /// </summary>
-    /// <typeparam name="TTarget">Type of the target</typeparam>
-    /// <typeparam name="TRequest">Type of the request</typeparam>
-    /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
-    /// <param name="requestMessage">HttpRequest message instance</param>
-    /// <param name="timeout">The status (Nullable)</param>
-    /// <returns>Calltarget state value</returns>
     internal static CallTargetState OnMethodBegin<TTarget, TRequest>(TTarget instance, TRequest requestMessage, TimeSpan? timeout)
         where TRequest : IHttpRequestMessage
     {
@@ -50,16 +41,6 @@ public sealed class GrpcCallRunCallIntegration
         return CallTargetState.GetDefault();
     }
 
-    /// <summary>
-    /// OnAsyncMethodEnd callback
-    /// </summary>
-    /// <typeparam name="TTarget">Type of the target</typeparam>
-    /// <typeparam name="TResponse">Type of the response, in an async scenario will be T of Task of T</typeparam>
-    /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
-    /// <param name="response">Response instance</param>
-    /// <param name="exception">Exception instance in case the original code threw an exception.</param>
-    /// <param name="state">Calltarget state value</param>
-    /// <returns>A response value, in an async scenario will be T of Task of T</returns>
     internal static TResponse OnAsyncMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, Exception exception, in CallTargetState state)
     {
         // Not setting exception here as it will always be null (any error would be stored in TCS on the instance)
