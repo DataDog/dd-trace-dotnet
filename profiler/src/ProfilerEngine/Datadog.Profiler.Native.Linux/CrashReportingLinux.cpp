@@ -9,6 +9,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <iostream>
 
 #include "FfiHelper.h"
 #include <fstream>
@@ -18,6 +19,7 @@
 #include <sstream>
 #include <string.h>
 #include <sys/ptrace.h>
+#include <sys/uio.h>
 #include <sys/wait.h>
 
 extern "C"
@@ -139,25 +141,103 @@ std::vector<ModuleInfo> CrashReportingLinux::GetModules()
     return modules;
 }
 
-std::vector<StackFrame> CrashReportingLinux::GetThreadFrames(int32_t tid, ResolveManagedCallstack resolveManagedCallstack, void* context)
+#define SET_REG(cursor, reg, value, fallback)             \
+    do {                                                  \
+        std::cerr << "[native] Setting register " << #reg << " to " << (value) << std::endl; \
+        if (unw_set_reg(&(cursor), (reg), (value)) != 0)  \
+        {                                                 \
+            std::cerr << "[native] Failed to set register " << #reg << " to " << (value) << std::endl; \
+            return {(fallback)};                          \
+        }                                                 \
+    } while (0)
+
+std::optional<unw_cursor_t> create_cursor_from_context(uint32_t pid, unw_addr_space_t& addressSpace, void* libunwindContext, void* threadContext)
+{
+    unw_cursor_t cursor;
+    if (unw_init_remote(&cursor, addressSpace, libunwindContext) != 0)
+    {
+        std::cerr << "Failed to initialize remote cursor" << std::endl;
+        return std::nullopt;
+    }
+
+    if (threadContext == nullptr)
+    {
+        std::cerr << "[native] Thread context is not provided" << std::endl;
+        return {cursor};
+    }
+
+    ucontext_t remoteCtx;
+    // threadContext is a pointer in the remote process address space pointing at the thread ucontext_t
+    // read it via process_vm_readv (more efficient than ptrace for bulk reads)
+    struct iovec local  = { .iov_base = &remoteCtx, .iov_len = sizeof(remoteCtx) };
+    struct iovec remote = { .iov_base = threadContext, .iov_len = sizeof(remoteCtx) };
+
+    std::cerr << "[native] Reading thread context" << std::endl;
+    if (process_vm_readv(pid, &local, 1, &remote, 1, 0) == sizeof(remoteCtx))
+    {
+        std::cerr << "[native] Thread context read successfully" << std::endl;
+        unw_cursor_t newCursor = cursor;
+
+        // Override cursor with the register state from the crash point.
+        // This skips the signal frame entirely, which is required on
+        // musl/Alpine where libunwind cannot unwind past the signal trampoline.
+#if defined(AMD64)
+        SET_REG(newCursor, UNW_REG_IP, remoteCtx.uc_mcontext.gregs[REG_RIP], cursor);
+        SET_REG(newCursor, UNW_REG_SP, remoteCtx.uc_mcontext.gregs[REG_RSP], cursor);
+        SET_REG(newCursor, UNW_X86_64_RBP, remoteCtx.uc_mcontext.gregs[REG_RBP], cursor);
+        // Callee-saved registers (DWARF unwind rules may reference these)
+        SET_REG(newCursor, UNW_X86_64_RBX, remoteCtx.uc_mcontext.gregs[REG_RBX], cursor);
+        SET_REG(newCursor, UNW_X86_64_R12, remoteCtx.uc_mcontext.gregs[REG_R12], cursor);
+        SET_REG(newCursor, UNW_X86_64_R13, remoteCtx.uc_mcontext.gregs[REG_R13], cursor);
+        SET_REG(newCursor, UNW_X86_64_R14, remoteCtx.uc_mcontext.gregs[REG_R14], cursor);
+        SET_REG(newCursor, UNW_X86_64_R15, remoteCtx.uc_mcontext.gregs[REG_R15], cursor);
+#elif defined(ARM64)
+        SET_REG(newCursor, UNW_REG_IP, remoteCtx.uc_mcontext.pc, cursor);
+        SET_REG(newCursor, UNW_REG_SP, remoteCtx.uc_mcontext.sp, cursor);
+        SET_REG(newCursor, UNW_AARCH64_X29, remoteCtx.uc_mcontext.regs[29], cursor); // FP
+        SET_REG(newCursor, UNW_AARCH64_X30, remoteCtx.uc_mcontext.regs[30], cursor); // LR
+        // Callee-saved registers (DWARF unwind rules may reference these)
+        SET_REG(newCursor, UNW_AARCH64_X19, remoteCtx.uc_mcontext.regs[19], cursor);
+        SET_REG(newCursor, UNW_AARCH64_X20, remoteCtx.uc_mcontext.regs[20], cursor);
+        SET_REG(newCursor, UNW_AARCH64_X21, remoteCtx.uc_mcontext.regs[21], cursor);
+        SET_REG(newCursor, UNW_AARCH64_X22, remoteCtx.uc_mcontext.regs[22], cursor);
+        SET_REG(newCursor, UNW_AARCH64_X23, remoteCtx.uc_mcontext.regs[23], cursor);
+        SET_REG(newCursor, UNW_AARCH64_X24, remoteCtx.uc_mcontext.regs[24], cursor);
+        SET_REG(newCursor, UNW_AARCH64_X25, remoteCtx.uc_mcontext.regs[25], cursor);
+        SET_REG(newCursor, UNW_AARCH64_X26, remoteCtx.uc_mcontext.regs[26], cursor);
+        SET_REG(newCursor, UNW_AARCH64_X27, remoteCtx.uc_mcontext.regs[27], cursor);
+        SET_REG(newCursor, UNW_AARCH64_X28, remoteCtx.uc_mcontext.regs[28], cursor);
+#else
+#error "Unsupported architecture"
+#endif
+        return {newCursor};
+    }
+    std::cerr << "[native] Failed to read thread context. Returning original cursor" << std::endl;
+    return {cursor};
+}
+
+std::vector<StackFrame> CrashReportingLinux::GetThreadFrames(int32_t tid, void* threadContext, ResolveManagedCallstack resolveManagedCallstack, void* context)
 {
     std::vector<StackFrame> frames;
 
     auto libunwindContext = _UPT_create(tid);
 
-    unw_cursor_t cursor;
+    std::cerr << "[native] Creating cursor from context" << std::endl;
+    auto cursorOpt = create_cursor_from_context(tid, _addressSpace, libunwindContext, threadContext);
 
-    auto result = unw_init_remote(&cursor, _addressSpace, libunwindContext);
-
-    if (result != 0)
+    if (!cursorOpt.has_value())
     {
+        std::cerr << "[native] Failed to create cursor from context" << std::endl;
         return frames;
     }
+    
+    unw_cursor_t& cursor = cursorOpt.value();
 
     // Get the managed callstack
     ResolveMethodData* managedCallstack;
     int32_t numberOfManagedFrames;
 
+    std::cerr << "[native] Resolving managed callstack" << std::endl;
     auto resolved = resolveManagedCallstack(tid, context, &managedCallstack, &numberOfManagedFrames);
 
     std::vector<StackFrame> managedFrames;
@@ -184,11 +264,16 @@ std::vector<StackFrame> CrashReportingLinux::GetThreadFrames(int32_t tid, Resolv
 
     unw_word_t ip;
     unw_word_t sp;
-
+    bool first = true;
     // Walk the stack
     do
     {
         unw_get_reg(&cursor, UNW_REG_IP, &ip);
+        if (first)
+        {
+            first = false;  
+            std::cerr << "[native] Retrieved IP from cursor: " << std::hex << ip << std::endl;
+        }
         unw_get_reg(&cursor, UNW_REG_SP, &sp);
 
         StackFrame stackFrame{};
@@ -205,7 +290,7 @@ std::vector<StackFrame> CrashReportingLinux::GetThreadFrames(int32_t tid, Resolv
             bool hasName = false;
 
             unw_proc_info_t procInfo;
-            result = unw_get_proc_info(&cursor, &procInfo);
+            auto result = unw_get_proc_info(&cursor, &procInfo);
 
             if (result == 0)
             {
