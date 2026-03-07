@@ -289,6 +289,8 @@ namespace Datadog.Trace.DuckTyping.Tests
 
             result.CanCreate().Should().BeTrue();
             result.CreateInstance<IForwardProxy>(target).Value.Should().Be("hello");
+            DuckTypeAotEngine.DirectObjectActivatorHandleCount.Should().Be(0);
+            DuckTypeAotEngine.AdaptedTypedActivatorHandleCount.Should().Be(1);
         }
 
         [Fact]
@@ -308,6 +310,52 @@ namespace Datadog.Trace.DuckTyping.Tests
             var result = DuckTypeAotEngine.GetOrCreateReverseProxyType(typeof(IReverseProxy), typeof(ReverseTarget));
             result.CanCreate().Should().BeTrue();
             result.CreateInstance<IReverseProxy>(new ReverseTarget("reverse")).Value.Should().Be("reverse");
+            DuckTypeAotEngine.DirectObjectActivatorHandleCount.Should().Be(0);
+            DuckTypeAotEngine.AdaptedTypedActivatorHandleCount.Should().Be(1);
+        }
+
+        [Fact]
+        public void RegisterForwardProxyUsingObjectBridgeMethodHandleAndResolve()
+        {
+            var activatorMethod = typeof(DuckTypeAotEngineTests).GetMethod(
+                nameof(CreateForwardProxyWithObjectMethodHandle),
+                BindingFlags.NonPublic | BindingFlags.Static);
+            activatorMethod.Should().NotBeNull();
+
+            DuckTypeAotEngine.RegisterProxy(
+                typeof(IForwardProxy),
+                typeof(ForwardTarget),
+                typeof(ForwardGeneratedProxy),
+                activatorMethod!.MethodHandle);
+
+            var target = new ForwardTarget("hello");
+            var result = DuckTypeAotEngine.GetOrCreateProxyType(typeof(IForwardProxy), typeof(ForwardTarget));
+
+            result.CanCreate().Should().BeTrue();
+            result.CreateInstance<IForwardProxy>(target).Value.Should().Be("hello");
+            DuckTypeAotEngine.DirectObjectActivatorHandleCount.Should().Be(1);
+            DuckTypeAotEngine.AdaptedTypedActivatorHandleCount.Should().Be(0);
+        }
+
+        [Fact]
+        public void RegisterReverseProxyUsingObjectBridgeMethodHandleAndResolve()
+        {
+            var activatorMethod = typeof(DuckTypeAotEngineTests).GetMethod(
+                nameof(CreateReverseProxyWithObjectMethodHandle),
+                BindingFlags.NonPublic | BindingFlags.Static);
+            activatorMethod.Should().NotBeNull();
+
+            DuckTypeAotEngine.RegisterReverseProxy(
+                typeof(IReverseProxy),
+                typeof(ReverseTarget),
+                typeof(ReverseGeneratedProxy),
+                activatorMethod!.MethodHandle);
+
+            var result = DuckTypeAotEngine.GetOrCreateReverseProxyType(typeof(IReverseProxy), typeof(ReverseTarget));
+            result.CanCreate().Should().BeTrue();
+            result.CreateInstance<IReverseProxy>(new ReverseTarget("reverse")).Value.Should().Be("reverse");
+            DuckTypeAotEngine.DirectObjectActivatorHandleCount.Should().Be(1);
+            DuckTypeAotEngine.AdaptedTypedActivatorHandleCount.Should().Be(0);
         }
 
         [Fact]
@@ -821,6 +869,11 @@ namespace Datadog.Trace.DuckTyping.Tests
             return new ForwardGeneratedProxy(instance);
         }
 
+        private static IForwardProxy CreateForwardProxyWithObjectMethodHandle(object? instance)
+        {
+            return new ForwardGeneratedProxy((ForwardTarget)instance!);
+        }
+
         private static IForwardProxy CreateForwardProxyWithMethodHandleAndExtraParameter(object? instance, int ignored)
         {
             return new ForwardGeneratedProxy((ForwardTarget)instance!);
@@ -829,6 +882,11 @@ namespace Datadog.Trace.DuckTyping.Tests
         private static IReverseProxy CreateReverseProxyWithMethodHandle(ReverseTarget instance)
         {
             return new ReverseGeneratedProxy(instance);
+        }
+
+        private static IReverseProxy CreateReverseProxyWithObjectMethodHandle(object? instance)
+        {
+            return new ReverseGeneratedProxy((ReverseTarget)instance!);
         }
 
         private static object CreateSingleRegistryConflictProxyInstance(object? instance)
