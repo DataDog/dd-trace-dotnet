@@ -1,4 +1,4 @@
-﻿// <copyright file="OtlpMetricsSerializer.cs" company="Datadog">
+// <copyright file="OtlpMetricsSerializer.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -28,12 +28,13 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
         private const int Fixed64 = 1;
         private const int LengthDelimited = 2;
 
-        private readonly TracerSettings _settings;
+        private readonly OtlpTemporalityPreference _otlpMetricsTemporalityPreference;
         private byte[] _cachedResourceData;
 
-        public OtlpMetricsSerializer(TracerSettings settings)
+        public OtlpMetricsSerializer(TracerSettings settings, OtlpTemporalityPreference otlpMetricsTemporalityPreference)
         {
-            _settings = settings;
+            _otlpMetricsTemporalityPreference = otlpMetricsTemporalityPreference;
+
             UpdateCachedResourceData(settings.Manager.InitialMutableSettings);
             settings.Manager.SubscribeToChanges(changes =>
             {
@@ -164,7 +165,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
             {
                 foreach (var tag in settings.GlobalTags)
                 {
-                    if (IsHandledResourceAttribute(tag.Key))
+                    if (OtlpMapper.IsHandledResourceAttribute(tag.Key))
                     {
                         continue;
                     }
@@ -177,20 +178,6 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
             }
 
             return buffer.ToArray();
-        }
-
-        /// <summary>
-        /// Checks if a tag key represents a resource attribute that has already been handled
-        /// </summary>
-        private bool IsHandledResourceAttribute(string tagKey)
-        {
-            return tagKey.Equals("service", StringComparison.OrdinalIgnoreCase) ||
-                   tagKey.Equals("env", StringComparison.OrdinalIgnoreCase) ||
-                   tagKey.Equals("version", StringComparison.OrdinalIgnoreCase) ||
-                   tagKey.Equals("service.name", StringComparison.OrdinalIgnoreCase) ||
-                   tagKey.Equals("deployment.environment.name", StringComparison.OrdinalIgnoreCase) ||
-                   tagKey.Equals("deployment.environment", StringComparison.OrdinalIgnoreCase) ||
-                   tagKey.Equals("service.version", StringComparison.OrdinalIgnoreCase);
         }
 
         private byte[] SerializeScopeMetrics(IReadOnlyList<MetricPoint> metrics)
@@ -360,7 +347,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
             }
             else
             {
-                temporality = _settings.OtlpMetricsTemporalityPreference switch
+                temporality = _otlpMetricsTemporalityPreference switch
                 {
                     OtlpTemporalityPreference.Delta => AggregationTemporality.Delta,
                     OtlpTemporalityPreference.LowMemory => AggregationTemporality.Delta,
@@ -408,7 +395,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
                 writer.Write(dataPointData);
             }
 
-            var temporality = _settings.OtlpMetricsTemporalityPreference switch
+            var temporality = _otlpMetricsTemporalityPreference switch
             {
                 OtlpTemporalityPreference.Delta => AggregationTemporality.Delta,
                 OtlpTemporalityPreference.LowMemory => AggregationTemporality.Delta,
@@ -510,20 +497,19 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
                 writer.Write((ulong)metric.SnapshotBucketCounts[i]);
             }
 
-            var bounds = MetricPoint.DefaultHistogramBounds;
-            for (int i = 0; i < bounds.Length; i++)
+            for (int i = 0; i < metric.SnapshotBucketBounds.Length; i++)
             {
                 WriteTag(writer, FieldNumbers.HistogramDataPointExplicitBounds, Fixed64);
-                writer.Write(bounds[i]);
+                writer.Write(metric.SnapshotBucketBounds[i]);
             }
 
-            if (metric.SnapshotCount > 0)
+            if (metric.SnapshotCount > 0 & metric.SnapshotMin != double.NaN)
             {
                 WriteTag(writer, FieldNumbers.HistogramDataPointMin, Fixed64);
                 writer.Write(metric.SnapshotMin);
             }
 
-            if (metric.SnapshotCount > 0)
+            if (metric.SnapshotCount > 0 & metric.SnapshotMax != double.NaN)
             {
                 WriteTag(writer, FieldNumbers.HistogramDataPointMax, Fixed64);
                 writer.Write(metric.SnapshotMax);
