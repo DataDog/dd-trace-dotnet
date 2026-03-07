@@ -360,6 +360,26 @@ The tracer runs in-process with customer applications and must have minimal perf
   - Example: Managed loader tests use `MockEnvironmentVariableProvider` (see `tracer/test/Datadog.Trace.Tests/ClrProfiler/Managed/Loader/`)
 - Prefer using `[Theory]` with input data rather than duplicating tests
 
+## CI Reliability Guardrails (recent learnings)
+
+Use this checklist before pushing changes that affect DuckTyping, tooling, or configuration contracts:
+
+1. **Cross-TFM compile sanity for tooling changes**
+   - If you modify `Datadog.Trace.Tools.Runner` or related AOT tooling code, validate compilation across relevant TFMs (especially `net5.0`), not only the local default TFM.
+   - Avoid introducing framework-specific attribute usage without TFM guards (for example code-analysis attributes that can conflict on older TFMs).
+
+2. **Config key contract updates**
+   - Any new `DD_*`, `_DD_*`, `DATADOG_*`, or `OTEL_*` key must be accounted for in telemetry configuration contract tests.
+   - Either register the key in intake normalization rules or explicitly exclude it when it is internal/test-only.
+
+3. **Local test execution concurrency**
+   - Do not run multiple `dotnet test` processes in parallel for projects that use Fody weaving, as file-lock contention can create false failures.
+   - Prefer serialized execution when touching shared build outputs.
+
+4. **Failure triage discipline**
+   - For Azure failures, always extract the exact failing test/error from timeline/logs before implementing a fix.
+   - Avoid assumption-based fixes; patch only after confirming the primary failure signature.
+
 ## Commit & Pull Request Guidelines
 
 **Commits:**

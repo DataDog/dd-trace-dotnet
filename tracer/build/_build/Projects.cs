@@ -22,6 +22,7 @@ public static class Projects
     public const string BenchmarksOpenTelemetryInstrumentedApi = "Benchmarks.OpenTelemetry.InstrumentedApi";
 
     public const string TraceTests = "Datadog.Trace.Tests";
+    public const string DuckTypingTests = "Datadog.Trace.DuckTyping.Tests";
     public const string TraceIntegrationTests = "Datadog.Trace.IntegrationTests";
     public const string FleetInstallerTests = "Datadog.FleetInstaller.IntegrationTests";
     public const string AppSecUnitTests = "Datadog.Trace.Security.Unit.Tests";

@@ -107,19 +107,12 @@ namespace Datadog.Trace.DuckTyping
         /// <returns>CreateTypeResult instance</returns>
         public static CreateTypeResult GetOrCreateProxyType(Type proxyType, Type targetType)
         {
-            return DuckTypeCache.GetOrAdd(
-                new TypesTuple(proxyType, targetType),
-                key => new Lazy<CreateTypeResult>(() =>
-                {
-                    var dryResult = CreateProxyType(key.ProxyDefinitionType, key.TargetType, true);
-                    if (dryResult.CanCreate())
-                    {
-                        return CreateProxyType(key.ProxyDefinitionType, key.TargetType, false);
-                    }
+            if (EnsureRuntimeModeIsInitialized() == DuckTypeRuntimeMode.Aot)
+            {
+                return DuckTypeAotEngine.GetOrCreateProxyType(proxyType, targetType);
+            }
 
-                    return dryResult;
-                }))
-                .Value;
+            return GetOrCreateDynamicProxyType(proxyType, targetType);
         }
 
         /// <summary>
@@ -149,19 +142,12 @@ namespace Datadog.Trace.DuckTyping
         /// <returns>CreateTypeResult instance</returns>
         public static CreateTypeResult GetOrCreateReverseProxyType(Type typeToDeriveFrom, Type delegationType)
         {
-            return DuckTypeCache.GetOrAdd(
-                new TypesTuple(typeToDeriveFrom, delegationType),
-                key => new Lazy<CreateTypeResult>(() =>
-                {
-                    var dryResult = CreateReverseProxyType(key.ProxyDefinitionType, key.TargetType, true);
-                    if (dryResult.CanCreate())
-                    {
-                        return CreateReverseProxyType(key.ProxyDefinitionType, key.TargetType, false);
-                    }
+            if (EnsureRuntimeModeIsInitialized() == DuckTypeRuntimeMode.Aot)
+            {
+                return DuckTypeAotEngine.GetOrCreateReverseProxyType(typeToDeriveFrom, delegationType);
+            }
 
-                    return dryResult;
-                }))
-                .Value;
+            return GetOrCreateDynamicReverseProxyType(typeToDeriveFrom, delegationType);
         }
 
         private static CreateTypeResult CreateProxyType(Type proxyDefinitionType, Type targetType, bool dryRun)
@@ -1248,6 +1234,7 @@ namespace Datadog.Trace.DuckTyping
 
             private readonly Type? _proxyType;
             private readonly Delegate? _activator;
+            private readonly Func<object?, object?>? _untypedActivator;
             private readonly ExceptionDispatchInfo? _exceptionInfo;
 
             /// <summary>
@@ -1261,6 +1248,12 @@ namespace Datadog.Trace.DuckTyping
             internal CreateTypeResult(Type proxyTypeDefinition, Type? proxyType, Type targetType, Delegate? activator, ExceptionDispatchInfo? exceptionInfo)
             {
                 _activator = activator;
+                _untypedActivator = activator as Func<object?, object?>;
+                if (_untypedActivator is null && activator is not null)
+                {
+                    _untypedActivator = instance => activator.DynamicInvoke(instance)!;
+                }
+
                 _proxyType = proxyType;
                 _exceptionInfo = exceptionInfo;
                 TargetType = targetType;
@@ -1299,12 +1292,7 @@ namespace Datadog.Trace.DuckTyping
             [return: NotNull]
             public T CreateInstance<T>(object? instance)
             {
-                if (_activator is null)
-                {
-                    ThrowHelper.ThrowNullReferenceException("The activator for this proxy type is null, check if the type can be created by calling 'CanCreate()'");
-                }
-
-                return ((CreateProxyInstance<T>)_activator)(instance);
+                return CreateInstanceCore<T>(instance);
             }
 
             /// <summary>
@@ -1318,12 +1306,14 @@ namespace Datadog.Trace.DuckTyping
             [return: NotNull]
             public T CreateInstance<T, TOriginal>(TOriginal instance)
             {
-                if (_activator is null)
+                if (_activator is Func<TOriginal, T> typedActivator)
                 {
-                    ThrowHelper.ThrowNullReferenceException("The activator for this proxy type is null, check if the type can be created by calling 'CanCreate()'");
+#pragma warning disable CS8607
+                    return typedActivator(instance);
+#pragma warning restore CS8607
                 }
 
-                return ((CreateProxyInstance<T>)_activator)(instance);
+                return CreateInstanceCore<T>(instance);
             }
 
             /// <summary>
@@ -1339,12 +1329,18 @@ namespace Datadog.Trace.DuckTyping
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             internal object CreateInstance(object instance)
             {
-                if (_activator is null)
+                if (_untypedActivator is not null)
                 {
-                    ThrowHelper.ThrowNullReferenceException("The activator for this proxy type is null, check if the type can be created by calling 'CanCreate()'");
+                    return _untypedActivator(instance)!;
                 }
 
-                return _activator.DynamicInvoke(instance)!;
+                if (_activator is not null)
+                {
+                    return _activator.DynamicInvoke(instance)!;
+                }
+
+                ThrowHelper.ThrowNullReferenceException("The activator for this proxy type is null, check if the type can be created by calling 'CanCreate()'");
+                return null!;
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1352,6 +1348,30 @@ namespace Datadog.Trace.DuckTyping
             {
                 _exceptionInfo?.Throw();
                 return default;
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            [return: NotNull]
+            private T CreateInstanceCore<T>(object? instance)
+            {
+                if (_activator is CreateProxyInstance<T> typedActivator)
+                {
+                    return typedActivator(instance);
+                }
+
+                if (_untypedActivator is not null)
+                {
+                    var value = _untypedActivator(instance);
+                    if (value is null)
+                    {
+                        ThrowHelper.ThrowNullReferenceException("AOT duck typing activator returned null.");
+                    }
+
+                    return (T)value;
+                }
+
+                ThrowHelper.ThrowNullReferenceException("The activator for this proxy type is null, check if the type can be created by calling 'CanCreate()'");
+                return default!;
             }
         }
 
@@ -1363,6 +1383,7 @@ namespace Datadog.Trace.DuckTyping
         {
             // Because CreateTypeResult is a struct, it needs to be boxed for safe concurrent access
             private static StrongBox<CreateTypeResult>? _fastPath;
+            private static int _fastPathAotCacheVersion = -1;
 
             /// <summary>
             /// Gets the type of T
@@ -1377,6 +1398,8 @@ namespace Datadog.Trace.DuckTyping
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public static CreateTypeResult GetProxy(Type targetType)
             {
+                InvalidateFastPathForAotRegistrations();
+
                 // We set a fast path for the first proxy type for a proxy definition. (It's likely to have a proxy definition just for one target type)
                 var fastPath = Volatile.Read(ref _fastPath);
 
@@ -1468,6 +1491,8 @@ namespace Datadog.Trace.DuckTyping
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public static CreateTypeResult GetReverseProxy(Type targetType)
             {
+                InvalidateFastPathForAotRegistrations();
+
                 // We set a fast path for the first proxy type for a proxy definition. (It's likely to have a proxy definition just for one target type)
                 var fastPath = Volatile.Read(ref _fastPath);
 
@@ -1481,6 +1506,24 @@ namespace Datadog.Trace.DuckTyping
                 _fastPath ??= new(result);
 
                 return result;
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private static void InvalidateFastPathForAotRegistrations()
+            {
+                if (!IsAotMode())
+                {
+                    return;
+                }
+
+                var cacheVersion = DuckTypeAotEngine.CacheVersion;
+                if (Volatile.Read(ref _fastPathAotCacheVersion) == cacheVersion)
+                {
+                    return;
+                }
+
+                Volatile.Write(ref _fastPath, null);
+                Volatile.Write(ref _fastPathAotCacheVersion, cacheVersion);
             }
         }
     }

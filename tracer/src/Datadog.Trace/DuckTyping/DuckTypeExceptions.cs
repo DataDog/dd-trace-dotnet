@@ -92,12 +92,19 @@ namespace Datadog.Trace.DuckTyping
         {
         }
 
+        private DuckTypeInvalidTypeConversionException(string message, bool useRawMessage)
+            : base(message)
+        {
+        }
+
         [DebuggerHidden]
         [DoesNotReturn]
         internal static void Throw(Type actualType, Type expectedType)
         {
             throw new DuckTypeInvalidTypeConversionException(actualType, expectedType);
         }
+
+        internal static Exception CreateForAot(string message) => new DuckTypeInvalidTypeConversionException(message, true);
     }
 
     /// <summary>
@@ -110,12 +117,19 @@ namespace Datadog.Trace.DuckTyping
         {
         }
 
+        private DuckTypePropertyCantBeReadException(string message, bool useRawMessage)
+            : base(message)
+        {
+        }
+
         [DebuggerHidden]
         [DoesNotReturn]
         internal static void Throw(PropertyInfo property)
         {
             throw new DuckTypePropertyCantBeReadException(property);
         }
+
+        internal static Exception CreateForAot(string message) => new DuckTypePropertyCantBeReadException(message, true);
     }
 
     /// <summary>
@@ -128,12 +142,19 @@ namespace Datadog.Trace.DuckTyping
         {
         }
 
+        private DuckTypePropertyCantBeWrittenException(string message, bool useRawMessage)
+            : base(message)
+        {
+        }
+
         [DebuggerHidden]
         [DoesNotReturn]
         internal static void Throw(PropertyInfo property)
         {
             throw new DuckTypePropertyCantBeWrittenException(property);
         }
+
+        internal static Exception CreateForAot(string message) => new DuckTypePropertyCantBeWrittenException(message, true);
     }
 
     /// <summary>
@@ -146,12 +167,19 @@ namespace Datadog.Trace.DuckTyping
         {
         }
 
+        private DuckTypePropertyArgumentsLengthException(string message, bool useRawMessage)
+            : base(message)
+        {
+        }
+
         [DebuggerHidden]
         [DoesNotReturn]
         internal static void Throw(PropertyInfo property)
         {
             throw new DuckTypePropertyArgumentsLengthException(property);
         }
+
+        internal static Exception CreateForAot(string message) => new DuckTypePropertyArgumentsLengthException(message, true);
     }
 
     /// <summary>
@@ -164,12 +192,19 @@ namespace Datadog.Trace.DuckTyping
         {
         }
 
+        private DuckTypeFieldIsReadonlyException(string message, bool useRawMessage)
+            : base(message)
+        {
+        }
+
         [DebuggerHidden]
         [DoesNotReturn]
         internal static void Throw(FieldInfo field)
         {
             throw new DuckTypeFieldIsReadonlyException(field);
         }
+
+        internal static Exception CreateForAot(string message) => new DuckTypeFieldIsReadonlyException(message, true);
     }
 
     /// <summary>
@@ -182,12 +217,19 @@ namespace Datadog.Trace.DuckTyping
         {
         }
 
+        private DuckTypePropertyOrFieldNotFoundException(string message, bool useRawMessage)
+            : base(message)
+        {
+        }
+
         [DebuggerHidden]
         [DoesNotReturn]
         internal static void Throw(string name, string duckAttributeName, Type type)
         {
             throw new DuckTypePropertyOrFieldNotFoundException(name, duckAttributeName, type?.FullName ?? type?.Name ?? "NULL");
         }
+
+        internal static Exception CreateForAot(string message) => new DuckTypePropertyOrFieldNotFoundException(message, true);
     }
 
     /// <summary>
@@ -200,12 +242,19 @@ namespace Datadog.Trace.DuckTyping
         {
         }
 
+        private DuckTypeStructMembersCannotBeChangedException(string message, bool useRawMessage)
+            : base(message)
+        {
+        }
+
         [DebuggerHidden]
         [DoesNotReturn]
         internal static void Throw(Type type)
         {
             throw new DuckTypeStructMembersCannotBeChangedException(type);
         }
+
+        internal static Exception CreateForAot(string message) => new DuckTypeStructMembersCannotBeChangedException(message, true);
     }
 
     /// <summary>
@@ -218,12 +267,19 @@ namespace Datadog.Trace.DuckTyping
         {
         }
 
+        private DuckTypeTargetMethodNotFoundException(string message, bool useRawMessage)
+            : base(message)
+        {
+        }
+
         [DebuggerHidden]
         [DoesNotReturn]
         internal static void Throw(MethodInfo method)
         {
             throw new DuckTypeTargetMethodNotFoundException(method);
         }
+
+        internal static Exception CreateForAot(string message) => new DuckTypeTargetMethodNotFoundException(message, true);
     }
 
     /// <summary>
@@ -236,12 +292,19 @@ namespace Datadog.Trace.DuckTyping
         {
         }
 
+        private DuckTypeProxyMethodParameterIsMissingException(string message, bool useRawMessage)
+            : base(message)
+        {
+        }
+
         [DebuggerHidden]
         [DoesNotReturn]
         internal static void Throw(MethodInfo proxyMethod, ParameterInfo targetParameterInfo)
         {
             throw new DuckTypeProxyMethodParameterIsMissingException(proxyMethod, targetParameterInfo);
         }
+
+        internal static Exception CreateForAot(string message) => new DuckTypeProxyMethodParameterIsMissingException(message, true);
     }
 
     /// <summary>
@@ -254,12 +317,19 @@ namespace Datadog.Trace.DuckTyping
         {
         }
 
+        private DuckTypeProxyAndTargetMethodParameterSignatureMismatchException(string message, bool useRawMessage)
+            : base(message)
+        {
+        }
+
         [DebuggerHidden]
         [DoesNotReturn]
         internal static void Throw(MethodInfo proxyMethod, MethodInfo targetMethod)
         {
             throw new DuckTypeProxyAndTargetMethodParameterSignatureMismatchException(proxyMethod, targetMethod);
         }
+
+        internal static Exception CreateForAot(string message) => new DuckTypeProxyAndTargetMethodParameterSignatureMismatchException(message, true);
     }
 
     /// <summary>
@@ -272,12 +342,19 @@ namespace Datadog.Trace.DuckTyping
         {
         }
 
+        private DuckTypeProxyAndTargetMethodReturnTypeMismatchException(string message, bool useRawMessage)
+            : base(message)
+        {
+        }
+
         [DebuggerHidden]
         [DoesNotReturn]
         internal static void Throw(MethodInfo proxyMethod, MethodInfo targetMethod)
         {
             throw new DuckTypeProxyAndTargetMethodReturnTypeMismatchException(proxyMethod, targetMethod);
         }
+
+        internal static Exception CreateForAot(string message) => new DuckTypeProxyAndTargetMethodReturnTypeMismatchException(message, true);
     }
 
     /// <summary>
@@ -290,12 +367,19 @@ namespace Datadog.Trace.DuckTyping
         {
         }
 
+        private DuckTypeProxyMethodsWithGenericParametersNotSupportedInNonPublicInstancesException(string message, bool useRawMessage)
+            : base(message)
+        {
+        }
+
         [DebuggerHidden]
         [DoesNotReturn]
         internal static void Throw(MethodInfo proxyMethod)
         {
             throw new DuckTypeProxyMethodsWithGenericParametersNotSupportedInNonPublicInstancesException(proxyMethod);
         }
+
+        internal static Exception CreateForAot(string message) => new DuckTypeProxyMethodsWithGenericParametersNotSupportedInNonPublicInstancesException(message, true);
     }
 
     /// <summary>
@@ -308,12 +392,19 @@ namespace Datadog.Trace.DuckTyping
         {
         }
 
+        private DuckTypeTargetMethodAmbiguousMatchException(string message, bool useRawMessage)
+            : base(message)
+        {
+        }
+
         [DebuggerHidden]
         [DoesNotReturn]
         internal static void Throw(MethodInfo proxyMethod, MethodInfo targetMethod, MethodInfo targetMethod2)
         {
             throw new DuckTypeTargetMethodAmbiguousMatchException(proxyMethod, targetMethod, targetMethod2);
         }
+
+        internal static Exception CreateForAot(string message) => new DuckTypeTargetMethodAmbiguousMatchException(message, true);
     }
 
     /// <summary>
@@ -326,12 +417,19 @@ namespace Datadog.Trace.DuckTyping
         {
         }
 
+        private DuckTypeReverseProxyBaseIsStructException(string message, bool useRawMessage)
+            : base(message)
+        {
+        }
+
         [DebuggerHidden]
         [DoesNotReturn]
         internal static void Throw(Type type)
         {
             throw new DuckTypeReverseProxyBaseIsStructException(type);
         }
+
+        internal static Exception CreateForAot(string message) => new DuckTypeReverseProxyBaseIsStructException(message, true);
     }
 
     /// <summary>
@@ -344,12 +442,19 @@ namespace Datadog.Trace.DuckTyping
         {
         }
 
+        private DuckTypeReverseProxyImplementorIsAbstractOrInterfaceException(string message, bool useRawMessage)
+            : base(message)
+        {
+        }
+
         [DebuggerHidden]
         [DoesNotReturn]
         internal static void Throw(Type type)
         {
             throw new DuckTypeReverseProxyImplementorIsAbstractOrInterfaceException(type);
         }
+
+        internal static Exception CreateForAot(string message) => new DuckTypeReverseProxyImplementorIsAbstractOrInterfaceException(message, true);
     }
 
     /// <summary>
@@ -362,12 +467,19 @@ namespace Datadog.Trace.DuckTyping
         {
         }
 
+        private DuckTypeReverseProxyPropertyCannotBeAbstractException(string message, bool useRawMessage)
+            : base(message)
+        {
+        }
+
         [DebuggerHidden]
         [DoesNotReturn]
         internal static void Throw(PropertyInfo property)
         {
             throw new DuckTypeReverseProxyPropertyCannotBeAbstractException(property);
         }
+
+        internal static Exception CreateForAot(string message) => new DuckTypeReverseProxyPropertyCannotBeAbstractException(message, true);
     }
 
     /// <summary>
@@ -380,12 +492,19 @@ namespace Datadog.Trace.DuckTyping
         {
         }
 
+        private DuckTypeIncorrectReverseMethodUsageException(string message, bool useRawMessage)
+            : base(message)
+        {
+        }
+
         [DebuggerHidden]
         [DoesNotReturn]
         internal static void Throw(MethodInfo method)
         {
             throw new DuckTypeIncorrectReverseMethodUsageException(method);
         }
+
+        internal static Exception CreateForAot(string message) => new DuckTypeIncorrectReverseMethodUsageException(message, true);
     }
 
     /// <summary>
@@ -398,12 +517,19 @@ namespace Datadog.Trace.DuckTyping
         {
         }
 
+        private DuckTypeIncorrectReversePropertyUsageException(string message, bool useRawMessage)
+            : base(message)
+        {
+        }
+
         [DebuggerHidden]
         [DoesNotReturn]
         internal static void Throw(PropertyInfo property)
         {
             throw new DuckTypeIncorrectReversePropertyUsageException(property);
         }
+
+        internal static Exception CreateForAot(string message) => new DuckTypeIncorrectReversePropertyUsageException(message, true);
     }
 
     /// <summary>
@@ -416,12 +542,19 @@ namespace Datadog.Trace.DuckTyping
         {
         }
 
+        private DuckTypeReverseProxyMissingPropertyImplementationException(string message, bool useRawMessage)
+            : base(message)
+        {
+        }
+
         [DebuggerHidden]
         [DoesNotReturn]
         internal static void Throw(IEnumerable<PropertyInfo> properties)
         {
             throw new DuckTypeReverseProxyMissingPropertyImplementationException(properties);
         }
+
+        internal static Exception CreateForAot(string message) => new DuckTypeReverseProxyMissingPropertyImplementationException(message, true);
     }
 
     /// <summary>
@@ -434,12 +567,19 @@ namespace Datadog.Trace.DuckTyping
         {
         }
 
+        private DuckTypeReverseProxyMissingMethodImplementationException(string message, bool useRawMessage)
+            : base(message)
+        {
+        }
+
         [DebuggerHidden]
         [DoesNotReturn]
         internal static void Throw(IEnumerable<MethodInfo> methods)
         {
             throw new DuckTypeReverseProxyMissingMethodImplementationException(methods);
         }
+
+        internal static Exception CreateForAot(string message) => new DuckTypeReverseProxyMissingMethodImplementationException(message, true);
     }
 
     /// <summary>
@@ -452,12 +592,19 @@ namespace Datadog.Trace.DuckTyping
         {
         }
 
+        private DuckTypeReverseAttributeParameterNamesMismatchException(string message, bool useRawMessage)
+            : base(message)
+        {
+        }
+
         [DebuggerHidden]
         [DoesNotReturn]
         internal static void Throw(MethodInfo method)
         {
             throw new DuckTypeReverseAttributeParameterNamesMismatchException(method);
         }
+
+        internal static Exception CreateForAot(string message) => new DuckTypeReverseAttributeParameterNamesMismatchException(message, true);
     }
 
     /// <summary>
@@ -471,12 +618,19 @@ namespace Datadog.Trace.DuckTyping
         {
         }
 
+        private DuckTypeReverseProxyMustImplementGenericMethodAsGenericException(string message, bool useRawMessage)
+            : base(message)
+        {
+        }
+
         [DebuggerHidden]
         [DoesNotReturn]
         internal static void Throw(MethodInfo implementationMethod, MethodInfo targetMethod)
         {
             throw new DuckTypeReverseProxyMustImplementGenericMethodAsGenericException(implementationMethod, targetMethod);
         }
+
+        internal static Exception CreateForAot(string message) => new DuckTypeReverseProxyMustImplementGenericMethodAsGenericException(message, true);
     }
 
     /// <summary>
@@ -489,12 +643,19 @@ namespace Datadog.Trace.DuckTyping
         {
         }
 
+        private DuckTypeCustomAttributeHasNamedArgumentsException(string message, bool useRawMessage)
+            : base(message)
+        {
+        }
+
         [DebuggerHidden]
         [DoesNotReturn]
         internal static void Throw(Type type, CustomAttributeData attributeData)
         {
             throw new DuckTypeCustomAttributeHasNamedArgumentsException(attributeData.AttributeType?.FullName ?? "Null", type?.FullName ?? type?.Name ?? "NULL");
         }
+
+        internal static Exception CreateForAot(string message) => new DuckTypeCustomAttributeHasNamedArgumentsException(message, true);
     }
 
     /// <summary>
@@ -507,11 +668,178 @@ namespace Datadog.Trace.DuckTyping
         {
         }
 
+        private DuckTypeDuckCopyStructDoesNotContainsAnyField(string message, bool useRawMessage)
+            : base(message)
+        {
+        }
+
         [DebuggerHidden]
         [DoesNotReturn]
         internal static void Throw(Type type)
         {
             throw new DuckTypeDuckCopyStructDoesNotContainsAnyField(type?.FullName ?? type?.Name ?? "NULL");
+        }
+
+        internal static Exception CreateForAot(string message) => new DuckTypeDuckCopyStructDoesNotContainsAnyField(message, true);
+    }
+
+    /// <summary>
+    /// DuckType runtime mode was configured with a different value.
+    /// </summary>
+    internal sealed class DuckTypeRuntimeModeConflictException : DuckTypeException
+    {
+        private DuckTypeRuntimeModeConflictException(DuckTypeRuntimeMode currentMode, DuckTypeRuntimeMode requestedMode)
+            : base($"DuckType runtime mode is immutable after initialization. Current mode: '{currentMode}', requested mode: '{requestedMode}'.")
+        {
+        }
+
+        [DebuggerHidden]
+        [DoesNotReturn]
+        internal static void Throw(DuckTypeRuntimeMode currentMode, DuckTypeRuntimeMode requestedMode)
+        {
+            throw new DuckTypeRuntimeModeConflictException(currentMode, requestedMode);
+        }
+    }
+
+    /// <summary>
+    /// No AOT proxy registration exists for the requested pair.
+    /// </summary>
+    internal sealed class DuckTypeAotMissingProxyRegistrationException : DuckTypeException
+    {
+        private DuckTypeAotMissingProxyRegistrationException(Type proxyDefinitionType, Type targetType, bool reverse)
+            : base($"AOT duck typing mapping not found for proxy '{proxyDefinitionType.FullName}' and target '{targetType.FullName}' (reverse={reverse}).")
+        {
+        }
+
+        [DebuggerHidden]
+        [DoesNotReturn]
+        internal static void Throw(Type proxyDefinitionType, Type targetType, bool reverse)
+        {
+            throw new DuckTypeAotMissingProxyRegistrationException(proxyDefinitionType, targetType, reverse);
+        }
+    }
+
+    /// <summary>
+    /// AOT proxy registration for a key already exists with a different generated proxy type.
+    /// </summary>
+    internal sealed class DuckTypeAotProxyRegistrationConflictException : DuckTypeException
+    {
+        private DuckTypeAotProxyRegistrationConflictException(Type proxyDefinitionType, Type targetType, bool reverse, Type existingProxyType, Type newProxyType)
+            : base($"Conflicting AOT duck typing registration for proxy '{proxyDefinitionType.FullName}' and target '{targetType.FullName}' (reverse={reverse}). Existing generated proxy: '{existingProxyType.FullName}', new generated proxy: '{newProxyType.FullName}'.")
+        {
+        }
+
+        [DebuggerHidden]
+        [DoesNotReturn]
+        internal static void Throw(Type proxyDefinitionType, Type targetType, bool reverse, Type existingProxyType, Type newProxyType)
+        {
+            throw new DuckTypeAotProxyRegistrationConflictException(proxyDefinitionType, targetType, reverse, existingProxyType, newProxyType);
+        }
+    }
+
+    /// <summary>
+    /// Generated AOT proxy type does not satisfy the proxy definition contract.
+    /// </summary>
+    internal sealed class DuckTypeAotGeneratedProxyTypeMismatchException : DuckTypeException
+    {
+        private DuckTypeAotGeneratedProxyTypeMismatchException(Type proxyDefinitionType, Type generatedProxyType)
+            : base($"Generated AOT proxy type '{generatedProxyType.FullName}' is not assignable to proxy definition '{proxyDefinitionType.FullName}'.")
+        {
+        }
+
+        [DebuggerHidden]
+        [DoesNotReturn]
+        internal static void Throw(Type proxyDefinitionType, Type generatedProxyType)
+        {
+            throw new DuckTypeAotGeneratedProxyTypeMismatchException(proxyDefinitionType, generatedProxyType);
+        }
+    }
+
+    /// <summary>
+    /// Multiple AOT registry assemblies attempted to register mappings in the same process.
+    /// </summary>
+    internal sealed class DuckTypeAotMultipleRegistryAssembliesException : DuckTypeException
+    {
+        private DuckTypeAotMultipleRegistryAssembliesException(string currentRegistryAssembly, string newRegistryAssembly)
+            : base($"AOT duck typing supports a single generated registry assembly per process. Current registry assembly: '{currentRegistryAssembly}', attempted registration from: '{newRegistryAssembly}'.")
+        {
+        }
+
+        [DebuggerHidden]
+        [DoesNotReturn]
+        internal static void Throw(string currentRegistryAssembly, string newRegistryAssembly)
+        {
+            throw new DuckTypeAotMultipleRegistryAssembliesException(currentRegistryAssembly, newRegistryAssembly);
+        }
+    }
+
+    /// <summary>
+    /// Generated AOT registry contract is invalid for the current Datadog.Trace runtime.
+    /// </summary>
+    internal sealed class DuckTypeAotRegistryContractValidationException : DuckTypeException
+    {
+        private DuckTypeAotRegistryContractValidationException(string detail)
+            : base($"AOT registry contract validation failed. {detail}")
+        {
+        }
+
+        [DebuggerHidden]
+        [DoesNotReturn]
+        internal static void ThrowValidation(string detail)
+        {
+            throw new DuckTypeAotRegistryContractValidationException(detail);
+        }
+    }
+
+    /// <summary>
+    /// Represents a deterministic registered AOT failure replay.
+    /// </summary>
+    internal sealed class DuckTypeAotRegisteredFailureException : DuckTypeException
+    {
+        private DuckTypeAotRegisteredFailureException(string failureTypeName, string detail)
+            : base(string.IsNullOrWhiteSpace(detail)
+                       ? $"AOT duck typing registered failure '{failureTypeName}' was replayed."
+                       : $"AOT duck typing registered failure '{failureTypeName}' was replayed. {detail}")
+        {
+        }
+
+        internal static Exception Create(string failureTypeName, string detail)
+        {
+            return failureTypeName switch
+            {
+                string name when name == typeof(DuckTypeInvalidTypeConversionException).FullName => DuckTypeInvalidTypeConversionException.CreateForAot(detail),
+                string name when name == typeof(DuckTypePropertyCantBeReadException).FullName => DuckTypePropertyCantBeReadException.CreateForAot(detail),
+                string name when name == typeof(DuckTypePropertyCantBeWrittenException).FullName => DuckTypePropertyCantBeWrittenException.CreateForAot(detail),
+                string name when name == typeof(DuckTypePropertyArgumentsLengthException).FullName => DuckTypePropertyArgumentsLengthException.CreateForAot(detail),
+                string name when name == typeof(DuckTypeFieldIsReadonlyException).FullName => DuckTypeFieldIsReadonlyException.CreateForAot(detail),
+                string name when name == typeof(DuckTypePropertyOrFieldNotFoundException).FullName => DuckTypePropertyOrFieldNotFoundException.CreateForAot(detail),
+                string name when name == typeof(DuckTypeStructMembersCannotBeChangedException).FullName => DuckTypeStructMembersCannotBeChangedException.CreateForAot(detail),
+                string name when name == typeof(DuckTypeTargetMethodNotFoundException).FullName => DuckTypeTargetMethodNotFoundException.CreateForAot(detail),
+                string name when name == typeof(DuckTypeProxyMethodParameterIsMissingException).FullName => DuckTypeProxyMethodParameterIsMissingException.CreateForAot(detail),
+                string name when name == typeof(DuckTypeProxyAndTargetMethodParameterSignatureMismatchException).FullName => DuckTypeProxyAndTargetMethodParameterSignatureMismatchException.CreateForAot(detail),
+                string name when name == typeof(DuckTypeProxyAndTargetMethodReturnTypeMismatchException).FullName => DuckTypeProxyAndTargetMethodReturnTypeMismatchException.CreateForAot(detail),
+                string name when name == typeof(DuckTypeProxyMethodsWithGenericParametersNotSupportedInNonPublicInstancesException).FullName => DuckTypeProxyMethodsWithGenericParametersNotSupportedInNonPublicInstancesException.CreateForAot(detail),
+                string name when name == typeof(DuckTypeTargetMethodAmbiguousMatchException).FullName => DuckTypeTargetMethodAmbiguousMatchException.CreateForAot(detail),
+                string name when name == typeof(DuckTypeReverseProxyBaseIsStructException).FullName => DuckTypeReverseProxyBaseIsStructException.CreateForAot(detail),
+                string name when name == typeof(DuckTypeReverseProxyImplementorIsAbstractOrInterfaceException).FullName => DuckTypeReverseProxyImplementorIsAbstractOrInterfaceException.CreateForAot(detail),
+                string name when name == typeof(DuckTypeReverseProxyPropertyCannotBeAbstractException).FullName => DuckTypeReverseProxyPropertyCannotBeAbstractException.CreateForAot(detail),
+                string name when name == typeof(DuckTypeIncorrectReverseMethodUsageException).FullName => DuckTypeIncorrectReverseMethodUsageException.CreateForAot(detail),
+                string name when name == typeof(DuckTypeIncorrectReversePropertyUsageException).FullName => DuckTypeIncorrectReversePropertyUsageException.CreateForAot(detail),
+                string name when name == typeof(DuckTypeReverseProxyMissingPropertyImplementationException).FullName => DuckTypeReverseProxyMissingPropertyImplementationException.CreateForAot(detail),
+                string name when name == typeof(DuckTypeReverseProxyMissingMethodImplementationException).FullName => DuckTypeReverseProxyMissingMethodImplementationException.CreateForAot(detail),
+                string name when name == typeof(DuckTypeReverseAttributeParameterNamesMismatchException).FullName => DuckTypeReverseAttributeParameterNamesMismatchException.CreateForAot(detail),
+                string name when name == typeof(DuckTypeReverseProxyMustImplementGenericMethodAsGenericException).FullName => DuckTypeReverseProxyMustImplementGenericMethodAsGenericException.CreateForAot(detail),
+                string name when name == typeof(DuckTypeCustomAttributeHasNamedArgumentsException).FullName => DuckTypeCustomAttributeHasNamedArgumentsException.CreateForAot(detail),
+                string name when name == typeof(DuckTypeDuckCopyStructDoesNotContainsAnyField).FullName => DuckTypeDuckCopyStructDoesNotContainsAnyField.CreateForAot(detail),
+                _ => new DuckTypeAotRegisteredFailureException(failureTypeName, detail)
+            };
+        }
+
+        [DebuggerHidden]
+        [DoesNotReturn]
+        internal static void Throw(string failureTypeName, string detail)
+        {
+            throw Create(failureTypeName, detail);
         }
     }
 }
