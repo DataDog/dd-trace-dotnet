@@ -643,6 +643,18 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 $"ducktype-aot emitter profile: registrationPlanning={profile.RegistrationPlanningSeconds:F3}s bindingPlanHits={profile.ForwardBindingPlanCacheHits} bindingPlanMisses={profile.ForwardBindingPlanCacheMisses} conversionPlanHits={profile.ConversionPlanCacheHits} conversionPlanMisses={profile.ConversionPlanCacheMisses}");
             Console.Error.WriteLine(
                 $"ducktype-aot emitter profile: methodCallTargetHits={profile.MethodCallTargetCacheHits} methodCallTargetMisses={profile.MethodCallTargetCacheMisses} propertySigHits={profile.PropertySignatureCacheHits} propertySigMisses={profile.PropertySignatureCacheMisses} reverseAttributePlanHits={profile.ReverseCustomAttributePlanCacheHits} reverseAttributePlanMisses={profile.ReverseCustomAttributePlanCacheMisses}");
+            Console.Error.WriteLine(
+                $"ducktype-aot emitter profile: forwardCollect={profile.ForwardBindingCollectionSeconds:F3}s structCopyCollect={profile.StructCopyBindingCollectionSeconds:F3}s duckIncludeCollect={profile.DuckIncludeCollectionSeconds:F3}s");
+            Console.Error.WriteLine(
+                $"ducktype-aot emitter profile: forwardResolve={profile.ForwardBindingResolutionSeconds:F3}s forwardMethodBind={profile.ForwardMethodBindingSeconds:F3}s forwardParameterBind={profile.ForwardParameterBindingSeconds:F3}s");
+            Console.Error.WriteLine(
+                $"ducktype-aot emitter profile: substitution={profile.TypeSubstitutionSeconds:F3}s substitutionHits={profile.TypeSubstitutionCacheHits} substitutionMisses={profile.TypeSubstitutionCacheMisses} runtimeTypeFromTypeSig={profile.RuntimeTypeFromTypeSigSeconds:F3}s");
+            Console.Error.WriteLine(
+                $"ducktype-aot emitter profile: methodCallTarget={profile.MethodCallTargetSeconds:F3}s emitArgConversion={profile.EmitMethodArgumentConversionSeconds:F3}s emitReturnConversion={profile.EmitMethodReturnConversionSeconds:F3}s");
+            Console.Error.WriteLine(
+                $"ducktype-aot emitter profile: ensureInterfaceProperty={profile.EnsureInterfacePropertyMetadataSeconds:F3}s copyMethodGenerics={profile.CopyMethodGenericParametersSeconds:F3}s");
+            Console.Error.WriteLine(
+                $"ducktype-aot emitter profile: importTypeDefOrRef={profile.ImportTypeDefOrRefSeconds:F3}s importTypeSig={profile.ImportTypeSigSeconds:F3}s importMethod={profile.ImportMethodSeconds:F3}s importField={profile.ImportFieldSeconds:F3}s");
         }
 
         private static ISet<string> BuildQueriedTargetTypeNames(IReadOnlyList<DuckTypeAotMapping> mappings)
@@ -3499,41 +3511,49 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             out IReadOnlyList<StructCopyFieldBinding> bindings,
             out DuckTypeAotMappingEmissionResult? failure)
         {
-            var collectedBindings = new List<StructCopyFieldBinding>();
-            bindings = collectedBindings;
-            failure = null;
-
-            foreach (var proxyField in proxyStructType.Fields)
+            var phaseStopwatch = StartProfilePhase();
+            try
             {
-                if (proxyField.IsStatic || proxyField.IsInitOnly || !proxyField.IsPublic)
+                var collectedBindings = new List<StructCopyFieldBinding>();
+                bindings = collectedBindings;
+                failure = null;
+
+                foreach (var proxyField in proxyStructType.Fields)
                 {
-                    continue;
+                    if (proxyField.IsStatic || proxyField.IsInitOnly || !proxyField.IsPublic)
+                    {
+                        continue;
+                    }
+
+                    if (proxyField.CustomAttributes.Any(attribute => string.Equals(attribute.TypeFullName, "Datadog.Trace.DuckTyping.DuckIgnoreAttribute", StringComparison.Ordinal)))
+                    {
+                        continue;
+                    }
+
+                    if (!TryResolveStructCopyFieldBinding(mapping, targetType, proxyField, closedGenericTargetTypeArguments, out var binding, out failure))
+                    {
+                        return false;
+                    }
+
+                    collectedBindings.Add(binding);
                 }
 
-                if (proxyField.CustomAttributes.Any(attribute => string.Equals(attribute.TypeFullName, "Datadog.Trace.DuckTyping.DuckIgnoreAttribute", StringComparison.Ordinal)))
+                if (collectedBindings.Count == 0 && proxyStructType.Properties.Count > 0)
                 {
-                    continue;
-                }
-
-                if (!TryResolveStructCopyFieldBinding(mapping, targetType, proxyField, closedGenericTargetTypeArguments, out var binding, out failure))
-                {
+                    failure = DuckTypeAotMappingEmissionResult.NotCompatible(
+                        mapping,
+                        DuckTypeAotCompatibilityStatuses.IncompatibleMethodSignature,
+                        StatusCodeIncompatibleSignature,
+                        $"DuckCopy struct '{mapping.ProxyTypeName}' does not expose any writable public fields.");
                     return false;
                 }
 
-                collectedBindings.Add(binding);
+                return true;
             }
-
-            if (collectedBindings.Count == 0 && proxyStructType.Properties.Count > 0)
+            finally
             {
-                failure = DuckTypeAotMappingEmissionResult.NotCompatible(
-                    mapping,
-                    DuckTypeAotCompatibilityStatuses.IncompatibleMethodSignature,
-                    StatusCodeIncompatibleSignature,
-                    $"DuckCopy struct '{mapping.ProxyTypeName}' does not expose any writable public fields.");
-                return false;
+                StopProfilePhase(phaseStopwatch, seconds => _currentProfile!.StructCopyBindingCollectionSeconds += seconds);
             }
-
-            return true;
         }
 
         /// <summary>
@@ -3869,30 +3889,38 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <param name="targetMethod">The target method value.</param>
         private static void CopyMethodGenericParameters(ModuleDef moduleDef, MethodDef sourceMethod, MethodDef targetMethod)
         {
-            if (sourceMethod.GenericParameters.Count == 0)
+            var phaseStopwatch = StartProfilePhase();
+            try
             {
-                return;
-            }
-
-            foreach (var sourceGenericParameter in sourceMethod.GenericParameters)
-            {
-                var copiedGenericParameter = new GenericParamUser(sourceGenericParameter.Number, sourceGenericParameter.Flags, sourceGenericParameter.Name)
+                if (sourceMethod.GenericParameters.Count == 0)
                 {
-                    Kind = sourceGenericParameter.Kind
-                };
-
-                foreach (var constraint in sourceGenericParameter.GenericParamConstraints)
-                {
-                    if (constraint.Constraint is null)
-                    {
-                        throw new InvalidOperationException($"Unable to import generic parameter constraint '(null)' for '{sourceMethod.FullName}'.");
-                    }
-
-                    var importedConstraint = ImportTypeDefOrRefCached(moduleDef, constraint.Constraint, $"generic parameter constraint '{constraint.Constraint.FullName}' for '{sourceMethod.FullName}'");
-                    copiedGenericParameter.GenericParamConstraints.Add(new GenericParamConstraintUser(importedConstraint));
+                    return;
                 }
 
-                targetMethod.GenericParameters.Add(copiedGenericParameter);
+                foreach (var sourceGenericParameter in sourceMethod.GenericParameters)
+                {
+                    var copiedGenericParameter = new GenericParamUser(sourceGenericParameter.Number, sourceGenericParameter.Flags, sourceGenericParameter.Name)
+                    {
+                        Kind = sourceGenericParameter.Kind
+                    };
+
+                    foreach (var constraint in sourceGenericParameter.GenericParamConstraints)
+                    {
+                        if (constraint.Constraint is null)
+                        {
+                            throw new InvalidOperationException($"Unable to import generic parameter constraint '(null)' for '{sourceMethod.FullName}'.");
+                        }
+
+                        var importedConstraint = ImportTypeDefOrRefCached(moduleDef, constraint.Constraint, $"generic parameter constraint '{constraint.Constraint.FullName}' for '{sourceMethod.FullName}'");
+                        copiedGenericParameter.GenericParamConstraints.Add(new GenericParamConstraintUser(importedConstraint));
+                    }
+
+                    targetMethod.GenericParameters.Add(copiedGenericParameter);
+                }
+            }
+            finally
+            {
+                StopProfilePhase(phaseStopwatch, seconds => _currentProfile!.CopyMethodGenericParametersSeconds += seconds);
             }
         }
 
@@ -3912,66 +3940,74 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             MethodDef generatedMethod,
             IReadOnlyList<TypeSig>? closedGenericMethodArguments)
         {
-            var cacheKey = BuildMethodCallTargetCacheKey(importedTargetMethod, importedTargetType, (int)generatedMethod.MethodSig.GenParamCount, closedGenericMethodArguments);
-            if (_currentExecutionContext?.TryGetMethodCallTarget(cacheKey, out var cachedCallTarget) == true)
+            var phaseStopwatch = StartProfilePhase();
+            try
             {
+                var cacheKey = BuildMethodCallTargetCacheKey(importedTargetMethod, importedTargetType, (int)generatedMethod.MethodSig.GenParamCount, closedGenericMethodArguments);
+                if (_currentExecutionContext?.TryGetMethodCallTarget(cacheKey, out var cachedCallTarget) == true)
+                {
+                    if (_currentProfile is not null)
+                    {
+                        _currentProfile.MethodCallTargetCacheHits++;
+                    }
+
+                    return cachedCallTarget!;
+                }
+
                 if (_currentProfile is not null)
                 {
-                    _currentProfile.MethodCallTargetCacheHits++;
+                    _currentProfile.MethodCallTargetCacheMisses++;
                 }
 
-                return cachedCallTarget!;
-            }
-
-            if (_currentProfile is not null)
-            {
-                _currentProfile.MethodCallTargetCacheMisses++;
-            }
-
-            IMethodDefOrRef effectiveTargetMethod = importedTargetMethod;
-            if (importedTargetMethod.DeclaringType is ITypeDefOrRef importedDeclaringType &&
-                !string.Equals(importedDeclaringType.FullName, importedTargetType.FullName, StringComparison.Ordinal))
-            {
-                // Bind the call to the imported target type so closed-generic target methods
-                // are emitted against the instantiated declaring type instead of the generic definition.
-                var reboundMethod = new MemberRefUser(
-                    moduleDef,
-                    importedTargetMethod.Name,
-                    importedTargetMethod.MethodSig,
-                    importedTargetType);
-                effectiveTargetMethod = moduleDef.UpdateRowId(reboundMethod);
-            }
-
-            if (closedGenericMethodArguments is not null && closedGenericMethodArguments.Count > 0)
-            {
-                var closedArguments = new List<TypeSig>(closedGenericMethodArguments.Count);
-                for (var i = 0; i < closedGenericMethodArguments.Count; i++)
+                IMethodDefOrRef effectiveTargetMethod = importedTargetMethod;
+                if (importedTargetMethod.DeclaringType is ITypeDefOrRef importedDeclaringType &&
+                    !string.Equals(importedDeclaringType.FullName, importedTargetType.FullName, StringComparison.Ordinal))
                 {
-                    closedArguments.Add(ImportTypeSigCached(moduleDef, closedGenericMethodArguments[i], $"closed generic method argument '{closedGenericMethodArguments[i].FullName}'"));
+                    // Bind the call to the imported target type so closed-generic target methods
+                    // are emitted against the instantiated declaring type instead of the generic definition.
+                    var reboundMethod = new MemberRefUser(
+                        moduleDef,
+                        importedTargetMethod.Name,
+                        importedTargetMethod.MethodSig,
+                        importedTargetType);
+                    effectiveTargetMethod = moduleDef.UpdateRowId(reboundMethod);
                 }
 
-                var methodSpecWithClosedArguments = new MethodSpecUser(effectiveTargetMethod, new GenericInstMethodSig(closedArguments));
-                var closedGenericCallTarget = moduleDef.UpdateRowId(methodSpecWithClosedArguments);
-                _currentExecutionContext?.CacheMethodCallTarget(cacheKey, closedGenericCallTarget);
-                return closedGenericCallTarget;
-            }
+                if (closedGenericMethodArguments is not null && closedGenericMethodArguments.Count > 0)
+                {
+                    var closedArguments = new List<TypeSig>(closedGenericMethodArguments.Count);
+                    for (var i = 0; i < closedGenericMethodArguments.Count; i++)
+                    {
+                        closedArguments.Add(ImportTypeSigCached(moduleDef, closedGenericMethodArguments[i], $"closed generic method argument '{closedGenericMethodArguments[i].FullName}'"));
+                    }
 
-            if (generatedMethod.MethodSig.GenParamCount == 0)
+                    var methodSpecWithClosedArguments = new MethodSpecUser(effectiveTargetMethod, new GenericInstMethodSig(closedArguments));
+                    var closedGenericCallTarget = moduleDef.UpdateRowId(methodSpecWithClosedArguments);
+                    _currentExecutionContext?.CacheMethodCallTarget(cacheKey, closedGenericCallTarget);
+                    return closedGenericCallTarget;
+                }
+
+                if (generatedMethod.MethodSig.GenParamCount == 0)
+                {
+                    _currentExecutionContext?.CacheMethodCallTarget(cacheKey, effectiveTargetMethod);
+                    return effectiveTargetMethod;
+                }
+
+                var genericArguments = new List<TypeSig>((int)generatedMethod.MethodSig.GenParamCount);
+                for (var genericParameterIndex = 0; genericParameterIndex < generatedMethod.MethodSig.GenParamCount; genericParameterIndex++)
+                {
+                    genericArguments.Add(new GenericMVar((uint)genericParameterIndex));
+                }
+
+                var methodSpec = new MethodSpecUser(effectiveTargetMethod, new GenericInstMethodSig(genericArguments));
+                var generatedMethodCallTarget = moduleDef.UpdateRowId(methodSpec);
+                _currentExecutionContext?.CacheMethodCallTarget(cacheKey, generatedMethodCallTarget);
+                return generatedMethodCallTarget;
+            }
+            finally
             {
-                _currentExecutionContext?.CacheMethodCallTarget(cacheKey, effectiveTargetMethod);
-                return effectiveTargetMethod;
+                StopProfilePhase(phaseStopwatch, seconds => _currentProfile!.MethodCallTargetSeconds += seconds);
             }
-
-            var genericArguments = new List<TypeSig>((int)generatedMethod.MethodSig.GenParamCount);
-            for (var genericParameterIndex = 0; genericParameterIndex < generatedMethod.MethodSig.GenParamCount; genericParameterIndex++)
-            {
-                genericArguments.Add(new GenericMVar((uint)genericParameterIndex));
-            }
-
-            var methodSpec = new MethodSpecUser(effectiveTargetMethod, new GenericInstMethodSig(genericArguments));
-            var generatedMethodCallTarget = moduleDef.UpdateRowId(methodSpec);
-            _currentExecutionContext?.CacheMethodCallTarget(cacheKey, generatedMethodCallTarget);
-            return generatedMethodCallTarget;
         }
 
         /// <summary>
@@ -3990,61 +4026,69 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             ImportedMembers importedMembers,
             string context)
         {
-            if (conversion.Kind == MethodReturnConversionKind.WrapValueWithType ||
-                conversion.Kind == MethodReturnConversionKind.WrapValueWithTypeAfterDuckChainToProxy ||
-                conversion.Kind == MethodReturnConversionKind.WrapValueWithTypeAfterTypeConversion)
+            var phaseStopwatch = StartProfilePhase();
+            try
             {
-                if (!TryGetValueWithTypeArgument(conversion.WrapperTypeSig!, out var wrapperValueType))
+                if (conversion.Kind == MethodReturnConversionKind.WrapValueWithType ||
+                    conversion.Kind == MethodReturnConversionKind.WrapValueWithTypeAfterDuckChainToProxy ||
+                    conversion.Kind == MethodReturnConversionKind.WrapValueWithTypeAfterTypeConversion)
                 {
-                    throw new InvalidOperationException($"Expected ValueWithType<T> wrapper for '{conversion.WrapperTypeSig!.FullName}'.");
+                    if (!TryGetValueWithTypeArgument(conversion.WrapperTypeSig!, out var wrapperValueType))
+                    {
+                        throw new InvalidOperationException($"Expected ValueWithType<T> wrapper for '{conversion.WrapperTypeSig!.FullName}'.");
+                    }
+
+                    if (conversion.Kind == MethodReturnConversionKind.WrapValueWithTypeAfterDuckChainToProxy)
+                    {
+                        EmitDuckChainToProxyConversion(
+                            moduleDef,
+                            methodBody,
+                            wrapperValueType!,
+                            conversion.InnerTypeSig!,
+                            context);
+                    }
+                    else if (conversion.Kind == MethodReturnConversionKind.WrapValueWithTypeAfterTypeConversion)
+                    {
+                        EmitTypeConversion(
+                            moduleDef,
+                            methodBody,
+                            conversion.InnerTypeSig!,
+                            wrapperValueType!,
+                            context);
+                    }
+
+                    // ValueWithType<T>.Type stores the original target return type seen before adaptation.
+                    var importedTargetReturnType = ResolveImportedTypeForTypeToken(moduleDef, conversion.InnerTypeSig!, context);
+                    methodBody.Instructions.Add(OpCodes.Ldtoken.ToInstruction(importedTargetReturnType));
+                    methodBody.Instructions.Add(OpCodes.Call.ToInstruction(importedMembers.GetTypeFromHandleMethod));
+
+                    var createMethodRef = CreateValueWithTypeCreateMethodRef(
+                        moduleDef,
+                        conversion.WrapperTypeSig!,
+                        wrapperValueType!);
+                    methodBody.Instructions.Add(OpCodes.Call.ToInstruction(createMethodRef));
+                    return;
                 }
 
-                if (conversion.Kind == MethodReturnConversionKind.WrapValueWithTypeAfterDuckChainToProxy)
+                if (conversion.Kind == MethodReturnConversionKind.TypeConversion)
+                {
+                    EmitTypeConversion(moduleDef, methodBody, conversion.WrapperTypeSig!, conversion.InnerTypeSig!, context);
+                    return;
+                }
+
+                if (conversion.Kind == MethodReturnConversionKind.DuckChainToProxy)
                 {
                     EmitDuckChainToProxyConversion(
                         moduleDef,
                         methodBody,
-                        wrapperValueType!,
+                        conversion.WrapperTypeSig!,
                         conversion.InnerTypeSig!,
                         context);
                 }
-                else if (conversion.Kind == MethodReturnConversionKind.WrapValueWithTypeAfterTypeConversion)
-                {
-                    EmitTypeConversion(
-                        moduleDef,
-                        methodBody,
-                        conversion.InnerTypeSig!,
-                        wrapperValueType!,
-                        context);
-                }
-
-                // ValueWithType<T>.Type stores the original target return type seen before adaptation.
-                var importedTargetReturnType = ResolveImportedTypeForTypeToken(moduleDef, conversion.InnerTypeSig!, context);
-                methodBody.Instructions.Add(OpCodes.Ldtoken.ToInstruction(importedTargetReturnType));
-                methodBody.Instructions.Add(OpCodes.Call.ToInstruction(importedMembers.GetTypeFromHandleMethod));
-
-                var createMethodRef = CreateValueWithTypeCreateMethodRef(
-                    moduleDef,
-                    conversion.WrapperTypeSig!,
-                    wrapperValueType!);
-                methodBody.Instructions.Add(OpCodes.Call.ToInstruction(createMethodRef));
-                return;
             }
-
-            if (conversion.Kind == MethodReturnConversionKind.TypeConversion)
+            finally
             {
-                EmitTypeConversion(moduleDef, methodBody, conversion.WrapperTypeSig!, conversion.InnerTypeSig!, context);
-                return;
-            }
-
-            if (conversion.Kind == MethodReturnConversionKind.DuckChainToProxy)
-            {
-                EmitDuckChainToProxyConversion(
-                    moduleDef,
-                    methodBody,
-                    conversion.WrapperTypeSig!,
-                    conversion.InnerTypeSig!,
-                    context);
+                StopProfilePhase(phaseStopwatch, seconds => _currentProfile!.EmitMethodReturnConversionSeconds += seconds);
             }
         }
 
@@ -4064,49 +4108,57 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             ImportedMembers importedMembers,
             string context)
         {
-            if (conversion.RequiresValueWithTypeUnwrap)
+            var phaseStopwatch = StartProfilePhase();
+            try
             {
-                var valueFieldRef = CreateValueWithTypeValueFieldRef(
-                    moduleDef,
-                    conversion.UnwrapWrapperTypeSig!,
-                    conversion.UnwrapInnerTypeSig!);
-                methodBody.Instructions.Add(OpCodes.Ldfld.ToInstruction(valueFieldRef));
-            }
-
-            switch (conversion.Kind)
-            {
-                case MethodArgumentConversionKind.None:
-                    return;
-                case MethodArgumentConversionKind.UnwrapValueWithType:
+                if (conversion.RequiresValueWithTypeUnwrap)
                 {
-                    var valueFieldRef = CreateValueWithTypeValueFieldRef(moduleDef, conversion.WrapperTypeSig!, conversion.InnerTypeSig!);
+                    var valueFieldRef = CreateValueWithTypeValueFieldRef(
+                        moduleDef,
+                        conversion.UnwrapWrapperTypeSig!,
+                        conversion.UnwrapInnerTypeSig!);
                     methodBody.Instructions.Add(OpCodes.Ldfld.ToInstruction(valueFieldRef));
-                    return;
                 }
 
-                case MethodArgumentConversionKind.ExtractDuckTypeInstance:
-                    // Dynamic duck typing treats null ref/out inputs as null instances, not as invalid IDuckType.
-                    var hasValueLabel = Instruction.Create(OpCodes.Nop);
-                    var endLabel = Instruction.Create(OpCodes.Nop);
-                    methodBody.Instructions.Add(OpCodes.Dup.ToInstruction());
-                    methodBody.Instructions.Add(OpCodes.Brtrue_S.ToInstruction(hasValueLabel));
-                    methodBody.Instructions.Add(OpCodes.Pop.ToInstruction());
-                    methodBody.Instructions.Add(OpCodes.Ldnull.ToInstruction());
-                    methodBody.Instructions.Add(OpCodes.Br_S.ToInstruction(endLabel));
-                    methodBody.Instructions.Add(hasValueLabel);
-                    methodBody.Instructions.Add(OpCodes.Castclass.ToInstruction(importedMembers.IDuckTypeType));
-                    methodBody.Instructions.Add(OpCodes.Callvirt.ToInstruction(importedMembers.IDuckTypeInstanceGetter));
-                    methodBody.Instructions.Add(endLabel);
-                    EmitObjectToExpectedTypeConversion(moduleDef, methodBody, conversion.InnerTypeSig!, context);
-                    return;
-                case MethodArgumentConversionKind.DuckChainToProxy:
-                    EmitDuckChainToProxyConversion(moduleDef, methodBody, conversion.WrapperTypeSig!, conversion.InnerTypeSig!, context);
-                    return;
-                case MethodArgumentConversionKind.TypeConversion:
-                    EmitTypeConversion(moduleDef, methodBody, conversion.WrapperTypeSig!, conversion.InnerTypeSig!, context);
-                    return;
-                default:
-                    throw new InvalidOperationException($"Unsupported method argument conversion '{conversion.Kind}'.");
+                switch (conversion.Kind)
+                {
+                    case MethodArgumentConversionKind.None:
+                        return;
+                    case MethodArgumentConversionKind.UnwrapValueWithType:
+                    {
+                        var valueFieldRef = CreateValueWithTypeValueFieldRef(moduleDef, conversion.WrapperTypeSig!, conversion.InnerTypeSig!);
+                        methodBody.Instructions.Add(OpCodes.Ldfld.ToInstruction(valueFieldRef));
+                        return;
+                    }
+
+                    case MethodArgumentConversionKind.ExtractDuckTypeInstance:
+                        // Dynamic duck typing treats null ref/out inputs as null instances, not as invalid IDuckType.
+                        var hasValueLabel = Instruction.Create(OpCodes.Nop);
+                        var endLabel = Instruction.Create(OpCodes.Nop);
+                        methodBody.Instructions.Add(OpCodes.Dup.ToInstruction());
+                        methodBody.Instructions.Add(OpCodes.Brtrue_S.ToInstruction(hasValueLabel));
+                        methodBody.Instructions.Add(OpCodes.Pop.ToInstruction());
+                        methodBody.Instructions.Add(OpCodes.Ldnull.ToInstruction());
+                        methodBody.Instructions.Add(OpCodes.Br_S.ToInstruction(endLabel));
+                        methodBody.Instructions.Add(hasValueLabel);
+                        methodBody.Instructions.Add(OpCodes.Castclass.ToInstruction(importedMembers.IDuckTypeType));
+                        methodBody.Instructions.Add(OpCodes.Callvirt.ToInstruction(importedMembers.IDuckTypeInstanceGetter));
+                        methodBody.Instructions.Add(endLabel);
+                        EmitObjectToExpectedTypeConversion(moduleDef, methodBody, conversion.InnerTypeSig!, context);
+                        return;
+                    case MethodArgumentConversionKind.DuckChainToProxy:
+                        EmitDuckChainToProxyConversion(moduleDef, methodBody, conversion.WrapperTypeSig!, conversion.InnerTypeSig!, context);
+                        return;
+                    case MethodArgumentConversionKind.TypeConversion:
+                        EmitTypeConversion(moduleDef, methodBody, conversion.WrapperTypeSig!, conversion.InnerTypeSig!, context);
+                        return;
+                    default:
+                        throw new InvalidOperationException($"Unsupported method argument conversion '{conversion.Kind}'.");
+                }
+            }
+            finally
+            {
+                StopProfilePhase(phaseStopwatch, seconds => _currentProfile!.EmitMethodArgumentConversionSeconds += seconds);
             }
         }
 
@@ -4327,31 +4379,39 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <returns>The result produced by this operation.</returns>
         private static Type? TryResolveRuntimeType(TypeSig typeSig)
         {
-            if (typeSig.IsGenericParameter)
+            var phaseStopwatch = StartProfilePhase();
+            try
             {
-                return null;
-            }
+                if (typeSig.IsGenericParameter)
+                {
+                    return null;
+                }
 
-            return typeSig.ElementType switch
+                return typeSig.ElementType switch
+                {
+                    ElementType.Boolean => typeof(bool),
+                    ElementType.Char => typeof(char),
+                    ElementType.I1 => typeof(sbyte),
+                    ElementType.U1 => typeof(byte),
+                    ElementType.I2 => typeof(short),
+                    ElementType.U2 => typeof(ushort),
+                    ElementType.I4 => typeof(int),
+                    ElementType.U4 => typeof(uint),
+                    ElementType.I8 => typeof(long),
+                    ElementType.U8 => typeof(ulong),
+                    ElementType.R4 => typeof(float),
+                    ElementType.R8 => typeof(double),
+                    ElementType.String => typeof(string),
+                    ElementType.Object => typeof(object),
+                    ElementType.I => typeof(IntPtr),
+                    ElementType.U => typeof(UIntPtr),
+                    _ => TryResolveRuntimeTypeFromTypeDefOrRef(typeSig)
+                };
+            }
+            finally
             {
-                ElementType.Boolean => typeof(bool),
-                ElementType.Char => typeof(char),
-                ElementType.I1 => typeof(sbyte),
-                ElementType.U1 => typeof(byte),
-                ElementType.I2 => typeof(short),
-                ElementType.U2 => typeof(ushort),
-                ElementType.I4 => typeof(int),
-                ElementType.U4 => typeof(uint),
-                ElementType.I8 => typeof(long),
-                ElementType.U8 => typeof(ulong),
-                ElementType.R4 => typeof(float),
-                ElementType.R8 => typeof(double),
-                ElementType.String => typeof(string),
-                ElementType.Object => typeof(object),
-                ElementType.I => typeof(IntPtr),
-                ElementType.U => typeof(UIntPtr),
-                _ => TryResolveRuntimeTypeFromTypeDefOrRef(typeSig)
-            };
+                StopProfilePhase(phaseStopwatch, seconds => _currentProfile!.RuntimeTypeFromTypeSigSeconds += seconds);
+            }
         }
 
         /// <summary>
@@ -4579,57 +4639,65 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             MethodDef generatedMethod,
             IDictionary<string, PropertyDef> generatedPropertiesByKey)
         {
-            // Keeping property rows aligned with emitted accessors preserves reflection and decompiler behavior parity.
-            // Without this, proxies may appear to expose only get_/set_ methods in downstream tooling.
-            if (!proxyMethod.IsSpecialName)
+            var phaseStopwatch = StartProfilePhase();
+            try
             {
-                return;
-            }
-
-            var accessorName = proxyMethod.Name;
-            var isGetter = accessorName.StartsWith("get_", StringComparison.Ordinal);
-            var isSetter = accessorName.StartsWith("set_", StringComparison.Ordinal);
-            if (!isGetter && !isSetter)
-            {
-                return;
-            }
-
-            var proxyProperty = FindPropertyFromAccessor(proxyMethod);
-            string propertyKey;
-            string propertyName;
-            PropertySig importedPropertySig;
-            // Prefer declared property metadata when available.
-            if (proxyProperty is not null)
-            {
-                importedPropertySig = CreateImportedPropertySig(moduleDef, proxyProperty.PropertySig);
-                propertyName = proxyProperty.Name;
-                propertyKey = proxyProperty.FullName;
-            }
-            else
-            {
-                // Fallback keeps metadata usable for contracts that declare accessor methods without property rows.
-                if (!TryInferPropertyMetadataFromAccessor(moduleDef, proxyMethod, out propertyName, out importedPropertySig, out propertyKey))
+                // Keeping property rows aligned with emitted accessors preserves reflection and decompiler behavior parity.
+                // Without this, proxies may appear to expose only get_/set_ methods in downstream tooling.
+                if (!proxyMethod.IsSpecialName)
                 {
                     return;
                 }
-            }
 
-            // Create property row once, then attach getter/setter accessors as they are emitted.
-            if (!generatedPropertiesByKey.TryGetValue(propertyKey, out var generatedProperty))
-            {
-                // One property definition per logical key avoids duplicate property rows in generated metadata.
-                generatedProperty = new PropertyDefUser(propertyName, importedPropertySig);
-                generatedType.Properties.Add(generatedProperty);
-                generatedPropertiesByKey[propertyKey] = generatedProperty;
-            }
+                var accessorName = proxyMethod.Name;
+                var isGetter = accessorName.StartsWith("get_", StringComparison.Ordinal);
+                var isSetter = accessorName.StartsWith("set_", StringComparison.Ordinal);
+                if (!isGetter && !isSetter)
+                {
+                    return;
+                }
 
-            if (isGetter)
-            {
-                generatedProperty.GetMethod ??= generatedMethod;
+                var proxyProperty = FindPropertyFromAccessor(proxyMethod);
+                string propertyKey;
+                string propertyName;
+                PropertySig importedPropertySig;
+                // Prefer declared property metadata when available.
+                if (proxyProperty is not null)
+                {
+                    importedPropertySig = CreateImportedPropertySig(moduleDef, proxyProperty.PropertySig);
+                    propertyName = proxyProperty.Name;
+                    propertyKey = proxyProperty.FullName;
+                }
+                else
+                {
+                    // Fallback keeps metadata usable for contracts that declare accessor methods without property rows.
+                    if (!TryInferPropertyMetadataFromAccessor(moduleDef, proxyMethod, out propertyName, out importedPropertySig, out propertyKey))
+                    {
+                        return;
+                    }
+                }
+
+                // Create property row once, then attach getter/setter accessors as they are emitted.
+                if (!generatedPropertiesByKey.TryGetValue(propertyKey, out var generatedProperty))
+                {
+                    // One property definition per logical key avoids duplicate property rows in generated metadata.
+                    generatedProperty = new PropertyDefUser(propertyName, importedPropertySig);
+                    generatedType.Properties.Add(generatedProperty);
+                    generatedPropertiesByKey[propertyKey] = generatedProperty;
+                }
+
+                if (isGetter)
+                {
+                    generatedProperty.GetMethod ??= generatedMethod;
+                }
+                else
+                {
+                    generatedProperty.SetMethod ??= generatedMethod;
+                }
             }
-            else
+            finally
             {
-                generatedProperty.SetMethod ??= generatedMethod;
+                StopProfilePhase(phaseStopwatch, seconds => _currentProfile!.EnsureInterfacePropertyMetadataSeconds += seconds);
             }
         }
 
@@ -4644,6 +4712,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             if (declaringType is null)
             {
                 return null;
+            }
+
+            var proxyTypePlan = _currentExecutionContext?.GetOrCreateProxyTypePlan(declaringType);
+            if (proxyTypePlan?.TryGetPropertyFromAccessor(accessorMethod, out var cachedProperty) == true)
+            {
+                return cachedProperty;
             }
 
             var visitedTypes = new HashSet<string>(StringComparer.Ordinal);
@@ -4940,41 +5014,49 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             out IReadOnlyList<ForwardBinding> bindings,
             out DuckTypeAotMappingEmissionResult? failure)
         {
-            var collectedBindings = new List<ForwardBinding>();
-            bindings = collectedBindings;
-            failure = null;
-            var targetUsesReverseMethodAttributes =
-                mapping.Mode == DuckTypeAotMappingMode.Reverse && HasReverseMethodAttributes(targetType);
-
-            var proxyMethods = GetInterfaceMethods(proxyInterfaceType).ToList();
-            AppendDuckIncludeTargetMethods(proxyMethods, targetType);
-            foreach (var proxyMethod in proxyMethods)
+            var phaseStopwatch = StartProfilePhase();
+            try
             {
-                if (proxyMethod.IsStatic)
+                var collectedBindings = new List<ForwardBinding>();
+                bindings = collectedBindings;
+                failure = null;
+                var targetUsesReverseMethodAttributes =
+                    mapping.Mode == DuckTypeAotMappingMode.Reverse && HasReverseMethodAttributes(targetType);
+
+                var proxyMethods = GetInterfaceMethods(proxyInterfaceType).ToList();
+                AppendDuckIncludeTargetMethods(proxyMethods, targetType);
+                foreach (var proxyMethod in proxyMethods)
                 {
-                    failure = DuckTypeAotMappingEmissionResult.NotCompatible(
-                        mapping,
-                        DuckTypeAotCompatibilityStatuses.IncompatibleMethodSignature,
-                        StatusCodeIncompatibleSignature,
-                        $"Proxy method '{proxyMethod.FullName}' is static. Static interface members are not emitted in this phase.");
+                    if (proxyMethod.IsStatic)
+                    {
+                        failure = DuckTypeAotMappingEmissionResult.NotCompatible(
+                            mapping,
+                            DuckTypeAotCompatibilityStatuses.IncompatibleMethodSignature,
+                            StatusCodeIncompatibleSignature,
+                            $"Proxy method '{proxyMethod.FullName}' is static. Static interface members are not emitted in this phase.");
+                        return false;
+                    }
+
+                    if (!TryResolveForwardBinding(mapping, targetType, closedGenericTargetTypeArguments, proxyMethod, out var binding, out failure))
+                    {
+                        return false;
+                    }
+
+                    collectedBindings.Add(binding);
+                }
+
+                if (targetUsesReverseMethodAttributes &&
+                    !TryValidateReverseImplementationCoverage(mapping, targetType, collectedBindings, out failure))
+                {
                     return false;
                 }
 
-                if (!TryResolveForwardBinding(mapping, targetType, closedGenericTargetTypeArguments, proxyMethod, out var binding, out failure))
-                {
-                    return false;
-                }
-
-                collectedBindings.Add(binding);
+                return true;
             }
-
-            if (targetUsesReverseMethodAttributes &&
-                !TryValidateReverseImplementationCoverage(mapping, targetType, collectedBindings, out failure))
+            finally
             {
-                return false;
+                StopProfilePhase(phaseStopwatch, seconds => _currentProfile!.ForwardBindingCollectionSeconds += seconds);
             }
-
-            return true;
         }
 
         /// <summary>
@@ -4994,54 +5076,57 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             out IReadOnlyList<ForwardBinding> bindings,
             out DuckTypeAotMappingEmissionResult? failure)
         {
-            var collectedBindings = new List<ForwardBinding>();
-            bindings = collectedBindings;
-            failure = null;
-            var targetUsesReverseMethodAttributes =
-                mapping.Mode == DuckTypeAotMappingMode.Reverse && HasReverseMethodAttributes(targetType);
-
-            var proxyMethods = GetClassProxyMethods(proxyClassType).ToList();
-            AppendDuckIncludeTargetMethods(proxyMethods, targetType);
-            if (proxyMethods.Count == 0)
+            var phaseStopwatch = StartProfilePhase();
+            try
             {
-                return true;
-            }
+                var collectedBindings = new List<ForwardBinding>();
+                bindings = collectedBindings;
+                failure = null;
+                var targetUsesReverseMethodAttributes =
+                    mapping.Mode == DuckTypeAotMappingMode.Reverse && HasReverseMethodAttributes(targetType);
 
-            foreach (var proxyMethod in proxyMethods)
-            {
-                if (!TryResolveForwardBinding(mapping, targetType, closedGenericTargetTypeArguments, proxyMethod, out var binding, out failure))
+                var proxyMethods = GetClassProxyMethods(proxyClassType).ToList();
+                AppendDuckIncludeTargetMethods(proxyMethods, targetType);
+                if (proxyMethods.Count == 0)
                 {
-                    // Reverse proxies may intentionally leave concrete base virtual members unbound.
-                    // In this case the generated type inherits the original implementation unchanged.
-                    if (mapping.Mode == DuckTypeAotMappingMode.Reverse &&
-                        failure?.Status == DuckTypeAotCompatibilityStatuses.MissingTargetMethod &&
-                        !proxyMethod.IsAbstract)
+                    return true;
+                }
+
+                foreach (var proxyMethod in proxyMethods)
+                {
+                    if (!TryResolveForwardBinding(mapping, targetType, closedGenericTargetTypeArguments, proxyMethod, out var binding, out failure))
                     {
-                        continue;
+                        if (mapping.Mode == DuckTypeAotMappingMode.Reverse &&
+                            failure?.Status == DuckTypeAotCompatibilityStatuses.MissingTargetMethod &&
+                            !proxyMethod.IsAbstract)
+                        {
+                            continue;
+                        }
+
+                        if (mapping.Mode == DuckTypeAotMappingMode.Reverse &&
+                            IsInheritedOpenGenericAbstractMethodWithConcreteOverride(proxyClassType, proxyMethod))
+                        {
+                            continue;
+                        }
+
+                        return false;
                     }
 
-                    // Ignore inherited open-generic abstract rows when a concrete override already exists
-                    // in the proxied class hierarchy. Dynamic reverse ducktyping binds through the concrete
-                    // override and does not require an extra mapping for the inherited generic definition.
-                    if (mapping.Mode == DuckTypeAotMappingMode.Reverse &&
-                        IsInheritedOpenGenericAbstractMethodWithConcreteOverride(proxyClassType, proxyMethod))
-                    {
-                        continue;
-                    }
+                    collectedBindings.Add(binding);
+                }
 
+                if (targetUsesReverseMethodAttributes &&
+                    !TryValidateReverseImplementationCoverage(mapping, targetType, collectedBindings, out failure))
+                {
                     return false;
                 }
 
-                collectedBindings.Add(binding);
+                return true;
             }
-
-            if (targetUsesReverseMethodAttributes &&
-                !TryValidateReverseImplementationCoverage(mapping, targetType, collectedBindings, out failure))
+            finally
             {
-                return false;
+                StopProfilePhase(phaseStopwatch, seconds => _currentProfile!.ForwardBindingCollectionSeconds += seconds);
             }
-
-            return true;
         }
 
         /// <summary>
@@ -5192,30 +5277,23 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <param name="targetType">The target type value.</param>
         private static void AppendDuckIncludeTargetMethods(List<MethodDef> proxyMethods, TypeDef targetType)
         {
-            var visitedMethodKeys = new HashSet<string>(proxyMethods.Select(method => $"{method.Name}::{method.MethodSig}"), StringComparer.Ordinal);
-            var current = targetType;
-            while (current is not null)
+            var phaseStopwatch = StartProfilePhase();
+            try
             {
-                foreach (var method in current.Methods)
+                var visitedMethodKeys = new HashSet<string>(proxyMethods.Select(method => $"{method.Name}::{method.MethodSig}"), StringComparer.Ordinal);
+                var duckIncludeMethods = _currentExecutionContext?.GetOrCreateDuckIncludeMethods(targetType) ?? Array.Empty<MethodDef>();
+                foreach (var method in duckIncludeMethods)
                 {
-                    if (method.IsConstructor || method.IsStatic || method.IsFinal || method.IsPrivate || method.IsSpecialName)
-                    {
-                        continue;
-                    }
-
-                    if (!method.CustomAttributes.Any(attribute => string.Equals(attribute.TypeFullName, DuckIncludeAttributeTypeName, StringComparison.Ordinal)))
-                    {
-                        continue;
-                    }
-
                     var key = $"{method.Name}::{method.MethodSig}";
                     if (visitedMethodKeys.Add(key))
                     {
                         proxyMethods.Add(method);
                     }
                 }
-
-                current = current.BaseType?.ResolveTypeDef();
+            }
+            finally
+            {
+                StopProfilePhase(phaseStopwatch, seconds => _currentProfile!.DuckIncludeCollectionSeconds += seconds);
             }
         }
 
@@ -5273,86 +5351,89 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             out ForwardBinding binding,
             out DuckTypeAotMappingEmissionResult? failure)
         {
-            binding = default;
-            failure = null;
-            var proxyMethodPlan = GetOrCreateProxyMethodPlan(proxyMethod);
-            var bindingPlanCacheKey = BuildForwardBindingPlanCacheKey(mapping, targetType, proxyMethod, closedGenericTargetTypeArguments);
-            if (_currentExecutionContext?.TryGetForwardBindingPlan(bindingPlanCacheKey, out var cachedPlan) == true)
+            var phaseStopwatch = StartProfilePhase();
+            try
             {
+                binding = default;
+                failure = null;
+                var proxyMethodPlan = GetOrCreateProxyMethodPlan(proxyMethod);
+                var bindingPlanCacheKey = BuildForwardBindingPlanCacheKey(mapping, targetType, proxyMethod, closedGenericTargetTypeArguments);
+                if (_currentExecutionContext?.TryGetForwardBindingPlan(bindingPlanCacheKey, out var cachedPlan) == true)
+                {
+                    if (_currentProfile is not null)
+                    {
+                        _currentProfile.ForwardBindingPlanCacheHits++;
+                    }
+
+                    if (cachedPlan.Succeeded)
+                    {
+                        binding = cachedPlan.Binding;
+                        return true;
+                    }
+
+                    failure = CreateFailureResult(
+                        mapping,
+                        cachedPlan.FailureStatus ?? DuckTypeAotCompatibilityStatuses.IncompatibleMethodSignature,
+                        cachedPlan.FailureDiagnosticCode ?? StatusCodeIncompatibleSignature,
+                        cachedPlan.FailureDetail ?? $"Target member for proxy method '{proxyMethod.FullName}' was not found.");
+                    return false;
+                }
+
                 if (_currentProfile is not null)
                 {
-                    _currentProfile.ForwardBindingPlanCacheHits++;
+                    _currentProfile.ForwardBindingPlanCacheMisses++;
                 }
 
-                if (cachedPlan.Succeeded)
+                var fieldResolutionMode = proxyMethodPlan.FieldResolutionMode;
+                var fieldOnly = fieldResolutionMode == FieldResolutionMode.FieldOnly;
+                var allowFieldFallback = fieldResolutionMode != FieldResolutionMode.Disabled;
+                var allowPrivateBaseMembers = proxyMethodPlan.AllowPrivateBaseMembers;
+                var isReverseMapping = mapping.Mode == DuckTypeAotMappingMode.Reverse;
+                // Dynamic ducktyping only applies FallbackToBaseTypes semantics to property/field binding paths.
+                // In AOT, property bindings are represented as accessor methods, so keep private-base fallback
+                // enabled only for accessor method resolution to preserve runtime parity.
+                var allowPrivateBaseMethodCandidates = proxyMethodPlan.AllowPrivateBaseMethodCandidates;
+
+                ForwardBindingPlanCacheEntry CreateFailurePlan(DuckTypeAotMappingEmissionResult failureResult)
                 {
-                    binding = cachedPlan.Binding;
-                    return true;
+                    return new ForwardBindingPlanCacheEntry(
+                        failureResult.Status,
+                        failureResult.DiagnosticCode ?? StatusCodeIncompatibleSignature,
+                        failureResult.Detail ?? string.Empty);
                 }
 
-                failure = CreateFailureResult(
-                    mapping,
-                    cachedPlan.FailureStatus ?? DuckTypeAotCompatibilityStatuses.IncompatibleMethodSignature,
-                    cachedPlan.FailureDiagnosticCode ?? StatusCodeIncompatibleSignature,
-                    cachedPlan.FailureDetail ?? $"Target member for proxy method '{proxyMethod.FullName}' was not found.");
-                return false;
-            }
-
-            if (_currentProfile is not null)
-            {
-                _currentProfile.ForwardBindingPlanCacheMisses++;
-            }
-
-            var fieldResolutionMode = proxyMethodPlan.FieldResolutionMode;
-            var fieldOnly = fieldResolutionMode == FieldResolutionMode.FieldOnly;
-            var allowFieldFallback = fieldResolutionMode != FieldResolutionMode.Disabled;
-            var allowPrivateBaseMembers = proxyMethodPlan.AllowPrivateBaseMembers;
-            var isReverseMapping = mapping.Mode == DuckTypeAotMappingMode.Reverse;
-            // Dynamic ducktyping only applies FallbackToBaseTypes semantics to property/field binding paths.
-            // In AOT, property bindings are represented as accessor methods, so keep private-base fallback
-            // enabled only for accessor method resolution to preserve runtime parity.
-            var allowPrivateBaseMethodCandidates = proxyMethodPlan.AllowPrivateBaseMethodCandidates;
-
-            ForwardBindingPlanCacheEntry CreateFailurePlan(DuckTypeAotMappingEmissionResult failureResult)
-            {
-                return new ForwardBindingPlanCacheEntry(
-                    failureResult.Status,
-                    failureResult.DiagnosticCode ?? StatusCodeIncompatibleSignature,
-                    failureResult.Detail ?? string.Empty);
-            }
-
-            if (!isReverseMapping &&
-                !string.IsNullOrWhiteSpace(proxyMethodPlan.ReverseUsageFailureDetail))
-            {
-                failure = DuckTypeAotMappingEmissionResult.NotCompatible(
-                    mapping,
-                    DuckTypeAotCompatibilityStatuses.IncompatibleMethodSignature,
-                    StatusCodeIncompatibleSignature,
-                    proxyMethodPlan.ReverseUsageFailureDetail!);
-                _currentExecutionContext?.CacheForwardBindingPlan(bindingPlanCacheKey, CreateFailurePlan(failure));
-                return false;
-            }
-
-            MethodCompatibilityFailure? firstMethodFailure = null;
-            if (!TryResolveForwardClosedGenericMethodArguments(targetType, proxyMethodPlan, out var closedGenericMethodArguments, out var closedGenericMethodArgumentsFailureReason))
-            {
-                failure = DuckTypeAotMappingEmissionResult.NotCompatible(
-                    mapping,
-                    DuckTypeAotCompatibilityStatuses.IncompatibleMethodSignature,
-                    StatusCodeIncompatibleSignature,
-                    closedGenericMethodArgumentsFailureReason ?? $"Unable to resolve generic type arguments for proxy method '{proxyMethod.FullName}'.");
-                _currentExecutionContext?.CacheForwardBindingPlan(bindingPlanCacheKey, CreateFailurePlan(failure));
-                return false;
-            }
-
-            if (!fieldOnly)
-            {
-                var hasSuccessfulMethodBinding = false;
-                var successfulMethodBinding = default(ForwardBinding);
-                MethodDef? successfulTargetMethod = null;
-                var visitedMethodCandidates = new HashSet<string>(StringComparer.Ordinal);
-                foreach (var targetMethod in FindForwardTargetMethodCandidates(mapping, targetType, proxyMethodPlan, closedGenericMethodArguments, allowPrivateBaseMethodCandidates))
+                if (!isReverseMapping &&
+                    !string.IsNullOrWhiteSpace(proxyMethodPlan.ReverseUsageFailureDetail))
                 {
+                    failure = DuckTypeAotMappingEmissionResult.NotCompatible(
+                        mapping,
+                        DuckTypeAotCompatibilityStatuses.IncompatibleMethodSignature,
+                        StatusCodeIncompatibleSignature,
+                        proxyMethodPlan.ReverseUsageFailureDetail!);
+                    _currentExecutionContext?.CacheForwardBindingPlan(bindingPlanCacheKey, CreateFailurePlan(failure));
+                    return false;
+                }
+
+                MethodCompatibilityFailure? firstMethodFailure = null;
+                if (!TryResolveForwardClosedGenericMethodArguments(targetType, proxyMethodPlan, out var closedGenericMethodArguments, out var closedGenericMethodArgumentsFailureReason))
+                {
+                    failure = DuckTypeAotMappingEmissionResult.NotCompatible(
+                        mapping,
+                        DuckTypeAotCompatibilityStatuses.IncompatibleMethodSignature,
+                        StatusCodeIncompatibleSignature,
+                        closedGenericMethodArgumentsFailureReason ?? $"Unable to resolve generic type arguments for proxy method '{proxyMethod.FullName}'.");
+                    _currentExecutionContext?.CacheForwardBindingPlan(bindingPlanCacheKey, CreateFailurePlan(failure));
+                    return false;
+                }
+
+                if (!fieldOnly)
+                {
+                    var hasSuccessfulMethodBinding = false;
+                    var successfulMethodBinding = default(ForwardBinding);
+                    MethodDef? successfulTargetMethod = null;
+                    var visitedMethodCandidates = new HashSet<string>(StringComparer.Ordinal);
+                    foreach (var targetMethod in FindForwardTargetMethodCandidates(mapping, targetType, proxyMethodPlan, closedGenericMethodArguments, allowPrivateBaseMethodCandidates))
+                    {
                     if (!visitedMethodCandidates.Add(GetMethodCandidateKey(targetMethod)))
                     {
                         continue;
@@ -5386,83 +5467,88 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     firstMethodFailure ??= methodFailure;
                 }
 
-                if (hasSuccessfulMethodBinding)
-                {
-                    binding = successfulMethodBinding;
-                    _currentExecutionContext?.CacheForwardBindingPlan(bindingPlanCacheKey, new ForwardBindingPlanCacheEntry(binding));
-                    return true;
-                }
-            }
-
-            if (allowFieldFallback)
-            {
-                if (!proxyMethodPlan.HasFieldAccessorKind)
-                {
-                    if (fieldOnly)
+                    if (hasSuccessfulMethodBinding)
                     {
-                        failure = DuckTypeAotMappingEmissionResult.NotCompatible(
-                            mapping,
-                            DuckTypeAotCompatibilityStatuses.IncompatibleMethodSignature,
-                            StatusCodeIncompatibleSignature,
-                            $"Proxy member '{proxyMethod.FullName}' uses DuckField semantics but is not a supported property accessor.");
-                        _currentExecutionContext?.CacheForwardBindingPlan(bindingPlanCacheKey, CreateFailurePlan(failure));
-                        return false;
-                    }
-                }
-                else
-                {
-                    var fieldAccessorKind = proxyMethodPlan.FieldAccessorKind;
-                    if (TryFindForwardTargetField(targetType, proxyMethod, fieldAccessorKind, allowPrivateBaseMembers, closedGenericTargetTypeArguments, isReverseMapping, out var targetField, out var fieldBinding, out var fieldFailureReason))
-                    {
-                        binding = fieldAccessorKind == FieldAccessorKind.Getter
-                                      ? ForwardBinding.ForFieldGet(proxyMethod, targetField!, fieldBinding)
-                                      : ForwardBinding.ForFieldSet(proxyMethod, targetField!, fieldBinding);
+                        binding = successfulMethodBinding;
                         _currentExecutionContext?.CacheForwardBindingPlan(bindingPlanCacheKey, new ForwardBindingPlanCacheEntry(binding));
                         return true;
                     }
+                }
 
-                    if (!string.IsNullOrWhiteSpace(fieldFailureReason))
+                if (allowFieldFallback)
+                {
+                    if (!proxyMethodPlan.HasFieldAccessorKind)
                     {
-                        failure = DuckTypeAotMappingEmissionResult.NotCompatible(
-                            mapping,
-                            DuckTypeAotCompatibilityStatuses.IncompatibleMethodSignature,
-                            StatusCodeIncompatibleSignature,
-                            fieldFailureReason ?? $"Field binding for proxy method '{proxyMethod.FullName}' is not compatible.");
-                        _currentExecutionContext?.CacheForwardBindingPlan(bindingPlanCacheKey, CreateFailurePlan(failure));
-                        return false;
+                        if (fieldOnly)
+                        {
+                            failure = DuckTypeAotMappingEmissionResult.NotCompatible(
+                                mapping,
+                                DuckTypeAotCompatibilityStatuses.IncompatibleMethodSignature,
+                                StatusCodeIncompatibleSignature,
+                                $"Proxy member '{proxyMethod.FullName}' uses DuckField semantics but is not a supported property accessor.");
+                            _currentExecutionContext?.CacheForwardBindingPlan(bindingPlanCacheKey, CreateFailurePlan(failure));
+                            return false;
+                        }
+                    }
+                    else
+                    {
+                        var fieldAccessorKind = proxyMethodPlan.FieldAccessorKind;
+                        if (TryFindForwardTargetField(targetType, proxyMethod, fieldAccessorKind, allowPrivateBaseMembers, closedGenericTargetTypeArguments, isReverseMapping, out var targetField, out var fieldBinding, out var fieldFailureReason))
+                        {
+                            binding = fieldAccessorKind == FieldAccessorKind.Getter
+                                          ? ForwardBinding.ForFieldGet(proxyMethod, targetField!, fieldBinding)
+                                          : ForwardBinding.ForFieldSet(proxyMethod, targetField!, fieldBinding);
+                            _currentExecutionContext?.CacheForwardBindingPlan(bindingPlanCacheKey, new ForwardBindingPlanCacheEntry(binding));
+                            return true;
+                        }
+
+                        if (!string.IsNullOrWhiteSpace(fieldFailureReason))
+                        {
+                            failure = DuckTypeAotMappingEmissionResult.NotCompatible(
+                                mapping,
+                                DuckTypeAotCompatibilityStatuses.IncompatibleMethodSignature,
+                                StatusCodeIncompatibleSignature,
+                                fieldFailureReason ?? $"Field binding for proxy method '{proxyMethod.FullName}' is not compatible.");
+                            _currentExecutionContext?.CacheForwardBindingPlan(bindingPlanCacheKey, CreateFailurePlan(failure));
+                            return false;
+                        }
                     }
                 }
-            }
 
-            if (firstMethodFailure is not null)
-            {
+                if (firstMethodFailure is not null)
+                {
+                    failure = CreateFailureResult(
+                        mapping,
+                        DuckTypeAotCompatibilityStatuses.IncompatibleMethodSignature,
+                        StatusCodeIncompatibleSignature,
+                        firstMethodFailure.Value.Detail);
+                    _currentExecutionContext?.CacheForwardBindingPlan(bindingPlanCacheKey, CreateFailurePlan(failure));
+                    return false;
+                }
+
+                if (TryResolvePropertyCantBeWrittenFailure(targetType, proxyMethod, allowPrivateBaseMembers, out var propertyCantBeWrittenDetail))
+                {
+                    failure = DuckTypeAotMappingEmissionResult.NotCompatible(
+                        mapping,
+                        DuckTypeAotCompatibilityStatuses.MissingTargetMethod,
+                        StatusCodePropertyCantBeWritten,
+                        propertyCantBeWrittenDetail!);
+                    _currentExecutionContext?.CacheForwardBindingPlan(bindingPlanCacheKey, CreateFailurePlan(failure));
+                    return false;
+                }
+
                 failure = CreateFailureResult(
                     mapping,
-                    DuckTypeAotCompatibilityStatuses.IncompatibleMethodSignature,
-                    StatusCodeIncompatibleSignature,
-                    firstMethodFailure.Value.Detail);
-                _currentExecutionContext?.CacheForwardBindingPlan(bindingPlanCacheKey, CreateFailurePlan(failure));
-                return false;
-            }
-
-            if (TryResolvePropertyCantBeWrittenFailure(targetType, proxyMethod, allowPrivateBaseMembers, out var propertyCantBeWrittenDetail))
-            {
-                failure = DuckTypeAotMappingEmissionResult.NotCompatible(
-                    mapping,
                     DuckTypeAotCompatibilityStatuses.MissingTargetMethod,
-                    StatusCodePropertyCantBeWritten,
-                    propertyCantBeWrittenDetail!);
+                    StatusCodeMissingMethod,
+                    $"Target member for proxy method '{proxyMethod.FullName}' was not found.");
                 _currentExecutionContext?.CacheForwardBindingPlan(bindingPlanCacheKey, CreateFailurePlan(failure));
                 return false;
             }
-
-            failure = CreateFailureResult(
-                mapping,
-                DuckTypeAotCompatibilityStatuses.MissingTargetMethod,
-                StatusCodeMissingMethod,
-                $"Target member for proxy method '{proxyMethod.FullName}' was not found.");
-            _currentExecutionContext?.CacheForwardBindingPlan(bindingPlanCacheKey, CreateFailurePlan(failure));
-            return false;
+            finally
+            {
+                StopProfilePhase(phaseStopwatch, seconds => _currentProfile!.ForwardBindingResolutionSeconds += seconds);
+            }
         }
 
         /// <summary>
@@ -5898,6 +5984,19 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return string.Join(",", typeSigs.Select(BuildTypeSigCacheKey));
         }
 
+        private static string BuildTypeSubstitutionCacheKey(
+            TypeSig typeSig,
+            IReadOnlyList<TypeSig>? closedGenericTypeArguments,
+            IReadOnlyList<TypeSig>? closedGenericMethodArguments)
+        {
+            return string.Concat(
+                BuildTypeSigCacheKey(typeSig),
+                "|",
+                BuildTypeSigSequenceCacheKey(closedGenericTypeArguments),
+                "|",
+                BuildTypeSigSequenceCacheKey(closedGenericMethodArguments));
+        }
+
         private static string BuildForwardBindingPlanCacheKey(
             DuckTypeAotMapping mapping,
             TypeDef targetType,
@@ -6238,95 +6337,103 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             out ForwardMethodBindingInfo binding,
             out MethodCompatibilityFailure? failure)
         {
-            var cacheKey = BuildForwardMethodBindingPlanCacheKey(
-                proxyMethod,
-                targetMethod,
-                closedGenericTargetTypeArguments,
-                closedGenericMethodArguments,
-                isReverseMapping);
-            if (_currentExecutionContext?.TryGetForwardMethodBindingPlan(cacheKey, out var cachedPlan) == true)
+            var phaseStopwatch = StartProfilePhase();
+            try
             {
+                var cacheKey = BuildForwardMethodBindingPlanCacheKey(
+                    proxyMethod,
+                    targetMethod,
+                    closedGenericTargetTypeArguments,
+                    closedGenericMethodArguments,
+                    isReverseMapping);
+                if (_currentExecutionContext?.TryGetForwardMethodBindingPlan(cacheKey, out var cachedPlan) == true)
+                {
+                    if (_currentProfile is not null)
+                    {
+                        _currentProfile.ForwardBindingPlanCacheHits++;
+                    }
+
+                    if (cachedPlan.Succeeded)
+                    {
+                        binding = cachedPlan.Binding;
+                        failure = null;
+                        return true;
+                    }
+
+                    binding = default;
+                    failure = new MethodCompatibilityFailure(cachedPlan.FailureDetail ?? $"Method binding for '{proxyMethod.FullName}' is not compatible.");
+                    return false;
+                }
+
                 if (_currentProfile is not null)
                 {
-                    _currentProfile.ForwardBindingPlanCacheHits++;
+                    _currentProfile.ForwardBindingPlanCacheMisses++;
                 }
 
-                if (cachedPlan.Succeeded)
-                {
-                    binding = cachedPlan.Binding;
-                    failure = null;
-                    return true;
-                }
-
-                binding = default;
-                failure = new MethodCompatibilityFailure(cachedPlan.FailureDetail ?? $"Method binding for '{proxyMethod.FullName}' is not compatible.");
-                return false;
-            }
-
-            if (_currentProfile is not null)
-            {
-                _currentProfile.ForwardBindingPlanCacheMisses++;
-            }
-
-            if (proxyMethod.MethodSig.Params.Count != targetMethod.MethodSig.Params.Count)
-            {
-                failure = new MethodCompatibilityFailure(
-                    $"Parameter count mismatch between proxy method '{proxyMethod.FullName}' and target method '{targetMethod.FullName}'.");
-                binding = default;
-                _currentExecutionContext?.CacheForwardMethodBindingPlan(cacheKey, new ForwardMethodBindingPlanCacheEntry(failure.Value.Detail));
-                return false;
-            }
-
-            if (closedGenericMethodArguments is null)
-            {
-                if (proxyMethod.MethodSig.GenParamCount != targetMethod.MethodSig.GenParamCount)
+                if (proxyMethod.MethodSig.Params.Count != targetMethod.MethodSig.Params.Count)
                 {
                     failure = new MethodCompatibilityFailure(
-                        $"Generic arity mismatch between proxy method '{proxyMethod.FullName}' and target method '{targetMethod.FullName}'.");
+                        $"Parameter count mismatch between proxy method '{proxyMethod.FullName}' and target method '{targetMethod.FullName}'.");
                     binding = default;
                     _currentExecutionContext?.CacheForwardMethodBindingPlan(cacheKey, new ForwardMethodBindingPlanCacheEntry(failure.Value.Detail));
                     return false;
                 }
-            }
-            else
-            {
-                if (proxyMethod.MethodSig.GenParamCount != 0 || targetMethod.MethodSig.GenParamCount != closedGenericMethodArguments.Count)
+
+                if (closedGenericMethodArguments is null)
+                {
+                    if (proxyMethod.MethodSig.GenParamCount != targetMethod.MethodSig.GenParamCount)
+                    {
+                        failure = new MethodCompatibilityFailure(
+                            $"Generic arity mismatch between proxy method '{proxyMethod.FullName}' and target method '{targetMethod.FullName}'.");
+                        binding = default;
+                        _currentExecutionContext?.CacheForwardMethodBindingPlan(cacheKey, new ForwardMethodBindingPlanCacheEntry(failure.Value.Detail));
+                        return false;
+                    }
+                }
+                else
+                {
+                    if (proxyMethod.MethodSig.GenParamCount != 0 || targetMethod.MethodSig.GenParamCount != closedGenericMethodArguments.Count)
+                    {
+                        failure = new MethodCompatibilityFailure(
+                            $"Generic arity mismatch between proxy method '{proxyMethod.FullName}' and target method '{targetMethod.FullName}'.");
+                        binding = default;
+                        _currentExecutionContext?.CacheForwardMethodBindingPlan(cacheKey, new ForwardMethodBindingPlanCacheEntry(failure.Value.Detail));
+                        return false;
+                    }
+                }
+
+                var parameterBindings = new MethodParameterBinding[proxyMethod.MethodSig.Params.Count];
+                for (var parameterIndex = 0; parameterIndex < proxyMethod.MethodSig.Params.Count; parameterIndex++)
+                {
+                    if (!TryCreateForwardMethodParameterBinding(proxyMethod, targetMethod, closedGenericTargetTypeArguments, closedGenericMethodArguments, parameterIndex, isReverseMapping, out var parameterBinding, out failure))
+                    {
+                        binding = default;
+                        _currentExecutionContext?.CacheForwardMethodBindingPlan(cacheKey, new ForwardMethodBindingPlanCacheEntry(failure?.Detail ?? $"Method binding for '{proxyMethod.FullName}' is not compatible."));
+                        return false;
+                    }
+
+                    parameterBindings[parameterIndex] = parameterBinding;
+                }
+
+                var targetReturnType = SubstituteTypeAndMethodGenericTypeArguments(targetMethod.MethodSig.RetType, closedGenericTargetTypeArguments, closedGenericMethodArguments);
+                if (!TryCreateReturnConversion(proxyMethod.MethodSig.RetType, targetReturnType, isReverseMapping, out var returnConversion))
                 {
                     failure = new MethodCompatibilityFailure(
-                        $"Generic arity mismatch between proxy method '{proxyMethod.FullName}' and target method '{targetMethod.FullName}'.");
+                        $"Return type mismatch between proxy method '{proxyMethod.FullName}' and target method '{targetMethod.FullName}'.");
                     binding = default;
                     _currentExecutionContext?.CacheForwardMethodBindingPlan(cacheKey, new ForwardMethodBindingPlanCacheEntry(failure.Value.Detail));
                     return false;
                 }
-            }
 
-            var parameterBindings = new MethodParameterBinding[proxyMethod.MethodSig.Params.Count];
-            for (var parameterIndex = 0; parameterIndex < proxyMethod.MethodSig.Params.Count; parameterIndex++)
+                binding = new ForwardMethodBindingInfo(parameterBindings, returnConversion, closedGenericMethodArguments);
+                failure = null;
+                _currentExecutionContext?.CacheForwardMethodBindingPlan(cacheKey, new ForwardMethodBindingPlanCacheEntry(binding));
+                return true;
+            }
+            finally
             {
-                if (!TryCreateForwardMethodParameterBinding(proxyMethod, targetMethod, closedGenericTargetTypeArguments, closedGenericMethodArguments, parameterIndex, isReverseMapping, out var parameterBinding, out failure))
-                {
-                    binding = default;
-                    _currentExecutionContext?.CacheForwardMethodBindingPlan(cacheKey, new ForwardMethodBindingPlanCacheEntry(failure?.Detail ?? $"Method binding for '{proxyMethod.FullName}' is not compatible."));
-                    return false;
-                }
-
-                parameterBindings[parameterIndex] = parameterBinding;
+                StopProfilePhase(phaseStopwatch, seconds => _currentProfile!.ForwardMethodBindingSeconds += seconds);
             }
-
-            var targetReturnType = SubstituteTypeAndMethodGenericTypeArguments(targetMethod.MethodSig.RetType, closedGenericTargetTypeArguments, closedGenericMethodArguments);
-            if (!TryCreateReturnConversion(proxyMethod.MethodSig.RetType, targetReturnType, isReverseMapping, out var returnConversion))
-            {
-                failure = new MethodCompatibilityFailure(
-                    $"Return type mismatch between proxy method '{proxyMethod.FullName}' and target method '{targetMethod.FullName}'.");
-                binding = default;
-                _currentExecutionContext?.CacheForwardMethodBindingPlan(cacheKey, new ForwardMethodBindingPlanCacheEntry(failure.Value.Detail));
-                return false;
-            }
-
-            binding = new ForwardMethodBindingInfo(parameterBindings, returnConversion, closedGenericMethodArguments);
-            failure = null;
-            _currentExecutionContext?.CacheForwardMethodBindingPlan(cacheKey, new ForwardMethodBindingPlanCacheEntry(binding));
-            return true;
         }
 
         /// <summary>
@@ -6349,24 +6456,64 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             out MethodParameterBinding parameterBinding,
             out MethodCompatibilityFailure? failure)
         {
-            var proxyMethodPlan = GetOrCreateProxyMethodPlan(proxyMethod);
-            var targetMethodPlan = GetOrCreateMethodPlan(targetMethod);
-            var proxyParameterType = proxyMethod.MethodSig.Params[parameterIndex];
-            var targetParameterType = SubstituteTypeAndMethodGenericTypeArguments(targetMethod.MethodSig.Params[parameterIndex], closedGenericTargetTypeArguments, closedGenericMethodArguments);
-
-            var proxyIsByRef = proxyParameterType.ElementType == ElementType.ByRef;
-            var targetIsByRef = targetParameterType.ElementType == ElementType.ByRef;
-            if (proxyIsByRef != targetIsByRef)
+            var phaseStopwatch = StartProfilePhase();
+            try
             {
-                failure = new MethodCompatibilityFailure(
-                    $"By-ref parameter mismatch between proxy method '{proxyMethod.FullName}' and target method '{targetMethod.FullName}'.");
-                parameterBinding = default;
-                return false;
-            }
+                var proxyMethodPlan = GetOrCreateProxyMethodPlan(proxyMethod);
+                var targetMethodPlan = GetOrCreateMethodPlan(targetMethod);
+                var proxyParameterType = proxyMethod.MethodSig.Params[parameterIndex];
+                var targetParameterType = SubstituteTypeAndMethodGenericTypeArguments(targetMethod.MethodSig.Params[parameterIndex], closedGenericTargetTypeArguments, closedGenericMethodArguments);
 
-            if (!proxyIsByRef)
-            {
-                if (!TryCreateMethodArgumentConversion(proxyParameterType, targetParameterType, isReverseMapping, enforceMethodSelectionRules: true, out var argumentConversion))
+                var proxyIsByRef = proxyParameterType.ElementType == ElementType.ByRef;
+                var targetIsByRef = targetParameterType.ElementType == ElementType.ByRef;
+                if (proxyIsByRef != targetIsByRef)
+                {
+                    failure = new MethodCompatibilityFailure(
+                        $"By-ref parameter mismatch between proxy method '{proxyMethod.FullName}' and target method '{targetMethod.FullName}'.");
+                    parameterBinding = default;
+                    return false;
+                }
+
+                if (!proxyIsByRef)
+                {
+                    if (!TryCreateMethodArgumentConversion(proxyParameterType, targetParameterType, isReverseMapping, enforceMethodSelectionRules: true, out var argumentConversion))
+                    {
+                        failure = new MethodCompatibilityFailure(
+                            $"Parameter type mismatch between proxy method '{proxyMethod.FullName}' and target method '{targetMethod.FullName}'.");
+                        parameterBinding = default;
+                        return false;
+                    }
+
+                    parameterBinding = MethodParameterBinding.ForStandard(proxyParameterType, targetParameterType, argumentConversion);
+                    failure = null;
+                    return true;
+                }
+
+                _ = proxyMethodPlan.TryGetParameterDirection(parameterIndex, out var proxyParameterDirection);
+                _ = targetMethodPlan.TryGetParameterDirection(parameterIndex, out var targetParameterDirection);
+                var proxyIsOut = proxyParameterDirection.IsOut;
+                var targetIsOut = targetParameterDirection.IsOut;
+                var proxyIsIn = proxyParameterDirection.IsIn;
+                var targetIsIn = targetParameterDirection.IsIn;
+                if (proxyIsOut != targetIsOut || proxyIsIn != targetIsIn)
+                {
+                    failure = new MethodCompatibilityFailure(
+                        $"Parameter direction mismatch between proxy method '{proxyMethod.FullName}' and target method '{targetMethod.FullName}'.");
+                    parameterBinding = default;
+                    return false;
+                }
+
+                // Both proxy and target parameters must expose by-ref element types for by-ref adaptation.
+                if (!TryGetByRefElementType(proxyParameterType, out var proxyByRefElementTypeSig) ||
+                    !TryGetByRefElementType(targetParameterType, out var targetByRefElementTypeSig))
+                {
+                    failure = new MethodCompatibilityFailure(
+                        $"By-ref parameter mismatch between proxy method '{proxyMethod.FullName}' and target method '{targetMethod.FullName}'.");
+                    parameterBinding = default;
+                    return false;
+                }
+
+                if (!MatchesDynamicMethodParameterSelectionRule(proxyByRefElementTypeSig!, targetByRefElementTypeSig!))
                 {
                     failure = new MethodCompatibilityFailure(
                         $"Parameter type mismatch between proxy method '{proxyMethod.FullName}' and target method '{targetMethod.FullName}'.");
@@ -6374,86 +6521,54 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     return false;
                 }
 
-                parameterBinding = MethodParameterBinding.ForStandard(proxyParameterType, targetParameterType, argumentConversion);
-                failure = null;
-                return true;
-            }
+                if (AreTypesEquivalent(proxyParameterType, targetParameterType))
+                {
+                    parameterBinding = MethodParameterBinding.ForByRefDirect(
+                        proxyParameterType,
+                        targetParameterType,
+                        proxyByRefElementTypeSig!,
+                        targetByRefElementTypeSig!,
+                        proxyIsOut);
+                    failure = null;
+                    return true;
+                }
 
-            _ = proxyMethodPlan.TryGetParameterDirection(parameterIndex, out var proxyParameterDirection);
-            _ = targetMethodPlan.TryGetParameterDirection(parameterIndex, out var targetParameterDirection);
-            var proxyIsOut = proxyParameterDirection.IsOut;
-            var targetIsOut = targetParameterDirection.IsOut;
-            var proxyIsIn = proxyParameterDirection.IsIn;
-            var targetIsIn = targetParameterDirection.IsIn;
-            if (proxyIsOut != targetIsOut || proxyIsIn != targetIsIn)
-            {
-                failure = new MethodCompatibilityFailure(
-                    $"Parameter direction mismatch between proxy method '{proxyMethod.FullName}' and target method '{targetMethod.FullName}'.");
-                parameterBinding = default;
-                return false;
-            }
+                MethodArgumentConversion preCallConversion;
+                if (proxyIsOut)
+                {
+                    preCallConversion = MethodArgumentConversion.None();
+                }
+                else if (!TryCreateMethodArgumentConversion(proxyByRefElementTypeSig!, targetByRefElementTypeSig!, isReverseMapping, enforceMethodSelectionRules: true, out preCallConversion))
+                {
+                    failure = new MethodCompatibilityFailure(
+                        $"Parameter type mismatch between proxy method '{proxyMethod.FullName}' and target method '{targetMethod.FullName}'.");
+                    parameterBinding = default;
+                    return false;
+                }
 
-            // Both proxy and target parameters must expose by-ref element types for by-ref adaptation.
-            if (!TryGetByRefElementType(proxyParameterType, out var proxyByRefElementTypeSig) ||
-                !TryGetByRefElementType(targetParameterType, out var targetByRefElementTypeSig))
-            {
-                failure = new MethodCompatibilityFailure(
-                    $"By-ref parameter mismatch between proxy method '{proxyMethod.FullName}' and target method '{targetMethod.FullName}'.");
-                parameterBinding = default;
-                return false;
-            }
+                if (!TryCreateByRefPostCallConversion(proxyByRefElementTypeSig!, targetByRefElementTypeSig!, out var postCallConversion))
+                {
+                    failure = new MethodCompatibilityFailure(
+                        $"By-ref parameter mismatch between proxy method '{proxyMethod.FullName}' and target method '{targetMethod.FullName}'.");
+                    parameterBinding = default;
+                    return false;
+                }
 
-            if (!MatchesDynamicMethodParameterSelectionRule(proxyByRefElementTypeSig!, targetByRefElementTypeSig!))
-            {
-                failure = new MethodCompatibilityFailure(
-                    $"Parameter type mismatch between proxy method '{proxyMethod.FullName}' and target method '{targetMethod.FullName}'.");
-                parameterBinding = default;
-                return false;
-            }
-
-            if (AreTypesEquivalent(proxyParameterType, targetParameterType))
-            {
-                parameterBinding = MethodParameterBinding.ForByRefDirect(
+                parameterBinding = MethodParameterBinding.ForByRefWithLocal(
                     proxyParameterType,
                     targetParameterType,
                     proxyByRefElementTypeSig!,
                     targetByRefElementTypeSig!,
-                    proxyIsOut);
+                    proxyIsOut,
+                    preCallConversion,
+                    postCallConversion);
                 failure = null;
                 return true;
             }
-
-            MethodArgumentConversion preCallConversion;
-            if (proxyIsOut)
+            finally
             {
-                preCallConversion = MethodArgumentConversion.None();
+                StopProfilePhase(phaseStopwatch, seconds => _currentProfile!.ForwardParameterBindingSeconds += seconds);
             }
-            else if (!TryCreateMethodArgumentConversion(proxyByRefElementTypeSig!, targetByRefElementTypeSig!, isReverseMapping, enforceMethodSelectionRules: true, out preCallConversion))
-            {
-                failure = new MethodCompatibilityFailure(
-                    $"Parameter type mismatch between proxy method '{proxyMethod.FullName}' and target method '{targetMethod.FullName}'.");
-                parameterBinding = default;
-                return false;
-            }
-
-            if (!TryCreateByRefPostCallConversion(proxyByRefElementTypeSig!, targetByRefElementTypeSig!, out var postCallConversion))
-            {
-                failure = new MethodCompatibilityFailure(
-                    $"By-ref parameter mismatch between proxy method '{proxyMethod.FullName}' and target method '{targetMethod.FullName}'.");
-                parameterBinding = default;
-                return false;
-            }
-
-            parameterBinding = MethodParameterBinding.ForByRefWithLocal(
-                proxyParameterType,
-                targetParameterType,
-                proxyByRefElementTypeSig!,
-                targetByRefElementTypeSig!,
-                proxyIsOut,
-                preCallConversion,
-                postCallConversion);
-            failure = null;
-            return true;
         }
 
         /// <summary>
@@ -6963,43 +7078,79 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 return typeSig;
             }
 
-            if (typeSig is GenericVar typeGenericParameter &&
-                closedGenericTypeArguments is not null &&
-                typeGenericParameter.Number < closedGenericTypeArguments.Count)
+            var phaseStopwatch = StartProfilePhase();
+            try
             {
-                return closedGenericTypeArguments[(int)typeGenericParameter.Number];
-            }
-
-            // Replace method generic parameter with the corresponding closed generic argument when available.
-            if (typeSig is GenericMVar methodGenericParameter &&
-                closedGenericMethodArguments is not null &&
-                methodGenericParameter.Number < closedGenericMethodArguments.Count)
-            {
-                return closedGenericMethodArguments[(int)methodGenericParameter.Number];
-            }
-
-            if (typeSig is ByRefSig byRefSig)
-            {
-                return new ByRefSig(SubstituteTypeAndMethodGenericTypeArguments(byRefSig.Next, closedGenericTypeArguments, closedGenericMethodArguments));
-            }
-
-            if (typeSig is SZArraySig szArraySig)
-            {
-                return new SZArraySig(SubstituteTypeAndMethodGenericTypeArguments(szArraySig.Next, closedGenericTypeArguments, closedGenericMethodArguments));
-            }
-
-            if (typeSig is GenericInstSig genericInstSig)
-            {
-                var genericArguments = new List<TypeSig>(genericInstSig.GenericArguments.Count);
-                for (var i = 0; i < genericInstSig.GenericArguments.Count; i++)
+                var cacheKey = BuildTypeSubstitutionCacheKey(typeSig, closedGenericTypeArguments, closedGenericMethodArguments);
+                if (_currentExecutionContext?.TryGetSubstitutedTypeSig(cacheKey, out var cachedTypeSig) == true)
                 {
-                    genericArguments.Add(SubstituteTypeAndMethodGenericTypeArguments(genericInstSig.GenericArguments[i], closedGenericTypeArguments, closedGenericMethodArguments));
+                    if (_currentProfile is not null)
+                    {
+                        _currentProfile.TypeSubstitutionCacheHits++;
+                    }
+
+                    return cachedTypeSig!;
                 }
 
-                return new GenericInstSig(genericInstSig.GenericType, genericArguments);
-            }
+                if (_currentProfile is not null)
+                {
+                    _currentProfile.TypeSubstitutionCacheMisses++;
+                }
 
-            return typeSig;
+                TypeSig substitutedTypeSig;
+                if (typeSig is GenericVar typeGenericParameter &&
+                    closedGenericTypeArguments is not null &&
+                    typeGenericParameter.Number < closedGenericTypeArguments.Count)
+                {
+                    substitutedTypeSig = closedGenericTypeArguments[(int)typeGenericParameter.Number];
+                    _currentExecutionContext?.CacheSubstitutedTypeSig(cacheKey, substitutedTypeSig);
+                    return substitutedTypeSig;
+                }
+
+                // Replace method generic parameter with the corresponding closed generic argument when available.
+                if (typeSig is GenericMVar methodGenericParameter &&
+                    closedGenericMethodArguments is not null &&
+                    methodGenericParameter.Number < closedGenericMethodArguments.Count)
+                {
+                    substitutedTypeSig = closedGenericMethodArguments[(int)methodGenericParameter.Number];
+                    _currentExecutionContext?.CacheSubstitutedTypeSig(cacheKey, substitutedTypeSig);
+                    return substitutedTypeSig;
+                }
+
+                if (typeSig is ByRefSig byRefSig)
+                {
+                    substitutedTypeSig = new ByRefSig(SubstituteTypeAndMethodGenericTypeArguments(byRefSig.Next, closedGenericTypeArguments, closedGenericMethodArguments));
+                    _currentExecutionContext?.CacheSubstitutedTypeSig(cacheKey, substitutedTypeSig);
+                    return substitutedTypeSig;
+                }
+
+                if (typeSig is SZArraySig szArraySig)
+                {
+                    substitutedTypeSig = new SZArraySig(SubstituteTypeAndMethodGenericTypeArguments(szArraySig.Next, closedGenericTypeArguments, closedGenericMethodArguments));
+                    _currentExecutionContext?.CacheSubstitutedTypeSig(cacheKey, substitutedTypeSig);
+                    return substitutedTypeSig;
+                }
+
+                if (typeSig is GenericInstSig genericInstSig)
+                {
+                    var genericArguments = new List<TypeSig>(genericInstSig.GenericArguments.Count);
+                    for (var i = 0; i < genericInstSig.GenericArguments.Count; i++)
+                    {
+                        genericArguments.Add(SubstituteTypeAndMethodGenericTypeArguments(genericInstSig.GenericArguments[i], closedGenericTypeArguments, closedGenericMethodArguments));
+                    }
+
+                    substitutedTypeSig = new GenericInstSig(genericInstSig.GenericType, genericArguments);
+                    _currentExecutionContext?.CacheSubstitutedTypeSig(cacheKey, substitutedTypeSig);
+                    return substitutedTypeSig;
+                }
+
+                _currentExecutionContext?.CacheSubstitutedTypeSig(cacheKey, typeSig);
+                return typeSig;
+            }
+            finally
+            {
+                StopProfilePhase(phaseStopwatch, seconds => _currentProfile!.TypeSubstitutionSeconds += seconds);
+            }
         }
 
         /// <summary>
@@ -7168,25 +7319,33 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
         private static ITypeDefOrRef ImportTypeDefOrRefCached(ModuleDef moduleDef, ITypeDefOrRef typeDefOrRef, string context)
         {
-            if (_currentExecutionContext?.TryGetImportedTypeDefOrRef(typeDefOrRef, out var cachedType) == true)
+            var phaseStopwatch = StartProfilePhase();
+            try
             {
-                if (_currentProfile is not null)
+                if (_currentExecutionContext?.TryGetImportedTypeDefOrRef(typeDefOrRef, out var cachedType) == true)
                 {
-                    _currentProfile.ImportCacheHits++;
+                    if (_currentProfile is not null)
+                    {
+                        _currentProfile.ImportCacheHits++;
+                    }
+
+                    return cachedType!;
                 }
 
-                return cachedType!;
-            }
+                var importedType = moduleDef.Import(typeDefOrRef) as ITypeDefOrRef
+                                   ?? throw new InvalidOperationException($"Unable to import type token for {context}.");
+                _currentExecutionContext?.CacheImportedTypeDefOrRef(typeDefOrRef, importedType);
+                if (_currentProfile is not null)
+                {
+                    _currentProfile.ImportCacheMisses++;
+                }
 
-            var importedType = moduleDef.Import(typeDefOrRef) as ITypeDefOrRef
-                               ?? throw new InvalidOperationException($"Unable to import type token for {context}.");
-            _currentExecutionContext?.CacheImportedTypeDefOrRef(typeDefOrRef, importedType);
-            if (_currentProfile is not null)
+                return importedType;
+            }
+            finally
             {
-                _currentProfile.ImportCacheMisses++;
+                StopProfilePhase(phaseStopwatch, seconds => _currentProfile!.ImportTypeDefOrRefSeconds += seconds);
             }
-
-            return importedType;
         }
 
         private static ITypeDefOrRef ImportRuntimeTypeCached(ModuleDef moduleDef, Type runtimeType, string context)
@@ -7214,48 +7373,64 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
         private static TypeSig ImportTypeSigCached(ModuleDef moduleDef, TypeSig typeSig, string context)
         {
-            var cacheKey = typeSig.FullName ?? context;
-            if (_currentExecutionContext?.TryGetImportedTypeSig(cacheKey, out var cachedTypeSig) == true)
+            var phaseStopwatch = StartProfilePhase();
+            try
             {
-                if (_currentProfile is not null)
+                var cacheKey = typeSig.FullName ?? context;
+                if (_currentExecutionContext?.TryGetImportedTypeSig(cacheKey, out var cachedTypeSig) == true)
                 {
-                    _currentProfile.ImportCacheHits++;
+                    if (_currentProfile is not null)
+                    {
+                        _currentProfile.ImportCacheHits++;
+                    }
+
+                    return cachedTypeSig!;
                 }
 
-                return cachedTypeSig!;
-            }
+                var importedTypeSig = moduleDef.Import(typeSig);
+                _currentExecutionContext?.CacheImportedTypeSig(cacheKey, importedTypeSig);
+                if (_currentProfile is not null)
+                {
+                    _currentProfile.ImportCacheMisses++;
+                }
 
-            var importedTypeSig = moduleDef.Import(typeSig);
-            _currentExecutionContext?.CacheImportedTypeSig(cacheKey, importedTypeSig);
-            if (_currentProfile is not null)
+                return importedTypeSig;
+            }
+            finally
             {
-                _currentProfile.ImportCacheMisses++;
+                StopProfilePhase(phaseStopwatch, seconds => _currentProfile!.ImportTypeSigSeconds += seconds);
             }
-
-            return importedTypeSig;
         }
 
         private static IMethod ImportMethodCached(ModuleDef moduleDef, IMethod method, string context)
         {
-            if (_currentExecutionContext?.TryGetImportedMethod(method, out var cachedMethod) == true)
+            var phaseStopwatch = StartProfilePhase();
+            try
             {
-                if (_currentProfile is not null)
+                if (_currentExecutionContext?.TryGetImportedMethod(method, out var cachedMethod) == true)
                 {
-                    _currentProfile.ImportCacheHits++;
+                    if (_currentProfile is not null)
+                    {
+                        _currentProfile.ImportCacheHits++;
+                    }
+
+                    return cachedMethod!;
                 }
 
-                return cachedMethod!;
-            }
+                var importedMethod = moduleDef.Import(method)
+                                   ?? throw new InvalidOperationException($"Unable to import method for {context}.");
+                _currentExecutionContext?.CacheImportedMethod(method, importedMethod);
+                if (_currentProfile is not null)
+                {
+                    _currentProfile.ImportCacheMisses++;
+                }
 
-            var importedMethod = moduleDef.Import(method)
-                               ?? throw new InvalidOperationException($"Unable to import method for {context}.");
-            _currentExecutionContext?.CacheImportedMethod(method, importedMethod);
-            if (_currentProfile is not null)
+                return importedMethod;
+            }
+            finally
             {
-                _currentProfile.ImportCacheMisses++;
+                StopProfilePhase(phaseStopwatch, seconds => _currentProfile!.ImportMethodSeconds += seconds);
             }
-
-            return importedMethod;
         }
 
         private static IMethodDefOrRef ImportMethodDefOrRefCached(ModuleDef moduleDef, IMethodDefOrRef method, string context)
@@ -7267,25 +7442,33 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
         private static IField ImportFieldCached(ModuleDef moduleDef, IField field, string context)
         {
-            if (_currentExecutionContext?.TryGetImportedField(field, out var cachedField) == true)
+            var phaseStopwatch = StartProfilePhase();
+            try
             {
-                if (_currentProfile is not null)
+                if (_currentExecutionContext?.TryGetImportedField(field, out var cachedField) == true)
                 {
-                    _currentProfile.ImportCacheHits++;
+                    if (_currentProfile is not null)
+                    {
+                        _currentProfile.ImportCacheHits++;
+                    }
+
+                    return cachedField!;
                 }
 
-                return cachedField!;
-            }
+                var importedField = moduleDef.Import(field)
+                                  ?? throw new InvalidOperationException($"Unable to import field for {context}.");
+                _currentExecutionContext?.CacheImportedField(field, importedField);
+                if (_currentProfile is not null)
+                {
+                    _currentProfile.ImportCacheMisses++;
+                }
 
-            var importedField = moduleDef.Import(field)
-                              ?? throw new InvalidOperationException($"Unable to import field for {context}.");
-            _currentExecutionContext?.CacheImportedField(field, importedField);
-            if (_currentProfile is not null)
+                return importedField;
+            }
+            finally
             {
-                _currentProfile.ImportCacheMisses++;
+                StopProfilePhase(phaseStopwatch, seconds => _currentProfile!.ImportFieldSeconds += seconds);
             }
-
-            return importedField;
         }
 
         /// <summary>
@@ -10214,6 +10397,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             private readonly Dictionary<ITypeDefOrRef, ITypeDefOrRef> _importedTypeDefOrRefs = new(ReferenceIdentityComparer<ITypeDefOrRef>.Instance);
             private readonly Dictionary<Type, ITypeDefOrRef> _importedRuntimeTypes = new();
             private readonly Dictionary<string, TypeSig> _importedTypeSigs = new(StringComparer.Ordinal);
+            private readonly Dictionary<string, TypeSig> _substitutedTypeSigs = new(StringComparer.Ordinal);
             private readonly Dictionary<IMethod, IMethod> _importedMethods = new(ReferenceIdentityComparer<IMethod>.Instance);
             private readonly Dictionary<IField, IField> _importedFields = new(ReferenceIdentityComparer<IField>.Instance);
             private readonly Dictionary<string, ForwardBindingPlanCacheEntry> _forwardBindingsByKey = new(StringComparer.Ordinal);
@@ -10229,6 +10413,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             private readonly Dictionary<string, IMethod> _duckTypeCreateCacheCreateFromMethodRefsByKey = new(StringComparer.Ordinal);
             private readonly Dictionary<string, IMethodDefOrRef> _nullableCtorRefsByKey = new(StringComparer.Ordinal);
             private readonly Dictionary<TypeDef, ReverseCustomAttributePlan> _reverseCustomAttributePlansByType = new();
+            private readonly Dictionary<TypeDef, IReadOnlyList<MethodDef>> _duckIncludeMethodsByTargetType = new();
             private readonly Dictionary<ICustomAttributeType, ICustomAttributeType> _importedCustomAttributeTypes = new(ReferenceIdentityComparer<ICustomAttributeType>.Instance);
 
             internal EmitterExecutionContext(IReadOnlyDictionary<string, string> runtimeTypeResolutionAssemblyPathsByName, TargetTypeIndex targetTypeIndex)
@@ -10423,6 +10608,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             internal void CacheImportedTypeSig(string key, TypeSig importedTypeSig)
                 => _importedTypeSigs[key] = importedTypeSig;
 
+            internal bool TryGetSubstitutedTypeSig(string key, out TypeSig substitutedTypeSig)
+                => _substitutedTypeSigs.TryGetValue(key, out substitutedTypeSig!);
+
+            internal void CacheSubstitutedTypeSig(string key, TypeSig substitutedTypeSig)
+                => _substitutedTypeSigs[key] = substitutedTypeSig;
+
             internal bool TryGetImportedMethod(IMethod source, out IMethod importedMethod)
                 => _importedMethods.TryGetValue(source, out importedMethod!);
 
@@ -10518,6 +10709,39 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
             internal void CacheImportedCustomAttributeType(ICustomAttributeType source, ICustomAttributeType importedType)
                 => _importedCustomAttributeTypes[source] = importedType;
+
+            internal IReadOnlyList<MethodDef> GetOrCreateDuckIncludeMethods(TypeDef targetType)
+            {
+                if (_duckIncludeMethodsByTargetType.TryGetValue(targetType, out var cachedMethods))
+                {
+                    return cachedMethods;
+                }
+
+                var methods = new List<MethodDef>();
+                var current = targetType;
+                while (current is not null)
+                {
+                    foreach (var method in current.Methods)
+                    {
+                        if (method.IsConstructor || method.IsStatic || method.IsFinal || method.IsPrivate || method.IsSpecialName)
+                        {
+                            continue;
+                        }
+
+                        if (!method.CustomAttributes.Any(attribute => string.Equals(attribute.TypeFullName, DuckIncludeAttributeTypeName, StringComparison.Ordinal)))
+                        {
+                            continue;
+                        }
+
+                        methods.Add(method);
+                    }
+
+                    current = current.BaseType?.ResolveTypeDef();
+                }
+
+                _duckIncludeMethodsByTargetType[targetType] = methods;
+                return methods;
+            }
         }
 
         private sealed class TargetTypeIndex
@@ -11162,12 +11386,14 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         private sealed class ProxyTypePlan
         {
             private readonly Dictionary<MethodDef, ProxyMethodPlan> _methodPlans = new(ReferenceIdentityComparer<MethodDef>.Instance);
+            private readonly IReadOnlyDictionary<MethodDef, PropertyDef> _propertiesByAccessorMethod;
 
             internal ProxyTypePlan(TypeDef proxyType)
             {
                 InterfaceMethods = BuildInterfaceMethods(proxyType);
                 ClassMethods = BuildClassMethods(proxyType);
                 SupportedBaseConstructor = BuildSupportedBaseConstructor(proxyType);
+                _propertiesByAccessorMethod = BuildAccessorPropertyMap(proxyType);
             }
 
             internal IReadOnlyList<MethodDef> InterfaceMethods { get; }
@@ -11175,6 +11401,9 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             internal IReadOnlyList<MethodDef> ClassMethods { get; }
 
             internal MethodDef? SupportedBaseConstructor { get; }
+
+            internal bool TryGetPropertyFromAccessor(MethodDef accessorMethod, out PropertyDef property)
+                => _propertiesByAccessorMethod.TryGetValue(accessorMethod, out property!);
 
             internal ProxyMethodPlan GetOrCreateMethodPlan(MethodDef proxyMethod)
             {
@@ -11275,6 +11504,53 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 }
 
                 return null;
+            }
+
+            private static IReadOnlyDictionary<MethodDef, PropertyDef> BuildAccessorPropertyMap(TypeDef proxyType)
+            {
+                var propertiesByAccessorMethod = new Dictionary<MethodDef, PropertyDef>(ReferenceIdentityComparer<MethodDef>.Instance);
+                var visitedTypes = new HashSet<string>(StringComparer.Ordinal);
+                var typesToInspect = new Stack<TypeDef>();
+                typesToInspect.Push(proxyType);
+
+                while (typesToInspect.Count > 0)
+                {
+                    var currentType = typesToInspect.Pop();
+                    if (!visitedTypes.Add(currentType.FullName))
+                    {
+                        continue;
+                    }
+
+                    foreach (var property in currentType.Properties)
+                    {
+                        if (property.GetMethod is not null && !propertiesByAccessorMethod.ContainsKey(property.GetMethod))
+                        {
+                            propertiesByAccessorMethod[property.GetMethod] = property;
+                        }
+
+                        if (property.SetMethod is not null && !propertiesByAccessorMethod.ContainsKey(property.SetMethod))
+                        {
+                            propertiesByAccessorMethod[property.SetMethod] = property;
+                        }
+                    }
+
+                    var baseType = currentType.BaseType?.ResolveTypeDef();
+                    if (baseType is not null)
+                    {
+                        typesToInspect.Push(baseType);
+                    }
+
+                    foreach (var interfaceImpl in currentType.Interfaces)
+                    {
+                        var resolvedInterface = interfaceImpl.Interface.ResolveTypeDef();
+                        if (resolvedInterface is not null)
+                        {
+                            typesToInspect.Push(resolvedInterface);
+                        }
+                    }
+                }
+
+                return propertiesByAccessorMethod;
             }
         }
 
@@ -11479,6 +11755,44 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             internal int ReverseCustomAttributePlanCacheHits { get; set; }
 
             internal int ReverseCustomAttributePlanCacheMisses { get; set; }
+
+            internal double ForwardBindingCollectionSeconds { get; set; }
+
+            internal double StructCopyBindingCollectionSeconds { get; set; }
+
+            internal double DuckIncludeCollectionSeconds { get; set; }
+
+            internal double ForwardBindingResolutionSeconds { get; set; }
+
+            internal double ForwardMethodBindingSeconds { get; set; }
+
+            internal double ForwardParameterBindingSeconds { get; set; }
+
+            internal double TypeSubstitutionSeconds { get; set; }
+
+            internal int TypeSubstitutionCacheHits { get; set; }
+
+            internal int TypeSubstitutionCacheMisses { get; set; }
+
+            internal double RuntimeTypeFromTypeSigSeconds { get; set; }
+
+            internal double MethodCallTargetSeconds { get; set; }
+
+            internal double EmitMethodArgumentConversionSeconds { get; set; }
+
+            internal double EmitMethodReturnConversionSeconds { get; set; }
+
+            internal double EnsureInterfacePropertyMetadataSeconds { get; set; }
+
+            internal double CopyMethodGenericParametersSeconds { get; set; }
+
+            internal double ImportTypeDefOrRefSeconds { get; set; }
+
+            internal double ImportTypeSigSeconds { get; set; }
+
+            internal double ImportMethodSeconds { get; set; }
+
+            internal double ImportFieldSeconds { get; set; }
         }
     }
 }
