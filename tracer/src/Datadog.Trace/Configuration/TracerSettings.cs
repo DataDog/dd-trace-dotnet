@@ -20,6 +20,7 @@ using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.Serverless;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
@@ -540,10 +541,10 @@ namespace Datadog.Trace.Configuration
             IsDataStreamsMonitoringEnabled = config
                                             .WithKeys(ConfigurationKeys.DataStreamsMonitoring.Enabled)
                                             .AsBool(
-                                                  !EnvironmentHelpers.IsAwsLambda() &&
-                                                  !EnvironmentHelpers.IsAzureAppServices() &&
-                                                  !EnvironmentHelpers.IsAzureFunctions() &&
-                                                  !EnvironmentHelpers.IsGoogleCloudFunctions());
+                                                  !AwsInfo.Instance.IsLambda &&
+                                                  !AzureInfo.Instance.IsAppService &&
+                                                  !AzureInfo.Instance.IsFunction &&
+                                                  !GcpInfo.Instance.IsCloudFunction);
 
             IsDataStreamsMonitoringInDefaultState = config
                                                     .WithKeys(ConfigurationKeys.DataStreamsMonitoring.Enabled)

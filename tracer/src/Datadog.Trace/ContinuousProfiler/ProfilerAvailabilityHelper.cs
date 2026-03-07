@@ -7,6 +7,7 @@
 
 using System;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Serverless;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Util;
 
@@ -20,7 +21,10 @@ internal static class ProfilerAvailabilityHelper
     // We should add or remove conditions from here as our deployment requirements change.
     // Longer term, we'd like to be able to pass this information from the native side to the managed side, but
     // today that only works on Windows (hence the early short-circuit).
-    private static readonly Lazy<bool> ProfilerIsAvailable = new(() => GetIsContinuousProfilerAvailable(EnvironmentHelpersNoLogging.IsClrProfilerAttachedSafe));
+    private static readonly Lazy<bool> ProfilerIsAvailable = new(() => GetIsContinuousProfilerAvailable(
+                                                                     EnvironmentHelpersNoLogging.IsClrProfilerAttachedSafe,
+                                                                     AwsInfo.Instance.IsLambda,
+                                                                     AzureInfo.Instance.IsFunction));
 
     /// <summary>
     /// Gets a value indicating whether returns true if the continuous profiler _should_ be available
@@ -28,10 +32,10 @@ internal static class ProfilerAvailabilityHelper
     public static bool IsContinuousProfilerAvailable => ProfilerIsAvailable.Value;
 
     [TestingOnly]
-    internal static bool IsContinuousProfilerAvailable_TestingOnly(Func<bool> isClrProfilerAttached)
-        => GetIsContinuousProfilerAvailable(isClrProfilerAttached);
+    internal static bool IsContinuousProfilerAvailable_TestingOnly(Func<bool> isClrProfilerAttached, bool isAwsLambda, bool isAzureFunction)
+        => GetIsContinuousProfilerAvailable(isClrProfilerAttached, isAwsLambda, isAzureFunction);
 
-    private static bool GetIsContinuousProfilerAvailable(Func<bool> isClrProfilerAttached)
+    private static bool GetIsContinuousProfilerAvailable(Func<bool> isClrProfilerAttached, bool isAwsLambda, bool isAzureFunction)
     {
         // Profiler is not available on ARM(64)
         var fd = FrameworkDescription.Instance;
@@ -51,7 +55,7 @@ internal static class ProfilerAvailabilityHelper
         // Now we're into fuzzy territory. The CP is not available in some environments
         // - AWS Lambda
         // - Azure Functions where the site extension is _not_ used (Site extension is Windows only, so that's already covered)
-        var isUnsupported = EnvironmentHelpers.IsAwsLambda() || EnvironmentHelpers.IsAzureFunctions();
+        var isUnsupported = isAwsLambda || isAzureFunction;
 
         // As a final check, we check whether the ClrProfiler is attached - if it's not, then the P/Invokes won't
         // have been re-written, and native calls won't work.
