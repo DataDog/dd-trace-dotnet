@@ -5431,41 +5431,35 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     var hasSuccessfulMethodBinding = false;
                     var successfulMethodBinding = default(ForwardBinding);
                     MethodDef? successfulTargetMethod = null;
-                    var visitedMethodCandidates = new HashSet<string>(StringComparer.Ordinal);
                     foreach (var targetMethod in FindForwardTargetMethodCandidates(mapping, targetType, proxyMethodPlan, closedGenericMethodArguments, allowPrivateBaseMethodCandidates))
                     {
-                    if (!visitedMethodCandidates.Add(GetMethodCandidateKey(targetMethod)))
-                    {
-                        continue;
-                    }
-
-                    if (TryCreateForwardMethodBinding(proxyMethod, targetMethod, closedGenericTargetTypeArguments, closedGenericMethodArguments, isReverseMapping, out var methodBinding, out var methodFailure))
-                    {
-                        if (TryGetStructMemberMutationFailureDetail(proxyMethod, targetMethod, out var structMutationFailureDetail))
+                        if (TryCreateForwardMethodBinding(proxyMethod, targetMethod, closedGenericTargetTypeArguments, closedGenericMethodArguments, isReverseMapping, out var methodBinding, out var methodFailure))
                         {
-                            firstMethodFailure ??= new MethodCompatibilityFailure(structMutationFailureDetail!);
+                            if (TryGetStructMemberMutationFailureDetail(proxyMethod, targetMethod, out var structMutationFailureDetail))
+                            {
+                                firstMethodFailure ??= new MethodCompatibilityFailure(structMutationFailureDetail!);
+                                continue;
+                            }
+
+                            if (hasSuccessfulMethodBinding)
+                            {
+                                failure = DuckTypeAotMappingEmissionResult.NotCompatible(
+                                    mapping,
+                                    DuckTypeAotCompatibilityStatuses.IncompatibleMethodSignature,
+                                    StatusCodeIncompatibleSignature,
+                                    $"Ambiguous target method match for proxy method '{proxyMethod.FullName}' between '{successfulTargetMethod!.FullName}' and '{targetMethod.FullName}'.");
+                                _currentExecutionContext?.CacheForwardBindingPlan(bindingPlanCacheKey, CreateFailurePlan(failure));
+                                return false;
+                            }
+
+                            successfulMethodBinding = ForwardBinding.ForMethod(proxyMethod, targetMethod, methodBinding);
+                            successfulTargetMethod = targetMethod;
+                            hasSuccessfulMethodBinding = true;
                             continue;
                         }
 
-                        if (hasSuccessfulMethodBinding)
-                        {
-                            failure = DuckTypeAotMappingEmissionResult.NotCompatible(
-                                mapping,
-                                DuckTypeAotCompatibilityStatuses.IncompatibleMethodSignature,
-                                StatusCodeIncompatibleSignature,
-                                $"Ambiguous target method match for proxy method '{proxyMethod.FullName}' between '{successfulTargetMethod!.FullName}' and '{targetMethod.FullName}'.");
-                            _currentExecutionContext?.CacheForwardBindingPlan(bindingPlanCacheKey, CreateFailurePlan(failure));
-                            return false;
-                        }
-
-                        successfulMethodBinding = ForwardBinding.ForMethod(proxyMethod, targetMethod, methodBinding);
-                        successfulTargetMethod = targetMethod;
-                        hasSuccessfulMethodBinding = true;
-                        continue;
+                        firstMethodFailure ??= methodFailure;
                     }
-
-                    firstMethodFailure ??= methodFailure;
-                }
 
                     if (hasSuccessfulMethodBinding)
                     {
@@ -5669,13 +5663,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 return false;
             }
 
-            var candidatePropertyNames = proxyMethodPlan.ForwardTargetMethodNames
-                                        .Select(methodName => ExtractSetterPropertyName(methodName))
-                                        .Where(propertyName => !string.IsNullOrWhiteSpace(propertyName))
-                                        .Select(propertyName => propertyName!)
-                                        .Distinct(StringComparer.Ordinal)
-                                        .ToArray();
-            if (candidatePropertyNames.Length == 0)
+            var candidatePropertyNames = proxyMethodPlan.SetterTargetPropertyNames;
+            if (candidatePropertyNames.Count == 0)
             {
                 return false;
             }
@@ -5691,7 +5680,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
                     if (!allowPrivateBaseMembers &&
                         propertyCandidate.IsInherited &&
-                        IsPropertyPrivate(property))
+                        propertyCandidate.IsEffectivelyPrivate)
                     {
                         continue;
                     }
@@ -5882,7 +5871,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 foreach (var candidateEntry in Array.Empty<TargetMethodCandidate>())
                 {
                     var candidate = candidateEntry.Method;
-                    var candidateMethodActualName = candidate.Name.String ?? candidate.Name.ToString();
+                    var candidateMethodActualName = candidateEntry.MethodName;
                     if (!IsForwardTargetMethodNameMatch(
                             candidateMethodActualName,
                             candidateMethodName,
@@ -5893,7 +5882,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     }
 
                     if (configuredParameterTypeNames.Count > 0 &&
-                        !IsForwardCandidateParameterTypeNameMatch(candidate, configuredParameterTypeNames))
+                        !IsForwardCandidateParameterTypeNameMatch(candidateEntry, configuredParameterTypeNames))
                     {
                         continue;
                     }
@@ -5916,9 +5905,9 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <param name="candidate">The candidate value.</param>
         /// <param name="configuredParameterTypeNames">The configured parameter type names value.</param>
         /// <returns>true if the operation succeeds; otherwise, false.</returns>
-        private static bool IsForwardCandidateParameterTypeNameMatch(MethodDef candidate, IReadOnlyList<string> configuredParameterTypeNames)
+        private static bool IsForwardCandidateParameterTypeNameMatch(TargetMethodCandidate candidate, IReadOnlyList<string> configuredParameterTypeNames)
         {
-            if (configuredParameterTypeNames.Count != candidate.MethodSig.Params.Count)
+            if (configuredParameterTypeNames.Count != candidate.ParameterTypeComparisonNames.Count)
             {
                 return false;
             }
@@ -5931,8 +5920,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     return false;
                 }
 
-                var candidateNames = GetTypeComparisonNames(candidate.MethodSig.Params[i]);
-                if (!candidateNames.Contains(configuredName))
+                if (!candidate.ParameterTypeComparisonNames[i].Contains(configuredName))
                 {
                     return false;
                 }
@@ -11248,19 +11236,19 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 bool allowPrivateBaseMembers)
             {
                 var cacheKey = string.Concat(
-                    string.Join("|", proxyMethodPlan.ForwardTargetMethodNames),
+                    proxyMethodPlan.ForwardTargetMethodNamesCacheKey,
                     "::",
-                    string.Join("|", explicitInterfaceTypeNames),
+                    proxyMethodPlan.ExplicitInterfaceTypeNamesCacheKey,
                     "::",
                     useRelaxedNameComparison ? "relaxed" : "strict",
                     "::",
                     expectedGenericArity.ToString(CultureInfo.InvariantCulture),
                     "::",
-                    proxyMethodPlan.Method.MethodSig.Params.Count.ToString(CultureInfo.InvariantCulture),
+                    proxyMethodPlan.ParameterCountCacheKey,
                     "::",
                     allowPrivateBaseMembers ? "base" : "declared",
                     "::",
-                    string.Join("|", configuredParameterTypeNames));
+                    proxyMethodPlan.ConfiguredParameterTypeNamesCacheKey);
                 if (_forwardMethodCandidatesByKey.TryGetValue(cacheKey, out var cachedCandidates))
                 {
                     return cachedCandidates;
@@ -11280,7 +11268,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                             continue;
                         }
 
-                        var candidateMethodActualName = candidate.Name.String ?? candidate.Name.ToString();
+                        var candidateMethodActualName = candidateEntry.MethodName;
                         if (!IsForwardTargetMethodNameMatch(
                                 candidateMethodActualName,
                                 candidateMethodName,
@@ -11291,7 +11279,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                         }
 
                         if (configuredParameterTypeNames.Count > 0 &&
-                            !IsForwardCandidateParameterTypeNameMatch(candidate, configuredParameterTypeNames))
+                            !IsForwardCandidateParameterTypeNameMatch(candidateEntry, configuredParameterTypeNames))
                         {
                             continue;
                         }
@@ -11349,12 +11337,34 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             internal TargetMethodCandidate(MethodDef method, bool isInherited)
             {
                 Method = method;
+                MethodName = method.Name.String ?? method.Name.ToString();
                 IsInherited = isInherited;
+                ParameterTypeComparisonNames = BuildParameterTypeComparisonNames(method);
             }
 
             internal MethodDef Method { get; }
 
+            internal string MethodName { get; }
+
             internal bool IsInherited { get; }
+
+            internal IReadOnlyList<HashSet<string>> ParameterTypeComparisonNames { get; }
+
+            private static IReadOnlyList<HashSet<string>> BuildParameterTypeComparisonNames(MethodDef method)
+            {
+                if (method.MethodSig.Params.Count == 0)
+                {
+                    return Array.Empty<HashSet<string>>();
+                }
+
+                var parameterTypeNames = new HashSet<string>[method.MethodSig.Params.Count];
+                for (var parameterIndex = 0; parameterIndex < parameterTypeNames.Length; parameterIndex++)
+                {
+                    parameterTypeNames[parameterIndex] = GetTypeComparisonNames(method.MethodSig.Params[parameterIndex]);
+                }
+
+                return parameterTypeNames;
+            }
         }
 
         private sealed class TargetPropertyCandidate
@@ -11363,11 +11373,14 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             {
                 Property = property;
                 IsInherited = isInherited;
+                IsEffectivelyPrivate = IsPropertyPrivate(property);
             }
 
             internal PropertyDef Property { get; }
 
             internal bool IsInherited { get; }
+
+            internal bool IsEffectivelyPrivate { get; }
         }
 
         private sealed class TargetFieldCandidate
@@ -11564,6 +11577,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 AllowPrivateBaseMembers = IsFallbackToBaseTypesEnabled(proxyMethod);
                 AllowPrivateBaseMethodCandidates = AllowPrivateBaseMembers && IsPropertyAccessorMethod(proxyMethod);
                 ForwardTargetMethodNames = GetForwardTargetMethodNames(proxyMethod);
+                ForwardTargetMethodNamesCacheKey = string.Join("|", ForwardTargetMethodNames);
                 ForwardTargetFieldNames = GetForwardTargetFieldNames(proxyMethod);
                 HasFieldAccessorKind = TryGetFieldAccessorKind(proxyMethod, out var accessorKind);
                 FieldAccessorKind = accessorKind;
@@ -11572,12 +11586,16 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                                                 : null;
                 HasExplicitInterfaceTypeNames = TryGetForwardExplicitInterfaceTypeNames(proxyMethod, out var explicitInterfaceTypeNames, out var useRelaxedNameComparison);
                 ExplicitInterfaceTypeNames = explicitInterfaceTypeNames;
+                ExplicitInterfaceTypeNamesCacheKey = string.Join("|", ExplicitInterfaceTypeNames);
                 UseRelaxedNameComparison = useRelaxedNameComparison;
                 HasConfiguredParameterTypeNames = TryGetForwardParameterTypeNames(proxyMethod, out var configuredParameterTypeNames);
                 ConfiguredParameterTypeNames = configuredParameterTypeNames;
+                ConfiguredParameterTypeNamesCacheKey = string.Join("|", ConfiguredParameterTypeNames);
                 HasDuckGenericParameterTypeNames = TryGetDuckGenericParameterTypeNames(proxyMethod, out var genericParameterTypeNames);
                 DuckGenericParameterTypeNames = genericParameterTypeNames;
+                SetterTargetPropertyNames = BuildSetterTargetPropertyNames(ForwardTargetMethodNames);
                 ParameterDirections = BuildParameterDirections(proxyMethod);
+                ParameterCountCacheKey = proxyMethod.MethodSig.Params.Count.ToString(CultureInfo.InvariantCulture);
             }
 
             internal MethodDef Method { get; }
@@ -11592,6 +11610,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
             internal IReadOnlyList<string> ForwardTargetMethodNames { get; }
 
+            internal string ForwardTargetMethodNamesCacheKey { get; }
+
             internal IReadOnlyList<string> ForwardTargetFieldNames { get; }
 
             internal bool HasFieldAccessorKind { get; }
@@ -11604,17 +11624,25 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
             internal IReadOnlyList<string> ExplicitInterfaceTypeNames { get; }
 
+            internal string ExplicitInterfaceTypeNamesCacheKey { get; }
+
             internal bool UseRelaxedNameComparison { get; }
 
             internal bool HasConfiguredParameterTypeNames { get; }
 
             internal IReadOnlyList<string> ConfiguredParameterTypeNames { get; }
 
+            internal string ConfiguredParameterTypeNamesCacheKey { get; }
+
             internal bool HasDuckGenericParameterTypeNames { get; }
 
             internal IReadOnlyList<string> DuckGenericParameterTypeNames { get; }
 
+            internal IReadOnlyList<string> SetterTargetPropertyNames { get; }
+
             internal IReadOnlyList<ParameterDirection> ParameterDirections { get; }
+
+            internal string ParameterCountCacheKey { get; }
 
             internal bool TryGetParameterDirection(int parameterIndex, out ParameterDirection direction)
             {
@@ -11642,6 +11670,35 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 }
 
                 return directions;
+            }
+
+            private static IReadOnlyList<string> BuildSetterTargetPropertyNames(IReadOnlyList<string> forwardTargetMethodNames)
+            {
+                if (forwardTargetMethodNames.Count == 0)
+                {
+                    return Array.Empty<string>();
+                }
+
+                var propertyNames = new List<string>(forwardTargetMethodNames.Count);
+                var seenPropertyNames = new HashSet<string>(StringComparer.Ordinal);
+                for (var i = 0; i < forwardTargetMethodNames.Count; i++)
+                {
+                    var propertyName = ExtractSetterPropertyName(forwardTargetMethodNames[i]);
+                    if (string.IsNullOrWhiteSpace(propertyName))
+                    {
+                        continue;
+                    }
+
+                    var nonNullPropertyName = propertyName!;
+                    if (!seenPropertyNames.Add(nonNullPropertyName))
+                    {
+                        continue;
+                    }
+
+                    propertyNames.Add(nonNullPropertyName);
+                }
+
+                return propertyNames;
             }
         }
 
