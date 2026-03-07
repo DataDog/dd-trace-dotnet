@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -638,6 +639,10 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 $"ducktype-aot emitter profile: runtimeTypeIndexBuild={profile.BuildRuntimeTypeIndexSeconds:F3}s runtimeTypeHits={profile.RuntimeTypeCacheHits} runtimeTypeMisses={profile.RuntimeTypeCacheMisses} runtimeTypeIndexHits={profile.RuntimeTypeIndexHits} runtimeTypeFallbackHits={profile.RuntimeTypeFallbackHits} runtimeTypeUnresolved={profile.RuntimeTypeUnresolved}");
             Console.Error.WriteLine(
                 $"ducktype-aot emitter profile: failureClassifierFastPath={profile.FailureClassifierFastPathCount} failureClassifierFallback={profile.FailureClassifierFallbackCount} importCacheHits={profile.ImportCacheHits} importCacheMisses={profile.ImportCacheMisses}");
+            Console.Error.WriteLine(
+                $"ducktype-aot emitter profile: registrationPlanning={profile.RegistrationPlanningSeconds:F3}s bindingPlanHits={profile.ForwardBindingPlanCacheHits} bindingPlanMisses={profile.ForwardBindingPlanCacheMisses} conversionPlanHits={profile.ConversionPlanCacheHits} conversionPlanMisses={profile.ConversionPlanCacheMisses}");
+            Console.Error.WriteLine(
+                $"ducktype-aot emitter profile: methodCallTargetHits={profile.MethodCallTargetCacheHits} methodCallTargetMisses={profile.MethodCallTargetCacheMisses} propertySigHits={profile.PropertySignatureCacheHits} propertySigMisses={profile.PropertySignatureCacheMisses} reverseAttributePlanHits={profile.ReverseCustomAttributePlanCacheHits} reverseAttributePlanMisses={profile.ReverseCustomAttributePlanCacheMisses}");
         }
 
         private static ISet<string> BuildQueriedTargetTypeNames(IReadOnlyList<DuckTypeAotMapping> mappings)
@@ -1872,8 +1877,10 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             // This branch controls default allocation behavior for all interface mappings:
             // struct by default (parity/perf), class only when explicitly requested via [DuckAsClass].
             var emitInterfaceStructProxy = isInterfaceProxy && !isDuckAsClassInterface;
+            var planningStopwatch = StartProfilePhase();
             if (!TryCollectForwardBindings(mapping, proxyType, targetType, closedGenericTargetTypeArguments: null, isInterfaceProxy, out var bindings, out var failure))
             {
+                StopProfilePhase(planningStopwatch, seconds => _currentProfile!.RegistrationPlanningSeconds += seconds);
                 TryEmitKnownFailureRegistration(
                     moduleDef,
                     bootstrapType,
@@ -1889,6 +1896,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     emissionWarnings);
                 return failure!;
             }
+
+            StopProfilePhase(planningStopwatch, seconds => _currentProfile!.RegistrationPlanningSeconds += seconds);
 
             IMethod baseCtorToCall = importedMembers.ObjectCtor;
             // Class-based proxy contracts keep inheritance semantics by requiring a callable parameterless base ctor.
@@ -2302,8 +2311,10 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             // This branch controls default allocation behavior for all interface mappings:
             // struct by default (parity/perf), class only when explicitly requested via [DuckAsClass].
             var emitInterfaceStructProxy = isInterfaceProxy && !isDuckAsClassInterface;
+            var planningStopwatch = StartProfilePhase();
             if (!TryCollectForwardBindings(mapping, proxyType, targetType, closedGenericTargetTypeArguments, isInterfaceProxy, out var bindings, out var failure))
             {
+                StopProfilePhase(planningStopwatch, seconds => _currentProfile!.RegistrationPlanningSeconds += seconds);
                 TryEmitKnownFailureRegistration(
                     moduleDef,
                     bootstrapType,
@@ -2319,6 +2330,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     emissionWarnings);
                 return failure!;
             }
+
+            StopProfilePhase(planningStopwatch, seconds => _currentProfile!.RegistrationPlanningSeconds += seconds);
 
             IMethod baseCtorToCall = importedMembers.ObjectCtor;
             // Class-based proxy contracts keep inheritance semantics by requiring a callable parameterless base ctor.
@@ -3345,10 +3358,14 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             bool? targetIsValueTypeOverride = null,
             IReadOnlyList<TypeSig>? closedGenericTargetTypeArguments = null)
         {
+            var planningStopwatch = StartProfilePhase();
             if (!TryCollectStructCopyBindings(mapping, proxyType, targetType, closedGenericTargetTypeArguments, out var bindings, out var failure))
             {
+                StopProfilePhase(planningStopwatch, seconds => _currentProfile!.RegistrationPlanningSeconds += seconds);
                 return failure!;
             }
+
+            StopProfilePhase(planningStopwatch, seconds => _currentProfile!.RegistrationPlanningSeconds += seconds);
 
             var importedTargetType = importedTargetTypeOverride ?? ImportTypeDefOrRefCached(moduleDef, targetType, $"resolved mapping target type '{targetType.FullName}'");
             var importedProxyType = ImportTypeDefOrRefCached(moduleDef, proxyType, $"resolved mapping proxy type '{proxyType.FullName}'");
@@ -3536,8 +3553,45 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             out StructCopyFieldBinding binding,
             out DuckTypeAotMappingEmissionResult? failure)
         {
+            var bindingPlanCacheKey = BuildStructCopyBindingPlanCacheKey(targetType, proxyField, closedGenericTargetTypeArguments);
+            if (_currentExecutionContext?.TryGetStructCopyBindingPlan(bindingPlanCacheKey, out var cachedPlan) == true)
+            {
+                if (_currentProfile is not null)
+                {
+                    _currentProfile.ForwardBindingPlanCacheHits++;
+                }
+
+                if (cachedPlan.Succeeded)
+                {
+                    binding = cachedPlan.Binding;
+                    failure = null;
+                    return true;
+                }
+
+                binding = default;
+                failure = CreateFailureResult(
+                    mapping,
+                    cachedPlan.FailureStatus ?? DuckTypeAotCompatibilityStatuses.IncompatibleMethodSignature,
+                    cachedPlan.FailureDiagnosticCode ?? StatusCodeIncompatibleSignature,
+                    cachedPlan.FailureDetail ?? $"Target member for proxy struct field '{proxyField.FullName}' was not found.");
+                return false;
+            }
+
+            if (_currentProfile is not null)
+            {
+                _currentProfile.ForwardBindingPlanCacheMisses++;
+            }
+
             binding = default;
             failure = null;
+
+            StructCopyFieldBindingPlanCacheEntry CreateFailurePlan(DuckTypeAotMappingEmissionResult failureResult)
+            {
+                return new StructCopyFieldBindingPlanCacheEntry(
+                    failureResult.Status,
+                    failureResult.DiagnosticCode ?? StatusCodeIncompatibleSignature,
+                    failureResult.Detail ?? string.Empty);
+            }
 
             var hasFieldOnlyAttribute = false;
             var allowFieldFallback = false;
@@ -3583,10 +3637,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                         DuckTypeAotCompatibilityStatuses.IncompatibleMethodSignature,
                         StatusCodeIncompatibleSignature,
                         $"Return type mismatch between proxy struct field '{proxyField.FullName}' and target property '{targetProperty.FullName}'.");
+                    _currentExecutionContext?.CacheStructCopyBindingPlan(bindingPlanCacheKey, CreateFailurePlan(failure));
                     return false;
                 }
 
                 binding = StructCopyFieldBinding.ForProperty(proxyField, targetProperty, returnConversion);
+                _currentExecutionContext?.CacheStructCopyBindingPlan(bindingPlanCacheKey, new StructCopyFieldBindingPlanCacheEntry(binding));
                 return true;
             }
 
@@ -3602,10 +3658,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                             DuckTypeAotCompatibilityStatuses.IncompatibleMethodSignature,
                             StatusCodeIncompatibleSignature,
                             $"Return type mismatch between proxy struct field '{proxyField.FullName}' and target field '{targetField.FullName}'.");
+                        _currentExecutionContext?.CacheStructCopyBindingPlan(bindingPlanCacheKey, CreateFailurePlan(failure));
                         return false;
                     }
 
                     binding = StructCopyFieldBinding.ForField(proxyField, targetField, returnConversion);
+                    _currentExecutionContext?.CacheStructCopyBindingPlan(bindingPlanCacheKey, new StructCopyFieldBindingPlanCacheEntry(binding));
                     return true;
                 }
             }
@@ -3615,6 +3673,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 DuckTypeAotCompatibilityStatuses.MissingTargetMethod,
                 StatusCodeMissingMethod,
                 $"Target member for proxy struct field '{proxyField.FullName}' was not found.");
+            _currentExecutionContext?.CacheStructCopyBindingPlan(bindingPlanCacheKey, CreateFailurePlan(failure));
             return false;
         }
 
@@ -3711,6 +3770,29 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool TryCreateReturnConversion(TypeSig proxyReturnType, TypeSig targetReturnType, bool isReverseMapping, out MethodReturnConversion returnConversion)
         {
+            var conversionCacheKey = BuildMethodReturnConversionCacheKey(proxyReturnType, targetReturnType, isReverseMapping);
+            if (_currentExecutionContext?.TryGetMethodReturnConversion(conversionCacheKey, out var cachedConversion) == true)
+            {
+                if (_currentProfile is not null)
+                {
+                    _currentProfile.ConversionPlanCacheHits++;
+                }
+
+                if (cachedConversion.Succeeded)
+                {
+                    returnConversion = cachedConversion.Conversion;
+                    return true;
+                }
+
+                returnConversion = default;
+                return false;
+            }
+
+            if (_currentProfile is not null)
+            {
+                _currentProfile.ConversionPlanCacheMisses++;
+            }
+
             bool IsDuckChainingRequiredForMapping(TypeSig actualType, TypeSig expectedType)
             {
                 // Dynamic reverse ducktyping swaps target/proxy order for duck-chaining checks.
@@ -3724,6 +3806,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             if (AreTypesEquivalent(proxyReturnType, targetReturnType))
             {
                 returnConversion = MethodReturnConversion.None();
+                _currentExecutionContext?.CacheMethodReturnConversion(conversionCacheKey, new MethodReturnConversionCacheEntry(returnConversion));
                 return true;
             }
 
@@ -3734,6 +3817,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 {
                     // ValueWithType<TProxy>: direct wrap when target returns TProxy.
                     returnConversion = MethodReturnConversion.WrapValueWithType(proxyReturnType, targetReturnType);
+                    _currentExecutionContext?.CacheMethodReturnConversion(conversionCacheKey, new MethodReturnConversionCacheEntry(returnConversion));
                     return true;
                 }
 
@@ -3741,6 +3825,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 {
                     // ValueWithType<TProxy>: dynamic mode supports duck-chaining before wrapping.
                     returnConversion = MethodReturnConversion.WrapValueWithTypeAfterDuckChainToProxy(proxyReturnType, targetReturnType);
+                    _currentExecutionContext?.CacheMethodReturnConversion(conversionCacheKey, new MethodReturnConversionCacheEntry(returnConversion));
                     return true;
                 }
 
@@ -3748,26 +3833,31 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 {
                     // ValueWithType<TProxy>: dynamic mode supports type conversion before wrapping.
                     returnConversion = MethodReturnConversion.WrapValueWithTypeAfterTypeConversion(proxyReturnType, targetReturnType);
+                    _currentExecutionContext?.CacheMethodReturnConversion(conversionCacheKey, new MethodReturnConversionCacheEntry(returnConversion));
                     return true;
                 }
 
                 returnConversion = default;
+                _currentExecutionContext?.CacheMethodReturnConversion(conversionCacheKey, new MethodReturnConversionCacheEntry());
                 return false;
             }
 
             if (IsDuckChainingRequiredForMapping(targetReturnType, proxyReturnType))
             {
                 returnConversion = MethodReturnConversion.DuckChainToProxy(proxyReturnType, targetReturnType);
+                _currentExecutionContext?.CacheMethodReturnConversion(conversionCacheKey, new MethodReturnConversionCacheEntry(returnConversion));
                 return true;
             }
 
             if (CanUseTypeConversion(targetReturnType, proxyReturnType))
             {
                 returnConversion = MethodReturnConversion.TypeConversion(targetReturnType, proxyReturnType);
+                _currentExecutionContext?.CacheMethodReturnConversion(conversionCacheKey, new MethodReturnConversionCacheEntry(returnConversion));
                 return true;
             }
 
             returnConversion = default;
+            _currentExecutionContext?.CacheMethodReturnConversion(conversionCacheKey, new MethodReturnConversionCacheEntry());
             return false;
         }
 
@@ -3822,6 +3912,22 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             MethodDef generatedMethod,
             IReadOnlyList<TypeSig>? closedGenericMethodArguments)
         {
+            var cacheKey = BuildMethodCallTargetCacheKey(importedTargetMethod, importedTargetType, (int)generatedMethod.MethodSig.GenParamCount, closedGenericMethodArguments);
+            if (_currentExecutionContext?.TryGetMethodCallTarget(cacheKey, out var cachedCallTarget) == true)
+            {
+                if (_currentProfile is not null)
+                {
+                    _currentProfile.MethodCallTargetCacheHits++;
+                }
+
+                return cachedCallTarget!;
+            }
+
+            if (_currentProfile is not null)
+            {
+                _currentProfile.MethodCallTargetCacheMisses++;
+            }
+
             IMethodDefOrRef effectiveTargetMethod = importedTargetMethod;
             if (importedTargetMethod.DeclaringType is ITypeDefOrRef importedDeclaringType &&
                 !string.Equals(importedDeclaringType.FullName, importedTargetType.FullName, StringComparison.Ordinal))
@@ -3845,11 +3951,14 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 }
 
                 var methodSpecWithClosedArguments = new MethodSpecUser(effectiveTargetMethod, new GenericInstMethodSig(closedArguments));
-                return moduleDef.UpdateRowId(methodSpecWithClosedArguments);
+                var closedGenericCallTarget = moduleDef.UpdateRowId(methodSpecWithClosedArguments);
+                _currentExecutionContext?.CacheMethodCallTarget(cacheKey, closedGenericCallTarget);
+                return closedGenericCallTarget;
             }
 
             if (generatedMethod.MethodSig.GenParamCount == 0)
             {
+                _currentExecutionContext?.CacheMethodCallTarget(cacheKey, effectiveTargetMethod);
                 return effectiveTargetMethod;
             }
 
@@ -3860,7 +3969,9 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
 
             var methodSpec = new MethodSpecUser(effectiveTargetMethod, new GenericInstMethodSig(genericArguments));
-            return moduleDef.UpdateRowId(methodSpec);
+            var generatedMethodCallTarget = moduleDef.UpdateRowId(methodSpec);
+            _currentExecutionContext?.CacheMethodCallTarget(cacheKey, generatedMethodCallTarget);
+            return generatedMethodCallTarget;
         }
 
         /// <summary>
@@ -4701,10 +4812,29 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <returns>The imported property signature.</returns>
         private static PropertySig CreateImportedPropertySig(ModuleDef moduleDef, PropertySig sourcePropertySig)
         {
+            var cacheKey = BuildPropertySignatureCacheKey(sourcePropertySig);
+            if (_currentExecutionContext?.TryGetPropertySignature(cacheKey, out var cachedPropertySig) == true)
+            {
+                if (_currentProfile is not null)
+                {
+                    _currentProfile.PropertySignatureCacheHits++;
+                }
+
+                return cachedPropertySig!;
+            }
+
+            if (_currentProfile is not null)
+            {
+                _currentProfile.PropertySignatureCacheMisses++;
+            }
+
             var importedReturnType = ImportTypeSigCached(moduleDef, sourcePropertySig.RetType, $"property signature return type '{sourcePropertySig}'");
+            PropertySig importedPropertySig;
             if (sourcePropertySig.Params.Count == 0)
             {
-                return new PropertySig(hasThis: sourcePropertySig.HasThis, importedReturnType);
+                importedPropertySig = new PropertySig(hasThis: sourcePropertySig.HasThis, importedReturnType);
+                _currentExecutionContext?.CachePropertySignature(cacheKey, importedPropertySig);
+                return importedPropertySig;
             }
 
             var importedParameterTypes = new TypeSig[sourcePropertySig.Params.Count];
@@ -4713,7 +4843,9 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 importedParameterTypes[index] = ImportTypeSigCached(moduleDef, sourcePropertySig.Params[index], $"property signature parameter '{sourcePropertySig}'");
             }
 
-            return new PropertySig(hasThis: sourcePropertySig.HasThis, importedReturnType, importedParameterTypes);
+            importedPropertySig = new PropertySig(hasThis: sourcePropertySig.HasThis, importedReturnType, importedParameterTypes);
+            _currentExecutionContext?.CachePropertySignature(cacheKey, importedPropertySig);
+            return importedPropertySig;
         }
 
         /// <summary>
@@ -5039,6 +5171,20 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return proxyTypePlan?.ClassMethods ?? Array.Empty<MethodDef>();
         }
 
+        private static ProxyMethodPlan GetOrCreateProxyMethodPlan(MethodDef proxyMethod)
+        {
+            var declaringType = proxyMethod.DeclaringType
+                             ?? throw new InvalidOperationException($"Proxy method '{proxyMethod.FullName}' does not have a declaring type.");
+            return _currentExecutionContext?.GetOrCreateProxyTypePlan(declaringType).GetOrCreateMethodPlan(proxyMethod)
+                ?? new ProxyMethodPlan(proxyMethod);
+        }
+
+        private static MethodPlan GetOrCreateMethodPlan(MethodDef method)
+        {
+            return _currentExecutionContext?.GetOrCreateMethodPlan(method)
+                ?? new MethodPlan(method);
+        }
+
         /// <summary>
         /// Appends target methods explicitly marked with DuckInclude into the proxy method list.
         /// </summary>
@@ -5129,35 +5275,73 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         {
             binding = default;
             failure = null;
+            var proxyMethodPlan = GetOrCreateProxyMethodPlan(proxyMethod);
+            var bindingPlanCacheKey = BuildForwardBindingPlanCacheKey(mapping, targetType, proxyMethod, closedGenericTargetTypeArguments);
+            if (_currentExecutionContext?.TryGetForwardBindingPlan(bindingPlanCacheKey, out var cachedPlan) == true)
+            {
+                if (_currentProfile is not null)
+                {
+                    _currentProfile.ForwardBindingPlanCacheHits++;
+                }
 
-            var fieldResolutionMode = GetFieldResolutionMode(proxyMethod);
+                if (cachedPlan.Succeeded)
+                {
+                    binding = cachedPlan.Binding;
+                    return true;
+                }
+
+                failure = CreateFailureResult(
+                    mapping,
+                    cachedPlan.FailureStatus ?? DuckTypeAotCompatibilityStatuses.IncompatibleMethodSignature,
+                    cachedPlan.FailureDiagnosticCode ?? StatusCodeIncompatibleSignature,
+                    cachedPlan.FailureDetail ?? $"Target member for proxy method '{proxyMethod.FullName}' was not found.");
+                return false;
+            }
+
+            if (_currentProfile is not null)
+            {
+                _currentProfile.ForwardBindingPlanCacheMisses++;
+            }
+
+            var fieldResolutionMode = proxyMethodPlan.FieldResolutionMode;
             var fieldOnly = fieldResolutionMode == FieldResolutionMode.FieldOnly;
             var allowFieldFallback = fieldResolutionMode != FieldResolutionMode.Disabled;
-            var allowPrivateBaseMembers = IsFallbackToBaseTypesEnabled(proxyMethod);
+            var allowPrivateBaseMembers = proxyMethodPlan.AllowPrivateBaseMembers;
             var isReverseMapping = mapping.Mode == DuckTypeAotMappingMode.Reverse;
             // Dynamic ducktyping only applies FallbackToBaseTypes semantics to property/field binding paths.
             // In AOT, property bindings are represented as accessor methods, so keep private-base fallback
             // enabled only for accessor method resolution to preserve runtime parity.
-            var allowPrivateBaseMethodCandidates = allowPrivateBaseMembers && IsPropertyAccessorMethod(proxyMethod);
+            var allowPrivateBaseMethodCandidates = proxyMethodPlan.AllowPrivateBaseMethodCandidates;
+
+            ForwardBindingPlanCacheEntry CreateFailurePlan(DuckTypeAotMappingEmissionResult failureResult)
+            {
+                return new ForwardBindingPlanCacheEntry(
+                    failureResult.Status,
+                    failureResult.DiagnosticCode ?? StatusCodeIncompatibleSignature,
+                    failureResult.Detail ?? string.Empty);
+            }
+
             if (!isReverseMapping &&
-                TryGetForwardReverseUsageFailure(proxyMethod, out var reverseUsageFailureDetail))
+                !string.IsNullOrWhiteSpace(proxyMethodPlan.ReverseUsageFailureDetail))
             {
                 failure = DuckTypeAotMappingEmissionResult.NotCompatible(
                     mapping,
                     DuckTypeAotCompatibilityStatuses.IncompatibleMethodSignature,
                     StatusCodeIncompatibleSignature,
-                    reverseUsageFailureDetail!);
+                    proxyMethodPlan.ReverseUsageFailureDetail!);
+                _currentExecutionContext?.CacheForwardBindingPlan(bindingPlanCacheKey, CreateFailurePlan(failure));
                 return false;
             }
 
             MethodCompatibilityFailure? firstMethodFailure = null;
-            if (!TryResolveForwardClosedGenericMethodArguments(targetType, proxyMethod, out var closedGenericMethodArguments, out var closedGenericMethodArgumentsFailureReason))
+            if (!TryResolveForwardClosedGenericMethodArguments(targetType, proxyMethodPlan, out var closedGenericMethodArguments, out var closedGenericMethodArgumentsFailureReason))
             {
                 failure = DuckTypeAotMappingEmissionResult.NotCompatible(
                     mapping,
                     DuckTypeAotCompatibilityStatuses.IncompatibleMethodSignature,
                     StatusCodeIncompatibleSignature,
                     closedGenericMethodArgumentsFailureReason ?? $"Unable to resolve generic type arguments for proxy method '{proxyMethod.FullName}'.");
+                _currentExecutionContext?.CacheForwardBindingPlan(bindingPlanCacheKey, CreateFailurePlan(failure));
                 return false;
             }
 
@@ -5167,7 +5351,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 var successfulMethodBinding = default(ForwardBinding);
                 MethodDef? successfulTargetMethod = null;
                 var visitedMethodCandidates = new HashSet<string>(StringComparer.Ordinal);
-                foreach (var targetMethod in FindForwardTargetMethodCandidates(mapping, targetType, proxyMethod, closedGenericMethodArguments, allowPrivateBaseMethodCandidates))
+                foreach (var targetMethod in FindForwardTargetMethodCandidates(mapping, targetType, proxyMethodPlan, closedGenericMethodArguments, allowPrivateBaseMethodCandidates))
                 {
                     if (!visitedMethodCandidates.Add(GetMethodCandidateKey(targetMethod)))
                     {
@@ -5189,6 +5373,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                                 DuckTypeAotCompatibilityStatuses.IncompatibleMethodSignature,
                                 StatusCodeIncompatibleSignature,
                                 $"Ambiguous target method match for proxy method '{proxyMethod.FullName}' between '{successfulTargetMethod!.FullName}' and '{targetMethod.FullName}'.");
+                            _currentExecutionContext?.CacheForwardBindingPlan(bindingPlanCacheKey, CreateFailurePlan(failure));
                             return false;
                         }
 
@@ -5204,13 +5389,14 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 if (hasSuccessfulMethodBinding)
                 {
                     binding = successfulMethodBinding;
+                    _currentExecutionContext?.CacheForwardBindingPlan(bindingPlanCacheKey, new ForwardBindingPlanCacheEntry(binding));
                     return true;
                 }
             }
 
             if (allowFieldFallback)
             {
-                if (!TryGetFieldAccessorKind(proxyMethod, out var fieldAccessorKind))
+                if (!proxyMethodPlan.HasFieldAccessorKind)
                 {
                     if (fieldOnly)
                     {
@@ -5219,16 +5405,19 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                             DuckTypeAotCompatibilityStatuses.IncompatibleMethodSignature,
                             StatusCodeIncompatibleSignature,
                             $"Proxy member '{proxyMethod.FullName}' uses DuckField semantics but is not a supported property accessor.");
+                        _currentExecutionContext?.CacheForwardBindingPlan(bindingPlanCacheKey, CreateFailurePlan(failure));
                         return false;
                     }
                 }
                 else
                 {
+                    var fieldAccessorKind = proxyMethodPlan.FieldAccessorKind;
                     if (TryFindForwardTargetField(targetType, proxyMethod, fieldAccessorKind, allowPrivateBaseMembers, closedGenericTargetTypeArguments, isReverseMapping, out var targetField, out var fieldBinding, out var fieldFailureReason))
                     {
                         binding = fieldAccessorKind == FieldAccessorKind.Getter
                                       ? ForwardBinding.ForFieldGet(proxyMethod, targetField!, fieldBinding)
                                       : ForwardBinding.ForFieldSet(proxyMethod, targetField!, fieldBinding);
+                        _currentExecutionContext?.CacheForwardBindingPlan(bindingPlanCacheKey, new ForwardBindingPlanCacheEntry(binding));
                         return true;
                     }
 
@@ -5239,6 +5428,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                             DuckTypeAotCompatibilityStatuses.IncompatibleMethodSignature,
                             StatusCodeIncompatibleSignature,
                             fieldFailureReason ?? $"Field binding for proxy method '{proxyMethod.FullName}' is not compatible.");
+                        _currentExecutionContext?.CacheForwardBindingPlan(bindingPlanCacheKey, CreateFailurePlan(failure));
                         return false;
                     }
                 }
@@ -5251,6 +5441,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     DuckTypeAotCompatibilityStatuses.IncompatibleMethodSignature,
                     StatusCodeIncompatibleSignature,
                     firstMethodFailure.Value.Detail);
+                _currentExecutionContext?.CacheForwardBindingPlan(bindingPlanCacheKey, CreateFailurePlan(failure));
                 return false;
             }
 
@@ -5261,6 +5452,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     DuckTypeAotCompatibilityStatuses.MissingTargetMethod,
                     StatusCodePropertyCantBeWritten,
                     propertyCantBeWrittenDetail!);
+                _currentExecutionContext?.CacheForwardBindingPlan(bindingPlanCacheKey, CreateFailurePlan(failure));
                 return false;
             }
 
@@ -5269,6 +5461,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 DuckTypeAotCompatibilityStatuses.MissingTargetMethod,
                 StatusCodeMissingMethod,
                 $"Target member for proxy method '{proxyMethod.FullName}' was not found.");
+            _currentExecutionContext?.CacheForwardBindingPlan(bindingPlanCacheKey, CreateFailurePlan(failure));
             return false;
         }
 
@@ -5381,6 +5574,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             out string? detail)
         {
             detail = null;
+            var proxyMethodPlan = GetOrCreateProxyMethodPlan(proxyMethod);
             var proxyMethodName = proxyMethod.Name.String ?? proxyMethod.Name.ToString();
             if (!proxyMethodName.StartsWith("set_", StringComparison.Ordinal) ||
                 proxyMethod.MethodSig.Params.Count != 1 ||
@@ -5389,7 +5583,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 return false;
             }
 
-            var candidatePropertyNames = GetForwardTargetMethodNames(proxyMethod)
+            var candidatePropertyNames = proxyMethodPlan.ForwardTargetMethodNames
                                         .Select(methodName => ExtractSetterPropertyName(methodName))
                                         .Where(propertyName => !string.IsNullOrWhiteSpace(propertyName))
                                         .Select(propertyName => propertyName!)
@@ -5485,15 +5679,14 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         private static IEnumerable<MethodDef> FindForwardTargetMethodCandidates(
             DuckTypeAotMapping mapping,
             TypeDef targetType,
-            MethodDef proxyMethod,
+            ProxyMethodPlan proxyMethodPlan,
             IReadOnlyList<TypeSig>? closedGenericMethodArguments,
             bool allowPrivateBaseMembers)
         {
-            _ = TryGetForwardExplicitInterfaceTypeNames(
-                proxyMethod,
-                out var explicitInterfaceTypeNames,
-                out var useRelaxedNameComparison);
-            _ = TryGetForwardParameterTypeNames(proxyMethod, out var configuredParameterTypeNames);
+            var proxyMethod = proxyMethodPlan.Method;
+            var explicitInterfaceTypeNames = proxyMethodPlan.ExplicitInterfaceTypeNames;
+            var useRelaxedNameComparison = proxyMethodPlan.UseRelaxedNameComparison;
+            var configuredParameterTypeNames = proxyMethodPlan.ConfiguredParameterTypeNames;
             var expectedGenericArity = closedGenericMethodArguments?.Count ?? (int)proxyMethod.MethodSig.GenParamCount;
 
             if (mapping.Mode == DuckTypeAotMappingMode.Reverse)
@@ -5502,7 +5695,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 {
                     foreach (var candidate in FindDefaultTargetMethodCandidates(
                                  targetType,
-                                 proxyMethod,
+                                 proxyMethodPlan,
                                  explicitInterfaceTypeNames,
                                  useRelaxedNameComparison,
                                  expectedGenericArity,
@@ -5537,7 +5730,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
             foreach (var candidate in FindDefaultTargetMethodCandidates(
                          targetType,
-                         proxyMethod,
+                         proxyMethodPlan,
                          explicitInterfaceTypeNames,
                          useRelaxedNameComparison,
                          expectedGenericArity,
@@ -5571,42 +5764,44 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <returns>The result produced by this operation.</returns>
         private static IEnumerable<MethodDef> FindDefaultTargetMethodCandidates(
             TypeDef targetType,
-            MethodDef proxyMethod,
+            ProxyMethodPlan proxyMethodPlan,
             IReadOnlyList<string> explicitInterfaceTypeNames,
             bool useRelaxedNameComparison,
             int expectedGenericArity,
             IReadOnlyList<string> configuredParameterTypeNames,
             bool allowPrivateBaseMembers)
         {
-            var candidateMethodNames = GetForwardTargetMethodNames(proxyMethod);
             var targetTypePlan = _currentExecutionContext?.GetOrCreateTargetTypePlan(targetType);
+            if (targetTypePlan is not null)
+            {
+                foreach (var candidate in targetTypePlan.GetForwardMethodCandidates(
+                             proxyMethodPlan,
+                             explicitInterfaceTypeNames,
+                             useRelaxedNameComparison,
+                             expectedGenericArity,
+                             configuredParameterTypeNames,
+                             allowPrivateBaseMembers))
+                {
+                    yield return candidate;
+                }
+
+                yield break;
+            }
+
+            var proxyMethod = proxyMethodPlan.Method;
+            var candidateMethodNames = proxyMethodPlan.ForwardTargetMethodNames;
+            var proxyParameterCount = proxyMethod.MethodSig.Params.Count;
             foreach (var candidateMethodName in candidateMethodNames)
             {
-                var emittedCandidates = new HashSet<string>(StringComparer.Ordinal);
-                var candidatePool = targetTypePlan is null
-                                        ? Array.Empty<TargetMethodCandidate>()
-                                        : targetTypePlan.GetMethodCandidatesByExactName(candidateMethodName)
-                                                        .Concat(targetTypePlan.GetMethodCandidatesBySimpleName(candidateMethodName));
-                foreach (var candidateEntry in candidatePool)
+                foreach (var candidateEntry in Array.Empty<TargetMethodCandidate>())
                 {
                     var candidate = candidateEntry.Method;
-                    if (!emittedCandidates.Add(GetMethodCandidateKey(candidate)))
-                    {
-                        continue;
-                    }
-
                     var candidateMethodActualName = candidate.Name.String ?? candidate.Name.ToString();
                     if (!IsForwardTargetMethodNameMatch(
                             candidateMethodActualName,
                             candidateMethodName,
                             explicitInterfaceTypeNames,
                             useRelaxedNameComparison))
-                    {
-                        continue;
-                    }
-
-                    if (candidate.MethodSig.GenParamCount != expectedGenericArity ||
-                        candidate.MethodSig.Params.Count != proxyMethod.MethodSig.Params.Count)
                     {
                         continue;
                     }
@@ -5668,6 +5863,134 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         private static string GetMethodCandidateKey(MethodDef candidate)
         {
             return $"{candidate.DeclaringType.FullName}::{candidate.Name}::{candidate.MethodSig}";
+        }
+
+        private static string BuildTypeIdentityKey(TypeDef type)
+        {
+            var assemblyName = type.DefinitionAssembly?.Name?.String ?? string.Empty;
+            return $"{assemblyName}::{type.FullName}";
+        }
+
+        private static string BuildMethodIdentityKey(MethodDef method)
+        {
+            var assemblyName = method.DeclaringType?.DefinitionAssembly?.Name?.String ?? string.Empty;
+            return $"{assemblyName}::{method.FullName}";
+        }
+
+        private static string BuildFieldIdentityKey(FieldDef field)
+        {
+            var assemblyName = field.DeclaringType?.DefinitionAssembly?.Name?.String ?? string.Empty;
+            return $"{assemblyName}::{field.FullName}";
+        }
+
+        private static string BuildTypeSigCacheKey(TypeSig typeSig)
+        {
+            return typeSig.FullName ?? typeSig.ToString();
+        }
+
+        private static string BuildTypeSigSequenceCacheKey(IEnumerable<TypeSig>? typeSigs)
+        {
+            if (typeSigs is null)
+            {
+                return string.Empty;
+            }
+
+            return string.Join(",", typeSigs.Select(BuildTypeSigCacheKey));
+        }
+
+        private static string BuildForwardBindingPlanCacheKey(
+            DuckTypeAotMapping mapping,
+            TypeDef targetType,
+            MethodDef proxyMethod,
+            IReadOnlyList<TypeSig>? closedGenericTargetTypeArguments)
+        {
+            return string.Concat(
+                mapping.Mode.ToString(),
+                "|",
+                BuildTypeIdentityKey(targetType),
+                "|",
+                BuildMethodIdentityKey(proxyMethod),
+                "|",
+                BuildTypeSigSequenceCacheKey(closedGenericTargetTypeArguments));
+        }
+
+        private static string BuildForwardMethodBindingPlanCacheKey(
+            MethodDef proxyMethod,
+            MethodDef targetMethod,
+            IReadOnlyList<TypeSig>? closedGenericTargetTypeArguments,
+            IReadOnlyList<TypeSig>? closedGenericMethodArguments,
+            bool isReverseMapping)
+        {
+            return string.Concat(
+                isReverseMapping ? "reverse" : "forward",
+                "|",
+                BuildMethodIdentityKey(proxyMethod),
+                "|",
+                BuildMethodIdentityKey(targetMethod),
+                "|",
+                BuildTypeSigSequenceCacheKey(closedGenericTargetTypeArguments),
+                "|",
+                BuildTypeSigSequenceCacheKey(closedGenericMethodArguments));
+        }
+
+        private static string BuildStructCopyBindingPlanCacheKey(TypeDef targetType, FieldDef proxyField, IReadOnlyList<TypeSig>? closedGenericTargetTypeArguments)
+        {
+            return string.Concat(
+                BuildTypeIdentityKey(targetType),
+                "|",
+                BuildFieldIdentityKey(proxyField),
+                "|",
+                BuildTypeSigSequenceCacheKey(closedGenericTargetTypeArguments));
+        }
+
+        private static string BuildMethodReturnConversionCacheKey(TypeSig proxyReturnType, TypeSig targetReturnType, bool isReverseMapping, string discriminator = "")
+        {
+            return string.Concat(
+                discriminator,
+                "|",
+                isReverseMapping ? "reverse" : "forward",
+                "|",
+                BuildTypeSigCacheKey(proxyReturnType),
+                "|",
+                BuildTypeSigCacheKey(targetReturnType));
+        }
+
+        private static string BuildMethodArgumentConversionCacheKey(TypeSig proxyParameterType, TypeSig targetParameterType, bool isReverseMapping, bool enforceMethodSelectionRules)
+        {
+            return string.Concat(
+                isReverseMapping ? "reverse" : "forward",
+                "|",
+                enforceMethodSelectionRules ? "strict" : "loose",
+                "|",
+                BuildTypeSigCacheKey(proxyParameterType),
+                "|",
+                BuildTypeSigCacheKey(targetParameterType));
+        }
+
+        private static string BuildMethodCallTargetCacheKey(
+            IMethodDefOrRef importedTargetMethod,
+            ITypeDefOrRef importedTargetType,
+            int generatedMethodGenericParameterCount,
+            IReadOnlyList<TypeSig>? closedGenericMethodArguments)
+        {
+            return string.Concat(
+                importedTargetMethod.FullName,
+                "|",
+                importedTargetType.FullName,
+                "|",
+                generatedMethodGenericParameterCount.ToString(CultureInfo.InvariantCulture),
+                "|",
+                BuildTypeSigSequenceCacheKey(closedGenericMethodArguments));
+        }
+
+        private static string BuildPropertySignatureCacheKey(PropertySig propertySig)
+        {
+            return string.Concat(
+                propertySig.HasThis ? "instance" : "static",
+                "|",
+                BuildTypeSigCacheKey(propertySig.RetType),
+                "|",
+                BuildTypeSigSequenceCacheKey(propertySig.Params));
         }
 
         /// <summary>
@@ -5915,11 +6238,42 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             out ForwardMethodBindingInfo binding,
             out MethodCompatibilityFailure? failure)
         {
+            var cacheKey = BuildForwardMethodBindingPlanCacheKey(
+                proxyMethod,
+                targetMethod,
+                closedGenericTargetTypeArguments,
+                closedGenericMethodArguments,
+                isReverseMapping);
+            if (_currentExecutionContext?.TryGetForwardMethodBindingPlan(cacheKey, out var cachedPlan) == true)
+            {
+                if (_currentProfile is not null)
+                {
+                    _currentProfile.ForwardBindingPlanCacheHits++;
+                }
+
+                if (cachedPlan.Succeeded)
+                {
+                    binding = cachedPlan.Binding;
+                    failure = null;
+                    return true;
+                }
+
+                binding = default;
+                failure = new MethodCompatibilityFailure(cachedPlan.FailureDetail ?? $"Method binding for '{proxyMethod.FullName}' is not compatible.");
+                return false;
+            }
+
+            if (_currentProfile is not null)
+            {
+                _currentProfile.ForwardBindingPlanCacheMisses++;
+            }
+
             if (proxyMethod.MethodSig.Params.Count != targetMethod.MethodSig.Params.Count)
             {
                 failure = new MethodCompatibilityFailure(
                     $"Parameter count mismatch between proxy method '{proxyMethod.FullName}' and target method '{targetMethod.FullName}'.");
                 binding = default;
+                _currentExecutionContext?.CacheForwardMethodBindingPlan(cacheKey, new ForwardMethodBindingPlanCacheEntry(failure.Value.Detail));
                 return false;
             }
 
@@ -5930,6 +6284,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     failure = new MethodCompatibilityFailure(
                         $"Generic arity mismatch between proxy method '{proxyMethod.FullName}' and target method '{targetMethod.FullName}'.");
                     binding = default;
+                    _currentExecutionContext?.CacheForwardMethodBindingPlan(cacheKey, new ForwardMethodBindingPlanCacheEntry(failure.Value.Detail));
                     return false;
                 }
             }
@@ -5940,6 +6295,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     failure = new MethodCompatibilityFailure(
                         $"Generic arity mismatch between proxy method '{proxyMethod.FullName}' and target method '{targetMethod.FullName}'.");
                     binding = default;
+                    _currentExecutionContext?.CacheForwardMethodBindingPlan(cacheKey, new ForwardMethodBindingPlanCacheEntry(failure.Value.Detail));
                     return false;
                 }
             }
@@ -5950,6 +6306,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 if (!TryCreateForwardMethodParameterBinding(proxyMethod, targetMethod, closedGenericTargetTypeArguments, closedGenericMethodArguments, parameterIndex, isReverseMapping, out var parameterBinding, out failure))
                 {
                     binding = default;
+                    _currentExecutionContext?.CacheForwardMethodBindingPlan(cacheKey, new ForwardMethodBindingPlanCacheEntry(failure?.Detail ?? $"Method binding for '{proxyMethod.FullName}' is not compatible."));
                     return false;
                 }
 
@@ -5962,11 +6319,13 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 failure = new MethodCompatibilityFailure(
                     $"Return type mismatch between proxy method '{proxyMethod.FullName}' and target method '{targetMethod.FullName}'.");
                 binding = default;
+                _currentExecutionContext?.CacheForwardMethodBindingPlan(cacheKey, new ForwardMethodBindingPlanCacheEntry(failure.Value.Detail));
                 return false;
             }
 
             binding = new ForwardMethodBindingInfo(parameterBindings, returnConversion, closedGenericMethodArguments);
             failure = null;
+            _currentExecutionContext?.CacheForwardMethodBindingPlan(cacheKey, new ForwardMethodBindingPlanCacheEntry(binding));
             return true;
         }
 
@@ -5990,6 +6349,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             out MethodParameterBinding parameterBinding,
             out MethodCompatibilityFailure? failure)
         {
+            var proxyMethodPlan = GetOrCreateProxyMethodPlan(proxyMethod);
+            var targetMethodPlan = GetOrCreateMethodPlan(targetMethod);
             var proxyParameterType = proxyMethod.MethodSig.Params[parameterIndex];
             var targetParameterType = SubstituteTypeAndMethodGenericTypeArguments(targetMethod.MethodSig.Params[parameterIndex], closedGenericTargetTypeArguments, closedGenericMethodArguments);
 
@@ -6018,8 +6379,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 return true;
             }
 
-            _ = TryGetMethodParameterDirection(proxyMethod, parameterIndex, out var proxyParameterDirection);
-            _ = TryGetMethodParameterDirection(targetMethod, parameterIndex, out var targetParameterDirection);
+            _ = proxyMethodPlan.TryGetParameterDirection(parameterIndex, out var proxyParameterDirection);
+            _ = targetMethodPlan.TryGetParameterDirection(parameterIndex, out var targetParameterDirection);
             var proxyIsOut = proxyParameterDirection.IsOut;
             var targetIsOut = targetParameterDirection.IsOut;
             var proxyIsIn = proxyParameterDirection.IsIn;
@@ -6109,9 +6470,33 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             bool enforceMethodSelectionRules,
             out MethodArgumentConversion argumentConversion)
         {
+            var conversionCacheKey = BuildMethodArgumentConversionCacheKey(proxyParameterType, targetParameterType, isReverseMapping, enforceMethodSelectionRules);
+            if (_currentExecutionContext?.TryGetMethodArgumentConversion(conversionCacheKey, out var cachedConversion) == true)
+            {
+                if (_currentProfile is not null)
+                {
+                    _currentProfile.ConversionPlanCacheHits++;
+                }
+
+                if (cachedConversion.Succeeded)
+                {
+                    argumentConversion = cachedConversion.Conversion;
+                    return true;
+                }
+
+                argumentConversion = default;
+                return false;
+            }
+
+            if (_currentProfile is not null)
+            {
+                _currentProfile.ConversionPlanCacheMisses++;
+            }
+
             if (AreTypesEquivalent(proxyParameterType, targetParameterType))
             {
                 argumentConversion = MethodArgumentConversion.None();
+                _currentExecutionContext?.CacheMethodArgumentConversion(conversionCacheKey, new MethodArgumentConversionCacheEntry(argumentConversion));
                 return true;
             }
 
@@ -6121,10 +6506,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 if (!TryCreateMethodArgumentConversion(proxyValueWithTypeArgument!, targetParameterType, isReverseMapping, enforceMethodSelectionRules, out argumentConversion))
                 {
                     argumentConversion = default;
+                    _currentExecutionContext?.CacheMethodArgumentConversion(conversionCacheKey, new MethodArgumentConversionCacheEntry());
                     return false;
                 }
 
                 argumentConversion = argumentConversion.WithValueWithTypeUnwrap(proxyParameterType, proxyValueWithTypeArgument!);
+                _currentExecutionContext?.CacheMethodArgumentConversion(conversionCacheKey, new MethodArgumentConversionCacheEntry(argumentConversion));
                 return true;
             }
 
@@ -6142,6 +6529,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     argumentConversion = MethodArgumentConversion.ExtractDuckTypeInstance(proxyParameterType, targetParameterType);
                 }
 
+                _currentExecutionContext?.CacheMethodArgumentConversion(conversionCacheKey, new MethodArgumentConversionCacheEntry(argumentConversion));
                 return true;
             }
 
@@ -6149,16 +6537,19 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 !MatchesDynamicMethodParameterSelectionRule(proxyParameterType, targetParameterType))
             {
                 argumentConversion = default;
+                _currentExecutionContext?.CacheMethodArgumentConversion(conversionCacheKey, new MethodArgumentConversionCacheEntry());
                 return false;
             }
 
             if (CanUseTypeConversion(proxyParameterType, targetParameterType))
             {
                 argumentConversion = MethodArgumentConversion.TypeConversion(proxyParameterType, targetParameterType);
+                _currentExecutionContext?.CacheMethodArgumentConversion(conversionCacheKey, new MethodArgumentConversionCacheEntry(argumentConversion));
                 return true;
             }
 
             argumentConversion = default;
+            _currentExecutionContext?.CacheMethodArgumentConversion(conversionCacheKey, new MethodArgumentConversionCacheEntry());
             return false;
         }
 
@@ -6477,12 +6868,37 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool TryCreateByRefPostCallConversion(TypeSig proxyParameterElementType, TypeSig targetParameterElementType, out MethodReturnConversion returnConversion)
         {
+            var conversionCacheKey = BuildMethodReturnConversionCacheKey(proxyParameterElementType, targetParameterElementType, isReverseMapping: false, discriminator: "byref");
+            if (_currentExecutionContext?.TryGetMethodReturnConversion(conversionCacheKey, out var cachedConversion) == true)
+            {
+                if (_currentProfile is not null)
+                {
+                    _currentProfile.ConversionPlanCacheHits++;
+                }
+
+                if (cachedConversion.Succeeded)
+                {
+                    returnConversion = cachedConversion.Conversion;
+                    return true;
+                }
+
+                returnConversion = default;
+                return false;
+            }
+
+            if (_currentProfile is not null)
+            {
+                _currentProfile.ConversionPlanCacheMisses++;
+            }
+
             if (TryCreateReturnConversion(proxyParameterElementType, targetParameterElementType, out returnConversion))
             {
+                _currentExecutionContext?.CacheMethodReturnConversion(conversionCacheKey, new MethodReturnConversionCacheEntry(returnConversion));
                 return true;
             }
 
             returnConversion = default;
+            _currentExecutionContext?.CacheMethodReturnConversion(conversionCacheKey, new MethodReturnConversionCacheEntry());
             return false;
         }
 
@@ -6635,10 +7051,18 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <returns>The result produced by this operation.</returns>
         private static IField CreateValueWithTypeValueFieldRef(ModuleDef moduleDef, TypeSig wrapperTypeSig, TypeSig innerTypeSig)
         {
+            var cacheKey = string.Concat(BuildTypeSigCacheKey(wrapperTypeSig), "|", BuildTypeSigCacheKey(innerTypeSig));
+            if (_currentExecutionContext?.TryGetValueWithTypeValueFieldRef(cacheKey, out var cachedField) == true)
+            {
+                return cachedField!;
+            }
+
             var importedWrapperTypeSig = ImportTypeSigCached(moduleDef, wrapperTypeSig, $"ValueWithType wrapper field '{wrapperTypeSig.FullName}'");
             var typeSpec = moduleDef.UpdateRowId(new TypeSpecUser(importedWrapperTypeSig));
             var fieldRef = new MemberRefUser(moduleDef, "Value", new FieldSig(new GenericVar(0)), typeSpec);
-            return moduleDef.UpdateRowId(fieldRef);
+            var importedField = moduleDef.UpdateRowId(fieldRef);
+            _currentExecutionContext?.CacheValueWithTypeValueFieldRef(cacheKey, importedField);
+            return importedField;
         }
 
         /// <summary>
@@ -6650,6 +7074,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <returns>The result produced by this operation.</returns>
         private static IMethodDefOrRef CreateValueWithTypeCreateMethodRef(ModuleDef moduleDef, TypeSig wrapperTypeSig, TypeSig innerTypeSig)
         {
+            var cacheKey = string.Concat(BuildTypeSigCacheKey(wrapperTypeSig), "|", BuildTypeSigCacheKey(innerTypeSig));
+            if (_currentExecutionContext?.TryGetValueWithTypeCreateMethodRef(cacheKey, out var cachedMethod) == true)
+            {
+                return cachedMethod!;
+            }
+
             var importedWrapperTypeSig = ImportTypeSigCached(moduleDef, wrapperTypeSig, $"ValueWithType wrapper method '{wrapperTypeSig.FullName}'");
             if (importedWrapperTypeSig is not GenericInstSig wrapperGenericInst)
             {
@@ -6663,7 +7093,9 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 new GenericVar(0),
                 moduleDef.CorLibTypes.GetTypeRef("System", "Type").ToTypeSig());
             var methodRef = new MemberRefUser(moduleDef, "Create", methodSig, typeSpec);
-            return moduleDef.UpdateRowId(methodRef);
+            var importedMethod = moduleDef.UpdateRowId(methodRef);
+            _currentExecutionContext?.CacheValueWithTypeCreateMethodRef(cacheKey, importedMethod);
+            return importedMethod;
         }
 
         /// <summary>
@@ -6674,6 +7106,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <returns>The result produced by this operation.</returns>
         private static IMethodDefOrRef CreateDuckTypeCreateCacheCreateMethodRef(ModuleDef moduleDef, TypeSig proxyTypeSig)
         {
+            var cacheKey = BuildTypeSigCacheKey(proxyTypeSig);
+            if (_currentExecutionContext?.TryGetDuckTypeCreateCacheCreateMethodRef(cacheKey, out var cachedMethod) == true)
+            {
+                return cachedMethod!;
+            }
+
             var importedProxyTypeSig = ImportTypeSigCached(moduleDef, proxyTypeSig, $"DuckType.CreateCache.Create proxy '{proxyTypeSig.FullName}'");
             var importedCreateCacheOpenType = ImportRuntimeTypeCached(moduleDef, typeof(DuckType.CreateCache<>), "DuckType.CreateCache<> type");
 
@@ -6684,11 +7122,19 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             var createCacheClosedTypeSpec = moduleDef.UpdateRowId(new TypeSpecUser(createCacheClosedTypeSig));
             var createMethodSig = MethodSig.CreateStatic(new GenericVar(0), moduleDef.CorLibTypes.Object);
             var createMethodRef = new MemberRefUser(moduleDef, "Create", createMethodSig, createCacheClosedTypeSpec);
-            return moduleDef.UpdateRowId(createMethodRef);
+            var importedMethod = moduleDef.UpdateRowId(createMethodRef);
+            _currentExecutionContext?.CacheDuckTypeCreateCacheCreateMethodRef(cacheKey, importedMethod);
+            return importedMethod;
         }
 
         private static IMethod CreateDuckTypeCreateCacheCreateFromMethodRef(ModuleDef moduleDef, TypeSig proxyTypeSig, TypeSig targetTypeSig)
         {
+            var cacheKey = string.Concat(BuildTypeSigCacheKey(proxyTypeSig), "|", BuildTypeSigCacheKey(targetTypeSig));
+            if (_currentExecutionContext?.TryGetDuckTypeCreateCacheCreateFromMethodRef(cacheKey, out var cachedMethod) == true)
+            {
+                return cachedMethod!;
+            }
+
             var importedProxyTypeSig = ImportTypeSigCached(moduleDef, proxyTypeSig, $"DuckType.CreateCache.CreateFrom proxy '{proxyTypeSig.FullName}'");
             var importedTargetTypeSig = ImportTypeSigCached(moduleDef, targetTypeSig, $"DuckType.CreateCache.CreateFrom target '{targetTypeSig.FullName}'");
             var importedCreateCacheOpenType = ImportRuntimeTypeCached(moduleDef, typeof(DuckType.CreateCache<>), "DuckType.CreateCache<> type");
@@ -6701,7 +7147,9 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             var createFromMethodSig = MethodSig.CreateStaticGeneric(1, new GenericVar(0), new GenericMVar(0));
             var createFromMethodRef = new MemberRefUser(moduleDef, "CreateFrom", createFromMethodSig, createCacheClosedTypeSpec);
             var createFromMethodSpec = new MethodSpecUser(createFromMethodRef, new GenericInstMethodSig(importedTargetTypeSig));
-            return moduleDef.UpdateRowId(createFromMethodSpec);
+            var importedMethod = moduleDef.UpdateRowId(createFromMethodSpec);
+            _currentExecutionContext?.CacheDuckTypeCreateCacheCreateFromMethodRef(cacheKey, importedMethod);
+            return importedMethod;
         }
 
         /// <summary>
@@ -6944,11 +7392,19 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 throw new InvalidOperationException($"Expected Nullable<T> type but received '{nullableTypeSig.FullName}'.");
             }
 
+            var cacheKey = BuildTypeSigCacheKey(nullableTypeSig);
+            if (_currentExecutionContext?.TryGetNullableCtorRef(cacheKey, out var cachedCtor) == true)
+            {
+                return cachedCtor!;
+            }
+
             var importedNullableTypeSig = ImportTypeSigCached(moduleDef, nullableTypeSig, $"nullable ctor '{nullableTypeSig.FullName}'");
             var nullableTypeSpec = moduleDef.UpdateRowId(new TypeSpecUser(importedNullableTypeSig));
             var ctorSig = MethodSig.CreateInstance(moduleDef.CorLibTypes.Void, new GenericVar(0));
             var ctorRef = new MemberRefUser(moduleDef, ".ctor", ctorSig, nullableTypeSpec);
-            return moduleDef.UpdateRowId(ctorRef);
+            var importedCtor = moduleDef.UpdateRowId(ctorRef);
+            _currentExecutionContext?.CacheNullableCtorRef(cacheKey, importedCtor);
+            return importedCtor;
         }
 
         /// <summary>
@@ -6976,38 +7432,30 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             targetField = null;
             fieldBinding = default;
             failureReason = null;
-            var candidateFieldNames = GetForwardTargetFieldNames(proxyMethod);
+            var candidateFieldNames = GetOrCreateProxyMethodPlan(proxyMethod).ForwardTargetFieldNames;
+            var targetTypePlan = _currentExecutionContext?.GetOrCreateTargetTypePlan(targetType);
 
             foreach (var candidateFieldName in candidateFieldNames)
             {
-                var current = targetType;
-                while (current is not null)
+                var fieldCandidates = targetTypePlan?.GetFieldCandidates(candidateFieldName) ?? Array.Empty<TargetFieldCandidate>();
+                foreach (var fieldCandidate in fieldCandidates)
                 {
-                    foreach (var candidate in current.Fields)
+                    var candidate = fieldCandidate.Field;
+                    if (!allowPrivateBaseMembers &&
+                        fieldCandidate.IsInherited &&
+                        candidate.IsPrivate)
                     {
-                        if (!string.Equals(candidate.Name, candidateFieldName, StringComparison.Ordinal))
-                        {
-                            continue;
-                        }
-
-                        if (!allowPrivateBaseMembers &&
-                            !ReferenceEquals(current, targetType) &&
-                            candidate.IsPrivate)
-                        {
-                            continue;
-                        }
-
-                        if (!AreFieldAccessorSignatureCompatible(proxyMethod, candidate, accessorKind, closedGenericTargetTypeArguments, isReverseMapping, out var candidateFieldBinding, out failureReason))
-                        {
-                            continue;
-                        }
-
-                        targetField = candidate;
-                        fieldBinding = candidateFieldBinding;
-                        return true;
+                        continue;
                     }
 
-                    current = current.BaseType?.ResolveTypeDef();
+                    if (!AreFieldAccessorSignatureCompatible(proxyMethod, candidate, accessorKind, closedGenericTargetTypeArguments, isReverseMapping, out var candidateFieldBinding, out failureReason))
+                    {
+                        continue;
+                    }
+
+                    targetField = candidate;
+                    fieldBinding = candidateFieldBinding;
+                    return true;
                 }
             }
 
@@ -7412,24 +7860,24 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool TryResolveForwardClosedGenericMethodArguments(
             TypeDef targetType,
-            MethodDef proxyMethod,
+            ProxyMethodPlan proxyMethodPlan,
             out IReadOnlyList<TypeSig>? closedGenericMethodArguments,
             out string? failureReason)
         {
             closedGenericMethodArguments = null;
             failureReason = null;
-            if (!TryGetDuckGenericParameterTypeNames(proxyMethod, out var genericParameterTypeNames))
+            if (!proxyMethodPlan.HasDuckGenericParameterTypeNames)
             {
                 return true;
             }
 
-            var resolvedTypeSigs = new List<TypeSig>(genericParameterTypeNames.Count);
-            foreach (var genericParameterTypeName in genericParameterTypeNames)
+            var resolvedTypeSigs = new List<TypeSig>(proxyMethodPlan.DuckGenericParameterTypeNames.Count);
+            foreach (var genericParameterTypeName in proxyMethodPlan.DuckGenericParameterTypeNames)
             {
                 if (!TryResolveRuntimeTypeByName(genericParameterTypeName, out var runtimeType))
                 {
                     failureReason =
-                        $"Generic parameter type '{genericParameterTypeName}' for proxy method '{proxyMethod.FullName}' could not be resolved.";
+                        $"Generic parameter type '{genericParameterTypeName}' for proxy method '{proxyMethodPlan.Method.FullName}' could not be resolved.";
                     return false;
                 }
 
@@ -8213,37 +8661,29 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             DuckTypeAotMapping mapping,
             out DuckTypeAotMappingEmissionResult? failure)
         {
-            failure = null;
-            foreach (var customAttribute in targetType.CustomAttributes)
+            var reverseCustomAttributePlan = GetOrCreateReverseCustomAttributePlan(moduleDef, targetType);
+            if (!reverseCustomAttributePlan.Succeeded)
             {
-                if (ShouldSkipReverseCopiedCustomAttribute(customAttribute))
-                {
-                    continue;
-                }
-
-                if (customAttribute.NamedArguments.Count > 0)
-                {
-                    failure = CreateFailureResult(
-                        mapping,
-                        DuckTypeAotCompatibilityStatuses.IncompatibleMethodSignature,
-                        StatusCodeCustomAttributeNamedArguments,
-                        $"Custom attribute '{customAttribute.TypeFullName}' on target type '{targetType.FullName}' contains named arguments and is not supported.");
-                    return false;
-                }
-
-                if (!TryCloneCustomAttribute(moduleDef, customAttribute, out var clonedAttribute))
-                {
-                    failure = CreateFailureResult(
-                        mapping,
-                        DuckTypeAotCompatibilityStatuses.IncompatibleMethodSignature,
-                        StatusCodeIncompatibleSignature,
-                        $"Unable to copy custom attribute '{customAttribute.TypeFullName}' from target type '{targetType.FullName}'.");
-                    return false;
-                }
-
-                generatedType.CustomAttributes.Add(clonedAttribute!);
+                failure = CreateFailureResult(
+                    mapping,
+                    reverseCustomAttributePlan.FailureStatus!,
+                    reverseCustomAttributePlan.FailureDiagnosticCode!,
+                    reverseCustomAttributePlan.FailureDetail!);
+                return false;
             }
 
+            foreach (var clonedAttributePlan in reverseCustomAttributePlan.ClonedAttributes)
+            {
+                var clonedAttribute = new CustomAttribute(clonedAttributePlan.Constructor);
+                foreach (var constructorArgument in clonedAttributePlan.ConstructorArguments)
+                {
+                    clonedAttribute.ConstructorArguments.Add(constructorArgument);
+                }
+
+                generatedType.CustomAttributes.Add(clonedAttribute);
+            }
+
+            failure = null;
             return true;
         }
 
@@ -8277,7 +8717,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             out CustomAttribute? clonedAttribute)
         {
             clonedAttribute = null;
-            if (moduleDef.Import(sourceAttribute.Constructor) is not ICustomAttributeType importedCtor)
+            if (!TryImportCustomAttributeTypeCached(moduleDef, sourceAttribute.Constructor, out var importedCtor))
             {
                 return false;
             }
@@ -8289,6 +8729,105 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
 
             clonedAttribute = importedAttribute;
+            return true;
+        }
+
+        private static ReverseCustomAttributePlan GetOrCreateReverseCustomAttributePlan(ModuleDef moduleDef, TypeDef targetType)
+        {
+            if (_currentExecutionContext?.TryGetReverseCustomAttributePlan(targetType, out var cachedPlan) == true)
+            {
+                if (_currentProfile is not null)
+                {
+                    _currentProfile.ReverseCustomAttributePlanCacheHits++;
+                }
+
+                return cachedPlan!;
+            }
+
+            if (_currentProfile is not null)
+            {
+                _currentProfile.ReverseCustomAttributePlanCacheMisses++;
+            }
+
+            var clonedAttributes = new List<CustomAttributeClonePlan>();
+            foreach (var customAttribute in targetType.CustomAttributes)
+            {
+                if (ShouldSkipReverseCopiedCustomAttribute(customAttribute))
+                {
+                    continue;
+                }
+
+                if (customAttribute.NamedArguments.Count > 0)
+                {
+                    var namedArgumentsFailure = new ReverseCustomAttributePlan(
+                        DuckTypeAotCompatibilityStatuses.IncompatibleMethodSignature,
+                        StatusCodeCustomAttributeNamedArguments,
+                        $"Custom attribute '{customAttribute.TypeFullName}' on target type '{targetType.FullName}' contains named arguments and is not supported.");
+                    _currentExecutionContext?.CacheReverseCustomAttributePlan(targetType, namedArgumentsFailure);
+                    return namedArgumentsFailure;
+                }
+
+                if (!TryCreateCustomAttributeClonePlan(moduleDef, customAttribute, out var clonePlan))
+                {
+                    var cloneFailure = new ReverseCustomAttributePlan(
+                        DuckTypeAotCompatibilityStatuses.IncompatibleMethodSignature,
+                        StatusCodeIncompatibleSignature,
+                        $"Unable to copy custom attribute '{customAttribute.TypeFullName}' from target type '{targetType.FullName}'.");
+                    _currentExecutionContext?.CacheReverseCustomAttributePlan(targetType, cloneFailure);
+                    return cloneFailure;
+                }
+
+                clonedAttributes.Add(clonePlan!);
+            }
+
+            var reversePlan = new ReverseCustomAttributePlan(clonedAttributes);
+            _currentExecutionContext?.CacheReverseCustomAttributePlan(targetType, reversePlan);
+            return reversePlan;
+        }
+
+        private static bool TryCreateCustomAttributeClonePlan(ModuleDef moduleDef, CustomAttribute sourceAttribute, out CustomAttributeClonePlan? clonePlan)
+        {
+            clonePlan = null;
+            if (!TryImportCustomAttributeTypeCached(moduleDef, sourceAttribute.Constructor, out var importedCtor))
+            {
+                return false;
+            }
+
+            var importedArguments = new CAArgument[sourceAttribute.ConstructorArguments.Count];
+            for (var argumentIndex = 0; argumentIndex < sourceAttribute.ConstructorArguments.Count; argumentIndex++)
+            {
+                importedArguments[argumentIndex] = ImportCustomAttributeArgument(moduleDef, sourceAttribute.ConstructorArguments[argumentIndex]);
+            }
+
+            clonePlan = new CustomAttributeClonePlan(importedCtor, importedArguments);
+            return true;
+        }
+
+        private static bool TryImportCustomAttributeTypeCached(ModuleDef moduleDef, ICustomAttributeType sourceAttributeType, out ICustomAttributeType importedAttributeType)
+        {
+            if (_currentExecutionContext?.TryGetImportedCustomAttributeType(sourceAttributeType, out importedAttributeType) == true)
+            {
+                if (_currentProfile is not null)
+                {
+                    _currentProfile.ImportCacheHits++;
+                }
+
+                return true;
+            }
+
+            if (moduleDef.Import(sourceAttributeType) is not ICustomAttributeType importedCtor)
+            {
+                importedAttributeType = null!;
+                return false;
+            }
+
+            _currentExecutionContext?.CacheImportedCustomAttributeType(sourceAttributeType, importedCtor);
+            if (_currentProfile is not null)
+            {
+                _currentProfile.ImportCacheMisses++;
+            }
+
+            importedAttributeType = importedCtor;
             return true;
         }
 
@@ -9671,11 +10210,26 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             private readonly Dictionary<Assembly, RuntimeAssemblyTypeIndex> _runtimeTypeIndexesByAssembly = new();
             private readonly Dictionary<TypeDef, TargetTypePlan> _targetTypePlans = new();
             private readonly Dictionary<TypeDef, ProxyTypePlan> _proxyTypePlans = new();
+            private readonly Dictionary<MethodDef, MethodPlan> _methodPlans = new(ReferenceIdentityComparer<MethodDef>.Instance);
             private readonly Dictionary<ITypeDefOrRef, ITypeDefOrRef> _importedTypeDefOrRefs = new(ReferenceIdentityComparer<ITypeDefOrRef>.Instance);
             private readonly Dictionary<Type, ITypeDefOrRef> _importedRuntimeTypes = new();
             private readonly Dictionary<string, TypeSig> _importedTypeSigs = new(StringComparer.Ordinal);
             private readonly Dictionary<IMethod, IMethod> _importedMethods = new(ReferenceIdentityComparer<IMethod>.Instance);
             private readonly Dictionary<IField, IField> _importedFields = new(ReferenceIdentityComparer<IField>.Instance);
+            private readonly Dictionary<string, ForwardBindingPlanCacheEntry> _forwardBindingsByKey = new(StringComparer.Ordinal);
+            private readonly Dictionary<string, ForwardMethodBindingPlanCacheEntry> _forwardMethodBindingsByKey = new(StringComparer.Ordinal);
+            private readonly Dictionary<string, StructCopyFieldBindingPlanCacheEntry> _structCopyBindingsByKey = new(StringComparer.Ordinal);
+            private readonly Dictionary<string, MethodReturnConversionCacheEntry> _methodReturnConversionsByKey = new(StringComparer.Ordinal);
+            private readonly Dictionary<string, MethodArgumentConversionCacheEntry> _methodArgumentConversionsByKey = new(StringComparer.Ordinal);
+            private readonly Dictionary<string, IMethod> _methodCallTargetsByKey = new(StringComparer.Ordinal);
+            private readonly Dictionary<string, PropertySig> _propertySignaturesByKey = new(StringComparer.Ordinal);
+            private readonly Dictionary<string, IField> _valueWithTypeValueFieldRefsByKey = new(StringComparer.Ordinal);
+            private readonly Dictionary<string, IMethodDefOrRef> _valueWithTypeCreateMethodRefsByKey = new(StringComparer.Ordinal);
+            private readonly Dictionary<string, IMethodDefOrRef> _duckTypeCreateCacheCreateMethodRefsByKey = new(StringComparer.Ordinal);
+            private readonly Dictionary<string, IMethod> _duckTypeCreateCacheCreateFromMethodRefsByKey = new(StringComparer.Ordinal);
+            private readonly Dictionary<string, IMethodDefOrRef> _nullableCtorRefsByKey = new(StringComparer.Ordinal);
+            private readonly Dictionary<TypeDef, ReverseCustomAttributePlan> _reverseCustomAttributePlansByType = new();
+            private readonly Dictionary<ICustomAttributeType, ICustomAttributeType> _importedCustomAttributeTypes = new(ReferenceIdentityComparer<ICustomAttributeType>.Instance);
 
             internal EmitterExecutionContext(IReadOnlyDictionary<string, string> runtimeTypeResolutionAssemblyPathsByName, TargetTypeIndex targetTypeIndex)
             {
@@ -9823,6 +10377,18 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 return plan;
             }
 
+            internal MethodPlan GetOrCreateMethodPlan(MethodDef method)
+            {
+                if (_methodPlans.TryGetValue(method, out var cachedPlan))
+                {
+                    return cachedPlan;
+                }
+
+                var plan = new MethodPlan(method);
+                _methodPlans[method] = plan;
+                return plan;
+            }
+
             private RuntimeAssemblyTypeIndex GetOrCreateRuntimeTypeIndex(Assembly assembly)
             {
                 if (_runtimeTypeIndexesByAssembly.TryGetValue(assembly, out var cachedIndex))
@@ -9868,6 +10434,90 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
             internal void CacheImportedField(IField source, IField importedField)
                 => _importedFields[source] = importedField;
+
+            internal bool TryGetForwardBindingPlan(string key, out ForwardBindingPlanCacheEntry plan)
+                => _forwardBindingsByKey.TryGetValue(key, out plan!);
+
+            internal void CacheForwardBindingPlan(string key, ForwardBindingPlanCacheEntry plan)
+                => _forwardBindingsByKey[key] = plan;
+
+            internal bool TryGetForwardMethodBindingPlan(string key, out ForwardMethodBindingPlanCacheEntry plan)
+                => _forwardMethodBindingsByKey.TryGetValue(key, out plan!);
+
+            internal void CacheForwardMethodBindingPlan(string key, ForwardMethodBindingPlanCacheEntry plan)
+                => _forwardMethodBindingsByKey[key] = plan;
+
+            internal bool TryGetStructCopyBindingPlan(string key, out StructCopyFieldBindingPlanCacheEntry plan)
+                => _structCopyBindingsByKey.TryGetValue(key, out plan!);
+
+            internal void CacheStructCopyBindingPlan(string key, StructCopyFieldBindingPlanCacheEntry plan)
+                => _structCopyBindingsByKey[key] = plan;
+
+            internal bool TryGetMethodReturnConversion(string key, out MethodReturnConversionCacheEntry conversion)
+                => _methodReturnConversionsByKey.TryGetValue(key, out conversion!);
+
+            internal void CacheMethodReturnConversion(string key, MethodReturnConversionCacheEntry conversion)
+                => _methodReturnConversionsByKey[key] = conversion;
+
+            internal bool TryGetMethodArgumentConversion(string key, out MethodArgumentConversionCacheEntry conversion)
+                => _methodArgumentConversionsByKey.TryGetValue(key, out conversion!);
+
+            internal void CacheMethodArgumentConversion(string key, MethodArgumentConversionCacheEntry conversion)
+                => _methodArgumentConversionsByKey[key] = conversion;
+
+            internal bool TryGetMethodCallTarget(string key, out IMethod method)
+                => _methodCallTargetsByKey.TryGetValue(key, out method!);
+
+            internal void CacheMethodCallTarget(string key, IMethod method)
+                => _methodCallTargetsByKey[key] = method;
+
+            internal bool TryGetPropertySignature(string key, out PropertySig propertySig)
+                => _propertySignaturesByKey.TryGetValue(key, out propertySig!);
+
+            internal void CachePropertySignature(string key, PropertySig propertySig)
+                => _propertySignaturesByKey[key] = propertySig;
+
+            internal bool TryGetValueWithTypeValueFieldRef(string key, out IField field)
+                => _valueWithTypeValueFieldRefsByKey.TryGetValue(key, out field!);
+
+            internal void CacheValueWithTypeValueFieldRef(string key, IField field)
+                => _valueWithTypeValueFieldRefsByKey[key] = field;
+
+            internal bool TryGetValueWithTypeCreateMethodRef(string key, out IMethodDefOrRef method)
+                => _valueWithTypeCreateMethodRefsByKey.TryGetValue(key, out method!);
+
+            internal void CacheValueWithTypeCreateMethodRef(string key, IMethodDefOrRef method)
+                => _valueWithTypeCreateMethodRefsByKey[key] = method;
+
+            internal bool TryGetDuckTypeCreateCacheCreateMethodRef(string key, out IMethodDefOrRef method)
+                => _duckTypeCreateCacheCreateMethodRefsByKey.TryGetValue(key, out method!);
+
+            internal void CacheDuckTypeCreateCacheCreateMethodRef(string key, IMethodDefOrRef method)
+                => _duckTypeCreateCacheCreateMethodRefsByKey[key] = method;
+
+            internal bool TryGetDuckTypeCreateCacheCreateFromMethodRef(string key, out IMethod method)
+                => _duckTypeCreateCacheCreateFromMethodRefsByKey.TryGetValue(key, out method!);
+
+            internal void CacheDuckTypeCreateCacheCreateFromMethodRef(string key, IMethod method)
+                => _duckTypeCreateCacheCreateFromMethodRefsByKey[key] = method;
+
+            internal bool TryGetNullableCtorRef(string key, out IMethodDefOrRef method)
+                => _nullableCtorRefsByKey.TryGetValue(key, out method!);
+
+            internal void CacheNullableCtorRef(string key, IMethodDefOrRef method)
+                => _nullableCtorRefsByKey[key] = method;
+
+            internal bool TryGetReverseCustomAttributePlan(TypeDef targetType, out ReverseCustomAttributePlan plan)
+                => _reverseCustomAttributePlansByType.TryGetValue(targetType, out plan!);
+
+            internal void CacheReverseCustomAttributePlan(TypeDef targetType, ReverseCustomAttributePlan plan)
+                => _reverseCustomAttributePlansByType[targetType] = plan;
+
+            internal bool TryGetImportedCustomAttributeType(ICustomAttributeType source, out ICustomAttributeType importedType)
+                => _importedCustomAttributeTypes.TryGetValue(source, out importedType!);
+
+            internal void CacheImportedCustomAttributeType(ICustomAttributeType source, ICustomAttributeType importedType)
+                => _importedCustomAttributeTypes[source] = importedType;
         }
 
         private sealed class TargetTypeIndex
@@ -9995,6 +10645,158 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             internal bool Succeeded { get; }
         }
 
+        private sealed class ForwardBindingPlanCacheEntry
+        {
+            internal ForwardBindingPlanCacheEntry(ForwardBinding binding)
+            {
+                Succeeded = true;
+                Binding = binding;
+            }
+
+            internal ForwardBindingPlanCacheEntry(string status, string diagnosticCode, string detail)
+            {
+                Succeeded = false;
+                FailureStatus = status;
+                FailureDiagnosticCode = diagnosticCode;
+                FailureDetail = detail;
+            }
+
+            internal bool Succeeded { get; }
+
+            internal ForwardBinding Binding { get; }
+
+            internal string? FailureStatus { get; }
+
+            internal string? FailureDiagnosticCode { get; }
+
+            internal string? FailureDetail { get; }
+        }
+
+        private sealed class ForwardMethodBindingPlanCacheEntry
+        {
+            internal ForwardMethodBindingPlanCacheEntry(ForwardMethodBindingInfo binding)
+            {
+                Succeeded = true;
+                Binding = binding;
+            }
+
+            internal ForwardMethodBindingPlanCacheEntry(string detail)
+            {
+                Succeeded = false;
+                FailureDetail = detail;
+            }
+
+            internal bool Succeeded { get; }
+
+            internal ForwardMethodBindingInfo Binding { get; }
+
+            internal string? FailureDetail { get; }
+        }
+
+        private sealed class StructCopyFieldBindingPlanCacheEntry
+        {
+            internal StructCopyFieldBindingPlanCacheEntry(StructCopyFieldBinding binding)
+            {
+                Succeeded = true;
+                Binding = binding;
+            }
+
+            internal StructCopyFieldBindingPlanCacheEntry(string status, string diagnosticCode, string detail)
+            {
+                Succeeded = false;
+                FailureStatus = status;
+                FailureDiagnosticCode = diagnosticCode;
+                FailureDetail = detail;
+            }
+
+            internal bool Succeeded { get; }
+
+            internal StructCopyFieldBinding Binding { get; }
+
+            internal string? FailureStatus { get; }
+
+            internal string? FailureDiagnosticCode { get; }
+
+            internal string? FailureDetail { get; }
+        }
+
+        private sealed class MethodReturnConversionCacheEntry
+        {
+            internal MethodReturnConversionCacheEntry(MethodReturnConversion conversion)
+            {
+                Succeeded = true;
+                Conversion = conversion;
+            }
+
+            internal MethodReturnConversionCacheEntry()
+            {
+                Succeeded = false;
+            }
+
+            internal bool Succeeded { get; }
+
+            internal MethodReturnConversion Conversion { get; }
+        }
+
+        private sealed class MethodArgumentConversionCacheEntry
+        {
+            internal MethodArgumentConversionCacheEntry(MethodArgumentConversion conversion)
+            {
+                Succeeded = true;
+                Conversion = conversion;
+            }
+
+            internal MethodArgumentConversionCacheEntry()
+            {
+                Succeeded = false;
+            }
+
+            internal bool Succeeded { get; }
+
+            internal MethodArgumentConversion Conversion { get; }
+        }
+
+        private sealed class ReverseCustomAttributePlan
+        {
+            internal ReverseCustomAttributePlan(IReadOnlyList<CustomAttributeClonePlan> clonedAttributes)
+            {
+                Succeeded = true;
+                ClonedAttributes = clonedAttributes;
+            }
+
+            internal ReverseCustomAttributePlan(string status, string diagnosticCode, string detail)
+            {
+                Succeeded = false;
+                FailureStatus = status;
+                FailureDiagnosticCode = diagnosticCode;
+                FailureDetail = detail;
+                ClonedAttributes = Array.Empty<CustomAttributeClonePlan>();
+            }
+
+            internal bool Succeeded { get; }
+
+            internal IReadOnlyList<CustomAttributeClonePlan> ClonedAttributes { get; }
+
+            internal string? FailureStatus { get; }
+
+            internal string? FailureDiagnosticCode { get; }
+
+            internal string? FailureDetail { get; }
+        }
+
+        private sealed class CustomAttributeClonePlan
+        {
+            internal CustomAttributeClonePlan(ICustomAttributeType constructor, IReadOnlyList<CAArgument> constructorArguments)
+            {
+                Constructor = constructor;
+                ConstructorArguments = constructorArguments;
+            }
+
+            internal ICustomAttributeType Constructor { get; }
+
+            internal IReadOnlyList<CAArgument> ConstructorArguments { get; }
+        }
+
         private sealed class RuntimeAssemblyTypeIndex
         {
             private readonly IReadOnlyDictionary<string, Type> _typesByName;
@@ -10076,8 +10878,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         {
             private readonly IReadOnlyDictionary<string, IReadOnlyList<TargetMethodCandidate>> _methodsByExactName;
             private readonly IReadOnlyDictionary<string, IReadOnlyList<TargetMethodCandidate>> _methodsBySimpleName;
+            private readonly IReadOnlyDictionary<string, IReadOnlyList<TargetMethodCandidate>> _methodsByExactNameAndShape;
+            private readonly IReadOnlyDictionary<string, IReadOnlyList<TargetMethodCandidate>> _methodsBySimpleNameAndShape;
             private readonly IReadOnlyDictionary<string, IReadOnlyList<TargetPropertyCandidate>> _propertiesByName;
             private readonly IReadOnlyDictionary<string, IReadOnlyList<TargetFieldCandidate>> _fieldsByName;
+            private readonly Dictionary<string, IReadOnlyList<MethodDef>> _forwardMethodCandidatesByKey = new(StringComparer.Ordinal);
 
             internal TargetTypePlan(TypeDef targetType)
             {
@@ -10093,6 +10898,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
                 var exactMethodIndex = new Dictionary<string, List<TargetMethodCandidate>>(StringComparer.Ordinal);
                 var simpleMethodIndex = new Dictionary<string, List<TargetMethodCandidate>>(StringComparer.Ordinal);
+                var exactMethodShapeIndex = new Dictionary<string, List<TargetMethodCandidate>>(StringComparer.Ordinal);
+                var simpleMethodShapeIndex = new Dictionary<string, List<TargetMethodCandidate>>(StringComparer.Ordinal);
                 var propertyIndex = new Dictionary<string, List<TargetPropertyCandidate>>(StringComparer.Ordinal);
                 var fieldIndex = new Dictionary<string, List<TargetFieldCandidate>>(StringComparer.Ordinal);
                 var declaredReverseImplementationMethods = new List<MethodDef>();
@@ -10104,12 +10911,15 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     foreach (var method in hierarchyType.Methods)
                     {
                         var candidate = new TargetMethodCandidate(method, isInherited);
-                        AddIndexEntry(exactMethodIndex, method.Name.String ?? method.Name.ToString(), candidate);
+                        var methodName = method.Name.String ?? method.Name.ToString();
+                        AddIndexEntry(exactMethodIndex, methodName, candidate);
+                        AddIndexEntry(exactMethodShapeIndex, BuildMethodShapeIndexKey(methodName, method), candidate);
 
-                        var simpleName = ResolveSimpleMethodName(method.Name.String ?? method.Name.ToString());
+                        var simpleName = ResolveSimpleMethodName(methodName);
                         if (!string.IsNullOrWhiteSpace(simpleName))
                         {
                             AddIndexEntry(simpleMethodIndex, simpleName!, candidate);
+                            AddIndexEntry(simpleMethodShapeIndex, BuildMethodShapeIndexKey(simpleName!, method), candidate);
                         }
 
                         if (!HasReverseMethodAttributes &&
@@ -10174,6 +10984,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
                 _methodsByExactName = exactMethodIndex.ToDictionary(kvp => kvp.Key, kvp => (IReadOnlyList<TargetMethodCandidate>)kvp.Value, StringComparer.Ordinal);
                 _methodsBySimpleName = simpleMethodIndex.ToDictionary(kvp => kvp.Key, kvp => (IReadOnlyList<TargetMethodCandidate>)kvp.Value, StringComparer.Ordinal);
+                _methodsByExactNameAndShape = exactMethodShapeIndex.ToDictionary(kvp => kvp.Key, kvp => (IReadOnlyList<TargetMethodCandidate>)kvp.Value, StringComparer.Ordinal);
+                _methodsBySimpleNameAndShape = simpleMethodShapeIndex.ToDictionary(kvp => kvp.Key, kvp => (IReadOnlyList<TargetMethodCandidate>)kvp.Value, StringComparer.Ordinal);
                 _propertiesByName = propertyIndex.ToDictionary(kvp => kvp.Key, kvp => (IReadOnlyList<TargetPropertyCandidate>)kvp.Value, StringComparer.Ordinal);
                 _fieldsByName = fieldIndex.ToDictionary(kvp => kvp.Key, kvp => (IReadOnlyList<TargetFieldCandidate>)kvp.Value, StringComparer.Ordinal);
                 DeclaredReverseImplementationMethods = declaredReverseImplementationMethods;
@@ -10191,11 +11003,89 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             internal IEnumerable<TargetMethodCandidate> GetMethodCandidatesBySimpleName(string methodName)
                 => _methodsBySimpleName.TryGetValue(methodName, out var candidates) ? candidates : Array.Empty<TargetMethodCandidate>();
 
+            internal IEnumerable<TargetMethodCandidate> GetMethodCandidatesByExactNameAndShape(string methodName, int genericArity, int parameterCount)
+                => _methodsByExactNameAndShape.TryGetValue(BuildMethodShapeIndexKey(methodName, genericArity, parameterCount), out var candidates) ? candidates : Array.Empty<TargetMethodCandidate>();
+
+            internal IEnumerable<TargetMethodCandidate> GetMethodCandidatesBySimpleNameAndShape(string methodName, int genericArity, int parameterCount)
+                => _methodsBySimpleNameAndShape.TryGetValue(BuildMethodShapeIndexKey(methodName, genericArity, parameterCount), out var candidates) ? candidates : Array.Empty<TargetMethodCandidate>();
+
             internal IEnumerable<TargetPropertyCandidate> GetPropertyCandidates(string propertyName)
                 => _propertiesByName.TryGetValue(propertyName, out var candidates) ? candidates : Array.Empty<TargetPropertyCandidate>();
 
             internal IEnumerable<TargetFieldCandidate> GetFieldCandidates(string fieldName)
                 => _fieldsByName.TryGetValue(fieldName, out var candidates) ? candidates : Array.Empty<TargetFieldCandidate>();
+
+            internal IReadOnlyList<MethodDef> GetForwardMethodCandidates(
+                ProxyMethodPlan proxyMethodPlan,
+                IReadOnlyList<string> explicitInterfaceTypeNames,
+                bool useRelaxedNameComparison,
+                int expectedGenericArity,
+                IReadOnlyList<string> configuredParameterTypeNames,
+                bool allowPrivateBaseMembers)
+            {
+                var cacheKey = string.Concat(
+                    string.Join("|", proxyMethodPlan.ForwardTargetMethodNames),
+                    "::",
+                    string.Join("|", explicitInterfaceTypeNames),
+                    "::",
+                    useRelaxedNameComparison ? "relaxed" : "strict",
+                    "::",
+                    expectedGenericArity.ToString(CultureInfo.InvariantCulture),
+                    "::",
+                    proxyMethodPlan.Method.MethodSig.Params.Count.ToString(CultureInfo.InvariantCulture),
+                    "::",
+                    allowPrivateBaseMembers ? "base" : "declared",
+                    "::",
+                    string.Join("|", configuredParameterTypeNames));
+                if (_forwardMethodCandidatesByKey.TryGetValue(cacheKey, out var cachedCandidates))
+                {
+                    return cachedCandidates;
+                }
+
+                var proxyParameterCount = proxyMethodPlan.Method.MethodSig.Params.Count;
+                var emittedCandidates = new HashSet<string>(StringComparer.Ordinal);
+                var candidates = new List<MethodDef>();
+                foreach (var candidateMethodName in proxyMethodPlan.ForwardTargetMethodNames)
+                {
+                    foreach (var candidateEntry in GetMethodCandidatesByExactNameAndShape(candidateMethodName, expectedGenericArity, proxyParameterCount)
+                                 .Concat(GetMethodCandidatesBySimpleNameAndShape(candidateMethodName, expectedGenericArity, proxyParameterCount)))
+                    {
+                        var candidate = candidateEntry.Method;
+                        if (!emittedCandidates.Add(GetMethodCandidateKey(candidate)))
+                        {
+                            continue;
+                        }
+
+                        var candidateMethodActualName = candidate.Name.String ?? candidate.Name.ToString();
+                        if (!IsForwardTargetMethodNameMatch(
+                                candidateMethodActualName,
+                                candidateMethodName,
+                                explicitInterfaceTypeNames,
+                                useRelaxedNameComparison))
+                        {
+                            continue;
+                        }
+
+                        if (configuredParameterTypeNames.Count > 0 &&
+                            !IsForwardCandidateParameterTypeNameMatch(candidate, configuredParameterTypeNames))
+                        {
+                            continue;
+                        }
+
+                        if (!allowPrivateBaseMembers &&
+                            candidateEntry.IsInherited &&
+                            candidate.IsPrivate)
+                        {
+                            continue;
+                        }
+
+                        candidates.Add(candidate);
+                    }
+                }
+
+                _forwardMethodCandidatesByKey[cacheKey] = candidates;
+                return candidates;
+            }
 
             private static void AddIndexEntry<TCandidate>(IDictionary<string, List<TCandidate>> index, string key, TCandidate candidate)
             {
@@ -10217,6 +11107,16 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 }
 
                 return methodName.Substring(separatorIndex + 1);
+            }
+
+            private static string BuildMethodShapeIndexKey(string methodName, MethodDef method)
+            {
+                return BuildMethodShapeIndexKey(methodName, (int)method.MethodSig.GenParamCount, method.MethodSig.Params.Count);
+            }
+
+            private static string BuildMethodShapeIndexKey(string methodName, int genericArity, int parameterCount)
+            {
+                return string.Concat(methodName, "::", genericArity.ToString(CultureInfo.InvariantCulture), "::", parameterCount.ToString(CultureInfo.InvariantCulture));
             }
         }
 
@@ -10261,6 +11161,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
         private sealed class ProxyTypePlan
         {
+            private readonly Dictionary<MethodDef, ProxyMethodPlan> _methodPlans = new(ReferenceIdentityComparer<MethodDef>.Instance);
+
             internal ProxyTypePlan(TypeDef proxyType)
             {
                 InterfaceMethods = BuildInterfaceMethods(proxyType);
@@ -10273,6 +11175,18 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             internal IReadOnlyList<MethodDef> ClassMethods { get; }
 
             internal MethodDef? SupportedBaseConstructor { get; }
+
+            internal ProxyMethodPlan GetOrCreateMethodPlan(MethodDef proxyMethod)
+            {
+                if (_methodPlans.TryGetValue(proxyMethod, out var cachedPlan))
+                {
+                    return cachedPlan;
+                }
+
+                var plan = new ProxyMethodPlan(proxyMethod);
+                _methodPlans[proxyMethod] = plan;
+                return plan;
+            }
 
             private static IReadOnlyList<MethodDef> BuildInterfaceMethods(TypeDef interfaceType)
             {
@@ -10364,6 +11278,138 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
         }
 
+        private sealed class ProxyMethodPlan
+        {
+            internal ProxyMethodPlan(MethodDef proxyMethod)
+            {
+                Method = proxyMethod;
+                DeclaringProperty = FindPropertyFromAccessor(proxyMethod);
+                FieldResolutionMode = GetFieldResolutionMode(proxyMethod);
+                AllowPrivateBaseMembers = IsFallbackToBaseTypesEnabled(proxyMethod);
+                AllowPrivateBaseMethodCandidates = AllowPrivateBaseMembers && IsPropertyAccessorMethod(proxyMethod);
+                ForwardTargetMethodNames = GetForwardTargetMethodNames(proxyMethod);
+                ForwardTargetFieldNames = GetForwardTargetFieldNames(proxyMethod);
+                HasFieldAccessorKind = TryGetFieldAccessorKind(proxyMethod, out var accessorKind);
+                FieldAccessorKind = accessorKind;
+                ReverseUsageFailureDetail = TryGetForwardReverseUsageFailure(proxyMethod, out var reverseUsageFailureDetail)
+                                                ? reverseUsageFailureDetail
+                                                : null;
+                HasExplicitInterfaceTypeNames = TryGetForwardExplicitInterfaceTypeNames(proxyMethod, out var explicitInterfaceTypeNames, out var useRelaxedNameComparison);
+                ExplicitInterfaceTypeNames = explicitInterfaceTypeNames;
+                UseRelaxedNameComparison = useRelaxedNameComparison;
+                HasConfiguredParameterTypeNames = TryGetForwardParameterTypeNames(proxyMethod, out var configuredParameterTypeNames);
+                ConfiguredParameterTypeNames = configuredParameterTypeNames;
+                HasDuckGenericParameterTypeNames = TryGetDuckGenericParameterTypeNames(proxyMethod, out var genericParameterTypeNames);
+                DuckGenericParameterTypeNames = genericParameterTypeNames;
+                ParameterDirections = BuildParameterDirections(proxyMethod);
+            }
+
+            internal MethodDef Method { get; }
+
+            internal PropertyDef? DeclaringProperty { get; }
+
+            internal FieldResolutionMode FieldResolutionMode { get; }
+
+            internal bool AllowPrivateBaseMembers { get; }
+
+            internal bool AllowPrivateBaseMethodCandidates { get; }
+
+            internal IReadOnlyList<string> ForwardTargetMethodNames { get; }
+
+            internal IReadOnlyList<string> ForwardTargetFieldNames { get; }
+
+            internal bool HasFieldAccessorKind { get; }
+
+            internal FieldAccessorKind FieldAccessorKind { get; }
+
+            internal string? ReverseUsageFailureDetail { get; }
+
+            internal bool HasExplicitInterfaceTypeNames { get; }
+
+            internal IReadOnlyList<string> ExplicitInterfaceTypeNames { get; }
+
+            internal bool UseRelaxedNameComparison { get; }
+
+            internal bool HasConfiguredParameterTypeNames { get; }
+
+            internal IReadOnlyList<string> ConfiguredParameterTypeNames { get; }
+
+            internal bool HasDuckGenericParameterTypeNames { get; }
+
+            internal IReadOnlyList<string> DuckGenericParameterTypeNames { get; }
+
+            internal IReadOnlyList<ParameterDirection> ParameterDirections { get; }
+
+            internal bool TryGetParameterDirection(int parameterIndex, out ParameterDirection direction)
+            {
+                if (parameterIndex < 0 || parameterIndex >= ParameterDirections.Count)
+                {
+                    direction = default;
+                    return false;
+                }
+
+                direction = ParameterDirections[parameterIndex];
+                return true;
+            }
+
+            private static IReadOnlyList<ParameterDirection> BuildParameterDirections(MethodDef method)
+            {
+                if (method.MethodSig.Params.Count == 0)
+                {
+                    return Array.Empty<ParameterDirection>();
+                }
+
+                var directions = new ParameterDirection[method.MethodSig.Params.Count];
+                for (var parameterIndex = 0; parameterIndex < directions.Length; parameterIndex++)
+                {
+                    _ = TryGetMethodParameterDirection(method, parameterIndex, out directions[parameterIndex]);
+                }
+
+                return directions;
+            }
+        }
+
+        private sealed class MethodPlan
+        {
+            internal MethodPlan(MethodDef method)
+            {
+                Method = method;
+                ParameterDirections = BuildParameterDirections(method);
+            }
+
+            internal MethodDef Method { get; }
+
+            internal IReadOnlyList<ParameterDirection> ParameterDirections { get; }
+
+            internal bool TryGetParameterDirection(int parameterIndex, out ParameterDirection direction)
+            {
+                if (parameterIndex < 0 || parameterIndex >= ParameterDirections.Count)
+                {
+                    direction = default;
+                    return false;
+                }
+
+                direction = ParameterDirections[parameterIndex];
+                return true;
+            }
+
+            private static IReadOnlyList<ParameterDirection> BuildParameterDirections(MethodDef method)
+            {
+                if (method.MethodSig.Params.Count == 0)
+                {
+                    return Array.Empty<ParameterDirection>();
+                }
+
+                var directions = new ParameterDirection[method.MethodSig.Params.Count];
+                for (var parameterIndex = 0; parameterIndex < directions.Length; parameterIndex++)
+                {
+                    _ = TryGetMethodParameterDirection(method, parameterIndex, out directions[parameterIndex]);
+                }
+
+                return directions;
+            }
+        }
+
         private sealed class EmitterProfile
         {
             internal Stopwatch Total { get; } = Stopwatch.StartNew();
@@ -10411,6 +11457,28 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             internal int ImportCacheHits { get; set; }
 
             internal int ImportCacheMisses { get; set; }
+
+            internal double RegistrationPlanningSeconds { get; set; }
+
+            internal int ForwardBindingPlanCacheHits { get; set; }
+
+            internal int ForwardBindingPlanCacheMisses { get; set; }
+
+            internal int ConversionPlanCacheHits { get; set; }
+
+            internal int ConversionPlanCacheMisses { get; set; }
+
+            internal int MethodCallTargetCacheHits { get; set; }
+
+            internal int MethodCallTargetCacheMisses { get; set; }
+
+            internal int PropertySignatureCacheHits { get; set; }
+
+            internal int PropertySignatureCacheMisses { get; set; }
+
+            internal int ReverseCustomAttributePlanCacheHits { get; set; }
+
+            internal int ReverseCustomAttributePlanCacheMisses { get; set; }
         }
     }
 }
