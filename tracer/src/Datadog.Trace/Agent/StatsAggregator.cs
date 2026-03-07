@@ -49,10 +49,10 @@ namespace Datadog.Trace.Agent
 
         private int _currentBuffer;
 
-        internal StatsAggregator(IApi api, TracerSettings settings, IDiscoveryService discoveryService)
+        internal StatsAggregator(IApi api, TracerSettings settings, IDiscoveryService discoveryService, bool isOtlp)
         {
             _api = api;
-            _isOtlp = settings.Manager.InitialExporterSettings.TracesEncoding is TracesEncoding.OtlpProtobuf or TracesEncoding.OtlpJson;
+            _isOtlp = isOtlp;
             _processExit = new TaskCompletionSource<bool>();
             _bucketDuration = TimeSpan.FromSeconds(settings.StatsComputationInterval);
             _buffers = new StatsBuffer[BufferCount];
@@ -64,7 +64,7 @@ namespace Datadog.Trace.Agent
 
             _prioritySampler = new PrioritySampler();
             _errorSampler = new ErrorSampler();
-            _rareSampler = new RareSampler(settings, _isOtlp);
+            _rareSampler = new RareSampler(settings, isOtlp);
             _analyticsEventSampler = new AnalyticsEventsSampler();
 
             // Create with the initial mutable settings, but be aware that this could change later
@@ -109,9 +109,9 @@ namespace Datadog.Trace.Agent
 
         public bool? CanComputeStats { get; private set; } = null;
 
-        public static IStatsAggregator Create(IApi api, TracerSettings settings, IDiscoveryService discoveryService)
+        public static IStatsAggregator Create(IApi api, TracerSettings settings, IDiscoveryService discoveryService, bool isOtlp)
         {
-            return settings.StatsComputationEnabled ? new StatsAggregator(api, settings, discoveryService) : new NullStatsAggregator();
+            return isOtlp || settings.StatsComputationEnabled ? new StatsAggregator(api, settings, discoveryService, isOtlp) : new NullStatsAggregator();
         }
 
         public Task DisposeAsync()
