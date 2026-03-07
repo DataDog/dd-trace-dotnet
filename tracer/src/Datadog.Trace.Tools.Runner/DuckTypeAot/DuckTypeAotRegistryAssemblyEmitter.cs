@@ -1296,7 +1296,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             failureTypeName = string.Empty;
             failureMessage = failure.Detail ?? string.Empty;
 
-            if (TryResolveFailureTypeName(failure, out var staticFailureTypeName))
+            if (TryResolveStaticExactFailureTypeName(failure, out var staticFailureTypeName))
             {
                 failureTypeName = staticFailureTypeName!;
                 if (_currentProfile is not null)
@@ -1310,6 +1310,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             if (TryResolveDynamicFailureExceptionType(
                     moduleDef,
                     mapping,
+                    failure,
                     proxyAssemblyPathsByName,
                     targetAssemblyPathsByName,
                     out var dynamicFailureExceptionType,
@@ -1317,6 +1318,17 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             {
                 failureTypeName = dynamicFailureExceptionType!.FullName ?? dynamicFailureExceptionType.Name;
                 failureMessage = dynamicFailureMessage ?? failureMessage;
+                if (_currentProfile is not null)
+                {
+                    _currentProfile.FailureClassifierFallbackCount++;
+                }
+
+                return true;
+            }
+
+            if (TryResolveBroadFailureTypeName(failure, out var broadFailureTypeName))
+            {
+                failureTypeName = broadFailureTypeName!;
                 if (_currentProfile is not null)
                 {
                     _currentProfile.FailureClassifierFallbackCount++;
@@ -1520,6 +1532,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         private static bool TryResolveDynamicFailureExceptionType(
             ModuleDef moduleDef,
             DuckTypeAotMapping mapping,
+            DuckTypeAotMappingEmissionResult failure,
             IReadOnlyDictionary<string, string> proxyAssemblyPathsByName,
             IReadOnlyDictionary<string, string> targetAssemblyPathsByName,
             out Type? exceptionType,
@@ -1527,10 +1540,26 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         {
             var phaseStopwatch = StartProfilePhase();
             var cacheKey = mapping.Key;
+            var fingerprintKey = BuildFailureProbeFingerprint(mapping.Mode, failure);
             if (_currentExecutionContext?.TryGetFailureProbe(cacheKey, out var cachedFailureProbe) == true)
             {
                 exceptionType = cachedFailureProbe.ExceptionType;
                 exceptionMessage = cachedFailureProbe.ExceptionMessage;
+                StopProfilePhase(
+                    phaseStopwatch,
+                    seconds =>
+                    {
+                        _currentProfile!.DynamicFailureProbeSeconds += seconds;
+                        _currentProfile!.DynamicFailureProbeCount++;
+                    });
+                return cachedFailureProbe.Succeeded;
+            }
+
+            if (_currentExecutionContext?.TryGetFailureProbeByFingerprint(fingerprintKey, out cachedFailureProbe) == true)
+            {
+                exceptionType = cachedFailureProbe.ExceptionType;
+                exceptionMessage = cachedFailureProbe.ExceptionMessage;
+                _currentExecutionContext.CacheFailureProbe(cacheKey, exceptionType, exceptionMessage, cachedFailureProbe.Succeeded);
                 StopProfilePhase(
                     phaseStopwatch,
                     seconds =>
@@ -1558,6 +1587,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                         _currentProfile!.DynamicFailureProbeCount++;
                     });
                 _currentExecutionContext?.CacheFailureProbe(cacheKey, exceptionType: null, exceptionMessage: null, succeeded: false);
+                _currentExecutionContext?.CacheFailureProbeByFingerprint(fingerprintKey, exceptionType: null, exceptionMessage: null, succeeded: false);
                 return false;
             }
 
@@ -1572,6 +1602,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                         _currentProfile!.DynamicFailureProbeCount++;
                     });
                 _currentExecutionContext?.CacheFailureProbe(cacheKey, exceptionType: null, exceptionMessage: null, succeeded: false);
+                _currentExecutionContext?.CacheFailureProbeByFingerprint(fingerprintKey, exceptionType: null, exceptionMessage: null, succeeded: false);
                 return false;
             }
 
@@ -1588,6 +1619,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                         _currentProfile!.DynamicFailureProbeCount++;
                     });
                 _currentExecutionContext?.CacheFailureProbe(cacheKey, exceptionType: null, exceptionMessage: null, succeeded: false);
+                _currentExecutionContext?.CacheFailureProbeByFingerprint(fingerprintKey, exceptionType: null, exceptionMessage: null, succeeded: false);
                 return false;
             }
 
@@ -1608,11 +1640,13 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                         _currentProfile!.DynamicFailureProbeCount++;
                     });
                 _currentExecutionContext?.CacheFailureProbe(cacheKey, exceptionType: null, exceptionMessage: null, succeeded: false);
+                _currentExecutionContext?.CacheFailureProbeByFingerprint(fingerprintKey, exceptionType: null, exceptionMessage: null, succeeded: false);
                 return false;
             }
 
             var result = TryExtractDynamicFailureExceptionType(dryRunResult, out exceptionType, out exceptionMessage);
             _currentExecutionContext?.CacheFailureProbe(cacheKey, exceptionType, exceptionMessage, result);
+            _currentExecutionContext?.CacheFailureProbeByFingerprint(fingerprintKey, exceptionType, exceptionMessage, result);
             StopProfilePhase(
                 phaseStopwatch,
                 seconds =>
@@ -1682,7 +1716,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <param name="failure">The failure value.</param>
         /// <param name="exceptionType">The exception type value.</param>
         /// <returns>true when a known exception type was resolved; otherwise, false.</returns>
-        private static bool TryResolveFailureTypeName(
+        private static bool TryResolveStaticExactFailureTypeName(
             DuckTypeAotMappingEmissionResult failure,
             out string? exceptionTypeName)
         {
@@ -1740,17 +1774,36 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 return exceptionTypeName is not null;
             }
 
-            if (string.Equals(failure.DiagnosticCode, StatusCodeMissingMethod, StringComparison.Ordinal))
-            {
-                exceptionTypeName = typeof(DuckTypeTargetMethodNotFoundException).FullName;
-                return exceptionTypeName is not null;
-            }
-
             if (string.Equals(failure.DiagnosticCode, StatusCodeFieldIsReadonly, StringComparison.Ordinal) ||
                 (string.Equals(failure.DiagnosticCode, StatusCodeIncompatibleSignature, StringComparison.Ordinal) &&
                  IsReadonlyFieldFailure(failure.Detail ?? string.Empty)))
             {
                 exceptionTypeName = typeof(DuckTypeFieldIsReadonlyException).FullName;
+                return exceptionTypeName is not null;
+            }
+
+            if (string.Equals(failure.DiagnosticCode, StatusCodeIncompatibleSignature, StringComparison.Ordinal))
+            {
+                if (IsParameterSignatureFailure(detail))
+                {
+                    exceptionTypeName = typeof(DuckTypeProxyAndTargetMethodParameterSignatureMismatchException).FullName;
+                    return exceptionTypeName is not null;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool TryResolveBroadFailureTypeName(
+            DuckTypeAotMappingEmissionResult failure,
+            out string? exceptionTypeName)
+        {
+            exceptionTypeName = null;
+            var detail = failure.Detail ?? string.Empty;
+
+            if (string.Equals(failure.DiagnosticCode, StatusCodeMissingMethod, StringComparison.Ordinal))
+            {
+                exceptionTypeName = typeof(DuckTypeTargetMethodNotFoundException).FullName;
                 return exceptionTypeName is not null;
             }
 
@@ -1767,15 +1820,21 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     exceptionTypeName = typeof(DuckTypeInvalidTypeConversionException).FullName;
                     return exceptionTypeName is not null;
                 }
-
-                if (IsParameterSignatureFailure(detail))
-                {
-                    exceptionTypeName = typeof(DuckTypeProxyAndTargetMethodParameterSignatureMismatchException).FullName;
-                    return exceptionTypeName is not null;
-                }
             }
 
             return false;
+        }
+
+        private static string BuildFailureProbeFingerprint(DuckTypeAotMappingMode mode, DuckTypeAotMappingEmissionResult failure)
+        {
+            return string.Concat(
+                mode.ToString(),
+                "|",
+                failure.Status ?? string.Empty,
+                "|",
+                failure.DiagnosticCode ?? string.Empty,
+                "|",
+                failure.Detail ?? string.Empty);
         }
 
         /// <summary>
@@ -10651,6 +10710,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             private readonly Dictionary<string, AssemblyResolutionCacheEntry> _resolvedRuntimeAssembliesByKey = new(StringComparer.Ordinal);
             private readonly Dictionary<string, RuntimeTypeResolutionCacheEntry> _typesByName = new(StringComparer.Ordinal);
             private readonly Dictionary<string, FailureProbeCacheEntry> _failureProbesByKey = new(StringComparer.Ordinal);
+            private readonly Dictionary<string, FailureProbeCacheEntry> _failureProbesByFingerprint = new(StringComparer.Ordinal);
             private readonly Dictionary<Assembly, RuntimeAssemblyTypeIndex> _runtimeTypeIndexesByAssembly = new();
             private readonly Dictionary<TypeDef, TargetTypePlan> _targetTypePlans = new();
             private readonly Dictionary<TypeDef, ProxyTypePlan> _proxyTypePlans = new();
@@ -10792,6 +10852,16 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             internal void CacheFailureProbe(string key, Type? exceptionType, string? exceptionMessage, bool succeeded)
             {
                 _failureProbesByKey[key] = new FailureProbeCacheEntry(exceptionType, exceptionMessage, succeeded);
+            }
+
+            internal bool TryGetFailureProbeByFingerprint(string key, out FailureProbeCacheEntry failureProbe)
+            {
+                return _failureProbesByFingerprint.TryGetValue(key, out failureProbe!);
+            }
+
+            internal void CacheFailureProbeByFingerprint(string key, Type? exceptionType, string? exceptionMessage, bool succeeded)
+            {
+                _failureProbesByFingerprint[key] = new FailureProbeCacheEntry(exceptionType, exceptionMessage, succeeded);
             }
 
             internal bool TryGetRuntimeTypeFromAssemblyIndex(Assembly assembly, string typeName, out Type? runtimeType)
