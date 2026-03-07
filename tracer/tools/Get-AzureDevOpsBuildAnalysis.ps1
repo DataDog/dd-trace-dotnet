@@ -280,6 +280,137 @@ function Get-FailedRecords {
     }
 }
 
+function Get-FailureHierarchy {
+    param(
+        [object]$Timeline
+    )
+
+    # Build lookup: record id -> record
+    $recordsById = @{}
+    foreach ($record in $Timeline.records) {
+        $recordsById[$record.id] = $record
+    }
+
+    # Azure DevOps timeline hierarchy: Stage -> Phase -> Job -> Task
+    # Phase is an internal container not shown in the UI — we skip it in the output.
+    # We walk up parentId chains to resolve: Task -> Job -> Stage
+
+    # Helper: walk up parent chain to find ancestor of a given type
+    function Find-Ancestor {
+        param([string]$RecordId, [string]$AncestorType)
+        $currentId = $RecordId
+        $maxDepth = 5
+        while ($currentId -and $maxDepth -gt 0) {
+            $parent = $recordsById[$currentId]
+            if (-not $parent) { return $null }
+            if ($parent.type -eq $AncestorType) { return $parent.id }
+            $currentId = $parent.parentId
+            $maxDepth--
+        }
+        return $null
+    }
+
+    # Helper: format duration from start/finish times
+    function Format-Duration {
+        param([object]$Record)
+        if ($Record.startTime -and $Record.finishTime) {
+            $start = [datetime]::Parse($Record.startTime)
+            $finish = [datetime]::Parse($Record.finishTime)
+            $minutes = [math]::Round(($finish - $start).TotalMinutes, 1)
+            return "$minutes min"
+        }
+        return $null
+    }
+
+    $stageMap = [ordered]@{}
+
+    # Ensure-Stage: get or create stage entry in the map
+    function Ensure-Stage {
+        param([string]$StageId)
+        if (-not $stageMap.Contains($StageId)) {
+            $stageRecord = $recordsById[$StageId]
+            $stageMap[$StageId] = [PSCustomObject]@{
+                Name   = if ($stageRecord) { $stageRecord.name } else { '(unknown stage)' }
+                Result = if ($stageRecord) { $stageRecord.result } else { 'unknown' }
+                Jobs   = [ordered]@{}
+            }
+        }
+        return $stageMap[$StageId]
+    }
+
+    # Ensure-Job: get or create job entry under a stage
+    function Ensure-Job {
+        param([object]$StageEntry, [string]$JobId)
+        if (-not $StageEntry.Jobs.Contains($JobId)) {
+            $jobRecord = $recordsById[$JobId]
+            $StageEntry.Jobs[$JobId] = [PSCustomObject]@{
+                Name     = if ($jobRecord) { $jobRecord.name } else { '(unknown job)' }
+                Result   = if ($jobRecord) { $jobRecord.result } else { 'unknown' }
+                Duration = if ($jobRecord) { Format-Duration $jobRecord } else { $null }
+                Tasks    = @()
+            }
+        }
+        return $StageEntry.Jobs[$JobId]
+    }
+
+    # 1) Seed with all failed/canceled stages
+    $Timeline.records | Where-Object {
+        $_.type -eq 'Stage' -and ($_.result -eq 'failed' -or $_.result -eq 'canceled')
+    } | ForEach-Object {
+        [void](Ensure-Stage $_.id)
+    }
+
+    # 2) Add all failed/canceled jobs under their stages
+    $Timeline.records | Where-Object {
+        $_.type -eq 'Job' -and ($_.result -eq 'failed' -or $_.result -eq 'canceled')
+    } | ForEach-Object {
+        $stageId = Find-Ancestor $_.parentId 'Stage'
+        if ($stageId) {
+            $stageEntry = Ensure-Stage $stageId
+            [void](Ensure-Job $stageEntry $_.id)
+        }
+    }
+
+    # 3) Add all failed tasks under their jobs (and stages)
+    $Timeline.records | Where-Object {
+        $_.type -eq 'Task' -and $_.result -eq 'failed'
+    } | ForEach-Object {
+        $jobId = Find-Ancestor $_.parentId 'Job'
+        if (-not $jobId) { return }
+        $stageId = Find-Ancestor $recordsById[$jobId].parentId 'Stage'
+        if (-not $stageId) { return }
+
+        $stageEntry = Ensure-Stage $stageId
+        $jobEntry = Ensure-Job $stageEntry $jobId
+
+        $jobEntry.Tasks += [PSCustomObject]@{
+            Name   = $_.name
+            Result = $_.result
+        }
+    }
+
+    # 4) Convert ordered dictionaries to arrays for clean output
+    $results = @()
+    foreach ($stageEntry in $stageMap.Values) {
+        $jobArray = @()
+        foreach ($jobEntry in $stageEntry.Jobs.Values) {
+            $jobArray += [PSCustomObject]@{
+                Name     = $jobEntry.Name
+                Result   = $jobEntry.Result
+                Duration = $jobEntry.Duration
+                Tasks    = $jobEntry.Tasks
+            }
+        }
+        $results += [PSCustomObject]@{
+            Name   = $stageEntry.Name
+            Result = $stageEntry.Result
+            Jobs   = $jobArray
+        }
+    }
+
+    return $results
+}
+
 function Get-CanceledRecords {
     param(
         [object]$Timeline,
@@ -393,6 +524,9 @@ try {
     $failedTests = @(Extract-FailedTests -Messages $errorMessages)
     $buildErrors = @(Extract-BuildErrors -Messages $errorMessages)
 
+    # Build full hierarchy: Stage -> Job -> Task for failed/canceled items
+    $failureHierarchy = @(Get-FailureHierarchy -Timeline $timeline)
+
     # Extract PR info from triggerInfo (available for PR-triggered builds)
     $prNumber = $null
     $prSourceBranch = $null
@@ -420,6 +554,7 @@ try {
         FailedTasks     = @($failedTasks | ForEach-Object { $_.name })
         FailedJobs      = @($failedJobs | ForEach-Object { $_.name })
         FailedStages    = @($failedStages | ForEach-Object { $_.name })
+        FailureHierarchy     = $failureHierarchy
         CanceledJobs         = @($canceledJobs | ForEach-Object { $_.Name })
         TimedOutJobs         = @($timedOutJobs | ForEach-Object { "$($_.Name) ($($_.DurationMinutes) min)" })
         CollateralCanceled   = @($collateralCanceledJobs | ForEach-Object { $_.Name })
@@ -483,19 +618,22 @@ try {
     Write-Host "  Timed Out:     " -NoNewline; Write-Host $result.TimedOutJobs.Count -ForegroundColor Yellow
     Write-Host "  Canceled:      " -NoNewline; Write-Host $result.CanceledJobs.Count -ForegroundColor DarkGray
 
-    if ($result.FailedStages.Count -gt 0) {
-        Write-Host "`nFailed Stages:" -ForegroundColor Red
-        $result.FailedStages | ForEach-Object { Write-Host "  - $_" -ForegroundColor DarkGray }
-    }
-
-    if ($result.FailedJobs.Count -gt 0) {
-        Write-Host "`nFailed Jobs:" -ForegroundColor Red
-        $result.FailedJobs | ForEach-Object { Write-Host "  - $_" -ForegroundColor DarkGray }
-    }
-
-    if ($result.FailedTasks.Count -gt 0) {
-        Write-Host "`nFailed Tasks:" -ForegroundColor Red
-        $result.FailedTasks | ForEach-Object { Write-Host "  - $_" -ForegroundColor DarkGray }
+    if ($result.FailureHierarchy.Count -gt 0) {
+        Write-Host "`nFailure Hierarchy (Stage > Job > Task):" -ForegroundColor Red
+        foreach ($stage in $result.FailureHierarchy) {
+            $stageIcon = if ($stage.Result -eq 'failed') { 'X' } elseif ($stage.Result -eq 'canceled') { '!' } else { '?' }
+            $stageColor = if ($stage.Result -eq 'failed') { 'Red' } else { 'Yellow' }
+            Write-Host "  [$stageIcon] $($stage.Name)" -ForegroundColor $stageColor
+            foreach ($job in $stage.Jobs) {
+                $jobIcon = if ($job.Result -eq 'failed') { 'X' } elseif ($job.Result -eq 'canceled') { '!' } else { '?' }
+                $jobColor = if ($job.Result -eq 'failed') { 'Red' } else { 'Yellow' }
+                $jobSuffix = if ($job.Duration) { " ($($job.Duration))" } else { '' }
+                Write-Host "      [$jobIcon] $($job.Name)$jobSuffix" -ForegroundColor $jobColor
+                foreach ($task in $job.Tasks) {
+                    Write-Host "          - $($task.Name)" -ForegroundColor DarkGray
+                }
+            }
+        }
     }
 
     if ($result.BuildErrors.Count -gt 0) {

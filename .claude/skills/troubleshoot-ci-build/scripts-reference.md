@@ -104,6 +104,7 @@ When capturing the returned object, the following structure is provided:
 | `FailedTasks` | string[] | Array of failed task names |
 | `FailedJobs` | string[] | Array of failed job names |
 | `FailedStages` | string[] | Array of failed stage names |
+| `FailureHierarchy` | object[] | Array of stage objects with nested jobs and tasks (see below) |
 | `CanceledJobs` | string[] | Canceled job names |
 | `TimedOutJobs` | string[] | Jobs canceled after ~60 min (format: "name (XX.X min)") |
 | `CollateralCanceled` | string[] | Jobs canceled in < 5 min |
@@ -113,6 +114,32 @@ When capturing the returned object, the following structure is provided:
 | `LogFiles` | string[] | Paths to downloaded log files |
 | `ArtifactPath` | string | Directory containing saved JSON files |
 | `BuildUrl` | string | Azure DevOps web URL for build |
+
+#### `FailureHierarchy` Structure
+
+Full hierarchy: Stage > Job > Task. Each element in the `FailureHierarchy` array is a stage object:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `Name` | string | Stage name |
+| `Result` | string | Stage result ("failed", "canceled", etc.) |
+| `Jobs` | object[] | Array of job objects belonging to this stage |
+
+Each job object has:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `Name` | string | Job name |
+| `Result` | string | Job result ("failed", "canceled") |
+| `Duration` | string/null | Duration string for canceled jobs (e.g., "43.2 min"), null for failed jobs |
+| `Tasks` | object[] | Array of failed task objects belonging to this job |
+
+Each task object has:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `Name` | string | Task name (e.g., "Run integration tests (Tracer)") |
+| `Result` | string | Task result (always "failed") |
 
 ### Saved Artifacts
 

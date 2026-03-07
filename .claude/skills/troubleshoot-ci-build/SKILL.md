@@ -160,7 +160,14 @@ Structure the output as:
 2. **Metadata**: Status, Build link (`https://dev.azure.com/datadoghq/dd-trace-dotnet/_build/results?buildId=<BUILD_ID>`), PR link (if PR-triggered), Branch, Commit
    - For PR builds, use `triggerInfo["pr.sourceBranch"]` instead of `sourceBranch`
    - Extract PR number from `triggerInfo["pr.number"]` or parse from `refs/pull/<NUMBER>/merge`
-3. **Failed Tasks/Jobs/Stages**: List names with counts
+3. **Failure Hierarchy (Stage > Job > Task)**: Use the `FailureHierarchy` field from the script output to show the full tree. Format as:
+   ```
+   ❌ stage_name
+       ❌ failed_job_name
+           - failed_task_name
+       ⚠️ canceled_job_name (duration)
+   ```
+   Use ❌ for failed, ⚠️ for canceled stages/jobs. Tasks are listed with `- ` prefix under their job.
 4. **Timed Out Jobs**: Jobs with `result="canceled"` and duration >= 55 min (show duration)
 5. **Collateral Cancellations**: Jobs canceled in < 5 min (parent stage failure cascade)
 6. **Failed Tests**: Specific test names extracted from error messages
@@ -212,18 +219,21 @@ For detailed categorization rules, pattern examples, and the decision tree, see 
 
 **Build**: 20260204-49
 **Status**: ❌ Failed
-**Failed Tasks**: 8
-  - RunWindowsIisTracerIntegrationTests (2 occurrences)
-  - docker-compose run IntegrationTests (Tracer) (2 occurrences)
-  - Run integration tests (Tracer) (2 occurrences)
-  - docker-compose run --no-deps IntegrationTests (2 occurrences)
 
-**Failed Jobs**: 8 platforms
-  - Test alpine_net8.0_Tracer
-  - Test debian_net8.0_Tracer
-  - Win x86_net8.0_Tracer
-  - Win x64_net8.0_Tracer
-  (and 4 more...)
+**Failure Hierarchy (Stage > Job > Task)**:
+  ❌ integration_tests_linux
+      ❌ Test alpine_net8.0_Tracer
+          - docker-compose run IntegrationTests (Tracer)
+      ❌ Test debian_net8.0_Tracer
+          - docker-compose run IntegrationTests (Tracer)
+  ❌ integration_tests_windows
+      ❌ Win x86_net8.0_Tracer
+          - Run integration tests (Tracer)
+      ❌ Win x64_net8.0_Tracer
+          - Run integration tests (Tracer)
+      (and 4 more...)
+  ⚠️ profiler_integration_tests
+      ⚠️ Test alpine (43.2 min)
 
 **Failed Tests**: 12
   - Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore.AspNetCoreMvcTests.SubmitMetrics
