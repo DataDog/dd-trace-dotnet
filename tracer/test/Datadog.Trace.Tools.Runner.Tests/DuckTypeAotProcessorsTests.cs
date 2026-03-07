@@ -380,11 +380,11 @@ public class DuckTypeAotProcessorsTests
             loadsActivatorMethodHandle.Should().BeTrue();
 
             var activatorMethod = bootstrapType.Methods.Single(method =>
-                method.Name.StartsWith("CreateProxy_", StringComparison.Ordinal));
+                method.Name.StartsWith("ActivateProxy_", StringComparison.Ordinal));
             activatorMethod.MethodSig.Params.Should().ContainSingle();
-            activatorMethod.MethodSig.Params[0].FullName.Should().Be(typeof(TestDuckTarget).FullName);
+            activatorMethod.MethodSig.Params[0].FullName.Should().Be("System.Object");
             activatorMethod.Body.Should().NotBeNull();
-            activatorMethod.Body!.Instructions.Should().NotContain(instruction => instruction.OpCode == OpCodes.Castclass || instruction.OpCode == OpCodes.Unbox_Any);
+            activatorMethod.Body!.Instructions.Should().Contain(instruction => instruction.OpCode == OpCodes.Castclass || instruction.OpCode == OpCodes.Unbox_Any);
 
             var moduleInitializer = generatedModule.GlobalType.FindMethod(".cctor");
             moduleInitializer.Should().NotBeNull();

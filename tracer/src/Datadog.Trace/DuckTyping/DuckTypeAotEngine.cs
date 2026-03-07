@@ -85,6 +85,13 @@ namespace Datadog.Trace.DuckTyping
         private static readonly string CurrentDatadogTraceAssemblyMvid = typeof(DuckTypeAotEngine).Assembly.ManifestModule.ModuleVersionId.ToString("D");
 
         /// <summary>
+        /// Cached helper used to construct typed-to-object activator bridges without runtime DynamicInvoke.
+        /// </summary>
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private static readonly MethodInfo CreateObjectBridgeActivatorFactoryMethod =
+            typeof(DuckTypeAotEngine).GetMethod(nameof(CreateObjectBridgeActivatorFactory), BindingFlags.NonPublic | BindingFlags.Static)!;
+
+        /// <summary>
         /// Registry identity captured from activator registration calls.
         /// </summary>
         /// <remarks>This field participates in shared runtime state and must remain thread-safe.</remarks>
@@ -105,10 +112,32 @@ namespace Datadog.Trace.DuckTyping
         private static int _cacheVersion;
 
         /// <summary>
+        /// Counts method-handle registrations that bind directly to object activators.
+        /// </summary>
+        /// <remarks>This field participates in shared runtime state and must remain thread-safe.</remarks>
+        private static int _directObjectActivatorHandleCount;
+
+        /// <summary>
+        /// Counts method-handle registrations that require a one-time typed-to-object bridge.
+        /// </summary>
+        /// <remarks>This field participates in shared runtime state and must remain thread-safe.</remarks>
+        private static int _adaptedTypedActivatorHandleCount;
+
+        /// <summary>
         /// Gets cache version.
         /// </summary>
         /// <remarks>This field participates in shared runtime state and must remain thread-safe.</remarks>
         internal static int CacheVersion => Volatile.Read(ref _cacheVersion);
+
+        /// <summary>
+        /// Gets the number of method-handle registrations that resolved directly to object activators.
+        /// </summary>
+        internal static int DirectObjectActivatorHandleCount => Volatile.Read(ref _directObjectActivatorHandleCount);
+
+        /// <summary>
+        /// Gets the number of method-handle registrations adapted from typed activators to object activators.
+        /// </summary>
+        internal static int AdaptedTypedActivatorHandleCount => Volatile.Read(ref _adaptedTypedActivatorHandleCount);
 
         /// <summary>
         /// Gets the cached forward AOT registration result for a proxy/target pair.
@@ -322,6 +351,8 @@ namespace Datadog.Trace.DuckTyping
                 ReverseMissCache.Clear();
                 _registeredRegistryAssemblyIdentity = null;
                 _validatedRegistryAssemblyIdentity = null;
+                Volatile.Write(ref _directObjectActivatorHandleCount, 0);
+                Volatile.Write(ref _adaptedTypedActivatorHandleCount, 0);
                 Interlocked.Increment(ref _cacheVersion);
             }
         }
@@ -371,6 +402,14 @@ namespace Datadog.Trace.DuckTyping
             if (!proxyDefinitionType.IsAssignableFrom(generatedProxyType))
             {
                 DuckTypeAotGeneratedProxyTypeMismatchException.Throw(proxyDefinitionType, generatedProxyType);
+            }
+
+            if (!IsObjectCallableActivator(proxyDefinitionType, activator))
+            {
+                throw new ArgumentException(
+                    $"AOT duck typing activator delegate '{activator.GetType()}' must be object-callable. " +
+                    $"Supported shapes are 'Func<object?, object?>' and 'CreateProxyInstance<{proxyDefinitionType}>'.",
+                    nameof(activator));
             }
 
             var key = new TypesTuple(proxyDefinitionType, targetType);
@@ -600,7 +639,7 @@ namespace Datadog.Trace.DuckTyping
         /// A closed delegate compatible with the registration path:
         /// <list type="bullet">
         /// <item><description><see cref="CreateProxyInstance{T}"/> when parameter type is <see cref="object"/>.</description></item>
-        /// <item><description><see cref="Func{T1, T2}"/> when parameter type is the concrete target/delegation type.</description></item>
+        /// <item><description><see cref="Func{T1, T2}"/> adapted once into <see cref="Func{T, TResult}"/> for typed compatibility handles.</description></item>
         /// </list>
         /// </returns>
         private static Delegate CreateTypedActivator(Type proxyDefinitionType, Type targetType, RuntimeMethodHandle activatorMethodHandle)
@@ -669,21 +708,78 @@ namespace Datadog.Trace.DuckTyping
                     nameof(activatorMethodHandle));
             }
 
-            // Prefer typed delegates to keep AOT runtime close to dynamic behavior with fewer object-bound transitions.
-            var delegateType = parameters[0].ParameterType == typeof(object)
-                                   ? typeof(CreateProxyInstance<>).MakeGenericType(proxyDefinitionType)
-                                   : typeof(Func<,>).MakeGenericType(targetType, proxyDefinitionType);
+            if (parameters[0].ParameterType == typeof(object))
+            {
+                var objectDelegateType = typeof(CreateProxyInstance<>).MakeGenericType(proxyDefinitionType);
+                try
+                {
+                    Interlocked.Increment(ref _directObjectActivatorHandleCount);
+                    return Delegate.CreateDelegate(objectDelegateType, activatorMethod);
+                }
+                catch (Exception ex)
+                {
+                    throw new ArgumentException(
+                        $"AOT duck typing activator method '{activatorMethod}' could not be converted to delegate '{objectDelegateType}'.",
+                        nameof(activatorMethodHandle),
+                        ex);
+                }
+            }
+
             try
             {
-                return Delegate.CreateDelegate(delegateType, activatorMethod);
+                var bridgeFactory = CreateObjectBridgeActivatorFactoryMethod.MakeGenericMethod(targetType, proxyDefinitionType);
+                var adaptedActivator = bridgeFactory.Invoke(obj: null, parameters: [activatorMethod]) as Func<object?, object?>;
+                if (adaptedActivator is null)
+                {
+                    throw new InvalidOperationException("AOT duck typing activator bridge factory returned null.");
+                }
+
+                Interlocked.Increment(ref _adaptedTypedActivatorHandleCount);
+                return adaptedActivator;
+            }
+            catch (TargetInvocationException ex) when (ex.InnerException is not null)
+            {
+                throw new ArgumentException(
+                    $"AOT duck typing activator method '{activatorMethod}' could not be adapted to an object activator bridge.",
+                    nameof(activatorMethodHandle),
+                    ex.InnerException);
             }
             catch (Exception ex)
             {
                 throw new ArgumentException(
-                    $"AOT duck typing activator method '{activatorMethod}' could not be converted to delegate '{delegateType}'.",
+                    $"AOT duck typing activator method '{activatorMethod}' could not be adapted to an object activator bridge.",
                     nameof(activatorMethodHandle),
                     ex);
             }
+        }
+
+        /// <summary>
+        /// Creates an object-callable bridge for a typed AOT activator method handle.
+        /// </summary>
+        /// <typeparam name="TTarget">The typed target/delegation input.</typeparam>
+        /// <typeparam name="TProxy">The proxy contract output.</typeparam>
+        /// <param name="activatorMethod">The typed activator method.</param>
+        /// <returns>An object-callable activator that performs only a cast/unbox and a direct delegate invocation.</returns>
+        private static Func<object?, object?> CreateObjectBridgeActivatorFactory<TTarget, TProxy>(MethodInfo activatorMethod)
+        {
+            var typedActivator = (Func<TTarget, TProxy>)Delegate.CreateDelegate(typeof(Func<TTarget, TProxy>), activatorMethod);
+            return instance => typedActivator((TTarget)instance!);
+        }
+
+        /// <summary>
+        /// Determines whether an activator is directly callable from the shared object-based CreateTypeResult path.
+        /// </summary>
+        /// <param name="proxyDefinitionType">The proxy definition type.</param>
+        /// <param name="activator">The activator delegate.</param>
+        /// <returns>true if the activator is object-callable; otherwise, false.</returns>
+        private static bool IsObjectCallableActivator(Type proxyDefinitionType, Delegate activator)
+        {
+            if (activator is Func<object?, object?>)
+            {
+                return true;
+            }
+
+            return activator.GetType() == typeof(CreateProxyInstance<>).MakeGenericType(proxyDefinitionType);
         }
 
         /// <summary>
