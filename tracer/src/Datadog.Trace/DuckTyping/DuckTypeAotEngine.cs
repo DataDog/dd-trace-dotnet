@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
@@ -90,6 +91,12 @@ namespace Datadog.Trace.DuckTyping
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static readonly MethodInfo CreateObjectBridgeActivatorFactoryMethod =
             typeof(DuckTypeAotEngine).GetMethod(nameof(CreateObjectBridgeActivatorFactory), BindingFlags.NonPublic | BindingFlags.Static)!;
+
+        /// <summary>
+        /// Test-only snapshot cache used to restore generated registry state without replaying the bootstrap on every test.
+        /// </summary>
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private static readonly ConcurrentDictionary<string, TestSnapshot> TestSnapshots = new(StringComparer.Ordinal);
 
         /// <summary>
         /// Registry identity captured from activator registration calls.
@@ -355,6 +362,85 @@ namespace Datadog.Trace.DuckTyping
                 Volatile.Write(ref _adaptedTypedActivatorHandleCount, 0);
                 Interlocked.Increment(ref _cacheVersion);
             }
+        }
+
+        /// <summary>
+        /// Captures the current registry state into a reusable test-only snapshot.
+        /// </summary>
+        /// <param name="snapshotKey">Stable snapshot key, typically the generated registry path.</param>
+        internal static void CaptureSnapshotForTests(string snapshotKey)
+        {
+            if (string.IsNullOrWhiteSpace(snapshotKey))
+            {
+                ThrowHelper.ThrowArgumentNullException(nameof(snapshotKey));
+            }
+
+            lock (RegistrationLock)
+            {
+                TestSnapshots[snapshotKey] = new TestSnapshot(
+                    [.. ForwardRegistry],
+                    [.. ReverseRegistry],
+                    [.. ForwardFailureRegistry],
+                    [.. ReverseFailureRegistry],
+                    _registeredRegistryAssemblyIdentity,
+                    _validatedRegistryAssemblyIdentity);
+            }
+        }
+
+        /// <summary>
+        /// Restores a previously captured registry snapshot for test execution.
+        /// </summary>
+        /// <param name="snapshotKey">Stable snapshot key, typically the generated registry path.</param>
+        /// <returns>true if a snapshot existed and was restored; otherwise, false.</returns>
+        internal static bool RestoreSnapshotForTests(string snapshotKey)
+        {
+            if (string.IsNullOrWhiteSpace(snapshotKey))
+            {
+                ThrowHelper.ThrowArgumentNullException(nameof(snapshotKey));
+            }
+
+            if (!TestSnapshots.TryGetValue(snapshotKey, out var snapshot))
+            {
+                return false;
+            }
+
+            lock (RegistrationLock)
+            {
+                ForwardRegistry.Clear();
+                ReverseRegistry.Clear();
+                ForwardFailureRegistry.Clear();
+                ReverseFailureRegistry.Clear();
+                ForwardMissCache.Clear();
+                ReverseMissCache.Clear();
+
+                foreach (var entry in snapshot.ForwardRegistrations)
+                {
+                    ForwardRegistry[entry.Key] = entry.Value;
+                }
+
+                foreach (var entry in snapshot.ReverseRegistrations)
+                {
+                    ReverseRegistry[entry.Key] = entry.Value;
+                }
+
+                foreach (var entry in snapshot.ForwardFailures)
+                {
+                    ForwardFailureRegistry[entry.Key] = entry.Value;
+                }
+
+                foreach (var entry in snapshot.ReverseFailures)
+                {
+                    ReverseFailureRegistry[entry.Key] = entry.Value;
+                }
+
+                _registeredRegistryAssemblyIdentity = snapshot.RegisteredRegistryAssemblyIdentity;
+                _validatedRegistryAssemblyIdentity = snapshot.ValidatedRegistryAssemblyIdentity;
+                Volatile.Write(ref _directObjectActivatorHandleCount, 0);
+                Volatile.Write(ref _adaptedTypedActivatorHandleCount, 0);
+                Interlocked.Increment(ref _cacheVersion);
+            }
+
+            return true;
         }
 
         /// <summary>
@@ -929,6 +1015,40 @@ namespace Datadog.Trace.DuckTyping
                 return ProxyType == other.ProxyType ||
                        string.Equals(ProxyType.AssemblyQualifiedName, other.ProxyType.AssemblyQualifiedName, StringComparison.Ordinal);
             }
+        }
+
+        /// <summary>
+        /// Represents a test-only snapshot of generated registry state.
+        /// </summary>
+        private sealed class TestSnapshot
+        {
+            internal TestSnapshot(
+                KeyValuePair<TypesTuple, Registration>[] forwardRegistrations,
+                KeyValuePair<TypesTuple, Registration>[] reverseRegistrations,
+                KeyValuePair<TypesTuple, DuckType.CreateTypeResult>[] forwardFailures,
+                KeyValuePair<TypesTuple, DuckType.CreateTypeResult>[] reverseFailures,
+                string? registeredRegistryAssemblyIdentity,
+                string? validatedRegistryAssemblyIdentity)
+            {
+                ForwardRegistrations = forwardRegistrations;
+                ReverseRegistrations = reverseRegistrations;
+                ForwardFailures = forwardFailures;
+                ReverseFailures = reverseFailures;
+                RegisteredRegistryAssemblyIdentity = registeredRegistryAssemblyIdentity;
+                ValidatedRegistryAssemblyIdentity = validatedRegistryAssemblyIdentity;
+            }
+
+            internal KeyValuePair<TypesTuple, Registration>[] ForwardRegistrations { get; }
+
+            internal KeyValuePair<TypesTuple, Registration>[] ReverseRegistrations { get; }
+
+            internal KeyValuePair<TypesTuple, DuckType.CreateTypeResult>[] ForwardFailures { get; }
+
+            internal KeyValuePair<TypesTuple, DuckType.CreateTypeResult>[] ReverseFailures { get; }
+
+            internal string? RegisteredRegistryAssemblyIdentity { get; }
+
+            internal string? ValidatedRegistryAssemblyIdentity { get; }
         }
     }
 }

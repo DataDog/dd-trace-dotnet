@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Concurrent;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -23,6 +24,7 @@ namespace Datadog.Trace.DuckTyping.Tests
         private const string AotBootstrapTypeFullName = "Datadog.Trace.DuckTyping.Generated.DuckTypeAotRegistryBootstrap";
         private const string AotBootstrapInitializeMethod = "Initialize";
 
+        private static readonly ConcurrentDictionary<string, Action> InitializeActionsByRegistryPath = new(StringComparer.Ordinal);
         private static int _initialized;
 
         internal static void Initialize()
@@ -81,6 +83,19 @@ namespace Datadog.Trace.DuckTyping.Tests
                     fullRegistryPath);
             }
 
+            DuckType.EnableAotMode();
+            if (DuckTypeAotEngine.RestoreSnapshotForTests(fullRegistryPath))
+            {
+                return;
+            }
+
+            var initializeAction = InitializeActionsByRegistryPath.GetOrAdd(fullRegistryPath, CreateInitializeAction);
+            initializeAction();
+            DuckTypeAotEngine.CaptureSnapshotForTests(fullRegistryPath);
+        }
+
+        private static Action CreateInitializeAction(string fullRegistryPath)
+        {
             var registryAssembly = Assembly.LoadFrom(fullRegistryPath);
             var bootstrapType = registryAssembly.GetType(AotBootstrapTypeFullName, throwOnError: false);
             if (bootstrapType is null)
@@ -91,7 +106,13 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
 
             var initializeMethod = bootstrapType?.GetMethod(AotBootstrapInitializeMethod, BindingFlags.Public | BindingFlags.Static);
-            initializeMethod?.Invoke(obj: null, parameters: null);
+            if (initializeMethod is null)
+            {
+                throw new InvalidOperationException(
+                    $"AOT registry bootstrap type '{AotBootstrapTypeFullName}' in '{fullRegistryPath}' does not expose a public static '{AotBootstrapInitializeMethod}' method.");
+            }
+
+            return (Action)Delegate.CreateDelegate(typeof(Action), initializeMethod);
         }
     }
 }
