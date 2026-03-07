@@ -7853,11 +7853,150 @@ public class DuckTypeAotProcessorsTests
         }
     }
 
+    [Fact]
+    public void GenerateProcessorShouldKeepCompatibilityDiagnosticsWhileReplayingExactRuntimeFailures()
+    {
+        var tempDirectory = CreateTempDirectory();
+        try
+        {
+            var proxyAssemblyPath = typeof(DuckTypeAotProcessorsTests).Assembly.Location;
+            var outputPath = Path.Combine(tempDirectory, "Datadog.Trace.DuckType.AotRegistry.FailureReplayParity.dll");
+            var mapFilePath = Path.Combine(tempDirectory, "ducktype-aot-map-failure-replay-parity.json");
+            var trimmerDescriptorPath = Path.Combine(tempDirectory, "ducktype-aot-failure-replay-parity.linker.xml");
+            var propsPath = Path.Combine(tempDirectory, "ducktype-aot-failure-replay-parity.props");
+
+            var mapDocument = new
+            {
+                mappings = new object[]
+                {
+                    CreateMappingDocumentEntry(typeof(IFailureReplayPropertyCantBeReadProxy), typeof(FailureReplayPropertyCantBeReadTarget)),
+                    CreateMappingDocumentEntry(typeof(IFailureReplayPropertyArgumentsLengthProxy), typeof(FailureReplayPropertyArgumentsLengthTarget)),
+                    CreateMappingDocumentEntry(typeof(IFailureReplayPropertyOrFieldNotFoundProxy), typeof(FailureReplayPropertyOrFieldNotFoundTarget)),
+                    CreateMappingDocumentEntry(typeof(IFailureReplayProxyMethodParameterMissingProxy), typeof(FailureReplayProxyMethodParameterMissingTarget)),
+                    CreateMappingDocumentEntry(typeof(IFailureReplayInvalidTypeConversionProxy), typeof(FailureReplayInvalidTypeConversionTarget)),
+                    CreateMappingDocumentEntry(typeof(IFailureReplayReverseGenericProxy), typeof(FailureReplayReverseGenericTarget), mode: "reverse"),
+                    CreateMappingDocumentEntry(typeof(IFailureReplayReverseAttributeMismatchProxy), typeof(FailureReplayReverseAttributeMismatchTarget), mode: "reverse"),
+                    CreateMappingDocumentEntry(typeof(IFailureReplayReverseMissingMethodProxy), typeof(FailureReplayReverseMissingMethodTarget), mode: "reverse"),
+                    CreateMappingDocumentEntry(typeof(IFailureReplayReverseMissingPropertyProxy), typeof(FailureReplayReverseMissingPropertyTarget), mode: "reverse"),
+                }
+            };
+            File.WriteAllText(mapFilePath, JsonConvert.SerializeObject(mapDocument, Formatting.Indented));
+
+            var options = new DuckTypeAotGenerateOptions(
+                proxyAssemblies: new[] { proxyAssemblyPath },
+                targetAssemblies: new[] { proxyAssemblyPath },
+                targetFolders: Array.Empty<string>(),
+                targetFilters: new[] { "*.dll" },
+                mapFile: mapFilePath,
+                mappingCatalog: null,
+                genericInstantiationsFile: null,
+                outputPath: outputPath,
+                assemblyName: "Datadog.Trace.DuckType.AotRegistry.FailureReplayParity",
+                trimmerDescriptorPath: trimmerDescriptorPath,
+                propsPath: propsPath);
+
+            var exitCode = DuckTypeAotGenerateProcessor.Process(options);
+            exitCode.Should().Be(0);
+
+            var compatibilityMatrixPath = $"{outputPath}.compat.json";
+            var matrix = JsonConvert.DeserializeObject<DuckTypeAotCompatibilityMatrix>(File.ReadAllText(compatibilityMatrixPath));
+            matrix.Should().NotBeNull();
+            matrix!.Mappings.Should().HaveCount(9);
+
+            AssertMappingDiagnostic(matrix, typeof(IFailureReplayPropertyCantBeReadProxy), typeof(FailureReplayPropertyCantBeReadTarget), DuckTypeAotCompatibilityStatuses.MissingTargetMethod, "DTAOT0207");
+            AssertMappingDiagnostic(matrix, typeof(IFailureReplayPropertyArgumentsLengthProxy), typeof(FailureReplayPropertyArgumentsLengthTarget), DuckTypeAotCompatibilityStatuses.MissingTargetMethod, "DTAOT0207");
+            AssertMappingDiagnostic(matrix, typeof(IFailureReplayPropertyOrFieldNotFoundProxy), typeof(FailureReplayPropertyOrFieldNotFoundTarget), DuckTypeAotCompatibilityStatuses.MissingTargetMethod, "DTAOT0207");
+            AssertMappingDiagnostic(matrix, typeof(IFailureReplayProxyMethodParameterMissingProxy), typeof(FailureReplayProxyMethodParameterMissingTarget), DuckTypeAotCompatibilityStatuses.MissingTargetMethod, "DTAOT0207");
+            AssertMappingDiagnostic(matrix, typeof(IFailureReplayInvalidTypeConversionProxy), typeof(FailureReplayInvalidTypeConversionTarget), DuckTypeAotCompatibilityStatuses.IncompatibleMethodSignature, "DTAOT0209");
+            AssertMappingDiagnostic(matrix, typeof(IFailureReplayReverseGenericProxy), typeof(FailureReplayReverseGenericTarget), DuckTypeAotCompatibilityStatuses.MissingTargetMethod, "DTAOT0207");
+            AssertMappingDiagnostic(matrix, typeof(IFailureReplayReverseAttributeMismatchProxy), typeof(FailureReplayReverseAttributeMismatchTarget), DuckTypeAotCompatibilityStatuses.MissingTargetMethod, "DTAOT0207");
+            AssertMappingDiagnostic(matrix, typeof(IFailureReplayReverseMissingMethodProxy), typeof(FailureReplayReverseMissingMethodTarget), DuckTypeAotCompatibilityStatuses.MissingTargetMethod, "DTAOT0207");
+            AssertMappingDiagnostic(matrix, typeof(IFailureReplayReverseMissingPropertyProxy), typeof(FailureReplayReverseMissingPropertyTarget), DuckTypeAotCompatibilityStatuses.MissingTargetMethod, "DTAOT0207");
+
+            var loadContext = new AssemblyLoadContext("DuckTypeAotProcessorsTests-FailureReplayParity", isCollectible: true);
+            try
+            {
+                var generatedAssembly = loadContext.LoadFromAssemblyPath(outputPath);
+                var bootstrapType = generatedAssembly.GetType("Datadog.Trace.DuckTyping.Generated.DuckTypeAotRegistryBootstrap");
+                bootstrapType.Should().NotBeNull();
+                var initializeMethod = bootstrapType!.GetMethod("Initialize", BindingFlags.Public | BindingFlags.Static);
+                initializeMethod.Should().NotBeNull();
+                _ = initializeMethod!.Invoke(obj: null, parameters: null);
+
+                AssertThrowsExactDuckTypeFailure<DuckTypePropertyCantBeReadException>(() => DuckType.Create(typeof(IFailureReplayPropertyCantBeReadProxy), new FailureReplayPropertyCantBeReadTarget()));
+                AssertThrowsExactDuckTypeFailure<DuckTypePropertyArgumentsLengthException>(() => DuckType.Create(typeof(IFailureReplayPropertyArgumentsLengthProxy), new FailureReplayPropertyArgumentsLengthTarget()));
+                AssertThrowsExactDuckTypeFailure<DuckTypePropertyOrFieldNotFoundException>(() => DuckType.Create(typeof(IFailureReplayPropertyOrFieldNotFoundProxy), new FailureReplayPropertyOrFieldNotFoundTarget()));
+                AssertThrowsExactDuckTypeFailure<DuckTypeProxyMethodParameterIsMissingException>(() => DuckType.Create(typeof(IFailureReplayProxyMethodParameterMissingProxy), new FailureReplayProxyMethodParameterMissingTarget()));
+                AssertThrowsExactDuckTypeFailure<DuckTypeInvalidTypeConversionException>(() => DuckType.Create(typeof(IFailureReplayInvalidTypeConversionProxy), new FailureReplayInvalidTypeConversionTarget()));
+                AssertThrowsExactDuckTypeFailure<DuckTypeReverseProxyMustImplementGenericMethodAsGenericException>(() => DuckType.CreateReverse(typeof(IFailureReplayReverseGenericProxy), new FailureReplayReverseGenericTarget()));
+                AssertThrowsExactDuckTypeFailure<DuckTypeReverseAttributeParameterNamesMismatchException>(() => DuckType.CreateReverse(typeof(IFailureReplayReverseAttributeMismatchProxy), new FailureReplayReverseAttributeMismatchTarget()));
+                AssertThrowsExactDuckTypeFailure<DuckTypeReverseProxyMissingMethodImplementationException>(() => DuckType.CreateReverse(typeof(IFailureReplayReverseMissingMethodProxy), new FailureReplayReverseMissingMethodTarget()));
+                AssertThrowsExactDuckTypeFailure<DuckTypeReverseProxyMissingPropertyImplementationException>(() => DuckType.CreateReverse(typeof(IFailureReplayReverseMissingPropertyProxy), new FailureReplayReverseMissingPropertyTarget()));
+            }
+            finally
+            {
+                loadContext.Unload();
+            }
+        }
+        finally
+        {
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
+
     private static string CreateTempDirectory()
     {
         var tempDirectory = Path.Combine(Path.GetTempPath(), "dd-trace-ducktype-aot-tests", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(tempDirectory);
         return tempDirectory;
+    }
+
+    private static void AssertMappingDiagnostic(
+        DuckTypeAotCompatibilityMatrix matrix,
+        Type proxyType,
+        Type targetType,
+        string expectedStatus,
+        string expectedDiagnosticCode)
+    {
+        var mapping = matrix.Mappings.Single(item =>
+            string.Equals(item.ProxyType, proxyType.FullName, StringComparison.Ordinal) &&
+            string.Equals(item.TargetType, targetType.FullName, StringComparison.Ordinal));
+
+        mapping.Status.Should().Be(expectedStatus);
+        mapping.DiagnosticCode.Should().Be(expectedDiagnosticCode);
+    }
+
+    private static object CreateMappingDocumentEntry(Type proxyType, Type targetType, string mode = "forward")
+    {
+        return new
+        {
+            mode,
+            proxyType = proxyType.FullName,
+            proxyAssembly = proxyType.Assembly.GetName().Name,
+            targetType = targetType.FullName,
+            targetAssembly = targetType.Assembly.GetName().Name
+        };
+    }
+
+    private static void AssertThrowsExactDuckTypeFailure<TException>(Action action)
+        where TException : Exception
+    {
+        try
+        {
+            action();
+        }
+        catch (TargetInvocationException ex) when (ex.InnerException is not null)
+        {
+            ex.InnerException.Should().BeOfType<TException>();
+            return;
+        }
+        catch (Exception ex)
+        {
+            ex.Should().BeOfType<TException>();
+            return;
+        }
+
+        throw new Xunit.Sdk.XunitException($"Expected {typeof(TException).FullName} to be thrown.");
     }
 
     private static ConstructorInfo? GetDuckProxyConstructor(Type proxyType)
@@ -7989,6 +8128,105 @@ public class DuckTypeAotProcessorsTests
             : base(value)
         {
         }
+    }
+
+    private interface IFailureReplayPropertyCantBeReadProxy
+    {
+        string OnlySetter { get; set; }
+    }
+
+    private sealed class FailureReplayPropertyCantBeReadTarget
+    {
+        public string OnlySetter
+        {
+            set { }
+        }
+    }
+
+    private interface IFailureReplayPropertyArgumentsLengthProxy
+    {
+        string Item { get; }
+    }
+
+    private sealed class FailureReplayPropertyArgumentsLengthTarget
+    {
+        public string this[string key] => key;
+    }
+
+    private interface IFailureReplayPropertyOrFieldNotFoundProxy
+    {
+        string Name { get; set; }
+    }
+
+    private sealed class FailureReplayPropertyOrFieldNotFoundTarget
+    {
+    }
+
+    private interface IFailureReplayProxyMethodParameterMissingProxy
+    {
+        [Duck(ParameterTypeNames = new[] { "System.String", "System.String" })]
+        void Add(string key);
+    }
+
+    private sealed class FailureReplayProxyMethodParameterMissingTarget
+    {
+        public void Add(string key, string value)
+        {
+        }
+    }
+
+    private interface IFailureReplayInvalidTypeConversionProxy
+    {
+        float Sum(int a, int b);
+    }
+
+    private sealed class FailureReplayInvalidTypeConversionTarget
+    {
+        public int Sum(int a, int b) => a + b;
+    }
+
+    private interface IFailureReplayReverseGenericProxy
+    {
+        void Add<TKey, TValue>(TKey key, TValue value);
+    }
+
+    private sealed class FailureReplayReverseGenericTarget
+    {
+        [DuckReverseMethod]
+        public void Add<TKey>(TKey key, object value)
+        {
+        }
+    }
+
+    private interface IFailureReplayReverseAttributeMismatchProxy
+    {
+        void Add(string key, string value);
+    }
+
+    private sealed class FailureReplayReverseAttributeMismatchTarget
+    {
+        [DuckReverseMethod(ParameterTypeNames = new[] { "System.String" })]
+        public void Add(string key, string value)
+        {
+        }
+    }
+
+    private interface IFailureReplayReverseMissingMethodProxy
+    {
+        void Add(int value1, int value2);
+    }
+
+    private sealed class FailureReplayReverseMissingMethodTarget
+    {
+    }
+
+    private interface IFailureReplayReverseMissingPropertyProxy
+    {
+        string Value { get; set; }
+    }
+
+    private sealed class FailureReplayReverseMissingPropertyTarget
+    {
     }
 
     private static void TryDeleteDirectory(string directory)
