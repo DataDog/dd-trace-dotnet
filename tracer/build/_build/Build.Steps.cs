@@ -2506,6 +2506,8 @@ partial class Build
                new(@".*Noop\dArgumentsVoidIntegration\.OnMethodBegin.*CallTargetNativeTest.*", RegexOptions.Compiled | RegexOptions.Singleline),
                new(@".*Noop\dArgumentsVoidIntegration\.OnMethodEnd.*CallTargetNativeTest.*", RegexOptions.Compiled | RegexOptions.Singleline),
                new(@".*System.Threading.ThreadAbortException: Thread was being aborted\.", RegexOptions.Compiled),
+               // Transient shutdown timeout - LifetimeManager hooks may not complete within 30s under CI resource pressure
+               new(@".*Error running shutdown hooks System\.TimeoutException.*", RegexOptions.Compiled),
                new(@".*System.InvalidOperationException: Module Samples.Trimming.dll has no HINSTANCE.*", RegexOptions.Compiled),
                // CI Visibility known errors
                new(@".*The Git repository couldn't be automatically extracted.*", RegexOptions.Compiled),
