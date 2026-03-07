@@ -19,7 +19,7 @@ namespace Datadog.Trace.Vendors.StatsdClient.Transport
 
         public NamedPipeTransport(string pipeName, TimeSpan? timeout = null)
         {
-            _namedPipe = new NamedPipeClientStream(".", pipeName, PipeDirection.Out, PipeOptions.Asynchronous);
+            _namedPipe = new NamedPipeClientStream(".", pipeName, PipeDirection.Out, PipeOptions.None);
             _timeout = timeout ?? TimeSpan.FromSeconds(2);
         }
 
@@ -65,15 +65,11 @@ namespace Datadog.Trace.Vendors.StatsdClient.Transport
 
             try
             {
-                // WriteAsync overload with a CancellationToken instance seems to not work.
-                return _namedPipe.WriteAsync(buffer, 0, length).Wait(_timeout);
+                _namedPipe.Write(buffer, 0, length);
+                return true;
             }
             catch (IOException)
             {
-            }
-            catch (AggregateException e) when (e.InnerException is IOException)
-            {
-                // dotnet6.0 raises AggregateException when an IOException occurs.
             }
 
             // When the server disconnects, IOException is raised with the message "Pipe is broken".
