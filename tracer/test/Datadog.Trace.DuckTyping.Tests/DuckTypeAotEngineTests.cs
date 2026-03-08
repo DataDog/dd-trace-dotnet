@@ -494,6 +494,29 @@ namespace Datadog.Trace.DuckTyping.Tests
         }
 
         [Fact]
+        public void RegisterFailureUsingMethodHandleDoesNotInvokeThrowerDuringBootstrap()
+        {
+            knownFailureThrowerInvocationCount = 0;
+            var throwerMethod = typeof(DuckTypeAotEngineTests).GetMethod(
+                nameof(ThrowKnownRegisteredFailureWithCounter),
+                BindingFlags.NonPublic | BindingFlags.Static);
+            throwerMethod.Should().NotBeNull();
+
+            DuckTypeAotEngine.RegisterProxyFailure(
+                typeof(IForwardProxy),
+                typeof(ForwardTarget),
+                throwerMethod!.MethodHandle);
+
+            knownFailureThrowerInvocationCount.Should().Be(0);
+
+            var result = DuckTypeAotEngine.GetOrCreateProxyType(typeof(IForwardProxy), typeof(ForwardTarget));
+            Action getProxyType = () => _ = result.ProxyType;
+            getProxyType.Should().Throw<DuckTypeAotRegisteredFailureException>()
+                        .WithMessage("*KnownDuckTypeFailure*missing-member*");
+            knownFailureThrowerInvocationCount.Should().Be(1);
+        }
+
+        [Fact]
         public void RegisterFailureUsingMethodHandleReplaysKnownFailureTypeAndMessage()
         {
             const string expectedMessage = "The target method for the proxy method 'Void Missing()' was not found.";
@@ -954,6 +977,8 @@ namespace Datadog.Trace.DuckTyping.Tests
 
         private static string CurrentDatadogTraceAssemblyMvid => typeof(DuckTypeAotEngine).Assembly.ManifestModule.ModuleVersionId.ToString("D");
 
+        private static int knownFailureThrowerInvocationCount;
+
         private static DuckTypeAotAssemblyMetadata CreateCurrentRegistryMetadata()
         {
             var assembly = typeof(DuckTypeAotEngineTests).Assembly;
@@ -965,6 +990,12 @@ namespace Datadog.Trace.DuckTyping.Tests
         private static void ThrowKnownRegisteredFailure()
         {
             DuckTypeAotRegisteredFailureException.Throw("KnownDuckTypeFailure", "missing-member");
+        }
+
+        private static void ThrowKnownRegisteredFailureWithCounter()
+        {
+            Interlocked.Increment(ref knownFailureThrowerInvocationCount);
+            ThrowKnownRegisteredFailure();
         }
 
         private static void ThrowKnownTargetMethodMissingFailure()
