@@ -175,14 +175,14 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
         }
 
-        private static bool IsProfilingEnabled()
+        internal static bool IsProfilingEnabled()
         {
             var value = Environment.GetEnvironmentVariable(ProfilingEnvironmentVariable);
             return string.Equals(value, "1", StringComparison.Ordinal) ||
                    string.Equals(value, "true", StringComparison.OrdinalIgnoreCase);
         }
 
-        private static void WriteProfileMetric(string message)
+        internal static void WriteProfileMetric(string message)
         {
             AnsiConsole.MarkupLine($"[blue]ducktype-aot profile:[/] {message.EscapeMarkup()}");
         }
