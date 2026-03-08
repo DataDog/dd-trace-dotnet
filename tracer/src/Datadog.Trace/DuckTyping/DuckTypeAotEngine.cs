@@ -549,7 +549,7 @@ namespace Datadog.Trace.DuckTyping
                 throw new ArgumentException($"Failure exception type '{exceptionType}' must derive from Exception.", nameof(exceptionType));
             }
 
-            RegisterFailure(proxyDefinitionType, targetType, ExceptionDispatchInfo.Capture(CreateRegisteredFailureException(exceptionType)), reverse);
+            RegisterFailure(proxyDefinitionType, targetType, CreateRegisteredFailureThrower(exceptionType), reverse);
         }
 
         /// <summary>
@@ -564,7 +564,7 @@ namespace Datadog.Trace.DuckTyping
             if (proxyDefinitionType is null) { ThrowHelper.ThrowArgumentNullException(nameof(proxyDefinitionType)); }
             if (targetType is null) { ThrowHelper.ThrowArgumentNullException(nameof(targetType)); }
 
-            RegisterFailure(proxyDefinitionType, targetType, ExceptionDispatchInfo.Capture(CreateRegisteredFailureException(throwerMethodHandle)), reverse);
+            RegisterFailure(proxyDefinitionType, targetType, CreateRegisteredFailureThrower(throwerMethodHandle), reverse);
         }
 
         /// <summary>
@@ -572,12 +572,12 @@ namespace Datadog.Trace.DuckTyping
         /// </summary>
         /// <param name="proxyDefinitionType">The proxy definition type value.</param>
         /// <param name="targetType">The target type value.</param>
-        /// <param name="exceptionInfo">The captured exception info for the failure.</param>
+        /// <param name="failureThrower">The failure thrower for the registration.</param>
         /// <param name="reverse">Whether the registration belongs to the reverse registry.</param>
-        private static void RegisterFailure(Type proxyDefinitionType, Type targetType, ExceptionDispatchInfo exceptionInfo, bool reverse)
+        private static void RegisterFailure(Type proxyDefinitionType, Type targetType, Action failureThrower, bool reverse)
         {
             var key = new TypesTuple(proxyDefinitionType, targetType);
-            var createTypeResult = new DuckType.CreateTypeResult(proxyDefinitionType, proxyType: null, targetType, activator: null, exceptionInfo);
+            var createTypeResult = new DuckType.CreateTypeResult(proxyDefinitionType, proxyType: null, targetType, activator: null, failureThrower);
 
             lock (RegistrationLock)
             {
@@ -607,54 +607,29 @@ namespace Datadog.Trace.DuckTyping
         /// Creates an exception instance for a registered AOT failure mapping.
         /// </summary>
         /// <param name="exceptionType">The exception type value.</param>
-        /// <returns>The resulting exception value.</returns>
-        private static Exception CreateRegisteredFailureException(Type exceptionType)
+        /// <returns>The resulting failure thrower.</returns>
+        private static Action CreateRegisteredFailureThrower(Type exceptionType)
         {
             if (exceptionType == typeof(DuckTypePropertyCantBeWrittenException))
             {
-                var sentinelProperty = typeof(string).GetProperty(nameof(string.Length), BindingFlags.Public | BindingFlags.Instance);
-                if (sentinelProperty is null)
-                {
-                    throw new InvalidOperationException("Unable to resolve sentinel property for DuckTypePropertyCantBeWrittenException.");
-                }
-
-                try
-                {
-                    DuckTypePropertyCantBeWrittenException.Throw(sentinelProperty);
-                }
-                catch (Exception ex)
-                {
-                    return ex;
-                }
+                return ThrowPropertyCantBeWrittenSentinelFailure;
             }
 
             if (exceptionType == typeof(DuckTypeFieldIsReadonlyException))
             {
-                var sentinelField = typeof(string).GetField(nameof(string.Empty), BindingFlags.Public | BindingFlags.Static);
-                if (sentinelField is null)
-                {
-                    throw new InvalidOperationException("Unable to resolve sentinel field for DuckTypeFieldIsReadonlyException.");
-                }
-
-                try
-                {
-                    DuckTypeFieldIsReadonlyException.Throw(sentinelField);
-                }
-                catch (Exception ex)
-                {
-                    return ex;
-                }
+                return ThrowFieldReadonlySentinelFailure;
             }
 
-            return DuckTypeAotRegisteredFailureException.Create(exceptionType.FullName ?? exceptionType.Name ?? "unknown", detail: string.Empty);
+            var failureTypeName = exceptionType.FullName ?? exceptionType.Name ?? "unknown";
+            return () => DuckTypeAotRegisteredFailureException.Throw(failureTypeName, detail: string.Empty);
         }
 
         /// <summary>
         /// Creates an exception instance for a registered AOT failure mapping using a generated thrower.
         /// </summary>
         /// <param name="throwerMethodHandle">The thrower method handle value.</param>
-        /// <returns>The resulting exception value.</returns>
-        private static Exception CreateRegisteredFailureException(RuntimeMethodHandle throwerMethodHandle)
+        /// <returns>The resulting failure thrower.</returns>
+        private static Action CreateRegisteredFailureThrower(RuntimeMethodHandle throwerMethodHandle)
         {
             if (throwerMethodHandle.Equals(default(RuntimeMethodHandle)))
             {
@@ -699,20 +674,37 @@ namespace Datadog.Trace.DuckTyping
 
             try
             {
-                throwerMethod.Invoke(obj: null, parameters: null);
-            }
-            catch (TargetInvocationException ex) when (ex.InnerException is not null)
-            {
-                return ex.InnerException;
+                return (Action)Delegate.CreateDelegate(typeof(Action), throwerMethod);
             }
             catch (Exception ex)
             {
-                return ex;
+                throw new ArgumentException(
+                    $"AOT duck typing failure thrower method '{throwerMethod}' could not be converted to delegate '{typeof(Action)}'.",
+                    nameof(throwerMethodHandle),
+                    ex);
+            }
+        }
+
+        private static void ThrowPropertyCantBeWrittenSentinelFailure()
+        {
+            var sentinelProperty = typeof(string).GetProperty(nameof(string.Length), BindingFlags.Public | BindingFlags.Instance);
+            if (sentinelProperty is null)
+            {
+                throw new InvalidOperationException("Unable to resolve sentinel property for DuckTypePropertyCantBeWrittenException.");
             }
 
-            throw new ArgumentException(
-                $"AOT duck typing failure thrower method '{throwerMethod}' must throw an exception.",
-                nameof(throwerMethodHandle));
+            DuckTypePropertyCantBeWrittenException.Throw(sentinelProperty);
+        }
+
+        private static void ThrowFieldReadonlySentinelFailure()
+        {
+            var sentinelField = typeof(string).GetField(nameof(string.Empty), BindingFlags.Public | BindingFlags.Static);
+            if (sentinelField is null)
+            {
+                throw new InvalidOperationException("Unable to resolve sentinel field for DuckTypeFieldIsReadonlyException.");
+            }
+
+            DuckTypeFieldIsReadonlyException.Throw(sentinelField);
         }
 
         /// <summary>

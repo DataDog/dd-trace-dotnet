@@ -191,7 +191,7 @@ namespace Datadog.Trace.DuckTyping
                         if (dryRun)
                         {
                             // Dry run
-                            return new CreateTypeResult(proxyDefinitionType, null, targetType, null, null);
+                            return new CreateTypeResult(proxyDefinitionType, null, targetType, null, exceptionInfo: null);
                         }
 
                         // Create Type
@@ -202,7 +202,7 @@ namespace Datadog.Trace.DuckTyping
                             return Failed(copyError);
                         }
 
-                        return new CreateTypeResult(proxyDefinitionType, proxyType, targetType, structActivator, null);
+                        return new CreateTypeResult(proxyDefinitionType, proxyType, targetType, structActivator, exceptionInfo: null);
                     }
                     else
                     {
@@ -221,12 +221,12 @@ namespace Datadog.Trace.DuckTyping
                         if (dryRun)
                         {
                             // Dry run
-                            return new CreateTypeResult(proxyDefinitionType, null, targetType, null, null);
+                            return new CreateTypeResult(proxyDefinitionType, null, targetType, null, exceptionInfo: null);
                         }
 
                         // Create Type
                         Type proxyType = proxyTypeBuilder!.CreateTypeInfo()!.AsType();
-                        return new CreateTypeResult(proxyDefinitionType, proxyType, targetType, GetCreateProxyInstanceDelegate(moduleBuilder, proxyDefinitionType, proxyType, targetType), null);
+                        return new CreateTypeResult(proxyDefinitionType, proxyType, targetType, GetCreateProxyInstanceDelegate(moduleBuilder, proxyDefinitionType, proxyType, targetType), exceptionInfo: null);
                     }
                 }
                 catch (DuckTypeException ex)
@@ -309,12 +309,12 @@ namespace Datadog.Trace.DuckTyping
                     if (dryRun)
                     {
                         // Dry run
-                        return new CreateTypeResult(typeToDeriveFrom, null, typeToDelegateTo, null, null);
+                        return new CreateTypeResult(typeToDeriveFrom, null, typeToDelegateTo, null, exceptionInfo: null);
                     }
 
                     // Create Type
                     Type? proxyType = proxyTypeBuilder!.CreateTypeInfo()!.AsType();
-                    return new CreateTypeResult(typeToDeriveFrom, proxyType, typeToDelegateTo, GetCreateProxyInstanceDelegate(moduleBuilder, typeToDeriveFrom, proxyType, typeToDelegateTo), null);
+                    return new CreateTypeResult(typeToDeriveFrom, proxyType, typeToDelegateTo, GetCreateProxyInstanceDelegate(moduleBuilder, typeToDeriveFrom, proxyType, typeToDelegateTo), exceptionInfo: null);
                 }
                 catch (DuckTypeException ex)
                 {
@@ -1403,6 +1403,7 @@ namespace Datadog.Trace.DuckTyping
             private readonly Delegate? _activator;
             private readonly Func<object?, object?>? _untypedActivator;
             private readonly ExceptionDispatchInfo? _exceptionInfo;
+            private readonly Action? _failureThrower;
 
             /// <summary>
             /// Initializes a new instance of the <see cref="CreateTypeResult"/> struct.
@@ -1423,9 +1424,43 @@ namespace Datadog.Trace.DuckTyping
 
                 _proxyType = proxyType;
                 _exceptionInfo = exceptionInfo;
+                _failureThrower = null;
                 TargetType = targetType;
                 Success = proxyType != null && exceptionInfo == null;
                 if (exceptionInfo is not null)
+                {
+                    MethodInfo methodInfo = typeof(CreateTypeResult).GetMethod(nameof(ThrowOnError), BindingFlags.NonPublic | BindingFlags.Instance)!;
+                    _activator = methodInfo
+                        .MakeGenericMethod(proxyTypeDefinition)
+                        .CreateDelegate(
+                        typeof(CreateProxyInstance<>).MakeGenericType(proxyTypeDefinition),
+                        this);
+                }
+            }
+
+            /// <summary>
+            /// Initializes a new instance of the <see cref="CreateTypeResult"/> struct using a deferred failure thrower.
+            /// </summary>
+            /// <param name="proxyTypeDefinition">Proxy type definition</param>
+            /// <param name="proxyType">Proxy type</param>
+            /// <param name="targetType">Target type</param>
+            /// <param name="activator">Proxy activator</param>
+            /// <param name="failureThrower">Failure thrower instance</param>
+            internal CreateTypeResult(Type proxyTypeDefinition, Type? proxyType, Type targetType, Delegate? activator, Action? failureThrower)
+            {
+                _activator = activator;
+                _untypedActivator = activator as Func<object?, object?>;
+                if (_untypedActivator is null && activator is not null)
+                {
+                    _untypedActivator = instance => activator.DynamicInvoke(instance)!;
+                }
+
+                _proxyType = proxyType;
+                _exceptionInfo = null;
+                _failureThrower = failureThrower;
+                TargetType = targetType;
+                Success = proxyType != null && failureThrower == null;
+                if (failureThrower is not null)
                 {
                     MethodInfo methodInfo = typeof(CreateTypeResult).GetMethod(nameof(ThrowOnError), BindingFlags.NonPublic | BindingFlags.Instance)!;
                     _activator = methodInfo
@@ -1444,7 +1479,7 @@ namespace Datadog.Trace.DuckTyping
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 get
                 {
-                    ThrowCachedException();
+                    ThrowFailureIfNeeded();
                     return _proxyType;
                 }
             }
@@ -1490,7 +1525,7 @@ namespace Datadog.Trace.DuckTyping
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public bool CanCreate()
             {
-                return _exceptionInfo == null;
+                return _exceptionInfo == null && _failureThrower == null;
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1513,7 +1548,7 @@ namespace Datadog.Trace.DuckTyping
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             private T? ThrowOnError<T>(object? instance)
             {
-                ThrowCachedException();
+                ThrowFailureIfNeeded();
                 return default;
             }
 
@@ -1542,6 +1577,13 @@ namespace Datadog.Trace.DuckTyping
                 // throws no longer cause a crash. Fixed in .NET 6+.
                 ExceptionDispatchInfo.Capture(((DuckTypeException)exceptionInfo.SourceException).CloneForThrow()).Throw();
 #endif
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private void ThrowFailureIfNeeded()
+            {
+                ThrowCachedException();
+                _failureThrower?.Invoke();
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
