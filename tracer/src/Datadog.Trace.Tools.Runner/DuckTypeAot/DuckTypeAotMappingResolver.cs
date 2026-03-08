@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -27,18 +28,20 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <returns>The result produced by this operation.</returns>
         internal static DuckTypeAotMappingResolutionResult Resolve(DuckTypeAotGenerateOptions options)
         {
+            var profile = DuckTypeAotGenerateProcessor.IsProfilingEnabled() ? new ResolverProfile() : null;
             var warnings = new List<string>();
             var errors = new List<string>();
 
-            var proxyAssemblyPathsByName = BuildAssemblyPathIndex(options.ProxyAssemblies, "--proxy-assembly", errors);
-            var targetAssemblyPathsByName = BuildAssemblyPathIndex(GetTargetAssemblyPaths(options), "--target-folder", errors);
+            var targetAssemblyPaths = Measure(profile, static p => p.GetTargetAssemblyPathsSeconds, static (p, value) => p.GetTargetAssemblyPathsSeconds = value, () => GetTargetAssemblyPaths(options));
+            var proxyAssemblyPathsByName = Measure(profile, static p => p.BuildProxyAssemblyPathIndexSeconds, static (p, value) => p.BuildProxyAssemblyPathIndexSeconds = value, () => BuildAssemblyPathIndex(options.ProxyAssemblies, "--proxy-assembly", errors));
+            var targetAssemblyPathsByName = Measure(profile, static p => p.BuildTargetAssemblyPathIndexSeconds, static (p, value) => p.BuildTargetAssemblyPathIndexSeconds = value, () => BuildAssemblyPathIndex(targetAssemblyPaths, "--target-folder", errors));
             var genericTypeRoots = new Dictionary<string, DuckTypeAotTypeReference>(StringComparer.Ordinal);
 
             var resolvedMappings = new Dictionary<string, DuckTypeAotMapping>(StringComparer.Ordinal);
 
             if (!string.IsNullOrWhiteSpace(options.MapFile))
             {
-                var mapFileResult = DuckTypeAotMapFileParser.Parse(options.MapFile!);
+                var mapFileResult = Measure(profile, static p => p.ParseMapFileSeconds, static (p, value) => p.ParseMapFileSeconds = value, () => DuckTypeAotMapFileParser.Parse(options.MapFile!));
                 errors.AddRange(mapFileResult.Errors);
                 foreach (var mapping in mapFileResult.Mappings)
                 {
@@ -49,7 +52,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             // Branch: take this path when (!string.IsNullOrWhiteSpace(options.GenericInstantiationsFile)) evaluates to true.
             if (!string.IsNullOrWhiteSpace(options.GenericInstantiationsFile))
             {
-                var genericInstantiationsResult = DuckTypeAotGenericInstantiationsParser.Parse(options.GenericInstantiationsFile!);
+                var genericInstantiationsResult = Measure(profile, static p => p.ParseGenericInstantiationsSeconds, static (p, value) => p.ParseGenericInstantiationsSeconds = value, () => DuckTypeAotGenericInstantiationsParser.Parse(options.GenericInstantiationsFile!));
                 errors.AddRange(genericInstantiationsResult.Errors);
                 foreach (var typeRoot in genericInstantiationsResult.TypeRoots)
                 {
@@ -57,21 +60,32 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 }
             }
 
-            ValidateGenericClosure(resolvedMappings.Values, errors);
+            Measure(profile, static p => p.ValidateGenericClosureSeconds, static (p, value) => p.ValidateGenericClosureSeconds = value, () => ValidateGenericClosure(resolvedMappings.Values, errors));
 
-            foreach (var mapping in resolvedMappings.Values)
+            Measure(profile, static p => p.ValidateResolvedAssemblyReferencesSeconds, static (p, value) => p.ValidateResolvedAssemblyReferencesSeconds = value, () =>
             {
-                // Branch: take this path when (!proxyAssemblyPathsByName.ContainsKey(mapping.ProxyAssemblyName)) evaluates to true.
-                if (!proxyAssemblyPathsByName.ContainsKey(mapping.ProxyAssemblyName))
+                foreach (var mapping in resolvedMappings.Values)
                 {
-                    errors.Add($"Mapping proxy assembly '{mapping.ProxyAssemblyName}' could not be resolved from --proxy-assembly inputs.");
-                }
+                    // Branch: take this path when (!proxyAssemblyPathsByName.ContainsKey(mapping.ProxyAssemblyName)) evaluates to true.
+                    if (!proxyAssemblyPathsByName.ContainsKey(mapping.ProxyAssemblyName))
+                    {
+                        errors.Add($"Mapping proxy assembly '{mapping.ProxyAssemblyName}' could not be resolved from --proxy-assembly inputs.");
+                    }
 
-                // Branch: take this path when (!targetAssemblyPathsByName.ContainsKey(mapping.TargetAssemblyName)) evaluates to true.
-                if (!targetAssemblyPathsByName.ContainsKey(mapping.TargetAssemblyName))
-                {
-                    errors.Add($"Mapping target assembly '{mapping.TargetAssemblyName}' could not be resolved from --target-folder inputs.");
+                    // Branch: take this path when (!targetAssemblyPathsByName.ContainsKey(mapping.TargetAssemblyName)) evaluates to true.
+                    if (!targetAssemblyPathsByName.ContainsKey(mapping.TargetAssemblyName))
+                    {
+                        errors.Add($"Mapping target assembly '{mapping.TargetAssemblyName}' could not be resolved from --target-folder inputs.");
+                    }
                 }
+            });
+
+            if (profile is not null)
+            {
+                DuckTypeAotGenerateProcessor.WriteProfileMetric(
+                    $"resolve.profile getTargetAssemblies={profile.GetTargetAssemblyPathsSeconds:F3}s buildProxyIndex={profile.BuildProxyAssemblyPathIndexSeconds:F3}s buildTargetIndex={profile.BuildTargetAssemblyPathIndexSeconds:F3}s parseMap={profile.ParseMapFileSeconds:F3}s parseGenericInstantiations={profile.ParseGenericInstantiationsSeconds:F3}s validateGenericClosure={profile.ValidateGenericClosureSeconds:F3}s validateAssemblyRefs={profile.ValidateResolvedAssemblyReferencesSeconds:F3}s");
+                DuckTypeAotGenerateProcessor.WriteProfileMetric(
+                    $"resolve.profile targetAssemblyPaths={targetAssemblyPaths.Count} proxyAssemblies={proxyAssemblyPathsByName.Count} targetAssemblies={targetAssemblyPathsByName.Count} mappings={resolvedMappings.Count} genericRoots={genericTypeRoots.Count} warnings={warnings.Count} errors={errors.Count}");
             }
 
             return new DuckTypeAotMappingResolutionResult(
@@ -108,6 +122,34 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
 
             return targetAssemblyPaths.ToList();
+        }
+
+        private static T Measure<T>(ResolverProfile? profile, Func<ResolverProfile, double> getter, Action<ResolverProfile, double> setter, Func<T> action)
+        {
+            if (profile is null)
+            {
+                return action();
+            }
+
+            var stopwatch = Stopwatch.StartNew();
+            var result = action();
+            stopwatch.Stop();
+            setter(profile, getter(profile) + stopwatch.Elapsed.TotalSeconds);
+            return result;
+        }
+
+        private static void Measure(ResolverProfile? profile, Func<ResolverProfile, double> getter, Action<ResolverProfile, double> setter, Action action)
+        {
+            if (profile is null)
+            {
+                action();
+                return;
+            }
+
+            var stopwatch = Stopwatch.StartNew();
+            action();
+            stopwatch.Stop();
+            setter(profile, getter(profile) + stopwatch.Elapsed.TotalSeconds);
         }
 
         /// <summary>
@@ -177,6 +219,23 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     "NativeAOT generation requires closed proxy and target types. " +
                     "Provide closed concrete mappings in --map-file and use --generic-instantiations for additional closed-generic roots.");
             }
+        }
+
+        private sealed class ResolverProfile
+        {
+            internal double GetTargetAssemblyPathsSeconds { get; set; }
+
+            internal double BuildProxyAssemblyPathIndexSeconds { get; set; }
+
+            internal double BuildTargetAssemblyPathIndexSeconds { get; set; }
+
+            internal double ParseMapFileSeconds { get; set; }
+
+            internal double ParseGenericInstantiationsSeconds { get; set; }
+
+            internal double ValidateGenericClosureSeconds { get; set; }
+
+            internal double ValidateResolvedAssemblyReferencesSeconds { get; set; }
         }
     }
 

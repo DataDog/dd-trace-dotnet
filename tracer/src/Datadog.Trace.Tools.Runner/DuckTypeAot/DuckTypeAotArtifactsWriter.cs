@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -47,34 +48,36 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             DuckTypeAotMappingResolutionResult mappingResolutionResult,
             DuckTypeAotRegistryEmissionResult emissionResult)
         {
+            var profile = DuckTypeAotGenerateProcessor.IsProfilingEnabled() ? new ArtifactsProfile() : null;
             var generatedAtUtc = DateTime.UtcNow;
-            var mappings = mappingResolutionResult.Mappings.OrderBy(m => m.Key, StringComparer.Ordinal).ToList();
+            var mappings = Measure(profile, static p => p.SortMappingsSeconds, static (p, value) => p.SortMappingsSeconds = value, () => mappingResolutionResult.Mappings.OrderBy(m => m.Key, StringComparer.Ordinal).ToList());
             var toolVersion = typeof(Program).Assembly.GetName().Version?.ToString() ?? "0.0.0.0";
             var registryAssemblyInfo = emissionResult.RegistryAssemblyInfo;
 
-            var compatibilityMappings = mappings
-                .Select((mapping, index) =>
-                {
-                    var hasResult = emissionResult.MappingResultsByKey.TryGetValue(mapping.Key, out var mappingResult);
-                    var effectiveStatus = ResolveEffectiveCompatibilityStatus(hasResult ? mappingResult : null);
-                    return new DuckTypeAotCompatibilityMapping
+            var compatibilityMappings = Measure(profile, static p => p.BuildCompatibilityMappingsSeconds, static (p, value) => p.BuildCompatibilityMappingsSeconds = value, () =>
+                mappings
+                    .Select((mapping, index) =>
                     {
-                        Id = mapping.ScenarioId ?? $"MAP-{index + 1:D4}",
-                        MappingIdentityChecksum = ComputeMappingIdentityChecksum(mapping.Key),
-                        Mode = mapping.Mode.ToString().ToLowerInvariant(),
-                        ProxyType = mapping.ProxyTypeName,
-                        ProxyAssembly = mapping.ProxyAssemblyName,
-                        TargetType = mapping.TargetTypeName,
-                        TargetAssembly = mapping.TargetAssemblyName,
-                        Source = mapping.Source.ToString().ToLowerInvariant(),
-                        Status = effectiveStatus,
-                        DiagnosticCode = hasResult ? mappingResult!.DiagnosticCode : null,
-                        Details = BuildEffectiveCompatibilityDetails(hasResult ? mappingResult : null),
-                        GeneratedProxyAssembly = hasResult ? mappingResult!.GeneratedProxyAssemblyName : null,
-                        GeneratedProxyType = hasResult ? mappingResult!.GeneratedProxyTypeName : null
-                    };
-                })
-                .ToList();
+                        var hasResult = emissionResult.MappingResultsByKey.TryGetValue(mapping.Key, out var mappingResult);
+                        var effectiveStatus = ResolveEffectiveCompatibilityStatus(hasResult ? mappingResult : null);
+                        return new DuckTypeAotCompatibilityMapping
+                        {
+                            Id = mapping.ScenarioId ?? $"MAP-{index + 1:D4}",
+                            MappingIdentityChecksum = ComputeMappingIdentityChecksum(mapping.Key),
+                            Mode = mapping.Mode.ToString().ToLowerInvariant(),
+                            ProxyType = mapping.ProxyTypeName,
+                            ProxyAssembly = mapping.ProxyAssemblyName,
+                            TargetType = mapping.TargetTypeName,
+                            TargetAssembly = mapping.TargetAssemblyName,
+                            Source = mapping.Source.ToString().ToLowerInvariant(),
+                            Status = effectiveStatus,
+                            DiagnosticCode = hasResult ? mappingResult!.DiagnosticCode : null,
+                            Details = BuildEffectiveCompatibilityDetails(hasResult ? mappingResult : null),
+                            GeneratedProxyAssembly = hasResult ? mappingResult!.GeneratedProxyAssemblyName : null,
+                            GeneratedProxyType = hasResult ? mappingResult!.GeneratedProxyTypeName : null
+                        };
+                    })
+                    .ToList());
 
             var compatibilityMatrix = new DuckTypeAotCompatibilityMatrix
             {
@@ -85,11 +88,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 Mappings = compatibilityMappings
             };
 
-            WriteJson(artifactPaths.CompatibilityMatrixPath, compatibilityMatrix);
-            WriteCompatibilityMarkdown(artifactPaths.CompatibilityReportPath, compatibilityMatrix);
-            WriteTrimmerDescriptor(artifactPaths.TrimmerDescriptorPath, mappingResolutionResult, emissionResult);
-            WritePropsFile(artifactPaths.PropsPath, artifactPaths, registryAssemblyInfo);
-            WriteManifest(
+            Measure(profile, static p => p.WriteCompatibilityMatrixJsonSeconds, static (p, value) => p.WriteCompatibilityMatrixJsonSeconds = value, () => WriteJson(artifactPaths.CompatibilityMatrixPath, compatibilityMatrix));
+            Measure(profile, static p => p.WriteCompatibilityMarkdownSeconds, static (p, value) => p.WriteCompatibilityMarkdownSeconds = value, () => WriteCompatibilityMarkdown(artifactPaths.CompatibilityReportPath, compatibilityMatrix));
+            Measure(profile, static p => p.WriteTrimmerDescriptorSeconds, static (p, value) => p.WriteTrimmerDescriptorSeconds = value, () => WriteTrimmerDescriptor(artifactPaths.TrimmerDescriptorPath, mappingResolutionResult, emissionResult));
+            Measure(profile, static p => p.WritePropsFileSeconds, static (p, value) => p.WritePropsFileSeconds = value, () => WritePropsFile(artifactPaths.PropsPath, artifactPaths, registryAssemblyInfo));
+            Measure(profile, static p => p.WriteManifestSeconds, static (p, value) => p.WriteManifestSeconds = value, () => WriteManifest(
                 artifactPaths.ManifestPath,
                 artifactPaths.TrimmerDescriptorPath,
                 artifactPaths.PropsPath,
@@ -97,7 +100,16 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 registryAssemblyInfo,
                 emissionResult,
                 generatedAtUtc,
-                toolVersion);
+                toolVersion,
+                profile));
+
+            if (profile is not null)
+            {
+                DuckTypeAotGenerateProcessor.WriteProfileMetric(
+                    $"artifacts.profile sortMappings={profile.SortMappingsSeconds:F3}s buildCompatibilityMappings={profile.BuildCompatibilityMappingsSeconds:F3}s writeMatrixJson={profile.WriteCompatibilityMatrixJsonSeconds:F3}s writeCompatibilityMarkdown={profile.WriteCompatibilityMarkdownSeconds:F3}s writeTrimmerDescriptor={profile.WriteTrimmerDescriptorSeconds:F3}s writeProps={profile.WritePropsFileSeconds:F3}s writeManifest={profile.WriteManifestSeconds:F3}s");
+                DuckTypeAotGenerateProcessor.WriteProfileMetric(
+                    $"artifacts.profile manifest registryFingerprint={profile.CreateRegistryAssemblyFingerprintSeconds:F3}s proxyFingerprints={profile.CreateProxyAssemblyFingerprintsSeconds:F3}s targetFingerprints={profile.CreateTargetAssemblyFingerprintsSeconds:F3}s datadogTraceFingerprint={profile.CreateDatadogTraceAssemblyFingerprintSeconds:F3}s manifestJson={profile.WriteManifestJsonSeconds:F3}s mappings={compatibilityMappings.Count}");
+            }
 
             return new DuckTypeAotCompatibilityArtifacts(
                 artifactPaths.CompatibilityMatrixPath,
@@ -126,9 +138,10 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             DuckTypeAotRegistryAssemblyInfo registryAssemblyInfo,
             DuckTypeAotRegistryEmissionResult emissionResult,
             DateTime generatedAtUtc,
-            string toolVersion)
+            string toolVersion,
+            ArtifactsProfile? profile)
         {
-            var registryAssemblyFingerprint = CreateAssemblyFingerprint(registryAssemblyInfo.OutputAssemblyPath);
+            var registryAssemblyFingerprint = Measure(profile, static p => p.CreateRegistryAssemblyFingerprintSeconds, static (p, value) => p.CreateRegistryAssemblyFingerprintSeconds = value, () => CreateAssemblyFingerprint(registryAssemblyInfo.OutputAssemblyPath));
             var aliasRegistrationCount = emissionResult.RuntimeRegistrations.Count(registration => !registration.IsCanonical);
             var manifest = new DuckTypeAotManifest
             {
@@ -171,12 +184,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                         Assembly = root.AssemblyName
                     })
                     .ToList(),
-                ProxyAssemblies = CreateAssemblyFingerprints(mappingResolutionResult.ProxyAssemblyPathsByName.Values),
-                TargetAssemblies = CreateAssemblyFingerprints(mappingResolutionResult.TargetAssemblyPathsByName.Values),
-                DatadogTraceAssembly = CreateAssemblyFingerprint(ResolveDatadogTraceAssemblyPath(mappingResolutionResult))
+                ProxyAssemblies = Measure(profile, static p => p.CreateProxyAssemblyFingerprintsSeconds, static (p, value) => p.CreateProxyAssemblyFingerprintsSeconds = value, () => CreateAssemblyFingerprints(mappingResolutionResult.ProxyAssemblyPathsByName.Values)),
+                TargetAssemblies = Measure(profile, static p => p.CreateTargetAssemblyFingerprintsSeconds, static (p, value) => p.CreateTargetAssemblyFingerprintsSeconds = value, () => CreateAssemblyFingerprints(mappingResolutionResult.TargetAssemblyPathsByName.Values)),
+                DatadogTraceAssembly = Measure(profile, static p => p.CreateDatadogTraceAssemblyFingerprintSeconds, static (p, value) => p.CreateDatadogTraceAssemblyFingerprintSeconds = value, () => CreateAssemblyFingerprint(ResolveDatadogTraceAssemblyPath(mappingResolutionResult)))
             };
 
-            WriteJson(manifestPath, manifest);
+            Measure(profile, static p => p.WriteManifestJsonSeconds, static (p, value) => p.WriteManifestJsonSeconds = value, () => WriteJson(manifestPath, manifest));
         }
 
         /// <summary>
@@ -529,6 +542,61 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         {
             var json = JsonConvert.SerializeObject(value, Formatting.Indented);
             File.WriteAllText(path, json);
+        }
+
+        private static T Measure<T>(ArtifactsProfile? profile, Func<ArtifactsProfile, double> getter, Action<ArtifactsProfile, double> setter, Func<T> action)
+        {
+            if (profile is null)
+            {
+                return action();
+            }
+
+            var stopwatch = Stopwatch.StartNew();
+            var result = action();
+            stopwatch.Stop();
+            setter(profile, getter(profile) + stopwatch.Elapsed.TotalSeconds);
+            return result;
+        }
+
+        private static void Measure(ArtifactsProfile? profile, Func<ArtifactsProfile, double> getter, Action<ArtifactsProfile, double> setter, Action action)
+        {
+            if (profile is null)
+            {
+                action();
+                return;
+            }
+
+            var stopwatch = Stopwatch.StartNew();
+            action();
+            stopwatch.Stop();
+            setter(profile, getter(profile) + stopwatch.Elapsed.TotalSeconds);
+        }
+
+        private sealed class ArtifactsProfile
+        {
+            internal double SortMappingsSeconds { get; set; }
+
+            internal double BuildCompatibilityMappingsSeconds { get; set; }
+
+            internal double WriteCompatibilityMatrixJsonSeconds { get; set; }
+
+            internal double WriteCompatibilityMarkdownSeconds { get; set; }
+
+            internal double WriteTrimmerDescriptorSeconds { get; set; }
+
+            internal double WritePropsFileSeconds { get; set; }
+
+            internal double WriteManifestSeconds { get; set; }
+
+            internal double CreateRegistryAssemblyFingerprintSeconds { get; set; }
+
+            internal double CreateProxyAssemblyFingerprintsSeconds { get; set; }
+
+            internal double CreateTargetAssemblyFingerprintsSeconds { get; set; }
+
+            internal double CreateDatadogTraceAssemblyFingerprintSeconds { get; set; }
+
+            internal double WriteManifestJsonSeconds { get; set; }
         }
     }
 
