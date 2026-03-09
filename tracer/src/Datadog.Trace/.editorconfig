@@ -63,4 +63,5 @@ dotnet_diagnostic.CA1864.severity = error # Prefer the IDictionary.TryAdd(TKey, 
 dotnet_diagnostic.CA1868.severity = error # Unnecessary call to Contains for sets
 dotnet_diagnostic.CA1869.severity = error # Cache and reuse JsonSerializerOptions instances
 dotnet_diagnostic.CA1870.severity = error # Use a cached SearchValues instance
+dotnet_diagnostic.CA1871.severity = error # Do not pass a nullable struct to ArgumentNullException.ThrowIfNull.
 
