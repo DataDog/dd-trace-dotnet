@@ -60,7 +60,7 @@ public class AspNetCore5RaspDownstream : AspNetBase, IClassFixture<AspNetCoreTes
         await TryStartApp();
         var agent = Fixture.Agent;
 
-        var spans = await SendRequestsAsync(agent, url, body, 1, 1, string.Empty, "application/json", null);
+        var spans = await SendRequestsAsync(agent, url, body, 1, 5, string.Empty, "application/json", null);
         var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
