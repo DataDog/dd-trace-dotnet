@@ -1140,6 +1140,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         var ddSampleRate = config.WithKeys(ConfigurationKeys.GlobalSamplingRate).AsDoubleResult();
         var otelSampleType = config.WithKeys(ConfigurationKeys.OpenTelemetry.TracesSampler).AsStringResult();
         var otelSampleRate = config.WithKeys(ConfigurationKeys.OpenTelemetry.TracesSamplerArg).AsDoubleResult();
+        var otlpTracesExporter = config.WithKeys(ConfigurationKeys.OpenTelemetry.TracesExporter).AsStringResult();
 
         double? ddResult = ddSampleRate.ConfigurationResult.IsValid ? ddSampleRate.ConfigurationResult.Result : null;
 
@@ -1204,6 +1205,11 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
             }
 
             log.LogInvalidConfiguration(otelSampleRate.Key);
+        }
+        else if (otlpTracesExporter.ConfigurationResult is { IsValid: true, Result: { } exporter }
+                 && string.Equals(exporter, "otlp", StringComparison.OrdinalIgnoreCase))
+        {
+            return 1.0;
         }
 
         return ddResult;
