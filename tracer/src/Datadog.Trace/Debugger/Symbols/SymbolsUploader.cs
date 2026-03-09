@@ -411,7 +411,11 @@ namespace Datadog.Trace.Debugger.Symbols
 
             // Insert '[' in place of 'null' (matching previous logic)
             var beforeNullEnd = index + scopesNull.Length - "null".Length;
+#if NETCOREAPP
+            prefix = string.Concat(rootAsString.AsSpan(0, beforeNullEnd), "[");
+#else
             prefix = rootAsString.Substring(0, beforeNullEnd) + "[";
+#endif
             suffix = rootAsString.Substring(index + scopesNull.Length);
             return true;
         }
