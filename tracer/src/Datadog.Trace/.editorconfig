@@ -16,4 +16,5 @@ dotnet_diagnostic.CA1819.severity = error # Properties should not return arrays
 dotnet_diagnostic.CA1820.severity = error # Test for empty strings using string length
 dotnet_diagnostic.CA1821.severity = error # Remove empty finalizers
 # dotnet_diagnostic.CA1822.severity = error # Mark members as static
+dotnet_diagnostic.CA1823.severity = error # Avoid unused private fields
 

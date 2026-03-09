@@ -23,7 +23,6 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 {
     internal sealed class ExceptionProbeProcessor
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ExceptionProbeProcessor));
         private readonly HashSet<Type> _exceptionTypes;
         private readonly Type? _singleExceptionType;
         private readonly ExceptionReplayProbe[] _childProbes;

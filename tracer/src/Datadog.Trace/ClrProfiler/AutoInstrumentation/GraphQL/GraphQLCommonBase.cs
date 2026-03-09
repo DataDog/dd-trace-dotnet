@@ -23,8 +23,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
 
         protected const string ServiceName = "graphql";
 
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(GraphQLCommonBase));
-
         protected static Scope CreateScopeFromExecuteAsync(Tracer tracer, IntegrationId integrationId, GraphQLTags tags, string serviceName, string queryOperationName, string source, string queryOperationType)
         {
             var (resolvedServiceName, serviceNameSource) = tracer.CurrentTraceSettings.GetServiceNameMetadata(serviceName);
