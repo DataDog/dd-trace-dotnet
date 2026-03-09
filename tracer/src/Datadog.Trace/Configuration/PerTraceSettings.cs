@@ -63,9 +63,8 @@ namespace Datadog.Trace.Configuration
         /// Returns the integration name when the resolved service name differs from the default,
         /// or null when the default service name is used.
         /// </summary>
-        internal string? GetServiceNameSource(string serviceName)
+        internal string? GetServiceNameSource(string serviceName, string resolvedName)
         {
-            var resolvedName = GetServiceName(serviceName);
             return resolvedName != Settings.DefaultServiceName ? serviceName : null;
         }
     }
