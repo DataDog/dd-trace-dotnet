@@ -23,6 +23,9 @@ namespace Datadog.Trace.Configuration.Schema
             "mongodb.query",
         ];
 
+        /// <summary>
+        /// WARNING: must stay in sync with <see cref="ServiceType"/> enum (same order and count).
+        /// </summary>
         private static readonly string[] IntegrationSourceNames =
         [
             "aerospike",
