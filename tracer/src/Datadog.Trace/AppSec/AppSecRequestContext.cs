@@ -128,11 +128,11 @@ internal sealed partial class AppSecRequestContext
         {
             _raspStackTraces ??= new();
 
-            if (!_raspStackTraces.ContainsKey(stackCategory))
+            if (!_raspStackTraces.TryGetValue(stackCategory, out var value))
             {
                 _raspStackTraces.Add(stackCategory, new());
             }
-            else if (maxStackTraces > 0 && _raspStackTraces[stackCategory].Count >= maxStackTraces)
+            else if (maxStackTraces > 0 && value.Count >= maxStackTraces)
             {
                 return;
             }

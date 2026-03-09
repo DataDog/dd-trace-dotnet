@@ -249,9 +249,9 @@ internal sealed record ConfigurationState
                         hasUpdateConfigurations = true;
                     }
 
-                    if (_fileRemoves.ContainsKey(configByProductToRemove.Key))
+                    if (_fileRemoves.TryGetValue(configByProductToRemove.Key, out var remove))
                     {
-                        _fileRemoves[configByProductToRemove.Key].AddRange(configByProductToRemove.Value);
+                        remove.AddRange(configByProductToRemove.Value);
                     }
                     else
                     {
@@ -267,9 +267,9 @@ internal sealed record ConfigurationState
                     hasUpdateConfigurations = true;
                 }
 
-                if (_fileUpdates.ContainsKey(configByProduct.Key))
+                if (_fileUpdates.TryGetValue(configByProduct.Key, out var update))
                 {
-                    _fileUpdates[configByProduct.Key].AddRange(configByProduct.Value);
+                    update.AddRange(configByProduct.Value);
                 }
                 else
                 {
