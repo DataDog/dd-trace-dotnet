@@ -117,7 +117,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
             var hash = Fnv1aHash.FnvOffsetBias;
 
-            if (installedProbes.Any())
+            if (installedProbes.Length != 0)
             {
                 foreach (var probe in installedProbes)
                 {

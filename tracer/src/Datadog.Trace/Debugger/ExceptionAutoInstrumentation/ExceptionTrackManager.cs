@@ -319,7 +319,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
                         var receivedOrRequestedRejitStatusProbeIds = trackedExceptionCase.ExceptionCase.Probes.Where(p => p.IsInstrumented && (p.ProbeStatus == Status.RECEIVED || p.ProbeStatus == Status.INSTALLED)).ToList();
 
-                        if (receivedOrRequestedRejitStatusProbeIds.Any())
+                        if (receivedOrRequestedRejitStatusProbeIds.Count != 0)
                         {
                             var statuses = DebuggerNativeMethods.GetProbesStatuses(receivedOrRequestedRejitStatusProbeIds.Select(p => p.ProbeId).ToArray());
 

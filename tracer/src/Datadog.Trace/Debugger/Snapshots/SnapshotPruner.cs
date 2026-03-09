@@ -67,7 +67,7 @@ namespace DatadogDebugger.Util
 
             var total = 0;
             var nodes = new Dictionary<int, Node>();
-            while (sortedLeaves.Any())
+            while (sortedLeaves.Count != 0)
             {
                 Node leaf = sortedLeaves.Min;
                 sortedLeaves.Remove(leaf);
@@ -148,7 +148,7 @@ namespace DatadogDebugger.Util
             {
                 case '{':
                     var node = new Node(index, pruner._currentLevel++);
-                    if (pruner._stack.Any())
+                    if (pruner._stack.Count != 0)
                     {
                         node.Parent = pruner._stack.Peek();
                         node.Parent.Children.Add(node);
@@ -161,7 +161,7 @@ namespace DatadogDebugger.Util
                     var completedNode = pruner._stack.Pop();
                     completedNode.End = index;
                     pruner._currentLevel--;
-                    if (!pruner._stack.Any())
+                    if (pruner._stack.Count == 0)
                     {
                         pruner._root = completedNode;
                         return null;
@@ -306,7 +306,7 @@ namespace DatadogDebugger.Util
 
             public IEnumerable<Node> GetLeaves(int minLevel)
             {
-                if (!Children.Any() && Level >= minLevel)
+                if (Children.Count == 0 && Level >= minLevel)
                 {
                     return new[] { this };
                 }

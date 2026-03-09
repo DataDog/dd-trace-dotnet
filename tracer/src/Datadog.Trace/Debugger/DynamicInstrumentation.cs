@@ -326,7 +326,7 @@ namespace Datadog.Trace.Debugger
                     }
                 }
 
-                if (probesToRemoveFromNative.Any())
+                if (probesToRemoveFromNative.Count != 0)
                 {
                     var revertProbes = probesToRemoveFromNative
                        .Select(probeId => new NativeRemoveProbeRequest(probeId));
@@ -381,7 +381,7 @@ namespace Datadog.Trace.Debugger
                     }
                 }
 
-                if (lineProbes?.Any() == true && noLongerUnboundProbes != null)
+                if (lineProbes?.Count > 0 && noLongerUnboundProbes != null)
                 {
                     Log.Information("Dynamic Instrumentation.CheckUnboundProbes: {Count} unbound probes became bound.", property: noLongerUnboundProbes.Count);
 
