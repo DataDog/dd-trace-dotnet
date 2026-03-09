@@ -106,8 +106,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcNetC
                 var metadata = new MetadataHeadersCollection(trailers);
                 span.SetHeaderTags(metadata, settings.GrpcTags, defaultTagPrefix: GrpcCommon.ResponseMetadataTagPrefix);
             }
+#if NETCOREAPP
+            else if (grpcCall.HttpResponse is { TrailingHeaders: { } trailingHeaders })
+#else
             else if (grpcCall.HttpResponse is { } httpResponse
                   && httpResponse.DuckCast<HttpResponseStruct>().TrailingHeaders is { } trailingHeaders)
+#endif
             {
                 var metadata = new HttpResponseHeadersCollection(trailingHeaders);
                 span.SetHeaderTags(metadata, settings.GrpcTags, defaultTagPrefix: GrpcCommon.ResponseMetadataTagPrefix);
