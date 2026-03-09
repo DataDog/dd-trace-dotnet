@@ -444,6 +444,9 @@ internal sealed class TelemetryController : ITelemetryController
                         $",asm:{(_isAsmEnabled ? '1' : '0')}" +
                         $",prof:{(_isProfilingEnabled ? '1' : '0')}" +
                         $",dyn:{(_isDynamicInstrumentationEnabled ? '1' : '0')}" +
+#if NET6_0_OR_GREATER
+                        $",trim:{(PlatformHelpers.TrimmingDetector.IsTrimmingDetected ? '1' : '0')}" +
+#endif
                         $"{_cloudEnv}";
             }
 

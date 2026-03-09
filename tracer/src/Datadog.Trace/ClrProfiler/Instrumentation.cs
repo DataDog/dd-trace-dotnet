@@ -294,6 +294,17 @@ namespace Datadog.Trace.ClrProfiler
                 Log.Error(ex, "Error printing assembly metadata");
             }
 
+#if NET6_0_OR_GREATER
+            if (PlatformHelpers.TrimmingDetector.IsTrimmingDetected)
+            {
+                Log.Warning(
+                    "Application trimming detected: a standard .NET type could not be loaded. "
+                  + "Some Datadog instrumentation may not work correctly. "
+                  + "To make your app compatible with trimming, add a reference to the "
+                  + "Datadog.Trace.Trimming NuGet package.");
+            }
+#endif
+
             try
             {
                 // ensure global instance is created if it's not already

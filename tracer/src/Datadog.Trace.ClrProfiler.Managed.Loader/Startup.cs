@@ -55,6 +55,19 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                     StartupLogger.Log("Dynamic code is not supported (System.Runtime.CompilerServices.RuntimeFeature.IsDynamicCodeSupported context switch is false). Datadog SDK will be disabled.");
                     return;
                 }
+
+                // Check if the application appears to have been trimmed by probing for
+                // internal BCL types from different assemblies. If ANY probe fails, trimming is likely.
+                // Keep these type checks in sync with tracer/src/Datadog.Trace/PlatformHelpers/TrimmingDetector.cs
+                if (Type.GetType("System.Net.Mime.SmtpDateTime, System.Net.Mail", throwOnError: false) is null
+                    || Type.GetType("System.Net.NetworkInformation.IcmpV4MessageConstants, System.Net.Ping", throwOnError: false) is null)
+                {
+                    StartupLogger.Log(
+                        "Application trimming detected: a standard .NET type could not be loaded. "
+                      + "Some Datadog instrumentation may not work correctly. "
+                      + "To make your app compatible with trimming, add a reference to the "
+                      + "Datadog.Trace.Trimming NuGet package.");
+                }
 #endif
 
                 var envVars = new EnvironmentVariableProvider(logErrors: true);

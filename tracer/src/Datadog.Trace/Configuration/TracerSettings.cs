@@ -674,6 +674,9 @@ namespace Datadog.Trace.Configuration
             };
 
             telemetry.Record(ConfigTelemetryData.InstrumentationSource, instrumentationSource, recordValue: true, ConfigurationOrigins.Calculated);
+#if NET6_0_OR_GREATER
+            telemetry.Record(ConfigTelemetryData.InvalidTrimmingDetected, TrimmingDetector.IsTrimmingDetected, Configuration.Telemetry.ConfigurationOrigins.Default);
+#endif
 
             if (AzureAppServiceMetadata is not null)
             {
