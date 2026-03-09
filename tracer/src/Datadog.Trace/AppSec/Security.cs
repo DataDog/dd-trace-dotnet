@@ -291,7 +291,11 @@ namespace Datadog.Trace.AppSec
                 // It will happen if the WAF version used does not support new operators defined in the rules
                 foreach (var error in errors)
                 {
+#if NETCOREAPP
+                    if (!error.Key.Contains("unknown matcher:", StringComparison.OrdinalIgnoreCase))
+#else
                     if (!error.Key.ToLower().Contains("unknown matcher:"))
+#endif
                     {
                         return false;
                     }
