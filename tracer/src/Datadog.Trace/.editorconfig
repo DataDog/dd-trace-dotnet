@@ -24,4 +24,5 @@ dotnet_diagnostic.CA1827.severity = error # Do not use Count/LongCount when Any 
 dotnet_diagnostic.CA1828.severity = error # Do not use CountAsync/LongCountAsync when AnyAsync can be used
 dotnet_diagnostic.CA1829.severity = error # Use Length/Count property instead of Enumerable.Count method
 dotnet_diagnostic.CA1830.severity = error # Prefer strongly-typed Append and Insert method overloads on StringBuilder
+dotnet_diagnostic.CA1831.severity = error # Use AsSpan instead of Range-based indexers for string when appropriate
 
