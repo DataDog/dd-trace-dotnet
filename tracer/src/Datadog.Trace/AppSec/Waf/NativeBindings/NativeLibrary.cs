@@ -180,7 +180,9 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             IntPtr lpSource,
             uint dwMessageId,
             uint dwLanguageId,
+#pragma warning disable CA1838 // Avoid 'StringBuilder' parameters for P/Invokes. Consider using a character buffer instead - should prob try to fix
             ref StringBuilder lpBuffer,
+#pragma warning restore CA1838
             uint nSize,
             IntPtr pArguments);
 
