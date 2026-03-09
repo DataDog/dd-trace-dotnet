@@ -59,13 +59,13 @@ namespace Datadog.Trace.Configuration
         }
 
         /// <summary>
-        /// Returns the service name source for the given integration service name key.
-        /// Returns the integration name when the resolved service name differs from the default,
+        /// Returns the service name source for the given integration key.
+        /// Returns the integration key when the resolved service name differs from the default,
         /// or null when the default service name is used.
         /// </summary>
-        internal string? GetServiceNameSource(string serviceName, string resolvedName)
+        internal string? GetServiceNameSource(string integrationKey, string resolvedName)
         {
-            return resolvedName != Settings.DefaultServiceName ? serviceName : null;
+            return resolvedName != Settings.DefaultServiceName ? integrationKey : null;
         }
     }
 }
