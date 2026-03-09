@@ -16,6 +16,7 @@ using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.Models;
 using Datadog.Trace.Util;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using ProbeLocation = Datadog.Trace.Debugger.Expressions.ProbeLocation;
 
@@ -60,7 +61,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             _isFullSnapshot = isFullSnapshot;
             _probeLocation = location;
             _jsonUnderlyingString = StringBuilderCache.Acquire();
-            JsonWriter = new JsonTextWriter(new StringWriter(_jsonUnderlyingString));
+            JsonWriter = new JsonTextWriter(new StringWriter(_jsonUnderlyingString)) { ArrayPool = JsonArrayPool.Shared };
             MethodScopeMembers = default;
             _captureBehaviour = CaptureBehaviour.Capture;
             _errors = null;

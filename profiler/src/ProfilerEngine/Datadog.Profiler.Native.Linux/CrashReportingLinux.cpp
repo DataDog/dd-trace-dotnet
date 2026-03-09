@@ -281,18 +281,6 @@ std::vector<StackFrame> CrashReportingLinux::GetThreadFrames(int32_t tid, Resolv
     return MergeFrames(frames, managedFrames);
 }
 
-std::string CrashReportingLinux::GetSignalInfo(int32_t signal)
-{
-    auto signalInfo = strsignal(signal);
-
-    if (signalInfo == nullptr)
-    {
-        return {};
-    }
-
-    return signalInfo;
-}
-
 std::vector<std::pair<int32_t, std::string>> CrashReportingLinux::GetThreads()
 {
     DIR* proc_dir;

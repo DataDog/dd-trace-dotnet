@@ -14,6 +14,7 @@ using System.Text.RegularExpressions;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Util.Json;
 
 namespace Datadog.Trace.Ci.CiEnvironment;
 
@@ -418,7 +419,7 @@ internal abstract class CIEnvironmentValues
         SetTagIfNotNullOrEmpty(span, CommonTags.CINodeName, NodeName);
         if (NodeLabels is { } nodeLabels)
         {
-            SetTagIfNotNullOrEmpty(span, CommonTags.CINodeLabels, Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(nodeLabels));
+            SetTagIfNotNullOrEmpty(span, CommonTags.CINodeLabels, JsonHelper.SerializeObject(nodeLabels));
         }
 
         SetTagIfNotNullOrEmpty(span, CommonTags.GitPrBaseHeadCommit, PrBaseHeadCommit);
@@ -436,7 +437,7 @@ internal abstract class CIEnvironmentValues
 
         if (VariablesToBypass is { } variablesToBypass)
         {
-            span.SetTag(CommonTags.CiEnvVars, Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(variablesToBypass));
+            span.SetTag(CommonTags.CiEnvVars, JsonHelper.SerializeObject(variablesToBypass));
         }
     }
 
