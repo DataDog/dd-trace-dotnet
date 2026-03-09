@@ -26,4 +26,5 @@ dotnet_diagnostic.CA1829.severity = error # Use Length/Count property instead of
 dotnet_diagnostic.CA1830.severity = error # Prefer strongly-typed Append and Insert method overloads on StringBuilder
 dotnet_diagnostic.CA1831.severity = error # Use AsSpan instead of Range-based indexers for string when appropriate
 dotnet_diagnostic.CA1832.severity = error # Use AsSpan or AsMemory instead of Range-based indexers for getting ReadOnlySpan or ReadOnlyMemory portion of an array.
+dotnet_diagnostic.CA1833.severity = error # Use AsSpan or AsMemory instead of Range-based indexers for getting Span or Memory portion of an array.
 
