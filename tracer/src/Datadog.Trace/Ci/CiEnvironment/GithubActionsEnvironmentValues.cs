@@ -15,6 +15,8 @@ using System.Text.RegularExpressions;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Util;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
@@ -77,7 +79,7 @@ internal sealed class GithubActionsEnvironmentValues<TValueProvider>(TValueProvi
         {
             using var fr = File.OpenRead(filepath);
             using var sr = new StreamReader(fr, Encoding.UTF8);
-            using var reader = new JsonTextReader(sr);
+            using var reader = new JsonTextReader(sr) { ArrayPool = JsonArrayPool.Shared };
 
             // Navigate: job.d[] where k == "check_run_id", get v
             // Structure: { "job": { "d": [ { "k": "check_run_id", "v": 55411116365.0 } ] } }
