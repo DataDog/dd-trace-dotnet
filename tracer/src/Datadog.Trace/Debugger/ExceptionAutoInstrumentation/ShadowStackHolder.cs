@@ -35,7 +35,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         public static void DisableShadowStackTracking()
         {
-            Logger.Information("DisableShadowStackTracking called on threadID {ManagedThreadId} and taskId {CurrentId}.", Thread.CurrentThread.ManagedThreadId, Task.CurrentId);
+            Logger.Information("DisableShadowStackTracking called on threadID {ManagedThreadId} and taskId {CurrentId}.", Environment.CurrentManagedThreadId, Task.CurrentId);
             ShadowStackTree.Value = null;
             _lastShadowStackTreeOnThisThread = null;
         }
