@@ -18,18 +18,17 @@ internal static class TrimmingDetector
     {
         try
         {
-            // Probe for internal BCL types from different assemblies.
-            // These are internal types that cannot be referenced by customer code,
-            // so they should generally be removed by the trimmer. We check two types
-            // to try to avoid false positives in the case where one of them _is_ referenced.
+            // Probe for various BCL types from different assemblies which we expect to be trimmed in most customer applications
+            // We check multiple types to try to avoid false positives in the case where one of them _is_ referenced.
             // Keep these type checks in sync with tracer/src/Datadog.Trace.ClrProfiler.Managed.Loader/Startup.cs
+            // and tracer/build/_build/Build.Steps.cs (CreateTrimmingFile target).
             return Type.GetType("System.Net.Mime.SmtpDateTime, System.Net.Mail", throwOnError: false) is null
-                || Type.GetType("System.Net.NetworkInformation.IcmpV4MessageConstants, System.Net.Ping", throwOnError: false) is null;
+                || Type.GetType("System.Net.NetworkInformation.PingCompletedEventArgs, System.Net.Ping", throwOnError: false) is null
+                || Type.GetType("System.IO.IsolatedStorage.IsolatedStorageScope, System.IO.IsolatedStorage", throwOnError: false) is null;
         }
         catch
         {
             // Shouldn't happen, seeing as we have throwOnError: false
-            // This is used in both
 
             return false;
         }

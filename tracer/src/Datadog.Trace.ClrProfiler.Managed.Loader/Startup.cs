@@ -57,10 +57,11 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                 }
 
                 // Check if the application appears to have been trimmed by probing for
-                // internal BCL types from different assemblies. If ANY probe fails, trimming is likely.
+                // BCL types from different assemblies. If ANY probe fails, trimming is likely.
                 // Keep these type checks in sync with tracer/src/Datadog.Trace/PlatformHelpers/TrimmingDetector.cs
                 if (Type.GetType("System.Net.Mime.SmtpDateTime, System.Net.Mail", throwOnError: false) is null
-                    || Type.GetType("System.Net.NetworkInformation.IcmpV4MessageConstants, System.Net.Ping", throwOnError: false) is null)
+                    || Type.GetType("System.Net.NetworkInformation.PingCompletedEventArgs, System.Net.Ping", throwOnError: false) is null
+                    || Type.GetType("System.IO.IsolatedStorage.IsolatedStorageScope, System.IO.IsolatedStorage", throwOnError: false) is null)
                 {
                     StartupLogger.Log(
                         "Application trimming detected: a standard .NET type could not be loaded. "
