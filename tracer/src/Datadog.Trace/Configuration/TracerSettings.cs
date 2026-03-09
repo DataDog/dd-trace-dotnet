@@ -178,10 +178,23 @@ namespace Datadog.Trace.Configuration
             }
 
 #if NET6_0_OR_GREATER
-            RuntimeMetricsEnabled = runtimeMetricsEnabledResult.WithDefault(true);
+            var defaultRuntimeMetrics = true;
 #else
-            RuntimeMetricsEnabled = runtimeMetricsEnabledResult.WithDefault(false);
+            var defaultRuntimeMetrics = false;
 #endif
+
+            if (runtimeMetricsEnabledResult.ConfigurationResult is { IsPresent: true, IsValid: true })
+            {
+                RuntimeMetricsEnabled = runtimeMetricsEnabledResult.WithDefault(defaultRuntimeMetrics);
+            }
+            else if (otelExporterResult.ConfigurationResult is { IsPresent: true, IsValid: true, Result: false })
+            {
+                RuntimeMetricsEnabled = false;
+            }
+            else
+            {
+                RuntimeMetricsEnabled = runtimeMetricsEnabledResult.WithDefault(defaultRuntimeMetrics);
+            }
 
             var runtimeMetricsDiagnosticsMetricsApiEnabledResult = config
                                                                   .WithKeys(ConfigurationKeys.RuntimeMetricsDiagnosticsMetricsApiEnabled)

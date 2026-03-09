@@ -151,25 +151,25 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData("false", "otlp", false)]
         [InlineData("false", "random", false)]
         [InlineData("false", null, false)]
+        [InlineData("A", "none", false)]
+        [InlineData("", "none", false)]
         // Runtime metrics are enabled by default on .NET 6+
 #if NET6_0_OR_GREATER
-        [InlineData("A", "none", true)]
-        [InlineData("A", "otlp", true)]
-        [InlineData("", "none", true)]
-        [InlineData("", "otlp", true)]
-        [InlineData(null, "none", true)]
+        [InlineData(null, "none", false)]
         [InlineData(null, "random", true)]
         [InlineData(null, "otlp", true)]
         [InlineData(null, null, true)]
+        [InlineData("", "otlp", true)]
+        [InlineData("A", "otlp", true)]
+        [InlineData("", null, true)]
 #else
-        [InlineData("A", "none", false)]
-        [InlineData("A", "otlp", false)]
-        [InlineData("", "none", false)]
-        [InlineData("", "otlp", false)]
         [InlineData(null, "none", false)]
         [InlineData(null, "random", false)]
         [InlineData(null, "otlp", false)]
         [InlineData(null, null, false)]
+        [InlineData("", "otlp", false)]
+        [InlineData("A", "otlp", false)]
+        [InlineData("", null, false)]
 #endif
         public void RuntimeMetricsEnabled(string value, string otelValue, bool expected)
         {
