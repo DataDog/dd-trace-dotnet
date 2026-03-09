@@ -55,7 +55,6 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("http.useragent")
                 .IsPresent("http.url")
                 .IsOptional("_dd.base_service")
-                .IsOptional("_dd.svc_src")
                 .Matches("component", "aspnet")
                 .Matches("span.kind", "server"));
 
@@ -74,7 +73,6 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("http.useragent")
                 .IsPresent("http.url")
                 .IsOptional("_dd.base_service")
-                .IsOptional("_dd.svc_src")
                 .Matches("component", "aspnet")
                 .Matches("span.kind", "server"));
 
@@ -102,7 +100,6 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("http.useragent")
                 .IsPresent("http.url")
                 .IsOptional("_dd.base_service")
-                .IsOptional("_dd.svc_src")
                 .Matches("component", "aspnet")
                 .Matches("span.kind", "server"));
 
@@ -122,7 +119,6 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("http.useragent")
                 .IsPresent("http.url")
                 .IsOptional("_dd.base_service")
-                .IsOptional("_dd.svc_src")
                 .Matches("component", "aspnet_core")
                 .Matches("span.kind", "server"));
 
@@ -138,7 +134,6 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("aspnet_core.page")
                 .IsPresent("aspnet_core.route")
                 .IsOptional("_dd.base_service")
-                .IsOptional("_dd.svc_src")
                 .Matches("component", "aspnet_core")
                 .Matches("span.kind", "server"));
 
@@ -461,7 +456,6 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("grpc.method.service")
                 .IsPresent("grpc.status.code")
                 .IsOptional("_dd.base_service")
-                .IsOptional("_dd.svc_src")
                 .Matches("component", "Grpc")
                 .Matches("span.kind", "server"));
 
@@ -837,7 +831,6 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("service-fabric.service-remoting.interface-id")
                 .IsOptional("service-fabric.service-remoting.invocation-id")
                 .IsOptional("_dd.base_service")
-                .IsOptional("_dd.svc_src")
                 .Matches("span.kind", "server"));
 
         public static Result IsServiceStackRedisV1(this MockSpan span) => Result.FromSpan(span)
@@ -919,7 +912,6 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("http.request.headers.host")
                 .IsPresent("http.url")
                 .IsOptional("_dd.base_service")
-                .IsOptional("_dd.svc_src")
                 .Matches("component", "Wcf")
                 .Matches("span.kind", "server"));
 
