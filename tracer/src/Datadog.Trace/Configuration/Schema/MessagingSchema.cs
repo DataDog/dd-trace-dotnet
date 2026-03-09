@@ -12,6 +12,9 @@ namespace Datadog.Trace.Configuration.Schema
 {
     internal sealed class MessagingSchema
     {
+        /// <summary>
+        /// WARNING: must stay in sync with <see cref="ServiceType"/> enum (same order and count).
+        /// </summary>
         private static readonly string[] IntegrationSourceNames =
         [
             "aws.eventbridge",
