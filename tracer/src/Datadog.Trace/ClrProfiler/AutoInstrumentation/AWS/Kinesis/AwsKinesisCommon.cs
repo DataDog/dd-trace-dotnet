@@ -61,7 +61,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
             {
                 tags = perTraceSettings.Schema.Messaging.CreateAwsKinesisTags(spanKind);
                 string serviceName = perTraceSettings.GetServiceName(DatadogAwsKinesisServiceName);
-                string? serviceNameSource = perTraceSettings.GetServiceNameSource(DatadogAwsKinesisServiceName);
+                string? serviceNameSource = perTraceSettings.GetServiceNameSource(DatadogAwsKinesisServiceName, serviceName);
                 string operationName = perTraceSettings.Schema.Messaging.GetOutboundOperationName(MessagingSchema.OperationType.AwsKinesis);
                 scope = tracer.StartActiveInternal(operationName, parent: parentContext, tags: tags, serviceName: serviceName, serviceNameSource: serviceNameSource);
                 var span = scope.Span;
