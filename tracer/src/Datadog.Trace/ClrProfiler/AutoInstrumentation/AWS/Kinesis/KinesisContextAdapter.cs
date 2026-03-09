@@ -67,7 +67,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
                 return Convert.FromBase64String(value[value.Count - 1]);
             }
 
-            return new byte[0];
+            return [];
         }
 
         public void Add(string name, byte[] value)

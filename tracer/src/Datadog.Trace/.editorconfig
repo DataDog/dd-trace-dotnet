@@ -18,4 +18,5 @@ dotnet_diagnostic.CA1821.severity = error # Remove empty finalizers
 # dotnet_diagnostic.CA1822.severity = error # Mark members as static
 dotnet_diagnostic.CA1823.severity = error # Avoid unused private fields
 dotnet_diagnostic.CA1824.severity = error # Mark assemblies with NeutralResourcesLanguageAttribute
+dotnet_diagnostic.CA1825.severity = error # Avoid zero-length array allocations
 
