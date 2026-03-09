@@ -59,7 +59,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
                     if (requestMessage.Instance is { } request)
                     {
                         var rootSpan = tracer.InternalActiveScope?.Root?.Span;
-                        executeOnDownstreamResponse = RaspModule.OnDownstreamRequest(request, scope.Span.SpanId, rootSpan);
+                        executeOnDownstreamResponse = RaspModule.OnDownstreamRequest(request, scope.Span.SpanId, rootSpan).Result;
                     }
 #endif
 
@@ -106,7 +106,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
 #if NETCOREAPP3_0_OR_GREATER
                 if (state.State is true && responseMessage.Instance is { } response)
                 {
-                    RaspModule.OnDownstreamResponse(response, scope.Span.SpanId);
+                    RaspModule.OnDownstreamResponse(response, scope.Span.SpanId).SafeWait();
                 }
 #endif
             }
