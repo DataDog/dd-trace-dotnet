@@ -22,4 +22,5 @@ dotnet_diagnostic.CA1825.severity = error # Avoid zero-length array allocations
 dotnet_diagnostic.CA1826.severity = error # Use property instead of Linq Enumerable method
 dotnet_diagnostic.CA1827.severity = error # Do not use Count/LongCount when Any can be used
 dotnet_diagnostic.CA1828.severity = error # Do not use CountAsync/LongCountAsync when AnyAsync can be used
+dotnet_diagnostic.CA1829.severity = error # Use Length/Count property instead of Enumerable.Count method
 
