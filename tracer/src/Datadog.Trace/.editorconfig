@@ -64,4 +64,5 @@ dotnet_diagnostic.CA1868.severity = error # Unnecessary call to Contains for set
 dotnet_diagnostic.CA1869.severity = error # Cache and reuse JsonSerializerOptions instances
 dotnet_diagnostic.CA1870.severity = error # Use a cached SearchValues instance
 dotnet_diagnostic.CA1871.severity = error # Do not pass a nullable struct to ArgumentNullException.ThrowIfNull.
+# dotnet_diagnostic.CA1872.severity = error # Prefer Convert.ToHexString over BitConverter.ToString
 
