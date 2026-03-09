@@ -41,6 +41,60 @@
 
 
 
+
+## [Release 3.39.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.39.0)
+
+## Summary
+
+- [Serverless] Create and reparent span for Azure API Management (#7806)
+- [CI Visibility] Support NUnit v4.5.0
+- [Profiler] Support Windows pdb format (#8096)
+- [Profiler] Measure memory consumption (#8134)
+
+## Changes
+
+### Tracer
+* Termination signals fix (#8168)
+* [Code Origin] DEBUG-5199 Reduce per-span allocations and locks (#8197)
+* Add `Base64DecodingStream` (#8226)
+
+### CI Visibility
+* Add support for latest NUnit (#8246)
+
+### ASM
+* [ASM] Ruggerize waf GetKnownAddresses call to try to stop it crashing (#8239)
+
+### Continuous Profiler
+* [Profiler] Support Windows pdb format (#8096)
+* [Profiler] Measure memory consumption (#8134)
+
+### Serverless
+* [tracing] Create and reparent span for Azure API Management (#7806)
+
+### Miscellaneous
+* [Claude][Azure Functions] Add dev/test workflow skill and scripts (#8173)
+* [Claude] Improve `troubleshoot-ci-build` skill with scripts and heuristics (#8181)
+* [crashtracker] Improve crashtracker message (#8182)
+* [Config registry] Add release step for v2 (#8200)
+* [Config registry] Only one yaml for all (#8206)
+* Implement `app-extended-heartbeat` telemetry event (#8227)
+* Attempt to prevent crash when enumerating integration_definitions (#8230)
+* Re-write /analyze-error Claude skill (#8240)
+* Add support for ducktyping private fields and properties  from a base type (#8248)
+* Add more Claude Code files to `.gitignore` (#8249)
+
+### Build / Test
+* Disable Ryuk images (#8208)
+* [CI] Upload system-tests results to Test Optimization (#8214)
+* [Test Package Versions Bump] Updating package versions (#8233)
+* Ensure we publish all nuget packages during release (#8234)
+* Add additional TFMs to benchmarks project (#8243)
+* Ensure docker ready (#8245)
+* Bump the gh-actions-packages group across 3 directories with 3 updates (#8251)
+
+
+[Changes since 3.38.0](https://github.com/DataDog/dd-trace-dotnet/compare/v3.38.0...v3.39.0)
+
 ## [Release 3.38.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.38.0)
 
 ## Summary
