@@ -1,4 +1,4 @@
-﻿// <copyright file="MutableSettings.cs" company="Datadog">
+// <copyright file="MutableSettings.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -951,7 +951,9 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
                               .WithKeys(ConfigurationKeys.OpenTelemetry.TracesExporter)
                               .AsBoolResult(value => string.Equals(value, "none", StringComparison.OrdinalIgnoreCase)
                                                          ? ParsingResult<bool>.Success(result: false)
-                                                         : ParsingResult<bool>.Failure());
+                                                         : string.Equals(value, "otlp", StringComparison.OrdinalIgnoreCase)
+                                                           ? ParsingResult<bool>.Success(result: true)
+                                                           : ParsingResult<bool>.Failure());
         var traceEnabled = config
                           .WithKeys(ConfigurationKeys.TraceEnabled)
                           .AsBoolResult()
@@ -1206,7 +1208,9 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
 
             log.LogInvalidConfiguration(otelSampleRate.Key);
         }
-        else if (otlpTracesExporter.ConfigurationResult is { IsValid: true, Result: { } exporter }
+
+        if (!ddSampleRate.ConfigurationResult.IsPresent &&
+                otlpTracesExporter.ConfigurationResult is { IsValid: true, Result: { } exporter }
                  && string.Equals(exporter, "otlp", StringComparison.OrdinalIgnoreCase))
         {
             return 1.0;
