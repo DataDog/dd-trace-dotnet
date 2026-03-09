@@ -55,4 +55,5 @@ dotnet_diagnostic.CA1858.severity = error # Use StartsWith instead of IndexOf
 dotnet_diagnostic.CA1860.severity = error # Avoid using Enumerable.Any() extension method
 # dotnet_diagnostic.CA1861.severity = error # Avoid constant arrays as arguments - too many changes, will do in a separate PR
 dotnet_diagnostic.CA1862.severity = error # Use StringComparison method overloads for case-insensitive comparisons
+dotnet_diagnostic.CA1863.severity = error # Use char overload
 
