@@ -9,6 +9,7 @@ using System.Globalization;
 using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.SourceGenerators;
+using Datadog.Trace.Util.Json;
 
 namespace Datadog.Trace.Ci.Tagging;
 
@@ -200,7 +201,7 @@ internal partial class TestSessionSpanTags : Trace.Tagging.TagsList
 
             if (environmentValues.VariablesToBypass is { } variablesToBypass)
             {
-                CiEnvVars = Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(variablesToBypass);
+                CiEnvVars = JsonHelper.SerializeObject(variablesToBypass);
             }
         }
     }

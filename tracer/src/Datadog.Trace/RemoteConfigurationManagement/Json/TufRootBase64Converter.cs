@@ -35,7 +35,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Json
 
         public override void WriteJson(JsonWriter writer, TufRoot value, JsonSerializer serializer)
         {
-            var encodedContent = Convert.ToBase64String(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(value)));
+            var encodedContent = Convert.ToBase64String(Encoding.UTF8.GetBytes(JsonHelper.SerializeObject(value)));
             writer.WriteValue(encodedContent);
         }
     }
