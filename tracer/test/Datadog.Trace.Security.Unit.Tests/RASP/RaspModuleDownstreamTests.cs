@@ -29,7 +29,7 @@ public class RaspModuleDownstreamTests : WafLibraryRequiredTest
         };
 
         var headersMock = HttpMocks.CreateMockHeaders(headers);
-        var result = RaspModule.ExtractHeaders(headersMock.Object);
+        var result = RaspModule.ExtractHeaders(headersMock);
 
         result.Should().NotBeNull();
         result.Should().ContainKey("content-type");
@@ -48,7 +48,7 @@ public class RaspModuleDownstreamTests : WafLibraryRequiredTest
         };
 
         var headersMock = HttpMocks.CreateMockHeaders(headers);
-        var result = RaspModule.ExtractHeaders(headersMock.Object);
+        var result = RaspModule.ExtractHeaders(headersMock);
 
         result.Should().NotBeNull();
         result.Should().NotContainKey("cookie");
@@ -62,7 +62,7 @@ public class RaspModuleDownstreamTests : WafLibraryRequiredTest
         var headers = new Dictionary<string, string>();
 
         var headersMock = HttpMocks.CreateMockHeaders(headers);
-        var result = RaspModule.ExtractHeaders(headersMock.Object);
+        var result = RaspModule.ExtractHeaders(headersMock);
 
         result.Should().BeNull();
     }
@@ -76,7 +76,7 @@ public class RaspModuleDownstreamTests : WafLibraryRequiredTest
         };
 
         var headersMock = HttpMocks.CreateMockHeaders(headers);
-        var result = RaspModule.ExtractHeaders(headersMock.Object);
+        var result = RaspModule.ExtractHeaders(headersMock);
 
         result.Should().BeNull();
     }
@@ -92,7 +92,7 @@ public class RaspModuleDownstreamTests : WafLibraryRequiredTest
         };
 
         var headersMock = HttpMocks.CreateMockHeaders(headers);
-        var result = RaspModule.ExtractHeaders(headersMock.Object);
+        var result = RaspModule.ExtractHeaders(headersMock);
 
         result.Should().NotBeNull();
         result.Should().NotContainKey("cookie");
@@ -110,7 +110,7 @@ public class RaspModuleDownstreamTests : WafLibraryRequiredTest
         };
 
         var headersMock = HttpMocks.CreateMockHeaders(headers);
-        var result = RaspModule.ExtractHeaders(headersMock.Object);
+        var result = RaspModule.ExtractHeaders(headersMock);
 
         result.Should().NotBeNull();
         result.Should().ContainKey("content-type");
@@ -123,7 +123,7 @@ public class RaspModuleDownstreamTests : WafLibraryRequiredTest
     [InlineData("{\"user\":{\"name\":\"John\"}}", "application/json", true)]
     [InlineData("[1,2,3,4,5]", "application/json", true)]
     [InlineData("", "application/json", false)]
-    [InlineData("{\"key\":\"value\"}", "text/plain", true)]
+    [InlineData("{\"key\":\"value\"}", "text/plain", false)]
     public void AddBody_JsonContent_ParsesCorrectly(string body, string contentType, bool shouldParse)
     {
         var mockContent = HttpMocks.CreateMockContent(body, contentType);
@@ -133,7 +133,7 @@ public class RaspModuleDownstreamTests : WafLibraryRequiredTest
         var method = typeof(RaspModule).GetMethod("AddBody", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
         method.Should().NotBeNull();
 
-        method!.Invoke(null, [mockContent.Object, wafArgs, AddressesConstants.DownstreamRequestBody, 10_000_000L]);
+        method!.Invoke(null, [mockContent, wafArgs, AddressesConstants.DownstreamRequestBody, 10_000_000L]);
 
         if (shouldParse && !string.IsNullOrEmpty(body))
         {
@@ -161,7 +161,7 @@ public class RaspModuleDownstreamTests : WafLibraryRequiredTest
         method.Should().NotBeNull();
 
         // Body size limit is 50,000 bytes
-        method!.Invoke(null, [mockContent.Object, wafArgs, AddressesConstants.DownstreamRequestBody, 50_000L]);
+        method!.Invoke(null, [mockContent, wafArgs, AddressesConstants.DownstreamRequestBody, 50_000L]);
 
         // Should not add body because it exceeds size limit
         wafArgs.Should().NotContainKey(AddressesConstants.DownstreamRequestBody);
@@ -191,7 +191,7 @@ public class RaspModuleDownstreamTests : WafLibraryRequiredTest
         var method = typeof(RaspModule).GetMethod("AddBody", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
         method.Should().NotBeNull();
 
-        method!.Invoke(null, [mockContent.Object, wafArgs, AddressesConstants.DownstreamRequestBody, 10_000_000L]);
+        method!.Invoke(null, [mockContent, wafArgs, AddressesConstants.DownstreamRequestBody, 10_000_000L]);
 
         wafArgs.Should().NotContainKey(AddressesConstants.DownstreamRequestBody);
     }
@@ -207,7 +207,7 @@ public class RaspModuleDownstreamTests : WafLibraryRequiredTest
         var method = typeof(RaspModule).GetMethod("AddBody", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
         method.Should().NotBeNull();
 
-        method!.Invoke(null, [mockContent.Object, wafArgs, AddressesConstants.DownstreamRequestBody, 10_000_000L]);
+        method!.Invoke(null, [mockContent, wafArgs, AddressesConstants.DownstreamRequestBody, 10_000_000L]);
 
         // Invalid JSON should not crash, but may not add to wafArgs
         // The behavior depends on BodyParser.Parse returning null for invalid JSON

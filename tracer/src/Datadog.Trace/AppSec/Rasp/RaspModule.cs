@@ -9,8 +9,8 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Threading;
+using System.Threading.Tasks;
 using Datadog.Trace.AppSec.Coordinator;
-using Datadog.Trace.AppSec.Rasp.HttpClient;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
@@ -310,7 +310,7 @@ internal static class RaspModule
     }
 
 #if NETCOREAPP3_0_OR_GREATER
-    internal static Dictionary<string, object>? ExtractHeaders(IHttpHeaders headers)
+    internal static Dictionary<string, object>? ExtractHeaders(System.Net.Http.Headers.HttpHeaders headers)
     {
         var enumerator = headers.GetEnumerator();
         Dictionary<string, object>? headersDic = null;
@@ -332,7 +332,7 @@ internal static class RaspModule
         return headersDic;
     }
 
-    internal static bool OnDownstreamRequest(object requestMessageInstance, ulong requestSpanId, Span rootSpan)
+    internal static async Task<bool> OnDownstreamRequest(object requestMessageInstance, ulong requestSpanId, Span rootSpan)
     {
         try
         {
@@ -357,16 +357,16 @@ internal static class RaspModule
                     return false;
                 }
 
-                if (!requestMessageInstance.TryDuckCast<IHttpRequestMessage>(out var requestMessage))
+                if (requestMessageInstance is not System.Net.Http.HttpRequestMessage requestMessage)
                 {
-                    Log.Error("DuckCast to IHttpRequestMessage failed");
+                    Log.Error("requestMessageInstance is not HttpRequestMessage");
                     return false;
                 }
 
                 var wafArgs = new Dictionary<string, object>();
-                wafArgs[AddressesConstants.DownstreamUrl] = requestMessage.RequestUri.ToString();
+                wafArgs[AddressesConstants.DownstreamUrl] = requestMessage.RequestUri?.ToString() ?? string.Empty;
                 wafArgs[AddressesConstants.DownstreamRequestMethod] = requestMessage.Method.Method;
-                if (requestMessage is { Headers: var headers } && headers is not null)
+                if (requestMessage is { Headers: { } headers })
                 {
                     var extractedHeaders = ExtractHeaders(headers);
                     if (extractedHeaders is not null)
@@ -377,7 +377,7 @@ internal static class RaspModule
 
                 if (context.IsHttpClientRequestSampled(requestSpanId))
                 {
-                    AddBody(requestMessage.Content, wafArgs, AddressesConstants.DownstreamRequestBody, security.AppSecBodyParsingSizeLimit);
+                    await AddBody(requestMessage.Content, wafArgs, AddressesConstants.DownstreamRequestBody, security.AppSecBodyParsingSizeLimit).ConfigureAwait(false);
                 }
 
                 // If a block is issued we must stop current child outbound request span, as the call is going to be interrupted
@@ -393,7 +393,7 @@ internal static class RaspModule
         return false;
     }
 
-    internal static void OnDownstreamResponse(object responseMessageInstance, ulong requestSpanId)
+    internal static async Task OnDownstreamResponse(object responseMessageInstance, ulong requestSpanId)
     {
         try
         {
@@ -417,15 +417,15 @@ internal static class RaspModule
                 return;
             }
 
-            if (!responseMessageInstance.TryDuckCast<IHttpResponseMessage>(out var requestMessage))
+            if (responseMessageInstance is not System.Net.Http.HttpResponseMessage responseMessage)
             {
-                Log.Error("DuckCast to IHttpResponseMessage failed");
+                Log.Error("responseMessageInstance is not HttpResponseMessage");
                 return;
             }
 
             var wafArgs = new Dictionary<string, object>();
-            wafArgs[AddressesConstants.DownstreamResponseStatus] = requestMessage.StatusCode;
-            if (requestMessage is { Headers: var headers } && headers is not null)
+            wafArgs[AddressesConstants.DownstreamResponseStatus] = responseMessage.StatusCode;
+            if (responseMessage is { Headers: var headers } && headers is not null)
             {
                 var extractedHeaders = ExtractHeaders(headers);
                 if (extractedHeaders is not null)
@@ -436,7 +436,7 @@ internal static class RaspModule
 
             if (context.IsHttpClientRequestSampled(requestSpanId))
             {
-                AddBody(requestMessage.Content, wafArgs, AddressesConstants.DownstreamResponseBody, security.AppSecBodyParsingSizeLimit);
+                await AddBody(responseMessage.Content, wafArgs, AddressesConstants.DownstreamResponseBody, security.AppSecBodyParsingSizeLimit).ConfigureAwait(false);
             }
 
             CheckVulnerability(wafArgs, AddressesConstants.DownstreamUrl);
@@ -447,18 +447,18 @@ internal static class RaspModule
         }
     }
 
-    private static void AddBody(IHttpContent content, Dictionary<string, object> wafArgs, string wafAddress, long bodySizeLimit)
+    private static async Task AddBody(System.Net.Http.HttpContent? content, Dictionary<string, object> wafArgs, string wafAddress, long bodySizeLimit)
     {
         try
         {
-            if (content?.Instance is not null)
+            if (content is not null)
             {
                 var contentType = content.Headers?.ContentType?.MediaType;
                 if (contentType is "application/json")
                 {
-                    content.LoadIntoBufferAsync().SafeWait();
+                    await content.LoadIntoBufferAsync().ConfigureAwait(false);
                     var len = 0L;
-                    var stream = content.ReadAsStreamAsync().SafeGetResult();
+                    var stream = content.ReadAsStreamAsync().Result;
                     if (stream != null)
                     {
                         len = stream.Length;
@@ -475,7 +475,7 @@ internal static class RaspModule
                 }
             }
         }
-        catch (Exception ex) when (ex is not BlockException)
+        catch (Exception ex)
         {
             Log.Error(ex, "RASP: Error while parsing body.");
         }
