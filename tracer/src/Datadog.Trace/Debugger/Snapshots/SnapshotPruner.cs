@@ -101,20 +101,20 @@ namespace DatadogDebugger.Util
 
             var prunedNodes = nodes.Values.OrderBy(n => n.Start).ToList();
             var sb = StringBuilderCache.Acquire();
-            sb.Append(snapshot.Substring(0, prunedNodes[0].Start));
+            sb.Append(snapshot, 0, prunedNodes[0].Start);
             for (var i = 1; i < prunedNodes.Count; i++)
             {
                 sb.Append(Pruned);
                 var nextSegmentStart = prunedNodes[i - 1].End + 1;
                 var nextSegmentLength = prunedNodes[i].Start - nextSegmentStart;
-                sb.Append(snapshot.Substring(nextSegmentStart, nextSegmentLength));
+                sb.Append(snapshot, nextSegmentStart, nextSegmentLength);
             }
 
             sb.Append(Pruned);
             var lastSegmentStart = prunedNodes[prunedNodes.Count - 1].End + 1;
             if (lastSegmentStart < Encoding.UTF8.GetByteCount(snapshot))
             {
-                sb.Append(snapshot.Substring(lastSegmentStart));
+                sb.Append(snapshot, lastSegmentStart, snapshot.Length - lastSegmentStart);
             }
 
             return StringBuilderCache.GetStringAndRelease(sb);

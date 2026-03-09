@@ -39,4 +39,5 @@ dotnet_diagnostic.CA1842.severity = error # Do not use WhenAll with a single tas
 dotnet_diagnostic.CA1843.severity = error # Do not use WhenAll with a single task
 dotnet_diagnostic.CA1844.severity = error # Provide memory-based overrides of async methods when subclassing Stream
 dotnet_diagnostic.CA1845.severity = error # Use span-based string.Concat
+dotnet_diagnostic.CA1846.severity = error # Prefer AsSpan over Substring
 
