@@ -15,10 +15,14 @@
       messaging.masstransit.input_address: loopback://localhost/Failing,
       messaging.operation: receive,
       messaging.system: in-memory,
+      runtime-id: Guid_1,
       span.kind: consumer,
       version: 1.0.0
     },
     Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -62,12 +66,12 @@ at Samples.MassTransit7.Consumers.FailingConsumer.Consume(ConsumeContext`1 conte
       language: dotnet,
       messaging.destination.name: GettingStarted,
       messaging.masstransit.destination_address: loopback://localhost/GettingStarted?bind=true,
-      messaging.masstransit.message_id: Guid_1,
+      messaging.masstransit.message_id: Guid_2,
       messaging.masstransit.message_types: GettingStartedMessage,
-      messaging.message.conversation_id: Guid_2,
+      messaging.message.conversation_id: Guid_3,
       messaging.operation: send,
       messaging.system: in-memory,
-      runtime-id: Guid_3,
+      runtime-id: Guid_1,
       span.kind: producer,
       version: 1.0.0
     },
@@ -96,7 +100,7 @@ at Samples.MassTransit7.Consumers.FailingConsumer.Consume(ConsumeContext`1 conte
       messaging.message.conversation_id: Guid_5,
       messaging.operation: send,
       messaging.system: rabbitmq,
-      runtime-id: Guid_3,
+      runtime-id: Guid_1,
       span.kind: producer,
       version: 1.0.0
     },
@@ -125,7 +129,7 @@ at Samples.MassTransit7.Consumers.FailingConsumer.Consume(ConsumeContext`1 conte
       messaging.message.conversation_id: Guid_7,
       messaging.operation: send,
       messaging.system: sqs,
-      runtime-id: Guid_3,
+      runtime-id: Guid_1,
       span.kind: producer,
       version: 1.0.0
     },
@@ -152,10 +156,14 @@ at Samples.MassTransit7.Consumers.FailingConsumer.Consume(ConsumeContext`1 conte
       messaging.masstransit.input_address: loopback://localhost/GettingStarted,
       messaging.operation: receive,
       messaging.system: in-memory,
+      runtime-id: Guid_1,
       span.kind: consumer,
       version: 1.0.0
     },
     Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -175,10 +183,14 @@ at Samples.MassTransit7.Consumers.FailingConsumer.Consume(ConsumeContext`1 conte
       messaging.masstransit.input_address: loopback://localhost/GettingStarted,
       messaging.operation: receive,
       messaging.system: in-memory,
+      runtime-id: Guid_1,
       span.kind: consumer,
       version: 1.0.0
     },
     Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -198,7 +210,7 @@ at Samples.MassTransit7.Consumers.FailingConsumer.Consume(ConsumeContext`1 conte
       messaging.masstransit.input_address: rabbitmq://localhost:00000/GettingStarted,
       messaging.operation: receive,
       messaging.system: rabbitmq,
-      runtime-id: Guid_3,
+      runtime-id: Guid_1,
       span.kind: consumer,
       version: 1.0.0
     },
@@ -225,7 +237,7 @@ at Samples.MassTransit7.Consumers.FailingConsumer.Consume(ConsumeContext`1 conte
       messaging.masstransit.input_address: rabbitmq://localhost:00000/GettingStarted,
       messaging.operation: receive,
       messaging.system: rabbitmq,
-      runtime-id: Guid_3,
+      runtime-id: Guid_1,
       span.kind: consumer,
       version: 1.0.0
     },
@@ -252,7 +264,7 @@ at Samples.MassTransit7.Consumers.FailingConsumer.Consume(ConsumeContext`1 conte
       messaging.masstransit.input_address: amazonsqs://us-east-1/GettingStarted,
       messaging.operation: receive,
       messaging.system: sqs,
-      runtime-id: Guid_3,
+      runtime-id: Guid_1,
       span.kind: consumer,
       version: 1.0.0
     },
@@ -279,7 +291,7 @@ at Samples.MassTransit7.Consumers.FailingConsumer.Consume(ConsumeContext`1 conte
       messaging.masstransit.input_address: amazonsqs://us-east-1/GettingStarted,
       messaging.operation: receive,
       messaging.system: sqs,
-      runtime-id: Guid_3,
+      runtime-id: Guid_1,
       span.kind: consumer,
       version: 1.0.0
     },
@@ -434,7 +446,7 @@ at Samples.MassTransit7.Consumers.FailingConsumer.Consume(ConsumeContext`1 conte
       messaging.message.conversation_id: Guid_9,
       messaging.operation: send,
       messaging.system: in-memory,
-      runtime-id: Guid_3,
+      runtime-id: Guid_1,
       span.kind: producer,
       version: 1.0.0
     },
@@ -461,10 +473,14 @@ at Samples.MassTransit7.Consumers.FailingConsumer.Consume(ConsumeContext`1 conte
       messaging.masstransit.input_address: loopback://localhost/handler-failing,
       messaging.operation: receive,
       messaging.system: in-memory,
+      runtime-id: Guid_1,
       span.kind: consumer,
       version: 1.0.0
     },
     Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -512,10 +528,14 @@ at MassTransit.Pipeline.Filters.HandlerMessageFilter`1.GreenPipes.IFilter<MassTr
       messaging.masstransit.input_address: loopback://localhost/OrderState,
       messaging.operation: receive,
       messaging.system: in-memory,
+      runtime-id: Guid_1,
       span.kind: consumer,
       version: 1.0.0
     },
     Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -535,10 +555,14 @@ at MassTransit.Pipeline.Filters.HandlerMessageFilter`1.GreenPipes.IFilter<MassTr
       messaging.masstransit.input_address: loopback://localhost/OrderState,
       messaging.operation: receive,
       messaging.system: in-memory,
+      runtime-id: Guid_1,
       span.kind: consumer,
       version: 1.0.0
     },
     Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -558,10 +582,14 @@ at MassTransit.Pipeline.Filters.HandlerMessageFilter`1.GreenPipes.IFilter<MassTr
       messaging.masstransit.input_address: loopback://localhost/OrderState,
       messaging.operation: receive,
       messaging.system: in-memory,
+      runtime-id: Guid_1,
       span.kind: consumer,
       version: 1.0.0
     },
     Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -581,10 +609,14 @@ at MassTransit.Pipeline.Filters.HandlerMessageFilter`1.GreenPipes.IFilter<MassTr
       messaging.masstransit.input_address: loopback://localhost/OrderState,
       messaging.operation: receive,
       messaging.system: in-memory,
+      runtime-id: Guid_1,
       span.kind: consumer,
       version: 1.0.0
     },
     Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -610,10 +642,14 @@ at Samples.MassTransit7.Sagas.OrderStateMachine.<>c.<.ctor>b__0_11(BehaviorConte
       messaging.masstransit.input_address: loopback://localhost/OrderState,
       messaging.operation: receive,
       messaging.system: in-memory,
+      runtime-id: Guid_1,
       span.kind: consumer,
       version: 1.0.0
     },
     Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -740,7 +776,7 @@ at Samples.MassTransit7.Sagas.OrderStateMachine.<>c.<.ctor>b__0_11(BehaviorConte
       messaging.message.conversation_id: Guid_11,
       messaging.operation: send,
       messaging.system: sqs,
-      runtime-id: Guid_3,
+      runtime-id: Guid_1,
       span.kind: producer,
       version: 1.0.0
     },
@@ -769,7 +805,7 @@ at Samples.MassTransit7.Sagas.OrderStateMachine.<>c.<.ctor>b__0_11(BehaviorConte
       messaging.message.conversation_id: Guid_13,
       messaging.operation: send,
       messaging.system: rabbitmq,
-      runtime-id: Guid_3,
+      runtime-id: Guid_1,
       span.kind: producer,
       version: 1.0.0
     },
@@ -868,7 +904,7 @@ at Samples.MassTransit7.Sagas.OrderStateMachine.<>c.<.ctor>b__0_11(BehaviorConte
       messaging.message.conversation_id: Guid_15,
       messaging.operation: send,
       messaging.system: in-memory,
-      runtime-id: Guid_3,
+      runtime-id: Guid_1,
       span.kind: producer,
       version: 1.0.0
     },
@@ -897,7 +933,7 @@ at Samples.MassTransit7.Sagas.OrderStateMachine.<>c.<.ctor>b__0_11(BehaviorConte
       messaging.message.conversation_id: Guid_22,
       messaging.operation: send,
       messaging.system: in-memory,
-      runtime-id: Guid_3,
+      runtime-id: Guid_1,
       span.kind: producer,
       version: 1.0.0
     },
@@ -926,7 +962,7 @@ at Samples.MassTransit7.Sagas.OrderStateMachine.<>c.<.ctor>b__0_11(BehaviorConte
       messaging.message.conversation_id: Guid_24,
       messaging.operation: send,
       messaging.system: in-memory,
-      runtime-id: Guid_3,
+      runtime-id: Guid_1,
       span.kind: producer,
       version: 1.0.0
     },
@@ -955,7 +991,7 @@ at Samples.MassTransit7.Sagas.OrderStateMachine.<>c.<.ctor>b__0_11(BehaviorConte
       messaging.message.conversation_id: Guid_26,
       messaging.operation: send,
       messaging.system: in-memory,
-      runtime-id: Guid_3,
+      runtime-id: Guid_1,
       span.kind: producer,
       version: 1.0.0
     },
@@ -984,7 +1020,7 @@ at Samples.MassTransit7.Sagas.OrderStateMachine.<>c.<.ctor>b__0_11(BehaviorConte
       messaging.message.conversation_id: Guid_19,
       messaging.operation: send,
       messaging.system: in-memory,
-      runtime-id: Guid_3,
+      runtime-id: Guid_1,
       span.kind: producer,
       version: 1.0.0
     },
@@ -1013,7 +1049,7 @@ at Samples.MassTransit7.Sagas.OrderStateMachine.<>c.<.ctor>b__0_11(BehaviorConte
       messaging.message.conversation_id: Guid_29,
       messaging.operation: send,
       messaging.system: in-memory,
-      runtime-id: Guid_3,
+      runtime-id: Guid_1,
       span.kind: producer,
       version: 1.0.0
     },
@@ -1042,7 +1078,7 @@ at Samples.MassTransit7.Sagas.OrderStateMachine.<>c.<.ctor>b__0_11(BehaviorConte
       messaging.message.conversation_id: Guid_31,
       messaging.operation: send,
       messaging.system: in-memory,
-      runtime-id: Guid_3,
+      runtime-id: Guid_1,
       span.kind: producer,
       version: 1.0.0
     },
