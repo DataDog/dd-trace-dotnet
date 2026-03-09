@@ -34,4 +34,5 @@ dotnet_diagnostic.CA1837.severity = error # Use Environment.ProcessId instead of
 dotnet_diagnostic.CA1838.severity = error # Avoid StringBuilder parameters for P/Invokes
 dotnet_diagnostic.CA1839.severity = error # Use Environment.ProcessPath instead of Process.GetCurrentProcess().MainModule.FileName.
 dotnet_diagnostic.CA1840.severity = error # Use Environment.CurrentManagedThreadId instead of Thread.CurrentThread.ManagedThreadId.
+dotnet_diagnostic.CA1841.severity = error # Prefer Dictionary Contains methods
 
