@@ -20,4 +20,5 @@ dotnet_diagnostic.CA1823.severity = error # Avoid unused private fields
 dotnet_diagnostic.CA1824.severity = error # Mark assemblies with NeutralResourcesLanguageAttribute
 dotnet_diagnostic.CA1825.severity = error # Avoid zero-length array allocations
 dotnet_diagnostic.CA1826.severity = error # Use property instead of Linq Enumerable method
+dotnet_diagnostic.CA1827.severity = error # Do not use Count/LongCount when Any can be used
 
