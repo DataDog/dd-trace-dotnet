@@ -13,6 +13,8 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Sampling;
+using Datadog.Trace.TestHelpers.TestTracer;
 using Datadog.Trace.Tests.Util;
 using FluentAssertions;
 using Moq;
@@ -413,6 +415,45 @@ namespace Datadog.Trace.Tests.Agent
                 var numberOfElementsLessThanOrEqualTo = (int)Math.Floor(1 + (quantile * (arrayLength - 1)));
                 return numberOfElementsLessThanOrEqualTo - 1;
             }
+        }
+
+        [Fact]
+        public void CreateStatsAggregator_Otlp_AlwaysComputesStats()
+        {
+            var aggregator = StatsAggregator.Create(Mock.Of<IApi>(), GetSettings(), NullDiscoveryService.Instance, isOtlp: true);
+            aggregator.CanComputeStats.Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task Otlp_ShouldKeepTraces_TrueWhenTraceSampled()
+        {
+            var aggregator = StatsAggregator.Create(Mock.Of<IApi>(), GetSettings(), NullDiscoveryService.Instance, isOtlp: true);
+            await using var tracer = TracerHelper.CreateWithFakeAgent();
+
+            var traceContext = new TraceContext(tracer);
+            var spanContext = new SpanContext(null, traceContext, "service");
+            var span = new Span(spanContext, DateTimeOffset.UtcNow) { OperationName = "operation" };
+            traceContext.AddSpan(span);
+            traceContext.SetSamplingPriority(priority: SamplingPriorityValues.AutoKeep, mechanism: SamplingMechanism.LocalTraceSamplingRule, rate: null, limiterRate: null);
+
+            var traceChunk = new SpanCollection([span]);
+            aggregator.ShouldKeepTrace(traceChunk).Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task Otlp_ShouldKeepTraces_FalseWhenTraceNotSampled()
+        {
+            var aggregator = StatsAggregator.Create(Mock.Of<IApi>(), GetSettings(), NullDiscoveryService.Instance, isOtlp: true);
+            await using var tracer = TracerHelper.CreateWithFakeAgent();
+
+            var traceContext = new TraceContext(tracer);
+            var spanContext = new SpanContext(null, traceContext, "service");
+            var span = new Span(spanContext, DateTimeOffset.UtcNow) { OperationName = "operation" };
+            traceContext.AddSpan(span);
+            traceContext.SetSamplingPriority(priority: SamplingPriorityValues.AutoReject, mechanism: SamplingMechanism.LocalTraceSamplingRule, rate: null, limiterRate: null);
+
+            var traceChunk = new SpanCollection([span]);
+            aggregator.ShouldKeepTrace(traceChunk).Should().BeFalse();
         }
 
         private static TracerSettings GetSettings(int? statsComputationIntervalSeconds = null)
