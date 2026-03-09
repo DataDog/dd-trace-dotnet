@@ -59,4 +59,5 @@ dotnet_diagnostic.CA1863.severity = error # Use char overload
 dotnet_diagnostic.CA1864.severity = error # Prefer the IDictionary.TryAdd(TKey, TValue) method
 # dotnet_diagnostic.CA1865.severity = error # Use char overload of StartsWith
 # dotnet_diagnostic.CA1866.severity = error # Use char overload of EndsWith
+# dotnet_diagnostic.CA1867.severity = error # Use char overload
 
