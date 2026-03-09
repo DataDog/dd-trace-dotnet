@@ -42,4 +42,5 @@ dotnet_diagnostic.CA1845.severity = error # Use span-based string.Concat
 dotnet_diagnostic.CA1846.severity = error # Prefer AsSpan over Substring
 # dotnet_diagnostic.CA1847.severity = error # Use char literal for a single character lookup - too annoying to enable because it's not available on .NET Framework
 dotnet_diagnostic.CA1848.severity = error # Use the LoggerMessage delegates
+# dotnet_diagnostic.CA1849.severity = error # Call async methods when in an async method - this likely would make sense to enable, except in most cases currently it's not an issue and intentional
 
