@@ -42,7 +42,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge
             {
                 tags = perTraceSettings.Schema.Messaging.CreateAwsEventBridgeTags(spanKind);
                 var serviceName = perTraceSettings.GetServiceName(DatadogAwsEventBridgeServiceName);
-                var serviceNameSource = perTraceSettings.GetServiceNameSource(DatadogAwsEventBridgeServiceName);
+                var serviceNameSource = perTraceSettings.GetServiceNameSource(DatadogAwsEventBridgeServiceName, serviceName);
                 var operationName = GetOperationName(tracer);
                 scope = tracer.StartActiveInternal(operationName, parent: parentContext, tags: tags, serviceName: serviceName, serviceNameSource: serviceNameSource);
                 var span = scope.Span;
