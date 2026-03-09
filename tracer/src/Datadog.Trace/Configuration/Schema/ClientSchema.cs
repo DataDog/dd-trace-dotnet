@@ -16,6 +16,9 @@ namespace Datadog.Trace.Configuration.Schema
         private const string HttpClientComponent = "http-client";
         private const string GrpcClientComponent = "grpc-client";
 
+        /// <summary>
+        /// WARNING: must stay in sync with <see cref="Component"/> enum (same order and count).
+        /// </summary>
         private static readonly string[] IntegrationSourceNames = [HttpClientComponent, GrpcClientComponent];
 
         private readonly bool _useV0Tags;
