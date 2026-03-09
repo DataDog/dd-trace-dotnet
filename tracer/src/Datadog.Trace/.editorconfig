@@ -41,4 +41,5 @@ dotnet_diagnostic.CA1844.severity = error # Provide memory-based overrides of as
 dotnet_diagnostic.CA1845.severity = error # Use span-based string.Concat
 dotnet_diagnostic.CA1846.severity = error # Prefer AsSpan over Substring
 # dotnet_diagnostic.CA1847.severity = error # Use char literal for a single character lookup - too annoying to enable because it's not available on .NET Framework
+dotnet_diagnostic.CA1848.severity = error # Use the LoggerMessage delegates
 
