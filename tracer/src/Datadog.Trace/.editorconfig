@@ -47,4 +47,5 @@ dotnet_diagnostic.CA1848.severity = error # Use the LoggerMessage delegates
 # dotnet_diagnostic.CA1851.severity = error # Possible multiple enumerations of IEnumerable collection - violation in ASM they should address
 dotnet_diagnostic.CA1853.severity = error # Unnecessary call to Dictionary.ContainsKey(key)
 dotnet_diagnostic.CA1854.severity = error # Prefer IDictionary.TryGetValue
+dotnet_diagnostic.CA1855.severity = error # Use Span<T>.Clear() instead of Span<T>.Fill()
 
