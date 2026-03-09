@@ -40,7 +40,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
             {
                 tags = perTraceSettings.Schema.Database.CreateAwsDynamoDbTags();
                 var serviceName = perTraceSettings.GetServiceName(DatadogAwsDynamoDbServiceName);
-                var serviceNameSource = perTraceSettings.GetServiceNameSource(DatadogAwsDynamoDbServiceName);
+                var serviceNameSource = perTraceSettings.GetServiceNameSource(DatadogAwsDynamoDbServiceName, serviceName);
                 scope = tracer.StartActiveInternal(DynamoDbOperationName, parent: parentContext, tags: tags, serviceName: serviceName, serviceNameSource: serviceNameSource);
                 var span = scope.Span;
 

@@ -1,4 +1,4 @@
-﻿// <copyright file="PerTraceSettings.cs" company="Datadog">
+// <copyright file="PerTraceSettings.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -63,9 +63,8 @@ namespace Datadog.Trace.Configuration
         /// Returns the integration name when the resolved service name differs from the default,
         /// or null when the default service name is used.
         /// </summary>
-        internal string? GetServiceNameSource(string serviceName)
+        internal string? GetServiceNameSource(string serviceName, string resolvedName)
         {
-            var resolvedName = GetServiceName(serviceName);
             return resolvedName != Settings.DefaultServiceName ? serviceName : null;
         }
     }

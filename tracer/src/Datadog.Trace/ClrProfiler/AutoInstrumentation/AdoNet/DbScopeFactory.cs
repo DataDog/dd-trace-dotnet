@@ -264,14 +264,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                     // use the cached values if command.GetType() == typeof(TCommand)
                     // and we successfully called TryGetIntegrationDetails() in the ctor
                     var tagsFromConnectionString = GetTagsFromConnectionString(command);
+                    var cachedServiceName = GetServiceName(tracer, DbTypeName);
                     return DbScopeFactory.CreateDbCommandScope(
                         tracer: tracer,
                         command: command,
                         integrationId: IntegrationId,
                         dbType: DbTypeName,
                         operationName: OperationName,
-                        serviceName: GetServiceName(tracer, DbTypeName),
-                        serviceNameSource: tracer.CurrentTraceSettings.GetServiceNameSource(DbTypeName),
+                        serviceName: cachedServiceName,
+                        serviceNameSource: tracer.CurrentTraceSettings.GetServiceNameSource(DbTypeName, cachedServiceName),
                         tagsFromConnectionString: ref tagsFromConnectionString);
                 }
 
@@ -281,14 +282,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 {
                     var operationName = $"{dbTypeName}.query";
                     var tagsFromConnectionString = GetTagsFromConnectionString(command);
+                    var resolvedServiceName = GetServiceName(tracer, dbTypeName);
                     return DbScopeFactory.CreateDbCommandScope(
                         tracer: tracer,
                         command: command,
                         integrationId: integrationId.Value,
                         dbType: dbTypeName,
                         operationName: operationName,
-                        serviceName: GetServiceName(tracer, dbTypeName),
-                        serviceNameSource: tracer.CurrentTraceSettings.GetServiceNameSource(dbTypeName),
+                        serviceName: resolvedServiceName,
+                        serviceNameSource: tracer.CurrentTraceSettings.GetServiceNameSource(dbTypeName, resolvedServiceName),
                         tagsFromConnectionString: ref tagsFromConnectionString);
                 }
 
