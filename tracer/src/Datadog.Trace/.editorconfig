@@ -50,4 +50,5 @@ dotnet_diagnostic.CA1854.severity = error # Prefer IDictionary.TryGetValue
 dotnet_diagnostic.CA1855.severity = error # Use Span<T>.Clear() instead of Span<T>.Fill()
 dotnet_diagnostic.CA1856.severity = error # Incorrect usage of ConstantExpected attribute
 dotnet_diagnostic.CA1857.severity = error # A constant is expected for the parameter
+dotnet_diagnostic.CA1858.severity = error # Use StartsWith instead of IndexOf
 
