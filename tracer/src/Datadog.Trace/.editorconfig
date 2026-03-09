@@ -32,4 +32,5 @@ dotnet_diagnostic.CA1834.severity = error # Use StringBuilder.Append(char) for s
 dotnet_diagnostic.CA1836.severity = error # Prefer IsEmpty over Count when available
 dotnet_diagnostic.CA1837.severity = error # Use Environment.ProcessId instead of Process.GetCurrentProcess().Id.
 dotnet_diagnostic.CA1838.severity = error # Avoid StringBuilder parameters for P/Invokes
+dotnet_diagnostic.CA1839.severity = error # Use Environment.ProcessPath instead of Process.GetCurrentProcess().MainModule.FileName.
 
