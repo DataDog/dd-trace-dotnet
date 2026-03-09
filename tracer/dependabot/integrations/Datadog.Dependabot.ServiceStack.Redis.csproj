@@ -9,7 +9,7 @@
     <!-- Integration: ServiceStack.Redis -->
     <!--    Assembly: ServiceStack.Redis -->
     <!-- Latest package https://www.nuget.org/packages/ServiceStack.Redis/10.0.6 -->
-    <PackageReference Include="ServiceStack.Redis" Version="10.0.4" />
+    <PackageReference Include="ServiceStack.Redis" Version="10.0.6" />
   </ItemGroup>
 
 </Project>
