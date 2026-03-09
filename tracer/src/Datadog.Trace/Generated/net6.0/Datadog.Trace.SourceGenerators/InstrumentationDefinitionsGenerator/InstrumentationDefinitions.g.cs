@@ -52,6 +52,7 @@ namespace Datadog.Trace.ClrProfiler
             || assemblyName.StartsWith("NLog,", StringComparison.Ordinal)
             || assemblyName.StartsWith("Npgsql,", StringComparison.Ordinal)
             || assemblyName.StartsWith("nunit.framework,", StringComparison.Ordinal)
+            || assemblyName.StartsWith("Ocelot,", StringComparison.Ordinal)
             || assemblyName.StartsWith("OpenTelemetry,", StringComparison.Ordinal)
             || assemblyName.StartsWith("OpenTelemetry.Api,", StringComparison.Ordinal)
             || assemblyName.StartsWith("Oracle.DataAccess,", StringComparison.Ordinal)
@@ -418,7 +419,9 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate.ExecuteAsyncIntegrationV13"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate.ExecuteAsyncIntegrationV14"
                     => Datadog.Trace.Configuration.IntegrationId.HotChocolate,
-                "Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.CurlHandler.CurlHandlerIntegration"
+                "Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.SocketsHttpHandler.OcelotMessageInvokerPoolIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.SocketsHttpHandler.OcelotMessageInvokerPoolIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.CurlHandler.CurlHandlerIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.HttpClientHandler.HttpClientHandlerSyncIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.HttpClientHandler.HttpClientHandlerIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.SocketsHttpHandler.SocketsHttpHandlerSyncIntegration"
