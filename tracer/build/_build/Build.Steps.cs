@@ -2515,6 +2515,8 @@ partial class Build
                new(@".*Noop\dArgumentsVoidIntegration\.OnMethodEnd.*CallTargetNativeTest.*", RegexOptions.Compiled | RegexOptions.Singleline),
                new(@".*System.Threading.ThreadAbortException: Thread was being aborted\.", RegexOptions.Compiled),
                new(@".*System.InvalidOperationException: Module Samples.Trimming.dll has no HINSTANCE.*", RegexOptions.Compiled),
+               // Error log testing
+               new(@".*Sending an error log using hacky reflection.*", RegexOptions.Compiled),
                // CI Visibility known errors
                new(@".*The Git repository couldn't be automatically extracted.*", RegexOptions.Compiled),
                new(@".*DD_GIT_REPOSITORY_URL is set with.*", RegexOptions.Compiled),
