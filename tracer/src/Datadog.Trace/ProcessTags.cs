@@ -38,31 +38,9 @@ internal sealed class ProcessTags
     }
 
     // two views on the same data
-    public List<string> TagsList
-    {
-        get
-        {
-            if (_tagsList is null)
-            {
-                InitTags();
-            }
+    public List<string> TagsList => field ??= GetTagsList(_serviceNameUserDefined, _autoServiceName);
 
-            return _tagsList!;
-        }
-    }
-
-    public string SerializedTags
-    {
-        get
-        {
-            if (_tagsList is null)
-            {
-                InitTags();
-            }
-
-            return _serializedTags!;
-        }
-    }
+    public string SerializedTags => field ??= string.Join(",", TagsList);
 
     private static List<string> GetTagsList(bool serviceNameUserDefined, string autoServiceName)
     {

@@ -21,9 +21,7 @@ namespace Datadog.Trace.Agent
         public long GetSequenceNumber() => Interlocked.Increment(ref _sequence);
 
         public void UpdateDetails(MutableSettings settings)
-        {
-            Interlocked.Exchange(ref _settings, CreateSettings(settings));
-        }
+            => Interlocked.Exchange(ref _settings, CreateSettings(settings));
 
         private static AppSettings CreateSettings(MutableSettings settings)
             => new(settings.Environment, settings.ServiceVersion, settings.ProcessTags);
