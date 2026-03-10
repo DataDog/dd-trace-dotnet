@@ -14,6 +14,14 @@ internal static class TrimmingDetector
 {
     public static readonly TrimState DetectedTrimmingState = DetectTrimming();
 
+    public enum TrimState
+    {
+        Unknown,
+        NoTrimmingDetected,
+        TrimmedAppUsingTrimmingFile,
+        TrimmedAppMissingTrimmingFile,
+    }
+
     private static TrimState DetectTrimming()
     {
         try
@@ -27,7 +35,7 @@ internal static class TrimmingDetector
             {
                 // These two are listed in our trimming.xml file. If _either_ of them are missing,
                 // that means the app is trimmed, and they haven't used our trimming file.
-                return  TrimState.TrimmedAppMissingTrimmingFile;
+                return TrimState.TrimmedAppMissingTrimmingFile;
             }
 
             // This probe is intentionally _not_ listed in CreateTrimmingFile, so that we can detect the case
@@ -41,14 +49,6 @@ internal static class TrimmingDetector
             // Shouldn't happen, seeing as we have throwOnError: false
             return TrimState.Unknown;
         }
-    }
-
-    public enum TrimState
-    {
-        Unknown,
-        NoTrimmingDetected,
-        TrimmedAppUsingTrimmingFile,
-        TrimmedAppMissingTrimmingFile,
     }
 }
 #endif

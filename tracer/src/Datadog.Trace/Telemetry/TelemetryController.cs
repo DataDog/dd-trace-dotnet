@@ -440,8 +440,9 @@ internal sealed class TelemetryController : ITelemetryController
             if (_isUpdateRequired || _tags is null)
             {
                 _isUpdateRequired = false;
-
+#if NET6_0_OR_GREATER
                 var trimState = TrimmingDetector.DetectedTrimmingState;
+#endif
                 // using 1/0 to save bytes!
                 _tags = $"ci:{(_isCiVisEnabled ? '1' : '0')}" +
                         $",asm:{(_isAsmEnabled ? '1' : '0')}" +
