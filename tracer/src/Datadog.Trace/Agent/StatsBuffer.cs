@@ -6,7 +6,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Vendors.Datadog.Sketches;
 using Datadog.Trace.Vendors.MessagePack;
 
@@ -78,7 +77,7 @@ namespace Datadog.Trace.Agent
             MessagePackBinary.WriteString(stream, "Version");
             MessagePackBinary.WriteString(stream, details.Version ?? string.Empty);
 
-            if (!StringUtils.IsNullOrEmpty(details.ProcessTags?.SerializedTags))
+            if (!StringUtil.IsNullOrEmpty(details.ProcessTags?.SerializedTags))
             {
                 MessagePackBinary.WriteString(stream, "ProcessTags");
                 MessagePackBinary.WriteString(stream, details.ProcessTags.SerializedTags);
