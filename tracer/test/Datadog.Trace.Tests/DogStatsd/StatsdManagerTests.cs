@@ -139,6 +139,7 @@ public class StatsdManagerTests
 
         lease.Client.Should().NotBeNull("client should be created when required");
         clientCount.Should().Be(1, "factory should be called exactly once");
+        lease.Dispose();
         await manager.DisposeAsync();
     }
 
