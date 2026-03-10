@@ -119,6 +119,8 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
         public int Serialize(Stream stream, long bucketDurationNs, List<SerializableStatsBucket> statsBuckets, List<SerializableBacklogBucket> backlogsBuckets)
         {
             var withProcessTags = _writeProcessTags && _processTags?.TagsList.Count > 0;
+            var processTags = _writeProcessTags ? _processTags?.TagsList : null;
+
             var bytesWritten = 0;
 
             // Should be in sync with Java
@@ -219,11 +221,11 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
             bytesWritten += MessagePackBinary.WriteStringBytes(stream, _productMaskBytes);
             bytesWritten += MessagePackBinary.WriteInt64(stream, _productMask);
 
-            if (withProcessTags)
+            if (processTags is not null)
             {
                 bytesWritten += MessagePackBinary.WriteStringBytes(stream, _processTagsBytes);
-                bytesWritten += MessagePackBinary.WriteArrayHeader(stream, _processTags!.TagsList.Count);
-                foreach (var tag in _processTags.TagsList)
+                bytesWritten += MessagePackBinary.WriteArrayHeader(stream, processTags.Count);
+                foreach (var tag in processTags)
                 {
                     bytesWritten += MessagePackBinary.WriteString(stream, tag);
                 }
