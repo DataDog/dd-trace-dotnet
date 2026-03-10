@@ -7,20 +7,25 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
+using Datadog.Trace.RemoteConfigurationManagement.Protocol.Tuf;
 using Datadog.Trace.RemoteConfigurationManagement.Transport;
+using Datadog.Trace.Util.Json;
+using Datadog.Trace.Util.Streams;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.RemoteConfigurationManagement;
 
 internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
 {
-    private const int RootVersion = 1;
+    private long _rootVersion = 1;
 
     public static readonly IRcmSubscriptionManager Instance = new RcmSubscriptionManager();
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<RcmSubscriptionManager>();
@@ -183,6 +188,8 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
                 return;
             }
 
+            UpdateRootVersionFromResponseRoots(response.Roots);
+
             if (response.Targets?.Signed != null)
             {
                 await ProcessResponse(response).ConfigureAwait(false);
@@ -213,7 +220,7 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
             configStates.Add(new RcmConfigState(cache.Path.Id, cache.Version, cache.Path.Product, cache.ApplyState, cache.Error));
         }
 
-        var rcmState = new RcmClientState(RootVersion, _targetsVersion, configStates, lastPollError != null, lastPollError, _backendClientState);
+        var rcmState = new RcmClientState(_rootVersion, _targetsVersion, configStates, lastPollError != null, lastPollError, _backendClientState);
         var rcmClient = new RcmClient(_id, ProductKeys, rcmTracer, rcmState, GetCapabilities());
         var rcmRequest = new GetRcmRequest(rcmClient, cachedTargetFiles);
 
@@ -355,6 +362,34 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
 
         _targetsVersion = response.Targets.Signed.Version;
         _backendClientState = response.Targets.Signed.Custom?.OpaqueBackendState;
+    }
+
+    private void UpdateRootVersionFromResponseRoots(List<string>? roots)
+    {
+        if (roots is not { Count: > 0 })
+        {
+            return;
+        }
+
+        // The response contains a list of Root objects with different versions
+        // We don't currently do anything with these root objects, hence why we just leave
+        // these un-deserialized initially. However, we need to send back the _last_
+        // version from the final root object in the array, so we deserialize that one only,
+        // and extract the version
+
+        var lastRoot = roots[roots.Count - 1];
+        using var stream = new Base64DecodingStream(lastRoot);
+        using var streamReader = new StreamReader(stream);
+        using var jsonReader = new JsonTextReader(streamReader)
+        {
+            ArrayPool = JsonArrayPool.Shared,
+        };
+        var tufRoot = new JsonSerializer().Deserialize<MinimalTufRoot>(jsonReader);
+
+        if (tufRoot?.Signed is not null)
+        {
+            _rootVersion = tufRoot.Signed.Version;
+        }
     }
 
     private void RefreshProductKeys() => ProductKeys = _subscriptions.SelectMany(s => s.ProductKeys).Distinct().ToList();

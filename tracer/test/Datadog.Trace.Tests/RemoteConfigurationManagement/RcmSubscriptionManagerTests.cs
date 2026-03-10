@@ -756,6 +756,45 @@ public class RcmSubscriptionManagerTests
         req4.Client.State.BackendClientState.Should().Be("state-v3");
     }
 
+    [Fact]
+    public async Task SendRequest_RootVersion_DefaultsToOneAndUpdatesFromLastRootsEntry()
+    {
+        var manager = new RcmSubscriptionManager();
+        manager.SubscribeToChanges(new Subscription((_, _) => [], RcmProducts.AsmFeatures));
+
+        // First request: root version should default to 1
+        GetRcmRequest captured = null;
+        await manager.SendRequest(
+            CreateTracer(),
+            request =>
+            {
+                captured = request;
+                return Task.FromResult<GetRcmResponse>(null);
+            });
+
+        captured.Client.State.RootVersion.Should().Be(1);
+
+        // Second request: respond with roots containing multiple entries;
+        // only the last entry's version should be used
+        var response = CreateSingleProductResponse(Array.Empty<ConfigEntry>());
+        response.Roots.Add(Convert.ToBase64String(Encoding.UTF8.GetBytes("""{"signed":{"version":2}}""")));
+        response.Roots.Add(Convert.ToBase64String(Encoding.UTF8.GetBytes("""{"signed":{"version":5}}""")));
+
+        await manager.SendRequest(CreateTracer(), _ => Task.FromResult(response));
+
+        // Third request: should use the version from the last roots entry
+        captured = null;
+        await manager.SendRequest(
+            CreateTracer(),
+            request =>
+            {
+                captured = request;
+                return Task.FromResult<GetRcmResponse>(null);
+            });
+
+        captured.Client.State.RootVersion.Should().Be(5);
+    }
+
     private static RcmClientTracer CreateTracer() =>
         RcmClientTracer.Create(
             runtimeId: "test-runtime-id",
