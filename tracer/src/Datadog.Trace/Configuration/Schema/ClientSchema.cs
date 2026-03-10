@@ -13,82 +13,100 @@ namespace Datadog.Trace.Configuration.Schema
 {
     internal sealed class ClientSchema
     {
-        private readonly SchemaVersion _version;
-        private readonly bool _peerServiceTagsEnabled;
-        private readonly bool _removeClientServiceNamesEnabled;
-        private readonly string _defaultServiceName;
-        private readonly IReadOnlyDictionary<string, string>? _serviceNameMappings;
+        private const string HttpClientComponent = "http-client";
+        private const string GrpcClientComponent = "grpc-client";
+        private readonly bool _useV0Tags;
+        private readonly string[] _protocols;
+        private readonly string[] _serviceNames;
+        private readonly string _operationNameSuffix;
 
         public ClientSchema(SchemaVersion version, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled, string defaultServiceName, IReadOnlyDictionary<string, string>? serviceNameMappings)
         {
-            _version = version;
-            _peerServiceTagsEnabled = peerServiceTagsEnabled;
-            _removeClientServiceNamesEnabled = removeClientServiceNamesEnabled;
-            _defaultServiceName = defaultServiceName;
-            _serviceNameMappings = serviceNameMappings;
-        }
-
-        public string GetOperationNameForProtocol(string protocol) =>
-            _version switch
+            _useV0Tags = version == SchemaVersion.V0 && !peerServiceTagsEnabled;
+            _protocols = version switch
             {
-                SchemaVersion.V0 => $"{protocol}.request",
-                _ => $"{protocol}.client.request",
+                SchemaVersion.V0 => V0Values.ProtocolOperationNames,
+                _ => V1Values.ProtocolOperationNames,
+            };
+            _operationNameSuffix = version switch
+            {
+                SchemaVersion.V0 => string.Empty,
+                _ => ".request",
             };
 
-        public string GetOperationNameForRequestType(string requestType) =>
-            _version switch
+            // Calculate service names once, to avoid allocations with every call
+            var useSuffix = version == SchemaVersion.V0 && !removeClientServiceNamesEnabled;
+            _serviceNames =
+            [
+                useSuffix ? $"{defaultServiceName}-{HttpClientComponent}" : defaultServiceName,
+                useSuffix ? $"{defaultServiceName}-{GrpcClientComponent}" : defaultServiceName,
+            ];
+            if (serviceNameMappings is not null)
             {
-                SchemaVersion.V0 => $"{requestType}",
-                _ => $"{requestType}.request",
-            };
+                if (serviceNameMappings.TryGetValue(HttpClientComponent, out var httpName))
+                {
+                    _serviceNames[(int)Component.Http] = httpName;
+                }
 
-        public string GetServiceName(string component)
-        {
-            if (_serviceNameMappings is not null && _serviceNameMappings.TryGetValue(component, out var mappedServiceName))
-            {
-                return mappedServiceName;
+                if (serviceNameMappings.TryGetValue(GrpcClientComponent, out var grpcName))
+                {
+                    _serviceNames[(int)Component.Grpc] = grpcName;
+                }
             }
-
-            return _version switch
-            {
-                SchemaVersion.V0 when !_removeClientServiceNamesEnabled => $"{_defaultServiceName}-{component}",
-                _ => _defaultServiceName,
-            };
         }
+
+        /// <summary>
+        /// WARNING: when adding new values, you _must_ update the corresponding arrays in <see cref="V0Values"/> and <see cref="V1Values"/>
+        /// </summary>
+        public enum Protocol
+        {
+            Http,
+            Grpc
+        }
+
+        public enum Component
+        {
+            Http, // http-client
+            Grpc // grpc-client
+        }
+
+        public string GetOperationNameForProtocol(Protocol protocol) => _protocols[(int)protocol];
+
+        public string GetOperationNameSuffixForRequest() => _operationNameSuffix;
+
+        public string GetServiceName(Component component) => _serviceNames[(int)component];
 
         public HttpTags CreateHttpTags()
-            => _version switch
-            {
-                SchemaVersion.V0 when !_peerServiceTagsEnabled => new HttpTags(),
-                _ => new HttpV1Tags(),
-            };
+            => _useV0Tags ? new HttpTags() : new HttpV1Tags();
 
         public GrpcClientTags CreateGrpcClientTags()
-            => _version switch
-            {
-                SchemaVersion.V0 when !_peerServiceTagsEnabled => new GrpcClientTags(),
-                _ => new GrpcClientV1Tags(),
-            };
+            => _useV0Tags ? new GrpcClientTags() : new GrpcClientV1Tags();
 
         public RemotingClientTags CreateRemotingClientTags()
-            => _version switch
-            {
-                SchemaVersion.V0 when !_peerServiceTagsEnabled => new RemotingClientTags(),
-                _ => new RemotingClientV1Tags(),
-            };
+            => _useV0Tags ? new RemotingClientTags() : new RemotingClientV1Tags();
 
         public ServiceRemotingClientTags CreateServiceRemotingClientTags()
-            => _version switch
-            {
-                SchemaVersion.V0 when !_peerServiceTagsEnabled => new ServiceRemotingClientTags(),
-                _ => new ServiceRemotingClientV1Tags(),
-            };
+            => _useV0Tags ? new ServiceRemotingClientTags() : new ServiceRemotingClientV1Tags();
 
         public AzureServiceBusTags CreateAzureServiceBusTags()
-            => _version switch
-            {
-                SchemaVersion.V0 when !_peerServiceTagsEnabled => new AzureServiceBusTags(),
-                _ => new AzureServiceBusV1Tags(),
-            };
+            => _useV0Tags ? new AzureServiceBusTags() : new AzureServiceBusV1Tags();
+
+        private static class V0Values
+        {
+            public static readonly string[] ProtocolOperationNames =
+            [
+                "http.request",
+                "grpc.request",
+            ];
+        }
+
+        private static class V1Values
+        {
+            public static readonly string[] ProtocolOperationNames =
+            [
+                "http.client.request",
+                "grpc.client.request",
+            ];
+        }
     }
 }

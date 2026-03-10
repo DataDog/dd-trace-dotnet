@@ -11,6 +11,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DataStreamsMonitoring.Utils;
 using Datadog.Trace.DuckTyping;
@@ -28,9 +29,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
     {
         internal const string IntegrationName = nameof(Configuration.IntegrationId.RabbitMQ);
         internal const int DefaultMaxMessageSize = 128 * 1024;
-
-        private const string MessagingType = "rabbitmq";
-        private const string MessagingSystem = "amqp";
 
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.RabbitMQ;
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RabbitMQIntegration));
@@ -61,7 +59,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
             try
             {
                 tags = perTraceSettings.Schema.Messaging.CreateRabbitMqTags(spanKind);
-                var serviceName = perTraceSettings.Schema.Messaging.GetServiceName(MessagingType);
+                var serviceName = perTraceSettings.Schema.Messaging.GetServiceName(MessagingSchema.ServiceType.RabbitMq);
                 var operation = GetOperationName(tracer, spanKind);
 
                 scope = tracer.StartActiveInternal(
@@ -106,8 +104,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
 
             return spanKind switch
             {
-                SpanKinds.Producer => tracer.CurrentTraceSettings.Schema.Messaging.GetOutboundOperationName(MessagingSystem),
-                SpanKinds.Consumer => tracer.CurrentTraceSettings.Schema.Messaging.GetInboundOperationName(MessagingSystem),
+                SpanKinds.Producer => tracer.CurrentTraceSettings.Schema.Messaging.GetOutboundOperationName(MessagingSchema.OperationType.Amqp),
+                SpanKinds.Consumer => tracer.CurrentTraceSettings.Schema.Messaging.GetInboundOperationName(MessagingSchema.OperationType.Amqp),
                 _ => RabbitMQConstants.AmqpCommand
             };
         }

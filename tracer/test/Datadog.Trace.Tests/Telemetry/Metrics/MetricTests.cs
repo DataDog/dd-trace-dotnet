@@ -67,6 +67,11 @@ public class MetricTests
         { "init_time", new() { "total", "component" } }, // we only send one of these
     };
 
+    // Deprecated tags which may still appear in the shared common_metrics.json file
+    private static readonly (string Category, string Metric, string Tag)[] TagsToRemove = [
+          ("appsec", "waf.requests", "request_excluded"),
+    ];
+
     [Fact]
     public void OnlyAllowedMetricsAreSubmitted()
     {
@@ -294,6 +299,15 @@ public class MetricTests
 
         var rawMetrics = GetMetricsData("common_metrics.json");
         var commonMetrics = JsonConvert.DeserializeObject<Dictionary<string, Dictionary<string, IntakeMetric>>>(rawMetrics, jsonSettings);
+
+        // Manually remove deprecated entries which may still appear in the shared common_metrics.json file
+        foreach (var detail in TagsToRemove)
+        {
+            if (commonMetrics.TryGetValue(detail.Category, out var category) && category.TryGetValue(detail.Metric, out var metric))
+            {
+                metric.Tags.RemoveAll(i => i == detail.Tag);
+            }
+        }
 
         rawMetrics = GetMetricsData("dotnet_metrics.json");
         // Note that dotnet doesn't have a namespace

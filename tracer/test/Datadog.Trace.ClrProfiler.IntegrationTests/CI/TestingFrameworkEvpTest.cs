@@ -1,4 +1,4 @@
-﻿// <copyright file="TestingFrameworkEvpTest.cs" company="Datadog">
+// <copyright file="TestingFrameworkEvpTest.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -267,14 +267,14 @@ public abstract class TestingFrameworkEvpTest : TestHelper
                 if (span.GetTag(key) is { } tagValue)
                 {
                     targetTest.Meta[key].Should().Be(tagValue);
-                    targetTest.Meta.Remove(key);
                 }
             }
             else
             {
                 targetTest.Meta[key].Should().Be(value);
-                targetTest.Meta.Remove(key);
             }
+
+            targetTest.Meta.Remove(key);
         }
 
         void AssertEqualDate(string key)
@@ -282,8 +282,9 @@ public abstract class TestingFrameworkEvpTest : TestHelper
             if (span.GetTag(key) is { } keyValue)
             {
                 DateTimeOffset.Parse(targetTest.Meta[key]).Should().Be(DateTimeOffset.Parse(keyValue));
-                targetTest.Meta.Remove(key);
             }
+
+            targetTest.Meta.Remove(key);
         }
     }
 
@@ -534,6 +535,7 @@ public abstract class TestingFrameworkEvpTest : TestHelper
                                  .ThenBy(s => GetValueOrDefault(s.Meta, TestTags.TestIsRetry))
                                  .ThenBy(s => GetValueOrDefault(s.Meta, TestTags.TestAttemptToFixPassed))
                                  .ThenBy(s => GetValueOrDefault(s.Meta, TestTags.TestHasFailedAllRetries))
+                                 .ThenBy(s => GetValueOrDefault(s.Meta, TestTags.TestFinalStatus))
                                  .ThenBy(s => GetValueOrDefault(s.Meta, EarlyFlakeDetectionTags.AbortReason)),
                     settings);
             }

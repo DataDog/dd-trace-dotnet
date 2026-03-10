@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
@@ -39,6 +40,65 @@ namespace Datadog.Trace.Tests.Tagging
         public Task InitializeAsync() => Task.CompletedTask;
 
         public async Task DisposeAsync() => await _tracer.DisposeAsync();
+
+        [Fact]
+        public async Task SetTagAndSetTags_WhenCalledConcurrently_ShouldKeepSingleEntryPerKey()
+        {
+            var tags = new TagsList();
+
+            const int workerCount = 8;
+            const int iterationsPerWorker = 2_000;
+            var timeout = TimeSpan.FromSeconds(20);
+            var expectedKeys = new[] { "k1", "k2", "k3", "k4" };
+
+            using var startSignal = new ManualResetEventSlim(false);
+            var workers = Enumerable.Range(0, workerCount)
+                                    .Select(
+                                         workerId => Task.Run(
+                                             () =>
+                                             {
+                                                 startSignal.Wait();
+
+                                                 for (var i = 0; i < iterationsPerWorker; i++)
+                                                 {
+                                                     tags.SetTags(
+                                                         new("k1", workerId.ToString()),
+                                                         new("k2", i.ToString()),
+                                                         new("k3", "stable"));
+                                                     tags.SetTag("k4", workerId.ToString());
+                                                 }
+                                             }))
+                                    .ToArray();
+
+            startSignal.Set();
+
+            var allWorkers = Task.WhenAll(workers);
+            var completedTask = await Task.WhenAny(allWorkers, Task.Delay(timeout));
+            if (completedTask != allWorkers)
+            {
+                throw new TimeoutException($"Concurrent tag updates exceeded {timeout}. Worker statuses: {string.Join(", ", workers.Select(w => w.Status))}");
+            }
+
+            await allWorkers;
+
+            var snapshot = GetTagsSnapshot(tags);
+
+            snapshot.Select(x => x.Key).Should().BeEquivalentTo(expectedKeys);
+            snapshot.Select(x => x.Key).Should().OnlyHaveUniqueItems();
+        }
+
+        [Fact]
+        public void SetTags_WithOnlyNullValues_DoesNotInitializeBackingTagsList()
+        {
+            var tags = new TagsList();
+
+            tags.SetTags(
+                new("k1", null),
+                new("k2", null),
+                new("k3", null));
+
+            GetBackingTagsList(tags).Should().BeNull();
+        }
 
         [Fact]
         public void GetTag_GetMetric_ReturnUpdatedValues()
@@ -355,6 +415,36 @@ namespace Datadog.Trace.Tests.Tagging
                 remainingValues.Remove(tagValue)
                                .Should()
                                .BeTrue($"Property {propertyAndTag.property.Name} of type {type.Name} is not mapped");
+            }
+        }
+
+        private static List<KeyValuePair<string, string>> GetTagsSnapshot(TagsList tags)
+        {
+            var result = new List<KeyValuePair<string, string>>();
+            var processor = new TagCollectorProcessor(result);
+            tags.EnumerateTags(ref processor);
+            return result;
+        }
+
+        private static object GetBackingTagsList(TagsList tags)
+        {
+            var field = typeof(TagsList).GetField("_tags", BindingFlags.Instance | BindingFlags.NonPublic);
+            field.Should().NotBeNull();
+            return field.GetValue(tags);
+        }
+
+        private readonly struct TagCollectorProcessor : IItemProcessor<string>
+        {
+            private readonly List<KeyValuePair<string, string>> _items;
+
+            public TagCollectorProcessor(List<KeyValuePair<string, string>> items)
+            {
+                _items = items;
+            }
+
+            public void Process(TagItem<string> item)
+            {
+                _items.Add(new(item.Key, item.Value));
             }
         }
     }

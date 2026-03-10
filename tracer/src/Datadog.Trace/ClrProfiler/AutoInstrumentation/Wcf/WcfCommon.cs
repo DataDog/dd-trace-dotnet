@@ -14,6 +14,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
@@ -133,7 +134,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
                     }
                 }
 
-                string operationName = tracer.CurrentTraceSettings.Schema.Server.GetOperationNameForComponent("wcf");
+                string operationName = tracer.CurrentTraceSettings.Schema.Server.GetOperationNameForComponent(ServerSchema.Component.Wcf);
                 var tags = new WcfTags();
 
                 string? resourceName = null;
@@ -201,12 +202,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
                 return action;
             }
 
-            if (Tracer.Instance.Settings.WcfObfuscationEnabled)
+            var absolutePath = requestHeaders?.To?.LocalPath;
+            if (absolutePath is null)
             {
-                return UriHelpers.GetCleanUriPath(requestHeaders?.To?.LocalPath);
+                return null;
             }
 
-            return requestHeaders?.To?.LocalPath;
+            if (Tracer.Instance.Settings.WcfObfuscationEnabled)
+            {
+                return UriHelpers.GetCleanUriPath(absolutePath);
+            }
+
+            return absolutePath;
         }
 
         private static Func<object>? CreateGetCurrentOperationContextDelegate()

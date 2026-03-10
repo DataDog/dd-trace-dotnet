@@ -5,13 +5,14 @@
 
 #nullable enable
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
-using Datadog.Trace.VendoredMicrosoftCode.System.Diagnostics.CodeAnalysis;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Ci.Net;
@@ -157,9 +158,9 @@ internal sealed class FileTestOptimizationClient : ITestOptimizationClient
             if (File.Exists(file))
             {
                 var value = File.ReadAllText(file);
-                payload = JsonConvert.DeserializeObject<T>(value);
+                payload = JsonHelper.DeserializeObject<T>(value);
                 Log.Debug("FileTestOptimizationClient: Loaded from: {File}", file);
-                return true;
+                return payload is not null;
             }
         }
         catch (Exception ex)
@@ -183,7 +184,7 @@ internal sealed class FileTestOptimizationClient : ITestOptimizationClient
         {
             var file = Path.Combine(_cacheFolder, name);
             Log.Debug("FileTestOptimizationClient: Writing to: {File}", file);
-            File.WriteAllText(file, JsonConvert.SerializeObject(value));
+            File.WriteAllText(file, JsonHelper.SerializeObject(value));
         }
         catch (Exception ex)
         {

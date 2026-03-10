@@ -44,6 +44,26 @@ partial class Program
         RunMethod(() => w8g2.ReturnGenericMethod<int, Tuple<int, int>, ulong>(42, 99, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
         Console.WriteLine();
         //
+        Console.WriteLine($"{typeof(With8ArgumentsGenericStatic<string>).FullName}.VoidMethod");
+        RunMethod(() => With8ArgumentsGenericStatic<string>.VoidMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+        Console.WriteLine($"{typeof(With8ArgumentsGenericStatic<string>).FullName}.ReturnValueMethod");
+        RunMethod(() => With8ArgumentsGenericStatic<string>.ReturnValueMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+        Console.WriteLine($"{typeof(With8ArgumentsGenericStatic<string>).FullName}.ReturnReferenceMethod");
+        RunMethod(() => With8ArgumentsGenericStatic<string>.ReturnReferenceMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+        Console.WriteLine($"{typeof(With8ArgumentsGenericStatic<string>).FullName}.ReturnGenericMethod");
+        RunMethod(() => With8ArgumentsGenericStatic<string>.ReturnGenericMethod<string, Tuple<int, int>, ulong>("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+        Console.WriteLine();
+        //
+        Console.WriteLine($"{typeof(With8ArgumentsGenericStatic<int>).FullName}.VoidMethod");
+        RunMethod(() => With8ArgumentsGenericStatic<int>.VoidMethod("Hello world", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+        Console.WriteLine($"{typeof(With8ArgumentsGenericStatic<int>).FullName}.ReturnValueMethod");
+        RunMethod(() => With8ArgumentsGenericStatic<int>.ReturnValueMethod("Hello world", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+        Console.WriteLine($"{typeof(With8ArgumentsGenericStatic<int>).FullName}.ReturnReferenceMethod");
+        RunMethod(() => With8ArgumentsGenericStatic<int>.ReturnReferenceMethod("Hello world", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+        Console.WriteLine($"{typeof(With8ArgumentsGenericStatic<int>).FullName}.ReturnGenericMethod");
+        RunMethod(() => With8ArgumentsGenericStatic<int>.ReturnGenericMethod<int, Tuple<int, int>, ulong>(42, 99, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+        Console.WriteLine();
+        //
         var w8in = new With8ArgumentsInherits();
         Console.WriteLine($"{typeof(With8ArgumentsInherits).FullName}.VoidMethod");
         RunMethod(() => w8in.VoidMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
@@ -91,6 +111,40 @@ partial class Program
         RunMethod(() => With8ArgumentsStatic.ReturnGenericMethod<string, int, Tuple<int, int>, ulong>(42, 99, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
         Console.WriteLine($"{typeof(With8ArgumentsStatic).FullName}.ReturnGenericMethod<int>");
         RunMethod(() => With8ArgumentsStatic.ReturnGenericMethod<int, string, Tuple<int, int>, ulong>("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+        Console.WriteLine();
+        //
+        Console.WriteLine($"{typeof(With8ArgumentsStaticStruct).FullName}.VoidMethod");
+        RunMethod(() => With8ArgumentsStaticStruct.VoidMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+        Console.WriteLine($"{typeof(With8ArgumentsStaticStruct).FullName}.ReturnValueMethod");
+        RunMethod(() => With8ArgumentsStaticStruct.ReturnValueMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+        Console.WriteLine($"{typeof(With8ArgumentsStaticStruct).FullName}.ReturnReferenceMethod");
+        RunMethod(() => With8ArgumentsStaticStruct.ReturnReferenceMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+        Console.WriteLine($"{typeof(With8ArgumentsStaticStruct).FullName}.ReturnGenericMethod<string>");
+        RunMethod(() => With8ArgumentsStaticStruct.ReturnGenericMethod<string, int, Tuple<int, int>, ulong>(42, 99, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+        Console.WriteLine($"{typeof(With8ArgumentsStaticStruct).FullName}.ReturnGenericMethod<int>");
+        RunMethod(() => With8ArgumentsStaticStruct.ReturnGenericMethod<int, string, Tuple<int, int>, ulong>("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+        Console.WriteLine();
+        //
+        // Note: We skip instrumentation today for generic value types.
+        Console.WriteLine($"{typeof(With8ArgumentsGenericStaticStruct<string>).FullName}.VoidMethod");
+        RunMethod(() => With8ArgumentsGenericStaticStruct<string>.VoidMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()), checkInstrumented: false);
+        Console.WriteLine($"{typeof(With8ArgumentsGenericStaticStruct<string>).FullName}.ReturnValueMethod");
+        RunMethod(() => With8ArgumentsGenericStaticStruct<string>.ReturnValueMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()), checkInstrumented: false);
+        Console.WriteLine($"{typeof(With8ArgumentsGenericStaticStruct<string>).FullName}.ReturnReferenceMethod");
+        RunMethod(() => With8ArgumentsGenericStaticStruct<string>.ReturnReferenceMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()), checkInstrumented: false);
+        Console.WriteLine($"{typeof(With8ArgumentsGenericStaticStruct<string>).FullName}.ReturnGenericMethod");
+        RunMethod(() => With8ArgumentsGenericStaticStruct<string>.ReturnGenericMethod<string, Tuple<int, int>, ulong>("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()), checkInstrumented: false);
+        Console.WriteLine();
+        //
+        // Note: We skip instrumentation today for generic value types.
+        Console.WriteLine($"{typeof(With8ArgumentsGenericStaticStruct<int>).FullName}.VoidMethod");
+        RunMethod(() => With8ArgumentsGenericStaticStruct<int>.VoidMethod("Hello world", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()), checkInstrumented: false);
+        Console.WriteLine($"{typeof(With8ArgumentsGenericStaticStruct<int>).FullName}.ReturnValueMethod");
+        RunMethod(() => With8ArgumentsGenericStaticStruct<int>.ReturnValueMethod("Hello world", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()), checkInstrumented: false);
+        Console.WriteLine($"{typeof(With8ArgumentsGenericStaticStruct<int>).FullName}.ReturnReferenceMethod");
+        RunMethod(() => With8ArgumentsGenericStaticStruct<int>.ReturnReferenceMethod("Hello world", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()), checkInstrumented: false);
+        Console.WriteLine($"{typeof(With8ArgumentsGenericStaticStruct<int>).FullName}.ReturnGenericMethod");
+        RunMethod(() => With8ArgumentsGenericStaticStruct<int>.ReturnGenericMethod<int, Tuple<int, int>, ulong>(42, 99, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()), checkInstrumented: false);
         Console.WriteLine();
         //
         var w8TBegin = new With8ArgumentsThrowOnBegin();
@@ -157,6 +211,26 @@ partial class Program
         RunMethod(() => w8g2.ReturnGenericMethod<int, Tuple<int, int>, ulong>(42, 99, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
         Console.WriteLine();
         //
+        Console.WriteLine($"{typeof(ArgumentsParentType.With8ArgumentsGenericStatic<string>).FullName}.VoidMethod");
+        RunMethod(() => ArgumentsParentType.With8ArgumentsGenericStatic<string>.VoidMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+        Console.WriteLine($"{typeof(ArgumentsParentType.With8ArgumentsGenericStatic<string>).FullName}.ReturnValueMethod");
+        RunMethod(() => ArgumentsParentType.With8ArgumentsGenericStatic<string>.ReturnValueMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+        Console.WriteLine($"{typeof(ArgumentsParentType.With8ArgumentsGenericStatic<string>).FullName}.ReturnReferenceMethod");
+        RunMethod(() => ArgumentsParentType.With8ArgumentsGenericStatic<string>.ReturnReferenceMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+        Console.WriteLine($"{typeof(ArgumentsParentType.With8ArgumentsGenericStatic<string>).FullName}.ReturnGenericMethod");
+        RunMethod(() => ArgumentsParentType.With8ArgumentsGenericStatic<string>.ReturnGenericMethod<string, Tuple<int, int>, ulong>("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+        Console.WriteLine();
+        //
+        Console.WriteLine($"{typeof(ArgumentsParentType.With8ArgumentsGenericStatic<int>).FullName}.VoidMethod");
+        RunMethod(() => ArgumentsParentType.With8ArgumentsGenericStatic<int>.VoidMethod("Hello world", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+        Console.WriteLine($"{typeof(ArgumentsParentType.With8ArgumentsGenericStatic<int>).FullName}.ReturnValueMethod");
+        RunMethod(() => ArgumentsParentType.With8ArgumentsGenericStatic<int>.ReturnValueMethod("Hello world", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+        Console.WriteLine($"{typeof(ArgumentsParentType.With8ArgumentsGenericStatic<int>).FullName}.ReturnReferenceMethod");
+        RunMethod(() => ArgumentsParentType.With8ArgumentsGenericStatic<int>.ReturnReferenceMethod("Hello world", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+        Console.WriteLine($"{typeof(ArgumentsParentType.With8ArgumentsGenericStatic<int>).FullName}.ReturnGenericMethod");
+        RunMethod(() => ArgumentsParentType.With8ArgumentsGenericStatic<int>.ReturnGenericMethod<int, Tuple<int, int>, ulong>(42, 99, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+        Console.WriteLine();
+        //
         var w8in = new ArgumentsParentType.With8ArgumentsInherits();
         Console.WriteLine($"{typeof(ArgumentsParentType.With8ArgumentsInherits).FullName}.VoidMethod");
         RunMethod(() => w8in.VoidMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
@@ -204,6 +278,40 @@ partial class Program
         RunMethod(() => ArgumentsParentType.With8ArgumentsStatic.ReturnGenericMethod<string, int, Tuple<int, int>, ulong>(42, 99, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
         Console.WriteLine($"{typeof(ArgumentsParentType.With8ArgumentsStatic).FullName}.ReturnGenericMethod<int>");
         RunMethod(() => ArgumentsParentType.With8ArgumentsStatic.ReturnGenericMethod<int, string, Tuple<int, int>, ulong>("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+        Console.WriteLine();
+        //
+        Console.WriteLine($"{typeof(ArgumentsParentType.With8ArgumentsStaticStruct).FullName}.VoidMethod");
+        RunMethod(() => ArgumentsParentType.With8ArgumentsStaticStruct.VoidMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+        Console.WriteLine($"{typeof(ArgumentsParentType.With8ArgumentsStaticStruct).FullName}.ReturnValueMethod");
+        RunMethod(() => ArgumentsParentType.With8ArgumentsStaticStruct.ReturnValueMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+        Console.WriteLine($"{typeof(ArgumentsParentType.With8ArgumentsStaticStruct).FullName}.ReturnReferenceMethod");
+        RunMethod(() => ArgumentsParentType.With8ArgumentsStaticStruct.ReturnReferenceMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+        Console.WriteLine($"{typeof(ArgumentsParentType.With8ArgumentsStaticStruct).FullName}.ReturnGenericMethod<string>");
+        RunMethod(() => ArgumentsParentType.With8ArgumentsStaticStruct.ReturnGenericMethod<string, int, Tuple<int, int>, ulong>(42, 99, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+        Console.WriteLine($"{typeof(ArgumentsParentType.With8ArgumentsStaticStruct).FullName}.ReturnGenericMethod<int>");
+        RunMethod(() => ArgumentsParentType.With8ArgumentsStaticStruct.ReturnGenericMethod<int, string, Tuple<int, int>, ulong>("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+        Console.WriteLine();
+        //
+        // Note: We skip instrumentation today for generic value types.
+        Console.WriteLine($"{typeof(ArgumentsParentType.With8ArgumentsGenericStaticStruct<string>).FullName}.VoidMethod");
+        RunMethod(() => ArgumentsParentType.With8ArgumentsGenericStaticStruct<string>.VoidMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()), checkInstrumented: false);
+        Console.WriteLine($"{typeof(ArgumentsParentType.With8ArgumentsGenericStaticStruct<string>).FullName}.ReturnValueMethod");
+        RunMethod(() => ArgumentsParentType.With8ArgumentsGenericStaticStruct<string>.ReturnValueMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()), checkInstrumented: false);
+        Console.WriteLine($"{typeof(ArgumentsParentType.With8ArgumentsGenericStaticStruct<string>).FullName}.ReturnReferenceMethod");
+        RunMethod(() => ArgumentsParentType.With8ArgumentsGenericStaticStruct<string>.ReturnReferenceMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()), checkInstrumented: false);
+        Console.WriteLine($"{typeof(ArgumentsParentType.With8ArgumentsGenericStaticStruct<string>).FullName}.ReturnGenericMethod");
+        RunMethod(() => ArgumentsParentType.With8ArgumentsGenericStaticStruct<string>.ReturnGenericMethod<string, Tuple<int, int>, ulong>("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()), checkInstrumented: false);
+        Console.WriteLine();
+        //
+        // Note: We skip instrumentation today for generic value types.
+        Console.WriteLine($"{typeof(ArgumentsParentType.With8ArgumentsGenericStaticStruct<int>).FullName}.VoidMethod");
+        RunMethod(() => ArgumentsParentType.With8ArgumentsGenericStaticStruct<int>.VoidMethod("Hello world", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()), checkInstrumented: false);
+        Console.WriteLine($"{typeof(ArgumentsParentType.With8ArgumentsGenericStaticStruct<int>).FullName}.ReturnValueMethod");
+        RunMethod(() => ArgumentsParentType.With8ArgumentsGenericStaticStruct<int>.ReturnValueMethod("Hello world", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()), checkInstrumented: false);
+        Console.WriteLine($"{typeof(ArgumentsParentType.With8ArgumentsGenericStaticStruct<int>).FullName}.ReturnReferenceMethod");
+        RunMethod(() => ArgumentsParentType.With8ArgumentsGenericStaticStruct<int>.ReturnReferenceMethod("Hello world", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()), checkInstrumented: false);
+        Console.WriteLine($"{typeof(ArgumentsParentType.With8ArgumentsGenericStaticStruct<int>).FullName}.ReturnGenericMethod");
+        RunMethod(() => ArgumentsParentType.With8ArgumentsGenericStaticStruct<int>.ReturnGenericMethod<int, Tuple<int, int>, ulong>(42, 99, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()), checkInstrumented: false);
         Console.WriteLine();
         //
         var w8TBegin = new ArgumentsParentType.With8ArgumentsThrowOnBegin();
@@ -270,6 +378,26 @@ partial class Program
         RunMethod(() => w8g2.ReturnGenericMethod<int, Tuple<int, int>, ulong>(42, 99, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
         Console.WriteLine();
         //
+        Console.WriteLine($"{typeof(ArgumentsStructParentType.With8ArgumentsGenericStatic<string>).FullName}.VoidMethod");
+        RunMethod(() => ArgumentsStructParentType.With8ArgumentsGenericStatic<string>.VoidMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+        Console.WriteLine($"{typeof(ArgumentsStructParentType.With8ArgumentsGenericStatic<string>).FullName}.ReturnValueMethod");
+        RunMethod(() => ArgumentsStructParentType.With8ArgumentsGenericStatic<string>.ReturnValueMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+        Console.WriteLine($"{typeof(ArgumentsStructParentType.With8ArgumentsGenericStatic<string>).FullName}.ReturnReferenceMethod");
+        RunMethod(() => ArgumentsStructParentType.With8ArgumentsGenericStatic<string>.ReturnReferenceMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+        Console.WriteLine($"{typeof(ArgumentsStructParentType.With8ArgumentsGenericStatic<string>).FullName}.ReturnGenericMethod");
+        RunMethod(() => ArgumentsStructParentType.With8ArgumentsGenericStatic<string>.ReturnGenericMethod<string, Tuple<int, int>, ulong>("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+        Console.WriteLine();
+        //
+        Console.WriteLine($"{typeof(ArgumentsStructParentType.With8ArgumentsGenericStatic<int>).FullName}.VoidMethod");
+        RunMethod(() => ArgumentsStructParentType.With8ArgumentsGenericStatic<int>.VoidMethod("Hello world", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+        Console.WriteLine($"{typeof(ArgumentsStructParentType.With8ArgumentsGenericStatic<int>).FullName}.ReturnValueMethod");
+        RunMethod(() => ArgumentsStructParentType.With8ArgumentsGenericStatic<int>.ReturnValueMethod("Hello world", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+        Console.WriteLine($"{typeof(ArgumentsStructParentType.With8ArgumentsGenericStatic<int>).FullName}.ReturnReferenceMethod");
+        RunMethod(() => ArgumentsStructParentType.With8ArgumentsGenericStatic<int>.ReturnReferenceMethod("Hello world", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+        Console.WriteLine($"{typeof(ArgumentsStructParentType.With8ArgumentsGenericStatic<int>).FullName}.ReturnGenericMethod");
+        RunMethod(() => ArgumentsStructParentType.With8ArgumentsGenericStatic<int>.ReturnGenericMethod<int, Tuple<int, int>, ulong>(42, 99, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+        Console.WriteLine();
+        //
         var w8in = new ArgumentsStructParentType.With8ArgumentsInherits();
         Console.WriteLine($"{typeof(ArgumentsStructParentType.With8ArgumentsInherits).FullName}.VoidMethod");
         RunMethod(() => w8in.VoidMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
@@ -317,6 +445,40 @@ partial class Program
         RunMethod(() => ArgumentsStructParentType.With8ArgumentsStatic.ReturnGenericMethod<string, int, Tuple<int, int>, ulong>(42, 99, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
         Console.WriteLine($"{typeof(ArgumentsStructParentType.With8ArgumentsStatic).FullName}.ReturnGenericMethod<int>");
         RunMethod(() => ArgumentsStructParentType.With8ArgumentsStatic.ReturnGenericMethod<int, string, Tuple<int, int>, ulong>("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+        Console.WriteLine();
+        //
+        Console.WriteLine($"{typeof(ArgumentsStructParentType.With8ArgumentsStaticStruct).FullName}.VoidMethod");
+        RunMethod(() => ArgumentsStructParentType.With8ArgumentsStaticStruct.VoidMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+        Console.WriteLine($"{typeof(ArgumentsStructParentType.With8ArgumentsStaticStruct).FullName}.ReturnValueMethod");
+        RunMethod(() => ArgumentsStructParentType.With8ArgumentsStaticStruct.ReturnValueMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+        Console.WriteLine($"{typeof(ArgumentsStructParentType.With8ArgumentsStaticStruct).FullName}.ReturnReferenceMethod");
+        RunMethod(() => ArgumentsStructParentType.With8ArgumentsStaticStruct.ReturnReferenceMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+        Console.WriteLine($"{typeof(ArgumentsStructParentType.With8ArgumentsStaticStruct).FullName}.ReturnGenericMethod<string>");
+        RunMethod(() => ArgumentsStructParentType.With8ArgumentsStaticStruct.ReturnGenericMethod<string, int, Tuple<int, int>, ulong>(42, 99, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+        Console.WriteLine($"{typeof(ArgumentsStructParentType.With8ArgumentsStaticStruct).FullName}.ReturnGenericMethod<int>");
+        RunMethod(() => ArgumentsStructParentType.With8ArgumentsStaticStruct.ReturnGenericMethod<int, string, Tuple<int, int>, ulong>("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+        Console.WriteLine();
+        //
+        // Note: We skip instrumentation today for generic value types.
+        Console.WriteLine($"{typeof(ArgumentsStructParentType.With8ArgumentsGenericStaticStruct<string>).FullName}.VoidMethod");
+        RunMethod(() => ArgumentsStructParentType.With8ArgumentsGenericStaticStruct<string>.VoidMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()), checkInstrumented: false);
+        Console.WriteLine($"{typeof(ArgumentsStructParentType.With8ArgumentsGenericStaticStruct<string>).FullName}.ReturnValueMethod");
+        RunMethod(() => ArgumentsStructParentType.With8ArgumentsGenericStaticStruct<string>.ReturnValueMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()), checkInstrumented: false);
+        Console.WriteLine($"{typeof(ArgumentsStructParentType.With8ArgumentsGenericStaticStruct<string>).FullName}.ReturnReferenceMethod");
+        RunMethod(() => ArgumentsStructParentType.With8ArgumentsGenericStaticStruct<string>.ReturnReferenceMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()), checkInstrumented: false);
+        Console.WriteLine($"{typeof(ArgumentsStructParentType.With8ArgumentsGenericStaticStruct<string>).FullName}.ReturnGenericMethod");
+        RunMethod(() => ArgumentsStructParentType.With8ArgumentsGenericStaticStruct<string>.ReturnGenericMethod<string, Tuple<int, int>, ulong>("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()), checkInstrumented: false);
+        Console.WriteLine();
+        //
+        // Note: We skip instrumentation today for generic value types.
+        Console.WriteLine($"{typeof(ArgumentsStructParentType.With8ArgumentsGenericStaticStruct<int>).FullName}.VoidMethod");
+        RunMethod(() => ArgumentsStructParentType.With8ArgumentsGenericStaticStruct<int>.VoidMethod("Hello world", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()), checkInstrumented: false);
+        Console.WriteLine($"{typeof(ArgumentsStructParentType.With8ArgumentsGenericStaticStruct<int>).FullName}.ReturnValueMethod");
+        RunMethod(() => ArgumentsStructParentType.With8ArgumentsGenericStaticStruct<int>.ReturnValueMethod("Hello world", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()), checkInstrumented: false);
+        Console.WriteLine($"{typeof(ArgumentsStructParentType.With8ArgumentsGenericStaticStruct<int>).FullName}.ReturnReferenceMethod");
+        RunMethod(() => ArgumentsStructParentType.With8ArgumentsGenericStaticStruct<int>.ReturnReferenceMethod("Hello world", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()), checkInstrumented: false);
+        Console.WriteLine($"{typeof(ArgumentsStructParentType.With8ArgumentsGenericStaticStruct<int>).FullName}.ReturnGenericMethod");
+        RunMethod(() => ArgumentsStructParentType.With8ArgumentsGenericStaticStruct<int>.ReturnGenericMethod<int, Tuple<int, int>, ulong>(42, 99, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()), checkInstrumented: false);
         Console.WriteLine();
         //
         var w8TBegin = new ArgumentsStructParentType.With8ArgumentsThrowOnBegin();
@@ -383,6 +545,26 @@ partial class Program
         RunMethod(() => w8g2.ReturnGenericMethod<int, Tuple<int, int>, ulong>(42, 99, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
         Console.WriteLine();
         //
+        Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.With8ArgumentsGenericStatic<string>).FullName}.VoidMethod");
+        RunMethod(() => ArgumentsGenericParentType<object>.With8ArgumentsGenericStatic<string>.VoidMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+        Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.With8ArgumentsGenericStatic<string>).FullName}.ReturnValueMethod");
+        RunMethod(() => ArgumentsGenericParentType<object>.With8ArgumentsGenericStatic<string>.ReturnValueMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+        Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.With8ArgumentsGenericStatic<string>).FullName}.ReturnReferenceMethod");
+        RunMethod(() => ArgumentsGenericParentType<object>.With8ArgumentsGenericStatic<string>.ReturnReferenceMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+        Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.With8ArgumentsGenericStatic<string>).FullName}.ReturnGenericMethod");
+        RunMethod(() => ArgumentsGenericParentType<object>.With8ArgumentsGenericStatic<string>.ReturnGenericMethod<string, Tuple<int, int>, ulong>("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+        Console.WriteLine();
+        //
+        Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.With8ArgumentsGenericStatic<int>).FullName}.VoidMethod");
+        RunMethod(() => ArgumentsGenericParentType<object>.With8ArgumentsGenericStatic<int>.VoidMethod("Hello world", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+        Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.With8ArgumentsGenericStatic<int>).FullName}.ReturnValueMethod");
+        RunMethod(() => ArgumentsGenericParentType<object>.With8ArgumentsGenericStatic<int>.ReturnValueMethod("Hello world", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+        Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.With8ArgumentsGenericStatic<int>).FullName}.ReturnReferenceMethod");
+        RunMethod(() => ArgumentsGenericParentType<object>.With8ArgumentsGenericStatic<int>.ReturnReferenceMethod("Hello world", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+        Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.With8ArgumentsGenericStatic<int>).FullName}.ReturnGenericMethod");
+        RunMethod(() => ArgumentsGenericParentType<object>.With8ArgumentsGenericStatic<int>.ReturnGenericMethod<int, Tuple<int, int>, ulong>(42, 99, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+        Console.WriteLine();
+        //
         var w8in = new ArgumentsGenericParentType<object>.With8ArgumentsInherits();
         Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.With8ArgumentsInherits).FullName}.VoidMethod");
         RunMethod(() => w8in.VoidMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
@@ -432,6 +614,38 @@ partial class Program
         RunMethod(() => ArgumentsGenericParentType<object>.With8ArgumentsStatic.ReturnGenericMethod<int, string, Tuple<int, int>, ulong>("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
         Console.WriteLine();
         //
+        Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.With8ArgumentsStaticStruct).FullName}.VoidMethod");
+        RunMethod(() => ArgumentsGenericParentType<object>.With8ArgumentsStaticStruct.VoidMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+        Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.With8ArgumentsStaticStruct).FullName}.ReturnValueMethod");
+        RunMethod(() => ArgumentsGenericParentType<object>.With8ArgumentsStaticStruct.ReturnValueMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+        Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.With8ArgumentsStaticStruct).FullName}.ReturnReferenceMethod");
+        RunMethod(() => ArgumentsGenericParentType<object>.With8ArgumentsStaticStruct.ReturnReferenceMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+        Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.With8ArgumentsStaticStruct).FullName}.ReturnGenericMethod<string>");
+        RunMethod(() => ArgumentsGenericParentType<object>.With8ArgumentsStaticStruct.ReturnGenericMethod<string, int, Tuple<int, int>, ulong>(42, 99, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+        Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.With8ArgumentsStaticStruct).FullName}.ReturnGenericMethod<int>");
+        RunMethod(() => ArgumentsGenericParentType<object>.With8ArgumentsStaticStruct.ReturnGenericMethod<int, string, Tuple<int, int>, ulong>("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+        Console.WriteLine();
+        //
+        Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.With8ArgumentsGenericStaticStruct<string>).FullName}.VoidMethod");
+        RunMethod(() => ArgumentsGenericParentType<object>.With8ArgumentsGenericStaticStruct<string>.VoidMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+        Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.With8ArgumentsGenericStaticStruct<string>).FullName}.ReturnValueMethod");
+        RunMethod(() => ArgumentsGenericParentType<object>.With8ArgumentsGenericStaticStruct<string>.ReturnValueMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+        Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.With8ArgumentsGenericStaticStruct<string>).FullName}.ReturnReferenceMethod");
+        RunMethod(() => ArgumentsGenericParentType<object>.With8ArgumentsGenericStaticStruct<string>.ReturnReferenceMethod("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+        Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.With8ArgumentsGenericStaticStruct<string>).FullName}.ReturnGenericMethod");
+        RunMethod(() => ArgumentsGenericParentType<object>.With8ArgumentsGenericStaticStruct<string>.ReturnGenericMethod<string, Tuple<int, int>, ulong>("Hello World", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+        Console.WriteLine();
+        //
+        Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.With8ArgumentsGenericStaticStruct<int>).FullName}.VoidMethod");
+        RunMethod(() => ArgumentsGenericParentType<object>.With8ArgumentsGenericStaticStruct<int>.VoidMethod("Hello world", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+        Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.With8ArgumentsGenericStaticStruct<int>).FullName}.ReturnValueMethod");
+        RunMethod(() => ArgumentsGenericParentType<object>.With8ArgumentsGenericStaticStruct<int>.ReturnValueMethod("Hello world", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+        Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.With8ArgumentsGenericStaticStruct<int>).FullName}.ReturnReferenceMethod");
+        RunMethod(() => ArgumentsGenericParentType<object>.With8ArgumentsGenericStaticStruct<int>.ReturnReferenceMethod("Hello world", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+        Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.With8ArgumentsGenericStaticStruct<int>).FullName}.ReturnGenericMethod");
+        RunMethod(() => ArgumentsGenericParentType<object>.With8ArgumentsGenericStaticStruct<int>.ReturnGenericMethod<int, Tuple<int, int>, ulong>(42, 99, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
+        Console.WriteLine();
+        //
         var w8TBegin = new ArgumentsGenericParentType<object>.With8ArgumentsThrowOnBegin();
         Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.With8ArgumentsThrowOnBegin).FullName}.VoidMethod");
         RunMethod(() => w8TBegin.VoidMethod("Hello world", 42, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly()));
@@ -474,6 +688,13 @@ class With8ArgumentsGeneric<T>
     public string ReturnReferenceMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6, string arg7, Assembly arg8) => "Hello World";
     public T ReturnGenericMethod<TArg1, TArg3, TArg6>(TArg1 arg1, int arg2, TArg3 arg3, Task arg4, CancellationToken arg5, TArg6 arg6, string arg7, Assembly arg8) => default;
 }
+static class With8ArgumentsGenericStatic<T>
+{
+    public static void VoidMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6, string arg7, Assembly arg8) { }
+    public static int ReturnValueMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6, string arg7, Assembly arg8) => 42;
+    public static string ReturnReferenceMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6, string arg7, Assembly arg8) => "Hello World";
+    public static T ReturnGenericMethod<TArg1, TArg3, TArg6>(TArg1 arg1, int arg2, TArg3 arg3, Task arg4, CancellationToken arg5, TArg6 arg6, string arg7, Assembly arg8) => default;
+}
 class With8ArgumentsInherits : With8Arguments { }
 class With8ArgumentsInheritsGeneric : With8ArgumentsGeneric<int> { }
 struct With8ArgumentsStruct
@@ -489,6 +710,20 @@ static class With8ArgumentsStatic
     public static int ReturnValueMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6, string arg7, Assembly arg8) => 42;
     public static string ReturnReferenceMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6, string arg7, Assembly arg8) => "Hello World";
     public static T ReturnGenericMethod<T, TArg1, TArg3, TArg6>(TArg1 arg1, int arg2, TArg3 arg3, Task arg4, CancellationToken arg5, TArg6 arg6, string arg7, Assembly arg8) => default;
+}
+struct With8ArgumentsStaticStruct
+{
+    public static void VoidMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6, string arg7, Assembly arg8) { }
+    public static int ReturnValueMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6, string arg7, Assembly arg8) => 42;
+    public static string ReturnReferenceMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6, string arg7, Assembly arg8) => "Hello World";
+    public static T ReturnGenericMethod<T, TArg1, TArg3, TArg6>(TArg1 arg1, int arg2, TArg3 arg3, Task arg4, CancellationToken arg5, TArg6 arg6, string arg7, Assembly arg8) => default;
+}
+struct With8ArgumentsGenericStaticStruct<T>
+{
+    public static void VoidMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6, string arg7, Assembly arg8) { }
+    public static int ReturnValueMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6, string arg7, Assembly arg8) => 42;
+    public static string ReturnReferenceMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6, string arg7, Assembly arg8) => "Hello World";
+    public static T ReturnGenericMethod<TArg1, TArg3, TArg6>(TArg1 arg1, int arg2, TArg3 arg3, Task arg4, CancellationToken arg5, TArg6 arg6, string arg7, Assembly arg8) => default;
 }
 class With8ArgumentsThrowOnBegin : With8Arguments { }
 class With8ArgumentsThrowOnEnd : With8Arguments { }
@@ -509,6 +744,13 @@ partial class ArgumentsParentType
         public string ReturnReferenceMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6, string arg7, Assembly arg8) => "Hello World";
         public T ReturnGenericMethod<TArg1, TArg3, TArg6>(TArg1 arg1, int arg2, TArg3 arg3, Task arg4, CancellationToken arg5, TArg6 arg6, string arg7, Assembly arg8) => default;
     }
+    public static class With8ArgumentsGenericStatic<T>
+    {
+        public static void VoidMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6, string arg7, Assembly arg8) { }
+        public static int ReturnValueMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6, string arg7, Assembly arg8) => 42;
+        public static string ReturnReferenceMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6, string arg7, Assembly arg8) => "Hello World";
+        public static T ReturnGenericMethod<TArg1, TArg3, TArg6>(TArg1 arg1, int arg2, TArg3 arg3, Task arg4, CancellationToken arg5, TArg6 arg6, string arg7, Assembly arg8) => default;
+    }
     public class With8ArgumentsInherits : With8Arguments { }
     public class With8ArgumentsInheritsGeneric : With8ArgumentsGeneric<int> { }
     public struct With8ArgumentsStruct
@@ -524,6 +766,20 @@ partial class ArgumentsParentType
         public static int ReturnValueMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6, string arg7, Assembly arg8) => 42;
         public static string ReturnReferenceMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6, string arg7, Assembly arg8) => "Hello World";
         public static T ReturnGenericMethod<T, TArg1, TArg3, TArg6>(TArg1 arg1, int arg2, TArg3 arg3, Task arg4, CancellationToken arg5, TArg6 arg6, string arg7, Assembly arg8) => default;
+    }
+    public struct With8ArgumentsStaticStruct
+    {
+        public static void VoidMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6, string arg7, Assembly arg8) { }
+        public static int ReturnValueMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6, string arg7, Assembly arg8) => 42;
+        public static string ReturnReferenceMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6, string arg7, Assembly arg8) => "Hello World";
+        public static T ReturnGenericMethod<T, TArg1, TArg3, TArg6>(TArg1 arg1, int arg2, TArg3 arg3, Task arg4, CancellationToken arg5, TArg6 arg6, string arg7, Assembly arg8) => default;
+    }
+    public struct With8ArgumentsGenericStaticStruct<T>
+    {
+        public static void VoidMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6, string arg7, Assembly arg8) { }
+        public static int ReturnValueMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6, string arg7, Assembly arg8) => 42;
+        public static string ReturnReferenceMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6, string arg7, Assembly arg8) => "Hello World";
+        public static T ReturnGenericMethod<TArg1, TArg3, TArg6>(TArg1 arg1, int arg2, TArg3 arg3, Task arg4, CancellationToken arg5, TArg6 arg6, string arg7, Assembly arg8) => default;
     }
     public class With8ArgumentsThrowOnBegin : With8Arguments { }
     public class With8ArgumentsThrowOnEnd : With8Arguments { }
@@ -545,6 +801,13 @@ partial struct ArgumentsStructParentType
         public string ReturnReferenceMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6, string arg7, Assembly arg8) => "Hello World";
         public T ReturnGenericMethod<TArg1, TArg3, TArg6>(TArg1 arg1, int arg2, TArg3 arg3, Task arg4, CancellationToken arg5, TArg6 arg6, string arg7, Assembly arg8) => default;
     }
+    public static class With8ArgumentsGenericStatic<T>
+    {
+        public static void VoidMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6, string arg7, Assembly arg8) { }
+        public static int ReturnValueMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6, string arg7, Assembly arg8) => 42;
+        public static string ReturnReferenceMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6, string arg7, Assembly arg8) => "Hello World";
+        public static T ReturnGenericMethod<TArg1, TArg3, TArg6>(TArg1 arg1, int arg2, TArg3 arg3, Task arg4, CancellationToken arg5, TArg6 arg6, string arg7, Assembly arg8) => default;
+    }
     public class With8ArgumentsInherits : With8Arguments { }
     public class With8ArgumentsInheritsGeneric : With8ArgumentsGeneric<int> { }
     public struct With8ArgumentsStruct
@@ -560,6 +823,20 @@ partial struct ArgumentsStructParentType
         public static int ReturnValueMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6, string arg7, Assembly arg8) => 42;
         public static string ReturnReferenceMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6, string arg7, Assembly arg8) => "Hello World";
         public static T ReturnGenericMethod<T, TArg1, TArg3, TArg6>(TArg1 arg1, int arg2, TArg3 arg3, Task arg4, CancellationToken arg5, TArg6 arg6, string arg7, Assembly arg8) => default;
+    }
+    public struct With8ArgumentsStaticStruct
+    {
+        public static void VoidMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6, string arg7, Assembly arg8) { }
+        public static int ReturnValueMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6, string arg7, Assembly arg8) => 42;
+        public static string ReturnReferenceMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6, string arg7, Assembly arg8) => "Hello World";
+        public static T ReturnGenericMethod<T, TArg1, TArg3, TArg6>(TArg1 arg1, int arg2, TArg3 arg3, Task arg4, CancellationToken arg5, TArg6 arg6, string arg7, Assembly arg8) => default;
+    }
+    public struct With8ArgumentsGenericStaticStruct<T>
+    {
+        public static void VoidMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6, string arg7, Assembly arg8) { }
+        public static int ReturnValueMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6, string arg7, Assembly arg8) => 42;
+        public static string ReturnReferenceMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6, string arg7, Assembly arg8) => "Hello World";
+        public static T ReturnGenericMethod<TArg1, TArg3, TArg6>(TArg1 arg1, int arg2, TArg3 arg3, Task arg4, CancellationToken arg5, TArg6 arg6, string arg7, Assembly arg8) => default;
     }
     public class With8ArgumentsThrowOnBegin : With8Arguments { }
     public class With8ArgumentsThrowOnEnd : With8Arguments { }
@@ -581,6 +858,13 @@ partial class ArgumentsGenericParentType<PType>
         public string ReturnReferenceMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6, string arg7, Assembly arg8) => "Hello World";
         public T ReturnGenericMethod<TArg1, TArg3, TArg6>(TArg1 arg1, int arg2, TArg3 arg3, Task arg4, CancellationToken arg5, TArg6 arg6, string arg7, Assembly arg8) => default;
     }
+    public static class With8ArgumentsGenericStatic<T>
+    {
+        public static void VoidMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6, string arg7, Assembly arg8) { }
+        public static int ReturnValueMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6, string arg7, Assembly arg8) => 42;
+        public static string ReturnReferenceMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6, string arg7, Assembly arg8) => "Hello World";
+        public static T ReturnGenericMethod<TArg1, TArg3, TArg6>(TArg1 arg1, int arg2, TArg3 arg3, Task arg4, CancellationToken arg5, TArg6 arg6, string arg7, Assembly arg8) => default;
+    }
     public class With8ArgumentsInherits : With8Arguments { }
     public class With8ArgumentsInheritsGeneric : With8ArgumentsGeneric<int> { }
     public struct With8ArgumentsStruct
@@ -596,6 +880,20 @@ partial class ArgumentsGenericParentType<PType>
         public static int ReturnValueMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6, string arg7, Assembly arg8) => 42;
         public static string ReturnReferenceMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6, string arg7, Assembly arg8) => "Hello World";
         public static T ReturnGenericMethod<T, TArg1, TArg3, TArg6>(TArg1 arg1, int arg2, TArg3 arg3, Task arg4, CancellationToken arg5, TArg6 arg6, string arg7, Assembly arg8) => default;
+    }
+    public struct With8ArgumentsStaticStruct
+    {
+        public static void VoidMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6, string arg7, Assembly arg8) { }
+        public static int ReturnValueMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6, string arg7, Assembly arg8) => 42;
+        public static string ReturnReferenceMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6, string arg7, Assembly arg8) => "Hello World";
+        public static T ReturnGenericMethod<T, TArg1, TArg3, TArg6>(TArg1 arg1, int arg2, TArg3 arg3, Task arg4, CancellationToken arg5, TArg6 arg6, string arg7, Assembly arg8) => default;
+    }
+    public struct With8ArgumentsGenericStaticStruct<T>
+    {
+        public static void VoidMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6, string arg7, Assembly arg8) { }
+        public static int ReturnValueMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6, string arg7, Assembly arg8) => 42;
+        public static string ReturnReferenceMethod(string arg1, int arg2, object arg3, Task arg4, CancellationToken arg5, ulong arg6, string arg7, Assembly arg8) => "Hello World";
+        public static T ReturnGenericMethod<TArg1, TArg3, TArg6>(TArg1 arg1, int arg2, TArg3 arg3, Task arg4, CancellationToken arg5, TArg6 arg6, string arg7, Assembly arg8) => default;
     }
     public class With8ArgumentsThrowOnBegin : With8Arguments { }
     public class With8ArgumentsThrowOnEnd : With8Arguments { }

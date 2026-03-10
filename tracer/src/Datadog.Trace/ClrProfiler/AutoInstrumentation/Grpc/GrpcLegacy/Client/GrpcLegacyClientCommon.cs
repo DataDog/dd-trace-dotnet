@@ -8,6 +8,7 @@ using System;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client.DuckTypes;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
@@ -56,8 +57,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
                     out var parentContext);
 
                 var clientSchema = tracer.CurrentTraceSettings.Schema.Client;
-                var operationName = clientSchema.GetOperationNameForProtocol("grpc");
-                var serviceName = clientSchema.GetServiceName(component: "grpc-client");
+                var operationName = clientSchema.GetOperationNameForProtocol(ClientSchema.Protocol.Grpc);
+                var serviceName = clientSchema.GetServiceName(ClientSchema.Component.Grpc);
                 var tags = clientSchema.CreateGrpcClientTags();
                 var methodFullName = callInvocationDetails.Method;
 
@@ -243,8 +244,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
         private static Span CreateInactiveSpan(Tracer tracer, string? methodFullName)
         {
             var perTraceSettings = tracer.CurrentTraceSettings;
-            var operationName = perTraceSettings.Schema.Client.GetOperationNameForProtocol("grpc");
-            var serviceName = perTraceSettings.Schema.Client.GetServiceName(component: "grpc-client");
+            var operationName = perTraceSettings.Schema.Client.GetOperationNameForProtocol(ClientSchema.Protocol.Grpc);
+            var serviceName = perTraceSettings.Schema.Client.GetServiceName(ClientSchema.Component.Grpc);
             var tags = perTraceSettings.Schema.Client.CreateGrpcClientTags();
             tags.SetAnalyticsSampleRate(IntegrationId.Grpc, perTraceSettings.Settings, enabledWithGlobalSetting: false);
             perTraceSettings.Schema.RemapPeerService(tags);

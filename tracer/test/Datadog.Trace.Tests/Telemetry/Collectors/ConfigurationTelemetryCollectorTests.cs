@@ -275,6 +275,39 @@ public class ConfigurationTelemetryCollectorTests
     }
 #endif
 
+    [Fact]
+    public void GetDataReturnsAllValuesAfterMultipleGetFullDataCalls()
+    {
+        var collector = new ConfigurationTelemetry();
+
+        // Record first batch of config values
+        collector.Record("key1", "value1", recordValue: true, ConfigurationOrigins.EnvVars);
+
+        // Call GetFullData() - should contain the first batch
+        var fullData1 = collector.GetFullData();
+        fullData1.Should().ContainSingle().And.ContainSingle(x => x.Name == "key1" && x.Value.Equals("value1"));
+
+        // Record second batch of config values
+        collector.Record("key2", "value2", recordValue: true, ConfigurationOrigins.EnvVars);
+
+        // Call GetFullData() again - should contain all values
+        var fullData2 = collector.GetFullData();
+        fullData2.Should()
+                 .HaveCount(2)
+                 .And
+                 .ContainSingle(x => x.Name == "key1" && x.Value.Equals("value1"))
+                 .And.ContainSingle(x => x.Name == "key2" && x.Value.Equals("value2"));
+
+        // Now call GetData() - should also contain all values since
+        // GetFullData() does not update _reportedCount
+        var data = collector.GetData();
+        data.Should()
+            .HaveCount(2)
+            .And
+            .ContainSingle(x => x.Name == "key1" && x.Value.Equals("value1"))
+            .And.ContainSingle(x => x.Name == "key2" && x.Value.Equals("value2"));
+    }
+
     private static object GetLatestValueFromConfig(ICollection<ConfigurationKeyValue> data, string key, ConfigurationOrigins? origin = null)
     {
         return data

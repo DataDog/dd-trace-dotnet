@@ -3,7 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if NET6_0_OR_GREATER
+#if NETCOREAPP3_1_OR_GREATER
 
 // Based on tests from https://github.com/dotnet/runtime/blob/b1e550cccc539b438a19f45816e8c5030ebb89db/src/libraries/Common/tests/Tests/System/Text/ValueStringBuilderTests.cs
 // Licensed to the .NET Foundation under one or more agreements.

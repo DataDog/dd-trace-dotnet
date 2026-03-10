@@ -8,8 +8,8 @@
   <ItemGroup>
     <!-- Integration: nunit.framework -->
     <!--    Assembly: nunit.framework -->
-    <!-- Latest package https://www.nuget.org/packages/NUnit/4.4.0 -->
-    <PackageReference Include="NUnit" Version="4.4.0" />
+    <!-- Latest package https://www.nuget.org/packages/NUnit/4.5.0 -->
+    <PackageReference Include="NUnit" Version="4.5.0" />
   </ItemGroup>
 
 </Project>

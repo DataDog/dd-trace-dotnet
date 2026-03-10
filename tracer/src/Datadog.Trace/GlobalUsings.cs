@@ -5,10 +5,27 @@
 
 #nullable enable
 
+global using Datadog.Trace.ExtensionMethods;
 global using ThrowHelper = Datadog.Trace.Util.ThrowHelper;
 
-#if NETFRAMEWORK || NETSTANDARD2_0
-global using Datadog.Trace.VendoredMicrosoftCode.System;
+#if NET5_0_OR_GREATER
+global using Unsafe = System.Runtime.CompilerServices.Unsafe;
+#else
+// we use Unsafe.IsNullRef() that was added in .NET 5
+global using Unsafe = Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe;
 #endif
 
-global using Datadog.Trace.ExtensionMethods;
+#if NETCOREAPP3_1_OR_GREATER
+global using System.Buffers;
+global using System.Buffers.Binary;
+global using System.Buffers.Text;
+global using System.Collections.Immutable;
+#else
+global using Datadog.Trace.VendoredMicrosoftCode.System;
+global using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
+global using Datadog.Trace.VendoredMicrosoftCode.System.Buffers.Binary;
+global using Datadog.Trace.VendoredMicrosoftCode.System.Buffers.Text;
+global using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
+global using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe;
+global using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.InteropServices;
+#endif

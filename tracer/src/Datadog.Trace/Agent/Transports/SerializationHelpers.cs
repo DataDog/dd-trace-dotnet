@@ -9,6 +9,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Threading.Tasks;
 using Datadog.Trace.Util;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Serialization;
 
@@ -36,6 +37,7 @@ internal static class SerializationHelpers
         using var streamWriter = new StreamWriter(streamToWriteTo, EncodingHelpers.Utf8NoBom, bufferSize: 1024, leaveOpen: true);
         using var jsonWriter = new JsonTextWriter(streamWriter)
         {
+            ArrayPool = JsonArrayPool.Shared,
             CloseOutput = false
         };
         var serializer = JsonSerializer.Create(serializationSettings);

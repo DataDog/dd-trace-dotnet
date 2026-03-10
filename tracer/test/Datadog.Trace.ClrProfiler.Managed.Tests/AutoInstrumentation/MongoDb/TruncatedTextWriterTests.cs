@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Globalization;
 using System.Text;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.BsonSerialization;
 using FluentAssertions;
@@ -35,7 +36,7 @@ public class TruncatedTextWriterTests
         using var sw = new TruncatedTextWriter(sb);
         for (var i = 0; i < 2 * TruncatedTextWriter.MaxLength; i++)
         {
-            sw.Write("Format {0:E} ", 1_000_000);
+            sw.Write(string.Format(CultureInfo.InvariantCulture, "Format {0:E} ", 1_000_000));
         }
 
         var finalString = sw.ToString();

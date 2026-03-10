@@ -71,6 +71,12 @@
     <ClInclude Include="chrono_helper.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="DbgHelpParser.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SymPdbParser.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="..\Datadog.Profiler.Native\AutoResetEvent.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -119,6 +125,12 @@
       <Filter>ETW</Filter>
     </ClCompile>
     <ClCompile Include="CrashReportingWindows.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DbgHelpParser.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SymPdbParser.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="AutoResetEvent.cpp">
