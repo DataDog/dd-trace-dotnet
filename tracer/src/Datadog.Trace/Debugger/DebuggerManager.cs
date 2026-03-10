@@ -29,6 +29,7 @@ namespace Datadog.Trace.Debugger
         private static readonly TimeSpan DebounceDelay = TimeSpan.FromMilliseconds(250);
         private static readonly TimeSpan EndpointTimeout = TimeSpan.FromMinutes(5);
         internal static readonly Func<string> ServiceNameProvider = static () => Instance.ServiceName;
+        internal static readonly Func<string?> ProcessTagsProvider = static () => Instance.ProcessTags;
 
         private static readonly Lazy<DebuggerManager> _lazyInstance =
             new(
@@ -92,6 +93,12 @@ namespace Datadog.Trace.Debugger
             private set => Volatile.Write(ref _serviceName, value);
         }
 
+        internal string? ProcessTags
+        {
+            get => Volatile.Read(ref field);
+            private set => Volatile.Write(ref field, value);
+        }
+
         private string GetServiceName(MutableSettings mutableSettings)
         {
             try
@@ -151,6 +158,7 @@ namespace Datadog.Trace.Debugger
             DebuggerSnapshotSerializer.SetConfig(settings);
             Redaction.Instance.SetConfig(settings.RedactedIdentifiers, settings.RedactedExcludedIdentifiers, settings.RedactedTypes);
             ServiceName = GetServiceName(tracerSettings.Manager.InitialMutableSettings);
+            ProcessTags = tracerSettings.Manager.InitialMutableSettings.ProcessTags?.SerializedTags;
         }
 
         internal Task UpdateConfiguration(TracerSettings tracerSettings, DebuggerSettings? newDebuggerSettings = null)
@@ -245,6 +253,7 @@ namespace Datadog.Trace.Debugger
             }
 
             ServiceName = GetServiceName(updatedMutable);
+            ProcessTags = updatedMutable.ProcessTags?.SerializedTags;
 
             // Note: `SymbolsUploader` captures the service name on first use (symbol extraction/upload) and then keeps it fixed for its lifetime,
             // to avoid mixing symbols across services. If the service name changes after that point, the correct behavior would be to stop and
