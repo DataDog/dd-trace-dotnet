@@ -652,11 +652,11 @@ namespace Datadog.Trace.Tests.Configuration
 
             if (propagateTags)
             {
-                mutable.ProcessTags?.Should().NotBeNull();
+                mutable.ProcessTags.Should().NotBeNull();
             }
             else
             {
-                mutable.ProcessTags?.Should().NotBeNull();
+                mutable.ProcessTags.Should().BeNull();
             }
         }
 

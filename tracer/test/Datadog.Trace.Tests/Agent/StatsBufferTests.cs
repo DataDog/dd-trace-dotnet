@@ -27,11 +27,12 @@ namespace Datadog.Trace.Tests.Agent
         }
 
         [Theory]
-        [InlineData(true)]
-        [InlineData(false)]
-        public void Serialization(bool propagateProcessTags)
+        [CombinatorialData]
+        public void Serialization(bool propagateProcessTags, bool setServiceName)
         {
             const long expectedDuration = 42;
+
+            // For Tracer Settings, the non mutable one.
             var collection = new NameValueCollection
             {
                 { ConfigurationKeys.PropagateProcessTags, propagateProcessTags.ToString() },
@@ -44,6 +45,7 @@ namespace Datadog.Trace.Tests.Agent
                 {
                     { ConfigurationKeys.Environment, "Env" },
                     { ConfigurationKeys.ServiceVersion, "v99.99" },
+                    { ConfigurationKeys.ServiceName, setServiceName ? "AServiceName" : null },
                 });
 
             var payload = new ClientStatsPayload(settings)
@@ -82,7 +84,8 @@ namespace Datadog.Trace.Tests.Agent
 
             if (propagateProcessTags)
             {
-                result.ProcessTags.Should().Contain("svc.auto");
+                result.ProcessTags.Should().Contain(setServiceName ? "svc.user" : "svc.auto");
+                result.ProcessTags.Should().NotContain(setServiceName ? "svc.auto" : "svc.user");
             }
             else
             {
