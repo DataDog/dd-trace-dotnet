@@ -73,8 +73,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting
                 return null;
             }
 
-            var serviceName = tracer.CurrentTraceSettings.GetServiceName(ServiceName);
-            var serviceNameSource = tracer.CurrentTraceSettings.GetServiceNameSource(ServiceName, serviceName);
+            var (serviceName, serviceNameSource) = tracer.CurrentTraceSettings.GetServiceNameMetadata(ServiceName);
 
             Scope? scope = null;
 

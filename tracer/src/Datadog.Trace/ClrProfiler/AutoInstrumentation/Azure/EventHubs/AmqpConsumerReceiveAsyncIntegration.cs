@@ -118,8 +118,7 @@ public sealed class AmqpConsumerReceiveAsyncIntegration
         var tags = Tracer.Instance.CurrentTraceSettings.Schema.Messaging.CreateAzureEventHubsTags(SpanKinds.Consumer);
         tags.MessagingOperation = OperationName;
 
-        string serviceName = tracer.CurrentTraceSettings.Schema.Messaging.GetServiceName(MessagingSchema.ServiceType.AzureEventHubs);
-        string? serviceNameSource = tracer.CurrentTraceSettings.Schema.Messaging.GetServiceNameSource(MessagingSchema.ServiceType.AzureEventHubs);
+        var (serviceName, serviceNameSource) = tracer.CurrentTraceSettings.Schema.Messaging.GetServiceNameMetadata(MessagingSchema.ServiceType.AzureEventHubs);
         var scope = tracer.StartActiveInternal(SpanOperationName, tags: tags, serviceName: serviceName, serviceNameSource: serviceNameSource, links: spanLinks);
         var span = scope.Span;
 

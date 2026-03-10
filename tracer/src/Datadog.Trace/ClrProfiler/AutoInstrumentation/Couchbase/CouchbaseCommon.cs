@@ -89,8 +89,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
             try
             {
                 string operationName = tracer.CurrentTraceSettings.Schema.Database.GetOperationName(DatabaseSchema.OperationType.Couchbase);
-                string serviceName = tracer.CurrentTraceSettings.Schema.Database.GetServiceName(DatabaseSchema.ServiceType.Couchbase);
-                string serviceNameSource = tracer.CurrentTraceSettings.Schema.Database.GetServiceNameSource(DatabaseSchema.ServiceType.Couchbase);
+                var (serviceName, serviceNameSource) = tracer.CurrentTraceSettings.Schema.Database.GetServiceNameMetadata(DatabaseSchema.ServiceType.Couchbase);
 
                 var scope = tracer.StartActiveInternal(operationName, serviceName: serviceName, serviceNameSource: serviceNameSource, tags: tags);
                 scope.Span.Type = SpanTypes.Db;
