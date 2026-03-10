@@ -34,12 +34,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
     {
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.OpenTelemetry;
 
-        internal static CallTargetState OnMethodBegin<TInstance, TBaggage>(TInstance instance, IEnumerable<KeyValuePair<string, string?>> baggageItems, TBaggage baggage)
+        internal static CallTargetState OnMethodBegin<TInstance, TBaggage>(TInstance instance, IEnumerable<KeyValuePair<string, string?>> baggageItems, TBaggage apiBaggage)
+            where TBaggage : IApiBaggage
         {
             // If the user provides the default baggage instance, then OpenTelemetry.Baggage.Current will be used as the baggage source,
             // so we must update the underlying OpenTelemetry.Baggage.Current store to the latest Datadog.Trace.Baggage.Current items.
             if (Tracer.Instance.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId)
-                && baggage.TryDuckCast<IApiBaggage>(out var apiBaggage)
                 && apiBaggage.Baggage is null)
             {
                 // Since Datadog.Trace.Baggage.Current may have been updated since the last time OpenTelemetry.Baggage.Current was accessed,
