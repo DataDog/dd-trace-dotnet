@@ -8,8 +8,8 @@
   <ItemGroup>
     <!-- Integration: MongoDB.Driver.Core -->
     <!--    Assembly: MongoDB.Driver.Core -->
-    <!-- Latest package https://www.nuget.org/packages/MongoDB.Driver/3.6.0 -->
-    <PackageReference Include="MongoDB.Driver" Version="3.6.0" />
+    <!-- Latest package https://www.nuget.org/packages/MongoDB.Driver/3.7.0 -->
+    <PackageReference Include="MongoDB.Driver" Version="3.7.0" />
   </ItemGroup>
 
 </Project>
