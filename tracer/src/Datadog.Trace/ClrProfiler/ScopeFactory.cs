@@ -112,8 +112,7 @@ namespace Datadog.Trace.ClrProfiler
                 string resourceUrl = requestUri != null ? UriHelpers.CleanUri(requestUri, removeScheme: true, tryRemoveIds: true) : null;
 
                 var operationName = tracer.CurrentTraceSettings.Schema.Client.GetOperationNameForProtocol(ClientSchema.Protocol.Http);
-                var serviceName = tracer.CurrentTraceSettings.Schema.Client.GetServiceName(ClientSchema.Component.Http);
-                var serviceNameSource = tracer.CurrentTraceSettings.Schema.Client.GetServiceNameSource(ClientSchema.Component.Http);
+                var (serviceName, serviceNameSource) = tracer.CurrentTraceSettings.Schema.Client.GetServiceNameMetadata(ClientSchema.Component.Http);
                 tags = tracer.CurrentTraceSettings.Schema.Client.CreateHttpTags();
 
                 span = tracer.StartSpan(operationName, tags, serviceName: serviceName, serviceNameSource: serviceNameSource, traceId: traceId, spanId: spanId, startTime: startTime, addToTraceContext: addToTraceContext);

@@ -59,8 +59,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
             try
             {
                 tags = perTraceSettings.Schema.Messaging.CreateRabbitMqTags(spanKind);
-                var serviceName = perTraceSettings.Schema.Messaging.GetServiceName(MessagingSchema.ServiceType.RabbitMq);
-                var serviceNameSource = perTraceSettings.Schema.Messaging.GetServiceNameSource(MessagingSchema.ServiceType.RabbitMq);
+                var (serviceName, serviceNameSource) = perTraceSettings.Schema.Messaging.GetServiceNameMetadata(MessagingSchema.ServiceType.RabbitMq);
                 var operation = GetOperationName(tracer, spanKind);
 
                 scope = tracer.StartActiveInternal(

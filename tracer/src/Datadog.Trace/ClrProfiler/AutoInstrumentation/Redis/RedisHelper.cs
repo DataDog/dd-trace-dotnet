@@ -37,8 +37,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
                 return null;
             }
 
-            string serviceName = perTraceSettings.Schema.Database.GetServiceName(DatabaseSchema.ServiceType.Redis);
-            string? serviceNameSource = perTraceSettings.Schema.Database.GetServiceNameSource(DatabaseSchema.ServiceType.Redis);
+            var (serviceName, serviceNameSource) = perTraceSettings.Schema.Database.GetServiceNameMetadata(DatabaseSchema.ServiceType.Redis);
             Scope? scope = null;
 
             try

@@ -39,33 +39,24 @@ namespace Datadog.Trace.Configuration
 
         internal ServiceNameMetadata GetServiceNameMetadata(string integrationKey)
         {
-            if (ServiceNames.TryGetValue(integrationKey, out var mappedName))
-            {
-                return new ServiceNameMetadata(mappedName, ServiceNameMetadata.OptServiceMapping);
-            }
+            string resolvedName;
 
-            if (Schema.Version != SchemaVersion.V0 || Schema.RemoveClientServiceNamesEnabled)
+            if (ServiceNames.TryGetValue(integrationKey, out var name))
             {
-                return new ServiceNameMetadata(Settings.DefaultServiceName, null);
+                resolvedName = name;
             }
-
-            if (!_serviceNameCache.TryGetValue(integrationKey, out var resolvedName))
+            else if (Schema.Version != SchemaVersion.V0 || Schema.RemoveClientServiceNamesEnabled)
+            {
+                resolvedName = Settings.DefaultServiceName;
+            }
+            else if (!_serviceNameCache.TryGetValue(integrationKey, out resolvedName!))
             {
                 resolvedName = $"{Settings.DefaultServiceName}-{integrationKey}";
                 _serviceNameCache.TryAdd(integrationKey, resolvedName);
             }
 
-            return new ServiceNameMetadata(resolvedName, integrationKey);
-        }
-
-        /// <summary>
-        /// Returns the service name source for the given integration key.
-        /// Returns the integration key when the resolved service name differs from the default,
-        /// or null when the default service name is used.
-        /// </summary>
-        internal string? GetServiceNameSource(string integrationKey, string resolvedName)
-        {
-            return resolvedName != Settings.DefaultServiceName ? integrationKey : null;
+            var source = resolvedName != Settings.DefaultServiceName ? integrationKey : null;
+            return new ServiceNameMetadata(resolvedName, source);
         }
     }
 }
