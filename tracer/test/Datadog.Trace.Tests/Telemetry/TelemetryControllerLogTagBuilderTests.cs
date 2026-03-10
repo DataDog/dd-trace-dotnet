@@ -14,9 +14,9 @@ namespace Datadog.Trace.Tests.Telemetry;
 
 public class TelemetryControllerLogTagBuilderTests
 {
-    // On .NET 6+, GetLogTags() includes a ",trim:0" suffix (trimming not detected in test environment)
+    // On .NET 6+, GetLogTags() includes a ",trim:no" suffix (trimming not detected in test environment)
 #if NET6_0_OR_GREATER
-    private const string TrimSuffix = ",trim:0";
+    private const string TrimSuffix = ",trim:no";
 #else
     private const string TrimSuffix = "";
 #endif

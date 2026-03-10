@@ -64,7 +64,7 @@ public class AppTrimmingTests : TestHelper
 
         allLogs.Should()
                .NotBeNullOrEmpty()
-               .And.AllSatisfy(log => log.Tags.Should().Contain("trim:0"))
+               .And.AllSatisfy(log => log.Tags.Should().Contain("trim:yes"))
                .And.ContainSingle()
                .Which.Message.Should()
                .Be("Sending an error log using hacky reflection");
