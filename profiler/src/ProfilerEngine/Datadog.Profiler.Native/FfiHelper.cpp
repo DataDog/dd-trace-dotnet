@@ -34,12 +34,87 @@ ddog_CharSlice to_char_slice(std::string_view str)
     return {str.data(), str.size()};
 }
 
-ddog_prof_ValueType CreateValueType(std::string const& type, std::string const& unit)
+bool TryCreateSampleType(std::string_view type, std::string_view unit, ddog_prof_SampleType& sampleType)
 {
-    auto valueType = ddog_prof_ValueType{};
-    valueType.type_ = to_char_slice(type);
-    valueType.unit = to_char_slice(unit);
-    return valueType;
+    if (type == "alloc-samples" && unit == "count")
+    {
+        sampleType = DDOG_PROF_SAMPLE_TYPE_ALLOC_SAMPLES;
+        return true;
+    }
+
+    if (type == "alloc-size" && unit == "bytes")
+    {
+        sampleType = DDOG_PROF_SAMPLE_TYPE_ALLOC_SIZE;
+        return true;
+    }
+
+    if (type == "cpu" && unit == "nanoseconds")
+    {
+        sampleType = DDOG_PROF_SAMPLE_TYPE_CPU_LEGACY;
+        return true;
+    }
+
+    if (type == "cpu-samples" && unit == "count")
+    {
+        sampleType = DDOG_PROF_SAMPLE_TYPE_CPU_SAMPLES;
+        return true;
+    }
+
+    if (type == "exception" && unit == "count")
+    {
+        sampleType = DDOG_PROF_SAMPLE_TYPE_EXCEPTION_LEGACY;
+        return true;
+    }
+
+    if (type == "inuse-objects" && unit == "count")
+    {
+        sampleType = DDOG_PROF_SAMPLE_TYPE_INUSE_OBJECTS;
+        return true;
+    }
+
+    if (type == "inuse-space" && unit == "bytes")
+    {
+        sampleType = DDOG_PROF_SAMPLE_TYPE_INUSE_SPACE;
+        return true;
+    }
+
+    if (type == "lock-count" && unit == "count")
+    {
+        sampleType = DDOG_PROF_SAMPLE_TYPE_LOCK_COUNT;
+        return true;
+    }
+
+    if (type == "lock-time" && unit == "nanoseconds")
+    {
+        sampleType = DDOG_PROF_SAMPLE_TYPE_LOCK_TIME;
+        return true;
+    }
+
+    if (type == "request-time" && unit == "nanoseconds")
+    {
+        sampleType = DDOG_PROF_SAMPLE_TYPE_REQUEST_TIME;
+        return true;
+    }
+
+    if (type == "timeline" && unit == "nanoseconds")
+    {
+        sampleType = DDOG_PROF_SAMPLE_TYPE_TIMELINE;
+        return true;
+    }
+
+    if (type == "wall" && unit == "nanoseconds")
+    {
+        sampleType = DDOG_PROF_SAMPLE_TYPE_WALL_LEGACY;
+        return true;
+    }
+
+    if ((type == "wall-time" || type == "RealTime") && (unit == "nanoseconds" || unit == "Nanoseconds"))
+    {
+        sampleType = DDOG_PROF_SAMPLE_TYPE_WALL_TIME;
+        return true;
+    }
+
+    return false;
 }
 
 std::string GetErrorMessage(ddog_Error& error)

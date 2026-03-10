@@ -21,6 +21,8 @@ extern "C"
 }
 
 namespace libdatadog {
+constexpr uint64_t EndpointTimeoutMs = 0; // 0 means "use the default timeout"
+constexpr bool UseSystemResolver = false;
 
 ExporterBuilder::ExporterBuilder() = default;
 ExporterBuilder::~ExporterBuilder() = default;
@@ -103,10 +105,10 @@ ExporterBuilder::AgentEndpoint ExporterBuilder::CreateEndpoint()
     {
         assert(!_site.empty());
         assert(!_apiKey.empty());
-        return {ddog_prof_Endpoint_agentless(to_char_slice(_site), to_char_slice(_apiKey))};
+        return {ddog_prof_Endpoint_agentless(to_char_slice(_site), to_char_slice(_apiKey), EndpointTimeoutMs, UseSystemResolver)};
     }
 
-    return {ddog_prof_Endpoint_agent(to_char_slice(_url))};
+    return {ddog_prof_Endpoint_agent(to_char_slice(_url), EndpointTimeoutMs, UseSystemResolver)};
 }
 
 std::unique_ptr<Exporter> ExporterBuilder::Build()
