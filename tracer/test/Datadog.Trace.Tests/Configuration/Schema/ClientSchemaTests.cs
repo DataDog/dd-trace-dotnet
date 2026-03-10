@@ -170,34 +170,34 @@ namespace Datadog.Trace.Tests.Configuration.Schema
 
         [Theory]
         [CombinatorialData]
-        public void GetServiceNameSource_SupportsAllEnumValues([CombinatorialValues(0, 1)]int schemaVersion, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
+        public void GetServiceNameMetadata_SourceSupportsAllEnumValues([CombinatorialValues(0, 1)]int schemaVersion, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
         {
             var namingSchema = new NamingSchema((SchemaVersion)schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, new Dictionary<string, string>(), new Dictionary<string, string>());
             foreach (var value in Enum.GetValues(typeof(ClientSchema.Component)).Cast<ClientSchema.Component>())
             {
                 // Should not throw IndexOutOfRangeException
-                var action = () => namingSchema.Client.GetServiceNameSource(value);
+                var action = () => namingSchema.Client.GetServiceNameMetadata(value).Source;
                 action.Should().NotThrow();
             }
         }
 
         [Fact]
-        public void GetServiceNameSource_ReturnsNonNull_WhenServiceNameDiffersFromDefault()
+        public void GetServiceNameMetadata_SourceReturnsNonNull_WhenServiceNameDiffersFromDefault()
         {
             var namingSchema = new NamingSchema(SchemaVersion.V0, peerServiceTagsEnabled: false, removeClientServiceNamesEnabled: false, DefaultServiceName, new Dictionary<string, string>(), new Dictionary<string, string>());
             foreach (var value in Enum.GetValues(typeof(ClientSchema.Component)).Cast<ClientSchema.Component>())
             {
-                namingSchema.Client.GetServiceNameSource(value).Should().NotBeNull($"Component.{value} should have a corresponding IntegrationSourceNames entry");
+                namingSchema.Client.GetServiceNameMetadata(value).Source.Should().NotBeNull($"Component.{value} should have a corresponding IntegrationSourceNames entry");
             }
         }
 
         [Fact]
-        public void GetServiceNameSource_ReturnsNull_WhenServiceNameIsDefault()
+        public void GetServiceNameMetadata_SourceReturnsNull_WhenServiceNameIsDefault()
         {
             var namingSchema = new NamingSchema(SchemaVersion.V1, peerServiceTagsEnabled: false, removeClientServiceNamesEnabled: false, DefaultServiceName, new Dictionary<string, string>(), new Dictionary<string, string>());
             foreach (var value in Enum.GetValues(typeof(ClientSchema.Component)).Cast<ClientSchema.Component>())
             {
-                namingSchema.Client.GetServiceNameSource(value).Should().BeNull();
+                namingSchema.Client.GetServiceNameMetadata(value).Source.Should().BeNull();
             }
         }
     }

@@ -71,8 +71,7 @@ public sealed class RequestInvokerHandlerSendAsyncIntegration
             }
 
             var operationName = perTraceSettings.Schema.Database.GetOperationName(DatabaseSchema.OperationType.CosmosDb);
-            var serviceName = perTraceSettings.Schema.Database.GetServiceName(DatabaseSchema.ServiceType.CosmosDb);
-            var serviceNameSource = perTraceSettings.Schema.Database.GetServiceNameSource(DatabaseSchema.ServiceType.CosmosDb);
+            var (serviceName, serviceNameSource) = perTraceSettings.Schema.Database.GetServiceNameMetadata(DatabaseSchema.ServiceType.CosmosDb);
             var tags = perTraceSettings.Schema.Database.CreateCosmosDbTags();
 
             tags.ContainerId = containerId;
