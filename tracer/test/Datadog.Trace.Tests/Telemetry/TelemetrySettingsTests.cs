@@ -295,6 +295,22 @@ namespace Datadog.Trace.Tests.Telemetry
         }
 
         [Theory]
+        [InlineData("0", 86400)]
+        [InlineData(null, 86400)]
+        [InlineData("", 86400)]
+        [InlineData("invalid", 86400)]
+        [InlineData("523", 523)]
+        [InlineData("604800", 604800)]
+        [InlineData("604801", 86400)]
+        public void ExtendedHeartbeatInterval(string value, int expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.Telemetry.ExtendedHeartbeatIntervalSeconds, value));
+            var settings = TelemetrySettings.FromSource(source, NullConfigurationTelemetry.Instance, isAgentAvailable: true, isServerless: false);
+
+            settings.ExtendedHeartbeatInterval.Should().Be(TimeSpan.FromSeconds(expected));
+        }
+
+        [Theory]
         [InlineData("0", false)]
         [InlineData(null, false)]
         [InlineData("", false)]

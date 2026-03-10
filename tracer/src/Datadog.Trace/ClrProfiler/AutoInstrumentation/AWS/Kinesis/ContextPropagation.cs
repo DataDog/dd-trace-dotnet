@@ -8,11 +8,15 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.SourceGenerators;
+using Datadog.Trace.Util;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
@@ -109,6 +113,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
             }
         }
 
+        [TestingAndPrivateOnly]
         internal static Dictionary<string, object>? ParseDataObject(MemoryStream dataStream)
         {
             try
@@ -123,11 +128,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
             return null;
         }
 
+        [TestingAndPrivateOnly]
         public static Dictionary<string, object>? MemoryStreamToDictionary(MemoryStream stream)
         {
             // Convert the MemoryStream to a string
-            var streamReader = new StreamReader(stream);
-            var reader = new JsonTextReader(streamReader);
+            // Default values for StreamReader, but with leaveOpen:true
+            using var streamReader = new StreamReader(stream, Encoding.UTF8, detectEncodingFromByteOrderMarks: true,  bufferSize: 1024, leaveOpen: true);
+            using var reader = new JsonTextReader(streamReader) { ArrayPool = JsonArrayPool.Shared };
             var serializer = new JsonSerializer();
 
             // Deserialize the JSON string into a Dictionary<string, object>
@@ -136,10 +143,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
             return serializer.Deserialize<Dictionary<string, object>>(reader);
         }
 
+        [TestingAndPrivateOnly]
         public static MemoryStream DictionaryToMemoryStream(Dictionary<string, object> dictionary)
         {
             var memoryStream = new MemoryStream();
-            var writer = new StreamWriter(memoryStream);
+            using var streamWriter = new StreamWriter(memoryStream, EncodingHelpers.Utf8NoBom, 1024, leaveOpen: true);
+            using var writer = new JsonTextWriter(streamWriter) { ArrayPool = JsonArrayPool.Shared };
             var serializer = new JsonSerializer();
             serializer.Serialize(writer, dictionary);
             writer.Flush();

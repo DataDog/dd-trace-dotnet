@@ -9,4 +9,8 @@ class ThreadsCpuManagerHelper : public IThreadsCpuManager
     // Inherited via IThreadsCpuManager
     void Map(DWORD threadOSId, const WCHAR* name) override;
     void LogCpuTimes() override;
+
+    // Inherited via IMemoryFootprintProvider
+    size_t GetMemorySize() const override { return 0; }
+    void LogMemoryBreakdown() const override {}
 };
