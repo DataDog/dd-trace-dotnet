@@ -904,7 +904,7 @@
         "minVersionAvailableInclusive": "1.0.3744.30075",
         "minVersionSupportedInclusive": "2.1.0",
         "minVersionTestedInclusive": "2.0.2",
-        "maxVersionSupportedInclusive": "3.6.0",
+        "maxVersionSupportedInclusive": "3.7.0",
         "maxVersionAvailableInclusive": "3.6.0",
         "maxVersionTestedInclusive": "3.6.0"
       }
