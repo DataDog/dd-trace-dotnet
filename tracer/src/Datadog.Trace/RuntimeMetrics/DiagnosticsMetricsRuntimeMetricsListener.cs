@@ -168,9 +168,14 @@ internal sealed class DiagnosticsMetricsRuntimeMetricsListener : IRuntimeMetrics
 
         if (gcPauseTimeMilliSeconds.HasValue && _previousGcPauseTime.HasValue)
         {
-            // Send total pause as a Counter. Avg per-GC pause can be computed at query time:
-            // pause_time.total / (gc.count.gen0 + gc.count.gen1 + gc.count.gen2)
-            statsd.Counter(MetricsNames.GcPauseTimeTotal, (long)Math.Round(gcPauseTimeMilliSeconds.Value - _previousGcPauseTime.Value));
+            var totalPauseDeltaMs = (long)Math.Round(gcPauseTimeMilliSeconds.Value - _previousGcPauseTime.Value);
+
+            if (totalPauseDeltaMs > 0)
+            {
+                // Send total pause as a Counter. Avg per-GC pause can be computed at query time:
+                // pause_time.total / (gc.count.gen0 + gc.count.gen1 + gc.count.gen2)
+                statsd.Counter(MetricsNames.GcPauseTimeTotal, totalPauseDeltaMs);
+            }
         }
 
         _previousGcPauseTime = gcPauseTimeMilliSeconds;
