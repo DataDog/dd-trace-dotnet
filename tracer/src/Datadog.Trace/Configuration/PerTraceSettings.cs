@@ -37,35 +37,26 @@ namespace Datadog.Trace.Configuration
 
         public MutableSettings Settings { get; }
 
-        internal string GetServiceName(string serviceName)
+        internal ServiceNameMetadata GetServiceNameMetadata(string integrationKey)
         {
-            if (ServiceNames.TryGetValue(serviceName, out var name))
+            string resolvedName;
+
+            if (ServiceNames.TryGetValue(integrationKey, out var name))
             {
-                return name;
+                resolvedName = name;
+            }
+            else if (Schema.Version != SchemaVersion.V0 || Schema.RemoveClientServiceNamesEnabled)
+            {
+                resolvedName = Settings.DefaultServiceName;
+            }
+            else if (!_serviceNameCache.TryGetValue(integrationKey, out resolvedName!))
+            {
+                resolvedName = $"{Settings.DefaultServiceName}-{integrationKey}";
+                _serviceNameCache.TryAdd(integrationKey, resolvedName);
             }
 
-            if (Schema.Version != SchemaVersion.V0 || Schema.RemoveClientServiceNamesEnabled)
-            {
-                return Settings.DefaultServiceName;
-            }
-
-            if (!_serviceNameCache.TryGetValue(serviceName, out var finalServiceName))
-            {
-                finalServiceName = $"{Settings.DefaultServiceName}-{serviceName}";
-                _serviceNameCache.TryAdd(serviceName, finalServiceName);
-            }
-
-            return finalServiceName;
-        }
-
-        /// <summary>
-        /// Returns the service name source for the given integration key.
-        /// Returns the integration key when the resolved service name differs from the default,
-        /// or null when the default service name is used.
-        /// </summary>
-        internal string? GetServiceNameSource(string integrationKey, string resolvedName)
-        {
-            return resolvedName != Settings.DefaultServiceName ? integrationKey : null;
+            var source = resolvedName != Settings.DefaultServiceName ? integrationKey : null;
+            return new ServiceNameMetadata(resolvedName, source);
         }
     }
 }

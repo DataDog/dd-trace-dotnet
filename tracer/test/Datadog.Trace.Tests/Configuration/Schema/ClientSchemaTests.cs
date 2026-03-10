@@ -33,7 +33,7 @@ namespace Datadog.Trace.Tests.Configuration.Schema
             yield return (1, (int)ClientSchema.Protocol.Grpc, "grpc.client.request");
         }
 
-        public static IEnumerable<(int SchemaVersion, int Component, string ExpectedValue, bool RemoveClientServiceNamesEnabled)> GetServiceNameData()
+        public static IEnumerable<(int SchemaVersion, int Component, string ExpectedValue, bool RemoveClientServiceNamesEnabled)> GetServiceNameMetadataData()
         {
             yield return (0, (int)ClientSchema.Component.Http, "some-service", true);   // V0, mapped
             yield return (0, (int)ClientSchema.Component.Http, "some-service", false);
@@ -77,13 +77,13 @@ namespace Datadog.Trace.Tests.Configuration.Schema
 
         [Theory]
         [CombinatorialData]
-        public void GetServiceNameIsCorrect(
-            [CombinatorialMemberData(nameof(GetServiceNameData))] (int SchemaVersion, int Component, string ExpectedValue, bool RemoveClientServiceNamesEnabled) values,
+        public void GetServiceNameMetadataIsCorrect(
+            [CombinatorialMemberData(nameof(GetServiceNameMetadataData))] (int SchemaVersion, int Component, string ExpectedValue, bool RemoveClientServiceNamesEnabled) values,
             bool peerServiceTagsEnabled)
         {
             var schemaVersion = (SchemaVersion)values.SchemaVersion;
             var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, values.RemoveClientServiceNamesEnabled, DefaultServiceName, _mappings, new Dictionary<string, string>());
-            namingSchema.Client.GetServiceName((ClientSchema.Component)values.Component).Should().Be(values.ExpectedValue);
+            namingSchema.Client.GetServiceNameMetadata((ClientSchema.Component)values.Component).ServiceName.Should().Be(values.ExpectedValue);
         }
 
         [Theory]
@@ -159,45 +159,45 @@ namespace Datadog.Trace.Tests.Configuration.Schema
 
         [Theory]
         [CombinatorialData]
-        public void GetServiceName_SupportsAllEnumValues([CombinatorialValues(0, 1)]int schemaVersion, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
+        public void GetServiceNameMetadata_SupportsAllEnumValues([CombinatorialValues(0, 1)]int schemaVersion, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
         {
             var namingSchema = new NamingSchema((SchemaVersion)schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings, new Dictionary<string, string>());
             foreach (var value in Enum.GetValues(typeof(ClientSchema.Component)).Cast<ClientSchema.Component>())
             {
-                namingSchema.Client.GetServiceName(value).Should().NotBeNull();
+                namingSchema.Client.GetServiceNameMetadata(value).Should().NotBeNull();
             }
         }
 
         [Theory]
         [CombinatorialData]
-        public void GetServiceNameSource_SupportsAllEnumValues([CombinatorialValues(0, 1)]int schemaVersion, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
+        public void GetServiceNameMetadata_SourceSupportsAllEnumValues([CombinatorialValues(0, 1)]int schemaVersion, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
         {
             var namingSchema = new NamingSchema((SchemaVersion)schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, new Dictionary<string, string>(), new Dictionary<string, string>());
             foreach (var value in Enum.GetValues(typeof(ClientSchema.Component)).Cast<ClientSchema.Component>())
             {
                 // Should not throw IndexOutOfRangeException
-                var action = () => namingSchema.Client.GetServiceNameSource(value);
+                var action = () => namingSchema.Client.GetServiceNameMetadata(value).Source;
                 action.Should().NotThrow();
             }
         }
 
         [Fact]
-        public void GetServiceNameSource_ReturnsNonNull_WhenServiceNameDiffersFromDefault()
+        public void GetServiceNameMetadata_SourceReturnsNonNull_WhenServiceNameDiffersFromDefault()
         {
             var namingSchema = new NamingSchema(SchemaVersion.V0, peerServiceTagsEnabled: false, removeClientServiceNamesEnabled: false, DefaultServiceName, new Dictionary<string, string>(), new Dictionary<string, string>());
             foreach (var value in Enum.GetValues(typeof(ClientSchema.Component)).Cast<ClientSchema.Component>())
             {
-                namingSchema.Client.GetServiceNameSource(value).Should().NotBeNull($"Component.{value} should have a corresponding IntegrationSourceNames entry");
+                namingSchema.Client.GetServiceNameMetadata(value).Source.Should().NotBeNull($"Component.{value} should have a corresponding IntegrationSourceNames entry");
             }
         }
 
         [Fact]
-        public void GetServiceNameSource_ReturnsNull_WhenServiceNameIsDefault()
+        public void GetServiceNameMetadata_SourceReturnsNull_WhenServiceNameIsDefault()
         {
             var namingSchema = new NamingSchema(SchemaVersion.V1, peerServiceTagsEnabled: false, removeClientServiceNamesEnabled: false, DefaultServiceName, new Dictionary<string, string>(), new Dictionary<string, string>());
             foreach (var value in Enum.GetValues(typeof(ClientSchema.Component)).Cast<ClientSchema.Component>())
             {
-                namingSchema.Client.GetServiceNameSource(value).Should().BeNull();
+                namingSchema.Client.GetServiceNameMetadata(value).Source.Should().BeNull();
             }
         }
     }

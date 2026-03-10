@@ -23,8 +23,7 @@ namespace Datadog.Trace.Configuration.Schema
 
         private readonly bool _useV0Tags;
         private readonly string[] _protocols;
-        private readonly string[] _serviceNames;
-        private readonly string?[] _serviceNameSources;
+        private readonly ServiceNameMetadata[] _serviceNameMetadata;
         private readonly string _operationNameSuffix;
 
         public ClientSchema(SchemaVersion version, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled, string defaultServiceName, IReadOnlyDictionary<string, string>? serviceNameMappings)
@@ -43,29 +42,30 @@ namespace Datadog.Trace.Configuration.Schema
 
             // Calculate service names once, to avoid allocations with every call
             var useSuffix = version == SchemaVersion.V0 && !removeClientServiceNamesEnabled;
-            _serviceNames =
-            [
+            var serviceNames = new string[]
+            {
                 useSuffix ? $"{defaultServiceName}-{HttpClientComponent}" : defaultServiceName,
                 useSuffix ? $"{defaultServiceName}-{GrpcClientComponent}" : defaultServiceName,
-            ];
+            };
             if (serviceNameMappings is not null)
             {
                 if (serviceNameMappings.TryGetValue(HttpClientComponent, out var httpName))
                 {
-                    _serviceNames[(int)Component.Http] = httpName;
+                    serviceNames[(int)Component.Http] = httpName;
                 }
 
                 if (serviceNameMappings.TryGetValue(GrpcClientComponent, out var grpcName))
                 {
-                    _serviceNames[(int)Component.Grpc] = grpcName;
+                    serviceNames[(int)Component.Grpc] = grpcName;
                 }
             }
 
-            // Calculate service name sources: non-null when service name differs from default
-            _serviceNameSources = new string[_serviceNames.Length];
-            for (var i = 0; i < _serviceNames.Length; i++)
+            // Build combined service name + source metadata
+            _serviceNameMetadata = new ServiceNameMetadata[serviceNames.Length];
+            for (var i = 0; i < serviceNames.Length; i++)
             {
-                _serviceNameSources[i] = _serviceNames[i] != defaultServiceName ? IntegrationSourceNames[i] : null;
+                var source = serviceNames[i] != defaultServiceName ? IntegrationSourceNames[i] : null;
+                _serviceNameMetadata[i] = new ServiceNameMetadata(serviceNames[i], source);
             }
         }
 
@@ -88,9 +88,7 @@ namespace Datadog.Trace.Configuration.Schema
 
         public string GetOperationNameSuffixForRequest() => _operationNameSuffix;
 
-        public string GetServiceName(Component component) => _serviceNames[(int)component];
-
-        public string? GetServiceNameSource(Component component) => _serviceNameSources[(int)component];
+        public ServiceNameMetadata GetServiceNameMetadata(Component component) => _serviceNameMetadata[(int)component];
 
         public HttpTags CreateHttpTags()
             => _useV0Tags ? new HttpTags() : new HttpV1Tags();
