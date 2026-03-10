@@ -34,81 +34,96 @@ ddog_CharSlice to_char_slice(std::string_view str)
     return {str.data(), str.size()};
 }
 
+bool IsCountUnit(std::string_view unit)
+{
+    return unit == "count" || unit == "counts";
+}
+
+bool IsBytesUnit(std::string_view unit)
+{
+    return unit == "byte" || unit == "bytes";
+}
+
+bool IsNanosecondsUnit(std::string_view unit)
+{
+    return unit == "nanosecond" || unit == "nanoseconds" || unit == "Nanosecond" || unit == "Nanoseconds";
+}
+
 bool TryCreateSampleType(std::string_view type, std::string_view unit, ddog_prof_SampleType& sampleType)
 {
-    if (type == "alloc-samples" && unit == "count")
+    if (type == "alloc-samples" && IsCountUnit(unit))
     {
         sampleType = DDOG_PROF_SAMPLE_TYPE_ALLOC_SAMPLES;
         return true;
     }
 
-    if (type == "alloc-size" && unit == "bytes")
+    if (type == "alloc-size" && IsBytesUnit(unit))
     {
         sampleType = DDOG_PROF_SAMPLE_TYPE_ALLOC_SIZE;
         return true;
     }
 
-    if (type == "cpu" && unit == "nanoseconds")
+    if (type == "cpu" && IsNanosecondsUnit(unit))
     {
         sampleType = DDOG_PROF_SAMPLE_TYPE_CPU_LEGACY;
         return true;
     }
 
-    if (type == "cpu-samples" && unit == "count")
+    if (type == "cpu-samples" && IsCountUnit(unit))
     {
         sampleType = DDOG_PROF_SAMPLE_TYPE_CPU_SAMPLES;
         return true;
     }
 
-    if (type == "exception" && unit == "count")
+    if (type == "exception" && IsCountUnit(unit))
     {
         sampleType = DDOG_PROF_SAMPLE_TYPE_EXCEPTION_LEGACY;
         return true;
     }
 
-    if (type == "inuse-objects" && unit == "count")
+    if (type == "inuse-objects" && IsCountUnit(unit))
     {
         sampleType = DDOG_PROF_SAMPLE_TYPE_INUSE_OBJECTS;
         return true;
     }
 
-    if (type == "inuse-space" && unit == "bytes")
+    if (type == "inuse-space" && IsBytesUnit(unit))
     {
         sampleType = DDOG_PROF_SAMPLE_TYPE_INUSE_SPACE;
         return true;
     }
 
-    if (type == "lock-count" && unit == "count")
+    if (type == "lock-count" && IsCountUnit(unit))
     {
         sampleType = DDOG_PROF_SAMPLE_TYPE_LOCK_COUNT;
         return true;
     }
 
-    if (type == "lock-time" && unit == "nanoseconds")
+    if (type == "lock-time" && IsNanosecondsUnit(unit))
     {
         sampleType = DDOG_PROF_SAMPLE_TYPE_LOCK_TIME;
         return true;
     }
 
-    if (type == "request-time" && unit == "nanoseconds")
+    if (type == "request-time" && IsNanosecondsUnit(unit))
     {
         sampleType = DDOG_PROF_SAMPLE_TYPE_REQUEST_TIME;
         return true;
     }
 
-    if (type == "timeline" && unit == "nanoseconds")
+    if (type == "timeline" && IsNanosecondsUnit(unit))
     {
         sampleType = DDOG_PROF_SAMPLE_TYPE_TIMELINE;
         return true;
     }
 
-    if (type == "wall" && unit == "nanoseconds")
+    if (type == "wall" && IsNanosecondsUnit(unit))
     {
         sampleType = DDOG_PROF_SAMPLE_TYPE_WALL_LEGACY;
         return true;
     }
 
-    if ((type == "wall-time" || type == "RealTime") && (unit == "nanoseconds" || unit == "Nanoseconds"))
+    if ((type == "wall-time" || type == "RealTime") && IsNanosecondsUnit(unit))
     {
         sampleType = DDOG_PROF_SAMPLE_TYPE_WALL_TIME;
         return true;
