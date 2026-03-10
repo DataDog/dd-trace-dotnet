@@ -122,7 +122,7 @@ internal static class RaspModule
         };
     }
 
-    private static void CheckVulnerability(Dictionary<string, object> arguments, string address, Span? rootSpan = null, Action? onBlock = null)
+    private static void CheckVulnerability(Dictionary<string, object> arguments, string address, Span? rootSpan = null)
     {
         var security = Security.Instance;
 
@@ -138,7 +138,7 @@ internal static class RaspModule
             return;
         }
 
-        RunWafRasp(arguments, rootSpan, address, onBlock);
+        RunWafRasp(arguments, rootSpan, address);
     }
 
     private static void RecordRaspTelemetry(string address, bool isMatch, bool timeOut, BlockType matchType)
@@ -172,7 +172,7 @@ internal static class RaspModule
         }
     }
 
-    private static void RunWafRasp(Dictionary<string, object> arguments, Span rootSpan, string address, Action? onBlock = null)
+    private static void RunWafRasp(Dictionary<string, object> arguments, Span rootSpan, string address)
     {
         var securityCoordinator = SecurityCoordinator.TryGet(Security.Instance, rootSpan);
 
@@ -226,8 +226,6 @@ internal static class RaspModule
             {
                 var matchSuccesCode = result.ReturnCode == WafReturnCode.Match && result.ShouldBlock ?
                     BlockType.Success : BlockType.Irrelevant;
-
-                if (matchSuccesCode == BlockType.Success) { onBlock?.Invoke(); }
 
                 securityCoordinator.Value.ReportAndBlock(result, () => RecordRaspTelemetry(address, result.ReturnCode == Waf.WafReturnCode.Match, result.Timeout, matchSuccesCode));
             }
@@ -378,7 +376,7 @@ internal static class RaspModule
                 }
 
                 // If a block is issued we must stop current child outbound request span, as the call is going to be interrupted
-                CheckVulnerability(wafArgs, AddressesConstants.DownstreamUrl, rootSpan, () => Tracer.Instance.InternalActiveScope?.Dispose());
+                CheckVulnerability(wafArgs, AddressesConstants.DownstreamUrl, rootSpan);
                 return true;
             }
         }
@@ -453,13 +451,14 @@ internal static class RaspModule
                 var contentType = content.Headers?.ContentType?.MediaType;
                 if (contentType is "application/json")
                 {
-                    await content.LoadIntoBufferAsync().ConfigureAwait(false);
-                    var len = 0L;
-                    var stream = content.ReadAsStreamAsync().Result;
-                    if (stream != null)
+                    var len = content.Headers?.ContentLength ?? 0;
+                    if (len > bodySizeLimit)
                     {
-                        len = stream.Length;
+                        return;
                     }
+
+                    await content.LoadIntoBufferAsync().ConfigureAwait(false);
+                    len = content.Headers?.ContentLength ?? 0;
 
                     if (len > 0 && len < bodySizeLimit)
                     {

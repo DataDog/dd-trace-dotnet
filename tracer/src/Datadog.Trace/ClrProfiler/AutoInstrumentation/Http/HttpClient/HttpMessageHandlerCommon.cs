@@ -51,7 +51,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
                     if (requestMessage.Instance is { } request)
                     {
                         var rootSpan = tracer.InternalActiveScope?.Root?.Span;
-                        executeOnDownstreamResponse = RaspModule.OnDownstreamRequest(request, scope.Span.SpanId, rootSpan).Result;
+                        try
+                        {
+                            executeOnDownstreamResponse = RaspModule.OnDownstreamRequest(request, scope.Span.SpanId, rootSpan).SafeGetResult();
+                        }
+                        catch (AppSec.BlockException ex)
+                        {
+                            scope.DisposeWithException(ex);
+                            throw;
+                        }
                     }
 #endif
 

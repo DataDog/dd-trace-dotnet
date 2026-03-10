@@ -178,7 +178,7 @@ namespace Datadog.Trace.AppSec
 
             AppSecBodyParsingSizeLimit = config
                                         .WithKeys(ConfigurationKeys.AppSec.AppSecBodyParsingSizeLimit)
-                                        .AsInt32(10_000_000);
+                                        .AsInt32(100_000); // Reduce dotnet default, as it is not possible to read content len without buffering it into memory
 
             ApiSecurityDownstreamBodyAnalysisSampleRate = config
                                                           .WithKeys(ConfigurationKeys.AppSec.ApiSecurityDownstreamBodyAnalysisSampleRate)
