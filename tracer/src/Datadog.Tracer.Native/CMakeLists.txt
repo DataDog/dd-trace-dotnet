@@ -12,7 +12,7 @@ endif()
 # Project definition
 # ******************************************************
 
-project("Datadog.Tracer.Native" VERSION 3.40.0)
+project("Datadog.Tracer.Native" VERSION 3.39.1)
 
 # ******************************************************
 # Environment detection

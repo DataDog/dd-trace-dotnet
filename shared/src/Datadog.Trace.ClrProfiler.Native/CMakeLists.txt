@@ -12,7 +12,7 @@ endif()
 # Project definition
 # ******************************************************
 
-project("Datadog.Trace.ClrProfiler.Native" VERSION 3.40.0)
+project("Datadog.Trace.ClrProfiler.Native" VERSION 3.39.1)
 
 if (UNIVERSAL)
    find_package(GlibcCompat REQUIRED)
