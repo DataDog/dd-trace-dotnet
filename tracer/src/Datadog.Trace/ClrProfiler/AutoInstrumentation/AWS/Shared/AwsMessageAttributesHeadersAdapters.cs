@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Text;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Headers;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.MessagePack;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
@@ -95,7 +96,7 @@ internal static class AwsMessageAttributesHeadersAdapters
 
                 if (jsonString != null)
                 {
-                    _ddAttributes = JsonConvert.DeserializeObject<Dictionary<string, string>>(jsonString);
+                    _ddAttributes = JsonHelper.DeserializeObject<Dictionary<string, string>>(jsonString);
                 }
             }
         }

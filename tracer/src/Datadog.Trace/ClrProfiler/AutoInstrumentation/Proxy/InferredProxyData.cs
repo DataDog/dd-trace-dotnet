@@ -18,7 +18,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
 /// <param name="httpMethod">HTTP method of the original request</param>
 /// <param name="path">Request path at the proxy</param>
 /// <param name="stage">Deployment stage name</param>
-internal readonly struct InferredProxyData(string proxyName, DateTimeOffset startTime, string? domainName, string? httpMethod, string? path, string? stage)
+/// <param name="region">Region of the proxy service</param>
+internal readonly struct InferredProxyData(string proxyName, DateTimeOffset startTime, string? domainName, string? httpMethod, string? path, string? stage, string? region)
 {
     // x-dd-proxy
     public readonly string ProxyName = proxyName;
@@ -30,11 +31,14 @@ internal readonly struct InferredProxyData(string proxyName, DateTimeOffset star
     public readonly string? DomainName = domainName;
 
     // x-dd-proxy-httpmethod
-    public readonly string? HttpMethod = httpMethod;
+    public readonly string? HttpMethod = httpMethod?.ToUpperInvariant();
 
     // x-dd-proxy-path
     public readonly string? Path = path;
 
     // x-dd-proxy-stage
     public readonly string? Stage = stage;
+
+    // x-dd-proxy-region
+    public readonly string? Region = region;
 }

@@ -207,6 +207,7 @@ internal static partial class PlatformKeys
             public const string Job = "GITHUB_JOB";
             public const string EventPath = "GITHUB_EVENT_PATH";
             public const string BaseRef = "GITHUB_BASE_REF";
+            public const string JobCheckRunId = "JOB_CHECK_RUN_ID";
         }
 
         /// <summary>

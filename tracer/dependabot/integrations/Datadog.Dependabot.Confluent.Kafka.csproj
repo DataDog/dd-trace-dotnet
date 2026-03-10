@@ -8,8 +8,8 @@
   <ItemGroup>
     <!-- Integration: Confluent.Kafka -->
     <!--    Assembly: Confluent.Kafka -->
-    <!-- Latest package https://www.nuget.org/packages/Confluent.Kafka/2.13.0 -->
-    <PackageReference Include="Confluent.Kafka" Version="2.13.0" />
+    <!-- Latest package https://www.nuget.org/packages/Confluent.Kafka/2.13.1 -->
+    <PackageReference Include="Confluent.Kafka" Version="2.13.1" />
   </ItemGroup>
 
 </Project>

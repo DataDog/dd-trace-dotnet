@@ -8,6 +8,7 @@
 
 using System;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
@@ -41,7 +42,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcAspN
                 // Otherwise, use the distributed context as the parent
                 var spanContext = tracer.ActiveScope?.Span.Context ?? extractedContext.SpanContext;
                 var serviceName = tracer.DefaultServiceName ?? "grpc-server";
-                string operationName = tracer.CurrentTraceSettings.Schema.Server.GetOperationNameForProtocol("grpc");
+                string operationName = tracer.CurrentTraceSettings.Schema.Server.GetOperationNameForProtocol(ServerSchema.Protocol.Grpc);
                 scope = tracer.StartActiveInternal(operationName, parent: spanContext, tags: tags, serviceName: serviceName);
 
                 var span = scope.Span;

@@ -74,8 +74,6 @@
     <PackageReference Include="Microsoft.AspNetCore.Hosting.Abstractions" Version="2.0.0" PrivateAssets="All" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Abstractions" Version="2.0.0" PrivateAssets="All" />
     <PackageReference Include="Microsoft.AspNetCore.Routing" Version="2.0.0" PrivateAssets="All" />
-
-    <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="4.4.1" />
   </ItemGroup>
 
   <ItemGroup>
@@ -87,6 +85,7 @@
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0'">
+    <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="4.4.1" />
     <!--DuckTyping-->
     <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
     <PackageReference Include="System.Reflection.Emit.Lightweight" Version="4.3.0" />
@@ -98,6 +97,29 @@
     <EmbeddedResource Include="AppSec\Waf\ConfigFiles\rule-set.json" />
     <EmbeddedResource Include="Debugger\ExceptionAutoInstrumentation\ConfigFiles\third-party-module-names.json" />
     <None Remove="AppSec\Waf\ConfigFiles\apisecurity-config.json" />
+  </ItemGroup>
+
+  <!-- we don't need the vendored .NET runtime code when targetting .NET Core 3.1+ -->
+  <!-- but keep Vendors/System.Reflection.Metadata/** for now because we use it to access internal members -->
+  <PropertyGroup>
+    <DotNetRuntimeFiles>Vendors/System.Collections.Immutable/**;Vendors/System.Memory/**;Vendors/System.Runtime.CompilerServices.Unsafe/**</DotNetRuntimeFiles>
+  </PropertyGroup>
+
+    <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible($(TargetFramework), 'netcoreapp3.1'))">
+    <Compile Remove="$(DotNetRuntimeFiles)" />
+    <EmbeddedResource Remove="$(DotNetRuntimeFiles)" />
+    <None Include="$(DotNetRuntimeFiles)" />
+
+    <!-- We use Unsafe.IsNullRef() which was added in .NET 5 -->
+    <Compile Include="Vendors/System.Runtime.CompilerServices.Unsafe/Unsafe.cs"
+        Condition="!$([MSBuild]::IsTargetFrameworkCompatible($(TargetFramework), 'net5.0'))" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Include="Configuration\supported-configurations.yaml">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </AdditionalFiles>
+    <AdditionalFiles Include="..\..\..\BannedSymbols.txt" Link="BannedSymbols.txt" />
   </ItemGroup>
 
   <!-- Below this point is reserved for vendor items -->
@@ -173,17 +195,4 @@
   <PropertyGroup>
     <DefineConstants>$(DefineConstants);ENABLE_IL2CPP</DefineConstants>
   </PropertyGroup>
-
-  <ItemGroup>
-    <AdditionalFiles Include="Configuration\supported-configurations.json">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </AdditionalFiles>
-    <AdditionalFiles Include="Configuration\supported-configurations-docs.yaml">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </AdditionalFiles>
-    <AdditionalFiles Include="Configuration\configuration_keys_mapping.json">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </AdditionalFiles>
-    <AdditionalFiles Include="..\..\..\BannedSymbols.txt" Link="BannedSymbols.txt" />
-  </ItemGroup>
 </Project>

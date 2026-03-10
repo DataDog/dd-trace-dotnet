@@ -47,6 +47,9 @@ labels:
   - name: "area:builds"
     title: "^\\[?(?i)build"
 
+  - name: "area:builds"
+    title: "^\\[?(?i)(version bump)"
+
   - name: "area:ssi"
     title: "^\\[?(?i)(fleet installer)"
 

@@ -15,12 +15,20 @@
 #undef MDTOKEN_DEFINED
 #undef GUID_DEFINED
 
+#ifdef _WINDOWS
+#include <atlbase.h>
+#include "..\Datadog.Profiler.Native.Windows\DbgHelpParser.h"
+#include "..\Datadog.Profiler.Native.Windows\SymPdbParser.h"
+#include "HResultConverter.h"
+#endif
+
 const std::string DebugInfoStore::NoFileFound = "";
 const std::uint32_t DebugInfoStore::NoStartLine = 0;
 
 DebugInfoStore::DebugInfoStore(ICorProfilerInfo4* profilerInfo, IConfiguration* _configuration) noexcept :
     _profilerInfo{profilerInfo},
-    _isEnabled{_configuration->IsDebugInfoEnabled()}
+    _isEnabled{_configuration->IsDebugInfoEnabled()},
+    _cachedItemsSize(0)
 {
 }
 
@@ -33,23 +41,31 @@ SymbolDebugInfo DebugInfoStore::Get(ModuleID moduleId, mdMethodDef methodDef)
 
     std::unique_lock _l(_modulesMutex);
 
-    auto rid = RidFromToken(methodDef);
     auto it = _modulesInfo.find(moduleId);
-    if (it != _modulesInfo.cend())
+    if (it == _modulesInfo.cend())
     {
-        return Get(it->second, moduleId, rid);
+        ParseModuleDebugInfo(moduleId);
     }
 
-    ParseModuleDebugInfo(moduleId);
+    ModuleDebugInfo& info = (it == _modulesInfo.cend()) ? _modulesInfo[moduleId] : it->second;
 
-    auto& info = _modulesInfo[moduleId];
-    return Get(info, moduleId, rid);
+    // we should support 2 situations:
+    //  - portable .pdb was found and we can use methodDef as RID
+    //  - only windows .pdb was found and we have rebuilt the RID
+    if ((info.LoadingState == SymbolLoadingState::Portable) || (info.LoadingState == SymbolLoadingState::Windows))
+    {
+        auto rid = RidFromToken(methodDef);
+        return GetFromRID(info, moduleId, rid);
+    }
+
+    return {NoFileFound, NoStartLine};
 }
 
 void DebugInfoStore::ParseModuleDebugInfo(ModuleID moduleId)
 {
     // This lookup creates an invalid ModuleInfo
     auto& moduleInfo = _modulesInfo[moduleId];
+    moduleInfo.LoadingState = SymbolLoadingState::Unknown;
 
     fs::path filePath = GetModuleFilePath(moduleId);
     moduleInfo.ModulePath = filePath.string();
@@ -73,15 +89,63 @@ void DebugInfoStore::ParseModuleDebugInfo(ModuleID moduleId)
 
     Log::Debug("Parsing ", pdbFile, " pdb file. (for module ", filePath,")");
 
+    ParseModuleDebugInfo(moduleId, pdbFile.string(), filePath.string(), moduleInfo);
+
+    // Incrementally track item size
+    size_t itemSize = moduleInfo.ModulePath.capacity();
+    itemSize += moduleInfo.Files.capacity() * sizeof(std::string);
+    for (const auto& file : moduleInfo.Files)
+    {
+        itemSize += file.capacity();
+    }
+    itemSize += moduleInfo.RidToDebugInfo.capacity() * sizeof(SymbolDebugInfo);
+    _cachedItemsSize.fetch_add(itemSize, std::memory_order_relaxed);
+}
+
+void DebugInfoStore::ParseModuleDebugInfo(ModuleID moduleId, const std::string& pdbFilename, const std::string& moduleFilename, ModuleDebugInfo& moduleInfo)
+{
+    // first, try to load the symbols via Portable PDB
+    if (TryLoadSymbolsWithPortable(pdbFilename, moduleFilename, moduleInfo))
+    {
+        Log::Debug("PDB file ", pdbFilename, " parsed successfully (for module ", moduleFilename, ")");
+        return;
+    }
+
+#ifdef _WINDOWS
+    // try to load the symbols via Windows PDB parsers as a fallback
+    if (moduleInfo.LoadingState != SymbolLoadingState::Portable)
+    {
+        if (TryLoadSymbolsWithSym(moduleId, pdbFilename, moduleFilename, moduleInfo))
+        {
+            Log::Debug("PDB file ", pdbFilename, " parsed successfully with Sym (for module ", moduleFilename, ")");
+            return;
+        }
+        if (TryLoadSymbolsWithDbgHelp(pdbFilename, moduleInfo))
+        {
+            Log::Debug("PDB file ", pdbFilename, " parsed successfully with DbgHelp (for module ", moduleFilename, ")");
+        }
+        else
+        {
+            moduleInfo.LoadingState = SymbolLoadingState::Failed;
+            Log::Debug("Failed to parse debug info from ", pdbFilename, " with DbgHelp (for module ", moduleFilename, ")");
+        }
+    }
+#else
+    moduleInfo.LoadingState = SymbolLoadingState::Failed;
+#endif
+}
+
+bool DebugInfoStore::TryLoadSymbolsWithPortable(const std::string& pdbFilename, const std::string& moduleFilename, ModuleDebugInfo& moduleInfo)
+{
     try
     {
-        auto r = PPDB::PortablePdbReader::CreateReader(pdbFile.string().c_str());
+        auto r = PPDB::PortablePdbReader::CreateReader(pdbFilename.c_str());
         auto m = r->GetNamedEntry<PPDB::MetadataStreamReader>();
         auto dtTable = m->GetTableReader<PPDB::DocumentTableReader>();
         if (dtTable == nullptr)
         {
-            Log::Warn("Unable to get the DocumentTable from the PDB file ", pdbFile, ".");
-            return;
+            Log::Warn("Unable to get the DocumentTable from the PDB file ", pdbFilename, ".");
+            return false;
         }
 
         Log::Debug("Reading DocumentTable: ", dtTable->RowCount(), " document(s)");
@@ -101,10 +165,10 @@ void DebugInfoStore::ParseModuleDebugInfo(ModuleID moduleId)
         auto mdiTable = m->GetTableReader<PPDB::MethodDebugInformationTableReader>();
         Log::Debug("Reading MethodDebugInformationTable: ", mdiTable->RowCount(), " row(s)");
 
-        moduleInfo.SymbolsDebugInfo.reserve(mdiTable->RowCount() + 1);
+        moduleInfo.RidToDebugInfo.reserve(mdiTable->RowCount() + 1);
 
         // Just in case a RID ended up to 0 due to a bug
-        moduleInfo.SymbolsDebugInfo.push_back({NoFileFound, NoStartLine});
+        moduleInfo.RidToDebugInfo.push_back({NoFileFound, NoStartLine});
         for (size_t i = 1; i <= mdiTable->RowCount(); ++i)
         {
             PPDB::MethodDebugInformationTableReader::Row row;
@@ -120,21 +184,80 @@ void DebugInfoStore::ParseModuleDebugInfo(ModuleID moduleId)
                     break;
                 }
             }
-            moduleInfo.SymbolsDebugInfo.emplace_back() = {moduleInfo.Files[row.InitialDocument], startLine};
+            moduleInfo.RidToDebugInfo.emplace_back() = {moduleInfo.Files[row.InitialDocument], startLine};
         }
-        moduleInfo.IsValid = true;
-        Log::Debug("PDB file ", pdbFile, " parsed successfully (for module ", filePath,")");
+        moduleInfo.LoadingState = SymbolLoadingState::Portable;
+
+        // Log memory size of loaded symbols
+        if (Log::IsDebugEnabled())
+        {
+            auto memorySize = moduleInfo.GetMemorySize();
+            Log::Debug("Loaded symbols from Portable PDB for module ", moduleFilename,
+                       ". Memory size: ", memorySize, " bytes (",
+                       moduleInfo.Files.size(), " files, ",
+                       moduleInfo.RidToDebugInfo.size(), " methods)");
+        }
+
+        return true;
     }
     catch (PPDB::Exception const& ec)
     {
-        Log::Warn("Failed to parse debug info from ", pdbFile,
-                  ".(Module: ", filePath, "Error name: ", ec.Name, ", code: ", std::hex, static_cast<std::uint32_t>(ec.Error), ", metadata table: ", static_cast<std::uint32_t>(ec.Table), ")");
+        Log::Warn("Failed to parse debug info from ", pdbFilename,
+                  ".(Module: ", moduleFilename, "Error name: ", ec.Name, ", code: ", std::hex, static_cast<std::uint32_t>(ec.Error), ", metadata table: ", static_cast<std::uint32_t>(ec.Table), ")");
     }
     catch (...)
     {
-        Log::Warn("Unexpected error happened while parsing the pdb file (Module: ", filePath, "): ", pdbFile);
+        Log::Warn("Unexpected error happened while parsing the pdb file (Module: ", moduleFilename, "): ", pdbFilename);
     }
+
+    return false;
 }
+
+
+#ifdef _WINDOWS
+bool DebugInfoStore::TryLoadSymbolsWithSym(ModuleID moduleId, const std::string& pdbFile, const std::string& moduleFile, ModuleDebugInfo& moduleInfo)
+{
+    // clear the module info in case some partial data was loaded
+    moduleInfo.RidToDebugInfo.clear();
+
+    moduleInfo.Files.clear();
+    moduleInfo.Files.reserve(DEFAULT_RESERVE_SIZE);
+    // still need to have the first file as empty string
+    moduleInfo.Files.push_back(NoFileFound);
+
+    // Get the IMetaDataImport from the ModuleID
+    CComPtr<IMetaDataImport> pMetaDataImport;
+    HRESULT hr = _profilerInfo->GetModuleMetaData(moduleId, CorOpenFlags::ofRead, IID_IMetaDataImport, reinterpret_cast<IUnknown**>(&pMetaDataImport));
+    if (FAILED(hr))
+    {
+        Log::Debug("GetModuleMetaData() failed with HRESULT = ", HResultConverter::ToStringWithCode(hr));
+        return false;
+    }
+
+    // the module LoadingState is set by the parser in case of success
+    SymParser parser;
+    bool success = parser.LoadPdbFile(pMetaDataImport, &moduleInfo, pdbFile, moduleFile);
+
+    return success;
+}
+
+bool DebugInfoStore::TryLoadSymbolsWithDbgHelp(const std::string& pdbFile, ModuleDebugInfo& moduleInfo)
+{
+    // clear the module info in case some partial data was loaded
+    moduleInfo.RidToDebugInfo.clear();
+
+    moduleInfo.Files.clear();
+    moduleInfo.Files.reserve(DEFAULT_RESERVE_SIZE);
+    // still need to have the first file as empty string
+    moduleInfo.Files.push_back(NoFileFound);
+
+    // the module LoadingState is set by the parser in case of success
+    DbgHelpParser parser;
+    bool success = parser.LoadPdbFile(&moduleInfo, pdbFile);
+
+    return success;
+}
+#endif
 
 fs::path DebugInfoStore::GetModuleFilePath(ModuleID moduleId) const
 {
@@ -156,4 +279,61 @@ fs::path DebugInfoStore::GetModuleFilePath(ModuleID moduleId) const
     }
 
     return buffer.get();
+}
+
+DebugInfoStore::MemoryStats DebugInfoStore::ComputeMemoryStats() const
+{
+    std::unique_lock lock(_modulesMutex);
+
+    MemoryStats stats{};
+    stats.baseSize = sizeof(DebugInfoStore);
+    stats.modulesMapBuckets = _modulesInfo.bucket_count();
+    stats.moduleCount = _modulesInfo.size();
+    stats.modulesMapSize = stats.modulesMapBuckets * (sizeof(ModuleID) + sizeof(ModuleDebugInfo) + sizeof(void*));
+
+    // Calculate memory for each ModuleDebugInfo
+    for (const auto& [moduleId, moduleInfo] : _modulesInfo)
+    {
+        // ModulePath string
+        stats.moduleInfosSize += moduleInfo.ModulePath.capacity();
+
+        // Files vector
+        stats.moduleInfosSize += moduleInfo.Files.capacity() * sizeof(std::string);
+        for (const auto& file : moduleInfo.Files)
+        {
+            stats.moduleInfosSize += file.capacity();
+        }
+
+        // SymbolsDebugInfo vector
+        stats.moduleInfosSize += moduleInfo.RidToDebugInfo.capacity() * sizeof(SymbolDebugInfo);
+        // SymbolDebugInfo contains string_view, which doesn't own the data, so no additional memory
+    }
+
+    return stats;
+}
+
+size_t DebugInfoStore::GetMemorySize() const
+{
+    std::lock_guard<std::mutex> lock(_modulesMutex);
+
+    size_t totalSize = sizeof(DebugInfoStore);
+
+    // Calculate container overhead on-demand
+    totalSize += _modulesInfo.bucket_count() * (sizeof(ModuleID) + sizeof(ModuleDebugInfo) + sizeof(void*));
+
+    // Add cached items size (updated incrementally)
+    totalSize += _cachedItemsSize.load(std::memory_order_relaxed);
+
+    return totalSize;
+}
+
+void DebugInfoStore::LogMemoryBreakdown() const
+{
+    auto stats = ComputeMemoryStats();
+
+    Log::Debug("DebugInfoStore Memory Breakdown:");
+    Log::Debug("  Base object size:        ", stats.baseSize, " bytes");
+    Log::Debug("  Modules map:             ", stats.modulesMapSize, " bytes (", stats.moduleCount, " entries, ", stats.modulesMapBuckets, " buckets)");
+    Log::Debug("  Module infos content:    ", stats.moduleInfosSize, " bytes");
+    Log::Debug("  Total memory:            ", stats.GetTotal(), " bytes (", (stats.GetTotal() / 1024.0), " KB)");
 }

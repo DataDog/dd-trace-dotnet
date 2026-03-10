@@ -17,8 +17,6 @@ namespace Datadog.Trace;
 /// </summary>
 internal sealed class SpanLink
 {
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SpanLink>();
-
     /// <summary>
     /// Initializes a new instance of the <see cref="SpanLink"/> class.
     /// A span link describes a tuple of trace id and span id
