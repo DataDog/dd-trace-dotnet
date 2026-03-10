@@ -25,12 +25,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
         ParameterTypeNames = new[] { "OpenTelemetry.Baggage" },
         MinimumVersion = "1.0.0",
         MaximumVersion = "1.0.0",
-        IntegrationName = IntegrationName)]
+        IntegrationName = nameof(Configuration.IntegrationId.OpenTelemetry))]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
     public sealed class OTelBaggage_ClearBaggageIntegration
     {
-        internal const string IntegrationName = nameof(Configuration.IntegrationId.OpenTelemetry);
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.OpenTelemetry;
 
         internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)

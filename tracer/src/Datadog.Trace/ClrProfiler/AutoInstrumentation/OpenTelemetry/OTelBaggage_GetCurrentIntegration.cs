@@ -26,12 +26,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
         ParameterTypeNames = new string[0],
         MinimumVersion = "1.0.0",
         MaximumVersion = "1.0.0",
-        IntegrationName = IntegrationName)]
+        IntegrationName = nameof(Configuration.IntegrationId.OpenTelemetry))]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
     public sealed class OTelBaggage_GetCurrentIntegration
     {
-        internal const string IntegrationName = nameof(Configuration.IntegrationId.OpenTelemetry);
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.OpenTelemetry;
         private static readonly Type? OTelBaggageType = Type.GetType("OpenTelemetry.Baggage, OpenTelemetry.Api", throwOnError: false);
 
