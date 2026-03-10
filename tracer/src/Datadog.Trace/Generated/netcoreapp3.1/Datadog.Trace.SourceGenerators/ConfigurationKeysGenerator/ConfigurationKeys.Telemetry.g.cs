@@ -82,6 +82,13 @@ internal static partial class ConfigurationKeys
         public const string DependencyCollectionEnabled = "DD_TELEMETRY_DEPENDENCY_COLLECTION_ENABLED";
 
         /// <summary>
+        /// Configuration key for how often the extended heartbeat telemetry should be sent, in seconds.
+        /// Must be between 1 and 604800 (7 days). For testing purposes. Defaults to 86400 (24 hours).
+        /// <see cref="Datadog.Trace.Telemetry.TelemetrySettings.ExtendedHeartbeatInterval"/>
+        /// </summary>
+        public const string ExtendedHeartbeatIntervalSeconds = "DD_TELEMETRY_EXTENDED_HEARTBEAT_INTERVAL";
+
+        /// <summary>
         /// Configuration key for how often telemetry should be sent, in seconds. Must be between 1 and 3600.
         /// For testing purposes. Defaults to 60
         /// <see cref="Datadog.Trace.Telemetry.TelemetrySettings.HeartbeatInterval"/>

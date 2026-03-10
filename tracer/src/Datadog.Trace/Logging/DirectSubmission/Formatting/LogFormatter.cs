@@ -15,6 +15,7 @@ using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Util;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Logging.DirectSubmission.Formatting
@@ -276,11 +277,11 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
         }
 
         internal static JsonTextWriter GetJsonWriter(StringBuilder builder)
-        {
-            var writer = new JsonTextWriter(new StringWriter(builder));
-            writer.Formatting = Vendors.Newtonsoft.Json.Formatting.None;
-            return writer;
-        }
+            => new JsonTextWriter(new StringWriter(builder))
+            {
+                ArrayPool = JsonArrayPool.Shared,
+                Formatting = Vendors.Newtonsoft.Json.Formatting.None,
+            };
 
         /// <summary>
         /// Format the log, based on <see cref="Datadog.Trace.Vendors.Serilog.Formatting.Json.JsonFormatter"/>
