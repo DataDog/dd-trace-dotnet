@@ -229,7 +229,7 @@ internal static partial class ConfigurationKeys
     /// <summary>
     /// Enables a runtime metrics collector which uses the 
     /// <a href="https://learn.microsoft.com/en-us/dotnet/core/diagnostics/metrics">System.Diagnostics.Metrics</a> API.
-    /// This collector can only be enabled when using .NET 6+, and will only include ASP.NET Core metrics on .NET 8+. 
+    /// This collector can only be enabled when using .NET 6+, and also reports ASP.NET Core metrics on .NET 8+. 
     /// On .NET 8+, defaults to <c>true</c> (enabled). On .NET 6+, defaults to <c>true</c> (enabled) 
     /// only when <c>DD_RUNTIME_METRICS_ENABLED</c> is not explicitly set. Otherwise defaults to
     /// <c>false</c> (disabled).

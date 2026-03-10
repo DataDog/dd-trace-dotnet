@@ -189,6 +189,8 @@ namespace Datadog.Trace.Configuration
             }
             else if (otelExporterResult.ConfigurationResult is { IsPresent: true, IsValid: true, Result: false })
             {
+                // OTEL_METRICS_EXPORTER=none explicitly disables metrics export, which takes precedence
+                // over the .NET 6+ default and disables runtime metrics.
                 RuntimeMetricsEnabled = false;
             }
             else
@@ -206,7 +208,7 @@ namespace Datadog.Trace.Configuration
             // to avoid EventPipe crash/leak issues (dotnet/runtime#103480, dotnet/runtime#111368).
             // Explicit DD_RUNTIME_METRICS_ENABLED=true users on .NET 6/7 keep EventListener
             // to preserve ASP.NET Core EventCounter metrics not available via Diagnostics on < .NET 8.
-            var diagnosticsDefault = !runtimeMetricsEnabledResult.ConfigurationResult.IsPresent || FrameworkDescription.Instance.RuntimeVersion.Major >= 8;
+            var diagnosticsDefault = !runtimeMetricsEnabledResult.ConfigurationResult.IsValid || FrameworkDescription.Instance.RuntimeVersion.Major >= 8;
             RuntimeMetricsDiagnosticsMetricsApiEnabled = runtimeMetricsDiagnosticsMetricsApiEnabledResult.WithDefault(diagnosticsDefault);
 #else
             // System.Diagnostics.Metrics is not available before .NET 6, keep disabled by default

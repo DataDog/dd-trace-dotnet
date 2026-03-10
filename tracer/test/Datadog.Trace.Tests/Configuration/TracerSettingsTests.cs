@@ -153,9 +153,9 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData("false", null, false)]
         [InlineData("A", "none", false)]
         [InlineData("", "none", false)]
+        [InlineData(null, "none", false)] // OTEL_METRICS_EXPORTER=none always disables, regardless of runtime
         // Runtime metrics are enabled by default on .NET 6+
 #if NET6_0_OR_GREATER
-        [InlineData(null, "none", false)]
         [InlineData(null, "random", true)]
         [InlineData(null, "otlp", true)]
         [InlineData(null, null, true)]
@@ -163,7 +163,6 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData("A", "otlp", true)]
         [InlineData("", null, true)]
 #else
-        [InlineData(null, "none", false)]
         [InlineData(null, "random", false)]
         [InlineData(null, "otlp", false)]
         [InlineData(null, null, false)]
@@ -197,6 +196,19 @@ namespace Datadog.Trace.Tests.Configuration
         public void RuntimeMetrics_DefaultsToDiagnosticsOnNet6Plus_WhenNotExplicitlySet()
         {
             var source = CreateConfigurationSource();
+            var settings = new TracerSettings(source);
+
+            settings.RuntimeMetricsEnabled.Should().BeTrue();
+            settings.RuntimeMetricsDiagnosticsMetricsApiEnabled.Should().BeTrue();
+        }
+
+        [Fact]
+        public void RuntimeMetrics_InvalidValue_TreatedAsUnset_DefaultsToDiagnostics()
+        {
+            // An invalid value like "blah" should be treated the same as unset:
+            // on .NET 6+ runtime metrics default to enabled with Diagnostics listener.
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.RuntimeMetricsEnabled, "blah"));
             var settings = new TracerSettings(source);
 
             settings.RuntimeMetricsEnabled.Should().BeTrue();
