@@ -160,25 +160,6 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
                         property1: span.Tags?.GetType().FullName ?? "<null>",
                         property2: span.OperationName);
                 }
-
-                var tags = span.Tags;
-                if (tags is null)
-                {
-                    return;
-                }
-
-                tags.SetTag(_tags.Type, "entry");
-                tags.SetTag(_tags.Index[0], "0");
-                tags.SetTag(_tags.Method[0], methodName);
-                tags.SetTag(_tags.TypeName[0], typeFullName);
-
-                if (sp.HasValue)
-                {
-                    var cached = sp.Value;
-                    tags.SetTag(_tags.File[0], cached.Url);
-                    tags.SetTag(_tags.Line[0], cached.Line);
-                    tags.SetTag(_tags.Column[0], cached.Column);
-                }
             }
             catch (Exception ex)
             {
