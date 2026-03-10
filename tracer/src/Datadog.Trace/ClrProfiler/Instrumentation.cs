@@ -20,6 +20,7 @@ using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.Logging;
+using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.ServiceFabric;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
@@ -295,7 +296,7 @@ namespace Datadog.Trace.ClrProfiler
             }
 
 #if NET6_0_OR_GREATER
-            if (PlatformHelpers.TrimmingDetector.IsTrimmingDetected)
+            if (TrimmingDetector.DetectedTrimmingState == TrimmingDetector.TrimState.TrimmedAppMissingTrimmingFile)
             {
                 Log.Warning(
                     "Application trimming detected: a standard .NET type could not be loaded. "

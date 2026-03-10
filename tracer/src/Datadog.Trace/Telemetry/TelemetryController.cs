@@ -17,6 +17,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.Logging;
+using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry.Collectors;
 using Datadog.Trace.Telemetry.Metrics;
@@ -439,13 +440,17 @@ internal sealed class TelemetryController : ITelemetryController
             if (_isUpdateRequired || _tags is null)
             {
                 _isUpdateRequired = false;
+
+                var trimState = TrimmingDetector.DetectedTrimmingState;
                 // using 1/0 to save bytes!
                 _tags = $"ci:{(_isCiVisEnabled ? '1' : '0')}" +
                         $",asm:{(_isAsmEnabled ? '1' : '0')}" +
                         $",prof:{(_isProfilingEnabled ? '1' : '0')}" +
                         $",dyn:{(_isDynamicInstrumentationEnabled ? '1' : '0')}" +
 #if NET6_0_OR_GREATER
-                        $",trim:{(PlatformHelpers.TrimmingDetector.IsTrimmingDetected ? '1' : '0')}" +
+                        $",trim:{(trimState == TrimmingDetector.TrimState.TrimmedAppMissingTrimmingFile
+                                      ? "err"
+                                      : trimState == TrimmingDetector.TrimState.TrimmedAppUsingTrimmingFile ? "yes" : "no")}" +
 #endif
                         $"{_cloudEnv}";
             }

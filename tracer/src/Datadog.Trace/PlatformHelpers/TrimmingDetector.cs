@@ -12,26 +12,43 @@ namespace Datadog.Trace.PlatformHelpers;
 
 internal static class TrimmingDetector
 {
-    public static readonly bool IsTrimmingDetected = DetectTrimming();
+    public static readonly TrimState DetectedTrimmingState = DetectTrimming();
 
-    private static bool DetectTrimming()
+    private static TrimState DetectTrimming()
     {
         try
         {
             // Probe for various BCL types from different assemblies which we expect to be trimmed in most customer applications
             // We check multiple types to try to avoid false positives in the case where one of them _is_ referenced.
-            // Keep these type checks in sync with tracer/src/Datadog.Trace.ClrProfiler.Managed.Loader/Startup.cs
-            // and tracer/build/_build/Build.Steps.cs (CreateTrimmingFile target).
+
+            // Keep these type checks in sync with tracer/build/_build/Build.Steps.cs (CreateTrimmingFile target).
+            if (Type.GetType("System.Net.NetworkInformation.PingCompletedEventArgs, System.Net.Ping", throwOnError: false) is null
+             || Type.GetType("System.IO.IsolatedStorage.IsolatedStorageScope, System.IO.IsolatedStorage", throwOnError: false) is null)
+            {
+                // These two are listed in our trimming.xml file. If _either_ of them are missing,
+                // that means the app is trimmed, and they haven't used our trimming file.
+                return  TrimState.TrimmedAppMissingTrimmingFile;
+            }
+
+            // This probe is intentionally _not_ listed in CreateTrimmingFile, so that we can detect the case
+            // where they're using trimming but have correctly added our trimming file
             return Type.GetType("System.Net.Mime.SmtpDateTime, System.Net.Mail", throwOnError: false) is null
-                || Type.GetType("System.Net.NetworkInformation.PingCompletedEventArgs, System.Net.Ping", throwOnError: false) is null
-                || Type.GetType("System.IO.IsolatedStorage.IsolatedStorageScope, System.IO.IsolatedStorage", throwOnError: false) is null;
+                       ? TrimState.TrimmedAppUsingTrimmingFile
+                       : TrimState.NoTrimmingDetected;
         }
         catch
         {
             // Shouldn't happen, seeing as we have throwOnError: false
-
-            return false;
+            return TrimState.Unknown;
         }
+    }
+
+    public enum TrimState
+    {
+        Unknown,
+        NoTrimmingDetected,
+        TrimmedAppUsingTrimmingFile,
+        TrimmedAppMissingTrimmingFile,
     }
 }
 #endif
