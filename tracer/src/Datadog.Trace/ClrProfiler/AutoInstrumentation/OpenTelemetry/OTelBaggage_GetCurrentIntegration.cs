@@ -32,25 +32,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
     public sealed class OTelBaggage_GetCurrentIntegration
     {
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.OpenTelemetry;
-        private static readonly Type? OTelBaggageType = Type.GetType("OpenTelemetry.Baggage, OpenTelemetry.Api", throwOnError: false);
 
-        internal static CallTargetState OnMethodBegin<TInstance>(TInstance instance)
+        internal static CallTargetState OnMethodBegin<TInstance>(TInstance apiBaggage)
+            where TInstance : IApiBaggage
         {
-            if (Tracer.Instance.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId)
-                && OTelBaggageType is not null)
+            if (Tracer.Instance.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
             {
-                DuckType.CreateTypeResult proxyResult = DuckType.GetOrCreateProxyType(typeof(IApiBaggage), OTelBaggageType);
-                if (proxyResult.Success)
-                {
-                    var apiBaggage = proxyResult.CreateInstance<IApiBaggage>(Activator.CreateInstance(OTelBaggageType));
-
-                    // Since Datadog.Trace.Baggage.Current may have been updated since the last time OpenTelemetry.Baggage.Current was accessed,
-                    // we must update the underlying OpenTelemetry.Baggage.Current store with the latest Datadog.Trace.Baggage.Current items.
-                    // Note: When the user sets OpenTelemetry.Baggage.Current, those changes will override the contents of Datadog.Trace.Baggage.Current,
-                    // so we can always consider Datadog.Trace.Baggage.Current as being up-to-date.
-                    var baggageHolder = apiBaggage.EnsureBaggageHolder();
-                    baggageHolder.Baggage = apiBaggage.Create(Baggage.Current.ToDictionary(kvp => kvp.Key, kvp => kvp.Value));
-                }
+                // Since Datadog.Trace.Baggage.Current may have been updated since the last time OpenTelemetry.Baggage.Current was accessed,
+                // we must update the underlying OpenTelemetry.Baggage.Current store with the latest Datadog.Trace.Baggage.Current items.
+                // Note: When the user sets OpenTelemetry.Baggage.Current, those changes will override the contents of Datadog.Trace.Baggage.Current,
+                // so we can always consider Datadog.Trace.Baggage.Current as being up-to-date.
+                var baggageHolder = apiBaggage.EnsureBaggageHolder();
+                baggageHolder.Baggage = apiBaggage.Create(Baggage.Current.ToDictionary(kvp => kvp.Key, kvp => kvp.Value));
             }
 
             return CallTargetState.GetDefault();
