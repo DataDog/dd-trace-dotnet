@@ -32,14 +32,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
         internal const string IntegrationName = nameof(Configuration.IntegrationId.OpenTelemetry);
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.OpenTelemetry;
 
-        /// <summary>
-        /// OnMethodBegin callback
-        /// </summary>
-        /// <typeparam name="TInstance">Type of the instance (null for this static method)</typeparam>
-        /// <typeparam name="TBaggage">Type of the baggage</typeparam>
-        /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
-        /// <param name="value">Baggage value of the setter operation.</param>
-        /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TInstance, TBaggage>(TInstance instance, TBaggage value)
             where TBaggage : IApiBaggage
         {

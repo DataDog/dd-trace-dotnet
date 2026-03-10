@@ -34,16 +34,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
         internal const string IntegrationName = nameof(Configuration.IntegrationId.OpenTelemetry);
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.OpenTelemetry;
 
-        /// <summary>
-        /// OnMethodBegin callback
-        /// </summary>
-        /// <typeparam name="TInstance">Type of the instance (null for this static method)</typeparam>
-        /// <typeparam name="TBaggage">Type of the baggage</typeparam>
-        /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
-        /// <param name="key">Key to be added to baggage.</param>
-        /// <param name="value">Value to be added to baggage.</param>
-        /// <param name="baggage">Optional baggage, or default if not specified.</param>
-        /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TInstance, TBaggage>(TInstance instance, string key, string value, TBaggage baggage)
         {
             // If the user provides the default baggage instance, then OpenTelemetry.Baggage.Current will be used as the baggage source,
@@ -63,16 +53,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
             return CallTargetState.GetDefault();
         }
 
-        /// <summary>
-        /// OnMethodEnd callback
-        /// </summary>
-        /// <typeparam name="TTarget">Type of the target</typeparam>
-        /// <typeparam name="TReturn">Type of the return value</typeparam>
-        /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
-        /// <param name="returnValue">Return value</param>
-        /// <param name="exception">Exception instance in case the original code threw an exception.</param>
-        /// <param name="state">Calltarget state value</param>
-        /// <returns>A response value, in an async scenario will be T of Task of T</returns>
         internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         {
             if (Tracer.Instance.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId)
