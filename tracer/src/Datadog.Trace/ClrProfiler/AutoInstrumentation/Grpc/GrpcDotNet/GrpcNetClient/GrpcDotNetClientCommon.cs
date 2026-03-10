@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcNetC
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(GrpcDotNetClientCommon));
 
 #if NETCOREAPP
-        public static Scope? CreateClientSpan<TGrpcCall>(Tracer tracer, TGrpcCall instance, System.Net.Http.HttpRequestMessage requestMessage)
+        public static Scope? CreateClientSpan<TGrpcCall, TRequest>(Tracer tracer, TGrpcCall instance, TRequest requestMessage)
 #else
         public static Scope? CreateClientSpan<TGrpcCall, TRequest>(Tracer tracer, TGrpcCall instance, TRequest requestMessage)
             where TRequest : IHttpRequestMessage
@@ -62,7 +62,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcNetC
                 // add distributed tracing headers to the HTTP request
                 // These will be overwritten by the HttpClient integration if that is enabled, per the RFC
                 var context = new PropagationContext(span.Context, Baggage.Current);
-                tracer.TracerManager.SpanContextPropagator.Inject(context, new HttpHeadersCollection(requestMessage.Headers));
+#if NETCOREAPP
+                var headers = (requestMessage as System.Net.Http.HttpRequestMessage)?.Headers;
+#else
+                var headers = requestMessage.Headers;
+#endif
+                tracer.TracerManager.SpanContextPropagator.Inject(context, new HttpHeadersCollection(headers));
 
                 // Add the request metadata as tags
                 if (grpcCall.Options.Headers is { Count: > 0 })

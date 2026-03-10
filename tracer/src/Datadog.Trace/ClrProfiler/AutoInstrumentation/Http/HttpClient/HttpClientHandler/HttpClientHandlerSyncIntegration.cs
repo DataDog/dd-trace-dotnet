@@ -31,7 +31,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.HttpClie
         private const IntegrationId IntegrationId = Configuration.IntegrationId.HttpMessageHandler;
 
 #if NETCOREAPP
-        internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, in System.Net.Http.HttpRequestMessage requestMessage, CancellationToken cancellationToken)
+        internal static CallTargetState OnMethodBegin<TTarget, TRequest>(TTarget instance, in TRequest requestMessage, CancellationToken cancellationToken)
 #else
         internal static CallTargetState OnMethodBegin<TTarget, TRequest>(TTarget instance, TRequest requestMessage, CancellationToken cancellationToken)
             where TRequest : IHttpRequestMessage
@@ -40,10 +40,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.HttpClie
             return HttpMessageHandlerCommon.OnMethodBegin(instance, requestMessage, cancellationToken, IntegrationId, implementationIntegrationId: null);
         }
 
-#if NETCOREAPP
-        internal static CallTargetReturn<System.Net.Http.HttpResponseMessage> OnMethodEnd<TTarget>(TTarget instance, System.Net.Http.HttpResponseMessage responseMessage, Exception exception, in CallTargetState state)
-#else
         internal static CallTargetReturn<TResponse> OnMethodEnd<TTarget, TResponse>(TTarget instance, TResponse responseMessage, Exception exception, in CallTargetState state)
+#if !NETCOREAPP
             where TResponse : IHttpResponseMessage
 #endif
         {

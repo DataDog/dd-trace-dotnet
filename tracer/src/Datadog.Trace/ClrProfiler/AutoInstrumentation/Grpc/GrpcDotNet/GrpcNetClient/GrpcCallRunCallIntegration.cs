@@ -30,7 +30,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcNetC
 public sealed class GrpcCallRunCallIntegration
 {
 #if NETCOREAPP
-    internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, in System.Net.Http.HttpRequestMessage requestMessage, TimeSpan? timeout)
+    internal static CallTargetState OnMethodBegin<TTarget, TRequest>(TTarget instance, in TRequest requestMessage, TimeSpan? timeout)
 #else
     internal static CallTargetState OnMethodBegin<TTarget, TRequest>(TTarget instance, TRequest requestMessage, TimeSpan? timeout)
         where TRequest : IHttpRequestMessage

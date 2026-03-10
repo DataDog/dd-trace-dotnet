@@ -32,7 +32,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.WinHttpH
         private const IntegrationId WinHttpHandlerIntegrationId = IntegrationId.WinHttpHandler;
 
 #if NETCOREAPP
-        internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, in System.Net.Http.HttpRequestMessage requestMessage, CancellationToken cancellationToken)
+        internal static CallTargetState OnMethodBegin<TTarget, TRequest>(TTarget instance, in TRequest requestMessage, CancellationToken cancellationToken)
 #else
         internal static CallTargetState OnMethodBegin<TTarget, TRequest>(TTarget instance, TRequest requestMessage, CancellationToken cancellationToken)
             where TRequest : IHttpRequestMessage
@@ -41,10 +41,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.WinHttpH
             return HttpMessageHandlerCommon.OnMethodBegin(instance, requestMessage, cancellationToken, IntegrationId, implementationIntegrationId: WinHttpHandlerIntegrationId);
         }
 
-#if NETCOREAPP
-        internal static System.Net.Http.HttpResponseMessage OnAsyncMethodEnd<TTarget>(TTarget instance, System.Net.Http.HttpResponseMessage responseMessage, Exception exception, in CallTargetState state)
-#else
         internal static TResponse OnAsyncMethodEnd<TTarget, TResponse>(TTarget instance, TResponse responseMessage, Exception exception, in CallTargetState state)
+#if !NETCOREAPP
             where TResponse : IHttpResponseMessage
 #endif
         {

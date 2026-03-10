@@ -15,14 +15,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
     internal static class HttpMessageHandlerCommon
     {
 #if NETCOREAPP
-        public static CallTargetState OnMethodBegin<TTarget>(TTarget instance, System.Net.Http.HttpRequestMessage requestMessage, CancellationToken cancellationToken, IntegrationId integrationId, IntegrationId? implementationIntegrationId)
+        public static CallTargetState OnMethodBegin<TTarget, TRequest>(TTarget instance, TRequest request, CancellationToken cancellationToken, IntegrationId integrationId, IntegrationId? implementationIntegrationId)
 #else
         public static CallTargetState OnMethodBegin<TTarget, TRequest>(TTarget instance, TRequest requestMessage, CancellationToken cancellationToken, IntegrationId integrationId, IntegrationId? implementationIntegrationId)
             where TRequest : IHttpRequestMessage
 #endif
         {
 #if NETCOREAPP
-            if (requestMessage is null)
+            if (request is not System.Net.Http.HttpRequestMessage requestMessage)
 #else
             if (requestMessage.Instance is null)
 #endif
@@ -59,7 +59,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
         }
 
 #if NETCOREAPP
-        public static System.Net.Http.HttpResponseMessage OnMethodEnd<TTarget>(TTarget instance, System.Net.Http.HttpResponseMessage responseMessage, Exception exception, in CallTargetState state)
+        public static TResponse OnMethodEnd<TTarget, TResponse>(TTarget instance, TResponse responseMessage, Exception exception, in CallTargetState state)
 #else
         public static TResponse OnMethodEnd<TTarget, TResponse>(TTarget instance, TResponse responseMessage, Exception exception, in CallTargetState state)
             where TResponse : IHttpResponseMessage
@@ -75,12 +75,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
             try
             {
 #if NETCOREAPP
-                if (responseMessage is not null)
+                if (responseMessage is System.Net.Http.HttpResponseMessage response)
+                {
+                    var statusCode = (int)response.StatusCode;
 #else
                 if (responseMessage.Instance is not null)
-#endif
                 {
-                    scope.Span.SetHttpStatusCode((int)responseMessage.StatusCode, false, Tracer.Instance.CurrentTraceSettings.Settings);
+                    var statusCode = responseMessage.StatusCode;
+#endif
+                    scope.Span.SetHttpStatusCode(statusCode, false, Tracer.Instance.CurrentTraceSettings.Settings);
                 }
 
                 if (exception != null)
