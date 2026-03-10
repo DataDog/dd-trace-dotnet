@@ -14,7 +14,7 @@ namespace Datadog.Trace.Vendors.StatsdClient.Worker
     /// AsynchronousWorker performs tasks asynchronously.
     /// `handler` must be thread safe if `workerThreadCount` > 1.
     /// </summary>
-    internal class AsynchronousWorker<T> : IDisposable
+    internal class AsynchronousWorker<T>
     {
         private static TimeSpan maxWaitDurationInFlush = TimeSpan.FromSeconds(3);
         private readonly ConcurrentBoundedQueue<T> _queue;
@@ -73,30 +73,6 @@ namespace Datadog.Trace.Vendors.StatsdClient.Worker
 
             _requestFlush = true;
             _flushEvent.WaitOne(maxWaitDurationInFlush);
-        }
-
-        public void Dispose()
-        {
-            if (!_terminate)
-            {
-                Flush();
-                _terminate = true;
-                try
-                {
-                    foreach (var worker in _workers)
-                    {
-                        worker.Wait();
-                    }
-
-                    _flushEvent.Dispose();
-                }
-                catch (Exception e)
-                {
-                    Debug.WriteLine(e.Message);
-                }
-
-                _workers.Clear();
-            }
         }
 
         public async Task DisposeAsync()

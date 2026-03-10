@@ -9,7 +9,7 @@ using Datadog.Trace.Vendors.StatsdClient.Transport;
 
 namespace Datadog.Trace.Vendors.StatsdClient
 {
-    internal class StatsdData : IDisposable
+    internal class StatsdData
     {
         private ITransport _transport;
         private StatsBufferize _statsBufferize;
@@ -34,23 +34,6 @@ namespace Datadog.Trace.Vendors.StatsdClient
         {
             _statsBufferize?.Flush();
             Telemetry.Flush();
-        }
-
-        public void Dispose()
-        {
-            // _statsBufferize and _telemetry must be disposed before _statsSender to make
-            // sure _statsSender does not received data when it is already disposed.
-
-            Telemetry?.Dispose();
-            Telemetry = null;
-
-            _statsBufferize?.Dispose();
-            _statsBufferize = null;
-
-            _transport?.Dispose();
-            _transport = null;
-
-            MetricsSender = null;
         }
 
         public async Task DisposeAsync()
