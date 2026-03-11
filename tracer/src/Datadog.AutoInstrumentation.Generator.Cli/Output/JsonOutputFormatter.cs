@@ -48,12 +48,7 @@ internal static class JsonOutputFormatter
                         meta.IsInterface,
                     }
                     : null,
-                configuration = new
-                {
-                    config.CreateOnMethodBegin,
-                    config.CreateOnMethodEnd,
-                    config.CreateOnAsyncMethodEnd,
-                },
+                configuration = config,
             },
             SerializerOptions);
     }
