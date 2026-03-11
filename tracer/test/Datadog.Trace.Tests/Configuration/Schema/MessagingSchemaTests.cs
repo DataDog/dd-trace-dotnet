@@ -222,5 +222,29 @@ namespace Datadog.Trace.Tests.Configuration.Schema
                 namingSchema.Messaging.GetServiceNameMetadata(value).Source.Should().BeNull();
             }
         }
+
+        [Fact]
+        public void GetServiceNameMetadata_SourceReturnsIntegrationKey_WhenV0Suffix()
+        {
+            var namingSchema = new NamingSchema(SchemaVersion.V0, peerServiceTagsEnabled: false, removeClientServiceNamesEnabled: false, DefaultServiceName, new Dictionary<string, string>(), new Dictionary<string, string>());
+            namingSchema.Messaging.GetServiceNameMetadata(MessagingSchema.ServiceType.Kafka).Source.Should().Be("kafka");
+            namingSchema.Messaging.GetServiceNameMetadata(MessagingSchema.ServiceType.AwsSqs).Source.Should().Be("aws.sqs");
+        }
+
+        [Fact]
+        public void GetServiceNameMetadata_SourceReturnsOptServiceMapping_WhenMapped()
+        {
+            var namingSchema = new NamingSchema(SchemaVersion.V0, peerServiceTagsEnabled: false, removeClientServiceNamesEnabled: false, DefaultServiceName, _mappings, new Dictionary<string, string>());
+            namingSchema.Messaging.GetServiceNameMetadata(MessagingSchema.ServiceType.Kafka).Source.Should().Be("opt.service_mapping");
+            namingSchema.Messaging.GetServiceNameMetadata(MessagingSchema.ServiceType.RabbitMq).Source.Should().Be("opt.service_mapping");
+        }
+
+        [Fact]
+        public void GetServiceNameMetadata_SourceReturnsOptServiceMapping_WhenMappedToDefault()
+        {
+            var mappings = new Dictionary<string, string> { { "kafka", DefaultServiceName } };
+            var namingSchema = new NamingSchema(SchemaVersion.V0, peerServiceTagsEnabled: false, removeClientServiceNamesEnabled: false, DefaultServiceName, mappings, new Dictionary<string, string>());
+            namingSchema.Messaging.GetServiceNameMetadata(MessagingSchema.ServiceType.Kafka).Source.Should().Be("opt.service_mapping");
+        }
     }
 }

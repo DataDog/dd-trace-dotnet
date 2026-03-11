@@ -200,5 +200,28 @@ namespace Datadog.Trace.Tests.Configuration.Schema
                 namingSchema.Client.GetServiceNameMetadata(value).Source.Should().BeNull();
             }
         }
+
+        [Fact]
+        public void GetServiceNameMetadata_SourceReturnsIntegrationKey_WhenV0Suffix()
+        {
+            var namingSchema = new NamingSchema(SchemaVersion.V0, peerServiceTagsEnabled: false, removeClientServiceNamesEnabled: false, DefaultServiceName, new Dictionary<string, string>(), new Dictionary<string, string>());
+            namingSchema.Client.GetServiceNameMetadata(ClientSchema.Component.Http).Source.Should().Be("http-client");
+            namingSchema.Client.GetServiceNameMetadata(ClientSchema.Component.Grpc).Source.Should().Be("grpc-client");
+        }
+
+        [Fact]
+        public void GetServiceNameMetadata_SourceReturnsOptServiceMapping_WhenMapped()
+        {
+            var namingSchema = new NamingSchema(SchemaVersion.V0, peerServiceTagsEnabled: false, removeClientServiceNamesEnabled: false, DefaultServiceName, _mappings, new Dictionary<string, string>());
+            namingSchema.Client.GetServiceNameMetadata(ClientSchema.Component.Http).Source.Should().Be("opt.service_mapping");
+        }
+
+        [Fact]
+        public void GetServiceNameMetadata_SourceReturnsOptServiceMapping_WhenMappedToDefault()
+        {
+            var mappings = new Dictionary<string, string> { { "http-client", DefaultServiceName } };
+            var namingSchema = new NamingSchema(SchemaVersion.V0, peerServiceTagsEnabled: false, removeClientServiceNamesEnabled: false, DefaultServiceName, mappings, new Dictionary<string, string>());
+            namingSchema.Client.GetServiceNameMetadata(ClientSchema.Component.Http).Source.Should().Be("opt.service_mapping");
+        }
     }
 }
