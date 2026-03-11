@@ -37,32 +37,22 @@ namespace Datadog.Trace.Configuration.Schema
 
             // Calculate service names and source metadata once, to avoid allocations with every call
             var useSuffix = version == SchemaVersion.V0 && !removeClientServiceNamesEnabled;
-            var serviceNames = new string[]
+
+            ServiceNameMetadata Resolve(string integrationKey)
             {
-                useSuffix ? $"{defaultServiceName}-{HttpClientComponent}" : defaultServiceName,
-                useSuffix ? $"{defaultServiceName}-{GrpcClientComponent}" : defaultServiceName,
-            };
-            if (serviceNameMappings is not null)
-            {
-                if (serviceNameMappings.TryGetValue(HttpClientComponent, out var httpName))
+                if (serviceNameMappings is not null && serviceNameMappings.TryGetValue(integrationKey, out var mappedName))
                 {
-                    serviceNames[(int)Component.Http] = httpName;
+                    return new(mappedName, mappedName != defaultServiceName ? "opt.service_mapping" : null);
                 }
 
-                if (serviceNameMappings.TryGetValue(GrpcClientComponent, out var grpcName))
-                {
-                    serviceNames[(int)Component.Grpc] = grpcName;
-                }
+                var name = useSuffix ? $"{defaultServiceName}-{integrationKey}" : defaultServiceName;
+                return new(name, name != defaultServiceName ? integrationKey : null);
             }
-
-            // Build combined service name + source metadata
-            ServiceNameMetadata Build(string serviceName, string sourceName) =>
-                new(serviceName, serviceName != defaultServiceName ? sourceName : null);
 
             _serviceNameMetadata =
             [
-                Build(serviceNames[(int)Component.Http], HttpClientComponent),
-                Build(serviceNames[(int)Component.Grpc], GrpcClientComponent),
+                Resolve(HttpClientComponent),
+                Resolve(GrpcClientComponent),
             ];
         }
 

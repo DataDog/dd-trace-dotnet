@@ -32,48 +32,27 @@ namespace Datadog.Trace.Configuration.Schema
 
             // Calculate service names and source metadata once, to avoid allocations with every call
             var useSuffix = version == SchemaVersion.V0 && !removeClientServiceNamesEnabled;
-            var serviceNames = new string[]
-            {
-                useSuffix ? $"{defaultServiceName}-aerospike" : defaultServiceName,
-                useSuffix ? $"{defaultServiceName}-cosmosdb" : defaultServiceName,
-                useSuffix ? $"{defaultServiceName}-couchbase" : defaultServiceName,
-                useSuffix ? $"{defaultServiceName}-elasticsearch" : defaultServiceName,
-                useSuffix ? $"{defaultServiceName}-mongodb" : defaultServiceName,
-                useSuffix ? $"{defaultServiceName}-redis" : defaultServiceName,
-            };
 
-            if (serviceNameMappings is not null)
+            ServiceNameMetadata Resolve(string integrationKey)
             {
-                TryApplyMapping(serviceNames, serviceNameMappings, "aerospike", ServiceType.Aerospike);
-                TryApplyMapping(serviceNames, serviceNameMappings, "couchbase", ServiceType.Couchbase);
-                TryApplyMapping(serviceNames, serviceNameMappings, "cosmosdb", ServiceType.CosmosDb);
-                TryApplyMapping(serviceNames, serviceNameMappings, "elasticsearch", ServiceType.Elasticsearch);
-                TryApplyMapping(serviceNames, serviceNameMappings, "mongodb", ServiceType.MongoDb);
-                TryApplyMapping(serviceNames, serviceNameMappings, "redis", ServiceType.Redis);
+                if (serviceNameMappings is not null && serviceNameMappings.TryGetValue(integrationKey, out var mappedName))
+                {
+                    return new(mappedName, mappedName != defaultServiceName ? "opt.service_mapping" : null);
+                }
+
+                var name = useSuffix ? $"{defaultServiceName}-{integrationKey}" : defaultServiceName;
+                return new(name, name != defaultServiceName ? integrationKey : null);
             }
-
-            // Build combined service name + source metadata
-            ServiceNameMetadata Build(string serviceName, string sourceName) =>
-                new(serviceName, serviceName != defaultServiceName ? sourceName : null);
 
             _serviceNameMetadata =
             [
-                Build(serviceNames[(int)ServiceType.Aerospike], "aerospike"),
-                Build(serviceNames[(int)ServiceType.CosmosDb], "cosmosdb"),
-                Build(serviceNames[(int)ServiceType.Couchbase], "couchbase"),
-                Build(serviceNames[(int)ServiceType.Elasticsearch], "elasticsearch"),
-                Build(serviceNames[(int)ServiceType.MongoDb], "mongodb"),
-                Build(serviceNames[(int)ServiceType.Redis], "redis"),
+                Resolve("aerospike"),
+                Resolve("cosmosdb"),
+                Resolve("couchbase"),
+                Resolve("elasticsearch"),
+                Resolve("mongodb"),
+                Resolve("redis"),
             ];
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            static void TryApplyMapping(string[] serviceNames, IReadOnlyDictionary<string, string> mappings, string key, ServiceType dbType)
-            {
-                if (mappings.TryGetValue(key, out var mappedName))
-                {
-                    serviceNames[(int)dbType] = mappedName;
-                }
-            }
         }
 
         /// <summary>
