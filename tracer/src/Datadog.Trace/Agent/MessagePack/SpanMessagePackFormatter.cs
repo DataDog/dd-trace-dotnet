@@ -612,7 +612,13 @@ namespace Datadog.Trace.Agent.MessagePack
             }
 
             // add _dd.svc_src tag to indicate which integration set the service name
-            var serviceNameSource = serviceNameEqualsDefault ? null : span.Context.ServiceNameSource;
+            // Safety: if the service name equals the default, clear the source — unless it's a
+            // configuration-driven override (opt.*), which should always be preserved.
+            var serviceNameSource = span.Context.ServiceNameSource;
+            if (serviceNameEqualsDefault && serviceNameSource?.StartsWith("opt.") != true)
+            {
+                serviceNameSource = null;
+            }
             if (serviceNameSource is not null)
             {
                 count++;
