@@ -612,7 +612,7 @@ namespace Datadog.Trace.Agent.MessagePack
             }
 
             // add _dd.svc_src tag to indicate which integration set the service name
-            var serviceNameSource = span.Context.ServiceNameSource;
+            var serviceNameSource = serviceNameEqualsDefault ? null : span.Context.ServiceNameSource;
             if (serviceNameSource is not null)
             {
                 count++;
