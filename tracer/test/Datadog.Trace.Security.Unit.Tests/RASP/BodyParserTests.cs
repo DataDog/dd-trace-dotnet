@@ -17,7 +17,10 @@ public class BodyParserTests
     [Fact]
     public void Parse_NullString_ReturnsNull()
     {
-        var result = BodyParser.Parse(null);
+        var result = BodyParser.Parse((System.IO.Stream)null);
+        result.Should().BeNull();
+
+        result = BodyParser.Parse((string)null);
         result.Should().BeNull();
     }
 
