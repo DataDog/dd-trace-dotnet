@@ -39,24 +39,23 @@ namespace Datadog.Trace.Configuration
 
         internal ServiceNameMetadata GetServiceNameMetadata(string integrationKey)
         {
-            string resolvedName;
+            if (ServiceNames.TryGetValue(integrationKey, out var mappedName))
+            {
+                return new ServiceNameMetadata(mappedName, "opt.service_mapping");
+            }
 
-            if (ServiceNames.TryGetValue(integrationKey, out var name))
+            if (Schema.Version != SchemaVersion.V0 || Schema.RemoveClientServiceNamesEnabled)
             {
-                resolvedName = name;
+                return new ServiceNameMetadata(Settings.DefaultServiceName, null);
             }
-            else if (Schema.Version != SchemaVersion.V0 || Schema.RemoveClientServiceNamesEnabled)
-            {
-                resolvedName = Settings.DefaultServiceName;
-            }
-            else if (!_serviceNameCache.TryGetValue(integrationKey, out resolvedName!))
+
+            if (!_serviceNameCache.TryGetValue(integrationKey, out var resolvedName))
             {
                 resolvedName = $"{Settings.DefaultServiceName}-{integrationKey}";
                 _serviceNameCache.TryAdd(integrationKey, resolvedName);
             }
 
-            var source = resolvedName != Settings.DefaultServiceName ? integrationKey : null;
-            return new ServiceNameMetadata(resolvedName, source);
+            return new ServiceNameMetadata(resolvedName, integrationKey);
         }
     }
 }

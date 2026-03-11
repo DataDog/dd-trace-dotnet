@@ -37,7 +37,7 @@ namespace Datadog.Trace.Configuration.Schema
             {
                 if (serviceNameMappings is not null && serviceNameMappings.TryGetValue(integrationKey, out var mappedName))
                 {
-                    return new(mappedName, mappedName != defaultServiceName ? "opt.service_mapping" : null);
+                    return new(mappedName, "opt.service_mapping");
                 }
 
                 var name = useSuffix ? $"{defaultServiceName}-{integrationKey}" : defaultServiceName;
