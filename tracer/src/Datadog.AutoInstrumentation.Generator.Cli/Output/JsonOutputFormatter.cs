@@ -3,74 +3,58 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Datadog.AutoInstrumentation.Generator.Core;
 
 namespace Datadog.AutoInstrumentation.Generator.Cli.Output;
 
 internal static class JsonOutputFormatter
 {
+    private static readonly JsonSerializerOptions SerializerOptions = new()
+    {
+        WriteIndented = true,
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+    };
+
     public static string Format(GenerationResult result, GenerationConfiguration config)
     {
-        var sb = new StringBuilder();
-        sb.AppendLine("{");
-
-        sb.AppendLine($"  \"success\": {(result.Success ? "true" : "false")},");
-
         if (!result.Success)
         {
-            sb.AppendLine($"  \"errorMessage\": {JsonEscape(result.ErrorMessage ?? string.Empty)}");
-            sb.AppendLine("}");
-            return sb.ToString();
+            return JsonSerializer.Serialize(
+                new { success = false, errorMessage = result.ErrorMessage ?? string.Empty },
+                SerializerOptions);
         }
 
-        sb.AppendLine($"  \"fileName\": {JsonEscape(result.FileName ?? string.Empty)},");
-        sb.AppendLine($"  \"sourceCode\": {JsonEscape(result.SourceCode ?? string.Empty)},");
-
-        if (result.Metadata is { } meta)
-        {
-            sb.AppendLine("  \"metadata\": {");
-            sb.AppendLine($"    \"assemblyName\": {JsonEscape(meta.AssemblyName)},");
-            sb.AppendLine($"    \"typeName\": {JsonEscape(meta.TypeName)},");
-            sb.AppendLine($"    \"methodName\": {JsonEscape(meta.MethodName)},");
-            sb.AppendLine($"    \"returnTypeName\": {JsonEscape(meta.ReturnTypeName)},");
-            sb.AppendLine($"    \"parameterTypeNames\": {JsonEscape(meta.ParameterTypeNames)},");
-            sb.AppendLine($"    \"minimumVersion\": {JsonEscape(meta.MinimumVersion)},");
-            sb.AppendLine($"    \"maximumVersion\": {JsonEscape(meta.MaximumVersion)},");
-            sb.AppendLine($"    \"integrationName\": {JsonEscape(meta.IntegrationName)},");
-            sb.AppendLine($"    \"integrationClassName\": {JsonEscape(meta.IntegrationClassName)},");
-            sb.AppendLine($"    \"isInterface\": {(meta.IsInterface ? "true" : "false")}");
-            sb.AppendLine("  },");
-        }
-
-        sb.AppendLine("  \"configuration\": {");
-        sb.AppendLine($"    \"createOnMethodBegin\": {(config.CreateOnMethodBegin ? "true" : "false")},");
-        sb.AppendLine($"    \"createOnMethodEnd\": {(config.CreateOnMethodEnd ? "true" : "false")},");
-        sb.AppendLine($"    \"createOnAsyncMethodEnd\": {(config.CreateOnAsyncMethodEnd ? "true" : "false")}");
-        sb.AppendLine("  }");
-
-        sb.AppendLine("}");
-        return sb.ToString();
-    }
-
-    private static string JsonEscape(string value)
-    {
-        var sb = new StringBuilder(value.Length + 2);
-        sb.Append('"');
-        foreach (var c in value)
-        {
-            switch (c)
+        return JsonSerializer.Serialize(
+            new
             {
-                case '"': sb.Append("\\\""); break;
-                case '\\': sb.Append("\\\\"); break;
-                case '\n': sb.Append("\\n"); break;
-                case '\r': sb.Append("\\r"); break;
-                case '\t': sb.Append("\\t"); break;
-                default: sb.Append(c); break;
-            }
-        }
-
-        sb.Append('"');
-        return sb.ToString();
+                success = true,
+                fileName = result.FileName ?? string.Empty,
+                sourceCode = result.SourceCode ?? string.Empty,
+                metadata = result.Metadata is { } meta
+                    ? new
+                    {
+                        meta.AssemblyName,
+                        meta.TypeName,
+                        meta.MethodName,
+                        meta.ReturnTypeName,
+                        meta.ParameterTypeNames,
+                        meta.MinimumVersion,
+                        meta.MaximumVersion,
+                        meta.IntegrationName,
+                        meta.IntegrationClassName,
+                        meta.IsInterface,
+                    }
+                    : null,
+                configuration = new
+                {
+                    config.CreateOnMethodBegin,
+                    config.CreateOnMethodEnd,
+                    config.CreateOnAsyncMethodEnd,
+                },
+            },
+            SerializerOptions);
     }
 }
