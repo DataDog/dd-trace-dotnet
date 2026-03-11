@@ -5,6 +5,14 @@
 #nullable enable
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit;
 
+internal enum TestCaseRetryMode
+{
+    None,
+    EarlyFlakeDetection,
+    AutomaticTestRetry,
+    AttemptToFix
+}
+
 internal class TestCaseMetadata
 {
     public TestCaseMetadata(string uniqueID, int totalExecution, int countDownExecutionNumber)
@@ -14,6 +22,7 @@ internal class TestCaseMetadata
         EarlyFlakeDetectionEnabled = false;
         AbortByThreshold = false;
         FlakyRetryEnabled = false;
+        SelectedRetryMode = TestCaseRetryMode.None;
         UniqueID = uniqueID;
     }
 
@@ -28,6 +37,8 @@ internal class TestCaseMetadata
     public bool AbortByThreshold { get; set; }
 
     public bool FlakyRetryEnabled { get; set; }
+
+    public TestCaseRetryMode SelectedRetryMode { get; set; }
 
     public bool IsQuarantinedTest { get; set; }
 
