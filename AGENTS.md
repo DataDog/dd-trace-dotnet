@@ -306,7 +306,7 @@ The tracer runs in-process with customer applications and must have minimal perf
 - `docs/development/DuckTyping.md` — Duck typing guide
 - `docs/development/AzureFunctions.md` — Azure Functions integration
 - `docs/development/for-ai/AzureFunctions-Architecture.md` — Azure Functions architecture deep dive
-- `docs/development/Serverless.md` — Serverless instrumentation
+- `docs/development/AwsLambdaIntegrationTests.md` — AWS Lambda integration tests
 - `docs/development/UpdatingTheSdk.md` — SDK updates
 - `docs/development/QueryingDatadogAPIs.md` — Querying Datadog APIs for debugging (spans, logs)
 
