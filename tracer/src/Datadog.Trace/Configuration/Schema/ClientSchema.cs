@@ -16,11 +16,6 @@ namespace Datadog.Trace.Configuration.Schema
         private const string HttpClientComponent = "http-client";
         private const string GrpcClientComponent = "grpc-client";
 
-        /// <summary>
-        /// WARNING: must stay in sync with <see cref="Component"/> enum (same order and count).
-        /// </summary>
-        private static readonly string[] IntegrationSourceNames = [HttpClientComponent, GrpcClientComponent];
-
         private readonly bool _useV0Tags;
         private readonly string[] _protocols;
         private readonly ServiceNameMetadata[] _serviceNameMetadata;
@@ -61,12 +56,14 @@ namespace Datadog.Trace.Configuration.Schema
             }
 
             // Build combined service name + source metadata
-            _serviceNameMetadata = new ServiceNameMetadata[serviceNames.Length];
-            for (var i = 0; i < serviceNames.Length; i++)
-            {
-                var source = serviceNames[i] != defaultServiceName ? IntegrationSourceNames[i] : null;
-                _serviceNameMetadata[i] = new ServiceNameMetadata(serviceNames[i], source);
-            }
+            ServiceNameMetadata Build(string serviceName, string sourceName) =>
+                new(serviceName, serviceName != defaultServiceName ? sourceName : null);
+
+            _serviceNameMetadata =
+            [
+                Build(serviceNames[(int)Component.Http], HttpClientComponent),
+                Build(serviceNames[(int)Component.Grpc], GrpcClientComponent),
+            ];
         }
 
         /// <summary>
