@@ -133,25 +133,25 @@ partial class Build
        });
 
     [Parameter("Path to the assembly to generate instrumentation for")]
-    readonly string AssemblyPath;
+    readonly string? AssemblyPath;
 
     [Parameter("Fully qualified type name for instrumentation generation")]
-    readonly string TypeName;
+    readonly string? TypeName;
 
     [Parameter("Method name for instrumentation generation")]
-    readonly string MethodName;
+    readonly string? MethodName;
 
     [Parameter("Output path for the generated integration file")]
-    readonly string OutputPath;
+    readonly string? OutputPath;
 
     [Parameter("0-based overload index for method disambiguation")]
     readonly int? OverloadIndex;
 
     [Parameter("Parameter type full names for method disambiguation (space-separated)")]
-    readonly string ParameterTypes;
+    readonly string? ParameterTypes;
 
     [Parameter("Additional arguments to pass to the instrumentation generator CLI (space-separated string)")]
-    readonly string GeneratorArgs;
+    readonly string? GeneratorArgs;
 
     Target RunInstrumentationGeneratorCli => _ => _
        .Description("Generates CallTarget auto-instrumentation code for a method. Usage: --assembly-path <dll> --type-name <type> --method-name <method> [--output-path <file>] [--overload-index <n>] [--generator-args <args>]")
@@ -177,9 +177,9 @@ partial class Build
 
            var appArgs = new List<string>
            {
-               "generate", AssemblyPath,
-               "--type", TypeName,
-               "--method", MethodName,
+               "generate", AssemblyPath!,
+               "--type", TypeName!,
+               "--method", MethodName!,
            };
 
            if (!string.IsNullOrEmpty(OutputPath))
