@@ -225,16 +225,17 @@ namespace Datadog.Trace.Tests.Sampling
 
             rule.GetSamplingRate(span).Should().BeApproximately(0.2f, 0.01f);
 
-            // Try again immediately (within cooldown) — rate stays at 0.2
+            // Try again after 0.5s (within cooldown) — rate stays at 0.2
+            clock.UtcNow = clock.UtcNow.AddSeconds(0.5);
             rule.SetDefaultSampleRates(new Dictionary<string, float>
             {
                 { "service:web,env:prod", 1.0f },
             });
 
-            rule.GetSamplingRate(span).Should().BeApproximately(0.2f, 0.01f);
+            rule.GetSamplingRate(span).Should().BeApproximately(0.2f, 0.01f);          
 
-            // After cooldown elapsed — rate doubles to 0.4
-            clock.UtcNow = clock.UtcNow.AddSeconds(1.1);
+            // Try again after 0.6s (puts total since change above cooldown) — rate doubles to 0.4
+            clock.UtcNow = clock.UtcNow.AddSeconds(0.6);
             rule.SetDefaultSampleRates(new Dictionary<string, float>
             {
                 { "service:web,env:prod", 1.0f },

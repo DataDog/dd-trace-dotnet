@@ -65,19 +65,22 @@ namespace Datadog.Trace.Sampling
         /// Rate decreases and transitions from zero are applied immediately.
         /// When <paramref name="canIncrease"/> is false (cooldown not elapsed), increases are held at <paramref name="oldRate"/>.
         /// </summary>
-        internal static float CappedRate(float oldRate, float newRate, bool canIncrease)
+        internal static bool CappedRate(float oldRate, float newRate, bool canIncrease, out float effectiveRate)
         {
             if (newRate <= oldRate || oldRate == 0)
             {
-                return newRate;
+                effectiveRate = newRate;
+                return false;
             }
 
             if (!canIncrease)
             {
-                return oldRate;
+                effectiveRate = oldRate;
+                return fase;
             }
 
-            return Math.Min(oldRate * 2, newRate);
+            effectiveRate = Math.Min(oldRate * 2, newRate);
+            return true;
         }
 
         public void SetDefaultSampleRates(IReadOnlyDictionary<string, float> sampleRates)
@@ -94,7 +97,7 @@ namespace Datadog.Trace.Sampling
             var defaultSamplingRate = _defaultSamplingRate;
 
             var now = Clock.UtcNow;
-            var canIncrease = _lastCapped == default || (now - _lastCapped) >= RampUpInterval;
+            var canIncrease = (now - _lastCapped) >= RampUpInterval;
             var capApplied = false;
 
             foreach (var pair in sampleRates)
@@ -102,9 +105,7 @@ namespace Datadog.Trace.Sampling
                 if (string.Equals(pair.Key, DefaultKey, StringComparison.OrdinalIgnoreCase))
                 {
                     var oldDefault = _defaultSamplingRate ?? 1f;
-                    var effective = CappedRate(oldDefault, pair.Value, canIncrease);
-                    capApplied = capApplied || effective != pair.Value;
-                    defaultSamplingRate = effective;
+                    capApplied = CappedRate(oldDefault, pair.Value, canIncrease, out defaultSamplingRate) || capApplied;
                     continue;
                 }
 
@@ -116,14 +117,12 @@ namespace Datadog.Trace.Sampling
                     continue;
                 }
 
-                float oldRate;
-                if (!_sampleRates.TryGetValue(key.Value, out oldRate))
+                if (!_sampleRates.TryGetValue(key.Value, out var oldRate))
                 {
                     oldRate = _defaultSamplingRate ?? 1f;
                 }
 
-                var effectiveRate = CappedRate(oldRate, pair.Value, canIncrease);
-                capApplied = capApplied || effectiveRate != pair.Value;
+                capApplied = CappedRate(oldRate, pair.Value, canIncrease, out var effectiveRate) || capApplied;
                 rates.Add(key.Value, effectiveRate);
             }
 
