@@ -619,6 +619,7 @@ namespace Datadog.Trace.Agent.MessagePack
             {
                 serviceNameSource = null;
             }
+
             if (serviceNameSource is not null)
             {
                 count++;
