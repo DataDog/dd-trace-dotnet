@@ -7,6 +7,7 @@ using System;
 using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.IO;
+using System.Text.Json;
 using Datadog.AutoInstrumentation.Generator.Cli.Output;
 using Datadog.AutoInstrumentation.Generator.Core;
 
@@ -14,6 +15,12 @@ namespace Datadog.AutoInstrumentation.Generator.Cli.Commands;
 
 internal class GenerateCommand : Command
 {
+    private static readonly JsonSerializerOptions ConfigDeserializerOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        PropertyNameCaseInsensitive = true,
+    };
+
     // Required arguments
     private readonly Argument<FileInfo> _assemblyPathArg = new("assembly-path", "Path to the .NET assembly (.dll) file");
 
@@ -63,6 +70,9 @@ internal class GenerateCommand : Command
     private readonly Option<bool> _jsonOption = new("--json", "Output structured JSON instead of source code");
     private readonly Option<FileInfo?> _outputOption = new("--output", "Write output to file instead of stdout");
 
+    // Configuration override
+    private readonly Option<string?> _configOption = new("--config", "JSON configuration object to use as base config instead of auto-detect. Accepts the 'configuration' block from --json output. Individual CLI flags still override on top.");
+
     // Auto-detect flag
     private readonly Option<bool> _noAutoDetectOption = new("--no-auto-detect", "Disable smart defaults (async detection, static method handling)");
 
@@ -104,6 +114,7 @@ internal class GenerateCommand : Command
         AddOption(_duckAsyncReturnChainingOption);
         AddOption(_jsonOption);
         AddOption(_outputOption);
+        AddOption(_configOption);
         AddOption(_noAutoDetectOption);
 
         this.SetHandler(Execute);
@@ -151,9 +162,30 @@ internal class GenerateCommand : Command
             return;
         }
 
-        var config = ctx.ParseResult.GetValueForOption(_noAutoDetectOption)
-            ? new GenerationConfiguration()
-            : GenerationConfiguration.CreateForMethod(methodDef);
+        var configJson = ctx.ParseResult.GetValueForOption(_configOption);
+        GenerationConfiguration config;
+        if (configJson is not null)
+        {
+            try
+            {
+                config = JsonSerializer.Deserialize<GenerationConfiguration>(configJson, ConfigDeserializerOptions)
+                         ?? new GenerationConfiguration();
+            }
+            catch (JsonException ex)
+            {
+                Console.Error.WriteLine($"Error: Invalid --config JSON: {ex.Message}");
+                ctx.ExitCode = 1;
+                return;
+            }
+        }
+        else if (ctx.ParseResult.GetValueForOption(_noAutoDetectOption))
+        {
+            config = new GenerationConfiguration();
+        }
+        else
+        {
+            config = GenerationConfiguration.CreateForMethod(methodDef);
+        }
 
         ApplyCliOverrides(ctx, config);
 
