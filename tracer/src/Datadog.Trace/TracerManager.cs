@@ -779,11 +779,10 @@ namespace Datadog.Trace
 
                     instance.RuntimeMetrics?.Dispose();
 
-                    Log.Debug("Disposing StatsD.");
-                    if (instance.Statsd is not null)
-                    {
-                        await instance.Statsd.DisposeAsync().ConfigureAwait(false);
-                    }
+                    // Trigger StatsD disposal without waiting -- the LifetimeManager
+                    // runs this under a timeout and we must not delay shutdown for the
+                    // flush/worker-drain that DisposeAsync awaits internally.
+                    _ = instance.Statsd?.DisposeAsync();
 
                     Log.Debug("Finished waiting for disposals.");
                 }
