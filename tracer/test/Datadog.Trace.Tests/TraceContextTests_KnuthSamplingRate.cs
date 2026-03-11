@@ -76,7 +76,7 @@ public class TraceContextTests_KnuthSamplingRate
         }
 
         [Fact]
-        public void SetSamplingPriority_KeepsFirstKsrTag()
+        public void SetSamplingPriority_OverwritesExistingKsrTag()
         {
             var tracer = new StubDatadogTracer();
             var traceContext = new TraceContext(tracer);
@@ -84,9 +84,9 @@ public class TraceContextTests_KnuthSamplingRate
             traceContext.SetSamplingPriority(SamplingPriorityValues.AutoKeep, SamplingMechanism.AgentRate, 0.5f);
             traceContext.Tags.GetTag(Tags.Propagated.KnuthSamplingRate).Should().Be("0.5");
 
-            // second call should not override the first KSR value (TryAddTag semantics)
+            // second call should overwrite the first KSR value (SetTag semantics)
             traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.LocalTraceSamplingRule, 0.75f);
-            traceContext.Tags.GetTag(Tags.Propagated.KnuthSamplingRate).Should().Be("0.5");
+            traceContext.Tags.GetTag(Tags.Propagated.KnuthSamplingRate).Should().Be("0.75");
         }
 
         [Theory]

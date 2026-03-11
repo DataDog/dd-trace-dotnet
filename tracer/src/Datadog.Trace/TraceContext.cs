@@ -337,7 +337,7 @@ namespace Datadog.Trace
                                                       or Sampling.SamplingMechanism.RemoteUserSamplingRule)
             {
                 // format with up to 6 significant digits, no trailing zeros
-                Tags.TryAddTag(Trace.Tags.Propagated.KnuthSamplingRate, samplingRate.ToString("G6", CultureInfo.InvariantCulture));
+                Tags.SetTag(Trace.Tags.Propagated.KnuthSamplingRate, samplingRate.ToString("G6", CultureInfo.InvariantCulture));
             }
 
             if (notifyDistributedTracer)
