@@ -1,0 +1,10 @@
+# Banned APIs for the Nuke build project
+# Format: Full type name with method signature; Optional message
+
+# Ban SetVersion on DotNet pack/build commands.
+# SetVersion passes -p:Version as a global MSBuild property, which overrides Version
+# in ALL projects in the dependency graph (including independently-versioned projects
+# like Datadog.Trace.Annotations).
+M:Nuke.Common.Tools.DotNet.DotNetPackSettingsExtensions.SetVersion``1(``0,System.String);SetVersion overrides Version globally across all projects and can cause misconfigured NuGet dependencies.
+M:Nuke.Common.Tools.DotNet.DotNetBuildSettingsExtensions.SetVersion``1(``0,System.String);SetVersion overrides Version globally across all projects and can cause misconfigured NuGet dependencies.
+M:Nuke.Common.Tools.DotNet.DotNetPublishSettingsExtensions.SetVersion``1(``0,System.String);SetVersion overrides Version globally across all projects and can cause misconfigured NuGet dependencies
