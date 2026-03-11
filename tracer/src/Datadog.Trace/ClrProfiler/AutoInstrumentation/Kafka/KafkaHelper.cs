@@ -218,15 +218,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     tags.Offset = offset.ToString();
                 }
 
-                var consumerClusterId = string.Empty;
-                if (ConsumerCache.TryGetConsumerGroup(consumer, out var groupId, out var bootstrapServers, out var clusterId))
+                if (ConsumerCache.TryGetConsumerGroup(consumer, out var groupId, out var bootstrapServers, out var consumerClusterId))
                 {
                     tags.ConsumerGroup = groupId;
                     tags.BootstrapServers = bootstrapServers;
-                    if (!string.IsNullOrEmpty(clusterId))
+                    if (!StringUtil.IsNullOrEmpty(consumerClusterId))
                     {
-                        tags.ClusterId = clusterId;
-                        consumerClusterId = clusterId;
+                        tags.ClusterId = consumerClusterId;
                     }
                 }
 
@@ -257,15 +255,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     // TODO: we could pool these arrays to reduce allocations
                     // NOTE: the tags must be sorted in alphabetical order
                     string[] edgeTags;
-                    if (!string.IsNullOrEmpty(consumerClusterId))
+                    if (!StringUtil.IsNullOrEmpty(consumerClusterId))
                     {
-                        edgeTags = string.IsNullOrEmpty(topic)
+                        edgeTags = StringUtil.IsNullOrEmpty(topic)
                                        ? new[] { "direction:in", $"group:{groupId}", $"kafka_cluster_id:{consumerClusterId}", "type:kafka" }
                                        : new[] { "direction:in", $"group:{groupId}", $"kafka_cluster_id:{consumerClusterId}", $"topic:{topic}", "type:kafka" };
                     }
                     else
                     {
-                        edgeTags = string.IsNullOrEmpty(topic)
+                        edgeTags = StringUtil.IsNullOrEmpty(topic)
                                        ? new[] { "direction:in", $"group:{groupId}", "type:kafka" }
                                        : new[] { "direction:in", $"group:{groupId}", $"topic:{topic}", "type:kafka" };
                     }
@@ -363,24 +361,20 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
                 if (dataStreamsManager.IsEnabled)
                 {
-                    var producerClusterId = string.Empty;
-                    if (ProducerCache.TryGetProducer(producer, out _, out var clusterId) && !string.IsNullOrEmpty(clusterId))
-                    {
-                        producerClusterId = clusterId;
-                    }
+                    ProducerCache.TryGetProducer(producer, out _, out var producerClusterId);
 
                     string[] edgeTags;
-                    if (!string.IsNullOrEmpty(producerClusterId))
+                    if (!StringUtil.IsNullOrEmpty(producerClusterId))
                     {
-                        edgeTags = string.IsNullOrEmpty(topic)
-                                       ? new[] { "direction:out", $"kafka_cluster_id:{producerClusterId}", "type:kafka" }
-                                       : new[] { "direction:out", $"kafka_cluster_id:{producerClusterId}", $"topic:{topic}", "type:kafka" };
+                        edgeTags = StringUtil.IsNullOrEmpty(topic)
+                                       ? ["direction:out", $"kafka_cluster_id:{producerClusterId}", "type:kafka"]
+                                       : ["direction:out", $"kafka_cluster_id:{producerClusterId}", $"topic:{topic}", "type:kafka"];
                     }
                     else
                     {
-                        edgeTags = string.IsNullOrEmpty(topic)
+                        edgeTags = StringUtil.IsNullOrEmpty(topic)
                                        ? DefaultProduceEdgeTags
-                                       : new[] { "direction:out", $"topic:{topic}", "type:kafka" };
+                                       : ["direction:out", $"topic:{topic}", "type:kafka"];
                     }
 
                     var msgSize = dataStreamsManager.IsInDefaultState ? 0 : GetMessageSize(message);
@@ -407,23 +401,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
         internal static string? GetClusterId(string? bootstrapServers, object clientInstance)
         {
-            if (string.IsNullOrEmpty(bootstrapServers))
+            if (StringUtil.IsNullOrEmpty(bootstrapServers))
             {
                 return null;
             }
 
-            if (ClusterIdCache.TryGetValue(bootstrapServers!, out var cached))
+            if (ClusterIdCache.TryGetValue(bootstrapServers, out var cached))
             {
                 return cached;
             }
 
             try
             {
-                if (!clientInstance.TryDuckCast<IClientHandle>(out var clientHandle))
-                {
-                    return null;
-                }
-
+                var clientHandle = clientInstance.DuckCast<IClientHandle>();
                 var handle = clientHandle.Handle;
                 if (handle is null)
                 {
@@ -436,34 +426,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     return null;
                 }
 
-                var builder = Activator.CreateInstance(builderType, new object[] { handle });
-                if (!builder.TryDuckCast<IAdminClientBuilder>(out var adminBuilder))
+                var builder = Activator.CreateInstance(builderType, handle);
+                if (builder is null)
                 {
                     return null;
                 }
 
-                var adminClientObj = adminBuilder.Build();
-                if (adminClientObj is null)
-                {
-                    return null;
-                }
-
-                if (!adminClientObj.TryDuckCast<IAdminClient>(out var adminClient))
-                {
-                    (adminClientObj as IDisposable)?.Dispose();
-                    return null;
-                }
-
-                try
-                {
-                    var clusterId = DescribeClusterWithTimeout(adminClient);
-                    ClusterIdCache.TryAdd(bootstrapServers!, clusterId);
-                    return clusterId;
-                }
-                finally
-                {
-                    adminClient.Dispose();
-                }
+                using var adminClient = builder.DuckCast<IAdminClientBuilder>().Build();
+                var clusterId = DescribeClusterWithTimeout(adminClient);
+                ClusterIdCache.TryAdd(bootstrapServers, clusterId);
+                return clusterId;
             }
             catch (Exception ex)
             {

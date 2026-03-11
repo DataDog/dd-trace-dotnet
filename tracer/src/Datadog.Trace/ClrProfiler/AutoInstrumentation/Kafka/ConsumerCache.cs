@@ -18,16 +18,16 @@ internal static class ConsumerCache
     private static readonly ConditionalWeakTable<object, string> ConsumerToClusterIdMap = new();
     private static readonly ConditionalWeakTable<object, Type?> ConsumerToOffsetsCommittedHandlerMap = new();
 
-    public static void SetConsumerGroup(object consumer, string groupId, string bootstrapServers, string clusterId)
+    public static void SetConsumerGroup(object consumer, string groupId, string bootstrapServers, string? clusterId)
     {
 #if NETCOREAPP3_1_OR_GREATER
         ConsumerToGroupIdMap.AddOrUpdate(consumer, groupId);
         ConsumerToBootstrapServersMap.AddOrUpdate(consumer, bootstrapServers);
-        ConsumerToClusterIdMap.AddOrUpdate(consumer, clusterId);
+        ConsumerToClusterIdMap.AddOrUpdate(consumer, clusterId ?? string.Empty);
 #else
         ConsumerToGroupIdMap.GetValue(consumer, _ => groupId);
         ConsumerToBootstrapServersMap.GetValue(consumer, _ => bootstrapServers);
-        ConsumerToClusterIdMap.GetValue(consumer, _ => clusterId);
+        ConsumerToClusterIdMap.GetValue(consumer, _ => clusterId ?? string.Empty);
 #endif
     }
 

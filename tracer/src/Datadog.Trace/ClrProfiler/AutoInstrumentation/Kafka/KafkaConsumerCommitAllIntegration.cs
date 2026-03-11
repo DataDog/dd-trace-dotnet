@@ -37,11 +37,9 @@ public sealed class KafkaConsumerCommitAllIntegration
             for (var i = 0; i < response.Count; i++)
             {
                 var item = response[i];
-                var backlogTags = $"consumer_group:{groupId},partition:{item.Partition.Value},topic:{item.Topic},type:kafka_commit";
-                if (!string.IsNullOrEmpty(clusterId))
-                {
-                    backlogTags = $"kafka_cluster_id:{clusterId},{backlogTags}";
-                }
+                var backlogTags = StringUtil.IsNullOrEmpty(clusterId)
+                    ? $"consumer_group:{groupId},partition:{item.Partition.Value},topic:{item.Topic},type:kafka_commit"
+                    : $"consumer_group:{groupId},kafka_cluster_id:{clusterId},partition:{item.Partition.Value},topic:{item.Topic},type:kafka_commit";
 
                 dataStreams.TrackBacklog(backlogTags, item.Offset.Value);
             }

@@ -12,5 +12,5 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;
 /// </summary>
 internal interface IClientHandle
 {
-    object Handle { get; }
+    object? Handle { get; }
 }

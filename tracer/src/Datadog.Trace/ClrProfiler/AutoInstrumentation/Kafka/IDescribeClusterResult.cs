@@ -12,5 +12,5 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;
 /// </summary>
 internal interface IDescribeClusterResult
 {
-    string ClusterId { get; }
+    string? ClusterId { get; }
 }
