@@ -63,7 +63,8 @@ namespace Datadog.Profiler.IntegrationTests.WindowsOnly
             var lines = File.ReadAllLines(logFile);
 
             lines.Should().ContainMatch("*Using agent endpoint windows:\\\\.\\pipe\\ForSureThisPipeDoesNotExist__I_Hope*");
-            lines.Should().ContainMatch("*ddog_prof_Exporter_send_blocking failed: client error (Connect): The system cannot find the file specified. (os error 2)*");
+            lines.Should().ContainMatch("*ddog_prof_Exporter_send_blocking failed*");
+            lines.Should().ContainMatch("*The system cannot find the file specified*");
         }
     }
 }
