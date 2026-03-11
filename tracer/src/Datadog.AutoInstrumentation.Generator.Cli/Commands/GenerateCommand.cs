@@ -25,71 +25,39 @@ internal class GenerateCommand : Command
     private readonly Option<string[]?> _parameterTypesOption = new("--parameter-types", "Parameter type full names for overload disambiguation");
     private readonly Option<int?> _overloadIndexOption = new("--overload-index", "0-based overload index for disambiguation");
 
-    // Generation flags (enable)
+    // Generation flags
     private readonly Option<bool> _noMethodBeginOption = new("--no-method-begin", "Skip OnMethodBegin handler generation");
     private readonly Option<bool> _noMethodEndOption = new("--no-method-end", "Skip OnMethodEnd handler generation");
     private readonly Option<bool> _asyncMethodEndOption = new("--async-method-end", "Generate OnAsyncMethodEnd handler");
     private readonly Option<bool> _duckCopyStructOption = new("--duck-copy-struct", "Use DuckCopy structs instead of interfaces");
 
-    // Generation flags (disable counterparts)
-    private readonly Option<bool> _noAsyncMethodEndOption = new("--no-async-method-end", "Skip OnAsyncMethodEnd handler generation (overrides auto-detect)");
-    private readonly Option<bool> _noDuckCopyStructOption = new("--no-duck-copy-struct", "Disable DuckCopy structs (overrides --duck-copy-struct)");
-
-    // Duck type: Instance (enable)
+    // Duck type: Instance
     private readonly Option<bool> _duckInstanceOption = new("--duck-instance", "Generate duck type proxy for instance");
     private readonly Option<bool> _duckInstanceFieldsOption = new("--duck-instance-fields", "Include fields in instance duck type");
     private readonly Option<bool> _duckInstancePropertiesOption = new("--duck-instance-properties", "Include properties in instance duck type (default when --duck-instance is set)");
     private readonly Option<bool> _duckInstanceMethodsOption = new("--duck-instance-methods", "Include methods in instance duck type");
     private readonly Option<bool> _duckInstanceChainingOption = new("--duck-instance-chaining", "Enable duck chaining for instance duck type");
 
-    // Duck type: Instance (disable counterparts)
-    private readonly Option<bool> _noDuckInstanceOption = new("--no-duck-instance", "Disable duck type proxy for instance (overrides auto-detect)");
-    private readonly Option<bool> _noDuckInstanceFieldsOption = new("--no-duck-instance-fields", "Exclude fields from instance duck type");
-    private readonly Option<bool> _noDuckInstancePropertiesOption = new("--no-duck-instance-properties", "Exclude properties from instance duck type");
-    private readonly Option<bool> _noDuckInstanceMethodsOption = new("--no-duck-instance-methods", "Exclude methods from instance duck type");
-    private readonly Option<bool> _noDuckInstanceChainingOption = new("--no-duck-instance-chaining", "Disable duck chaining for instance duck type");
-
-    // Duck type: Arguments (enable)
+    // Duck type: Arguments
     private readonly Option<bool> _duckArgsOption = new("--duck-args", "Generate duck type proxies for arguments");
     private readonly Option<bool> _duckArgsFieldsOption = new("--duck-args-fields", "Include fields in argument duck types");
     private readonly Option<bool> _duckArgsPropertiesOption = new("--duck-args-properties", "Include properties in argument duck types (default when --duck-args is set)");
     private readonly Option<bool> _duckArgsMethodsOption = new("--duck-args-methods", "Include methods in argument duck types");
     private readonly Option<bool> _duckArgsChainingOption = new("--duck-args-chaining", "Enable duck chaining for argument duck types");
 
-    // Duck type: Arguments (disable counterparts)
-    private readonly Option<bool> _noDuckArgsOption = new("--no-duck-args", "Disable duck type proxies for arguments (overrides auto-detect)");
-    private readonly Option<bool> _noDuckArgsFieldsOption = new("--no-duck-args-fields", "Exclude fields from argument duck types");
-    private readonly Option<bool> _noDuckArgsPropertiesOption = new("--no-duck-args-properties", "Exclude properties from argument duck types");
-    private readonly Option<bool> _noDuckArgsMethodsOption = new("--no-duck-args-methods", "Exclude methods from argument duck types");
-    private readonly Option<bool> _noDuckArgsChainingOption = new("--no-duck-args-chaining", "Disable duck chaining for argument duck types");
-
-    // Duck type: Return Value (enable)
+    // Duck type: Return Value
     private readonly Option<bool> _duckReturnOption = new("--duck-return", "Generate duck type proxy for return value");
     private readonly Option<bool> _duckReturnFieldsOption = new("--duck-return-fields", "Include fields in return value duck type");
     private readonly Option<bool> _duckReturnPropertiesOption = new("--duck-return-properties", "Include properties in return value duck type (default when --duck-return is set)");
     private readonly Option<bool> _duckReturnMethodsOption = new("--duck-return-methods", "Include methods in return value duck type");
     private readonly Option<bool> _duckReturnChainingOption = new("--duck-return-chaining", "Enable duck chaining for return value duck type");
 
-    // Duck type: Return Value (disable counterparts)
-    private readonly Option<bool> _noDuckReturnOption = new("--no-duck-return", "Disable duck type proxy for return value (overrides auto-detect)");
-    private readonly Option<bool> _noDuckReturnFieldsOption = new("--no-duck-return-fields", "Exclude fields from return value duck type");
-    private readonly Option<bool> _noDuckReturnPropertiesOption = new("--no-duck-return-properties", "Exclude properties from return value duck type");
-    private readonly Option<bool> _noDuckReturnMethodsOption = new("--no-duck-return-methods", "Exclude methods from return value duck type");
-    private readonly Option<bool> _noDuckReturnChainingOption = new("--no-duck-return-chaining", "Disable duck chaining for return value duck type");
-
-    // Duck type: Async Return Value (enable)
+    // Duck type: Async Return Value
     private readonly Option<bool> _duckAsyncReturnOption = new("--duck-async-return", "Generate duck type proxy for async return value");
     private readonly Option<bool> _duckAsyncReturnFieldsOption = new("--duck-async-return-fields", "Include fields in async return value duck type");
     private readonly Option<bool> _duckAsyncReturnPropertiesOption = new("--duck-async-return-properties", "Include properties in async return value duck type (default when --duck-async-return is set)");
     private readonly Option<bool> _duckAsyncReturnMethodsOption = new("--duck-async-return-methods", "Include methods in async return value duck type");
     private readonly Option<bool> _duckAsyncReturnChainingOption = new("--duck-async-return-chaining", "Enable duck chaining for async return value duck type");
-
-    // Duck type: Async Return Value (disable counterparts)
-    private readonly Option<bool> _noDuckAsyncReturnOption = new("--no-duck-async-return", "Disable duck type proxy for async return value (overrides auto-detect)");
-    private readonly Option<bool> _noDuckAsyncReturnFieldsOption = new("--no-duck-async-return-fields", "Exclude fields from async return value duck type");
-    private readonly Option<bool> _noDuckAsyncReturnPropertiesOption = new("--no-duck-async-return-properties", "Exclude properties from async return value duck type");
-    private readonly Option<bool> _noDuckAsyncReturnMethodsOption = new("--no-duck-async-return-methods", "Exclude methods from async return value duck type");
-    private readonly Option<bool> _noDuckAsyncReturnChainingOption = new("--no-duck-async-return-chaining", "Disable duck chaining for async return value duck type");
 
     // Output flags
     private readonly Option<bool> _jsonOption = new("--json", "Output structured JSON instead of source code");
@@ -110,64 +78,30 @@ internal class GenerateCommand : Command
         AddOption(_methodOption);
         AddOption(_parameterTypesOption);
         AddOption(_overloadIndexOption);
-
-        // Generation flags (enable + disable pairs)
         AddOption(_noMethodBeginOption);
         AddOption(_noMethodEndOption);
         AddOption(_asyncMethodEndOption);
-        AddOption(_noAsyncMethodEndOption);
         AddOption(_duckCopyStructOption);
-        AddOption(_noDuckCopyStructOption);
-
-        // Duck type: Instance
         AddOption(_duckInstanceOption);
-        AddOption(_noDuckInstanceOption);
         AddOption(_duckInstanceFieldsOption);
-        AddOption(_noDuckInstanceFieldsOption);
         AddOption(_duckInstancePropertiesOption);
-        AddOption(_noDuckInstancePropertiesOption);
         AddOption(_duckInstanceMethodsOption);
-        AddOption(_noDuckInstanceMethodsOption);
         AddOption(_duckInstanceChainingOption);
-        AddOption(_noDuckInstanceChainingOption);
-
-        // Duck type: Arguments
         AddOption(_duckArgsOption);
-        AddOption(_noDuckArgsOption);
         AddOption(_duckArgsFieldsOption);
-        AddOption(_noDuckArgsFieldsOption);
         AddOption(_duckArgsPropertiesOption);
-        AddOption(_noDuckArgsPropertiesOption);
         AddOption(_duckArgsMethodsOption);
-        AddOption(_noDuckArgsMethodsOption);
         AddOption(_duckArgsChainingOption);
-        AddOption(_noDuckArgsChainingOption);
-
-        // Duck type: Return Value
         AddOption(_duckReturnOption);
-        AddOption(_noDuckReturnOption);
         AddOption(_duckReturnFieldsOption);
-        AddOption(_noDuckReturnFieldsOption);
         AddOption(_duckReturnPropertiesOption);
-        AddOption(_noDuckReturnPropertiesOption);
         AddOption(_duckReturnMethodsOption);
-        AddOption(_noDuckReturnMethodsOption);
         AddOption(_duckReturnChainingOption);
-        AddOption(_noDuckReturnChainingOption);
-
-        // Duck type: Async Return Value
         AddOption(_duckAsyncReturnOption);
-        AddOption(_noDuckAsyncReturnOption);
         AddOption(_duckAsyncReturnFieldsOption);
-        AddOption(_noDuckAsyncReturnFieldsOption);
         AddOption(_duckAsyncReturnPropertiesOption);
-        AddOption(_noDuckAsyncReturnPropertiesOption);
         AddOption(_duckAsyncReturnMethodsOption);
-        AddOption(_noDuckAsyncReturnMethodsOption);
         AddOption(_duckAsyncReturnChainingOption);
-        AddOption(_noDuckAsyncReturnChainingOption);
-
-        // Output
         AddOption(_jsonOption);
         AddOption(_outputOption);
         AddOption(_noAutoDetectOption);
@@ -263,7 +197,16 @@ internal class GenerateCommand : Command
 
     private void ApplyCliOverrides(InvocationContext ctx, GenerationConfiguration config)
     {
-        // Enable flags first
+        if (ctx.ParseResult.GetValueForOption(_noMethodBeginOption))
+        {
+            config.CreateOnMethodBegin = false;
+        }
+
+        if (ctx.ParseResult.GetValueForOption(_noMethodEndOption))
+        {
+            config.CreateOnMethodEnd = false;
+        }
+
         if (ctx.ParseResult.GetValueForOption(_asyncMethodEndOption))
         {
             config.CreateOnAsyncMethodEnd = true;
@@ -372,127 +315,6 @@ internal class GenerateCommand : Command
         if (ctx.ParseResult.GetValueForOption(_duckAsyncReturnChainingOption))
         {
             config.DucktypeAsyncReturnValueDuckChaining = true;
-        }
-
-        // Disable flags applied second so --no-* always wins over --*
-        if (ctx.ParseResult.GetValueForOption(_noMethodBeginOption))
-        {
-            config.CreateOnMethodBegin = false;
-        }
-
-        if (ctx.ParseResult.GetValueForOption(_noMethodEndOption))
-        {
-            config.CreateOnMethodEnd = false;
-        }
-
-        if (ctx.ParseResult.GetValueForOption(_noAsyncMethodEndOption))
-        {
-            config.CreateOnAsyncMethodEnd = false;
-        }
-
-        if (ctx.ParseResult.GetValueForOption(_noDuckCopyStructOption))
-        {
-            config.UseDuckCopyStruct = false;
-        }
-
-        if (ctx.ParseResult.GetValueForOption(_noDuckInstanceOption))
-        {
-            config.CreateDucktypeInstance = false;
-        }
-
-        if (ctx.ParseResult.GetValueForOption(_noDuckInstanceFieldsOption))
-        {
-            config.DucktypeInstanceFields = false;
-        }
-
-        if (ctx.ParseResult.GetValueForOption(_noDuckInstancePropertiesOption))
-        {
-            config.DucktypeInstanceProperties = false;
-        }
-
-        if (ctx.ParseResult.GetValueForOption(_noDuckInstanceMethodsOption))
-        {
-            config.DucktypeInstanceMethods = false;
-        }
-
-        if (ctx.ParseResult.GetValueForOption(_noDuckInstanceChainingOption))
-        {
-            config.DucktypeInstanceDuckChaining = false;
-        }
-
-        if (ctx.ParseResult.GetValueForOption(_noDuckArgsOption))
-        {
-            config.CreateDucktypeArguments = false;
-        }
-
-        if (ctx.ParseResult.GetValueForOption(_noDuckArgsFieldsOption))
-        {
-            config.DucktypeArgumentsFields = false;
-        }
-
-        if (ctx.ParseResult.GetValueForOption(_noDuckArgsPropertiesOption))
-        {
-            config.DucktypeArgumentsProperties = false;
-        }
-
-        if (ctx.ParseResult.GetValueForOption(_noDuckArgsMethodsOption))
-        {
-            config.DucktypeArgumentsMethods = false;
-        }
-
-        if (ctx.ParseResult.GetValueForOption(_noDuckArgsChainingOption))
-        {
-            config.DucktypeArgumentsDuckChaining = false;
-        }
-
-        if (ctx.ParseResult.GetValueForOption(_noDuckReturnOption))
-        {
-            config.CreateDucktypeReturnValue = false;
-        }
-
-        if (ctx.ParseResult.GetValueForOption(_noDuckReturnFieldsOption))
-        {
-            config.DucktypeReturnValueFields = false;
-        }
-
-        if (ctx.ParseResult.GetValueForOption(_noDuckReturnPropertiesOption))
-        {
-            config.DucktypeReturnValueProperties = false;
-        }
-
-        if (ctx.ParseResult.GetValueForOption(_noDuckReturnMethodsOption))
-        {
-            config.DucktypeReturnValueMethods = false;
-        }
-
-        if (ctx.ParseResult.GetValueForOption(_noDuckReturnChainingOption))
-        {
-            config.DucktypeReturnValueDuckChaining = false;
-        }
-
-        if (ctx.ParseResult.GetValueForOption(_noDuckAsyncReturnOption))
-        {
-            config.CreateDucktypeAsyncReturnValue = false;
-        }
-
-        if (ctx.ParseResult.GetValueForOption(_noDuckAsyncReturnFieldsOption))
-        {
-            config.DucktypeAsyncReturnValueFields = false;
-        }
-
-        if (ctx.ParseResult.GetValueForOption(_noDuckAsyncReturnPropertiesOption))
-        {
-            config.DucktypeAsyncReturnValueProperties = false;
-        }
-
-        if (ctx.ParseResult.GetValueForOption(_noDuckAsyncReturnMethodsOption))
-        {
-            config.DucktypeAsyncReturnValueMethods = false;
-        }
-
-        if (ctx.ParseResult.GetValueForOption(_noDuckAsyncReturnChainingOption))
-        {
-            config.DucktypeAsyncReturnValueDuckChaining = false;
         }
     }
 }
