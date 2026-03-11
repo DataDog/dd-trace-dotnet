@@ -35,11 +35,11 @@ internal static class HashHelper
         if (!StringUtil.IsNullOrEmpty(processTags))
         {
             hash = FnvHash64.GenerateHash(processTags, HashVersion, hash);
-        }
-
-        if (!StringUtil.IsNullOrEmpty(containerTagsHash))
-        {
-            hash = FnvHash64.GenerateHash(containerTagsHash, HashVersion, hash);
+            // container tags are only added if process tags are in use
+            if (!StringUtil.IsNullOrEmpty(containerTagsHash))
+            {
+                hash = FnvHash64.GenerateHash(containerTagsHash, HashVersion, hash);
+            }
         }
 
         return new NodeHashBase(hash);
