@@ -33,7 +33,7 @@ namespace Datadog.Profiler.IntegrationTests.WindowsOnly
         {
             string[] errorExceptions =
             {
-                "ddog_prof_Exporter_send_blocking failed: operation timed out",
+                "ddog_prof_Exporter_send_blocking failed: Failed to send HTTP request: error sending request for url (http://localhost/profiling/v1/input): operation timed out",
                 "ddog_prof_Exporter_send_blocking failed: operation was canceled"
             };
             var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 1", output: _output, transportType: TransportType.NamedPipe);
