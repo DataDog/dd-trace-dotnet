@@ -12,24 +12,6 @@ namespace Datadog.Trace.Configuration.Schema
 {
     internal sealed class MessagingSchema
     {
-        /// <summary>
-        /// WARNING: must stay in sync with <see cref="ServiceType"/> enum (same order and count).
-        /// </summary>
-        private static readonly string[] IntegrationSourceNames =
-        [
-            "aws.eventbridge",
-            "aws.kinesis",
-            "aws.sns",
-            "aws.sqs",
-            "aws.stepfunctions",
-            "azureeventhubs",
-            "azureservicebus",
-            "ibmmq",
-            "kafka",
-            "msmq",
-            "rabbitmq",
-        ];
-
         private readonly bool _useV0Tags;
         private readonly string[] _inboundOperationNames;
         private readonly string[] _outboundOperationNames;
@@ -91,12 +73,23 @@ namespace Datadog.Trace.Configuration.Schema
             }
 
             // Build combined service name + source metadata
-            _serviceNameMetadata = new ServiceNameMetadata[serviceNames.Length];
-            for (var i = 0; i < serviceNames.Length; i++)
-            {
-                var source = serviceNames[i] != defaultServiceName ? IntegrationSourceNames[i] : null;
-                _serviceNameMetadata[i] = new ServiceNameMetadata(serviceNames[i], source);
-            }
+            ServiceNameMetadata Build(string serviceName, string sourceName) =>
+                new(serviceName, serviceName != defaultServiceName ? sourceName : null);
+
+            _serviceNameMetadata =
+            [
+                Build(serviceNames[(int)ServiceType.AwsEventBridge], "aws.eventbridge"),
+                Build(serviceNames[(int)ServiceType.AwsKinesis], "aws.kinesis"),
+                Build(serviceNames[(int)ServiceType.AwsSns], "aws.sns"),
+                Build(serviceNames[(int)ServiceType.AwsSqs], "aws.sqs"),
+                Build(serviceNames[(int)ServiceType.AwsStepFunctions], "aws.stepfunctions"),
+                Build(serviceNames[(int)ServiceType.AzureEventHubs], "azureeventhubs"),
+                Build(serviceNames[(int)ServiceType.AzureServiceBus], "azureservicebus"),
+                Build(serviceNames[(int)ServiceType.IbmMq], "ibmmq"),
+                Build(serviceNames[(int)ServiceType.Kafka], "kafka"),
+                Build(serviceNames[(int)ServiceType.Msmq], "msmq"),
+                Build(serviceNames[(int)ServiceType.RabbitMq], "rabbitmq"),
+            ];
         }
 
         /// <summary>

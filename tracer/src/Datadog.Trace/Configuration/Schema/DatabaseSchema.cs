@@ -24,19 +24,6 @@ namespace Datadog.Trace.Configuration.Schema
             "mongodb.query",
         ];
 
-        /// <summary>
-        /// WARNING: must stay in sync with <see cref="ServiceType"/> enum (same order and count).
-        /// </summary>
-        private static readonly string[] IntegrationSourceNames =
-        [
-            "aerospike",
-            "cosmosdb",
-            "couchbase",
-            "elasticsearch",
-            "mongodb",
-            "redis",
-        ];
-
         private readonly bool _useV0Tags;
         private readonly ServiceNameMetadata[] _serviceNameMetadata;
 
@@ -67,12 +54,18 @@ namespace Datadog.Trace.Configuration.Schema
             }
 
             // Build combined service name + source metadata
-            _serviceNameMetadata = new ServiceNameMetadata[serviceNames.Length];
-            for (var i = 0; i < serviceNames.Length; i++)
-            {
-                var source = serviceNames[i] != defaultServiceName ? IntegrationSourceNames[i] : null;
-                _serviceNameMetadata[i] = new ServiceNameMetadata(serviceNames[i], source);
-            }
+            ServiceNameMetadata Build(string serviceName, string sourceName) =>
+                new(serviceName, serviceName != defaultServiceName ? sourceName : null);
+
+            _serviceNameMetadata =
+            [
+                Build(serviceNames[(int)ServiceType.Aerospike], "aerospike"),
+                Build(serviceNames[(int)ServiceType.CosmosDb], "cosmosdb"),
+                Build(serviceNames[(int)ServiceType.Couchbase], "couchbase"),
+                Build(serviceNames[(int)ServiceType.Elasticsearch], "elasticsearch"),
+                Build(serviceNames[(int)ServiceType.MongoDb], "mongodb"),
+                Build(serviceNames[(int)ServiceType.Redis], "redis"),
+            ];
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             static void TryApplyMapping(string[] serviceNames, IReadOnlyDictionary<string, string> mappings, string key, ServiceType dbType)
