@@ -232,5 +232,31 @@ namespace Datadog.Trace.Tests.Configuration.Schema
                 namingSchema.Database.GetServiceNameMetadata(value).Source.Should().BeNull();
             }
         }
+
+        [Fact]
+        public void GetServiceNameMetadata_SourceReturnsIntegrationKey_WhenV0Suffix()
+        {
+            // V0 without mappings: source should be the integration key
+            var namingSchema = new NamingSchema(SchemaVersion.V0, peerServiceTagsEnabled: false, removeClientServiceNamesEnabled: false, DefaultServiceName, new Dictionary<string, string>(), new Dictionary<string, string>());
+            namingSchema.Database.GetServiceNameMetadata(DatabaseSchema.ServiceType.Redis).Source.Should().Be("redis");
+            namingSchema.Database.GetServiceNameMetadata(DatabaseSchema.ServiceType.Elasticsearch).Source.Should().Be("elasticsearch");
+        }
+
+        [Fact]
+        public void GetServiceNameMetadata_SourceReturnsOptServiceMapping_WhenMapped()
+        {
+            // When a mapping is configured, source should be "opt.service_mapping"
+            var namingSchema = new NamingSchema(SchemaVersion.V0, peerServiceTagsEnabled: false, removeClientServiceNamesEnabled: false, DefaultServiceName, _mappings, new Dictionary<string, string>());
+            namingSchema.Database.GetServiceNameMetadata(DatabaseSchema.ServiceType.MongoDb).Source.Should().Be("opt.service_mapping");
+        }
+
+        [Fact]
+        public void GetServiceNameMetadata_SourceReturnsOptServiceMapping_WhenMappedToDefault()
+        {
+            // Even when mapped value equals default service name, source should still be "opt.service_mapping"
+            var mappings = new Dictionary<string, string> { { "redis", DefaultServiceName } };
+            var namingSchema = new NamingSchema(SchemaVersion.V0, peerServiceTagsEnabled: false, removeClientServiceNamesEnabled: false, DefaultServiceName, mappings, new Dictionary<string, string>());
+            namingSchema.Database.GetServiceNameMetadata(DatabaseSchema.ServiceType.Redis).Source.Should().Be("opt.service_mapping");
+        }
     }
 }
