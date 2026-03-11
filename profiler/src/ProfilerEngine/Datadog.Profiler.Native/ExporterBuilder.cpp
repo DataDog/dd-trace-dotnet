@@ -22,7 +22,7 @@ extern "C"
 
 namespace libdatadog {
 constexpr uint64_t EndpointTimeoutMs = 0; // 0 means "use the default timeout"
-constexpr bool UseSystemResolver = false;
+constexpr bool UseSystemResolver = true;
 
 ExporterBuilder::ExporterBuilder() = default;
 ExporterBuilder::~ExporterBuilder() = default;
