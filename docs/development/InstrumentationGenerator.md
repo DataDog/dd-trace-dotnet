@@ -19,10 +19,13 @@ The tooling is split into three projects:
   - [Using Nuke](#using-nuke)
   - [Method Resolution](#method-resolution)
   - [Generation Flags](#generation-flags)
-  - [Duck Typing Flags](#duck-typing-flags)
+  - [Configuration Overrides](#configuration-overrides)
+  - [File-Based Configuration](#file-based-configuration)
+  - [Discovering Available Keys](#discovering-available-keys)
   - [Output Options](#output-options)
   - [Auto-Detection](#auto-detection)
   - [JSON Output](#json-output)
+  - [Configuration Precedence](#configuration-precedence)
 - [Two-Tool Workflow with dotnet-inspect](#two-tool-workflow-with-dotnet-inspect)
 - [Architecture](#architecture)
   - [Core Library](#core-library)
@@ -111,14 +114,14 @@ Overload disambiguation is available as direct Nuke parameters:
   --overload-index 0
 ```
 
-Additional CLI flags (duck typing, JSON output, etc.) can be passed via `--generator-args` as a single space-separated string:
+Additional CLI flags (--set, --config-file, JSON output, etc.) can be passed via `--generator-args` as a single space-separated string:
 
 ```bash
 .\tracer\build.cmd RunInstrumentationGeneratorCli ^
   --assembly-path "path/to/MyLib.dll" ^
   --type-name "MyLib.MyClass" ^
   --method-name "DoSomething" ^
-  --generator-args "--duck-instance --json"
+  --generator-args "--set createDucktypeInstance=true --json"
 ```
 
 Nuke parameters:
@@ -153,6 +156,8 @@ If disambiguation is needed but not provided, the tool lists available overloads
 
 #### Generation Flags
 
+Three shortcut flags are available for the most common toggles:
+
 | Flag | Description |
 |---|---|
 | `--no-method-begin` | Skip `OnMethodBegin` handler |
@@ -160,26 +165,64 @@ If disambiguation is needed but not provided, the tool lists available overloads
 | `--async-method-end` | Generate `OnAsyncMethodEnd` handler |
 | `--no-auto-detect` | Disable smart defaults (see [Auto-Detection](#auto-detection)) |
 
-#### Duck Typing Flags
+#### Configuration Overrides
 
-Duck type proxies can be generated for four targets: the instance (`this`), method arguments, the return value, and the async return value. Each target has the same set of sub-flags:
-
-| Target | Enable flag | Sub-flags |
-|---|---|---|
-| Instance | `--duck-instance` | `--duck-instance-fields`, `--duck-instance-properties`, `--duck-instance-methods`, `--duck-instance-chaining` |
-| Arguments | `--duck-args` | `--duck-args-fields`, `--duck-args-properties`, `--duck-args-methods`, `--duck-args-chaining` |
-| Return value | `--duck-return` | `--duck-return-fields`, `--duck-return-properties`, `--duck-return-methods`, `--duck-return-chaining` |
-| Async return | `--duck-async-return` | `--duck-async-return-fields`, `--duck-async-return-properties`, `--duck-async-return-methods`, `--duck-async-return-chaining` |
-
-Use `--duck-copy-struct` to generate `[DuckCopy]` structs instead of interfaces.
-
-Example — generate an integration with instance duck typing including properties and methods:
+For fine-grained control over all generation options, use `--set key=value`. This replaces the previous 25+ individual duck typing flags with a single, repeatable mechanism:
 
 ```bash
+# Enable instance duck typing with methods
 dd-autoinstrumentation generate lib.dll \
   -t MyLib.MyClass -m DoWork \
-  --duck-instance --duck-instance-methods
+  --set createDucktypeInstance=true --set ducktypeInstanceMethods=true
+
+# Disable what auto-detect enabled
+dd-autoinstrumentation generate lib.dll \
+  -t MyLib.MyClass -m DoWork \
+  --set createOnAsyncMethodEnd=false --set createOnMethodEnd=true
+
+# Use DuckCopy structs
+dd-autoinstrumentation generate lib.dll \
+  -t MyLib.MyClass -m DoWork \
+  --set useDuckCopyStruct=true --set createDucktypeInstance=true
 ```
+
+Keys use camelCase names matching the JSON output from `--json`. Use `--list-keys` to see all available keys.
+
+#### File-Based Configuration
+
+Use `--config-file` to load configuration from a JSON file. This is useful for reusable templates or for round-tripping with `--json` output:
+
+```bash
+# Save configuration to a file
+dd-autoinstrumentation generate lib.dll -t MyLib.MyClass -m DoWork --json > config.json
+
+# Re-run with saved config, optionally with tweaks
+dd-autoinstrumentation generate lib.dll -t MyLib.MyClass -m DoWork \
+  --config-file config.json --set ducktypeInstanceMethods=true
+```
+
+The `--config-file` option accepts either:
+- A bare configuration object (just the boolean flags)
+- A full `--json` output envelope (the tool auto-extracts the `configuration` block)
+
+For inline JSON (useful for AI agents), use `--config`:
+
+```bash
+dd-autoinstrumentation generate lib.dll -t MyLib.MyClass -m DoWork \
+  --config '{"createDucktypeInstance": true, "ducktypeInstanceProperties": true}'
+```
+
+Note: `--config` and `--config-file` are mutually exclusive.
+
+#### Discovering Available Keys
+
+Use `--list-keys` to see all available configuration keys with their types and default values:
+
+```bash
+dd-autoinstrumentation generate --list-keys
+```
+
+This prints a table of all keys that can be used with `--set`, `--config`, or `--config-file`.
 
 #### Output Options
 
@@ -226,6 +269,14 @@ The `--json` flag produces structured output for machine consumption:
   }
 }
 ```
+
+#### Configuration Precedence
+
+Configuration is applied in layers (lowest to highest precedence):
+
+1. **Auto-detect** (`CreateForMethod`) — unless `--no-auto-detect`
+2. **Base config** — `--config-file` OR `--config` (mutually exclusive; replaces layer 1 entirely)
+3. **Shortcut flags + `--set` overrides** — applied on top of the base config
 
 ### Two-Tool Workflow with dotnet-inspect
 

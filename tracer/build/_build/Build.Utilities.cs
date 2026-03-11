@@ -150,7 +150,7 @@ partial class Build
     [Parameter("Parameter type full names for method disambiguation (space-separated)")]
     readonly string? ParameterTypes;
 
-    [Parameter("Additional arguments to pass to the instrumentation generator CLI (space-separated string)")]
+    [Parameter("Additional arguments to pass to the instrumentation generator CLI (space-separated string, e.g., '--set createDucktypeInstance=true --json')")]
     readonly string? GeneratorArgs;
 
     Target RunInstrumentationGeneratorCli => _ => _

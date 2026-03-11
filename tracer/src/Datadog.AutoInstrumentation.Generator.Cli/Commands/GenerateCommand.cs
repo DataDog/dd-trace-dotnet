@@ -21,57 +21,31 @@ internal class GenerateCommand : Command
         PropertyNameCaseInsensitive = true,
     };
 
-    // Required arguments
-    private readonly Argument<FileInfo> _assemblyPathArg = new("assembly-path", "Path to the .NET assembly (.dll) file");
+    // Arguments (validated in handler to allow --list-keys without them)
+    private readonly Argument<FileInfo?> _assemblyPathArg = new("assembly-path") { Arity = ArgumentArity.ZeroOrOne, Description = "Path to the .NET assembly (.dll) file" };
 
-    // Required options
-    private readonly Option<string> _typeOption = new("--type", "Fully qualified type name (e.g., MyLib.MyClass)") { IsRequired = true };
-    private readonly Option<string> _methodOption = new("--method", "Method name to instrument") { IsRequired = true };
+    // Options (validated in handler to allow --list-keys without them)
+    private readonly Option<string?> _typeOption = new("--type", "Fully qualified type name (e.g., MyLib.MyClass)");
+    private readonly Option<string?> _methodOption = new("--method", "Method name to instrument");
 
     // Method resolution
     private readonly Option<string[]?> _parameterTypesOption = new("--parameter-types", "Parameter type full names for overload disambiguation");
     private readonly Option<int?> _overloadIndexOption = new("--overload-index", "0-based overload index for disambiguation");
 
-    // Generation flags
+    // Shortcut flags (3 most common toggles)
     private readonly Option<bool> _noMethodBeginOption = new("--no-method-begin", "Skip OnMethodBegin handler generation");
     private readonly Option<bool> _noMethodEndOption = new("--no-method-end", "Skip OnMethodEnd handler generation");
     private readonly Option<bool> _asyncMethodEndOption = new("--async-method-end", "Generate OnAsyncMethodEnd handler");
-    private readonly Option<bool> _duckCopyStructOption = new("--duck-copy-struct", "Use DuckCopy structs instead of interfaces");
 
-    // Duck type: Instance
-    private readonly Option<bool> _duckInstanceOption = new("--duck-instance", "Generate duck type proxy for instance");
-    private readonly Option<bool> _duckInstanceFieldsOption = new("--duck-instance-fields", "Include fields in instance duck type");
-    private readonly Option<bool> _duckInstancePropertiesOption = new("--duck-instance-properties", "Include properties in instance duck type (default when --duck-instance is set)");
-    private readonly Option<bool> _duckInstanceMethodsOption = new("--duck-instance-methods", "Include methods in instance duck type");
-    private readonly Option<bool> _duckInstanceChainingOption = new("--duck-instance-chaining", "Enable duck chaining for instance duck type");
-
-    // Duck type: Arguments
-    private readonly Option<bool> _duckArgsOption = new("--duck-args", "Generate duck type proxies for arguments");
-    private readonly Option<bool> _duckArgsFieldsOption = new("--duck-args-fields", "Include fields in argument duck types");
-    private readonly Option<bool> _duckArgsPropertiesOption = new("--duck-args-properties", "Include properties in argument duck types (default when --duck-args is set)");
-    private readonly Option<bool> _duckArgsMethodsOption = new("--duck-args-methods", "Include methods in argument duck types");
-    private readonly Option<bool> _duckArgsChainingOption = new("--duck-args-chaining", "Enable duck chaining for argument duck types");
-
-    // Duck type: Return Value
-    private readonly Option<bool> _duckReturnOption = new("--duck-return", "Generate duck type proxy for return value");
-    private readonly Option<bool> _duckReturnFieldsOption = new("--duck-return-fields", "Include fields in return value duck type");
-    private readonly Option<bool> _duckReturnPropertiesOption = new("--duck-return-properties", "Include properties in return value duck type (default when --duck-return is set)");
-    private readonly Option<bool> _duckReturnMethodsOption = new("--duck-return-methods", "Include methods in return value duck type");
-    private readonly Option<bool> _duckReturnChainingOption = new("--duck-return-chaining", "Enable duck chaining for return value duck type");
-
-    // Duck type: Async Return Value
-    private readonly Option<bool> _duckAsyncReturnOption = new("--duck-async-return", "Generate duck type proxy for async return value");
-    private readonly Option<bool> _duckAsyncReturnFieldsOption = new("--duck-async-return-fields", "Include fields in async return value duck type");
-    private readonly Option<bool> _duckAsyncReturnPropertiesOption = new("--duck-async-return-properties", "Include properties in async return value duck type (default when --duck-async-return is set)");
-    private readonly Option<bool> _duckAsyncReturnMethodsOption = new("--duck-async-return-methods", "Include methods in async return value duck type");
-    private readonly Option<bool> _duckAsyncReturnChainingOption = new("--duck-async-return-chaining", "Enable duck chaining for async return value duck type");
+    // Configuration mechanisms
+    private readonly Option<string?> _configOption = new("--config", "Inline JSON configuration object (accepts the 'configuration' block from --json output). Mutually exclusive with --config-file.");
+    private readonly Option<FileInfo?> _configFileOption = new("--config-file", "Path to a JSON configuration file. Accepts the 'configuration' block or full --json output envelope. Mutually exclusive with --config.");
+    private readonly Option<string[]> _setOption = new("--set", "Set a configuration key (repeatable, e.g., --set createDucktypeInstance=true). Use --list-keys to see available keys.") { AllowMultipleArgumentsPerToken = true };
+    private readonly Option<bool> _listKeysOption = new("--list-keys", "Print available configuration keys with their default values and exit");
 
     // Output flags
     private readonly Option<bool> _jsonOption = new("--json", "Output structured JSON instead of source code");
     private readonly Option<FileInfo?> _outputOption = new("--output", "Write output to file instead of stdout");
-
-    // Configuration override
-    private readonly Option<string?> _configOption = new("--config", "JSON configuration object to use as base config instead of auto-detect. Accepts the 'configuration' block from --json output. Individual CLI flags still override on top.");
 
     // Auto-detect flag
     private readonly Option<bool> _noAutoDetectOption = new("--no-auto-detect", "Disable smart defaults (async detection, static method handling)");
@@ -91,44 +65,106 @@ internal class GenerateCommand : Command
         AddOption(_noMethodBeginOption);
         AddOption(_noMethodEndOption);
         AddOption(_asyncMethodEndOption);
-        AddOption(_duckCopyStructOption);
-        AddOption(_duckInstanceOption);
-        AddOption(_duckInstanceFieldsOption);
-        AddOption(_duckInstancePropertiesOption);
-        AddOption(_duckInstanceMethodsOption);
-        AddOption(_duckInstanceChainingOption);
-        AddOption(_duckArgsOption);
-        AddOption(_duckArgsFieldsOption);
-        AddOption(_duckArgsPropertiesOption);
-        AddOption(_duckArgsMethodsOption);
-        AddOption(_duckArgsChainingOption);
-        AddOption(_duckReturnOption);
-        AddOption(_duckReturnFieldsOption);
-        AddOption(_duckReturnPropertiesOption);
-        AddOption(_duckReturnMethodsOption);
-        AddOption(_duckReturnChainingOption);
-        AddOption(_duckAsyncReturnOption);
-        AddOption(_duckAsyncReturnFieldsOption);
-        AddOption(_duckAsyncReturnPropertiesOption);
-        AddOption(_duckAsyncReturnMethodsOption);
-        AddOption(_duckAsyncReturnChainingOption);
+        AddOption(_configOption);
+        AddOption(_configFileOption);
+        AddOption(_setOption);
+        AddOption(_listKeysOption);
         AddOption(_jsonOption);
         AddOption(_outputOption);
-        AddOption(_configOption);
         AddOption(_noAutoDetectOption);
 
         this.SetHandler(Execute);
     }
 
+    private static (GenerationConfiguration? Config, string? Error) LoadConfigFile(FileInfo configFile)
+    {
+        if (!configFile.Exists)
+        {
+            return (null, $"Error: Config file not found: {configFile.FullName}");
+        }
+
+        string fileContent;
+        try
+        {
+            fileContent = File.ReadAllText(configFile.FullName);
+        }
+        catch (Exception ex)
+        {
+            return (null, $"Error: Could not read config file: {ex.Message}");
+        }
+
+        try
+        {
+            // Try to parse as full --json output envelope (has "configuration" property)
+            using var doc = JsonDocument.Parse(fileContent);
+            if (doc.RootElement.TryGetProperty("configuration", out var configElement))
+            {
+                var config = JsonSerializer.Deserialize<GenerationConfiguration>(configElement.GetRawText(), ConfigDeserializerOptions)
+                             ?? new GenerationConfiguration();
+                return (config, null);
+            }
+
+            // Otherwise treat as a bare configuration object
+            var bareConfig = JsonSerializer.Deserialize<GenerationConfiguration>(fileContent, ConfigDeserializerOptions)
+                             ?? new GenerationConfiguration();
+            return (bareConfig, null);
+        }
+        catch (JsonException ex)
+        {
+            return (null, $"Error: Invalid JSON in config file '{configFile.Name}': {ex.Message}");
+        }
+    }
+
+    private static void PrintAvailableKeys()
+    {
+        Console.WriteLine("Available configuration keys for --set (camelCase, same as --json output):");
+        Console.WriteLine();
+        Console.WriteLine("  {0,-45} {1,-10} {2}", "Key", "Type", "Default");
+        Console.WriteLine("  {0,-45} {1,-10} {2}", new string('-', 45), new string('-', 10), new string('-', 7));
+
+        foreach (var (key, typeName, defaultValue) in ConfigurationApplier.GetAvailableKeys())
+        {
+            Console.WriteLine("  {0,-45} {1,-10} {2}", key, typeName, defaultValue);
+        }
+
+        Console.WriteLine();
+        Console.WriteLine("Usage: --set key=value (repeatable)");
+        Console.WriteLine("Example: --set createDucktypeInstance=true --set ducktypeInstanceMethods=true");
+    }
+
     private void Execute(InvocationContext ctx)
     {
+        // Handle --list-keys: print and exit (no assembly/type/method required)
+        if (ctx.ParseResult.GetValueForOption(_listKeysOption))
+        {
+            PrintAvailableKeys();
+            return;
+        }
+
         var assemblyPath = ctx.ParseResult.GetValueForArgument(_assemblyPathArg);
-        var type = ctx.ParseResult.GetValueForOption(_typeOption)!;
-        var method = ctx.ParseResult.GetValueForOption(_methodOption)!;
+        var type = ctx.ParseResult.GetValueForOption(_typeOption);
+        var method = ctx.ParseResult.GetValueForOption(_methodOption);
+
+        if (assemblyPath is null || type is null || method is null)
+        {
+            Console.Error.WriteLine("Error: assembly-path, --type, and --method are required (unless using --list-keys).");
+            ctx.ExitCode = 1;
+            return;
+        }
 
         if (!assemblyPath.Exists)
         {
             Console.Error.WriteLine($"Error: Assembly file not found: {assemblyPath.FullName}");
+            ctx.ExitCode = 1;
+            return;
+        }
+
+        // Validate mutual exclusivity of --config and --config-file
+        var configJson = ctx.ParseResult.GetValueForOption(_configOption);
+        var configFile = ctx.ParseResult.GetValueForOption(_configFileOption);
+        if (configJson is not null && configFile is not null)
+        {
+            Console.Error.WriteLine("Error: --config and --config-file are mutually exclusive. Use one or the other.");
             ctx.ExitCode = 1;
             return;
         }
@@ -162,9 +198,31 @@ internal class GenerateCommand : Command
             return;
         }
 
-        var configJson = ctx.ParseResult.GetValueForOption(_configOption);
+        // Step 1: Start with auto-detect or blank config
         GenerationConfiguration config;
-        if (configJson is not null)
+        if (ctx.ParseResult.GetValueForOption(_noAutoDetectOption))
+        {
+            config = new GenerationConfiguration();
+        }
+        else
+        {
+            config = GenerationConfiguration.CreateForMethod(methodDef);
+        }
+
+        // Step 2: Apply base config from --config-file or --config (replaces layer 1)
+        if (configFile is not null)
+        {
+            var loadResult = LoadConfigFile(configFile);
+            if (loadResult.Error is not null)
+            {
+                Console.Error.WriteLine(loadResult.Error);
+                ctx.ExitCode = 1;
+                return;
+            }
+
+            config = loadResult.Config!;
+        }
+        else if (configJson is not null)
         {
             try
             {
@@ -178,17 +236,37 @@ internal class GenerateCommand : Command
                 return;
             }
         }
-        else if (ctx.ParseResult.GetValueForOption(_noAutoDetectOption))
+
+        // Step 3: Apply shortcut flags
+        if (ctx.ParseResult.GetValueForOption(_noMethodBeginOption))
         {
-            config = new GenerationConfiguration();
-        }
-        else
-        {
-            config = GenerationConfiguration.CreateForMethod(methodDef);
+            config.CreateOnMethodBegin = false;
         }
 
-        ApplyCliOverrides(ctx, config);
+        if (ctx.ParseResult.GetValueForOption(_noMethodEndOption))
+        {
+            config.CreateOnMethodEnd = false;
+        }
 
+        if (ctx.ParseResult.GetValueForOption(_asyncMethodEndOption))
+        {
+            config.CreateOnAsyncMethodEnd = true;
+        }
+
+        // Step 4: Apply --set overrides
+        var setValues = ctx.ParseResult.GetValueForOption(_setOption);
+        if (setValues is { Length: > 0 })
+        {
+            var error = ConfigurationApplier.ApplyOverrides(config, setValues);
+            if (error is not null)
+            {
+                Console.Error.WriteLine(error);
+                ctx.ExitCode = 1;
+                return;
+            }
+        }
+
+        // Step 5: Generate and output
         var generator = new InstrumentationGenerator();
         var result = generator.Generate(methodDef, config);
 
@@ -224,129 +302,6 @@ internal class GenerateCommand : Command
         else
         {
             Console.Write(outputText);
-        }
-    }
-
-    private void ApplyCliOverrides(InvocationContext ctx, GenerationConfiguration config)
-    {
-        if (ctx.ParseResult.GetValueForOption(_noMethodBeginOption))
-        {
-            config.CreateOnMethodBegin = false;
-        }
-
-        if (ctx.ParseResult.GetValueForOption(_noMethodEndOption))
-        {
-            config.CreateOnMethodEnd = false;
-        }
-
-        if (ctx.ParseResult.GetValueForOption(_asyncMethodEndOption))
-        {
-            config.CreateOnAsyncMethodEnd = true;
-        }
-
-        if (ctx.ParseResult.GetValueForOption(_duckCopyStructOption))
-        {
-            config.UseDuckCopyStruct = true;
-        }
-
-        if (ctx.ParseResult.GetValueForOption(_duckInstanceOption))
-        {
-            config.CreateDucktypeInstance = true;
-        }
-
-        if (ctx.ParseResult.GetValueForOption(_duckInstanceFieldsOption))
-        {
-            config.DucktypeInstanceFields = true;
-        }
-
-        if (ctx.ParseResult.GetValueForOption(_duckInstancePropertiesOption))
-        {
-            config.DucktypeInstanceProperties = true;
-        }
-
-        if (ctx.ParseResult.GetValueForOption(_duckInstanceMethodsOption))
-        {
-            config.DucktypeInstanceMethods = true;
-        }
-
-        if (ctx.ParseResult.GetValueForOption(_duckInstanceChainingOption))
-        {
-            config.DucktypeInstanceDuckChaining = true;
-        }
-
-        if (ctx.ParseResult.GetValueForOption(_duckArgsOption))
-        {
-            config.CreateDucktypeArguments = true;
-        }
-
-        if (ctx.ParseResult.GetValueForOption(_duckArgsFieldsOption))
-        {
-            config.DucktypeArgumentsFields = true;
-        }
-
-        if (ctx.ParseResult.GetValueForOption(_duckArgsPropertiesOption))
-        {
-            config.DucktypeArgumentsProperties = true;
-        }
-
-        if (ctx.ParseResult.GetValueForOption(_duckArgsMethodsOption))
-        {
-            config.DucktypeArgumentsMethods = true;
-        }
-
-        if (ctx.ParseResult.GetValueForOption(_duckArgsChainingOption))
-        {
-            config.DucktypeArgumentsDuckChaining = true;
-        }
-
-        if (ctx.ParseResult.GetValueForOption(_duckReturnOption))
-        {
-            config.CreateDucktypeReturnValue = true;
-        }
-
-        if (ctx.ParseResult.GetValueForOption(_duckReturnFieldsOption))
-        {
-            config.DucktypeReturnValueFields = true;
-        }
-
-        if (ctx.ParseResult.GetValueForOption(_duckReturnPropertiesOption))
-        {
-            config.DucktypeReturnValueProperties = true;
-        }
-
-        if (ctx.ParseResult.GetValueForOption(_duckReturnMethodsOption))
-        {
-            config.DucktypeReturnValueMethods = true;
-        }
-
-        if (ctx.ParseResult.GetValueForOption(_duckReturnChainingOption))
-        {
-            config.DucktypeReturnValueDuckChaining = true;
-        }
-
-        if (ctx.ParseResult.GetValueForOption(_duckAsyncReturnOption))
-        {
-            config.CreateDucktypeAsyncReturnValue = true;
-        }
-
-        if (ctx.ParseResult.GetValueForOption(_duckAsyncReturnFieldsOption))
-        {
-            config.DucktypeAsyncReturnValueFields = true;
-        }
-
-        if (ctx.ParseResult.GetValueForOption(_duckAsyncReturnPropertiesOption))
-        {
-            config.DucktypeAsyncReturnValueProperties = true;
-        }
-
-        if (ctx.ParseResult.GetValueForOption(_duckAsyncReturnMethodsOption))
-        {
-            config.DucktypeAsyncReturnValueMethods = true;
-        }
-
-        if (ctx.ParseResult.GetValueForOption(_duckAsyncReturnChainingOption))
-        {
-            config.DucktypeAsyncReturnValueDuckChaining = true;
         }
     }
 }
