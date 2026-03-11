@@ -25,8 +25,6 @@ namespace Datadog.Trace.RemoteConfigurationManagement;
 
 internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
 {
-    private long _rootVersion = 1;
-
     public static readonly IRcmSubscriptionManager Instance = new RcmSubscriptionManager();
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<RcmSubscriptionManager>();
 
@@ -40,13 +38,30 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
 
     private readonly string _id = Guid.NewGuid().ToString();
 
+    // Persistent request object, mutated in-place each poll
+    private readonly GetRcmRequest _request;
+
     // Ideally this would be an ImmutableArray but that's not available in net461
     private IReadOnlyList<ISubscription> _subscriptions = [];
 
+    private long _rootVersion = 1;
     private string? _backendClientState;
     private long _targetsVersion;
     private BigInteger _capabilities;
     private string? _lastPollError;
+    private long _appliedConfigsVersion;
+
+    // Cached capabilities byte[] — only recomputed when _capabilities changes
+    private BigInteger _cachedCapabilities;
+    private byte[]? _cachedCapabilitiesBytes;
+
+    // Version tracking for lists that are expensive to rebuild
+    private long _requestAppliedConfigsVersion = -1;
+
+    public RcmSubscriptionManager()
+    {
+        _request = new GetRcmRequest(new RcmClient(_id, new RcmClientState()));
+    }
 
     public bool HasAnySubscription => _subscriptions.Count > 0;
 
@@ -109,25 +124,37 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
     /// <summary>
     /// Called by RCM
     /// </summary>
-    private async Task<IReadOnlyList<ApplyDetails>> Update(Dictionary<string, List<RemoteConfiguration>> configByProducts, Dictionary<string, List<RemoteConfigurationPath>> removedConfigsByProduct)
+    private async Task<List<ApplyDetails>?> Update(Dictionary<string, List<RemoteConfiguration>>? configByProducts, Dictionary<string, List<RemoteConfigurationPath>>? removedConfigsByProduct)
     {
-        List<ApplyDetails> results = new();
+        List<ApplyDetails>? results = null;
 
         var subscriptions = Volatile.Read(ref _subscriptions);
 
         foreach (var subscription in subscriptions)
         {
-            var configByProduct = configByProducts.Where(c => subscription.ProductKeys.Contains(c.Key))
-                                                  .ToDictionary(c => c.Key, c => c.Value);
+            Dictionary<string, List<RemoteConfiguration>>? filteredConfigs = null;
+            if (configByProducts is not null)
+            {
+                foreach (var productKey in subscription.ProductKeys)
+                {
+                    if (configByProducts.TryGetValue(productKey, out var configs))
+                    {
+                        filteredConfigs ??= new(subscription.ProductKeys.Count);
+                        filteredConfigs[productKey] = configs;
+                    }
+                }
+            }
 
-            if (configByProduct.Count == 0 && removedConfigsByProduct?.Count == 0)
+            var haveChanges = filteredConfigs?.Count > 0 || removedConfigsByProduct?.Count > 0;
+            if (!haveChanges)
             {
                 continue;
             }
 
             try
             {
-                results.AddRange(await subscription.Invoke(configByProduct, removedConfigsByProduct).ConfigureAwait(false));
+                results ??= new();
+                results.AddRange(await subscription.Invoke(filteredConfigs ?? [], removedConfigsByProduct).ConfigureAwait(false));
             }
             catch (Exception e)
             {
@@ -210,21 +237,49 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
 
     private GetRcmRequest BuildRequest(RcmClientTracer rcmTracer, string? lastPollError)
     {
-        var cachedTargetFiles = new List<RcmCachedTargetFile>();
-        var configStates = new List<RcmConfigState>();
-        var appliedConfigs = _appliedConfigurations.Values;
+        // Update all fields in-place instead of recreating everything
+        var requestClient = _request.Client;
+        var requestState = requestClient.State;
+        requestState.RootVersion = _rootVersion;
+        requestState.TargetsVersion = _targetsVersion;
+        requestState.HasError = lastPollError is not null;
+        requestState.Error = lastPollError;
+        requestState.BackendClientState = _backendClientState;
 
-        foreach (var cache in appliedConfigs)
+        requestClient.ClientTracer = rcmTracer;
+        requestClient.Products = ProductKeys;
+        requestClient.Capabilities = GetCachedCapabilities();
+
+        // Rebuild config-derived lists only when applied configs have changed
+        if (_requestAppliedConfigsVersion != _appliedConfigsVersion)
         {
-            cachedTargetFiles.Add(new RcmCachedTargetFile(cache.Path.Path, cache.Length, cache.Hashes.Select(kp => new RcmCachedTargetFileHash(kp.Key, kp.Value)).ToList()));
-            configStates.Add(new RcmConfigState(cache.Path.Id, cache.Version, cache.Path.Product, cache.ApplyState, cache.Error));
+            _requestAppliedConfigsVersion = _appliedConfigsVersion;
+            var cachedTargetFiles = new List<RcmCachedTargetFile>(_appliedConfigurations.Values.Count);
+            var configStates = new List<RcmConfigState>(_appliedConfigurations.Values.Count);
+
+            foreach (var cache in _appliedConfigurations.Values)
+            {
+                cachedTargetFiles.Add(new RcmCachedTargetFile(cache.Path.Path, cache.Length, cache.Hashes.Select(kp => new RcmCachedTargetFileHash(kp.Key, kp.Value)).ToList()));
+                configStates.Add(new RcmConfigState(cache.Path.Id, cache.Version, cache.Path.Product, cache.ApplyState, cache.Error));
+            }
+
+            _request.CachedTargetFiles = cachedTargetFiles;
+            requestState.ConfigStates = configStates;
         }
 
-        var rcmState = new RcmClientState(_rootVersion, _targetsVersion, configStates, lastPollError != null, lastPollError, _backendClientState);
-        var rcmClient = new RcmClient(_id, ProductKeys, rcmTracer, rcmState, GetCapabilities());
-        var rcmRequest = new GetRcmRequest(rcmClient, cachedTargetFiles);
+        return _request;
 
-        return rcmRequest;
+        byte[] GetCachedCapabilities()
+        {
+            if (_cachedCapabilitiesBytes is not null && _capabilities == _cachedCapabilities)
+            {
+                return _cachedCapabilitiesBytes;
+            }
+
+            _cachedCapabilities = _capabilities;
+            _cachedCapabilitiesBytes = GetCapabilities();
+            return _cachedCapabilitiesBytes;
+        }
     }
 
     private async Task<GetRcmResponse?> TrySendRequest(RcmClientTracer rcmClientTracer, Func<GetRcmRequest, Task<GetRcmResponse?>> func)
@@ -257,111 +312,147 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
     {
         if (Log.IsEnabled(LogEventLevel.Debug))
         {
-            var description = response.TargetFiles.Count > 0
+            var description = response.TargetFiles?.Count > 0
                                   ? "with the following paths: " + string.Join(",", response.TargetFiles.Select(t => t.Path))
                                   : "that is empty.";
             Log.Debug("Received Remote Configuration response {ResponseDescription}.", description);
         }
 
-        var configByProducts = new Dictionary<string, List<RemoteConfiguration>>();
-        var receivedPaths = new List<string>();
+        var signed = response.Targets?.Signed?.Targets;
 
-        // handle new configurations
-        foreach (var clientConfig in response.ClientConfigs)
+        Dictionary<string, List<RemoteConfiguration>>? configByProducts = null;
+        List<string>? receivedPaths = null;
+        if (response.ClientConfigs?.Count > 0)
         {
-            var remoteConfigurationPath = RemoteConfigurationPath.FromPath(clientConfig);
-            receivedPaths.Add(remoteConfigurationPath.Path);
-            var signed = response.Targets.Signed.Targets;
-            var targetFiles =
-                (response.TargetFiles ?? Enumerable.Empty<RcmFile>()).ToDictionary(f => f.Path, f => f);
+            receivedPaths = new List<string>(capacity: response.ClientConfigs.Count);
 
-            if (!signed.TryGetValue(remoteConfigurationPath.Path, out var signedTarget))
+            // handle new configurations
+            foreach (var clientConfig in response.ClientConfigs)
             {
-                ThrowHelper.ThrowException($"Missing config {remoteConfigurationPath.Path} in targets");
+                var remoteConfigurationPath = RemoteConfigurationPath.FromPath(clientConfig);
+                receivedPaths.Add(remoteConfigurationPath.Path);
+
+                if (signed is null || !signed.TryGetValue(remoteConfigurationPath.Path, out var signedTarget))
+                {
+                    ThrowHelper.ThrowException($"Missing config {remoteConfigurationPath.Path} in targets");
+                    return; // keep compiler happy
+                }
+
+                if (!ProductKeys.Contains(remoteConfigurationPath.Product))
+                {
+                    Log.Warning("Received config {RemoteConfigurationPath} for a product that was not requested", remoteConfigurationPath);
+                    continue;
+                }
+
+                if (_appliedConfigurations.TryGetValue(remoteConfigurationPath.Path, out var appliedConfig) &&
+                    IsConfigAlreadyApplied(appliedConfig, signedTarget))
+                {
+                    continue;
+                }
+
+                var targetFile = response.TargetFiles?.FirstOrDefault(file => file.Path == remoteConfigurationPath.Path);
+                if (targetFile is null)
+                {
+                    ThrowHelper.ThrowException($"Missing config {remoteConfigurationPath.Path} in target files");
+                }
+
+                var remoteConfigurationCache = new RemoteConfigurationCache(remoteConfigurationPath, signedTarget.Length, signedTarget.Hashes, signedTarget.Custom?.V ?? 0);
+                _appliedConfigurations[remoteConfigurationCache.Path.Path] = remoteConfigurationCache;
+                _appliedConfigsVersion++;
+
+                var remoteConfiguration = new RemoteConfiguration(remoteConfigurationPath, targetFile.Raw, signedTarget.Length, signedTarget.Hashes, signedTarget.Custom?.V ?? 0);
+                configByProducts ??= [];
+                if (!configByProducts.TryGetValue(remoteConfigurationPath.Product, out var configByProduct))
+                {
+                    configByProduct ??= [];
+                    configByProducts[remoteConfigurationPath.Product] = configByProduct;
+                }
+
+                configByProduct.Add(remoteConfiguration);
             }
-
-            if (!ProductKeys.Contains(remoteConfigurationPath.Product))
-            {
-                Log.Warning("Received config {RemoteConfigurationPath} for a product that was not requested", remoteConfigurationPath);
-                continue;
-            }
-
-            var isConfigApplied =
-                _appliedConfigurations.TryGetValue(remoteConfigurationPath.Path, out var appliedConfig) &&
-                appliedConfig.Hashes.SequenceEqual(signedTarget.Hashes);
-            if (isConfigApplied)
-            {
-                continue;
-            }
-
-            if (!targetFiles.TryGetValue(remoteConfigurationPath.Path, out var targetFile))
-            {
-                ThrowHelper.ThrowException($"Missing config {remoteConfigurationPath.Path} in target files");
-            }
-
-            var remoteConfigurationCache = new RemoteConfigurationCache(remoteConfigurationPath, signedTarget.Length, signedTarget.Hashes, signedTarget.Custom.V);
-            _appliedConfigurations[remoteConfigurationCache.Path.Path] = remoteConfigurationCache;
-
-            var remoteConfiguration = new RemoteConfiguration(remoteConfigurationPath, targetFile.Raw, signedTarget.Length, signedTarget.Hashes, signedTarget.Custom.V);
-            if (!configByProducts.ContainsKey(remoteConfigurationPath.Product))
-            {
-                configByProducts[remoteConfigurationPath.Product] = new List<RemoteConfiguration>();
-            }
-
-            configByProducts[remoteConfigurationPath.Product].Add(remoteConfiguration);
         }
 
-        Dictionary<string, List<RemoteConfigurationPath>> removedConfigsByProduct = new();
+        Dictionary<string, List<RemoteConfigurationPath>>? removedConfigsByProduct = null;
 
         // handle removed configurations
         foreach (var appliedConfiguration in _appliedConfigurations)
         {
-            if (receivedPaths.Contains(appliedConfiguration.Key))
+            if (receivedPaths is not null && receivedPaths.Contains(appliedConfiguration.Key))
             {
                 continue;
             }
 
-            if (!removedConfigsByProduct.ContainsKey(appliedConfiguration.Value.Path.Product))
+            removedConfigsByProduct ??= [];
+            if (!removedConfigsByProduct.TryGetValue(appliedConfiguration.Value.Path.Product, out var removedConfig))
             {
-                removedConfigsByProduct[appliedConfiguration.Value.Path.Product] =
-                    new List<RemoteConfigurationPath>();
+                removedConfig ??= [];
+                removedConfigsByProduct[appliedConfiguration.Value.Path.Product] = removedConfig;
             }
 
-            removedConfigsByProduct[appliedConfiguration.Value.Path.Product].Add(appliedConfiguration.Value.Path);
+            removedConfig.Add(appliedConfiguration.Value.Path);
         }
 
         // update applied configurations after removal
-        foreach (var removedConfig in removedConfigsByProduct.Values)
+        if (removedConfigsByProduct is not null)
         {
-            foreach (var value in removedConfig)
+            foreach (var removedConfig in removedConfigsByProduct.Values)
             {
-                _appliedConfigurations.Remove(value.Path);
+                foreach (var value in removedConfig)
+                {
+                    _appliedConfigurations.Remove(value.Path);
+                    _appliedConfigsVersion++;
+                }
             }
         }
 
         var results = await Update(configByProducts, removedConfigsByProduct).ConfigureAwait(false);
 
-        foreach (var result in results)
+        if (results is not null)
         {
-            switch (result.ApplyState)
+            foreach (var result in results)
             {
-                case ApplyStates.UNACKNOWLEDGED:
-                    // Do nothing
-                    break;
-                case ApplyStates.ACKNOWLEDGED:
-                    _appliedConfigurations[result.Filename].Applied();
-                    break;
-                case ApplyStates.ERROR:
-                    _appliedConfigurations[result.Filename].ErrorOccured(result.Error);
-                    break;
-                default:
-                    Log.Warning("Unexpected ApplyState: {ApplyState}", result.ApplyState);
-                    break;
+                switch (result.ApplyState)
+                {
+                    case ApplyStates.UNACKNOWLEDGED:
+                        // Do nothing
+                        break;
+                    case ApplyStates.ACKNOWLEDGED:
+                        _appliedConfigurations[result.Filename].Applied();
+                        _appliedConfigsVersion++;
+                        break;
+                    case ApplyStates.ERROR:
+                        _appliedConfigurations[result.Filename].ErrorOccured(result.Error);
+                        _appliedConfigsVersion++;
+                        break;
+                    default:
+                        Log.Warning("Unexpected ApplyState: {ApplyState}", result.ApplyState);
+                        break;
+                }
             }
         }
 
-        _targetsVersion = response.Targets.Signed.Version;
-        _backendClientState = response.Targets.Signed.Custom?.OpaqueBackendState;
+        _targetsVersion = response.Targets?.Signed?.Version ?? 0;
+        _backendClientState = response.Targets?.Signed?.Custom?.OpaqueBackendState;
+
+        static bool IsConfigAlreadyApplied(RemoteConfigurationCache appliedConfig, Target signedTarget)
+        {
+            var newHashes = signedTarget.Hashes;
+            if (appliedConfig.Hashes.Count != newHashes?.Count)
+            {
+                return false;
+            }
+
+            foreach (var kvp in appliedConfig.Hashes)
+            {
+                if (!newHashes.TryGetValue(kvp.Key, out var newHash)
+                 || !newHash.Equals(kvp.Value, StringComparison.OrdinalIgnoreCase))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
     }
 
     private void UpdateRootVersionFromResponseRoots(List<string>? roots)
