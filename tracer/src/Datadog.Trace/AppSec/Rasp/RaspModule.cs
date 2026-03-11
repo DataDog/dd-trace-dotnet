@@ -327,7 +327,7 @@ internal static class RaspModule
         return headersDic;
     }
 
-    internal static async Task<bool> OnDownstreamRequest(object requestMessageInstance, ulong requestSpanId, Span rootSpan)
+    internal static bool OnDownstreamRequest(object requestMessageInstance, ulong requestSpanId, Span rootSpan)
     {
         try
         {
@@ -372,7 +372,7 @@ internal static class RaspModule
 
                 if (context.IsHttpClientRequestSampled(requestSpanId))
                 {
-                    await AddBody(requestMessage.Content, wafArgs, AddressesConstants.DownstreamRequestBody, security.AppSecBodyParsingSizeLimit).ConfigureAwait(false);
+                    AddBody(requestMessage.Content, wafArgs, AddressesConstants.DownstreamRequestBody, security.AppSecBodyParsingSizeLimit).SafeWait();
                 }
 
                 // If a block is issued we must stop current child outbound request span, as the call is going to be interrupted
@@ -388,7 +388,7 @@ internal static class RaspModule
         return false;
     }
 
-    internal static async Task OnDownstreamResponse(object responseMessageInstance, ulong requestSpanId)
+    internal static void OnDownstreamResponse(object responseMessageInstance, ulong requestSpanId)
     {
         try
         {
@@ -431,7 +431,7 @@ internal static class RaspModule
 
             if (context.IsHttpClientRequestSampled(requestSpanId))
             {
-                await AddBody(responseMessage.Content, wafArgs, AddressesConstants.DownstreamResponseBody, security.AppSecBodyParsingSizeLimit).ConfigureAwait(false);
+                AddBody(responseMessage.Content, wafArgs, AddressesConstants.DownstreamResponseBody, security.AppSecBodyParsingSizeLimit).SafeWait();
             }
 
             CheckVulnerability(wafArgs, AddressesConstants.DownstreamUrl);
@@ -462,7 +462,7 @@ internal static class RaspModule
 
                     if (len > 0 && len < bodySizeLimit)
                     {
-                        var body = content.ReadAsStringAsync().SafeGetResult();
+                        var body = await content.ReadAsStringAsync().ConfigureAwait(false);
                         if (BodyParser.Parse(body) is { } parsedBody)
                         {
                             wafArgs[AddressesConstants.DownstreamRequestBody] = parsedBody;
