@@ -102,13 +102,17 @@ namespace Datadog.Trace.Configuration
             AgentUri = traceSettings.AgentUri;
 
             var otlpTraceSettings = GetOtlpTracesTransport(signalEndpoint: rawSettings.OtlpTracesEndpoint, generalEndpoint: rawSettings.OtlpEndpoint, signalProtocol: rawSettings.OtlpTracesProtocol, generalProtocol: rawSettings.OtlpProtocol);
-            TracesEncoding = otlpTraceSettings.Encoding;
             OtlpTracesEndpoint = otlpTraceSettings.AgentUri;
             OtlpTracesProtocol = otlpTraceSettings.OtlpProtocol;
             var tracesHeaders = StringConfigurationSource.ParseCustomKeyValues(rawSettings.OtlpTracesHeaders, allowOptionalMappings: false, separator: '=')
                                 ?? StringConfigurationSource.ParseCustomKeyValues(rawSettings.OtlpHeaders, allowOptionalMappings: false, separator: '=');
             OtlpTracesHeaders = tracesHeaders?.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value)).ToArray() ?? [];
             OtlpTracesTimeoutMs = rawSettings.OtlpTracesTimeoutMs;
+
+            if (rawSettings.OtelTracesExporter == "otlp")
+            {
+                TracesEncoding = otlpTraceSettings.Encoding;
+            }
 
             var metricsSettings = ConfigureMetricsTransport(
                 metricsUrl: rawSettings.MetricsUrl,
