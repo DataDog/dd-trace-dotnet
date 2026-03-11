@@ -8,8 +8,8 @@
   <ItemGroup>
     <!-- Integration: NLog -->
     <!--    Assembly: NLog -->
-    <!-- Latest package https://www.nuget.org/packages/NLog/6.1.0 -->
-    <PackageReference Include="NLog" Version="6.1.0" />
+    <!-- Latest package https://www.nuget.org/packages/NLog/6.1.1 -->
+    <PackageReference Include="NLog" Version="6.1.1" />
   </ItemGroup>
 
 </Project>

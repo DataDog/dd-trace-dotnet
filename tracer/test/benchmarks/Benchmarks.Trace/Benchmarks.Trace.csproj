@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>net10.0;net9.0;net8.0;net7.0;net6.0;netcoreapp3.1;net472</TargetFrameworks>
+    <TargetFrameworks>net10.0;net9.0;net8.0;net7.0;net6.0;netcoreapp3.1;netcoreapp3.0;netcoreapp2.1;net472</TargetFrameworks>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
 
     <!-- benchmarkdotnet only support numberic values, not "latest"-->
@@ -14,12 +14,14 @@
     <AssemblyOriginatorKeyFile>..\..\..\..\Datadog.Trace.snk</AssemblyOriginatorKeyFile>
     <DelaySign>false</DelaySign>
     <!-- NU* are workaround for Rider bug: https://youtrack.jetbrains.com/issue/RIDER-103207/Cannot-suppress-vulnerable-package-errors -->
-    <NoWarn>1591;NU1901;NU1902;NU1903;NU1904</NoWarn>
+    <!-- ASPDEPR004: 'WebHostBuilder' is obsolete: 'WebHostBuilder is deprecated in favor of HostBuilder and WebApplicationBuilder  -->
+    <NoWarn>1591;NU1901;NU1902;NU1903;NU1904;ASPDEPR004</NoWarn>
 
      <!-- Tell Visual Studio to not create a new launchSettings.json file, even though we have AspNetCore assets -->
     <NoDefaultLaunchSettingsFile>true</NoDefaultLaunchSettingsFile>
     <CheckEolTargetFramework>false</CheckEolTargetFramework>
     <LangVersion>latest</LangVersion>
+    <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
   </PropertyGroup>
 
   <ItemGroup>
@@ -41,7 +43,7 @@
 
   <ItemGroup>
     <PackageReference Include="BenchmarkDotNet" Version="0.15.8" />
-    <PackageReference Include="JetBrains.Profiler.SelfApi" Version="2.5.14" />
+    <PackageReference Include="JetBrains.Profiler.SelfApi" Version="2.5.16" Condition=" '$(TargetFramework)' != 'netcoreapp2.1'" />
     <PackageReference Include="log4net" Version="2.0.12" />
     <PackageReference Include="NLog" Version="5.2.0" />
     <PackageReference Include="Serilog" Version="2.10.0" />
@@ -49,6 +51,15 @@
     <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="7.0.0" />
   </ItemGroup>
 
+  <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp2.1' ">
+    <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="2.1.0" />
+    <PackageReference Include="Microsoft.AspNetCore" Version="2.1.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.1.0" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.0' ">
+    <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="3.0.0" />
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\Datadog.Trace.BenchmarkDotNet\Datadog.Trace.BenchmarkDotNet.csproj" />
@@ -56,11 +67,7 @@
     <ProjectReference Include="..\..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
   </ItemGroup>
 
-  <ItemGroup Condition=" '$(TargetFrameworkIdentifier)' == '.NETCoreApp' ">
-    <!--
-    This reference allows us to build the code without precompiler directives,
-    but the logic at runtime will never try to use the Registry if it's not available
-    -->
+  <ItemGroup Condition=" '$(TargetFrameworkIdentifier)' != '.NETFramework' AND '$(TargetFramework)' != 'netcoreapp2.1' AND '$(TargetFramework)' != 'netcoreapp3.0' ">
     <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="3.1.14" />
   </ItemGroup>
 

@@ -16,6 +16,7 @@ using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Ci.Telemetry;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 // ReSharper disable ConvertToPrimaryConstructor
@@ -46,7 +47,7 @@ internal sealed partial class TestOptimizationClient
 
         _packFileUrl ??= GetUriFromPath(PackFileUrlPath);
 
-        var jsonPushedSha = JsonConvert.SerializeObject(new DataEnvelope<Data<object>>(new Data<object>(commitSha, CommitType, null), _repositoryUrl), SerializerSettings);
+        var jsonPushedSha = JsonHelper.SerializeObject(new DataEnvelope<Data<object>>(new Data<object>(commitSha, CommitType, null), _repositoryUrl), SerializerSettings);
         Log.Debug("TestOptimizationClient: ObjPack.JSON RQ = {Json}", jsonPushedSha);
         var jsonPushedShaBytes = Encoding.UTF8.GetBytes(jsonPushedSha);
 

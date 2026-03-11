@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -507,6 +508,120 @@ public class SpanMessagePackFormatterTests
         var tagValue0 = span0.GetTag("_dd.parent_id");
 
         tagValue0.Should().Be("0123456789abcdef");
+    }
+
+    [Fact]
+    public async Task Serialize_InferredProxySpan_InAzureAppServices_DoesNotIncludeAasTags()
+    {
+        // Arrange
+        var collection = new NameValueCollection
+        {
+            { ConfigurationKeys.ApiKey, "1" },
+            { ConfigurationKeys.AzureAppService.AzureAppServicesContextKey, "1" },
+            { "WEBSITE_OWNER_NAME", "SubscriptionId+ResourceGroup-EastUSwebspace" },
+            { "WEBSITE_RESOURCE_GROUP", "SiteResourceGroup" },
+            { "WEBSITE_SITE_NAME", "SiteName" },
+            { "WEBSITE_OS", "windows" },
+            { "WEBSITE_INSTANCE_ID", "InstanceId" },
+            { "COMPUTERNAME", "InstanceName" },
+        };
+
+        var source = new NameValueConfigurationSource(collection);
+        var settings = new TracerSettings(source);
+        await using var tracer = TracerHelper.Create(settings);
+
+        // Create an inferred proxy span with a trace context that references the tracer
+        var traceContext = new TraceContext(tracer);
+        var proxyTags = new InferredProxyTags
+        {
+            HttpMethod = "GET",
+            InstrumentationName = "azure-apim",
+            HttpUrl = "https://api.example.com/test",
+            HttpRoute = "/test",
+            InferredSpan = 1, // This marks it as an inferred span
+        };
+
+        var spanContext = new SpanContext(null, traceContext, "api.example.com");
+        var proxySpan = new Span(spanContext, DateTimeOffset.UtcNow, proxyTags);
+        proxySpan.OperationName = "azure.apim";
+        proxySpan.Type = SpanTypes.Web;
+        proxySpan.SetDuration(TimeSpan.FromMilliseconds(100));
+
+        var traceChunk = new TraceChunkModel(new SpanCollection(new[] { proxySpan }));
+        var formatter = SpanFormatterResolver.Instance.GetFormatter<TraceChunkModel>();
+        byte[] bytes = Array.Empty<byte>();
+
+        // Act
+        var length = formatter.Serialize(ref bytes, 0, traceChunk, SpanFormatterResolver.Instance);
+        var result = global::MessagePack.MessagePackSerializer.Deserialize<MockSpan[]>(new ArraySegment<byte>(bytes, 0, length));
+
+        // Assert
+        result.Should().HaveCount(1);
+        var serializedSpan = result[0];
+
+        // Verify the proxy span does NOT have AAS tags
+        serializedSpan.Tags.Should().NotContainKey("aas.site.name");
+        serializedSpan.Tags.Should().NotContainKey("aas.site.type");
+        serializedSpan.Tags.Should().NotContainKey("aas.site.kind");
+        serializedSpan.Tags.Should().NotContainKey("aas.resource.group");
+        serializedSpan.Tags.Should().NotContainKey("aas.subscription.id");
+        serializedSpan.Tags.Should().NotContainKey("aas.resource.id");
+        serializedSpan.Tags.Should().NotContainKey("aas.environment.instance_id");
+        serializedSpan.Tags.Should().NotContainKey("aas.environment.instance_name");
+        serializedSpan.Tags.Should().NotContainKey("aas.environment.os");
+        serializedSpan.Tags.Should().NotContainKey("aas.environment.runtime");
+        serializedSpan.Tags.Should().NotContainKey("aas.environment.extension_version");
+
+        // Verify it DOES have the inferred span metric
+        serializedSpan.Metrics.Should().ContainKey("_dd.inferred_span");
+        serializedSpan.Metrics["_dd.inferred_span"].Should().Be(1.0);
+    }
+
+    [Fact]
+    public async Task Serialize_NonProxySpan_InAzureAppServices_IncludesAasTags()
+    {
+        // Arrange
+        var collection = new NameValueCollection
+        {
+            { ConfigurationKeys.ApiKey, "1" },
+            { ConfigurationKeys.AzureAppService.AzureAppServicesContextKey, "1" },
+            { "WEBSITE_OWNER_NAME", "SubscriptionId+ResourceGroup-EastUSwebspace" },
+            { "WEBSITE_RESOURCE_GROUP", "SiteResourceGroup" },
+            { "WEBSITE_SITE_NAME", "SiteName" },
+            { "WEBSITE_OS", "windows" },
+            { "WEBSITE_INSTANCE_ID", "InstanceId" },
+            { "COMPUTERNAME", "InstanceName" },
+        };
+
+        var source = new NameValueConfigurationSource(collection);
+        var settings = new TracerSettings(source);
+        await using var tracer = TracerHelper.Create(settings);
+
+        // Create a regular (non-proxy) span with a trace context that references the tracer
+        var traceContext = new TraceContext(tracer);
+        var spanContext = new SpanContext(null, traceContext, "my-service");
+        var normalSpan = new Span(spanContext, DateTimeOffset.UtcNow);
+        normalSpan.OperationName = "http.request";
+        normalSpan.Type = SpanTypes.Http;
+        normalSpan.SetDuration(TimeSpan.FromMilliseconds(100));
+
+        var traceChunk = new TraceChunkModel(new SpanCollection(new[] { normalSpan }));
+        var formatter = SpanFormatterResolver.Instance.GetFormatter<TraceChunkModel>();
+        byte[] bytes = Array.Empty<byte>();
+
+        // Act
+        var length = formatter.Serialize(ref bytes, 0, traceChunk, SpanFormatterResolver.Instance);
+        var result = global::MessagePack.MessagePackSerializer.Deserialize<MockSpan[]>(new ArraySegment<byte>(bytes, 0, length));
+
+        // Assert
+        result.Should().HaveCount(1);
+        var serializedSpan = result[0];
+
+        // Verify the regular span DOES have AAS tags
+        serializedSpan.Tags.Should().ContainKey("aas.site.name");
+        serializedSpan.Tags["aas.site.name"].Should().Be("SiteName");
+        serializedSpan.Tags.Should().ContainKey("aas.site.type");
+        serializedSpan.Tags["aas.site.type"].Should().Be("app");
     }
 
     private readonly struct TagsProcessor<T> : IItemProcessor<T>

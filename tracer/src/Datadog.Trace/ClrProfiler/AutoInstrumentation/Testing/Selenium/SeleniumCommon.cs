@@ -12,6 +12,7 @@ using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Serilog.Events;
 
@@ -81,7 +82,7 @@ internal static class SeleniumCommon
             {
                 if (Log.IsEnabled(LogEventLevel.Debug))
                 {
-                    Log.Debug("Inject: {Parameters}", JsonConvert.SerializeObject(parameters ?? new object()));
+                    Log.Debug("Inject: {Parameters}", JsonHelper.SerializeObject(parameters ?? new object()));
                 }
 
                 // Inject cookie for RUM session
