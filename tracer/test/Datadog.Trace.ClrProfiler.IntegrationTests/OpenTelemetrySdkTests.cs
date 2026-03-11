@@ -21,6 +21,8 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
+    [Trait("RequiresDockerDependency", "true")]
+    [Trait("DockerGroup", "1")]
     [UsesVerify]
     public class OpenTelemetrySdkTests : TracingIntegrationTest
     {
@@ -227,8 +229,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if NET6_0_OR_GREATER
         [SkippableTheory]
         [Trait("Category", "EndToEnd")]
-        [Trait("RequiresDockerDependency", "true")]
-        [Trait("DockerGroup", "1")]
         [MemberData(nameof(GetOtlpTracesTestData))]
         public async Task SubmitsOtlpTraces(string packageVersion, string datadogTracesEnabled, string otelTracesEnabled, string protocol)
         {
@@ -494,8 +494,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [SkippableTheory]
         [Flaky("New test agent seems to not always be ready", maxRetries: 3)]
         [Trait("Category", "EndToEnd")]
-        [Trait("RequiresDockerDependency", "true")]
-        [Trait("DockerGroup", "1")]
         [MemberData(nameof(GetOtlpTestData))]
         public async Task SubmitsOtlpMetrics(string packageVersion, string datadogMetricsEnabled, string otelMetricsEnabled, string protocol)
         {
@@ -585,8 +583,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [SkippableTheory]
         [Flaky("New test agent seems to not always be ready", maxRetries: 3)]
         [Trait("Category", "EndToEnd")]
-        [Trait("RequiresDockerDependency", "true")]
-        [Trait("DockerGroup", "1")]
         [MemberData(nameof(GetOtlpTestData))]
         public async Task SubmitsOtlpLogs(string packageVersion, string datadogLogsEnabled, string otelLogsEnabled, string protocol)
         {
