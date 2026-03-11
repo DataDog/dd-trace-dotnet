@@ -457,13 +457,13 @@ internal static class RaspModule
                         return;
                     }
 
-                    await content.LoadIntoBufferAsync().ConfigureAwait(false);
+                    await content.LoadIntoBufferAsync(len > 0 ? len : bodySizeLimit).ConfigureAwait(false);
                     len = content.Headers?.ContentLength ?? 0;
 
-                    if (len > 0 && len < bodySizeLimit)
+                    if (len > 0 && len <= bodySizeLimit)
                     {
-                        var body = await content.ReadAsStringAsync().ConfigureAwait(false);
-                        if (BodyParser.Parse(body) is { } parsedBody)
+                        using var stream = await content.ReadAsStreamAsync().ConfigureAwait(false);
+                        if (BodyParser.Parse(stream) is { } parsedBody)
                         {
                             wafArgs[AddressesConstants.DownstreamRequestBody] = parsedBody;
                         }
