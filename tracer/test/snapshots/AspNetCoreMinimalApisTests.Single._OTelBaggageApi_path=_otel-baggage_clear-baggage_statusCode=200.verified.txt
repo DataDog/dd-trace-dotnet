@@ -9,7 +9,6 @@
     Tags: {
       env: integration_tests,
       language: dotnet,
-      otel-baggage: ,
       version: 1.0.0
     }
   },

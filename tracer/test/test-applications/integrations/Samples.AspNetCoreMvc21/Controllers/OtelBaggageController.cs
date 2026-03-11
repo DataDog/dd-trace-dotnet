@@ -20,7 +20,10 @@ namespace Samples.AspNetCoreMvc.Controllers
             using var scope = SampleHelpers.CreateScope(nameof(ClearBaggage));
             var baggage = OpenTelemetry.Baggage.ClearBaggage().GetBaggage();
             var baggageString = string.Join(",", baggage.Select(kvp => $"{kvp.Key}={kvp.Value}"));
-            SampleHelpers.TrySetTag(scope, "otel-baggage", baggageString);
+            if (!string.IsNullOrEmpty(baggageString))
+            {
+                SampleHelpers.TrySetTag(scope, "otel-baggage", baggageString);
+            }
 
             return Ok(baggageString);
         }
@@ -32,7 +35,10 @@ namespace Samples.AspNetCoreMvc.Controllers
             using var scope = SampleHelpers.CreateScope(nameof(GetBaggage));
             var baggage = OpenTelemetry.Baggage.GetBaggage();
             var baggageString = string.Join(",", baggage.Select(kvp => $"{kvp.Key}={kvp.Value}"));
-            SampleHelpers.TrySetTag(scope, "otel-baggage", baggageString);
+            if (!string.IsNullOrEmpty(baggageString))
+            {
+                SampleHelpers.TrySetTag(scope, "otel-baggage", baggageString);
+            }
 
             return Ok(baggageString);
         }
@@ -44,7 +50,10 @@ namespace Samples.AspNetCoreMvc.Controllers
             using var scope = SampleHelpers.CreateScope(nameof(GetBaggageName));
             var foo_case_sensitive_key_value = OpenTelemetry.Baggage.GetBaggage("foo_case_sensitive_key");
             var baggageString = $"foo_case_sensitive_key={foo_case_sensitive_key_value ?? string.Empty}";
-            SampleHelpers.TrySetTag(scope, "otel-baggage", baggageString);
+            if (!string.IsNullOrEmpty(baggageString))
+            {
+                SampleHelpers.TrySetTag(scope, "otel-baggage", baggageString);
+            }
 
             return Ok(baggageString);
         }
@@ -56,7 +65,10 @@ namespace Samples.AspNetCoreMvc.Controllers
             using var scope = SampleHelpers.CreateScope(nameof(GetCurrent));
             var baggage = OpenTelemetry.Baggage.Current.GetBaggage();
             var baggageString = string.Join(",", baggage.Select(kvp => $"{kvp.Key}={kvp.Value}"));
-            SampleHelpers.TrySetTag(scope, "otel-baggage", baggageString);
+            if (!string.IsNullOrEmpty(baggageString))
+            {
+                SampleHelpers.TrySetTag(scope, "otel-baggage", baggageString);
+            }
 
             return Ok(baggageString);
         }
@@ -75,7 +87,10 @@ namespace Samples.AspNetCoreMvc.Controllers
             }
 
             var baggageString = string.Join(",", baggage.Select(kvp => $"{kvp.Key}={kvp.Value}"));
-            SampleHelpers.TrySetTag(scope, "otel-baggage", baggageString);
+            if (!string.IsNullOrEmpty(baggageString))
+            {
+                SampleHelpers.TrySetTag(scope, "otel-baggage", baggageString);
+            }
 
             return Ok(baggageString);
         }
@@ -88,7 +103,10 @@ namespace Samples.AspNetCoreMvc.Controllers
             using var scope = SampleHelpers.CreateScope(nameof(RemoveBaggage));
             var baggage = OpenTelemetry.Baggage.RemoveBaggage(key).GetBaggage();
             var baggageString = string.Join(",", baggage.Select(kvp => $"{kvp.Key}={kvp.Value}"));
-            SampleHelpers.TrySetTag(scope, "otel-baggage", baggageString);
+            if (!string.IsNullOrEmpty(baggageString))
+            {
+                SampleHelpers.TrySetTag(scope, "otel-baggage", baggageString);
+            }
 
             return Ok(baggageString);
         }
@@ -100,7 +118,10 @@ namespace Samples.AspNetCoreMvc.Controllers
             using var scope = SampleHelpers.CreateScope(nameof(SetBaggage));
             var baggage = OpenTelemetry.Baggage.SetBaggage(key, value).GetBaggage();
             var baggageString = string.Join(",", baggage.Select(kvp => $"{kvp.Key}={kvp.Value}"));
-            SampleHelpers.TrySetTag(scope, "otel-baggage", baggageString);
+            if (!string.IsNullOrEmpty(baggageString))
+            {
+                SampleHelpers.TrySetTag(scope, "otel-baggage", baggageString);
+            }
 
             return Ok(baggageString);
         }
@@ -112,7 +133,10 @@ namespace Samples.AspNetCoreMvc.Controllers
             using var scope = SampleHelpers.CreateScope(nameof(SetBaggageItems));
             var baggage = OpenTelemetry.Baggage.SetBaggage(new Dictionary<string, string>() { { key, value } }).GetBaggage();
             var baggageString = string.Join(",", baggage.Select(kvp => $"{kvp.Key}={kvp.Value}"));
-            SampleHelpers.TrySetTag(scope, "otel-baggage", baggageString);
+            if (!string.IsNullOrEmpty(baggageString))
+            {
+                SampleHelpers.TrySetTag(scope, "otel-baggage", baggageString);
+            }
 
             return Ok(baggageString);
         }
@@ -127,7 +151,10 @@ namespace Samples.AspNetCoreMvc.Controllers
 
             var baggage = OpenTelemetry.Baggage.Current.GetBaggage();
             var baggageString = string.Join(",", baggage.Select(kvp => $"{kvp.Key}={kvp.Value}"));
-            SampleHelpers.TrySetTag(scope, "otel-baggage", baggageString);
+            if (!string.IsNullOrEmpty(baggageString))
+            {
+                SampleHelpers.TrySetTag(scope, "otel-baggage", baggageString);
+            }
 
             return Ok(baggageString);
         }
