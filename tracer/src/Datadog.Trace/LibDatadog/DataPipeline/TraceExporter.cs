@@ -45,7 +45,7 @@ internal sealed class TraceExporter : SafeHandle, IApi
 
         try
         {
-            using var response = Send(traces, numberOfTraces);
+            using var response = Send(traces);
 
             if (response.IsInvalid)
             {
@@ -104,7 +104,7 @@ internal sealed class TraceExporter : SafeHandle, IApi
         return true;
     }
 
-    private unsafe TraceExporterResponse Send(ArraySegment<byte> traces, int numberOfTraces)
+    private unsafe TraceExporterResponse Send(ArraySegment<byte> traces)
     {
         fixed (byte* ptr = traces.Array)
         {
@@ -117,7 +117,7 @@ internal sealed class TraceExporter : SafeHandle, IApi
             var responsePtr = IntPtr.Zero;
             try
             {
-                using var error = NativeInterop.Exporter.Send(this, traceSlice, (UIntPtr)numberOfTraces, ref responsePtr);
+                using var error = NativeInterop.Exporter.Send(this, traceSlice, ref responsePtr);
                 if (!error.IsInvalid)
                 {
                     var ex = error.ToException();
