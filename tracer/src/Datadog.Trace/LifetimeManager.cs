@@ -1,4 +1,4 @@
-﻿// <copyright file="LifetimeManager.cs" company="Datadog">
+// <copyright file="LifetimeManager.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -263,17 +263,12 @@ namespace Datadog.Trace
 
         private void TerminationSignalHandler(PosixSignalContext context)
         {
-            // Ensure this handler initiates termination at most once.
-            if (Interlocked.Exchange(ref _terminationExitInitiated, 1) != 0)
-            {
-                // Another signal already initiated termination; do nothing.
-                return;
-            }
-
             try
             {
                 // On Unix, Cancel prevents the OS default handler from immediately terminating the process.
                 // (On Windows, SIGTERM/SIGHUP can't be canceled.)
+                // This must happen for EVERY signal, not just the first, otherwise a repeated signal
+                // will use the OS default handler and kill the process while shutdown hooks are still running.
                 if (!OperatingSystem.IsWindows())
                 {
                     // See PosixSignalRegistration.Create remarks:
@@ -285,6 +280,13 @@ namespace Datadog.Trace
             {
                 // Best-effort. If we can't cancel default handling, still attempt a managed exit.
                 Log.Warning(ex, "Failed to cancel default termination signal handling. Graceful shutdown may not run.");
+            }
+
+            // Ensure this handler initiates termination at most once.
+            if (Interlocked.Exchange(ref _terminationExitInitiated, 1) != 0)
+            {
+                // Another signal already initiated termination; do nothing.
+                return;
             }
 
             // Intentionally do NOT call RunShutdownTasks() directly here.
