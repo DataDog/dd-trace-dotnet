@@ -32,63 +32,33 @@ namespace Datadog.Trace.Configuration.Schema
                 _ => V1Values.OutboundOperationNames,
             };
 
-            // Calculate service names once, to avoid allocations with every call
+            // Calculate service names and source metadata once, to avoid allocations with every call
             var useSuffix = version == SchemaVersion.V0 && !removeClientServiceNamesEnabled;
-            var serviceNames = new string[]
-            {
-                useSuffix ? $"{defaultServiceName}-aws.eventbridge" : defaultServiceName,
-                useSuffix ? $"{defaultServiceName}-aws.kinesis" : defaultServiceName,
-                useSuffix ? $"{defaultServiceName}-aws.sns" : defaultServiceName,
-                useSuffix ? $"{defaultServiceName}-aws.sqs" : defaultServiceName,
-                useSuffix ? $"{defaultServiceName}-aws.stepfunctions" : defaultServiceName,
-                useSuffix ? $"{defaultServiceName}-azureeventhubs" : defaultServiceName,
-                useSuffix ? $"{defaultServiceName}-azureservicebus" : defaultServiceName,
-                useSuffix ? $"{defaultServiceName}-ibmmq" : defaultServiceName,
-                useSuffix ? $"{defaultServiceName}-kafka" : defaultServiceName,
-                useSuffix ? $"{defaultServiceName}-msmq" : defaultServiceName,
-                useSuffix ? $"{defaultServiceName}-rabbitmq" : defaultServiceName,
-            };
 
-            if (serviceNameMappings is not null)
+            ServiceNameMetadata Resolve(string integrationKey)
             {
-                TryApplyMapping(serviceNames, serviceNameMappings, "aws.eventbridge", ServiceType.AwsEventBridge);
-                TryApplyMapping(serviceNames, serviceNameMappings, "aws.kinesis", ServiceType.AwsKinesis);
-                TryApplyMapping(serviceNames, serviceNameMappings, "aws.sns", ServiceType.AwsSns);
-                TryApplyMapping(serviceNames, serviceNameMappings, "aws.sqs", ServiceType.AwsSqs);
-                TryApplyMapping(serviceNames, serviceNameMappings, "aws.stepfunctions", ServiceType.AwsStepFunctions);
-                TryApplyMapping(serviceNames, serviceNameMappings, "azureeventhubs", ServiceType.AzureEventHubs);
-                TryApplyMapping(serviceNames, serviceNameMappings, "azureservicebus", ServiceType.AzureServiceBus);
-                TryApplyMapping(serviceNames, serviceNameMappings, "ibmmq", ServiceType.IbmMq);
-                TryApplyMapping(serviceNames, serviceNameMappings, "kafka", ServiceType.Kafka);
-                TryApplyMapping(serviceNames, serviceNameMappings, "msmq", ServiceType.Msmq);
-                TryApplyMapping(serviceNames, serviceNameMappings, "rabbitmq", ServiceType.RabbitMq);
-            }
-
-            static void TryApplyMapping(string[] serviceNames, IReadOnlyDictionary<string, string> mappings, string key, ServiceType system)
-            {
-                if (mappings.TryGetValue(key, out var mappedName))
+                if (serviceNameMappings is not null && serviceNameMappings.TryGetValue(integrationKey, out var mappedName))
                 {
-                    serviceNames[(int)system] = mappedName;
+                    return new(mappedName, mappedName != defaultServiceName ? "opt.service_mapping" : null);
                 }
-            }
 
-            // Build combined service name + source metadata
-            ServiceNameMetadata Build(string serviceName, string sourceName) =>
-                new(serviceName, serviceName != defaultServiceName ? sourceName : null);
+                var name = useSuffix ? $"{defaultServiceName}-{integrationKey}" : defaultServiceName;
+                return new(name, name != defaultServiceName ? integrationKey : null);
+            }
 
             _serviceNameMetadata =
             [
-                Build(serviceNames[(int)ServiceType.AwsEventBridge], "aws.eventbridge"),
-                Build(serviceNames[(int)ServiceType.AwsKinesis], "aws.kinesis"),
-                Build(serviceNames[(int)ServiceType.AwsSns], "aws.sns"),
-                Build(serviceNames[(int)ServiceType.AwsSqs], "aws.sqs"),
-                Build(serviceNames[(int)ServiceType.AwsStepFunctions], "aws.stepfunctions"),
-                Build(serviceNames[(int)ServiceType.AzureEventHubs], "azureeventhubs"),
-                Build(serviceNames[(int)ServiceType.AzureServiceBus], "azureservicebus"),
-                Build(serviceNames[(int)ServiceType.IbmMq], "ibmmq"),
-                Build(serviceNames[(int)ServiceType.Kafka], "kafka"),
-                Build(serviceNames[(int)ServiceType.Msmq], "msmq"),
-                Build(serviceNames[(int)ServiceType.RabbitMq], "rabbitmq"),
+                Resolve("aws.eventbridge"),
+                Resolve("aws.kinesis"),
+                Resolve("aws.sns"),
+                Resolve("aws.sqs"),
+                Resolve("aws.stepfunctions"),
+                Resolve("azureeventhubs"),
+                Resolve("azureservicebus"),
+                Resolve("ibmmq"),
+                Resolve("kafka"),
+                Resolve("msmq"),
+                Resolve("rabbitmq"),
             ];
         }
 
