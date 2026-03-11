@@ -27,17 +27,17 @@ namespace Datadog.Trace.Tests.Configuration
             var scope = Tracer.Instance.StartActive("Trace1");
 
             Tracer.Instance.CurrentTraceSettings.GetServiceNameMetadata("test")
-               .Should().Be($"{Tracer.Instance.DefaultServiceName}-test");
+               .ServiceName.Should().Be($"{Tracer.Instance.DefaultServiceName}-test");
 
             DynamicConfigurationManager.OnlyForTests_ApplyConfiguration(CreateConfig(("tracing_service_mapping", "test:ok")), Tracer.Instance.Settings);
 
             Tracer.Instance.CurrentTraceSettings.GetServiceNameMetadata("test")
-               .Should().Be($"{Tracer.Instance.DefaultServiceName}-test", "the old configuration should be used inside of the active trace");
+               .ServiceName.Should().Be($"{Tracer.Instance.DefaultServiceName}-test", "the old configuration should be used inside of the active trace");
 
             scope.Close();
 
             Tracer.Instance.CurrentTraceSettings.GetServiceNameMetadata("test")
-               .Should().Be("ok", "the new configuration should be used outside of the active trace");
+               .ServiceName.Should().Be("ok", "the new configuration should be used outside of the active trace");
         }
 
         [Fact]
