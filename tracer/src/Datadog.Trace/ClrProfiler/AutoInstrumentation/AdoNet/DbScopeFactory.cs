@@ -302,8 +302,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             {
                 if (tracer.CurrentTraceSettings.ServiceNames.TryGetValue(dbTypeName, out var serviceName))
                 {
-                    var source = serviceName != tracer.CurrentTraceSettings.Settings.DefaultServiceName ? dbTypeName : null;
-                    return new ServiceNameMetadata(serviceName, source);
+                    return new ServiceNameMetadata(serviceName, "opt.service_mapping");
                 }
 
                 if (DbTypeName != dbTypeName)
