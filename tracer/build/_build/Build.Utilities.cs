@@ -116,7 +116,7 @@ partial class Build
 
            DotNetBuild(s => s
                            .SetDotnetPath(TargetPlatform)
-                           .SetFramework(TargetFramework.NET7_0)
+                           .SetFramework(TargetFramework.NET10_0)
                            .SetProjectFile(autoInstGenProj)
                            .SetConfiguration(Configuration.Release)
                            .SetNoWarnDotNetCore3());
@@ -125,11 +125,98 @@ partial class Build
            var dotnetRunSettings = new DotNetRunSettings()
                                   .SetDotnetPath(TargetPlatform)
                                   .SetNoBuild(true)
-                                  .SetFramework(TargetFramework.NET7_0)
+                                  .SetFramework(TargetFramework.NET10_0)
                                   .EnableNoLaunchProfile()
                                   .SetProjectFile(autoInstGenProj)
                                   .SetConfiguration(Configuration.Release);
            ProcessTasks.StartProcess(dotnetRunSettings);
+       });
+
+    [Parameter("Path to the assembly to generate instrumentation for")]
+    readonly string AssemblyPath;
+
+    [Parameter("Fully qualified type name for instrumentation generation")]
+    readonly string TypeName;
+
+    [Parameter("Method name for instrumentation generation")]
+    readonly string MethodName;
+
+    [Parameter("Output path for the generated integration file")]
+    readonly string OutputPath;
+
+    [Parameter("0-based overload index for method disambiguation")]
+    readonly int? OverloadIndex;
+
+    [Parameter("Parameter type full names for method disambiguation (space-separated)")]
+    readonly string ParameterTypes;
+
+    [Parameter("Additional arguments to pass to the instrumentation generator CLI (space-separated string)")]
+    readonly string GeneratorArgs;
+
+    Target RunInstrumentationGeneratorCli => _ => _
+       .Description("Generates CallTarget auto-instrumentation code for a method. Usage: --assembly-path <dll> --type-name <type> --method-name <method> [--output-path <file>] [--overload-index <n>] [--generator-args <args>]")
+       .Requires(() => AssemblyPath)
+       .Requires(() => TypeName)
+       .Requires(() => MethodName)
+       .Executes(() =>
+       {
+           var autoInstGenCliProj =
+               SourceDirectory / "Datadog.AutoInstrumentation.Generator.Cli" / "Datadog.AutoInstrumentation.Generator.Cli.csproj";
+
+           DotNetRestore(s => s
+                             .SetDotnetPath(TargetPlatform)
+                             .SetProjectFile(autoInstGenCliProj)
+                             .SetNoWarnDotNetCore3());
+
+           DotNetBuild(s => s
+                           .SetDotnetPath(TargetPlatform)
+                           .SetFramework(TargetFramework.NET10_0)
+                           .SetProjectFile(autoInstGenCliProj)
+                           .SetConfiguration(Configuration.Release)
+                           .SetNoWarnDotNetCore3());
+
+           var appArgs = new List<string>
+           {
+               "generate", AssemblyPath,
+               "--type", TypeName,
+               "--method", MethodName,
+           };
+
+           if (!string.IsNullOrEmpty(OutputPath))
+           {
+               appArgs.Add("--output");
+               appArgs.Add(OutputPath);
+           }
+
+           if (OverloadIndex.HasValue)
+           {
+               appArgs.Add("--overload-index");
+               appArgs.Add(OverloadIndex.Value.ToString());
+           }
+
+           if (!string.IsNullOrEmpty(ParameterTypes))
+           {
+               appArgs.Add("--parameter-types");
+               appArgs.AddRange(ParameterTypes.Split(' ', StringSplitOptions.RemoveEmptyEntries));
+           }
+
+           if (!string.IsNullOrEmpty(GeneratorArgs))
+           {
+               appArgs.AddRange(GeneratorArgs.Split(' ', StringSplitOptions.RemoveEmptyEntries));
+           }
+
+           var applicationArguments = string.Join(" ", appArgs.Select(a => a.Contains(' ') ? $"\"{a}\"" : a));
+
+           var dotnetRunSettings = new DotNetRunSettings()
+                                  .SetDotnetPath(TargetPlatform)
+                                  .SetNoBuild(true)
+                                  .SetFramework(TargetFramework.NET10_0)
+                                  .EnableNoLaunchProfile()
+                                  .SetProjectFile(autoInstGenCliProj)
+                                  .SetConfiguration(Configuration.Release)
+                                  .SetApplicationArguments(applicationArguments);
+           var process = ProcessTasks.StartProcess(dotnetRunSettings);
+           process.AssertZeroExitCode();
        });
 
     Target BuildIisSampleApp => _ => _
