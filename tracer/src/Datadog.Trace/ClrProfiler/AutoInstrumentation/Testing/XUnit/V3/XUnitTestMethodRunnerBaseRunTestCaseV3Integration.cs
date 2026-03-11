@@ -141,33 +141,22 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
 
         switch (testCaseMetadata)
         {
-            // We retry tests if:
-            // - EarlyFlakeDetectionEnabled is true and AbortByThreshold is false, or
-            // - FlakyRetryEnabled is true, or
-            // - IsAttemptToFix is true
-            case { EarlyFlakeDetectionEnabled: true, AbortByThreshold: false } or { FlakyRetryEnabled: true } or { IsAttemptToFix: true }:
+            case { SelectedRetryMode: not TestCaseRetryMode.None } when !testCaseMetadata.AbortByThreshold:
             {
-                var isFlakyRetryEnabled = testCaseMetadata.FlakyRetryEnabled;
-                var isAttemptToFix = testCaseMetadata.IsAttemptToFix;
+                var selectedRetryMode = testCaseMetadata.SelectedRetryMode;
+                var isAtrRetry = selectedRetryMode == TestCaseRetryMode.AutomaticTestRetry;
                 var isFirstExecution = testCaseMetadata.ExecutionIndex == 0;
 
                 // If it's the first execution then let's calculate the total executions
                 if (isFirstExecution)
                 {
                     // Let's make decisions regarding slow tests, retry failed test feature or an attempt to fix
-                    if (isFlakyRetryEnabled)
+                    testCaseMetadata.TotalExecutions = selectedRetryMode switch
                     {
-                        testCaseMetadata.TotalExecutions = (testOptimization.FlakyRetryFeature?.FlakyRetryCount ?? TestOptimizationFlakyRetryFeature.FlakyRetryCountDefault) + 1;
-                    }
-                    else if (isAttemptToFix)
-                    {
-                        testCaseMetadata.TotalExecutions = testOptimization.TestManagementFeature?.TestManagementAttemptToFixRetryCount ?? TestOptimizationTestManagementFeature.TestManagementAttemptToFixRetryCountDefault;
-                    }
-                    else
-                    {
-                        var duration = TimeSpan.FromSeconds((double)runSummaryUnsafe.Time);
-                        testCaseMetadata.TotalExecutions = Common.GetNumberOfExecutionsForDuration(duration);
-                    }
+                        TestCaseRetryMode.AutomaticTestRetry => (testOptimization.FlakyRetryFeature?.FlakyRetryCount ?? TestOptimizationFlakyRetryFeature.FlakyRetryCountDefault) + 1,
+                        TestCaseRetryMode.AttemptToFix => testOptimization.TestManagementFeature?.TestManagementAttemptToFixRetryCount ?? TestOptimizationTestManagementFeature.TestManagementAttemptToFixRetryCountDefault,
+                        _ => Common.GetNumberOfExecutionsForDuration(TimeSpan.FromSeconds((double)runSummaryUnsafe.Time))
+                    };
 
                     testCaseMetadata.CountDownExecutionNumber = testCaseMetadata.TotalExecutions - 1;
                 }
@@ -176,7 +165,7 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
                 {
                     // If we are not in the latest execution, we need to retry the test
                     var doRetry = true;
-                    if (isFlakyRetryEnabled)
+                    if (isAtrRetry)
                     {
                         // For flaky retry feature, we need to check if the test has failed or if the total retries are exceeded
                         var remainingTotalRetries = Interlocked.Decrement(ref _totalRetries);
@@ -200,7 +189,7 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
                     if (doRetry)
                     {
                         // check if is the first execution and the dynamic instrumentation feature is enabled
-                        if (isFlakyRetryEnabled && isFirstExecution && testCaseMetadata.HasAnException && testOptimization.DynamicInstrumentationFeature?.Enabled == true)
+                        if (isAtrRetry && isFirstExecution && testCaseMetadata.HasAnException && testOptimization.DynamicInstrumentationFeature?.Enabled == true)
                         {
                             // let's wait for the instrumentation of an exception has been done
                             Common.Log.Debug("XUnitTestMethodRunnerBaseRunTestCaseV3Integration: First execution with an exception detected. Waiting for the exception instrumentation.");
@@ -232,7 +221,7 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
                 else
                 {
                     // If we are in the last execution, we write some debug logs
-                    if (isFlakyRetryEnabled && runSummaryUnsafe.Failed == 0)
+                    if (isAtrRetry && runSummaryUnsafe.Failed == 0)
                     {
                         Common.Log.Debug("XUnitTestMethodRunnerBaseRunTestCaseV3Integration: EFD/Retry: [FlakyRetryEnabled] A non failed test execution was detected.");
                     }

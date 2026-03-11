@@ -505,6 +505,11 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
 
             // Determine if we should mask outcome (quarantined/ATF) - only on final execution
             var testTags = test.GetTags();
+            if (testTags is not null)
+            {
+                ApplyRetryTags(testTags, retryState);
+            }
+
             if (TestOptimization.Instance.TestManagementFeature?.Enabled == true && testTags is not null)
             {
                 var isQuarantined = testTags.IsQuarantined == "true";
@@ -544,6 +549,21 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
                 testResult.TestFailureException = null;
             }
         }
+    }
+
+    private static void ApplyRetryTags(Ci.Tagging.TestSpanTags testTags, RetryState retryState)
+    {
+        if (!retryState.IsARetry)
+        {
+            testTags.TestIsRetry = null;
+            testTags.TestRetryReason = null;
+            return;
+        }
+
+        testTags.TestIsRetry = "true";
+        testTags.TestRetryReason = retryState.IsAttemptToFix ? TestTags.TestRetryReasonAttemptToFix
+                               : retryState.IsEfdOrAtfTest ? TestTags.TestRetryReasonEfd
+                               : TestTags.TestRetryReasonAtr;
     }
 
     private static TestStatus GetStatusFromOutcome(UnitTestOutcome outcome)

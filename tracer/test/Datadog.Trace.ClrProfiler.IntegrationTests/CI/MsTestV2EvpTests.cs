@@ -72,6 +72,26 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                     148,
                     "all_efd");
 
+                yield return row.Concat(
+                    new MockData(
+                        GetSettingsJson("true", "true", "false", "0", "true"),
+                        """
+                        {
+                            "data":{
+                                "id":"lNemDTwOV8U",
+                                "type":"ci_app_libraries_tests",
+                                "attributes":{
+                                    "tests":{}
+                                }
+                            }
+                        }
+                        """,
+                        string.Empty),
+                    1,
+                    146,
+                    148,
+                    "all_efd_with_atr");
+
                 // EFD with 1 test to bypass (TraitPassTest)
                 yield return row.Concat(
                     new MockData(
@@ -579,6 +599,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                         {
                             // Check the tests, suites and modules count
                             Assert.Single(data.TestModules);
+
+                            if (friendlyName == "all_efd_with_atr")
+                            {
+                                AssertEfdSelectedOverAtr(data, "Samples.MSTestTests.TestSuite.SimplePassTest");
+                            }
                         },
                         useDotnetExec: false))
                .ConfigureAwait(false);
