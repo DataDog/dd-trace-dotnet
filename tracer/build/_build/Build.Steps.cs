@@ -2377,11 +2377,11 @@ partial class Build
             // add Datadog projects to the root descriptors file
             datadogTraceTypes.Add(new(Projects.DatadogTrace, null));
 
-            // Add canary types used by TrimmingDetector to detect trimming.
+            // Add canary types used by TrimmingDetector when classifying trimming state.
             // These are loaded via Type.GetType() so they don't appear in TypeRef tables.
             // When the Datadog.Trace.Trimming package is referenced, these types must be
-            // preserved so the detector correctly reports "no trimming detected".
-			// Keep in sync with tracer/src/Datadog.Trace/PlatformHelpers/TrimmingDetector.cs
+            // preserved so the detector does not incorrectly classify the app as "missing trimming file".
+            // Keep in sync with tracer/src/Datadog.Trace/PlatformHelpers/TrimmingDetector.cs
             datadogTraceTypes.Add(new("System.Resources.Writer", "System.Resources.ResourceWriter"));
             datadogTraceTypes.Add(new("System.IO.IsolatedStorage", "System.IO.IsolatedStorage.IsolatedStorageScope"));
 
