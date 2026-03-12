@@ -21,5 +21,18 @@
       "Skill(dd:live-test-api *)",
       "Skill(dd:debug-ddci-request *)"
     ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/block-generated-files.sh"
+          }
+        ]
+      }
+    ]
   }
 }
