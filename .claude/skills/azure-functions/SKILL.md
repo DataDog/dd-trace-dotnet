@@ -64,25 +64,7 @@ Use the `Deploy-AzureFunction.ps1` script to build, publish, swap the tracer DLL
   -SampleAppPath "<path-to-sample-app>"
 ```
 
-**What this does**:
-1. Publishes the sample app with `dotnet publish -c Release`
-2. Builds `Datadog.Trace` (net6.0) from local source
-3. Copies the locally-built `Datadog.Trace.dll` into the publish output at `datadog/net6.0/`
-4. Zips the publish output
-5. Deploys to Azure with `az functionapp deployment source config-zip`
-6. Waits 60 seconds (default) for worker process to restart
-7. Triggers the HTTP endpoint and captures execution timestamp
-
-**Options**:
-- `-SkipTracerBuild` - Skip building Datadog.Trace (use previously-built version)
-- `-TracerSourcePath "<path>"` - Custom path to Datadog.Trace project (defaults to `tracer/src/Datadog.Trace`)
-- `-TargetFramework "net6.0"` - Target framework for building the tracer (default: `net6.0`)
-- `-SkipWait` - Skip post-deployment wait (not recommended)
-- `-WaitSeconds 60` - Custom wait duration
-- `-SkipTrigger` - Skip HTTP trigger
-- `-TriggerUrl "https://..."` - Custom trigger URL
-
-**Note**: `-AppName` and `-ResourceGroup` are required parameters.
+See [scripts-reference.md](scripts-reference.md#deploy-azurefunctionps1) for all parameters and details.
 
 **Verify environment variables are configured** (skip if already done on a previous deploy):
 ```powershell
@@ -113,27 +95,7 @@ Configure Datadog instrumentation environment variables for an Azure Function Ap
   -Env "dev-lucas"
 ```
 
-**What this does**:
-1. Detects the OS/platform (Linux or Windows)
-2. Builds the correct set of variables for the chosen tier
-3. Sets platform-specific profiler paths automatically
-4. Applies all settings via Azure CLI
-5. Restarts the function app (unless `-SkipRestart`)
-
-**Tiers**:
-- **required** - Minimum variables for instrumentation (CORECLR_*, DD_API_KEY, DD_DOTNET_TRACER_HOME, DOTNET_STARTUP_HOOKS)
-- **recommended** - required + feature disables (AppSec, CI Visibility, RCM, Agent Feature Polling, Process)
-- **debug** - recommended + debug logging (DD_TRACE_DEBUG, DD_LOG_LEVEL, DD_TRACE_LOG_SINKS, direct log submission)
-
-**Options**:
-- `-Tier required|recommended|debug` - Configuration tier (default: required)
-- `-Env "dev-lucas"` - Set DD_ENV
-- `-Service "my-service"` - Set DD_SERVICE
-- `-Version "1.0.0"` - Set DD_VERSION
-- `-SamplingRules '<json>'` - Set DD_TRACE_SAMPLING_RULES
-- `-ExtraSettings @{"KEY"="value"}` - Set additional variables
-- `-SkipRestart` - Don't restart the app after applying
-- `-WhatIf` - Preview changes without applying
+**Tiers**: `required` (minimum for instrumentation), `recommended` (+ feature disables), `debug` (+ debug logging). See [scripts-reference.md](scripts-reference.md#set-envvarsps1) for all parameters, tiers, and details.
 
 **Preview before applying**:
 ```powershell
@@ -189,17 +151,7 @@ Use the `Get-AzureFunctionLogs.ps1` script to download, extract, and analyze log
 
 **IMPORTANT**: Always specify `-OutputPath $env:TEMP` to save logs to the system temp folder instead of cluttering the repository directory.
 
-**What this does**:
-1. Downloads logs from Azure to a timestamped zip file
-2. Extracts the archive
-3. Identifies host and worker log files
-4. Analyzes tracer version, span count, and trace parenting
-
-**Analysis options**:
-- `-ShowVersion` - Display Datadog tracer version from worker logs
-- `-ShowSpans` - Count spans at execution timestamp (split by host/worker)
-- `-CheckParenting` - Validate trace parenting (detect root span duplication)
-- `-All` - Enable all analysis (recommended)
+See [scripts-reference.md](scripts-reference.md#get-azurefunctionlogsps1) for all parameters and details.
 
 **Pipeline usage** (with Deploy script):
 ```powershell
@@ -254,19 +206,7 @@ Build the `Datadog.AzureFunctions` NuGet package with your changes:
 ./tracer/tools/Build-AzureFunctionsNuget.ps1 -CopyTo <output-dir>
 ```
 
-**What this does**:
-1. (If `-BuildId` specified and files not already downloaded) Downloads bundle from Azure DevOps build once
-2. Generates a unique prerelease version from a timestamp (e.g. `3.38.0-dev20260209143022`)
-3. Cleans previous builds
-4. Builds `Datadog.Trace` (net6.0)
-5. Publishes to bundle folder
-6. Packages `Datadog.AzureFunctions.nupkg` with the generated version (referencing latest nuget.org releases)
-7. Copies to the directory specified by `-CopyTo`
-
-**Options**:
-- `-CopyTo <output-dir>` - Copy the built package to the specified directory
-- `-Version '3.38.0-dev.custom'` - Use a specific version instead of auto-generating
-- `-BuildId 12345` - One-time download of bundle files from Azure DevOps build
+See [scripts-reference.md](scripts-reference.md#build-azurefunctionsnugetps1) for all parameters and details.
 
 ## Verification Checklist
 

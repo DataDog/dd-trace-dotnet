@@ -81,6 +81,11 @@ Sets Datadog instrumentation environment variables on an Azure Function App.
 - `-SkipRestart` (switch) - Don't restart the app after applying
 - `-WhatIf` (switch) - Preview changes without applying
 
+**Tiers**:
+- **required** - Minimum variables for instrumentation (CORECLR_*, DD_API_KEY, DD_DOTNET_TRACER_HOME, DOTNET_STARTUP_HOOKS)
+- **recommended** - required + feature disables (AppSec, CI Visibility, RCM, Agent Feature Polling, Process)
+- **debug** - recommended + debug logging (DD_TRACE_DEBUG, DD_LOG_LEVEL, DD_TRACE_LOG_SINKS, direct log submission)
+
 **What it does**:
 1. Detects platform (Linux vs Windows) from Azure
 2. Builds settings based on tier and platform-specific paths
@@ -128,22 +133,26 @@ $deploy = ./tracer/tools/Deploy-AzureFunction.ps1 `
 # Use $deploy.ExecutionTimestamp and $deploy.AppName for log analysis
 ```
 
-**Options**:
+**Parameters**:
+- `-AppName` (required) - Azure Function App name
+- `-ResourceGroup` (required) - Azure resource group
+- `-SampleAppPath` (required) - Path to the sample Azure Functions app
 - `-SkipTracerBuild` - Skip building Datadog.Trace (use previously-built version)
 - `-TracerSourcePath "<path>"` - Custom path to Datadog.Trace project (defaults to `tracer/src/Datadog.Trace`)
-- `-TargetFramework "net6.0"` - Target framework for building the tracer
-- `-SkipWait` - Skip post-deployment wait
-- `-WaitSeconds 60` - Custom wait duration
+- `-TargetFramework "net6.0"` - Target framework for building the tracer (default: `net6.0`)
+- `-SkipWait` - Skip post-deployment wait (not recommended)
+- `-WaitSeconds 60` - Custom wait duration (default: 60)
 - `-SkipTrigger` - Skip HTTP trigger
 - `-TriggerUrl "https://..."` - Custom trigger URL
 
 **What it does**:
-1. `dotnet publish` the sample app to a temp directory
-2. `dotnet build` Datadog.Trace (net6.0) from local source (unless `-SkipTracerBuild`)
+1. Publishes the sample app with `dotnet publish -c Release`
+2. Builds `Datadog.Trace` (net6.0) from local source (unless `-SkipTracerBuild`)
 3. Copies locally-built `Datadog.Trace.dll` → `<publish-dir>/datadog/net6.0/`
 4. Zips the publish output
 5. Deploys with `az functionapp deployment source config-zip`
-6. Waits for worker restart, triggers HTTP endpoint
+6. Waits for worker process to restart (default: 60 seconds)
+7. Triggers the HTTP endpoint and captures execution timestamp
 
 **Output**: PSCustomObject with `AppName`, `ExecutionTimestamp`, `TriggerUrl`, `HttpStatus`
 
@@ -186,6 +195,15 @@ $deploy = ./tracer/tools/Deploy-AzureFunction.ps1 `
 - `-All` - Enable all analysis
 - `-OutputPath "<output-dir>"` - Custom output directory
 
+**Log file patterns**:
+- **Host process**: `dotnet-tracer-managed-Microsoft.Azure.WebJobs.Script.WebHost-{pid}.log`
+- **Worker process**: `dotnet-tracer-managed-dotnet-{pid}.log`
+
+**Parenting analysis fields**:
+- `s_id` (span ID), `p_id` (parent ID), `t_id` (trace ID)
+- **Healthy trace**: Worker spans have same `t_id` as host, `p_id` matching host span IDs
+- **Broken trace**: Worker spans have different `t_id` or `p_id: null` (orphaned root)
+
 **Output**: PSCustomObject with `LogZipPath`, `ExtractDir`, `DatadogLogDir`, `TracerVersion`, `SpanCount`, `ParentingAnalysis`
 
 ### Build-AzureFunctionsNuget.ps1
@@ -203,26 +221,7 @@ Build the Datadog.AzureFunctions NuGet package. **Optional** — only needed whe
 - `-Version '3.38.0-dev.custom'` - Use a specific version instead of auto-generating a timestamp-based one
 - `-Verbose` - Show detailed build output
 
-## Build Scripts
-
-### Build NuGet Package (Standard)
-```powershell
-# Build with verbose output
-./tracer/tools/Build-AzureFunctionsNuget.ps1 -CopyTo <output-dir> -Verbose
-
-# Build without copying
-./tracer/tools/Build-AzureFunctionsNuget.ps1 -Verbose
-
-# Build from specific Azure DevOps build
-./tracer/tools/Build-AzureFunctionsNuget.ps1 -BuildId 12345 -CopyTo <output-dir> -Verbose
-```
-
-### Clean and Rebuild
-```powershell
-# Clear NuGet caches and rebuild
-dotnet nuget locals all --clear
-./tracer/tools/Build-AzureFunctionsNuget.ps1 -CopyTo <output-dir> -Verbose
-```
+**Tip — clean and rebuild**: If you hit stale NuGet cache issues, clear caches first: `dotnet nuget locals all --clear`
 
 ## Testing Scripts
 

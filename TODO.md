@@ -16,7 +16,7 @@
   - Both skill reviews flagged it as vestigial; documented as "no longer needed" in `scripts-reference.md`
   - File: `.claude/skills/azure-functions/Find-NuGetConfig.ps1`
   - Also remove references from `scripts-reference.md`
-- [ ] Trim `scripts-reference.md` duplication with SKILL.md
+- [x] Trim `scripts-reference.md` duplication with SKILL.md
   - Deploy-AzureFunction.ps1 params, Get-AzureFunctionLogs.ps1 usage, Build-AzureFunctionsNuget.ps1 usage documented in both
   - Keep SKILL.md as the concise "how to use", scripts-reference.md as the detailed reference
 - [ ] Extract troubleshooting + Datadog API sections from SKILL.md to supplementary files
