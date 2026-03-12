@@ -107,30 +107,18 @@ Sets Datadog instrumentation environment variables on an Azure Function App.
 
 ### Find-NuGetConfig.ps1
 
-Searches for `nuget.config` file by walking up the directory hierarchy from a starting path.
+Searches for `nuget.config` file by walking up the directory hierarchy from a starting path. **No longer needed in the main deploy workflow** — only useful if testing the `Datadog.AzureFunctions` NuGet package with a local feed.
 
 **Location**: `.claude/skills/azure-functions/Find-NuGetConfig.ps1`
-
-**Basic usage**:
-```powershell
-$nugetConfig = ./.claude/skills/azure-functions/Find-NuGetConfig.ps1 -StartPath "<path-to-sample-app>"
-if (-not $nugetConfig) {
-    Write-Error "nuget.config not found in sample app directory or parent directories"
-    exit 1
-}
-Write-Host "Found nuget.config at: $nugetConfig"
-```
 
 **Parameters**:
 - `-StartPath` - Directory to start searching from (defaults to current directory)
 
 **Output**: Returns the full path to `nuget.config` if found, otherwise returns `$null`
 
-**Use case**: Verify that a sample app has access to a `nuget.config` before deploying. The `nuget.config` file defines the local NuGet feed where the locally-built `Datadog.AzureFunctions` package is stored.
-
 ### Deploy-AzureFunction.ps1
 
-Automates deployment, wait, and HTTP trigger with timestamp capture.
+Publishes a sample app, replaces `Datadog.Trace.dll` with a locally-built version, zips, and deploys to Azure via `az functionapp deployment source config-zip`. Then waits for worker restart and triggers the HTTP endpoint.
 
 **Basic usage**:
 ```powershell
@@ -152,13 +140,25 @@ $deploy = ./tracer/tools/Deploy-AzureFunction.ps1 `
 ```
 
 **Options**:
-- `-SkipBuild` - Skip `dotnet restore`
-- `-SkipWait` - Skip 2-minute wait
+- `-SkipTracerBuild` - Skip building Datadog.Trace (use previously-built version)
+- `-TracerSourcePath "<path>"` - Custom path to Datadog.Trace project (defaults to `tracer/src/Datadog.Trace`)
+- `-TargetFramework "net6.0"` - Target framework for building the tracer
+- `-SkipWait` - Skip post-deployment wait
 - `-WaitSeconds 60` - Custom wait duration
 - `-SkipTrigger` - Skip HTTP trigger
 - `-TriggerUrl "https://..."` - Custom trigger URL
 
+**What it does**:
+1. `dotnet publish` the sample app to a temp directory
+2. `dotnet build` Datadog.Trace (net6.0) from local source (unless `-SkipTracerBuild`)
+3. Copies locally-built `Datadog.Trace.dll` → `<publish-dir>/datadog/net6.0/`
+4. Zips the publish output
+5. Deploys with `az functionapp deployment source config-zip`
+6. Waits for worker restart, triggers HTTP endpoint
+
 **Output**: PSCustomObject with `AppName`, `ExecutionTimestamp`, `TriggerUrl`, `HttpStatus`
+
+**Temp files**: Publish dir and zip are cleaned up on success; kept on failure for debugging.
 
 ### Get-AzureFunctionLogs.ps1
 
@@ -201,7 +201,7 @@ $deploy = ./tracer/tools/Deploy-AzureFunction.ps1 `
 
 ### Build-AzureFunctionsNuget.ps1
 
-Build the Datadog.AzureFunctions NuGet package.
+Build the Datadog.AzureFunctions NuGet package. **Optional** — only needed when testing changes to the NuGet package structure itself, not for testing tracer code changes (use `Deploy-AzureFunction.ps1` instead).
 
 **Usage**:
 ```powershell
