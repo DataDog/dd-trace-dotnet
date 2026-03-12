@@ -27,7 +27,7 @@
 
 ## Low Priority (polish)
 
-- [ ] Tighten the skill description in SKILL.md frontmatter
+- [x] Tighten the skill description in SKILL.md frontmatter
   - Currently ~60 words with some overlap between sentences
 - [ ] Add `context: fork` frontmatter to SKILL.md
   - Keeps main conversation clean when handling large log outputs
