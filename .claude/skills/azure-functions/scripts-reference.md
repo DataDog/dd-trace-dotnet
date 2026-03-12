@@ -105,17 +105,6 @@ Sets Datadog instrumentation environment variables on an Azure Function App.
 ./.claude/skills/azure-functions/Test-EnvVars.ps1 -AppName "<app-name>" -ResourceGroup "<resource-group>" -IncludeRecommended
 ```
 
-### Find-NuGetConfig.ps1
-
-Searches for `nuget.config` file by walking up the directory hierarchy from a starting path. **No longer needed in the main deploy workflow** — only useful if testing the `Datadog.AzureFunctions` NuGet package with a local feed.
-
-**Location**: `.claude/skills/azure-functions/Find-NuGetConfig.ps1`
-
-**Parameters**:
-- `-StartPath` - Directory to start searching from (defaults to current directory)
-
-**Output**: Returns the full path to `nuget.config` if found, otherwise returns `$null`
-
 ### Deploy-AzureFunction.ps1
 
 Publishes a sample app, replaces `Datadog.Trace.dll` with a locally-built version, zips, and deploys to Azure via `az functionapp deployment source config-zip`. Then waits for worker restart and triggers the HTTP endpoint.
