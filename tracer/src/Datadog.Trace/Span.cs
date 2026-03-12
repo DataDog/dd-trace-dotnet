@@ -42,6 +42,8 @@ namespace Datadog.Trace
         internal Span(SpanContext context, DateTimeOffset? start, ITags tags, IEnumerable<SpanLink> links = null)
         {
             Tags = tags ?? new TagsList();
+            Block(100);
+
             Context = context;
             StartTime = start ?? Context.TraceContext.Clock.UtcNow;
 
@@ -581,6 +583,19 @@ namespace Datadog.Trace
 
             SpanEvents ??= new List<SpanEvent>();
             SpanEvents.Add(spanEvent);
+        }
+
+        private void Block(int miliseconds)
+        {
+            // This is a blocking call to simulate a long operation.
+            var now = DateTime.UtcNow;
+            while (true)
+            {
+                if (DateTime.UtcNow - now > TimeSpan.FromMilliseconds(miliseconds))
+                {
+                    break;
+                }
+            }
         }
     }
 }
