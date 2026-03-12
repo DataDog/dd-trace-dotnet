@@ -13,7 +13,7 @@ namespace Datadog.Trace.Agent
     {
         int HeaderSize { get; }
 
-        int SerializeSpans(ref byte[] bytes, int offset, TraceChunkModel traceChunk, int spanBufferOffset, int maxSize);
+        int SerializeSpans(ref byte[] bytes, int temporaryBufferOffset, TraceChunkModel traceChunk, int spanBufferOffset, int maxSize);
 
         void WriteHeader(ref byte[] bytes, int offset, int traceCount);
 

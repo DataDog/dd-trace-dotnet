@@ -580,9 +580,9 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
         };
     }
 
-    public int SerializeSpans(ref byte[] bytes, int offset, TraceChunkModel traceChunk, int spanBufferOffset, int maxSize)
+    public int SerializeSpans(ref byte[] bytes, int temporaryBufferOffset, TraceChunkModel traceChunk, int spanBufferOffset, int maxSize)
     {
-        return SerializeSpans(ref bytes, offset, in traceChunk, spanBufferOffset, maxSize);
+        return SerializeSpans(ref bytes, temporaryBufferOffset, in traceChunk, spanBufferOffset, maxSize);
     }
 
     public void WriteHeader(ref byte[] bytes, int offset, int traceCount)
@@ -635,12 +635,12 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
     /// Subsequent calls to the method will only append to the `repeated Span spans` field.
     /// </summary>
     /// <param name="bytes">The temporary byte buffer</param>
-    /// <param name="offset">The offset of the temporary byte buffer</param>
+    /// <param name="temporaryBufferOffset">The offset of the temporary byte buffer</param>
     /// <param name="traceChunk">The trace chunk to serialize</param>
     /// <param name="spanBufferOffset">The offset of the overall span buffer</param>
     /// <param name="maxSize">Maximum allowed size of the trace chunk</param>
     /// <returns>UTF-8 encoded JSON byte array</returns>
-    internal int SerializeSpans(ref byte[] bytes, int offset, in TraceChunkModel traceChunk, int spanBufferOffset, int maxSize)
+    internal int SerializeSpans(ref byte[] bytes, int temporaryBufferOffset, in TraceChunkModel traceChunk, int spanBufferOffset, int maxSize)
     {
         using var memoryStream = new MemoryStream();
         using var streamWriter = new StreamWriter(memoryStream, EncodingHelpers.Utf8NoBom, bufferSize: 4096, leaveOpen: true);
@@ -650,6 +650,7 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
         };
 
         // This implementation assumes that there is at least one span in the trace chunk
+        // The spanBufferOffset is only used to check whether this is the first chunk in the payload
         if (spanBufferOffset == HeaderSize)
         {
             ExportTraceServiceRequest(jsonWriter, in traceChunk);
@@ -667,19 +668,19 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
         // Get the length of the written JSON
         var length = (int)memoryStream.Position;
 
-        if (length - offset >= maxSize)
+        if (length - temporaryBufferOffset >= maxSize)
         {
             // We've already reached the maximum size, give up
             return 0;
         }
 
         // Ensure the target buffer has enough space
-        MessagePackBinary.EnsureCapacity(ref bytes, offset, length);
+        MessagePackBinary.EnsureCapacity(ref bytes, temporaryBufferOffset, length);
 
         // Copy the internal buffer to the target buffer
         // MemoryStream.GetBuffer() returns the internal buffer without copying
         var buffer = memoryStream.GetBuffer();
-        Array.Copy(buffer, 0, bytes, offset, length);
+        Array.Copy(buffer, 0, bytes, temporaryBufferOffset, length);
 
         return length;
     }
