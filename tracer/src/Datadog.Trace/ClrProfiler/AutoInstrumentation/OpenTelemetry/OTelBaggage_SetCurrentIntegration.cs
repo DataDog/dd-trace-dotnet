@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using Datadog.Trace;
 using Datadog.Trace.ClrProfiler.CallTarget;
@@ -36,6 +37,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
         {
             if (Tracer.Instance.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
             {
+                return new CallTargetState(scope: null, state: value.GetBaggage());
+            }
+
+            return CallTargetState.GetDefault();
+        }
+
+        internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception exception, in CallTargetState state)
+        {
+            if (state.State is IReadOnlyDictionary<string, string?> baggage
+                && exception is null)
+            {
                 // We treat Datadog.Trace.Baggage.Current as the single source of truth for the baggage API interopability, so we completely replace its
                 // contents with the items from the new OpenTelemetry.Baggage object. In order to keep the mutable model of Datadog.Trace.Baggage.Current,
                 // we must clear the contents of Datadog.Trace.Baggage.Current and then add the new items.
@@ -47,11 +59,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
                 // - The user sets their completed baggage as OpenTelemetry.Baggage.Current either by using this OpenTelemetry.Baggage.set_Current() API or calling
                 //   one of the static OpenTelemetry.Baggage APIs, and our instrumentation will replace the contents of Datadog.Trace.Baggage.Current with the specified baggage items.
                 Baggage.Current.Clear();
-                var newBaggage = new Baggage(value.GetBaggage());
+                var newBaggage = new Baggage(baggage);
                 newBaggage.MergeInto(Baggage.Current);
             }
 
-            return CallTargetState.GetDefault();
+            return CallTargetReturn.GetDefault();
         }
     }
 }
