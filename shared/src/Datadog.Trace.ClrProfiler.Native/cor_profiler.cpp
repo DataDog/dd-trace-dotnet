@@ -5,6 +5,7 @@
 #include "../../../shared/src/native-src/pal.h"
 #include "environment.h"
 #include "single_step_guard_rails.h"
+#include "workload_selection.h"
 #include "instrumented_assembly_generator/instrumented_assembly_generator_cor_profiler_function_control.h"
 #include "instrumented_assembly_generator/instrumented_assembly_generator_cor_profiler_info.h"
 #include "instrumented_assembly_generator/instrumented_assembly_generator_helper.h"
@@ -314,6 +315,33 @@ namespace datadog::shared::nativeloader
         {
             info4->Release();
             return E_FAIL;
+        }
+
+        if (IsSingleStepInstrumentation())
+        {
+            Log::Info("CorProfiler::Initialize: Evaluating workload selection.");
+
+            if (auto policies = readPolicies(); policies)
+            {
+                WSTRING application_pool;
+                if (auto maybe_application_pool = GetApplicationPool())
+                {
+                    application_pool = std::move(*maybe_application_pool);
+                }
+
+                if (isWorkloadAllowed(process_name, tokenized_command_line, application_pool, *policies, IsRunningOnIIS()) == false)
+                {
+                    return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
+                }
+            }
+            else
+            {
+                // Default behaviour is to *always* instrument IIS
+                if (!IsRunningOnIIS())
+                {
+                    return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
+                }
+            }
         }
 
         // Guard rails have all passed, so we enable (and flush) logs if necessary
