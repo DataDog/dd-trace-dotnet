@@ -2,7 +2,7 @@
 
 ## High Priority (correctness)
 
-- [ ] Fix `2>&1` stderr handling in `Set-EnvVars.ps1` and `Test-EnvVars.ps1`
+- [x] Fix `2>&1` stderr handling in `Set-EnvVars.ps1` and `Test-EnvVars.ps1`
   - `az` CLI warnings (deprecation notices, etc.) get mixed into JSON output as `ErrorRecord` objects, causing `ConvertFrom-Json` to fail
   - Files: `.claude/skills/azure-functions/Set-EnvVars.ps1` (lines 100, 205), `Test-EnvVars.ps1` (lines 79, 113, 126)
   - Fix: suppress stderr with `2>$null` on the happy path, re-run with `2>&1` only on error to capture the message
