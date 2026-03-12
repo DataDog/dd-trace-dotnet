@@ -21,6 +21,7 @@ using Datadog.Trace.Debugger.Upload;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Util;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using OperationCanceledException = System.OperationCanceledException;
 
@@ -265,7 +266,7 @@ namespace Datadog.Trace.Debugger.Symbols
 
         private async Task UploadClasses(Root root, IEnumerable<Model.Scope> classes)
         {
-            var rootAsString = JsonConvert.SerializeObject(root);
+            var rootAsString = JsonHelper.SerializeObject(root);
             if (!TryBuildPrefixAndSuffix(rootAsString, out var prefix, out var suffix))
             {
                 // this should not happen unless Root/Scope JSON shape changes
@@ -372,7 +373,7 @@ namespace Datadog.Trace.Debugger.Symbols
             out int newTotalBytes)
         {
             pooledWriter.Reset();
-            using (var jsonWriter = new JsonTextWriter(pooledWriter) { CloseOutput = false })
+            using (var jsonWriter = new JsonTextWriter(pooledWriter) { CloseOutput = false, ArrayPool = JsonArrayPool.Shared })
             {
                 serializer.Serialize(jsonWriter, classScope);
                 jsonWriter.Flush();

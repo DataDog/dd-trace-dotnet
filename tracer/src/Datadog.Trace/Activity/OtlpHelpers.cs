@@ -16,6 +16,7 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
@@ -455,7 +456,7 @@ namespace Datadog.Trace.Activity
                     else
                     {
                         // we've already unrolled once, don't do it again for IEnumerable values
-                        AgentSetOtlpTag(span, key, JsonConvert.SerializeObject(value));
+                        AgentSetOtlpTag(span, key, JsonHelper.SerializeObject(value));
                     }
 
                     break;

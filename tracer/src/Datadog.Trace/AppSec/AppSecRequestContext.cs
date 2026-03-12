@@ -11,6 +11,7 @@ using Datadog.Trace.AppSec.Rasp;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.AppSec;
@@ -44,7 +45,7 @@ internal sealed partial class AppSecRequestContext
                 }
                 else
                 {
-                    var triggers = JsonConvert.SerializeObject(_wafSecurityEvents);
+                    var triggers = JsonHelper.SerializeObject(_wafSecurityEvents);
                     span.Tags.SetTag(Tags.AppSecJson, "{\"triggers\":" + triggers + "}");
                 }
             }

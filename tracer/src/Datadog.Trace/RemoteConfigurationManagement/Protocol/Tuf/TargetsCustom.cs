@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.RemoteConfigurationManagement.Protocol.Tuf
@@ -10,6 +12,6 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Protocol.Tuf
     internal sealed class TargetsCustom
     {
         [JsonProperty("opaque_backend_state")]
-        public string OpaqueBackendState { get; set; }
+        public string? OpaqueBackendState { get; set; }
     }
 }
