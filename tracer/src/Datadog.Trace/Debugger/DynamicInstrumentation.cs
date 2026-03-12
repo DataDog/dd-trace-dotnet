@@ -657,6 +657,7 @@ namespace Datadog.Trace.Debugger
                         .Add(_diagnosticsUploader)
                         .Add(_probeStatusPoller)
                         .DisposeAll();
+            _dogStats?.DisposeAsync().ContinueWith(t => Log.Error(t.Exception, "Error waiting for StatsD disposal"), TaskContinuationOptions.OnlyOnFaulted);
         }
     }
 }
