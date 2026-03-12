@@ -615,7 +615,7 @@ namespace Datadog.Trace.Agent.MessagePack
             // Safety: if the service name equals the default, clear the source — unless it's a
             // configuration-driven override (opt.*), which should always be preserved.
             var serviceNameSource = span.Context.ServiceNameSource;
-            if (serviceNameEqualsDefault && serviceNameSource?.StartsWith("opt.") != true)
+            if (serviceNameEqualsDefault && serviceNameSource?.StartsWith("opt.", StringComparison.Ordinal) != true)
             {
                 serviceNameSource = null;
             }

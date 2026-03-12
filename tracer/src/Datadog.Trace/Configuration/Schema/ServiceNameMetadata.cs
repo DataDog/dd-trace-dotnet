@@ -5,6 +5,8 @@
 
 #nullable enable
 
+using System.Collections.Generic;
+
 namespace Datadog.Trace.Configuration.Schema;
 
 /// <summary>
@@ -14,6 +16,8 @@ namespace Datadog.Trace.Configuration.Schema;
 /// </summary>
 internal readonly struct ServiceNameMetadata
 {
+    internal const string OptServiceMapping = "opt.service_mapping";
+
     public ServiceNameMetadata(string serviceName, string? source)
     {
         ServiceName = serviceName;
@@ -23,6 +27,21 @@ internal readonly struct ServiceNameMetadata
     public string ServiceName { get; }
 
     public string? Source { get; }
+
+    internal static ServiceNameMetadata Resolve(
+        string integrationKey,
+        string defaultServiceName,
+        IReadOnlyDictionary<string, string>? serviceNameMappings,
+        bool useSuffix)
+    {
+        if (serviceNameMappings is not null && serviceNameMappings.TryGetValue(integrationKey, out var mappedName))
+        {
+            return new(mappedName, OptServiceMapping);
+        }
+
+        var name = useSuffix ? $"{defaultServiceName}-{integrationKey}" : defaultServiceName;
+        return new(name, name != defaultServiceName ? integrationKey : null);
+    }
 
     public void Deconstruct(out string serviceName, out string? source)
     {
