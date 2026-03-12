@@ -19,9 +19,8 @@
 - [x] Trim `scripts-reference.md` duplication with SKILL.md
   - Deploy-AzureFunction.ps1 params, Get-AzureFunctionLogs.ps1 usage, Build-AzureFunctionsNuget.ps1 usage documented in both
   - Keep SKILL.md as the concise "how to use", scripts-reference.md as the detailed reference
-- [ ] Extract troubleshooting + Datadog API sections from SKILL.md to supplementary files
-  - "Common Troubleshooting" (~70 lines) and "Query Datadog API" (~25 lines) add bulk
-  - Move to `troubleshooting.md` and keep reference links in SKILL.md
+- [x] Extract troubleshooting + Datadog API sections from SKILL.md to supplementary files
+  - Moved to `troubleshooting.md` and `datadog-api.md`; added links in SKILL.md Additional Resources
 - [ ] Fix potential quoting issue in `Set-EnvVars.ps1` splatting
   - Complex JSON values in `DD_TRACE_SAMPLING_RULES` could break when passed via `@settingsArgs` to `az --settings`
   - File: `.claude/skills/azure-functions/Set-EnvVars.ps1` (line ~204)
