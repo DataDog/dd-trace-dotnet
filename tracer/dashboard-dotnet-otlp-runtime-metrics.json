@@ -1,0 +1,714 @@
+{
+  "title": ".NET OTLP Runtime Metrics",
+  "description": "OTel-native .NET runtime metrics dashboard using dotnet.* metric names sent via OTLP.\nCovers System.Runtime instruments from .NET 9+ (native) and .NET 6-8 (polyfill).\n\nClone this template dashboard to make changes and add your own graph widgets.",
+  "widgets": [
+    {
+      "id": 1000000000000001,
+      "definition": {
+        "title": "CPU Time (rate)",
+        "show_legend": true,
+        "legend_layout": "auto",
+        "type": "timeseries",
+        "requests": [
+          {
+            "response_format": "timeseries",
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "cpu_user",
+                "query": "avg:dotnet.process.cpu.time{cpu.mode:user,$env,$service,$host}"
+              }
+            ],
+            "formulas": [
+              { "formula": "per_second(cpu_user)", "alias": "User CPU (s/s)" }
+            ],
+            "style": { "palette": "dog_classic", "line_type": "solid", "line_width": "normal" },
+            "display_type": "line"
+          },
+          {
+            "response_format": "timeseries",
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "cpu_sys",
+                "query": "avg:dotnet.process.cpu.time{cpu.mode:system,$env,$service,$host}"
+              }
+            ],
+            "formulas": [
+              { "formula": "per_second(cpu_sys)", "alias": "System CPU (s/s)" }
+            ],
+            "style": { "palette": "dog_classic", "line_type": "solid", "line_width": "normal" },
+            "display_type": "line"
+          },
+          {
+            "on_right_yaxis": true,
+            "response_format": "timeseries",
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "cpu_total",
+                "query": "avg:dotnet.process.cpu.time{$env,$service,$host}"
+              },
+              {
+                "data_source": "metrics",
+                "name": "cpu_count",
+                "query": "avg:dotnet.process.cpu.count{$env,$service,$host}"
+              }
+            ],
+            "formulas": [
+              { "formula": "per_second(cpu_total) / cpu_count * 100", "alias": "CPU %" }
+            ],
+            "style": { "palette": "warm", "line_type": "solid", "line_width": "normal" },
+            "display_type": "line"
+          }
+        ],
+        "yaxis": { "label": "seconds/second", "include_zero": true, "min": "auto", "max": "auto" },
+        "right_yaxis": { "label": "percent", "include_zero": true, "min": "auto", "max": "auto" }
+      }
+    },
+    {
+      "id": 1000000000000002,
+      "definition": {
+        "title": "Process Memory",
+        "show_legend": true,
+        "legend_layout": "auto",
+        "type": "timeseries",
+        "requests": [
+          {
+            "response_format": "timeseries",
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "committed",
+                "query": "avg:dotnet.gc.last_collection.memory.committed_size{$env,$service,$host}"
+              }
+            ],
+            "formulas": [
+              { "formula": "committed", "alias": "GC Committed" }
+            ],
+            "style": { "palette": "dog_classic", "line_type": "solid", "line_width": "normal" },
+            "display_type": "line"
+          },
+          {
+            "response_format": "timeseries",
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "working_set",
+                "query": "avg:dotnet.process.memory.working_set{$env,$service,$host}"
+              }
+            ],
+            "formulas": [
+              { "formula": "working_set", "alias": "Working Set" }
+            ],
+            "style": { "palette": "cool", "line_type": "solid", "line_width": "normal" },
+            "display_type": "line"
+          }
+        ],
+        "yaxis": { "label": "bytes", "include_zero": true, "min": "auto", "max": "auto" }
+      }
+    },
+    {
+      "id": 1000000000000003,
+      "definition": {
+        "title": "First Chance Exceptions",
+        "show_legend": true,
+        "legend_layout": "auto",
+        "type": "timeseries",
+        "requests": [
+          {
+            "response_format": "timeseries",
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "exceptions",
+                "query": "sum:dotnet.exceptions{$env,$service,$host} by {error.type}.as_count()"
+              }
+            ],
+            "style": { "palette": "dog_classic", "line_type": "solid", "line_width": "normal" },
+            "display_type": "line"
+          }
+        ],
+        "yaxis": { "include_zero": true, "min": "auto", "max": "auto" }
+      }
+    },
+    {
+      "id": 1000000000000004,
+      "definition": {
+        "title": "Thread Pool Threads",
+        "show_legend": true,
+        "legend_layout": "auto",
+        "type": "timeseries",
+        "requests": [
+          {
+            "response_format": "timeseries",
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "tp_threads",
+                "query": "avg:dotnet.thread_pool.thread.count{$env,$service,$host}"
+              }
+            ],
+            "formulas": [
+              { "formula": "tp_threads", "alias": "Thread Pool Threads" }
+            ],
+            "style": { "palette": "dog_classic", "line_type": "solid", "line_width": "normal" },
+            "display_type": "line"
+          }
+        ],
+        "yaxis": { "include_zero": true, "min": "auto", "max": "auto" }
+      }
+    },
+    {
+      "id": 1000000000000005,
+      "definition": {
+        "title": "GC Collections Count",
+        "show_legend": true,
+        "legend_layout": "auto",
+        "type": "timeseries",
+        "requests": [
+          {
+            "response_format": "timeseries",
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "gc_gen0",
+                "query": "avg:dotnet.gc.collections{gc.heap.generation:gen0,$env,$service,$host}.as_count()"
+              }
+            ],
+            "formulas": [
+              { "formula": "gc_gen0", "alias": "Gen 0" }
+            ],
+            "style": { "palette": "dog_classic", "line_type": "solid", "line_width": "normal" },
+            "display_type": "line"
+          },
+          {
+            "response_format": "timeseries",
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "gc_gen1",
+                "query": "avg:dotnet.gc.collections{gc.heap.generation:gen1,$env,$service,$host}.as_count()"
+              }
+            ],
+            "formulas": [
+              { "formula": "gc_gen1", "alias": "Gen 1" }
+            ],
+            "style": { "palette": "dog_classic", "line_type": "solid", "line_width": "normal" },
+            "display_type": "line"
+          },
+          {
+            "response_format": "timeseries",
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "gc_gen2",
+                "query": "avg:dotnet.gc.collections{gc.heap.generation:gen2,$env,$service,$host}.as_count()"
+              }
+            ],
+            "formulas": [
+              { "formula": "gc_gen2", "alias": "Gen 2" }
+            ],
+            "style": { "palette": "dog_classic", "line_type": "solid", "line_width": "normal" },
+            "display_type": "line"
+          }
+        ],
+        "yaxis": { "include_zero": true, "min": "auto", "max": "auto" }
+      }
+    },
+    {
+      "id": 1000000000000006,
+      "definition": {
+        "title": "GC Pause Time (rate)",
+        "show_legend": true,
+        "legend_layout": "auto",
+        "type": "timeseries",
+        "requests": [
+          {
+            "response_format": "timeseries",
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "gc_pause",
+                "query": "avg:dotnet.gc.pause.time{$env,$service,$host}"
+              }
+            ],
+            "formulas": [
+              { "formula": "per_second(gc_pause)", "alias": "Pause seconds/second" }
+            ],
+            "style": { "palette": "dog_classic", "line_type": "solid", "line_width": "normal" },
+            "display_type": "line"
+          }
+        ],
+        "yaxis": { "label": "s/s", "include_zero": true, "min": "auto", "max": "auto" }
+      }
+    },
+    {
+      "id": 1000000000000007,
+      "definition": {
+        "title": "GC Heap Size",
+        "show_legend": true,
+        "legend_layout": "auto",
+        "type": "timeseries",
+        "requests": [
+          {
+            "response_format": "timeseries",
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "heap_gen0",
+                "query": "avg:dotnet.gc.last_collection.heap.size{gc.heap.generation:gen0,$env,$service,$host}"
+              }
+            ],
+            "formulas": [
+              { "formula": "heap_gen0", "alias": "Gen 0" }
+            ],
+            "style": { "palette": "dog_classic", "line_type": "solid", "line_width": "normal" },
+            "display_type": "line"
+          },
+          {
+            "response_format": "timeseries",
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "heap_gen1",
+                "query": "avg:dotnet.gc.last_collection.heap.size{gc.heap.generation:gen1,$env,$service,$host}"
+              }
+            ],
+            "formulas": [
+              { "formula": "heap_gen1", "alias": "Gen 1" }
+            ],
+            "style": { "palette": "dog_classic", "line_type": "solid", "line_width": "normal" },
+            "display_type": "line"
+          },
+          {
+            "response_format": "timeseries",
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "heap_gen2",
+                "query": "avg:dotnet.gc.last_collection.heap.size{gc.heap.generation:gen2,$env,$service,$host}"
+              }
+            ],
+            "formulas": [
+              { "formula": "heap_gen2", "alias": "Gen 2" }
+            ],
+            "style": { "palette": "dog_classic", "line_type": "solid", "line_width": "normal" },
+            "display_type": "line"
+          },
+          {
+            "response_format": "timeseries",
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "heap_loh",
+                "query": "avg:dotnet.gc.last_collection.heap.size{gc.heap.generation:loh,$env,$service,$host}"
+              }
+            ],
+            "formulas": [
+              { "formula": "heap_loh", "alias": "LOH" }
+            ],
+            "style": { "palette": "dog_classic", "line_type": "solid", "line_width": "normal" },
+            "display_type": "line"
+          },
+          {
+            "response_format": "timeseries",
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "heap_poh",
+                "query": "avg:dotnet.gc.last_collection.heap.size{gc.heap.generation:poh,$env,$service,$host}"
+              }
+            ],
+            "formulas": [
+              { "formula": "heap_poh", "alias": "POH" }
+            ],
+            "style": { "palette": "dog_classic", "line_type": "solid", "line_width": "normal" },
+            "display_type": "line"
+          }
+        ],
+        "yaxis": { "label": "bytes", "include_zero": true, "min": "auto", "max": "auto" }
+      }
+    },
+    {
+      "id": 1000000000000008,
+      "definition": {
+        "title": "Lock Contentions",
+        "show_legend": true,
+        "legend_layout": "auto",
+        "type": "timeseries",
+        "requests": [
+          {
+            "response_format": "timeseries",
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "contentions",
+                "query": "avg:dotnet.monitor.lock_contentions{$env,$service,$host}.as_count()"
+              }
+            ],
+            "formulas": [
+              { "formula": "contentions", "alias": "Lock Contentions" }
+            ],
+            "style": { "palette": "dog_classic", "line_type": "solid", "line_width": "normal" },
+            "display_type": "line"
+          }
+        ],
+        "yaxis": { "include_zero": true, "min": "auto", "max": "auto" }
+      }
+    },
+    {
+      "id": 1000000000000009,
+      "definition": {
+        "title": "GC Allocation Rate",
+        "show_legend": true,
+        "legend_layout": "auto",
+        "type": "timeseries",
+        "requests": [
+          {
+            "response_format": "timeseries",
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "alloc",
+                "query": "avg:dotnet.gc.heap.total_allocated{$env,$service,$host}"
+              }
+            ],
+            "formulas": [
+              { "formula": "per_second(alloc)", "alias": "Allocation Rate (B/s)" }
+            ],
+            "style": { "palette": "dog_classic", "line_type": "solid", "line_width": "normal" },
+            "display_type": "line"
+          }
+        ],
+        "yaxis": { "label": "bytes/second", "include_zero": true, "min": "auto", "max": "auto" }
+      }
+    },
+    {
+      "id": 1000000000000010,
+      "definition": {
+        "title": "GC Heap Fragmentation",
+        "show_legend": true,
+        "legend_layout": "auto",
+        "type": "timeseries",
+        "requests": [
+          {
+            "response_format": "timeseries",
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "frag_gen0",
+                "query": "avg:dotnet.gc.last_collection.heap.fragmentation.size{gc.heap.generation:gen0,$env,$service,$host}"
+              }
+            ],
+            "formulas": [
+              { "formula": "frag_gen0", "alias": "Gen 0" }
+            ],
+            "style": { "palette": "dog_classic", "line_type": "solid", "line_width": "normal" },
+            "display_type": "line"
+          },
+          {
+            "response_format": "timeseries",
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "frag_gen1",
+                "query": "avg:dotnet.gc.last_collection.heap.fragmentation.size{gc.heap.generation:gen1,$env,$service,$host}"
+              }
+            ],
+            "formulas": [
+              { "formula": "frag_gen1", "alias": "Gen 1" }
+            ],
+            "style": { "palette": "dog_classic", "line_type": "solid", "line_width": "normal" },
+            "display_type": "line"
+          },
+          {
+            "response_format": "timeseries",
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "frag_gen2",
+                "query": "avg:dotnet.gc.last_collection.heap.fragmentation.size{gc.heap.generation:gen2,$env,$service,$host}"
+              }
+            ],
+            "formulas": [
+              { "formula": "frag_gen2", "alias": "Gen 2" }
+            ],
+            "style": { "palette": "dog_classic", "line_type": "solid", "line_width": "normal" },
+            "display_type": "line"
+          },
+          {
+            "response_format": "timeseries",
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "frag_loh",
+                "query": "avg:dotnet.gc.last_collection.heap.fragmentation.size{gc.heap.generation:loh,$env,$service,$host}"
+              }
+            ],
+            "formulas": [
+              { "formula": "frag_loh", "alias": "LOH" }
+            ],
+            "style": { "palette": "dog_classic", "line_type": "solid", "line_width": "normal" },
+            "display_type": "line"
+          }
+        ],
+        "yaxis": { "label": "bytes", "include_zero": true, "min": "auto", "max": "auto" }
+      }
+    },
+    {
+      "id": 1000000000000011,
+      "definition": {
+        "title": "JIT Compilation",
+        "type": "group",
+        "layout_type": "ordered",
+        "widgets": [
+          {
+            "id": 1000000000000012,
+            "definition": {
+              "title": "JIT Compiled Methods (rate)",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "type": "timeseries",
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "jit_methods",
+                      "query": "avg:dotnet.jit.compiled_methods{$env,$service,$host}"
+                    }
+                  ],
+                  "formulas": [
+                    { "formula": "per_second(jit_methods)", "alias": "Methods/s" }
+                  ],
+                  "style": { "palette": "dog_classic", "line_type": "solid", "line_width": "normal" },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": { "include_zero": true, "min": "auto", "max": "auto" }
+            }
+          },
+          {
+            "id": 1000000000000013,
+            "definition": {
+              "title": "JIT Compiled IL Size (rate)",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "type": "timeseries",
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "jit_il",
+                      "query": "avg:dotnet.jit.compiled_il.size{$env,$service,$host}"
+                    }
+                  ],
+                  "formulas": [
+                    { "formula": "per_second(jit_il)", "alias": "IL bytes/s" }
+                  ],
+                  "style": { "palette": "dog_classic", "line_type": "solid", "line_width": "normal" },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": { "label": "bytes/second", "include_zero": true, "min": "auto", "max": "auto" }
+            }
+          },
+          {
+            "id": 1000000000000014,
+            "definition": {
+              "title": "JIT Compilation Time (rate)",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "type": "timeseries",
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "jit_time",
+                      "query": "avg:dotnet.jit.compilation.time{$env,$service,$host}"
+                    }
+                  ],
+                  "formulas": [
+                    { "formula": "per_second(jit_time)", "alias": "Compilation s/s" }
+                  ],
+                  "style": { "palette": "dog_classic", "line_type": "solid", "line_width": "normal" },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": { "label": "s/s", "include_zero": true, "min": "auto", "max": "auto" }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": 1000000000000015,
+      "definition": {
+        "title": "Thread Pool Activity",
+        "type": "group",
+        "layout_type": "ordered",
+        "widgets": [
+          {
+            "id": 1000000000000016,
+            "definition": {
+              "title": "Work Items Completed (rate)",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "type": "timeseries",
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "work_items",
+                      "query": "avg:dotnet.thread_pool.work_item.count{$env,$service,$host}"
+                    }
+                  ],
+                  "formulas": [
+                    { "formula": "per_second(work_items)", "alias": "Work Items/s" }
+                  ],
+                  "style": { "palette": "dog_classic", "line_type": "solid", "line_width": "normal" },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": { "include_zero": true, "min": "auto", "max": "auto" }
+            }
+          },
+          {
+            "id": 1000000000000017,
+            "definition": {
+              "title": "Thread Pool Queue Length",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "type": "timeseries",
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "queue_len",
+                      "query": "avg:dotnet.thread_pool.queue.length{$env,$service,$host}"
+                    }
+                  ],
+                  "formulas": [
+                    { "formula": "queue_len", "alias": "Pending Work Items" }
+                  ],
+                  "style": { "palette": "dog_classic", "line_type": "solid", "line_width": "normal" },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": { "include_zero": true, "min": "auto", "max": "auto" }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": 1000000000000018,
+      "definition": {
+        "title": "Runtime Info",
+        "type": "group",
+        "layout_type": "ordered",
+        "widgets": [
+          {
+            "id": 1000000000000019,
+            "definition": {
+              "title": "Loaded Assemblies",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "type": "timeseries",
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "assemblies",
+                      "query": "avg:dotnet.assembly.count{$env,$service,$host}"
+                    }
+                  ],
+                  "formulas": [
+                    { "formula": "assemblies", "alias": "Assemblies" }
+                  ],
+                  "style": { "palette": "dog_classic", "line_type": "solid", "line_width": "normal" },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": { "include_zero": true, "min": "auto", "max": "auto" }
+            }
+          },
+          {
+            "id": 1000000000000020,
+            "definition": {
+              "title": "Active Timers",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "type": "timeseries",
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "timers",
+                      "query": "avg:dotnet.timer.count{$env,$service,$host}"
+                    }
+                  ],
+                  "formulas": [
+                    { "formula": "timers", "alias": "Active Timers" }
+                  ],
+                  "style": { "palette": "dog_classic", "line_type": "solid", "line_width": "normal" },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": { "include_zero": true, "min": "auto", "max": "auto" }
+            }
+          },
+          {
+            "id": 1000000000000021,
+            "definition": {
+              "title": "CPU Count",
+              "show_legend": true,
+              "legend_layout": "auto",
+              "type": "timeseries",
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "cpus",
+                      "query": "avg:dotnet.process.cpu.count{$env,$service,$host}"
+                    }
+                  ],
+                  "formulas": [
+                    { "formula": "cpus", "alias": "Processors" }
+                  ],
+                  "style": { "palette": "dog_classic", "line_type": "solid", "line_width": "normal" },
+                  "display_type": "line"
+                }
+              ],
+              "yaxis": { "include_zero": true, "min": "auto", "max": "auto" }
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "template_variables": [
+    { "name": "env", "prefix": "env", "available_values": [], "default": "*" },
+    { "name": "service", "prefix": "service", "available_values": [], "default": "*" },
+    { "name": "host", "prefix": "host", "available_values": [], "default": "*" }
+  ],
+  "layout_type": "ordered",
+  "notify_list": [],
+  "reflow_type": "auto"
+}

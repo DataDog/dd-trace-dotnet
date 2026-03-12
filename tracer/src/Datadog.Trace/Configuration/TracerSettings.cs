@@ -179,6 +179,8 @@ namespace Datadog.Trace.Configuration
 
             RuntimeMetricsEnabled = runtimeMetricsEnabledResult.WithDefault(false);
 
+            OtelMetricsExporterExplicitlyConfigured = otelExporterResult.ConfigurationResult is { IsPresent: true, IsValid: true };
+
             RuntimeMetricsDiagnosticsMetricsApiEnabled = config.WithKeys(ConfigurationKeys.RuntimeMetricsDiagnosticsMetricsApiEnabled).AsBool(false);
 
 #if !NET6_0_OR_GREATER
@@ -648,6 +650,15 @@ namespace Datadog.Trace.Configuration
                 ? new HashSet<string>(TrimSplitString(enabledMeters, commaSeparator), StringComparer.Ordinal)
                 : new HashSet<string>(StringComparer.Ordinal);
 
+#if NET6_0_OR_GREATER
+            if (OpenTelemetryMeterNames.Count > 0)
+            {
+                OpenTelemetryMeterNames.Add("System.Runtime");
+                OpenTelemetryMeterNames.Add("Microsoft.AspNetCore.Hosting");
+                OpenTelemetryMeterNames.Add("Microsoft.AspNetCore.Server.Kestrel");
+            }
+#endif
+
             var disabledActivitySources = config.WithKeys(ConfigurationKeys.DisabledActivitySources).AsString();
 
             DisabledActivitySources = !string.IsNullOrEmpty(disabledActivitySources) ? TrimSplitString(disabledActivitySources, commaSeparator) : [];
@@ -809,6 +820,11 @@ namespace Datadog.Trace.Configuration
         /// Default is enabled (true).
         /// </summary>
         internal bool OtelMetricsExporterEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the user explicitly set OTEL_METRICS_EXPORTER to a valid value (otlp or none).
+        /// </summary>
+        internal bool OtelMetricsExporterExplicitlyConfigured { get; }
 
         /// <summary>
         /// Gets the OTLP protocol for metrics export with fallback behavior.
