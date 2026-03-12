@@ -1,13 +1,13 @@
 ---
 name: azure-functions
-description: Dev/test workflow for tracer engineers working on the Datadog .NET tracer — build a local Datadog.AzureFunctions NuGet package, deploy it to a test Azure Function App, trigger it, and analyze traces/logs to verify instrumentation behavior. Use this skill whenever the user is working on Azure Functions instrumentation: building or testing the Datadog.AzureFunctions NuGet package, deploying to a test Function App, analyzing instrumentation logs or spans from an Azure Functions app, or configuring Datadog environment variables on Azure — even if they don't explicitly invoke /azure-functions.
-argument-hint: [build-nuget|deploy|test|logs|configure]
-allowed-tools: Bash(pwsh *) Bash(az functionapp show *) Bash(az functionapp list *) Bash(az functionapp list-functions *) Bash(az functionapp function list *) Bash(az functionapp function show *) Bash(az functionapp config appsettings list *) Bash(az functionapp config appsettings set *) Bash(az functionapp config appsettings delete *) Bash(az functionapp config show *) Bash(az functionapp deployment list *) Bash(az functionapp deployment show *) Bash(az functionapp deployment source show *) Bash(az functionapp plan list *) Bash(az functionapp plan show *) Bash(az functionapp restart *) Bash(az functionapp stop *) Bash(az functionapp start *) Bash(az webapp log download *) Bash(az webapp log tail *) Bash(az group list *) Bash(az group show *) Bash(curl *) Bash(func azure functionapp publish *) Bash(func azure functionapp logstream *) Bash(func azure functionapp list-functions *) Bash(func azure functionapp fetch-app-settings *) Bash(func azure functionapp fetch *) Bash(dotnet restore) Bash(dotnet clean) Bash(dotnet build *) Bash(unzip *) Read
+description: Dev/test workflow for tracer engineers working on the Datadog .NET tracer — build Datadog.Trace locally, deploy it to a test Azure Function App (replacing only the managed tracer DLL in a published app that uses the released NuGet package), trigger it, and analyze traces/logs to verify instrumentation behavior. Use this skill whenever the user is working on Azure Functions instrumentation: building or testing the tracer, deploying to a test Function App, analyzing instrumentation logs or spans from an Azure Functions app, or configuring Datadog environment variables on Azure — even if they don't explicitly invoke /azure-functions.
+argument-hint: [deploy|test|logs|configure|build-nuget]
+allowed-tools: Bash(pwsh *) Bash(az functionapp show *) Bash(az functionapp list *) Bash(az functionapp list-functions *) Bash(az functionapp function list *) Bash(az functionapp function show *) Bash(az functionapp config appsettings list *) Bash(az functionapp config appsettings set *) Bash(az functionapp config appsettings delete *) Bash(az functionapp config show *) Bash(az functionapp deployment list *) Bash(az functionapp deployment show *) Bash(az functionapp deployment source show *) Bash(az functionapp deployment source config-zip *) Bash(az functionapp plan list *) Bash(az functionapp plan show *) Bash(az functionapp restart *) Bash(az functionapp stop *) Bash(az functionapp start *) Bash(az webapp log download *) Bash(az webapp log tail *) Bash(az group list *) Bash(az group show *) Bash(curl *) Bash(func azure functionapp logstream *) Bash(func azure functionapp list-functions *) Bash(func azure functionapp fetch-app-settings *) Bash(func azure functionapp fetch *) Bash(dotnet restore) Bash(dotnet clean) Bash(dotnet build *) Bash(dotnet publish *) Bash(unzip *) Read
 ---
 
 # Azure Functions Dev/Test Workflow
 
-This skill helps tracer engineers test changes to the `Datadog.AzureFunctions` package: build a local dev version, deploy it to a test Azure Function App, trigger the function, and analyze traces/logs to verify instrumentation behavior.
+This skill helps tracer engineers test changes to the managed tracer (`Datadog.Trace.dll`) in Azure Functions: build the tracer locally, publish a sample app that uses the released `Datadog.AzureFunctions` NuGet package, swap in the locally-built `Datadog.Trace.dll`, deploy to Azure, trigger the function, and analyze traces/logs to verify instrumentation behavior.
 
 ## Prerequisites
 
@@ -17,8 +17,10 @@ This skill requires the following tools (assume they are installed and only trou
   - Always prefer `pwsh` over `powershell.exe` when available
   - Scripts use PowerShell-specific cmdlets like `Expand-Archive`
 - **Azure CLI**: `az` (must be authenticated)
-- **Azure Functions Core Tools**: `func`
 - **.NET SDK**: Matching target framework of sample app
+
+**Optional tools** (not required for the main workflow):
+- **Azure Functions Core Tools**: `func` (useful for debugging, listing functions, streaming logs)
 
 **Only if a tool fails, provide installation links**:
 - **PowerShell**: https://learn.microsoft.com/en-us/powershell/scripting/install/installing-powershell
@@ -30,11 +32,11 @@ This skill requires the following tools (assume they are installed and only trou
 
 When invoked with an argument, perform the corresponding workflow:
 
-- `/azure-functions build-nuget` - Build the Datadog.AzureFunctions NuGet package
-- `/azure-functions deploy [app-name]` - Deploy to Azure Function App
+- `/azure-functions deploy [app-name]` - Deploy to Azure Function App (build tracer, publish app, swap DLL, zip deploy)
 - `/azure-functions configure [app-name]` - Configure environment variables for Datadog instrumentation
 - `/azure-functions test [app-name]` - Trigger and verify function execution
 - `/azure-functions logs [app-name]` - Download and analyze logs
+- `/azure-functions build-nuget` - Build the Datadog.AzureFunctions NuGet package (for NuGet package testing only)
 
 If no argument is provided, guide the user through the full workflow interactively.
 
@@ -42,98 +44,18 @@ If no argument is provided, guide the user through the full workflow interactive
 
 **Current repository**: This skill assumes you are working from the root of the `dd-trace-dotnet` repository.
 
-**Prerequisites**: Users provide their own Azure Function App name (`-AppName`), resource group (`-ResourceGroup`), and sample app path (`-SampleAppPath`). The sample app must:
-1. Reference the `Datadog.AzureFunctions` NuGet package
-2. Have a `nuget.config` file (in the app directory or a parent directory) that defines a local NuGet feed pointing to a directory on disk, for example:
-   ```xml
-   <?xml version="1.0" encoding="utf-8"?>
-   <configuration>
-     <packageSources>
-       <clear />
-       <add key="local" value="nuget/local-source" />
-       <add key="nuget" value="https://api.nuget.org/v3/index.json" />
-     </packageSources>
-   </configuration>
-   ```
-   The `-CopyTo` parameter of `Build-AzureFunctionsNuget.ps1` must point to the same directory as the local feed (e.g. if the feed `value` is `nuget/local-source` relative to the `nuget.config` location, then `-CopyTo` should be the absolute path to that directory).
+**Sample app requirements**: The sample app must:
+1. Reference the released `Datadog.AzureFunctions` NuGet package from nuget.org (pinned version)
+2. NOT need a local NuGet feed or special `nuget.config` — the standard nuget.org feed is sufficient
+3. The local NuGet feed at `apm-serverless-test-apps/.../nuget/local-source` is no longer used in the main workflow
+
+**How it works**: The deploy script publishes the sample app (which includes the released `Datadog.AzureFunctions` package and all its bundled files), then replaces only `datadog/net6.0/Datadog.Trace.dll` in the publish output with a locally-built version before zipping and deploying to Azure.
 
 ## Workflow Steps
 
-### 1. Build NuGet Package
+### 1. Deploy Function
 
-**CRITICAL**: Before building, verify that `tracer/src/Datadog.AzureFunctions/Datadog.AzureFunctions.csproj` uses **PackageReference** (not ProjectReference) for `Datadog.Trace` and `Datadog.Trace.Annotations`. This ensures the locally-built package references the latest releases from nuget.org instead of building them from source.
-
-**Check the .csproj** — it should contain:
-```xml
-<PackageReference Include="Datadog.Trace" Version="*"/>
-<PackageReference Include="Datadog.Trace.Annotations" Version="*" />
-```
-
-If instead it contains **ProjectReference** lines like these, replace them with the PackageReference lines above:
-```xml
-<!-- These are the production references — replace for local testing: -->
-<ProjectReference Include="$(MSBuildThisFileDirectory)..\Datadog.Trace.Manual\Datadog.Trace.Manual.csproj" />
-<ProjectReference Include="$(MSBuildThisFileDirectory)..\Datadog.Trace.Annotations\Datadog.Trace.Annotations.csproj" />
-```
-
-**IMPORTANT**: The PackageReference change is for local testing only. Do NOT commit it. If it's already using PackageReference, no change is needed.
-
-Build the `Datadog.AzureFunctions` NuGet package with your changes:
-
-```powershell
-./tracer/tools/Build-AzureFunctionsNuget.ps1 -CopyTo <output-dir>
-```
-
-**What this does**:
-1. (If `-BuildId` specified and files not already downloaded) Downloads bundle from Azure DevOps build once
-2. Generates a unique prerelease version from a timestamp (e.g. `3.38.0-dev20260209143022`)
-3. Cleans previous builds
-4. Builds `Datadog.Trace` (net6.0)
-5. Publishes to bundle folder
-6. Packages `Datadog.AzureFunctions.nupkg` with the generated version (referencing latest nuget.org releases)
-7. Copies to the directory specified by `-CopyTo`
-
-**Versioning**: Each build gets a unique version, so NuGet caching is never an issue.
-The sample app should use a floating version like `3.38.0-dev.*` in its package reference
-(or `Directory.Packages.props`) to always resolve the latest local dev build.
-
-**Options**:
-- `-CopyTo <output-dir>` - Copy the built package to the specified directory (typically your local NuGet feed)
-- `-Version '3.38.0-dev.custom'` - Use a specific version instead of auto-generating
-- `-BuildId 12345` - One-time download of bundle files from Azure DevOps build (only needed once per dd-trace-dotnet release, then reused for subsequent local builds)
-
-**Examples**:
-```powershell
-# Typical local build (after bundle files already downloaded)
-./tracer/tools/Build-AzureFunctionsNuget.ps1 -CopyTo <output-dir>
-
-# First build after new dd-trace-dotnet release (download bundle files once)
-./tracer/tools/Build-AzureFunctionsNuget.ps1 -BuildId 12345 -CopyTo <output-dir>
-```
-
-### 2. Deploy Function
-
-**IMPORTANT**: Before deploying, verify prerequisites:
-
-**Verify nuget.config exists**:
-```powershell
-$nugetConfig = ./.claude/skills/azure-functions/Find-NuGetConfig.ps1 -StartPath "<path-to-sample-app>"
-if (-not $nugetConfig) {
-    Write-Error "nuget.config not found in sample app directory or parent directories"
-    exit 1
-}
-Write-Host "Found nuget.config at: $nugetConfig"
-```
-
-**Verify environment variables are configured** (skip if already done on a previous deploy):
-```powershell
-$envCheck = ./.claude/skills/azure-functions/Test-EnvVars.ps1 -AppName "<app-name>" -ResourceGroup "<resource-group>"
-if (-not $envCheck.AllRequiredPresent) {
-    Write-Warning "Required environment variables are missing. Run '/azure-functions configure' first, or proceed if you plan to configure after deploying."
-}
-```
-
-Use the `Deploy-AzureFunction.ps1` script to automate deployment, wait, and trigger:
+Use the `Deploy-AzureFunction.ps1` script to build, publish, swap the tracer DLL, and deploy:
 
 ```powershell
 ./tracer/tools/Deploy-AzureFunction.ps1 `
@@ -143,20 +65,32 @@ Use the `Deploy-AzureFunction.ps1` script to automate deployment, wait, and trig
 ```
 
 **What this does**:
-1. Runs `dotnet restore` in the sample app directory
-2. Publishes to Azure with `func azure functionapp publish`
-3. Waits 60 seconds (default) for worker process to restart
-4. Triggers the HTTP endpoint and captures execution timestamp
-5. Outputs a result object for pipeline usage
+1. Publishes the sample app with `dotnet publish -c Release`
+2. Builds `Datadog.Trace` (net6.0) from local source
+3. Copies the locally-built `Datadog.Trace.dll` into the publish output at `datadog/net6.0/`
+4. Zips the publish output
+5. Deploys to Azure with `az functionapp deployment source config-zip`
+6. Waits 60 seconds (default) for worker process to restart
+7. Triggers the HTTP endpoint and captures execution timestamp
 
 **Options**:
-- `-SkipBuild` - Skip `dotnet restore`
-- `-SkipWait` - Skip 2-minute wait (not recommended)
+- `-SkipTracerBuild` - Skip building Datadog.Trace (use previously-built version)
+- `-TracerSourcePath "<path>"` - Custom path to Datadog.Trace project (defaults to `tracer/src/Datadog.Trace`)
+- `-TargetFramework "net6.0"` - Target framework for building the tracer (default: `net6.0`)
+- `-SkipWait` - Skip post-deployment wait (not recommended)
 - `-WaitSeconds 60` - Custom wait duration
 - `-SkipTrigger` - Skip HTTP trigger
 - `-TriggerUrl "https://..."` - Custom trigger URL
 
 **Note**: `-AppName` and `-ResourceGroup` are required parameters.
+
+**Verify environment variables are configured** (skip if already done on a previous deploy):
+```powershell
+$envCheck = ./.claude/skills/azure-functions/Test-EnvVars.ps1 -AppName "<app-name>" -ResourceGroup "<resource-group>"
+if (-not $envCheck.AllRequiredPresent) {
+    Write-Warning "Required environment variables are missing. Run '/azure-functions configure' first, or proceed if you plan to configure after deploying."
+}
+```
 
 **Pipeline usage** (save output for log analysis):
 ```powershell
@@ -166,7 +100,7 @@ $deploy = ./tracer/tools/Deploy-AzureFunction.ps1 `
   -SampleAppPath "<path-to-sample-app>"
 ```
 
-### 3. Configure Environment Variables
+### 2. Configure Environment Variables
 
 Configure Datadog instrumentation environment variables for an Azure Function App using `Set-EnvVars.ps1`:
 
@@ -213,7 +147,7 @@ Configure Datadog instrumentation environment variables for an Azure Function Ap
 
 **Complete reference**: See [environment-variables.md](environment-variables.md) for all available variables.
 
-### 4. Test Function
+### 3. Test Function
 
 Trigger an already-deployed function and capture the execution timestamp. Useful for re-testing after a deploy, or testing an app that was deployed earlier.
 
@@ -238,9 +172,9 @@ Write-Host "Execution timestamp (UTC): $timestamp"
 
 Save the timestamp — you'll need it for log filtering in the next step.
 
-**Note**: The Deploy script (step 2) already triggers and captures a timestamp. Use this step when you want to re-test without redeploying.
+**Note**: The Deploy script (step 1) already triggers and captures a timestamp. Use this step when you want to re-test without redeploying.
 
-### 5. Download and Analyze Logs
+### 4. Download and Analyze Logs
 
 Use the `Get-AzureFunctionLogs.ps1` script to download, extract, and analyze logs:
 
@@ -293,6 +227,47 @@ $deploy = ./tracer/tools/Deploy-AzureFunction.ps1 `
 - **Healthy trace**: Worker spans have same `t_id` as host, `p_id` matching host span IDs
 - **Broken trace**: Worker spans have different `t_id` or `p_id: null` (orphaned root)
 
+### 5. Build NuGet Package (Optional - for NuGet package testing only)
+
+This step is only needed when testing changes to the `Datadog.AzureFunctions` NuGet package structure itself. For testing tracer code changes, skip this step and use the Deploy workflow above.
+
+**CRITICAL**: Before building, verify that `tracer/src/Datadog.AzureFunctions/Datadog.AzureFunctions.csproj` uses **PackageReference** (not ProjectReference) for `Datadog.Trace` and `Datadog.Trace.Annotations`. This ensures the locally-built package references the latest releases from nuget.org instead of building them from source.
+
+**Check the .csproj** — it should contain:
+```xml
+<PackageReference Include="Datadog.Trace" Version="*"/>
+<PackageReference Include="Datadog.Trace.Annotations" Version="*" />
+```
+
+If instead it contains **ProjectReference** lines like these, replace them with the PackageReference lines above:
+```xml
+<!-- These are the production references — replace for local testing: -->
+<ProjectReference Include="$(MSBuildThisFileDirectory)..\Datadog.Trace.Manual\Datadog.Trace.Manual.csproj" />
+<ProjectReference Include="$(MSBuildThisFileDirectory)..\Datadog.Trace.Annotations\Datadog.Trace.Annotations.csproj" />
+```
+
+**IMPORTANT**: The PackageReference change is for local testing only. Do NOT commit it. If it's already using PackageReference, no change is needed.
+
+Build the `Datadog.AzureFunctions` NuGet package with your changes:
+
+```powershell
+./tracer/tools/Build-AzureFunctionsNuget.ps1 -CopyTo <output-dir>
+```
+
+**What this does**:
+1. (If `-BuildId` specified and files not already downloaded) Downloads bundle from Azure DevOps build once
+2. Generates a unique prerelease version from a timestamp (e.g. `3.38.0-dev20260209143022`)
+3. Cleans previous builds
+4. Builds `Datadog.Trace` (net6.0)
+5. Publishes to bundle folder
+6. Packages `Datadog.AzureFunctions.nupkg` with the generated version (referencing latest nuget.org releases)
+7. Copies to the directory specified by `-CopyTo`
+
+**Options**:
+- `-CopyTo <output-dir>` - Copy the built package to the specified directory
+- `-Version '3.38.0-dev.custom'` - Use a specific version instead of auto-generating
+- `-BuildId 12345` - One-time download of bundle files from Azure DevOps build
+
 ## Verification Checklist
 
 After deployment and testing:
@@ -326,34 +301,33 @@ If the app is running but not responding:
 az functionapp restart --name <app-name> --resource-group <resource-group>
 ```
 
-### Deployment Fails (`func azure functionapp publish`)
+### Deployment Fails
 
-If the publish command fails, diagnose with:
+If `az functionapp deployment source config-zip` fails:
 ```bash
 # Check recent deployment status
 az functionapp deployment list \
   --name <app-name> \
   --resource-group <resource-group> \
   --query "[0].{status:status, message:message, startTime:startTime}" -o table
-
-# Stream live logs to see startup errors
-func azure functionapp logstream <app-name>
 ```
 
 Common causes:
 - **Auth expired**: Run `az login` and retry
 - **App not running**: Start it first with `az functionapp start --name <app-name> --resource-group <resource-group>`
-- **Build errors**: Check `dotnet restore` output in the sample app directory
+- **Zip structure wrong**: Verify `host.json` exists at root of publish output (check the temp publish dir on failure)
+- **Build errors**: Check `dotnet publish` output
 
 ### Wrong Tracer Version After Deployment
+
 ```bash
 # Check all worker initializations
 grep "Assembly metadata" LogFiles/datadog/dotnet-tracer-managed-dotnet-*.log
-
-# If old version, rebuild from the dd-trace-dotnet repo root (each build gets a unique version, no cache issues)
-./tracer/tools/Build-AzureFunctionsNuget.ps1 -CopyTo <output-dir> -Verbose
-# Then restore and redeploy the sample app
 ```
+
+If old version appears:
+1. Rebuild the tracer: `dotnet build tracer/src/Datadog.Trace -c Release -f net6.0`
+2. Re-run `Deploy-AzureFunction.ps1` (or use `-SkipTracerBuild` if you just built it manually)
 
 ### Traces Not Appearing in Datadog
 
