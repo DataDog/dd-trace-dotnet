@@ -126,10 +126,7 @@ internal sealed class RuntimeMetricsPolyfill : IDisposable
             unit: "{contention}",
             description: "The number of times there was contention when trying to acquire a monitor lock since the process has started.");
 
-        // .NET 9 uses ObservableCounter here, but thread count can decrease when threads
-        // are retired. ObservableCounter + delta temporality produces negative deltas in that
-        // case. Use ObservableGauge so the pipeline reports the last observed value directly.
-        _meter.CreateObservableGauge(
+        _meter.CreateObservableCounter(
             "dotnet.thread_pool.thread.count",
             () => (long)ThreadPool.ThreadCount,
             unit: "{thread}",
@@ -141,9 +138,7 @@ internal sealed class RuntimeMetricsPolyfill : IDisposable
             unit: "{work_item}",
             description: "The number of work items that the thread pool has completed since the process has started.");
 
-        // .NET 9 uses ObservableCounter here, but queue length can decrease as items are
-        // dequeued. Use ObservableGauge to avoid negative deltas (same rationale as thread.count).
-        _meter.CreateObservableGauge(
+        _meter.CreateObservableCounter(
             "dotnet.thread_pool.queue.length",
             () => ThreadPool.PendingWorkItemCount,
             unit: "{work_item}",
