@@ -38,21 +38,10 @@ namespace Datadog.Trace.Configuration.Schema
             // Calculate service names and source metadata once, to avoid allocations with every call
             var useSuffix = version == SchemaVersion.V0 && !removeClientServiceNamesEnabled;
 
-            ServiceNameMetadata Resolve(string integrationKey)
-            {
-                if (serviceNameMappings is not null && serviceNameMappings.TryGetValue(integrationKey, out var mappedName))
-                {
-                    return new(mappedName, "opt.service_mapping");
-                }
-
-                var name = useSuffix ? $"{defaultServiceName}-{integrationKey}" : defaultServiceName;
-                return new(name, name != defaultServiceName ? integrationKey : null);
-            }
-
             _serviceNameMetadata =
             [
-                Resolve(HttpClientComponent),
-                Resolve(GrpcClientComponent),
+                ServiceNameMetadata.Resolve(HttpClientComponent, defaultServiceName, serviceNameMappings, useSuffix),
+                ServiceNameMetadata.Resolve(GrpcClientComponent, defaultServiceName, serviceNameMappings, useSuffix),
             ];
         }
 

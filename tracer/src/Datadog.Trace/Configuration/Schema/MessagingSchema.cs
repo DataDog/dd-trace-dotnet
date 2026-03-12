@@ -35,30 +35,19 @@ namespace Datadog.Trace.Configuration.Schema
             // Calculate service names and source metadata once, to avoid allocations with every call
             var useSuffix = version == SchemaVersion.V0 && !removeClientServiceNamesEnabled;
 
-            ServiceNameMetadata Resolve(string integrationKey)
-            {
-                if (serviceNameMappings is not null && serviceNameMappings.TryGetValue(integrationKey, out var mappedName))
-                {
-                    return new(mappedName, "opt.service_mapping");
-                }
-
-                var name = useSuffix ? $"{defaultServiceName}-{integrationKey}" : defaultServiceName;
-                return new(name, name != defaultServiceName ? integrationKey : null);
-            }
-
             _serviceNameMetadata =
             [
-                Resolve("aws.eventbridge"),
-                Resolve("aws.kinesis"),
-                Resolve("aws.sns"),
-                Resolve("aws.sqs"),
-                Resolve("aws.stepfunctions"),
-                Resolve("azureeventhubs"),
-                Resolve("azureservicebus"),
-                Resolve("ibmmq"),
-                Resolve("kafka"),
-                Resolve("msmq"),
-                Resolve("rabbitmq"),
+                ServiceNameMetadata.Resolve("aws.eventbridge", defaultServiceName, serviceNameMappings, useSuffix),
+                ServiceNameMetadata.Resolve("aws.kinesis", defaultServiceName, serviceNameMappings, useSuffix),
+                ServiceNameMetadata.Resolve("aws.sns", defaultServiceName, serviceNameMappings, useSuffix),
+                ServiceNameMetadata.Resolve("aws.sqs", defaultServiceName, serviceNameMappings, useSuffix),
+                ServiceNameMetadata.Resolve("aws.stepfunctions", defaultServiceName, serviceNameMappings, useSuffix),
+                ServiceNameMetadata.Resolve("azureeventhubs", defaultServiceName, serviceNameMappings, useSuffix),
+                ServiceNameMetadata.Resolve("azureservicebus", defaultServiceName, serviceNameMappings, useSuffix),
+                ServiceNameMetadata.Resolve("ibmmq", defaultServiceName, serviceNameMappings, useSuffix),
+                ServiceNameMetadata.Resolve("kafka", defaultServiceName, serviceNameMappings, useSuffix),
+                ServiceNameMetadata.Resolve("msmq", defaultServiceName, serviceNameMappings, useSuffix),
+                ServiceNameMetadata.Resolve("rabbitmq", defaultServiceName, serviceNameMappings, useSuffix),
             ];
         }
 
