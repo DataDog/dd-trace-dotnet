@@ -465,7 +465,7 @@ internal static class RaspModule
                         using var stream = await content.ReadAsStreamAsync().ConfigureAwait(false);
                         if (BodyParser.Parse(stream) is { } parsedBody)
                         {
-                            wafArgs[AddressesConstants.DownstreamRequestBody] = parsedBody;
+                            wafArgs[wafAddress] = parsedBody;
                         }
                     }
                 }
