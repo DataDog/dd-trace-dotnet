@@ -1069,24 +1069,10 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        [MemberData(nameof(BooleanTestCases), false)]
+        [MemberData(nameof(BooleanTestCases), true)]
         public void ProcessTagsEnabled(string value, bool expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.PropagateProcessTags, value));
-            var settings = new TracerSettings(source);
-
-            settings.PropagateProcessTags.Should().Be(expected);
-        }
-
-        [Theory]
-        [InlineData(null, false)]
-        [InlineData("", false)]
-        [InlineData("none", false)]
-        [InlineData("all", true)]
-        [InlineData(ConfigurationKeys.PropagateProcessTags, true)]
-        public void ProcessTagsEnabledIfExperimentalEnabled(string value, bool expected)
-        {
-            var source = CreateConfigurationSource((ConfigurationKeys.ExperimentalFeaturesEnabled, value));
             var settings = new TracerSettings(source);
 
             settings.PropagateProcessTags.Should().Be(expected);
