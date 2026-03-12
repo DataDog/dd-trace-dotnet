@@ -62,108 +62,11 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
+# Import shared module
+$modulePath = Join-Path $PSScriptRoot 'AzureDevOpsHelpers.psm1'
+Import-Module $modulePath -Force
+
 #region Helper Functions
-
-function Invoke-AzDevOpsApi {
-    param(
-        [string]$Area,
-        [string]$Resource,
-        [string]$RouteParameters = '',
-        [hashtable]$QueryParameters = @{},
-        [string]$SaveToFile = ''
-    )
-
-    # Build argument array to avoid command injection via Invoke-Expression
-    $azArgs = @(
-        'devops', 'invoke',
-        '--area', $Area,
-        '--resource', $Resource,
-        '--org', 'https://dev.azure.com/datadoghq',
-        '--api-version', '6.0',
-        '--detect', 'false'
-    )
-
-    if ($RouteParameters) {
-        $azArgs += '--route-parameters'
-        # Split space-separated parameters into individual arguments
-        $azArgs += $RouteParameters -split '\s+'
-    }
-
-    if ($QueryParameters.Count -gt 0) {
-        $azArgs += '--query-parameters'
-        foreach ($kvp in $QueryParameters.GetEnumerator()) {
-            $azArgs += "$($kvp.Key)=$($kvp.Value)"
-        }
-    }
-
-    $cmdDisplay = "az $($azArgs -join ' ')"
-    Write-Verbose "Executing: $cmdDisplay"
-
-    # Capture stderr separately so az CLI warnings don't corrupt the JSON output
-    $stderrFile = [System.IO.Path]::GetTempFileName()
-    try {
-        $output = & az @azArgs 2>$stderrFile
-
-        if ($LASTEXITCODE -ne 0) {
-            $stderr = Get-Content -Path $stderrFile -Raw -ErrorAction SilentlyContinue
-            $errorMsg = @"
-Azure DevOps API call failed
-  Command: $cmdDisplay
-  Area: $Area
-  Resource: $Resource
-  Exit Code: $LASTEXITCODE
-  Error: $stderr
-"@
-            throw $errorMsg
-        }
-    }
-    finally {
-        Remove-Item -Path $stderrFile -Force -ErrorAction SilentlyContinue
-    }
-
-    $json = $output | ConvertFrom-Json
-
-    if ($SaveToFile) {
-        $json | ConvertTo-Json -Depth 100 | Set-Content -Path $SaveToFile -Encoding UTF8
-        Write-Verbose "Saved to: $SaveToFile"
-    }
-
-    return $json
-}
-
-function Get-BuildIdFromPR {
-    param([int]$PRNumber)
-
-    Write-Verbose "Resolving build ID from PR #$PRNumber..."
-
-    $stderrFile = [System.IO.Path]::GetTempFileName()
-    try {
-        $checks = & gh pr checks $PRNumber --json name,link 2>$stderrFile
-        if ($LASTEXITCODE -ne 0) {
-            $stderr = Get-Content -Path $stderrFile -Raw -ErrorAction SilentlyContinue
-            throw "Failed to get PR checks: $stderr"
-        }
-    }
-    finally {
-        Remove-Item -Path $stderrFile -Force -ErrorAction SilentlyContinue
-    }
-
-    $checksJson = $checks | ConvertFrom-Json
-    # Find check with Azure DevOps URL (dev.azure.com)
-    $azureCheck = $checksJson | Where-Object { $_.link -like '*dev.azure.com*' } | Select-Object -First 1
-
-    if (-not $azureCheck) {
-        throw "No Azure DevOps check found for PR #$PRNumber"
-    }
-
-    if ($azureCheck.link -match 'buildId=(\d+)') {
-        $buildId = [int]$matches[1]
-        Write-Verbose "Resolved build ID: $buildId from check: $($azureCheck.name)"
-        return $buildId
-    }
-
-    throw "Could not extract build ID from URL: $($azureCheck.link)"
-}
 
 function Extract-FailedTests {
     param([string[]]$Messages)
@@ -456,34 +359,7 @@ function Get-CanceledRecords {
 #endregion
 
 try {
-    # Prerequisite checks
-    if (-not (Get-Command az -ErrorAction SilentlyContinue)) {
-        throw "Azure CLI (az) not found. Install from https://aka.ms/azure-cli"
-    }
-
-    if ($PSCmdlet.ParameterSetName -eq 'ByCurrentBranch' -or $PSCmdlet.ParameterSetName -eq 'ByPullRequest') {
-        if (-not (Get-Command gh -ErrorAction SilentlyContinue)) {
-            throw "GitHub CLI (gh) not found. Install from https://cli.github.com"
-        }
-
-        if ($PSCmdlet.ParameterSetName -eq 'ByCurrentBranch') {
-            Write-Verbose "No arguments provided. Detecting PR for current branch..."
-            $stderrFile = [System.IO.Path]::GetTempFileName()
-            try {
-                $prOutput = & gh pr view --json number -q .number 2>$stderrFile
-                if ($LASTEXITCODE -ne 0) {
-                    throw "No PR found for current branch. Specify -PullRequest or -BuildId."
-                }
-            }
-            finally {
-                Remove-Item -Path $stderrFile -Force -ErrorAction SilentlyContinue
-            }
-            $PullRequest = [int]$prOutput
-            Write-Verbose "Detected PR #$PullRequest for current branch."
-        }
-
-        $BuildId = Get-BuildIdFromPR -PRNumber $PullRequest
-    }
+    $BuildId = Resolve-BuildId -ParameterSetName $PSCmdlet.ParameterSetName -BuildId $BuildId -PullRequest $PullRequest
 
     Write-Host "Analyzing build $BuildId..." -ForegroundColor Cyan
 
