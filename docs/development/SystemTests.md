@@ -34,6 +34,7 @@ The workflow here is:
 
 1. Add `docker_image_artifacts` label to your dd-trace-dotnet PR, this builds and pushes the Docker image
 2. In your system-tests PR *title*, include `[dotnet@your-branch-name]`, this makes system-tests CI to pull that Docker image
+3. The PR's (dev) tests will run against the image created, whereas (prod) runs against master without your changes.
 
 For an example refer to these two PRs:
 
