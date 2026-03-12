@@ -1,6 +1,6 @@
 ---
-name: troubleshoot-ci-build
-description: Troubleshoot CI failures in dd-trace-dotnet Azure DevOps pipeline. Use this skill whenever the user mentions a failing CI build, PR checks failing, Azure DevOps pipeline failures, test failures in CI, or when they share a build ID or PR number and want to understand what went wrong. Analyzes build failures, categorizes them (infrastructure/flaky/real), and provides actionable recommendations.
+name: analyze-azdo-build
+description: Analyze Azure DevOps CI build failures in dd-trace-dotnet pipeline. Use this skill whenever the user mentions a failing CI build, PR checks failing, Azure DevOps pipeline failures, test failures in CI, or when they share a build ID or PR number and want to understand what went wrong. Analyzes build failures, categorizes them (infrastructure/flaky/real), and provides actionable recommendations.
 argument-hint: <pr NUMBER | build BUILD_ID>
 user-invocable: true
 allowed-tools: WebFetch, Bash(pwsh:*), Bash(gh pr checks:*), Bash(az devops invoke:*), Bash(az pipelines build list:*), Bash(az pipelines build show:*), Bash(az pipelines runs artifact list:*), Bash(az pipelines runs list:*), Bash(az pipelines runs show:*)
@@ -248,7 +248,7 @@ For detailed categorization rules, pattern examples, and the decision tree, see 
 
 ### Example 1: Initial Quick Analysis
 
-**Command**: `/troubleshoot-ci-build build 195272`
+**Command**: `/analyze-azdo-build build 195272`
 
 **Phase 1 Output** (shown immediately):
 ```
@@ -288,7 +288,7 @@ What would you like to investigate?
 
 ### Example 2: PR Analysis
 
-**Command**: `/troubleshoot-ci-build pr 7806`
+**Command**: `/analyze-azdo-build pr 7806`
 
 **Output**:
 ```
