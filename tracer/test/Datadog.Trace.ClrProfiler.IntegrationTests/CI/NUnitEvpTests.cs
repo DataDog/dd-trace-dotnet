@@ -284,8 +284,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                 out var sessionWorkingDirectory,
                 out var gitRepositoryUrl,
                 out var gitBranch,
-                out var gitCommitSha);
+                out var gitCommitSha,
+                out var runId);
 
+            Output.WriteLine("RunId: {0}", runId);
             try
             {
                 using (var agent = EnvironmentHelper.GetMockAgent())
@@ -403,6 +405,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                             // Remove EFD tags
                             targetTest.Meta.Remove(TestTags.TestIsNew);
                             targetTest.Meta.Remove(TestTags.TestIsRetry);
+
+                            // Remove test final status
+                            targetTest.Meta.Remove(TestTags.TestFinalStatus);
 
                             // Remove capabilities
                             targetTest.Meta.Remove(CapabilitiesTags.LibraryCapabilitiesAutoTestRetries);

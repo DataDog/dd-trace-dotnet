@@ -25,7 +25,7 @@ namespace Datadog.Trace.Tests.Telemetry
             var collector = new IntegrationTelemetryCollector();
             collector.RecordTracerSettings(new TracerSettings().Manager.InitialMutableSettings);
 
-            collector.GetData();
+            collector.GetIncrementalData();
             collector.HasChanges().Should().BeFalse();
 
             collector.IntegrationRunning(IntegrationId);
@@ -38,12 +38,12 @@ namespace Datadog.Trace.Tests.Telemetry
             var collector = new IntegrationTelemetryCollector();
             collector.RecordTracerSettings(new TracerSettings().Manager.InitialMutableSettings);
 
-            collector.GetData();
+            collector.GetIncrementalData();
             collector.HasChanges().Should().BeFalse();
 
             collector.IntegrationRunning(IntegrationId);
             collector.HasChanges().Should().BeTrue();
-            collector.GetData();
+            collector.GetIncrementalData();
 
             collector.IntegrationRunning(IntegrationId);
             collector.HasChanges().Should().BeFalse();
@@ -55,7 +55,7 @@ namespace Datadog.Trace.Tests.Telemetry
             var collector = new IntegrationTelemetryCollector();
             collector.RecordTracerSettings(new TracerSettings().Manager.InitialMutableSettings);
 
-            collector.GetData();
+            collector.GetIncrementalData();
             collector.HasChanges().Should().BeFalse();
 
             collector.IntegrationGeneratedSpan(IntegrationId);
@@ -68,12 +68,12 @@ namespace Datadog.Trace.Tests.Telemetry
             var collector = new IntegrationTelemetryCollector();
             collector.RecordTracerSettings(new TracerSettings().Manager.InitialMutableSettings);
 
-            collector.GetData();
+            collector.GetIncrementalData();
             collector.HasChanges().Should().BeFalse();
 
             collector.IntegrationGeneratedSpan(IntegrationId);
             collector.HasChanges().Should().BeTrue();
-            collector.GetData();
+            collector.GetIncrementalData();
 
             collector.IntegrationGeneratedSpan(IntegrationId);
             collector.HasChanges().Should().BeFalse();
@@ -85,7 +85,7 @@ namespace Datadog.Trace.Tests.Telemetry
             var collector = new IntegrationTelemetryCollector();
             collector.RecordTracerSettings(new TracerSettings().Manager.InitialMutableSettings);
 
-            collector.GetData();
+            collector.GetIncrementalData();
             collector.HasChanges().Should().BeFalse();
 
             collector.IntegrationDisabledDueToError(IntegrationId, "Testing!");
@@ -98,12 +98,12 @@ namespace Datadog.Trace.Tests.Telemetry
             var collector = new IntegrationTelemetryCollector();
             collector.RecordTracerSettings(new TracerSettings().Manager.InitialMutableSettings);
 
-            collector.GetData();
+            collector.GetIncrementalData();
             collector.HasChanges().Should().BeFalse();
 
             collector.IntegrationDisabledDueToError(IntegrationId, "Testing");
             collector.HasChanges().Should().BeTrue();
-            collector.GetData();
+            collector.GetIncrementalData();
 
             collector.IntegrationDisabledDueToError(IntegrationId, "Another error");
             collector.HasChanges().Should().BeFalse();
@@ -118,7 +118,7 @@ namespace Datadog.Trace.Tests.Telemetry
             collector.IntegrationRunning(IntegrationId);
             collector.IntegrationGeneratedSpan(IntegrationId);
 
-            var data = collector.GetData();
+            var data = collector.GetIncrementalData();
             var integration = data.FirstOrDefault(x => x.Name == IntegrationName);
             integration.Should().NotBeNull();
             integration.AutoEnabled.Should().BeTrue();
@@ -134,7 +134,7 @@ namespace Datadog.Trace.Tests.Telemetry
 
             collector.IntegrationRunning(IntegrationId);
 
-            var data = collector.GetData();
+            var data = collector.GetIncrementalData();
             var integration = data.FirstOrDefault(x => x.Name == IntegrationName);
             integration.Should().NotBeNull();
             integration.AutoEnabled.Should().BeTrue();
@@ -152,7 +152,7 @@ namespace Datadog.Trace.Tests.Telemetry
             collector.IntegrationRunning(IntegrationId);
             collector.IntegrationDisabledDueToError(IntegrationId, error);
 
-            var data = collector.GetData();
+            var data = collector.GetIncrementalData();
             var integration = data.FirstOrDefault(x => x.Name == IntegrationName);
             integration.Should().NotBeNull();
             integration.AutoEnabled.Should().BeTrue();
@@ -171,7 +171,7 @@ namespace Datadog.Trace.Tests.Telemetry
             collector.IntegrationGeneratedSpan(IntegrationId);
             collector.IntegrationDisabledDueToError(IntegrationId, error);
 
-            var data = collector.GetData();
+            var data = collector.GetIncrementalData();
             var integration = data.FirstOrDefault(x => x.Name == IntegrationName);
             integration.Should().NotBeNull();
             integration.AutoEnabled.Should().BeTrue();
@@ -187,29 +187,29 @@ namespace Datadog.Trace.Tests.Telemetry
             collector.RecordTracerSettings(new TracerSettings().Manager.InitialMutableSettings);
 
             // first call
-            collector.GetData().Should().NotBeEmpty();
+            collector.GetIncrementalData().Should().NotBeEmpty();
             // second call
-            collector.GetData().Should().BeNullOrEmpty();
+            collector.GetIncrementalData().Should().BeNullOrEmpty();
 
             // Make change
             collector.IntegrationRunning(IntegrationId);
 
             collector.HasChanges().Should().BeTrue();
-            collector.GetData().Should().ContainSingle().Which.Should().BeEquivalentTo(new { Name = IntegrationName });
+            collector.GetIncrementalData().Should().ContainSingle().Which.Should().BeEquivalentTo(new { Name = IntegrationName });
 
             // Make identical change
             collector.IntegrationRunning(IntegrationId);
-            collector.GetData().Should().BeNullOrEmpty();
+            collector.GetIncrementalData().Should().BeNullOrEmpty();
 
             // new change
             collector.IntegrationGeneratedSpan(IntegrationId);
-            collector.GetData().Should().ContainSingle().Which.Should().BeEquivalentTo(new { Name = IntegrationName });
-            collector.GetData().Should().BeNullOrEmpty();
+            collector.GetIncrementalData().Should().ContainSingle().Which.Should().BeEquivalentTo(new { Name = IntegrationName });
+            collector.GetIncrementalData().Should().BeNullOrEmpty();
 
             // new change
             collector.IntegrationDisabledDueToError(IntegrationId, error);
-            collector.GetData().Should().ContainSingle().Which.Should().BeEquivalentTo(new { Name = IntegrationName });
-            collector.GetData().Should().BeNullOrEmpty();
+            collector.GetIncrementalData().Should().ContainSingle().Which.Should().BeEquivalentTo(new { Name = IntegrationName });
+            collector.GetIncrementalData().Should().BeNullOrEmpty();
         }
     }
 }

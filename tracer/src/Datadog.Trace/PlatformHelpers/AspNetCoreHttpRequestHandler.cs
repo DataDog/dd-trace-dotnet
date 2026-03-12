@@ -112,8 +112,7 @@ namespace Datadog.Trace.PlatformHelpers
             => StartAspNetCorePipelineScope(tracer, security, iast, httpContext, resourceName, new AspNetCoreSingleSpanTags(), useSingleSpanRequestTracking: true);
 #endif
 
-        private Scope StartAspNetCorePipelineScope<T>(Tracer tracer, Security security, Iast.Iast iast, HttpContext httpContext, string resourceName, T tags, bool useSingleSpanRequestTracking)
-            where T : WebTags
+        private Scope StartAspNetCorePipelineScope(Tracer tracer, Security security, Iast.Iast iast, HttpContext httpContext, string resourceName, WebTags tags, bool useSingleSpanRequestTracking)
         {
             var request = httpContext.Request;
             string host = request.Host.Value;

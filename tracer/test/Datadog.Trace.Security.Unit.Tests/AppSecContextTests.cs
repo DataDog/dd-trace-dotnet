@@ -44,15 +44,18 @@ public class AppSecContextTests
 
     private class MockResult : IResult
     {
-        public MockResult(int returnCode, bool timeout)
+        public MockResult(int returnCode, bool timeout, bool truncated = false)
         {
             ReturnCode = (WafReturnCode)returnCode;
             Timeout = timeout;
+            Truncated = truncated;
         }
 
         public WafReturnCode ReturnCode { get; }
 
         public bool Timeout { get; }
+
+        public bool Truncated { get; }
 
         public bool ShouldBlock => throw new System.NotImplementedException();
 

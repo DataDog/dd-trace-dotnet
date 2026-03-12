@@ -124,6 +124,14 @@ Configuration::Configuration()
     _heapSnapshotCheckInterval = ExtractHeapSnapshotCheckInterval();
     _heapSnapshotMemoryPressureThreshold = GetEnvironmentValue(EnvironmentVariables::HeapSnapshotMemoryPressureThreshold, 85);
     _heapHandleLimit = ExtractHeapHandleLimit();
+    bool defaultUseManagedCodeCache =
+    #if ARM64
+        true;
+    #else
+        false;
+    #endif
+    _useManagedCodeCache = GetEnvironmentValue(EnvironmentVariables::UseManagedCodeCache, defaultUseManagedCodeCache);
+    _isMemoryFootprintEnabled = GetEnvironmentValue(EnvironmentVariables::MemoryFootprintEnabled, false);
 }
 
 fs::path Configuration::ExtractLogDirectory()
@@ -312,6 +320,16 @@ std::string const& Configuration::GetApiKey() const
 std::string const& Configuration::GetServiceName() const
 {
     return _serviceName;
+}
+
+bool Configuration::UseManagedCodeCache() const
+{
+    return _useManagedCodeCache;
+}
+
+bool Configuration::IsMemoryFootprintEnabled() const
+{
+    return _isMemoryFootprintEnabled;
 }
 
 bool Configuration::IsAllocationRecorderEnabled() const

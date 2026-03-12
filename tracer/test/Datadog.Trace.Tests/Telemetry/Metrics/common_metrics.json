@@ -740,7 +740,10 @@
         "rule_triggered",
         "request_blocked",
         "waf_timeout",
-        "request_excluded"
+        "request_excluded",
+        "block_failure",
+        "rate_limited",
+        "input_truncated"
       ],
       "metric_type": "count",
       "data_type": "requests",

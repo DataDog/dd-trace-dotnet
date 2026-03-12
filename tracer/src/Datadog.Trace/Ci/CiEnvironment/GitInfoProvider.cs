@@ -14,6 +14,15 @@ internal abstract class GitInfoProvider : IGitInfoProvider
 {
     public bool TryGetFrom(string folder, [NotNullWhen(true)] out IGitInfo? gitInfo)
     {
+        if (!folder.EndsWith("/.git") && !folder.EndsWith("\\.git"))
+        {
+            var tentativeFolder = Path.Combine(folder, ".git");
+            if (Directory.Exists(tentativeFolder))
+            {
+                folder = tentativeFolder;
+            }
+        }
+
         // Try to load git metadata from the folder
         if (TryGetFrom(new DirectoryInfo(folder), out gitInfo))
         {

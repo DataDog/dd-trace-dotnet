@@ -2,7 +2,9 @@
   "solution": {
     "path": "Datadog.Trace.sln",
     "projects": [
+      "tracer\\src\\Datadog.Trace.Annotations\\Datadog.Trace.Annotations.csproj",
       "tracer\\src\\Datadog.Trace.ClrProfiler.Managed.Loader\\Datadog.Trace.ClrProfiler.Managed.Loader.csproj",
+      "tracer\\src\\Datadog.Trace.Manual\\Datadog.Trace.Manual.csproj",
       "tracer\\src\\Datadog.Trace.MSBuild\\Datadog.Trace.MSBuild.csproj",
       "tracer\\src\\Datadog.Trace.SourceGenerators\\Datadog.Trace.SourceGenerators.csproj",
       "tracer\\src\\Datadog.Trace.Tools.Analyzers.CodeFixes\\Datadog.Trace.Tools.Analyzers.CodeFixes.csproj",
@@ -10,7 +12,10 @@
       "tracer\\src\\Datadog.Tracer.Native\\Datadog.Tracer.Native.DLL.vcxproj",
       "tracer\\src\\Datadog.Tracer.Native\\Datadog.Tracer.Native.vcxproj",
       "tracer\\src\\Datadog.Trace\\Datadog.Trace.csproj",
-      "tracer\\test\\Datadog.Trace.SourceGenerators.Tests\\Datadog.Trace.SourceGenerators.Tests.csproj"
+      "tracer\\test\\benchmarks\\Benchmarks.Trace\\Benchmarks.Trace.csproj",
+      "tracer\\test\\Datadog.Trace.SourceGenerators.Tests\\Datadog.Trace.SourceGenerators.Tests.csproj",
+      "tracer\\test\\Datadog.Trace.TestHelpers\\Datadog.Trace.TestHelpers.csproj",
+      "tracer\\test\\Datadog.Trace.Tests\\Datadog.Trace.Tests.csproj"
     ]
   }
 }

@@ -21,6 +21,8 @@ internal interface ITestOptimization
 
     bool IsRunning { get; }
 
+    string RunId { get; }
+
     TestOptimizationSettings Settings { get; }
 
     ITestOptimizationClient Client { get; }

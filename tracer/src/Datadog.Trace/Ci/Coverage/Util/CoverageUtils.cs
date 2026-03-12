@@ -12,6 +12,7 @@ using System.Text;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Coverage.Models.Global;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 internal static class CoverageUtils
@@ -40,7 +41,8 @@ internal static class CoverageUtils
         {
             using var fStream = File.OpenWrite(outputFile);
             using var sWriter = new StreamWriter(fStream, Encoding.UTF8, 4096, false);
-            new JsonSerializer().Serialize(sWriter, globalCoverageInfo);
+            using var jsonWriter = new JsonTextWriter(sWriter) { ArrayPool = JsonArrayPool.Shared };
+            new JsonSerializer().Serialize(jsonWriter, globalCoverageInfo);
             return true;
         }
         catch (Exception ex)
@@ -81,7 +83,7 @@ internal static class CoverageUtils
                 var fileContent = File.ReadAllText(file);
                 try
                 {
-                    if (JsonConvert.DeserializeObject<GlobalCoverageInfo>(fileContent) is { } gCoverageInfo)
+                    if (JsonHelper.DeserializeObject<GlobalCoverageInfo>(fileContent) is { } gCoverageInfo)
                     {
                         globalCoverages.Add(gCoverageInfo);
                     }

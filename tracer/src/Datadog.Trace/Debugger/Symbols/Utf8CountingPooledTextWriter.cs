@@ -8,7 +8,6 @@
 using System;
 using System.IO;
 using System.Text;
-using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
 
 namespace Datadog.Trace.Debugger.Symbols;
 

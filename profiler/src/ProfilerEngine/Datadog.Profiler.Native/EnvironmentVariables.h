@@ -77,6 +77,7 @@ public:
     inline static const shared::WSTRING HeapSnapshotInterval            = WStr("DD_INTERNAL_PROFILING_HEAPSNAPSHOT_INTERVAL");
     inline static const shared::WSTRING HeapSnapshotCheckInterval       = WStr("DD_INTERNAL_PROFILING_HEAPSNAPSHOT_CHECK_INTERVAL");
     inline static const shared::WSTRING HeapSnapshotMemoryPressureThreshold = WStr("DD_INTERNAL_PROFILING_HEAPSNAPSHOT_MEMORY_PRESSURE_THRESHOLD");
+    inline static const shared::WSTRING MemoryFootprintEnabled            = WStr("DD_INTERNAL_PROFILING_MEMORY_FOOTPRINT_ENABLED");
 
     // used for tests only
     inline static const shared::WSTRING ForceHttpSampling           = WStr("DD_INTERNAL_PROFILING_FORCE_HTTP_SAMPLING");
@@ -84,4 +85,5 @@ public:
     inline static const shared::WSTRING CIVisibilityEnabled         = WStr("DD_CIVISIBILITY_ENABLED");
     inline static const shared::WSTRING InternalCIVisibilitySpanId  = WStr("DD_INTERNAL_CIVISIBILITY_SPANID");
     inline static const shared::WSTRING WaitHandleProfilingEnabled  = WStr("DD_INTERNAL_PROFILING_WAITHANDLE_ENABLED");
+    inline static const shared::WSTRING UseManagedCodeCache         = WStr("DD_INTERNAL_PROFILING_USE_MANAGED_CODE_CACHE");
 };

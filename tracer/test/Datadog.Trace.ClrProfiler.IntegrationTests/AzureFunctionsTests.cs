@@ -397,6 +397,66 @@ public abstract class AzureFunctionsTests : TestHelper
             }
         }
     }
+
+    [UsesVerify]
+    [Collection(nameof(AzureFunctionsTestsCollection))]
+    public class IsolatedRuntimeV4AzureApim : AzureFunctionsTests
+    {
+        public IsolatedRuntimeV4AzureApim(ITestOutputHelper output)
+            : base("AzureFunctions.V4Isolated", output)
+        {
+            SetEnvironmentVariable("FUNCTIONS_WORKER_RUNTIME", "dotnet-isolated");
+            SetEnvironmentVariable("FUNCTIONS_EXTENSION_VERSION", "~4");
+            SetEnvironmentVariable("DD_TRACE_INFERRED_PROXY_SERVICES_ENABLED", "true");
+        }
+
+        [SkippableFact]
+        [Trait("Category", "EndToEnd")]
+        [Trait("Category", "AzureFunctions")]
+        [Trait("RunOnWindows", "True")]
+        public async Task SubmitsTracesWithAzureApimHeaders()
+        {
+            // Enable APIM testing - this makes TriggerAllTimer call CallFunctionHttpWithProxy
+            SetEnvironmentVariable("DD_TEST_APIM_ENABLED", "1");
+
+            using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
+            using (await RunAzureFunctionAndWaitForExit(agent, expectedExitCode: -1))
+            {
+                // 6 spans: Timer TriggerAllTimer, http.request, azure.apim, host span (GET /api/simple),
+                // worker span (Http SimpleHttpTrigger), Manual inside Simple.
+                const int expectedSpanCount = 6;
+                var spans = await agent.WaitForSpansAsync(expectedSpanCount);
+                var filteredSpans = spans.Where(s => !s.Resource.Equals("Timer ExitApp", StringComparison.OrdinalIgnoreCase)).ToImmutableList();
+
+                using var assertionScope = new AssertionScope();
+
+                filteredSpans.Count.Should().Be(expectedSpanCount);
+
+                filteredSpans.Should().ContainSingle(s => s.Name == "azure.apim");
+
+                // Verify we have azure_functions.invoke spans: host (GET /api/simple), worker (Http SimpleHttpTrigger), Timer TriggerAllTimer
+                var functionSpans = filteredSpans.Where(s => s.Name == "azure_functions.invoke").ToList();
+                functionSpans.Should().HaveCount(3);
+                functionSpans.Should().Contain(s => s.Resource.Contains("TriggerAllTimer"));
+                functionSpans.Should().Contain(s => s.Resource.Contains("SimpleHttpTrigger"));
+                functionSpans.Should().Contain(s => s.Resource.Contains("GET /api/simple"));
+
+                // Verify the http.request span
+                var httpSpan = filteredSpans.Should().ContainSingle(s => s.Name == "http.request").Subject;
+                httpSpan.Tags.Should().ContainKey("http.url");
+
+                var settings = VerifyHelper.GetSpanVerifierSettings();
+                settings.AddSimpleScrubber("aas.environment.runtime: .NET Core", "aas.environment.runtime: .NET");
+                settings.AddRegexScrubber(
+                    new(@"Microsoft.Azure.WebJobs.Extensions, Version=\d.\d.\d.\d"),
+                    @"Microsoft.Azure.WebJobs.Extensions, Version=0.0.0.0");
+                settings.AddRegexScrubber(new(@" in .+\.cs:line \d+"), string.Empty);
+                await VerifyHelper.VerifySpans(filteredSpans, settings)
+                                    .UseFileName($"{nameof(AzureFunctionsTests)}.Isolated.V4.AzureApim")
+                                    .DisableRequireUniquePrefix();
+            }
+        }
+    }
 #endif
 
     [CollectionDefinition(nameof(AzureFunctionsTestsCollection), DisableParallelization = true)]

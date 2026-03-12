@@ -4,27 +4,19 @@
 // </copyright>
 #nullable enable
 
-using System.Linq;
+using System.Collections.Generic;
 
 namespace Datadog.Trace.HttpOverStreams;
 
-internal class MinimalAgentHeaderHelper : HttpHeaderHelperBase
+internal sealed class MinimalAgentHeaderHelper : HttpHeaderHelperBase
 {
-    private static string? _metadataHeaders = null;
+    public static readonly MinimalAgentHeaderHelper Instance = new();
 
-    protected override string MetadataHeaders
+    private MinimalAgentHeaderHelper()
     {
-        get
-        {
-            if (_metadataHeaders == null)
-            {
-                var headers = AgentHttpHeaderNames.MinimalHeaders.Select(kvp => $"{kvp.Key}: {kvp.Value}{DatadogHttpValues.CrLf}");
-                _metadataHeaders = string.Concat(headers);
-            }
-
-            return _metadataHeaders;
-        }
     }
 
-    protected override string ContentType => "application/json";
+    public override KeyValuePair<string, string>[] DefaultHeaders => AgentHttpHeaderNames.MinimalHeaders;
+
+    protected override string HttpSerializedDefaultHeaders => AgentHttpHeaderNames.HttpSerializedMinimalHeaders;
 }
