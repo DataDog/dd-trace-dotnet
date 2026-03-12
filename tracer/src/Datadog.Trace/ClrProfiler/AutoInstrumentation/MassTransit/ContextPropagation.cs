@@ -48,18 +48,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
                     var allHeaders = _headersProxy.GetAll();
                     if (allHeaders != null)
                     {
-                        foreach (var headerValue in allHeaders)
+                        foreach (var item in allHeaders)
                         {
-                            if (headerValue == null)
+                            // Items are KeyValuePair<string, object> — cast directly, no duck typing needed
+                            if (item is System.Collections.Generic.KeyValuePair<string, object> kvp
+                                && string.Equals(kvp.Key, name, StringComparison.OrdinalIgnoreCase)
+                                && kvp.Value != null)
                             {
-                                continue;
-                            }
-
-                            // Duck cast HeaderValue struct to get Key and Value
-                            var hv = headerValue.DuckCast<IHeaderValue>();
-                            if (string.Equals(hv?.Key, name, StringComparison.OrdinalIgnoreCase))
-                            {
-                                result = hv?.Value?.ToString();
+                                result = kvp.Value.ToString();
                                 break;
                             }
                         }

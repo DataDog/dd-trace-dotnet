@@ -10,9 +10,9 @@ using System.Linq;
 using System.Threading;
 using Datadog.Trace.Activity;
 using Datadog.Trace.Activity.DuckTypes;
-
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.DuckTypes;
 using Datadog.Trace.DuckTyping;
+
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 

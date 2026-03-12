@@ -8,7 +8,9 @@
 #if !NETFRAMEWORK
 using System;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.DuckTypes;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 
@@ -215,25 +217,26 @@ namespace Datadog.Trace.DiagnosticListeners
                 "MassTransitDiagnosticObserver.OnReceiveStart: Processing ReceiveContext, ArgType={ArgType}",
                 arg.GetType().FullName);
 
-            // For Receive events, arg IS the ReceiveContext directly (e.g., InMemoryReceiveContext, RabbitMqReceiveContext)
-            // Extract InputAddress and TransportHeaders from the ReceiveContext
-            var inputAddress = MassTransitCommon.TryGetProperty<Uri>(arg, "InputAddress")?.ToString();
-            var transportHeaders = MassTransitCommon.TryGetProperty<object>(arg, "TransportHeaders");
+            // Duck cast arg to IReceiveContext — BaseReceiveContext.TransportHeaders is public and
+            // returns Headers (JsonTransportHeaders). IReceiveContext.TransportHeaders is duck typed
+            // to IHeaders which exposes GetAll() returning KeyValuePair<string, object> items.
+            var receiveCtx = arg.DuckCast<IReceiveContext>();
+            var inputAddress = receiveCtx?.InputAddress?.ToString();
+            var transportHeaders = receiveCtx?.TransportHeaders;
 
             Log.Debug(
                 "MassTransitDiagnosticObserver.OnReceiveStart: InputAddress={InputAddress}, HasTransportHeaders={HasHeaders}",
                 inputAddress ?? "null",
                 transportHeaders != null);
 
-            // Extract parent context for distributed tracing.
-            // The InMemoryTransportMessageIntegration constructor hook injects trace headers into
-            // InMemoryTransportMessage.Headers for all MT7 versions, so the same header-based
-            // extraction path works for both in-memory and real transports.
+            // Pass transportHeaders (already IHeaders proxy) directly to the extract adapter.
+            // ContextPropagationExtractAdapter.GetValues() iterates GetAll() and casts each item
+            // as KeyValuePair<string, object> — no duck typing of items needed.
             PropagationContext parentContext = default;
             if (transportHeaders != null)
             {
-                var headersWrapper = new { Headers = transportHeaders };
-                parentContext = MassTransitCommon.ExtractTraceContext(Tracer.Instance, headersWrapper);
+                var adapter = new ContextPropagationExtractAdapter(transportHeaders);
+                parentContext = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(adapter);
             }
 
             if (parentContext.SpanContext == null)
