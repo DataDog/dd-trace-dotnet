@@ -68,6 +68,10 @@ namespace Datadog.Trace.Agent
 
         public TracesEncoding TracesEncoding => _tracesEncoding;
 
+        // Ping() has historically been used to check if the Datadog Trace Agent
+        // by sending an empty payload to the trace endpoint. This check doesn't
+        // make sense in the context of OTLP so skip this check and immediately
+        // return true.
         public Task<bool> Ping() => Task.FromResult(true);
 
         public Task<bool> SendStatsAsync(StatsBuffer stats, long bucketDuration)
@@ -198,6 +202,8 @@ namespace Datadog.Trace.Agent
             }
 
             response?.Dispose();
+
+            // Retries are handled by the OtlpExporter, so either indicate success or failure with no retry
             return success ? SendResult.Success : SendResult.Failed_DontRetry;
         }
 #else
@@ -296,13 +302,6 @@ namespace Datadog.Trace.Agent
 
                     // TODO: Telemetry - Record OTLP Traces API error with status code
                     return finalTry ? SendResult.Failed_DontRetry : SendResult.Failed_CanRetry;
-                }
-
-                if (response.StatusCode == 429 || response.StatusCode == 413 || response.StatusCode == 408)
-                {
-                    var retryAfter = response.GetHeader("Retry-After");
-                    _log.Debug<int, string>("Failed to submit {Count} traces. Agent responded with 429 Too Many Requests, retry after {RetryAfter}", numberOfTraces, retryAfter ?? "unspecified");
-                    return SendResult.Failed_DontRetry;
                 }
             }
             finally

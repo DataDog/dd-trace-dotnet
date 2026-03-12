@@ -5,7 +5,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.IO;
 using System.Text;
 using Datadog.Trace.Agent;
@@ -25,37 +24,6 @@ namespace Datadog.Trace.OpenTelemetry.Traces;
 /// compliant with the OpenTelemetry ExportTracesServiceRequest schema.
 /// See: https://github.com/open-telemetry/opentelemetry-proto/blob/main/opentelemetry/proto/trace/v1/trace.proto
 /// </summary>
-/// <example>
-/// Usage example:
-/// <code>
-/// // Create trace and span IDs
-/// var traceId = new byte[16]; // 16-byte trace ID
-/// var spanId = new byte[8];   // 8-byte span ID
-///
-/// // Create a span
-/// var span = new OtlpSpan(
-///     traceId: traceId,
-///     spanId: spanId,
-///     name: "my-operation",
-///     kind: SpanKind.Server,
-///     startTimeUnixNano: 1234567890000000000UL,
-///     endTimeUnixNano: 1234567891000000000UL,
-///     attributes: new[] { new KeyValue("http.method", "GET") }
-/// );
-///
-/// // Create scope and resource
-/// var scope = new InstrumentationScope("my-library", "1.0.0");
-/// var scopeSpans = new ScopeSpans(scope, new[] { span });
-///
-/// var resource = new OtlpResource(new[] { new KeyValue("service.name", "my-service") });
-/// var resourceSpans = new ResourceSpans(resource, new[] { scopeSpans });
-///
-/// var tracesData = new TracesData(new[] { resourceSpans });
-///
-/// // Serialize to JSON
-/// byte[] jsonBytes = OtlpTracesJsonSerializer.SerializeToJson(tracesData);
-/// </code>
-/// </example>
 internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
 {
     internal static readonly int SpanAttributeCountLimit = 128;
@@ -63,6 +31,9 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
     internal static readonly int LinkCountLimit = 128;
     internal static readonly int AttributePerEventCountLimit = 128;
     internal static readonly int AttributePerLinkCountLimit = 128;
+
+    // Cache several strings required for encoding OTLP JSON
+    private readonly byte[] _closingTracesBytes = EncodingHelpers.Utf8NoBom.GetBytes("]}]}]}");
 
     public int HeaderSize => 0;
 
@@ -634,7 +605,7 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
         // jsonWriter.WriteEndObject(); // Close ResourceSpans message
         // jsonWriter.WriteEndArray(); // Close repeated ResourceSpans field
         // jsonWriter.WriteEndObject(); // Close ExportTraceServiceRequest message
-        var buffer = Encoding.UTF8.GetBytes("]}]}]}");
+        var buffer = _closingTracesBytes;
 
         // Get the length of the written JSON
         var length = buffer.Length;
