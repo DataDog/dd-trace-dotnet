@@ -38,7 +38,7 @@ internal sealed class NullConfigurationTelemetry : IConfigurationTelemetry
     {
     }
 
-    public ICollection<ConfigurationKeyValue>? GetData() => null;
+    public ICollection<ConfigurationKeyValue>? GetIncrementalData() => null;
 
     public ICollection<ConfigurationKeyValue>? GetFullData() => null;
 

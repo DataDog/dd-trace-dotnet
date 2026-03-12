@@ -630,7 +630,7 @@ public class ConfigurationBuilderTests
                              converter: _nullableConverter);
 
             actual.Should().Be(_default);
-            var finalValue = telemetry.GetData()
+            var finalValue = telemetry.GetIncrementalData()
                                       .Where(x => x.Name == key)
                                       .OrderByDescending(x => x.SeqId)
                                       .FirstOrDefault()
@@ -658,7 +658,7 @@ public class ConfigurationBuilderTests
                              converter: _nullableConverter);
 
             actual.Should().Be(_default);
-            var finalValue = telemetry.GetData()
+            var finalValue = telemetry.GetIncrementalData()
                                       .Where(x => x.Name == key)
                                       .OrderByDescending(x => x.SeqId)
                                       .FirstOrDefault()
@@ -910,7 +910,7 @@ public class ConfigurationBuilderTests
                         .WithDefault(expected);
 
             actual.Should().Be(expected);
-            telemetry.GetData()
+            telemetry.GetIncrementalData()
                      .Should()
                      .ContainSingle()
                      .Which.Should()
@@ -1160,7 +1160,7 @@ public class ConfigurationBuilderTests
                         .WithDefault(new(null, expected));
 
             actual.Should().BeNull();
-            telemetry.GetData()
+            telemetry.GetIncrementalData()
                      .Should()
                      .ContainSingle()
                      .Which.Should()
