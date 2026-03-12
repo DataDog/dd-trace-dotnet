@@ -95,14 +95,14 @@ namespace Datadog.Trace.Configuration
                         agentPort: rawSettings.TraceAgentPort,
                         tracesUnixDomainSocketPath: rawSettings.TracesUnixDomainSocketPath);
 
-            TracesEncoding = traceSettings.Encoding;
+            TracesEncoding = TracesEncoding.DatadogV0_4;
             TracesTransport = traceSettings.Transport;
             TracesPipeName = traceSettings.PipeName;
             TracesUnixDomainSocketPath = traceSettings.UdsPath;
             AgentUri = traceSettings.AgentUri;
 
             var otlpTraceSettings = GetOtlpTracesTransport(signalEndpoint: rawSettings.OtlpTracesEndpoint, generalEndpoint: rawSettings.OtlpEndpoint, signalProtocol: rawSettings.OtlpTracesProtocol, generalProtocol: rawSettings.OtlpProtocol);
-            OtlpTracesEndpoint = otlpTraceSettings.AgentUri;
+            OtlpTracesEndpoint = otlpTraceSettings.OtlpSignalEndpoint;
             OtlpTracesProtocol = otlpTraceSettings.OtlpProtocol;
             var tracesHeaders = StringConfigurationSource.ParseCustomKeyValues(rawSettings.OtlpTracesHeaders, allowOptionalMappings: false, separator: '=')
                                 ?? StringConfigurationSource.ParseCustomKeyValues(rawSettings.OtlpHeaders, allowOptionalMappings: false, separator: '=');
@@ -111,7 +111,12 @@ namespace Datadog.Trace.Configuration
 
             if (rawSettings.OtelTracesExporter == "otlp")
             {
-                TracesEncoding = otlpTraceSettings.Encoding;
+                TracesEncoding = otlpTraceSettings.OtlpProtocol switch
+                {
+                    OtlpProtocol.HttpProtobuf => TracesEncoding.OtlpProtobuf,
+                    OtlpProtocol.HttpJson => TracesEncoding.OtlpJson,
+                    _ => TracesEncoding.DatadogV0_4,
+                };
             }
 
             var metricsSettings = ConfigureMetricsTransport(
@@ -131,7 +136,7 @@ namespace Datadog.Trace.Configuration
                                 : (rawSettings.DogStatsdPort > 0 ? rawSettings.DogStatsdPort : DefaultDogstatsdPort);
 
             var otlpMetricsSettings = GetOtlpMetricsTransport(signalEndpoint: rawSettings.OtlpMetricsEndpoint, generalEndpoint: rawSettings.OtlpEndpoint, signalProtocol: rawSettings.OtlpMetricsProtocol, generalProtocol: rawSettings.OtlpProtocol);
-            OtlpMetricsEndpoint = otlpMetricsSettings.AgentUri;
+            OtlpMetricsEndpoint = otlpMetricsSettings.OtlpSignalEndpoint;
             OtlpMetricsProtocol = otlpMetricsSettings.OtlpProtocol;
             var metricsHeaders = StringConfigurationSource.ParseCustomKeyValues(rawSettings.OtlpMetricsHeaders, allowOptionalMappings: false, separator: '=')
                                 ?? StringConfigurationSource.ParseCustomKeyValues(rawSettings.OtlpHeaders, allowOptionalMappings: false, separator: '=');

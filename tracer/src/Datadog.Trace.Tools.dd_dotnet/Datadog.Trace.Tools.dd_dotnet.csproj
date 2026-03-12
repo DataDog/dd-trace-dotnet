@@ -55,7 +55,6 @@
 
   <ItemGroup>
     <Compile Include="..\Datadog.Trace\TracerConstants.cs" Link="TracerConstants.cs" />
-    <Compile Include="..\Datadog.Trace\Agent\TracesEncoding.cs" Link="TracesEncoding.cs" />
     <Compile Include="..\Datadog.Trace\Agent\TracesTransportType.cs" Link="TracesTransportType.cs" />
     <Compile Include="..\Datadog.Trace\Configuration\DeprecationMessages.cs" Link="DeprecationMessages.cs" />
     <Compile Include="..\Datadog.Trace\Configuration\ExporterSettings.Shared.cs" Link="ExporterSettings.Shared.cs" />
