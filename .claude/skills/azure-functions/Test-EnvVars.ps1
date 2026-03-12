@@ -76,10 +76,15 @@ try {
         --name $AppName `
         --resource-group $ResourceGroup `
         --query "{state:state, kind:kind}" `
-        -o json 2>&1
+        -o json 2>$null
 
     if ($LASTEXITCODE -ne 0) {
-        Write-Error "Failed to query function app '$AppName' in resource group '$ResourceGroup': $appInfo"
+        $errMsg = az functionapp show `
+            --name $AppName `
+            --resource-group $ResourceGroup `
+            --query "{state:state, kind:kind}" `
+            -o json 2>&1
+        Write-Error "Failed to query function app '$AppName' in resource group '$ResourceGroup': $errMsg"
         exit 1
     }
 
@@ -109,10 +114,15 @@ try {
         --name $AppName `
         --resource-group $ResourceGroup `
         --query "[?name!='DD_API_KEY']" `
-        -o json 2>&1
+        -o json 2>$null
 
     if ($LASTEXITCODE -ne 0) {
-        Write-Error "Failed to fetch app settings: $settingsJson"
+        $errMsg = az functionapp config appsettings list `
+            --name $AppName `
+            --resource-group $ResourceGroup `
+            --query "[?name!='DD_API_KEY']" `
+            -o json 2>&1
+        Write-Error "Failed to fetch app settings: $errMsg"
         exit 1
     }
 
@@ -123,10 +133,15 @@ try {
         --name $AppName `
         --resource-group $ResourceGroup `
         --query "[?name=='DD_API_KEY'].name" `
-        -o tsv 2>&1
+        -o tsv 2>$null
 
     if ($LASTEXITCODE -ne 0) {
-        Write-Error "Failed to check DD_API_KEY existence: $apiKeyExists"
+        $errMsg = az functionapp config appsettings list `
+            --name $AppName `
+            --resource-group $ResourceGroup `
+            --query "[?name=='DD_API_KEY'].name" `
+            -o tsv 2>&1
+        Write-Error "Failed to check DD_API_KEY existence: $errMsg"
         exit 1
     }
 }

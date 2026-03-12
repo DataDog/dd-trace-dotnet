@@ -97,10 +97,15 @@ try {
         --name $AppName `
         --resource-group $ResourceGroup `
         --query "{state:state, kind:kind}" `
-        -o json 2>&1
+        -o json 2>$null
 
     if ($LASTEXITCODE -ne 0) {
-        Write-Error "Failed to query function app '$AppName' in resource group '$ResourceGroup': $appInfo"
+        $errMsg = az functionapp show `
+            --name $AppName `
+            --resource-group $ResourceGroup `
+            --query "{state:state, kind:kind}" `
+            -o json 2>&1
+        Write-Error "Failed to query function app '$AppName' in resource group '$ResourceGroup': $errMsg"
         exit 1
     }
 
@@ -198,14 +203,19 @@ if ($PSCmdlet.ShouldProcess("$AppName ($platform)", "Set $($settings.Count) app 
     }
 
     try {
-        $result = az functionapp config appsettings set `
+        $null = az functionapp config appsettings set `
             --name $AppName `
             --resource-group $ResourceGroup `
             --settings @settingsArgs `
-            -o json 2>&1
+            -o json 2>$null
 
         if ($LASTEXITCODE -ne 0) {
-            Write-Error "Failed to set app settings: $result"
+            $errMsg = az functionapp config appsettings set `
+                --name $AppName `
+                --resource-group $ResourceGroup `
+                --settings @settingsArgs `
+                -o json 2>&1
+            Write-Error "Failed to set app settings: $errMsg"
             exit 1
         }
 
