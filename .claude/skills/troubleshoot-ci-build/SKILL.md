@@ -137,6 +137,31 @@ If snapshot failures are detected:
    - **Prerequisite**: The build must have run far enough to produce snapshot artifacts (even if tests failed)
    - If the changes are unintentional, the developer should investigate the code change instead of updating snapshots
 
+### Retry Failed Stages (Only If User Requests)
+
+When the user selects "Retry failed stages" from the investigation menu:
+
+1. **Show what would be retried** — Run with `-WhatIf` first to preview:
+   ```bash
+   pwsh -NoProfile -Command ".\tracer\tools\Retry-AzureDevOpsFailedStages.ps1 -BuildId $BUILD_ID -All -WhatIf"
+   ```
+
+2. **Confirm with user** — Show the list of stages that would be retried and ask for confirmation.
+
+3. **Run the retry** — After confirmation:
+   ```bash
+   pwsh -NoProfile -Command ".\tracer\tools\Retry-AzureDevOpsFailedStages.ps1 -BuildId $BUILD_ID -All"
+   ```
+
+   Or for specific stages:
+   ```bash
+   pwsh -NoProfile -Command ".\tracer\tools\Retry-AzureDevOpsFailedStages.ps1 -BuildId $BUILD_ID -Stage stage_identifier_1, stage_identifier_2"
+   ```
+
+4. **Optionally re-check status** — After retrying, offer to re-run the analysis script later to check the new results.
+
+**Note**: Use `-ForceRetryAllJobs` if the user wants to rerun all jobs in a stage, not just the failed ones.
+
 ### PHASE 2: Deep Analysis (Only If Requested)
 
 **DO NOT perform these steps automatically**. Only do them if the user asks for:
@@ -184,7 +209,7 @@ Structure the output as:
 5. **Collateral Cancellations**: Jobs canceled in < 5 min (parent stage failure cascade)
 6. **Failed Tests**: Specific test names extracted from error messages
 7. **Snapshot Mismatches** (if detected): List affected tests and show `UpdateSnapshotsFromBuild` command
-8. **Investigation menu**: Categorize failures / View logs / Full analysis / Update snapshots (if applicable)
+8. **Investigation menu**: Categorize failures / View logs / Full analysis / Retry failed stages / Update snapshots (if applicable)
 
 ### Phase 2: Detailed Output (Only If User Requests)
 
@@ -258,6 +283,7 @@ What would you like to investigate?
 1. Categorize failures
 2. View specific logs
 3. Show full analysis
+4. Retry failed stages
 ```
 
 ### Example 2: PR Analysis
