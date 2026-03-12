@@ -8,7 +8,6 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
 using Datadog.Trace;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
@@ -47,7 +46,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
                 // Note: When the user sets OpenTelemetry.Baggage.Current, those changes will override the contents of Datadog.Trace.Baggage.Current,
                 // so we can always consider Datadog.Trace.Baggage.Current as being up-to-date.
                 var baggageHolder = apiBaggage.EnsureBaggageHolder();
-                baggageHolder.Baggage = apiBaggage.Create(Baggage.Current.ToDictionary(kvp => kvp.Key, kvp => kvp.Value));
+                baggageHolder.Baggage = apiBaggage.Create(Baggage.Current.AsDictionary());
             }
 
             return CallTargetState.GetDefault();
