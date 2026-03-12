@@ -2377,6 +2377,14 @@ partial class Build
             // add Datadog projects to the root descriptors file
             datadogTraceTypes.Add(new(Projects.DatadogTrace, null));
 
+            // Add canary types used by TrimmingDetector when classifying trimming state.
+            // These are loaded via Type.GetType() so they don't appear in TypeRef tables.
+            // When the Datadog.Trace.Trimming package is referenced, these types must be
+            // preserved so the detector does not incorrectly classify the app as "missing trimming file".
+            // Keep in sync with tracer/src/Datadog.Trace/PlatformHelpers/TrimmingDetector.cs
+            datadogTraceTypes.Add(new("System.Resources.Writer", "System.Resources.ResourceWriter"));
+            datadogTraceTypes.Add(new("System.IO.IsolatedStorage", "System.IO.IsolatedStorage.IsolatedStorageScope"));
+
             var types = loaderTypes
                        .Concat(datadogTraceTypes)
                        .Distinct()
@@ -2507,6 +2515,8 @@ partial class Build
                new(@".*Noop\dArgumentsVoidIntegration\.OnMethodEnd.*CallTargetNativeTest.*", RegexOptions.Compiled | RegexOptions.Singleline),
                new(@".*System.Threading.ThreadAbortException: Thread was being aborted\.", RegexOptions.Compiled),
                new(@".*System.InvalidOperationException: Module Samples.Trimming.dll has no HINSTANCE.*", RegexOptions.Compiled),
+               // Error log testing
+               new(@".*Sending an error log using hacky reflection.*", RegexOptions.Compiled),
                // CI Visibility known errors
                new(@".*The Git repository couldn't be automatically extracted.*", RegexOptions.Compiled),
                new(@".*DD_GIT_REPOSITORY_URL is set with.*", RegexOptions.Compiled),
