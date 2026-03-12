@@ -12,7 +12,7 @@
 
 ## Medium Priority (maintenance / clarity)
 
-- [ ] Remove `Find-NuGetConfig.ps1`
+- [x] Remove `Find-NuGetConfig.ps1`
   - Both skill reviews flagged it as vestigial; documented as "no longer needed" in `scripts-reference.md`
   - File: `.claude/skills/azure-functions/Find-NuGetConfig.ps1`
   - Also remove references from `scripts-reference.md`
