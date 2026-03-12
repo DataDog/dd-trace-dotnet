@@ -5,6 +5,7 @@
 
 using System;
 using System.IO;
+using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources;
 using Datadog.Trace.Configuration.Telemetry;
@@ -58,7 +59,7 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Fact]
-        public void ApplyTagsToDirectLogs()
+        public async Task ApplyTagsToDirectLogs()
         {
             var tracerSettings = TracerSettings.Create(new() { { ConfigurationKeys.GlobalTags, "key1:value1" } });
 
@@ -71,10 +72,12 @@ namespace Datadog.Trace.Tests.Configuration
             DynamicConfigurationManager.OnlyForTests_ApplyConfiguration(configBuilder, tracerSettings);
 
             tracerManager.DirectLogSubmission.Formatter.Tags.Should().Be("key2:value2");
+
+            await tracerManager.ShutdownAsync();
         }
 
         [Fact]
-        public void DoesNotOverrideDirectLogsTags()
+        public async Task DoesNotOverrideDirectLogsTags()
         {
             var tracerSettings = TracerSettings.Create(new()
             {
@@ -90,10 +93,12 @@ namespace Datadog.Trace.Tests.Configuration
             DynamicConfigurationManager.OnlyForTests_ApplyConfiguration(configBuilder, tracerSettings);
 
             tracerManager.DirectLogSubmission.Formatter.Tags.Should().Be("key1:value1");
+
+            await tracerManager.ShutdownAsync();
         }
 
         [Fact]
-        public void DoesNotReplaceRuntimeMetricsWriter()
+        public async Task DoesNotReplaceRuntimeMetricsWriter()
         {
             var tracerSettings = TracerSettings.Create(new()
             {
@@ -108,10 +113,12 @@ namespace Datadog.Trace.Tests.Configuration
             DynamicConfigurationManager.OnlyForTests_ApplyConfiguration(configBuilder, tracerSettings);
 
             tracerManager.RuntimeMetrics.Should().Be(previousRuntimeMetrics);
+
+            await tracerManager.ShutdownAsync();
         }
 
         [Fact]
-        public void EnableTracing()
+        public async Task EnableTracing()
         {
             var tracerSettings = new TracerSettings();
             var tracerManager = TracerManagerFactory.Instance.CreateTracerManager(tracerSettings, null);
@@ -126,10 +133,12 @@ namespace Datadog.Trace.Tests.Configuration
             // re-enable "remotely"
             DynamicConfigurationManager.OnlyForTests_ApplyConfiguration(CreateConfig(("tracing_enabled", true)), tracerSettings);
             tracerManager.PerTraceSettings.Settings.TraceEnabled.Should().BeTrue();
+
+            await tracerManager.ShutdownAsync();
         }
 
         [Fact]
-        public void SetSamplingRules()
+        public async Task SetSamplingRules()
         {
             // start with local sampling rules only
             var localSamplingRulesConfig = new[]
@@ -205,6 +214,8 @@ namespace Datadog.Trace.Tests.Configuration
                               timeout: TimeSpan.FromSeconds(1)),
                           new AgentSamplingRule()
                       });
+
+            await tracerManager.ShutdownAsync();
         }
 
         [Fact]

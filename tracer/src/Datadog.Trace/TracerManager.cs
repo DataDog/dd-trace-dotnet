@@ -272,7 +272,10 @@ namespace Datadog.Trace
                 if (oldManager.Statsd != newManager.Statsd)
                 {
                     statsdReplaced = true;
-                    oldManager.Statsd?.Dispose();
+                    if (oldManager.Statsd is not null)
+                    {
+                        await oldManager.Statsd.DisposeAsync().ConfigureAwait(false);
+                    }
                 }
 
                 var discoveryReplaced = false;
@@ -775,7 +778,11 @@ namespace Datadog.Trace
                     }
 
                     instance.RuntimeMetrics?.Dispose();
-                    instance.Statsd?.Dispose();
+
+                    // Trigger StatsD disposal without waiting -- the LifetimeManager
+                    // runs this under a timeout and we must not delay shutdown for the
+                    // flush/worker-drain that DisposeAsync awaits internally.
+                    _ = instance.Statsd?.DisposeAsync();
 
                     Log.Debug("Finished waiting for disposals.");
                 }

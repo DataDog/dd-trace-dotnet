@@ -5,11 +5,12 @@
 
 #nullable enable
 using System;
+using System.Threading.Tasks;
 using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace.DogStatsd;
 
-internal interface IStatsdManager : IDisposable
+internal interface IStatsdManager
 {
     /// <summary>
     /// Obtain a <see cref="StatsdManager.StatsdClientLease"/> for accessing a <see cref="IDogStatsd"/> instance.
@@ -23,4 +24,11 @@ internal interface IStatsdManager : IDisposable
     /// <see cref="StatsdConsumer"/> value.
     /// </summary>
     void SetRequired(StatsdConsumer consumer, bool enabled);
+
+    /// <summary>
+    /// Asynchronously disposes the instance.
+    /// Flushes all metrics.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous dispose operation.</returns>
+    Task DisposeAsync();
 }
