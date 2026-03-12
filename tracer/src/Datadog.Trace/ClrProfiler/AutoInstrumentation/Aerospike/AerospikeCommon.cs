@@ -5,6 +5,7 @@
 
 using System;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
@@ -14,7 +15,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike
 {
     internal sealed class AerospikeCommon
     {
-        private const string DatabaseType = "aerospike";
         private const string OperationName = "aerospike.command";
         public const string IntegrationName = nameof(Configuration.IntegrationId.Aerospike);
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.Aerospike;
@@ -34,7 +34,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike
 
             try
             {
-                var serviceName = perTraceSettings.Schema.Database.GetServiceName(DatabaseType);
+                var serviceName = perTraceSettings.Schema.Database.GetServiceName(DatabaseSchema.ServiceType.Aerospike);
                 var tags = perTraceSettings.Schema.Database.CreateAerospikeTags();
 
                 scope = tracer.StartActiveInternal(OperationName, tags: tags, serviceName: serviceName);

@@ -1,4 +1,4 @@
-﻿// <copyright file="Span.cs" company="Datadog">
+// <copyright file="Span.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -197,7 +197,11 @@ namespace Datadog.Trace
         {
             if (IsFinished)
             {
-                Log.Warning("SetTag should not be called after the span was closed");
+                Log.Warning(
+                    "SetTag should not be called after the span was closed. key: {Key}, span_id: {SpanId}, trace_id: {TraceId}",
+                    property0: key,
+                    property1: SpanId,
+                    property2: TraceId128);
                 return this;
             }
 

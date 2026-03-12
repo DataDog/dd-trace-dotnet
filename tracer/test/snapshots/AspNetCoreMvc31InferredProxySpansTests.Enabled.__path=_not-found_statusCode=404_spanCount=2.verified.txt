@@ -1,4 +1,4 @@
-[
+﻿[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -44,7 +44,7 @@
       http.url: test.api.com/api/test/1,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: internal,
+      span.kind: server,
       stage: prod,
       _dd.base_service: Samples.AspNetCoreMvc31
     },

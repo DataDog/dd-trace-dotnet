@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch;
@@ -19,69 +20,62 @@ namespace Datadog.Trace.Tests.Configuration.Schema
     public class DatabaseSchemaTests
     {
         private const string DefaultServiceName = "MyApplication";
-        private readonly string[] _unmappedKeys = { "elasticsearch", "postgres", "custom-service" };
         private readonly Dictionary<string, string> _mappings = new()
         {
             { "sql-server", "custom-db" },
-            { "http-client", "some-service" },
             { "mongodb", "my-mongo" },
         };
 
-        public static IEnumerable<object[]> GetAllConfigs()
-            => from schemaVersion in new object[] { SchemaVersion.V0, SchemaVersion.V1 }
-               from peerServiceTagsEnabled in new[] { true, false }
-               from removeClientServiceNamesEnabled in new[] { true, false }
-               select new[] { schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled };
+        public static IEnumerable<(int SchemaVersion, int DatabaseType, string ExpectedOperationName)> GetOperationNameData()
+        {
+            yield return (0, (int)DatabaseSchema.OperationType.MongoDb, "mongodb.query");
+            yield return (0, (int)DatabaseSchema.OperationType.Elasticsearch, "elasticsearch.query");
+            yield return (1, (int)DatabaseSchema.OperationType.MongoDb, "mongodb.query");
+            yield return (1, (int)DatabaseSchema.OperationType.Elasticsearch, "elasticsearch.query");
+        }
+
+        public static IEnumerable<(int SchemaVersion, int DatabaseType, string ExpectedValue, bool RemoveClientServiceNamesEnabled)> GetServiceNameData()
+        {
+            // Mapped service names (always return mapped value)
+            yield return (0, (int)DatabaseSchema.ServiceType.MongoDb, "my-mongo", true);
+            yield return (0, (int)DatabaseSchema.ServiceType.MongoDb, "my-mongo", false);
+            yield return (1, (int)DatabaseSchema.ServiceType.MongoDb, "my-mongo", true);
+            yield return (1, (int)DatabaseSchema.ServiceType.MongoDb, "my-mongo", false);
+            // Unmapped service names
+            yield return (0, (int)DatabaseSchema.ServiceType.Elasticsearch, DefaultServiceName, true);
+            yield return (0, (int)DatabaseSchema.ServiceType.Elasticsearch, $"{DefaultServiceName}-elasticsearch", false);
+            yield return (1, (int)DatabaseSchema.ServiceType.Elasticsearch, DefaultServiceName, true);
+            yield return (1, (int)DatabaseSchema.ServiceType.Elasticsearch, DefaultServiceName, false);
+        }
 
         [Theory]
-        [MemberData(nameof(GetAllConfigs))]
-        public void GetOperationNameIsCorrect(object schemaVersionObject, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
+        [CombinatorialData]
+        public void GetOperationNameIsCorrect(
+            [CombinatorialMemberData(nameof(GetOperationNameData))] (int SchemaVersion, int DatabaseType, string ExpectedOperationName) values,
+            bool peerServiceTagsEnabled,
+            bool removeClientServiceNamesEnabled)
         {
-            var schemaVersion = (SchemaVersion)schemaVersionObject; // Unbox SchemaVersion, which is only defined internally
-            var databaseType = "DbCommand";
-            var expectedValue = $"{databaseType}.query";
-
+            var schemaVersion = (SchemaVersion)values.SchemaVersion;
             var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings, new Dictionary<string, string>());
-            namingSchema.Database.GetOperationName(databaseType).Should().Be(expectedValue);
+            namingSchema.Database.GetOperationName((DatabaseSchema.OperationType)values.DatabaseType).Should().Be(values.ExpectedOperationName);
         }
 
         [Theory]
-        [MemberData(nameof(GetAllConfigs))]
-        public void RetrievesMappedServiceNames(object schemaVersionObject, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
+        [CombinatorialData]
+        public void GetServiceNameIsCorrect(
+            [CombinatorialMemberData(nameof(GetServiceNameData))] (int SchemaVersion, int DatabaseType, string ExpectedValue, bool RemoveClientServiceNamesEnabled) values,
+            bool peerServiceTagsEnabled)
         {
-            var schemaVersion = (SchemaVersion)schemaVersionObject; // Unbox SchemaVersion, which is only defined internally
-            var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings, new Dictionary<string, string>());
-
-            foreach (var kvp in _mappings)
-            {
-                namingSchema.Database.GetServiceName(kvp.Key).Should().Be(kvp.Value);
-            }
+            var schemaVersion = (SchemaVersion)values.SchemaVersion;
+            var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, values.RemoveClientServiceNamesEnabled, DefaultServiceName, _mappings, new Dictionary<string, string>());
+            namingSchema.Database.GetServiceName((DatabaseSchema.ServiceType)values.DatabaseType).Should().Be(values.ExpectedValue);
         }
 
         [Theory]
-        [MemberData(nameof(GetAllConfigs))]
-        public void RetrievesUnmappedServiceNames(object schemaVersionObject, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
+        [CombinatorialData]
+        public void CreateCouchbaseTagsReturnsCorrectImplementation([CombinatorialValues(0, 1)] int schemaVersionInt, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
         {
-            var schemaVersion = (SchemaVersion)schemaVersionObject; // Unbox SchemaVersion, which is only defined internally
-            var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings, peerServiceNameMappings: new Dictionary<string, string>());
-
-            foreach (var key in _unmappedKeys)
-            {
-                var expectedServiceName = schemaVersion switch
-                {
-                    SchemaVersion.V0 when removeClientServiceNamesEnabled == false => $"{DefaultServiceName}-{key}",
-                    _ => DefaultServiceName,
-                };
-
-                namingSchema.Database.GetServiceName(key).Should().Be(expectedServiceName);
-            }
-        }
-
-        [Theory]
-        [MemberData(nameof(GetAllConfigs))]
-        public void CreateCouchbaseTagsReturnsCorrectImplementation(object schemaVersionObject, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
-        {
-            var schemaVersion = (SchemaVersion)schemaVersionObject; // Unbox SchemaVersion, which is only defined internally
+            var schemaVersion = (SchemaVersion)schemaVersionInt;
             var expectedType = schemaVersion switch
             {
                 SchemaVersion.V0 when peerServiceTagsEnabled == false => typeof(CouchbaseTags),
@@ -93,10 +87,10 @@ namespace Datadog.Trace.Tests.Configuration.Schema
         }
 
         [Theory]
-        [MemberData(nameof(GetAllConfigs))]
-        public void CreateElasticsearchTagsReturnsCorrectImplementation(object schemaVersionObject, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
+        [CombinatorialData]
+        public void CreateElasticsearchTagsReturnsCorrectImplementation([CombinatorialValues(0, 1)] int schemaVersionInt, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
         {
-            var schemaVersion = (SchemaVersion)schemaVersionObject; // Unbox SchemaVersion, which is only defined internally
+            var schemaVersion = (SchemaVersion)schemaVersionInt;
             var expectedType = schemaVersion switch
             {
                 SchemaVersion.V0 when peerServiceTagsEnabled == false => typeof(ElasticsearchTags),
@@ -108,10 +102,10 @@ namespace Datadog.Trace.Tests.Configuration.Schema
         }
 
         [Theory]
-        [MemberData(nameof(GetAllConfigs))]
-        public void CreateMongoDbTagsReturnsCorrectImplementation(object schemaVersionObject, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
+        [CombinatorialData]
+        public void CreateMongoDbTagsReturnsCorrectImplementation([CombinatorialValues(0, 1)] int schemaVersionInt, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
         {
-            var schemaVersion = (SchemaVersion)schemaVersionObject; // Unbox SchemaVersion, which is only defined internally
+            var schemaVersion = (SchemaVersion)schemaVersionInt;
             var expectedType = schemaVersion switch
             {
                 SchemaVersion.V0 when peerServiceTagsEnabled == false => typeof(MongoDbTags),
@@ -123,10 +117,10 @@ namespace Datadog.Trace.Tests.Configuration.Schema
         }
 
         [Theory]
-        [MemberData(nameof(GetAllConfigs))]
-        public void CreateSqlTagsReturnsCorrectImplementation(object schemaVersionObject, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
+        [CombinatorialData]
+        public void CreateSqlTagsReturnsCorrectImplementation([CombinatorialValues(0, 1)] int schemaVersionInt, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
         {
-            var schemaVersion = (SchemaVersion)schemaVersionObject; // Unbox SchemaVersion, which is only defined internally
+            var schemaVersion = (SchemaVersion)schemaVersionInt;
             var expectedType = schemaVersion switch
             {
                 SchemaVersion.V0 when peerServiceTagsEnabled == false => typeof(SqlTags),
@@ -138,10 +132,10 @@ namespace Datadog.Trace.Tests.Configuration.Schema
         }
 
         [Theory]
-        [MemberData(nameof(GetAllConfigs))]
-        public void CreateRedisTagsReturnsCorrectImplementation(object schemaVersionObject, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
+        [CombinatorialData]
+        public void CreateRedisTagsReturnsCorrectImplementation([CombinatorialValues(0, 1)] int schemaVersionInt, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
         {
-            var schemaVersion = (SchemaVersion)schemaVersionObject; // Unbox SchemaVersion, which is only defined internally
+            var schemaVersion = (SchemaVersion)schemaVersionInt;
             var expectedType = schemaVersion switch
             {
                 SchemaVersion.V0 when peerServiceTagsEnabled == false => typeof(RedisTags),
@@ -153,10 +147,10 @@ namespace Datadog.Trace.Tests.Configuration.Schema
         }
 
         [Theory]
-        [MemberData(nameof(GetAllConfigs))]
-        public void CreateCosmosDbTagsReturnsCorrectImplementation(object schemaVersionObject, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
+        [CombinatorialData]
+        public void CreateCosmosDbTagsReturnsCorrectImplementation([CombinatorialValues(0, 1)] int schemaVersionInt, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
         {
-            var schemaVersion = (SchemaVersion)schemaVersionObject; // Unbox SchemaVersion, which is only defined internally
+            var schemaVersion = (SchemaVersion)schemaVersionInt;
             var expectedType = schemaVersion switch
             {
                 SchemaVersion.V0 when peerServiceTagsEnabled == false => typeof(CosmosDbTags),
@@ -168,10 +162,10 @@ namespace Datadog.Trace.Tests.Configuration.Schema
         }
 
         [Theory]
-        [MemberData(nameof(GetAllConfigs))]
-        public void CreateAerospikeTagsReturnsCorrectImplementation(object schemaVersionObject, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
+        [CombinatorialData]
+        public void CreateAerospikeTagsReturnsCorrectImplementation([CombinatorialValues(0, 1)] int schemaVersionInt, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
         {
-            var schemaVersion = (SchemaVersion)schemaVersionObject; // Unbox SchemaVersion, which is only defined internally
+            var schemaVersion = (SchemaVersion)schemaVersionInt;
             var expectedType = schemaVersion switch
             {
                 SchemaVersion.V0 when peerServiceTagsEnabled == false => typeof(AerospikeTags),
@@ -180,6 +174,28 @@ namespace Datadog.Trace.Tests.Configuration.Schema
 
             var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings, peerServiceNameMappings: new Dictionary<string, string>());
             namingSchema.Database.CreateAerospikeTags().Should().BeOfType(expectedType);
+        }
+
+        [Theory]
+        [CombinatorialData]
+        public void GetOperationName_SupportsAllEnumValues([CombinatorialValues(0, 1)]int schemaVersion, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
+        {
+            var namingSchema = new NamingSchema((SchemaVersion)schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings, new Dictionary<string, string>());
+            foreach (var value in Enum.GetValues(typeof(DatabaseSchema.OperationType)).Cast<DatabaseSchema.OperationType>())
+            {
+                namingSchema.Database.GetOperationName(value).Should().NotBeNull();
+            }
+        }
+
+        [Theory]
+        [CombinatorialData]
+        public void GetServiceName_SupportsAllEnumValues([CombinatorialValues(0, 1)]int schemaVersion, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
+        {
+            var namingSchema = new NamingSchema((SchemaVersion)schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings, new Dictionary<string, string>());
+            foreach (var value in Enum.GetValues(typeof(DatabaseSchema.ServiceType)).Cast<DatabaseSchema.ServiceType>())
+            {
+                namingSchema.Database.GetServiceName(value).Should().NotBeNull();
+            }
         }
     }
 }

@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
@@ -30,7 +31,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
         internal const string MaxVersion3 = "3";
         internal const string IntegrationName = nameof(Configuration.IntegrationId.Couchbase);
 
-        private const string DatabaseType = "couchbase";
         private const IntegrationId IntegrationId = Configuration.IntegrationId.Couchbase;
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(CouchbaseCommon));
         private static readonly ConditionalWeakTable<object, string> ClientSourceToNormalizedSeedNodesMap = new();
@@ -88,8 +88,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
         {
             try
             {
-                string operationName = tracer.CurrentTraceSettings.Schema.Database.GetOperationName(DatabaseType);
-                string serviceName = tracer.CurrentTraceSettings.Schema.Database.GetServiceName(DatabaseType);
+                string operationName = tracer.CurrentTraceSettings.Schema.Database.GetOperationName(DatabaseSchema.OperationType.Couchbase);
+                string serviceName = tracer.CurrentTraceSettings.Schema.Database.GetServiceName(DatabaseSchema.ServiceType.Couchbase);
 
                 var scope = tracer.StartActiveInternal(operationName, serviceName: serviceName, tags: tags);
                 scope.Span.Type = SpanTypes.Db;

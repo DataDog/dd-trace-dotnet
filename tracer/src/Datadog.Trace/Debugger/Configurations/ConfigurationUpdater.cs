@@ -15,28 +15,25 @@ namespace Datadog.Trace.Debugger.Configurations
 {
     internal sealed class ConfigurationUpdater
     {
-        private const int MaxAllowedLogProbes = 100;
-        private const int MaxAllowedMetricProbes = 100;
-        private const int MaxAllowedSpanProbes = 100;
-        private const int MaxAllowedSpanDecorationProbes = 100;
-
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ConfigurationUpdater>();
 
         private readonly string? _env;
         private readonly string? _version;
+        private readonly int _maxProbesPerType;
 
         private ProbeConfiguration _currentConfiguration;
 
-        private ConfigurationUpdater(string? env, string? version)
+        private ConfigurationUpdater(string? env, string? version, int maxProbesPerType)
         {
             _env = env;
             _version = version;
+            _maxProbesPerType = maxProbesPerType;
             _currentConfiguration = new ProbeConfiguration();
         }
 
-        public static ConfigurationUpdater Create(string? environment, string? serviceVersion)
+        public static ConfigurationUpdater Create(string? environment, string? serviceVersion, int maxProbesPerType)
         {
-            return new ConfigurationUpdater(environment, serviceVersion);
+            return new ConfigurationUpdater(environment, serviceVersion, maxProbesPerType);
         }
 
         public List<UpdateResult> AcceptAdded(ProbeConfiguration configuration)
@@ -77,21 +74,26 @@ namespace Datadog.Trace.Debugger.Configurations
             return new ProbeConfiguration()
             {
                 ServiceConfiguration = configuration.ServiceConfiguration,
-                LogProbes = Filter(configuration.LogProbes, MaxAllowedLogProbes),
-                MetricProbes = Filter(configuration.MetricProbes, MaxAllowedMetricProbes),
-                SpanProbes = Filter(configuration.SpanProbes, MaxAllowedSpanProbes),
-                SpanDecorationProbes = Filter(configuration.SpanDecorationProbes, MaxAllowedSpanDecorationProbes)
+                LogProbes = Filter(configuration.LogProbes),
+                MetricProbes = Filter(configuration.MetricProbes),
+                SpanProbes = Filter(configuration.SpanProbes),
+                SpanDecorationProbes = Filter(configuration.SpanDecorationProbes)
             };
 
-            T[] Filter<T>(T[] probes, int maxAllowedProbes)
+            T[] Filter<T>(T[] probes)
                 where T : ProbeDefinition
             {
-                return
+                var filtered =
                     probes
                        .Where(probe => probe.Language == TracerConstants.Language)
-                       .Where(IsEnvAndVersionMatch)
-                       .Take(maxAllowedProbes)
-                       .ToArray();
+                       .Where(IsEnvAndVersionMatch);
+
+                if (_maxProbesPerType > 0)
+                {
+                    filtered = filtered.Take(_maxProbesPerType);
+                }
+
+                return filtered.ToArray();
 
                 bool IsEnvAndVersionMatch(ProbeDefinition probe)
                 {

@@ -170,6 +170,7 @@ partial class Build
         Solution.GetProject(Projects.DatadogTraceOpenTracing),
         Solution.GetProject(Projects.DatadogTraceAnnotations),
         Solution.GetProject(Projects.DatadogTraceTrimming),
+        Solution.GetProject(Projects.DatadogFeatureFlagsOpenFeature),
     };
 
     Project[] ParallelIntegrationTests => new[]

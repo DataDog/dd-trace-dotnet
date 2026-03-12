@@ -57,7 +57,7 @@ namespace Datadog.Trace.Agent
             _traceProcessors = new ITraceProcessor[]
             {
                 new Processors.NormalizerTraceProcessor(),
-                new Processors.ObfuscatorTraceProcessor(false),
+                new Processors.ObfuscatorTraceProcessor(),
             };
 
             _prioritySampler = new PrioritySampler();

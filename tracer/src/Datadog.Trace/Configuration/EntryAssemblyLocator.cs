@@ -54,10 +54,21 @@ internal static class EntryAssemblyLocator
             // Therefore, we'll try to find the entry assembly by scanning through all loaded assemblies.
             foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
             {
-                if (IsMicrosoftAssembly(assembly!) == false &&
-                    assembly.CustomAttributes.Any(x => x.AttributeType.FullName == "Microsoft.Owin.OwinStartupAttribute"))
+                try
                 {
-                    return assembly;
+                    if (IsMicrosoftAssembly(assembly!) == false &&
+                        assembly.FullName?.StartsWith("Datadog.Trace") != true &&
+                        assembly.CustomAttributes.Any(x => x.AttributeType.FullName == "Microsoft.Owin.OwinStartupAttribute"))
+                    {
+                        return assembly;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Accessing CustomAttributes can throw if an attribute references a type
+                    // from a missing assembly (e.g. FileNotFoundException during method token resolution).
+                    // Skip this assembly and continue scanning the rest.
+                    Log.Debug(ex, "Error scanning assembly {AssemblyName} for OwinStartupAttribute", assembly?.FullName);
                 }
             }
 #endif

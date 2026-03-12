@@ -415,27 +415,6 @@ public class DiscoveryServiceTests
         await ds.DisposeAsync();
     }
 
-    [Fact]
-    public void BuildHeaders_WithContainerId_IncludesContainerIdHeader()
-    {
-        const string containerId = "test-container-id-12345";
-
-        var headers = DiscoveryService.BuildHeaders(containerId);
-
-        headers.Should().HaveCount(AgentHttpHeaderNames.MinimalHeaders.Length + 1);
-        headers.Should().Contain(AgentHttpHeaderNames.MinimalHeaders);
-        headers.Should().Contain(kvp => kvp.Value == containerId);
-    }
-
-    [Fact]
-    public void BuildHeaders_WithoutContainerId_ReturnsMinimalHeaders()
-    {
-        var headers = DiscoveryService.BuildHeaders(null);
-
-        // Should return exactly the minimal headers
-        headers.Should().BeEquivalentTo(AgentHttpHeaderNames.MinimalHeaders);
-    }
-
     private string GetConfig(bool dropP0 = true, string version = null)
         => JsonConvert.SerializeObject(new MockTracerAgent.AgentConfiguration() { ClientDropP0s = dropP0, AgentVersion = version });
 

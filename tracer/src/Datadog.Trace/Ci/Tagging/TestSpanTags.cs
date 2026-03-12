@@ -127,6 +127,9 @@ internal sealed partial class TestSpanTags : TestSuiteSpanTags
     [Tag(TestTags.TestAttemptToFixPassed)]
     public string? AttemptToFixPassed { get; set; }
 
+    [Tag(TestTags.TestFinalStatus)]
+    public string? FinalStatus { get; set; }
+
     [Tag(CapabilitiesTags.LibraryCapabilitiesTestImpactAnalysis)]
     public string? CapabilitiesTestImpactAnalysis { get; set; }
 

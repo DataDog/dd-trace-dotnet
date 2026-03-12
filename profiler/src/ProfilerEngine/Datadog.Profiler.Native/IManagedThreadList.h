@@ -5,12 +5,13 @@
 #include "cor.h"
 #include "corprof.h"
 
+#include "IMemoryFootprintProvider.h"
 #include "ManagedThreadInfo.h"
 
 #include <functional>
 #include <memory>
 
-class IManagedThreadList
+class IManagedThreadList : public IMemoryFootprintProvider
 {
 public:
     virtual bool RegisterThread(std::shared_ptr<ManagedThreadInfo>& pThreadInfo) = 0;
