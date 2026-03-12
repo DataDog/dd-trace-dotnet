@@ -41,7 +41,7 @@ namespace Datadog.Trace.Configuration
         {
             if (ServiceNames.TryGetValue(integrationKey, out var mappedName))
             {
-                return new ServiceNameMetadata(mappedName, "opt.service_mapping");
+                return new ServiceNameMetadata(mappedName, ServiceNameMetadata.OptServiceMapping);
             }
 
             if (Schema.Version != SchemaVersion.V0 || Schema.RemoveClientServiceNamesEnabled)
