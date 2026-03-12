@@ -235,8 +235,8 @@ namespace Datadog.Trace.Tests.Configuration.Schema
         public void GetServiceNameMetadata_SourceReturnsOptServiceMapping_WhenMapped()
         {
             var namingSchema = new NamingSchema(SchemaVersion.V0, peerServiceTagsEnabled: false, removeClientServiceNamesEnabled: false, DefaultServiceName, _mappings, new Dictionary<string, string>());
-            namingSchema.Messaging.GetServiceNameMetadata(MessagingSchema.ServiceType.Kafka).Source.Should().Be("opt.service_mapping");
-            namingSchema.Messaging.GetServiceNameMetadata(MessagingSchema.ServiceType.RabbitMq).Source.Should().Be("opt.service_mapping");
+            namingSchema.Messaging.GetServiceNameMetadata(MessagingSchema.ServiceType.Kafka).Source.Should().Be(ServiceNameMetadata.OptServiceMapping);
+            namingSchema.Messaging.GetServiceNameMetadata(MessagingSchema.ServiceType.RabbitMq).Source.Should().Be(ServiceNameMetadata.OptServiceMapping);
         }
 
         [Fact]
@@ -244,7 +244,7 @@ namespace Datadog.Trace.Tests.Configuration.Schema
         {
             var mappings = new Dictionary<string, string> { { "kafka", DefaultServiceName } };
             var namingSchema = new NamingSchema(SchemaVersion.V0, peerServiceTagsEnabled: false, removeClientServiceNamesEnabled: false, DefaultServiceName, mappings, new Dictionary<string, string>());
-            namingSchema.Messaging.GetServiceNameMetadata(MessagingSchema.ServiceType.Kafka).Source.Should().Be("opt.service_mapping");
+            namingSchema.Messaging.GetServiceNameMetadata(MessagingSchema.ServiceType.Kafka).Source.Should().Be(ServiceNameMetadata.OptServiceMapping);
         }
     }
 }

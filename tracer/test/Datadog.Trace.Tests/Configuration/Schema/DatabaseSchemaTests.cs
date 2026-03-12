@@ -247,7 +247,7 @@ namespace Datadog.Trace.Tests.Configuration.Schema
         {
             // When a mapping is configured, source should be "opt.service_mapping"
             var namingSchema = new NamingSchema(SchemaVersion.V0, peerServiceTagsEnabled: false, removeClientServiceNamesEnabled: false, DefaultServiceName, _mappings, new Dictionary<string, string>());
-            namingSchema.Database.GetServiceNameMetadata(DatabaseSchema.ServiceType.MongoDb).Source.Should().Be("opt.service_mapping");
+            namingSchema.Database.GetServiceNameMetadata(DatabaseSchema.ServiceType.MongoDb).Source.Should().Be(ServiceNameMetadata.OptServiceMapping);
         }
 
         [Fact]
@@ -256,7 +256,7 @@ namespace Datadog.Trace.Tests.Configuration.Schema
             // Even when mapped value equals default service name, source should still be "opt.service_mapping"
             var mappings = new Dictionary<string, string> { { "redis", DefaultServiceName } };
             var namingSchema = new NamingSchema(SchemaVersion.V0, peerServiceTagsEnabled: false, removeClientServiceNamesEnabled: false, DefaultServiceName, mappings, new Dictionary<string, string>());
-            namingSchema.Database.GetServiceNameMetadata(DatabaseSchema.ServiceType.Redis).Source.Should().Be("opt.service_mapping");
+            namingSchema.Database.GetServiceNameMetadata(DatabaseSchema.ServiceType.Redis).Source.Should().Be(ServiceNameMetadata.OptServiceMapping);
         }
     }
 }
