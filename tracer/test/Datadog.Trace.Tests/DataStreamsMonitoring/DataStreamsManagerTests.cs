@@ -211,10 +211,22 @@ public class DataStreamsManagerTests
         var env = "foo";
         var service = "bar";
 
+        var hashWithout = HashHelper.CalculateNodeHashBase(service, env, primaryTag: null, processTags: "hello:world", containerTagsHash: null);
+        var hashWith = HashHelper.CalculateNodeHashBase(service, env, primaryTag: null, processTags: "hello:world", "12345ABCDE");
+
+        hashWith.Value.Should().NotBe(hashWithout.Value);
+    }
+
+    [Fact]
+    public void ContainerTagsHashNotUsedUsedWithoutProcessTags()
+    {
+        var env = "foo";
+        var service = "bar";
+
         var hashWithout = HashHelper.CalculateNodeHashBase(service, env, primaryTag: null, processTags: null, containerTagsHash: null);
         var hashWith = HashHelper.CalculateNodeHashBase(service, env, primaryTag: null, processTags: null, "12345ABCDE");
 
-        hashWith.Value.Should().NotBe(hashWithout.Value);
+        hashWith.Value.Should().Be(hashWithout.Value);
     }
 
     [Fact]
