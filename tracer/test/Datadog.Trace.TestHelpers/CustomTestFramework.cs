@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -25,6 +26,8 @@ namespace Datadog.Trace.TestHelpers
 {
     public class CustomTestFramework : XunitTestFramework
     {
+        private static ConcurrentQueue<IXunitTestCase> _failedTests = new();
+
         public CustomTestFramework(IMessageSink messageSink)
             : base(messageSink)
         {
@@ -171,6 +174,13 @@ namespace Datadog.Trace.TestHelpers
                     summary.Aggregate(await RunTestCollectionAsync(messageBus, test.Collection, test.TestCases, cancellationTokenSource));
                 }
 
+                // Run failed tests
+
+                if (summary.Failed > 0)
+                {
+                    await RunFailingTestsWithDebugInfo(messageBus, cancellationTokenSource, runner);
+                }
+
                 return summary;
             }
 
@@ -203,6 +213,58 @@ namespace Datadog.Trace.TestHelpers
                     var value = list[k];
                     list[k] = list[n];
                     list[n] = value;
+                }
+            }
+
+            private async Task RunFailingTestsWithDebugInfo(IMessageBus messageBus, CancellationTokenSource cancellationTokenSource, ConcurrentRunner runner)
+            {
+                // We will only run the first 5 failing tests. We don't want to slown down the CI if there are many failures
+                var failedFiltered = _failedTests.Take(5).ToList();
+
+                var collectionsFailed = OrderTestCollections().Select(
+                pair =>
+                new
+                {
+                    Collection = pair.Item1,
+                    TestCases = pair.Item2.Where(x => failedFiltered.Contains(x)).ToList(),
+                    DisableParallelization = IsParallelizationDisabled(pair.Item1)
+                })
+                .Where(c => c.TestCases.Any()).ToList();
+
+                var traceDebugOldValue = Environment.GetEnvironmentVariable("DD_TRACE_DEBUG");
+                List<Task<RunSummary>> tasks = new(collectionsFailed.Count);
+
+                try
+                {
+                    Environment.SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
+                    // The DelayedMessageBus is used to avoid reporting repeated failures
+                    CustomTestMethodRunner.DelayedMessageBus delayedMessageBus = new(messageBus);
+
+                    foreach (var test in collectionsFailed)
+                    {
+                        tasks.Add(runner.RunAsync(() => RunTestCollectionAsync(delayedMessageBus, test.Collection, test.TestCases, cancellationTokenSource)));
+                    }
+
+                    await Task.WhenAll(tasks);
+                }
+                finally
+                {
+                    Environment.SetEnvironmentVariable("DD_TRACE_DEBUG", traceDebugOldValue);
+                }
+
+                var failedSummary = new RunSummary();
+                foreach (var task in tasks)
+                {
+                    failedSummary.Aggregate(task.Result);
+                }
+
+                if (failedSummary.Failed > 0)
+                {
+                    DiagnosticMessageSink.OnMessage(new DiagnosticMessage($"{failedSummary.Failed} failing tests were re-run with debug enabled and failed again. Check logs with debug information."));
+                }
+                else
+                {
+                    DiagnosticMessageSink.OnMessage(new DiagnosticMessage($"Failing tests were re-run with debug enabled and did not fail."));
                 }
             }
         }
@@ -266,9 +328,10 @@ namespace Datadog.Trace.TestHelpers
 
                 var attemptsRemaining = 1;
                 var retryReason = string.Empty;
+                FlakyAttribute flakyAttribute = null;
                 try
                 {
-                    var flakyAttribute = Method.MethodInfo.GetCustomAttribute<FlakyAttribute>();
+                    flakyAttribute = Method.MethodInfo.GetCustomAttribute<FlakyAttribute>();
                     if (flakyAttribute != null)
                     {
                         attemptsRemaining = flakyAttribute.MaxRetries + 1;
@@ -290,6 +353,13 @@ namespace Datadog.Trace.TestHelpers
 
                         // If this throws, we just let it bubble up, regardless of whether there's a retry, as this indicates an xunit infra issue
                         var summary = await RunTest(messageBus);
+
+                        // We don't want to retry flaky tests with debug info after the normal run
+                        if ((summary.Failed > 0) && (!_failedTests.Contains(testCase) && (flakyAttribute is null)))
+                        {
+                            _failedTests.Enqueue(testCase);
+                        }
+
                         if (summary.Failed == 0 || attemptsRemaining <= 0)
                         {
                             // No failures, or not allowed to retry
