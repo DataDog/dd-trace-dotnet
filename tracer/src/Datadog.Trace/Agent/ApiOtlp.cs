@@ -165,54 +165,11 @@ namespace Datadog.Trace.Agent
             }
         }
 
-#if NET6_0_OR_GREATER
-        private async Task<SendResult> SendStatsAsyncImpl(IApiRequest request, bool isFinalTry, SendStatsState state)
-        {
-            bool success = false;
-            IApiResponse response = null;
-
-            var endTime = DateTimeOffset.UtcNow;
-            var metrics = OtlpMapper.ConvertToOtlpMetrics(state.Stats, endTime);
-            Datadog.Trace.OpenTelemetry.ExportResult exportResult;
-
-            try
-            {
-                // TODO: Telemetry - Record OTLP Metrics API requests for APM trace stats
-                exportResult = await _metricsExporter.ExportAsync(metrics).ConfigureAwait(false);
-            }
-            catch (Exception)
-            {
-                // TODO: Telemetry - Record OTLP Metrics API errors for APM trace stats
-                throw;
-            }
-
-            // TelemetryFactory.Metrics.RecordCountStatsApiResponses(response.GetTelemetryStatusCodeMetricTag());
-            if (exportResult == Datadog.Trace.OpenTelemetry.ExportResult.Success)
-            {
-                success = true;
-            }
-
-            if (success)
-            {
-                _log.Debug("Successfully sent APM trace stats to the OTLP metrics endpoint.");
-            }
-            else
-            {
-                // TODO: Telemetry - Record OTLP Metrics API errors for APM trace stats
-            }
-
-            response?.Dispose();
-
-            // Retries are handled by the OtlpExporter, so either indicate success or failure with no retry
-            return success ? SendResult.Success : SendResult.Failed_DontRetry;
-        }
-#else
         private Task<SendResult> SendStatsAsyncImpl(IApiRequest request, bool isFinalTry, SendStatsState state)
         {
             _log.Debug("Sending APM trace stats is currently only supported on .NET 6+");
             return Task.FromResult(SendResult.Success);
         }
-#endif
 
         private async Task<SendResult> SendTracesAsyncImpl(IApiRequest request, bool finalTry, SendTracesState state)
         {
