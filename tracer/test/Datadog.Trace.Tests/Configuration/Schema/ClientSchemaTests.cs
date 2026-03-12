@@ -213,7 +213,7 @@ namespace Datadog.Trace.Tests.Configuration.Schema
         public void GetServiceNameMetadata_SourceReturnsOptServiceMapping_WhenMapped()
         {
             var namingSchema = new NamingSchema(SchemaVersion.V0, peerServiceTagsEnabled: false, removeClientServiceNamesEnabled: false, DefaultServiceName, _mappings, new Dictionary<string, string>());
-            namingSchema.Client.GetServiceNameMetadata(ClientSchema.Component.Http).Source.Should().Be("opt.service_mapping");
+            namingSchema.Client.GetServiceNameMetadata(ClientSchema.Component.Http).Source.Should().Be(ServiceNameMetadata.OptServiceMapping);
         }
 
         [Fact]
@@ -221,7 +221,7 @@ namespace Datadog.Trace.Tests.Configuration.Schema
         {
             var mappings = new Dictionary<string, string> { { "http-client", DefaultServiceName } };
             var namingSchema = new NamingSchema(SchemaVersion.V0, peerServiceTagsEnabled: false, removeClientServiceNamesEnabled: false, DefaultServiceName, mappings, new Dictionary<string, string>());
-            namingSchema.Client.GetServiceNameMetadata(ClientSchema.Component.Http).Source.Should().Be("opt.service_mapping");
+            namingSchema.Client.GetServiceNameMetadata(ClientSchema.Component.Http).Source.Should().Be(ServiceNameMetadata.OptServiceMapping);
         }
     }
 }
