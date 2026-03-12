@@ -12,28 +12,40 @@ Troubleshoot Azure DevOps pipeline failures with automated analysis.
 
 ## Prerequisites
 
-**CRITICAL**: This skill requires PowerShell to run the build analysis script.
+This skill requires the following tools. If any are missing, provide the relevant install instructions below.
 
-**PowerShell version requirements**:
-- **Recommended**: PowerShell 7+ (`pwsh`) - cross-platform, modern features
-- **Minimum**: PowerShell 5.1 (`powershell.exe` on Windows only)
+### PowerShell 7+ (`pwsh`) — Required
 
-**Installation**:
-- Windows: `winget install Microsoft.PowerShell` (or use built-in PowerShell 5.1)
-- macOS: `brew install powershell/tap/powershell`
-- Linux: https://learn.microsoft.com/en-us/powershell/scripting/install/installing-powershell-on-linux
+The build analysis script requires PowerShell. PowerShell 7+ (`pwsh`) is recommended; PowerShell 5.1 (`powershell.exe`, Windows only) is the minimum.
+
+- **Verify**: `pwsh -Version`
+- **Install**: `winget install Microsoft.PowerShell` (Windows) · `brew install powershell/tap/powershell` (macOS)
+- **Docs**: https://learn.microsoft.com/en-us/powershell/scripting/install/installing-powershell
 
 **If the user does not have PowerShell installed**:
 1. Check for `pwsh` first: `pwsh -Version`
 2. If not found and on Windows, check for PowerShell 5.1: `powershell -NoProfile -Command '$PSVersionTable.PSVersion'`
-3. If neither found or version is too old, provide installation instructions (see Prerequisites above)
+3. If neither found or version is too old, provide installation instructions above
 4. Do NOT attempt to replicate the script functionality using bash/jq - the logic is too complex
 
-**Always prefer `pwsh` over `powershell.exe`** when both are available (better cross-platform compatibility and modern features).
+**Always prefer `pwsh` over `powershell.exe`** when both are available.
 
-**Other requirements**:
-- GitHub CLI (`gh`) authenticated (for PR analysis)
-- Azure CLI (`az`) configured
+### GitHub CLI (`gh`) — Required for PR analysis
+
+Used to resolve PR numbers to Azure DevOps build IDs. Must be authenticated.
+
+- **Verify**: `gh auth status`
+- **Install**: `winget install GitHub.cli` (Windows) · `brew install gh` (macOS)
+- **Docs**: https://cli.github.com/
+
+### Azure CLI (`az`) with `azure-devops` extension — Required
+
+Used by the PowerShell script to query Azure DevOps build and timeline APIs.
+
+- **Verify**: `az version` (check that `azure-devops` appears under "extensions")
+- **Install CLI**: `winget install Microsoft.AzureCLI` (Windows) · `brew install azure-cli` (macOS)
+- **Install extension**: `az extension add --name azure-devops`
+- **Docs**: https://learn.microsoft.com/en-us/cli/azure/install-azure-cli
 
 ## Additional Resources
 
@@ -282,8 +294,8 @@ The Azure DevOps timeline contains a hierarchy:
 
 ## Notes
 
-- Requires `gh` CLI authenticated for PR analysis
-- Requires `az` CLI configured (but public API, no auth needed for dd-trace-dotnet)
+- Requires `gh` CLI authenticated for PR analysis (see Prerequisites)
+- Requires `az` CLI with `azure-devops` extension (see Prerequisites)
 - Large builds may take 30-60 seconds to analyze
 - Log downloads are best-effort; may fail due to Azure DevOps API issues
 - Always use scratchpad directory from system prompt, never hardcode /tmp paths

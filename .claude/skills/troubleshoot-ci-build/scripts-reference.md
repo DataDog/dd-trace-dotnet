@@ -12,13 +12,18 @@ This document describes reusable PowerShell scripts for Azure DevOps CI troubles
 
 ### Prerequisites
 
-- **PowerShell 5.1+** - Required to run this script
-  - **Recommended**: PowerShell 7+ (`pwsh`) for cross-platform support
-  - **Minimum**: PowerShell 5.1 (`powershell.exe` on Windows)
-  - Installation: https://learn.microsoft.com/en-us/powershell/scripting/install/installing-powershell
-  - Verify: `pwsh -Version` or `powershell -NoProfile -Command '$PSVersionTable.PSVersion'`
-- **Azure CLI** (`az`) authenticated to DataDog organization
-- **GitHub CLI** (`gh`) authenticated (only if using `-PullRequest` parameter)
+- **PowerShell 7+** (`pwsh`) — recommended; minimum PowerShell 5.1 (`powershell.exe`, Windows only)
+  - Verify: `pwsh -Version`
+  - Install: `winget install Microsoft.PowerShell` (Windows) · `brew install powershell/tap/powershell` (macOS)
+  - Docs: https://learn.microsoft.com/en-us/powershell/scripting/install/installing-powershell
+- **Azure CLI** (`az`) with `azure-devops` extension — used for build/timeline API queries
+  - Verify: `az version` (check that `azure-devops` appears under "extensions")
+  - Install: `winget install Microsoft.AzureCLI` (Windows) · `brew install azure-cli` (macOS), then `az extension add --name azure-devops`
+  - Docs: https://learn.microsoft.com/en-us/cli/azure/install-azure-cli
+- **GitHub CLI** (`gh`) — authenticated; only needed for `-PullRequest` parameter or auto-detect mode
+  - Verify: `gh auth status`
+  - Install: `winget install GitHub.cli` (Windows) · `brew install gh` (macOS)
+  - Docs: https://cli.github.com/
 
 **Note**: This script uses PowerShell-specific features (e.g., `-notin` operator, `HashSet<T>`, `Invoke-RestMethod`) that cannot be easily replicated in bash. Always prefer `pwsh` over `powershell.exe` when both are available.
 
