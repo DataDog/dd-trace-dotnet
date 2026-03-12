@@ -107,7 +107,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             foreach (var packageVersion in PackageVersions.OpenTelemetry)
             {
-                yield return [packageVersion[0], "false", "true", "http/json"];
+                yield return [packageVersion[0], "false", "true", "http/protobuf"];
                 yield return [packageVersion[0], "true", "false", "http/json"];
             }
         }
@@ -258,20 +258,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetEnvironmentVariable("DD_SERVICE", string.Empty);
             SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", datadogTracesEnabled);
 
+            SetEnvironmentVariable("OTEL_EXPORTER_OTLP_PROTOCOL", protocol);
+            SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", $"http://{testAgentHost}:{otlpPort}");
             if (otelTracesEnabled.Equals("true"))
             {
-                var otelProtocol = protocol == "http/json" ? "http/protobuf" : protocol;
                 SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENABLED", "true");
-                SetEnvironmentVariable("OTEL_EXPORTER_OTLP_PROTOCOL", otelProtocol);
-                SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", $"http://{testAgentHost}:{otlpPort}");
-            }
-            else
-            {
-                // For now we only support the 'http/json' protocol for the Traces exporter, so hard-code it
-                SetEnvironmentVariable("OTEL_EXPORTER_OTLP_TRACES_PROTOCOL", "http/json");
-                SetEnvironmentVariable("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", $"http://{testAgentHost}:4318/v1/traces");
-                SetEnvironmentVariable("OTEL_EXPORTER_OTLP_METRICS_PROTOCOL", protocol);
-                SetEnvironmentVariable("OTEL_EXPORTER_OTLP_METRICS_ENDPOINT", $"http://{testAgentHost}:{otlpPort}");
             }
 
             var applicationStartTimeUnixNano = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();

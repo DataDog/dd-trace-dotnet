@@ -113,10 +113,16 @@ namespace Datadog.Trace.Configuration
             {
                 TracesEncoding = otlpTraceSettings.OtlpProtocol switch
                 {
-                    OtlpProtocol.HttpProtobuf => TracesEncoding.OtlpProtobuf,
+                    OtlpProtocol.Grpc => TracesEncoding.DatadogV0_4,
+                    OtlpProtocol.HttpProtobuf => TracesEncoding.DatadogV0_4,
                     OtlpProtocol.HttpJson => TracesEncoding.OtlpJson,
                     _ => TracesEncoding.DatadogV0_4,
                 };
+
+                if (TracesEncoding == TracesEncoding.DatadogV0_4)
+                {
+                    ValidationWarnings.Add($"Found OTEL_TRACES_EXPORTER=otlp, but calculated OTLP protocol {otlpTraceSettings.OtlpProtocol.ToString()} is not yet supported. Falling back to Datadog v0.4 encoding.");
+                }
             }
 
             var metricsSettings = ConfigureMetricsTransport(
