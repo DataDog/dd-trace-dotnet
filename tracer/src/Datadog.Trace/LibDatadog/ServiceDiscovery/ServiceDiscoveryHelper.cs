@@ -7,6 +7,7 @@
 using System;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
+using Datadog.Trace.PlatformHelpers;
 
 namespace Datadog.Trace.LibDatadog.ServiceDiscovery;
 
@@ -38,8 +39,8 @@ internal static class ServiceDiscoveryHelper
                     mutableSettings.DefaultServiceName,
                     mutableSettings.Environment,
                     mutableSettings.ServiceVersion,
-                    processTags: null,
-                    containerId: null);
+                    ProcessTags.SerializedTags, // TODO get the process tags from MutableSettings after https://github.com/DataDog/dd-trace-dotnet/pull/8106 is merged
+                    ContainerMetadata.Instance.ContainerId);
 
                 if (result.Tag == ResultTag.Error)
                 {
