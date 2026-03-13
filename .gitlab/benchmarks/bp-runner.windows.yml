@@ -4,7 +4,7 @@
 # The run_microbenchmarks template handles:
 # - Cloning the repo (candidate to C:\app\candidate, baseline to C:\app\baseline)
 # - Running the benchmarks via how_to_run_benchmarks script
-# - The $env:CODE_SRC variable points to the current clone being benchmarked
+# - $CodeSrc and $BaselineOrCandidate are function parameters passed by bp-runner
 
 experiments:
   - name: dd-trace-dotnet-microbenchmarks
@@ -19,18 +19,22 @@ experiments:
         baseline_branch: ""
 
         # Script to build and run benchmarks
-        # $env:CODE_SRC is set by bp-runner to the cloned repo path (C:\app\candidate)
+        # $CodeSrc is a function parameter set by bp-runner to the cloned repo path
+        # $BaselineOrCandidate indicates which run this is ("baseline" or "candidate")
         how_to_run_benchmarks: |
           $ErrorActionPreference = "Stop"
 
+          Write-Output "Running benchmarks for $BaselineOrCandidate"
+          Write-Output "CodeSrc: $CodeSrc"
+
           Write-Output "Building tracer for benchmarks..."
-          Set-Location $env:CODE_SRC
+          Set-Location $CodeSrc
 
           # Build the tracer (minimal build for benchmarks)
           & .\tracer\build.cmd CreateRequiredDirectories Restore CompileManagedSrc DownloadLibDdwaf CopyLibDdwaf
 
           Write-Output "Running benchmarks..."
-          Set-Location "$env:CODE_SRC\tracer\test\benchmarks\Benchmarks.Trace"
+          Set-Location "$CodeSrc\tracer\test\benchmarks\Benchmarks.Trace"
 
           # Run a single fast benchmark for initial validation
           # --job dry: minimal iterations for fast feedback
