@@ -3,7 +3,7 @@ name: analyze-azdo-build
 description: Analyze Azure DevOps CI build failures in dd-trace-dotnet pipeline. Use this skill whenever the user mentions a failing CI build, PR checks failing, Azure DevOps pipeline failures, test failures in CI, or when they share a build ID or PR number and want to understand what went wrong. Analyzes build failures, categorizes them (infrastructure/flaky/real), and provides actionable recommendations.
 argument-hint: <pr NUMBER | build BUILD_ID>
 user-invocable: true
-allowed-tools: WebFetch, Bash(pwsh:*), Bash(gh pr checks:*), Bash(az devops invoke:*), Bash(az pipelines build list:*), Bash(az pipelines build show:*), Bash(az pipelines runs artifact list:*), Bash(az pipelines runs list:*), Bash(az pipelines runs show:*)
+allowed-tools: WebFetch, Bash(pwsh -Version*), Bash(pwsh *Get-AzureDevOpsBuildAnalysis.ps1*), Bash(pwsh *Retry-AzureDevOpsFailedStages.ps1*), Bash(gh pr checks:*), Bash(az devops invoke:*), Bash(az pipelines build list:*), Bash(az pipelines build show:*), Bash(az pipelines runs artifact list:*), Bash(az pipelines runs list:*), Bash(az pipelines runs show:*)
 ---
 
 # Troubleshoot Azure DevOps Builds for dd-trace-dotnet
