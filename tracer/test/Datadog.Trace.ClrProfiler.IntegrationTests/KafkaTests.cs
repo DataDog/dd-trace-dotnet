@@ -157,9 +157,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     x => x.Tags[Tags.KafkaConsumerGroup] == "Samples.Kafka.AutoCommitConsumer1"
                       || x.Tags[Tags.KafkaConsumerGroup] == "Samples.Kafka.ManualCommitConsumer2");
 
-            // cluster_id is only available with Confluent.Kafka 2.0+ (DescribeClusterAsync)
-            var isKafka2x = !string.IsNullOrEmpty(packageVersion) && packageVersion.StartsWith("2");
-            if (isKafka2x)
+            // cluster_id is only available with Confluent.Kafka 2.3.0+ (DescribeClusterAsync)
+            var hasDescribeCluster = !string.IsNullOrEmpty(packageVersion) && new Version(packageVersion) >= new Version("2.3.0");
+            if (hasDescribeCluster)
             {
                 successfulProducerSpans.Should().OnlyContain(x => x.Tags.ContainsKey(Tags.KafkaClusterId) && !string.IsNullOrEmpty(x.Tags[Tags.KafkaClusterId]));
                 successfulConsumerSpans.Should().OnlyContain(x => x.Tags.ContainsKey(Tags.KafkaClusterId) && !string.IsNullOrEmpty(x.Tags[Tags.KafkaClusterId]));

@@ -414,26 +414,32 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
             try
             {
+                var kafkaAssembly = clientInstance.GetType().Assembly;
+
+                // DescribeClusterAsync and DescribeClusterOptions were added in Confluent.Kafka 2.3.0
+                if (kafkaAssembly.GetType("Confluent.Kafka.Admin.DescribeClusterOptions") is null)
+                {
+                    Log.Debug("Confluent.Kafka.Admin.DescribeClusterOptions not found; cluster_id tag requires Confluent.Kafka >= 2.3.0");
+                    ClusterIdCache.TryAdd(bootstrapServers, string.Empty);
+                    return string.Empty;
+                }
+
+                var builderType = kafkaAssembly.GetType("Confluent.Kafka.DependentAdminClientBuilder");
+                if (builderType is null)
+                {
+                    Log.Error("Failed to find Confluent.Kafka.DependentAdminClientBuilder in the Confluent.Kafka assembly");
+                    return null;
+                }
+
                 var clientHandle = clientInstance.DuckCast<IClientHandle>();
                 var handle = clientHandle.Handle;
                 if (handle is null)
                 {
+                    Log.Error("Kafka client handle is null; unable to extract cluster_id");
                     return null;
                 }
 
-                var kafkaAssembly = clientInstance.GetType().Assembly;
-                var builderType = kafkaAssembly.GetType("Confluent.Kafka.DependentAdminClientBuilder");
-                if (builderType is null)
-                {
-                    return null;
-                }
-
-                var builder = Activator.CreateInstance(builderType, handle);
-                if (builder is null)
-                {
-                    return null;
-                }
-
+                var builder = Activator.CreateInstance(builderType, handle)!;
                 using var adminClient = builder.DuckCast<IAdminClientBuilder>().Build();
                 var clusterId = DescribeClusterWithTimeout(adminClient);
                 ClusterIdCache.TryAdd(bootstrapServers, clusterId);
@@ -448,13 +454,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
         private static string? DescribeClusterWithTimeout(IAdminClient adminClient)
         {
-            object? options = null;
             var optionsType = adminClient.Instance?.GetType().Assembly.GetType("Confluent.Kafka.Admin.DescribeClusterOptions");
-            if (optionsType is not null)
+            if (optionsType is null)
             {
-                options = Activator.CreateInstance(optionsType)!;
-                options.DuckCast<IDescribeClusterOptions>().RequestTimeout = TimeSpan.FromSeconds(2);
+                Log.Error("Failed to find Confluent.Kafka.Admin.DescribeClusterOptions in the Confluent.Kafka assembly");
+                return null;
             }
+
+            var options = Activator.CreateInstance(optionsType)!;
+            options.DuckCast<IDescribeClusterOptions>().RequestTimeout = TimeSpan.FromSeconds(2);
 
             var duckTask = adminClient.DescribeClusterAsync(options);
             var describeResult = SafeGetResult<IDuckTypeTask<IDescribeClusterResult>, IDescribeClusterResult>(duckTask);
