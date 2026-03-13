@@ -16,7 +16,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -42,7 +43,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -68,7 +70,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -94,7 +97,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -120,7 +124,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -146,7 +151,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -172,7 +178,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -198,7 +205,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -224,7 +232,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -250,7 +259,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -276,7 +286,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -302,7 +313,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -328,7 +340,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -354,7 +367,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -380,7 +394,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -406,7 +421,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -432,7 +448,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -458,7 +475,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -484,7 +502,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -510,7 +529,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -536,7 +556,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -562,7 +583,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -588,7 +610,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -614,7 +637,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -640,7 +664,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -666,7 +691,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -692,7 +718,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -718,7 +745,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -744,7 +772,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -770,7 +799,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -796,7 +826,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -822,7 +853,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -848,7 +880,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -874,7 +907,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -900,7 +934,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -926,7 +961,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -952,7 +988,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -978,7 +1015,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -1004,7 +1042,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -1030,7 +1069,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -1056,7 +1096,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -1082,7 +1123,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -1108,7 +1150,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -1134,7 +1177,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -1160,7 +1204,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -1186,7 +1231,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -1212,7 +1258,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -1238,7 +1285,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -1264,7 +1312,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -1290,7 +1339,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -1316,7 +1366,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -1342,7 +1393,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -1368,7 +1420,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -1394,7 +1447,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -1420,7 +1474,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -1446,7 +1501,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -1472,7 +1528,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -1498,7 +1555,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -1524,7 +1582,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -1550,7 +1609,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -1576,7 +1636,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -1602,7 +1663,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -1628,7 +1690,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -1654,7 +1717,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -1680,7 +1744,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -1706,7 +1771,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -1732,7 +1798,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -1758,7 +1825,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -1784,7 +1852,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -1810,7 +1879,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -1836,7 +1906,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -1862,7 +1933,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -1888,7 +1960,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -1914,7 +1987,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -1940,7 +2014,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -1966,7 +2041,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -1992,7 +2068,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -2018,7 +2095,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -2044,7 +2122,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -2070,7 +2149,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -2096,7 +2176,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -2122,7 +2203,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -2148,7 +2230,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -2174,7 +2257,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -2200,7 +2284,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -2226,7 +2311,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -2252,7 +2338,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -2278,7 +2365,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -2304,7 +2392,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -2330,7 +2419,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -2356,7 +2446,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -2382,7 +2473,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -2408,7 +2500,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -2434,7 +2527,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -2460,7 +2554,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -2486,7 +2581,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -2512,7 +2608,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -2538,7 +2635,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -2564,7 +2662,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -2590,7 +2689,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -2616,7 +2716,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -2642,7 +2743,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -2668,7 +2770,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -2694,7 +2797,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -2720,7 +2824,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -2746,7 +2851,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -2772,7 +2878,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -2798,7 +2905,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -2824,7 +2932,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -2850,7 +2959,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -2876,7 +2986,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -2902,7 +3013,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -2928,7 +3040,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -2954,7 +3067,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -2980,7 +3094,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
@@ -3006,7 +3121,8 @@
       out.host: elasticsearch,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Elasticsearch
+      _dd.base_service: Samples.Elasticsearch,
+      _dd.svc_src: elasticsearch
     },
     Metrics: {
       process_id: 0,
