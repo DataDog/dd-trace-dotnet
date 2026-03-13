@@ -6,7 +6,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Vendors.Datadog.Sketches;
 using Datadog.Trace.Vendors.MessagePack;
 
@@ -60,7 +59,9 @@ namespace Datadog.Trace.Agent
         public void Serialize(Stream stream, long bucketDuration)
         {
             var count = 8;
-            if (!string.IsNullOrEmpty(_header.ProcessTags))
+            var details = _header.Details;
+
+            if (!string.IsNullOrEmpty(details.ProcessTags?.SerializedTags))
             {
                 count++;
             }
@@ -70,17 +71,16 @@ namespace Datadog.Trace.Agent
             MessagePackBinary.WriteString(stream, "Hostname");
             MessagePackBinary.WriteString(stream, _header.HostName ?? string.Empty);
 
-            var details = _header.Details;
             MessagePackBinary.WriteString(stream, "Env");
             MessagePackBinary.WriteString(stream, details.Environment ?? string.Empty);
 
             MessagePackBinary.WriteString(stream, "Version");
             MessagePackBinary.WriteString(stream, details.Version ?? string.Empty);
 
-            if (!string.IsNullOrEmpty(_header.ProcessTags))
+            if (!StringUtil.IsNullOrEmpty(details.ProcessTags?.SerializedTags))
             {
                 MessagePackBinary.WriteString(stream, "ProcessTags");
-                MessagePackBinary.WriteString(stream, _header.ProcessTags);
+                MessagePackBinary.WriteString(stream, details.ProcessTags.SerializedTags);
             }
 
             MessagePackBinary.WriteString(stream, "Stats");
