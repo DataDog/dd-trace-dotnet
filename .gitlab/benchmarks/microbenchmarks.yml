@@ -154,12 +154,8 @@ run-benchmarks-test:
   rules:
     - if: $CI_COMMIT_REF_NAME =~ /^v[0-9]+\.[0-9]+\.[0-9]+(-prerelease)?$/
       when: never
-    # Run automatically on this branch for testing
-    - if: $CI_COMMIT_REF_NAME == "augusto/fix-microbenchmarks"
-      interruptible: true
-    # Manual on other branches
-    - when: manual
-      allow_failure: true
+    # Always run for testing (will make manual after validation)
+    - interruptible: true
   artifacts:
     name: "artifacts"
     when: always
