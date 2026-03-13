@@ -6,7 +6,6 @@
 #nullable enable
 
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis;
@@ -25,42 +24,24 @@ namespace Datadog.Trace.Configuration.Schema
         ];
 
         private readonly bool _useV0Tags;
-        private readonly string[] _serviceNames;
+        private readonly ServiceNameMetadata[] _serviceNameMetadata;
 
         public DatabaseSchema(SchemaVersion version, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled, string defaultServiceName, IReadOnlyDictionary<string, string>? serviceNameMappings)
         {
             _useV0Tags = version == SchemaVersion.V0 && !peerServiceTagsEnabled;
 
-            // Calculate service names once, to avoid allocations with every call
+            // Calculate service names and source metadata once, to avoid allocations with every call
             var useSuffix = version == SchemaVersion.V0 && !removeClientServiceNamesEnabled;
-            _serviceNames =
+
+            _serviceNameMetadata =
             [
-                useSuffix ? $"{defaultServiceName}-aerospike" : defaultServiceName,
-                useSuffix ? $"{defaultServiceName}-cosmosdb" : defaultServiceName,
-                useSuffix ? $"{defaultServiceName}-couchbase" : defaultServiceName,
-                useSuffix ? $"{defaultServiceName}-elasticsearch" : defaultServiceName,
-                useSuffix ? $"{defaultServiceName}-mongodb" : defaultServiceName,
-                useSuffix ? $"{defaultServiceName}-redis" : defaultServiceName,
+                ServiceNameMetadata.Resolve("aerospike", defaultServiceName, serviceNameMappings, useSuffix),
+                ServiceNameMetadata.Resolve("cosmosdb", defaultServiceName, serviceNameMappings, useSuffix),
+                ServiceNameMetadata.Resolve("couchbase", defaultServiceName, serviceNameMappings, useSuffix),
+                ServiceNameMetadata.Resolve("elasticsearch", defaultServiceName, serviceNameMappings, useSuffix),
+                ServiceNameMetadata.Resolve("mongodb", defaultServiceName, serviceNameMappings, useSuffix),
+                ServiceNameMetadata.Resolve("redis", defaultServiceName, serviceNameMappings, useSuffix),
             ];
-
-            if (serviceNameMappings is not null)
-            {
-                TryApplyMapping(_serviceNames, serviceNameMappings, "aerospike", ServiceType.Aerospike);
-                TryApplyMapping(_serviceNames, serviceNameMappings, "couchbase", ServiceType.Couchbase);
-                TryApplyMapping(_serviceNames, serviceNameMappings, "cosmosdb", ServiceType.CosmosDb);
-                TryApplyMapping(_serviceNames, serviceNameMappings, "elasticsearch", ServiceType.Elasticsearch);
-                TryApplyMapping(_serviceNames, serviceNameMappings, "mongodb", ServiceType.MongoDb);
-                TryApplyMapping(_serviceNames, serviceNameMappings, "redis", ServiceType.Redis);
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            static void TryApplyMapping(string[] serviceNames, IReadOnlyDictionary<string, string> mappings, string key, ServiceType dbType)
-            {
-                if (mappings.TryGetValue(key, out var mappedName))
-                {
-                    serviceNames[(int)dbType] = mappedName;
-                }
-            }
         }
 
         /// <summary>
@@ -91,7 +72,7 @@ namespace Datadog.Trace.Configuration.Schema
 
         public string GetOperationName(OperationType databaseType) => OperationNames[(int)databaseType];
 
-        public string GetServiceName(ServiceType databaseType) => _serviceNames[(int)databaseType];
+        public ServiceNameMetadata GetServiceNameMetadata(ServiceType databaseType) => _serviceNameMetadata[(int)databaseType];
 
         public CouchbaseTags CreateCouchbaseTags()
             => _useV0Tags ? new CouchbaseTags() : new CouchbaseV1Tags();

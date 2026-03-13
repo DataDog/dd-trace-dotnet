@@ -71,7 +71,7 @@ public sealed class RequestInvokerHandlerSendAsyncIntegration
             }
 
             var operationName = perTraceSettings.Schema.Database.GetOperationName(DatabaseSchema.OperationType.CosmosDb);
-            var serviceName = perTraceSettings.Schema.Database.GetServiceName(DatabaseSchema.ServiceType.CosmosDb);
+            var (serviceName, serviceNameSource) = perTraceSettings.Schema.Database.GetServiceNameMetadata(DatabaseSchema.ServiceType.CosmosDb);
             var tags = perTraceSettings.Schema.Database.CreateCosmosDbTags();
 
             tags.ContainerId = containerId;
@@ -95,7 +95,7 @@ public sealed class RequestInvokerHandlerSendAsyncIntegration
             tags.SetAnalyticsSampleRate(IntegrationId.CosmosDb, perTraceSettings.Settings, enabledWithGlobalSetting: false);
             perTraceSettings.Schema.RemapPeerService(tags);
 
-            var scope = tracer.StartActiveInternal(operationName, tags: tags, serviceName: serviceName);
+            var scope = tracer.StartActiveInternal(operationName, tags: tags, serviceName: serviceName, serviceNameSource: serviceNameSource);
             var span = scope.Span;
 
             span.Type = SpanTypes.Sql;

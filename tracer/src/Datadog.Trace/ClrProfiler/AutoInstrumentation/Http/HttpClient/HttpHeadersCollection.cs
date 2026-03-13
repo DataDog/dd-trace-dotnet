@@ -12,9 +12,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
 {
     internal readonly struct HttpHeadersCollection : IHeadersCollection
     {
+#if NETCOREAPP
+        private readonly System.Net.Http.Headers.HttpRequestHeaders _headers;
+#else
         private readonly IRequestHeaders _headers;
+#endif
 
+#if NETCOREAPP
+        public HttpHeadersCollection(System.Net.Http.Headers.HttpRequestHeaders headers)
+#else
         public HttpHeadersCollection(IRequestHeaders headers)
+#endif
         {
             if (headers is null)
             {
@@ -31,7 +39,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
                 return values;
             }
 
-            return Enumerable.Empty<string>();
+            return [];
         }
 
         public void Set(string name, string value)
