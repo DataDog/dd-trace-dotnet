@@ -101,15 +101,15 @@ experiments:
             --exporters json `
             --artifacts $localArtifactsDir
 
-          # Copy results to ARTIFACTS_DIR with bp-runner naming convention
-          # bp-runner expects: candidate-<name>.json or baseline-<name>.json
+          # Copy results to ARTIFACTS_DIR with naming convention matching benchmarking-platform
+          # Format: candidate.Trace.SpanBenchmark.json (strips Benchmarks. prefix and -report-full-compressed suffix)
           $resultsDir = "$localArtifactsDir\results"
           if (Test-Path $resultsDir) {
               $jsonFiles = Get-ChildItem -Path $resultsDir -Filter "*.json" -Recurse
               foreach ($file in $jsonFiles) {
-                  # Extract benchmark name from path (e.g., Benchmarks.Trace.SpanBenchmark-report.json)
-                  $benchmarkName = $file.BaseName -replace '-report$', ''
-                  $destName = "$env:BASELINE_OR_CANDIDATE-$benchmarkName-$env:PARALLEL_INDEX.json"
+                  # Extract benchmark name: Benchmarks.Trace.SpanBenchmark-report-full-compressed.json -> Trace.SpanBenchmark
+                  $benchmarkName = $file.BaseName -replace '^Benchmarks\.', '' -replace '-report(-full)?(-compressed)?$', ''
+                  $destName = "$env:BASELINE_OR_CANDIDATE.$benchmarkName.json"
                   $destPath = "$env:ARTIFACTS_DIR\$destName"
                   Write-Output "Copying $($file.Name) -> $destName"
                   Copy-Item $file.FullName -Destination $destPath -Force
