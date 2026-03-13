@@ -89,12 +89,13 @@ experiments:
           Set-Location "$env:CODE_SRC\tracer\test\benchmarks\Benchmarks.Trace"
 
           # Run benchmarks for this parallel item
+          # --no-build: use pre-built output from how_to_fetch_release (avoids parallel build conflicts)
           # --job dry: minimal iterations for fast feedback
           # --filter: use PARALLEL_ITEM as the benchmark filter
           # --exporters json: output results in JSON format
           # Note: Using net6.0 because the AMI has .NET 3.1, 6.0, and 10.0 (not 8.0)
           $localArtifactsDir = "$env:CODE_SRC\tracer\artifacts\benchmarks\$env:PARALLEL_INDEX"
-          dotnet run -c Release -f net6.0 -- `
+          dotnet run -c Release -f net6.0 --no-build -- `
             --job dry `
             --filter "$env:PARALLEL_ITEM" `
             -r net6.0 `
