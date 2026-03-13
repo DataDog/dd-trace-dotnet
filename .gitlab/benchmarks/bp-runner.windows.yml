@@ -31,7 +31,7 @@ experiments:
         # Each item is a BenchmarkDotNet filter pattern
         parallelize:
           items: "*SpanBenchmark* *AgentWriterBenchmark* *AspNetCoreBenchmark*"
-          cpus_per_item: 1
+          cpus: 1
 
         # Script to clone repo AND build tracer (runs ONCE before parallel benchmarks)
         # This replaces the default fetch script with one that also builds.
