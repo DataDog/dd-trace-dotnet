@@ -657,6 +657,10 @@ namespace Datadog.Trace.Debugger
                         .Add(_diagnosticsUploader)
                         .Add(_probeStatusPoller)
                         .DisposeAll();
+
+            // Cannot await here because Dispose() is synchronous and callers hold locks.
+            // On master, _dogStats was disposed via SafeDisposal.Add() which called sync
+            // Dispose() — itself fire-and-forget internally via Task.Run().
             _dogStats?.DisposeAsync().ContinueWith(t => Log.Error(t.Exception, "Error waiting for StatsD disposal"), TaskContinuationOptions.OnlyOnFaulted);
         }
     }

@@ -316,6 +316,9 @@ internal sealed class StatsdManager : IStatsdManager
             if (Interlocked.Exchange(ref _disposed, 1) == 0)
             {
                 Log.Debug("Disposing DogStatsdService");
+                // We push this to a background thread to avoid disposals running in-line
+                // in consuming code. This flushes any outstanding data too
+                // so could take a relatively long time
                 _ = Task.Run(DisposeClientAsync);
             }
         }
