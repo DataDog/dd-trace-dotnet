@@ -43,10 +43,11 @@ experiments:
           # --job dry: minimal iterations for fast feedback
           # --filter: run only SpanBenchmark.StartFinishSpan
           # --exporters json: output results in JSON format
-          dotnet run -c Release -f net8.0 -- `
+          # Note: Using net6.0 because the AMI has .NET 3.1, 6.0, and 10.0 (not 8.0)
+          dotnet run -c Release -f net6.0 -- `
             --job dry `
             --filter "*SpanBenchmark.StartFinishSpan" `
-            -r net8.0 `
+            -r net6.0 `
             --exporters json
 
           Write-Output "Benchmarks completed!"
