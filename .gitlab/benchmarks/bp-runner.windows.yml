@@ -4,12 +4,16 @@
 # The run_microbenchmarks template handles:
 # - Cloning the repo (candidate to C:\app\candidate, baseline to C:\app\baseline)
 # - Running the benchmarks via how_to_run_benchmarks script
-# - $CodeSrc and $BaselineOrCandidate are function parameters passed by bp-runner
+#
+# Environment variables available:
+# - $env:CODE_SRC: Path to cloned repo (set by bp-runner)
+# - $env:BASELINE_OR_CANDIDATE: "candidate" or "baseline"
+# - $env:PARALLEL_ITEM: Benchmark filter pattern for this parallel run
+# - $env:PARALLEL_INDEX: 0-based index of this parallel run
 #
 # Parallelization:
-# - Each PARALLEL_ITEM is a benchmark filter pattern
-# - Benchmarks run in parallel across CPU groups
-# - Results are aggregated after all parallel runs complete
+# - how_to_fetch_release runs ONCE per candidate/baseline to clone and build
+# - how_to_run_benchmarks runs in PARALLEL for each PARALLEL_ITEM
 
 experiments:
   - name: dd-trace-dotnet-microbenchmarks
@@ -29,30 +33,56 @@ experiments:
           items: "*SpanBenchmark* *AgentWriterBenchmark* *AspNetCoreBenchmark*"
           cpus_per_item: 1
 
-        # Script to build and run benchmarks
-        # $CodeSrc is a function parameter set by bp-runner to the cloned repo path
-        # $BaselineOrCandidate indicates which run this is ("baseline" or "candidate")
-        # $env:PARALLEL_ITEM is the benchmark filter pattern for this parallel run
-        # $env:PARALLEL_INDEX is the 0-based index of this parallel run
-        how_to_run_benchmarks: |
+        # Script to clone repo AND build tracer (runs ONCE before parallel benchmarks)
+        # This replaces the default fetch script with one that also builds.
+        how_to_fetch_release: |
           $ErrorActionPreference = "Stop"
 
-          Write-Output "Running benchmarks for $BaselineOrCandidate"
-          Write-Output "CodeSrc: $CodeSrc"
-          Write-Output "PARALLEL_ITEM: $env:PARALLEL_ITEM"
-          Write-Output "PARALLEL_INDEX: $env:PARALLEL_INDEX"
+          Write-Output "=== Fetching release for $env:BASELINE_OR_CANDIDATE ==="
+          Write-Output "CODE_SRC: $env:CODE_SRC"
+          Write-Output "BRANCH: $env:BRANCH"
+          Write-Output "COMMIT_SHA: $env:COMMIT_SHA"
+
+          # Clone the repository
+          if (Test-Path $env:CODE_SRC) {
+              Remove-Item -Recurse -Force $env:CODE_SRC
+          }
+          New-Item -ItemType Directory -Path $env:CODE_SRC -Force | Out-Null
+
+          Write-Output "Cloning $env:REPO at $env:COMMIT_SHA..."
+          if ($env:GITHUB_TOKEN) {
+              git clone "https://x-access-token:$env:GITHUB_TOKEN@github.com/$env:REPO.git" $env:CODE_SRC
+          } else {
+              git clone "https://github.com/$env:REPO.git" $env:CODE_SRC
+          }
+
+          Set-Location $env:CODE_SRC
+          git checkout $env:COMMIT_SHA
 
           # Add dotnet to PATH (installed at C:\dotnet on the AMI)
           [Environment]::SetEnvironmentVariable("PATH", "C:\dotnet;" + [Environment]::GetEnvironmentVariable("PATH", [EnvironmentVariableTarget]::Process), [EnvironmentVariableTarget]::Process)
 
+          # Build the tracer ONCE (minimal build for benchmarks)
           Write-Output "Building tracer for benchmarks..."
-          Set-Location $CodeSrc
-
-          # Build the tracer (minimal build for benchmarks)
           & .\tracer\build.cmd CreateRequiredDirectories Restore CompileManagedSrc DownloadLibDdwaf CopyLibDdwaf
 
-          Write-Output "Running benchmarks with filter: $env:PARALLEL_ITEM"
-          Set-Location "$CodeSrc\tracer\test\benchmarks\Benchmarks.Trace"
+          Write-Output "=== Fetch and build complete for $env:BASELINE_OR_CANDIDATE ==="
+
+        # Script to run benchmarks (runs in PARALLEL for each PARALLEL_ITEM)
+        # The tracer is already built by how_to_fetch_release.
+        how_to_run_benchmarks: |
+          $ErrorActionPreference = "Stop"
+
+          Write-Output "=== Running benchmarks ==="
+          Write-Output "BASELINE_OR_CANDIDATE: $env:BASELINE_OR_CANDIDATE"
+          Write-Output "CODE_SRC: $env:CODE_SRC"
+          Write-Output "PARALLEL_ITEM: $env:PARALLEL_ITEM"
+          Write-Output "PARALLEL_INDEX: $env:PARALLEL_INDEX"
+
+          # Add dotnet to PATH
+          [Environment]::SetEnvironmentVariable("PATH", "C:\dotnet;" + [Environment]::GetEnvironmentVariable("PATH", [EnvironmentVariableTarget]::Process), [EnvironmentVariableTarget]::Process)
+
+          Set-Location "$env:CODE_SRC\tracer\test\benchmarks\Benchmarks.Trace"
 
           # Run benchmarks for this parallel item
           # --job dry: minimal iterations for fast feedback
@@ -60,7 +90,7 @@ experiments:
           # --exporters json: output results in JSON format
           # --artifacts: output to indexed directory for aggregation
           # Note: Using net6.0 because the AMI has .NET 3.1, 6.0, and 10.0 (not 8.0)
-          $artifactsDir = "$CodeSrc\tracer\artifacts\benchmarks\$env:PARALLEL_INDEX"
+          $artifactsDir = "$env:CODE_SRC\tracer\artifacts\benchmarks\$env:PARALLEL_INDEX"
           dotnet run -c Release -f net6.0 -- `
             --job dry `
             --filter "$env:PARALLEL_ITEM" `
@@ -68,4 +98,4 @@ experiments:
             --exporters json `
             --artifacts $artifactsDir
 
-          Write-Output "Benchmarks completed for filter: $env:PARALLEL_ITEM"
+          Write-Output "=== Benchmarks completed for filter: $env:PARALLEL_ITEM ==="
