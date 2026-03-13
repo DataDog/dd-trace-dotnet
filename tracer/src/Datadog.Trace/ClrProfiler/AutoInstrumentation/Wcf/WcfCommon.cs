@@ -63,8 +63,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
                 string? userAgent = null;
                 string? httpMethod = null;
                 WebHeadersCollection? headers = null;
+                var requestProperties = requestMessage.Properties;
 
-                IDictionary<string, object?>? requestProperties = requestMessage.Properties;
                 if (requestProperties is not null
                  && requestProperties.TryGetValue("httpRequest", out var httpRequestProperty)
                  && httpRequestProperty?.GetType().FullName != null
@@ -90,8 +90,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
                             headers = webHeaderCollection.Wrap();
 
                             extractedContext = tracer.TracerManager.SpanContextPropagator
-                                                                    .Extract(headers.Value)
-                                                                    .MergeBaggageInto(Baggage.Current);
+                                                     .Extract(headers.Value)
+                                                     .MergeBaggageInto(Baggage.Current);
                         }
                         catch (Exception ex)
                         {
@@ -102,35 +102,51 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
 
                 if (extractedContext.SpanContext is null && requestMessage.Headers is { } messageHeaders)
                 {
-                    Log.Debug("Extracting from WCF headers if any as http headers hadn't been found.");
-                    try
+                    if (tracer.ActiveScope is { } activeScope)
                     {
-                        extractedContext = tracer.TracerManager.SpanContextPropagator
-                                                                .Extract(messageHeaders, GetHeaderValues)
-                                                                .MergeBaggageInto(Baggage.Current);
-
-                        static IEnumerable<string?> GetHeaderValues(IMessageHeaders headers, string name)
-                        {
-                            try
-                            {
-                                const string ns = "datadog";
-                                var index = headers.FindHeader(name, ns);
-                                if (index >= 0)
-                                {
-                                    return [headers.GetHeader<string>(name, ns)];
-                                }
-                            }
-                            catch (Exception ex)
-                            {
-                                Log.Error(ex, "Error extracting propagated WCF headers.");
-                            }
-
-                            return [];
-                        }
+                        Log.Warning("Skipped extracting headers due to existing scope: {ActiveScope}", activeScope.Span);
                     }
-                    catch (Exception ex)
+                    else
                     {
-                        Log.Error(ex, "Error extracting propagated WCF headers.");
+                        Log.Debug("Extracting from WCF headers if any as http headers hadn't been found.");
+                        try
+                        {
+                            extractedContext = tracer.TracerManager.SpanContextPropagator
+                                                     .Extract(messageHeaders, GetHeaderValues)
+                                                     .MergeBaggageInto(Baggage.Current);
+
+                            static IEnumerable<string?> GetHeaderValues(IMessageHeaders headers, string name)
+                            {
+                                try
+                                {
+                                    const string datadogNs = "datadog";
+                                    var index = headers.FindHeader(name, datadogNs);
+                                    if (index >= 0)
+                                    {
+                                        return [headers.GetHeader<string>(name, datadogNs)];
+                                    }
+
+                                    // Also check the W3C trace context namespace for headers injected
+                                    // by OpenTelemetry WCF client instrumentation (e.g. traceparent, tracestate)
+                                    const string w3CNs = "https://www.w3.org/TR/trace-context/";
+                                    index = headers.FindHeader(name, w3CNs);
+                                    if (index >= 0)
+                                    {
+                                        return [headers.GetHeader<string>(name, w3CNs)];
+                                    }
+                                }
+                                catch (Exception ex)
+                                {
+                                    Log.Error(ex, "Error extracting propagated WCF headers.");
+                                }
+
+                                return [];
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Error(ex, "Error extracting propagated WCF headers.");
+                        }
                     }
                 }
 

@@ -296,6 +296,12 @@ namespace Datadog.Trace
         internal PathwayContext? PathwayContext { get; private set; }
 
         /// <summary>
+        /// Gets or sets the source that set the service name on this span.
+        /// Null when the service name is the default (not overridden by an integration).
+        /// </summary>
+        internal string ServiceNameSource { get; set; }
+
+        /// <summary>
         ///  Gets a value indicating whether this <see cref="SpanContext"/> was propagated from a remote parent.
         /// </summary>
         internal bool IsRemote { get; }
