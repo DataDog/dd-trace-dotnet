@@ -88,6 +88,7 @@ namespace Datadog.Trace
             set
             {
                 Context.ServiceName = value;
+                Context.ServiceNameSource = Configuration.Schema.ServiceNameMetadata.Manual;
             }
         }
 
