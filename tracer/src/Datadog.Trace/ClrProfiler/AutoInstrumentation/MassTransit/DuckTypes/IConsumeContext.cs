@@ -5,65 +5,23 @@
 
 #nullable enable
 
-using System;
-using System.Collections.Generic;
-
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.DuckTypes;
 
 /// <summary>
-/// Minimal duck-typing interface for MassTransit.ConsumeContext
-/// Only includes the properties needed by MassTransitIntegration and DiagnosticObserver
+/// Minimal duck-typing interface for MassTransit.BaseConsumeContext.
+/// Only includes properties that are concretely public on BaseConsumeContext.
 /// </summary>
 internal interface IConsumeContext
 {
     /// <summary>
-    /// Gets the message ID
+    /// Gets the receive context — public concrete property on BaseConsumeContext.
+    /// Used to access InputAddress for the process span resource name.
     /// </summary>
-    Guid? MessageId { get; }
+    IReceiveContext? ReceiveContext { get; }
 
     /// <summary>
-    /// Gets the conversation ID
+    /// Gets the message-level headers containing injected trace context.
+    /// Works for some context types; TryDuckCast handles types where it fails.
     /// </summary>
-    Guid? ConversationId { get; }
-
-    /// <summary>
-    /// Gets the correlation ID
-    /// </summary>
-    Guid? CorrelationId { get; }
-
-    /// <summary>
-    /// Gets the initiator ID
-    /// </summary>
-    Guid? InitiatorId { get; }
-
-    /// <summary>
-    /// Gets the request ID (for request/response)
-    /// </summary>
-    Guid? RequestId { get; }
-
-    /// <summary>
-    /// Gets the source address
-    /// </summary>
-    Uri? SourceAddress { get; }
-
-    /// <summary>
-    /// Gets the destination address
-    /// </summary>
-    Uri? DestinationAddress { get; }
-
-    /// <summary>
-    /// Gets the response address
-    /// </summary>
-    Uri? ResponseAddress { get; }
-
-    /// <summary>
-    /// Gets the fault address
-    /// </summary>
-    Uri? FaultAddress { get; }
-
-    /// <summary>
-    /// Gets the receive context which contains InputAddress
-    /// Returns object to allow duck-typing to IReceiveContext
-    /// </summary>
-    object? ReceiveContext { get; }
+    IHeaders? Headers { get; }
 }

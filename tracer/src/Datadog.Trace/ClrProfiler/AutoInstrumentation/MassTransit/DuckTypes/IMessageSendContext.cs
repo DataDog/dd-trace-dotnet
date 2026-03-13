@@ -1,4 +1,4 @@
-// <copyright file="ISendContext.cs" company="Datadog">
+// <copyright file="IMessageSendContext.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -10,10 +10,11 @@ using System;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.DuckTypes;
 
 /// <summary>
-/// Duck-typing interface for MassTransit.SendContext
-/// Used for extracting send operation metadata for tracing.
+/// Duck-typing interface for MassTransit.MessageSendContext&lt;T&gt;.
+/// Targets MessageSendContext&lt;T&gt; directly — both loopback and transport-specific send contexts
+/// (e.g. BasicPublishRabbitMqSendContext) inherit from MessageSendContext&lt;T&gt;.
 /// </summary>
-internal interface ISendContext
+internal interface IMessageSendContext
 {
     /// <summary>
     /// Gets the message ID
@@ -61,7 +62,8 @@ internal interface ISendContext
     Uri? FaultAddress { get; }
 
     /// <summary>
-    /// Gets the message headers (returns object, accessed via reflection)
+    /// Gets the message headers for trace context injection.
+    /// Returns object? — caller uses DuckCast&lt;DictionarySendHeadersCopy&gt;() to copy _headers.
     /// </summary>
     object? Headers { get; }
 }

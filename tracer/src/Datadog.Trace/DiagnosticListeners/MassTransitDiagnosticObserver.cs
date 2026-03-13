@@ -89,7 +89,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 {
                     // Send events (producer spans)
                     case "MassTransit.Transport.Send.Start":
-                        OnProduceStart(arg);
+                        OnSendStart(arg);
                         break;
                     case "MassTransit.Transport.Send.Stop":
                         OnStop("Send");
@@ -164,7 +164,7 @@ namespace Datadog.Trace.DiagnosticListeners
             }
         }
 
-        private void OnProduceStart(object? arg)
+        private void OnSendStart(object? arg)
         {
             if (arg == null)
             {
@@ -232,14 +232,13 @@ namespace Datadog.Trace.DiagnosticListeners
             // Pass transportHeaders (already IHeaders proxy) directly to the extract adapter.
             // ContextPropagationExtractAdapter.GetValues() iterates GetAll() and casts each item
             // as KeyValuePair<string, object> — no duck typing of items needed.
-            PropagationContext parentContext = default;
+            PropagationContext parentContext;
             if (transportHeaders != null)
             {
                 var adapter = new ContextPropagationExtractAdapter(transportHeaders);
                 parentContext = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(adapter);
             }
-
-            if (parentContext.SpanContext == null)
+            else
             {
                 parentContext = MassTransitCommon.ExtractTraceContext(Tracer.Instance, arg);
             }
@@ -271,51 +270,43 @@ namespace Datadog.Trace.DiagnosticListeners
                 return;
             }
 
-            // For consume, we get a ConsumeContext.
-            // InputAddress gives clean queue names like "GettingStarted", "OrderState"
-            // while DestinationAddress might be a URN like "loopback://localhost/urn:message:..."
-
-            // Note: We use reflection here because the most common context type (MessageConsumeContext<T>)
-            // uses explicit interface implementation for all properties, which duck typing cannot handle.
-            // Duck typing only works for some proxy types like CorrelationIdConsumeContextProxy<T>.
-            string? inputAddress = null;
-            var receiveContext = MassTransitCommon.TryGetProperty<object>(arg, "ReceiveContext");
-            if (receiveContext != null)
-            {
-                inputAddress = MassTransitCommon.TryGetProperty<Uri>(receiveContext, "InputAddress")?.ToString();
-            }
-
-            // Fallback to DestinationAddress if InputAddress not available
-            if (string.IsNullOrEmpty(inputAddress))
-            {
-                inputAddress = MassTransitCommon.TryGetProperty<Uri>(arg, "DestinationAddress")?.ToString();
-            }
-
-            // If still not available, try SourceAddress
-            if (string.IsNullOrEmpty(inputAddress))
-            {
-                inputAddress = MassTransitCommon.TryGetProperty<Uri>(arg, "SourceAddress")?.ToString();
-            }
-
             var messageType = MassTransitCommon.GetMessageType(arg);
 
             Log.Debug(
-                "MassTransitDiagnosticObserver.OnConsumeStart: InputAddress={InputAddress}, MessageType={MessageType}, OperationType={OperationType}",
-                inputAddress,
+                "MassTransitDiagnosticObserver.OnConsumeStart: MessageType={MessageType}, OperationType={OperationType}",
                 messageType,
                 operationType);
 
-            // Extract parent context from headers for distributed tracing
-            var parentContext = MassTransitCommon.ExtractTraceContext(Tracer.Instance, arg);
+            // Try duck casting to IConsumeContext to get Headers.
+            // Fails for MessageConsumeContext<T> (the most common type) because it implements
+            // Headers as an explicit interface: `Headers MessageContext.Headers => _context.Headers`
+            // Duck typing only finds public class members, not explicit interface implementations.
+            // In that case TryDuckCast returns false and we fall back to reflection-based ExtractTraceContext.
+            PropagationContext parentContext;
+            if (arg.TryDuckCast<IConsumeContext>(out var consumeCtx) && consumeCtx.Headers != null)
+            {
+                var adapter = new ContextPropagationExtractAdapter(consumeCtx.Headers);
+                parentContext = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(adapter);
+            }
+            else
+            {
+                parentContext = MassTransitCommon.ExtractTraceContext(Tracer.Instance, arg);
+            }
 
-            // For Process/Consume/Handle spans, check if there's an active Receive span to use as parent
-            // If a Receive span is active, use it instead of the extracted context from headers
+            // Get InputAddress from ReceiveContext — via duck typing if available, reflection otherwise.
+            var inputAddress = consumeCtx?.ReceiveContext?.InputAddress?.ToString();
+            if (string.IsNullOrEmpty(inputAddress))
+            {
+                var rc = MassTransitCommon.TryGetProperty<object>(arg, "ReceiveContext");
+                inputAddress = rc != null ? MassTransitCommon.TryGetProperty<Uri>(rc, "InputAddress")?.ToString() : null;
+            }
+
+            // For Process/Consume/Handle spans, check if there's an active Receive span to use as parent.
             var activeScope = Tracer.Instance.ActiveScope;
             if (activeScope?.Span != null &&
                 activeScope.Span.OperationName == "masstransit.receive" &&
                 activeScope.Span.GetTag("component") == MassTransitConstants.ComponentTagName)
             {
-                // Use the active Receive span as the parent for Process/Consume spans
                 parentContext = new PropagationContext(activeScope.Span.Context as SpanContext, Baggage.Current);
 
                 Log.Debug(
@@ -327,9 +318,6 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (scope != null)
             {
-                // Note: MT8 OTEL instrumentation does not set messageId/conversationId/correlationId tags
-                // on consumer "process" spans, only on "receive" spans. We match that behavior.
-
                 Log.Debug(
                     "MassTransitDiagnosticObserver.OnConsumeStart: Created span TraceId={TraceId}, SpanId={SpanId}",
                     scope.Span.TraceId,

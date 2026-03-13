@@ -468,6 +468,8 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("messaging.masstransit.message_types")
                 .IsOptional("messaging.masstransit.destination_address")
                 .IsOptional("messaging.masstransit.source_address")
+                .IsOptional("messaging.masstransit.response_address")
+                .IsOptional("messaging.masstransit.fault_address")
                 .IsOptional("messaging.masstransit.input_address")
                 .IsOptional("messaging.masstransit.consumer_type")
                 .IsOptional("messaging.masstransit.saga_type")
