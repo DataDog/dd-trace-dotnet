@@ -1,4 +1,4 @@
-﻿// <copyright file="StatsdManager.cs" company="Datadog">
+// <copyright file="StatsdManager.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -164,6 +164,13 @@ internal sealed class StatsdManager : IStatsdManager
         EnsureClient(ensureCreated: false, forceRecreate: true);
     }
 
+    public async Task DisposeAsync()
+    {
+        _settingSubscription.Dispose();
+        // We swap out the client to make sure we do any flushes.
+        await EnsureClientAsync(ensureCreated: false, forceRecreate: true).ConfigureAwait(false);
+    }
+
     // Internal for testing
     internal static bool HasImpactingChanges(TracerSettings.SettingsManager.SettingChanges changes)
     {
@@ -205,6 +212,29 @@ internal sealed class StatsdManager : IStatsdManager
         }
 
         previous?.MarkClosing(); // will dispose when last lease releases
+    }
+
+    private async Task EnsureClientAsync(bool ensureCreated, bool forceRecreate)
+    {
+        StatsdClientHolder? previous;
+        Log.Debug("Recreating statsdClient: Create new client: {CreateClient}, Force recreate: {ForceRecreate}", ensureCreated, forceRecreate);
+
+        lock (_lock)
+        {
+            previous = _current;
+            if (ensureCreated && previous != null && !forceRecreate)
+            {
+                // Already created
+                return;
+            }
+
+            _current = ensureCreated ? _factory() : null;
+        }
+
+        if (previous is not null)
+        {
+            await previous.MarkClosingAsync().ConfigureAwait(false); // will dispose when last lease releases
+        }
     }
 
     internal readonly struct StatsdClientLease(StatsdClientHolder? holder) : IDisposable
@@ -300,23 +330,43 @@ internal sealed class StatsdManager : IStatsdManager
             }
         }
 
+        public async Task MarkClosingAsync()
+        {
+            // Set the closing bit to ensure no more retention of client
+#if NET6_0_OR_GREATER
+            Interlocked.Or(ref _state, ClosingBit);
+#else
+            // Interlocked.Or is not available in < .NET 6, so have to emulate it
+            int state;
+            do
+            {
+                state = Volatile.Read(ref _state);
+            }
+            while (Interlocked.CompareExchange(ref _state, state | ClosingBit, state) != state);
+#endif
+
+            // If ref count is 0 (i.e., state == ClosingBit), dispose now; else wait for Release() to reach 0
+            if ((Volatile.Read(ref _state) & int.MaxValue) == 0)
+            {
+                await DisposeAsync().ConfigureAwait(false);
+            }
+        }
+
         private void Dispose()
         {
             if (Interlocked.Exchange(ref _disposed, 1) == 0)
             {
                 Log.Debug("Disposing DogStatsdService");
+                Client.DisposeAsync().GetAwaiter().GetResult();
+            }
+        }
 
-                // We push this all to a background thread to avoid the disposes running in-line
-                // the DogStatsdService does sync-over-async, and this can cause thread exhaustion
-                _ = Task.Run(() =>
-                {
-                    if (Client is DogStatsdService dogStatsd)
-                    {
-                        dogStatsd.Flush();
-                    }
-
-                    Client.Dispose();
-                });
+        private async Task DisposeAsync()
+        {
+            if (Interlocked.Exchange(ref _disposed, 1) == 0)
+            {
+                Log.Debug("Disposing DogStatsdService");
+                await Client.DisposeAsync().ConfigureAwait(false);
             }
         }
     }
