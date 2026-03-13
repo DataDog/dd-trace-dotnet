@@ -4,28 +4,54 @@
 // </copyright>
 
 using System;
-using System.Security.Cryptography;
-using System.Text;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Debugger.Helpers
 {
     internal static class StringExtensions
     {
+        private static readonly char[] Hex = "0123456789abcdef".ToCharArray();
+
         // https://stackoverflow.com/questions/18021808/uuid-interop-with-c-sharp-code
         public static string ToUUID(this string input)
         {
-            byte[] hash;
-            using (var md5 = MD5.Create())
+            // 1. To MD5
+#if NETCOREAPP
+            // MD5 always produces a 16 byte hash
+            Span<byte> bytes = stackalloc byte[16];
+            Md5Helper.ComputeMd5Hash(input, bytes);
+#else
+            var bytes = Md5Helper.ComputeMd5Hash(input);
+#endif
+
+            // version (3) and variant (RFC 4122)
+            bytes[6] = (byte)((bytes[6] & 0x0F) | 0x30);
+            bytes[8] = (byte)((bytes[8] & 0x3F) | 0x80);
+
+            // Format the return bytes as a guid
+            // note that we _could_ get a UUID from these bytes by trivially doing
+            // new Guid(bytes).ToString("d") but that uses a slightly different
+            // layout of the bytes, which would cause a different UUID to be generated
+#if NETCOREAPP
+            Span<char> chars = stackalloc char[36];
+#else
+            var chars = new char[36];
+#endif
+            var targetIndex = 0;
+
+            for (var sourceIndex = 0; sourceIndex < 16; sourceIndex++)
             {
-                hash = md5.ComputeHash(Encoding.UTF8.GetBytes(input));
+                if (sourceIndex == 4 || sourceIndex == 6 || sourceIndex == 8 || sourceIndex == 10)
+                {
+                    chars[targetIndex++] = '-';
+                }
+
+                var sourceByte = bytes[sourceIndex];
+                chars[targetIndex++] = Hex[sourceByte >> 4];
+                chars[targetIndex++] = Hex[sourceByte & 0xF];
             }
 
-            hash[6] &= 0x0f;
-            hash[6] |= 0x30;
-            hash[8] &= 0x3f;
-            hash[8] |= 0x80;
-            var hex = BitConverter.ToString(hash).Replace("-", string.Empty).ToLower();
-            return hex.Insert(8, "-").Insert(13, "-").Insert(18, "-").Insert(23, "-");
+            return new string(chars);
         }
     }
 }
