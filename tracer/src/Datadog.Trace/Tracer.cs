@@ -388,7 +388,9 @@ namespace Datadog.Trace
 
             var context = new SpanContext(parent, traceContext, finalServiceName, traceId: traceId, spanId: spanId, rawTraceId: rawTraceId, rawSpanId: rawSpanId);
             context.LastParentId = lastParentId; // lastParentId is only non-null when parent is extracted from W3C headers
-            context.ServiceNameSource = serviceNameSource;
+            context.ServiceNameSource = serviceName is null
+                ? serviceNameSource
+                : (serviceNameSource is null ? Configuration.Schema.ServiceNameMetadata.Manual : serviceNameSource);
             return context;
         }
 
