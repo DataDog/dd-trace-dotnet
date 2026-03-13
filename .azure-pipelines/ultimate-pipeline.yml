@@ -32,7 +32,7 @@ pr:
       - .vscode/
       - docs/
       - tracer/samples/
-      - tracer/tools/*.ps1
+      - tracer/tools/*.ps*1
       - AGENTS.md
       - LICENSE
       - NOTICE
