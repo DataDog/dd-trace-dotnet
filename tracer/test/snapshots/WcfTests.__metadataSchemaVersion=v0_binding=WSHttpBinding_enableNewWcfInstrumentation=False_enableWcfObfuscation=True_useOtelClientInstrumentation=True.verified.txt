@@ -69,7 +69,8 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Wcf
+      _dd.base_service: Samples.Wcf,
+      _dd.svc_src: http-client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -185,7 +186,8 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Wcf
+      _dd.base_service: Samples.Wcf,
+      _dd.svc_src: http-client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -320,7 +322,8 @@ at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult),
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Wcf
+      _dd.base_service: Samples.Wcf,
+      _dd.svc_src: http-client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -442,7 +445,8 @@ at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult),
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Wcf
+      _dd.base_service: Samples.Wcf,
+      _dd.svc_src: http-client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -558,7 +562,8 @@ at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult),
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Wcf
+      _dd.base_service: Samples.Wcf,
+      _dd.svc_src: http-client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -674,7 +679,8 @@ at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult),
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Wcf
+      _dd.base_service: Samples.Wcf,
+      _dd.svc_src: http-client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -813,7 +819,8 @@ at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult),
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Wcf
+      _dd.base_service: Samples.Wcf,
+      _dd.svc_src: http-client
     },
     Metrics: {
       process_id: 0,
@@ -859,7 +866,8 @@ at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult),
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Wcf
+      _dd.base_service: Samples.Wcf,
+      _dd.svc_src: http-client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -883,7 +891,8 @@ at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult),
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Wcf
+      _dd.base_service: Samples.Wcf,
+      _dd.svc_src: http-client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -907,7 +916,8 @@ at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult),
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Wcf
+      _dd.base_service: Samples.Wcf,
+      _dd.svc_src: http-client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1042,7 +1052,8 @@ at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult),
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Wcf
+      _dd.base_service: Samples.Wcf,
+      _dd.svc_src: http-client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1158,7 +1169,8 @@ at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult),
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Wcf
+      _dd.base_service: Samples.Wcf,
+      _dd.svc_src: http-client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1274,7 +1286,8 @@ at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult),
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Wcf
+      _dd.base_service: Samples.Wcf,
+      _dd.svc_src: http-client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1390,7 +1403,8 @@ at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult),
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Wcf
+      _dd.base_service: Samples.Wcf,
+      _dd.svc_src: http-client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1506,7 +1520,8 @@ at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult),
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Wcf
+      _dd.base_service: Samples.Wcf,
+      _dd.svc_src: http-client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1622,7 +1637,8 @@ at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult),
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Wcf
+      _dd.base_service: Samples.Wcf,
+      _dd.svc_src: http-client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1738,7 +1754,8 @@ at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult),
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Wcf
+      _dd.base_service: Samples.Wcf,
+      _dd.svc_src: http-client
     },
     Metrics: {
       _dd.top_level: 1.0

@@ -57,26 +57,26 @@ stages:
       - execution_benchmarks
       - profiler_execution_benchmarks
       - system_tests
-      - installer_smoke_tests
-      - installer_chiseled_smoke_tests
-      - nuget_installer_smoke_tests
-      - trimmed_installer_smoke_tests
-      - dotnet_tool_nuget_smoke_tests_linux
-      - dotnet_tool_smoke_tests_linux
-      - dotnet_tool_self_instrument_smoke_tests_linux
-      - installer_smoke_tests_arm64
-      - installer_chiseled_smoke_tests_arm64
-      - nuget_installer_smoke_tests_arm64
-      - dotnet_tool_smoke_tests_arm64
-      - nuget_installer_smoke_tests_windows
-      - dotnet_tool_smoke_tests_windows
-      - msi_installer_smoke_tests
-      - dd_dotnet_msi_installer_smoke_tests
-      - tracer_home_smoke_tests
-      - fleet_installer_iis_smoke_tests
-      - dotnet_tool_nuget_smoke_tests_macos
-      - dd_dotnet_installer_failure_tests_linux
-      - dd_dotnet_installer_failure_tests_linux_arm64
+      - smoke_x64_installer_tests
+      - smoke_arm64_installer_tests
+      - smoke_musl_x64_installer_tests
+      - smoke_x64_nuget_tests
+      - smoke_arm64_nuget_tests
+      - smoke_x64_tool_tests
+      - smoke_arm64_tool_tests
+      - smoke_x64_tool_nuget_tests
+      - smoke_musl_x64_tool_tests
+      - smoke_musl_arm64_tool_tests
+      - smoke_x64_trimming_tests
+      - smoke_musl_x64_trimming_tests
+      - smoke_x64_self_instrument_tests
+      - smoke_win_msi_tests
+      - smoke_win_nuget_tests
+      - smoke_win_tool_tests
+      - smoke_win_tracer_home_tests
+      - smoke_win_fleet_tests
+      - smoke_macos_tool_tests
+      - smoke_linux_dd_dotnet_failure_tests
     condition: |
       and(
          in(dependencies.merge_commit_id.result, 'Succeeded','SucceededWithIssues','Skipped'),
@@ -134,26 +134,26 @@ stages:
          in(dependencies.execution_benchmarks.result, 'Succeeded','SucceededWithIssues','Skipped'),
          in(dependencies.profiler_execution_benchmarks.result, 'Succeeded','SucceededWithIssues','Skipped'),
          in(dependencies.system_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
-         in(dependencies.installer_smoke_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
-         in(dependencies.installer_chiseled_smoke_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
-         in(dependencies.nuget_installer_smoke_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
-         in(dependencies.trimmed_installer_smoke_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
-         in(dependencies.dotnet_tool_nuget_smoke_tests_linux.result, 'Succeeded','SucceededWithIssues','Skipped'),
-         in(dependencies.dotnet_tool_smoke_tests_linux.result, 'Succeeded','SucceededWithIssues','Skipped'),
-         in(dependencies.dotnet_tool_self_instrument_smoke_tests_linux.result, 'Succeeded','SucceededWithIssues','Skipped'),
-         in(dependencies.installer_smoke_tests_arm64.result, 'Succeeded','SucceededWithIssues','Skipped'),
-         in(dependencies.installer_chiseled_smoke_tests_arm64.result, 'Succeeded','SucceededWithIssues','Skipped'),
-         in(dependencies.nuget_installer_smoke_tests_arm64.result, 'Succeeded','SucceededWithIssues','Skipped'),
-         in(dependencies.dotnet_tool_smoke_tests_arm64.result, 'Succeeded','SucceededWithIssues','Skipped'),
-         in(dependencies.nuget_installer_smoke_tests_windows.result, 'Succeeded','SucceededWithIssues','Skipped'),
-         in(dependencies.dotnet_tool_smoke_tests_windows.result, 'Succeeded','SucceededWithIssues','Skipped'),
-         in(dependencies.msi_installer_smoke_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
-         in(dependencies.dd_dotnet_msi_installer_smoke_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
-         in(dependencies.tracer_home_smoke_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
-         in(dependencies.fleet_installer_iis_smoke_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
-         in(dependencies.dotnet_tool_nuget_smoke_tests_macos.result, 'Succeeded','SucceededWithIssues','Skipped'),
-         in(dependencies.dd_dotnet_installer_failure_tests_linux.result, 'Succeeded','SucceededWithIssues','Skipped'),
-         in(dependencies.dd_dotnet_installer_failure_tests_linux_arm64.result, 'Succeeded','SucceededWithIssues','Skipped'))
+         in(dependencies.smoke_x64_installer_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
+         in(dependencies.smoke_arm64_installer_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
+         in(dependencies.smoke_musl_x64_installer_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
+         in(dependencies.smoke_x64_nuget_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
+         in(dependencies.smoke_arm64_nuget_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
+         in(dependencies.smoke_x64_tool_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
+         in(dependencies.smoke_arm64_tool_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
+         in(dependencies.smoke_x64_tool_nuget_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
+         in(dependencies.smoke_musl_x64_tool_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
+         in(dependencies.smoke_musl_arm64_tool_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
+         in(dependencies.smoke_x64_trimming_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
+         in(dependencies.smoke_musl_x64_trimming_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
+         in(dependencies.smoke_x64_self_instrument_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
+         in(dependencies.smoke_win_msi_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
+         in(dependencies.smoke_win_nuget_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
+         in(dependencies.smoke_win_tool_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
+         in(dependencies.smoke_win_tracer_home_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
+         in(dependencies.smoke_win_fleet_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
+         in(dependencies.smoke_macos_tool_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
+         in(dependencies.smoke_linux_dd_dotnet_failure_tests.result, 'Succeeded','SucceededWithIssues','Skipped'))
     jobs:
       - job: report_success
         timeoutInMinutes: 60 #default value
@@ -223,26 +223,26 @@ stages:
       - execution_benchmarks
       - profiler_execution_benchmarks
       - system_tests
-      - installer_smoke_tests
-      - installer_chiseled_smoke_tests
-      - nuget_installer_smoke_tests
-      - trimmed_installer_smoke_tests
-      - dotnet_tool_nuget_smoke_tests_linux
-      - dotnet_tool_smoke_tests_linux
-      - dotnet_tool_self_instrument_smoke_tests_linux
-      - installer_smoke_tests_arm64
-      - installer_chiseled_smoke_tests_arm64
-      - nuget_installer_smoke_tests_arm64
-      - dotnet_tool_smoke_tests_arm64
-      - nuget_installer_smoke_tests_windows
-      - dotnet_tool_smoke_tests_windows
-      - msi_installer_smoke_tests
-      - dd_dotnet_msi_installer_smoke_tests
-      - tracer_home_smoke_tests
-      - fleet_installer_iis_smoke_tests
-      - dotnet_tool_nuget_smoke_tests_macos
-      - dd_dotnet_installer_failure_tests_linux
-      - dd_dotnet_installer_failure_tests_linux_arm64
+      - smoke_x64_installer_tests
+      - smoke_arm64_installer_tests
+      - smoke_musl_x64_installer_tests
+      - smoke_x64_nuget_tests
+      - smoke_arm64_nuget_tests
+      - smoke_x64_tool_tests
+      - smoke_arm64_tool_tests
+      - smoke_x64_tool_nuget_tests
+      - smoke_musl_x64_tool_tests
+      - smoke_musl_arm64_tool_tests
+      - smoke_x64_trimming_tests
+      - smoke_musl_x64_trimming_tests
+      - smoke_x64_self_instrument_tests
+      - smoke_win_msi_tests
+      - smoke_win_nuget_tests
+      - smoke_win_tool_tests
+      - smoke_win_tracer_home_tests
+      - smoke_win_fleet_tests
+      - smoke_macos_tool_tests
+      - smoke_linux_dd_dotnet_failure_tests
     condition: |
       not(and(
          in(dependencies.merge_commit_id.result, 'Succeeded','SucceededWithIssues','Skipped'),
@@ -300,26 +300,26 @@ stages:
          in(dependencies.execution_benchmarks.result, 'Succeeded','SucceededWithIssues','Skipped'),
          in(dependencies.profiler_execution_benchmarks.result, 'Succeeded','SucceededWithIssues','Skipped'),
          in(dependencies.system_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
-         in(dependencies.installer_smoke_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
-         in(dependencies.installer_chiseled_smoke_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
-         in(dependencies.nuget_installer_smoke_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
-         in(dependencies.trimmed_installer_smoke_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
-         in(dependencies.dotnet_tool_nuget_smoke_tests_linux.result, 'Succeeded','SucceededWithIssues','Skipped'),
-         in(dependencies.dotnet_tool_smoke_tests_linux.result, 'Succeeded','SucceededWithIssues','Skipped'),
-         in(dependencies.dotnet_tool_self_instrument_smoke_tests_linux.result, 'Succeeded','SucceededWithIssues','Skipped'),
-         in(dependencies.installer_smoke_tests_arm64.result, 'Succeeded','SucceededWithIssues','Skipped'),
-         in(dependencies.installer_chiseled_smoke_tests_arm64.result, 'Succeeded','SucceededWithIssues','Skipped'),
-         in(dependencies.nuget_installer_smoke_tests_arm64.result, 'Succeeded','SucceededWithIssues','Skipped'),
-         in(dependencies.dotnet_tool_smoke_tests_arm64.result, 'Succeeded','SucceededWithIssues','Skipped'),
-         in(dependencies.nuget_installer_smoke_tests_windows.result, 'Succeeded','SucceededWithIssues','Skipped'),
-         in(dependencies.dotnet_tool_smoke_tests_windows.result, 'Succeeded','SucceededWithIssues','Skipped'),
-         in(dependencies.msi_installer_smoke_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
-         in(dependencies.dd_dotnet_msi_installer_smoke_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
-         in(dependencies.tracer_home_smoke_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
-         in(dependencies.fleet_installer_iis_smoke_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
-         in(dependencies.dotnet_tool_nuget_smoke_tests_macos.result, 'Succeeded','SucceededWithIssues','Skipped'),
-         in(dependencies.dd_dotnet_installer_failure_tests_linux.result, 'Succeeded','SucceededWithIssues','Skipped'),
-         in(dependencies.dd_dotnet_installer_failure_tests_linux_arm64.result, 'Succeeded','SucceededWithIssues','Skipped')))
+         in(dependencies.smoke_x64_installer_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
+         in(dependencies.smoke_arm64_installer_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
+         in(dependencies.smoke_musl_x64_installer_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
+         in(dependencies.smoke_x64_nuget_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
+         in(dependencies.smoke_arm64_nuget_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
+         in(dependencies.smoke_x64_tool_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
+         in(dependencies.smoke_arm64_tool_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
+         in(dependencies.smoke_x64_tool_nuget_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
+         in(dependencies.smoke_musl_x64_tool_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
+         in(dependencies.smoke_musl_arm64_tool_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
+         in(dependencies.smoke_x64_trimming_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
+         in(dependencies.smoke_musl_x64_trimming_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
+         in(dependencies.smoke_x64_self_instrument_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
+         in(dependencies.smoke_win_msi_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
+         in(dependencies.smoke_win_nuget_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
+         in(dependencies.smoke_win_tool_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
+         in(dependencies.smoke_win_tracer_home_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
+         in(dependencies.smoke_win_fleet_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
+         in(dependencies.smoke_macos_tool_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
+         in(dependencies.smoke_linux_dd_dotnet_failure_tests.result, 'Succeeded','SucceededWithIssues','Skipped')))
     jobs:
       - job: report_failure
         timeoutInMinutes: 60 #default value
