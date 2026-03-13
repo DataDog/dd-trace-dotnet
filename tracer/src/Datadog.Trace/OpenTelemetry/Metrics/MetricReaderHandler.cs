@@ -56,6 +56,11 @@ internal sealed class MetricReaderHandler
 
         if (!shouldEnable)
         {
+            shouldEnable = IsRuntimeMeter(meterName);
+        }
+
+        if (!shouldEnable)
+        {
             return;
         }
 
@@ -199,6 +204,11 @@ internal sealed class MetricReaderHandler
             _ => AggregationTemporality.Delta
         };
     }
+
+    private static bool IsRuntimeMeter(string meterName) =>
+        meterName is "System.Runtime"
+                  or "Microsoft.AspNetCore.Hosting"
+                  or "Microsoft.AspNetCore.Server.Kestrel";
 
     private static InstrumentType? GetInstrumentType(string? instrumentType)
     {

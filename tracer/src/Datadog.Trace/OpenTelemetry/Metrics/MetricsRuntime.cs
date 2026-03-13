@@ -7,9 +7,11 @@
 
 #nullable enable
 
+using System;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
+using Datadog.Trace.RuntimeMetrics;
 
 namespace Datadog.Trace.OpenTelemetry.Metrics
 {
@@ -20,6 +22,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(MetricsRuntime));
         private static OtelMetricsPipeline? _instance;
+        private static RuntimeMetricsPolyfill? _runtimeMetricsPolyfill;
 
         public static void Start(TracerSettings settings)
         {
@@ -32,6 +35,19 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
             var exporter = new OtlpExporter(settings);
             _instance = new OtelMetricsPipeline(settings, exporter);
             _instance.Start();
+
+            if (Environment.Version.Major < 9)
+            {
+                try
+                {
+                    _runtimeMetricsPolyfill = new RuntimeMetricsPolyfill();
+                    Log.Debug("Started RuntimeMetricsPolyfill for .NET {Version} (System.Runtime meter instruments not natively available until .NET 9)", Environment.Version);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Failed to initialize RuntimeMetricsPolyfill for OTLP export");
+                }
+            }
 
             LifetimeManager.Instance.AddAsyncShutdownTask((_) => StopAsync());
         }
@@ -52,6 +68,9 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
             {
                 return;
             }
+
+            _runtimeMetricsPolyfill?.Dispose();
+            _runtimeMetricsPolyfill = null;
 
             await _instance.StopAsync().ConfigureAwait(false);
         }

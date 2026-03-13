@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -11,6 +12,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.RuntimeMetrics;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
+using Newtonsoft.Json.Linq;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -149,6 +151,65 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                .And.NotContain(s => s.Contains("entrypoint.workdir:"), "entrypoint.workdir should not be present when process tags are disabled")
                .And.NotContain(s => s.Contains("entrypoint.name:"), "entrypoint.name should not be present when process tags are disabled");
         }
+
+#if NET6_0_OR_GREATER
+        [SkippableFact]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        [Trait("RequiresDockerDependency", "true")]
+        public async Task OtlpRuntimeMetricsSubmitted()
+        {
+            var testAgentHost = Environment.GetEnvironmentVariable("TEST_AGENT_HOST") ?? "localhost";
+            const int otlpPort = 4318;
+
+            using (var httpClient = new System.Net.Http.HttpClient())
+            {
+                await httpClient.GetAsync($"http://{testAgentHost}:{otlpPort}/test/session/clear");
+            }
+
+            SetEnvironmentVariable("OTEL_METRICS_EXPORTER", "otlp");
+            SetEnvironmentVariable("OTEL_EXPORTER_OTLP_PROTOCOL", "http/protobuf");
+            SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", $"http://{testAgentHost}:{otlpPort}");
+            SetEnvironmentVariable("OTEL_METRIC_EXPORT_INTERVAL", "1000");
+            SetEnvironmentVariable("DD_RUNTIME_METRICS_ENABLED", "0");
+
+            using var agent = EnvironmentHelper.GetMockAgent();
+            using (await RunSampleAndWaitForExit(agent))
+            {
+                using var httpClient = new System.Net.Http.HttpClient();
+                var metricsResponse = await httpClient.GetAsync($"http://{testAgentHost}:{otlpPort}/test/session/metrics");
+                metricsResponse.EnsureSuccessStatusCode();
+
+                var metricsJson = await metricsResponse.Content.ReadAsStringAsync();
+                var metricsData = JToken.Parse(metricsJson);
+
+                metricsData.Should().NotBeNullOrEmpty();
+
+                var metricNames = metricsData
+                    .SelectTokens("$..metrics[*].name")
+                    .Select(t => t.ToString())
+                    .Distinct()
+                    .ToList();
+
+                _output.WriteLine("Received OTLP metric names: " + string.Join(", ", metricNames.OrderBy(n => n)));
+
+                var expectedMetrics = new List<string>
+                {
+                    "dotnet.gc.collections",
+                    "dotnet.process.memory.working_set",
+                    "dotnet.gc.heap.total_allocated",
+                    "dotnet.thread_pool.thread.count",
+                    "dotnet.monitor.lock_contentions",
+                    "dotnet.assembly.count",
+                };
+
+                foreach (var expected in expectedMetrics)
+                {
+                    metricNames.Should().Contain(expected, $"expected OTLP runtime metric '{expected}' to be present");
+                }
+            }
+        }
+#endif
 
         private async Task RunTest()
         {
