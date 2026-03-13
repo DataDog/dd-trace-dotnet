@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Text;
+using System.Threading;
 using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DataStreamsMonitoring.Utils;
@@ -420,7 +421,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     return null;
                 }
 
-                var builderType = Type.GetType("Confluent.Kafka.DependentAdminClientBuilder, Confluent.Kafka");
+                var kafkaAssembly = clientInstance.GetType().Assembly;
+                var builderType = kafkaAssembly.GetType("Confluent.Kafka.DependentAdminClientBuilder");
                 if (builderType is null)
                 {
                     return null;
@@ -447,17 +449,41 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         private static string? DescribeClusterWithTimeout(IAdminClient adminClient)
         {
             object? options = null;
-            var optionsType = Type.GetType("Confluent.Kafka.Admin.DescribeClusterOptions, Confluent.Kafka");
+            var optionsType = adminClient.Instance?.GetType().Assembly.GetType("Confluent.Kafka.Admin.DescribeClusterOptions");
             if (optionsType is not null)
             {
-                options = Activator.CreateInstance(optionsType);
-                var requestTimeoutProp = optionsType.GetProperty("RequestTimeout");
-                requestTimeoutProp?.SetValue(options, TimeSpan.FromSeconds(2));
+                options = Activator.CreateInstance(optionsType)!;
+                options.DuckCast<IDescribeClusterOptions>().RequestTimeout = TimeSpan.FromSeconds(2);
             }
 
             var duckTask = adminClient.DescribeClusterAsync(options);
-            var describeResult = duckTask.GetAwaiter().GetResult();
+            var describeResult = SafeGetResult<IDuckTypeTask<IDescribeClusterResult>, IDescribeClusterResult>(duckTask);
             return describeResult?.ClusterId;
+
+            static TResult? SafeGetResult<TTask, TResult>(TTask task)
+                where TTask : IDuckTypeTask<TResult>
+                where TResult : IDescribeClusterResult
+            {
+                if (task.IsCompletedSuccessfully)
+                {
+                    return task.Result;
+                }
+
+                var originalContext = SynchronizationContext.Current;
+                try
+                {
+                    // Set the synchronization context to null to avoid deadlocks.
+                    SynchronizationContext.SetSynchronizationContext(null);
+
+                    // Wait synchronously for the task to complete.
+                    return task.GetAwaiter().GetResult();
+                }
+                finally
+                {
+                    // Restore the original synchronization context.
+                    SynchronizationContext.SetSynchronizationContext(originalContext);
+                }
+            }
         }
 
         internal static void DisableHeadersIfUnsupportedBroker(Exception exception)
