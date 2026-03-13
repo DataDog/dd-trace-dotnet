@@ -78,6 +78,7 @@ experiments:
           Write-Output "CODE_SRC: $env:CODE_SRC"
           Write-Output "PARALLEL_ITEM: $env:PARALLEL_ITEM"
           Write-Output "PARALLEL_INDEX: $env:PARALLEL_INDEX"
+          Write-Output "ARTIFACTS_DIR: $env:ARTIFACTS_DIR"
 
           # Add dotnet to PATH
           [Environment]::SetEnvironmentVariable("PATH", "C:\dotnet;" + [Environment]::GetEnvironmentVariable("PATH", [EnvironmentVariableTarget]::Process), [EnvironmentVariableTarget]::Process)
@@ -88,14 +89,30 @@ experiments:
           # --job dry: minimal iterations for fast feedback
           # --filter: use PARALLEL_ITEM as the benchmark filter
           # --exporters json: output results in JSON format
-          # --artifacts: output to indexed directory for aggregation
           # Note: Using net6.0 because the AMI has .NET 3.1, 6.0, and 10.0 (not 8.0)
-          $artifactsDir = "$env:CODE_SRC\tracer\artifacts\benchmarks\$env:PARALLEL_INDEX"
+          $localArtifactsDir = "$env:CODE_SRC\tracer\artifacts\benchmarks\$env:PARALLEL_INDEX"
           dotnet run -c Release -f net6.0 -- `
             --job dry `
             --filter "$env:PARALLEL_ITEM" `
             -r net6.0 `
             --exporters json `
-            --artifacts $artifactsDir
+            --artifacts $localArtifactsDir
+
+          # Copy results to ARTIFACTS_DIR with bp-runner naming convention
+          # bp-runner expects: candidate-<name>.json or baseline-<name>.json
+          $resultsDir = "$localArtifactsDir\results"
+          if (Test-Path $resultsDir) {
+              $jsonFiles = Get-ChildItem -Path $resultsDir -Filter "*.json" -Recurse
+              foreach ($file in $jsonFiles) {
+                  # Extract benchmark name from path (e.g., Benchmarks.Trace.SpanBenchmark-report.json)
+                  $benchmarkName = $file.BaseName -replace '-report$', ''
+                  $destName = "$env:BASELINE_OR_CANDIDATE-$benchmarkName-$env:PARALLEL_INDEX.json"
+                  $destPath = "$env:ARTIFACTS_DIR\$destName"
+                  Write-Output "Copying $($file.Name) -> $destName"
+                  Copy-Item $file.FullName -Destination $destPath -Force
+              }
+          } else {
+              Write-Warning "No results directory found at $resultsDir"
+          }
 
           Write-Output "=== Benchmarks completed for filter: $env:PARALLEL_ITEM ==="
