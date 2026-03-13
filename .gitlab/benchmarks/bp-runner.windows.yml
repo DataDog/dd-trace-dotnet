@@ -27,11 +27,13 @@ experiments:
         # master results from S3 (in a future phase).
         baseline_branch: ""
 
+        # CPU affinity for the benchmark process (hex mask or comma-separated list)
+        cpus: "0,0x3"
+
         # Parallelize benchmarks by category
         # Each item is a BenchmarkDotNet filter pattern
         parallelize:
           items: "*SpanBenchmark* *AgentWriterBenchmark* *AspNetCoreBenchmark*"
-          cpus: 1
           cpus_per_item: 1
 
         # Script to clone repo AND build tracer (runs ONCE before parallel benchmarks)
