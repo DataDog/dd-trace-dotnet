@@ -13,6 +13,7 @@ using CodeGenerators;
 using ICSharpCode.SharpZipLib.Zip;
 using LogParsing;
 using Mono.Cecil;
+using MsiValidation;
 using Nuke.Common;
 using Nuke.Common.IO;
 using Nuke.Common.ProjectModel;
@@ -1007,6 +1008,13 @@ partial class Build
                         .SetProperty("MsiOutputPath", ArtifactsDirectory / arch.ToString())
                         .SetTargetPlatform(arch)),
                 degreeOfParallelism: 2);
+
+            foreach (var arch in architectures)
+            {
+                var msiPath = ArtifactsDirectory / arch / "en-us" / $"datadog-dotnet-apm-{FullVersion}-{arch}.msi";
+                var verifiedPath = BuildProjectDirectory / nameof(MsiValidation) / $"msi-{arch}.verified.yml";
+                MsiSnapshot.ValidateMsiSnapshot(msiPath, verifiedPath, Version, FullVersion);
+            }
         });
 
     Target CreateBundleHome => _ => _
