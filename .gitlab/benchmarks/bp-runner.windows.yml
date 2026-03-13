@@ -27,6 +27,9 @@ experiments:
           Write-Output "Running benchmarks for $BaselineOrCandidate"
           Write-Output "CodeSrc: $CodeSrc"
 
+          # Add dotnet to PATH (installed at C:\dotnet on the AMI)
+          [Environment]::SetEnvironmentVariable("PATH", "C:\dotnet;" + [Environment]::GetEnvironmentVariable("PATH", [EnvironmentVariableTarget]::Process), [EnvironmentVariableTarget]::Process)
+
           Write-Output "Building tracer for benchmarks..."
           Set-Location $CodeSrc
 
