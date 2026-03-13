@@ -78,7 +78,7 @@ run-benchmarks:
   stage: benchmarks
   tags: ["arch:amd64"]
   timeout: 2h
-  image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:dd-trace-dotnet-micro
+  image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:e5bde3e5
   id_tokens:
     DDOCTOSTS_ID_TOKEN:
       aud: dd-octo-sts
