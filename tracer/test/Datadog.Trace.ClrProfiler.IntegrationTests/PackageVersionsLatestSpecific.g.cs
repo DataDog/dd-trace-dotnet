@@ -3267,5 +3267,29 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #endif
             };
 
+      public static IEnumerable<object[]> Ocelot =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
+#if NET8_0
+                new object[] { "23.0.0" },
+                new object[] { "23.4.3" },
+                new object[] { "24.0.1" },
+                new object[] { "24.1.0" },
+#endif
+#if NET9_0
+                new object[] { "24.0.1" },
+                new object[] { "24.1.0" },
+#endif
+#if NET10_0
+                new object[] { "24.0.1" },
+                new object[] { "24.1.0" },
+#endif
+#endif
+            };
+
     }
 }
