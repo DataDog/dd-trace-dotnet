@@ -204,10 +204,12 @@ tracer/src/Datadog.Trace
 - Implement `OnMethodBegin` and `OnMethodEnd`/`OnAsyncMethodEnd` handlers
 - Use duck typing constraints (`where TReq : IMyShape, IDuckType`) or `obj.DuckCast<IMyShape>()` for third-party types
 - Tests: Add under `tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests` with samples in `tracer/test/test-applications/integrations`
-- Generate boilerplate: `./tracer/build.ps1 RunInstrumentationGenerator`
+- Generate boilerplate (GUI): `./tracer/build.ps1 RunInstrumentationGenerator`
+- Generate boilerplate (CLI): `./tracer/build.ps1 RunInstrumentationGeneratorCli --assembly-path <dll> --type-name <type> --method-name <method>`
 
 📖 **Load when**: Creating a new integration or adding instrumentation to an existing library
 - **`docs/development/AutomaticInstrumentation.md`** — Complete guide to creating integrations, CallTarget wiring, testing strategies, package version configuration, and CI testing
+- **`docs/development/InstrumentationGenerator.md`** — GUI and CLI instrumentation generator tools, Nuke integration, duck typing flags, JSON output, and two-tool workflow with dotnet-inspect
 
 📖 **Load when**: Working with third-party types that can't be directly referenced or need version-agnostic access
 - **`docs/development/DuckTyping.md`** — Duck typing patterns, proxy types, binding attributes, best practices, and performance benchmarks
@@ -385,6 +387,7 @@ The tracer runs in-process with customer applications and must have minimal perf
 
 **Development guides:**
 - `docs/development/AutomaticInstrumentation.md` — Creating integrations
+- `docs/development/InstrumentationGenerator.md` — GUI and CLI instrumentation generator tools
 - `docs/development/DuckTyping.md` — Duck typing guide
 - `docs/development/AzureFunctions.md` — Azure Functions integration
 - `docs/development/for-ai/AzureFunctions-Architecture.md` — Azure Functions architecture deep dive

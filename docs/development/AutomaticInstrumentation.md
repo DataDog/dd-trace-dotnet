@@ -291,19 +291,29 @@ Additional information regarding the specific limitations with these can be foun
 
 ### AutoInstrumentation Generator
 
-There's a tool to help developers in the process of creating all the boilerplate code for new instrumentations.
+There are two tools to help developers create the boilerplate code for new instrumentations: an interactive **GUI** and a scriptable **CLI**. See [InstrumentationGenerator.md](./InstrumentationGenerator.md) for full documentation.
 
-To run the tool use: `./tracer/build.ps1 RunInstrumentationGenerator`
+**GUI** (interactive browsing and generation):
 
-#### Nuke command:
+```bash
+./tracer/build.ps1 RunInstrumentationGenerator
+```
+
+**CLI** (scriptable, CI-friendly, AI-assisted workflows):
+
+```bash
+# Via Nuke
+.\tracer\build.cmd RunInstrumentationGeneratorCli --assembly-path "path/to/MyLib.dll" --type-name "MyLib.MyClass" --method-name "DoSomething"
+
+# Via dotnet run
+dotnet run --project tracer/src/Datadog.AutoInstrumentation.Generator.Cli/ --framework net8.0 -- generate path/to/MyLib.dll -t MyLib.MyClass -m DoSomething
+```
+
+#### GUI screenshots:
 
 ![nuke command](./images/gen01.jpg)
 
-#### Main window:
-
 ![tool main window](./images/gen02.jpg)
-
-#### Creating a new Instrumentation class with the DuckType proxies:
 
 ![tool main window](./images/gen03.jpg)
 
