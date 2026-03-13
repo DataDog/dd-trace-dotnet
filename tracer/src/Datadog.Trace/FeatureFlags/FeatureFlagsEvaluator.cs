@@ -15,6 +15,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
 using Datadog.Trace.Logging;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
@@ -371,7 +372,8 @@ namespace Datadog.Trace.FeatureFlags
             return false;
         }
 
-        private static int GetShard(string salt, string? targetingKey, int totalShards)
+        [TestingAndPrivateOnly]
+        internal static int GetShard(string salt, string? targetingKey, int totalShards)
         {
             if (StringUtil.IsNullOrEmpty(targetingKey))
             {
