@@ -23,6 +23,7 @@ internal class TestApiResponse : IApiResponse
         _body = body;
         _headers = headers ?? new();
         ContentTypeHeader = contentType;
+        _headers = headers ?? new Dictionary<string, string>();
     }
 
     public string ContentTypeHeader { get; }

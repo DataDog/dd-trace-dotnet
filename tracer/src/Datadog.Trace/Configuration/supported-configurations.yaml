@@ -533,6 +533,15 @@ supportedConfigurations:
       Configuration key for setting DBM propagation mode
       Default value is disabled, expected values are either: disabled, service or full
       <seealso cref="Datadog.Trace.Configuration.TracerSettings.DbmPropagationMode"/>
+  DD_DBM_INJECT_SQL_BASEHASH:
+  - implementation: A
+    type: boolean
+    default: 'false'
+    const_name: DbmInjectSqlBasehash
+    documentation: |-
+      Configuration key for enabling or disabling the injection of Base Hash in SQL Comments.
+      Default value is false (disabled).
+      <seealso cref="Datadog.Trace.Configuration.TracerSettings.DbmInjectSqlBasehash"/>
   DD_DIAGNOSTIC_SOURCE_ENABLED:
   - implementation: A
     type: boolean
