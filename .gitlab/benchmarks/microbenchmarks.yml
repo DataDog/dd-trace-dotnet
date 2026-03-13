@@ -15,6 +15,7 @@
 stages:
   - build
   - benchmarks
+  - benchmarks-test
   - gate
 
 workflow:
@@ -139,6 +140,64 @@ run-benchmarks:
     - ./platform/steps/analyze-results.sh
     - ./platform/steps/post-pr-comment.sh
     - ./platform/steps/upload-to-bp-ui.sh
+
+# Test job for new bp-runner based benchmarks
+# This runs a single dry-run benchmark to validate the new infrastructure
+run-benchmarks-test:
+  stage: benchmarks-test
+  tags: ["arch:amd64"]
+  timeout: 2h
+  image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:dd-trace-dotnet-micro
+  id_tokens:
+    DDOCTOSTS_ID_TOKEN:
+      aud: dd-octo-sts
+  rules:
+    - if: $CI_COMMIT_REF_NAME =~ /^v[0-9]+\.[0-9]+\.[0-9]+(-prerelease)?$/
+      when: never
+    # Run automatically on this branch for testing
+    - if: $CI_COMMIT_REF_NAME == "augusto/fix-microbenchmarks"
+      interruptible: true
+    # Manual on other branches
+    - when: manual
+      allow_failure: true
+  artifacts:
+    name: "artifacts"
+    when: always
+    paths:
+      - artifacts/
+    expire_in: 3 months
+  variables:
+    # Scope for dd-octo-sts to get GitHub token for cloning dd-trace-dotnet
+    DDOCTOSTS_SCOPE: "DataDog/dd-trace-dotnet"
+    DDOCTOSTS_POLICY: "gitlab.github-access.read-contents"
+    AWS_REGION: "us-east-1"
+    # Cleanup instances after benchmarks
+    CLEANUP: "true"
+  before_script:
+    - !reference [.dd-octo-sts-setup, before_script]
+  script:
+    - mkdir -p artifacts
+    - export GITHUB_TOKEN=$(cat /tmp/github-token)
+    - CLEANUP_ARG=$([[ "$CLEANUP" == "false" ]] && echo "--no-cleanup" || echo "")
+    - |
+      bp-infra launch \
+        --provision .gitlab/benchmarks/infrastructure/instance.yml \
+        --region "${AWS_REGION}" \
+        --os windows \
+        --env-regex "^(CI_|DD_|BP_|GITHUB_|ARTIFACTS_)" \
+        --bypass-stack-destroy \
+        $CLEANUP_ARG
+  after_script:
+    - |
+      if [ "$CLEANUP" == "true" ]; then
+        bp-infra cleanup \
+          --provision .gitlab/benchmarks/infrastructure/instance.yml \
+          --region "${AWS_REGION}" \
+          --os windows \
+          --bypass-stack-destroy || true
+      else
+        echo "'CLEANUP' is set to 'false'. Will not cleanup."
+      fi
 
 # This repository is using PR-level performance quality gates.
 # Verify that the check-big-regressions CI job has passed. If any regression happened, merging this PR will be blocked.

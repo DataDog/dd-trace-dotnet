@@ -1,0 +1,70 @@
+# Instance provision file for running dd-trace-dotnet microbenchmarks
+#
+# This file is used by bp-infra to provision a Windows instance and run benchmarks.
+# The bp-runner template handles cloning the repo, so we only need to:
+# 1. Verify the CPU model (for reproducibility)
+# 2. Run bp-runner with the benchmark config
+
+name: &provision_name "dd-trace-dotnet-microbenchmarks"
+
+init_environment:
+  # SSM parameter for DD_API_KEY (for telemetry)
+  DD_API_KEY_SSM_PARAMETER: "ci.dd-trace-dotnet.dd_api_key"
+  # S3 bucket for benchmark results
+  BP_INFRA_ARTIFACTS_BUCKET_NAME: "windows-benchmarking-results-us-east-1"
+
+source_ami:
+  # Test AMI with bp-runner from dev branch
+  # Built from benchmarking-platform/dd-trace-dotnet-micro/ephemeral-infra/ami-test.yaml
+  ami_id_ssm_parameter: "/windows-benchmarking/dd-trace-dotnet-microbenchmarks-ami-test-id"
+
+tags:
+  Name: *provision_name
+
+provision_steps:
+  - check_cpu_model
+  - run_benchmarks
+
+check_cpu_model:
+  remote_command: |
+    $ErrorActionPreference = "Stop"
+    $cpuModel = (Get-WmiObject -Class Win32_Processor).Name
+    if ($cpuModel -notlike "*8259CL CPU*") {
+        Write-Error "CPU model is not Intel(R) Xeon(R) Platinum 8259CL: $cpuModel"
+        exit 1
+    }
+    Write-Output "CPU model verified: Intel(R) Xeon(R) Platinum 8259CL"
+
+run_benchmarks:
+  populate_env: true
+  remote_command: |
+    $ErrorActionPreference = "Stop"
+
+    # Fetch DD_API_KEY from SSM if not already set
+    if (-not $env:DD_API_KEY) {
+        if ($env:DD_API_KEY_SSM_PARAMETER) {
+            Write-Output "Fetching DD_API_KEY from SSM parameter: $env:DD_API_KEY_SSM_PARAMETER"
+            $env:DD_API_KEY = (Get-SSMParameter -Name $env:DD_API_KEY_SSM_PARAMETER -WithDecryption $true).Value
+        }
+    }
+
+    # Clone dd-trace-dotnet to get the bp-runner config
+    $branch = if ($env:CI_COMMIT_REF_NAME) { $env:CI_COMMIT_REF_NAME } else { "master" }
+    $repoDir = "C:\app\dd-trace-dotnet-config"
+
+    Write-Output "Cloning dd-trace-dotnet (branch: $branch) to get bp-runner config..."
+    if ($env:GITHUB_TOKEN) {
+        git clone -b $branch --single-branch --depth 1 "https://x-access-token:$env:GITHUB_TOKEN@github.com/DataDog/dd-trace-dotnet.git" $repoDir
+    } else {
+        git clone -b $branch --single-branch --depth 1 "https://github.com/DataDog/dd-trace-dotnet.git" $repoDir
+    }
+
+    # Set ARTIFACTS_DIR for bp-runner output
+    $env:ARTIFACTS_DIR = "C:\artifacts"
+    New-Item -ItemType Directory -Path $env:ARTIFACTS_DIR -Force | Out-Null
+
+    # Run bp-runner with the benchmark config
+    # bp-runner will handle cloning the repo for benchmarks into C:\app\candidate
+    Write-Output "Running bp-runner..."
+    Set-Location $repoDir
+    bp-runner .gitlab\benchmarks\bp-runner.windows.yml --debug

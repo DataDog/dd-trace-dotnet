@@ -1,0 +1,45 @@
+# bp-runner configuration for dd-trace-dotnet microbenchmarks
+#
+# This file controls how benchmarks are executed on Windows ephemeral instances.
+# The run_microbenchmarks template handles:
+# - Cloning the repo (candidate to C:\app\candidate, baseline to C:\app\baseline)
+# - Running the benchmarks via how_to_run_benchmarks script
+# - The $env:CODE_SRC variable points to the current clone being benchmarked
+
+experiments:
+  - name: dd-trace-dotnet-microbenchmarks
+    steps:
+      - name: run-microbenchmarks
+        run: run_microbenchmarks
+        repo: DataDog/dd-trace-dotnet
+
+        # Empty baseline_branch means we only run benchmarks for the candidate.
+        # Comparison with baseline will be done by fetching previously stored
+        # master results from S3 (in a future phase).
+        baseline_branch: ""
+
+        # Script to build and run benchmarks
+        # $env:CODE_SRC is set by bp-runner to the cloned repo path (C:\app\candidate)
+        how_to_run_benchmarks: |
+          $ErrorActionPreference = "Stop"
+
+          Write-Output "Building tracer for benchmarks..."
+          Set-Location $env:CODE_SRC
+
+          # Build the tracer (minimal build for benchmarks)
+          & .\tracer\build.cmd CreateRequiredDirectories Restore CompileManagedSrc DownloadLibDdwaf CopyLibDdwaf
+
+          Write-Output "Running benchmarks..."
+          Set-Location "$env:CODE_SRC\tracer\test\benchmarks\Benchmarks.Trace"
+
+          # Run a single fast benchmark for initial validation
+          # --job dry: minimal iterations for fast feedback
+          # --filter: run only SpanBenchmark.StartFinishSpan
+          # --exporters json: output results in JSON format
+          dotnet run -c Release -f net8.0 -- `
+            --job dry `
+            --filter "*SpanBenchmark.StartFinishSpan" `
+            -r net8.0 `
+            --exporters json
+
+          Write-Output "Benchmarks completed!"
