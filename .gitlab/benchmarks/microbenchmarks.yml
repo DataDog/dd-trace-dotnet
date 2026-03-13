@@ -106,6 +106,8 @@ run-benchmarks:
   script:
     - mkdir -p artifacts
     - export GITHUB_TOKEN=$(cat /tmp/github-token)
+    # Fetch DD_API_KEY from SSM (in GitLab runner's AWS account) and export for bp-infra
+    - export DD_API_KEY=$(aws ssm get-parameter --name "ci.dd-trace-dotnet.dd_api_key" --with-decryption --query "Parameter.Value" --output text --region "${AWS_REGION}")
     - CLEANUP_ARG=$([[ "$CLEANUP" == "false" ]] && echo "--no-cleanup" || echo "")
     - |
       bp-infra launch \

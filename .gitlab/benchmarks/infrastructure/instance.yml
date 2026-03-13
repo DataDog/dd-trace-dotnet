@@ -8,8 +8,6 @@
 name: &provision_name "dd-trace-dotnet-microbenchmarks"
 
 init_environment:
-  # SSM parameter for DD_API_KEY (for telemetry)
-  DD_API_KEY_SSM_PARAMETER: "ci.dd-trace-dotnet.dd_api_key"
   # S3 bucket for benchmark results
   BP_INFRA_ARTIFACTS_BUCKET_NAME: "windows-benchmarking-results-us-east-1"
 
@@ -40,13 +38,7 @@ run_benchmarks:
   remote_command: |
     $ErrorActionPreference = "Stop"
 
-    # Fetch DD_API_KEY from SSM if not already set
-    if (-not $env:DD_API_KEY) {
-        if ($env:DD_API_KEY_SSM_PARAMETER) {
-            Write-Output "Fetching DD_API_KEY from SSM parameter: $env:DD_API_KEY_SSM_PARAMETER"
-            $env:DD_API_KEY = (Get-SSMParameter -Name $env:DD_API_KEY_SSM_PARAMETER -WithDecryption $true).Value
-        }
-    }
+    # DD_API_KEY is passed from the CI job via --env-regex
 
     # Clone dd-trace-dotnet to get the bp-runner config
     $branch = if ($env:CI_COMMIT_REF_NAME) { $env:CI_COMMIT_REF_NAME } else { "master" }
