@@ -45,9 +45,10 @@ SymbolDebugInfo DebugInfoStore::Get(ModuleID moduleId, mdMethodDef methodDef)
     if (it == _modulesInfo.cend())
     {
         ParseModuleDebugInfo(moduleId);
+        it = _modulesInfo.find(moduleId);
     }
 
-    ModuleDebugInfo& info = (it == _modulesInfo.cend()) ? _modulesInfo[moduleId] : it->second;
+    ModuleDebugInfo& info = it->second;
 
     // we should support 2 situations:
     //  - portable .pdb was found and we can use methodDef as RID
