@@ -78,6 +78,7 @@
     <ClCompile Include="ProfileExporterTest.cpp" />
     <ClCompile Include="LinuxStackFramesCollectorTest.cpp" />
     <ClCompile Include="LogTest.cpp" />
+    <ClCompile Include="ManagedCodeCacheTest.cpp" />
     <ClCompile Include="ManagedThreadListTest.cpp" />
     <ClCompile Include="MetricsRegistryTest.cpp" />
     <ClCompile Include="OpSysToolsTest.cpp" />

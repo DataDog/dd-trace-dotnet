@@ -62,6 +62,9 @@
     <ClCompile Include="LogTest.cpp">
       <Filter>Tests</Filter>
     </ClCompile>
+    <ClCompile Include="ManagedCodeCacheTest.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
     <ClCompile Include="EnvironmentHelper.cpp">
       <Filter>Helpers</Filter>
     </ClCompile>
