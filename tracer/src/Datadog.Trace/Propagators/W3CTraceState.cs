@@ -1,4 +1,4 @@
-﻿// <copyright file="W3CTraceState.cs" company="Datadog">
+// <copyright file="W3CTraceState.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -18,15 +18,18 @@ internal readonly struct W3CTraceState
     // format is "_dd.p.key1:value1;_dd.p.key2:value2"
     public readonly string? PropagatedTags;
 
+    public readonly string? OrganizationPropagationMarker;
+
     // the string left in "tracestate" after removing "dd=*"
     public readonly string? AdditionalValues;
 
-    public W3CTraceState(int? samplingPriority, string? origin, string? lastParent, string? propagatedTags, string? additionalValues)
+    public W3CTraceState(int? samplingPriority, string? origin, string? lastParent, string? propagatedTags, string? additionalValues, string? organizationPropagationMarker = null)
     {
         SamplingPriority = samplingPriority;
         Origin = origin;
         LastParent = lastParent;
         PropagatedTags = propagatedTags;
+        OrganizationPropagationMarker = organizationPropagationMarker;
         AdditionalValues = additionalValues;
     }
 }

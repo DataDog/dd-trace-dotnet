@@ -1,4 +1,4 @@
-﻿// <copyright file="SpanContext.cs" company="Datadog">
+// <copyright file="SpanContext.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -58,6 +58,7 @@ namespace Datadog.Trace
         private string _rawSpanId;
         private string _origin;
         private string _additionalW3CTraceState;
+        private string _organizationPropagationMarker;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SpanContext"/> class
@@ -292,6 +293,20 @@ namespace Datadog.Trace
         /// to allow for the re-parenting of spans in cases where spans in distributed traces have missing spans.
         /// </summary>
         internal string LastParentId { get; set; }
+
+        internal string OrganizationPropagationMarker
+        {
+            get => TraceContext?.OrganizationPropagationMarker ?? _organizationPropagationMarker;
+            set
+            {
+                _organizationPropagationMarker = value;
+
+                if (TraceContext is not null)
+                {
+                    TraceContext.OrganizationPropagationMarker = value;
+                }
+            }
+        }
 
         internal PathwayContext? PathwayContext { get; private set; }
 

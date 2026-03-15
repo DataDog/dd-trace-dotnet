@@ -33,13 +33,23 @@ namespace Datadog.Trace.Tests.Propagators
 
         private static readonly SpanContextPropagator Propagator;
 
-        private static readonly KeyValuePair<string, string>[] DefaultHeaderValues =
+        private static readonly KeyValuePair<string, string>[] InjectHeaderValues =
         {
             new("x-datadog-trace-id", TraceId.Lower.ToString(InvariantCulture)),
             new("x-datadog-parent-id", SpanId.ToString(InvariantCulture)),
             new("x-datadog-sampling-priority", SamplingPriority.ToString(InvariantCulture)),
             new("x-datadog-origin", Origin),
             new("x-datadog-tags", PropagatedTagsString),
+        };
+
+        private static readonly KeyValuePair<string, string>[] ExtractHeaderValues =
+        {
+            new("x-datadog-trace-id", TraceId.Lower.ToString(InvariantCulture)),
+            new("x-datadog-parent-id", SpanId.ToString(InvariantCulture)),
+            new("x-datadog-sampling-priority", SamplingPriority.ToString(InvariantCulture)),
+            new("x-datadog-origin", Origin),
+            new("x-datadog-tags", PropagatedTagsString),
+            new("x-dd-opm", "local-opm"),
         };
 
         private static readonly TraceTagCollection PropagatedTagsCollection = new(
@@ -85,7 +95,7 @@ namespace Datadog.Trace.Tests.Propagators
 
             Propagator.Inject(new PropagationContext(spanContext, TestBaggage), headers.Object);
 
-            VerifySetCalls(headers, DefaultHeaderValues);
+            VerifySetCalls(headers, InjectHeaderValues);
         }
 
         [Fact]
@@ -175,7 +185,7 @@ namespace Datadog.Trace.Tests.Propagators
                 headers.Object,
                 (carrier, name, value) => carrier.Set(name, value));
 
-            VerifySetCalls(headers, DefaultHeaderValues);
+            VerifySetCalls(headers, InjectHeaderValues);
         }
 
         [Fact]
@@ -454,7 +464,7 @@ namespace Datadog.Trace.Tests.Propagators
         {
             var headers = new Mock<IHeadersCollection>(MockBehavior.Strict);
 
-            foreach (var pair in DefaultHeaderValues)
+            foreach (var pair in ExtractHeaderValues)
             {
                 headers.Setup(h => h.GetValues(pair.Key)).Returns(new[] { pair.Value });
             }
@@ -465,9 +475,9 @@ namespace Datadog.Trace.Tests.Propagators
         private static Mock<IReadOnlyDictionary<string, string>> SetupMockReadOnlyDictionary()
         {
             var headers = new Mock<IReadOnlyDictionary<string, string>>(MockBehavior.Strict);
-            headers.Setup(h => h.Count).Returns(DefaultHeaderValues.Length);
+            headers.Setup(h => h.Count).Returns(ExtractHeaderValues.Length);
 
-            foreach (var pair in DefaultHeaderValues)
+            foreach (var pair in ExtractHeaderValues)
             {
                 var value = pair.Value;
                 headers.Setup(h => h.TryGetValue(pair.Key, out value)).Returns(true);
@@ -492,7 +502,7 @@ namespace Datadog.Trace.Tests.Propagators
         {
             var once = Times.Once();
 
-            foreach (var pair in DefaultHeaderValues)
+            foreach (var pair in ExtractHeaderValues)
             {
                 headers.Verify(h => h.GetValues(pair.Key), once);
             }
@@ -507,7 +517,7 @@ namespace Datadog.Trace.Tests.Propagators
 
             headers.Verify(h => h.Count, once);
 
-            foreach (var pair in DefaultHeaderValues)
+            foreach (var pair in ExtractHeaderValues)
             {
                 headers.Verify(h => h.TryGetValue(pair.Key, out value), once);
             }
