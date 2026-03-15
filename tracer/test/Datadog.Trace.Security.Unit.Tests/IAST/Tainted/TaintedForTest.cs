@@ -42,6 +42,15 @@ public class TaintedForTest : ITaintedObject
         _alive = false;
     }
 
+    /// <summary>
+    /// Simulates garbage collection by setting Value to null, like WeakReference.Target
+    /// </summary>
+    public void SimulateGarbageCollection()
+    {
+        _alive = false;
+        _value = null;
+    }
+
     internal Range[]? GetRanges()
     {
         return _ranges;
