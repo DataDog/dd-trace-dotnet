@@ -118,6 +118,7 @@ namespace Datadog.Trace.Tools.Runner
 
             builder.Command.AddCommand(new RunCommand(applicationContext));
             builder.Command.AddCommand(new AotCommand { IsHidden = true });
+            builder.Command.AddCommand(new DuckTypeAotCommand { IsHidden = true });
             builder.Command.AddCommand(new AnalyzeInstrumentationErrorsCommand { IsHidden = true });
             builder.Command.AddCommand(new CoverageMergerCommand { IsHidden = true });
 
