@@ -57,18 +57,6 @@ std::pair<DWORD, std::string> GetLastErrorMessage()
     return std::make_pair(errorCode, message);
 }
 
-
-std::unique_ptr<StackFramesCollectorBase> CreateNewStackFramesCollectorInstance(
-    ICorProfilerInfo4* pCorProfilerInfo,
-    IConfiguration const* const pConfiguration,
-    CallstackProvider* callstackProvider,
-    MetricsRegistry& metricsRegistry)
-{
-    static auto pUnwinder = std::make_unique<Backtrace2Unwinder>();
-    return std::make_unique<LinuxStackFramesCollector>(
-        ProfilerSignalManager::Get(SIGUSR1), pConfiguration, callstackProvider, metricsRegistry, pUnwinder.get());
-}
-
 // https://linux.die.net/man/5/proc
 //
 // the third field is the Status:  (Running = R, D or W)

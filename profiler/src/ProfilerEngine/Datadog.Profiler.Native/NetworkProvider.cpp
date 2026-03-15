@@ -8,6 +8,7 @@
 #include "Log.h"
 #include "OsSpecificApi.h"
 #include "RawSampleTransformer.h"
+#include "StackFramesCollectorFactory.h"
 
 #include <chrono>
 
@@ -25,6 +26,7 @@ NetworkProvider::NetworkProvider(
     IConfiguration* pConfiguration,
     MetricsRegistry& metricsRegistry,
     CallstackProvider callstackProvider,
+    StackFramesCollectorFactory* pStackFramesCollectorFactory,
     shared::pmr::memory_resource* memoryResource)
     :
     CollectorBase<RawNetworkSample>(
@@ -36,7 +38,7 @@ NetworkProvider::NetworkProvider(
     _pManagedThreadList{ pManagedThreadList },
     _pConfiguration{ pConfiguration },
     _callstackProvider{ std::move(callstackProvider) },
-    _metricsRegistry{metricsRegistry}
+    _pStackFramesCollectorFactory{pStackFramesCollectorFactory}
 {
     // all other durations in the code are in nanoseconds but the config is in milliseconds
     _requestDurationThreshold = std::chrono::duration_cast<std::chrono::nanoseconds>(pConfiguration->GetHttpRequestDurationThreshold());
@@ -72,7 +74,7 @@ bool NetworkProvider::CaptureThreadInfo(NetworkRequestInfo& info)
 
     // collect current call stack
     uint32_t hrCollectStack = E_FAIL;
-    const auto pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo, _pConfiguration, &_callstackProvider, _metricsRegistry);
+    const auto pStackFramesCollector = _pStackFramesCollectorFactory->Create(&_callstackProvider);
 
     pStackFramesCollector->PrepareForNextCollection();
     const auto result = pStackFramesCollector->CollectStackSample(threadInfo.get(), &hrCollectStack);

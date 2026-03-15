@@ -30,6 +30,7 @@ class IAppDomainStore;
 class IRuntimeIdStore;
 class RawSampleTransformer;
 class SampleValueTypeProvider;
+class StackFramesCollectorFactory;
 
 
 class ContentionProvider : public CollectorBase<RawContentionSample>,
@@ -45,6 +46,7 @@ public:
         IConfiguration* pConfiguration,
         MetricsRegistry& metricsRegistry,
         CallstackProvider callstackProvider,
+        StackFramesCollectorFactory* pStackFramesCollectorFactory,
         shared::pmr::memory_resource* memoryResource);
 
     // IContentionListener implementation
@@ -81,6 +83,6 @@ private:
     std::shared_ptr<CounterMetric> _sampledLockContentionsCountMetric;
     std::shared_ptr<MeanMaxMetric> _sampledLockContentionsDurationMetric;
     std::mutex _contentionsLock;
-    MetricsRegistry& _metricsRegistry;
+    StackFramesCollectorFactory* _pStackFramesCollectorFactory;
     CallstackProvider _callstackProvider;
 };

@@ -7,6 +7,7 @@
 #include "OpSysTools.h"
 #include "OsSpecificApi.h"
 #include "ThreadsCpuManager.h"
+#include "StackFramesCollectorFactory.h"
 
 using namespace std::chrono_literals;
 
@@ -35,7 +36,8 @@ StackSamplerLoopManager::StackSamplerLoopManager(
     ICollector<RawWallTimeSample>* pWallTimeCollector,
     ICollector<RawCpuSample>* pCpuTimeCollector,
     MetricsRegistry& metricsRegistry,
-    CallstackProvider callstackProvider
+    CallstackProvider callstackProvider,
+    StackFramesCollectorFactory* pStackFramesCollectorFactory
     ) :
     _pCorProfilerInfo{pCorProfilerInfo},
     _pConfiguration{pConfiguration},
@@ -59,17 +61,16 @@ StackSamplerLoopManager::StackSamplerLoopManager(
     _totalDeadlockDetectionsCount{0},
     _metricsSender{metricsSender},
     _statisticsReadyToSend{nullptr},
-    _metricsRegistry{metricsRegistry},
-    _callstackProvider{std::move(callstackProvider)}
+    _callstackProvider{std::move(callstackProvider)},
+    _metricsRegistry{metricsRegistry}
 {
     _pCorProfilerInfo->AddRef();
-    _pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(
-        _pCorProfilerInfo, pConfiguration, &_callstackProvider, _metricsRegistry);
+    _pStackFramesCollector = pStackFramesCollectorFactory->Create(&_callstackProvider);
 
     _currentStatistics = std::make_unique<Statistics>();
     _statisticCollectionStartNs = OpSysTools::GetHighPrecisionNanoseconds();
 
-    _deadlockCountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_internal_deadlocks");
+    _deadlockCountMetric = _metricsRegistry.GetOrRegister<CounterMetric>("dotnet_internal_deadlocks");
 }
 
 StackSamplerLoopManager::~StackSamplerLoopManager()
