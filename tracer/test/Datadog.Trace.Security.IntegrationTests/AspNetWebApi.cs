@@ -105,7 +105,10 @@ namespace Datadog.Trace.Security.IntegrationTests
 
             var settings = VerifyHelper.GetSpanVerifierSettings(test);
             FilterConnectionHeader(settings);
-            await TestAppSecRequestWithVerifyAsync(_iisFixture.Agent, url, null, 5, 1, settings, userAgent: "Hello/V");
+            // When AppSec is enabled, the request is blocked early and only the ASP.NET root span is created.
+            // When AppSec is disabled, the request completes normally and we also get the Web API span.
+            var spansPerRequest = SecurityEnabled ? 1 : 2;
+            await TestAppSecRequestWithVerifyAsync(_iisFixture.Agent, url, null, 5, spansPerRequest, settings, userAgent: "Hello/V");
         }
 
         [Trait("Category", "EndToEnd")]
