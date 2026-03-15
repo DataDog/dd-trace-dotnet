@@ -480,7 +480,7 @@ internal sealed class TelemetryController : ITelemetryController
         private TimeSpan _flushInterval;
         private DateTime _lastFlush;
         private DateTime _lastExtendedFlush;
-        private bool _initializationFlushExecuted = false;
+        private bool _initializationFlushExecuted;
 
         public Scheduler(TimeSpan flushInterval, TimeSpan extendHeartbeatInterval, Func<Task> logQueueTaskGenerator, TaskCompletionSource<bool> processExitSource)
             : this(flushInterval, extendHeartbeatInterval, logQueueTaskGenerator, processExitSource, new Clock(), new DelayFactory())

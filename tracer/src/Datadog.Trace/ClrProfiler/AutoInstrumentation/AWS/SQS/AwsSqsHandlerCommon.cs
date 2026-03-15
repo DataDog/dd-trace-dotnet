@@ -160,7 +160,10 @@ internal sealed class AwsSqsHandlerCommon
                     var sentTime = 0;
                     if (message.Attributes != null && message.Attributes.TryGetValue("SentTimestamp", out var sentTimeStr) && sentTimeStr != null)
                     {
-                        int.TryParse(sentTimeStr, out sentTime);
+                        if (!int.TryParse(sentTimeStr, out sentTime))
+                        {
+                            sentTime = 0;
+                        }
                     }
 
                     var adapter = AwsMessageAttributesHeadersAdapters.GetExtractionAdapter(message.MessageAttributes);

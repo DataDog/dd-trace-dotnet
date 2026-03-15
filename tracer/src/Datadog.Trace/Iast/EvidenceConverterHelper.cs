@@ -173,8 +173,8 @@ internal static class EvidenceConverterHelper
         {
             private ValuePartIterator iterator;
 
-            private int index = 0;
-            private ValuePart? current = null;
+            private int index;
+            private ValuePart? current;
 
             public Enumerator(ValuePartIterator iterator)
             {

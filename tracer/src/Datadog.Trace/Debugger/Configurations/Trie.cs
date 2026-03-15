@@ -40,9 +40,9 @@ namespace Datadog.Trace.Debugger.Configurations
             {
                 var c = str[i];
                 TrieNode node;
-                if (children.ContainsKey(c))
+                if (children.TryGetValue(c, out var child))
                 {
-                    node = children[c];
+                    node = child;
                 }
                 else
                 {
@@ -113,9 +113,9 @@ namespace Datadog.Trace.Debugger.Configurations
             for (var i = 0; i < str.Length; i++)
             {
                 var c = str[i];
-                if (children.ContainsKey(c))
+                if (children.TryGetValue(c, out var value))
                 {
-                    node = children[c];
+                    node = value;
                     children = node.Children;
                     if (prefixMode && node.IsLeaf)
                     {

@@ -441,7 +441,7 @@ internal static class GitCommandHelper
                             return false;
                         }));
 
-                Log.Debug(
+                Log.Debug<int, string>(
                     "GitCommandHelper: Found {Count} candidate branches: {Branches}",
                     candidateBranches.Count,
                     string.Join(", ", candidateBranches));
@@ -707,9 +707,9 @@ internal static class GitCommandHelper
             var lastSpace = span.LastIndexOf(' ');
             var versionText = span.Slice(lastSpace + 1).ToString();
             var segments = versionText.Split('.');
-            int.TryParse(segments.ElementAtOrDefault(0), out var major);
-            int.TryParse(segments.ElementAtOrDefault(1), out var minor);
-            int.TryParse(segments.ElementAtOrDefault(2), out var patch);
+            var major = int.TryParse(segments.ElementAtOrDefault(0), out var r) ? r : 0;
+            var minor = int.TryParse(segments.ElementAtOrDefault(1), out r) ? r : 0;
+            var patch = int.TryParse(segments.ElementAtOrDefault(2), out r) ? r : 0;
             return new VersionInfo(major, minor, patch);
         }
 
