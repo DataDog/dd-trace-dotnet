@@ -5,6 +5,7 @@
 
 #nullable enable
 
+using System;
 using System.Threading;
 
 #if NETFRAMEWORK
@@ -28,10 +29,7 @@ internal sealed class ContainerMetadata
         // nothing to do, just to match the other version
     }
 
-    /// <summary>
-    /// Gets or sets the container tags hash received from the agent, used by DBM/DSM
-    /// This is set when we receive a value for it in an http response from the agent
-    /// </summary>
+    // always null in this implementation
     public string? ContainerTagsHash
     {
         get => Volatile.Read(ref field);
@@ -57,5 +55,10 @@ internal sealed class ContainerMetadata
     /// </summary>
     /// <value>The entity id or <c>null</c>.</value>
     public string? EntityId => null;
+
+    public void SubscribeToContainerTagsHashChanges(Action<string?> action)
+    {
+        // nothing to do here, there is no container ID, so there is no hash to get, so it's always null.
+    }
 }
 #endif
