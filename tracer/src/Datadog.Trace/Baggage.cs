@@ -6,6 +6,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using Datadog.Trace.Util;
@@ -369,6 +370,27 @@ internal sealed class Baggage : IDictionary<string, string?>
     }
 
     /// <summary>
+    /// Converts the baggage items to a new dictionary.
+    /// </summary>
+    /// <returns>A dictionary of the baggage items, or an empty dictionary if there are no items.</returns>
+    public Dictionary<string, string?> AsDictionary()
+    {
+        if (_items is { } items)
+        {
+            lock (items)
+            {
+#if NETCOREAPP3_1_OR_GREATER
+                return new(items);
+#else
+                return new Dictionary<string, string?>(items.ToDictionary(kvp => kvp.Key, kvp => kvp.Value));
+#endif
+            }
+        }
+
+        return [];
+    }
+
+    /// <summary>
     /// Adds the baggage items from this baggage instance into <paramref name="destination"/>.
     /// </summary>
     public void MergeInto(Baggage destination)
@@ -446,7 +468,7 @@ internal sealed class Baggage : IDictionary<string, string?>
         }
     }
 
-    private List<KeyValuePair<string, string?>>.Enumerator GetEnumerator() => _items?.GetEnumerator() ?? EmptyList.GetEnumerator();
+    public List<KeyValuePair<string, string?>>.Enumerator GetEnumerator() => _items?.GetEnumerator() ?? EmptyList.GetEnumerator();
 
     IEnumerator<KeyValuePair<string, string?>> IEnumerable<KeyValuePair<string, string?>>.GetEnumerator() => GetEnumerator();
 
