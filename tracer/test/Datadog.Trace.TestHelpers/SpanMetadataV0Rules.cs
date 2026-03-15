@@ -98,6 +98,35 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("component", "aspnet")
                 .Matches("span.kind", "server"));
 
+        /// <summary>
+        /// ASP.NET Core request span when no route matched (404). Code origin is absent because Routing.EndpointMatched never fires.
+        /// </summary>
+        public static Result IsAspNetCore404V0(this MockSpan span, ISet<string> excludeTags = null) => Result.FromSpan(span, excludeTags)
+            .Properties(s => s
+                .Matches(Name, "aspnet_core.request")
+                .Matches(Type, "web"))
+            .Tags(s => s
+                .IsOptional("aspnet_core.endpoint")
+                .IsOptional("aspnet_core.route")
+                .IsAbsent("_dd.code_origin.type")
+                .IsAbsent("_dd.code_origin.frames.0.index")
+                .IsAbsent("_dd.code_origin.frames.0.method")
+                .IsAbsent("_dd.code_origin.frames.0.type")
+                .IsAbsent("_dd.code_origin.frames.0.file")
+                .IsAbsent("_dd.code_origin.frames.0.line")
+                .IsAbsent("_dd.code_origin.frames.0.column")
+                .IsOptional("http.client_ip")
+                .IsOptional("network.client.ip")
+                .IsPresent("http.method")
+                .IsPresent("http.request.headers.host")
+                .IsOptional("http.route")
+                .IsPresent("http.status_code")
+                .IsPresent("http.useragent")
+                .IsPresent("http.url")
+                .IsOptional("_dd.base_service")
+                .Matches("component", "aspnet_core")
+                .Matches("span.kind", "server"));
+
         public static Result IsAspNetCoreV0(this MockSpan span, ISet<string> excludeTags = null) => Result.FromSpan(span, excludeTags)
             .Properties(s => s
                 .Matches(Name, "aspnet_core.request")
@@ -105,6 +134,13 @@ namespace Datadog.Trace.TestHelpers
             .Tags(s => s
                 .IsOptional("aspnet_core.endpoint")
                 .IsOptional("aspnet_core.route")
+                .IsOptional("_dd.code_origin.type")
+                .IsOptional("_dd.code_origin.frames.0.index")
+                .IsOptional("_dd.code_origin.frames.0.method")
+                .IsOptional("_dd.code_origin.frames.0.type")
+                .IsOptional("_dd.code_origin.frames.0.file")
+                .IsOptional("_dd.code_origin.frames.0.line")
+                .IsOptional("_dd.code_origin.frames.0.column")
                 .IsOptional("http.client_ip")
                 .IsOptional("network.client.ip")
                 .IsPresent("http.method")
@@ -128,6 +164,13 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("aspnet_core.controller")
                 .IsOptional("aspnet_core.page")
                 .IsPresent("aspnet_core.route")
+                .IsOptional("_dd.code_origin.type")
+                .IsOptional("_dd.code_origin.frames.0.index")
+                .IsOptional("_dd.code_origin.frames.0.method")
+                .IsOptional("_dd.code_origin.frames.0.type")
+                .IsOptional("_dd.code_origin.frames.0.file")
+                .IsOptional("_dd.code_origin.frames.0.line")
+                .IsOptional("_dd.code_origin.frames.0.column")
                 .IsOptional("_dd.base_service")
                 .Matches("component", "aspnet_core")
                 .Matches("span.kind", "server"));

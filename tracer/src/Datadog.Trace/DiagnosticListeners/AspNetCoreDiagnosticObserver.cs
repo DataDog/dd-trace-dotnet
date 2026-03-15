@@ -442,8 +442,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private void OnRoutingEndpointMatched(object arg)
         {
-            if (!_tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId) ||
-                !_tracer.Settings.RouteTemplateResourceNamesEnabled)
+            if (!_tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 return;
             }
@@ -452,11 +451,7 @@ namespace Datadog.Trace.DiagnosticListeners
              && typedArg.HttpContext is { } httpContext
              && httpContext.Items[AspNetCoreHttpRequestHandler.HttpContextTrackingKey] is AspNetCoreHttpRequestHandler.RequestTrackingFeature { RootScope.Span: { } rootSpan } trackingFeature)
             {
-                if (rootSpan.Tags is not AspNetCoreEndpointTags tags)
-                {
-                    // customer is using legacy resource names
-                    return;
-                }
+                var routeTemplateResourceNamesEnabled = _tracer.Settings.RouteTemplateResourceNamesEnabled;
 
                 var isFirstExecution = trackingFeature.IsFirstPipelineExecution;
                 if (isFirstExecution)
@@ -510,22 +505,26 @@ namespace Datadog.Trace.DiagnosticListeners
                     return;
                 }
 
-                if (CurrentCodeOrigin is { Settings.CodeOriginForSpansEnabled: true })
+                var codeOrigin = CurrentCodeOrigin;
+                if (codeOrigin is { Settings.CodeOriginForSpansEnabled: true } &&
+                    AspNetCoreEndpointCodeOrigin.TryGetTypeAndMethod(routeEndpoint.Value, out var endpointType, out var endpointMethod))
                 {
-                    var method = routeEndpoint?.RequestDelegate?.Method;
-                    if (method != null)
-                    {
-                        CurrentCodeOrigin?.SetCodeOriginForEntrySpan(rootSpan, routeEndpoint?.RequestDelegate?.Target?.GetType() ?? method.DeclaringType, method);
-                    }
-                    else if (routeEndpoint?.RequestDelegate?.TryDuckCast<Target>(out var target) == true && target is { Handler: { } handler })
-                    {
-                        Log.Debug("RouteEndpoint?.RequestDelegate?.Method is null. Extracting code origin from RouteEndpoint.RequestDelegate.Target.Handler {Handler}", handler);
-                        CurrentCodeOrigin?.SetCodeOriginForEntrySpan(rootSpan, handler.Target?.GetType(), handler.Method);
-                    }
-                    else
-                    {
-                        Log.Debug("RouteEndpoint?.RequestDelegate?.Method is null and could not extract handler from RouteEndpoint.RequestDelegate.Target");
-                    }
+                    codeOrigin.SetCodeOriginForEntrySpan(rootSpan, endpointType, endpointMethod);
+                }
+                else if (codeOrigin is { Settings.CodeOriginForSpansEnabled: true })
+                {
+                    Log.Debug("Could not extract type and method for endpoint code origin. Endpoint: {EndpointDisplayName}", routeEndpoint.Value.DisplayName);
+                }
+
+                if (!routeTemplateResourceNamesEnabled)
+                {
+                    return;
+                }
+
+                if (rootSpan.Tags is not AspNetCoreEndpointTags tags)
+                {
+                    // customer is using legacy resource names
+                    return;
                 }
 
                 if (isFirstExecution)
@@ -619,20 +618,20 @@ namespace Datadog.Trace.DiagnosticListeners
                     }
                 }
 
+                if (isCodeOriginEnabled)
+                {
+                    if (TryGetTypeAndMethod(typedArg, out var type, out var method))
+                    {
+                        CurrentCodeOrigin?.SetCodeOriginForEntrySpan(rootSpan, type, method);
+                    }
+                    else
+                    {
+                        Log.Debug("Could not extract type and method from {ActionDescriptor}", typedArg.ActionDescriptor?.DisplayName);
+                    }
+                }
+
                 if (span is not null)
                 {
-                    if (isCodeOriginEnabled)
-                    {
-                        if (TryGetTypeAndMethod(typedArg, out var type, out var method))
-                        {
-                            CurrentCodeOrigin?.SetCodeOriginForEntrySpan(rootSpan, type, method);
-                        }
-                        else
-                        {
-                            Log.Debug("Could not extract type and method from {ActionDescriptor}", typedArg.ActionDescriptor?.DisplayName);
-                        }
-                    }
-
                     _security.CheckPathParamsFromAction(httpContext, span, typedArg.ActionDescriptor?.Parameters, typedArg.RouteData.Values);
                 }
 
