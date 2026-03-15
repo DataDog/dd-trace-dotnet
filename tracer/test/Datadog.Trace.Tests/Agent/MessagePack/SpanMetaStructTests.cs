@@ -117,7 +117,7 @@ public class SpanMetaStructTests
         }
 
         var spanBytes = new byte[] { };
-        var spanBuffer = new SpanBuffer(10000, FormatterResolver);
+        var spanBuffer = new SpanBuffer(10000, new SpanBufferMessagePackSerializer(FormatterResolver));
         // We serialize the span
         var serializationResult = spanBuffer.TryWrite(new([span]), ref spanBytes);
         serializationResult.Should().Be(SpanBuffer.WriteStatus.Success);
