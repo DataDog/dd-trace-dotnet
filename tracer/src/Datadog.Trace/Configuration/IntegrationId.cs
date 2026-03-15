@@ -90,6 +90,7 @@ namespace Datadog.Trace.Configuration
         AzureEventHubs,
         DatadogTraceVersionConflict,
         Hangfire,
-        OpenFeature
+        OpenFeature,
+        ServerlessCompat
     }
 }

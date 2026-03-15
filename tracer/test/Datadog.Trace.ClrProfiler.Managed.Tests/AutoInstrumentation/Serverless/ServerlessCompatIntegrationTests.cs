@@ -1,0 +1,203 @@
+// <copyright file="ServerlessCompatIntegrationTests.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
+// </copyright>
+
+#nullable enable
+
+#if !NETFRAMEWORK
+using System;
+using System.Reflection;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Serverless;
+using Datadog.Trace.ClrProfiler.CallTarget;
+using FluentAssertions;
+using Xunit;
+
+namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.Serverless;
+
+public class ServerlessCompatIntegrationTests
+{
+    [Fact]
+    public void TracePipeName_WithPreGeneratedName_ReturnsTracerValue()
+    {
+        // Arrange
+        ResetCachedPipeNames();
+        const string preGeneratedName = "dd_trace_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+        const string compatLayerName = "dd_trace_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
+        SetExporterSettingsGeneratedNames(preGeneratedName, null);
+
+        // Act
+        var result = CompatibilityLayer_CalculateTracePipeName_Integration.OnMethodEnd<object>(
+            null!,
+            compatLayerName,
+            null!,
+            default);
+
+        // Assert
+        result.GetReturnValue().Should().Be(preGeneratedName);
+    }
+
+    [Fact]
+    public void TracePipeName_WithoutPreGeneratedName_GeneratesUniqueName()
+    {
+        // Arrange
+        ResetCachedPipeNames();
+        const string compatLayerName = "dd_trace_00000000000000000000000000000000";
+        SetExporterSettingsGeneratedNames(null, null);
+
+        // Act
+        var result = CompatibilityLayer_CalculateTracePipeName_Integration.OnMethodEnd<object>(
+            null!,
+            compatLayerName,
+            null!,
+            default);
+
+        // Assert
+        var pipeName = result.GetReturnValue();
+        pipeName.Should().NotBe(compatLayerName);
+        pipeName.Should().StartWith("dd_trace_");
+        pipeName.Should().MatchRegex(@"^dd_trace_[a-f0-9]{32}$"); // base_guid format
+    }
+
+    [Fact]
+    public void TracePipeName_CalledMultipleTimes_ReturnsCachedValue()
+    {
+        // Arrange
+        ResetCachedPipeNames();
+        SetExporterSettingsGeneratedNames(null, null);
+
+        // Act
+        var result1 = CompatibilityLayer_CalculateTracePipeName_Integration.OnMethodEnd<object>(
+            null!,
+            "compat_name_1",
+            null!,
+            default);
+
+        var result2 = CompatibilityLayer_CalculateTracePipeName_Integration.OnMethodEnd<object>(
+            null!,
+            "compat_name_2",
+            null!,
+            default);
+
+        // Assert
+        result1.GetReturnValue().Should().Be(result2.GetReturnValue());
+    }
+
+    [Fact]
+    public void DogStatsDPipeName_WithPreGeneratedName_ReturnsTracerValue()
+    {
+        // Arrange
+        ResetCachedPipeNames();
+        const string preGeneratedName = "dd_dogstatsd_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+        const string compatLayerName = "dd_dogstatsd_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
+        SetExporterSettingsGeneratedNames(null, preGeneratedName);
+
+        // Act
+        var result = CompatibilityLayer_CalculateDogStatsDPipeName_Integration.OnMethodEnd<object>(
+            null!,
+            compatLayerName,
+            null!,
+            default);
+
+        // Assert
+        result.GetReturnValue().Should().Be(preGeneratedName);
+    }
+
+    [Fact]
+    public void DogStatsDPipeName_WithoutPreGeneratedName_GeneratesUniqueName()
+    {
+        // Arrange
+        ResetCachedPipeNames();
+        const string compatLayerName = "dd_dogstatsd_00000000000000000000000000000000";
+        SetExporterSettingsGeneratedNames(null, null);
+
+        // Act
+        var result = CompatibilityLayer_CalculateDogStatsDPipeName_Integration.OnMethodEnd<object>(
+            null!,
+            compatLayerName,
+            null!,
+            default);
+
+        // Assert
+        var pipeName = result.GetReturnValue();
+        pipeName.Should().NotBe(compatLayerName);
+        pipeName.Should().StartWith("dd_dogstatsd_");
+        pipeName.Should().MatchRegex(@"^dd_dogstatsd_[a-f0-9]{32}$"); // base_guid format
+    }
+
+    [Fact]
+    public void DogStatsDPipeName_CalledMultipleTimes_ReturnsCachedValue()
+    {
+        // Arrange
+        ResetCachedPipeNames();
+        SetExporterSettingsGeneratedNames(null, null);
+
+        // Act
+        var result1 = CompatibilityLayer_CalculateDogStatsDPipeName_Integration.OnMethodEnd<object>(
+            null!,
+            "compat_name_1",
+            null!,
+            default);
+
+        var result2 = CompatibilityLayer_CalculateDogStatsDPipeName_Integration.OnMethodEnd<object>(
+            null!,
+            "compat_name_2",
+            null!,
+            default);
+
+        // Assert
+        result1.GetReturnValue().Should().Be(result2.GetReturnValue());
+    }
+
+    [Theory]
+    [InlineData("trace")]
+    [InlineData("dogstatsd")]
+    public void OnMethodEnd_WithException_PassesThroughOriginalValue(string pipeType)
+    {
+        // Arrange
+        ResetCachedPipeNames();
+        const string originalValue = "original_pipe_name";
+        var exception = new InvalidOperationException("Test exception");
+
+        // Act
+        CallTargetReturn<string> result = pipeType == "trace"
+            ? CompatibilityLayer_CalculateTracePipeName_Integration.OnMethodEnd<object>(null!, originalValue, exception, default)
+            : CompatibilityLayer_CalculateDogStatsDPipeName_Integration.OnMethodEnd<object>(null!, originalValue, exception, default);
+
+        // Assert
+        result.GetReturnValue().Should().Be(originalValue);
+    }
+
+    // Clear cached values between tests using reflection.
+    // The integration classes cache their resolved pipe name in a static field;
+    // resetting these allows each test to start fresh.
+    private static void ResetCachedPipeNames()
+    {
+        var traceIntegrationType = typeof(CompatibilityLayer_CalculateTracePipeName_Integration);
+        var dogstatsdIntegrationType = typeof(CompatibilityLayer_CalculateDogStatsDPipeName_Integration);
+
+        var traceCacheField = traceIntegrationType.GetField("_cachedTracePipeName", BindingFlags.NonPublic | BindingFlags.Static);
+        var dogstatsdCacheField = dogstatsdIntegrationType.GetField("_cachedDogStatsDPipeName", BindingFlags.NonPublic | BindingFlags.Static);
+
+        traceCacheField?.SetValue(null, null);
+        dogstatsdCacheField?.SetValue(null, null);
+    }
+
+    // Pre-populate the integration cache fields directly to simulate
+    // having a pre-generated pipe name (e.g. from ExporterSettings).
+    // The ExporterSettings backing fields are static readonly and cannot be
+    // set via reflection, so we set the integration-level cache instead,
+    // which is what the integration checks first.
+    private static void SetExporterSettingsGeneratedNames(string? tracePipeName, string? metricsPipeName)
+    {
+        var traceIntegrationType = typeof(CompatibilityLayer_CalculateTracePipeName_Integration);
+        var dogstatsdIntegrationType = typeof(CompatibilityLayer_CalculateDogStatsDPipeName_Integration);
+
+        var traceCacheField = traceIntegrationType.GetField("_cachedTracePipeName", BindingFlags.NonPublic | BindingFlags.Static);
+        var dogstatsdCacheField = dogstatsdIntegrationType.GetField("_cachedDogStatsDPipeName", BindingFlags.NonPublic | BindingFlags.Static);
+
+        traceCacheField?.SetValue(null, tracePipeName);
+        dogstatsdCacheField?.SetValue(null, metricsPipeName);
+    }
+}
+#endif
