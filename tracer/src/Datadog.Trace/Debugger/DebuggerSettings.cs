@@ -26,7 +26,7 @@ namespace Datadog.Trace.Debugger
         public const int DefaultMaxProbesPerType = 0;
 
         private const int DefaultUploadBatchSize = 100;
-        public const int DefaultSymbolBatchSizeInBytes = 100000;
+        public const int DefaultSymbolBatchSizeInBytes = 1 * 1024 * 1024; // 1 MB
         private const int DefaultDiagnosticsIntervalSeconds = 60 * 60; // 1 hour
         private const int DefaultUploadFlushIntervalMilliseconds = 0;
         public const int DefaultCodeOriginExitSpanFrames = 8;
