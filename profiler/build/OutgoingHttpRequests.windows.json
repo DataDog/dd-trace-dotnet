@@ -15,7 +15,7 @@
       "name": "Profiler_outgoinghttprequests",
       "environmentVariables": {
         "DD_CLR_ENABLE_NGEN": "true",
-        "DD_PROFILING_ENABLED": "1",
+        "DD_PROFILING_ENABLED": "0",
         "DD_PROFILING_WALLTIME_ENABLED": "0",
         "DD_PROFILING_CPU_ENABLED": "0",
         "DD_PROFILING_GC_ENABLED": "0",
@@ -26,7 +26,7 @@
 
         "DD_PROFILING_DD_INTERNAL_PROFILING_HTTP_ENABLED": "1",
         "DD_INTERNAL_PROFILING_FORCE_HTTP_SAMPLING": "1",
-        "DD_TRACE_ENABLED" : "0",
+        "DD_TRACE_ENABLED" : "1",
         "DD_PROFILING_MANAGED_ACTIVATION_ENABLED" : "0"
       }
     },
@@ -45,7 +45,7 @@
 
         "DD_PROFILING_DD_INTERNAL_PROFILING_HTTP_ENABLED": "1",
         "DD_INTERNAL_PROFILING_FORCE_HTTP_SAMPLING": "1",
-        "DD_TRACE_ENABLED" : "0",
+        "DD_TRACE_ENABLED" : "1",
         "DD_PROFILING_MANAGED_ACTIVATION_ENABLED" : "0"
       }
     }
