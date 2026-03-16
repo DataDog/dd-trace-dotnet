@@ -457,8 +457,15 @@ internal static class RaspModule
                         return;
                     }
 
-                    await content.LoadIntoBufferAsync(len > 0 ? len : bodySizeLimit).ConfigureAwait(false);
-                    len = content.Headers?.ContentLength ?? 0;
+                    try
+                    {
+                        await content.LoadIntoBufferAsync(len > 0 ? len : bodySizeLimit).ConfigureAwait(false);
+                        len = content.Headers?.ContentLength ?? 0;
+                    }
+                    catch (System.Net.Http.HttpRequestException)
+                    {
+                        len = 0;
+                    }
 
                     if (len > 0 && len <= bodySizeLimit)
                     {
@@ -473,7 +480,7 @@ internal static class RaspModule
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "RASP: Error while parsing body.");
+            Log.Warning(ex, "RASP: Error while parsing body.");
         }
     }
 #endif

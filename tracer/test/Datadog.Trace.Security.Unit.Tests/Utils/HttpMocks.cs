@@ -7,9 +7,12 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace Datadog.Trace.Security.Unit.Tests.Utils;
 
@@ -63,6 +66,34 @@ internal static class HttpMocks
         return new StringContent(body, Encoding.UTF8, contentType);
     }
 
+    /// <summary>
+    /// Creates an HttpContent that has no Content-Length header, simulating chunked transfer encoding.
+    /// TryComputeLength returns false so ContentLength remains null even after LoadIntoBufferAsync.
+    /// </summary>
+    public static HttpContent CreateChunkedContent(string body, string contentType)
+        => new ChunkedContent(Encoding.UTF8.GetBytes(body), contentType);
+
+    /// <summary>
+    /// Creates an HttpContent that exceeds the size limit but has no Content-Length header.
+    /// Simulates a large chunked response.
+    /// </summary>
+    public static HttpContent CreateLargeChunkedContent(int sizeInBytes, string contentType, bool incomplete = false)
+    {
+        // Build a JSON array large enough to exceed the limit
+        var sb = new StringBuilder("[");
+        while (sb.Length < sizeInBytes)
+        {
+            sb.Append("\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",");
+        }
+
+        if (!incomplete)
+        {
+            sb.Append("\"end\"]");
+        }
+
+        return new ChunkedContent(Encoding.UTF8.GetBytes(sb.ToString()), contentType);
+    }
+
     public static HttpHeaders CreateMockHeaders(Dictionary<string, string> headers)
     {
         var httpHeaders = new TestHttpHeaders();
@@ -73,6 +104,32 @@ internal static class HttpMocks
         }
 
         return httpHeaders;
+    }
+
+    /// <summary>
+    /// HttpContent with no Content-Length (like chunked transfer encoding).
+    /// </summary>
+    private sealed class ChunkedContent : HttpContent
+    {
+        private readonly byte[] _data;
+
+        public ChunkedContent(byte[] data, string contentType)
+        {
+            _data = data;
+            Headers.ContentType = MediaTypeHeaderValue.Parse(contentType);
+            // Deliberately NOT setting ContentLength — simulates Transfer-Encoding: chunked
+        }
+
+        protected override Task SerializeToStreamAsync(Stream stream, TransportContext? context)
+            => stream.WriteAsync(_data, 0, _data.Length);
+
+        protected override bool TryComputeLength(out long length)
+        {
+            // Return false to prevent the framework from computing or caching ContentLength,
+            // exactly as happens with chunked transfer encoding
+            length = 0;
+            return false;
+        }
     }
 
     // Concrete subclass to allow adding any header without category restrictions

@@ -4,7 +4,9 @@
 // </copyright>
 
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Text;
 using Datadog.Trace.AppSec.Rasp;
 using Datadog.Trace.Security.Unit.Tests.Utils;
 using FluentAssertions;
@@ -17,17 +19,17 @@ public class BodyParserTests
     [Fact]
     public void Parse_NullString_ReturnsNull()
     {
-        var result = BodyParser.Parse((System.IO.Stream)null);
+        var result = BodyParser.Parse(null);
         result.Should().BeNull();
 
-        result = BodyParser.Parse((string)null);
+        result = ParseBody(null);
         result.Should().BeNull();
     }
 
     [Fact]
     public void Parse_EmptyString_ReturnsNull()
     {
-        var result = BodyParser.Parse(string.Empty);
+        var result = ParseBody(string.Empty);
         result.Should().BeNull();
     }
 
@@ -35,7 +37,7 @@ public class BodyParserTests
     public void Parse_ValidSimpleObject_ParsesCorrectly()
     {
         var json = @"{""name"":""test"",""age"":30}";
-        var result = BodyParser.Parse(json);
+        var result = ParseBody(json);
 
         result.Should().NotBeNull();
         result.Should().BeOfType<Dictionary<string, object>>();
@@ -50,7 +52,7 @@ public class BodyParserTests
     public void Parse_ValidArray_ParsesCorrectly()
     {
         var json = @"[1,2,3,4,5]";
-        var result = BodyParser.Parse(json);
+        var result = ParseBody(json);
 
         result.Should().NotBeNull();
         result.Should().BeOfType<List<object>>();
@@ -64,7 +66,7 @@ public class BodyParserTests
     public void Parse_ValidNestedObject_ParsesCorrectly()
     {
         var json = @"{""user"":{""name"":""John"",""age"":30}}";
-        var result = BodyParser.Parse(json);
+        var result = ParseBody(json);
 
         result.Should().NotBeNull();
         var dict = (Dictionary<string, object>)result!;
@@ -79,7 +81,7 @@ public class BodyParserTests
     public void Parse_MixedTypes_ParsesCorrectly()
     {
         var json = JsonTestData.GenerateMixedStructure();
-        var result = BodyParser.Parse(json);
+        var result = ParseBody(json);
 
         result.Should().NotBeNull();
         var dict = (Dictionary<string, object>)result!;
@@ -96,7 +98,7 @@ public class BodyParserTests
     public void Parse_BooleanValues_ParsesCorrectly()
     {
         var json = @"{""isActive"":true,""isDeleted"":false}";
-        var result = BodyParser.Parse(json);
+        var result = ParseBody(json);
 
         result.Should().NotBeNull();
         var dict = (Dictionary<string, object>)result!;
@@ -108,7 +110,7 @@ public class BodyParserTests
     public void Parse_NullValue_ParsesCorrectly()
     {
         var json = @"{""value"":null}";
-        var result = BodyParser.Parse(json);
+        var result = ParseBody(json);
 
         result.Should().NotBeNull();
         var dict = (Dictionary<string, object>)result!;
@@ -120,7 +122,7 @@ public class BodyParserTests
     public void Parse_NumberTypes_ParsesAsDouble()
     {
         var json = @"{""int"":42,""float"":3.14,""negative"":-10}";
-        var result = BodyParser.Parse(json);
+        var result = ParseBody(json);
 
         result.Should().NotBeNull();
         var dict = (Dictionary<string, object>)result!;
@@ -133,7 +135,7 @@ public class BodyParserTests
     public void Parse_MaxDepth64_TruncatesDeepObjects()
     {
         var json = JsonTestData.GenerateNestedJson(65);
-        var result = BodyParser.Parse(json);
+        var result = ParseBody(json);
 
         result.Should().NotBeNull();
 
@@ -155,7 +157,7 @@ public class BodyParserTests
     public void Parse_MaxElements1000_TruncatesLargeArrays()
     {
         var json = JsonTestData.GenerateArrayJson(1001);
-        var result = BodyParser.Parse(json);
+        var result = ParseBody(json);
 
         result.Should().NotBeNull();
         result.Should().BeOfType<List<object>>();
@@ -169,7 +171,7 @@ public class BodyParserTests
     public void Parse_MaxElements1000_TruncatesObjectsWithManyProperties()
     {
         var json = JsonTestData.GenerateObjectWithManyProperties(1001);
-        var result = BodyParser.Parse(json);
+        var result = ParseBody(json);
 
         result.Should().NotBeNull();
         result.Should().BeOfType<Dictionary<string, object>>();
@@ -183,7 +185,7 @@ public class BodyParserTests
     public void Parse_MaxStringSize1024_TruncatesLongStrings()
     {
         var json = JsonTestData.GenerateLargeStringJson(2000);
-        var result = BodyParser.Parse(json);
+        var result = ParseBody(json);
 
         result.Should().NotBeNull();
         var dict = (Dictionary<string, object>)result!;
@@ -197,7 +199,7 @@ public class BodyParserTests
     public void Parse_InvalidJson_ReturnsNull()
     {
         var json = @"{invalid json}";
-        var result = BodyParser.Parse(json);
+        var result = ParseBody(json);
 
         // Should handle gracefully (may throw or return null depending on implementation)
         // Adjust based on actual behavior
@@ -210,7 +212,7 @@ public class BodyParserTests
     [InlineData(@"{""key"": undefined}")]  // Undefined value
     public void Parse_MalformedJson_HandlesGracefully(string json)
     {
-        var result = BodyParser.Parse(json);
+        var result = ParseBody(json);
 
         // Should not throw, may return null or partial result
         // Test ensures no exceptions are thrown
@@ -220,7 +222,7 @@ public class BodyParserTests
     public void Parse_EmptyObject_ParsesCorrectly()
     {
         var json = @"{}";
-        var result = BodyParser.Parse(json);
+        var result = ParseBody(json);
 
         result.Should().NotBeNull();
         result.Should().BeOfType<Dictionary<string, object>>();
@@ -232,7 +234,7 @@ public class BodyParserTests
     public void Parse_EmptyArray_ParsesCorrectly()
     {
         var json = @"[]";
-        var result = BodyParser.Parse(json);
+        var result = ParseBody(json);
 
         result.Should().NotBeNull();
         result.Should().BeOfType<List<object>>();
@@ -244,7 +246,7 @@ public class BodyParserTests
     public void Parse_UnicodeCharacters_ParsesCorrectly()
     {
         var json = @"{""emoji"":""🔥"",""chinese"":""你好"",""special"":""\u0041\u0042""}";
-        var result = BodyParser.Parse(json);
+        var result = ParseBody(json);
 
         result.Should().NotBeNull();
         var dict = (Dictionary<string, object>)result!;
@@ -257,7 +259,7 @@ public class BodyParserTests
     public void Parse_EscapedCharacters_ParsesCorrectly()
     {
         var json = @"{""quote"":""\""quoted\"""",""newline"":""line1\nline2"",""tab"":""col1\tcol2""}";
-        var result = BodyParser.Parse(json);
+        var result = ParseBody(json);
 
         result.Should().NotBeNull();
         var dict = (Dictionary<string, object>)result!;
@@ -270,7 +272,7 @@ public class BodyParserTests
     public void Parse_WhitespaceOnly_ReturnsNull()
     {
         var json = "   \t\n   ";
-        var result = BodyParser.Parse(json);
+        var result = ParseBody(json);
 
         result.Should().BeNull();
     }
@@ -279,7 +281,7 @@ public class BodyParserTests
     public void Parse_ArrayOfObjects_ParsesCorrectly()
     {
         var json = @"[{""id"":1,""name"":""first""},{""id"":2,""name"":""second""}]";
-        var result = BodyParser.Parse(json);
+        var result = ParseBody(json);
 
         result.Should().NotBeNull();
         var list = (List<object>)result!;
@@ -294,7 +296,7 @@ public class BodyParserTests
     public void Parse_NestedArrays_ParsesCorrectly()
     {
         var json = @"[[1,2],[3,4],[5,6]]";
-        var result = BodyParser.Parse(json);
+        var result = ParseBody(json);
 
         result.Should().NotBeNull();
         var list = (List<object>)result!;
@@ -309,7 +311,7 @@ public class BodyParserTests
     public void Parse_PrimitiveString_ParsesCorrectly()
     {
         var json = @"""simple string""";
-        var result = BodyParser.Parse(json);
+        var result = ParseBody(json);
 
         result.Should().NotBeNull();
         result.Should().Be("simple string");
@@ -319,7 +321,7 @@ public class BodyParserTests
     public void Parse_PrimitiveNumber_ParsesCorrectly()
     {
         var json = @"42";
-        var result = BodyParser.Parse(json);
+        var result = ParseBody(json);
 
         result.Should().NotBeNull();
         result.Should().Be(42.0);
@@ -331,8 +333,8 @@ public class BodyParserTests
         var jsonTrue = @"true";
         var jsonFalse = @"false";
 
-        var resultTrue = BodyParser.Parse(jsonTrue);
-        var resultFalse = BodyParser.Parse(jsonFalse);
+        var resultTrue = ParseBody(jsonTrue);
+        var resultFalse = ParseBody(jsonFalse);
 
         resultTrue.Should().Be(true);
         resultFalse.Should().Be(false);
@@ -342,8 +344,20 @@ public class BodyParserTests
     public void Parse_PrimitiveNull_ReturnsNull()
     {
         var json = @"null";
-        var result = BodyParser.Parse(json);
+        var result = ParseBody(json);
 
         result.Should().BeNull();
+    }
+
+    private object ParseBody(string json)
+    {
+        if (string.IsNullOrEmpty(json))
+        {
+            return null;
+        }
+
+        byte[] byteArray = Encoding.UTF8.GetBytes(json);
+        using MemoryStream stream = new MemoryStream(byteArray);
+        return BodyParser.Parse(stream);
     }
 }

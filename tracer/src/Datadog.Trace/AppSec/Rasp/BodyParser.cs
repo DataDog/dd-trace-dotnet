@@ -19,17 +19,6 @@ internal static class BodyParser
     private const int MaxDepth = 64;
     private const int MaxStringSize = 1024;
 
-    public static object? Parse(string json)
-    {
-        if (string.IsNullOrEmpty(json))
-        {
-            return null;
-        }
-
-        using var reader = new StringReader(json);
-        return Parse(reader);
-    }
-
     public static object? Parse(Stream? json)
     {
         if (json is null)
@@ -38,11 +27,6 @@ internal static class BodyParser
         }
 
         using var reader = new StreamReader(json);
-        return Parse(reader);
-    }
-
-    private static object? Parse(TextReader reader)
-    {
         using var jsonReader = new JsonTextReader(reader) { ArrayPool = JsonArrayPool.Shared };
         jsonReader.MaxDepth = null; // disable built-in limit; we enforce MaxDepth ourselves
 
