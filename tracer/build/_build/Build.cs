@@ -263,6 +263,66 @@ partial class Build : NukeBuild
         .DependsOn(TestNativeWrapper)
         .DependsOn(PublishNativeWrapper);
 
+    Target CreateProfilerStubs => _ => _
+        .Unlisted()
+        .Description("Creates stub files for profiler artifacts when profiler build is skipped")
+        .After(BuildTracerHome)
+        .Before(ZipMonitoringHomeLinux)
+        .OnlyWhenStatic(() => IsLinux)
+        .Executes(() =>
+        {
+            var (arch, ext) = GetUnixArchitectureAndExtension();
+            var archDir = MonitoringHomeDirectory / arch;
+
+            if (!File.Exists(archDir / FileNames.ProfilerLinuxApiWrapper))
+            {
+                Logger.Information("Creating profiler stub: {File}", FileNames.ProfilerLinuxApiWrapper);
+                EnsureExistingDirectory(archDir);
+                File.WriteAllBytes(archDir / FileNames.ProfilerLinuxApiWrapper, Array.Empty<byte>());
+            }
+
+            // Ensure the musl directory exists with required native files
+            // (normally produced by a full build, but we skip the profiler/musl targets)
+            if (!IsAlpine)
+            {
+                var muslArch = GetUnixArchitectureAndExtension(isOsx: false, isAlpine: true).Arch;
+                var muslDir = MonitoringHomeDirectory / muslArch;
+                EnsureExistingDirectory(muslDir);
+
+                foreach (var fileName in new[]
+                         {
+                             $"{FileNames.NativeLoader}.{ext}",
+                             FileNames.AppSecLinuxWaf,
+                             FileNames.LoaderConf,
+                             FileNames.ProfilerLinuxApiWrapper,
+                         })
+                {
+                    var dest = muslDir / fileName;
+                    if (File.Exists(dest))
+                    {
+                        continue;
+                    }
+
+                    var source = archDir / fileName;
+                    if (File.Exists(source))
+                    {
+                        CopyFile(source, dest);
+                    }
+                    else
+                    {
+                        File.WriteAllBytes(dest, Array.Empty<byte>());
+                    }
+                }
+            }
+        });
+
+    Target BuildForSystemTests => _ => _
+        .Description("Builds the tracer and packages it for system-tests (skips profiler)")
+        .After(Clean)
+        .DependsOn(BuildTracerHome)
+        .DependsOn(CreateProfilerStubs)
+        .DependsOn(ZipMonitoringHome);
+
     Target PackageTracerHome => _ => _
         .Description("Builds NuGet packages, MSIs, and zip files, from already built source")
         .After(Clean, BuildTracerHome, BuildProfilerHome, BuildNativeLoader)
