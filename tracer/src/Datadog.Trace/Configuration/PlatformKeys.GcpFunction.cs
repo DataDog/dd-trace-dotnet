@@ -16,7 +16,6 @@ internal static partial class PlatformKeys
 
         /// <summary>
         /// The name of the gcp project a deprecated function belongs to. Only set in functions running deprecated runtimes.
-        /// Used to tell whether or not we are in a deprecated function environment.
         /// </summary>
         internal const string DeprecatedProjectKey = "GCP_PROJECT";
 
@@ -27,7 +26,6 @@ internal static partial class PlatformKeys
 
         /// <summary>
         /// The name of the function handler to be executed when the function is invoked. Only set in functions running non-deprecated runtimes.
-        /// Used to tell whether or not we are in a non-deprecated function environment.
         /// </summary>
         internal const string FunctionTargetKey = "FUNCTION_TARGET";
     }
