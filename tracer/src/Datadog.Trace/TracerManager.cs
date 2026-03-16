@@ -33,6 +33,7 @@ using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util;
 using Datadog.Trace.Util.Http;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.StatsdClient;
 
@@ -271,7 +272,10 @@ namespace Datadog.Trace
                 if (oldManager.Statsd != newManager.Statsd)
                 {
                     statsdReplaced = true;
-                    oldManager.Statsd?.Dispose();
+                    if (oldManager.Statsd is not null)
+                    {
+                        await oldManager.Statsd.DisposeAsync().ConfigureAwait(false);
+                    }
                 }
 
                 var discoveryReplaced = false;
@@ -361,7 +365,7 @@ namespace Datadog.Trace
 
                 var stringWriter = new StringWriter();
 
-                using (var writer = new JsonTextWriter(stringWriter))
+                using (var writer = new JsonTextWriter(stringWriter) { ArrayPool = JsonArrayPool.Shared })
                 {
                     void WriteDictionary(IReadOnlyDictionary<string, string> dictionary)
                     {
@@ -774,7 +778,12 @@ namespace Datadog.Trace
                     }
 
                     instance.RuntimeMetrics?.Dispose();
-                    instance.Statsd?.Dispose();
+
+                    // Fire-and-forget: on master the old sync Dispose() was already
+                    // fire-and-forget internally (Task.Run). DisposeAsync flushes buffers
+                    // and drains worker threads which can take several seconds, longer than
+                    // the window between repeated termination signals on .NET 10.
+                    instance.Statsd?.DisposeAsync().ContinueWith(t => Log.Error(t.Exception, "Error waiting for StatsD disposal"), TaskContinuationOptions.OnlyOnFaulted);
 
                     Log.Debug("Finished waiting for disposals.");
                 }

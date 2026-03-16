@@ -14,10 +14,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
 {
     internal static class HttpMessageHandlerCommon
     {
+#if NETCOREAPP
+        public static CallTargetState OnMethodBegin<TTarget, TRequest>(TTarget instance, TRequest request, CancellationToken cancellationToken, IntegrationId integrationId, IntegrationId? implementationIntegrationId)
+#else
         public static CallTargetState OnMethodBegin<TTarget, TRequest>(TTarget instance, TRequest requestMessage, CancellationToken cancellationToken, IntegrationId integrationId, IntegrationId? implementationIntegrationId)
             where TRequest : IHttpRequestMessage
+#endif
         {
+#if NETCOREAPP
+            if (request is not System.Net.Http.HttpRequestMessage requestMessage)
+#else
             if (requestMessage.Instance is null)
+#endif
             {
                 return CallTargetState.GetDefault();
             }
@@ -50,8 +58,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
             return CallTargetState.GetDefault();
         }
 
+#if NETCOREAPP
+        public static TResponse OnMethodEnd<TTarget, TResponse>(TTarget instance, TResponse responseMessage, Exception exception, in CallTargetState state)
+#else
         public static TResponse OnMethodEnd<TTarget, TResponse>(TTarget instance, TResponse responseMessage, Exception exception, in CallTargetState state)
             where TResponse : IHttpResponseMessage
+#endif
         {
             Scope scope = state.Scope;
 
@@ -62,9 +74,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
 
             try
             {
+#if NETCOREAPP
+                if (responseMessage is System.Net.Http.HttpResponseMessage response)
+                {
+                    var statusCode = (int)response.StatusCode;
+#else
                 if (responseMessage.Instance is not null)
                 {
-                    scope.Span.SetHttpStatusCode(responseMessage.StatusCode, false, Tracer.Instance.CurrentTraceSettings.Settings);
+                    var statusCode = responseMessage.StatusCode;
+#endif
+                    scope.Span.SetHttpStatusCode(statusCode, false, Tracer.Instance.CurrentTraceSettings.Settings);
                 }
 
                 if (exception != null)
@@ -80,7 +99,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
             return responseMessage;
         }
 
+#if NETCOREAPP
+        private static bool IsTracingEnabled(Tracer tracer, System.Net.Http.Headers.HttpRequestHeaders headers, IntegrationId? implementationIntegrationId)
+#else
         private static bool IsTracingEnabled(Tracer tracer, IRequestHeaders headers, IntegrationId? implementationIntegrationId)
+#endif
         {
             if (implementationIntegrationId != null && !tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(implementationIntegrationId.Value))
             {

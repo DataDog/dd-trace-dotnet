@@ -12,6 +12,7 @@ using Datadog.Trace.Ci.Coverage.Models.Tests;
 using Datadog.Trace.Ci.Coverage.Util;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Serilog.Events;
 
@@ -116,7 +117,7 @@ internal class DefaultCoverageEventHandler : CoverageEventHandler
 
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
-                Log.Debug("Test Coverage: {Json}", JsonConvert.SerializeObject(testCoverage));
+                Log.Debug("Test Coverage: {Json}", JsonHelper.SerializeObject(testCoverage));
             }
 
             return testCoverage;

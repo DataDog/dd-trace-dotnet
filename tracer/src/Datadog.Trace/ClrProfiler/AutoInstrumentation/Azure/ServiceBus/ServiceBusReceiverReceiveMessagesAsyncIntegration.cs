@@ -140,12 +140,13 @@ public sealed class ServiceBusReceiverReceiveMessagesAsyncIntegration
         tags.MessagingOperation = "receive";
         tags.MessagingSystem = "servicebus";
 
-        string serviceName = tracer.CurrentTraceSettings.Schema.Messaging.GetServiceName(MessagingSchema.ServiceType.AzureServiceBus);
+        var (serviceName, serviceNameSource) = tracer.CurrentTraceSettings.Schema.Messaging.GetServiceNameMetadata(MessagingSchema.ServiceType.AzureServiceBus);
         var scope = tracer.StartActiveInternal(
             OperationName,
             links: spanLinks,
             tags: tags,
-            serviceName: serviceName);
+            serviceName: serviceName,
+            serviceNameSource: serviceNameSource);
         var span = scope.Span;
 
         span.Type = SpanTypes.Queue;

@@ -45,7 +45,7 @@ namespace Datadog.Trace.Configuration.Telemetry
         /// Get the latest data to send to the intake.
         /// </summary>
         /// <returns>Null if there are no changes, or the collector is not yet initialized</returns>
-        public ICollection<ConfigurationKeyValue>? GetData()
+        public ICollection<ConfigurationKeyValue>? GetIncrementalData()
         {
             lock (_allData)
             {
