@@ -27,6 +27,7 @@ internal sealed class DataStreamsManager
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DataStreamsManager>();
     private static readonly AsyncLocal<PathwayContext?> LastConsumePathway = new(); // saves the context on consume checkpointing only
+    private readonly object _nodeHashUpdateLock = new();
     private readonly ConcurrentDictionary<string, RateLimiter> _schemaRateLimiters = new();
     private readonly IDisposable _updateSubscription;
     private readonly bool _isLegacyDsmHeadersEnabled;
@@ -55,7 +56,7 @@ internal sealed class DataStreamsManager
 
         _previousMutableSettings = tracerSettings.Manager.InitialMutableSettings;
         _previousContainerTagsHash = containerMetadata.ContainerTagsHash;
-        UpdateNodeHash(tracerSettings.Manager.InitialMutableSettings, containerMetadata.ContainerTagsHash);
+        UpdateNodeHash(_previousMutableSettings, _previousContainerTagsHash);
         discoveryService.SubscribeToChanges(UpdateHashWithContainerTags);
         _updateSubscription = tracerSettings.Manager.SubscribeToChanges(UpdateHashWithNewSettings);
     }
@@ -67,10 +68,15 @@ internal sealed class DataStreamsManager
     /// <summary> Callback for AgentConfiguration updates </summary>
     private void UpdateHashWithContainerTags(AgentConfiguration conf)
     {
-        if (conf.ContainerTagsHash != _previousContainerTagsHash)
+        lock (_nodeHashUpdateLock)
         {
-            _previousContainerTagsHash = conf.ContainerTagsHash;
+            if (conf.ContainerTagsHash == _previousContainerTagsHash)
+            {
+                return;
+            }
+
             UpdateNodeHash(_previousMutableSettings, conf.ContainerTagsHash);
+            _previousContainerTagsHash = conf.ContainerTagsHash;
         }
     }
 
@@ -79,13 +85,14 @@ internal sealed class DataStreamsManager
     {
         if (updates.UpdatedMutable is { } updated)
         {
-            _previousMutableSettings = updated;
-            UpdateNodeHash(updated, _previousContainerTagsHash);
+            lock (_nodeHashUpdateLock)
+            {
+                UpdateNodeHash(updated, _previousContainerTagsHash);
+                _previousMutableSettings = updated;
+            }
         }
     }
 
-    // since we always get one or the other (but not both at the same time),
-    // the other argument should be filled with the saved "_previous..." field.
     private void UpdateNodeHash(MutableSettings settings, string? containerTagsHash)
     {
         // We don't yet support primary tag in .NET yet
