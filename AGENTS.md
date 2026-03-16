@@ -190,6 +190,7 @@ tracer/src/Datadog.Trace
 
 **Quick start:**
 - Build: `./tracer/build.sh` (Linux/macOS) or `.\tracer\build.cmd` (Windows)
+- Build without profiler: `./tracer/build.sh BuildTracerHomeWithoutProfiler` — builds the tracer and packages it (tar.gz/deb/rpm), skipping the profiler build. Useful for system-tests or when the profiler is not needed.
 - Unit tests: `./tracer/build.sh BuildAndRunManagedUnitTests`
 - Integration tests: `BuildAndRunLinuxIntegrationTests` / `BuildAndRunWindowsIntegrationTests` / `BuildAndRunOsxIntegrationTests`
 

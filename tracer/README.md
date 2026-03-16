@@ -167,6 +167,37 @@ docker-compose up StartDependencies.OSXARM64
 docker-compose down
 ```
 
+### Building Linux packages from macOS
+
+To build the Linux tracer package (e.g., for [system-tests](https://github.com/DataDog/system-tests)) from macOS, use the Debian builder Docker image:
+
+```bash
+# Build the Docker image (one-time setup, uses tracer/build/_build/docker/debian.dockerfile)
+SDK_VERSION=$(grep -Eo '"version"\s*:\s*"[^"]+"' global.json | head -1 | grep -Eo '[0-9]+\.[0-9]+\.[0-9]+')
+docker build \
+  --platform linux/$(uname -m) \
+  --build-arg "DOTNETSDK_VERSION=${SDK_VERSION}" \
+  --tag "dd-trace-dotnet/debian-builder:${SDK_VERSION}" \
+  --file tracer/build/_build/docker/debian.dockerfile \
+  --target builder \
+  tracer/build/_build
+
+# Run the build inside Docker
+docker run --rm \
+  --platform linux/$(uname -m) \
+  --mount "type=bind,source=$(pwd),target=/project" \
+  --workdir /project/tracer \
+  --env NugetPackageDirectory=/project/packages \
+  --env artifacts=/project/tracer/bin/artifacts \
+  --env NUKE_TELEMETRY_OPTOUT=1 \
+  --env DOTNET_CLI_TELEMETRY_OPTOUT=1 \
+  --env DOTNET_NOLOGO=1 \
+  "dd-trace-dotnet/debian-builder:${SDK_VERSION}" \
+  dotnet /build/bin/Debug/_build.dll BuildTracerHomeWithoutProfiler
+```
+
+The artifact will be at `tracer/bin/artifacts/linux-<arch>/datadog-dotnet-apm-<version>.<arch>.tar.gz`.
+
 Troubleshooting tips for build errors:
  * Try deleting the `cmake-build-debug` and `obj_*` directories.
  * Verify your xcode developer tools installation with `xcode-select --install`. You may need to repeat this process after an operating system update.

@@ -4,6 +4,32 @@
 
 [System tests](https://github.com/DataDog/system-tests) is a black-box testing workbench for Datadog tracer libraries. It runs the same tests against every tracer implementation -- Java, Node.js, Python, PHP, Ruby, C++, .NET, Go, and Rust -- so shared features stay consistent across languages.
 
+## Building the tracer locally for system-tests
+
+To run system-tests locally, you first need to build the tracer package (`datadog-dotnet-apm-*.tar.gz`).
+
+### Linux
+
+```bash
+./tracer/build.sh BuildTracerHomeWithoutProfiler
+```
+
+The artifact will be at `tracer/bin/artifacts/linux-<arch>/datadog-dotnet-apm-<version>.tar.gz`.
+
+### macOS (via Docker)
+
+macOS requires Docker to cross-compile for Linux. See the [Building Linux packages from macOS](../../tracer/README.md#building-linux-packages-from-macos) section in the tracer README for Docker setup and build instructions.
+
+### Using the artifact with system-tests
+
+Copy the tar.gz into your system-tests binaries directory:
+
+```bash
+cp tracer/bin/artifacts/linux-*/datadog-dotnet-apm-*.tar.gz /path/to/system-tests/binaries/dotnet/
+```
+
+Then follow the [system-tests README](https://github.com/DataDog/system-tests/blob/main/README.md) to run the tests.
+
 > TODO document how to run system-tests locally on Windows for dd-trace-dotnet
 
 ## How to run against a specific system-tests branch
