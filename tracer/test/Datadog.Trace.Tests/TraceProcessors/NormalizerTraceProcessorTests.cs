@@ -12,69 +12,65 @@ namespace Datadog.Trace.Tests.TraceProcessors
     public class NormalizerTraceProcessorTests
     {
         // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/traceutil/normalize_test.go#L17
-        [Fact]
-        public void NormalizeTagTests()
+        public static IEnumerable<object[]> GetNormalizeTagValues()
         {
-            foreach (var value in GetNormalizeTagValues())
-            {
-                var inValue = (string)value[0];
-                var expectedValue = (string)value[1];
+            yield return new object[] { "#test_starting_hash", "_test_starting_hash" };
+            yield return new object[] { "TestCAPSandSuch", "testcapsandsuch" };
+            yield return new object[] { "Test Conversion Of Weird !@#$%^&**() Characters", "test_conversion_of_weird_characters" };
+            yield return new object[] { "$#weird_starting", "_weird_starting" };
+            yield return new object[] { "allowed:c0l0ns", "allowed:c0l0ns" };
+            yield return new object[] { "1love", "1love" };
+            yield return new object[] { "ünicöde", "ünicöde" };
+            yield return new object[] { "ünicöde:metäl", "ünicöde:metäl" };
+            yield return new object[] { "Data🐨dog🐶 繋がっ⛰てて", "data_dog_繋がっ_てて" };
+            yield return new object[] { " spaces   ", "_spaces" };
+            yield return new object[] { " #hashtag!@#spaces #__<>#  ", "_hashtag_spaces" };
+            yield return new object[] { ":testing", ":testing" };
+            yield return new object[] { "_foo", "_foo" };
+            yield return new object[] { ":::test", ":::test" };
+            yield return new object[] { "contiguous_____underscores", "contiguous_underscores" };
+            yield return new object[] { "foo_", "foo" };
+            yield return new object[] { "\u017Fodd_\u017Fcase\u017F", "\u017Fodd_\u017Fcase\u017F" }; // edge-case
+            yield return new object[] { string.Empty, string.Empty };
+            yield return new object[] { " ", string.Empty };
+            yield return new object[] { "ok", "ok" };
+            yield return new object[] { "™Ö™Ö™™Ö™", "_ö_ö_ö" };
+            yield return new object[] { "AlsO:ök", "also:ök" };
+            yield return new object[] { ":still_ok", ":still_ok" };
+            yield return new object[] { "___trim", "_trim" };
+            yield return new object[] { "12.:trim@", "12.:trim" };
+            yield return new object[] { "12.:trim@@", "12.:trim" };
+            yield return new object[] { "fun:ky__tag/1", "fun:ky_tag/1" };
+            yield return new object[] { "fun:ky@tag/2", "fun:ky_tag/2" };
+            yield return new object[] { "fun:ky@@@tag/3", "fun:ky_tag/3" };
+            yield return new object[] { "tag:1/2.3", "tag:1/2.3" };
+            yield return new object[] { "---fun:k####y_ta@#g/1_@@#", "---fun:k_y_ta_g/1" };
+            yield return new object[] { "AlsO:œ#@ö))œk", "also:œ_ö_œk" };
+            yield return new object[] { "test\x99\x8f", "test" };
+            yield return new object[] { new string(c: 'a', count: 888), new string(c: 'a', count: 200) };
+            yield return new object[] { "^^_.non_alpha.prefix", "_.non_alpha.prefix" };
 
-                var actualValue = Trace.Processors.TraceUtil.NormalizeTag(inValue);
-                Assert.Equal(expectedValue, actualValue);
+            var sBuilder = new StringBuilder("a");
+            for (var i = 0; i < 799; i++)
+            {
+                sBuilder.Append("🐶");
             }
 
-            // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/traceutil/normalize_test.go#L17
-            static IEnumerable<object[]> GetNormalizeTagValues()
-            {
-                yield return new object[] { "#test_starting_hash", "test_starting_hash" };
-                yield return new object[] { "TestCAPSandSuch", "testcapsandsuch" };
-                yield return new object[] { "Test Conversion Of Weird !@#$%^&**() Characters", "test_conversion_of_weird_characters" };
-                yield return new object[] { "$#weird_starting", "weird_starting" };
-                yield return new object[] { "allowed:c0l0ns", "allowed:c0l0ns" };
-                yield return new object[] { "1love", "love" };
-                yield return new object[] { "ünicöde", "ünicöde" };
-                yield return new object[] { "ünicöde:metäl", "ünicöde:metäl" };
-                yield return new object[] { "Data🐨dog🐶 繋がっ⛰てて", "data_dog_繋がっ_てて" };
-                yield return new object[] { " spaces   ", "spaces" };
-                yield return new object[] { " #hashtag!@#spaces #__<>#  ", "hashtag_spaces" };
-                yield return new object[] { ":testing", ":testing" };
-                yield return new object[] { "_foo", "foo" };
-                yield return new object[] { ":::test", ":::test" };
-                yield return new object[] { "contiguous_____underscores", "contiguous_underscores" };
-                yield return new object[] { "foo_", "foo" };
-                yield return new object[] { "\u017Fodd_\u017Fcase\u017F", "\u017Fodd_\u017Fcase\u017F" }; // edge-case
-                yield return new object[] { string.Empty, string.Empty };
-                yield return new object[] { " ", string.Empty };
-                yield return new object[] { "ok", "ok" };
-                yield return new object[] { "™Ö™Ö™™Ö™", "ö_ö_ö" };
-                yield return new object[] { "AlsO:ök", "also:ök" };
-                yield return new object[] { ":still_ok", ":still_ok" };
-                yield return new object[] { "___trim", "trim" };
-                yield return new object[] { "12.:trim@", ":trim" };
-                yield return new object[] { "12.:trim@@", ":trim" };
-                yield return new object[] { "fun:ky__tag/1", "fun:ky_tag/1" };
-                yield return new object[] { "fun:ky@tag/2", "fun:ky_tag/2" };
-                yield return new object[] { "fun:ky@@@tag/3", "fun:ky_tag/3" };
-                yield return new object[] { "tag:1/2.3", "tag:1/2.3" };
-                yield return new object[] { "---fun:k####y_ta@#g/1_@@#", "fun:k_y_ta_g/1" };
-                yield return new object[] { "AlsO:œ#@ö))œk", "also:œ_ö_œk" };
-                yield return new object[] { "test\x99\x8f", "test" };
-                yield return new object[] { new string('a', 888), new string('a', 200) };
+            sBuilder.Append('b');
+            yield return new object[] { sBuilder.ToString(), "a" };
+            yield return new object[] { "a\xFFFD", "a" };
+            yield return new object[] { "a\xFFFD\xFFFD", "a" };
+            yield return new object[] { "a\xFFFD\xFFFDb", "a_b" };
+            yield return new object[] { null, null };
+        }
 
-                var sBuilder = new StringBuilder("a");
-                for (var i = 0; i < 799; i++)
-                {
-                    sBuilder.Append("🐶");
-                }
-
-                sBuilder.Append('b');
-                yield return new object[] { sBuilder.ToString(), "a" };
-                yield return new object[] { "a\xFFFD", "a" };
-                yield return new object[] { "a\xFFFD\xFFFD", "a" };
-                yield return new object[] { "a\xFFFD\xFFFDb", "a_b" };
-                yield return new object[] { null, null };
-            }
+        // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/traceutil/normalize_test.go#L17
+        [Theory]
+        [MemberData(nameof(GetNormalizeTagValues))]
+        public void NormalizeTagTests(string inValue, string expectedValue)
+        {
+            var actualValue = Processors.TraceUtil.NormalizeTag(inValue);
+            Assert.Equal(expectedValue, actualValue);
         }
 
         // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/traceutil/normalize_test.go#L94
