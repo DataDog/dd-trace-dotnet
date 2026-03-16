@@ -1,4 +1,4 @@
-﻿// <copyright file="TestingFrameworkEvpTest.cs" company="Datadog">
+// <copyright file="TestingFrameworkEvpTest.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -68,6 +68,9 @@ public abstract class TestingFrameworkEvpTest : TestHelper
     {
         _gacFixture.RemoveAssembliesFromGac();
     }
+
+    protected static bool IsMacOS()
+        => string.Equals(FrameworkDescription.Instance.OSPlatform, OSPlatformName.MacOS, StringComparison.OrdinalIgnoreCase);
 
     protected static string GetSettingsJson(string earlyFlakeDetection, string testsSkipping, string testManagementEnabled, string attemptToFixRetries)
     {
@@ -264,14 +267,14 @@ public abstract class TestingFrameworkEvpTest : TestHelper
                 if (span.GetTag(key) is { } tagValue)
                 {
                     targetTest.Meta[key].Should().Be(tagValue);
-                    targetTest.Meta.Remove(key);
                 }
             }
             else
             {
                 targetTest.Meta[key].Should().Be(value);
-                targetTest.Meta.Remove(key);
             }
+
+            targetTest.Meta.Remove(key);
         }
 
         void AssertEqualDate(string key)
@@ -279,8 +282,9 @@ public abstract class TestingFrameworkEvpTest : TestHelper
             if (span.GetTag(key) is { } keyValue)
             {
                 DateTimeOffset.Parse(targetTest.Meta[key]).Should().Be(DateTimeOffset.Parse(keyValue));
-                targetTest.Meta.Remove(key);
             }
+
+            targetTest.Meta.Remove(key);
         }
     }
 
@@ -392,7 +396,8 @@ public abstract class TestingFrameworkEvpTest : TestHelper
         out string sessionWorkingDirectory,
         out string gitRepositoryUrl,
         out string gitBranch,
-        out string gitCommitSha)
+        out string gitCommitSha,
+        out string runId)
     {
         // Inject session
         sessionId = RandomIdGenerator.Shared.NextSpanId();
@@ -412,6 +417,9 @@ public abstract class TestingFrameworkEvpTest : TestHelper
 
         SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "1");
         SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Logs, "1");
+
+        runId = Guid.NewGuid().ToString("n");
+        SetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestOptimizationRunId, runId);
     }
 
     protected virtual async Task ExecuteTestAsync(string packageVersion, string evpVersionToRemove, bool expectedGzip, TestScenario testScenario)
@@ -425,13 +433,15 @@ public abstract class TestingFrameworkEvpTest : TestHelper
             out var sessionWorkingDirectory,
             out var gitRepositoryUrl,
             out var gitBranch,
-            out var gitCommitSha);
+            out var gitCommitSha,
+            out var runId);
 
+        Output.WriteLine("RunId: {0}", runId);
         try
         {
             using var logsIntake = new MockLogsIntakeForCiVisibility();
             EnableDirectLogSubmission(logsIntake.Port, nameof(IntegrationId.XUnit), nameof(XUnitTests));
-            using var agent = EnvironmentHelper.GetMockAgent(useStatsD: true);
+            using var agent = EnvironmentHelper.GetMockAgent(useStatsD: !IsMacOS());
             agent.Configuration.Endpoints = agent.Configuration.Endpoints.Where(e => !e.Contains(evpVersionToRemove)).ToArray();
 
             const string correlationId = "2e8a36bda770b683345957cc6c15baf9";
@@ -525,6 +535,7 @@ public abstract class TestingFrameworkEvpTest : TestHelper
                                  .ThenBy(s => GetValueOrDefault(s.Meta, TestTags.TestIsRetry))
                                  .ThenBy(s => GetValueOrDefault(s.Meta, TestTags.TestAttemptToFixPassed))
                                  .ThenBy(s => GetValueOrDefault(s.Meta, TestTags.TestHasFailedAllRetries))
+                                 .ThenBy(s => GetValueOrDefault(s.Meta, TestTags.TestFinalStatus))
                                  .ThenBy(s => GetValueOrDefault(s.Meta, EarlyFlakeDetectionTags.AbortReason)),
                     settings);
             }

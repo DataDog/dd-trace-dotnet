@@ -65,7 +65,9 @@ namespace Datadog.Trace.Vendors.StatsdClient.Transport
 
             try
             {
-                // WriteAsync overload with a CancellationToken instance seems to not work.
+                // WriteAsync overload with a CancellationToken has a bug fixed in .NET 7
+                // Bug: https://github.com/dotnet/runtime/issues/31390 
+                // Fix: https://github.com/dotnet/runtime/pull/72503
                 return _namedPipe.WriteAsync(buffer, 0, length).Wait(_timeout);
             }
             catch (IOException)

@@ -55,7 +55,7 @@ namespace Datadog.Trace.Tagging
                     AspNetCoreRoute = value;
                     break;
                 case "http.route": 
-                    HttpRoute = value;
+                    Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(AspNetCoreTags));
                     break;
                 default: 
                     base.SetTag(key, value);

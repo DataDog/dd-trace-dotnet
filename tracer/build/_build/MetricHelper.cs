@@ -12,6 +12,7 @@ using System.Text;
 using System.Threading.Tasks;
 using LogParsing;
 using Serilog;
+using Serilog.Events;
 
 public static class MetricHelper
 {
@@ -32,7 +33,7 @@ public static class MetricHelper
                              "ci.stage:{{SanitizeTagValue(Environment.GetEnvironmentVariable("DD_LOGGER_SYSTEM_STAGEDISPLAYNAME"))}}",
                              "ci.job:{{SanitizeTagValue(Environment.GetEnvironmentVariable("DD_LOGGER_SYSTEM_JOBDISPLAYNAME"))}}",
                              "git.branch:{{SanitizeTagValue(Environment.GetEnvironmentVariable("DD_LOGGER_BUILD_SOURCEBRANCH"))}}",
-                             "target_framework:{{SanitizeTagValue(Environment.GetEnvironmentVariable("PUBLISHFRAMEWORK"))}}",
+                             "target_framework:{{Environment.GetEnvironmentVariable("PUBLISHFRAMEWORK")}}",
                              "os:{{SanitizeTagValue(Environment.GetEnvironmentVariable("SMOKETESTOS"))}}",
                              "os_version:{{SanitizeTagValue(Environment.GetEnvironmentVariable("SMOKETESTOSVERSION"))}}",
                              "error_reason:{{SanitizeTagValue(errorReason)}}"
@@ -60,7 +61,7 @@ public static class MetricHelper
                              "ci.stage:{{SanitizeTagValue(Environment.GetEnvironmentVariable("DD_LOGGER_SYSTEM_STAGEDISPLAYNAME"))}}",
                              "ci.job:{{SanitizeTagValue(Environment.GetEnvironmentVariable("DD_LOGGER_SYSTEM_JOBDISPLAYNAME"))}}",
                              "git.branch:{{SanitizeTagValue(Environment.GetEnvironmentVariable("DD_LOGGER_BUILD_SOURCEBRANCH"))}}",
-                             "target_framework:{{SanitizeTagValue(Environment.GetEnvironmentVariable("PUBLISHFRAMEWORK"))}}",
+                             "target_framework:{{Environment.GetEnvironmentVariable("PUBLISHFRAMEWORK")}}",
                              "os:{{SanitizeTagValue(Environment.GetEnvironmentVariable("SMOKETESTOS"))}}",
                              "os_version:{{SanitizeTagValue(Environment.GetEnvironmentVariable("SMOKETESTOSVERSION"))}}"
                          """;
@@ -151,7 +152,9 @@ public static class MetricHelper
             var result = response.IsSuccessStatusCode
                              ? "Successfully submitted metric"
                              : "Failed to submit metric";
-            log.Warning("{Result} {MetricName} to {Uri}. Response was: Code: {ResponseStatusCode}. Response: {ResponseContent}. Payload sent was: \"{Payload}\"", result, metricName, uri, response.StatusCode, responseContent, payload);
+            var level = response.IsSuccessStatusCode ? LogEventLevel.Debug : LogEventLevel.Warning;
+            log.Write(level, "{Result} {MetricName} to {Uri}. Response was: Code: {ResponseStatusCode}. Response: {ResponseContent}. Payload sent was: \"{Payload}\"", result,
+                metricName, uri, response.StatusCode, responseContent, payload);
         }
         catch (Exception ex)
         {

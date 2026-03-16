@@ -12,6 +12,7 @@ using System.IO;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
@@ -69,8 +70,8 @@ public sealed class RequestInvokerHandlerSendAsyncIntegration
                 databaseId = cosmosContainerCore.Database?.Id;
             }
 
-            var operationName = perTraceSettings.Schema.Database.GetOperationName("cosmosdb");
-            var serviceName = perTraceSettings.Schema.Database.GetServiceName("cosmosdb");
+            var operationName = perTraceSettings.Schema.Database.GetOperationName(DatabaseSchema.OperationType.CosmosDb);
+            var (serviceName, serviceNameSource) = perTraceSettings.Schema.Database.GetServiceNameMetadata(DatabaseSchema.ServiceType.CosmosDb);
             var tags = perTraceSettings.Schema.Database.CreateCosmosDbTags();
 
             tags.ContainerId = containerId;
@@ -94,7 +95,7 @@ public sealed class RequestInvokerHandlerSendAsyncIntegration
             tags.SetAnalyticsSampleRate(IntegrationId.CosmosDb, perTraceSettings.Settings, enabledWithGlobalSetting: false);
             perTraceSettings.Schema.RemapPeerService(tags);
 
-            var scope = tracer.StartActiveInternal(operationName, tags: tags, serviceName: serviceName);
+            var scope = tracer.StartActiveInternal(operationName, tags: tags, serviceName: serviceName, serviceNameSource: serviceNameSource);
             var span = scope.Span;
 
             span.Type = SpanTypes.Sql;

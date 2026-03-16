@@ -17,27 +17,18 @@ internal sealed class TestOptimizationFlakyRetryFeature : ITestOptimizationFlaky
 
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(TestOptimizationFlakyRetryFeature));
 
-    private TestOptimizationFlakyRetryFeature(TestOptimizationSettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationClient testOptimizationClient)
+    private TestOptimizationFlakyRetryFeature(TestOptimizationSettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse)
     {
-        if (settings.FlakyRetryEnabled == null && clientSettingsResponse.FlakyTestRetries.HasValue)
+        if (!settings.FlakyRetryEnabled.HasValue && clientSettingsResponse.FlakyTestRetries.HasValue)
         {
             Log.Information("TestOptimizationFlakyRetryFeature: Flaky retries has been changed to {Value} by the settings api.", clientSettingsResponse.FlakyTestRetries.Value);
             settings.SetFlakyRetryEnabled(clientSettingsResponse.FlakyTestRetries.Value);
         }
 
-        if (settings.FlakyRetryEnabled == true)
-        {
-            Log.Information("TestOptimizationFlakyRetryFeature: Flaky retries is enabled.");
-            Enabled = true;
-        }
-        else
-        {
-            Log.Information("TestOptimizationFlakyRetryFeature: Flaky retries is disabled.");
-            Enabled = false;
-        }
-
+        Enabled = settings.FlakyRetryEnabled == true;
         FlakyRetryCount = settings.FlakyRetryCount;
         TotalFlakyRetryCount = settings.TotalFlakyRetryCount;
+        Log.Information("{V}", Enabled ? "TestOptimizationFlakyRetryFeature: Flaky retries is enabled." : "TestOptimizationFlakyRetryFeature: Flaky retries is disabled.");
     }
 
     public bool Enabled { get; }
@@ -46,6 +37,6 @@ internal sealed class TestOptimizationFlakyRetryFeature : ITestOptimizationFlaky
 
     public int TotalFlakyRetryCount { get; }
 
-    public static ITestOptimizationFlakyRetryFeature Create(TestOptimizationSettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationClient testOptimizationClient)
-        => new TestOptimizationFlakyRetryFeature(settings, clientSettingsResponse, testOptimizationClient);
+    public static ITestOptimizationFlakyRetryFeature Create(TestOptimizationSettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse)
+        => new TestOptimizationFlakyRetryFeature(settings, clientSettingsResponse);
 }

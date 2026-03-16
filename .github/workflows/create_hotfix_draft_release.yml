@@ -32,14 +32,15 @@ jobs:
         permissions:
           contents: write # create release
           actions: read # read secrets
-          issues: write # change milestones 
+          issues: write # change milestones
+          id-token: write  # enable GitHub OIDC token issuance for this job
         with:
             forced_commit_id: ${{ inputs.forced_commit_id }}
             ignore_gitlab_failures: ${{ inputs.ignore_gitlab_failures }}
             is_hotfix: true
         secrets:
             AZURE_DEVOPS_TOKEN: ${{ secrets.AZURE_DEVOPS_TOKEN }}
-            NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+            NUGET_TRUSTED_PUBLISHING_USERNAME: ${{ secrets.NUGET_TRUSTED_PUBLISHING_USERNAME }}
             GH_APP_ID: ${{ secrets.GH_APP_ID }}
             GH_APP_PRIVATE_KEY: ${{ secrets.GH_APP_PRIVATE_KEY }}
             DD_PUBLIC_SYMBOL_PREPROD_API_KEY: ${{ secrets.DD_PUBLIC_SYMBOL_PREPROD_API_KEY }}

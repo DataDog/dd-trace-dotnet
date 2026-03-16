@@ -1,4 +1,4 @@
-﻿// <copyright file="ApiWebRequestFactory.cs" company="Datadog">
+// <copyright file="ApiWebRequestFactory.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -9,6 +9,7 @@ using System.Net;
 using Datadog.Trace.Util;
 
 #pragma warning disable CS0618 // WebRequest, HttpWebRequest, ServicePoint, and WebClient are obsolete. Use HttpClient instead.
+#pragma warning disable SYSLIB0014 // 'WebRequest.Create(string)' is obsolete: 'WebRequest, HttpWebRequest, ServicePoint, and WebClient are obsolete. Use HttpClient instead.'
 
 namespace Datadog.Trace.Agent.Transports
 {

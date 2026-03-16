@@ -7,6 +7,7 @@
 #include "DebugInfoStore.h"
 #include "IConfiguration.h"
 #include "Log.h"
+#include "ManagedCodeCache.h"
 #include "OpSysTools.h"
 
 #include "shared/src/native-src/com_ptr.h"
@@ -22,11 +23,23 @@ void FixGenericSyntax(char* name);
 
 PCCOR_SIGNATURE ParseByte(PCCOR_SIGNATURE pbSig, BYTE* pByte);
 
-FrameStore::FrameStore(ICorProfilerInfo4* pCorProfilerInfo, IConfiguration* pConfiguration, IDebugInfoStore* debugInfoStore) :
+FrameStore::FrameStore(ICorProfilerInfo4* pCorProfilerInfo,
+    IConfiguration* pConfiguration,
+    IDebugInfoStore* debugInfoStore,
+    ManagedCodeCache* pManagedCodeCache) :
     _pCorProfilerInfo{pCorProfilerInfo},
     _pDebugInfoStore{debugInfoStore},
-    _resolveNativeFrames{pConfiguration->IsNativeFramesEnabled()}
+    _pManagedCodeCache{pManagedCodeCache},
+    _cachedItemsSize(0)
 {
+    if (_pManagedCodeCache == nullptr)
+    {
+        Log::Info("FrameStore will not rely on ManagedCodeCache to resolve function IDs.");
+    }
+    else
+    {
+        Log::Info("FrameStore will rely on ManagedCodeCache to resolve function IDs.");
+    }
 }
 
 std::optional<std::pair<HRESULT, FunctionID>> FrameStore::GetFunctionFromIP(uintptr_t instructionPointer)
@@ -54,7 +67,7 @@ std::optional<std::pair<HRESULT, FunctionID>> FrameStore::GetFunctionFromIP(uint
 
     if (wasAccessViolationRaised)
     {
-        return {};
+        return std::nullopt;
     }
 #endif
 
@@ -91,71 +104,45 @@ std::pair<bool, FrameInfoView> FrameStore::GetFrame(uintptr_t instructionPointer
         }
     }
 
-    std::optional<std::pair<HRESULT, FunctionID>> result = GetFunctionFromIP(instructionPointer);
-
-    if (!result.has_value())
+    HRESULT hr;
+    std::optional<FunctionID> functionId;
+    if (_pManagedCodeCache == nullptr)
     {
-        // we still want a frame to display a good'ish callstack shape
-        return {true, {UnloadedModuleName, NotResolvedFrame, "", 0}};
-    }
-
-    auto const& [hr, functionId] = result.value();
-
-    if (SUCCEEDED(hr))
-    {
-        auto frameInfo = GetManagedFrame(functionId);
-        return {true, frameInfo};
+        std::optional<std::pair<HRESULT, FunctionID>> result = GetFunctionFromIP(instructionPointer);
+        if (!result.has_value())
+        {
+            return {true, {NotResolvedModuleName, NotResolvedFrame, "", 0}};
+        }
+        std::tie(hr, functionId) = result.value();
+        // if native frame
+        if (FAILED(hr))
+        {
+            return {false, {NotResolvedModuleName, NotResolvedFrame, "", 0}};
+        }
     }
     else
     {
-        if (!_resolveNativeFrames)
+        functionId = _pManagedCodeCache->GetFunctionId(instructionPointer);
+
+        if (!functionId.has_value())
         {
             return {false, {NotResolvedModuleName, NotResolvedFrame, "", 0}};
         }
 
-        auto [moduleName, frame] = GetNativeFrame(instructionPointer);
-        return {true, {moduleName, frame, "", 0}};
-    }
-}
-
-// It should be possible to use dbghlp.dll on Windows (and something else on Linux?)
-// to get function name + offset
-// see https://docs.microsoft.com/en-us/windows/win32/api/dbghelp/nf-dbghelp-symfromaddr for more details
-// However, today, no symbol resolution is done; only the module implementing the function is provided
-std::pair<std::string_view, std::string_view> FrameStore::GetNativeFrame(uintptr_t instructionPointer)
-{
-    static const std::string UnknownNativeFrame("|lm:Unknown-Native-Module |ns:NativeCode |ct:Unknown-Native-Module |fn:Function");
-    static const std::string UnknowNativeModule = "Unknown-Native-Module";
-
-    auto moduleName = OpSysTools::GetModuleName(reinterpret_cast<void*>(instructionPointer));
-    if (moduleName.empty())
-    {
-        return {UnknowNativeModule, UnknownNativeFrame};
-    }
-
-    {
-        std::lock_guard<std::mutex> lock(_nativeLock);
-
-        auto it = _framePerNativeModule.find(moduleName);
-        if (it != _framePerNativeModule.cend())
+        if (functionId.value() == ManagedCodeCache::InvalidFunctionId)
         {
-            return {it->first, it->second};
+            // We have a value but not a valid one. This is fake function ID.
+            // This can occur when the calling into the CLR from managed code cache
+            // resulted in a crash(lucky us on windows, we can catch on linux ....:grimacing:)
+            // This is to preserve the current semantic
+            return {true, {NotResolvedModuleName, NotResolvedFrame, "", 0}};
         }
     }
 
-    // moduleName contains the full path: keep only the filename
-    auto moduleFilename = fs::path(moduleName).filename().string();
-    std::stringstream builder;
-    builder << "|lm:" << moduleFilename << " |ns:NativeCode |ct:" << moduleFilename << " |fn:Function";
-
-    {
-        std::lock_guard<std::mutex> lock(_nativeLock);
-        // emplace returns a pair<iterator, bool>. It returns false if the element was already there
-        // we use the iterator (first element of the pair) to get a reference to the key and the value
-        auto [it, _] = _framePerNativeModule.emplace(std::move(moduleName), builder.str());
-        return {it->first, it->second};
-    }
+    auto frameInfo = GetManagedFrame(functionId.value());
+    return {true, frameInfo};
 }
+
 
 FrameInfoView FrameStore::GetManagedFrame(FunctionID functionId)
 {
@@ -191,7 +178,7 @@ FrameInfoView FrameStore::GetManagedFrame(FunctionID functionId)
     }
 
     // method name is resolved first because we also get the mdDefToken of its class
-    auto [methodName, methodGenericParameters, mdTokenType] = GetMethodName(functionId, pMetadataImport.Get(), mdTokenFunc, genericParametersCount, genericParameters.get());
+    auto [rva, methodName, methodGenericParameters, mdTokenType] = GetMethodName(functionId, pMetadataImport.Get(), mdTokenFunc, genericParametersCount, genericParameters.get());
     if (methodName.empty())
     {
         return {UnknownManagedAssembly, UnknownManagedFrame, {}, 0};
@@ -222,6 +209,11 @@ FrameInfoView FrameStore::GetManagedFrame(FunctionID functionId)
             std::stringstream builder;
             builder << UnknownManagedType << " |fn:" << std::move(methodName) << " |fg:" << std::move(methodGenericParameters) << " |sg:" << std::move(signature);
             value = {UnknownManagedAssembly, builder.str(), "", 0};
+
+            // Incrementally track item size
+            size_t itemSize = value.ModuleName.capacity() + value.Frame.capacity();
+            _cachedItemsSize.fetch_add(itemSize, std::memory_order_relaxed);
+
             return value;
         }
 
@@ -250,6 +242,11 @@ FrameInfoView FrameStore::GetManagedFrame(FunctionID functionId)
 
         // store it into the function cache and return an iterator to the stored elements
         auto [it, _] = _methods.emplace(functionId, FrameInfo{pTypeDesc->Assembly, managedFrame, debugInfo.File, debugInfo.StartLine});
+
+        // Incrementally track item size
+        size_t itemSize = it->second.ModuleName.capacity() + it->second.Frame.capacity();
+        _cachedItemsSize.fetch_add(itemSize, std::memory_order_relaxed);
+
         // first is the key, second is the associated value
         return it->second;
     }
@@ -310,6 +307,9 @@ bool FrameStore::GetTypeName(ClassID classId, std::string_view& name)
     auto& entry = _fullTypeNames[classId];
     entry = pTypeDesc->Type + pTypeDesc->Parameters;
     name = {entry.data(), entry.size()};
+
+    // Incrementally track item size
+    _cachedItemsSize.fetch_add(entry.capacity(), std::memory_order_relaxed);
 
     return true;
 }
@@ -426,6 +426,11 @@ bool FrameStore::GetTypeDesc(ClassID classId, TypeDesc*& pTypeDesc)
             }
 
             pTypeDesc = &(_types[originalClassId] = typeDesc);
+
+            // Incrementally track item size
+            size_t itemSize = pTypeDesc->Assembly.capacity() + pTypeDesc->Namespace.capacity() +
+                              pTypeDesc->Type.capacity() + pTypeDesc->Parameters.capacity();
+            _cachedItemsSize.fetch_add(itemSize, std::memory_order_relaxed);
         }
         else
         {
@@ -557,17 +562,17 @@ bool FrameStore::GetMetadataApi(ModuleID moduleId, FunctionID functionId, ComPtr
     return true;
 }
 
-std::tuple<std::string, std::string, mdTypeDef> FrameStore::GetMethodName(
+std::tuple<ULONG, std::string, std::string, mdTypeDef> FrameStore::GetMethodName(
     FunctionID functionId,
     IMetaDataImport2* pMetadataImport,
     mdMethodDef mdTokenFunc,
     ULONG32 genericParametersCount,
     ClassID* genericParameters)
 {
-    auto [methodName, mdTokenType] = GetMethodNameFromMetadata(pMetadataImport, mdTokenFunc);
+    auto [methodName, mdTokenType, rva] = GetMethodNameFromMetadata(pMetadataImport, mdTokenFunc);
     if ((methodName.empty()) || (genericParametersCount == 0))
     {
-        return std::make_tuple(std::move(methodName), std::string(), mdTokenType);
+        return std::make_tuple(rva, std::move(methodName), std::string(), mdTokenType);
     }
 
     // Get generic parameters if any
@@ -606,7 +611,7 @@ std::tuple<std::string, std::string, mdTypeDef> FrameStore::GetMethodName(
     }
     builder << ">";
 
-    return std::make_tuple(methodName, builder.str(), mdTokenType);
+    return std::make_tuple(rva, methodName, builder.str(), mdTokenType);
 }
 
 bool FrameStore::GetAssemblyName(ICorProfilerInfo4* pInfo, ModuleID moduleId, std::string& assemblyName)
@@ -935,27 +940,28 @@ std::tuple<std::string, std::string, std::string> FrameStore::GetManagedTypeName
     }
 }
 
-std::pair<std::string, mdTypeDef> FrameStore::GetMethodNameFromMetadata(IMetaDataImport2* pMetadataImport, mdMethodDef mdTokenFunc)
+std::tuple<std::string, mdTypeDef, ULONG> FrameStore::GetMethodNameFromMetadata(IMetaDataImport2* pMetadataImport, mdMethodDef mdTokenFunc)
 {
     // get the method name
     ULONG nameCharCount = 0;
+    ULONG rva = 0;
     HRESULT hr = pMetadataImport->GetMethodProps(mdTokenFunc, nullptr, nullptr, 0, &nameCharCount, nullptr, nullptr, nullptr, nullptr, nullptr);
     if (FAILED(hr))
     {
-        return std::make_pair(std::string(), mdTokenNil);
+        return std::make_tuple(std::string(), mdTokenNil, rva);
     }
 
     auto buffer = std::make_unique<WCHAR[]>(nameCharCount);
     mdTypeDef mdTokenType;
 
-    hr = pMetadataImport->GetMethodProps(mdTokenFunc, &mdTokenType, buffer.get(), nameCharCount, &nameCharCount, nullptr, nullptr, nullptr, nullptr, nullptr);
+    hr = pMetadataImport->GetMethodProps(mdTokenFunc, &mdTokenType, buffer.get(), nameCharCount, &nameCharCount, nullptr, nullptr, nullptr, &rva, nullptr);
     if (FAILED(hr))
     {
-        return std::make_pair(std::string(), mdTokenNil);
+        return std::make_tuple(std::string(), mdTokenNil, rva);
     }
 
     // convert from UTF16 to UTF8
-    return std::make_pair(shared::ToString(buffer.get()), mdTokenType);
+    return std::make_tuple(shared::ToString(buffer.get()), mdTokenType, rva);
 }
 
 std::string FrameStore::GetMethodSignature(ICorProfilerInfo4* pInfo, IMetaDataImport2* pMetaData, mdTypeDef mdTokenType, FunctionID functionId, mdMethodDef mdTokenFunc)
@@ -1541,4 +1547,110 @@ PCCOR_SIGNATURE ParseByte(PCCOR_SIGNATURE pbSig, BYTE* pByte)
 {
     *pByte = *pbSig++;
     return pbSig;
+}
+
+FrameStore::MemoryStats FrameStore::ComputeMemoryStats() const
+{
+    MemoryStats stats{};
+    stats.baseSize = sizeof(FrameStore);
+
+    // Calculate memory for _methods cache
+    {
+        std::lock_guard<std::mutex> lock(_methodsLock);
+        stats.methodsBuckets = _methods.bucket_count();
+        stats.methodsCount = _methods.size();
+        stats.methodsCacheSize = stats.methodsBuckets * (sizeof(FunctionID) + sizeof(FrameInfo) + sizeof(void*));
+        for (const auto& [key, frameInfo] : _methods)
+        {
+            stats.methodsCacheSize += frameInfo.ModuleName.capacity();
+            stats.methodsCacheSize += frameInfo.Frame.capacity();
+            // Filename is a string_view, no additional memory
+        }
+    }
+
+    // Calculate memory for _types cache
+    {
+        std::lock_guard<std::mutex> lock(_typesLock);
+        stats.typesBuckets = _types.bucket_count();
+        stats.typesCount = _types.size();
+        stats.typesCacheSize = stats.typesBuckets * (sizeof(ClassID) + sizeof(TypeDesc) + sizeof(void*));
+        for (const auto& [key, typeDesc] : _types)
+        {
+            stats.typesCacheSize += typeDesc.Assembly.capacity();
+            stats.typesCacheSize += typeDesc.Namespace.capacity();
+            stats.typesCacheSize += typeDesc.Type.capacity();
+            stats.typesCacheSize += typeDesc.Parameters.capacity();
+        }
+    }
+
+    // Calculate memory for _framePerNativeModule cache
+    {
+        std::lock_guard<std::mutex> lock(_nativeLock);
+        stats.nativeFramesBuckets = _framePerNativeModule.bucket_count();
+        stats.nativeFramesCount = _framePerNativeModule.size();
+        stats.nativeFramesCacheSize = stats.nativeFramesBuckets * (sizeof(std::string) + sizeof(std::string) + sizeof(void*));
+        for (const auto& [key, value] : _framePerNativeModule)
+        {
+            stats.nativeFramesCacheSize += key.capacity();
+            stats.nativeFramesCacheSize += value.capacity();
+        }
+    }
+
+    // Calculate memory for _fullTypeNames cache
+    {
+        std::lock_guard<std::mutex> lock(_fullTypeNamesLock);
+        stats.fullTypeNamesBuckets = _fullTypeNames.bucket_count();
+        stats.fullTypeNamesCount = _fullTypeNames.size();
+        stats.fullTypeNamesCacheSize = stats.fullTypeNamesBuckets * (sizeof(ClassID) + sizeof(std::string) + sizeof(void*));
+        for (const auto& [key, value] : _fullTypeNames)
+        {
+            stats.fullTypeNamesCacheSize += value.capacity();
+        }
+    }
+
+    return stats;
+}
+
+size_t FrameStore::GetMemorySize() const
+{
+    size_t totalSize = sizeof(FrameStore);
+
+    // Calculate container overhead on-demand
+    {
+        std::lock_guard<std::mutex> lock(_methodsLock);
+        totalSize += _methods.bucket_count() * (sizeof(FunctionID) + sizeof(FrameInfo) + sizeof(void*));
+    }
+
+    {
+        std::lock_guard<std::mutex> lock(_typesLock);
+        totalSize += _types.bucket_count() * (sizeof(ClassID) + sizeof(TypeDesc) + sizeof(void*));
+    }
+
+    {
+        std::lock_guard<std::mutex> lock(_nativeLock);
+        totalSize += _framePerNativeModule.bucket_count() * (sizeof(std::string) * 2 + sizeof(void*));
+    }
+
+    {
+        std::lock_guard<std::mutex> lock(_fullTypeNamesLock);
+        totalSize += _fullTypeNames.bucket_count() * (sizeof(ClassID) + sizeof(std::string) + sizeof(void*));
+    }
+
+    // Add cached items size (updated incrementally at add time)
+    totalSize += _cachedItemsSize.load(std::memory_order_relaxed);
+
+    return totalSize;
+}
+
+void FrameStore::LogMemoryBreakdown() const
+{
+    auto stats = ComputeMemoryStats();
+
+    Log::Debug("FrameStore Memory Breakdown:");
+    Log::Debug("  Base object size:        ", stats.baseSize, " bytes");
+    Log::Debug("  Methods cache:           ", stats.methodsCacheSize, " bytes (", stats.methodsCount, " entries, ", stats.methodsBuckets, " buckets)");
+    Log::Debug("  Types cache:             ", stats.typesCacheSize, " bytes (", stats.typesCount, " entries, ", stats.typesBuckets, " buckets)");
+    Log::Debug("  Native frames cache:     ", stats.nativeFramesCacheSize, " bytes (", stats.nativeFramesCount, " entries, ", stats.nativeFramesBuckets, " buckets)");
+    Log::Debug("  Full type names cache:   ", stats.fullTypeNamesCacheSize, " bytes (", stats.fullTypeNamesCount, " entries, ", stats.fullTypeNamesBuckets, " buckets)");
+    Log::Debug("  Total memory:            ", stats.GetTotal(), " bytes (", (stats.GetTotal() / 1024.0), " KB)");
 }

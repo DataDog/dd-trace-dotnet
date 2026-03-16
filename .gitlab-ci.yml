@@ -14,6 +14,7 @@ variables:
     description: "Used by the package stage when triggered manually"
   REPO_NOTIFICATION_CHANNEL: "#apm-dotnet-bots"
   CI_IDENTITIES_CLIENT_URL: s3://binaries-ddbuild-io-prod/ci-identities/ci-identities-gitlab-job-client/versions/v0.2.0/ci-identities-gitlab-job-client-windows-amd64.exe
+  SUPPORTED_CONFIG_PATH: "tracer/src/Datadog.Trace/Configuration/supported-configurations.yaml"
 
 build:
   except:
@@ -193,7 +194,17 @@ benchmark-serverless:
   needs:
     - benchmark-serverless-trigger
   script:
-    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/serverless-tools.git ./serverless-tools && cd ./serverless-tools
+    - curl -OL "binaries.ddbuild.io/dd-source/authanywhere/LATEST/authanywhere-linux-amd64" 
+    - mv "authanywhere-linux-amd64" /bin/authanywhere 
+    - chmod +x /bin/authanywhere
+    - BTI_CI_API_TOKEN=$(authanywhere --audience rapid-devex-ci)
+    - >-
+      BTI_RESPONSE=$(curl --silent --request GET \
+        --header "$BTI_CI_API_TOKEN" \  --header "Content-Type: application/vnd.api+json" \
+        "https://bti-ci-api.us1.ddbuild.io/internal/ci/gitlab/token?owner=DataDog&repository=serverless-tools")
+    - GITLAB_TOKEN=$(echo "$BTI_RESPONSE" | jq -r '.token // empty')
+    - git clone https://gitlab-ci-token:${GITLAB_TOKEN}@gitlab.ddbuild.io/DataDog/serverless-tools.git ./serverless-tools
+    - cd ./serverless-tools
     - ./ci/check_trigger_status.sh
 
 benchmark-serverless-trigger:
@@ -248,10 +259,18 @@ dsm_throughput:
     - when: manual
 
 
-validate_supported_configurations_local_file:
+validate_supported_configurations_v2_local_file:
   stage: build
   rules:
     - when: on_success
-  extends: .validate_supported_configurations_local_file
+  extends: .validate_supported_configurations_v2_local_file
   variables:
-    LOCAL_JSON_PATH: "tracer/src/Datadog.Trace/Configuration/supported-configurations.json"
+    LOCAL_CONFIG_PATH: $SUPPORTED_CONFIG_PATH
+    BACKFILLED: true
+  
+update_central_configurations_version_range_v2:
+  extends: .update_central_configurations_version_range_v2
+  variables:
+    LOCAL_CONFIG_PATH: $SUPPORTED_CONFIG_PATH
+    LANGUAGE_NAME: "dotnet"
+    SEND_ALIASES: true

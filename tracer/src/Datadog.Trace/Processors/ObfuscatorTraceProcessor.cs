@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Collections;
 using Datadog.Trace.Agent;
@@ -17,7 +19,6 @@ namespace Datadog.Trace.Processors
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ObfuscatorTraceProcessor>();
         private static readonly BitArray NumericLiteralPrefix = new BitArray(256, false);
         private static readonly BitArray Splitters = new BitArray(256, false);
-        private readonly ObfuscatorTagsProcessor _tagsProcessor;
 
         static ObfuscatorTraceProcessor()
         {
@@ -41,12 +42,6 @@ namespace Datadog.Trace.Processors
                     Splitters.Set(i, true);
                 }
             }
-        }
-
-        public ObfuscatorTraceProcessor(bool redisTagObfuscationEnabled)
-        {
-            _tagsProcessor = new(redisTagObfuscationEnabled);
-            Log.Information("ObfuscatorTraceProcessor initialized. Redis tag obfuscation enabled: {RedisObfuscation}", redisTagObfuscationEnabled);
         }
 
         public SpanCollection Process(in SpanCollection trace)
@@ -73,7 +68,7 @@ namespace Datadog.Trace.Processors
             return span;
         }
 
-        public ITagProcessor GetTagProcessor() => _tagsProcessor;
+        public ITagProcessor? GetTagProcessor() => null;
 
         internal static string ObfuscateSqlResource(string sqlQuery)
         {
