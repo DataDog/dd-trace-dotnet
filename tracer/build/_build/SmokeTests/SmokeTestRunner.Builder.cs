@@ -104,6 +104,7 @@ public static partial class SmokeTestRunner
                     ["TOOL_VERSION"] = toolVersion,
                     ["RELATIVE_PROFILER_PATH"] = scenario.RelativeProfilerPath,
                     ["RELATIVE_APIWRAPPER_PATH"] = scenario.RelativeApiWrapperPath,
+                    ["NUGET_PACKAGE"] = scenario.NuGetPackageName,
                 };
 
                 await DockerService.BuildImageFromDockerfileAsync(tracerDir, dockerfilePath, scenario.DockerTag, buildArgs, artifactsDir);
@@ -244,6 +245,7 @@ public static partial class SmokeTestRunner
                     ["TOOL_VERSION"] = toolVersion,
                     ["CHANNEL_32_BIT"] = scenario.Channel32Bit,
                     ["RELATIVE_PROFILER_PATH"] = scenario.RelativeProfilerPath,
+                    ["NUGET_PACKAGE"] = scenario.NuGetPackageName,
                 };
 
                 await DockerService.BuildImageFromDockerfileAsync(tracerDir, dockerfilePath, scenario.DockerTag, buildArgs, artifactsDir);

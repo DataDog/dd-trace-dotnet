@@ -51,6 +51,7 @@ public record ChiseledScenario : SmokeTestScenario
 public record NuGetScenario : SmokeTestScenario
 {
     public required string RuntimeId { get; init; }
+    public required string NuGetPackageName { get; init; }
     public string RelativeProfilerPath => $"datadog/{RuntimeId}/Datadog.Trace.ClrProfiler.Native.so";
     public string RelativeApiWrapperPath => $"datadog/{RuntimeId}/Datadog.Linux.ApiWrapper.x64.so";
 }
@@ -89,6 +90,7 @@ public record WindowsNuGetScenario : SmokeTestScenario
 {
     public required string Channel32Bit { get; init; }
     public required string RelativeProfilerPath { get; init; }
+    public required string NuGetPackageName { get; init; }
 }
 
 public record WindowsDotnetToolScenario : SmokeTestScenario
