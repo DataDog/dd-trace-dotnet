@@ -52,4 +52,7 @@ internal static class JsonOutputFormatter
             },
             SerializerOptions);
     }
+
+    public static string FormatResult(CliResult result) =>
+        JsonSerializer.Serialize(result, SerializerOptions);
 }
