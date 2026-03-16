@@ -129,6 +129,9 @@ Auto-instrumentation comes from the tracer "monitoring home" deployed separately
 - **`docs/development/AutomaticInstrumentation.md`** — Complete guide to creating integrations, CallTarget wiring, testing strategies, package version configuration, and CI testing
 - **`docs/development/InstrumentationGenerator.md`** — GUI and CLI instrumentation generator tools, Nuke integration, duck typing flags, JSON output, and two-tool workflow with dotnet-inspect
 
+📖 **Load when**: Using the CLI tool programmatically or as an AI agent to inspect assemblies and generate instrumentation code
+- **`docs/development/for-ai/InstrumentationGenerator-CLI.md`** — Complete LLM reference: all commands, JSON schemas, error codes, recovery patterns, and recommended autonomous workflow
+
 📖 **Load when**: Working with third-party types that can't be directly referenced or need version-agnostic access
 - **`docs/development/DuckTyping.md`** — Duck typing patterns, proxy types, binding attributes, best practices, and performance benchmarks
 
@@ -310,6 +313,7 @@ The tracer runs in-process with customer applications and must have minimal perf
 **Development guides:**
 - `docs/development/AutomaticInstrumentation.md` — Creating integrations
 - `docs/development/InstrumentationGenerator.md` — GUI and CLI instrumentation generator tools
+- `docs/development/for-ai/InstrumentationGenerator-CLI.md` — LLM reference for the CLI (commands, JSON schemas, error handling)
 - `docs/development/DuckTyping.md` — Duck typing guide
 - `docs/development/TracerDebugging.md` — Local debugging, IDE configuration, path issues, and troubleshooting
 - `docs/development/AzureFunctions.md` — Azure Functions integration
