@@ -49,7 +49,7 @@ build-dd-trace-dotnet-microbenchmarks-ami:
 
     # Whether to cleanup instances after building the AMI, since the AMI is 
     # based on an instance that is created in this job
-    CLEANUP: "false"
+    CLEANUP: "true"
   before_script:
     - !reference [.dd-octo-sts-setup, before_script]
   script:
@@ -101,7 +101,7 @@ run-benchmarks:
     AWS_REGION: "us-east-1"
     BP_INFRA_ARTIFACTS_BUCKET_NAME: "windows-benchmarking-results-us-east-1"
     # Cleanup instances after benchmarks
-    CLEANUP: "true"
+    CLEANUP: "false"
   before_script:
     - !reference [.dd-octo-sts-setup, before_script]
   script:
