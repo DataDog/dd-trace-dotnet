@@ -98,6 +98,7 @@ $arguments = @("-r") + $runtimes + @(
     "-f", $Filter,
     "--allCategories", $Category,
     "--iterationTime", "200",
+    "--buildTimeout", "3600",
     "--artifacts", $localArtifactsDir
 )
 
