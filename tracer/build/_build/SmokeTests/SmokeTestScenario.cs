@@ -97,6 +97,7 @@ public record WindowsNuGetScenario : SmokeTestScenario
     public required string Channel32Bit { get; init; }
     public required string RelativeProfilerPath { get; init; }
     public required string NuGetPackageName { get; init; }
+    public bool IncludeDdDotnetScenario { get; init; }
 }
 
 public record WindowsDotnetToolScenario : SmokeTestScenario

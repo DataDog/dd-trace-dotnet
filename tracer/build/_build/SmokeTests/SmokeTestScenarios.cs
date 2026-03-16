@@ -1021,7 +1021,8 @@ public static class SmokeTestScenarios
                              RunCrashTest = false,
                              Channel32Bit = channel32Bit,
                              RelativeProfilerPath = $"datadog/win-{platform}/Datadog.Trace.ClrProfiler.Native.dll",
-                             NuGetPackageName = Projects.DatadogTraceBundle
+                             NuGetPackageName = Projects.DatadogTraceBundle,
+                             IncludeDdDotnetScenario = true,
                          };
         }
 
@@ -1049,6 +1050,7 @@ public static class SmokeTestScenarios
                              Channel32Bit = channel32Bit,
                              RelativeProfilerPath = $"datadog/win-{platform}/Datadog.Trace.ClrProfiler.Native.dll",
                              NuGetPackageName = Projects.DatadogAzureFunctions,
+                             IncludeDdDotnetScenario = false,
                          };
         }
 
