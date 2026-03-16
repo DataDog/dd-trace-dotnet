@@ -55,13 +55,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
                     tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(implementationIntegrationId ?? integrationId);
 
                     bool executeOnDownstreamResponse = false;
-#if NETCOREAPP3_0_OR_GREATER
-                    if (requestMessage.Instance is { } request)
+#if NETCOREAPP
+                    if (requestMessage != null)
                     {
                         var rootSpan = tracer.InternalActiveScope?.Root?.Span;
                         try
                         {
-                            executeOnDownstreamResponse = RaspModule.OnDownstreamRequest(request, scope.Span.SpanId, rootSpan);
+                            executeOnDownstreamResponse = RaspModule.OnDownstreamRequest(requestMessage, scope.Span.SpanId, rootSpan);
                         }
                         catch (AppSec.BlockException ex)
                         {
@@ -98,6 +98,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
                 if (responseMessage is System.Net.Http.HttpResponseMessage response)
                 {
                     var statusCode = (int)response.StatusCode;
+                    RaspModule.OnDownstreamResponse(response, scope.Span.SpanId);
 #else
                 if (responseMessage.Instance is not null)
                 {
@@ -110,13 +111,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
                 {
                     scope.Span.SetException(exception);
                 }
-
-#if NETCOREAPP3_0_OR_GREATER
-                if (state.State is true && responseMessage.Instance is { } response)
-                {
-                    RaspModule.OnDownstreamResponse(response, scope.Span.SpanId);
-                }
-#endif
             }
             finally
             {

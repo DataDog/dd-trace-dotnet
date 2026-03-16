@@ -304,7 +304,7 @@ internal static class RaspModule
         }
     }
 
-#if NETCOREAPP3_0_OR_GREATER
+#if NETCOREAPP
     internal static Dictionary<string, object>? ExtractHeaders(System.Net.Http.Headers.HttpHeaders headers)
     {
         var enumerator = headers.GetEnumerator();
@@ -327,7 +327,7 @@ internal static class RaspModule
         return headersDic;
     }
 
-    internal static bool OnDownstreamRequest(object requestMessageInstance, ulong requestSpanId, Span rootSpan)
+    internal static bool OnDownstreamRequest(System.Net.Http.HttpRequestMessage requestMessage, ulong requestSpanId, Span rootSpan)
     {
         try
         {
@@ -349,12 +349,6 @@ internal static class RaspModule
                 var context = rootSpan.Context.TraceContext.AppSecRequestContext;
                 if (context is null)
                 {
-                    return false;
-                }
-
-                if (requestMessageInstance is not System.Net.Http.HttpRequestMessage requestMessage)
-                {
-                    Log.Error("requestMessageInstance is not HttpRequestMessage");
                     return false;
                 }
 
@@ -388,7 +382,7 @@ internal static class RaspModule
         return false;
     }
 
-    internal static void OnDownstreamResponse(object responseMessageInstance, ulong requestSpanId)
+    internal static void OnDownstreamResponse(System.Net.Http.HttpResponseMessage responseMessage, ulong requestSpanId)
     {
         try
         {
@@ -409,12 +403,6 @@ internal static class RaspModule
             var context = rootSpan.Context.TraceContext.AppSecRequestContext;
             if (context is null)
             {
-                return;
-            }
-
-            if (responseMessageInstance is not System.Net.Http.HttpResponseMessage responseMessage)
-            {
-                Log.Error("responseMessageInstance is not HttpResponseMessage");
                 return;
             }
 
