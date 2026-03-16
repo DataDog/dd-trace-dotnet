@@ -61,8 +61,8 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         public static IEnumerable<object[]> GetEnabledDbmData()
             => from command in (IEnumerable<object[]>)GetDbmCommands()
                from dbm in new[] { "service", "full" }
-               from storedProcInject in new[] { false, true }
-               select new[] { command[0], dbm, storedProcInject };
+               from enabled in new[] { false, true }
+               select new[] { command[0], dbm, enabled };
 
         [Theory]
         [MemberData(nameof(GetDbCommands))]
