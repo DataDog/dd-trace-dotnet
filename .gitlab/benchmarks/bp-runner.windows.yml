@@ -92,17 +92,36 @@ experiments:
           # Set up artifacts directory for this parallel run
           $localArtifactsDir = "$env:CODE_SRC\tracer\artifacts\benchmarks\$env:PARALLEL_INDEX"
 
-          # Run benchmarks using Nuke target
-          # --no-benchmark-build: use pre-built benchmarks from how_to_fetch_release
-          # --filter: use PARALLEL_ITEM as the benchmark filter
-          # --benchmark-artifacts-directory: output results to a unique directory per parallel run
-          # --benchmark-category prs: run PR category benchmarks (dry run style)
+          # Run benchmarks using Nuke target with retry logic.
+          # Retry is needed because parallel bp-runner invocations may race to compile/load
+          # Nuke's _build.dll. The lock is brief, so a short retry usually succeeds.
           Set-Location "$env:CODE_SRC\tracer"
-          & .\build.cmd RunBenchmarks `
-            --no-benchmark-build `
-            --filter "$env:PARALLEL_ITEM" `
-            --benchmark-artifacts-directory "$localArtifactsDir" `
-            --benchmark-category prs
+          $maxRetries = 3
+          $retryDelay = 5
+          $success = $false
+          for ($i = 1; $i -le $maxRetries; $i++) {
+              # --no-benchmark-build: use pre-built benchmarks from how_to_fetch_release
+              # --filter: use PARALLEL_ITEM as the benchmark filter
+              # --benchmark-artifacts-directory: output results to a unique directory per parallel run
+              # --benchmark-category prs: run PR category benchmarks
+              & .\build.cmd RunBenchmarks `
+                --no-benchmark-build `
+                --filter "$env:PARALLEL_ITEM" `
+                --benchmark-artifacts-directory "$localArtifactsDir" `
+                --benchmark-category prs
+              if ($LASTEXITCODE -eq 0) {
+                  $success = $true
+                  break
+              }
+              if ($i -lt $maxRetries) {
+                  Write-Output "Attempt $i failed (exit code $LASTEXITCODE). Retrying in ${retryDelay}s..."
+                  Start-Sleep -Seconds $retryDelay
+              }
+          }
+          if (-not $success) {
+              Write-Error "Failed after $maxRetries attempts"
+              exit 1
+          }
 
           # Copy results to ARTIFACTS_DIR with naming convention matching benchmarking-platform
           # Format: candidate.Trace.SpanBenchmark.json (strips Benchmarks. prefix and -report-full-compressed suffix)
