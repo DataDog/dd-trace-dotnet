@@ -11,7 +11,7 @@ using System.Text;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Propagators;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Util.Json;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared
 {
@@ -111,7 +111,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared
                         string? jsonString = messageAttributeValue.StringValue;
                         if (!StringUtil.IsNullOrEmpty(jsonString))
                         {
-                            var headers = JsonConvert.DeserializeObject<Dictionary<string, string>>(jsonString);
+                            var headers = JsonHelper.DeserializeObject<Dictionary<string, string>>(jsonString);
                             if (headers != null)
                             {
                                 return tracer.TracerManager.SpanContextPropagator
