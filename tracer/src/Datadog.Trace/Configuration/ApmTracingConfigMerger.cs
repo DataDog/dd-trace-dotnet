@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Text;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
@@ -29,7 +30,7 @@ namespace Datadog.Trace.Configuration
         {
             if (configs.Count == 0)
             {
-                return JToken.Parse("{\"lib_config\":{}}");
+                return GetNullObject();
             }
 
             var applicableConfigs = new List<ApmTracingConfig>(configs.Count);
@@ -64,7 +65,7 @@ namespace Datadog.Trace.Configuration
             if (applicableConfigs.Count == 0)
             {
                 Log.Debug("No APM_TRACING configurations match service '{ServiceName}' and environment '{Environment}'", serviceName, environment);
-                return JToken.Parse("{\"lib_config\":{}}");
+                return GetNullObject();
             }
 
             // Sort configs by priority (highest first), then by config ID (alphabetically) for deterministic ordering
@@ -75,6 +76,8 @@ namespace Datadog.Trace.Configuration
 
             var result = new { lib_config = mergedLibConfig };
             return JToken.FromObject(result);
+
+            JObject GetNullObject() => new() { ["lib_config"] = new JObject(), };
         }
 
         /// <summary>
@@ -165,7 +168,7 @@ namespace Datadog.Trace.Configuration
         {
             try
             {
-                var configDto = JsonConvert.DeserializeObject<ApmTracingConfigDto>(jsonContent);
+                var configDto = JsonHelper.DeserializeObject<ApmTracingConfigDto>(jsonContent);
 
                 if (configDto?.LibConfig == null)
                 {

@@ -8,6 +8,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 #nullable enable
@@ -40,7 +42,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation.ThirdParty
             }
 
             using var sr = new StreamReader(stream!);
-            using var jsonReader = new JsonTextReader(sr);
+            using var jsonReader = new JsonTextReader(sr) { ArrayPool = JsonArrayPool.Shared };
 
             var modules = new HashSet<string>();
             while (jsonReader.Read())

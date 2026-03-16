@@ -165,12 +165,17 @@ internal sealed class DiagnosticsMetricsRuntimeMetricsListener : IRuntimeMetrics
         }
 
         var gcPauseTimeMilliSeconds = _getGcPauseTimeFunc(this);
-        // We don't record 0-length pauses, so that we match RuntimeEventListener behaviour
-        // We don't worry about the floating point comparison, as reporting close to zero is fine
-        if (gcPauseTimeMilliSeconds.HasValue && _previousGcPauseTime.HasValue
-                                             && gcPauseTimeMilliSeconds.Value != _previousGcPauseTime.Value)
+
+        if (gcPauseTimeMilliSeconds.HasValue && _previousGcPauseTime.HasValue)
         {
-            statsd.Timer(MetricsNames.GcPauseTime, gcPauseTimeMilliSeconds.Value - _previousGcPauseTime.Value);
+            var totalPauseDeltaMs = (long)Math.Round(gcPauseTimeMilliSeconds.Value - _previousGcPauseTime.Value);
+
+            if (totalPauseDeltaMs > 0)
+            {
+                // Send total pause as a Counter. Avg per-GC pause can be computed at query time:
+                // pause_time.total / (gc.count.gen0 + gc.count.gen1 + gc.count.gen2)
+                statsd.Counter(MetricsNames.GcPauseTimeTotal, totalPauseDeltaMs);
+            }
         }
 
         _previousGcPauseTime = gcPauseTimeMilliSeconds;
