@@ -6,6 +6,10 @@
 using System.CommandLine;
 using Datadog.AutoInstrumentation.Generator.Cli.Commands;
 
+var jsonOption = new Option<bool>("--json") { Description = "Output structured JSON instead of plain text", Recursive = true };
+
 var rootCommand = new RootCommand("Datadog Auto-Instrumentation Generator CLI");
-rootCommand.Add(new GenerateCommand());
+rootCommand.Options.Add(jsonOption);
+rootCommand.Add(new GenerateCommand(jsonOption));
+rootCommand.Add(new InspectCommand(jsonOption));
 return rootCommand.Parse(args).Invoke();

@@ -112,6 +112,53 @@ public class AssemblyBrowser : IDisposable
         return typeDef.Methods.Where(m => m.Name == methodName).ToList();
     }
 
+    /// <summary>
+    /// Lists all non-compiler-generated types in the assembly.
+    /// </summary>
+    public IReadOnlyList<TypeDef> ListTypes()
+    {
+        var result = new List<TypeDef>();
+        foreach (var module in _assemblyDef.Modules)
+        {
+            foreach (var type in module.GetTypes())
+            {
+                if (IsCompilerGenerated(type) || type.Name == "<Module>")
+                {
+                    continue;
+                }
+
+                result.Add(type);
+            }
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Lists all instrumentable methods on a type (excludes compiler-generated and special-name methods).
+    /// </summary>
+    public IReadOnlyList<MethodDef> ListMethods(string typeFullName)
+    {
+        TypeDef? typeDef = null;
+        foreach (var module in _assemblyDef.Modules)
+        {
+            typeDef = FindType(module, typeFullName);
+            if (typeDef is not null)
+            {
+                break;
+            }
+        }
+
+        if (typeDef is null)
+        {
+            return Array.Empty<MethodDef>();
+        }
+
+        return typeDef.Methods
+            .Where(m => !m.IsSpecialName && !IsCompilerGenerated(m))
+            .ToList();
+    }
+
     public void Dispose()
     {
         // AssemblyDef doesn't implement IDisposable, but we free module contexts
@@ -146,6 +193,11 @@ public class AssemblyBrowser : IDisposable
         }
 
         return current;
+    }
+
+    private static bool IsCompilerGenerated(IHasCustomAttribute member)
+    {
+        return member.CustomAttributes.Any(a => a.TypeFullName == "System.Runtime.CompilerServices.CompilerGeneratedAttribute");
     }
 
     private static bool MatchesParameterTypes(MethodDef method, string[] parameterTypes)
