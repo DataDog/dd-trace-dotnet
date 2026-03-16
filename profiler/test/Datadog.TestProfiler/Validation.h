@@ -10,7 +10,6 @@
 #endif
 
 struct ValidationOptions {
-    bool failFast;
     const char* reportPath;  // UTF-8, full path
 };
 

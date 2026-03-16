@@ -34,13 +34,21 @@ namespace Datadog.Profiler.IntegrationTests.ManagedCodeCache
             _output.WriteLine($"[ManagedCodeCacheTest] Application: {appPath}");
             _output.WriteLine($"[ManagedCodeCacheTest] Working directory: {workingDir}");
 
+            var validationReportPath = Path.Combine(workingDir, "validation_report.txt");
+            _output.WriteLine($"[ManagedCodeCacheTest] Validation report path: {validationReportPath}");
+
+            // Ensure we have .dll extension for dotnet to execute
+            var appDllPath = appPath.EndsWith(".dll") || appPath.EndsWith(".exe")
+                ? appPath
+                : $"{appPath}.dll";
+
             // Run the test application with the test profiler attached
             var process = new Process
             {
                 StartInfo = new ProcessStartInfo
                 {
                     FileName = "dotnet",
-                    Arguments = appPath,
+                    Arguments = $"{appDllPath} --output {validationReportPath}",
                     WorkingDirectory = workingDir,
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
@@ -87,13 +95,12 @@ namespace Datadog.Profiler.IntegrationTests.ManagedCodeCache
             process.ExitCode.Should().Be(0, "test application should exit successfully");
 
             // Check that the validation report was created
-            var reportPath = Path.Combine(workingDir, "validation_report.txt");
-            var reportExists = File.Exists(reportPath);
+            var reportExists = File.Exists(validationReportPath);
             _output.WriteLine($"[ManagedCodeCacheTest] Validation report exists: {reportExists}");
 
             reportExists.Should().BeTrue("validation report should be created");
 
-            var reportContent = File.ReadAllText(reportPath);
+            var reportContent = File.ReadAllText(validationReportPath);
             _output.WriteLine("[ManagedCodeCacheTest] === Validation Report ===");
             _output.WriteLine(reportContent);
 

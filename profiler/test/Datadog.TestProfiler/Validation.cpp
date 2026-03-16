@@ -80,7 +80,6 @@ extern "C" PROFILER_EXPORT int ValidateManagedCodeCache(
         return -1;
     }
 
-    bool failFast = options ? options->failFast : true;
     std::string reportPath = options && options->reportPath
         ? std::string(options->reportPath)
         : "validation_report.txt";
@@ -259,21 +258,6 @@ extern "C" PROFILER_EXPORT int ValidateManagedCodeCache(
                         report << "  Cache returned: " << (cachedId.has_value() ? std::to_string(cachedId.value()) : "nullopt") << std::endl;
                         report << "  CLR returned: " << clrFunctionId << " (hr=" << std::hex << hr << std::dec << ")" << std::endl;
                         report << std::endl;
-
-                        if (failFast)
-                        {
-                            report.close();
-
-                            if (result)
-                            {
-                                result->failureCount = 1;
-                                strncpy(result->firstFailureMethod, firstFailureMethod.c_str(), 511);
-                                result->firstFailureMethod[511] = '\0';
-                            }
-
-                            Log::Error("FAILED in fail-fast mode");
-                            return 1;
-                        }
                     }
                 }
             }

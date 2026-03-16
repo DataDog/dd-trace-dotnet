@@ -17,9 +17,6 @@ namespace Samples.TestProfiler
         [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
         public struct ValidationOptions
         {
-            [MarshalAs(UnmanagedType.I1)]
-            public bool FailFast;
-
             [MarshalAs(UnmanagedType.LPStr)]
             public string? ReportPath;
         }
@@ -47,9 +44,38 @@ namespace Samples.TestProfiler
             ref ValidationOptions options,
             ref ValidationResult result);
 
+        private static string ParseCommandLine(string[] args)
+        {
+            for (int i = 0; i < args.Length; i++)
+            {
+                if ("--output".Equals(args[i], StringComparison.OrdinalIgnoreCase))
+                {
+                    if (i + 1 < args.Length)
+                    {
+                        return args[i + 1];
+                    }
+                    else
+                    {
+                        Console.Error.WriteLine("ERROR: --output requires a path argument");
+                        Environment.Exit(1);
+                    }
+                }
+            }
+
+            // --output is mandatory
+            Console.Error.WriteLine("ERROR: --output argument is required");
+            Console.Error.WriteLine("Usage: Samples.TestProfiler --output <path>");
+            Environment.Exit(1);
+            return null; // Never reached
+        }
+
         static async Task Main(string[] args)
         {
+            // Parse output path from arguments (mandatory)
+            string outputPath = ParseCommandLine(args);
+
             Console.WriteLine("[TestProfiler] Starting test application");
+            Console.WriteLine($"[TestProfiler] Output path: {outputPath}");
             Console.WriteLine($"[TestProfiler] Runtime: {RuntimeInformation.FrameworkDescription}");
             Console.WriteLine($"[TestProfiler] Architecture: {RuntimeInformation.ProcessArchitecture}");
 
@@ -90,8 +116,7 @@ namespace Samples.TestProfiler
             Console.WriteLine("\n=== Running Validation ===");
             var options = new ValidationOptions
             {
-                FailFast = false,
-                ReportPath = "validation_report.txt"
+                ReportPath = outputPath
             };
             var result = new ValidationResult();
 
