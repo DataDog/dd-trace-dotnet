@@ -101,7 +101,7 @@ run-benchmarks:
     AWS_REGION: "us-east-1"
     BP_INFRA_ARTIFACTS_BUCKET_NAME: "windows-benchmarking-results-us-east-1"
     # Cleanup instances after benchmarks
-    CLEANUP: "false"
+    CLEANUP: "true"
   before_script:
     - !reference [.dd-octo-sts-setup, before_script]
   script:
