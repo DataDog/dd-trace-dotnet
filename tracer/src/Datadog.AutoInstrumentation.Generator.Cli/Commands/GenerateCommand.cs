@@ -6,6 +6,7 @@
 using System;
 using System.CommandLine;
 using System.IO;
+using System.Linq;
 using System.Text.Json;
 using Datadog.AutoInstrumentation.Generator.Cli.Output;
 using Datadog.AutoInstrumentation.Generator.Core;
@@ -43,15 +44,17 @@ internal class GenerateCommand : Command
     private readonly Option<bool> _listKeysOption = new("--list-keys") { Description = "Print available configuration keys with their default values and exit" };
 
     // Output flags
-    private readonly Option<bool> _jsonOption = new("--json") { Description = "Output structured JSON instead of source code" };
+    private readonly Option<bool> _jsonOption;
     private readonly Option<FileInfo?> _outputOption = new("--output") { Description = "Write output to file instead of stdout" };
 
     // Auto-detect flag
     private readonly Option<bool> _noAutoDetectOption = new("--no-auto-detect") { Description = "Disable smart defaults (async detection, static method handling)" };
 
-    public GenerateCommand()
+    public GenerateCommand(Option<bool> jsonOption)
         : base("generate", "Generate CallTarget auto-instrumentation code for a method")
     {
+        _jsonOption = jsonOption;
+
         _typeOption.Aliases.Add("-t");
         _methodOption.Aliases.Add("-m");
         _outputOption.Aliases.Add("-o");
@@ -68,7 +71,6 @@ internal class GenerateCommand : Command
         Add(_configFileOption);
         Add(_setOption);
         Add(_listKeysOption);
-        Add(_jsonOption);
         Add(_outputOption);
         Add(_noAutoDetectOption);
 
@@ -133,9 +135,19 @@ internal class GenerateCommand : Command
 
     private int Execute(ParseResult parseResult)
     {
+        var jsonMode = parseResult.GetValue(_jsonOption);
+
         // Handle --list-keys: print and exit (no assembly/type/method required)
         if (parseResult.GetValue(_listKeysOption))
         {
+            if (jsonMode)
+            {
+                var keys = ConfigurationApplier.GetAvailableKeys()
+                    .Select(k => new { key = k.Key, type = k.Type, defaultValue = k.DefaultValue?.ToString() })
+                    .ToList();
+                return OutputHelper.WriteSuccess(true, "generate", new { configurationKeys = keys });
+            }
+
             PrintAvailableKeys();
             return 0;
         }
@@ -146,14 +158,20 @@ internal class GenerateCommand : Command
 
         if (assemblyPath is null || type is null || method is null)
         {
-            Console.Error.WriteLine("Error: assembly-path, --type, and --method are required (unless using --list-keys).");
-            return 1;
+            return OutputHelper.WriteError(
+                jsonMode,
+                "generate",
+                ErrorCodes.InvalidArgument,
+                "Error: assembly-path, --type, and --method are required (unless using --list-keys).");
         }
 
         if (!assemblyPath.Exists)
         {
-            Console.Error.WriteLine($"Error: Assembly file not found: {assemblyPath.FullName}");
-            return 1;
+            return OutputHelper.WriteError(
+                jsonMode,
+                "generate",
+                ErrorCodes.FileNotFound,
+                $"Error: Assembly file not found: {assemblyPath.FullName}");
         }
 
         // Validate mutual exclusivity of --config and --config-file
@@ -161,8 +179,11 @@ internal class GenerateCommand : Command
         var configFile = parseResult.GetValue(_configFileOption);
         if (configJson is not null && configFile is not null)
         {
-            Console.Error.WriteLine("Error: --config and --config-file are mutually exclusive. Use one or the other.");
-            return 1;
+            return OutputHelper.WriteError(
+                jsonMode,
+                "generate",
+                ErrorCodes.InvalidArgument,
+                "Error: --config and --config-file are mutually exclusive. Use one or the other.");
         }
 
         using var browser = new AssemblyBrowser(assemblyPath.FullName);
@@ -177,20 +198,33 @@ internal class GenerateCommand : Command
             var overloads = browser.ListOverloads(type, method);
             if (overloads.Count == 0)
             {
-                Console.Error.WriteLine($"Error: Method '{method}' not found on type '{type}' in assembly '{assemblyPath.Name}'.");
+                return OutputHelper.WriteError(
+                    jsonMode,
+                    "generate",
+                    ErrorCodes.MethodNotFound,
+                    $"Error: Method '{method}' not found on type '{type}' in assembly '{assemblyPath.Name}'.");
             }
-            else
+
+            var overloadData = overloads.Select((o, i) => new
             {
-                Console.Error.WriteLine($"Error: Could not resolve method '{method}' on type '{type}'. Found {overloads.Count} overload(s):");
-                for (var i = 0; i < overloads.Count; i++)
-                {
-                    Console.Error.WriteLine($"  [{i}] {overloads[i].FullName}");
-                }
+                index = i,
+                fullName = o.FullName,
+                parameters = o.Parameters
+                    .Where(p => !p.IsHiddenThisParameter)
+                    .Select(p => new { name = p.Name, type = p.Type.FullName })
+                    .ToList(),
+            }).ToList();
 
-                Console.Error.WriteLine("Use --parameter-types or --overload-index to disambiguate.");
-            }
+            var message = $"Error: Could not resolve method '{method}' on type '{type}'. Found {overloads.Count} overload(s):\n"
+                + string.Join("\n", overloads.Select((o, i) => $"  [{i}] {o.FullName}"))
+                + "\nUse --parameter-types or --overload-index to disambiguate.";
 
-            return 1;
+            return OutputHelper.WriteError(
+                jsonMode,
+                "generate",
+                ErrorCodes.AmbiguousOverload,
+                message,
+                new { overloads = overloadData });
         }
 
         // Step 1: Start with auto-detect or blank config
@@ -210,8 +244,11 @@ internal class GenerateCommand : Command
             var loadResult = LoadConfigFile(configFile);
             if (loadResult.Error is not null)
             {
-                Console.Error.WriteLine(loadResult.Error);
-                return 1;
+                return OutputHelper.WriteError(
+                    jsonMode,
+                    "generate",
+                    ErrorCodes.InvalidConfig,
+                    loadResult.Error);
             }
 
             config = loadResult.Config!;
@@ -225,8 +262,11 @@ internal class GenerateCommand : Command
             }
             catch (JsonException ex)
             {
-                Console.Error.WriteLine($"Error: Invalid --config JSON: {ex.Message}");
-                return 1;
+                return OutputHelper.WriteError(
+                    jsonMode,
+                    "generate",
+                    ErrorCodes.InvalidConfig,
+                    $"Error: Invalid --config JSON: {ex.Message}");
             }
         }
 
@@ -253,8 +293,11 @@ internal class GenerateCommand : Command
             var error = ConfigurationApplier.ApplyOverrides(config, setValues);
             if (error is not null)
             {
-                Console.Error.WriteLine(error);
-                return 1;
+                return OutputHelper.WriteError(
+                    jsonMode,
+                    "generate",
+                    ErrorCodes.UnknownKey,
+                    error);
             }
         }
 
@@ -263,8 +306,7 @@ internal class GenerateCommand : Command
         var result = generator.Generate(methodDef, config);
 
         string outputText;
-        var json = parseResult.GetValue(_jsonOption);
-        if (json)
+        if (jsonMode)
         {
             outputText = JsonOutputFormatter.Format(result, config);
         }
@@ -274,8 +316,11 @@ internal class GenerateCommand : Command
         }
         else
         {
-            Console.Error.WriteLine($"Error: {result.ErrorMessage}");
-            return 1;
+            return OutputHelper.WriteError(
+                jsonMode,
+                "generate",
+                ErrorCodes.GenerationError,
+                $"Error: {result.ErrorMessage}");
         }
 
         var output = parseResult.GetValue(_outputOption);
