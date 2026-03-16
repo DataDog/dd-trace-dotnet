@@ -186,9 +186,8 @@ namespace Datadog.Trace.Debugger
                                     {
                                         var lineProbeResult = _lineProbeResolver.TryResolveLineProbe(addedProbe, out var location);
                                         var status = lineProbeResult.Status;
-                                        var message = lineProbeResult.Message;
 
-                                        Log.Information("Finished resolving line probe for ProbeID {ProbeID}. Result was '{Status}'. Message was: '{Message}'", addedProbe.Id, status, message);
+                                        LogLineProbeResolution(addedProbe.Id, lineProbeResult, "initial resolution");
                                         switch (status)
                                         {
                                             case LiveProbeResolveStatus.Bound:
@@ -203,8 +202,8 @@ namespace Datadog.Trace.Debugger
                                                 fetchProbeStatus.Add(new FetchProbeStatus(addedProbe.Id, addedProbe.Version ?? 0, new ProbeStatus(addedProbe.Id, Sink.Models.Status.RECEIVED, errorMessage: null)));
                                                 break;
                                             case LiveProbeResolveStatus.Error:
-                                                Log.Warning("ProbeID {ProbeID} error resolving live. Error: {Error}", addedProbe.Id, message);
-                                                fetchProbeStatus.Add(new FetchProbeStatus(addedProbe.Id, addedProbe.Version ?? 0, new ProbeStatus(addedProbe.Id, Sink.Models.Status.ERROR, errorMessage: message)));
+                                                Log.Warning("ProbeID {ProbeID} error resolving live. Error: {Error}", addedProbe.Id, lineProbeResult.Message);
+                                                fetchProbeStatus.Add(new FetchProbeStatus(addedProbe.Id, addedProbe.Version ?? 0, new ProbeStatus(addedProbe.Id, Sink.Models.Status.ERROR, errorMessage: lineProbeResult.Message)));
                                                 break;
                                         }
 
@@ -275,6 +274,11 @@ namespace Datadog.Trace.Debugger
                     ProbeRateLimiter.Instance.TryAddSampler(probe.Id, NopAdaptiveSampler.Instance);
                     break;
             }
+        }
+
+        private static object? JoinLogValues(string[]? values)
+        {
+            return values is { Length: > 0 } ? string.Join(" | ", values) : null;
         }
 
         internal void UpdateRemovedProbeInstrumentations(List<RemoteConfigurationPath> paths)
@@ -354,6 +358,49 @@ namespace Datadog.Trace.Debugger
             return ProbeLocationType.Unrecognized;
         }
 
+        private void LogLineProbeResolution(string probeId, LineProbeResolveResult result, string phase)
+        {
+            var diagnostics = result.Diagnostics;
+            Log.Information(
+                "Finished resolving line probe for ProbeID {ProbeID} during {Phase}. Result was '{Status}'. Reason was '{Reason}'. Message was: '{Message}'. ProbeFile={ProbeFile} ProbeLine={ProbeLine}",
+                [
+                    probeId,
+                    phase,
+                    result.Status,
+                    result.Reason,
+                    result.Message,
+                    diagnostics?.ProbeFile,
+                    diagnostics?.ProbeLine
+                ]);
+
+            if (!Log.IsEnabled(LogEventLevel.Debug) || diagnostics == null)
+            {
+                return;
+            }
+
+            Log.Debug(
+                "Finished resolving line probe for ProbeID {ProbeID} during {Phase}. Result was '{Status}'. Reason was '{Reason}'. Message was: '{Message}'. ProbeFile={ProbeFile} ProbeLine={ProbeLine} RawLines={RawLines} ResolvedSourceFile={ResolvedSourceFile} AssemblyName={AssemblyName} AssemblyLocation={AssemblyLocation} ModuleVersionId={ModuleVersionId} ExceptionType={ExceptionType} LoadedAssemblies={LoadedAssemblies} SymbolicatedAssemblies={SymbolicatedAssemblies} SameFileNameMatches={SameFileNameMatches} SameFileNameExamples={SameFileNameExamples}",
+                [
+                    probeId,
+                    phase,
+                    result.Status,
+                    result.Reason,
+                    result.Message,
+                    diagnostics.ProbeFile,
+                    diagnostics.ProbeLine,
+                    diagnostics.RawLines,
+                    diagnostics.ResolvedSourceFile,
+                    diagnostics.AssemblyName,
+                    diagnostics.AssemblyLocation,
+                    diagnostics.ModuleVersionId,
+                    diagnostics.ExceptionType,
+                    diagnostics.LoadedAssemblyCount,
+                    diagnostics.SymbolicatedAssemblyCount,
+                    diagnostics.SameFileNameMatchCount,
+                    JoinLogValues(diagnostics.SameFileNameExamples)
+                ]);
+        }
+
         private void CheckUnboundProbes(object? sender, AssemblyLoadEventArgs args)
         {
             // A new assembly was loaded, so re-examine whether the probe can now be resolved.
@@ -378,6 +425,31 @@ namespace Datadog.Trace.Debugger
 
                         noLongerUnboundProbes.Add(unboundProbe);
                         lineProbes.Add(new NativeLineProbeDefinition(location!.ProbeDefinition.Id, location.Mvid, location.MethodToken, (int)location.BytecodeOffset, location.LineNumber, location.ProbeDefinition.Where.SourceFile));
+                    }
+                    else if (Log.IsEnabled(LogEventLevel.Debug))
+                    {
+                        var diagnostics = result.Diagnostics;
+                        Log.Debug(
+                            "Rechecked unbound line probe for ProbeID {ProbeId} after assembly load {AssemblyName}. Result was '{Status}'. Reason was '{Reason}'. Message was: '{Message}'. ProbeFile={ProbeFile} ProbeLine={ProbeLine} RawLines={RawLines} ResolvedSourceFile={ResolvedSourceFile} AssemblyName={ResolvedAssemblyName} AssemblyLocation={ResolvedAssemblyLocation} ModuleVersionId={ModuleVersionId} ExceptionType={ExceptionType} LoadedAssemblies={LoadedAssemblies} SymbolicatedAssemblies={SymbolicatedAssemblies} SameFileNameMatches={SameFileNameMatches} SameFileNameExamples={SameFileNameExamples}",
+                            [
+                                unboundProbe.Id,
+                                args.LoadedAssembly.GetName().Name,
+                                result.Status,
+                                result.Reason,
+                                result.Message,
+                                diagnostics?.ProbeFile,
+                                diagnostics?.ProbeLine,
+                                diagnostics?.RawLines,
+                                diagnostics?.ResolvedSourceFile,
+                                diagnostics?.AssemblyName,
+                                diagnostics?.AssemblyLocation,
+                                diagnostics?.ModuleVersionId,
+                                diagnostics?.ExceptionType,
+                                diagnostics?.LoadedAssemblyCount,
+                                diagnostics?.SymbolicatedAssemblyCount,
+                                diagnostics?.SameFileNameMatchCount,
+                                JoinLogValues(diagnostics?.SameFileNameExamples)
+                            ]);
                     }
                 }
 
