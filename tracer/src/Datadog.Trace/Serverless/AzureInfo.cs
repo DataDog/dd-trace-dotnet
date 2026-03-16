@@ -24,8 +24,6 @@ internal sealed class AzureInfo
     private bool? _isIsolatedFunction;
     private bool? _isIsolatedFunctionHostProcess;
     private bool? _isIsolatedFunctionWorkerProcess;
-    private bool _functionWorkerRuntimeCached;
-    private bool _functionExtensionVersionCached;
 
     /// <summary>
     /// Gets the shared singleton instance. Cached after first evaluation.
@@ -82,35 +80,13 @@ internal sealed class AzureInfo
     /// Gets the cached value of the "FUNCTIONS_WORKER_RUNTIME" environment variable.
     /// </summary>
     internal string? AzureFunctionsWorkerRuntime
-    {
-        get
-        {
-            if (!_functionWorkerRuntimeCached)
-            {
-                field = EnvironmentHelpers.GetEnvironmentVariable(PlatformKeys.AzureFunctions.FunctionsWorkerRuntime, defaultValue: string.Empty);
-                _functionWorkerRuntimeCached = true;
-            }
-
-            return field;
-        }
-    }
+        => field ??= EnvironmentHelpers.GetEnvironmentVariable(PlatformKeys.AzureFunctions.FunctionsWorkerRuntime, defaultValue: string.Empty);
 
     /// <summary>
     /// Gets the cached value of the "FUNCTIONS_EXTENSION_VERSION" environment variable.
     /// </summary>
     internal string? AzureFunctionsExtensionVersion
-    {
-        get
-        {
-            if (!_functionExtensionVersionCached)
-            {
-                field = EnvironmentHelpers.GetEnvironmentVariable(PlatformKeys.AzureFunctions.FunctionsExtensionVersion, defaultValue: string.Empty);
-                _functionExtensionVersionCached = true;
-            }
-
-            return field;
-        }
-    }
+        => field ??= EnvironmentHelpers.GetEnvironmentVariable(PlatformKeys.AzureFunctions.FunctionsExtensionVersion, defaultValue: string.Empty);
 
     /// <summary>
     /// Gets a value indicating whether the current environment is the Azure Functions host process
