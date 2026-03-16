@@ -45,11 +45,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Quartz
             activity.AddTag("operation.name", activity.DisplayName);
 
             string? jobName = null;
-            foreach (var tag in activity.Tags)
+            foreach (var tag in activity.TagObjects)
             {
                 if (tag.Key == "job.name")
                 {
-                    jobName = tag.Value;
+                    jobName = tag.Value as string;
                     break;
                 }
             }
