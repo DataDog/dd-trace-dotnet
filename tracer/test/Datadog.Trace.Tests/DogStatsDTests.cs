@@ -49,7 +49,7 @@ namespace Datadog.Trace.Tests
             Assert.True(spans.Count == 1, AssertionFailureMessage(1, spans));
 
             // no methods should be called on the IStatsd other than dispose
-            statsd.Verify(s => s.Dispose(), Times.Once);
+            statsd.Verify(s => s.DisposeAsync(), Times.Once);
             statsd.VerifyNoOtherCalls();
         }
 
@@ -139,6 +139,7 @@ namespace Datadog.Trace.Tests
                 settings.Manager.InitialMutableSettings,
                 settings.Manager.InitialExporterSettings,
                 includeDefaultTags: true,
+                processTags: ["a:b", "c:d"],
                 prefix: null);
 
             // If there's an error during configuration, we get a no-op instance, so using this as a test
@@ -168,6 +169,7 @@ namespace Datadog.Trace.Tests
                 settings.Manager.InitialMutableSettings,
                 settings.Manager.InitialExporterSettings,
                 includeDefaultTags: true,
+                processTags: ["a:b", "c:d"],
                 prefix: null);
 
             // If there's an error during configuration, we get a no-op instance, so using this as a test
@@ -202,6 +204,7 @@ namespace Datadog.Trace.Tests
                 settings.Manager.InitialMutableSettings,
                 settings.Manager.InitialExporterSettings,
                 includeDefaultTags: true,
+                processTags: ["a:b", "c:d"],
                 prefix: null);
 
             // If there's an error during configuration, we get a no-op instance, so using this as a test
@@ -234,6 +237,7 @@ namespace Datadog.Trace.Tests
                 settings.Manager.InitialMutableSettings,
                 settings.Manager.InitialExporterSettings,
                 includeDefaultTags: true,
+                processTags: ["a:b", "c:d"],
                 prefix: null);
 
             // If there's an error during configuration, we get a no-op instance, so using this as a test

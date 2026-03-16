@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 #if NETFRAMEWORK
 using System;
 using System.Linq;
@@ -12,26 +14,25 @@ namespace Datadog.Trace
 {
     internal partial class FrameworkDescription
     {
-        private static FrameworkDescription _instance = null;
+        private const string Unknown = "unknown";
+        private static readonly Lazy<FrameworkDescription> _instance = new(Create);
 
-        public static FrameworkDescription Instance
-        {
-            get { return _instance ?? (_instance = Create()); }
-        }
+        public static FrameworkDescription Instance => _instance.Value;
 
         public static FrameworkDescription Create()
         {
-            var osArchitecture = "unknown";
-            var processArchitecture = "unknown";
-            var frameworkVersion = "unknown";
-            var osDescription = "unknown";
+            var osArchitecture = Unknown;
+            var processArchitecture = Unknown;
+            var frameworkVersion = Unknown;
+            var osDescription = Unknown;
+            Version? runtimeVersion = null;
 
             try
             {
                 osDescription = Environment.OSVersion.VersionString;
                 osArchitecture = Environment.Is64BitOperatingSystem ? "x64" : "x86";
                 processArchitecture = Environment.Is64BitProcess ? "x64" : "x86";
-                frameworkVersion = GetNetFrameworkVersion();
+                GetNetFrameworkVersion(out frameworkVersion, out runtimeVersion);
             }
             catch (Exception ex)
             {
@@ -44,7 +45,8 @@ namespace Datadog.Trace
                 osPlatform: "Windows",
                 osArchitecture: osArchitecture,
                 processArchitecture: processArchitecture,
-                osDescription: osDescription);
+                osDescription: osDescription,
+                runtimeVersion ?? Environment.Version);
         }
 
         public bool IsCoreClr()
@@ -52,13 +54,11 @@ namespace Datadog.Trace
             return false;
         }
 
-        private static string GetNetFrameworkVersion()
+        private static void GetNetFrameworkVersion(out string frameworkVersion, out Version version)
         {
-            string productVersion = null;
-
             try
             {
-                object registryValue;
+                object? registryValue;
 
                 using (var baseKey = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Default))
                 using (var subKey = baseKey.OpenSubKey(@"SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full\"))
@@ -70,7 +70,12 @@ namespace Datadog.Trace
                 {
                     // find the known version on the list with the largest release number
                     // that is lower than or equal to the release number in the Windows Registry
-                    productVersion = DotNetFrameworkVersionMapping.FirstOrDefault(t => release >= t.Item1)?.Item2;
+                    if (GetDotNetFrameworkProductMapping(release, out var productVersion, out var runtime))
+                    {
+                        frameworkVersion = productVersion;
+                        version = runtime;
+                        return;
+                    }
                 }
             }
             catch (Exception e)
@@ -78,20 +83,26 @@ namespace Datadog.Trace
                 Log.Error(e, "Error getting .NET Framework version from Windows Registry");
             }
 
-            if (productVersion == null)
+            // if we fail to extract version from assembly path,
+            // fall back to the [AssemblyInformationalVersion] or [AssemblyFileVersion]
+            if (GetVersionFromAssemblyAttributes() is { } foundVersion)
             {
-                // if we fail to extract version from assembly path,
-                // fall back to the [AssemblyInformationalVersion] or [AssemblyFileVersion]
-                productVersion = GetVersionFromAssemblyAttributes();
+                frameworkVersion = foundVersion;
+                if (Version.TryParse(foundVersion, out var parsedVersion))
+                {
+                    version = parsedVersion;
+                }
+                else
+                {
+                    version = Environment.Version;
+                }
+
+                return;
             }
 
-            if (productVersion == null)
-            {
-                // at this point, everything else has failed (this is probably the same as [AssemblyFileVersion] above)
-                productVersion = Environment.Version.ToString();
-            }
-
-            return productVersion;
+            // at this point, everything else has failed (this is probably the same as [AssemblyFileVersion] above)
+            version = Environment.Version;
+            frameworkVersion = version.ToString();
         }
     }
 }

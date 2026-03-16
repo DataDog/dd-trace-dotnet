@@ -1,4 +1,4 @@
-﻿{
+{
   "service": "test",
   "env": "test",
   "version": "0",
@@ -66,7 +66,7 @@
                   "symbols": [
                     {
                       "name": "this",
-                      "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.AsyncMethod+<>c",
+                      "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.AsyncMethod",
                       "symbol_type": "arg",
                       "line": 0
                     }

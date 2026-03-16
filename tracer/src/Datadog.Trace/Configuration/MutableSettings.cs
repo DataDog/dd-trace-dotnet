@@ -247,13 +247,13 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
     /// <summary>
     /// Gets the application's git repository url.
     /// </summary>
-    /// <seealso cref="ConfigurationKeys.GitRepositoryUrl"/>
+    /// <seealso cref="ConfigurationKeys.CIVisibility.GitRepositoryUrl"/>
     public string? GitRepositoryUrl { get; }
 
     /// <summary>
     /// Gets the application's git commit hash.
     /// </summary>
-    /// <seealso cref="ConfigurationKeys.GitCommitSha"/>
+    /// <seealso cref="ConfigurationKeys.CIVisibility.GitCommitSha"/>
     public string? GitCommitSha { get; }
 
     // Infra
@@ -934,18 +934,18 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         serviceVersion = GetExplicitSettingOrTag(serviceVersion, globalTags, Tags.Version, ConfigurationKeys.ServiceVersion, telemetry);
 
         var gitCommitSha = config
-                          .WithKeys(ConfigurationKeys.GitCommitSha)
+                          .WithKeys(ConfigurationKeys.CIVisibility.GitCommitSha)
                           .AsString();
 
         // DD_GIT_COMMIT_SHA has precedence over DD_TAGS
-        gitCommitSha = GetExplicitSettingOrTag(gitCommitSha, globalTags, Ci.Tags.CommonTags.GitCommit, ConfigurationKeys.GitCommitSha, telemetry);
+        gitCommitSha = GetExplicitSettingOrTag(gitCommitSha, globalTags, Ci.Tags.CommonTags.GitCommit, ConfigurationKeys.CIVisibility.GitCommitSha, telemetry);
 
         var gitRepositoryUrl = config
-                              .WithKeys(ConfigurationKeys.GitRepositoryUrl)
+                              .WithKeys(ConfigurationKeys.CIVisibility.GitRepositoryUrl)
                               .AsString();
 
         // DD_GIT_REPOSITORY_URL has precedence over DD_TAGS
-        gitRepositoryUrl = GetExplicitSettingOrTag(gitRepositoryUrl, globalTags, Ci.Tags.CommonTags.GitRepository, ConfigurationKeys.GitRepositoryUrl, telemetry);
+        gitRepositoryUrl = GetExplicitSettingOrTag(gitRepositoryUrl, globalTags, Ci.Tags.CommonTags.GitRepository, ConfigurationKeys.CIVisibility.GitRepositoryUrl, telemetry);
 
         var otelTraceEnabled = config
                               .WithKeys(ConfigurationKeys.OpenTelemetry.TracesExporter)

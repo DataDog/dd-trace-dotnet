@@ -38,7 +38,7 @@ public class WafLibraryRequiredTest : SettingsTestsBase
 
     static WafLibraryRequiredTest()
     {
-        var result = WafLibraryInvoker.Initialize();
+        var result = WafLibraryInvoker.Initialize(Environment.GetEnvironmentVariable(ConfigurationKeys.DotNetTracerHome), Environment.GetEnvironmentVariable(ConfigurationKeys.InternalTraceNativeEnginePath));
         WafLibraryInvoker = result.WafLibraryInvoker;
     }
 
@@ -212,7 +212,7 @@ public class WafLibraryRequiredTest : SettingsTestsBase
         return CreateConfigurationState(creation, ruleFile, null, asmConfigs, asmDataConfigs);
     }
 
-    private static ConfigurationState CreateConfigurationState(bool creation, string? ruleFile = null, Dictionary<string, RuleSet>? rulesetConfigs = null, Dictionary<string, AppSec.Rcm.Models.Asm.Payload>? asmConfigs = null, Dictionary<string, AppSec.Rcm.Models.AsmData.Payload>? asmDataConfigs = null)
+    private static ConfigurationState CreateConfigurationState(bool creation, string? ruleFile = null, List<KeyValuePair<string, RuleSet>>? rulesetConfigs = null, Dictionary<string, AppSec.Rcm.Models.Asm.Payload>? asmConfigs = null, Dictionary<string, AppSec.Rcm.Models.AsmData.Payload>? asmDataConfigs = null)
     {
         var source = CreateConfigurationSource((ConfigurationKeys.AppSec.Rules, ruleFile), (ConfigurationKeys.AppSec.Enabled, "1"));
         var settings = new SecuritySettings(source, NullConfigurationTelemetry.Instance);

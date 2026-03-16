@@ -5,6 +5,7 @@
 
 using System;
 using System.IO;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
@@ -12,9 +13,6 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 internal sealed class LambdaMetadata
 {
     private const string ExtensionFullPath = "/opt/extensions/datadog-agent";
-    internal const string ExtensionPathEnvVar = "_DD_EXTENSION_PATH";
-    internal const string FunctionNameEnvVar = "AWS_LAMBDA_FUNCTION_NAME";
-    internal const string HandlerEnvVar = "_HANDLER";
 
     /// <summary>
     /// Gets the paths we don't want to trace when running in Lambda
@@ -39,11 +37,11 @@ internal sealed class LambdaMetadata
 
     public static LambdaMetadata Create(string extensionPath = ExtensionFullPath)
     {
-        var functionName = EnvironmentHelpers.GetEnvironmentVariable(FunctionNameEnvVar);
+        var functionName = EnvironmentHelpers.GetEnvironmentVariable(PlatformKeys.Aws.LambdaFunctionName);
 
         var isRunningInLambda = !string.IsNullOrEmpty(functionName)
                              && File.Exists(
-                                    EnvironmentHelpers.GetEnvironmentVariable(ExtensionPathEnvVar)
+                                    EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.Aws.LambdaExtensionPath)
                                  ?? extensionPath);
 
         if (!isRunningInLambda)
@@ -52,7 +50,7 @@ internal sealed class LambdaMetadata
             return new LambdaMetadata(isRunningInLambda: false, functionName, handlerName: null, serviceName: null);
         }
 
-        var handlerName = EnvironmentHelpers.GetEnvironmentVariable(HandlerEnvVar);
+        var handlerName = EnvironmentHelpers.GetEnvironmentVariable(PlatformKeys.Aws.LambdaHandler);
         var serviceName = handlerName?.IndexOf("::", StringComparison.Ordinal) switch
         {
             null => null, // not provided

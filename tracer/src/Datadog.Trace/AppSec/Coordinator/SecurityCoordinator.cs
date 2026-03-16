@@ -74,7 +74,7 @@ internal readonly partial struct SecurityCoordinator
                          : additiveContext.Run(args, _security.Settings.WafTimeoutMicroSeconds);
 
             SetErrorInformation(isRasp, result);
-            SecurityReporter.RecordTelemetry(result);
+            SecurityReporter.RecordWafTelemetry(result);
         }
         catch (Exception ex) when (ex is not BlockException)
         {
@@ -140,7 +140,7 @@ internal readonly partial struct SecurityCoordinator
                 result = additiveContext.Run(userAddresses, _security.Settings.WafTimeoutMicroSeconds);
                 SetErrorInformation(false, result);
                 additiveContext.CommitUserRuns(userAddresses, fromSdk);
-                RecordTelemetry(result);
+                SecurityReporter.RecordWafTelemetry(result);
 
                 if (_localRootSpan.Context.TraceContext is not null)
                 {
@@ -163,24 +163,6 @@ internal readonly partial struct SecurityCoordinator
         }
 
         return result;
-    }
-
-    private static void RecordTelemetry(IResult? result)
-    {
-        if (result == null)
-        {
-            return;
-        }
-
-        var metric = result switch
-        {
-            { Timeout: true } => MetricTags.WafAnalysis.WafTimeout,
-            { ShouldBlock: true } => MetricTags.WafAnalysis.RuleTriggeredAndBlocked,
-            { ShouldReportSecurityResult: true } => MetricTags.WafAnalysis.RuleTriggered,
-            _ => MetricTags.WafAnalysis.Normal,
-        };
-
-        TelemetryFactory.Metrics.RecordCountWafRequests(metric);
     }
 
     public void AddResponseHeadersToSpan()

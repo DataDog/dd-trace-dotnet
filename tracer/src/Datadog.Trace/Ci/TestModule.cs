@@ -20,13 +20,14 @@ using Datadog.Trace.Ci.Ipc.Messages;
 using Datadog.Trace.Ci.Tagging;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Ci.Telemetry;
-using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Ci;
@@ -140,12 +141,12 @@ public sealed class TestModule
             if (context.SpanContext is { } sessionContext)
             {
                 tags.SessionId = sessionContext.SpanId;
-                if (environmentVariables.TryGetValue<string>(TestSuiteVisibilityTags.TestSessionCommandEnvironmentVariable, out var testSessionCommand))
+                if (environmentVariables.TryGetValue<string>(ConfigurationKeys.CIVisibility.TestSessionCommand, out var testSessionCommand))
                 {
                     tags.Command = testSessionCommand;
                 }
 
-                if (environmentVariables.TryGetValue<string>(TestSuiteVisibilityTags.TestSessionWorkingDirectoryEnvironmentVariable, out var testSessionWorkingDirectory))
+                if (environmentVariables.TryGetValue<string>(ConfigurationKeys.CIVisibility.TestSessionWorkingDirectory, out var testSessionWorkingDirectory))
                 {
                     tags.WorkingDirectory = testSessionWorkingDirectory;
                 }
@@ -422,7 +423,8 @@ public sealed class TestModule
                 {
                     using var fStream = File.OpenWrite(codeCoveragePath);
                     using var sWriter = new StreamWriter(fStream, Encoding.UTF8, 4096, false);
-                    new JsonSerializer().Serialize(sWriter, globalCoverage);
+                    using var jsonWriter = new JsonTextWriter(sWriter) { ArrayPool = JsonArrayPool.Shared };
+                    JsonSerializer.Create().Serialize(jsonWriter, globalCoverage);
                 }
                 catch (Exception ex)
                 {

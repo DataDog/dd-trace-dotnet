@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.Debugger.Configurations.Models;
@@ -16,7 +17,7 @@ internal sealed record SnapshotSegment
     public SnapshotSegment(string dsl, string json, string str)
     {
         Dsl = dsl;
-        Json = json == null ? null : JObject.Parse(json);
+        Json = json == null ? null : JsonHelper.ParseJObject(json);
         Str = str;
     }
 

@@ -64,6 +64,7 @@ internal interface ITestResult : IDuckType
     /// <summary>
     /// Gets a list of assertion results associated with the test.
     /// </summary>
+    [DuckField(Name = "_assertionResults", FallbackToBaseTypes = true)]
     IList? AssertionResults { get; }
 
     /// <summary>

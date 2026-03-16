@@ -61,15 +61,15 @@ public class SeleniumTests : TestingFrameworkEvpTest
         var sessionWorkingDirectory = Path.GetTempPath();
         SetEnvironmentVariable(HttpHeaderNames.TraceId.Replace(".", "_").Replace("-", "_").ToUpperInvariant(), sessionId.ToString(CultureInfo.InvariantCulture));
         SetEnvironmentVariable(HttpHeaderNames.ParentId.Replace(".", "_").Replace("-", "_").ToUpperInvariant(), sessionId.ToString(CultureInfo.InvariantCulture));
-        SetEnvironmentVariable(TestSuiteVisibilityTags.TestSessionCommandEnvironmentVariable, sessionCommand);
-        SetEnvironmentVariable(TestSuiteVisibilityTags.TestSessionWorkingDirectoryEnvironmentVariable, sessionWorkingDirectory);
+        SetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestSessionCommand, sessionCommand);
+        SetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestSessionWorkingDirectory, sessionWorkingDirectory);
 
         const string gitRepositoryUrl = "git@github.com:DataDog/dd-trace-dotnet.git";
         const string gitBranch = "main";
         const string gitCommitSha = "3245605c3d1edc67226d725799ee969c71f7632b";
-        SetEnvironmentVariable(CIEnvironmentValues.Constants.DDGitRepository, gitRepositoryUrl);
-        SetEnvironmentVariable(CIEnvironmentValues.Constants.DDGitBranch, gitBranch);
-        SetEnvironmentVariable(CIEnvironmentValues.Constants.DDGitCommitSha, gitCommitSha);
+        SetEnvironmentVariable(ConfigurationKeys.CIVisibility.GitRepositoryUrl, gitRepositoryUrl);
+        SetEnvironmentVariable(ConfigurationKeys.CIVisibility.GitBranch, gitBranch);
+        SetEnvironmentVariable(ConfigurationKeys.CIVisibility.GitCommitSha, gitCommitSha);
         SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "1");
 
         var codeCoverageReceived = new StrongBox<bool>(false);

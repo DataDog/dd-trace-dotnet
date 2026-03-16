@@ -24,10 +24,10 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Transport
     internal sealed class RemoteConfigurationApi : IRemoteConfigurationApi
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RemoteConfigurationApi));
+        private static readonly JsonSerializerSettings SerializerSettings = new();
 
         private readonly IApiRequestFactory _apiRequestFactory;
-        private readonly string? _containerId;
-        private readonly string? _entityId;
+        private readonly ContainerMetadata _containerMetadata;
         private string? _configEndpoint = null;
 
         private RemoteConfigurationApi(IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService)
@@ -39,8 +39,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Transport
                     _configEndpoint = config.ConfigurationEndpoint;
                 });
 
-            _containerId = ContainerMetadata.GetContainerId();
-            _entityId = ContainerMetadata.GetEntityId();
+            _containerMetadata = ContainerMetadata.Instance;
         }
 
         public static RemoteConfigurationApi Create(IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService)
@@ -60,22 +59,9 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Transport
             var uri = _apiRequestFactory.GetEndpoint(configEndpoint);
             var apiRequest = _apiRequestFactory.Create(uri);
 
-            var requestContent = JsonConvert.SerializeObject(request);
-            Log.Debug("Sending Remote Configuration Request: {Content}", requestContent);
-            var bytes = Encoding.UTF8.GetBytes(requestContent);
-            var payload = new ArraySegment<byte>(bytes);
+            apiRequest.AddContainerMetadataHeaders(_containerMetadata);
 
-            if (_containerId != null)
-            {
-                apiRequest.AddHeader(AgentHttpHeaderNames.ContainerId, _containerId);
-            }
-
-            if (_entityId != null)
-            {
-                apiRequest.AddHeader(AgentHttpHeaderNames.EntityId, _entityId);
-            }
-
-            using var apiResponse = await apiRequest.PostAsync(payload, MimeTypes.Json).ConfigureAwait(false);
+            using var apiResponse = await apiRequest.PostAsJsonAsync(request, MultipartCompression.None, SerializerSettings).ConfigureAwait(false);
             var isRcmDisabled = apiResponse.StatusCode == 404;
             if (isRcmDisabled)
             {

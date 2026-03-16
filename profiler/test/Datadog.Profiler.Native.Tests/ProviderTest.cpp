@@ -15,6 +15,7 @@
 #include "IAppDomainStore.h"
 #include "IFrameStore.h"
 #include "MemoryResourceManager.h"
+#include "OpSysTools.h"
 #include "ProfilerMockedInterface.h"
 #include "RawCpuSample.h"
 #include "RawSampleTransformer.h"
@@ -151,6 +152,7 @@ TEST(WallTimeProviderTest, CheckAppDomainInfoAndRuntimeId)
     size_t currentSample = 0;
     auto sample = std::make_shared<Sample>(0ns, std::string_view{}, 10);
 
+    auto expectedPid = OpSysTools::GetProcId();
     while (samples->MoveNext(sample))
     {
         const auto& currentRuntimeId = sample->GetRuntimeId();
@@ -166,8 +168,6 @@ TEST(WallTimeProviderTest, CheckAppDomainInfoAndRuntimeId)
         std::stringstream builder;
         builder << "AD_" << expectedAppDomainId[currentSample];
         std::string expectedAppDomainName(builder.str());
-
-        auto expectedPid = expectedAppDomainId[currentSample];
 
         auto labels = sample->GetLabels();
         for (auto const& label : labels)

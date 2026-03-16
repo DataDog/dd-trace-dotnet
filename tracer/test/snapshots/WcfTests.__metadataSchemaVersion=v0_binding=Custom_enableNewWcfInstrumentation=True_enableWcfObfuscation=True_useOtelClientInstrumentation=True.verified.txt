@@ -1,0 +1,879 @@
+[
+  {
+    TraceId: Id_1,
+    SpanId: Id_2,
+    Name: Begin_ServerAsyncAdd_false_false,
+    Resource: Begin_ServerAsyncAdd_false_false,
+    Service: Samples.Wcf,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_3,
+    Name: dotnet_wcf.client.request,
+    Resource: WcfSample/ICalculator/ServerAsyncAdd,
+    Service: Samples.Wcf,
+    Type: http,
+    ParentId: Id_2,
+    Error: 1,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      net.peer.name: localhost,
+      otel.library.name: OpenTelemetry.Instrumentation.Wcf,
+      otel.library.version: 1.15.0-beta.1,
+      otel.status_code: STATUS_CODE_ERROR,
+      otel.trace_id: Guid_2,
+      rpc.method: ServerAsyncAdd,
+      rpc.service: WcfSampleICalculator,
+      rpc.system: dotnet_wcf,
+      service.name: Samples.Wcf,
+      span.kind: client,
+      telemetry.sdk.language: dotnet,
+      telemetry.sdk.name: opentelemetry,
+      telemetry.sdk.version: 1.15.0,
+      version: 1.0.0,
+      wcf.channel.path: /WcfSample/123,123/CalculatorService,
+      wcf.channel.scheme: http
+    },
+    Metrics: {
+      net.peer.port: 8585.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_4,
+    Name: http.request,
+    Resource: POST localhost:00000/WcfSample/?/CalculatorService,
+    Service: Samples.Wcf-http-client,
+    Type: http,
+    ParentId: Id_3,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      error.msg: The remote server returned an error: (500) Internal Server Error.,
+      error.stack:
+System.Net.WebException: The remote server returned an error: (500) Internal Server Error.
+at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult),
+      error.type: System.Net.WebException,
+      http.method: POST,
+      http.status_code: 500,
+      http.url: http://localhost:00000/WcfSample/123,123/CalculatorService,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.Wcf,
+      _dd.svc_src: http-client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_6,
+    Name: Begin_ServerAsyncAdd_false_true,
+    Resource: Begin_ServerAsyncAdd_false_true,
+    Service: Samples.Wcf,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_7,
+    Name: dotnet_wcf.client.request,
+    Resource: WcfSample/ICalculator/ServerAsyncAdd,
+    Service: Samples.Wcf,
+    Type: http,
+    ParentId: Id_6,
+    Error: 1,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      net.peer.name: localhost,
+      otel.library.name: OpenTelemetry.Instrumentation.Wcf,
+      otel.library.version: 1.15.0-beta.1,
+      otel.status_code: STATUS_CODE_ERROR,
+      otel.trace_id: Guid_3,
+      rpc.method: ServerAsyncAdd,
+      rpc.service: WcfSampleICalculator,
+      rpc.system: dotnet_wcf,
+      service.name: Samples.Wcf,
+      span.kind: client,
+      telemetry.sdk.language: dotnet,
+      telemetry.sdk.name: opentelemetry,
+      telemetry.sdk.version: 1.15.0,
+      version: 1.0.0,
+      wcf.channel.path: /WcfSample/123,123/CalculatorService,
+      wcf.channel.scheme: http
+    },
+    Metrics: {
+      net.peer.port: 8585.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_8,
+    Name: http.request,
+    Resource: POST localhost:00000/WcfSample/?/CalculatorService,
+    Service: Samples.Wcf-http-client,
+    Type: http,
+    ParentId: Id_7,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      error.msg: The remote server returned an error: (500) Internal Server Error.,
+      error.stack:
+System.Net.WebException: The remote server returned an error: (500) Internal Server Error.
+at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult),
+      error.type: System.Net.WebException,
+      http.method: POST,
+      http.status_code: 500,
+      http.url: http://localhost:00000/WcfSample/123,123/CalculatorService,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.Wcf,
+      _dd.svc_src: http-client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_9,
+    SpanId: Id_10,
+    Name: Begin_ServerAsyncAdd_true_false,
+    Resource: Begin_ServerAsyncAdd_true_false,
+    Service: Samples.Wcf,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_9,
+    SpanId: Id_11,
+    Name: dotnet_wcf.client.request,
+    Resource: WcfSample/ICalculator/ServerAsyncAdd,
+    Service: Samples.Wcf,
+    Type: http,
+    ParentId: Id_10,
+    Error: 1,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      net.peer.name: localhost,
+      otel.library.name: OpenTelemetry.Instrumentation.Wcf,
+      otel.library.version: 1.15.0-beta.1,
+      otel.status_code: STATUS_CODE_ERROR,
+      otel.trace_id: Guid_4,
+      rpc.method: ServerAsyncAdd,
+      rpc.service: WcfSampleICalculator,
+      rpc.system: dotnet_wcf,
+      service.name: Samples.Wcf,
+      span.kind: client,
+      telemetry.sdk.language: dotnet,
+      telemetry.sdk.name: opentelemetry,
+      telemetry.sdk.version: 1.15.0,
+      version: 1.0.0,
+      wcf.channel.path: /WcfSample/123,123/CalculatorService,
+      wcf.channel.scheme: http
+    },
+    Metrics: {
+      net.peer.port: 8585.0
+    }
+  },
+  {
+    TraceId: Id_9,
+    SpanId: Id_12,
+    Name: http.request,
+    Resource: POST localhost:00000/WcfSample/?/CalculatorService,
+    Service: Samples.Wcf-http-client,
+    Type: http,
+    ParentId: Id_11,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      error.msg: The remote server returned an error: (500) Internal Server Error.,
+      error.stack:
+System.Net.WebException: The remote server returned an error: (500) Internal Server Error.
+at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult),
+      error.type: System.Net.WebException,
+      http.method: POST,
+      http.status_code: 500,
+      http.url: http://localhost:00000/WcfSample/123,123/CalculatorService,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.Wcf,
+      _dd.svc_src: http-client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_13,
+    SpanId: Id_14,
+    Name: Begin_ServerAsyncAdd_true_true,
+    Resource: Begin_ServerAsyncAdd_true_true,
+    Service: Samples.Wcf,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_13,
+    SpanId: Id_15,
+    Name: dotnet_wcf.client.request,
+    Resource: WcfSample/ICalculator/ServerAsyncAdd,
+    Service: Samples.Wcf,
+    Type: http,
+    ParentId: Id_14,
+    Error: 1,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      net.peer.name: localhost,
+      otel.library.name: OpenTelemetry.Instrumentation.Wcf,
+      otel.library.version: 1.15.0-beta.1,
+      otel.status_code: STATUS_CODE_ERROR,
+      otel.trace_id: Guid_5,
+      rpc.method: ServerAsyncAdd,
+      rpc.service: WcfSampleICalculator,
+      rpc.system: dotnet_wcf,
+      service.name: Samples.Wcf,
+      span.kind: client,
+      telemetry.sdk.language: dotnet,
+      telemetry.sdk.name: opentelemetry,
+      telemetry.sdk.version: 1.15.0,
+      version: 1.0.0,
+      wcf.channel.path: /WcfSample/123,123/CalculatorService,
+      wcf.channel.scheme: http
+    },
+    Metrics: {
+      net.peer.port: 8585.0
+    }
+  },
+  {
+    TraceId: Id_13,
+    SpanId: Id_16,
+    Name: http.request,
+    Resource: POST localhost:00000/WcfSample/?/CalculatorService,
+    Service: Samples.Wcf-http-client,
+    Type: http,
+    ParentId: Id_15,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      error.msg: The remote server returned an error: (500) Internal Server Error.,
+      error.stack:
+System.Net.WebException: The remote server returned an error: (500) Internal Server Error.
+at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult),
+      error.type: System.Net.WebException,
+      http.method: POST,
+      http.status_code: 500,
+      http.url: http://localhost:00000/WcfSample/123,123/CalculatorService,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.Wcf,
+      _dd.svc_src: http-client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_17,
+    SpanId: Id_18,
+    Name: BeginEnd_ServerSyncAdd,
+    Resource: BeginEnd_ServerSyncAdd,
+    Service: Samples.Wcf,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_17,
+    SpanId: Id_19,
+    Name: dotnet_wcf.client.request,
+    Resource: WcfSample/ICalculator/ServerSyncAdd,
+    Service: Samples.Wcf,
+    Type: http,
+    ParentId: Id_18,
+    Error: 1,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      net.peer.name: localhost,
+      otel.library.name: OpenTelemetry.Instrumentation.Wcf,
+      otel.library.version: 1.15.0-beta.1,
+      otel.status_code: STATUS_CODE_ERROR,
+      otel.trace_id: Guid_6,
+      rpc.method: ServerSyncAdd,
+      rpc.service: WcfSampleICalculator,
+      rpc.system: dotnet_wcf,
+      service.name: Samples.Wcf,
+      span.kind: client,
+      telemetry.sdk.language: dotnet,
+      telemetry.sdk.name: opentelemetry,
+      telemetry.sdk.version: 1.15.0,
+      version: 1.0.0,
+      wcf.channel.path: /WcfSample/123,123/CalculatorService,
+      wcf.channel.scheme: http
+    },
+    Metrics: {
+      net.peer.port: 8585.0
+    }
+  },
+  {
+    TraceId: Id_17,
+    SpanId: Id_20,
+    Name: http.request,
+    Resource: POST localhost:00000/WcfSample/?/CalculatorService,
+    Service: Samples.Wcf-http-client,
+    Type: http,
+    ParentId: Id_19,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      error.msg: The remote server returned an error: (500) Internal Server Error.,
+      error.stack:
+System.Net.WebException: The remote server returned an error: (500) Internal Server Error.
+at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult),
+      error.type: System.Net.WebException,
+      http.method: POST,
+      http.status_code: 500,
+      http.url: http://localhost:00000/WcfSample/123,123/CalculatorService,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.Wcf,
+      _dd.svc_src: http-client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_21,
+    SpanId: Id_22,
+    Name: BeginEnd_ServerTaskAdd,
+    Resource: BeginEnd_ServerTaskAdd,
+    Service: Samples.Wcf,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_21,
+    SpanId: Id_23,
+    Name: dotnet_wcf.client.request,
+    Resource: WcfSample/ICalculator/ServerTaskAdd,
+    Service: Samples.Wcf,
+    Type: http,
+    ParentId: Id_22,
+    Error: 1,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      net.peer.name: localhost,
+      otel.library.name: OpenTelemetry.Instrumentation.Wcf,
+      otel.library.version: 1.15.0-beta.1,
+      otel.status_code: STATUS_CODE_ERROR,
+      otel.trace_id: Guid_7,
+      rpc.method: ServerTaskAdd,
+      rpc.service: WcfSampleICalculator,
+      rpc.system: dotnet_wcf,
+      service.name: Samples.Wcf,
+      span.kind: client,
+      telemetry.sdk.language: dotnet,
+      telemetry.sdk.name: opentelemetry,
+      telemetry.sdk.version: 1.15.0,
+      version: 1.0.0,
+      wcf.channel.path: /WcfSample/123,123/CalculatorService,
+      wcf.channel.scheme: http
+    },
+    Metrics: {
+      net.peer.port: 8585.0
+    }
+  },
+  {
+    TraceId: Id_21,
+    SpanId: Id_24,
+    Name: http.request,
+    Resource: POST localhost:00000/WcfSample/?/CalculatorService,
+    Service: Samples.Wcf-http-client,
+    Type: http,
+    ParentId: Id_23,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      error.msg: The remote server returned an error: (500) Internal Server Error.,
+      error.stack:
+System.Net.WebException: The remote server returned an error: (500) Internal Server Error.
+at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult),
+      error.type: System.Net.WebException,
+      http.method: POST,
+      http.status_code: 500,
+      http.url: http://localhost:00000/WcfSample/123,123/CalculatorService,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.Wcf,
+      _dd.svc_src: http-client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_25,
+    SpanId: Id_26,
+    Name: ServerEmptyActionAdd,
+    Resource: ServerEmptyActionAdd,
+    Service: Samples.Wcf,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_25,
+    SpanId: Id_27,
+    Name: dotnet_wcf.client.request,
+    Resource: OpenTelemetry.Instrumentation.Wcf.OutgoingRequest,
+    Service: Samples.Wcf,
+    Type: http,
+    ParentId: Id_26,
+    Error: 1,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      net.peer.name: localhost,
+      otel.library.name: OpenTelemetry.Instrumentation.Wcf,
+      otel.library.version: 1.15.0-beta.1,
+      otel.status_code: STATUS_CODE_ERROR,
+      otel.trace_id: Guid_8,
+      rpc.method: ServerEmptyActionAdd,
+      rpc.service: WcfSampleICalculator,
+      rpc.system: dotnet_wcf,
+      service.name: Samples.Wcf,
+      span.kind: client,
+      telemetry.sdk.language: dotnet,
+      telemetry.sdk.name: opentelemetry,
+      telemetry.sdk.version: 1.15.0,
+      version: 1.0.0,
+      wcf.channel.path: /WcfSample/123,123/CalculatorService,
+      wcf.channel.scheme: http
+    },
+    Metrics: {
+      net.peer.port: 8585.0
+    }
+  },
+  {
+    TraceId: Id_25,
+    SpanId: Id_28,
+    Name: http.request,
+    Resource: POST localhost:00000/WcfSample/?/CalculatorService,
+    Service: Samples.Wcf-http-client,
+    Type: http,
+    ParentId: Id_27,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      error.msg: The remote server returned an error: (500) Internal Server Error.,
+      error.stack:
+System.Net.WebException: The remote server returned an error: (500) Internal Server Error.
+at System.Net.HttpWebRequest.GetResponse(),
+      error.type: System.Net.WebException,
+      http.method: POST,
+      http.status_code: 500,
+      http.url: http://localhost:00000/WcfSample/123,123/CalculatorService,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.Wcf,
+      _dd.svc_src: http-client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_29,
+    SpanId: Id_30,
+    Name: Sync_ServerAsyncAdd,
+    Resource: Sync_ServerAsyncAdd,
+    Service: Samples.Wcf,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_31,
+    SpanId: Id_32,
+    Name: Sync_ServerSyncAdd,
+    Resource: Sync_ServerSyncAdd,
+    Service: Samples.Wcf,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_33,
+    SpanId: Id_34,
+    Name: Sync_ServerTaskAdd,
+    Resource: Sync_ServerTaskAdd,
+    Service: Samples.Wcf,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_35,
+    SpanId: Id_36,
+    Name: Task_ServerAsyncAdd,
+    Resource: Task_ServerAsyncAdd,
+    Service: Samples.Wcf,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_35,
+    SpanId: Id_37,
+    Name: dotnet_wcf.client.request,
+    Resource: WcfSample/ICalculator/ServerAsyncAdd,
+    Service: Samples.Wcf,
+    Type: http,
+    ParentId: Id_36,
+    Error: 1,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      net.peer.name: localhost,
+      otel.library.name: OpenTelemetry.Instrumentation.Wcf,
+      otel.library.version: 1.15.0-beta.1,
+      otel.status_code: STATUS_CODE_ERROR,
+      otel.trace_id: Guid_9,
+      rpc.method: ServerAsyncAdd,
+      rpc.service: WcfSampleICalculator,
+      rpc.system: dotnet_wcf,
+      service.name: Samples.Wcf,
+      span.kind: client,
+      telemetry.sdk.language: dotnet,
+      telemetry.sdk.name: opentelemetry,
+      telemetry.sdk.version: 1.15.0,
+      version: 1.0.0,
+      wcf.channel.path: /WcfSample/123,123/CalculatorService,
+      wcf.channel.scheme: http
+    },
+    Metrics: {
+      net.peer.port: 8585.0
+    }
+  },
+  {
+    TraceId: Id_35,
+    SpanId: Id_38,
+    Name: http.request,
+    Resource: POST localhost:00000/WcfSample/?/CalculatorService,
+    Service: Samples.Wcf-http-client,
+    Type: http,
+    ParentId: Id_37,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      error.msg: The remote server returned an error: (500) Internal Server Error.,
+      error.stack:
+System.Net.WebException: The remote server returned an error: (500) Internal Server Error.
+at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult),
+      error.type: System.Net.WebException,
+      http.method: POST,
+      http.status_code: 500,
+      http.url: http://localhost:00000/WcfSample/123,123/CalculatorService,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.Wcf,
+      _dd.svc_src: http-client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_39,
+    SpanId: Id_40,
+    Name: Task_ServerSyncAdd,
+    Resource: Task_ServerSyncAdd,
+    Service: Samples.Wcf,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_39,
+    SpanId: Id_41,
+    Name: dotnet_wcf.client.request,
+    Resource: WcfSample/ICalculator/ServerSyncAdd,
+    Service: Samples.Wcf,
+    Type: http,
+    ParentId: Id_40,
+    Error: 1,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      net.peer.name: localhost,
+      otel.library.name: OpenTelemetry.Instrumentation.Wcf,
+      otel.library.version: 1.15.0-beta.1,
+      otel.status_code: STATUS_CODE_ERROR,
+      otel.trace_id: Guid_10,
+      rpc.method: ServerSyncAdd,
+      rpc.service: WcfSampleICalculator,
+      rpc.system: dotnet_wcf,
+      service.name: Samples.Wcf,
+      span.kind: client,
+      telemetry.sdk.language: dotnet,
+      telemetry.sdk.name: opentelemetry,
+      telemetry.sdk.version: 1.15.0,
+      version: 1.0.0,
+      wcf.channel.path: /WcfSample/123,123/CalculatorService,
+      wcf.channel.scheme: http
+    },
+    Metrics: {
+      net.peer.port: 8585.0
+    }
+  },
+  {
+    TraceId: Id_39,
+    SpanId: Id_42,
+    Name: http.request,
+    Resource: POST localhost:00000/WcfSample/?/CalculatorService,
+    Service: Samples.Wcf-http-client,
+    Type: http,
+    ParentId: Id_41,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      error.msg: The remote server returned an error: (500) Internal Server Error.,
+      error.stack:
+System.Net.WebException: The remote server returned an error: (500) Internal Server Error.
+at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult),
+      error.type: System.Net.WebException,
+      http.method: POST,
+      http.status_code: 500,
+      http.url: http://localhost:00000/WcfSample/123,123/CalculatorService,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.Wcf,
+      _dd.svc_src: http-client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_43,
+    SpanId: Id_44,
+    Name: Task_ServerTaskAdd,
+    Resource: Task_ServerTaskAdd,
+    Service: Samples.Wcf,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_43,
+    SpanId: Id_45,
+    Name: dotnet_wcf.client.request,
+    Resource: WcfSample/ICalculator/ServerTaskAdd,
+    Service: Samples.Wcf,
+    Type: http,
+    ParentId: Id_44,
+    Error: 1,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      net.peer.name: localhost,
+      otel.library.name: OpenTelemetry.Instrumentation.Wcf,
+      otel.library.version: 1.15.0-beta.1,
+      otel.status_code: STATUS_CODE_ERROR,
+      otel.trace_id: Guid_11,
+      rpc.method: ServerTaskAdd,
+      rpc.service: WcfSampleICalculator,
+      rpc.system: dotnet_wcf,
+      service.name: Samples.Wcf,
+      span.kind: client,
+      telemetry.sdk.language: dotnet,
+      telemetry.sdk.name: opentelemetry,
+      telemetry.sdk.version: 1.15.0,
+      version: 1.0.0,
+      wcf.channel.path: /WcfSample/123,123/CalculatorService,
+      wcf.channel.scheme: http
+    },
+    Metrics: {
+      net.peer.port: 8585.0
+    }
+  },
+  {
+    TraceId: Id_43,
+    SpanId: Id_46,
+    Name: http.request,
+    Resource: POST localhost:00000/WcfSample/?/CalculatorService,
+    Service: Samples.Wcf-http-client,
+    Type: http,
+    ParentId: Id_45,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      error.msg: The remote server returned an error: (500) Internal Server Error.,
+      error.stack:
+System.Net.WebException: The remote server returned an error: (500) Internal Server Error.
+at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult),
+      error.type: System.Net.WebException,
+      http.method: POST,
+      http.status_code: 500,
+      http.url: http://localhost:00000/WcfSample/123,123/CalculatorService,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.Wcf,
+      _dd.svc_src: http-client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  }
+]

@@ -631,6 +631,21 @@ namespace Datadog.Trace
         internal const string CosmosDbContainer = "cosmosdb.container";
 
         /// <summary>
+        /// The HTTP status code of the database response.
+        /// </summary>
+        internal const string DbResponseStatusCode = "db.response.status_code";
+
+        /// <summary>
+        /// The CosmosDb sub-status code of the response.
+        /// </summary>
+        internal const string CosmosDbResponseSubStatusCode = "cosmosdb.response.sub_status_code";
+
+        /// <summary>
+        /// The CosmosDb connection mode.
+        /// </summary>
+        internal const string CosmosDbConnectionMode = "cosmosdb.connection.mode";
+
+        /// <summary>
         /// If a span was involved with an application security event
         /// </summary>
         internal const string AppSecEvent = "appsec.event";
@@ -791,6 +806,13 @@ namespace Datadog.Trace
         internal const string BaseService = "_dd.base_service";
 
         /// <summary>
+        /// Indicates the source that set the service name on a span.
+        /// The value is the integration name (e.g. "redis", "kafka") when the service name
+        /// was set by an integration, or null when the default service name is used.
+        /// </summary>
+        internal const string ServiceNameSource = "_dd.svc_src";
+
+        /// <summary>
         /// Tag used to propagate the unsigned  64 bits last parent Id
         /// lower-case 16 characters hexadecimal string
         /// </summary>
@@ -798,6 +820,12 @@ namespace Datadog.Trace
 
         // inferred proxy tags
         internal const string ProxyStage = "stage";
+
+        // code origin
+        internal const string CodeOriginType = "_dd.code_origin.type";
+        internal const string CodeOriginFrameIndex = "_dd.code_origin.frames.0.index";
+        internal const string CodeOriginFrameMethod = "_dd.code_origin.frames.0.method";
+        internal const string CodeOriginFrameType = "_dd.code_origin.frames.0.type";
 
         internal static class User
         {

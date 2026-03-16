@@ -31,7 +31,7 @@ namespace Datadog.Trace.Processors
 
         public NormalizerTraceProcessor()
         {
-            Log.Information("NormalizerTraceProcessor initialized.");
+            Log.Debug("NormalizerTraceProcessor initialized.");
         }
 
         public SpanCollection Process(in SpanCollection trace)

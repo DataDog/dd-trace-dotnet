@@ -74,13 +74,6 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 
-        public bool OptionalHeaders { get; set; }
-
-        /// <summary>
-        /// Gets or sets a value indicating whether to skip serialization of traces.
-        /// </summary>
-        public bool ShouldDeserializeTraces { get; set; } = true;
-
         /// <summary>
         /// Gets the TCP port that this Agent is listening on.
         /// Can be different from <see cref="MockTelemetryAgent"/>'s <c>initialPort</c>
@@ -165,20 +158,7 @@ namespace Datadog.Trace.TestHelpers
             var requestType = ctx.Request.Headers[TelemetryConstants.RequestTypeHeader];
             var compressed = ctx.Request.Headers["Content-Encoding"].Equals("gzip", StringComparison.OrdinalIgnoreCase);
 
-            var inputStream = ctx.Request.InputStream;
-
-            if (OptionalHeaders && (apiVersion == null || requestType == null))
-            {
-                using var sr = new StreamReader(inputStream);
-                var text = sr.ReadToEnd();
-
-                var json = JObject.Parse(text);
-                apiVersion = json["api_version"].Value<string>();
-                requestType = json["request_type"].Value<string>();
-                inputStream = new MemoryStream(Encoding.UTF8.GetBytes(text));
-            }
-
-            var telemetry = DeserializeResponse(inputStream, apiVersion, requestType, compressed);
+            var telemetry = DeserializeResponse(ctx.Request.InputStream, apiVersion, requestType, compressed);
             Telemetry.Push(telemetry);
 
             lock (this)

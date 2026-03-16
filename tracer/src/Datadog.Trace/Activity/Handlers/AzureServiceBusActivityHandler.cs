@@ -8,6 +8,7 @@
 using System.Collections.Generic;
 using Datadog.Trace.Activity.DuckTypes;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Shared;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DuckTyping;
@@ -46,17 +47,13 @@ namespace Datadog.Trace.Activity.Handlers
                 // then we can retrieve the active message object using our mapping. With access to the message
                 // object, we can accurately calculate the payload size for the DataStreamsCheckpoint
 
-                string key;
-                if (activity is IW3CActivity w3cActivity)
+                ActivityKey key = activity switch
                 {
-                    key = w3cActivity.TraceId + w3cActivity.SpanId;
-                }
-                else
-                {
-                    key = activity.Id;
-                }
+                    IW3CActivity { TraceId: not null, SpanId: not null } w3cActivity => new(w3cActivity.TraceId, w3cActivity.SpanId),
+                    _ => new(activity.Id)
+                };
 
-                if (ActivityHandlerCommon.ActivityMappingById.TryRemove(key, out ActivityMapping activityMapping)
+                if (key.IsValid() && ActivityHandlerCommon.ActivityMappingById.TryRemove(key, out ActivityMapping activityMapping)
                     && activityMapping.Scope?.Span is Span span)
                 {
                     // Copy over the data to our Span object so we can do an efficient tags lookup
@@ -81,7 +78,7 @@ namespace Datadog.Trace.Activity.Handlers
                         payloadSize ?? 0,
                         0);
 
-                    dataStreamsManager.InjectPathwayContextAsBase64String(span.Context.PathwayContext, new ServiceBusHeadersCollectionAdapter(applicationProperties));
+                    dataStreamsManager.InjectPathwayContextAsBase64String(span.Context.PathwayContext, new AzureHeadersCollectionAdapter(applicationProperties));
 
                     // Close the scope and return so we bypass the common code path
                     span.Finish(activity.StartTimeUtc.Add(activity.Duration));

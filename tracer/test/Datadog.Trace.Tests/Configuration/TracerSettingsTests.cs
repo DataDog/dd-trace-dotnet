@@ -152,13 +152,24 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData("false", "random", false)]
         [InlineData("false", null, false)]
         [InlineData("A", "none", false)]
-        [InlineData("A", "otlp", false)]
         [InlineData("", "none", false)]
-        [InlineData("", "otlp", false)]
-        [InlineData(null, "none", false)]
+        [InlineData(null, "none", false)] // OTEL_METRICS_EXPORTER=none always disables, regardless of runtime
+        // Runtime metrics are enabled by default on .NET 6+
+#if NET6_0_OR_GREATER
+        [InlineData(null, "random", true)]
+        [InlineData(null, "otlp", true)]
+        [InlineData(null, null, true)]
+        [InlineData("", "otlp", true)]
+        [InlineData("A", "otlp", true)]
+        [InlineData("", null, true)]
+#else
         [InlineData(null, "random", false)]
         [InlineData(null, "otlp", false)]
         [InlineData(null, null, false)]
+        [InlineData("", "otlp", false)]
+        [InlineData("A", "otlp", false)]
+        [InlineData("", null, false)]
+#endif
         public void RuntimeMetricsEnabled(string value, string otelValue, bool expected)
         {
             var source = CreateConfigurationSource(
@@ -178,6 +189,80 @@ namespace Datadog.Trace.Tests.Configuration
             };
 
             errorLog.ShouldHaveExpectedOtelMetric(metric, ConfigurationKeys.OpenTelemetry.MetricsExporter.ToLowerInvariant(), ConfigurationKeys.RuntimeMetricsEnabled.ToLowerInvariant());
+        }
+
+#if NET6_0_OR_GREATER
+        [Fact]
+        public void RuntimeMetrics_DefaultsToDiagnosticsOnNet6Plus_WhenNotExplicitlySet()
+        {
+            var source = CreateConfigurationSource();
+            var settings = new TracerSettings(source);
+
+            settings.RuntimeMetricsEnabled.Should().BeTrue();
+            settings.RuntimeMetricsDiagnosticsMetricsApiEnabled.Should().BeTrue();
+        }
+
+        [Fact]
+        public void RuntimeMetrics_InvalidValue_TreatedAsUnset_DefaultsToDiagnostics()
+        {
+            // An invalid value like "blah" should be treated the same as unset:
+            // on .NET 6+ runtime metrics default to enabled with Diagnostics listener.
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.RuntimeMetricsEnabled, "blah"));
+            var settings = new TracerSettings(source);
+
+            settings.RuntimeMetricsEnabled.Should().BeTrue();
+            settings.RuntimeMetricsDiagnosticsMetricsApiEnabled.Should().BeTrue();
+        }
+
+        [Theory]
+        [InlineData("true", "true", true)]
+        [InlineData("true", "false", false)]
+        public void RuntimeMetrics_ExplicitEnable_RespectsExplicitDiagnosticsFlag(string runtimeMetrics, string diagnosticsApi, bool expectedDiagnostics)
+        {
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.RuntimeMetricsEnabled, runtimeMetrics),
+                (ConfigurationKeys.RuntimeMetricsDiagnosticsMetricsApiEnabled, diagnosticsApi));
+            var settings = new TracerSettings(source);
+
+            settings.RuntimeMetricsEnabled.Should().BeTrue();
+            settings.RuntimeMetricsDiagnosticsMetricsApiEnabled.Should().Be(expectedDiagnostics);
+        }
+
+#if NET8_0_OR_GREATER
+        [Fact]
+        public void RuntimeMetrics_ExplicitEnable_DefaultsToDiagnosticsOnNet8Plus()
+        {
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.RuntimeMetricsEnabled, "true"));
+            var settings = new TracerSettings(source);
+
+            settings.RuntimeMetricsEnabled.Should().BeTrue();
+            settings.RuntimeMetricsDiagnosticsMetricsApiEnabled.Should().BeTrue();
+        }
+#else
+        [Fact]
+        public void RuntimeMetrics_ExplicitEnable_DefaultsToEventListenerOnNet6And7()
+        {
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.RuntimeMetricsEnabled, "true"));
+            var settings = new TracerSettings(source);
+
+            settings.RuntimeMetricsEnabled.Should().BeTrue();
+            settings.RuntimeMetricsDiagnosticsMetricsApiEnabled.Should().BeFalse();
+        }
+#endif
+
+#endif
+
+        [Fact]
+        public void RuntimeMetrics_ExplicitDisable_OverridesDefault()
+        {
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.RuntimeMetricsEnabled, "false"));
+            var settings = new TracerSettings(source);
+
+            settings.RuntimeMetricsEnabled.Should().BeFalse();
         }
 
         [Theory]
@@ -682,7 +767,7 @@ namespace Datadog.Trace.Tests.Configuration
         {
             var telemetry = new ConfigurationTelemetry();
             var tracerSettings = new TracerSettings(NullConfigurationSource.Instance, telemetry);
-            var data = telemetry.GetData();
+            var data = telemetry.GetIncrementalData();
             var value = data
                        .GroupBy(x => x.Name)
                        .Should()

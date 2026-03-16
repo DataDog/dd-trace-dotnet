@@ -5,6 +5,8 @@
 
 #nullable enable
 
+using System.Threading;
+
 #if NETFRAMEWORK
 
 namespace Datadog.Trace.PlatformHelpers;
@@ -12,14 +14,36 @@ namespace Datadog.Trace.PlatformHelpers;
 /// <summary>
 /// Utility class with methods to interact with container hosts.
 /// </summary>
-internal static class ContainerMetadata
+internal sealed class ContainerMetadata
 {
+    public static readonly ContainerMetadata Instance = new();
+
+    private ContainerMetadata()
+    {
+    }
+
+    // For use in tests only
+    public ContainerMetadata(string containerId, string entityId)
+    {
+        // nothing to do, just to match the other version
+    }
+
+    /// <summary>
+    /// Gets or sets the container tags hash received from the agent, used by DBM/DSM
+    /// This is set when we receive a value for it in an http response from the agent
+    /// </summary>
+    public string? ContainerTagsHash
+    {
+        get => Volatile.Read(ref field);
+        set => Volatile.Write(ref field, value);
+    }
+
     /// <summary>
     /// Gets the id of the container executing the code.
     /// Return <c>null</c> if code is not executing inside a supported container.
     /// </summary>
-    /// <returns>The container id or <c>null</c>.</returns>
-    public static string? GetContainerId() => null;
+    /// <value>The container id or <c>null</c>.</value>
+    public string? ContainerId => null;
 
     /// <summary>
     /// Gets the unique identifier of the container executing the code.
@@ -31,7 +55,7 @@ internal static class ContainerMetadata
     /// <item><c>null</c> if neither are available.</item>
     /// </list>
     /// </summary>
-    /// <returns>The entity id or <c>null</c>.</returns>
-    public static string? GetEntityId() => null;
+    /// <value>The entity id or <c>null</c>.</value>
+    public string? EntityId => null;
 }
 #endif

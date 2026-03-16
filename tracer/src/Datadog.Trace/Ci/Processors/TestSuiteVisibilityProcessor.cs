@@ -19,7 +19,7 @@ internal sealed class TestSuiteVisibilityProcessor : ITraceProcessor
 
     public TestSuiteVisibilityProcessor()
     {
-        Log.Information("TestSuiteVisibilityProcessor initialized.");
+        Log.Debug("TestSuiteVisibilityProcessor initialized.");
     }
 
     public SpanCollection Process(in SpanCollection trace)

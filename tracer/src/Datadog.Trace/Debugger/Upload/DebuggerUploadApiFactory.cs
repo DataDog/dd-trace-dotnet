@@ -4,6 +4,7 @@
 // </copyright>
 
 #nullable enable
+using System;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
@@ -27,9 +28,9 @@ namespace Datadog.Trace.Debugger.Upload
             return DiagnosticsUploadApi.Create(apiRequestFactory, discoveryService, gitMetadataTagsProvider);
         }
 
-        internal static IBatchUploadApi CreateSymbolsUploadApi(IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService, IGitMetadataTagsProvider gitMetadataTagsProvider, string serviceName, bool enableCompression)
+        internal static IBatchUploadApi CreateSymbolsUploadApi(IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService, IGitMetadataTagsProvider gitMetadataTagsProvider, Func<string> serviceNameProvider, bool enableCompression)
         {
-            return SymbolUploadApi.Create(apiRequestFactory, discoveryService, gitMetadataTagsProvider, serviceName, enableCompression);
+            return SymbolUploadApi.Create(apiRequestFactory, discoveryService, gitMetadataTagsProvider, serviceNameProvider, enableCompression);
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿// <copyright file="TestingFrameworkEvpTest.cs" company="Datadog">
+// <copyright file="TestingFrameworkEvpTest.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -68,6 +68,9 @@ public abstract class TestingFrameworkEvpTest : TestHelper
     {
         _gacFixture.RemoveAssembliesFromGac();
     }
+
+    protected static bool IsMacOS()
+        => string.Equals(FrameworkDescription.Instance.OSPlatform, OSPlatformName.MacOS, StringComparison.OrdinalIgnoreCase);
 
     protected static string GetSettingsJson(string earlyFlakeDetection, string testsSkipping, string testManagementEnabled, string attemptToFixRetries)
     {
@@ -264,14 +267,14 @@ public abstract class TestingFrameworkEvpTest : TestHelper
                 if (span.GetTag(key) is { } tagValue)
                 {
                     targetTest.Meta[key].Should().Be(tagValue);
-                    targetTest.Meta.Remove(key);
                 }
             }
             else
             {
                 targetTest.Meta[key].Should().Be(value);
-                targetTest.Meta.Remove(key);
             }
+
+            targetTest.Meta.Remove(key);
         }
 
         void AssertEqualDate(string key)
@@ -279,8 +282,9 @@ public abstract class TestingFrameworkEvpTest : TestHelper
             if (span.GetTag(key) is { } keyValue)
             {
                 DateTimeOffset.Parse(targetTest.Meta[key]).Should().Be(DateTimeOffset.Parse(keyValue));
-                targetTest.Meta.Remove(key);
             }
+
+            targetTest.Meta.Remove(key);
         }
     }
 
@@ -328,26 +332,26 @@ public abstract class TestingFrameworkEvpTest : TestHelper
         var current = GitInfo.GetCurrent();
         var ciDictionaryValues = new Dictionary<string, string>
         {
-            [CIEnvironmentValues.Constants.AzureTFBuild] = "1",
-            [CIEnvironmentValues.Constants.AzureSystemTeamProjectId] = "TeamProjectId",
-            [CIEnvironmentValues.Constants.AzureBuildBuildId] = "BuildId",
-            [CIEnvironmentValues.Constants.AzureSystemJobId] = "JobId",
-            [CIEnvironmentValues.Constants.AzureBuildSourcesDirectory] = current.SourceRoot ?? string.Empty,
-            [CIEnvironmentValues.Constants.AzureBuildDefinitionName] = "DefinitionName",
-            [CIEnvironmentValues.Constants.AzureSystemTeamFoundationServerUri] = "https://foundation.server.url/",
-            [CIEnvironmentValues.Constants.AzureSystemStageDisplayName] = "StageDisplayName",
-            [CIEnvironmentValues.Constants.AzureSystemJobDisplayName] = "JobDisplayName",
-            [CIEnvironmentValues.Constants.AzureSystemTaskInstanceId] = "TaskInstanceId",
-            [CIEnvironmentValues.Constants.AzureSystemPullRequestSourceRepositoryUri] = "git@github.com:DataDog/dd-trace-dotnet.git",
-            [CIEnvironmentValues.Constants.AzureBuildRepositoryUri] = "git@github.com:DataDog/dd-trace-dotnet.git",
-            [CIEnvironmentValues.Constants.AzureSystemPullRequestSourceCommitId] = "3245605c3d1edc67226d725799ee969c71f7632b",
-            [CIEnvironmentValues.Constants.AzureBuildSourceVersion] = "3245605c3d1edc67226d725799ee969c71f7632b",
-            [CIEnvironmentValues.Constants.AzureSystemPullRequestSourceBranch] = "main",
-            [CIEnvironmentValues.Constants.AzureBuildSourceBranch] = "main",
-            [CIEnvironmentValues.Constants.AzureBuildSourceBranchName] = "main",
-            [CIEnvironmentValues.Constants.AzureBuildSourceVersionMessage] = "Fake commit for testing",
-            [CIEnvironmentValues.Constants.AzureBuildRequestedForId] = "AuthorName",
-            [CIEnvironmentValues.Constants.AzureBuildRequestedForEmail] = "author@company.com",
+            [PlatformKeys.Ci.Azure.TFBuild] = "1",
+            [PlatformKeys.Ci.Azure.SystemTeamProjectId] = "TeamProjectId",
+            [PlatformKeys.Ci.Azure.BuildBuildId] = "BuildId",
+            [PlatformKeys.Ci.Azure.SystemJobId] = "JobId",
+            [PlatformKeys.Ci.Azure.BuildSourcesDirectory] = current.SourceRoot ?? string.Empty,
+            [PlatformKeys.Ci.Azure.BuildDefinitionName] = "DefinitionName",
+            [PlatformKeys.Ci.Azure.SystemTeamFoundationServerUri] = "https://foundation.server.url/",
+            [PlatformKeys.Ci.Azure.SystemStageDisplayName] = "StageDisplayName",
+            [PlatformKeys.Ci.Azure.SystemJobDisplayName] = "JobDisplayName",
+            [PlatformKeys.Ci.Azure.SystemTaskInstanceId] = "TaskInstanceId",
+            [PlatformKeys.Ci.Azure.SystemPullRequestSourceRepositoryUri] = "git@github.com:DataDog/dd-trace-dotnet.git",
+            [PlatformKeys.Ci.Azure.BuildRepositoryUri] = "git@github.com:DataDog/dd-trace-dotnet.git",
+            [PlatformKeys.Ci.Azure.SystemPullRequestSourceCommitId] = "3245605c3d1edc67226d725799ee969c71f7632b",
+            [PlatformKeys.Ci.Azure.BuildSourceVersion] = "3245605c3d1edc67226d725799ee969c71f7632b",
+            [PlatformKeys.Ci.Azure.SystemPullRequestSourceBranch] = "main",
+            [PlatformKeys.Ci.Azure.BuildSourceBranch] = "main",
+            [PlatformKeys.Ci.Azure.BuildSourceBranchName] = "main",
+            [PlatformKeys.Ci.Azure.BuildSourceVersionMessage] = "Fake commit for testing",
+            [PlatformKeys.Ci.Azure.BuildRequestedForId] = "AuthorName",
+            [PlatformKeys.Ci.Azure.BuildRequestedForEmail] = "author@company.com",
         };
 
         foreach (var item in ciDictionaryValues)
@@ -392,7 +396,8 @@ public abstract class TestingFrameworkEvpTest : TestHelper
         out string sessionWorkingDirectory,
         out string gitRepositoryUrl,
         out string gitBranch,
-        out string gitCommitSha)
+        out string gitCommitSha,
+        out string runId)
     {
         // Inject session
         sessionId = RandomIdGenerator.Shared.NextSpanId();
@@ -400,18 +405,21 @@ public abstract class TestingFrameworkEvpTest : TestHelper
         sessionWorkingDirectory = "C:\\evp_demo\\working_directory";
         SetEnvironmentVariable(HttpHeaderNames.TraceId.Replace(".", "_").Replace("-", "_").ToUpperInvariant(), sessionId.ToString(CultureInfo.InvariantCulture));
         SetEnvironmentVariable(HttpHeaderNames.ParentId.Replace(".", "_").Replace("-", "_").ToUpperInvariant(), sessionId.ToString(CultureInfo.InvariantCulture));
-        SetEnvironmentVariable(TestSuiteVisibilityTags.TestSessionCommandEnvironmentVariable, sessionCommand);
-        SetEnvironmentVariable(TestSuiteVisibilityTags.TestSessionWorkingDirectoryEnvironmentVariable, sessionWorkingDirectory);
+        SetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestSessionCommand, sessionCommand);
+        SetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestSessionWorkingDirectory, sessionWorkingDirectory);
 
         gitRepositoryUrl = "git@github.com:DataDog/dd-trace-dotnet.git";
         gitBranch = "main";
         gitCommitSha = "3245605c3d1edc67226d725799ee969c71f7632b";
-        SetEnvironmentVariable(CIEnvironmentValues.Constants.DDGitRepository, gitRepositoryUrl);
-        SetEnvironmentVariable(CIEnvironmentValues.Constants.DDGitBranch, gitBranch);
-        SetEnvironmentVariable(CIEnvironmentValues.Constants.DDGitCommitSha, gitCommitSha);
+        SetEnvironmentVariable(ConfigurationKeys.CIVisibility.GitRepositoryUrl, gitRepositoryUrl);
+        SetEnvironmentVariable(ConfigurationKeys.CIVisibility.GitBranch, gitBranch);
+        SetEnvironmentVariable(ConfigurationKeys.CIVisibility.GitCommitSha, gitCommitSha);
 
         SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "1");
         SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Logs, "1");
+
+        runId = Guid.NewGuid().ToString("n");
+        SetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestOptimizationRunId, runId);
     }
 
     protected virtual async Task ExecuteTestAsync(string packageVersion, string evpVersionToRemove, bool expectedGzip, TestScenario testScenario)
@@ -425,13 +433,15 @@ public abstract class TestingFrameworkEvpTest : TestHelper
             out var sessionWorkingDirectory,
             out var gitRepositoryUrl,
             out var gitBranch,
-            out var gitCommitSha);
+            out var gitCommitSha,
+            out var runId);
 
+        Output.WriteLine("RunId: {0}", runId);
         try
         {
             using var logsIntake = new MockLogsIntakeForCiVisibility();
             EnableDirectLogSubmission(logsIntake.Port, nameof(IntegrationId.XUnit), nameof(XUnitTests));
-            using var agent = EnvironmentHelper.GetMockAgent(useStatsD: true);
+            using var agent = EnvironmentHelper.GetMockAgent(useStatsD: !IsMacOS());
             agent.Configuration.Endpoints = agent.Configuration.Endpoints.Where(e => !e.Contains(evpVersionToRemove)).ToArray();
 
             const string correlationId = "2e8a36bda770b683345957cc6c15baf9";
@@ -525,6 +535,7 @@ public abstract class TestingFrameworkEvpTest : TestHelper
                                  .ThenBy(s => GetValueOrDefault(s.Meta, TestTags.TestIsRetry))
                                  .ThenBy(s => GetValueOrDefault(s.Meta, TestTags.TestAttemptToFixPassed))
                                  .ThenBy(s => GetValueOrDefault(s.Meta, TestTags.TestHasFailedAllRetries))
+                                 .ThenBy(s => GetValueOrDefault(s.Meta, TestTags.TestFinalStatus))
                                  .ThenBy(s => GetValueOrDefault(s.Meta, EarlyFlakeDetectionTags.AbortReason)),
                     settings);
             }

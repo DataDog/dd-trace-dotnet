@@ -1,4 +1,4 @@
-﻿// <copyright file="RuntimeMetricsWriter.cs" company="Datadog">
+// <copyright file="RuntimeMetricsWriter.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -12,6 +12,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace.RuntimeMetrics
@@ -30,7 +31,7 @@ namespace Datadog.Trace.RuntimeMetrics
         private static readonly Version Windows81Version = new(6, 3, 9600);
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<RuntimeMetricsWriter>();
-        private static readonly Func<IStatsdManager, TimeSpan, bool, IRuntimeMetricsListener> InitializeListenerFunc = InitializeListener;
+        private static readonly Func<IStatsdManager, TimeSpan, bool, bool, IRuntimeMetricsListener> InitializeListenerFunc = InitializeListener;
 
         [ThreadStatic]
         private static bool _inspectingFirstChanceException;
@@ -66,12 +67,13 @@ namespace Datadog.Trace.RuntimeMetrics
         private TimeSpan _previousSystemCpu;
         private int _disposed;
 
-        public RuntimeMetricsWriter(IStatsdManager statsd, TimeSpan delay, bool inAzureAppServiceContext)
-            : this(statsd, delay, inAzureAppServiceContext, InitializeListenerFunc)
+        public RuntimeMetricsWriter(IStatsdManager statsd, TimeSpan delay, bool inAzureAppServiceContext, bool useDiagnosticsApiListener)
+            : this(statsd, delay, inAzureAppServiceContext, useDiagnosticsApiListener, InitializeListenerFunc)
         {
         }
 
-        internal RuntimeMetricsWriter(IStatsdManager statsd, TimeSpan delay, bool inAzureAppServiceContext, Func<IStatsdManager, TimeSpan, bool, IRuntimeMetricsListener> initializeListener)
+        [TestingAndPrivateOnly]
+        internal RuntimeMetricsWriter(IStatsdManager statsd, TimeSpan delay, bool inAzureAppServiceContext, bool useDiagnosticsApiListener, Func<IStatsdManager, TimeSpan, bool, bool, IRuntimeMetricsListener> initializeListener)
         {
             _delay = delay;
             _statsd = statsd;
@@ -104,9 +106,9 @@ namespace Datadog.Trace.RuntimeMetrics
                 {
                     { } x when x.IsWindows() => true, // Works on Windows
                     { } x when !x.IsCoreClr() => true, // Works on .NET Framework
-                    _ when Environment.Version is { Major: >= 5 } => true, // Works on .NET 5 and above
-                    _ when Environment.Version is { Major: 3, Minor: > 0 } => true, // 3.1 works
-                    _ when Environment.Version is { Major: 3, Minor: 0 } => false, // 3.0 is broken on linux
+                    { RuntimeVersion: { Major: >= 5 } } => true, // Works on .NET 5 and above
+                    { RuntimeVersion: { Major: 3, Minor: > 0 } } => true, // 3.1 works
+                    { RuntimeVersion: { Major: 3, Minor: 0 } } => false, // 3.0 is broken on linux
                     _ => false, // everything else (i.e. <.NET Core 3.0) is broken
                 };
 #endif
@@ -119,7 +121,7 @@ namespace Datadog.Trace.RuntimeMetrics
 
             try
             {
-                _listener = initializeListener(statsd, delay, inAzureAppServiceContext);
+                _listener = initializeListener(statsd, delay, inAzureAppServiceContext, useDiagnosticsApiListener);
             }
             catch (Exception ex)
             {
@@ -170,9 +172,16 @@ namespace Datadog.Trace.RuntimeMetrics
 #endif
             Log.Debug("Disposing other resources for Runtime Metrics");
             AppDomain.CurrentDomain.FirstChanceException -= FirstChanceException;
-            // We don't dispose runtime metrics on .NET Core because of https://github.com/dotnet/runtime/issues/103480
 #if NETFRAMEWORK
             _listener?.Dispose();
+#elif NET6_0_OR_GREATER
+            // DiagnosticsMetricsRuntimeMetricsListener uses MeterListener which is safe to dispose.
+            // RuntimeEventListener extends EventListener which is NOT safe to dispose on .NET Core
+            // due to https://github.com/dotnet/runtime/issues/103480
+            if (_listener is DiagnosticsMetricsRuntimeMetricsListener)
+            {
+                _listener.Dispose();
+            }
 #endif
             _exceptionCounts.Clear();
         }
@@ -323,9 +332,13 @@ namespace Datadog.Trace.RuntimeMetrics
             return true;
         }
 
-        private static IRuntimeMetricsListener InitializeListener(IStatsdManager statsd, TimeSpan delay, bool inAzureAppServiceContext)
+        private static IRuntimeMetricsListener InitializeListener(IStatsdManager statsd, TimeSpan delay, bool inAzureAppServiceContext, bool useDiagnosticsApiListener)
         {
-#if NETCOREAPP
+#if NET6_0_OR_GREATER
+            return useDiagnosticsApiListener
+                       ? new DiagnosticsMetricsRuntimeMetricsListener(statsd)
+                       : new RuntimeEventListener(statsd, delay);
+#elif NETCOREAPP
             return new RuntimeEventListener(statsd, delay);
 #elif NETFRAMEWORK
             try

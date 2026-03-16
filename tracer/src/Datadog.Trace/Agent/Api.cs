@@ -18,6 +18,7 @@ using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util.Http;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Serilog.Events;
 using Datadog.Trace.Vendors.StatsdClient;
@@ -35,11 +36,11 @@ namespace Datadog.Trace.Agent
         private readonly IDatadogLogger _log;
         private readonly IApiRequestFactory _apiRequestFactory;
         private readonly IStatsdManager _statsd;
-        private readonly string _containerId;
-        private readonly string _entityId;
+        private readonly ContainerMetadata _containerMetadata;
         private readonly Uri _tracesEndpoint;
         private readonly Uri _statsEndpoint;
         private readonly Action<Dictionary<string, float>> _updateSampleRates;
+        private readonly Action<string> _updateConfigState;
         private readonly bool _partialFlushEnabled;
         private readonly SendCallback<SendStatsState> _sendStats;
         private readonly SendCallback<SendTracesState> _sendTraces;
@@ -50,7 +51,9 @@ namespace Datadog.Trace.Agent
         public Api(
             IApiRequestFactory apiRequestFactory,
             IStatsdManager statsd,
+            ContainerMetadata containerMetadata,
             Action<Dictionary<string, float>> updateSampleRates,
+            Action<string> updateConfigState,
             bool partialFlushEnabled,
             bool healthMetricsEnabled,
             IDatadogLogger log = null)
@@ -61,10 +64,10 @@ namespace Datadog.Trace.Agent
             _sendStats = SendStatsAsyncImpl;
             _sendTraces = SendTracesAsyncImpl;
             _updateSampleRates = updateSampleRates;
+            _updateConfigState = updateConfigState;
             _statsd = statsd;
             ToggleTracerHealthMetrics(healthMetricsEnabled);
-            _containerId = ContainerMetadata.GetContainerId();
-            _entityId = ContainerMetadata.GetEntityId();
+            _containerMetadata = containerMetadata;
             _apiRequestFactory = apiRequestFactory;
             _partialFlushEnabled = partialFlushEnabled;
             _healthMetricsEnabled = healthMetricsEnabled;
@@ -208,16 +211,7 @@ namespace Datadog.Trace.Agent
             bool success = false;
             IApiResponse response = null;
 
-            // Set additional headers
-            if (_containerId != null)
-            {
-                request.AddHeader(AgentHttpHeaderNames.ContainerId, _containerId);
-            }
-
-            if (_entityId != null)
-            {
-                request.AddHeader(AgentHttpHeaderNames.EntityId, _entityId);
-            }
+            request.AddContainerMetadataHeaders(_containerMetadata);
 
             using var stream = new MemoryStream();
             state.Stats.Serialize(stream, state.BucketDuration);
@@ -288,16 +282,7 @@ namespace Datadog.Trace.Agent
 
             // Set additional headers
             request.AddHeader(AgentHttpHeaderNames.TraceCount, numberOfTraces.ToString());
-
-            if (_containerId != null)
-            {
-                request.AddHeader(AgentHttpHeaderNames.ContainerId, _containerId);
-            }
-
-            if (_entityId != null)
-            {
-                request.AddHeader(AgentHttpHeaderNames.EntityId, _entityId);
-            }
+            request.AddContainerMetadataHeaders(_containerMetadata);
 
             if (statsComputationEnabled)
             {
@@ -384,12 +369,17 @@ namespace Datadog.Trace.Agent
 
                         if (responseContent != _cachedResponse)
                         {
-                            var apiResponse = JsonConvert.DeserializeObject<ApiResponse>(responseContent);
+                            var apiResponse = JsonHelper.DeserializeObject<ApiResponse>(responseContent);
 
                             _updateSampleRates(apiResponse.RateByService);
 
                             _cachedResponse = responseContent;
                         }
+                    }
+
+                    if (_updateConfigState is not null && response.GetHeader(AgentHttpHeaderNames.AgentState) is { } configState)
+                    {
+                        _updateConfigState.Invoke(configState);
                     }
                 }
                 catch (Exception ex)

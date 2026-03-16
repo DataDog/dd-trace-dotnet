@@ -17,11 +17,6 @@ namespace Datadog.Trace.Debugger.Helpers
 {
     internal static class RuntimeHelper
     {
-        internal static bool IsNetOnward(int major)
-        {
-            return Environment.Version.Major >= major;
-        }
-
         internal static bool IsModuleDebugCompiled(Assembly assembly)
         {
             var debuggableAttribute = assembly.GetCustomAttributes(typeof(DebuggableAttribute), false).FirstOrDefault() as DebuggableAttribute;

@@ -8,6 +8,7 @@
 #include "ApplicationInfo.h"
 
 // forward declarations
+class IGcSettingsProvider;
 class IProfile;
 class IUpscalePoissonProvider;
 class IUpscaleProvider;
@@ -25,4 +26,5 @@ public:
     virtual void RegisterUpscalePoissonProvider(IUpscalePoissonProvider* provider) = 0;
     virtual void RegisterProcessSamplesProvider(ISamplesProvider* provider) = 0;
     virtual void RegisterApplication(std::string_view runtimeId) = 0;
+    virtual void RegisterGcSettingsProvider(IGcSettingsProvider* provider) = 0;
 };

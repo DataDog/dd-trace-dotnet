@@ -15,6 +15,7 @@
    <assembly fullname="Confluent.Kafka" />
    <assembly fullname="Couchbase.NetClient" />
    <assembly fullname="coverlet.core" />
+   <assembly fullname="Datadog.FeatureFlags.OpenFeature" />
    <assembly fullname="Datadog.Trace" />
    <assembly fullname="Datadog.Trace.Manual" />
    <assembly fullname="Datadog.Trace.OpenTracing" />
@@ -161,7 +162,6 @@
       <type fullname="System.Collections.Generic.SortedDictionary`2" />
       <type fullname="System.Collections.Generic.SortedList`2" />
       <type fullname="System.Collections.Generic.SortedSet`1" />
-      <type fullname="System.Collections.Generic.SortedSet`1/Enumerator" />
       <type fullname="System.Collections.Generic.Stack`1" />
       <type fullname="System.Collections.Generic.Stack`1/Enumerator" />
    </assembly>
@@ -171,6 +171,20 @@
       <type fullname="System.Collections.Concurrent.ConcurrentDictionary`2" />
       <type fullname="System.Collections.Concurrent.ConcurrentQueue`1" />
       <type fullname="System.Collections.Concurrent.ConcurrentStack`1" />
+   </assembly>
+   <assembly fullname="System.Collections.Immutable">
+      <type fullname="System.Collections.Immutable.ImmutableArray" />
+      <type fullname="System.Collections.Immutable.ImmutableArray`1" />
+      <type fullname="System.Collections.Immutable.ImmutableArray`1/Builder" />
+      <type fullname="System.Collections.Immutable.ImmutableArray`1/Enumerator" />
+      <type fullname="System.Collections.Immutable.ImmutableDictionary" />
+      <type fullname="System.Collections.Immutable.ImmutableDictionary`2" />
+      <type fullname="System.Collections.Immutable.ImmutableDictionary`2/Builder" />
+      <type fullname="System.Collections.Immutable.ImmutableHashSet" />
+      <type fullname="System.Collections.Immutable.ImmutableHashSet`1" />
+      <type fullname="System.Collections.Immutable.ImmutableHashSet`1/Builder" />
+      <type fullname="System.Collections.Immutable.ImmutableHashSet`1/Enumerator" />
+      <type fullname="System.Linq.ImmutableArrayExtensions" />
    </assembly>
    <assembly fullname="System.Collections.NonGeneric">
       <type fullname="System.Collections.Queue" />
@@ -302,6 +316,9 @@
       <type fullname="System.IO.FileSystemInfo" />
       <type fullname="System.IO.SearchOption" />
    </assembly>
+   <assembly fullname="System.IO.IsolatedStorage">
+      <type fullname="System.IO.IsolatedStorage.IsolatedStorageScope" />
+   </assembly>
    <assembly fullname="System.IO.MemoryMappedFiles">
       <type fullname="Microsoft.Win32.SafeHandles.SafeMemoryMappedViewHandle" />
       <type fullname="System.IO.MemoryMappedFiles.MemoryMappedFile" />
@@ -365,7 +382,9 @@
    </assembly>
    <assembly fullname="System.Memory">
       <type fullname="System.Buffers.Binary.BinaryPrimitives" />
+      <type fullname="System.Buffers.MemoryPool`1" />
       <type fullname="System.Buffers.StandardFormat" />
+      <type fullname="System.Buffers.Text.Base64" />
       <type fullname="System.Buffers.Text.Utf8Formatter" />
       <type fullname="System.Buffers.Text.Utf8Parser" />
       <type fullname="System.MemoryExtensions" />
@@ -490,6 +509,9 @@
       <type fullname="System.Resources.MissingManifestResourceException" />
       <type fullname="System.Resources.ResourceManager" />
    </assembly>
+   <assembly fullname="System.Resources.Writer">
+      <type fullname="System.Resources.ResourceWriter" />
+   </assembly>
    <assembly fullname="System.Runtime">
       <type fullname="Microsoft.Win32.SafeHandles.SafeFileHandle" />
       <type fullname="System.AccessViolationException" />
@@ -509,7 +531,6 @@
       <type fullname="System.ArgumentOutOfRangeException" />
       <type fullname="System.Array" />
       <type fullname="System.ArraySegment`1" />
-      <type fullname="System.ArrayTypeMismatchException" />
       <type fullname="System.AssemblyLoadEventArgs" />
       <type fullname="System.AssemblyLoadEventHandler" />
       <type fullname="System.AsyncCallback" />
@@ -521,6 +542,8 @@
       <type fullname="System.Boolean" />
       <type fullname="System.Buffer" />
       <type fullname="System.Buffers.ArrayPool`1" />
+      <type fullname="System.Buffers.IMemoryOwner`1" />
+      <type fullname="System.Buffers.OperationStatus" />
       <type fullname="System.Buffers.SpanAction`2" />
       <type fullname="System.Byte" />
       <type fullname="System.Char" />
@@ -542,14 +565,12 @@
       <type fullname="System.Collections.Generic.KeyValuePair`2" />
       <type fullname="System.Collections.Hashtable" />
       <type fullname="System.Collections.ICollection" />
-      <type fullname="System.Collections.IComparer" />
       <type fullname="System.Collections.IDictionary" />
       <type fullname="System.Collections.IDictionaryEnumerator" />
       <type fullname="System.Collections.IEnumerable" />
       <type fullname="System.Collections.IEnumerator" />
       <type fullname="System.Collections.IEqualityComparer" />
       <type fullname="System.Collections.IList" />
-      <type fullname="System.Collections.IStructuralComparable" />
       <type fullname="System.Collections.IStructuralEquatable" />
       <type fullname="System.Collections.ObjectModel.Collection`1" />
       <type fullname="System.Collections.ObjectModel.ReadOnlyCollection`1" />
@@ -563,7 +584,6 @@
       <type fullname="System.DateTime" />
       <type fullname="System.DateTimeKind" />
       <type fullname="System.DateTimeOffset" />
-      <type fullname="System.DayOfWeek" />
       <type fullname="System.Decimal" />
       <type fullname="System.Delegate" />
       <type fullname="System.Diagnostics.CodeAnalysis.AllowNullAttribute" />
@@ -573,7 +593,6 @@
       <type fullname="System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes" />
       <type fullname="System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute" />
       <type fullname="System.Diagnostics.CodeAnalysis.MaybeNullAttribute" />
-      <type fullname="System.Diagnostics.CodeAnalysis.MaybeNullWhenAttribute" />
       <type fullname="System.Diagnostics.CodeAnalysis.MemberNotNullAttribute" />
       <type fullname="System.Diagnostics.CodeAnalysis.MemberNotNullWhenAttribute" />
       <type fullname="System.Diagnostics.CodeAnalysis.NotNullAttribute" />
@@ -614,6 +633,7 @@
       <type fullname="System.Func`5" />
       <type fullname="System.Func`6" />
       <type fullname="System.GC" />
+      <type fullname="System.GCGenerationInfo" />
       <type fullname="System.GCMemoryInfo" />
       <type fullname="System.Globalization.CultureInfo" />
       <type fullname="System.Globalization.DateTimeStyles" />
@@ -675,6 +695,7 @@
       <type fullname="System.ISpanFormattable" />
       <type fullname="System.Lazy`1" />
       <type fullname="System.Math" />
+      <type fullname="System.Memory`1" />
       <type fullname="System.MethodAccessException" />
       <type fullname="System.MidpointRounding" />
       <type fullname="System.MissingMemberException" />
@@ -841,6 +862,7 @@
       <type fullname="System.StringComparison" />
       <type fullname="System.StringSplitOptions" />
       <type fullname="System.Text.Decoder" />
+      <type fullname="System.Text.Encoder" />
       <type fullname="System.Text.Encoding" />
       <type fullname="System.Text.StringBuilder" />
       <type fullname="System.Text.StringBuilder/AppendInterpolatedStringHandler" />
@@ -959,6 +981,9 @@
       <type fullname="System.Runtime.InteropServices.GuidAttribute" />
       <type fullname="System.Runtime.InteropServices.InterfaceTypeAttribute" />
       <type fullname="System.Runtime.InteropServices.Marshal" />
+      <type fullname="System.Runtime.InteropServices.PosixSignal" />
+      <type fullname="System.Runtime.InteropServices.PosixSignalContext" />
+      <type fullname="System.Runtime.InteropServices.PosixSignalRegistration" />
       <type fullname="System.Runtime.InteropServices.SafeBuffer" />
       <type fullname="System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute" />
       <type fullname="System.Security.SecureString" />
@@ -1059,8 +1084,6 @@
       <type fullname="System.Threading.Mutex" />
       <type fullname="System.Threading.ReaderWriterLockSlim" />
       <type fullname="System.Threading.SemaphoreSlim" />
-      <type fullname="System.Threading.SpinLock" />
-      <type fullname="System.Threading.SpinWait" />
       <type fullname="System.Threading.SynchronizationContext" />
       <type fullname="System.Threading.ThreadLocal`1" />
       <type fullname="System.Threading.Volatile" />

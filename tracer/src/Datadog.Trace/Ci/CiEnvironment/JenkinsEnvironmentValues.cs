@@ -1,4 +1,4 @@
-﻿// <copyright file="JenkinsEnvironmentValues.cs" company="Datadog">
+// <copyright file="JenkinsEnvironmentValues.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections.Generic;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Telemetry.Metrics;
 
 namespace Datadog.Trace.Ci.CiEnvironment;
@@ -20,15 +21,15 @@ internal sealed class JenkinsEnvironmentValues<TValueProvider>(TValueProvider va
         IsCI = true;
         Provider = "jenkins";
         MetricTag = MetricTags.CIVisibilityTestSessionProvider.Jenkins;
-        Repository = ValueProvider.GetValue(Constants.JenkinsGitUrl);
+        Repository = ValueProvider.GetValue(PlatformKeys.Ci.Jenkins.GitUrl);
         if (string.IsNullOrEmpty(Repository))
         {
-            Repository = ValueProvider.GetValue(Constants.JenkinsGitUrl1);
+            Repository = ValueProvider.GetValue(PlatformKeys.Ci.Jenkins.GitUrl1);
         }
 
-        Commit = ValueProvider.GetValue(Constants.JenkinsGitCommit);
+        Commit = ValueProvider.GetValue(PlatformKeys.Ci.Jenkins.GitCommit);
 
-        var gitBranch = ValueProvider.GetValue(Constants.JenkinsGitBranch);
+        var gitBranch = ValueProvider.GetValue(PlatformKeys.Ci.Jenkins.GitBranch);
         if (gitBranch?.Contains("tags") == true)
         {
             Tag = gitBranch;
@@ -38,14 +39,14 @@ internal sealed class JenkinsEnvironmentValues<TValueProvider>(TValueProvider va
             Branch = gitBranch;
         }
 
-        SourceRoot = ValueProvider.GetValue(Constants.JenkinsWorkspace);
-        WorkspacePath = ValueProvider.GetValue(Constants.JenkinsWorkspace);
-        PipelineId = ValueProvider.GetValue(Constants.JenkinsBuildTag);
-        PipelineNumber = ValueProvider.GetValue(Constants.JenkinsBuildNumber);
-        PipelineUrl = ValueProvider.GetValue(Constants.JenkinsBuildUrl);
+        SourceRoot = ValueProvider.GetValue(PlatformKeys.Ci.Jenkins.Workspace);
+        WorkspacePath = ValueProvider.GetValue(PlatformKeys.Ci.Jenkins.Workspace);
+        PipelineId = ValueProvider.GetValue(PlatformKeys.Ci.Jenkins.BuildTag);
+        PipelineNumber = ValueProvider.GetValue(PlatformKeys.Ci.Jenkins.BuildNumber);
+        PipelineUrl = ValueProvider.GetValue(PlatformKeys.Ci.Jenkins.BuildUrl);
 
         // Pipeline Name algorithm from: https://github.com/DataDog/dd-trace-java/blob/master/internal-api/src/main/java/datadog/trace/bootstrap/instrumentation/api/ci/JenkinsInfo.java
-        var pipelineName = ValueProvider.GetValue(Constants.JenkinsJobName);
+        var pipelineName = ValueProvider.GetValue(PlatformKeys.Ci.Jenkins.JobName);
         if (pipelineName != null)
         {
             CleanBranchAndTag();
@@ -84,15 +85,15 @@ internal sealed class JenkinsEnvironmentValues<TValueProvider>(TValueProvider va
         }
 
         // Node
-        NodeName = ValueProvider.GetValue(Constants.JenkinsNodeName);
-        NodeLabels = ValueProvider.GetValue(Constants.JenkinsNodeLabels)?.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+        NodeName = ValueProvider.GetValue(PlatformKeys.Ci.Jenkins.NodeName);
+        NodeLabels = ValueProvider.GetValue(PlatformKeys.Ci.Jenkins.NodeLabels)?.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
 
         VariablesToBypass = new Dictionary<string, string?>();
         SetVariablesIfNotEmpty(
             VariablesToBypass,
-            Constants.JenkinsCustomTraceId);
+            ConfigurationKeys.CIVisibility.CustomTraceId);
 
-        PrBaseBranch = ValueProvider.GetValue(Constants.JenkinsChangeTarget);
-        PrNumber = ValueProvider.GetValue(Constants.JenkinsChangeId);
+        PrBaseBranch = ValueProvider.GetValue(PlatformKeys.Ci.Jenkins.ChangeTarget);
+        PrNumber = ValueProvider.GetValue(PlatformKeys.Ci.Jenkins.ChangeId);
     }
 }

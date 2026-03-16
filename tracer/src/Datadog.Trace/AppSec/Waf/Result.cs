@@ -1,4 +1,4 @@
-﻿// <copyright file="Result.cs" company="Datadog">
+// <copyright file="Result.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -12,7 +12,7 @@ namespace Datadog.Trace.AppSec.Waf
 {
     internal sealed class Result : IResult
     {
-        public Result(ref DdwafObjectStruct returnStruct, WafReturnCode returnCode, ref ulong aggregatedTotalRuntime, ulong aggregatedTotalRuntimeWithBindings, bool isRasp = false)
+        public Result(ref DdwafObjectStruct returnStruct, WafReturnCode returnCode, ref ulong aggregatedTotalRuntime, ulong aggregatedTotalRuntimeWithBindings, bool isRasp = false, bool truncated = false)
         {
             ReturnCode = returnCode;
 
@@ -76,6 +76,8 @@ namespace Datadog.Trace.AppSec.Waf
             {
                 Timeout = timeoutValue;
             }
+
+            Truncated = truncated;
         }
 
         public WafReturnCode ReturnCode { get; }
@@ -124,6 +126,8 @@ namespace Datadog.Trace.AppSec.Waf
         public bool ShouldReportSecurityResult { get; }
 
         public bool Timeout { get; }
+
+        public bool Truncated { get; }
 
         private void BuildDerivatives(Dictionary<string, object?> derivatives)
         {

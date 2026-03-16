@@ -19,6 +19,7 @@ using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DogStatsd;
+using Datadog.Trace.FeatureFlags;
 using Datadog.Trace.LibDatadog.ServiceDiscovery;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
@@ -32,6 +33,7 @@ using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util;
 using Datadog.Trace.Util.Http;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.StatsdClient;
 
@@ -74,6 +76,7 @@ namespace Datadog.Trace
             IDynamicConfigurationManager dynamicConfigurationManager,
             ITracerFlareManager tracerFlareManager,
             ISpanEventsManager spanEventsManager,
+            FeatureFlagsModule featureFlagsModule,
             ITraceProcessor[] traceProcessors = null)
         {
             Settings = settings;
@@ -103,6 +106,7 @@ namespace Datadog.Trace
             DynamicConfigurationManager = dynamicConfigurationManager;
             TracerFlareManager = tracerFlareManager;
             SpanEventsManager = spanEventsManager;
+            FeatureFlags = featureFlagsModule;
 
             SpanContextPropagator = SpanContextPropagatorFactory.GetSpanContextPropagator(settings.PropagationStyleInject, settings.PropagationStyleExtract, settings.PropagationExtractFirstOnly, settings.PropagationBehaviorExtract);
             UpdatePerTraceSettings(settings.Manager.InitialMutableSettings);
@@ -176,6 +180,8 @@ namespace Datadog.Trace
         public RuntimeMetricsWriter RuntimeMetrics { get; }
 
         public ISpanEventsManager SpanEventsManager { get; }
+
+        public FeatureFlagsModule FeatureFlags { get; }
 
         public PerTraceSettings PerTraceSettings => Volatile.Read(ref _perTraceSettings);
 
@@ -266,7 +272,10 @@ namespace Datadog.Trace
                 if (oldManager.Statsd != newManager.Statsd)
                 {
                     statsdReplaced = true;
-                    oldManager.Statsd?.Dispose();
+                    if (oldManager.Statsd is not null)
+                    {
+                        await oldManager.Statsd.DisposeAsync().ConfigureAwait(false);
+                    }
                 }
 
                 var discoveryReplaced = false;
@@ -304,10 +313,17 @@ namespace Datadog.Trace
                     oldManager.TracerFlareManager.Dispose();
                 }
 
+                var featureFlagsReplaced = false;
+                if (oldManager.FeatureFlags != newManager.FeatureFlags && oldManager.FeatureFlags is not null)
+                {
+                    featureFlagsReplaced = true;
+                    oldManager.FeatureFlags.Dispose();
+                }
+
                 Log.Information(
                     exception: null,
-                    "Replaced global instances. AgentWriter: {AgentWriterReplaced}, StatsD: {StatsDReplaced}, RuntimeMetricsWriter: {RuntimeMetricsWriterReplaced}, Discovery: {DiscoveryReplaced}, DataStreamsManager: {DataStreamsManagerReplaced}, RemoteConfigurationManager: {ConfigurationManagerReplaced}, DynamicConfigurationManager: {DynamicConfigurationManagerReplaced}, TracerFlareManager {TracerFlareManagerReplaced}",
-                    new object[] { agentWriterReplaced, statsdReplaced, runtimeMetricsWriterReplaced, discoveryReplaced, dataStreamsReplaced, configurationManagerReplaced, dynamicConfigurationManagerReplaced, tracerFlareManagerReplaced });
+                    "Replaced global instances. AgentWriter: {AgentWriterReplaced}, StatsD: {StatsDReplaced}, RuntimeMetricsWriter: {RuntimeMetricsWriterReplaced}, Discovery: {DiscoveryReplaced}, DataStreamsManager: {DataStreamsManagerReplaced}, RemoteConfigurationManager: {ConfigurationManagerReplaced}, DynamicConfigurationManager: {DynamicConfigurationManagerReplaced}, TracerFlareManager {TracerFlareManagerReplaced}, FeatureFlags {FeatureFlagsReplaced}",
+                    new object[] { agentWriterReplaced, statsdReplaced, runtimeMetricsWriterReplaced, discoveryReplaced, dataStreamsReplaced, configurationManagerReplaced, dynamicConfigurationManagerReplaced, tracerFlareManagerReplaced, featureFlagsReplaced });
             }
             catch (Exception ex)
             {
@@ -349,7 +365,7 @@ namespace Datadog.Trace
 
                 var stringWriter = new StringWriter();
 
-                using (var writer = new JsonTextWriter(stringWriter))
+                using (var writer = new JsonTextWriter(stringWriter) { ArrayPool = JsonArrayPool.Shared })
                 {
                     void WriteDictionary(IReadOnlyDictionary<string, string> dictionary)
                     {
@@ -749,6 +765,8 @@ namespace Datadog.Trace
                     var dataStreamsTask = instance.DataStreamsManager?.DisposeAsync() ?? Task.CompletedTask;
                     Log.Debug("Disposing RemoteConfigurationManager");
                     instance.RemoteConfigurationManager?.Dispose();
+                    Log.Debug("Disposing FeatureFlagsManager");
+                    instance.FeatureFlags?.Dispose();
 
                     Log.Debug("Waiting for disposals.");
                     await Task.WhenAll(flushTracesTask, logSubmissionTask, discoveryService, dataStreamsTask).ConfigureAwait(false);
@@ -760,7 +778,12 @@ namespace Datadog.Trace
                     }
 
                     instance.RuntimeMetrics?.Dispose();
-                    instance.Statsd?.Dispose();
+
+                    // Fire-and-forget: on master the old sync Dispose() was already
+                    // fire-and-forget internally (Task.Run). DisposeAsync flushes buffers
+                    // and drains worker threads which can take several seconds, longer than
+                    // the window between repeated termination signals on .NET 10.
+                    instance.Statsd?.DisposeAsync().ContinueWith(t => Log.Error(t.Exception, "Error waiting for StatsD disposal"), TaskContinuationOptions.OnlyOnFaulted);
 
                     Log.Debug("Finished waiting for disposals.");
                 }

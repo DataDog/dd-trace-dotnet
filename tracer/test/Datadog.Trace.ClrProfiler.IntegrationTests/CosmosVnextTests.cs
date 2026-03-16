@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
+using VerifyTests;
 using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
@@ -58,13 +59,39 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
-                var settings = VerifyHelper.GetSpanVerifierSettings();
+                var settings = ApplyCosmosDbScrubbers(VerifyHelper.GetSpanVerifierSettings());
 
-                // Normalize cosmosdb host between localhost, x64, and ARM64
-                settings.AddSimpleScrubber("out.host: https://localhost:00000/", "out.host: https://cosmosdb-emulator:8081/");
-                settings.AddSimpleScrubber("out.host: https://cosmosdb-emulator_arm64:8081/", "out.host: https://cosmosdb-emulator:8081/");
-                settings.AddSimpleScrubber("out.host: localhost", "out.host: cosmosdb-emulator");
-                settings.AddSimpleScrubber("out.host: cosmosdb-emulator_arm64", "out.host: cosmosdb-emulator");
+                await VerifyHelper.VerifySpans(spans, settings)
+                                  .UseTextForParameters($"Schema{metadataSchemaVersion.ToUpper()}")
+                                  .DisableRequireUniquePrefix();
+
+                await telemetry.AssertIntegrationEnabledAsync(IntegrationId.CosmosDb);
+            }
+        }
+
+        [SkippableTheory]
+        [MemberData(nameof(GetEnabledConfig))]
+        [Trait("Category", "EndToEnd")]
+        public async Task SubmitTracesCRUD(string packageVersion, string metadataSchemaVersion)
+        {
+            var expectedSpanCount = 9;
+
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+            SetEnvironmentVariable("TEST_MODE", "CRUD");
+
+            var isExternalSpan = metadataSchemaVersion == "v0";
+            var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-cosmosdb" : EnvironmentHelper.FullSampleName;
+
+            using var telemetry = this.ConfigureTelemetry();
+            using (var agent = EnvironmentHelper.GetMockAgent())
+            using (await RunSampleAndWaitForExit(agent, arguments: $"{TestPrefix}", packageVersion: packageVersion))
+            {
+                var spans = await agent.WaitForSpansAsync(expectedSpanCount, operationName: ExpectedOperationName);
+                spans.Count.Should().BeGreaterOrEqualTo(expectedSpanCount, $"Expecting at least {expectedSpanCount} CosmosDB spans for CRUD operations, only received {spans.Count}");
+
+                ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
+
+                var settings = ApplyCosmosDbScrubbers(VerifyHelper.GetSpanVerifierSettings());
 
                 await VerifyHelper.VerifySpans(spans, settings)
                                   .UseTextForParameters($"Schema{metadataSchemaVersion.ToUpper()}")
@@ -85,5 +112,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
 
         public Task DisposeAsync() => Task.CompletedTask;
+
+        private static VerifySettings ApplyCosmosDbScrubbers(VerifySettings settings)
+        {
+            settings.AddSimpleScrubber("out.host: https://localhost:00000/", "out.host: https://cosmosdb-emulator:8081/");
+            settings.AddSimpleScrubber("out.host: https://cosmosdb-emulator_arm64:8081/", "out.host: https://cosmosdb-emulator:8081/");
+            settings.AddSimpleScrubber("out.host: localhost", "out.host: cosmosdb-emulator");
+            settings.AddSimpleScrubber("out.host: cosmosdb-emulator_arm64", "out.host: cosmosdb-emulator");
+            settings.AddSimpleScrubber("peer.service: localhost", "peer.service: cosmosdb-emulator");
+            settings.AddSimpleScrubber("peer.service: cosmosdb-emulator_arm64", "peer.service: cosmosdb-emulator");
+            settings.AddRegexScrubber(new(@"http\.useragent: cosmos-netstandard-sdk\/[^\,]+", VerifyHelper.RegOptions), "http.useragent: cosmos-netstandard-sdk/3.0.0|3.0.0|00|arch|os|runtime|");
+            return settings;
+        }
     }
 }

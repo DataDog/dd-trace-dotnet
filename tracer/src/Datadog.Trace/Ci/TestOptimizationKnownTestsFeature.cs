@@ -15,7 +15,7 @@ internal sealed class TestOptimizationKnownTestsFeature : ITestOptimizationKnown
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(TestOptimizationKnownTestsFeature));
     private readonly bool _enabled;
-    private readonly Task<TestOptimizationClient.KnownTestsResponse> _knownTestsTask;
+    private readonly Task<TestOptimizationClient.KnownTestsResponse>? _knownTestsTask;
 
     private TestOptimizationKnownTestsFeature(TestOptimizationSettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationClient testOptimizationClient)
     {
@@ -31,7 +31,7 @@ internal sealed class TestOptimizationKnownTestsFeature : ITestOptimizationKnown
             Log.Information("TestOptimizationKnownTestsFeature: Known tests is disabled.");
             settings.SetKnownTestsEnabled(false);
             settings.SetEarlyFlakeDetectionEnabled(false);
-            _knownTestsTask = Task.FromResult(default(TestOptimizationClient.KnownTestsResponse));
+            _knownTestsTask = null;
             _enabled = false;
         }
 
@@ -46,16 +46,21 @@ internal sealed class TestOptimizationKnownTestsFeature : ITestOptimizationKnown
         }
     }
 
-    public bool Enabled => _enabled && KnownTests.Tests is not null; // Ensure that the known tests response was not empty
+    public bool Enabled => _enabled && _knownTestsTask is not null && KnownTests.Tests is not null; // Ensure that the known tests response was not empty
 
     public TestOptimizationClient.KnownTestsResponse KnownTests
-        => _knownTestsTask.SafeGetResult();
+        => _knownTestsTask?.SafeGetResult() ?? default;
 
     public static ITestOptimizationKnownTestsFeature Create(TestOptimizationSettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationClient testOptimizationClient)
         => new TestOptimizationKnownTestsFeature(settings, clientSettingsResponse, testOptimizationClient);
 
     public bool IsAKnownTest(string moduleName, string testSuite, string testName)
     {
+        if (_knownTestsTask is null)
+        {
+            return false;
+        }
+
         if (KnownTests is { Tests: { } knownTests } &&
             knownTests.TryGetValue(moduleName, out var knownTestsSuites) &&
             knownTestsSuites?.TryGetValue(testSuite, out var knownTestsArray) == true &&

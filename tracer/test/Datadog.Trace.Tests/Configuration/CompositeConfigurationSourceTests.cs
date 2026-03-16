@@ -6,7 +6,9 @@
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.ConfigurationSources;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Telemetry;
@@ -312,6 +314,66 @@ public class CompositeConfigurationSourceTests
                   ]);
     }
 
+    [Fact]
+    public void Telemetry_RecordsDictionary()
+    {
+        var telemetry = new StubTelemetry();
+        const string key = "some_value";
+        var source = new CompositeConfigurationSource()
+        {
+            new NameValueConfigurationSource(new() { { key, "foo:bar,x:baz" } }, ConfigurationOrigins.EnvVars),
+            new NameValueConfigurationSource(new(), ConfigurationOrigins.Calculated),
+            new NameValueConfigurationSource(new() { { key, string.Empty } }, ConfigurationOrigins.DdConfig),
+            new NameValueConfigurationSource(new() { { key, "not_a_dict" } }, ConfigurationOrigins.Code),
+            new NameValueConfigurationSource(new() { { key, null } }, ConfigurationOrigins.AppConfig),
+            new NameValueConfigurationSource(new() { { key, "x:y" } }, ConfigurationOrigins.RemoteConfig),
+        };
+
+        // first wins
+        var config = new ConfigurationBuilder(source, telemetry);
+        var actual = config.WithKeys(key).AsDictionary();
+        actual.Should().NotBeNullOrEmpty().And.BeEquivalentTo(new Dictionary<string, string> { { "foo", "bar" }, { "x", "baz" } });
+
+        // final telemetry value should be the "real" value
+        var telemetryData = telemetry.Telemetry;
+        telemetryData?.Last().Value.Should().Be("foo:bar,x:baz");
+
+        // telemetry records everything where a value was found
+        telemetryData.Should()
+                 .BeEquivalentTo(
+                  [
+                      new ConfigurationTelemetryTests.ConfigDto(key, "x:y", ConfigurationOrigins.RemoteConfig, true, null),
+                      new ConfigurationTelemetryTests.ConfigDto(key, "not_a_dict", ConfigurationOrigins.Code, true, null),
+                      new ConfigurationTelemetryTests.ConfigDto(key, string.Empty, ConfigurationOrigins.DdConfig, true, null),
+                      new ConfigurationTelemetryTests.ConfigDto(key, "foo:bar,x:baz", ConfigurationOrigins.EnvVars, true, null),
+                  ]);
+    }
+
+    [Fact]
+    public void Telemetry_RecordsDictionaryManualConfig()
+    {
+        var dynamicSource = NullConfigurationSource.Instance;
+        var tags = new Dictionary<string, string> { { "x", "y" } };
+        var manualSource = new ManualInstrumentationConfigurationSource(
+            new Dictionary<string, object>
+            {
+                { TracerSettingKeyConstants.GlobalTagsKey, tags },
+            },
+            useDefaultSources: true);
+        var telemetry = new StubTelemetry();
+        var config = new ConfigurationBuilder(new CompositeConfigurationSource([dynamicSource, manualSource]), telemetry);
+
+        var result = config.WithKeys(ConfigurationKeys.GlobalTags).AsDictionaryResult();
+        result.ConfigurationResult.Result.Should().BeSameAs(tags);
+        telemetry.Telemetry
+                 .Should()
+                 .NotBeNull()
+                 .And.BeEquivalentTo(
+                  [
+                      new ConfigurationTelemetryTests.ConfigDto("DD_TAGS", "x:y", ConfigurationOrigins.Code, true, null),
+                  ]);
+    }
+
     internal class StubTelemetry : IConfigurationTelemetry
     {
         public List<ConfigurationTelemetryTests.ConfigDto> Telemetry { get; } = new();
@@ -334,7 +396,9 @@ public class CompositeConfigurationSourceTests
         public void Record(string key, int? value, ConfigurationOrigins origin, TelemetryErrorCode? error = null)
             => Telemetry.Add(new(key, value, origin, recordValue: true, error));
 
-        public ICollection<ConfigurationKeyValue> GetData() => null;
+        public ICollection<ConfigurationKeyValue> GetIncrementalData() => null;
+
+        public ICollection<ConfigurationKeyValue> GetFullData() => null;
 
         public void CopyTo(IConfigurationTelemetry destination)
         {

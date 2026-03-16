@@ -12,6 +12,11 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 var app = builder.Build();
 
+if (Environment.GetEnvironmentVariable("ADD_ACTIVITY_MIDDLEWARE") == "1")
+{
+    app.UseMiddleware<ActivityMiddleware>();
+}
+
 app.UseMiddleware<PingMiddleware>();
 
 app.MapControllerRoute("default", "{controller=Home}/{action=Index}/{id?}");

@@ -106,7 +106,7 @@ namespace Datadog.Trace.Telemetry
         /// Get the latest data to send to the intake.
         /// </summary>
         /// <returns>Null if there are no changes, or the collector is not yet initialized</returns>
-        public ICollection<IntegrationTelemetryData>? GetData()
+        public ICollection<IntegrationTelemetryData>? GetIncrementalData()
         {
             var hasChanges = Interlocked.CompareExchange(ref _hasChangesFlag, 0, 1) == 1;
             if (!hasChanges)

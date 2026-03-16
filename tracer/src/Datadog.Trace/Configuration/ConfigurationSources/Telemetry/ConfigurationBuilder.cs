@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 
 namespace Datadog.Trace.Configuration.Telemetry;
@@ -19,36 +20,39 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
 
     public HasKeys WithKeys(string key) => new(_source, _telemetry, key);
 
-    public HasKeys WithIntegrationKey(string integrationName) => new(
-        _source,
-        _telemetry,
-        string.Format(IntegrationSettings.IntegrationEnabledKey, integrationName.ToUpperInvariant()),
-        [
-            string.Format(IntegrationSettings.IntegrationEnabledKey, integrationName),
-            $"DD_{integrationName}_ENABLED"
-        ]);
+    public HasKeys WithIntegrationKey(string integrationName)
+    {
+        var integrationEnabledKeys = IntegrationNameToKeys.GetIntegrationEnabledKeys(integrationName);
+        return new(
+            _source,
+            _telemetry,
+            integrationEnabledKeys.Key,
+            integrationEnabledKeys.Value);
+    }
 
-    public HasKeys WithIntegrationAnalyticsKey(string integrationName) => new(
-        _source,
-        _telemetry,
+    public HasKeys WithIntegrationAnalyticsKey(string integrationName)
+    {
 #pragma warning disable 618 // App analytics is deprecated, but still used
-        string.Format(IntegrationSettings.AnalyticsEnabledKey, integrationName.ToUpperInvariant()),
-        [
-            string.Format(IntegrationSettings.AnalyticsEnabledKey, integrationName),
+        var integrationAnalyticsEnabledKeys = IntegrationNameToKeys.GetIntegrationAnalyticsEnabledKeys(integrationName);
 #pragma warning restore 618
-            $"DD_{integrationName}_ANALYTICS_ENABLED"
-        ]);
+        return new(
+            _source,
+            _telemetry,
+            integrationAnalyticsEnabledKeys.Key,
+            integrationAnalyticsEnabledKeys.Value);
+    }
 
-    public HasKeys WithIntegrationAnalyticsSampleRateKey(string integrationName) => new(
-        _source,
-        _telemetry,
+    public HasKeys WithIntegrationAnalyticsSampleRateKey(string integrationName)
+    {
 #pragma warning disable 618 // App analytics is deprecated, but still used
-        string.Format(IntegrationSettings.AnalyticsSampleRateKey, integrationName.ToUpperInvariant()),
-        [
-            string.Format(IntegrationSettings.AnalyticsSampleRateKey, integrationName),
+        var integrationAnalyticsSampleRateKeys = IntegrationNameToKeys.GetIntegrationAnalyticsSampleRateKeys(integrationName);
 #pragma warning restore 618
-            $"DD_{integrationName}_ANALYTICS_SAMPLE_RATE"
-        ]);
+        return new(
+            _source,
+            _telemetry,
+            integrationAnalyticsSampleRateKeys.Key,
+            integrationAnalyticsSampleRateKeys.Value);
+    }
 
     internal readonly struct HasKeys(IConfigurationSource source, IConfigurationTelemetry telemetry, string key, string[]? providedAliases = null)
     {

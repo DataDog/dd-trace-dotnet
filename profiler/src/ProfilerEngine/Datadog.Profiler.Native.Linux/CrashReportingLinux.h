@@ -34,7 +34,6 @@ private:
     std::vector<StackFrame> GetThreadFrames(int32_t tid, ResolveManagedCallstack resolveManagedCallstack, void* context) override;
     const ModuleInfo* FindModule(uintptr_t ip);
     std::vector<ModuleInfo> GetModules();
-    std::string GetSignalInfo(int32_t signal) override;
     std::string GetThreadName(int32_t tid);
 
     unw_addr_space_t _addressSpace;

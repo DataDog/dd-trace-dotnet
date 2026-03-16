@@ -15,7 +15,7 @@ using Xunit;
 namespace Datadog.Trace.Tests.Configuration;
 
 [Collection(nameof(EnvironmentVariablesTestCollection))]
-[EnvironmentRestorer(LambdaMetadata.FunctionNameEnvVar, LambdaMetadata.HandlerEnvVar, LambdaMetadata.ExtensionPathEnvVar)]
+[EnvironmentRestorer(PlatformKeys.Aws.LambdaFunctionName, PlatformKeys.Aws.LambdaHandler, ConfigurationKeys.Aws.LambdaExtensionPath)]
 public class TracerSettingsAzureAppServiceTests : SettingsTestsBase
 {
     [Theory]

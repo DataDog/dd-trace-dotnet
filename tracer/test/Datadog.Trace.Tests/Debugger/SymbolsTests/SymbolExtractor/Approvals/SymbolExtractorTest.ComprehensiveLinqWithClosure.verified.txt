@@ -1,4 +1,4 @@
-﻿{
+{
   "service": "test",
   "env": "test",
   "version": "0",
@@ -56,14 +56,14 @@
                     "access_modifiers": [
                       "sanitized"
                     ],
-                    "return_type": "System.Bool",
+                    "return_type": "System.Boolean",
                     "start_column": 999,
                     "end_column": 999
                   },
                   "symbols": [
                     {
                       "name": "this",
-                      "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.ComprehensiveLinqWithClosure+<>c__DisplayClass0_0",
+                      "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.ComprehensiveLinqWithClosure",
                       "symbol_type": "arg",
                       "line": 0
                     },

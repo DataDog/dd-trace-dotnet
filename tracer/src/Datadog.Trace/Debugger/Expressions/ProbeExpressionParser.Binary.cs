@@ -1,4 +1,4 @@
-﻿// <copyright file="ProbeExpressionParser.Binary.cs" company="Datadog">
+// <copyright file="ProbeExpressionParser.Binary.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -75,8 +75,7 @@ internal sealed partial class ProbeExpressionParser<T>
                 ">=" => Expression.GreaterThanOrEqual(left, right),
                 "<" => Expression.LessThan(left, right),
                 "<=" => Expression.LessThanOrEqual(left, right),
-                "==" => Expression.Equal(left, right),
-                "!=" => Expression.NotEqual(left, right),
+                "==" or "!=" => EqualExpression(),
                 _ => throw new ArgumentException("Unknown operand" + operand, nameof(operand))
             };
         }
@@ -84,6 +83,38 @@ internal sealed partial class ProbeExpressionParser<T>
         {
             AddError($"{left?.ToString() ?? "N/A"} {operand} {right?.ToString() ?? "N/A"}", e.Message);
             return ReturnDefaultValueExpression();
+        }
+
+        Expression EqualExpression()
+        {
+            // Check if comparing non-nullable value type to null constant
+            if ((right is ConstantExpression { Value: null } && left.Type.IsValueType && Nullable.GetUnderlyingType(left.Type) == null) ||
+                (left is ConstantExpression { Value: null } && right.Type.IsValueType && Nullable.GetUnderlyingType(right.Type) == null))
+            {
+                // Non-nullable value types can never be null
+                return operand == "==" ? Expression.Constant(false) : Expression.Constant(true);
+            }
+
+            // For ANY reference type compared to null, use object reference equality
+            // This avoids InvalidCastException when runtime type differs from compile-time type
+            // (e.g., probe compiled for LimitedInputStream but invoked with MemoryStream)
+            if (right is ConstantExpression { Value: null } && !left.Type.IsValueType)
+            {
+                var leftAsObject = left.Type == typeof(object) ? left : Expression.Convert(left, typeof(object));
+                return operand == "=="
+                    ? Expression.ReferenceEqual(leftAsObject, Expression.Constant(null, typeof(object)))
+                    : Expression.Not(Expression.ReferenceEqual(leftAsObject, Expression.Constant(null, typeof(object))));
+            }
+
+            if (left is ConstantExpression { Value: null } && !right.Type.IsValueType)
+            {
+                var rightAsObject = right.Type == typeof(object) ? right : Expression.Convert(right, typeof(object));
+                return operand == "=="
+                    ? Expression.ReferenceEqual(Expression.Constant(null, typeof(object)), rightAsObject)
+                    : Expression.Not(Expression.ReferenceEqual(Expression.Constant(null, typeof(object)), rightAsObject));
+            }
+
+            return operand == "==" ? Expression.Equal(left, right) : Expression.NotEqual(left, right);
         }
     }
 

@@ -270,7 +270,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
 
         if (isIastEnabled || isRaspEnabled)
         {
-            _dataflow = new iast::Dataflow(info_, rejit_handler, runtime_information_);
+            auto modules = module_ids.Get();
+            _dataflow = new iast::Dataflow(info_, rejit_handler, modules.Ref(), runtime_information_);
         }
         else
         {
@@ -2011,6 +2012,10 @@ long CorProfiler::EnableCallTargetDefinitions(UINT32 enabledCategories)
         auto _ = trace::Stats::Instance()->InitializeProfilerMeasure();
         Logger::Info("EnableCallTargetDefinitions: enabledCategories: ", enabledCategories, " from managed side.");
 
+        // Hold module_ids lock while iterating and mutating integration_definitions_
+        // to prevent concurrent modification from ModuleLoadFinished or RegisterCallTargetDefinitions
+        auto modules = module_ids.Get();
+
         std::vector<IntegrationDefinition> affectedDefinitions;
         for (auto& integration : integration_definitions_)
         {
@@ -2022,7 +2027,6 @@ long CorProfiler::EnableCallTargetDefinitions(UINT32 enabledCategories)
 
         if (affectedDefinitions.size() > 0)
         {
-            auto modules = module_ids.Get();
             auto promise = std::make_shared<std::promise<ULONG>>();
             std::future<ULONG> future = promise->get_future();
             tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(modules.Ref(), affectedDefinitions,
@@ -2043,6 +2047,10 @@ long CorProfiler::DisableCallTargetDefinitions(UINT32 disabledCategories)
         auto _ = trace::Stats::Instance()->InitializeProfilerMeasure();
         Logger::Info("DisableCallTargetDefinitions: enabledCategories: ", disabledCategories, " from managed side.");
 
+        // Hold module_ids lock while iterating and mutating integration_definitions_
+        // to prevent concurrent modification from ModuleLoadFinished or RegisterCallTargetDefinitions
+        auto modules = module_ids.Get();
+
         std::vector<IntegrationDefinition> affectedDefinitions;
         for (auto& integration : integration_definitions_)
         {
@@ -2054,7 +2062,6 @@ long CorProfiler::DisableCallTargetDefinitions(UINT32 disabledCategories)
 
         if (affectedDefinitions.size() > 0)
         {
-            auto modules = module_ids.Get();
             auto promise = std::make_shared<std::promise<ULONG>>();
             std::future<ULONG> future = promise->get_future();
             tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(modules.Ref(), affectedDefinitions, promise);
@@ -2076,7 +2083,8 @@ int CorProfiler::RegisterIastAspects(WCHAR** aspects, int aspectsLength, UINT32 
     if (dataflow == nullptr && IsCallSiteManagedActivationEnabled())
     {
         Logger::Debug("Creating Dataflow.");
-        dataflow = new iast::Dataflow(info_, rejit_handler, runtime_information_);
+        auto modules = module_ids.Get();
+        dataflow = new iast::Dataflow(info_, rejit_handler, modules.Ref(), runtime_information_);
     }
 
     if (dataflow != nullptr)

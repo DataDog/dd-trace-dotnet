@@ -19,6 +19,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore;
 
+// Only testing a single specific TFM for each, just to reduce overhead
 #if NETCOREAPP2_1
 public class AspNetCoreMvc21ResourceBasedSamplingTests : AspNetCoreMvcResourceBasedSamplingTestBase
 {
@@ -90,6 +91,32 @@ public class AspNetCoreIisMvc31MvcResourceBasedSamplingOutOfProcessTests : AspNe
     {
     }
 }
+#elif NET8_0
+public class AspNetCoreMvc31ResourceBasedSamplingSingleSpanTests : AspNetCoreMvcResourceBasedSamplingTestBase
+{
+    public AspNetCoreMvc31ResourceBasedSamplingSingleSpanTests(AspNetCoreTestFixture fixture, ITestOutputHelper output)
+        : base(nameof(AspNetCoreMvc31ResourceBasedSamplingSingleSpanTests), "AspNetCoreMvc31", fixture, output, singleSpan: true)
+    {
+    }
+}
+
+[Collection("IisTests")]
+public class AspNetCoreIisMvc31MvcResourceBasedSamplingInProcessSingleSpanTests : AspNetCoreIisMvcResourceBasedSamplingTestBase
+{
+    public AspNetCoreIisMvc31MvcResourceBasedSamplingInProcessSingleSpanTests(IisFixture fixture, ITestOutputHelper output)
+        : base(nameof(AspNetCoreIisMvc31MvcResourceBasedSamplingInProcessSingleSpanTests), "AspNetCoreMvc31", fixture, output, inProcess: true, singleSpan: true)
+    {
+    }
+}
+
+[Collection("IisTests")]
+public class AspNetCoreIisMvc31MvcResourceBasedSamplingOutOfProcessSingleSpanTests : AspNetCoreIisMvcResourceBasedSamplingTestBase
+{
+    public AspNetCoreIisMvc31MvcResourceBasedSamplingOutOfProcessSingleSpanTests(IisFixture fixture, ITestOutputHelper output)
+        : base(nameof(AspNetCoreIisMvc31MvcResourceBasedSamplingOutOfProcessSingleSpanTests), "AspNetCoreMvc31", fixture, output, inProcess: false, singleSpan: true)
+    {
+    }
+}
 #endif
 
 [UsesVerify]
@@ -98,8 +125,8 @@ public abstract class AspNetCoreMvcResourceBasedSamplingTestBase : AspNetCoreMvc
     private readonly AspNetCoreTestFixture fixture;
     private readonly string _testName;
 
-    public AspNetCoreMvcResourceBasedSamplingTestBase(string testName, string sampleName, AspNetCoreTestFixture fixture, ITestOutputHelper output)
-        : base(sampleName, fixture, output, enableRouteTemplateResourceNames: true)
+    public AspNetCoreMvcResourceBasedSamplingTestBase(string testName, string sampleName, AspNetCoreTestFixture fixture, ITestOutputHelper output, bool singleSpan = false)
+        : base(sampleName, fixture, output, singleSpan ? AspNetCoreFeatureFlags.SingleSpan : AspNetCoreFeatureFlags.RouteTemplateResourceNames)
     {
         // These test resource-based sampling on the parent ASP.NET span (non-MVC) one.
         SetEnvironmentVariable(ConfigurationKeys.CustomSamplingRules, """[{"sample_rate":0.0, "service":"*", "resource":"GET /ping"}]""");
@@ -136,8 +163,8 @@ public abstract class AspNetCoreIisMvcResourceBasedSamplingTestBase : AspNetCore
     private readonly IisFixture _iisFixture;
     private readonly string _testName;
 
-    protected AspNetCoreIisMvcResourceBasedSamplingTestBase(string testName, string sampleName, IisFixture fixture, ITestOutputHelper output, bool inProcess)
-        : base(sampleName, fixture, output, inProcess, enableRouteTemplateResourceNames: true)
+    protected AspNetCoreIisMvcResourceBasedSamplingTestBase(string testName, string sampleName, IisFixture fixture, ITestOutputHelper output, bool inProcess, bool singleSpan = false)
+        : base(sampleName, fixture, output, inProcess, singleSpan ? AspNetCoreFeatureFlags.SingleSpan : AspNetCoreFeatureFlags.RouteTemplateResourceNames)
     {
         _iisFixture = fixture;
         _testName = testName;

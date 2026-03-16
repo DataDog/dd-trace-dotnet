@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Ci.Telemetry;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 // ReSharper disable ConvertToPrimaryConstructor
@@ -42,7 +43,7 @@ internal sealed partial class TestOptimizationClient
             commitRequests[i] = new Data<object>(localCommits[i], CommitType, null);
         }
 
-        var jsonQuery = JsonConvert.SerializeObject(new DataArrayEnvelope<Data<object>>(commitRequests, _repositoryUrl), SerializerSettings);
+        var jsonQuery = JsonHelper.SerializeObject(new DataArrayEnvelope<Data<object>>(commitRequests, _repositoryUrl), SerializerSettings);
         Log.Debug("TestOptimizationClient: Commits.JSON RQ = {Json}", jsonQuery);
 
         string? queryResponse;
@@ -63,7 +64,7 @@ internal sealed partial class TestOptimizationClient
             return new SearchCommitResponse(localCommits, null, false);
         }
 
-        var deserializedResult = JsonConvert.DeserializeObject<DataArrayEnvelope<Data<object>>>(queryResponse);
+        var deserializedResult = JsonHelper.DeserializeObject<DataArrayEnvelope<Data<object>>>(queryResponse);
         if (deserializedResult.Data is null || deserializedResult.Data.Length == 0)
         {
             return new SearchCommitResponse(localCommits, null, true);
@@ -115,10 +116,19 @@ internal sealed partial class TestOptimizationClient
 
     internal readonly struct SearchCommitResponse
     {
+        [JsonProperty("localCommits")]
         public readonly string[] LocalCommits;
+
+        [JsonProperty("remoteCommits")]
         public readonly string[] RemoteCommits;
+
+        [JsonProperty("isOk")]
         public readonly bool IsOk;
+
+        [JsonProperty("hasCommits")]
         public readonly bool HasCommits;
+
+        [JsonProperty("missingCommits")]
         public readonly string[] MissingCommits;
 
         public SearchCommitResponse(string[]? localCommits, string[]? remoteCommits, bool isOk)

@@ -173,6 +173,14 @@ namespace Samples.AzureServiceBus.APM
             var sequenceNumbers = await sender.ScheduleMessagesAsync(scheduledMessages, scheduleTime);
             Console.WriteLine($"Scheduled {scheduledMessages.Length} messages for {scheduleTime}");
             Console.WriteLine($"Sequence numbers: {string.Join(", ", sequenceNumbers)}");
+
+            // Wait for scheduled messages to be delivered so they can be purged
+            // Calculate remaining time, but ensure we wait at least 2 seconds total to account for any delays
+            var waitTime = scheduleTime - DateTimeOffset.Now;
+            var totalWaitSeconds = Math.Max(2.0, waitTime.TotalSeconds + 1.0);
+            Console.WriteLine($"Waiting {totalWaitSeconds:F1} seconds for scheduled messages to be delivered...");
+            await Task.Delay(TimeSpan.FromSeconds(totalWaitSeconds));
+            Console.WriteLine("Scheduled messages should now be delivered and ready for purging");
         }
 
         private static async Task TestServiceBusMessageBatchAsync(ServiceBusSender sender, ServiceBusReceiver receiver)

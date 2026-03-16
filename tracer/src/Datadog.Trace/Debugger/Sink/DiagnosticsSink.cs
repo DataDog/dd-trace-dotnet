@@ -1,4 +1,4 @@
-﻿// <copyright file="DiagnosticsSink.cs" company="Datadog">
+// <copyright file="DiagnosticsSink.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -17,15 +17,15 @@ namespace Datadog.Trace.Debugger.Sink
         private const int QueueLimit = 1000;
         private readonly ConcurrentDictionary<string, TimedMessage> _diagnostics;
 
-        private readonly string _serviceName;
+        private readonly Func<string> _serviceNameProvider;
         private readonly int _batchSize;
         private readonly TimeSpan _interval;
 
         private BoundedConcurrentQueue<ProbeStatus> _queue;
 
-        private DiagnosticsSink(string serviceName, int batchSize, TimeSpan interval)
+        private DiagnosticsSink(Func<string> serviceNameProvider, int batchSize, TimeSpan interval)
         {
-            _serviceName = serviceName;
+            _serviceNameProvider = serviceNameProvider;
             _batchSize = batchSize;
             _interval = interval;
 
@@ -33,9 +33,9 @@ namespace Datadog.Trace.Debugger.Sink
             _queue = new BoundedConcurrentQueue<ProbeStatus>(QueueLimit);
         }
 
-        public static DiagnosticsSink Create(string serviceName, DebuggerSettings settings)
+        public static DiagnosticsSink Create(Func<string> serviceNameProvider, DebuggerSettings settings)
         {
-            return new DiagnosticsSink(serviceName, settings.UploadBatchSize, TimeSpan.FromSeconds(settings.DiagnosticsIntervalSeconds));
+            return new DiagnosticsSink(serviceNameProvider, settings.UploadBatchSize, TimeSpan.FromSeconds(settings.DiagnosticsIntervalSeconds));
         }
 
         public void AddProbeStatus(string probeId, Status status, int probeVersion = 0, Exception? exception = null, string? errorMessage = null)
@@ -53,7 +53,7 @@ namespace Datadog.Trace.Debugger.Sink
                 return;
             }
 
-            var next = new ProbeStatus(_serviceName, probeId, status, probeVersion, exception, errorMessage);
+            var next = new ProbeStatus(_serviceNameProvider(), probeId, status, probeVersion, exception, errorMessage);
             var timedMessage = new TimedMessage
             {
                 LastEmit = Clock.UtcNow,

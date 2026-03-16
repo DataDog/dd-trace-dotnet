@@ -27,7 +27,7 @@ namespace Datadog.Trace.Ci.Processors
             _isPartialFlushEnabled = isPartialFlushEnabled;
             _isCiVisibilityProtocol = isCiVisibilityProtocol;
 
-            Log.Information("OriginTraceProcessor initialized.");
+            Log.Debug("OriginTraceProcessor initialized.");
         }
 
         public SpanCollection Process(in SpanCollection trace)

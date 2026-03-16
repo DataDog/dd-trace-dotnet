@@ -151,10 +151,10 @@ namespace Datadog.Trace.Tests.RuntimeMetrics
             var settings = TracerSettings.Create(new() { { ConfigurationKeys.ServiceName, "original" } });
             var statsdManager = new StatsdManager(
                 settings,
-                (m, e) => new(m.ServiceName == "original" ? originalStatsd.Object : newStatsd.Object));
+                (m, e, p) => new(m.ServiceName == "original" ? originalStatsd.Object : newStatsd.Object));
 
             using var listener = new RuntimeEventListener(statsdManager, TimeSpan.FromSeconds(1));
-            using var writer = new RuntimeMetricsWriter(statsdManager, TimeSpan.FromSeconds(1), false);
+            using var writer = new RuntimeMetricsWriter(statsdManager, TimeSpan.FromSeconds(1), false, false);
 
             mutex.Wait();
 

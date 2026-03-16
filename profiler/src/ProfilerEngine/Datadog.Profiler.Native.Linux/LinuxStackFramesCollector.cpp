@@ -7,6 +7,7 @@
 #include <chrono>
 #include <errno.h>
 #include <iomanip>
+// No need to add UNW_LOCAL_ONLY here, we do not call unw_backtraceXX here.
 #include <libunwind.h>
 #include <mutex>
 #include <ucontext.h>

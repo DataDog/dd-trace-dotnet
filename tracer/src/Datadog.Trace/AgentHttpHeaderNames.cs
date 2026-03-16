@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.Collections.Generic;
+using Datadog.Trace.HttpOverStreams;
 
 namespace Datadog.Trace
 {
@@ -44,6 +45,11 @@ namespace Datadog.Trace
         public const string ContainerId = "Datadog-Container-ID";
 
         /// <summary>
+        /// The hash of the container tags received from the agent.
+        /// </summary>
+        public const string ContainerTagsHash = "Datadog-Container-Tags-Hash";
+
+        /// <summary>
         /// The unique identifier of the container where the traced application is running, either as the container id
         /// or the cgroup node controller's inode.
         /// This differs from <see cref="ContainerId"/> which is always the container id, which may not always be
@@ -62,6 +68,11 @@ namespace Datadog.Trace
         public const string AgentVersion = "Datadog-Agent-Version";
 
         /// <summary>
+        /// Agent state reported by the Datadog agent
+        /// </summary>
+        public const string AgentState = "Datadog-Agent-State";
+
+        /// <summary>
         /// Tells the agent whether stats are computer by the tracer
         /// </summary>
         public const string StatsComputation = "Datadog-Client-Computed-Stats";
@@ -75,6 +86,14 @@ namespace Datadog.Trace
         /// Tells the agent how many P0 spans were dropped as a result of stats computation in the tracer
         /// </summary>
         public const string DroppedP0Spans = "Datadog-Client-Dropped-P0-Spans";
+
+        /// <summary>
+        /// Returns <see cref="MinimalHeaders"/>, in the format <c>Key: Value\r\n</c>. For use in HTTP headers
+        /// </summary>
+        internal const string HttpSerializedMinimalHeaders =
+            $"{Language}: .NET" + DatadogHttpValues.CrLf +
+            $"{TracerVersion}: {TracerConstants.AssemblyVersion}" + DatadogHttpValues.CrLf +
+            $"{HttpHeaderNames.TracingEnabled}: false" + DatadogHttpValues.CrLf;
 
         /// <summary>
         /// Gets the default constant header that should be added to any request to the agent

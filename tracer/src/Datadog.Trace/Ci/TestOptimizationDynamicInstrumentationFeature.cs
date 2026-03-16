@@ -16,45 +16,32 @@ namespace Datadog.Trace.Ci;
 internal sealed class TestOptimizationDynamicInstrumentationFeature : ITestOptimizationDynamicInstrumentationFeature
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(TestOptimizationDynamicInstrumentationFeature));
-    private readonly Task<ExceptionIdentifier?> _doneTask;
-    private TaskCompletionSource<ExceptionIdentifier?> _doneTaskSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    private static Task<ExceptionIdentifier?>? _doneTask;
+    private TaskCompletionSource<ExceptionIdentifier?>? _doneTaskSource;
 
     public const int DefaultExceptionHandlerTimeout = 2_000;
 
     public TestOptimizationDynamicInstrumentationFeature(TestOptimizationSettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse)
     {
-        _doneTask = Task.FromResult<ExceptionIdentifier?>(null);
-        if (settings.DynamicInstrumentationEnabled == null && clientSettingsResponse.DynamicInstrumentationEnabled.HasValue)
+        if (!settings.DynamicInstrumentationEnabled.HasValue && clientSettingsResponse.DynamicInstrumentationEnabled.HasValue)
         {
-            Log.Information("TestOptimizationDynamicInstrumentationFeature: Dynamic instrumentation has been changed to {Value} by the settings api.", clientSettingsResponse.DynamicInstrumentationEnabled.Value);
-            settings.SetFlakyRetryEnabled(clientSettingsResponse.DynamicInstrumentationEnabled.Value);
+            Log.Information("TestOptimizationDynamicInstrumentationFeature: Dynamic instrumentation has been changed to {Value} by the settings api.", clientSettingsResponse.DynamicInstrumentationEnabled);
+            settings.SetDynamicInstrumentationEnabled(clientSettingsResponse.DynamicInstrumentationEnabled.Value);
         }
 
-        if (settings.DynamicInstrumentationEnabled == true)
+        Enabled = settings.DynamicInstrumentationEnabled == true;
+        if (Enabled)
         {
             Log.Information("TestOptimizationDynamicInstrumentationFeature: Dynamic instrumentation is enabled.");
-            Enabled = true;
+            _doneTaskSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+            ExceptionTrackManager.ExceptionCaseInstrumented += ExceptionCaseInstrumentedHandler;
         }
         else
         {
             Log.Information("TestOptimizationDynamicInstrumentationFeature: Dynamic instrumentation is disabled.");
-            Enabled = false;
         }
 
-        if (Enabled)
-        {
-            settings.SetDynamicInstrumentationEnabled(true);
-            ExceptionTrackManager.ExceptionCaseInstrumented += exceptionIdentifier =>
-            {
-                Log.Debug("TestOptimizationDynamicInstrumentationFeature: Exception instrumentation completed for {ExceptionIdentifier}", exceptionIdentifier);
-                var tcs = Interlocked.Exchange(ref _doneTaskSource, new(TaskCreationOptions.RunContinuationsAsynchronously));
-                tcs.TrySetResult(exceptionIdentifier);
-            };
-        }
-        else
-        {
-            settings.SetDynamicInstrumentationEnabled(false);
-        }
+        settings.SetDynamicInstrumentationEnabled(Enabled);
     }
 
     public bool Enabled { get; }
@@ -64,13 +51,18 @@ internal sealed class TestOptimizationDynamicInstrumentationFeature : ITestOptim
 
     public Task WaitForExceptionInstrumentation(int timeout)
     {
-        if (!Enabled)
+        if (Enabled && Volatile.Read(ref _doneTaskSource) is { } tcs)
         {
-            return _doneTask;
+            return Task.WhenAny(tcs.Task, Task.Delay(timeout));
         }
 
-        var dts = _doneTaskSource;
-        dts = Interlocked.CompareExchange(ref _doneTaskSource, dts, dts);
-        return Task.WhenAny(dts.Task, Task.Delay(timeout));
+        return _doneTask ??= Task.FromResult<ExceptionIdentifier?>(null);
+    }
+
+    private void ExceptionCaseInstrumentedHandler(ExceptionIdentifier exceptionIdentifier)
+    {
+        Log.Debug("TestOptimizationDynamicInstrumentationFeature: Exception instrumentation completed for {ExceptionIdentifier}", exceptionIdentifier);
+        Interlocked.Exchange(ref _doneTaskSource, new(TaskCreationOptions.RunContinuationsAsynchronously))?
+           .TrySetResult(exceptionIdentifier);
     }
 }

@@ -133,46 +133,53 @@ namespace Datadog.Trace.Debugger.Snapshots
             bool fieldsOnly,
             CaptureLimitInfo limitInfo)
         {
-            if (!fieldsOnly)
-            {
-                WriteTypeAndValue(source, type, jsonWriter, variableName, limitInfo);
-            }
+            var objectOpened = false;
 
             try
             {
-                SerializeInstanceFieldsInternal(source, type, jsonWriter, cts, currentDepth, limitInfo);
                 if (!fieldsOnly)
                 {
-                    jsonWriter.WriteEndObject();
+                    objectOpened = WriteTypeAndValue(source, type, jsonWriter, variableName, limitInfo);
                 }
 
+                SerializeInstanceFieldsInternal(source, type, jsonWriter, cts, currentDepth, limitInfo);
                 return true;
             }
             catch (OperationCanceledException)
             {
                 WriteNotCapturedReason(jsonWriter, NotCapturedReason.timeout);
+                return false;
             }
             catch (Exception e)
             {
                 Log.Error(e, "Error serializing object {VariableName} Depth={CurrentDepth} FieldsOnly={FieldsOnly}", variableName, currentDepth, fieldsOnly);
+                return false;
             }
-
-            return false;
+            finally
+            {
+                if (objectOpened)
+                {
+                    jsonWriter.WriteEndObject();
+                }
+            }
         }
 
-        private static void WriteTypeAndValue(
+        private static bool WriteTypeAndValue(
             object source,
             Type type,
             JsonWriter jsonWriter,
             string variableName,
             CaptureLimitInfo limitInfo)
         {
+            var opened = false;
+
             if (variableName != null)
             {
                 jsonWriter.WritePropertyName(variableName);
             }
 
             jsonWriter.WriteStartObject();
+            opened = true;
             jsonWriter.WritePropertyName("type");
             jsonWriter.WriteValue(type.Name);
 
@@ -188,6 +195,8 @@ namespace Datadog.Trace.Debugger.Snapshots
                 var stringValueTruncated = stringValue?.Length < limitInfo.MaxLength ? stringValue : stringValue?.Substring(0, limitInfo.MaxLength);
                 jsonWriter.WriteValue(stringValueTruncated);
             }
+
+            return opened;
         }
 
         private static void SerializeInstanceFieldsInternal(
@@ -277,22 +286,24 @@ namespace Datadog.Trace.Debugger.Snapshots
         }
 
         private static void SerializeEnumerable(
-           object source,
-           Type type,
-           JsonWriter jsonWriter,
-           IEnumerable enumerable,
-           int currentDepth,
-           CancellationTokenSource cts,
-           CaptureLimitInfo limitInfo)
+            object source,
+            Type type,
+            JsonWriter jsonWriter,
+            IEnumerable enumerable,
+            int currentDepth,
+            CancellationTokenSource cts,
+            CaptureLimitInfo limitInfo)
         {
+            if (source is not ICollection collection)
+            {
+                return;
+            }
+
             IEnumerator enumerator = null;
+            var arrayOpened = false;
+            NotCapturedReason? notCapturedReason = null;
             try
             {
-                if (source is not ICollection collection)
-                {
-                    return;
-                }
-
                 var isDictionary = Redaction.IsSupportedDictionary(source);
                 jsonWriter.WritePropertyName("type");
                 jsonWriter.WriteValue(type.Name);
@@ -300,6 +311,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                 jsonWriter.WriteValue(collection.Count);
                 jsonWriter.WritePropertyName(isDictionary ? "entries" : "elements");
                 jsonWriter.WriteStartArray();
+                arrayOpened = true;
 
                 var itemIndex = 0;
                 enumerator = enumerable.GetEnumerator();
@@ -368,15 +380,14 @@ namespace Datadog.Trace.Debugger.Snapshots
                     }
                 }
 
-                jsonWriter.WriteEndArray();
-
+                // Track the reason but don't write yet if we're still inside the array
                 if (cts.IsCancellationRequested)
                 {
-                    WriteNotCapturedReason(jsonWriter, NotCapturedReason.timeout);
+                    notCapturedReason = NotCapturedReason.timeout;
                 }
                 else if (hasNext && itemIndex >= limitInfo.MaxCollectionSize)
                 {
-                    WriteNotCapturedReason(jsonWriter, NotCapturedReason.collectionSize);
+                    notCapturedReason = NotCapturedReason.collectionSize;
                 }
             }
             catch (InvalidOperationException e)
@@ -393,6 +404,19 @@ namespace Datadog.Trace.Debugger.Snapshots
             }
             finally
             {
+                // Always close the array if we opened one, even on error
+                // This prevents leaving the JSON writer in an inconsistent state
+                if (arrayOpened)
+                {
+                    jsonWriter.WriteEndArray();
+                }
+
+                // Write not captured reason AFTER closing the array (property must be at object level, not array level)
+                if (notCapturedReason.HasValue)
+                {
+                    WriteNotCapturedReason(jsonWriter, notCapturedReason.Value);
+                }
+
                 if (enumerator is IDisposable disposable)
                 {
                     disposable.Dispose();

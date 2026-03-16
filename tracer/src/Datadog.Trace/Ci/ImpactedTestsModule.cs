@@ -68,8 +68,12 @@ internal sealed class ImpactedTestsModule
             }
             catch (Exception ex)
             {
-                Log.Debug(ex, "Git command failed.");
+                Log.Debug(ex, "ImpactedTestsModule: Git command failed.");
             }
+        }
+        else
+        {
+            Log.Debug("ImpactedTestsModule: Base commit sha not found in {Path} (current sha: {CurrentSha})", workspacePath, currentCommitSha);
         }
 
         // We don't have any modified files, let's try to calculate the PR base commit
@@ -91,7 +95,7 @@ internal sealed class ImpactedTestsModule
                 }
                 catch (Exception ex)
                 {
-                    Log.Debug(ex, "Git command failed.");
+                    Log.Debug(ex, "ImpactedTestsModule: Git command failed.");
                 }
             }
         }
@@ -207,11 +211,14 @@ internal sealed class ImpactedTestsModule
     /// <returns>Calculated commit</returns>
     private static string CalculateBaseCommit(string workingDirectory, string? defaultBranch, CIEnvironmentValues environmentValues)
     {
+        Log.Debug("ImpactedTestsModule: Calculating Base Commit with: [DefaultBranch: {DefaultBranch}, TargetBranch: {TargetBranch}, PullRequestBaseBranch: {PullRequestBaseBranch}]", defaultBranch, environmentValues.Branch, environmentValues.PrBaseBranch);
         var baseBranchInfo = GitCommandHelper.DetectBaseBranch(
             workingDirectory,
             defaultBranch: defaultBranch,
             targetBranch: environmentValues.Branch,
             pullRequestBaseBranch: environmentValues.PrBaseBranch);
-        return baseBranchInfo?.MergeBaseSha ?? string.Empty;
+        var value = baseBranchInfo?.MergeBaseSha ?? string.Empty;
+        Log.Debug("ImpactedTestsModule: MergeBaseSha: {MergeBaseSha}", value);
+        return value;
     }
 }

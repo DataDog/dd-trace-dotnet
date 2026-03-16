@@ -14,13 +14,13 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 {
     internal sealed class ExceptionReplaySnapshotCreator : DebuggerSnapshotCreator
     {
-        public ExceptionReplaySnapshotCreator(bool isFullSnapshot, ProbeLocation location, bool hasCondition, string[] tags, CaptureLimitInfo limitInfo, bool withProcessTags)
-            : base(isFullSnapshot, location, hasCondition, tags, limitInfo, withProcessTags)
+        public ExceptionReplaySnapshotCreator(bool isFullSnapshot, ProbeLocation location, bool hasCondition, string[] tags, CaptureLimitInfo limitInfo, bool withProcessTags, Func<string> serviceNameProvider)
+            : base(isFullSnapshot, location, hasCondition, tags, limitInfo, withProcessTags, serviceNameProvider)
         {
         }
 
-        public ExceptionReplaySnapshotCreator(bool isFullSnapshot, ProbeLocation location, bool hasCondition, string[] tags, MethodScopeMembers methodScopeMembers, CaptureLimitInfo limitInfo, bool withProcessTags)
-            : base(isFullSnapshot, location, hasCondition, tags, methodScopeMembers, limitInfo, withProcessTags)
+        public ExceptionReplaySnapshotCreator(bool isFullSnapshot, ProbeLocation location, bool hasCondition, string[] tags, MethodScopeMembers methodScopeMembers, CaptureLimitInfo limitInfo, bool withProcessTags, Func<string> serviceNameProvider)
+            : base(isFullSnapshot, location, hasCondition, tags, methodScopeMembers, limitInfo, withProcessTags, serviceNameProvider)
         {
         }
 

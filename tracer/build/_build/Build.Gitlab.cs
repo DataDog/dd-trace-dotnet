@@ -88,7 +88,15 @@ partial class Build
 
     void SignFiles(IReadOnlyCollection<AbsolutePath> filesToSign)
     {
-        const string validSignature = "59063C826DAA5B628B5CE8A2B32015019F164BF0";
+        // See list of certificates
+        // in https://datadoghq.atlassian.net/wiki/spaces/SECENG/pages/3217261499/Certificates+for+Windows+Code+Signing
+        var expectedCertificateThumbprints = new []
+        {
+            "A0FB7BEE153FE31431062731306903B3A5CB1824",
+            // TODO remove this one when the new certificate is deployed;
+            // see https://github.com/DataDog/windows-code-signing-cert/blob/main/current-certs.toml
+            "59063C826DAA5B628B5CE8A2B32015019F164BF0",
+        };
 
         Logger.Information("Signing {Count} binaries...", filesToSign.Count);
         filesToSign.ForEach(file => SignBinary(file));
@@ -99,7 +107,7 @@ partial class Build
             Logger.Information("Signing {BinaryPath}", binaryPath);
 
             var signProcess = ProcessTasks.StartProcess(
-                    "dd-wcs",
+                    "c:/devtools/windows-code-signer.exe",
                     $"sign {binaryPath}",
                     logOutput: false,
                     logInvocation: false);
@@ -108,13 +116,7 @@ partial class Build
             var output = signProcess.Output.Select(o => o.Text);
             foreach (var line in output)
             {
-                Logger.Information("[dd-wcs] {Line}", line);
-
-                // dd-wcs will return 0 even if there are errors
-                if (line.StartsWith("ERROR:", StringComparison.OrdinalIgnoreCase))
-                {
-                    throw new Exception($"Error found when signing {binaryPath}: {line}");
-                }
+                Logger.Information("[windows-code-signer] {Line}", line);
             }
 
             if (signProcess.ExitCode == 0)
@@ -138,7 +140,7 @@ partial class Build
 
                 var printValue = print.Select(o => o.Text).FirstOrDefault(l => !string.IsNullOrEmpty(l))?.Trim();
 
-                if (!string.Equals(printValue, validSignature, StringComparison.OrdinalIgnoreCase))
+                if (!expectedCertificateThumbprints.Contains(printValue, StringComparer.OrdinalIgnoreCase))
                 {
                     throw new Exception($"Signature verification failed for {binaryPath}. Signature: {printValue ?? "Empty"}");
                 }
