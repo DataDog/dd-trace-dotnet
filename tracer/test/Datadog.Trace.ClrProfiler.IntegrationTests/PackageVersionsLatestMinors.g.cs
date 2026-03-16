@@ -89,7 +89,79 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
+#if NET48
+                new object[] { "8.0.2" },
+                new object[] { "8.1.3" },
+                new object[] { "8.2.5" },
+                new object[] { "8.3.3" },
+                new object[] { "8.4.0" },
+                new object[] { "8.5.8" },
+#endif
+#if NETCOREAPP2_1
+                new object[] { "8.0.2" },
+                new object[] { "8.1.3" },
+                new object[] { "8.2.5" },
+                new object[] { "8.3.3" },
+                new object[] { "8.4.0" },
+                new object[] { "8.5.8" },
+#endif
+#if NETCOREAPP3_0
+                new object[] { "8.0.2" },
+                new object[] { "8.1.3" },
+                new object[] { "8.2.5" },
+                new object[] { "8.3.3" },
+                new object[] { "8.4.0" },
+                new object[] { "8.5.8" },
+#endif
+#if NETCOREAPP3_1
+                new object[] { "8.0.2" },
+                new object[] { "8.1.3" },
+                new object[] { "8.2.5" },
+                new object[] { "8.3.3" },
+                new object[] { "8.4.0" },
+                new object[] { "8.5.8" },
+#endif
+#if NET5_0
+                new object[] { "8.0.2" },
+                new object[] { "8.1.3" },
+                new object[] { "8.2.5" },
+                new object[] { "8.3.3" },
+                new object[] { "8.4.0" },
+                new object[] { "8.5.8" },
+#endif
+#if NET6_0
+                new object[] { "8.0.2" },
+                new object[] { "8.1.3" },
+                new object[] { "8.2.5" },
+                new object[] { "8.3.3" },
+                new object[] { "8.4.0" },
+                new object[] { "8.5.8" },
+#endif
+#if NET7_0
+                new object[] { "8.0.2" },
+                new object[] { "8.1.3" },
+                new object[] { "8.2.5" },
+                new object[] { "8.3.3" },
+                new object[] { "8.4.0" },
+                new object[] { "8.5.8" },
+#endif
 #if NET8_0
+                new object[] { "8.0.2" },
+                new object[] { "8.1.3" },
+                new object[] { "8.2.5" },
+                new object[] { "8.3.3" },
+                new object[] { "8.4.0" },
+                new object[] { "8.5.8" },
+#endif
+#if NET9_0
+                new object[] { "8.0.2" },
+                new object[] { "8.1.3" },
+                new object[] { "8.2.5" },
+                new object[] { "8.3.3" },
+                new object[] { "8.4.0" },
+                new object[] { "8.5.8" },
+#endif
+#if NET10_0
                 new object[] { "8.0.2" },
                 new object[] { "8.1.3" },
                 new object[] { "8.2.5" },
