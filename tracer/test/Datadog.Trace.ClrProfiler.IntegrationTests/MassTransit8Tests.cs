@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -28,13 +29,16 @@ public class MassTransit8Tests : TracingIntegrationTest
         SetServiceVersion("1.0.0");
     }
 
+    public static IEnumerable<object[]> GetData() => PackageVersions.MassTransit8;
+
     public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
         span.IsMassTransit(metadataSchemaVersion);
 
-    [SkippableFact]
+    [SkippableTheory]
+    [MemberData(nameof(GetData))]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
-    public async Task SubmitsTraces()
+    public async Task SubmitsTraces(string packageVersion)
     {
         // Set environment variables for RabbitMQ and LocalStack (for SQS/SNS)
         var rabbitHost = Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? "localhost";
@@ -50,7 +54,7 @@ public class MassTransit8Tests : TracingIntegrationTest
 
         using (var telemetry = this.ConfigureTelemetry())
         using (var agent = EnvironmentHelper.GetMockAgent())
-        using (await RunSampleAndWaitForExit(agent))
+        using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
         {
             // Wait for spans to arrive
             // MassTransit 8 uses OpenTelemetry ActivitySource which creates Activities automatically

@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <ApiVersion Condition="'$(ApiVersion)' == ''">8.2.0</ApiVersion>
     <TargetFramework>net8.0</TargetFramework>
     <OutputType>Exe</OutputType>
     <Nullable>enable</Nullable>
@@ -8,9 +9,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="MassTransit" Version="8.2.0" />
-    <PackageReference Include="MassTransit.RabbitMQ" Version="8.2.0" />
-    <PackageReference Include="MassTransit.AmazonSQS" Version="8.2.0" />
+    <PackageReference Include="MassTransit" Version="$(ApiVersion)" />
+    <PackageReference Include="MassTransit.RabbitMQ" Version="$(ApiVersion)" />
+    <PackageReference Include="MassTransit.AmazonSQS" Version="$(ApiVersion)" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.0" />
     <PackageReference Include="OpenTelemetry" Version="1.7.0" />

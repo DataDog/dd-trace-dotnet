@@ -28,6 +28,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public static IEnumerable<object[]> MassTransit7 => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.MassTransit7 : PackageVersionsLatestSpecific.MassTransit7;
 
+        public static IEnumerable<object[]> MassTransit8 => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.MassTransit8 : PackageVersionsLatestSpecific.MassTransit8;
+
         public static IEnumerable<object[]> Hangfire => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.Hangfire : PackageVersionsLatestSpecific.Hangfire;
 
         public static IEnumerable<object[]> Quartz => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.Quartz : PackageVersionsLatestSpecific.Quartz;

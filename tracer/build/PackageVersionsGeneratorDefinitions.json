@@ -10,6 +10,16 @@
     ]
   },
   {
+    "IntegrationName": "MassTransit8",
+    "SampleProjectName": "Samples.MassTransit8",
+    "NugetPackageSearchName": "MassTransit",
+    "MinVersion": "8.0.0",
+    "MaxVersionExclusive": "9.0.0",
+    "SpecificVersions": [
+      "8.*.*"
+    ]
+  },
+  {
     "IntegrationName": "Hangfire",
     "SampleProjectName": "Samples.Hangfire",
     "NugetPackageSearchName": "Hangfire.Core",

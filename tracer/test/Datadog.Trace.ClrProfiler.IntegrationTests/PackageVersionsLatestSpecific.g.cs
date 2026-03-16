@@ -55,6 +55,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #endif
             };
 
+      public static IEnumerable<object[]> MassTransit8 =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
+#if NET8_0
+                new object[] { "8.5.8" },
+#endif
+#endif
+            };
+
       public static IEnumerable<object[]> Hangfire =>
 
             new List<object[]>
