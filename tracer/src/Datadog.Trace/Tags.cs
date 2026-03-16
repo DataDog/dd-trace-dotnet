@@ -809,6 +809,13 @@ namespace Datadog.Trace
         internal const string BaseService = "_dd.base_service";
 
         /// <summary>
+        /// Indicates the source that set the service name on a span.
+        /// The value is the integration name (e.g. "redis", "kafka") when the service name
+        /// was set by an integration, or null when the default service name is used.
+        /// </summary>
+        internal const string ServiceNameSource = "_dd.svc_src";
+
+        /// <summary>
         /// Tag used to propagate the unsigned  64 bits last parent Id
         /// lower-case 16 characters hexadecimal string
         /// </summary>

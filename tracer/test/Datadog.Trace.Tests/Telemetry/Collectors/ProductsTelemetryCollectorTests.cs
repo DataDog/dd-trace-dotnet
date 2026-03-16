@@ -18,7 +18,7 @@ public class ProductsTelemetryCollectorTests
         var collector = new ProductsTelemetryCollector();
 
         collector.HasChanges().Should().BeFalse();
-        collector.GetData().Should().BeNull();
+        collector.GetIncrementalData().Should().BeNull();
     }
 
     [Theory]
@@ -41,7 +41,7 @@ public class ProductsTelemetryCollectorTests
             collector.ProductChanged(TelemetryProductType.DynamicInstrumentation, enabled: debuggerEnabled.Value, error: null);
         }
 
-        var data = collector.GetData();
+        var data = collector.GetIncrementalData();
         (data?.Appsec?.Enabled).Should().Be(appsecEnabled);
         (data?.Profiler?.Enabled).Should().Be(profilerEnabled);
         (data?.DynamicInstrumentation?.Enabled).Should().Be(debuggerEnabled);
@@ -55,10 +55,10 @@ public class ProductsTelemetryCollectorTests
 
         collector.ProductChanged(TelemetryProductType.AppSec, enabled: true, error: null);
         collector.HasChanges().Should().BeTrue();
-        collector.GetData().Should().NotBeNull();
+        collector.GetIncrementalData().Should().NotBeNull();
 
         collector.HasChanges().Should().BeFalse();
-        collector.GetData().Should().BeNull();
+        collector.GetIncrementalData().Should().BeNull();
     }
 
     [Fact]
@@ -69,11 +69,11 @@ public class ProductsTelemetryCollectorTests
 
         collector.ProductChanged(TelemetryProductType.AppSec, enabled: true, error: null);
         collector.HasChanges().Should().BeTrue();
-        collector.GetData().Should().NotBeNull();
+        collector.GetIncrementalData().Should().NotBeNull();
 
         collector.ProductChanged(TelemetryProductType.AppSec, enabled: true, error: null);
         collector.HasChanges().Should().BeTrue();
-        collector.GetData().Should().NotBeNull();
+        collector.GetIncrementalData().Should().NotBeNull();
     }
 
     [Fact]
@@ -87,7 +87,7 @@ public class ProductsTelemetryCollectorTests
         collector.ProductChanged(TelemetryProductType.AppSec, enabled: false, error: new ErrorData(errorCode, errorMessage));
 
         collector.HasChanges().Should().BeTrue();
-        var data = collector.GetData();
+        var data = collector.GetIncrementalData();
         (data?.Appsec?.Enabled).Should().BeFalse();
         data.Appsec.Error.Should().NotBeNull();
         data.Appsec.Error.Value.Code.Should().Be((int)errorCode);
@@ -112,8 +112,8 @@ public class ProductsTelemetryCollectorTests
         data.DynamicInstrumentation.Should().BeNull();
 
         // do some "normal" telemetry collections, but ignore it
-        _ = collector.GetData();
-        _ = collector.GetData();
+        _ = collector.GetIncrementalData();
+        _ = collector.GetIncrementalData();
 
         // make sure we still have all the data we expect
         data = collector.GetFullData();

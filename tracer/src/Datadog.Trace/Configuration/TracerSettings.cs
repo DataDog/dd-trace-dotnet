@@ -177,18 +177,53 @@ namespace Datadog.Trace.Configuration
                 ErrorLog.LogInvalidConfiguration(ConfigurationKeys.OpenTelemetry.MetricsExporter);
             }
 
-            RuntimeMetricsEnabled = runtimeMetricsEnabledResult.WithDefault(false);
+#if NET6_0_OR_GREATER
+            var defaultRuntimeMetrics = true;
+#else
+            var defaultRuntimeMetrics = false;
+#endif
 
-            RuntimeMetricsDiagnosticsMetricsApiEnabled = config.WithKeys(ConfigurationKeys.RuntimeMetricsDiagnosticsMetricsApiEnabled).AsBool(false);
+            if (runtimeMetricsEnabledResult.ConfigurationResult is { IsPresent: true, IsValid: true })
+            {
+                RuntimeMetricsEnabled = runtimeMetricsEnabledResult.WithDefault(defaultRuntimeMetrics);
+            }
+            else if (otelExporterResult.ConfigurationResult is { IsPresent: true, IsValid: true, Result: false })
+            {
+                // OTEL_METRICS_EXPORTER=none explicitly disables metrics export, which takes precedence
+                // over the .NET 6+ default and disables runtime metrics.
+                RuntimeMetricsEnabled = false;
+            }
+            else
+            {
+                RuntimeMetricsEnabled = runtimeMetricsEnabledResult.WithDefault(defaultRuntimeMetrics);
+            }
 
-#if !NET6_0_OR_GREATER
+            var runtimeMetricsDiagnosticsMetricsApiEnabledResult = config
+                                                                  .WithKeys(ConfigurationKeys.RuntimeMetricsDiagnosticsMetricsApiEnabled)
+                                                                  .AsBoolResult();
+
+#if NET6_0_OR_GREATER
+            // On .NET 8+, default to Diagnostics for all users (full metric coverage including ASP.NET Core meters).
+            // On .NET 6/7, default to Diagnostics only when runtime metrics were not explicitly configured,
+            // to avoid EventPipe crash/leak issues (dotnet/runtime#103480, dotnet/runtime#111368).
+            // Explicit DD_RUNTIME_METRICS_ENABLED=true users on .NET 6/7 keep EventListener
+            // to preserve ASP.NET Core EventCounter metrics not available via Diagnostics on < .NET 8.
+            var diagnosticsDefault = !runtimeMetricsEnabledResult.ConfigurationResult.IsValid || FrameworkDescription.Instance.RuntimeVersion.Major >= 8;
+            RuntimeMetricsDiagnosticsMetricsApiEnabled = runtimeMetricsDiagnosticsMetricsApiEnabledResult.WithDefault(diagnosticsDefault);
+#else
+            // System.Diagnostics.Metrics is not available before .NET 6, keep disabled by default
+            RuntimeMetricsDiagnosticsMetricsApiEnabled = runtimeMetricsDiagnosticsMetricsApiEnabledResult.WithDefault(false);
+
             if (RuntimeMetricsEnabled && RuntimeMetricsDiagnosticsMetricsApiEnabled)
             {
                 Log.Warning(
                     $"{ConfigurationKeys.RuntimeMetricsDiagnosticsMetricsApiEnabled} was enabled, but System.Diagnostics.Metrics is only available on .NET 6+. Using standard runtime metrics collector.");
                 telemetry.Record(ConfigurationKeys.RuntimeMetricsDiagnosticsMetricsApiEnabled, false, ConfigurationOrigins.Calculated);
+
+                RuntimeMetricsDiagnosticsMetricsApiEnabled = false;
             }
 #endif
+
             OtelMetricExportIntervalMs = config
                             .WithKeys(ConfigurationKeys.OpenTelemetry.MetricExportIntervalMs)
                             .AsInt32(defaultValue: 10_000);
@@ -678,6 +713,14 @@ namespace Datadog.Trace.Configuration
             };
 
             telemetry.Record(ConfigTelemetryData.InstrumentationSource, instrumentationSource, recordValue: true, ConfigurationOrigins.Calculated);
+#if NET6_0_OR_GREATER
+            var trimState = TrimmingDetector.DetectedTrimmingState;
+            var invalidTrimming = trimState == TrimmingDetector.TrimState.TrimmedAppMissingTrimmingFile;
+            var isTrimmed = invalidTrimming || trimState == TrimmingDetector.TrimState.TrimmedAppUsingTrimmingFile;
+
+            telemetry.Record(ConfigTelemetryData.TrimmedAppDetected, isTrimmed, ConfigurationOrigins.Calculated);
+            telemetry.Record(ConfigTelemetryData.TrimmedAppMissingTrimmingFile, invalidTrimming, ConfigurationOrigins.Calculated);
+#endif
 
             if (AzureAppServiceMetadata is not null)
             {

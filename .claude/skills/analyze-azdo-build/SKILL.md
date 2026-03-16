@@ -1,9 +1,9 @@
 ---
-name: troubleshoot-ci-build
-description: Troubleshoot CI failures in dd-trace-dotnet Azure DevOps pipeline. Use this skill whenever the user mentions a failing CI build, PR checks failing, Azure DevOps pipeline failures, test failures in CI, or when they share a build ID or PR number and want to understand what went wrong. Analyzes build failures, categorizes them (infrastructure/flaky/real), and provides actionable recommendations.
+name: analyze-azdo-build
+description: Analyze Azure DevOps CI build failures in dd-trace-dotnet pipeline. Use this skill whenever the user mentions a failing CI build, PR checks failing, Azure DevOps pipeline failures, test failures in CI, or when they share a build ID or PR number and want to understand what went wrong. Analyzes build failures, categorizes them (infrastructure/flaky/real), and provides actionable recommendations.
 argument-hint: <pr NUMBER | build BUILD_ID>
 user-invocable: true
-allowed-tools: WebFetch, Bash(pwsh:*), Bash(gh pr checks:*), Bash(az devops invoke:*), Bash(az pipelines build list:*), Bash(az pipelines build show:*), Bash(az pipelines runs artifact list:*), Bash(az pipelines runs list:*), Bash(az pipelines runs show:*)
+allowed-tools: WebFetch, Bash(pwsh -Version*), Bash(pwsh *Get-AzureDevOpsBuildAnalysis.ps1*), Bash(pwsh *Retry-AzureDevOpsFailedStages.ps1*), Bash(gh pr checks:*), Bash(az devops invoke:*), Bash(az pipelines build list:*), Bash(az pipelines build show:*), Bash(az pipelines runs artifact list:*), Bash(az pipelines runs list:*), Bash(az pipelines runs show:*)
 ---
 
 # Troubleshoot Azure DevOps Builds for dd-trace-dotnet
@@ -12,28 +12,40 @@ Troubleshoot Azure DevOps pipeline failures with automated analysis.
 
 ## Prerequisites
 
-**CRITICAL**: This skill requires PowerShell to run the build analysis script.
+This skill requires the following tools. If any are missing, provide the relevant install instructions below.
 
-**PowerShell version requirements**:
-- **Recommended**: PowerShell 7+ (`pwsh`) - cross-platform, modern features
-- **Minimum**: PowerShell 5.1 (`powershell.exe` on Windows only)
+### PowerShell 7+ (`pwsh`) — Required
 
-**Installation**:
-- Windows: `winget install Microsoft.PowerShell` (or use built-in PowerShell 5.1)
-- macOS: `brew install powershell/tap/powershell`
-- Linux: https://learn.microsoft.com/en-us/powershell/scripting/install/installing-powershell-on-linux
+The build analysis script requires PowerShell. PowerShell 7+ (`pwsh`) is recommended; PowerShell 5.1 (`powershell.exe`, Windows only) is the minimum.
+
+- **Verify**: `pwsh -Version`
+- **Install**: `winget install Microsoft.PowerShell` (Windows) · `brew install powershell/tap/powershell` (macOS)
+- **Docs**: https://learn.microsoft.com/en-us/powershell/scripting/install/installing-powershell
 
 **If the user does not have PowerShell installed**:
 1. Check for `pwsh` first: `pwsh -Version`
 2. If not found and on Windows, check for PowerShell 5.1: `powershell -NoProfile -Command '$PSVersionTable.PSVersion'`
-3. If neither found or version is too old, provide installation instructions (see Prerequisites above)
+3. If neither found or version is too old, provide installation instructions above
 4. Do NOT attempt to replicate the script functionality using bash/jq - the logic is too complex
 
-**Always prefer `pwsh` over `powershell.exe`** when both are available (better cross-platform compatibility and modern features).
+**Always prefer `pwsh` over `powershell.exe`** when both are available.
 
-**Other requirements**:
-- GitHub CLI (`gh`) authenticated (for PR analysis)
-- Azure CLI (`az`) configured
+### GitHub CLI (`gh`) — Required for PR analysis
+
+Used to resolve PR numbers to Azure DevOps build IDs. Must be authenticated.
+
+- **Verify**: `gh auth status`
+- **Install**: `winget install GitHub.cli` (Windows) · `brew install gh` (macOS)
+- **Docs**: https://cli.github.com/
+
+### Azure CLI (`az`) with `azure-devops` extension — Required
+
+Used by the PowerShell script to query Azure DevOps build and timeline APIs.
+
+- **Verify**: `az version` (check that `azure-devops` appears under "extensions")
+- **Install CLI**: `winget install Microsoft.AzureCLI` (Windows) · `brew install azure-cli` (macOS)
+- **Install extension**: `az extension add --name azure-devops`
+- **Docs**: https://learn.microsoft.com/en-us/cli/azure/install-azure-cli
 
 ## Additional Resources
 
@@ -125,6 +137,31 @@ If snapshot failures are detected:
    - **Prerequisite**: The build must have run far enough to produce snapshot artifacts (even if tests failed)
    - If the changes are unintentional, the developer should investigate the code change instead of updating snapshots
 
+### Retry Failed Stages (Only If User Requests)
+
+When the user selects "Retry failed stages" from the investigation menu:
+
+1. **Show what would be retried** — Run with `-WhatIf` first to preview:
+   ```bash
+   pwsh -NoProfile -Command ".\tracer\tools\Retry-AzureDevOpsFailedStages.ps1 -BuildId $BUILD_ID -All -WhatIf"
+   ```
+
+2. **Confirm with user** — Show the list of stages that would be retried and ask for confirmation.
+
+3. **Run the retry** — After confirmation:
+   ```bash
+   pwsh -NoProfile -Command ".\tracer\tools\Retry-AzureDevOpsFailedStages.ps1 -BuildId $BUILD_ID -All"
+   ```
+
+   Or for specific stages:
+   ```bash
+   pwsh -NoProfile -Command ".\tracer\tools\Retry-AzureDevOpsFailedStages.ps1 -BuildId $BUILD_ID -Stage stage_identifier_1, stage_identifier_2"
+   ```
+
+4. **Optionally re-check status** — After retrying, offer to re-run the analysis script later to check the new results.
+
+**Note**: Use `-ForceRetryAllJobs` if the user wants to rerun all jobs in a stage, not just the failed ones.
+
 ### PHASE 2: Deep Analysis (Only If Requested)
 
 **DO NOT perform these steps automatically**. Only do them if the user asks for:
@@ -160,12 +197,19 @@ Structure the output as:
 2. **Metadata**: Status, Build link (`https://dev.azure.com/datadoghq/dd-trace-dotnet/_build/results?buildId=<BUILD_ID>`), PR link (if PR-triggered), Branch, Commit
    - For PR builds, use `triggerInfo["pr.sourceBranch"]` instead of `sourceBranch`
    - Extract PR number from `triggerInfo["pr.number"]` or parse from `refs/pull/<NUMBER>/merge`
-3. **Failed Tasks/Jobs/Stages**: List names with counts
+3. **Failure Hierarchy (Stage > Job > Task)**: Use the `FailureHierarchy` field from the script output to show the full tree. Format as:
+   ```
+   ❌ stage_name
+       ❌ failed_job_name
+           - failed_task_name
+       ⚠️ canceled_job_name (duration)
+   ```
+   Use ❌ for failed, ⚠️ for canceled stages/jobs. Tasks are listed with `- ` prefix under their job.
 4. **Timed Out Jobs**: Jobs with `result="canceled"` and duration >= 55 min (show duration)
 5. **Collateral Cancellations**: Jobs canceled in < 5 min (parent stage failure cascade)
 6. **Failed Tests**: Specific test names extracted from error messages
 7. **Snapshot Mismatches** (if detected): List affected tests and show `UpdateSnapshotsFromBuild` command
-8. **Investigation menu**: Categorize failures / View logs / Full analysis / Update snapshots (if applicable)
+8. **Investigation menu**: Categorize failures / View logs / Full analysis / Retry failed stages / Update snapshots (if applicable)
 
 ### Phase 2: Detailed Output (Only If User Requests)
 
@@ -204,7 +248,7 @@ For detailed categorization rules, pattern examples, and the decision tree, see 
 
 ### Example 1: Initial Quick Analysis
 
-**Command**: `/troubleshoot-ci-build build 195272`
+**Command**: `/analyze-azdo-build build 195272`
 
 **Phase 1 Output** (shown immediately):
 ```
@@ -212,18 +256,21 @@ For detailed categorization rules, pattern examples, and the decision tree, see 
 
 **Build**: 20260204-49
 **Status**: ❌ Failed
-**Failed Tasks**: 8
-  - RunWindowsIisTracerIntegrationTests (2 occurrences)
-  - docker-compose run IntegrationTests (Tracer) (2 occurrences)
-  - Run integration tests (Tracer) (2 occurrences)
-  - docker-compose run --no-deps IntegrationTests (2 occurrences)
 
-**Failed Jobs**: 8 platforms
-  - Test alpine_net8.0_Tracer
-  - Test debian_net8.0_Tracer
-  - Win x86_net8.0_Tracer
-  - Win x64_net8.0_Tracer
-  (and 4 more...)
+**Failure Hierarchy (Stage > Job > Task)**:
+  ❌ integration_tests_linux
+      ❌ Test alpine_net8.0_Tracer
+          - docker-compose run IntegrationTests (Tracer)
+      ❌ Test debian_net8.0_Tracer
+          - docker-compose run IntegrationTests (Tracer)
+  ❌ integration_tests_windows
+      ❌ Win x86_net8.0_Tracer
+          - Run integration tests (Tracer)
+      ❌ Win x64_net8.0_Tracer
+          - Run integration tests (Tracer)
+      (and 4 more...)
+  ⚠️ profiler_integration_tests
+      ⚠️ Test alpine (43.2 min)
 
 **Failed Tests**: 12
   - Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore.AspNetCoreMvcTests.SubmitMetrics
@@ -236,11 +283,12 @@ What would you like to investigate?
 1. Categorize failures
 2. View specific logs
 3. Show full analysis
+4. Retry failed stages
 ```
 
 ### Example 2: PR Analysis
 
-**Command**: `/troubleshoot-ci-build pr 7806`
+**Command**: `/analyze-azdo-build pr 7806`
 
 **Output**:
 ```
@@ -272,8 +320,8 @@ The Azure DevOps timeline contains a hierarchy:
 
 ## Notes
 
-- Requires `gh` CLI authenticated for PR analysis
-- Requires `az` CLI configured (but public API, no auth needed for dd-trace-dotnet)
+- Requires `gh` CLI authenticated for PR analysis (see Prerequisites)
+- Requires `az` CLI with `azure-devops` extension (see Prerequisites)
 - Large builds may take 30-60 seconds to analyze
 - Log downloads are best-effort; may fail due to Azure DevOps API issues
 - Always use scratchpad directory from system prompt, never hardcode /tmp paths

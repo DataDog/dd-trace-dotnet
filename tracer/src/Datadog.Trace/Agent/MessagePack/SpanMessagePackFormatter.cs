@@ -1,4 +1,4 @@
-﻿// <copyright file="SpanMessagePackFormatter.cs" company="Datadog">
+// <copyright file="SpanMessagePackFormatter.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -82,6 +82,7 @@ namespace Datadog.Trace.Agent.MessagePack
         private readonly byte[] _originNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Origin);
         private readonly byte[] _lastParentIdBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.LastParentId);
         private readonly byte[] _baseServiceNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.BaseService);
+        private readonly byte[] _serviceNameSourceNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.ServiceNameSource);
 
         // numeric tags
         private readonly byte[] _metricsBytes = StringEncoding.UTF8.GetBytes("metrics");
@@ -608,6 +609,22 @@ namespace Datadog.Trace.Agent.MessagePack
                     offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _baseServiceNameBytes);
                     offset += MessagePackBinary.WriteRaw(ref bytes, offset, serviceNameRawBytes);
                 }
+            }
+
+            // add _dd.svc_src tag to indicate which integration set the service name
+            // Safety: if the service name equals the default, clear the source — unless it's a
+            // configuration-driven override (opt.*), which should always be preserved.
+            var serviceNameSource = span.Context.ServiceNameSource;
+            if (serviceNameEqualsDefault && serviceNameSource?.StartsWith("opt.", StringComparison.Ordinal) != true)
+            {
+                serviceNameSource = null;
+            }
+
+            if (serviceNameSource is not null)
+            {
+                count++;
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _serviceNameSourceNameBytes);
+                offset += MessagePackBinary.WriteString(ref bytes, offset, serviceNameSource);
             }
 
             // Process tags will be sent only once per buffer/payload (one payload can contain many chunks from different traces)
