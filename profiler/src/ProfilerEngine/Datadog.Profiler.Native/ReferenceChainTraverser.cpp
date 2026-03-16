@@ -3,9 +3,6 @@
 
 #include "ReferenceChainTraverser.h"
 #include "Log.h"
-#include "OpSysTools.h"
-#include <algorithm>
-#include <chrono>
 
 // CLR object layout:
 //   ObjectID + 0              : MethodTable* (the "reference points to the MethodTable")
@@ -32,9 +29,12 @@ ReferenceChainTraverser::ReferenceChainTraverser(
 
 void ReferenceChainTraverser::TraverseFromSingleRoot(const RootInfo& root)
 {
-    Log::Debug("[ROOT] type='", GetClassName(root.classID),
-               "' category=", RootCategoryToString(root.category),
-               " address=", root.address, " size=", root.objectSize);
+    if (Log::IsDebugEnabled())
+    {
+        Log::Debug("[ROOT] type='", GetClassName(root.classID),
+                   "' category=", RootCategoryToString(root.category),
+                   " address=", root.address, " size=", root.objectSize);
+    }
 
     _rootCategoryCounts[static_cast<int>(root.category)]++;
 
@@ -192,8 +192,6 @@ void ReferenceChainTraverser::TraverseArray(
 
     if (!isReferenceTypeArray && !isValueTypeArray)
     {
-        Log::Debug("TraverseArray: skipping array with elementType=", static_cast<int>(layout.arrayElementType),
-                   " (not reference or value type)");
         return;
     }
 
@@ -202,37 +200,26 @@ void ReferenceChainTraverser::TraverseArray(
     const ClassLayoutCache::ClassLayoutData* elementLayout = nullptr;
     if (isValueTypeArray)
     {
-        Log::Debug("TraverseArray: value type array detected, element='", GetClassName(layout.arrayElementClassID), "'");
-
         elementLayout = _layoutCache.GetLayout(layout.arrayElementClassID);
         if (elementLayout == nullptr || elementLayout->classSize == 0)
         {
-            Log::Debug("TraverseArray: GetLayout returned null or classSize=0 for element='", GetClassName(layout.arrayElementClassID), "'");
             return;
         }
-
-        Log::Debug("TraverseArray: element layout classSize=", elementLayout->classSize,
-                   ", fieldCount=", elementLayout->fields.size());
 
         bool hasReferenceFields = false;
         for (const auto& field : elementLayout->fields)
         {
-            Log::Debug("TraverseArray:   field offset=", field.offset,
-                       ", isRef=", field.isReferenceType ? "true" : "false",
-                       ", token=", field.fieldToken);
             if (field.isReferenceType)
             {
                 hasReferenceFields = true;
+                break;
             }
         }
 
         if (!hasReferenceFields)
         {
-            Log::Debug("TraverseArray: no reference fields in value type element, skipping");
             return;
         }
-
-        Log::Debug("TraverseArray: value type element has reference fields, proceeding with traversal");
     }
 
     ULONG32 rank = layout.arrayRank;
@@ -331,18 +318,6 @@ void ReferenceChainTraverser::TraverseValueTypeArrayElements(
 {
     ULONG elementSize = elementLayout.classSize;
 
-    int refFieldCount = 0;
-    for (const auto& f : elementLayout.fields)
-    {
-        if (f.isReferenceType) refFieldCount++;
-    }
-    Log::Debug("TraverseValueTypeArrayElements: totalElements=", totalElements,
-               ", elementSize=", elementSize,
-               ", refFields=", refFieldCount);
-
-    uint64_t refsFound = 0;
-    uint64_t refsTraversed = 0;
-
     for (uint64_t i = 0; i < totalElements; i++)
     {
         uintptr_t elementBase = reinterpret_cast<uintptr_t>(pData) + i * elementSize;
@@ -356,11 +331,6 @@ void ReferenceChainTraverser::TraverseValueTypeArrayElements(
 
             if (static_cast<SIZE_T>(field.offset) + sizeof(uintptr_t) > elementSize)
             {
-                if (i == 0)
-                {
-                    Log::Debug("TraverseValueTypeArrayElements: field offset=", field.offset,
-                               " + ptr exceeds elementSize=", elementSize, " (element 0)");
-                }
                 continue;
             }
 
@@ -372,8 +342,6 @@ void ReferenceChainTraverser::TraverseValueTypeArrayElements(
                 continue;
             }
 
-            refsFound++;
-
             if (visited.IsVisited(fieldValue))
             {
                 continue;
@@ -383,32 +351,18 @@ void ReferenceChainTraverser::TraverseValueTypeArrayElements(
             HRESULT hr = _pCorProfilerInfo->GetClassFromObject(fieldValue, &targetClassID);
             if (FAILED(hr) || targetClassID == 0)
             {
-                if (refsFound <= 3)
-                {
-                    Log::Debug("TraverseValueTypeArrayElements: GetClassFromObject failed for address=",
-                               fieldValue, " at element ", i, " field offset=", field.offset, " hr=", hr);
-                }
                 continue;
             }
 
             SIZE_T targetSize = 0;
             _pCorProfilerInfo->GetObjectSize2(fieldValue, &targetSize);
 
-            if (refsTraversed < 3)
-            {
-                Log::Debug("TraverseValueTypeArrayElements: element[", i, "] field offset=", field.offset,
-                           " -> '", GetClassName(targetClassID), "' size=", targetSize);
-            }
-
             TypeTreeNode* childNode = currentNode->GetOrCreateChild(targetClassID);
             childNode->AddInstance(targetSize);
 
-            refsTraversed++;
             TraverseObject(fieldValue, visited, childNode, depth + 1);
         }
     }
-
-    Log::Debug("TraverseValueTypeArrayElements: done, refsFound=", refsFound, ", refsTraversed=", refsTraversed);
 }
 
 std::string ReferenceChainTraverser::GetClassName(ClassID classID) const
@@ -456,16 +410,12 @@ uintptr_t ReferenceChainTraverser::ReadFieldReference(uintptr_t objectAddress, U
 
     if (fieldOffset < MinFieldOffset)
     {
-        Log::Debug("ReadFieldReference: adjusting field offset from ", fieldOffset,
-                   " to MinFieldOffset=", MinFieldOffset);
         fieldOffset = MinFieldOffset;
     }
 
     // Guard: field value (a pointer-sized reference) must fit within the object
     if (static_cast<SIZE_T>(fieldOffset) + sizeof(uintptr_t) > objectSize)
     {
-        Log::Debug("ReadFieldReference: field at offset ", fieldOffset,
-                   " + ", sizeof(uintptr_t), " exceeds object size ", objectSize);
         return 0;
     }
 

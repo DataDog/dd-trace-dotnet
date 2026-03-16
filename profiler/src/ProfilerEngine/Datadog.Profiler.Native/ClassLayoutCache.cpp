@@ -98,16 +98,7 @@ ClassLayoutCache::ClassLayoutData ClassLayoutCache::BuildLayout(ClassID classID)
             classID, nullptr, nullptr, nullptr, numTypeArgs, &numTypeArgs, typeArgs.data());
         if (FAILED(hr))
         {
-            Log::Debug("BuildLayout: GetClassIDInfo2 (type args) failed for '", GetClassName(classID), "' hr=", hr);
             typeArgs.clear();
-        }
-        else
-        {
-            Log::Debug("BuildLayout: '", GetClassName(classID), "' has ", numTypeArgs, " type args");
-            for (ULONG32 t = 0; t < numTypeArgs; t++)
-            {
-                Log::Debug("BuildLayout:   typeArgs[", t, "] = '", GetClassName(typeArgs[t]), "'");
-            }
         }
     }
 
@@ -147,8 +138,6 @@ ClassLayoutCache::ClassLayoutData ClassLayoutCache::BuildLayout(ClassID classID)
     }
 
     // Process each field
-    Log::Debug("BuildLayout: '", GetClassName(classID), "' classSize=", layout.classSize, " fieldCount=", fieldCount);
-
     for (ULONG i = 0; i < fieldCount; i++)
     {
         FieldInfo fieldInfo;
@@ -157,10 +146,6 @@ ClassLayoutCache::ClassLayoutData ClassLayoutCache::BuildLayout(ClassID classID)
 
         fieldInfo.isReferenceType = IsFieldReferenceType(
             fieldInfo.fieldToken, moduleID, pMetadataImport.Get(), typeArgs);
-
-        Log::Debug("BuildLayout:   field[", i, "] offset=", fieldInfo.offset,
-                   " token=", fieldInfo.fieldToken,
-                   " isRef=", fieldInfo.isReferenceType ? "true" : "false");
 
         layout.fields.push_back(fieldInfo);
     }
@@ -237,10 +222,6 @@ bool ClassLayoutCache::IsFieldReferenceType(
 
     CorElementType elementType = static_cast<CorElementType>(pSignature[idx]);
 
-    Log::Debug("IsFieldReferenceType: fieldToken=", fieldToken,
-               " elementType=", static_cast<int>(elementType),
-               " typeArgs.size=", typeArgs.size());
-
     if (elementType == ELEMENT_TYPE_CLASS ||
         elementType == ELEMENT_TYPE_STRING ||
         elementType == ELEMENT_TYPE_OBJECT ||
@@ -259,7 +240,6 @@ bool ClassLayoutCache::IsFieldReferenceType(
             return false;
         }
         CorElementType genericBase = static_cast<CorElementType>(pSignature[idx]);
-        Log::Debug("IsFieldReferenceType: GENERICINST base=", static_cast<int>(genericBase));
         return (genericBase == ELEMENT_TYPE_CLASS);
     }
 
@@ -269,26 +249,18 @@ bool ClassLayoutCache::IsFieldReferenceType(
         idx++;
         if (idx >= signatureSize || typeArgs.empty())
         {
-            Log::Debug("IsFieldReferenceType: ELEMENT_TYPE_VAR but no type args or signature too short");
             return false;
         }
         ULONG varIndex;
         CorSigUncompressData(&pSignature[idx], &varIndex);
 
-        Log::Debug("IsFieldReferenceType: ELEMENT_TYPE_VAR index=", varIndex);
-
         if (varIndex < static_cast<ULONG>(typeArgs.size()))
         {
-            bool isRef = IsClassIDReferenceType(typeArgs[varIndex]);
-            Log::Debug("IsFieldReferenceType: VAR(", varIndex, ") -> '", GetClassName(typeArgs[varIndex]),
-                       "' isRef=", isRef ? "true" : "false");
-            return isRef;
+            return IsClassIDReferenceType(typeArgs[varIndex]);
         }
-        Log::Debug("IsFieldReferenceType: VAR index ", varIndex, " out of range (size=", typeArgs.size(), ")");
         return false;
     }
 
-    Log::Debug("IsFieldReferenceType: unhandled elementType=", static_cast<int>(elementType), " -> false");
     return false;
 }
 

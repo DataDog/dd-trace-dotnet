@@ -353,13 +353,6 @@ void HeapSnapshotManager::OnBulkRootEdges(
             category = RootCategory::Unknown;
         }
 
-        if (i < 3)
-        {
-            Log::Debug("OnBulkRootEdges: root[", i, "] address=", root.RootedNodeAddress,
-                       " kind=", static_cast<int>(root.Kind),
-                       " flags=", static_cast<uint32_t>(root.Flags),
-                       " gcRootID=", root.GCRootID);
-        }
 
         // GetClassFromObject/GetObjectSize2 can only be called from within ICorProfilerCallback methods
         // (i.e. NOT from another thread and NOT after a GC)
@@ -368,11 +361,6 @@ void HeapSnapshotManager::OnBulkRootEdges(
         if (FAILED(hr))
         {
             failCount++;
-            if (failCount <= 5)
-            {
-                Log::Debug("OnBulkRootEdges: GetClassFromObject failed for address=", root.RootedNodeAddress,
-                           " kind=", static_cast<int>(root.Kind), " hr=", hr);
-            }
             continue;
         }
 
@@ -381,13 +369,7 @@ void HeapSnapshotManager::OnBulkRootEdges(
         if (FAILED(hr))
         {
             failCount++;
-            std::string typeName;
-            _pFrameStore->GetTypeName(rootClassID, typeName);
-            if (failCount <= 5)
-            {
-                Log::Debug("OnBulkRootEdges: GetObjectSize2 failed for address=", root.RootedNodeAddress,
-                           " type='", typeName, "' kind=", static_cast<int>(root.Kind), " hr=", hr);
-            }
+
             continue;
         }
 
@@ -408,17 +390,18 @@ void HeapSnapshotManager::OnBulkRootStaticVar(const GCBulkRootStaticVarValue& ro
 {
     std::lock_guard lock(_histogramLock);
 
-    std::string typeName;
-    _pFrameStore->GetTypeName(static_cast<ClassID>(root.TypeID), typeName);
-    Log::Debug("[STATIC_ROOT] field='", fieldName, "' type='", typeName, "' objectID=", root.ObjectID);
-
     // GetClassFromObject/GetObjectSize2 can only be called from within ICorProfilerCallback methods
     SIZE_T size = 0;
     HRESULT hr = _pCorProfilerInfo->GetObjectSize2(root.ObjectID, &size);
     if (FAILED(hr))
     {
-        Log::Debug("[STATIC_ROOT] GetObjectSize2 failed for field='", fieldName,
-                   "' type='", typeName, "' hr=", hr);
+        if (Log::IsDebugEnabled())
+        {
+            std::string typeName;
+            _pFrameStore->GetTypeName(static_cast<ClassID>(root.TypeID), typeName);
+            Log::Debug("[STATIC_ROOT] GetObjectSize2 failed for field='", fieldName,
+                       "' type='", typeName, "' hr=", hr);
+        }
         return;
     }
 
