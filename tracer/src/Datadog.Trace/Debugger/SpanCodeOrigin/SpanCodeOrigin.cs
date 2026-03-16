@@ -155,7 +155,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
                 if (Log.IsEnabled(LogEventLevel.Debug))
                 {
                     Log.Debug(
-                        "Unexpected tags type for entry span {SpanID}: {TagsType}. Falling back to setting code origin tags via ITags. Operation: {OperationName}",
+                        "Unexpected tags type for entry span {SpanID}: {TagsType}. Skipping code origin tags. Operation: {OperationName}",
                         property0: span.SpanId,
                         property1: span.Tags?.GetType().FullName ?? "<null>",
                         property2: span.OperationName);
