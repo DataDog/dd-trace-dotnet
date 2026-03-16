@@ -173,7 +173,7 @@ To build the Linux tracer package (e.g., for [system-tests](https://github.com/D
 
 ```bash
 # Build the Docker image (one-time setup, uses tracer/build/_build/docker/debian.dockerfile)
-SDK_VERSION=$(python3 -c "import json; print(json.load(open('global.json'))['sdk']['version'])")
+SDK_VERSION=$(grep -Eo '"version"\s*:\s*"[^"]+"' global.json | head -1 | grep -Eo '[0-9]+\.[0-9]+\.[0-9]+')
 docker build \
   --platform linux/$(uname -m) \
   --build-arg "DOTNETSDK_VERSION=${SDK_VERSION}" \
