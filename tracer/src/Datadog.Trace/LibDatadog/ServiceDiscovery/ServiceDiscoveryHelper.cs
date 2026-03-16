@@ -39,8 +39,8 @@ internal static class ServiceDiscoveryHelper
                     mutableSettings.DefaultServiceName,
                     mutableSettings.Environment,
                     mutableSettings.ServiceVersion,
-                    tracerSettings.PropagateProcessTags ? ProcessTags.SerializedTags : null, // TODO get the process tags from MutableSettings after https://github.com/DataDog/dd-trace-dotnet/pull/8106 is merged
-                    ContainerMetadata.Instance.ContainerId);
+                    tracerSettings.PropagateProcessTags ? ProcessTags.SerializedTags : string.Empty, // TODO get the process tags from MutableSettings after https://github.com/DataDog/dd-trace-dotnet/pull/8106 is merged
+                    ContainerMetadata.Instance.ContainerId ?? string.Empty);
 
                 if (result.Tag == ResultTag.Error)
                 {
@@ -75,8 +75,8 @@ internal static class ServiceDiscoveryHelper
         string? serviceName,
         string? serviceEnv,
         string? serviceVersion,
-        string? processTags,
-        string? containerId)
+        string processTags,
+        string containerId)
     {
         IntPtr ptr = IntPtr.Zero;
         try
