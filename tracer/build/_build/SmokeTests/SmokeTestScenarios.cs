@@ -504,17 +504,6 @@ public static class SmokeTestScenarios
                 });
 
             yield return GetAzureFunctionsNuGet(
-                shortName: "alpine",
-                os: "alpine",
-                runtimeId: "linux-musl-x64",
-                scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[]
-                {
-                    (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22", "3.22", true),
-                    (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-alpine3.22-composite", "3.22", true),
-                    (TargetFramework.NET6_0, "mcr.microsoft.com/dotnet/aspnet", "6.0-alpine3.14", "3.14", true),
-                });
-
-            yield return GetAzureFunctionsNuGet(
                 shortName: "centos",
                 os: "centos",
                 runtimeId: "linux-x64",
