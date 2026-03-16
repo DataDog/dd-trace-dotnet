@@ -81,6 +81,9 @@ namespace Datadog.Trace
 
         /// <summary>
         /// Gets or sets the service name.
+        /// Setting ServiceName directly marks the source as manual ("m").
+        /// Internal code that normalizes/defaults the service name should
+        /// write to Context.ServiceName directly to avoid overwriting the source.
         /// </summary>
         internal string ServiceName
         {
