@@ -588,7 +588,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
             var operationName = activity.OperationName;
 
             // Check messaging.operation tag which MassTransit sets
-            var messagingOperation = activity.Tags.FirstOrDefault(kv => kv.Key == "messaging.operation").Value;
+            string? messagingOperation = null;
+            foreach (var tag in activity.Tags)
+            {
+                if (tag.Key == "messaging.operation")
+                {
+                    messagingOperation = tag.Value;
+                    break;
+                }
+            }
 
             if (!StringUtil.IsNullOrWhiteSpace(messagingOperation))
             {
@@ -722,14 +730,36 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
             }
 
             // Read destination from messaging.destination.name, fallback to peer.address for process/consume spans.
-            var destination = activity.Tags.FirstOrDefault(kv => kv.Key == "messaging.destination.name").Value;
-            if (StringUtil.IsNullOrWhiteSpace(destination))
+            string? destination = null;
+            string? peerAddress = null;
+            string? operation = null;
+
+            foreach (var tag in activity.Tags)
             {
-                var peerAddress = activity.Tags.FirstOrDefault(kv => kv.Key == "peer.address").Value;
-                destination = peerAddress?.TrimStart('/');
+                switch (tag.Key)
+                {
+                    case "messaging.destination.name":
+                        destination = tag.Value;
+                        break;
+                    case "peer.address":
+                        peerAddress = tag.Value;
+                        break;
+                    case "messaging.operation":
+                        operation = tag.Value;
+                        break;
+                }
+
+                // Early exit if we found all tags
+                if (destination != null && peerAddress != null && operation != null)
+                {
+                    break;
+                }
             }
 
-            var operation = activity.Tags.FirstOrDefault(kv => kv.Key == "messaging.operation").Value;
+            if (StringUtil.IsNullOrWhiteSpace(destination))
+            {
+                destination = peerAddress?.TrimStart('/');
+            }
 
             // Update DisplayName (resource name) from destination + operation
             if (!StringUtil.IsNullOrWhiteSpace(destination))
