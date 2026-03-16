@@ -497,28 +497,28 @@ public static class SmokeTestScenarios
                 shortName: "debian",
                 os: "debian",
                 runtimeId: "linux-x64",
-                scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[]
+                scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion)[]
                 {
-                    (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-noble", "noble", true),
-                    (TargetFramework.NET6_0, "mcr.microsoft.com/dotnet/aspnet", "6.0-bullseye-slim", "bullseye", true),
+                    (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-noble", "noble"),
+                    (TargetFramework.NET6_0, "mcr.microsoft.com/dotnet/aspnet", "6.0-bullseye-slim", "bullseye"),
                 });
 
             yield return GetAzureFunctionsNuGet(
                 shortName: "centos",
                 os: "centos",
                 runtimeId: "linux-x64",
-                scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[]
+                scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion)[]
                 {
-                    (TargetFramework.NET6_0, "andrewlock/dotnet-centos", "7-6.0", "7", true),
+                    (TargetFramework.NET6_0, "andrewlock/dotnet-centos", "7-6.0", "7"),
                 });
 
             yield return GetAzureFunctionsNuGet(
                 shortName: "opensuse",
                 os: "opensuse",
                 runtimeId: "linux-x64",
-                scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[]
+                scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion)[]
                 {
-                    (TargetFramework.NET10_0, "andrewlock/dotnet-opensuse", "15-10.0", "15", true),
+                    (TargetFramework.NET10_0, "andrewlock/dotnet-opensuse", "15-10.0", "15"),
                 });
         }
 
@@ -872,7 +872,7 @@ public static class SmokeTestScenarios
             string shortName,
             string os,
             string runtimeId,
-            params (string PublishFramework, string Image, string Tag, string OsVersion, bool RunCrashTest)[] scenarios)
+            params (string PublishFramework, string Image, string Tag, string OsVersion)[] scenarios)
             => scenarios.Select(scenario => new NuGetScenario
             {
                 ShortName = shortName,
@@ -882,7 +882,7 @@ public static class SmokeTestScenarios
                 RuntimeId = runtimeId,
                 Os = os,
                 OsVersion = scenario.OsVersion,
-                RunCrashTest = scenario.RunCrashTest,
+                RunCrashTest = false, // there's no profiler, so we have no crash tracking
                 NuGetPackageName = Projects.DatadogAzureFunctions,
             });
 

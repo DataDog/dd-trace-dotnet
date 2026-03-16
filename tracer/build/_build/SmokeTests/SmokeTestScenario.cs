@@ -55,8 +55,11 @@ public record NuGetScenario : SmokeTestScenario
     public string RelativeProfilerPath => $"datadog/{RuntimeId}/Datadog.Trace.ClrProfiler.Native.so";
     public string RelativeApiWrapperPath => $"datadog/{RuntimeId}/Datadog.Linux.ApiWrapper.x64.so";
 
-    public override string SnapshotFile =>
-        NuGetPackageName == Projects.DatadogAzureFunctions ? "smoke_test_azurefunctions_snapshots" : base.SnapshotFile;
+    public override string SnapshotFile => NuGetPackageName switch
+    {
+        Projects.DatadogAzureFunctions => "smoke_test_azurefunctions_snapshots",
+        _ => base.SnapshotFile,
+    };
 }
 
 public record DotnetToolScenario : SmokeTestScenario
