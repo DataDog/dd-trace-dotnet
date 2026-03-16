@@ -99,7 +99,6 @@ The full managed tracer (`Datadog.Trace.dll`) contains all auto-instrumentation 
 
 - **`docs/development/AutomaticInstrumentation.md`** — Complete guide to creating integrations, CallTarget wiring, testing strategies, package version configuration, and CI testing
 - **`docs/development/InstrumentationGenerator.md`** — GUI and CLI instrumentation generator tools, Nuke integration, duck typing flags, JSON output, and two-tool workflow with dotnet-inspect
-
 - **`docs/development/DuckTyping.md`** — Duck typing patterns, proxy types, binding attributes, best practices, and performance benchmarks
 
 ## Azure Functions & Serverless
@@ -261,6 +260,7 @@ The tracer runs in-process with customer applications and must have minimal perf
 **Development guides:**
 - `docs/development/AutomaticInstrumentation.md` — Creating integrations
 - `docs/development/InstrumentationGenerator.md` — GUI and CLI instrumentation generator tools
+- `docs/development/for-ai/InstrumentationGenerator-CLI.md` — LLM reference for the CLI (commands, JSON schemas, error handling)
 - `docs/development/DuckTyping.md` — Duck typing guide
 - `docs/development/TracerDebugging.md` — Local debugging, IDE configuration, path issues, and troubleshooting
 - `docs/development/AzureFunctions.md` — Azure Functions integration

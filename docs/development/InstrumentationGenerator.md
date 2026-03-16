@@ -17,6 +17,7 @@ The tooling is split into three projects:
   - [Running the CLI](#running-the-cli)
   - [Basic Usage](#basic-usage)
   - [Using Nuke](#using-nuke)
+  - [Assembly Inspection](#assembly-inspection)
   - [Method Resolution](#method-resolution)
   - [Generation Flags](#generation-flags)
   - [Configuration Overrides](#configuration-overrides)
@@ -25,7 +26,9 @@ The tooling is split into three projects:
   - [Output Options](#output-options)
   - [Auto-Detection](#auto-detection)
   - [JSON Output](#json-output)
+  - [Structured Error Handling](#structured-error-handling)
   - [Configuration Precedence](#configuration-precedence)
+- [LLM / AI Agent Usage](#llm--ai-agent-usage)
 - [Two-Tool Workflow with dotnet-inspect](#two-tool-workflow-with-dotnet-inspect)
 - [Architecture](#architecture)
   - [Core Library](#core-library)
@@ -136,6 +139,28 @@ Nuke parameters:
 | `--parameter-types` | No | Parameter type full names (space-separated) for disambiguation |
 | `--generator-args` | No | Additional flags passed through to the CLI (space-separated string) |
 
+#### Assembly Inspection
+
+The `inspect` subcommand discovers types and methods in an assembly without generating code. This is useful for exploring unfamiliar libraries or for LLM agents that need to pick instrumentation targets.
+
+**List all types:**
+
+```bash
+dd-autoinstrumentation inspect path/to/MyLib.dll --list-types
+```
+
+Output includes visibility, kind (class/interface/struct/abstract/sealed), method count, and nested type count.
+
+**List methods on a type:**
+
+```bash
+dd-autoinstrumentation inspect path/to/MyLib.dll --list-methods MyLib.MyClass
+```
+
+Output includes return type, parameters, visibility, modifiers (static/virtual/async), and overload index/count for disambiguation.
+
+Both modes support `--json` for structured output (see [JSON Output](#json-output)).
+
 #### Method Resolution
 
 When a type has multiple overloads of the same method, use one of these to disambiguate:
@@ -243,7 +268,9 @@ Use `--no-auto-detect` to start from a blank configuration and control everythin
 
 #### JSON Output
 
-The `--json` flag produces structured output for machine consumption:
+`--json` is a global flag that works with all subcommands (`generate`, `inspect`). It can appear before or after the subcommand name. When active, **all** output (success and error) goes to stdout as structured JSON.
+
+The `generate` command's success output includes the generated source code and metadata:
 
 ```json
 {
@@ -270,6 +297,50 @@ The `--json` flag produces structured output for machine consumption:
 }
 ```
 
+Other commands (`inspect`, `generate --list-keys`) use a unified envelope:
+
+```json
+{
+  "success": true,
+  "command": "inspect",
+  "data": { ... }
+}
+```
+
+#### Structured Error Handling
+
+When `--json` is active, errors return a structured envelope instead of plain text to stderr:
+
+```json
+{
+  "success": false,
+  "command": "generate",
+  "errorCode": "AMBIGUOUS_OVERLOAD",
+  "errorMessage": "Error: Could not resolve method 'Send' on type 'MyLib.MyClass'. Found 3 overload(s)...",
+  "data": {
+    "overloads": [
+      { "index": 0, "fullName": "...", "parameters": [...] },
+      { "index": 1, "fullName": "...", "parameters": [...] }
+    ]
+  }
+}
+```
+
+Machine-readable error codes:
+
+| Error Code | When |
+|---|---|
+| `FILE_NOT_FOUND` | Assembly file does not exist |
+| `TYPE_NOT_FOUND` | Type not found in assembly |
+| `METHOD_NOT_FOUND` | Method not found on type (zero overloads) |
+| `AMBIGUOUS_OVERLOAD` | Multiple overloads, no disambiguation provided. Includes overload data in response |
+| `INVALID_ARGUMENT` | Missing required arguments |
+| `INVALID_CONFIG` | Bad JSON in `--config` or `--config-file` |
+| `UNKNOWN_KEY` | Unrecognized key in `--set` |
+| `GENERATION_ERROR` | Code generation failed |
+
+The `AMBIGUOUS_OVERLOAD` error is notable: it includes the full overload list in `data`, so you can immediately retry with `--overload-index` without a separate inspect call.
+
 #### Configuration Precedence
 
 Configuration is applied in layers (lowest to highest precedence):
@@ -277,6 +348,39 @@ Configuration is applied in layers (lowest to highest precedence):
 1. **Auto-detect** (`CreateForMethod`) — unless `--no-auto-detect`
 2. **Base config** — `--config-file` OR `--config` (mutually exclusive; replaces layer 1 entirely)
 3. **Shortcut flags + `--set` overrides** — applied on top of the base config
+
+### LLM / AI Agent Usage
+
+The CLI is designed for autonomous LLM use. An agent can discover targets, generate code, and recover from errors entirely through structured JSON — no human in the loop required.
+
+**End-to-end workflow:**
+
+```bash
+# 1. Discover types in the target assembly
+dd-autoinstrumentation inspect MyLib.dll --list-types --json
+
+# 2. Pick a type and list its methods
+dd-autoinstrumentation inspect MyLib.dll --list-methods MyLib.HttpClient --json
+
+# 3. Generate instrumentation (if overloadCount > 1, use --overload-index)
+dd-autoinstrumentation generate MyLib.dll \
+  -t MyLib.HttpClient -m SendAsync --overload-index 0 --json
+
+# 4. On error, parse errorCode and retry
+#    AMBIGUOUS_OVERLOAD → read data.overloads, pick index, retry with --overload-index
+#    METHOD_NOT_FOUND   → go back to step 2
+#    FILE_NOT_FOUND     → fix the path
+```
+
+**Key design points for LLM consumers:**
+
+- **Always use `--json`** — all output (success and error) is structured JSON on stdout
+- **Check `success` first**, then `errorCode` on failure for machine-readable dispatch
+- **`AMBIGUOUS_OVERLOAD` includes overload data** — no need for a separate inspect call
+- **`inspect --list-methods` includes `overloadIndex` and `overloadCount`** — the agent knows upfront if disambiguation is needed
+- **`generate --list-keys --json`** returns all configuration keys as structured data
+
+For a detailed LLM-focused reference with full JSON schemas, see [`docs/development/for-ai/InstrumentationGenerator-CLI.md`](for-ai/InstrumentationGenerator-CLI.md).
 
 ### Two-Tool Workflow with dotnet-inspect
 
