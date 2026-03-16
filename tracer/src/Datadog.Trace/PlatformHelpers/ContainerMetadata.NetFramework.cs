@@ -5,7 +5,6 @@
 
 #nullable enable
 
-using System;
 using System.Threading;
 
 #if NETFRAMEWORK
@@ -55,10 +54,5 @@ internal sealed class ContainerMetadata
     /// </summary>
     /// <value>The entity id or <c>null</c>.</value>
     public string? EntityId => null;
-
-    public void SubscribeToContainerTagsHashChanges(Action<string?> action)
-    {
-        // nothing to do here, there is no container ID, so there is no hash to get, so it's always null.
-    }
 }
 #endif
