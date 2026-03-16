@@ -9,19 +9,20 @@ Replace the current shell-script-based benchmark execution with bp-runner, enabl
 | Phase | Description | Status |
 |-------|-------------|--------|
 | Phase 1 | Minimal validation (single benchmark, dry run) | ✅ DONE |
-| Phase 2 | Run all benchmarks | 🔜 Next |
-| Phase 3 | S3 upload & results | Pending |
-| Phase 4 | Parallelization | Pending |
+| Phase 2 | Parallelization (3 benchmark categories) | ✅ DONE |
+| Phase 2.5 | S3 upload & fetch | 🔄 Testing |
+| Phase 3 | Results analysis | Pending |
 | Phase 5 | PR comments & analysis | Pending |
 
 ## What's Working Now
 
-- **bp-runner.windows.yml** runs `SpanBenchmark.StartFinishSpan` with `--job dry` on net6.0
-- **instance.yml** provisions Windows instance, clones repo, builds tracer, runs bp-runner
+- **bp-runner.windows.yml** runs 3 parallel benchmark categories with `--job dry` on net6.0
+- **instance.yml** provisions Windows instance, clones repo, builds tracer once, runs bp-runner
 - **microbenchmarks.yml** triggers via bp-infra with `--env-regex`
 - Test AMI from benchmarking-platform has bp-runner pre-installed
+- Parallelization: `*SpanBenchmark*`, `*AgentWriterBenchmark*`, `*AspNetCoreBenchmark*`
 
-**Successful CI run**: [Pipeline 102364929](https://gitlab.ddbuild.io/DataDog/apm-reliability/dd-trace-dotnet/-/pipelines/102364929)
+**Phase 2 success**: Commit `75b774f225` - parallelization working
 
 ## Files Created/Modified
 

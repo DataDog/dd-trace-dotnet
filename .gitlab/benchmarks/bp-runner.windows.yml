@@ -36,8 +36,8 @@ experiments:
           items: "*SpanBenchmark* *AgentWriterBenchmark* *AspNetCoreBenchmark*"
           cpus_per_item: 1
 
-        # Script to clone repo AND build tracer (runs ONCE before parallel benchmarks)
-        # This replaces the default fetch script with one that also builds.
+        # Script to clone repo AND build tracer + benchmarks (runs ONCE before parallel benchmarks)
+        # Uses Nuke build targets: BuildTracerHome builds the tracer, BuildBenchmarks builds benchmark projects
         how_to_fetch_release: |
           $ErrorActionPreference = "Stop"
 
@@ -65,19 +65,17 @@ experiments:
           # Add dotnet to PATH (installed at C:\dotnet on the AMI)
           [Environment]::SetEnvironmentVariable("PATH", "C:\dotnet;" + [Environment]::GetEnvironmentVariable("PATH", [EnvironmentVariableTarget]::Process), [EnvironmentVariableTarget]::Process)
 
-          # Build the tracer ONCE (minimal build for benchmarks)
-          Write-Output "Building tracer for benchmarks..."
-          & .\tracer\build.cmd CreateRequiredDirectories Restore CompileManagedSrc DownloadLibDdwaf CopyLibDdwaf
-
-          # Build the benchmarks project so parallel runs can use --no-build
-          Write-Output "Building Benchmarks.Trace project..."
-          Set-Location "$env:CODE_SRC\tracer\test\benchmarks\Benchmarks.Trace"
-          dotnet build -c Release -f net6.0
+          # Build the tracer and benchmarks using Nuke targets
+          # BuildTracerHome: builds the tracer (required for benchmarks to reference)
+          # BuildBenchmarks: builds all benchmark projects (so parallel runs can use --no-benchmark-build)
+          Write-Output "Building tracer and benchmarks using Nuke..."
+          Set-Location "$env:CODE_SRC\tracer"
+          & .\build.cmd BuildTracerHome BuildBenchmarks
 
           Write-Output "=== Fetch and build complete for $env:BASELINE_OR_CANDIDATE ==="
 
         # Script to run benchmarks (runs in PARALLEL for each PARALLEL_ITEM)
-        # The tracer is already built by how_to_fetch_release.
+        # Uses Nuke RunBenchmarks with --no-benchmark-build to use pre-built benchmarks
         how_to_run_benchmarks: |
           $ErrorActionPreference = "Stop"
 
@@ -91,21 +89,20 @@ experiments:
           # Add dotnet to PATH
           [Environment]::SetEnvironmentVariable("PATH", "C:\dotnet;" + [Environment]::GetEnvironmentVariable("PATH", [EnvironmentVariableTarget]::Process), [EnvironmentVariableTarget]::Process)
 
-          Set-Location "$env:CODE_SRC\tracer\test\benchmarks\Benchmarks.Trace"
-
-          # Run benchmarks for this parallel item
-          # --no-build: use pre-built output from how_to_fetch_release (avoids parallel build conflicts)
-          # --job dry: minimal iterations for fast feedback
-          # --filter: use PARALLEL_ITEM as the benchmark filter
-          # --exporters json: output results in JSON format
-          # Note: Using net6.0 because the AMI has .NET 3.1, 6.0, and 10.0 (not 8.0)
+          # Set up artifacts directory for this parallel run
           $localArtifactsDir = "$env:CODE_SRC\tracer\artifacts\benchmarks\$env:PARALLEL_INDEX"
-          dotnet run -c Release -f net6.0 --no-build -- `
-            --job dry `
+
+          # Run benchmarks using Nuke target
+          # --no-benchmark-build: use pre-built benchmarks from how_to_fetch_release
+          # --filter: use PARALLEL_ITEM as the benchmark filter
+          # --benchmark-artifacts-directory: output results to a unique directory per parallel run
+          # --benchmark-category prs: run PR category benchmarks (dry run style)
+          Set-Location "$env:CODE_SRC\tracer"
+          & .\build.cmd RunBenchmarks `
+            --no-benchmark-build `
             --filter "$env:PARALLEL_ITEM" `
-            -r net6.0 `
-            --exporters json `
-            --artifacts $localArtifactsDir
+            --benchmark-artifacts-directory "$localArtifactsDir" `
+            --benchmark-category prs
 
           # Copy results to ARTIFACTS_DIR with naming convention matching benchmarking-platform
           # Format: candidate.Trace.SpanBenchmark.json (strips Benchmarks. prefix and -report-full-compressed suffix)
