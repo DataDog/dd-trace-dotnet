@@ -316,6 +316,9 @@
       <type fullname="System.IO.FileSystemInfo" />
       <type fullname="System.IO.SearchOption" />
    </assembly>
+   <assembly fullname="System.IO.IsolatedStorage">
+      <type fullname="System.IO.IsolatedStorage.IsolatedStorageScope" />
+   </assembly>
    <assembly fullname="System.IO.MemoryMappedFiles">
       <type fullname="Microsoft.Win32.SafeHandles.SafeMemoryMappedViewHandle" />
       <type fullname="System.IO.MemoryMappedFiles.MemoryMappedFile" />
@@ -505,6 +508,9 @@
    <assembly fullname="System.Resources.ResourceManager">
       <type fullname="System.Resources.MissingManifestResourceException" />
       <type fullname="System.Resources.ResourceManager" />
+   </assembly>
+   <assembly fullname="System.Resources.Writer">
+      <type fullname="System.Resources.ResourceWriter" />
    </assembly>
    <assembly fullname="System.Runtime">
       <type fullname="Microsoft.Win32.SafeHandles.SafeFileHandle" />

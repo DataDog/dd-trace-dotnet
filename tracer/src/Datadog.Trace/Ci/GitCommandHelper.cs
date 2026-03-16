@@ -21,6 +21,7 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Ci;
@@ -74,7 +75,7 @@ internal static class GitCommandHelper
                 if (File.Exists(cacheKey))
                 {
                     var jsonValue = File.ReadAllText(cacheKey);
-                    if (JsonConvert.DeserializeObject<ProcessHelpers.CommandOutput>(jsonValue) is { } cachedOutput)
+                    if (JsonHelper.DeserializeObject<ProcessHelpers.CommandOutput>(jsonValue) is { } cachedOutput)
                     {
                         cachedOutput.Cached = true;
                         return cachedOutput;
@@ -139,7 +140,7 @@ internal static class GitCommandHelper
                 if (useCache &&
                         !string.IsNullOrEmpty(cacheKey) &&
                         gitOutput is not null &&
-                        JsonConvert.SerializeObject(gitOutput) is { } jsonValue)
+                        JsonHelper.SerializeObject(gitOutput) is { } jsonValue)
                 {
                         File.WriteAllText(cacheKey, jsonValue);
                 }

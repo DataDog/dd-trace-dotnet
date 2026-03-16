@@ -87,8 +87,8 @@ internal static class EventHubsCommon
             tags.MessagingDestinationName = eventHubName;
             tags.MessagingOperation = operationName;
 
-            string serviceName = tracer.CurrentTraceSettings.Schema.Messaging.GetServiceName(MessagingSchema.ServiceType.AzureEventHubs);
-            scope = tracer.StartActiveInternal("azure_eventhubs." + operationName, tags: tags, serviceName: serviceName, links: spanLinks);
+            var (serviceName, serviceNameSource) = tracer.CurrentTraceSettings.Schema.Messaging.GetServiceNameMetadata(MessagingSchema.ServiceType.AzureEventHubs);
+            scope = tracer.StartActiveInternal("azure_eventhubs." + operationName, tags: tags, serviceName: serviceName, serviceNameSource: serviceNameSource, links: spanLinks);
             var span = scope.Span;
 
             span.Type = SpanTypes.Queue;

@@ -31,7 +31,7 @@ internal sealed class ProductsTelemetryCollector
     /// Get the latest data to send to the intake.
     /// </summary>
     /// <returns>Null if there are no changes, or the collector is not yet initialized</returns>
-    public ProductsData? GetData()
+    public ProductsData? GetIncrementalData()
     {
         var hasChanges = Interlocked.CompareExchange(ref _hasChangesFlag, 0, 1) == 1;
         if (!hasChanges)

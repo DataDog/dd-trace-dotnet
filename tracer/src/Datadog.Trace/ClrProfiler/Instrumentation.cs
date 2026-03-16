@@ -20,6 +20,7 @@ using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.Logging;
+using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.ServiceFabric;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
@@ -293,6 +294,17 @@ namespace Datadog.Trace.ClrProfiler
             {
                 Log.Error(ex, "Error printing assembly metadata");
             }
+
+#if NET6_0_OR_GREATER
+            if (TrimmingDetector.DetectedTrimmingState == TrimmingDetector.TrimState.TrimmedAppMissingTrimmingFile)
+            {
+                Log.Warning(
+                    "Application trimming detected: a standard .NET type could not be loaded. "
+                  + "Some Datadog instrumentation may not work correctly. "
+                  + "To make your app compatible with trimming, add a reference to the "
+                  + "Datadog.Trace.Trimming NuGet package.");
+            }
+#endif
 
             try
             {

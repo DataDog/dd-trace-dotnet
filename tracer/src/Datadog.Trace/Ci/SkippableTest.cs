@@ -4,6 +4,7 @@
 // </copyright>
 #nullable enable
 
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Ci;
@@ -32,6 +33,6 @@ internal readonly struct SkippableTest
 
     public TestParameters? GetParameters()
     {
-        return string.IsNullOrWhiteSpace(RawParameters) ? null : JsonConvert.DeserializeObject<TestParameters>(RawParameters!);
+        return string.IsNullOrWhiteSpace(RawParameters) ? null : JsonHelper.DeserializeObject<TestParameters>(RawParameters!);
     }
 }

@@ -22,6 +22,7 @@ namespace Datadog.Trace.Activity.Handlers
             "HttpHandlerDiagnosticListener",
             "Microsoft.AspNetCore",
             "Microsoft.EntityFrameworkCore",
+            "MongoDB.Driver",
             "MySqlConnector",
             "Npgsql",
             "System.Net.Http.Desktop",
