@@ -55,7 +55,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
                 bool isOutbound = (tags.SpanKind == SpanKinds.Client) || (tags.SpanKind == SpanKinds.Producer);
                 if (isOutbound)
                 {
-                    PeerServiceHelpers.DerivePeerService(tags, AwsInfo.Instance.IsLambda);
+                    PeerServiceHelpers.DerivePeerService(tags, AwsInfo.Instance.IsAwsLambda);
                 }
 
                 Tracer.Instance.CurrentTraceSettings.Schema.RemapPeerService(tags);

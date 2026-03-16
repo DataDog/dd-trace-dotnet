@@ -17,7 +17,7 @@ namespace Datadog.Trace.Serverless;
 /// </summary>
 internal sealed class AwsInfo
 {
-    private bool? _isLambda;
+    private bool? _isAwsLambda;
 
     /// <summary>
     /// Gets the shared singleton instance. Cached after first evaluation.
@@ -29,6 +29,6 @@ internal sealed class AwsInfo
     /// by checking for the presence of "AWS_LAMBDA_FUNCTION_NAME".
     /// The result is cached after the first evaluation.
     /// </summary>
-    internal bool IsLambda =>
-        _isLambda ??= EnvironmentHelpers.EnvironmentVariableExists(PlatformKeys.Aws.LambdaFunctionName);
+    internal bool IsAwsLambda =>
+        _isAwsLambda ??= EnvironmentHelpers.EnvironmentVariableExists(PlatformKeys.Aws.LambdaFunctionName);
 }
