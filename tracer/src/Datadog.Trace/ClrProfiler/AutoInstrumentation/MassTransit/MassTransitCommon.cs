@@ -651,6 +651,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
 
             return $"{cleanDestination} {operation}";
         }
+
         /// <summary>
         /// Extracts a clean destination name from a MassTransit address URI.
         /// For URN format destinations, keeps the full URN.
