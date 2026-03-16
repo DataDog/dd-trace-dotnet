@@ -51,11 +51,6 @@ protected:
     }
 };
 
-// Test: Initialization succeeds
-TEST_F(ManagedCodeCacheTest, Initialize_Succeeds) {
-    ASSERT_NE(nullptr, cache);
-}
-
 // Test: Single code range
 TEST_F(ManagedCodeCacheTest, AddFunction_SingleRange_GetFunctionIdReturnsCorrect) {
     FunctionID testFuncId = 12345;
@@ -177,12 +172,30 @@ TEST_F(ManagedCodeCacheTest, AddFunction_ConcurrentCalls_ThreadSafe) {
 
     WaitForWorkerThread(500);  // Wait longer for all async operations
 
-    // Verify no crashes and cache is still functional
-    EXPECT_NE(nullptr, cache);
+    // Verify every function is retrievable by IP
+    for (int t = 0; t < numThreads; t++) {
+        for (int i = 0; i < functionsPerThread; i++) {
+            FunctionID funcId = (t * 1000) + i;
+            uintptr_t codeStart = 0x10000 + (funcId * 0x1000);
+
+            auto result = cache->GetFunctionId(codeStart + 0x50);
+            EXPECT_TRUE(result.has_value())
+                << "Function " << funcId << " not found at IP 0x" << std::hex << (codeStart + 0x50);
+            EXPECT_EQ(funcId, result.value_or(0))
+                << "Wrong FunctionID for function " << funcId;
+
+            EXPECT_TRUE(cache->IsManaged(codeStart + 0x50))
+                << "IsManaged returned false for function " << funcId;
+        }
+    }
+
+    // Verify an IP outside all registered ranges returns empty
+    EXPECT_FALSE(cache->GetFunctionId(0xDEAD).has_value());
+    EXPECT_FALSE(cache->IsManaged(0xDEAD));
 }
 
-// Test: Signal safety of IsManaged (no blocking)
-TEST_F(ManagedCodeCacheTest, IsManaged_ConcurrentAccess_IsSignalSafe) {
+// Test: IsManaged (no blocking)
+TEST_F(ManagedCodeCacheTest, IsManaged_ConcurrentAccess) {
     FunctionID testFuncId = 999;
     uintptr_t codeStart = 0x7000;
     ULONG32 codeSize = 0x200;
@@ -261,7 +274,7 @@ TEST_F(ManagedCodeCacheTest, AddFunction_LargeCodeRange_WorksCorrectly) {
 
     // Test various points in large range
     EXPECT_EQ(testFuncId, cache->GetFunctionId(codeStart).value_or(0));
-    EXPECT_EQ(testFuncId, cache->GetFunctionId(codeStart + 0x8000).value_or(0));  // Middle
+    EXPECT_EQ(testFuncId, cache->GetFunctionId(codeStart + 0x8000).value_or(0));
     EXPECT_EQ(testFuncId, cache->GetFunctionId(codeStart + codeSize - 1).value_or(0));  // End
 }
 
