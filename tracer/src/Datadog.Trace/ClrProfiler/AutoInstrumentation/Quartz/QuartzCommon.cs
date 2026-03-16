@@ -44,6 +44,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Quartz
         internal static void EnhanceActivityMetadata(IActivity5 activity)
         {
             activity.AddTag("operation.name", activity.DisplayName);
+            activity.AddTag(Tags.InstrumentationName, "quartz");
             var jobName = activity.Tags.FirstOrDefault(kv => kv.Key == "job.name").Value ?? string.Empty;
             if (string.IsNullOrEmpty(jobName))
             {
