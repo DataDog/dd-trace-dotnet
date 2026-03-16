@@ -24,6 +24,6 @@ public class AwsInfoTests
             Environment.SetEnvironmentVariable("AWS_LAMBDA_FUNCTION_NAME", "test");
         }
 
-        new AwsInfo().IsLambda.Should().Be(value);
+        new AwsInfo().IsAwsLambda.Should().Be(value);
     }
 }

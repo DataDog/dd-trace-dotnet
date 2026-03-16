@@ -18,8 +18,8 @@ namespace Datadog.Trace.Serverless;
 /// </summary>
 internal sealed class AzureInfo
 {
-    private bool? _isAppService;
-    private bool? _isFunction;
+    private bool? _isAzureAppService;
+    private bool? _isAzureFunctions;
     private bool? _isUsingSiteExtension;
     private bool? _isIsolatedFunction;
     private bool? _isIsolatedFunctionHostProcess;
@@ -35,21 +35,21 @@ internal sealed class AzureInfo
     /// <summary>
     /// Gets a value indicating whether the current environment is Azure App Services
     /// by checking for the presence of "WEBSITE_SITE_NAME".
-    /// Note that this is a superset of <see cref="IsFunction"/>.
+    /// Note that this is a superset of <see cref="IsAzureFunction"/>.
     /// The result is cached after the first evaluation.
     /// </summary>
-    internal bool IsAppService =>
-        _isAppService ??= EnvironmentHelpers.EnvironmentVariableExists(PlatformKeys.AzureAppService.SiteNameKey);
+    internal bool IsAzureAppService =>
+        _isAzureAppService ??= EnvironmentHelpers.EnvironmentVariableExists(PlatformKeys.AzureAppService.SiteNameKey);
 
     /// <summary>
     /// Gets a value indicating whether the current environment is Azure Functions
     /// by checking for the presence of "WEBSITE_SITE_NAME", "FUNCTIONS_WORKER_RUNTIME", and "FUNCTIONS_EXTENSION_VERSION".
-    /// Note that this is a subset of <see cref="IsAppService"/>.
+    /// Note that this is a subset of <see cref="IsAzureAppService"/>.
     /// The result is cached after the first evaluation.
     /// </summary>
-    internal bool IsFunction =>
-        _isFunction ??=
-            IsAppService &&
+    internal bool IsAzureFunction =>
+        _isAzureFunctions ??=
+            IsAzureAppService &&
             EnvironmentHelpers.EnvironmentVariableExists(PlatformKeys.AzureFunctions.FunctionsWorkerRuntime) &&
             EnvironmentHelpers.EnvironmentVariableExists(PlatformKeys.AzureFunctions.FunctionsExtensionVersion);
 
@@ -67,7 +67,7 @@ internal sealed class AzureInfo
     /// Gets a value indicating whether the current environment is an Azure Functions isolated worker process
     /// (as opposed to in-process functions) by checking that:
     ///
-    /// - <see cref="IsFunction"/> is <c>true</c>
+    /// - <see cref="IsAzureFunction"/> is <c>true</c>
     /// - "FUNCTIONS_WORKER_RUNTIME" is set to "dotnet-isolated"
     ///
     /// This will return true for both the host process and worker process in isolated functions.
@@ -76,12 +76,12 @@ internal sealed class AzureInfo
     /// </summary>
     internal bool IsIsolatedFunction =>
         _isIsolatedFunction ??=
-            IsFunction && string.Equals(FunctionWorkerRuntime, "dotnet-isolated", StringComparison.Ordinal);
+            IsAzureFunction && string.Equals(AzureFunctionsWorkerRuntime, "dotnet-isolated", StringComparison.Ordinal);
 
     /// <summary>
     /// Gets the cached value of the "FUNCTIONS_WORKER_RUNTIME" environment variable.
     /// </summary>
-    internal string? FunctionWorkerRuntime
+    internal string? AzureFunctionsWorkerRuntime
     {
         get
         {
@@ -98,7 +98,7 @@ internal sealed class AzureInfo
     /// <summary>
     /// Gets the cached value of the "FUNCTIONS_EXTENSION_VERSION" environment variable.
     /// </summary>
-    internal string? FunctionExtensionVersion
+    internal string? AzureFunctionsExtensionVersion
     {
         get
         {
@@ -118,7 +118,7 @@ internal sealed class AzureInfo
     /// - <see cref="IsIsolatedFunction"/> is <c>true</c>
     /// - we do not see either "--functions-worker-id" or "--workerId" on the command line.
     /// Only the worker process will have these command-line parameters.
-    /// Note that this is a subset of <see cref="IsFunction"/> and <see cref="IsIsolatedFunction"/>.
+    /// Note that this is a subset of <see cref="IsAzureFunction"/> and <see cref="IsIsolatedFunction"/>.
     /// The result is cached after the first evaluation.
     /// </summary>
     internal bool IsIsolatedFunctionHostProcess
@@ -151,7 +151,7 @@ internal sealed class AzureInfo
     /// - <see cref="IsIsolatedFunction"/> is <c>true</c>
     /// - we see either "--functions-worker-id" or "--workerId" on the command line.
     /// Only the worker process will have these command-line parameters.
-    /// Note that this is a subset of <see cref="IsFunction"/> and <see cref="IsIsolatedFunction"/>.
+    /// Note that this is a subset of <see cref="IsAzureFunction"/> and <see cref="IsIsolatedFunction"/>.
     /// The result is cached after the first evaluation.
     /// </summary>
     internal bool IsIsolatedFunctionWorkerProcess
