@@ -208,6 +208,12 @@
     <ClCompile Include="ManagedThreadInfoTest.cpp">
       <Filter>Tests</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native\ManagedCodeCache.cpp">
+      <Filter>Referenced from: Datadog.Profiler.Native</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\AutoResetEvent.cpp">
+      <Filter>Referenced from: Datadog.Profiler.Native</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native\HResultConverter.h">

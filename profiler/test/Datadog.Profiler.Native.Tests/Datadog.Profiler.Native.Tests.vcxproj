@@ -39,6 +39,7 @@
   <ItemGroup Label="Required files from the project(s) being tested">
     <ClCompile Include="..\..\..\shared\src\native-src\string.cpp" />
     <ClCompile Include="..\..\..\shared\src\native-src\util.cpp" />
+    <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\AutoResetEvent.cpp" />
     <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\CrashReportingWindows.cpp" />
     <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\DbgHelpParser.cpp" />
     <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\EtwEventsManager.cpp" />
@@ -55,6 +56,7 @@
     <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\Windows64BitStackFramesCollector.cpp" />
     <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\Windows32BitStackFramesCollector.cpp" />
     <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\WindowsThreadInfo.cpp" />
+    <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native\ManagedCodeCache.cpp" />
     <ClCompile Include="AdaptiveSamplerTest.cpp" />
     <ClCompile Include="AppDomainStoreHelper.cpp" />
     <ClCompile Include="ApplicationStoreTest.cpp" />

@@ -22,16 +22,9 @@ public:
             return E_POINTER;
         }
 
-        if (riid == IID_ICorProfilerInfo4 || riid == IID_ICorProfilerInfo3 ||
-            riid == IID_ICorProfilerInfo2 || riid == IID_ICorProfilerInfo ||
-            riid == IID_IUnknown) {
-            *ppvObject = this;
-            AddRef();
-            return S_OK;
-        }
-
-        *ppvObject = nullptr;
-        return E_NOINTERFACE;
+        *ppvObject = static_cast<ICorProfilerInfo4*>(this);
+        AddRef();
+        return S_OK;
     }
     STDMETHOD_(ULONG, AddRef)() override { return ++_refCount; }
     STDMETHOD_(ULONG, Release)() override {
@@ -42,16 +35,19 @@ public:
 
     // Mocked methods (3 total - only what ManagedCodeCache uses)
     MOCK_METHOD(HRESULT, GetFunctionFromIP,
-        (LPCBYTE ip, FunctionID* pFunctionId), (override));
+        (LPCBYTE ip, FunctionID* pFunctionId),
+        (override, Calltype(STDMETHODCALLTYPE)));
 
     MOCK_METHOD(HRESULT, GetCodeInfo2,
         (FunctionID functionId, ULONG32 cCodeInfos, ULONG32* pcCodeInfos,
-         COR_PRF_CODE_INFO codeInfos[]), (override));
+         COR_PRF_CODE_INFO codeInfos[]),
+        (override, Calltype(STDMETHODCALLTYPE)));
 
     MOCK_METHOD(HRESULT, GetModuleInfo2,
         (ModuleID moduleId, LPCBYTE* ppBaseLoadAddress, ULONG cchName,
          ULONG* pcchName, WCHAR szName[], AssemblyID* pAssemblyId,
-         DWORD* pdwModuleFlags), (override));
+         DWORD* pdwModuleFlags),
+        (override, Calltype(STDMETHODCALLTYPE)));
 
     // All other ICorProfilerInfo4 methods - stub with E_NOTIMPL
     STDMETHOD(GetClassIDInfo)(ClassID classId, ModuleID* pModuleId, mdTypeDef* pTypeDefToken) override { return E_NOTIMPL; }
