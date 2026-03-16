@@ -99,6 +99,7 @@ $arguments = @("-r") + $runtimes + @(
     "--allCategories", $Category,
     "--iterationTime", "200",
     "--buildTimeout", "3600",
+    "--keepFiles",
     "--artifacts", $localArtifactsDir
 )
 
