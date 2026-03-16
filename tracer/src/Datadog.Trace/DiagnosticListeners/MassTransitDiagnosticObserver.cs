@@ -171,8 +171,8 @@ namespace Datadog.Trace.DiagnosticListeners
                 return;
             }
 
-            // Extract metadata from SendContext using duck typing
-            MassTransitCommon.ExtractSendContextMetadata(arg, out var destinationAddress, out var messageId, out var conversationId, out var correlationId);
+            // Extract metadata from SendContext — returns the duck-typed proxy for reuse
+            var sendContextProxy = MassTransitCommon.ExtractSendContextMetadata(arg, out var destinationAddress, out var messageId, out var conversationId, out var correlationId);
             var messageType = MassTransitCommon.GetMessageType(arg);
 
             Log.Debug(
@@ -187,8 +187,8 @@ namespace Datadog.Trace.DiagnosticListeners
                 // Set additional context tags
                 MassTransitCommon.SetContextTags(scope, messageId, conversationId, correlationId);
 
-                // Inject trace context into message headers for distributed tracing
-                MassTransitCommon.InjectTraceContext(Tracer.Instance, arg, scope);
+                // Inject trace context into message headers — reuses the proxy from above, no second DuckCast
+                MassTransitCommon.InjectTraceContext(Tracer.Instance, sendContextProxy, scope);
 
                 // Set AsyncLocal so the InMemoryTransportMessage constructor hook can copy
                 // trace headers into the transport message. The constructor fires synchronously

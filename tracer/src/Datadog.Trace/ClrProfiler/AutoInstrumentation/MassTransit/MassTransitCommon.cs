@@ -302,8 +302,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
 
         /// <summary>
         /// Extracts metadata from SendContext using duck typing.
+        /// Returns the duck-typed proxy so the caller can reuse it (e.g. for header injection)
+        /// without casting again.
         /// </summary>
-        internal static void ExtractSendContextMetadata(
+        internal static IMessageSendContext? ExtractSendContextMetadata(
             object? sendContext,
             out string? destinationAddress,
             out Guid? messageId,
@@ -316,14 +318,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
                 messageId = null;
                 conversationId = null;
                 correlationId = null;
-                return;
+                return null;
             }
 
             var context = sendContext.DuckCast<IMessageSendContext>();
             destinationAddress = context.DestinationAddress?.ToString();
             messageId = context.MessageId;
-            conversationId = context?.ConversationId;
-            correlationId = context?.CorrelationId;
+            conversationId = context.ConversationId;
+            correlationId = context.CorrelationId;
+            return context;
         }
 
         /// <summary>
@@ -507,8 +510,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
 
         /// <summary>
         /// Injects trace context into MassTransit SendContext headers.
+        /// Accepts the already duck-typed proxy to avoid casting sendContext again.
         /// </summary>
-        internal static void InjectTraceContext(Tracer tracer, object? sendContext, Scope scope)
+        internal static void InjectTraceContext(Tracer tracer, IMessageSendContext? sendContext, Scope scope)
         {
             if (sendContext is null || scope.Span is null)
             {
@@ -519,13 +523,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
             var propagationContext = new PropagationContext(scope.Span.Context, Baggage.Current);
             bool injected = false;
 
-            // DuckCopy sendContext (MessageSendContext<T>) directly — copies _headers (DictionarySendHeaders)
-            // then its inner _headers (IDictionary<string, object>) via nested [DuckCopy] structs.
-            // This avoids proxy creation issues since [DuckCopy] copies field values by value.
+            // DuckCopy the Headers object (DictionarySendHeaders) to read its private _headers dictionary.
+            // The caller already holds the IMessageSendContext proxy so no second DuckCast is needed here.
             try
             {
-                var copy = sendContext.DuckCast<DictionarySendHeadersCopy>();
-                var internalHeaders = copy.Headers.Headers;
+                var headersObj = sendContext.Headers;
+                if (headersObj is null)
+                {
+                    Log.Debug("MassTransitCommon.InjectTraceContext: Headers object is null");
+                }
+
+                var internalHeaders = headersObj?.DuckCast<DictionarySendHeadersInnerCopy>().Headers;
                 if (internalHeaders != null)
                 {
                     var adapter = new Datadog.Trace.Headers.CarrierWithDelegate<System.Collections.Generic.IDictionary<string, object>>(
@@ -543,9 +551,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
             // Reflection fallback — uses GetInterfaceMap() to find DictionarySendHeaders.Set()
             if (!injected)
             {
+                Log.Debug("MassTransitCommon.InjectTraceContext: Using reflection fallback to inject trace context");
                 try
                 {
-                    var headers = TryGetProperty<object>(sendContext, "Headers");
+                    var headers = sendContext.Headers ?? TryGetProperty<object>((sendContext as IDuckType)?.Instance, "Headers");
                     if (headers is null)
                     {
                         Log.Debug("MassTransitCommon.InjectTraceContext: No Headers property found in SendContext");
