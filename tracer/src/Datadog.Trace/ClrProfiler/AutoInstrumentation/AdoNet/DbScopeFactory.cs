@@ -14,7 +14,6 @@ using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DatabaseMonitoring;
 using Datadog.Trace.Logging;
-using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 
