@@ -13,7 +13,7 @@ COPY ./test/test-applications/regression/AspNetCoreSmokeTest/ .
 
 ARG TOOL_VERSION
 ARG PUBLISH_FRAMEWORK
-ARG NUGET_PACKAGE="Datadog.Trace.Bundle"
+ARG NUGET_PACKAGE
 RUN dotnet restore "AspNetCoreSmokeTest.csproj" \
     && dotnet nuget add source "c:\src\artifacts" \
     && dotnet add package %NUGET_PACKAGE% --version %TOOL_VERSION% \
