@@ -218,7 +218,7 @@ public class DataStreamsManagerTests
     }
 
     [Fact]
-    public void ContainerTagsHashNotUsedUsedWithoutProcessTags()
+    public void ContainerTagsHashNotUsedWithoutProcessTags()
     {
         var env = "foo";
         var service = "bar";
