@@ -299,6 +299,20 @@ namespace Datadog.Trace.Debugger.Snapshots
                 return;
             }
 
+            if (currentDepth >= limitInfo.MaxReferenceDepth)
+            {
+                var isDictionary = Redaction.IsSupportedDictionary(source);
+                jsonWriter.WritePropertyName("type");
+                jsonWriter.WriteValue(type.Name);
+                jsonWriter.WritePropertyName("size");
+                jsonWriter.WriteValue(collection.Count);
+                jsonWriter.WritePropertyName(isDictionary ? "entries" : "elements");
+                jsonWriter.WriteStartArray();
+                jsonWriter.WriteEndArray();
+                WriteNotCapturedReason(jsonWriter, NotCapturedReason.depth);
+                return;
+            }
+
             IEnumerator enumerator = null;
             var arrayOpened = false;
             NotCapturedReason? notCapturedReason = null;
@@ -358,7 +372,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                     bool serialized;
                     if (isDictionary)
                     {
-                        serialized = SerializeKeyValuePair(current, jsonWriter, cts, currentDepth, limitInfo);
+                        serialized = SerializeKeyValuePair(current, jsonWriter, cts, currentDepth + 1, limitInfo);
                     }
                     else
                     {
@@ -367,7 +381,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                             current.GetType(),
                             jsonWriter,
                             cts,
-                            currentDepth,
+                            currentDepth + 1,
                             variableName: null,
                             fieldsOnly: false,
                             limitInfo);

@@ -54,6 +54,18 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Fact]
+        public void Limits_SelfReferencingEnumerable_DoesNotStackOverflow()
+        {
+            var list = new List<object>();
+            list.Add(list);
+
+            var snapshot = SnapshotHelper.GenerateSnapshot(list, prettify: false);
+
+            Assert.NotNull(snapshot);
+            Assert.Contains("\"notCapturedReason\":\"depth\"", snapshot);
+        }
+
+        [Fact]
         public async Task ObjectStructure_Null()
         {
             await ValidateSingleValue(null);
