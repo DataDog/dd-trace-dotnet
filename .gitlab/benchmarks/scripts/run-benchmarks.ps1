@@ -8,7 +8,7 @@
 #
 # This script mimics the setup from Build.cs RunBenchmarks target:
 # - Sets required environment variables (DD_SERVICE, DD_ENV, DD_TRACER_HOME, etc.)
-# - Constructs BenchmarkDotNet CLI arguments (-r, -f, --allCategories, etc.)
+# - Constructs BenchmarkDotNet CLI arguments (-f, --allCategories, etc.)
 # - Runs the benchmark executable
 #
 # Required environment variables:
@@ -63,10 +63,6 @@ $localArtifactsDir = "$tracerRoot\artifacts\benchmarks\$ArtifactsIndex"
 # Must match what was built in how_to_fetch_release
 $hostFramework = "net6.0"
 
-# Target runtimes for BenchmarkDotNet to benchmark against
-# On Windows: net472, netcoreapp3.1, net6.0
-$runtimes = @("net472", "netcoreapp31", "net60")
-
 # Build the benchmark executable path
 $benchmarkExe = "$benchmarkProjectDir\bin\Release\$hostFramework\$Project.exe"
 
@@ -86,13 +82,12 @@ $env:DD_DOTNET_TRACER_HOME = $monitoringHome
 $env:DD_TRACER_HOME = $monitoringHome
 
 # Build BenchmarkDotNet arguments
-# -r: target runtimes
 # -m: memory diagnoser
 # -f: filter pattern
 # --allCategories: category filter
 # --iterationTime: target time per iteration in ms
 # --artifacts: output directory
-$arguments = @("-r") + $runtimes + @(
+$arguments = @(
     "-m",
     "-f", $Filter,
     "--allCategories", $Category,
@@ -104,7 +99,6 @@ Write-Output "=== Running benchmarks ==="
 Write-Output "Project: $Project"
 Write-Output "Filter: $Filter"
 Write-Output "Category: $Category"
-Write-Output "Runtimes: $($runtimes -join ' ')"
 Write-Output "Executable: $benchmarkExe"
 Write-Output "Artifacts: $localArtifactsDir"
 Write-Output "Arguments: $($arguments -join ' ')"

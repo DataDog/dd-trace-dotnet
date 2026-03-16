@@ -75,9 +75,8 @@ experiments:
           Write-Output "=== Fetch and build complete for $env:BASELINE_OR_CANDIDATE ==="
 
         # Script to run benchmarks (runs in PARALLEL for each PARALLEL_ITEM)
-        # Runs the pre-compiled Nuke DLL directly to avoid _build.dll lock contention.
-        # Using build.cmd would trigger recompilation of _build.csproj, causing file locks
-        # when multiple parallel runs execute simultaneously.
+        # Runs benchmark .exe directly via run-benchmarks.ps1 to avoid Nuke lock contention.
+        # Each parallel run uses --artifacts with a unique path, so no writes conflict.
         how_to_run_benchmarks: |
           $ErrorActionPreference = "Stop"
 
@@ -91,41 +90,9 @@ experiments:
           # Add dotnet to PATH
           [Environment]::SetEnvironmentVariable("PATH", "C:\dotnet;" + [Environment]::GetEnvironmentVariable("PATH", [EnvironmentVariableTarget]::Process), [EnvironmentVariableTarget]::Process)
 
-          # Set up artifacts directory for this parallel run
-          $localArtifactsDir = "$env:CODE_SRC\tracer\artifacts\benchmarks\$env:PARALLEL_INDEX"
-
-          # Determine benchmark category (same logic as Build.cs)
-          $category = if ($env:PR_NUMBER) { "prs" } else { "master" }
-
-          # Run benchmarks using pre-compiled Nuke DLL directly
-          # This avoids the _build.dll lock that occurs when using build.cmd
-          Set-Location "$env:CODE_SRC\tracer"
-          dotnet build/_build/bin/Debug/_build.dll RunBenchmarks `
-            --no-benchmark-build `
-            --filter "$env:PARALLEL_ITEM" `
-            --benchmark-artifacts-directory "$localArtifactsDir" `
-            --benchmark-category $category
-
-          if ($LASTEXITCODE -ne 0) {
-              Write-Error "Benchmark execution failed with exit code $LASTEXITCODE"
-              exit $LASTEXITCODE
-          }
-
-          # Copy results to ARTIFACTS_DIR with naming convention
-          # Format: candidate.Trace.SpanBenchmark.json
-          $resultsDir = "$localArtifactsDir\results"
-          if (Test-Path $resultsDir) {
-              $jsonFiles = Get-ChildItem -Path $resultsDir -Filter "*-report-full-compressed.json" -Recurse
-              foreach ($file in $jsonFiles) {
-                  # Extract benchmark name: Benchmarks.Trace.SpanBenchmark-report-full-compressed.json -> Trace.SpanBenchmark
-                  $benchmarkName = $file.BaseName -replace '^Benchmarks\.', '' -replace '-report(-full)?(-compressed)?$', ''
-                  $destName = "$env:BASELINE_OR_CANDIDATE.$benchmarkName.json"
-                  $destPath = "$env:ARTIFACTS_DIR\$destName"
-                  Write-Output "Copying $($file.Name) -> $destName"
-                  Copy-Item $file.FullName -Destination $destPath -Force
-              }
-          } else {
-              Write-Warning "No results directory found at $resultsDir"
-          }
+          # Run benchmarks - each parallel run gets unique artifacts dir via PARALLEL_INDEX
+          & "$env:CODE_SRC\.gitlab\benchmarks\scripts\run-benchmarks.ps1" `
+            -Filter "$env:PARALLEL_ITEM" `
+            -ArtifactsIndex "$env:PARALLEL_INDEX"
 
           Write-Output "=== Benchmarks completed for filter: $env:PARALLEL_ITEM ==="
