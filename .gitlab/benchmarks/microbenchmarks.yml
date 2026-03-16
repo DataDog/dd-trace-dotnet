@@ -119,19 +119,11 @@ run-benchmarks:
         --env-regex "^(CI_|DD_|BP_|GITHUB_|ARTIFACTS_)" \
         --bypass-stack-destroy \
         $CLEANUP_ARG
-    # Fetch results from S3 (uploaded by ephemeral instance)
-    - |
-      echo "=== Fetching benchmark results from S3 ==="
-      bp-infra setup --region "${AWS_REGION}" --os "windows"
-      export AWS_PROFILE=ephemeral-infra-ci
-      S3_PREFIX="${CI_PROJECT_NAME}/${CI_COMMIT_REF_NAME}/${CI_JOB_ID}/reports"
-      echo "Downloading from s3://${BP_INFRA_ARTIFACTS_BUCKET_NAME}/${S3_PREFIX}"
-      aws s3 cp "s3://${BP_INFRA_ARTIFACTS_BUCKET_NAME}/${S3_PREFIX}" artifacts/ \
-        --region "${AWS_REGION}" \
-        --profile "${AWS_PROFILE}" \
-        --recursive || echo "Warning: No results found in S3"
-      echo "Downloaded files:"
-      ls -la artifacts/ || true
+    # Fetch results from S3, analyze, and upload
+    - export ARTIFACTS_DIR="$(pwd)/artifacts"
+    - .gitlab/benchmarks/steps/fetch-results.sh
+    - .gitlab/benchmarks/steps/analyze-results.sh
+    - .gitlab/benchmarks/steps/upload-to-bp-ui.sh
   after_script:
     - |
       if [ "$CLEANUP" == "true" ]; then

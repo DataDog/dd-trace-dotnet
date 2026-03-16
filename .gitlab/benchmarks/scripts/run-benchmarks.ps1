@@ -65,7 +65,7 @@ $hostFramework = "net6.0"
 
 # Target runtimes for BenchmarkDotNet to benchmark against
 # On Windows: net472, netcoreapp3.1, net6.0
-$runtimes = "net472 netcoreapp3.1 net6.0"
+$runtimes = @("net472", "netcoreapp31", "net60")
 
 # Build the benchmark executable path
 $benchmarkExe = "$benchmarkProjectDir\bin\Release\$hostFramework\$Project.exe"
@@ -92,8 +92,7 @@ $env:DD_TRACER_HOME = $monitoringHome
 # --allCategories: category filter
 # --iterationTime: target time per iteration in ms
 # --artifacts: output directory
-$arguments = @(
-    "-r", $runtimes,
+$arguments = @("-r") + $runtimes + @(
     "-m",
     "-f", $Filter,
     "--allCategories", $Category,
@@ -105,7 +104,7 @@ Write-Output "=== Running benchmarks ==="
 Write-Output "Project: $Project"
 Write-Output "Filter: $Filter"
 Write-Output "Category: $Category"
-Write-Output "Runtimes: $runtimes"
+Write-Output "Runtimes: $($runtimes -join ' ')"
 Write-Output "Executable: $benchmarkExe"
 Write-Output "Artifacts: $localArtifactsDir"
 Write-Output "Arguments: $($arguments -join ' ')"
