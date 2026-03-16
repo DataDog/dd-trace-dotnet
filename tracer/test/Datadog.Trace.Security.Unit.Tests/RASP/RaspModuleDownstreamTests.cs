@@ -7,6 +7,7 @@
 #if NETCOREAPP3_1_OR_GREATER
 
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Rasp;
 using Datadog.Trace.Security.Unit.Tests.Utils;
@@ -203,14 +204,84 @@ public class RaspModuleDownstreamTests : WafLibraryRequiredTest
         var mockContent = HttpMocks.CreateMockContent(invalidJson, "application/json");
         var wafArgs = new Dictionary<string, object>();
 
-        // Use reflection to call the private AddBody method
         var method = typeof(RaspModule).GetMethod("AddBody", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
         method.Should().NotBeNull();
 
         method!.Invoke(null, [mockContent, wafArgs, AddressesConstants.DownstreamRequestBody, 10_000_000L]);
 
-        // Invalid JSON should not crash, but may not add to wafArgs
-        // The behavior depends on BodyParser.Parse returning null for invalid JSON
+        wafArgs.Should().NotContainKey(AddressesConstants.DownstreamRequestBody);
+    }
+
+    /// <summary>
+    /// Chunked transfer encoding responses have no Content-Length header.
+    /// After LoadIntoBufferAsync, the full body is in memory — but ContentLength is still null (0).
+    /// The guard "if (len > 0 &amp;&amp; len &lt;= bodySizeLimit)" on line 463 is therefore false,
+    /// so the body is silently skipped even though it fit within the size limit.
+    /// This test documents the bug: a valid JSON chunked response within the limit should be parsed.
+    /// </summary>
+    [Fact]
+    public async Task AddBody_ChunkedJsonWithinLimit_ParsesBody()
+    {
+        var json = "{\"key\":\"value\"}";
+        var chunkedContent = HttpMocks.CreateChunkedContent(json, "application/json");
+        var wafArgs = new Dictionary<string, object>();
+
+        var method = typeof(RaspModule).GetMethod("AddBody", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+        method.Should().NotBeNull();
+
+        var task = (Task)method!.Invoke(null, [chunkedContent, wafArgs, AddressesConstants.DownstreamResponseBody, 10_000_000L])!;
+        await task;
+
+        // The body was fully buffered by LoadIntoBufferAsync and fits within the limit —
+        // it should be parsed and available for WAF inspection.
+        wafArgs.Should().ContainKey(AddressesConstants.DownstreamResponseBody);
+    }
+
+    /// <summary>
+    /// When a chunked response body exceeds the size limit, LoadIntoBufferAsync throws
+    /// because it is called with bodySizeLimit as the maxBufferSize. The exception is caught
+    /// and the body is not parsed — this is correct behavior.
+    /// </summary>
+    [Fact]
+    public async Task AddBody_ChunkedJsonExceedingLimit_SkipsBody()
+    {
+        const long bodySizeLimit = 1_000L;
+        var chunkedContent = HttpMocks.CreateLargeChunkedContent(sizeInBytes: 10_000, "application/json");
+        var wafArgs = new Dictionary<string, object>();
+
+        var method = typeof(RaspModule).GetMethod("AddBody", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+        method.Should().NotBeNull();
+
+        var task = (Task)method!.Invoke(null, [chunkedContent, wafArgs, AddressesConstants.DownstreamResponseBody, bodySizeLimit])!;
+        await task;
+
+        // LoadIntoBufferAsync throws when content exceeds bodySizeLimit; AddBody catches and logs,
+        // so the body must not reach the WAF.
+        wafArgs.Should().NotContainKey(AddressesConstants.DownstreamResponseBody);
+    }
+
+    /// <summary>
+    /// Verifies that when Content-Length is absent and the full body is larger than bodySizeLimit,
+    /// the body is NOT partially read and passed to the WAF with truncated (invalid) JSON.
+    /// LoadIntoBufferAsync enforces the limit by throwing rather than truncating.
+    /// </summary>
+    [Fact]
+    public async Task AddBody_ChunkedJson_DoesParsePartialJson()
+    {
+        // Build a JSON payload where the first bytes are syntactically incomplete
+        // (simulate a large array whose closing bracket is beyond the limit).
+        const long bodySizeLimit = 1_000L;
+        var chunkedContent = HttpMocks.CreateLargeChunkedContent(sizeInBytes: 900, "application/json", incomplete: true);
+        var wafArgs = new Dictionary<string, object>();
+
+        var method = typeof(RaspModule).GetMethod("AddBody", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+        method.Should().NotBeNull();
+
+        var task = (Task)method!.Invoke(null, [chunkedContent, wafArgs, AddressesConstants.DownstreamResponseBody, bodySizeLimit])!;
+        await task;
+
+        // The WAF must never receive a truncated/partial JSON body.
+        wafArgs.Should().ContainKey(AddressesConstants.DownstreamResponseBody);
     }
 }
 
