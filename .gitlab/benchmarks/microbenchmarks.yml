@@ -49,7 +49,7 @@ build-dd-trace-dotnet-microbenchmarks-ami:
 
     # Whether to cleanup instances after building the AMI, since the AMI is 
     # based on an instance that is created in this job
-    CLEANUP: "true"
+    CLEANUP: "false"
   before_script:
     - !reference [.dd-octo-sts-setup, before_script]
   script:
