@@ -1,0 +1,139 @@
+# run-benchmarks.ps1
+#
+# Runs pre-built benchmark executables directly, bypassing Nuke.
+#
+# This script exists because parallel bp-runner invocations would race to
+# compile/load Nuke's _build.dll, causing file lock errors. By running the
+# benchmark .exe directly, we avoid Nuke entirely for parallel runs.
+#
+# This script mimics the setup from Build.cs RunBenchmarks target:
+# - Sets required environment variables (DD_SERVICE, DD_ENV, DD_TRACER_HOME, etc.)
+# - Constructs BenchmarkDotNet CLI arguments (-r, -f, --allCategories, etc.)
+# - Runs the benchmark executable
+#
+# Required environment variables:
+#   CODE_SRC - Path to the repository root
+#   PARALLEL_ITEM - Benchmark filter pattern (e.g., "*SpanBenchmark*")
+#   PARALLEL_INDEX - Index for artifact directory isolation
+#   BASELINE_OR_CANDIDATE - "candidate" or "baseline"
+#   ARTIFACTS_DIR - Where to copy final results
+#
+# Optional:
+#   BENCHMARK_CATEGORY - Category to run (default: "prs")
+#   BENCHMARK_PROJECT - Which project to run (default: "Benchmarks.Trace")
+
+param(
+    [string]$Filter = $env:PARALLEL_ITEM,
+    [string]$Category = $env:BENCHMARK_CATEGORY,
+    [string]$Project = $env:BENCHMARK_PROJECT,
+    [string]$ArtifactsIndex = $env:PARALLEL_INDEX
+)
+
+# Apply defaults (mimics Build.cs logic)
+if (-not $Project) { $Project = "Benchmarks.Trace" }
+
+# Category defaults: if PR_NUMBER is set -> "prs", else -> "master"
+if (-not $Category) {
+    if ($env:PR_NUMBER) {
+        $Category = "prs"
+    } else {
+        $Category = "master"
+    }
+}
+
+$ErrorActionPreference = "Stop"
+
+if (-not $env:CODE_SRC) {
+    Write-Error "CODE_SRC environment variable is not set"
+    exit 1
+}
+
+if (-not $Filter) {
+    Write-Error "PARALLEL_ITEM environment variable (or -Filter parameter) is not set"
+    exit 1
+}
+
+# Paths
+$tracerRoot = "$env:CODE_SRC\tracer"
+$monitoringHome = "$tracerRoot\bin\monitoring-home"
+$benchmarkProjectDir = "$tracerRoot\test\benchmarks\$Project"
+$localArtifactsDir = "$tracerRoot\artifacts\benchmarks\$ArtifactsIndex"
+
+# Framework to run the host process (the benchmark exe)
+# Must match what was built in how_to_fetch_release
+$hostFramework = "net6.0"
+
+# Target runtimes for BenchmarkDotNet to benchmark against
+# On Windows: net472, netcoreapp3.1, net6.0
+$runtimes = "net472 netcoreapp3.1 net6.0"
+
+# Build the benchmark executable path
+$benchmarkExe = "$benchmarkProjectDir\bin\Release\$hostFramework\$Project.exe"
+
+if (-not (Test-Path $benchmarkExe)) {
+    Write-Error "Benchmark executable not found at: $benchmarkExe"
+    Write-Error "Make sure BuildBenchmarks was run in how_to_fetch_release"
+    exit 1
+}
+
+# Ensure artifacts directory exists
+New-Item -ItemType Directory -Path $localArtifactsDir -Force | Out-Null
+
+# Set environment variables (mimics Build.cs)
+$env:DD_SERVICE = "dd-trace-dotnet"
+$env:DD_ENV = "CI"
+$env:DD_DOTNET_TRACER_HOME = $monitoringHome
+$env:DD_TRACER_HOME = $monitoringHome
+
+# Build BenchmarkDotNet arguments
+# -r: target runtimes
+# -m: memory diagnoser
+# -f: filter pattern
+# --allCategories: category filter
+# --iterationTime: target time per iteration in ms
+# --artifacts: output directory
+$arguments = @(
+    "-r", $runtimes,
+    "-m",
+    "-f", $Filter,
+    "--allCategories", $Category,
+    "--iterationTime", "200",
+    "--artifacts", $localArtifactsDir
+)
+
+Write-Output "=== Running benchmarks ==="
+Write-Output "Project: $Project"
+Write-Output "Filter: $Filter"
+Write-Output "Category: $Category"
+Write-Output "Runtimes: $runtimes"
+Write-Output "Executable: $benchmarkExe"
+Write-Output "Artifacts: $localArtifactsDir"
+Write-Output "Arguments: $($arguments -join ' ')"
+Write-Output ""
+
+# Run the benchmark
+& $benchmarkExe @arguments
+
+if ($LASTEXITCODE -ne 0) {
+    Write-Error "Benchmark execution failed with exit code $LASTEXITCODE"
+    exit $LASTEXITCODE
+}
+
+# Copy results to ARTIFACTS_DIR with naming convention
+# Format: candidate.Trace.SpanBenchmark.json
+$resultsDir = "$localArtifactsDir\results"
+if (Test-Path $resultsDir) {
+    $jsonFiles = Get-ChildItem -Path $resultsDir -Filter "*.json" -Recurse
+    foreach ($file in $jsonFiles) {
+        # Extract benchmark name: Benchmarks.Trace.SpanBenchmark-report-full-compressed.json -> Trace.SpanBenchmark
+        $benchmarkName = $file.BaseName -replace '^Benchmarks\.', '' -replace '-report(-full)?(-compressed)?$', ''
+        $destName = "$env:BASELINE_OR_CANDIDATE.$benchmarkName.json"
+        $destPath = "$env:ARTIFACTS_DIR\$destName"
+        Write-Output "Copying $($file.Name) -> $destName"
+        Copy-Item $file.FullName -Destination $destPath -Force
+    }
+} else {
+    Write-Warning "No results directory found at $resultsDir"
+}
+
+Write-Output "=== Benchmarks completed ==="

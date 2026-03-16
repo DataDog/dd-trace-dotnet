@@ -75,69 +75,12 @@ experiments:
           Write-Output "=== Fetch and build complete for $env:BASELINE_OR_CANDIDATE ==="
 
         # Script to run benchmarks (runs in PARALLEL for each PARALLEL_ITEM)
-        # Uses Nuke RunBenchmarks with --no-benchmark-build to use pre-built benchmarks
+        # Runs the benchmark executable directly, bypassing Nuke to avoid _build.dll lock contention
         how_to_run_benchmarks: |
           $ErrorActionPreference = "Stop"
-
-          Write-Output "=== Running benchmarks ==="
-          Write-Output "BASELINE_OR_CANDIDATE: $env:BASELINE_OR_CANDIDATE"
-          Write-Output "CODE_SRC: $env:CODE_SRC"
-          Write-Output "PARALLEL_ITEM: $env:PARALLEL_ITEM"
-          Write-Output "PARALLEL_INDEX: $env:PARALLEL_INDEX"
-          Write-Output "ARTIFACTS_DIR: $env:ARTIFACTS_DIR"
 
           # Add dotnet to PATH
           [Environment]::SetEnvironmentVariable("PATH", "C:\dotnet;" + [Environment]::GetEnvironmentVariable("PATH", [EnvironmentVariableTarget]::Process), [EnvironmentVariableTarget]::Process)
 
-          # Set up artifacts directory for this parallel run
-          $localArtifactsDir = "$env:CODE_SRC\tracer\artifacts\benchmarks\$env:PARALLEL_INDEX"
-
-          # Run benchmarks using Nuke target with retry logic.
-          # Retry is needed because parallel bp-runner invocations may race to compile/load
-          # Nuke's _build.dll. The lock is brief, so a short retry usually succeeds.
-          Set-Location "$env:CODE_SRC\tracer"
-          $maxRetries = 3
-          $retryDelay = 5
-          $success = $false
-          for ($i = 1; $i -le $maxRetries; $i++) {
-              # --no-benchmark-build: use pre-built benchmarks from how_to_fetch_release
-              # --filter: use PARALLEL_ITEM as the benchmark filter
-              # --benchmark-artifacts-directory: output results to a unique directory per parallel run
-              # --benchmark-category prs: run PR category benchmarks
-              & .\build.cmd RunBenchmarks `
-                --no-benchmark-build `
-                --filter "$env:PARALLEL_ITEM" `
-                --benchmark-artifacts-directory "$localArtifactsDir" `
-                --benchmark-category prs
-              if ($LASTEXITCODE -eq 0) {
-                  $success = $true
-                  break
-              }
-              if ($i -lt $maxRetries) {
-                  Write-Output "Attempt $i failed (exit code $LASTEXITCODE). Retrying in ${retryDelay}s..."
-                  Start-Sleep -Seconds $retryDelay
-              }
-          }
-          if (-not $success) {
-              Write-Error "Failed after $maxRetries attempts"
-              exit 1
-          }
-
-          # Copy results to ARTIFACTS_DIR with naming convention matching benchmarking-platform
-          # Format: candidate.Trace.SpanBenchmark.json (strips Benchmarks. prefix and -report-full-compressed suffix)
-          $resultsDir = "$localArtifactsDir\results"
-          if (Test-Path $resultsDir) {
-              $jsonFiles = Get-ChildItem -Path $resultsDir -Filter "*.json" -Recurse
-              foreach ($file in $jsonFiles) {
-                  # Extract benchmark name: Benchmarks.Trace.SpanBenchmark-report-full-compressed.json -> Trace.SpanBenchmark
-                  $benchmarkName = $file.BaseName -replace '^Benchmarks\.', '' -replace '-report(-full)?(-compressed)?$', ''
-                  $destName = "$env:BASELINE_OR_CANDIDATE.$benchmarkName.json"
-                  $destPath = "$env:ARTIFACTS_DIR\$destName"
-                  Write-Output "Copying $($file.Name) -> $destName"
-                  Copy-Item $file.FullName -Destination $destPath -Force
-              }
-          } else {
-              Write-Warning "No results directory found at $resultsDir"
-          }
-
-          Write-Output "=== Benchmarks completed for filter: $env:PARALLEL_ITEM ==="
+          # Run the benchmark script (bypasses Nuke, runs .exe directly)
+          & "$env:CODE_SRC\.gitlab\benchmarks\scripts\run-benchmarks.ps1"
