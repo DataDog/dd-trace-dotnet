@@ -160,6 +160,8 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
 
             var tracerSettings = TracerSettings.Create(new Dictionary<string, object>
             {
+                // hash propagation requires both those settings to be true
+                { ConfigurationKeys.PropagateProcessTags, hashPropagationEnabled.ToString() },
                 { ConfigurationKeys.DbmInjectSqlBasehash, hashPropagationEnabled.ToString() },
                 { ConfigurationKeys.DbmPropagationMode, dbmMode }
             });
