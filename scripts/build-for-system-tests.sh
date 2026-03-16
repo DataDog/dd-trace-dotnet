@@ -151,11 +151,19 @@ fi
 # These are the minimal targets required to produce a functional tracer home
 # directory and then zip it. We intentionally omit profiler targets to keep
 # build time short (the profiler .so files will be stubbed below if missing).
-NUKE_TARGETS="CompileManagedLoader BuildNativeTracerHome BuildManagedTracerHome BuildNativeLoader ZipMonitoringHome"
+#
+# We split into two phases:
+#   Phase 1: Build everything up to (but not including) ZipMonitoringHome
+#   Phase 2: Create stubs for missing profiler files, then run ZipMonitoringHome
+#
+# This avoids the ZipMonitoringHomeLinux failure caused by the missing
+# Datadog.Linux.ApiWrapper.x64.so (which is only produced by the profiler
+# build targets that we skip).
+BUILD_TARGETS="CompileManagedLoader BuildNativeTracerHome BuildManagedTracerHome BuildNativeLoader"
 
 if [[ "$NO_CLEAN" == false ]]; then
   # Prepend Clean so we start from a pristine state on a first run
-  NUKE_TARGETS="Clean $NUKE_TARGETS"
+  BUILD_TARGETS="Clean $BUILD_TARGETS"
 fi
 
 ###############################################################################
@@ -181,64 +189,64 @@ run_nuke() {
 }
 
 ###############################################################################
-# First build attempt
+# Phase 1: Build everything except ZipMonitoringHome
 ###############################################################################
 
-info "=== Starting build (targets: $NUKE_TARGETS) ==="
+info "=== Phase 1: Building tracer (targets: $BUILD_TARGETS) ==="
 
-if run_nuke "$NUKE_TARGETS"; then
-  success "Nuke build completed successfully on first attempt."
-else
-  BUILD_EXIT=$?
+run_nuke "$BUILD_TARGETS"
+success "Phase 1 complete — tracer compiled successfully."
 
-  # -------------------------------------------------------------------------
-  # ARM64 workaround: ZipMonitoringHome can fail because the profiler native
-  # build does not produce Datadog.Linux.ApiWrapper.x64.so on arm64 in some
-  # configurations.  We create a dummy (empty) .so and retry only the zip step.
-  # -------------------------------------------------------------------------
-  warn "Nuke build exited with code $BUILD_EXIT — attempting ARM64 stub workaround."
+###############################################################################
+# Phase 1.5: Create stubs for missing profiler files in monitoring-home
+###############################################################################
 
-  MONITORING_HOME="$REPO_ROOT/tracer/bin/monitoring-home"
-  ARCH_DIR="$MONITORING_HOME/linux-${LINUX_ARCH}"
-  MUSL_DIR="$MONITORING_HOME/linux-musl-${LINUX_ARCH}"
-  API_WRAPPER="Datadog.Linux.ApiWrapper.x64.so"
+# The ZipMonitoringHomeLinux step expects Datadog.Linux.ApiWrapper.x64.so
+# in the monitoring-home/<arch> directory. This file is normally produced by
+# the profiler build targets (CompileNativeWrapper / PublishNativeWrapperUnix)
+# which we skip to save time. Create an empty stub so the packaging step
+# can create its required hard-links.
 
-  # Create a stub ApiWrapper if it is missing
-  if [[ ! -f "$ARCH_DIR/$API_WRAPPER" ]]; then
-    warn "Creating stub $API_WRAPPER in $ARCH_DIR"
-    mkdir -p "$ARCH_DIR"
-    touch "$ARCH_DIR/$API_WRAPPER"
-  fi
+# Nuke's MonitoringHomeDirectory resolves to shared/bin/monitoring-home (not tracer/bin/)
+MONITORING_HOME="$REPO_ROOT/shared/bin/monitoring-home"
+ARCH_DIR="$MONITORING_HOME/linux-${LINUX_ARCH}"
+MUSL_DIR="$MONITORING_HOME/linux-musl-${LINUX_ARCH}"
+API_WRAPPER="Datadog.Linux.ApiWrapper.x64.so"
 
-  # The linux-musl-<arch>/ directory must also exist with a few expected files
-  # so that the packaging step can create hard-links.  Copy what we have from
-  # the glibc directory if it is entirely absent.
-  if [[ ! -d "$MUSL_DIR" || -z "$(ls -A "$MUSL_DIR" 2>/dev/null)" ]]; then
-    warn "linux-musl-${LINUX_ARCH}/ is empty or missing — copying from linux-${LINUX_ARCH}/"
-    mkdir -p "$MUSL_DIR"
-    for f in \
-      "Datadog.Trace.ClrProfiler.Native.so" \
-      "libddwaf.so" \
-      "loader.conf" \
-      "$API_WRAPPER"
-    do
-      if [[ -f "$ARCH_DIR/$f" ]]; then
-        cp "$ARCH_DIR/$f" "$MUSL_DIR/$f"
-      else
-        warn "  Source file missing, creating stub: $f"
-        touch "$MUSL_DIR/$f"
-      fi
-    done
-  fi
-
-  # Retry just the zip step — skip Clean to preserve what was built above
-  info "Retrying only: ZipMonitoringHome"
-  if run_nuke "ZipMonitoringHome"; then
-    success "ZipMonitoringHome succeeded after stub workaround."
-  else
-    error "ZipMonitoringHome failed even after stub workaround.  Check the Docker output above."
-  fi
+if [[ ! -f "$ARCH_DIR/$API_WRAPPER" ]]; then
+  info "Creating stub $API_WRAPPER in $ARCH_DIR (profiler build was skipped)"
+  mkdir -p "$ARCH_DIR"
+  touch "$ARCH_DIR/$API_WRAPPER"
 fi
+
+# The linux-musl-<arch>/ directory must also exist with a few expected files
+# so that the packaging step can create hard-links.
+if [[ ! -d "$MUSL_DIR" || -z "$(ls -A "$MUSL_DIR" 2>/dev/null)" ]]; then
+  info "Populating linux-musl-${LINUX_ARCH}/ from linux-${LINUX_ARCH}/"
+  mkdir -p "$MUSL_DIR"
+  for f in \
+    "Datadog.Trace.ClrProfiler.Native.so" \
+    "libddwaf.so" \
+    "loader.conf" \
+    "$API_WRAPPER"
+  do
+    if [[ -f "$ARCH_DIR/$f" ]]; then
+      cp "$ARCH_DIR/$f" "$MUSL_DIR/$f"
+    else
+      info "  Creating stub: $f"
+      touch "$MUSL_DIR/$f"
+    fi
+  done
+fi
+
+###############################################################################
+# Phase 2: Package (ZipMonitoringHome)
+###############################################################################
+
+info "=== Phase 2: Packaging (ZipMonitoringHome) ==="
+
+run_nuke "ZipMonitoringHome"
+success "Phase 2 complete — ZipMonitoringHome succeeded."
 
 ###############################################################################
 # Locate the produced tar.gz
