@@ -2864,8 +2864,7 @@ stages:
       parameters:
         baseImage: $(baseImage)
         useNativeSdkVersion: $(useNativeSdkVersion)
-        command: "BuildAndRunProfilerCpuLimitTests"
-        extraArgs: "--cpus 2 --env CONTAINER_CPUS=1"
+        command: "BuildProfilerCpuLimitTests"
         apiKey: $(DD_LOGGER_DD_API_KEY)
         retryCountForRunCommand: 3
 
@@ -2873,10 +2872,17 @@ stages:
       parameters:
         baseImage: $(baseImage)
         useNativeSdkVersion: $(useNativeSdkVersion)
-        command: "BuildAndRunProfilerCpuLimitTests"
+        command: "RunProfilerCpuLimitTests"
+        extraArgs: "--cpus 2 --env CONTAINER_CPUS=1"
+        apiKey: $(DD_LOGGER_DD_API_KEY)
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        baseImage: $(baseImage)
+        useNativeSdkVersion: $(useNativeSdkVersion)
+        command: "RunProfilerCpuLimitTests"
         extraArgs: "--cpus 0.5 --env CONTAINER_CPUS=0.5"
         apiKey: $(DD_LOGGER_DD_API_KEY)
-        retryCountForRunCommand: 3
 
     - script: |
         docker-compose -f docker-compose.yml -p $(DockerComposeProjectName) \
