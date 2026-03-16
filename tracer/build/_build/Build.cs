@@ -316,8 +316,8 @@ partial class Build : NukeBuild
             }
         });
 
-    Target BuildForSystemTests => _ => _
-        .Description("Builds the tracer and packages it for system-tests (skips profiler)")
+    Target BuildTracerHomeWithoutProfiler => _ => _
+        .Description("Builds the tracer and packages it, skipping the profiler build")
         .After(Clean)
         .DependsOn(BuildTracerHome)
         .DependsOn(CreateProfilerStubs)
