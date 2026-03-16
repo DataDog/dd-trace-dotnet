@@ -24,8 +24,6 @@ internal sealed class ProcessTags
 
     private readonly bool _serviceNameUserDefined;
     private readonly string _autoServiceName;
-    private List<string>? _tagsList;
-    private string? _serializedTags;
 
     // ProcessTags captures EntryAssemblyLocator.GetEntryAssembly() and Environment.CurrentDirectory
     // If initialization happens before the entry assembly is available (common in ASP.NET/IIS or some test hosts),
@@ -104,11 +102,5 @@ internal sealed class ProcessTags
     private static string? GetEntryPointName()
     {
         return EntryAssemblyLocator.GetEntryAssembly()?.EntryPoint?.DeclaringType?.FullName;
-    }
-
-    private void InitTags()
-    {
-        _tagsList = GetTagsList(_serviceNameUserDefined, _autoServiceName);
-        _serializedTags = string.Join(",", _tagsList);
     }
 }

@@ -61,7 +61,7 @@ namespace Datadog.Trace.Agent
             var count = 8;
             var details = _header.Details;
 
-            if (!string.IsNullOrEmpty(details.ProcessTags?.SerializedTags))
+            if (!StringUtil.IsNullOrEmpty(details.ProcessTags?.SerializedTags))
             {
                 count++;
             }
