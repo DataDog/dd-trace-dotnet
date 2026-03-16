@@ -70,7 +70,8 @@ at Samples.Hangfire.Jobs.TestJob.ThrowException(),
       otel.trace_id: Guid_4,
       runtime-id: Guid_2,
       span.kind: internal,
-      _dd.base_service: Samples.Hangfire
+      _dd.base_service: Samples.Hangfire,
+      _dd.svc_src: m
     },
     Metrics: {
       process_id: 0,
