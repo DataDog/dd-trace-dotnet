@@ -212,6 +212,7 @@ When `--json` is active, all errors are returned as structured JSON on stdout (n
 | `INVALID_CONFIG` | Bad JSON in `--config` or `--config-file` | Fix JSON syntax |
 | `UNKNOWN_KEY` | Bad key in `--set` | Use `--list-keys` to see valid keys |
 | `GENERATION_ERROR` | Code generation failed | Check error message for details |
+| `BAD_ASSEMBLY` | File is not a valid .NET assembly | Verify the file is a .NET DLL (not native, not corrupted) |
 
 ### AMBIGUOUS_OVERLOAD detail
 

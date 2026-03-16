@@ -186,7 +186,21 @@ internal class GenerateCommand : Command
                 "Error: --config and --config-file are mutually exclusive. Use one or the other.");
         }
 
-        using var browser = new AssemblyBrowser(assemblyPath.FullName);
+        AssemblyBrowser browser;
+        try
+        {
+            browser = new AssemblyBrowser(assemblyPath.FullName);
+        }
+        catch (Exception ex)
+        {
+            return OutputHelper.WriteError(
+                jsonMode,
+                "generate",
+                ErrorCodes.BadAssembly,
+                $"Error: Failed to load assembly '{assemblyPath.Name}': {ex.Message}");
+        }
+
+        using var disposableBrowser = browser;
         var methodDef = browser.ResolveMethod(
             type,
             method,

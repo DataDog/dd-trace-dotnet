@@ -15,4 +15,5 @@ internal static class ErrorCodes
     public const string InvalidConfig = "INVALID_CONFIG";
     public const string UnknownKey = "UNKNOWN_KEY";
     public const string GenerationError = "GENERATION_ERROR";
+    public const string BadAssembly = "BAD_ASSEMBLY";
 }

@@ -168,7 +168,21 @@ internal class InspectCommand : Command
                 $"Error: Assembly file not found: {assemblyPath?.FullName ?? "<not specified>"}");
         }
 
-        using var browser = new AssemblyBrowser(assemblyPath.FullName);
+        AssemblyBrowser browser;
+        try
+        {
+            browser = new AssemblyBrowser(assemblyPath.FullName);
+        }
+        catch (Exception ex)
+        {
+            return OutputHelper.WriteError(
+                jsonMode,
+                "inspect",
+                ErrorCodes.BadAssembly,
+                $"Error: Failed to load assembly '{assemblyPath.Name}': {ex.Message}");
+        }
+
+        using var disposableBrowser = browser;
 
         if (listTypes)
         {

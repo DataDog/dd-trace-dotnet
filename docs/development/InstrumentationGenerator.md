@@ -338,6 +338,7 @@ Machine-readable error codes:
 | `INVALID_CONFIG` | Bad JSON in `--config` or `--config-file` |
 | `UNKNOWN_KEY` | Unrecognized key in `--set` |
 | `GENERATION_ERROR` | Code generation failed |
+| `BAD_ASSEMBLY` | File is not a valid .NET assembly (corrupted, native, etc.) |
 
 The `AMBIGUOUS_OVERLOAD` error is notable: it includes the full overload list in `data`, so you can immediately retry with `--overload-index` without a separate inspect call.
 
