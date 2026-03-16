@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
 
         public IEnumerable<string> GetValues(string name)
         {
-            // NOT USED — this adapter is write-only (inject only)
+            // Not used - this adapter is write-only (inject only)
             return System.Array.Empty<string>();
         }
 
@@ -43,7 +43,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
 
         public void Remove(string name)
         {
-            // NOT USED — header removal is not needed for trace context injection
+            // Not used - header removal is not needed for trace context injection
         }
     }
 }

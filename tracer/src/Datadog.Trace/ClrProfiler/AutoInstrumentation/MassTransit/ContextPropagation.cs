@@ -75,18 +75,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
 
         public void Set(string name, string value)
         {
-            // NOT USED - This adapter only EXTRACTS (reads) headers via GetValues(), never INJECTS (writes) them.
+            // Not used - this adapter only extracts (reads) headers via GetValues(), never injects (writes) them.
             // Incoming message headers are read-only.
         }
 
         public void Add(string name, string value)
         {
-            // NOT USED - Incoming message headers are read-only.
+            // Not used - incoming message headers are read-only.
         }
 
         public void Remove(string name)
         {
-            // NOT USED - Incoming message headers are read-only.
+            // Not used - incoming message headers are read-only.
         }
     }
 
@@ -249,7 +249,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
 
         public IEnumerable<string> GetValues(string name)
         {
-            // NOT USED - This adapter only INJECTS (writes) headers via Set(), never EXTRACTS (reads) them.
+            // Not used - this adapter only injects (writes) headers via Set(), never extracts (reads) them.
             // The SpanContextPropagator.Inject() method only calls Set(), not GetValues().
             yield break;
         }
@@ -295,7 +295,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
 
         public void Remove(string name)
         {
-            // NOT USED - Header removal is not needed for trace context injection.
+            // Not used - header removal is not needed for trace context injection.
             // We only add/set headers, never remove them.
         }
     }

@@ -88,9 +88,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared
         }
 
         /// <summary>
-        /// Extracts trace context from message attributes if present.
-        /// This allows spans to be connected when messaging frameworks like MassTransit
-        /// have already injected trace context before the AWS SDK call.
+        /// Extracts trace context from message attributes.
         /// </summary>
         public static PropagationContext ExtractHeadersFromMessage(Tracer tracer, IContainsMessageAttributes? carrier)
         {
@@ -127,12 +125,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared
                 var headerDict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
                 foreach (var key in carrier.MessageAttributes.Keys)
                 {
-                    if (key is string keyStr)
+                    if (key is string keyString)
                     {
-                        var attributeValue = carrier.MessageAttributes[keyStr]?.DuckCast<IMessageAttributeValue>();
+                        var attributeValue = carrier.MessageAttributes[keyString]?.DuckCast<IMessageAttributeValue>();
                         if (attributeValue?.StringValue != null)
                         {
-                            headerDict[keyStr] = attributeValue.StringValue;
+                            headerDict[keyString] = attributeValue.StringValue;
                         }
                     }
                 }

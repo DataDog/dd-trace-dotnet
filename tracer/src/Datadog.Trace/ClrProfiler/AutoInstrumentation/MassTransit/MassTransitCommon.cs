@@ -334,28 +334,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
         /// Used by DiagnosticObserver for properties on ConsumeContext types.
         /// </summary>
         /// <remarks>
-        /// Why reflection is required (duck typing cannot be used):
-        ///
-        /// Investigation shows that the most common context type in DiagnosticObserver is
-        /// MessageConsumeContext&lt;T&gt;, which uses EXPLICIT INTERFACE IMPLEMENTATION for all
-        /// IConsumeContext properties (MessageId, SourceAddress, DestinationAddress, ReceiveContext, etc.).
-        ///
-        /// Evidence from MassTransit.dll inspection:
-        /// - MessageConsumeContext&lt;T&gt; (most common, ~70% of cases):
-        ///   - All properties on interfaces, not public on class (⚠️ explicit implementation)
-        ///   - Duck typing to IConsumeContext FAILS
-        /// - CorrelationIdConsumeContextProxy&lt;T&gt; (~30% of cases):
-        ///   - Properties are public on the class (✅ implicit implementation)
-        ///   - Duck typing to IConsumeContext SUCCEEDS
-        ///
-        /// Since duck typing fails for the MAJORITY of cases, reflection is the primary approach.
-        /// This is the same explicit interface implementation issue that affects SendContextHeadersAdapter
-        /// (see WHY_DUCK_TYPING_FAILED.md for detailed explanation).
-        ///
-        /// This reflection approach:
-        /// - Searches class properties first (fast path for implicit implementations like proxies)
-        /// - Falls back to interface properties (handles explicit implementations like MessageConsumeContext)
-        /// - Works reliably for all MassTransit context types
+        /// Uses reflection because duck typing fails for explicit interface implementations
+        /// in MessageConsumeContext&lt;T&gt; and similar MassTransit context types.
+        /// Searches class properties first, then falls back to interface properties.
         /// </remarks>
         internal static T? TryGetProperty<T>(object? obj, string propertyName)
         {
@@ -476,8 +457,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
             var propagationContext = new PropagationContext(scope.Span.Context, Baggage.Current);
             bool injected = false;
 
-            // DuckCopy the Headers object (DictionarySendHeaders) to read its private _headers dictionary.
-            // The caller already holds the IMessageSendContext proxy so no second DuckCast is needed here.
+            // Access Headers dictionary via DuckCast to avoid second DuckCast.
             try
             {
                 var headersObj = sendContext.Headers;
@@ -507,14 +487,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
                 Log.Debug("MassTransitCommon.InjectTraceContext: Using reflection fallback to inject trace context");
                 try
                 {
-                    var headers = sendContext.Headers ?? TryGetProperty<object>((sendContext as IDuckType)?.Instance, "Headers");
-                    if (headers is null)
+                    var headersObject = sendContext.Headers ?? TryGetProperty<object>((sendContext as IDuckType)?.Instance, "Headers");
+                    if (headersObject is null)
                     {
                         Log.Debug("MassTransitCommon.InjectTraceContext: No Headers property found in SendContext");
                         return;
                     }
 
-                    var injectAdapter = new ContextPropagationInjectAdapter(headers);
+                    var injectAdapter = new ContextPropagationInjectAdapter(headersObject);
                     tracer.TracerManager.SpanContextPropagator.Inject(propagationContext, injectAdapter);
                 }
                 catch (Exception ex)
@@ -545,20 +525,20 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
             {
                 // Use reflection to get Headers property — duck typing fails for most concrete context types
                 // due to explicit interface implementation (e.g. MessageConsumeContext<T>)
-                var headers = TryGetProperty<object>(context, "Headers");
+                var headersObject = TryGetProperty<object>(context, "Headers");
 
                 Log.Debug(
                     "MassTransitCommon.ExtractTraceContext: ContextType={ContextType}, HeadersType={HeadersType}",
                     context.GetType().FullName,
-                    headers?.GetType().FullName ?? "null");
+                    headersObject?.GetType().FullName ?? "null");
 
-                if (headers is null)
+                if (headersObject is null)
                 {
                     return default;
                 }
 
                 // Extract trace context from incoming message headers (consumer side)
-                var extractHeadersAdapter = new ContextPropagationExtractAdapter(headers);
+                var extractHeadersAdapter = new ContextPropagationExtractAdapter(headersObject);
                 var extractedContext = tracer.TracerManager.SpanContextPropagator.Extract(extractHeadersAdapter);
 
                 Log.Debug(
@@ -671,12 +651,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
 
             return $"{cleanDestination} {operation}";
         }
-
-        /// <summary>
-        /// Enhances MassTransit Activity metadata by updating DisplayName (resource name) and OperationName.
-        /// This is called from ActivityHandler (MassTransit 8.x) and DiagnosticObserver (MassTransit 7.x).
-        /// Supports both OTEL semantic convention tags (MassTransit 8.x) and legacy tags (MassTransit 7.x).
-        /// </summary>
         /// <summary>
         /// Extracts a clean destination name from a MassTransit address URI.
         /// For URN format destinations, keeps the full URN.
@@ -746,8 +720,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
                 activity.AddTag("operation.name", originalOperationName);
             }
 
-            // Read destination — MT8 sets messaging.destination.name for receive/send spans.
-            // For process/consume spans, fall back to peer.address which contains the message type name.
+            // Read destination from messaging.destination.name, fallback to peer.address for process/consume spans.
             var destination = activity.Tags.FirstOrDefault(kv => kv.Key == "messaging.destination.name").Value;
             if (StringUtil.IsNullOrWhiteSpace(destination))
             {
