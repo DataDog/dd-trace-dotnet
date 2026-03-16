@@ -193,7 +193,7 @@ docker run --rm \
   --env DOTNET_CLI_TELEMETRY_OPTOUT=1 \
   --env DOTNET_NOLOGO=1 \
   "dd-trace-dotnet/debian-builder:${SDK_VERSION}" \
-  dotnet /build/bin/Debug/_build.dll BuildTracerHomeWithoutProfiler
+  dotnet /build/bin/Debug/_build.dll BuildTracerHome BuildProfilerHome PackageTracerHome
 ```
 
 The artifact will be at `tracer/bin/artifacts/linux-<arch>/datadog-dotnet-apm-<version>.<arch>.tar.gz`.

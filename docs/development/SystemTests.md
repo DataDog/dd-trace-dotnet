@@ -11,7 +11,7 @@ To run system-tests locally, you first need to build the tracer package (`datado
 ### Linux
 
 ```bash
-./tracer/build.sh BuildTracerHomeWithoutProfiler
+./tracer/build.sh BuildTracerHome BuildProfilerHome PackageTracerHome
 ```
 
 The artifact will be at `tracer/bin/artifacts/linux-<arch>/datadog-dotnet-apm-<version>.tar.gz`.
