@@ -69,6 +69,11 @@ experiments:
           Write-Output "Building tracer for benchmarks..."
           & .\tracer\build.cmd CreateRequiredDirectories Restore CompileManagedSrc DownloadLibDdwaf CopyLibDdwaf
 
+          # Build the benchmarks project so parallel runs can use --no-build
+          Write-Output "Building Benchmarks.Trace project..."
+          Set-Location "$env:CODE_SRC\tracer\test\benchmarks\Benchmarks.Trace"
+          dotnet build -c Release -f net6.0
+
           Write-Output "=== Fetch and build complete for $env:BASELINE_OR_CANDIDATE ==="
 
         # Script to run benchmarks (runs in PARALLEL for each PARALLEL_ITEM)
