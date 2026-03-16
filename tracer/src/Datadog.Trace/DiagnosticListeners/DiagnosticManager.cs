@@ -50,7 +50,6 @@ namespace Datadog.Trace.DiagnosticListeners
 #else
                 try
                 {
-                    // Get the DiagnosticListener type
                     var diagnosticListenerType = Type.GetType("System.Diagnostics.DiagnosticListener, System.Diagnostics.DiagnosticSource");
                     if (diagnosticListenerType == null)
                     {
@@ -58,13 +57,14 @@ namespace Datadog.Trace.DiagnosticListeners
                         return;
                     }
 
-                    _allListenersSubscription = DiagnosticObserverFactory.SubscribeWithInstanceCallback(
-                        diagnosticListenerType,
-                        this,
-                        typeof(DiagnosticManager),
-                        nameof(OnDiagnosticListenerNext),
-                        "Datadog.DiagnosticManager.Dynamic",
-                        typeof(DiagnosticManager));
+                    var iObserverType = typeof(IObserver<>).MakeGenericType(diagnosticListenerType);
+                    var observer = new FrameworkDiagnosticListenerObserver(this);
+                    var implementation = observer.DuckImplement(iObserverType);
+
+                    var allListenersProperty = diagnosticListenerType.GetProperty("AllListeners", BindingFlags.Public | BindingFlags.Static);
+                    var allListeners = allListenersProperty?.GetValue(null);
+                    var subscribeMethod = allListenersProperty?.PropertyType.GetMethod("Subscribe");
+                    _allListenersSubscription = subscribeMethod?.Invoke(allListeners, new[] { implementation }) as IDisposable;
 
                     if (_allListenersSubscription != null)
                     {
@@ -130,28 +130,6 @@ namespace Datadog.Trace.DiagnosticListeners
         {
             Stop();
         }
-
-        /// <summary>
-        /// Called when a new DiagnosticListener is created.
-        /// This method is called by the dynamically created observer type via reflection.
-        /// </summary>
-        /// <param name="diagnosticListener">The DiagnosticListener instance (actual System.Diagnostics type)</param>
-        internal void OnDiagnosticListenerNext(object diagnosticListener)
-        {
-            try
-            {
-                // Duck type the actual DiagnosticListener to our interface
-                var listener = diagnosticListener.DuckAs<IDiagnosticListener>();
-                if (listener?.Instance != null)
-                {
-                    OnNext(listener);
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error handling DiagnosticListener notification");
-            }
-        }
     }
 
 #if !NETFRAMEWORK
@@ -176,7 +154,33 @@ namespace Datadog.Trace.DiagnosticListeners
 
         public void OnNext(DiagnosticListener value)
         {
-            _diagnosticManager.OnDiagnosticListenerNext(value);
+            _diagnosticManager.OnNext(value.DuckCast<IDiagnosticListener>());
+        }
+    }
+#else
+    internal sealed class FrameworkDiagnosticListenerObserver
+    {
+        private readonly DiagnosticManager _diagnosticManager;
+
+        public FrameworkDiagnosticListenerObserver(DiagnosticManager diagnosticManager)
+        {
+            _diagnosticManager = diagnosticManager;
+        }
+
+        [DuckReverseMethod]
+        public void OnCompleted()
+        {
+        }
+
+        [DuckReverseMethod]
+        public void OnError(Exception error)
+        {
+        }
+
+        [DuckReverseMethod]
+        public void OnNext(IDiagnosticListener value)
+        {
+            _diagnosticManager.OnNext(value);
         }
     }
 #endif

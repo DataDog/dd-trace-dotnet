@@ -14,6 +14,8 @@ using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 
+#pragma warning disable SA1402
+
 namespace Datadog.Trace.Activity
 {
     internal static class DiagnosticObserverListener
@@ -93,6 +95,25 @@ namespace Datadog.Trace.Activity
             {
                 ((IObservable<KeyValuePair<string, object>>?)source.Instance)?.Subscribe(new DiagnosticSourceEventListener(source.Name));
             }
+        }
+    }
+
+    internal sealed class FrameworkDiagnosticObserverListenerObserver
+    {
+        [DuckReverseMethod]
+        public void OnCompleted()
+        {
+        }
+
+        [DuckReverseMethod]
+        public void OnError(Exception error)
+        {
+        }
+
+        [DuckReverseMethod]
+        public void OnNext(object value)
+        {
+            DiagnosticObserverListener.OnSetListener(value);
         }
     }
 }
