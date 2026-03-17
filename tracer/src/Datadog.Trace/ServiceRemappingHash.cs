@@ -1,4 +1,4 @@
-// <copyright file="BaseHash.cs" company="Datadog">
+// <copyright file="ServiceRemappingHash.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -17,7 +17,7 @@ namespace Datadog.Trace;
 /// Used by DBM to retrieve all the tag values from the spans, from just a single parameter (this hash),
 /// Used by DSM in the pathway to identify different sources that could have been service-remapped
 /// </summary>
-internal static class BaseHash
+internal static class ServiceRemappingHash
 {
     /// <summary>
     /// Gets the base64 representation of the hash

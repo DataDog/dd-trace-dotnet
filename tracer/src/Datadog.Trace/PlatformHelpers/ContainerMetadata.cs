@@ -71,7 +71,7 @@ namespace Datadog.Trace.PlatformHelpers
             set
             {
                 Volatile.Write(ref field, value);
-                BaseHash.Recompute(ProcessTags.SerializedTags, value);
+                ServiceRemappingHash.Recompute(ProcessTags.SerializedTags, value);
             }
         }
 
