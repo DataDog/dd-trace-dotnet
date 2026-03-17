@@ -8,6 +8,7 @@
 using System.Net;
 using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
+using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -22,6 +23,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     /// finishes its initialization.
     /// </summary>
     [Collection("IisTests")]
+    [UsesVerify]
     public class AspNetWebFormsNinjectTests : TracingIntegrationTest, IClassFixture<IisFixture>, IAsyncLifetime
     {
         private readonly IisFixture _iisFixture;
@@ -46,24 +48,30 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("LoadFromGAC", "True")]
-        [InlineData("/", "GET /")]
-        [InlineData("/Default", "GET /default")]
-        [InlineData("/Account/Login", "GET /account/login")]
-        public async Task SubmitsTraces(
-            string path,
-            string expectedResourceName)
+        [InlineData("/", 200)]
+        [InlineData("/Default", 200)]
+        [InlineData("/Account/Login", 200)]
+        public async Task SubmitsTraces(string path, int statusCode)
         {
-            await AssertAspNetSpanOnly(
+#pragma warning disable CS0618 // Type or member is obsolete
+            EnableDebugMode();
+#pragma warning restore CS0618 // Type or member is obsolete
+            var spans = await GetWebServerSpans(
                 path,
                 _iisFixture.Agent,
                 _iisFixture.HttpPort,
-                HttpStatusCode.OK,
-                isError: false,
-                expectedErrorType: null,
-                expectedErrorMessage: null,
-                SpanTypes.Web,
-                expectedResourceName,
-                "1.0.0");
+                (HttpStatusCode)statusCode,
+                expectedSpanCount: 1,
+                filterServerSpans: true);
+
+            ValidateIntegrationSpans(spans, metadataSchemaVersion: "v0", expectedServiceName: "sample", isExternalSpan: false);
+
+            var sanitisedPath = VerifyHelper.SanitisePathsForVerify(path);
+            var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedPath, statusCode);
+
+            await VerifyHelper.VerifySpans(spans, settings)
+                              .UseMethodName("_")
+                              .UseTypeName(nameof(AspNetWebFormsNinjectTests));
         }
 
         public Task InitializeAsync() => _iisFixture.TryStartIis(this, IisAppType.AspNetIntegrated);

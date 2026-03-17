@@ -43,7 +43,6 @@ namespace Datadog.Trace.Configuration.Schema
                 ServiceNameMetadata.Resolve(HttpClientComponent, defaultServiceName, serviceNameMappings, useSuffix),
                 ServiceNameMetadata.Resolve(GrpcClientComponent, defaultServiceName, serviceNameMappings, useSuffix),
             ];
-
         }
 
         /// <summary>
