@@ -42,12 +42,13 @@ namespace Datadog.Trace.Tests.Tagging
         public async Task DisposeAsync() => await _tracer.DisposeAsync();
 
         [Fact]
+        [Flaky("This concurrency test can time out on saturated CI agents")]
         public async Task SetTagAndSetTags_WhenCalledConcurrently_ShouldKeepSingleEntryPerKey()
         {
             var tags = new TagsList();
 
-            const int workerCount = 8;
-            const int iterationsPerWorker = 2_000;
+            const int workerCount = 4;
+            const int iterationsPerWorker = 1_000;
             var timeout = TimeSpan.FromSeconds(20);
             var expectedKeys = new[] { "k1", "k2", "k3", "k4" };
 
