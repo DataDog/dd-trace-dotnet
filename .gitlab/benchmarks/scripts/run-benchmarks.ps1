@@ -14,13 +14,11 @@
 # Required environment variables:
 #   CODE_SRC - Path to the repository root
 #   PARALLEL_ITEM - Benchmark filter pattern (e.g., "*SpanBenchmark*")
+#   BENCHMARK_CATEGORY - Category to run (e.g., "prs", "master")
+#   BENCHMARK_PROJECT - Which project to run (e.g., "Benchmarks.Trace")
 #   PARALLEL_INDEX - Index for artifact directory isolation
 #   BASELINE_OR_CANDIDATE - "candidate" or "baseline"
 #   ARTIFACTS_DIR - Where to copy final results
-#
-# Optional:
-#   BENCHMARK_CATEGORY - Category to run (default: "prs")
-#   BENCHMARK_PROJECT - Which project to run (default: "Benchmarks.Trace")
 
 param(
     [string]$Filter = $env:PARALLEL_ITEM,
@@ -28,18 +26,6 @@ param(
     [string]$Project = $env:BENCHMARK_PROJECT,
     [string]$ArtifactsIndex = $env:PARALLEL_INDEX
 )
-
-# Apply defaults (mimics Build.cs logic)
-if (-not $Project) { $Project = "Benchmarks.Trace" }
-
-# Category defaults: if PR_NUMBER is set -> "prs", else -> "master"
-if (-not $Category) {
-    if ($env:PR_NUMBER) {
-        $Category = "prs"
-    } else {
-        $Category = "master"
-    }
-}
 
 $ErrorActionPreference = "Stop"
 
