@@ -64,10 +64,10 @@ internal sealed class MetricReaderHandler
             return;
         }
 
-        var instrumentType = GetInstrumentType(instrument.GetType().FullName);
+        var instrumentType = GetInstrumentType(instrument);
         if (instrumentType == null)
         {
-            Log.Debug("Skipping unsupported instrument: {InstrumentName} of type: {InstrumentType}", instrument.Name, instrument.GetType().FullName);
+            Log.Debug("Skipping unsupported instrument: {InstrumentName} of type: {InstrumentType}", instrument.Name, instrument.GetType().Name);
             return;
         }
 
@@ -210,40 +210,73 @@ internal sealed class MetricReaderHandler
                   or "Microsoft.AspNetCore.Hosting"
                   or "Microsoft.AspNetCore.Server.Kestrel";
 
-    private static InstrumentType? GetInstrumentType(string? instrumentType)
+    private static InstrumentType? GetInstrumentType(Instrument instrument)
     {
-        if (string.IsNullOrEmpty(instrumentType))
+        var type = instrument.GetType();
+        if (!type.IsGenericType)
         {
             return null;
         }
 
-        if (instrumentType.StartsWith("System.Diagnostics.Metrics.Counter`1"))
+        var genericDef = type.GetGenericTypeDefinition();
+
+        if (genericDef == typeof(Counter<>))
         {
             return InstrumentType.Counter;
         }
-        else if (instrumentType.StartsWith("System.Diagnostics.Metrics.ObservableCounter`1"))
+
+        if (genericDef == typeof(ObservableCounter<>))
         {
             return InstrumentType.ObservableCounter;
         }
-        else if (instrumentType.StartsWith("System.Diagnostics.Metrics.UpDownCounter`1"))
-        {
-            return InstrumentType.UpDownCounter;
-        }
-        else if (instrumentType.StartsWith("System.Diagnostics.Metrics.ObservableUpDownCounter`1"))
-        {
-            return InstrumentType.ObservableUpDownCounter;
-        }
-        else if (instrumentType.StartsWith("System.Diagnostics.Metrics.Gauge`1"))
-        {
-            return InstrumentType.Gauge;
-        }
-        else if (instrumentType.StartsWith("System.Diagnostics.Metrics.ObservableGauge`1"))
+
+        if (genericDef == typeof(ObservableGauge<>))
         {
             return InstrumentType.ObservableGauge;
         }
-        else if (instrumentType.StartsWith("System.Diagnostics.Metrics.Histogram`1"))
+
+        if (genericDef == typeof(Histogram<>))
         {
             return InstrumentType.Histogram;
+        }
+
+#if NET7_0_OR_GREATER
+        if (genericDef == typeof(UpDownCounter<>))
+        {
+            return InstrumentType.UpDownCounter;
+        }
+
+        if (genericDef == typeof(ObservableUpDownCounter<>))
+        {
+            return InstrumentType.ObservableUpDownCounter;
+        }
+#endif
+
+#if NET9_0_OR_GREATER
+        if (genericDef == typeof(Gauge<>))
+        {
+            return InstrumentType.Gauge;
+        }
+#endif
+
+        // Fallback for types not available in the current TFM (e.g. UpDownCounter on .NET 6)
+        var fullName = type.FullName;
+        if (fullName != null)
+        {
+            if (fullName.StartsWith("System.Diagnostics.Metrics.UpDownCounter`1", StringComparison.Ordinal))
+            {
+                return InstrumentType.UpDownCounter;
+            }
+
+            if (fullName.StartsWith("System.Diagnostics.Metrics.ObservableUpDownCounter`1", StringComparison.Ordinal))
+            {
+                return InstrumentType.ObservableUpDownCounter;
+            }
+
+            if (fullName.StartsWith("System.Diagnostics.Metrics.Gauge`1", StringComparison.Ordinal))
+            {
+                return InstrumentType.Gauge;
+            }
         }
 
         return null;

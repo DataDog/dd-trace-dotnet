@@ -8,6 +8,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
@@ -43,6 +44,7 @@ internal sealed class RuntimeMetricsPolyfill : IDisposable
     private readonly Meter _meter;
     private readonly Process _process;
     private readonly Counter<long>? _exceptions;
+    private readonly ConcurrentDictionary<string, KeyValuePair<string, object?>> _exceptionTagCache = new();
 
     private GCMemoryInfo _cachedGcInfo;
     private long _gcInfoTimestamp;
@@ -209,16 +211,20 @@ internal sealed class RuntimeMetricsPolyfill : IDisposable
         return null;
     }
 
-    private static IEnumerable<Measurement<long>> GetGarbageCollectionCounts()
+    private static Measurement<long>[] GetGarbageCollectionCounts()
     {
+        var count = GC.MaxGeneration + 1;
+        var measurements = new Measurement<long>[count];
         long collectionsFromHigherGeneration = 0;
 
         for (int gen = GC.MaxGeneration; gen >= 0; --gen)
         {
             long collectionsFromThisGeneration = GC.CollectionCount(gen);
-            yield return new(collectionsFromThisGeneration - collectionsFromHigherGeneration, new KeyValuePair<string, object?>("gc.heap.generation", GenNames[gen]));
+            measurements[GC.MaxGeneration - gen] = new(collectionsFromThisGeneration - collectionsFromHigherGeneration, new KeyValuePair<string, object?>("gc.heap.generation", GenNames[gen]));
             collectionsFromHigherGeneration = collectionsFromThisGeneration;
         }
+
+        return measurements;
     }
 
     private GCMemoryInfo GetCachedGcInfo()
@@ -233,31 +239,40 @@ internal sealed class RuntimeMetricsPolyfill : IDisposable
         return _cachedGcInfo;
     }
 
-    private IEnumerable<Measurement<double>> GetCpuTime()
+    private Measurement<double>[] GetCpuTime()
     {
         _process.Refresh();
-        yield return new(_process.UserProcessorTime.TotalSeconds, new KeyValuePair<string, object?>("cpu.mode", "user"));
-        yield return new(_process.PrivilegedProcessorTime.TotalSeconds, new KeyValuePair<string, object?>("cpu.mode", "system"));
+        return
+        [
+            new(_process.UserProcessorTime.TotalSeconds, new KeyValuePair<string, object?>("cpu.mode", "user")),
+            new(_process.PrivilegedProcessorTime.TotalSeconds, new KeyValuePair<string, object?>("cpu.mode", "system")),
+        ];
     }
 
-    private IEnumerable<Measurement<long>> GetHeapSizes()
+    private Measurement<long>[] GetHeapSizes()
     {
         var gcInfo = GetCachedGcInfo();
+        var measurements = new Measurement<long>[MaxGenerations];
 
         for (int i = 0; i < MaxGenerations; ++i)
         {
-            yield return new(gcInfo.GenerationInfo[i].SizeAfterBytes, new KeyValuePair<string, object?>("gc.heap.generation", GenNames[i]));
+            measurements[i] = new(gcInfo.GenerationInfo[i].SizeAfterBytes, new KeyValuePair<string, object?>("gc.heap.generation", GenNames[i]));
         }
+
+        return measurements;
     }
 
-    private IEnumerable<Measurement<long>> GetHeapFragmentation()
+    private Measurement<long>[] GetHeapFragmentation()
     {
         var gcInfo = GetCachedGcInfo();
+        var measurements = new Measurement<long>[MaxGenerations];
 
         for (int i = 0; i < MaxGenerations; ++i)
         {
-            yield return new(gcInfo.GenerationInfo[i].FragmentationAfterBytes, new KeyValuePair<string, object?>("gc.heap.generation", GenNames[i]));
+            measurements[i] = new(gcInfo.GenerationInfo[i].FragmentationAfterBytes, new KeyValuePair<string, object?>("gc.heap.generation", GenNames[i]));
         }
+
+        return measurements;
     }
 
     private void OnFirstChanceException(object? sender, System.Runtime.ExceptionServices.FirstChanceExceptionEventArgs e)
@@ -268,7 +283,9 @@ internal sealed class RuntimeMetricsPolyfill : IDisposable
         }
 
         t_handlingFirstChanceException = true;
-        _exceptions?.Add(1, new KeyValuePair<string, object?>("error.type", e.Exception.GetType().Name));
+        var typeName = e.Exception.GetType().Name;
+        var tag = _exceptionTagCache.GetOrAdd(typeName, static name => new KeyValuePair<string, object?>("error.type", name));
+        _exceptions?.Add(1, tag);
         t_handlingFirstChanceException = false;
     }
 }
