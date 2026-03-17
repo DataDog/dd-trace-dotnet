@@ -11,7 +11,7 @@ internal sealed class DownstreamSampler : IDownstreamSampler
 {
     private const long KnuthFactor = 1111111111111111111L;
     private readonly long _threshold;
-    private long _globalRequestCount = 0;
+    private long _globalRequestCount;
 
     public DownstreamSampler(double rate)
     {
