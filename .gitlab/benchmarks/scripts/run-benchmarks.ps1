@@ -73,17 +73,12 @@ $env:DD_DOTNET_TRACER_HOME = $monitoringHome
 $env:DD_TRACER_HOME = $monitoringHome
 
 # Build BenchmarkDotNet arguments
-# -r: target runtimes
-# -m: memory diagnoser
-# -f: filter pattern
-# --allCategories: category filter
-# --iterationTime: target time per iteration in ms
-# --artifacts: output directory
 $arguments = @("-r") + $runtimes + @(
     "-m",
     "-f", $Filter,
     "--allCategories", $Category,
     "--iterationTime", "200",
+    "--launchCount", "5",
     "--buildTimeout", "3600",
     "--keepFiles",
     "--artifacts", $localArtifactsDir
