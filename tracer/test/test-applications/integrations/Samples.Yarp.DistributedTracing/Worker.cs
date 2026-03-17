@@ -62,8 +62,17 @@ namespace Samples.Yarp.DistributedTracing
                     codeProvider.Update(address);
                 };
 
-                // Next, send a request
+                // Next, send a request. Use a SocketsHttpHandler with ActivityHeadersPropagator = null
+                // to prevent the OTel SDK's DiagnosticsHandler from injecting a foreign traceparent
+                // header that would conflict with Datadog's trace context on the inbound request.
+                // This is a test-only workaround — in production, the external caller originates
+                // outside the process and is unaffected by the in-process OTel SDK.
+#if NET6_0_OR_GREATER
+                var handler = new SocketsHttpHandler { ActivityHeadersPropagator = null };
+                using var client = new HttpClient(handler);
+#else
                 var client = new HttpClient();
+#endif
 
                 _logger.LogInformation("Sending request to self");
                 var response = await client.GetAsync($"{address}/proxy", stoppingToken);
