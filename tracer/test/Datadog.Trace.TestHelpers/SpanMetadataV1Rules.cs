@@ -897,6 +897,7 @@ namespace Datadog.Trace.TestHelpers
 
         public static Result IsQuartzV1(this MockSpan span) => Result.FromSpan(span)
           .Tags(s => s
+                .Matches("component", "quartz")
                 .IsOptional("events")
                 .IsPresent("fire.instance.id")
                 .IsPresent("job.group")
