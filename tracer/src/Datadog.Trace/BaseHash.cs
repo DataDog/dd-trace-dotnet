@@ -24,11 +24,9 @@ internal static class BaseHash
     /// </summary>
     public static string B64Value
     {
-        get => Volatile.Read(ref field);
+        get => Volatile.Read(ref field) ?? Recompute(ProcessTags.SerializedTags, ContainerMetadata.Instance.ContainerTagsHash);
         private set => Volatile.Write(ref field, value);
     }
-
-        = Recompute(ProcessTags.SerializedTags, ContainerMetadata.Instance.ContainerTagsHash);
 
     public static string Recompute(string processTags, string? containerTagsHash)
     {
