@@ -518,6 +518,18 @@ namespace Datadog.Trace.ClrProfiler
             return EnvironmentHelpers.IsAzureFunctions();
         }
 
+#else
+        private static void StartDiagnosticManager()
+        {
+            var observers = new List<DiagnosticObserver>
+            {
+                new QuartzDiagnosticObserver(),
+            };
+
+            var diagnosticManager = new DiagnosticManager(observers);
+            diagnosticManager.Start();
+            DiagnosticManager.Instance = diagnosticManager;
+        }
 #endif
 
         private static void InitializeDebugger(TracerSettings tracerSettings)

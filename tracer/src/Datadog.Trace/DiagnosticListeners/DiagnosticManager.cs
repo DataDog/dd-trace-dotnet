@@ -15,7 +15,6 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog.Events;
 
-#pragma warning disable SA1402
 namespace Datadog.Trace.DiagnosticListeners
 {
     internal sealed class DiagnosticManager : IDiagnosticManager, IDisposable
@@ -131,57 +130,4 @@ namespace Datadog.Trace.DiagnosticListeners
             Stop();
         }
     }
-
-#if !NETFRAMEWORK
-    internal sealed class DiagnosticListenerObserver : IObserver<DiagnosticListener>
-    {
-        private DiagnosticManager _diagnosticManager;
-
-        public DiagnosticListenerObserver(DiagnosticManager diagnosticManager)
-        {
-            _diagnosticManager = diagnosticManager;
-        }
-
-        public void OnCompleted()
-        {
-            return;
-        }
-
-        public void OnError(Exception error)
-        {
-            return;
-        }
-
-        public void OnNext(DiagnosticListener value)
-        {
-            _diagnosticManager.OnNext(value.DuckCast<IDiagnosticListener>());
-        }
-    }
-#else
-    internal sealed class FrameworkDiagnosticListenerObserver
-    {
-        private readonly DiagnosticManager _diagnosticManager;
-
-        public FrameworkDiagnosticListenerObserver(DiagnosticManager diagnosticManager)
-        {
-            _diagnosticManager = diagnosticManager;
-        }
-
-        [DuckReverseMethod]
-        public void OnCompleted()
-        {
-        }
-
-        [DuckReverseMethod]
-        public void OnError(Exception error)
-        {
-        }
-
-        [DuckReverseMethod]
-        public void OnNext(IDiagnosticListener value)
-        {
-            _diagnosticManager.OnNext(value);
-        }
-    }
-#endif
 }

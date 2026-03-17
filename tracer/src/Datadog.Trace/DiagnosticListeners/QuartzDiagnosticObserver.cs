@@ -4,7 +4,6 @@
 // </copyright>
 
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Quartz;
-using Datadog.Trace.Logging;
 
 #nullable enable
 
@@ -19,7 +18,6 @@ namespace Datadog.Trace.DiagnosticListeners;
 internal sealed class QuartzDiagnosticObserver : DiagnosticObserver
 {
     private const string DiagnosticListenerName = "Quartz";
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<QuartzDiagnosticObserver>();
 
     protected override string ListenerName => DiagnosticListenerName;
 
