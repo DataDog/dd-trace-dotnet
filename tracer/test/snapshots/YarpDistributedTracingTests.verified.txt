@@ -55,11 +55,24 @@
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
-    }
+    },
+    SpanLinks: [
+      {
+        TraceIdLow: 16172162121882437868,
+        TraceIdHigh: 12202386342843101073,
+        SpanId: Id_4,
+        TraceFlags: 2147483649,
+        TraceState: dd=s:1;p:42caaa50eae0b248;t.dm:-0,
+        Attributes: {
+          context_headers: tracecontext,
+          reason: terminated_context
+        }
+      }
+    ]
   },
   {
     TraceId: Id_1,
-    SpanId: Id_4,
+    SpanId: Id_5,
     Name: http.request,
     Resource: GET localhost:00000/,
     Service: Samples.Yarp.DistributedTracing-http-client,
@@ -85,12 +98,12 @@
   },
   {
     TraceId: Id_1,
-    SpanId: Id_5,
+    SpanId: Id_6,
     Name: aspnet_core.request,
     Resource: GET /,
     Service: Samples.Yarp.DistributedTracing,
     Type: web,
-    ParentId: Id_4,
+    ParentId: Id_5,
     Tags: {
       aspnet_core.endpoint: HTTP: GET /,
       aspnet_core.route: /,
@@ -111,6 +124,19 @@
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
-    }
+    },
+    SpanLinks: [
+      {
+        TraceIdLow: 16172162121882437868,
+        TraceIdHigh: 12202386342843101073,
+        SpanId: Id_7,
+        TraceFlags: 2147483649,
+        TraceState: dd=s:1;p:fb5b1d38c48ca11b;t.dm:-0,
+        Attributes: {
+          context_headers: tracecontext,
+          reason: terminated_context
+        }
+      }
+    ]
   }
 ]
