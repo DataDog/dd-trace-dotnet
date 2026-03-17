@@ -9,7 +9,7 @@
     Tags: {
       component: HttpMessageHandler,
       env: integration_tests,
-      http-client-handler-type: System.Net.Http.HttpClientHandler,
+      http-client-handler-type: System.Net.Http.SocketsHttpHandler,
       http.method: GET,
       http.status_code: 200,
       http.url: http://localhost:00000/proxy,
@@ -55,24 +55,11 @@
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
-    },
-    SpanLinks: [
-      {
-        TraceIdLow: LinkIdLow,
-        TraceIdHigh: LinkIdHigh,
-        SpanId: Id_4,
-        TraceFlags: 2147483649,
-        TraceState: dd=s:1;p:LinkParentId;t.dm:-0,
-        Attributes: {
-          context_headers: tracecontext,
-          reason: terminated_context
-        }
-      }
-    ]
+    }
   },
   {
     TraceId: Id_1,
-    SpanId: Id_5,
+    SpanId: Id_4,
     Name: http.request,
     Resource: GET localhost:00000/,
     Service: Samples.Yarp.DistributedTracing-http-client,
@@ -98,12 +85,12 @@
   },
   {
     TraceId: Id_1,
-    SpanId: Id_6,
+    SpanId: Id_5,
     Name: aspnet_core.request,
     Resource: GET /,
     Service: Samples.Yarp.DistributedTracing,
     Type: web,
-    ParentId: Id_5,
+    ParentId: Id_4,
     Tags: {
       aspnet_core.endpoint: HTTP: GET /,
       aspnet_core.route: /,
