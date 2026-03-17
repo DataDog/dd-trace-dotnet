@@ -80,6 +80,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Quartz
             }
 
             activity.AddTag("operation.name", activity.OperationName);
+            activity.AddTag(Tags.InstrumentationName, ComponentName);
 
             string? jobName = null;
             foreach (var tag in activity.Tags)
