@@ -38,35 +38,15 @@ public static partial class SmokeTestRunner
 
         var imageTags = await Builder.BuildImageAsync(scenario, tracerDir, artifactsDir, toolVersion, dotnetSdkVersion);
 
-        foreach (var imageTag in imageTags)
-        {
-            await RunSmokeTestAsync(scenario, tracerDir, buildDataDir, imageTag);
-        }
-    }
-
-    static async Task RunSmokeTestAsync(
-        SmokeTestScenario scenario,
-        AbsolutePath tracerDir,
-        AbsolutePath buildDataDir,
-        string imageTag)
-    {
-        LogSection($"Running smoke test: {imageTag}");
-
-        var networkName = $"smoke-test-{Guid.NewGuid():N}";
-        string testAgentContainerId = null;
-        string smokeTestContainerId = null;
-        string crashTestContainerId = null;
-        DockerService.DockerEnvironment environment = null;
-
         // Ensure output directories exist
         // debugSnapshotsDir: mounted as /debug_snapshots in the test-agent container,
         // also where we write dumped traces/stats/requests from the host
         var debugSnapshotsDir = buildDataDir / "snapshots";
         var logsDir = buildDataDir / "logs";
         var dumpsDir = buildDataDir / "dumps";
-        EnsureExistingDirectory(debugSnapshotsDir);
-        EnsureExistingDirectory(logsDir);
-        EnsureExistingDirectory(dumpsDir);
+        EnsureCleanDirectory(debugSnapshotsDir);
+        EnsureCleanDirectory(logsDir);
+        EnsureCleanDirectory(dumpsDir);
 
         // Make bind-mounted directories world-writable so non-root containers
         // (e.g. chiseled images) can write logs and dumps
@@ -80,6 +60,28 @@ public static partial class SmokeTestRunner
             File.SetUnixFileMode(logsDir, worldRwx);
             File.SetUnixFileMode(dumpsDir, worldRwx);
         }
+
+        foreach (var imageTag in imageTags)
+        {
+            await RunSmokeTestAsync(scenario, tracerDir, imageTag, debugSnapshotsDir, logsDir, dumpsDir);
+        }
+    }
+
+    static async Task RunSmokeTestAsync(
+        SmokeTestScenario scenario,
+        AbsolutePath tracerDir,
+        string imageTag,
+        AbsolutePath debugSnapshotsDir,
+        AbsolutePath logsDir,
+        AbsolutePath dumpsDir)
+    {
+        LogSection($"Running smoke test: {imageTag}");
+
+        var networkName = $"smoke-test-{Guid.NewGuid():N}";
+        string testAgentContainerId = null;
+        string smokeTestContainerId = null;
+        string crashTestContainerId = null;
+        DockerService.DockerEnvironment environment = null;
 
         try
         {
