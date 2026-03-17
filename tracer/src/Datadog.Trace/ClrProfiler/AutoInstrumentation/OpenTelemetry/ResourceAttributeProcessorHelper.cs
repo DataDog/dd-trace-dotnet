@@ -71,7 +71,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
                                         span.SetTag(attribute.Key, resourceServiceName);
                                     }
 
-                                    span.ServiceName = resourceServiceName;
+                                    span.Context.ServiceName = resourceServiceName;
                                 }
                                 else if (attribute.Key == "service.version")
                                 {

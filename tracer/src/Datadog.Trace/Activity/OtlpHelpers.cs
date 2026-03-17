@@ -481,7 +481,7 @@ namespace Datadog.Trace.Activity
                 case "service.name":
                     if (setKnownValues)
                     {
-                        span.ServiceName = value;
+                        span.Context.ServiceName = value;
                     }
 
                     break;
