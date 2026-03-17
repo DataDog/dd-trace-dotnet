@@ -21,7 +21,7 @@ namespace Datadog.Trace.AppSec.Rasp;
 internal static class RaspModule
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RaspModule));
-    private static bool _nullContextReported = false;
+    private static bool _nullContextReported;
 
     internal enum BlockType
     {

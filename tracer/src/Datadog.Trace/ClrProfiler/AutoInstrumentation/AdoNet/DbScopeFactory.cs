@@ -23,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
     internal static class DbScopeFactory
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DbScopeFactory));
-        private static bool _dbCommandCachingLogged = false;
+        private static bool _dbCommandCachingLogged;
 
         private static Scope? CreateDbCommandScope(Tracer tracer, IDbCommand command, IntegrationId integrationId, string dbType, string operationName, string serviceName, string? serviceNameSource, ref DbCommandCache.TagsCacheItem tagsFromConnectionString)
         {

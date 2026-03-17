@@ -13,7 +13,7 @@ namespace Datadog.Trace.Debugger.Symbols;
 
 internal static class SymbolsExtensions
 {
-    private static readonly EntityHandle _nilEntityHandle = default;
+    private static readonly EntityHandle _nilEntityHandle;
 
     internal static ref readonly EntityHandle NilEntityHandle => ref _nilEntityHandle;
 

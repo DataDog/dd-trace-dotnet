@@ -213,7 +213,7 @@ namespace Datadog.Trace.Debugger
 
                                 case ProbeLocationType.Method:
                                     {
-                                        SignatureParser.TryParse(addedProbe.Where.Signature, out var signature);
+                                        var signature = SignatureParser.TryParse(addedProbe.Where.Signature, out var s) ? s : null;
 
                                         fetchProbeStatus.Add(new FetchProbeStatus(addedProbe.Id, addedProbe.Version ?? 0));
                                         if (addedProbe is SpanProbe)
@@ -326,7 +326,7 @@ namespace Datadog.Trace.Debugger
                     }
                 }
 
-                if (probesToRemoveFromNative.Any())
+                if (probesToRemoveFromNative.Count != 0)
                 {
                     var revertProbes = probesToRemoveFromNative
                        .Select(probeId => new NativeRemoveProbeRequest(probeId));
@@ -381,7 +381,7 @@ namespace Datadog.Trace.Debugger
                     }
                 }
 
-                if (lineProbes?.Any() == true && noLongerUnboundProbes != null)
+                if (lineProbes?.Count > 0 && noLongerUnboundProbes != null)
                 {
                     Log.Information("Dynamic Instrumentation.CheckUnboundProbes: {Count} unbound probes became bound.", property: noLongerUnboundProbes.Count);
 

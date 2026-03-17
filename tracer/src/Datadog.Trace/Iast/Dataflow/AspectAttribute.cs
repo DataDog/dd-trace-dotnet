@@ -23,13 +23,13 @@ namespace Datadog.Trace.Iast.Dataflow;
 internal abstract class AspectAttribute : Attribute
 {
     private static Regex nameSplitter = new Regex(@"(?:([^|]+)\|)?(([^:]+)(?:::[^()]+\(.*\))?)", RegexOptions.Compiled); // 1->Assembly 2->Function 3->Type
-    private readonly List<object> parameters = new List<object>();
+    private readonly List<object> parameters = [];
 
     public AspectAttribute(string targetMethod, string targetType, int[] paramShift, bool[] boxParam, AspectFilter[] filters, AspectType aspectType = AspectType.Propagation, params VulnerabilityType[] vulnerabilityTypes)
     {
-        if (paramShift == null || paramShift.Length == 0) { paramShift = new int[] { 0 }; }
-        if (boxParam == null || boxParam.Length == 0) { boxParam = new bool[] { false }; }
-        if (filters == null || filters.Length == 0) { filters = new AspectFilter[] { AspectFilter.None }; }
+        if (paramShift == null || paramShift.Length == 0) { paramShift = [0]; }
+        if (boxParam == null || boxParam.Length == 0) { boxParam = [false]; }
+        if (filters == null || filters.Length == 0) { filters = [AspectFilter.None]; }
 
         if (paramShift.Length > 1 && boxParam.Length == 1)
         {
@@ -44,7 +44,7 @@ internal abstract class AspectAttribute : Attribute
         parameters.Add(boxParam);
         parameters.Add(filters);
         parameters.Add(aspectType);
-        parameters.Add(vulnerabilityTypes ?? new VulnerabilityType[0]);
+        parameters.Add(vulnerabilityTypes ?? []);
 
         var targetMethodMatch = nameSplitter.Match(targetMethod);
         TargetMethodAssemblies = GetAssemblyList(targetMethodMatch.Groups[1].Value);
@@ -61,7 +61,7 @@ internal abstract class AspectAttribute : Attribute
         }
 
         AspectType = aspectType;
-        VulnerabilityTypes = vulnerabilityTypes ?? new VulnerabilityType[0];
+        VulnerabilityTypes = vulnerabilityTypes ?? [];
         IsVirtual = (TargetMethodType != TargetType);
 
         ParamShift = paramShift;
@@ -97,7 +97,7 @@ internal abstract class AspectAttribute : Attribute
     {
         if (string.IsNullOrEmpty(expression))
         {
-            return new List<string>();
+            return [];
         }
 
         return expression.Split(',').Select(e => e.Trim()).Where(e => !string.IsNullOrEmpty(e)).ToList<string>();
