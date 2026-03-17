@@ -6,6 +6,7 @@
 #if NETCOREAPP3_1_OR_GREATER
 
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
@@ -58,6 +59,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 // Since this test is not interested in generating the aspnet_core span, we'll just apply a band-aid
                 // solution to the snapshot testing
                 settings.AddSimpleScrubber("aspnet_core.endpoint: / HTTP: GET", "aspnet_core.endpoint: HTTP: GET /");
+
+                // Scrub non-deterministic SpanLink fields from terminated OTel context
+                settings.AddRegexScrubber(new Regex("TraceIdLow: [0-9]+"), "TraceIdLow: LinkIdLow");
+                settings.AddRegexScrubber(new Regex("TraceIdHigh: [0-9]+"), "TraceIdHigh: LinkIdHigh");
+                settings.AddRegexScrubber(new Regex("p:[0-9a-fA-F]+"), "p:LinkParentId");
 
                 await VerifyHelper.VerifySpans(spans, settings)
                                   .UseFileName(nameof(YarpDistributedTracingTests))
