@@ -79,13 +79,11 @@ $env:DD_TRACER_HOME = $monitoringHome
 # --allCategories: category filter
 # --iterationTime: target time per iteration in ms
 # --artifacts: output directory
-# TODO: Remove --job short
 $arguments = @("-r") + $runtimes + @(
     "-m",
     "-f", $Filter,
     "--allCategories", $Category,
-    "--job", "short",
-    "--iterationTime", "10",
+    "--iterationTime", "200",
     "--buildTimeout", "3600",
     "--keepFiles",
     "--artifacts", $localArtifactsDir
