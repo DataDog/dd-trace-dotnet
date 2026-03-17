@@ -479,6 +479,7 @@ namespace Datadog.Trace.ClrProfiler
             }
         }
 
+#if !NETFRAMEWORK
         private static void StartDiagnosticManager()
         {
             var observers = new List<DiagnosticObserver>();
@@ -516,6 +517,8 @@ namespace Datadog.Trace.ClrProfiler
             // this is extremely simple now, but will get more complex soon...
             return EnvironmentHelpers.IsAzureFunctions();
         }
+
+#endif
 
         private static void InitializeDebugger(TracerSettings tracerSettings)
         {
