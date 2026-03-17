@@ -517,8 +517,6 @@ namespace Datadog.Trace.ClrProfiler
             return EnvironmentHelpers.IsAzureFunctions();
         }
 
-#endif // #if !NETFRAMEWORK
-
         private static void InitializeDebugger(TracerSettings tracerSettings)
         {
             var manager = DebuggerManager.Instance;
