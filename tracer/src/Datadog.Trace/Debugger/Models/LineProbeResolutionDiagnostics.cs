@@ -3,30 +3,32 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Linq;
 
 namespace Datadog.Trace.Debugger.Models
 {
     internal sealed record LineProbeResolutionDiagnostics(
-        string ProbeFile = null,
+        string? ProbeFile = null,
         int? ProbeLine = null,
-        string RawLines = null,
-        string ResolvedSourceFile = null,
-        string AssemblyName = null,
-        string AssemblyLocation = null,
+        string? RawLines = null,
+        string? ResolvedSourceFile = null,
+        string? AssemblyName = null,
+        string? AssemblyLocation = null,
         Guid? ModuleVersionId = null,
-        string ProbeId = null,
-        string ExceptionType = null,
+        string? ProbeId = null,
+        string? ExceptionType = null,
         int LoadedAssemblyCount = 0,
         int SymbolicatedAssemblyCount = 0,
         int SameFileNameMatchCount = 0,
-        string[] SameFileNameExamples = null)
+        string[]? SameFileNameExamples = null)
     {
         public string ToSummary()
         {
             var sameFileNameExamples = SameFileNameExamples is { Length: > 0 } ? string.Join(" | ", SameFileNameExamples) : "<none>";
-            var values = new[]
+            string?[] values =
             {
                 Format("probeFile", ProbeFile),
                 Format("probeLine", ProbeLine),
@@ -48,7 +50,7 @@ namespace Datadog.Trace.Debugger.Models
 
         public override string ToString() => ToSummary();
 
-        private static string Format(string key, object value)
+        private static string? Format(string key, object? value)
         {
             return value == null ? null : $"{key}={value}";
         }
