@@ -13,3 +13,5 @@ claim_pattern:
 permissions:
   contents: write
   issues: write
+  statuses: read
+  actions: read
