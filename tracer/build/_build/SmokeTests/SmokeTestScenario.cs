@@ -35,6 +35,18 @@ public abstract record SmokeTestScenario
     public string DockerTag => $"dd-trace-dotnet/{JobName}-tester";
     public string RuntimeImage => $"{DockerImageRepo}:{RuntimeTag}";
     public bool IsWindows => Os == "windows";
+
+    public virtual Dictionary<string, string> GetEnvironment(bool isCrashTest) =>
+        isCrashTest
+            ? new()
+            {
+                {"DD_PROFILING_ENABLED", "0"},
+                {"CRASH_APP_ON_STARTUP", "1"},
+                {"DD_CRASHTRACKING_INTERNAL_LOG_TO_CONSOLE", "1"},
+                {"COMPlus_DbgEnableMiniDump", "0"},
+            }
+            : new() {{"DD_PROFILING_ENABLED", "1"}};
+
 }
 
 public record InstallerScenario : SmokeTestScenario
@@ -60,6 +72,24 @@ public record NuGetScenario : SmokeTestScenario
         Projects.DatadogAzureFunctions => "smoke_test_azurefunctions_snapshots",
         _ => base.SnapshotFile,
     };
+
+    public override Dictionary<string, string> GetEnvironment(bool isCrashTest)
+    {
+        var env = base.GetEnvironment(isCrashTest);
+        // profiler, libdatadog, libddwaf, Datadog.Linux.ApiWrapper.x64.so aren't available in the package
+        if (NuGetPackageName == Projects.DatadogAzureFunctions)
+        {
+            env["DD_PROFILING_ENABLED"] = "0";
+            env["DD_APPSEC_ENABLED"] = "0";
+            env["LD_PRELOAD"] = "";
+            // Pretend to be in AAS, to avoid trying to use libdatadog for config.
+            env["WEBSITE_SITE_NAME"] = "AspNetCoreSmokeTest";
+            // Need to have this so it counts as "safe to trace"
+            env["DD_API_KEY"] = "123";
+        }
+
+        return env;
+    }
 }
 
 public record DotnetToolScenario : SmokeTestScenario

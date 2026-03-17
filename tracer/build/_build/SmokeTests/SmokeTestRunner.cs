@@ -136,7 +136,7 @@ public static partial class SmokeTestRunner
                     logsDir: environment.ToHostPath(logsDir),
                     dumpsDir: environment.ToHostPath(dumpsDir),
                     isWindowsScenario: scenario.IsWindows,
-                    isCrashTest: false));
+                    scenario.GetEnvironment(isCrashTest: false)));
 
             if (await DockerService.WaitForContainerAsync("Smoke test", smokeTestContainerId) is var statusCode and not 0)
             {
@@ -156,7 +156,8 @@ public static partial class SmokeTestRunner
                 crashTestContainerId = await RunCrashTestAsync(
                     imageTag, networkName,
                     environment.ToHostPath(logsDir),
-                    environment.ToHostPath(dumpsDir));
+                    environment.ToHostPath(dumpsDir),
+                    scenario.GetEnvironment(isCrashTest: true));
             }
         }
         finally
@@ -232,24 +233,14 @@ public static partial class SmokeTestRunner
         string logsDir,
         string dumpsDir,
         bool isWindowsScenario,
-        bool isCrashTest)
+        Dictionary<string, string> environment)
     {
-        var env = isCrashTest
-            ? new List<string>
-            {
-                $"DD_TRACE_AGENT_URL=http://{TestAgentAlias}:8126",
-                "DD_PROFILING_ENABLED=0",
-                "CRASH_APP_ON_STARTUP=1",
-                "DD_CRASHTRACKING_INTERNAL_LOG_TO_CONSOLE=1",
-                "COMPlus_DbgEnableMiniDump=0",
-                $"dockerTag={imageTag}",
-            }
-            : new List<string>
-            {
-                $"DD_TRACE_AGENT_URL=http://{TestAgentAlias}:8126",
-                "DD_PROFILING_ENABLED=1",
-                $"dockerTag={imageTag}",
-            };
+        var env = new List<string>
+        {
+            $"DD_TRACE_AGENT_URL=http://{TestAgentAlias}:8126",
+            $"dockerTag={imageTag}",
+        };
+        env.AddRange(environment.Select(kvp => $"{kvp.Key}={kvp.Value}"));
 
         return new CreateContainerParameters
         {
@@ -383,7 +374,8 @@ public static partial class SmokeTestRunner
         string imageTag,
         string networkName,
         string logsDir,
-        string dumpsDir)
+        string dumpsDir,
+        Dictionary<string, string> environmentVariables)
     {
         LogSection("Running crash test");
         using var crashCts = new CancellationTokenSource(TimeSpan.FromMinutes(4));
@@ -395,7 +387,7 @@ public static partial class SmokeTestRunner
             logsDir: logsDir,
             dumpsDir: dumpsDir,
             isWindowsScenario: false, // We don't yet support windows crash-tests
-            isCrashTest: true);
+            environmentVariables);
         var containerId = await DockerService.CreateAndStartContainerWithRetryAsync(
             "crash-test", containerParams, ct);
 
