@@ -9,8 +9,10 @@
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hh;hpp;hxx;hm;inl;inc;ipp;xsd</Extensions>
     </Filter>
+    <Filter Include="Referenced from Datadog.Profiler.Native.Windows">
+      <UniqueIdentifier>{198231d2-3997-4f90-a605-8e9d9ee0b48f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
-
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
       <Filter>Source Files</Filter>
@@ -24,8 +26,10 @@
     <ClCompile Include="TestProfilerClassFactory.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\AutoResetEvent.cpp">
+      <Filter>Referenced from Datadog.Profiler.Native.Windows</Filter>
+    </ClCompile>
   </ItemGroup>
-
   <ItemGroup>
     <ClInclude Include="TestProfilerCallback.h">
       <Filter>Header Files</Filter>
@@ -37,7 +41,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
-
   <ItemGroup>
     <None Include="Datadog.TestProfiler.def">
       <Filter>Source Files</Filter>

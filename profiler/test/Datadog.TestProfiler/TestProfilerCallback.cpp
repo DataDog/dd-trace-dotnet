@@ -307,7 +307,6 @@ void TestProfilerCallback::AddClearlyInvalidIPs()
     _invalidIPsToTest.push_back({0, "Null pointer"});
     _invalidIPsToTest.push_back({0x1, "Very low address"});
     _invalidIPsToTest.push_back({0xDEADBEEF, "Invalid marker address"});
-    _invalidIPsToTest.push_back({0xFFFFFFFFFFFFFFFF, "Max address"});
     _invalidIPsToTest.push_back({0x123, "Low user-space address"});
     _invalidIPsToTest.push_back({static_cast<uintptr_t>(-1), "All bits set"});
     _invalidIPsToTest.push_back({0xBADF00D, "Bad food marker"});
@@ -333,6 +332,10 @@ void TestProfilerCallback::CollectNativeCodeIPs()
     uintptr_t thisFuncAddr = reinterpret_cast<uintptr_t>(static_cast<void(*)()>(nullptr));
     if (thisFuncAddr == 0) {
         // Use a plausible native code address
+#ifdef BIT64
         _invalidIPsToTest.push_back({0x7FFF00000000, "Typical native code address (high memory)"});
+#else
+        _invalidIPsToTest.push_back({0x7FFF0000, "Typical native code address (high memory)"});
+#endif
     }
 }

@@ -372,8 +372,8 @@ extern "C" PROFILER_EXPORT int ValidateManagedCodeCache(
 
         if (!firstFailureMethod.empty())
         {
-            strncpy(result->firstFailureMethod, firstFailureMethod.c_str(), 511);
-            result->firstFailureMethod[511] = '\0';
+            auto len = firstFailureMethod.copy(result->firstFailureMethod, 511);
+            result->firstFailureMethod[len] = '\0';
         }
     }
 
