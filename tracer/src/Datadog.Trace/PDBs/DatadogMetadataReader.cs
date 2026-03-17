@@ -108,6 +108,11 @@ namespace Datadog.Trace.Pdb
                 module.LoadPdb(dnlibReader);
                 return new DatadogMetadataReader(peReader, metadataReader, null, pdbFullPath, dnlibReader, module);
             }
+            catch (UnauthorizedAccessException e)
+            {
+                Logger.Debug("Unable to access PDB for {Assembly} in location: {AssemblyLocation}. Error: {Error}", assembly.FullName, assembly.Location, e.Message);
+                return null;
+            }
             catch (IOException e)
             {
                 Logger.Debug("Error while trying to get a pdb for {Assembly} in location: {AssemblyLocation}. Error: {Error}", assembly.FullName, assembly.Location, e.Message);
