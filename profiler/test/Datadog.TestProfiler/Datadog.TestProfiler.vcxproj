@@ -54,17 +54,20 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>kernel32.lib;user32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <ModuleDefinitionFile>Datadog.TestProfiler.def</ModuleDefinitionFile>
     </Link>
   </ItemDefinitionGroup>
 
   <ItemGroup>
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="TestProfilerCallback.cpp" />
+    <ClCompile Include="TestProfilerClassFactory.cpp" />
     <ClCompile Include="Validation.cpp" />
   </ItemGroup>
 
   <ItemGroup>
     <ClInclude Include="TestProfilerCallback.h" />
+    <ClInclude Include="TestProfilerClassFactory.h" />
     <ClInclude Include="Validation.h" />
   </ItemGroup>
 
@@ -72,6 +75,10 @@
     <ProjectReference Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native\Datadog.Profiler.Native.vcxproj">
       <Project>{CAAD3273-5A0F-40ED-B023-97B9800B2267}</Project>
     </ProjectReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Datadog.TestProfiler.def" />
   </ItemGroup>
 
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -1,4 +1,6 @@
-cmake_minimum_required(VERSION 3.14)
+# ******************************************************
+# Project definition
+# ******************************************************
 
 project(Datadog.TestProfiler)
 
@@ -15,6 +17,7 @@ SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${TEST_PROFILER_DEPLOY_DIR})
 set(SOURCES
     dllmain.cpp
     TestProfilerCallback.cpp
+    TestProfilerClassFactory.cpp
     Validation.cpp
 )
 
@@ -42,7 +45,11 @@ target_link_libraries(Datadog.TestProfiler PRIVATE
     dl
 )
 
-# Set visibility for exports
+set(dd_testprofiler_linker_script "${CMAKE_CURRENT_SOURCE_DIR}/datadog_testprofiler.version")
+
 set_target_properties(Datadog.TestProfiler PROPERTIES
-    CXX_VISIBILITY_PRESET hidden
+    LINK_DEPENDS "${dd_testprofiler_linker_script}"
 )
+
+target_link_options(Datadog.TestProfiler PRIVATE
+                    "LINKER:--version-script=${dd_testprofiler_linker_script}")

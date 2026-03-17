@@ -21,14 +21,26 @@
     <ClCompile Include="Validation.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="TestProfilerClassFactory.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 
   <ItemGroup>
     <ClInclude Include="TestProfilerCallback.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="TestProfilerClassFactory.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="Validation.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Datadog.TestProfiler.def">
+      <Filter>Source Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

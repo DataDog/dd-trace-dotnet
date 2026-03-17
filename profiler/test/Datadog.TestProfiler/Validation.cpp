@@ -22,7 +22,7 @@ std::string GetFullMethodName(TestProfilerCallback* profiler, uintptr_t instruct
 
     auto [success, frameInfo] = profiler->_pFrameStore->GetFrame(instructionPointer);
 
-    if (!success || frameInfo.Frame == nullptr || frameInfo.Frame[0] == '\0')
+    if (!success || frameInfo.Frame.empty())
     {
         return "<UnknownFunction>";
     }
