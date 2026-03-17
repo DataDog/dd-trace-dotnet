@@ -128,6 +128,30 @@ public record WindowsNuGetScenario : SmokeTestScenario
     public required string RelativeProfilerPath { get; init; }
     public required string NuGetPackageName { get; init; }
     public bool IncludeDdDotnetScenario { get; init; }
+
+    public override string SnapshotFile => NuGetPackageName switch
+    {
+        Projects.DatadogAzureFunctions => "smoke_test_azurefunctions_snapshots",
+        _ => base.SnapshotFile,
+    };
+
+    public override Dictionary<string, string> GetEnvironment(bool isCrashTest)
+    {
+        var env = base.GetEnvironment(isCrashTest);
+        // profiler, libdatadog, libddwaf, Datadog.Linux.ApiWrapper.x64.so aren't available in the package
+        if (NuGetPackageName == Projects.DatadogAzureFunctions)
+        {
+            env["DD_PROFILING_ENABLED"] = "0";
+            env["DD_APPSEC_ENABLED"] = "0";
+            env["LD_PRELOAD"] = "";
+            // Pretend to be in AAS, to avoid trying to use libdatadog for config.
+            env["WEBSITE_SITE_NAME"] = "AspNetCoreSmokeTest";
+            // Need to have this so it counts as "safe to trace"
+            env["DD_API_KEY"] = "123";
+        }
+
+        return env;
+    }
 }
 
 public record WindowsDotnetToolScenario : SmokeTestScenario
