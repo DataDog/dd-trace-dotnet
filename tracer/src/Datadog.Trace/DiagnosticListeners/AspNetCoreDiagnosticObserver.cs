@@ -383,7 +383,11 @@ namespace Datadog.Trace.DiagnosticListeners
 
                     resourceName = $"{rootSpanTags.HttpMethod} {request.PathBase.ToUriComponent()}{resourcePathName}";
 
-                    aspNetRoute = routeTemplate?.TemplateText.ToLowerInvariant();
+                    // When route templates are expanded, use the expanded route for http.route
+                    // to stay consistent with resource_name
+                    aspNetRoute = tracer.Settings.ExpandRouteTemplatesEnabled
+                        ? resourcePathName
+                        : routeTemplate?.TemplateText.ToLowerInvariant();
                 }
             }
 
@@ -539,7 +543,6 @@ namespace Datadog.Trace.DiagnosticListeners
 
                 // Have to pass this value through to the MVC span, as not available there
                 var normalizedRoute = routePattern.RawText?.ToLowerInvariant();
-                trackingFeature.Route = normalizedRoute;
 
                 var request = httpContext.Request.DuckCast<HttpRequestStruct>();
                 RouteValueDictionary routeValues = request.RouteValues;
@@ -566,16 +569,23 @@ namespace Datadog.Trace.DiagnosticListeners
 
                 var resourceName = $"{tags.HttpMethod} {request.PathBase.ToUriComponent()}{resourcePathName}";
 
+                // When route templates are expanded, use the expanded route for http.route
+                // to stay consistent with resource_name
+                var routeTagValue = _tracer.Settings.ExpandRouteTemplatesEnabled
+                    ? resourcePathName
+                    : normalizedRoute;
+
                 // NOTE: We could set the controller/action/area tags on the parent span
                 // But instead we re-extract them in the MVC endpoint as these are MVC
                 // constructs. this is likely marginally less efficient, but simplifies the
                 // already complex logic in the MVC handler
+                trackingFeature.Route = routeTagValue;
                 trackingFeature.ResourceName = resourceName;
                 if (isFirstExecution)
                 {
                     // Overwrite the route in the parent span
                     rootSpan.ResourceName = resourceName;
-                    tags.AspNetCoreRoute = normalizedRoute;
+                    tags.AspNetCoreRoute = routeTagValue;
                 }
 
                 _security.CheckPathParamsAndSessionId(httpContext, rootSpan, routeValues);
