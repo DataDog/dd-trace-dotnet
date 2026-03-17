@@ -262,7 +262,7 @@ namespace Datadog.Trace.Tests
         public void StartActive_SetServiceName_ServiceNameIsSet()
         {
             var scope = _tracer.StartActive("Operation");
-            scope.Span.ServiceName = "MyAwesomeService";
+            scope.Span.SetService("MyAwesomeService", null);
 
             Assert.Equal("MyAwesomeService", scope.Span.ServiceName);
         }
@@ -271,7 +271,7 @@ namespace Datadog.Trace.Tests
         public void StartActive_SetParentServiceName_ChildServiceNameIsDefaultServiceName()
         {
             var parent = _tracer.StartActive("Parent");
-            parent.Span.ServiceName = "MyAwesomeService";
+            parent.Span.SetService("MyAwesomeService", null);
             var child = _tracer.StartActive("Child");
 
             Assert.NotEqual("MyAwesomeService", child.Span.ServiceName);

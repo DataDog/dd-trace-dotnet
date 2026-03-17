@@ -81,13 +81,14 @@ namespace Datadog.Trace
 
         /// <summary>
         /// Gets or sets the service name.
-        /// Setting ServiceName directly marks the source as manual ("m").
-        /// Internal code that normalizes/defaults the service name should
-        /// write to Context.ServiceName directly to avoid overwriting the source.
+        /// The setter marks the source as manual ("m") and exists as the
+        /// duck-typed entry point for Datadog.Trace.Manual.dll users.
+        /// Internal code should call <see cref="SetService"/> with an explicit source instead.
         /// </summary>
         internal string ServiceName
         {
             get => Context.ServiceName;
+            [Obsolete("Use SetService(serviceName, source) instead to explicitly provide a source.")]
             set
             {
                 Context.ServiceName = value;
@@ -158,6 +159,15 @@ namespace Datadog.Trace
         public void Dispose()
         {
             Finish();
+        }
+
+        /// <summary>
+        /// Sets the service name with an explicit source for <c>_dd.svc_src</c>.
+        /// </summary>
+        internal void SetService(string serviceName, string source)
+        {
+            Context.ServiceName = serviceName;
+            Context.ServiceNameSource = source;
         }
 
         /// <summary>
