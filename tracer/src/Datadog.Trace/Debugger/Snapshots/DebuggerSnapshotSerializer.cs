@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using System.Threading;
 using Datadog.Trace.Debugger.Expressions;
@@ -40,13 +41,15 @@ namespace Datadog.Trace.Debugger.Snapshots
             CaptureLimitInfo limitInfo)
         {
             using var cts = CreateCancellationTimeout();
-            SerializeInternal(source, type, jsonWriter, cts, currentDepth: 0, name, fieldsOnly: false, limitInfo);
+            var collectionsBeingSerialized = new HashSet<object>(ObjectReferenceEqualityComparer.Instance);
+            SerializeInternal(source, type, jsonWriter, cts, currentDepth: 0, name, fieldsOnly: false, limitInfo, collectionsBeingSerialized);
         }
 
         public static void SerializeStaticFields(Type declaringType, JsonTextWriter jsonWriter, CaptureLimitInfo limitInfo)
         {
             using var cts = CreateCancellationTimeout();
-            WriteFields(null, declaringType, jsonWriter, cts, currentDepth: 0, writeStaticFields: true, limitInfo);
+            var collectionsBeingSerialized = new HashSet<object>(ObjectReferenceEqualityComparer.Instance);
+            WriteFields(null, declaringType, jsonWriter, cts, currentDepth: 0, writeStaticFields: true, limitInfo, collectionsBeingSerialized);
         }
 
         private static bool SerializeInternal(
@@ -57,7 +60,8 @@ namespace Datadog.Trace.Debugger.Snapshots
             int currentDepth,
             string variableName,
             bool fieldsOnly,
-            CaptureLimitInfo limitInfo)
+            CaptureLimitInfo limitInfo,
+            HashSet<object> collectionsBeingSerialized)
         {
             try
             {
@@ -99,7 +103,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                     }
 
                     jsonWriter.WriteStartObject();
-                    SerializeEnumerable(source, type, jsonWriter, enumerable, currentDepth, cts, limitInfo);
+                    SerializeEnumerable(source, type, jsonWriter, enumerable, currentDepth, cts, limitInfo, collectionsBeingSerialized);
                     jsonWriter.WriteEndObject();
 
                     return true;
@@ -113,7 +117,8 @@ namespace Datadog.Trace.Debugger.Snapshots
                     currentDepth,
                     variableName,
                     fieldsOnly,
-                    limitInfo);
+                    limitInfo,
+                    collectionsBeingSerialized);
             }
             catch (Exception e)
             {
@@ -131,7 +136,8 @@ namespace Datadog.Trace.Debugger.Snapshots
             int currentDepth,
             string variableName,
             bool fieldsOnly,
-            CaptureLimitInfo limitInfo)
+            CaptureLimitInfo limitInfo,
+            HashSet<object> collectionsBeingSerialized)
         {
             var objectOpened = false;
 
@@ -142,7 +148,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                     objectOpened = WriteTypeAndValue(source, type, jsonWriter, variableName, limitInfo);
                 }
 
-                SerializeInstanceFieldsInternal(source, type, jsonWriter, cts, currentDepth, limitInfo);
+                SerializeInstanceFieldsInternal(source, type, jsonWriter, cts, currentDepth, limitInfo, collectionsBeingSerialized);
                 return true;
             }
             catch (OperationCanceledException)
@@ -205,7 +211,8 @@ namespace Datadog.Trace.Debugger.Snapshots
             JsonWriter jsonWriter,
             CancellationTokenSource cts,
             int currentDepth,
-            CaptureLimitInfo limitInfo)
+            CaptureLimitInfo limitInfo,
+            HashSet<object> collectionsBeingSerialized)
         {
             if (Redaction.IsSafeToCallToString(type) || source == null)
             {
@@ -218,21 +225,21 @@ namespace Datadog.Trace.Debugger.Snapshots
                 return;
             }
 
-            WriteFields(source, type, jsonWriter, cts, currentDepth, writeStaticFields: false, limitInfo);
+            WriteFields(source, type, jsonWriter, cts, currentDepth, writeStaticFields: false, limitInfo, collectionsBeingSerialized);
         }
 
-        private static void WriteFields(object source, Type type, JsonWriter jsonWriter, CancellationTokenSource cts, int currentDepth, bool writeStaticFields, CaptureLimitInfo limitInfo)
+        private static void WriteFields(object source, Type type, JsonWriter jsonWriter, CancellationTokenSource cts, int currentDepth, bool writeStaticFields, CaptureLimitInfo limitInfo, HashSet<object> collectionsBeingSerialized)
         {
             var selector = SnapshotSerializerFieldsAndPropsSelector.CreateDeepClonerFieldsAndPropsSelector(type);
             var fields = selector.GetFieldsAndProps(type, source, cts);
-            WriteFieldsInternal(source, jsonWriter, cts, currentDepth, fields.Where(f => IsStatic(f) == writeStaticFields), writeStaticFields ? "staticFields" : "fields", limitInfo);
+            WriteFieldsInternal(source, jsonWriter, cts, currentDepth, fields.Where(f => IsStatic(f) == writeStaticFields), writeStaticFields ? "staticFields" : "fields", limitInfo, collectionsBeingSerialized);
         }
 
         private static bool IsStatic(MemberInfo arg) =>
             (arg is FieldInfo fieldInfo && fieldInfo.IsStatic) ||
             (arg is PropertyInfo propertyInfo && propertyInfo.GetMethod.IsStatic);
 
-        private static void WriteFieldsInternal(object source, JsonWriter jsonWriter, CancellationTokenSource cts, int currentDepth, IEnumerable<MemberInfo> fields, string fieldsObjectName, CaptureLimitInfo limitInfo)
+        private static void WriteFieldsInternal(object source, JsonWriter jsonWriter, CancellationTokenSource cts, int currentDepth, IEnumerable<MemberInfo> fields, string fieldsObjectName, CaptureLimitInfo limitInfo, HashSet<object> collectionsBeingSerialized)
         {
             int index = 0;
             var isFieldCountReached = false;
@@ -266,7 +273,8 @@ namespace Datadog.Trace.Debugger.Snapshots
                     currentDepth + 1,
                     fieldOrPropertyName,
                     fieldsOnly: false,
-                    limitInfo);
+                    limitInfo,
+                    collectionsBeingSerialized);
 
                 if (!serialized)
                 {
@@ -292,7 +300,8 @@ namespace Datadog.Trace.Debugger.Snapshots
             IEnumerable enumerable,
             int currentDepth,
             CancellationTokenSource cts,
-            CaptureLimitInfo limitInfo)
+            CaptureLimitInfo limitInfo,
+            HashSet<object> collectionsBeingSerialized)
         {
             if (source is not ICollection collection)
             {
@@ -300,6 +309,20 @@ namespace Datadog.Trace.Debugger.Snapshots
             }
 
             if (currentDepth >= limitInfo.MaxReferenceDepth)
+            {
+                var isDictionary = Redaction.IsSupportedDictionary(source);
+                jsonWriter.WritePropertyName("type");
+                jsonWriter.WriteValue(type.Name);
+                jsonWriter.WritePropertyName("size");
+                jsonWriter.WriteValue(collection.Count);
+                jsonWriter.WritePropertyName(isDictionary ? "entries" : "elements");
+                jsonWriter.WriteStartArray();
+                jsonWriter.WriteEndArray();
+                WriteNotCapturedReason(jsonWriter, NotCapturedReason.depth);
+                return;
+            }
+
+            if (!collectionsBeingSerialized.Add(source))
             {
                 var isDictionary = Redaction.IsSupportedDictionary(source);
                 jsonWriter.WritePropertyName("type");
@@ -372,7 +395,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                     bool serialized;
                     if (isDictionary)
                     {
-                        serialized = SerializeKeyValuePair(current, jsonWriter, cts, currentDepth + 1, limitInfo);
+                        serialized = SerializeKeyValuePair(current, jsonWriter, cts, currentDepth, limitInfo, collectionsBeingSerialized);
                     }
                     else
                     {
@@ -381,10 +404,11 @@ namespace Datadog.Trace.Debugger.Snapshots
                             current.GetType(),
                             jsonWriter,
                             cts,
-                            currentDepth + 1,
+                            currentDepth,
                             variableName: null,
                             fieldsOnly: false,
-                            limitInfo);
+                            limitInfo,
+                            collectionsBeingSerialized);
                     }
 
                     itemIndex++;
@@ -418,6 +442,8 @@ namespace Datadog.Trace.Debugger.Snapshots
             }
             finally
             {
+                collectionsBeingSerialized.Remove(source);
+
                 // Always close the array if we opened one, even on error
                 // This prevents leaving the JSON writer in an inconsistent state
                 if (arrayOpened)
@@ -443,13 +469,14 @@ namespace Datadog.Trace.Debugger.Snapshots
             JsonWriter jsonWriter,
             CancellationTokenSource cts,
             int currentDepth,
-            CaptureLimitInfo limitInfo)
+            CaptureLimitInfo limitInfo,
+            HashSet<object> collectionsBeingSerialized)
         {
             var reflectionObject = ReflectionObject.Create(current.GetType(), "Key", "Value");
             jsonWriter.WriteStartArray();
 
-            bool serializedKey = SerializeInternal(reflectionObject.GetValue(current, "Key"), reflectionObject.GetType("Key"), jsonWriter, cts, currentDepth, variableName: null, fieldsOnly: false, limitInfo);
-            bool serializedValue = SerializeInternal(reflectionObject.GetValue(current, "Value"), reflectionObject.GetType("Value"), jsonWriter, cts, currentDepth, variableName: null, fieldsOnly: false, limitInfo);
+            bool serializedKey = SerializeInternal(reflectionObject.GetValue(current, "Key"), reflectionObject.GetType("Key"), jsonWriter, cts, currentDepth, variableName: null, fieldsOnly: false, limitInfo, collectionsBeingSerialized);
+            bool serializedValue = SerializeInternal(reflectionObject.GetValue(current, "Value"), reflectionObject.GetType("Value"), jsonWriter, cts, currentDepth, variableName: null, fieldsOnly: false, limitInfo, collectionsBeingSerialized);
 
             jsonWriter.WriteEndArray();
             return serializedKey;
@@ -604,6 +631,15 @@ namespace Datadog.Trace.Debugger.Snapshots
             }
 
             return cts;
+        }
+
+        private sealed class ObjectReferenceEqualityComparer : IEqualityComparer<object>
+        {
+            internal static readonly ObjectReferenceEqualityComparer Instance = new();
+
+            public new bool Equals(object x, object y) => ReferenceEquals(x, y);
+
+            public int GetHashCode(object obj) => RuntimeHelpers.GetHashCode(obj);
         }
     }
 }
