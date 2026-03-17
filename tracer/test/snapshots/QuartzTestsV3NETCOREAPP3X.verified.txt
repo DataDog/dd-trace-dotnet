@@ -8,6 +8,7 @@
     Type: custom,
     Error: 1,
     Tags: {
+      component: quartz,
       env: integration_tests,
       error.msg: Expected InvalidOperationException thrown,
       error.stack:

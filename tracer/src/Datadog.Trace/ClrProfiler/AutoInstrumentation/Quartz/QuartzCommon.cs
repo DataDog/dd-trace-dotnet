@@ -13,6 +13,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Quartz
 {
     internal static class QuartzCommon
     {
+        internal const string ComponentName = "quartz";
+
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(QuartzCommon));
 
         internal static string CreateResourceName(string operationName, string jobName)
@@ -43,6 +45,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Quartz
         internal static void EnhanceActivityMetadata(IActivity5 activity)
         {
             activity.AddTag("operation.name", activity.DisplayName);
+            activity.AddTag(Tags.InstrumentationName, ComponentName);
 
             string? jobName = null;
             foreach (var tag in activity.TagObjects)
