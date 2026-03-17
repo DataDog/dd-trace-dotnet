@@ -13,6 +13,7 @@ using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using static Datadog.Trace.Telemetry.Metrics.MetricTags;
 
@@ -319,7 +320,7 @@ internal static class RaspModule
                 var value = enumerator.Current.Value;
                 if (!headersDic.TryAdd(currentKey, value))
                 {
-                    Log.Warning("Header {Key} couldn't be added as argument to the waf", currentKey);
+                    Log.Debug("Header {Key} couldn't be added as argument to the waf", currentKey);
                 }
             }
         }
@@ -430,7 +431,7 @@ internal static class RaspModule
         }
     }
 
-    private static async Task AddBody(System.Net.Http.HttpContent? content, Dictionary<string, object> wafArgs, string wafAddress, long bodySizeLimit)
+    internal static async Task AddBody(System.Net.Http.HttpContent? content, Dictionary<string, object> wafArgs, string wafAddress, long bodySizeLimit)
     {
         try
         {
