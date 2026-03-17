@@ -58,11 +58,11 @@
     },
     SpanLinks: [
       {
-        TraceIdLow: 16172162121882437868,
-        TraceIdHigh: 12202386342843101073,
+        TraceIdLow: LinkIdLow,
+        TraceIdHigh: LinkIdHigh,
         SpanId: Id_4,
         TraceFlags: 2147483649,
-        TraceState: dd=s:1;p:42caaa50eae0b248;t.dm:-0,
+        TraceState: dd=s:1;p:LinkParentId;t.dm:-0,
         Attributes: {
           context_headers: tracecontext,
           reason: terminated_context
@@ -124,19 +124,6 @@
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
-    },
-    SpanLinks: [
-      {
-        TraceIdLow: 16172162121882437868,
-        TraceIdHigh: 12202386342843101073,
-        SpanId: Id_7,
-        TraceFlags: 2147483649,
-        TraceState: dd=s:1;p:fb5b1d38c48ca11b;t.dm:-0,
-        Attributes: {
-          context_headers: tracecontext,
-          reason: terminated_context
-        }
-      }
-    ]
+    }
   }
 ]
