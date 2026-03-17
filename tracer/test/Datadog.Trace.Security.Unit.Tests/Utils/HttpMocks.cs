@@ -34,7 +34,7 @@ internal static class HttpMocks
 
         if (body is not null)
         {
-            request.Content = new StringContent(body, Encoding.UTF8, contentType ?? "application/json");
+            request.Content = new ChunkedContent(Encoding.UTF8.GetBytes(body), contentType ?? "application/json");
         }
 
         return request;
@@ -55,16 +55,14 @@ internal static class HttpMocks
 
         if (body is not null)
         {
-            response.Content = new StringContent(body, Encoding.UTF8, contentType ?? "application/json");
+            response.Content = new ChunkedContent(Encoding.UTF8.GetBytes(body), contentType ?? "application/json");
         }
 
         return response;
     }
 
     public static HttpContent CreateMockContent(string body, string contentType, long? length = null)
-    {
-        return new StringContent(body, Encoding.UTF8, contentType);
-    }
+        => new ChunkedContent(Encoding.UTF8.GetBytes(body), contentType);
 
     /// <summary>
     /// Creates an HttpContent that has no Content-Length header, simulating chunked transfer encoding.

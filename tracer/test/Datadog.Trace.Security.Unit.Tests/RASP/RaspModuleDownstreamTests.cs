@@ -7,6 +7,7 @@
 #if NETCOREAPP3_1_OR_GREATER
 
 using System.Collections.Generic;
+using System.Net.Http;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Rasp;
@@ -125,16 +126,12 @@ public class RaspModuleDownstreamTests : WafLibraryRequiredTest
     [InlineData("[1,2,3,4,5]", "application/json", true)]
     [InlineData("", "application/json", false)]
     [InlineData("{\"key\":\"value\"}", "text/plain", false)]
-    public void AddBody_JsonContent_ParsesCorrectly(string body, string contentType, bool shouldParse)
+    public async Task AddBody_JsonContent_ParsesCorrectly(string body, string contentType, bool shouldParse)
     {
         var mockContent = HttpMocks.CreateMockContent(body, contentType);
         var wafArgs = new Dictionary<string, object>();
 
-        // Use reflection to call the private AddBody method
-        var method = typeof(RaspModule).GetMethod("AddBody", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-        method.Should().NotBeNull();
-
-        method!.Invoke(null, [mockContent, wafArgs, AddressesConstants.DownstreamRequestBody, 10_000_000L]);
+        await RaspModule.AddBody(mockContent, wafArgs, AddressesConstants.DownstreamRequestBody, 10_000_000L);
 
         if (shouldParse && !string.IsNullOrEmpty(body))
         {
@@ -151,63 +148,48 @@ public class RaspModuleDownstreamTests : WafLibraryRequiredTest
     }
 
     [Fact]
-    public void AddBody_OversizedContent_SkipsBodyParsing()
+    public async Task AddBody_OversizedContent_SkipsBodyParsing()
     {
         var largeBody = new string('a', 100_000);
         var mockContent = HttpMocks.CreateMockContent(largeBody, "application/json", 100_000);
         var wafArgs = new Dictionary<string, object>();
 
-        // Use reflection to call the private AddBody method
-        var method = typeof(RaspModule).GetMethod("AddBody", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-        method.Should().NotBeNull();
-
         // Body size limit is 50,000 bytes
-        method!.Invoke(null, [mockContent, wafArgs, AddressesConstants.DownstreamRequestBody, 50_000L]);
+        await RaspModule.AddBody(mockContent, wafArgs, AddressesConstants.DownstreamRequestBody, 50_000L);
 
         // Should not add body because it exceeds size limit
         wafArgs.Should().NotContainKey(AddressesConstants.DownstreamRequestBody);
     }
 
     [Fact]
-    public void AddBody_NullContent_DoesNotAddBody()
+    public async Task AddBody_NullContent_DoesNotAddBody()
     {
         var wafArgs = new Dictionary<string, object>();
 
-        // Use reflection to call the private AddBody method
-        var method = typeof(RaspModule).GetMethod("AddBody", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-        method.Should().NotBeNull();
-
-        method!.Invoke(null, [null, wafArgs, AddressesConstants.DownstreamRequestBody, 10_000_000L]);
+        await RaspModule.AddBody(null, wafArgs, AddressesConstants.DownstreamRequestBody, 10_000_000L);
 
         wafArgs.Should().NotContainKey(AddressesConstants.DownstreamRequestBody);
     }
 
     [Fact]
-    public void AddBody_ZeroLengthContent_DoesNotAddBody()
+    public async Task AddBody_ZeroLengthContent_DoesNotAddBody()
     {
         var mockContent = HttpMocks.CreateMockContent(string.Empty, "application/json", 0);
         var wafArgs = new Dictionary<string, object>();
 
-        // Use reflection to call the private AddBody method
-        var method = typeof(RaspModule).GetMethod("AddBody", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-        method.Should().NotBeNull();
-
-        method!.Invoke(null, [mockContent, wafArgs, AddressesConstants.DownstreamRequestBody, 10_000_000L]);
+        await RaspModule.AddBody(mockContent, wafArgs, AddressesConstants.DownstreamRequestBody, 10_000_000L);
 
         wafArgs.Should().NotContainKey(AddressesConstants.DownstreamRequestBody);
     }
 
     [Fact]
-    public void AddBody_InvalidJson_DoesNotAddBody()
+    public async Task AddBody_InvalidJson_DoesNotAddBody()
     {
         var invalidJson = "{invalid: json}";
         var mockContent = HttpMocks.CreateMockContent(invalidJson, "application/json");
         var wafArgs = new Dictionary<string, object>();
 
-        var method = typeof(RaspModule).GetMethod("AddBody", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-        method.Should().NotBeNull();
-
-        method!.Invoke(null, [mockContent, wafArgs, AddressesConstants.DownstreamRequestBody, 10_000_000L]);
+        await RaspModule.AddBody(mockContent, wafArgs, AddressesConstants.DownstreamRequestBody, 10_000_000L);
 
         wafArgs.Should().NotContainKey(AddressesConstants.DownstreamRequestBody);
     }
@@ -226,11 +208,7 @@ public class RaspModuleDownstreamTests : WafLibraryRequiredTest
         var chunkedContent = HttpMocks.CreateChunkedContent(json, "application/json");
         var wafArgs = new Dictionary<string, object>();
 
-        var method = typeof(RaspModule).GetMethod("AddBody", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-        method.Should().NotBeNull();
-
-        var task = (Task)method!.Invoke(null, [chunkedContent, wafArgs, AddressesConstants.DownstreamResponseBody, 10_000_000L])!;
-        await task;
+        await RaspModule.AddBody(chunkedContent, wafArgs, AddressesConstants.DownstreamResponseBody, 10_000_000L);
 
         // The body was fully buffered by LoadIntoBufferAsync and fits within the limit —
         // it should be parsed and available for WAF inspection.
@@ -249,11 +227,7 @@ public class RaspModuleDownstreamTests : WafLibraryRequiredTest
         var chunkedContent = HttpMocks.CreateLargeChunkedContent(sizeInBytes: 10_000, "application/json");
         var wafArgs = new Dictionary<string, object>();
 
-        var method = typeof(RaspModule).GetMethod("AddBody", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-        method.Should().NotBeNull();
-
-        var task = (Task)method!.Invoke(null, [chunkedContent, wafArgs, AddressesConstants.DownstreamResponseBody, bodySizeLimit])!;
-        await task;
+        await RaspModule.AddBody(chunkedContent, wafArgs, AddressesConstants.DownstreamResponseBody, bodySizeLimit);
 
         // LoadIntoBufferAsync throws when content exceeds bodySizeLimit; AddBody catches and logs,
         // so the body must not reach the WAF.
@@ -274,11 +248,7 @@ public class RaspModuleDownstreamTests : WafLibraryRequiredTest
         var chunkedContent = HttpMocks.CreateLargeChunkedContent(sizeInBytes: 900, "application/json", incomplete: true);
         var wafArgs = new Dictionary<string, object>();
 
-        var method = typeof(RaspModule).GetMethod("AddBody", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-        method.Should().NotBeNull();
-
-        var task = (Task)method!.Invoke(null, [chunkedContent, wafArgs, AddressesConstants.DownstreamResponseBody, bodySizeLimit])!;
-        await task;
+        await RaspModule.AddBody(chunkedContent, wafArgs, AddressesConstants.DownstreamResponseBody, bodySizeLimit);
 
         // The WAF must never receive a truncated/partial JSON body.
         wafArgs.Should().ContainKey(AddressesConstants.DownstreamResponseBody);

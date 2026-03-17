@@ -73,7 +73,7 @@ namespace Datadog.Trace.AppSec
                 _waf = waf;
                 _configurationState = configurationState ?? new ConfigurationState(_settings, telemetry, _waf is null);
                 LifetimeManager.Instance.AddShutdownTask(RunShutdown);
-                _downstreamSampler = downstreamSampler ?? new DownstreamSampler(_settings.ApiSecurityMaxDownstreamRequestBodyAnalysis);
+                _downstreamSampler = downstreamSampler ?? new DownstreamSampler(_settings.ApiSecurityDownstreamBodyAnalysisSampleRate);
 
                 if (_configurationState.IncomingUpdateState.ShouldInitAppsec)
                 {
