@@ -6,6 +6,10 @@
 # compile/load Nuke's _build.dll, causing file lock errors. By running the
 # benchmark .exe directly, we avoid Nuke entirely for parallel runs.
 #
+# Additionally, BenchmarkDotNet generates code in a subfolder of the exe's
+# directory. To avoid file lock conflicts between parallel runs, this script
+# copies the benchmark binaries to an isolated directory per parallel run.
+#
 # This script mimics the setup from Build.cs RunBenchmarks target:
 # - Sets required environment variables (DD_SERVICE, DD_ENV, DD_TRACER_HOME, etc.)
 # - Constructs BenchmarkDotNet CLI arguments (-r, -f, --allCategories, etc.)
@@ -54,14 +58,26 @@ $hostFramework = "net6.0"
 # Matches Build.cs: on Windows, benchmarks run against net472, netcoreapp3.1, net6.0
 $runtimes = @("net472", "netcoreapp3.1", "net6.0")
 
-# Build the benchmark executable path
-$benchmarkExe = "$benchmarkProjectDir\bin\Release\$hostFramework\$Project.exe"
+# Source bin folder (built by Nuke in how_to_fetch_release)
+$sourceBinDir = "$benchmarkProjectDir\bin\Release\$hostFramework"
 
-if (-not (Test-Path $benchmarkExe)) {
-    Write-Error "Benchmark executable not found at: $benchmarkExe"
+if (-not (Test-Path "$sourceBinDir\$Project.exe")) {
+    Write-Error "Benchmark executable not found at: $sourceBinDir\$Project.exe"
     Write-Error "Make sure BuildBenchmarks was run in how_to_fetch_release"
     exit 1
 }
+
+# Copy bin folder to unique location per parallel run to avoid BenchmarkDotNet
+# code generation conflicts. Each parallel run generates code in a subfolder
+# of the exe's directory, so they must be isolated.
+$runDir = "$tracerRoot\benchmarks-run\$ArtifactsIndex"
+Write-Output "Copying benchmark binaries to isolated run directory: $runDir"
+if (Test-Path $runDir) {
+    Remove-Item -Recurse -Force $runDir
+}
+Copy-Item -Path $sourceBinDir -Destination $runDir -Recurse -Force
+
+$benchmarkExe = "$runDir\$Project.exe"
 
 # Ensure artifacts directory exists
 New-Item -ItemType Directory -Path $localArtifactsDir -Force | Out-Null
