@@ -265,6 +265,37 @@ namespace Datadog.Trace.Tests
             scope.Span.SetService("MyAwesomeService", null);
 
             Assert.Equal("MyAwesomeService", scope.Span.ServiceName);
+            Assert.Null(((Span)scope.Span).Context.ServiceNameSource);
+        }
+
+        [Fact]
+        public void StartActive_SetServiceName_WithManualSource()
+        {
+            var scope = _tracer.StartActive("Operation");
+            scope.Span.SetService("MyAwesomeService", Configuration.Schema.ServiceNameMetadata.Manual);
+
+            Assert.Equal("MyAwesomeService", scope.Span.ServiceName);
+            Assert.Equal("m", ((Span)scope.Span).Context.ServiceNameSource);
+        }
+
+        [Fact]
+        public void StartActive_SetServiceName_ViaISpanSetter_SetsManualSource()
+        {
+            ISpan span = _tracer.StartActive("Operation").Span;
+            span.ServiceName = "MyAwesomeService";
+
+            Assert.Equal("MyAwesomeService", span.ServiceName);
+            Assert.Equal("m", ((Span)span).Context.ServiceNameSource);
+        }
+
+        [Fact]
+        public void StartActive_SetServiceName_ViaISpanSetter_NullClearsSource()
+        {
+            ISpan span = _tracer.StartActive("Operation").Span;
+            span.ServiceName = "MyAwesomeService";
+            span.ServiceName = null;
+
+            Assert.Null(((Span)span).Context.ServiceNameSource);
         }
 
         [Fact]
@@ -276,6 +307,7 @@ namespace Datadog.Trace.Tests
 
             Assert.NotEqual("MyAwesomeService", child.Span.ServiceName);
             Assert.Equal(_tracer.DefaultServiceName, child.Span.ServiceName);
+            Assert.Null(((Span)child.Span).Context.ServiceNameSource);
         }
 
         [Fact]
