@@ -15,9 +15,10 @@ namespace Datadog.Trace.Configuration.Schema
     {
         private const string HttpClientComponent = "http-client";
         private const string GrpcClientComponent = "grpc-client";
+
         private readonly bool _useV0Tags;
         private readonly string[] _protocols;
-        private readonly string[] _serviceNames;
+        private readonly ServiceNameMetadata[] _serviceNameMetadata;
         private readonly string _operationNameSuffix;
 
         public ClientSchema(SchemaVersion version, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled, string defaultServiceName, IReadOnlyDictionary<string, string>? serviceNameMappings)
@@ -34,25 +35,14 @@ namespace Datadog.Trace.Configuration.Schema
                 _ => ".request",
             };
 
-            // Calculate service names once, to avoid allocations with every call
+            // Calculate service names and source metadata once, to avoid allocations with every call
             var useSuffix = version == SchemaVersion.V0 && !removeClientServiceNamesEnabled;
-            _serviceNames =
-            [
-                useSuffix ? $"{defaultServiceName}-{HttpClientComponent}" : defaultServiceName,
-                useSuffix ? $"{defaultServiceName}-{GrpcClientComponent}" : defaultServiceName,
-            ];
-            if (serviceNameMappings is not null)
-            {
-                if (serviceNameMappings.TryGetValue(HttpClientComponent, out var httpName))
-                {
-                    _serviceNames[(int)Component.Http] = httpName;
-                }
 
-                if (serviceNameMappings.TryGetValue(GrpcClientComponent, out var grpcName))
-                {
-                    _serviceNames[(int)Component.Grpc] = grpcName;
-                }
-            }
+            _serviceNameMetadata =
+            [
+                ServiceNameMetadata.Resolve(HttpClientComponent, defaultServiceName, serviceNameMappings, useSuffix),
+                ServiceNameMetadata.Resolve(GrpcClientComponent, defaultServiceName, serviceNameMappings, useSuffix),
+            ];
         }
 
         /// <summary>
@@ -74,7 +64,7 @@ namespace Datadog.Trace.Configuration.Schema
 
         public string GetOperationNameSuffixForRequest() => _operationNameSuffix;
 
-        public string GetServiceName(Component component) => _serviceNames[(int)component];
+        public ServiceNameMetadata GetServiceNameMetadata(Component component) => _serviceNameMetadata[(int)component];
 
         public HttpTags CreateHttpTags()
             => _useV0Tags ? new HttpTags() : new HttpV1Tags();

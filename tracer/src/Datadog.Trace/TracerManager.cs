@@ -57,7 +57,7 @@ namespace Datadog.Trace
 
         private readonly IDisposable _settingSubscription;
         private PerTraceSettings _perTraceSettings;
-        private volatile bool _isClosing = false;
+        private volatile bool _isClosing;
 
         public TracerManager(
             TracerSettings settings,
@@ -272,7 +272,10 @@ namespace Datadog.Trace
                 if (oldManager.Statsd != newManager.Statsd)
                 {
                     statsdReplaced = true;
-                    oldManager.Statsd?.Dispose();
+                    if (oldManager.Statsd is not null)
+                    {
+                        await oldManager.Statsd.DisposeAsync().ConfigureAwait(false);
+                    }
                 }
 
                 var discoveryReplaced = false;
@@ -775,7 +778,12 @@ namespace Datadog.Trace
                     }
 
                     instance.RuntimeMetrics?.Dispose();
-                    instance.Statsd?.Dispose();
+
+                    // Fire-and-forget: on master the old sync Dispose() was already
+                    // fire-and-forget internally (Task.Run). DisposeAsync flushes buffers
+                    // and drains worker threads which can take several seconds, longer than
+                    // the window between repeated termination signals on .NET 10.
+                    instance.Statsd?.DisposeAsync().ContinueWith(t => Log.Error(t.Exception, "Error waiting for StatsD disposal"), TaskContinuationOptions.OnlyOnFaulted);
 
                     Log.Debug("Finished waiting for disposals.");
                 }

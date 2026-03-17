@@ -860,37 +860,37 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
 
     private sealed class RetryState
     {
-        public bool IsARetry { get; set; } = false;
+        public bool IsARetry { get; set; }
 
-        public bool IsLastRetry { get; set; } = false;
+        public bool IsLastRetry { get; set; }
 
         public bool AllAttemptsPassed { get; set; } = true;
 
         public bool AllRetriesFailed { get; set; } = true;
 
-        public bool IsAttemptToFix { get; set; } = false;
+        public bool IsAttemptToFix { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether this test is an EFD or ATF test (retries will always happen).
         /// </summary>
-        public bool IsEfdOrAtfTest { get; set; } = false;
+        public bool IsEfdOrAtfTest { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether the initial execution passed. Only PASS counts as passed, not SKIP.
         /// </summary>
-        public bool InitialExecutionPassed { get; set; } = false;
+        public bool InitialExecutionPassed { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether the initial execution failed. Only FAIL counts as failed, not SKIP.
         /// Used for ATF final_status calculation.
         /// </summary>
-        public bool InitialExecutionFailed { get; set; } = false;
+        public bool InitialExecutionFailed { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether any retry execution passed. Only PASS counts as passed, not SKIP.
         /// Used for final_status calculation.
         /// </summary>
-        public bool AnyRetryPassed { get; set; } = false;
+        public bool AnyRetryPassed { get; set; }
 
         /// <summary>
         /// Gets or sets the total number of executions for this test (1 = single execution, >1 = has retries).

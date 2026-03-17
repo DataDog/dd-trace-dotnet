@@ -28,7 +28,7 @@ internal readonly partial struct SecurityCoordinator
 {
     private const string ReportedExternalWafsRequestHeadersStr = "ReportedExternalWafsRequestHeaders";
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SecurityCoordinator>();
-    private static bool _nullContextReported = false;
+    private static bool _nullContextReported;
     private readonly Security _security;
     private readonly Span _localRootSpan;
     private readonly HttpTransportBase _httpTransport;

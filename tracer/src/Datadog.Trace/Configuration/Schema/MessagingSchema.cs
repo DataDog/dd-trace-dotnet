@@ -15,7 +15,7 @@ namespace Datadog.Trace.Configuration.Schema
         private readonly bool _useV0Tags;
         private readonly string[] _inboundOperationNames;
         private readonly string[] _outboundOperationNames;
-        private readonly string[] _serviceNames;
+        private readonly ServiceNameMetadata[] _serviceNameMetadata;
 
         public MessagingSchema(SchemaVersion version, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled, string defaultServiceName, IReadOnlyDictionary<string, string>? serviceNameMappings)
         {
@@ -32,45 +32,23 @@ namespace Datadog.Trace.Configuration.Schema
                 _ => V1Values.OutboundOperationNames,
             };
 
-            // Calculate service names once, to avoid allocations with every call
+            // Calculate service names and source metadata once, to avoid allocations with every call
             var useSuffix = version == SchemaVersion.V0 && !removeClientServiceNamesEnabled;
-            _serviceNames =
+
+            _serviceNameMetadata =
             [
-                useSuffix ? $"{defaultServiceName}-aws.eventbridge" : defaultServiceName,
-                useSuffix ? $"{defaultServiceName}-aws.kinesis" : defaultServiceName,
-                useSuffix ? $"{defaultServiceName}-aws.sns" : defaultServiceName,
-                useSuffix ? $"{defaultServiceName}-aws.sqs" : defaultServiceName,
-                useSuffix ? $"{defaultServiceName}-aws.stepfunctions" : defaultServiceName,
-                useSuffix ? $"{defaultServiceName}-azureeventhubs" : defaultServiceName,
-                useSuffix ? $"{defaultServiceName}-azureservicebus" : defaultServiceName,
-                useSuffix ? $"{defaultServiceName}-ibmmq" : defaultServiceName,
-                useSuffix ? $"{defaultServiceName}-kafka" : defaultServiceName,
-                useSuffix ? $"{defaultServiceName}-msmq" : defaultServiceName,
-                useSuffix ? $"{defaultServiceName}-rabbitmq" : defaultServiceName,
+                ServiceNameMetadata.Resolve("aws.eventbridge", defaultServiceName, serviceNameMappings, useSuffix),
+                ServiceNameMetadata.Resolve("aws.kinesis", defaultServiceName, serviceNameMappings, useSuffix),
+                ServiceNameMetadata.Resolve("aws.sns", defaultServiceName, serviceNameMappings, useSuffix),
+                ServiceNameMetadata.Resolve("aws.sqs", defaultServiceName, serviceNameMappings, useSuffix),
+                ServiceNameMetadata.Resolve("aws.stepfunctions", defaultServiceName, serviceNameMappings, useSuffix),
+                ServiceNameMetadata.Resolve("azureeventhubs", defaultServiceName, serviceNameMappings, useSuffix),
+                ServiceNameMetadata.Resolve("azureservicebus", defaultServiceName, serviceNameMappings, useSuffix),
+                ServiceNameMetadata.Resolve("ibmmq", defaultServiceName, serviceNameMappings, useSuffix),
+                ServiceNameMetadata.Resolve("kafka", defaultServiceName, serviceNameMappings, useSuffix),
+                ServiceNameMetadata.Resolve("msmq", defaultServiceName, serviceNameMappings, useSuffix),
+                ServiceNameMetadata.Resolve("rabbitmq", defaultServiceName, serviceNameMappings, useSuffix),
             ];
-
-            if (serviceNameMappings is not null)
-            {
-                TryApplyMapping(serviceNameMappings, "aws.eventbridge", ServiceType.AwsEventBridge);
-                TryApplyMapping(serviceNameMappings, "aws.kinesis", ServiceType.AwsKinesis);
-                TryApplyMapping(serviceNameMappings, "aws.sns", ServiceType.AwsSns);
-                TryApplyMapping(serviceNameMappings, "aws.sqs", ServiceType.AwsSqs);
-                TryApplyMapping(serviceNameMappings, "aws.stepfunctions", ServiceType.AwsStepFunctions);
-                TryApplyMapping(serviceNameMappings, "azureeventhubs", ServiceType.AzureEventHubs);
-                TryApplyMapping(serviceNameMappings, "azureservicebus", ServiceType.AzureServiceBus);
-                TryApplyMapping(serviceNameMappings, "ibmmq", ServiceType.IbmMq);
-                TryApplyMapping(serviceNameMappings, "kafka", ServiceType.Kafka);
-                TryApplyMapping(serviceNameMappings, "msmq", ServiceType.Msmq);
-                TryApplyMapping(serviceNameMappings, "rabbitmq", ServiceType.RabbitMq);
-            }
-
-            void TryApplyMapping(IReadOnlyDictionary<string, string> mappings, string key, ServiceType system)
-            {
-                if (mappings.TryGetValue(key, out var mappedName))
-                {
-                    _serviceNames[(int)system] = mappedName;
-                }
-            }
         }
 
         /// <summary>
@@ -111,7 +89,7 @@ namespace Datadog.Trace.Configuration.Schema
 
         public string GetOutboundOperationName(OperationType operationType) => _outboundOperationNames[(int)operationType];
 
-        public string GetServiceName(ServiceType messagingSystem) => _serviceNames[(int)messagingSystem];
+        public ServiceNameMetadata GetServiceNameMetadata(ServiceType messagingSystem) => _serviceNameMetadata[(int)messagingSystem];
 
         public KafkaTags CreateKafkaTags(string spanKind)
             => _useV0Tags ? new KafkaTags(spanKind) : new KafkaV1Tags(spanKind);

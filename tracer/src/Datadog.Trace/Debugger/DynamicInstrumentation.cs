@@ -1,4 +1,4 @@
-﻿// <copyright file="DynamicInstrumentation.cs" company="Datadog">
+// <copyright file="DynamicInstrumentation.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -213,7 +213,7 @@ namespace Datadog.Trace.Debugger
 
                                 case ProbeLocationType.Method:
                                     {
-                                        SignatureParser.TryParse(addedProbe.Where.Signature, out var signature);
+                                        var signature = SignatureParser.TryParse(addedProbe.Where.Signature, out var s) ? s : null;
 
                                         fetchProbeStatus.Add(new FetchProbeStatus(addedProbe.Id, addedProbe.Version ?? 0));
                                         if (addedProbe is SpanProbe)
@@ -326,7 +326,7 @@ namespace Datadog.Trace.Debugger
                     }
                 }
 
-                if (probesToRemoveFromNative.Any())
+                if (probesToRemoveFromNative.Count != 0)
                 {
                     var revertProbes = probesToRemoveFromNative
                        .Select(probeId => new NativeRemoveProbeRequest(probeId));
@@ -381,7 +381,7 @@ namespace Datadog.Trace.Debugger
                     }
                 }
 
-                if (lineProbes?.Any() == true && noLongerUnboundProbes != null)
+                if (lineProbes?.Count > 0 && noLongerUnboundProbes != null)
                 {
                     Log.Information("Dynamic Instrumentation.CheckUnboundProbes: {Count} unbound probes became bound.", property: noLongerUnboundProbes.Count);
 
@@ -656,8 +656,12 @@ namespace Datadog.Trace.Debugger
                         .Add(_snapshotUploader)
                         .Add(_diagnosticsUploader)
                         .Add(_probeStatusPoller)
-                        .Add(_dogStats)
                         .DisposeAll();
+
+            // Cannot await here because Dispose() is synchronous and callers hold locks.
+            // On master, _dogStats was disposed via SafeDisposal.Add() which called sync
+            // Dispose() — itself fire-and-forget internally via Task.Run().
+            _dogStats?.DisposeAsync().ContinueWith(t => Log.Error(t.Exception, "Error waiting for StatsD disposal"), TaskContinuationOptions.OnlyOnFaulted);
         }
     }
 }

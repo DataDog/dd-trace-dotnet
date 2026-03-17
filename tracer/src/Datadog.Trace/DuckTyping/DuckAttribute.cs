@@ -50,6 +50,6 @@ namespace Datadog.Trace.DuckTyping
         /// <summary>
         /// Gets or sets a value indicating whether we need look up the base types in case the member is not found in the existing type
         /// </summary>
-        public bool FallbackToBaseTypes { get; set; } = false;
+        public bool FallbackToBaseTypes { get; set; }
     }
 }

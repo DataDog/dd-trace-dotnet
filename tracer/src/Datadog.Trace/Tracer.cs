@@ -234,7 +234,7 @@ namespace Datadog.Trace
         /// <param name="settings">Settings for the new <see cref="IScope"/></param>
         /// <returns>A scope wrapping the newly created span</returns>
         public IScope StartActive(string operationName, SpanCreationSettings settings)
-            => StartActiveInternal(operationName, settings.Parent, serviceName: null, settings.StartTime, settings.FinishOnClose ?? true);
+            => StartActiveInternal(operationName, settings.Parent, serviceName: null, startTime: settings.StartTime, finishOnClose: settings.FinishOnClose ?? true);
 
         /// <summary>
         /// Creates a new <see cref="ISpan"/> with the specified parameters.
@@ -255,7 +255,7 @@ namespace Datadog.Trace
                 parent = SpanContext.None;
             }
 
-            var span = StartSpan(operationName, tags: null, parent, serviceName: null, startTime);
+            var span = StartSpan(operationName, tags: null, parent, serviceName: null, startTime: startTime);
 
             if (serviceName != null)
             {
@@ -296,7 +296,7 @@ namespace Datadog.Trace
             return TracerManager.ScopeManager.Activate(span, finishOnClose);
         }
 
-        internal SpanContext CreateSpanContext(ISpanContext parent = null, string serviceName = null, TraceId traceId = default, ulong spanId = 0, string rawTraceId = null, string rawSpanId = null)
+        internal SpanContext CreateSpanContext(ISpanContext parent = null, string serviceName = null, TraceId traceId = default, ulong spanId = 0, string rawTraceId = null, string rawSpanId = null, string serviceNameSource = null)
         {
             // null parent means use the currently active span
             parent ??= DistributedTracer.Instance.GetSpanContext() ?? TracerManager.ScopeManager.Active?.Span?.Context;
@@ -371,7 +371,7 @@ namespace Datadog.Trace
                         // if there's an existing Activity we try to use its TraceId,
                         // but if Activity.IdFormat is not ActivityIdFormat.W3C, it may be null or unparsable
                         rawTraceId = activityTraceId;
-                        HexString.TryParseTraceId(activityTraceId, out traceId);
+                        traceId = HexString.TryParseTraceId(activityTraceId, out var r) ? r : TraceId.Zero;
                     }
                 }
             }
@@ -388,6 +388,7 @@ namespace Datadog.Trace
 
             var context = new SpanContext(parent, traceContext, finalServiceName, traceId: traceId, spanId: spanId, rawTraceId: rawTraceId, rawSpanId: rawSpanId);
             context.LastParentId = lastParentId; // lastParentId is only non-null when parent is extracted from W3C headers
+            context.ServiceNameSource = serviceNameSource;
             return context;
         }
 
@@ -397,9 +398,9 @@ namespace Datadog.Trace
         /// and the span count metric is incremented. Alternatively, if this is not being called from an
         /// automatic integration, call <c>TelemetryFactory.Metrics.RecordCountSpanCreated()</c> directory instead.
         /// </remarks>
-        internal Scope StartActiveInternal(string operationName, ISpanContext parent = null, string serviceName = null, DateTimeOffset? startTime = null, bool finishOnClose = true, ITags tags = null, IEnumerable<SpanLink> links = null)
+        internal Scope StartActiveInternal(string operationName, ISpanContext parent = null, string serviceName = null, string serviceNameSource = null, DateTimeOffset? startTime = null, bool finishOnClose = true, ITags tags = null, IEnumerable<SpanLink> links = null)
         {
-            var span = StartSpan(operationName, tags, parent, serviceName, startTime, links: links);
+            var span = StartSpan(operationName, tags, parent, serviceName, serviceNameSource, startTime, links: links);
 
             return TracerManager.ScopeManager.Activate(span, finishOnClose);
         }
@@ -410,9 +411,9 @@ namespace Datadog.Trace
         /// and the span count metric is incremented. Alternatively, if this is not being called from an
         /// automatic integration, call <c>TelemetryFactory.Metrics.RecordCountSpanCreated()</c> directly instead.
         /// </remarks>
-        internal Span StartSpan(string operationName, ITags tags = null, ISpanContext parent = null, string serviceName = null, DateTimeOffset? startTime = null, TraceId traceId = default, ulong spanId = 0, string rawTraceId = null, string rawSpanId = null, bool addToTraceContext = true, IEnumerable<SpanLink> links = null)
+        internal Span StartSpan(string operationName, ITags tags = null, ISpanContext parent = null, string serviceName = null, string serviceNameSource = null, DateTimeOffset? startTime = null, TraceId traceId = default, ulong spanId = 0, string rawTraceId = null, string rawSpanId = null, bool addToTraceContext = true, IEnumerable<SpanLink> links = null)
         {
-            var spanContext = CreateSpanContext(parent, serviceName, traceId, spanId, rawTraceId, rawSpanId);
+            var spanContext = CreateSpanContext(parent, serviceName, traceId, spanId, rawTraceId, rawSpanId, serviceNameSource);
 
             var span = new Span(spanContext, startTime, tags, links)
             {
