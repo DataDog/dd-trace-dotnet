@@ -6,6 +6,7 @@
 #nullable enable
 
 using System.Threading;
+using Datadog.Trace.Logging;
 
 #if NETFRAMEWORK
 
@@ -16,6 +17,9 @@ namespace Datadog.Trace.PlatformHelpers;
 /// </summary>
 internal sealed class ContainerMetadata
 {
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ContainerMetadata));
+    private static bool _warnedOnSet = false; // to log only once
+
     public static readonly ContainerMetadata Instance = new();
 
     private ContainerMetadata()
@@ -31,8 +35,15 @@ internal sealed class ContainerMetadata
     // always null in this implementation
     public string? ContainerTagsHash
     {
-        get => Volatile.Read(ref field);
-        set => Volatile.Write(ref field, value);
+        get => null;
+        set
+        {
+            if (!_warnedOnSet)
+            {
+                _warnedOnSet = true;
+                Log.Warning("The code is trying to set the value '{Value}' to {Prop}, but this has no effect in NetFramework.", value, nameof(ContainerTagsHash));
+            }
+        }
     }
 
     /// <summary>
