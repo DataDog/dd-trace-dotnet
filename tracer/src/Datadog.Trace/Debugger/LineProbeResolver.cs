@@ -1,4 +1,4 @@
-﻿// <copyright file="LineProbeResolver.cs" company="Datadog">
+// <copyright file="LineProbeResolver.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -22,6 +22,7 @@ namespace Datadog.Trace.Debugger
 {
     internal sealed class LineProbeResolver : ILineProbeResolver
     {
+        private static readonly string[] DirectorySeparatorsCrossPlatform = { @"\", @"/" };
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<LineProbeResolver>();
         private readonly ImmutableHashSet<string> _thirdPartyDetectionExcludes;
         private readonly ImmutableHashSet<string> _thirdPartyDetectionIncludes;
@@ -40,6 +41,11 @@ namespace Datadog.Trace.Debugger
         public static LineProbeResolver Create(ImmutableHashSet<string> thirdPartyDetectionExcludes, ImmutableHashSet<string> thirdPartyDetectionIncludes)
         {
             return new LineProbeResolver(thirdPartyDetectionExcludes, thirdPartyDetectionIncludes);
+        }
+
+        private static string GetFileName(string path)
+        {
+            return path.Split(DirectorySeparatorsCrossPlatform, StringSplitOptions.None).LastOrDefault() ?? string.Empty;
         }
 
         private IList<string>? GetDocumentsFromPDB(Assembly loadedAssembly)
@@ -114,6 +120,30 @@ namespace Datadog.Trace.Debugger
             return false;
         }
 
+        private AssemblySearchDiagnostics CollectAssemblySearchDiagnostics(string probeFilePath)
+        {
+            var diagnostics = new AssemblySearchDiagnostics(probeFilePath);
+
+            lock (_locker)
+            {
+                foreach (var candidateAssembly in AppDomain.CurrentDomain.GetAssemblies())
+                {
+                    diagnostics.IncrementLoadedAssemblies();
+                    var lookup = GetSourceFilePathForAssembly(candidateAssembly);
+                    if (lookup != null)
+                    {
+                        diagnostics.IncrementSymbolicatedAssemblies();
+                        if (lookup.TryGetDocumentPathByFileName(diagnostics.ProbeFileName, out var sameFileNameDocument))
+                        {
+                            diagnostics.AddSameFileNameMatch(candidateAssembly, sameFileNameDocument);
+                        }
+                    }
+                }
+            }
+
+            return diagnostics;
+        }
+
         public LineProbeResolveResult TryResolveLineProbe(ProbeDefinition probe, out BoundLineProbeLocation? location)
         {
             location = null;
@@ -122,45 +152,90 @@ namespace Datadog.Trace.Debugger
                 var sourceFile = probe.Where?.SourceFile;
                 if (sourceFile == null)
                 {
-                    return new LineProbeResolveResult(LiveProbeResolveStatus.Error, "Source file is empty.");
+                    return new LineProbeResolveResult(
+                        LiveProbeResolveStatus.Error,
+                        LineProbeResolveReason.MissingSourceFile,
+                        "Source file is empty.",
+                        new LineProbeResolutionDiagnostics(ProbeFile: "<empty>", ProbeId: probe.Id));
+                }
+
+                if (probe.Where?.Lines?.Length != 1 || !int.TryParse(probe.Where.Lines[0], out var lineNum))
+                {
+                    return new LineProbeResolveResult(
+                        LiveProbeResolveStatus.Error,
+                        LineProbeResolveReason.InvalidLineNumber,
+                        "Failed to parse line number.",
+                        new LineProbeResolutionDiagnostics(
+                            ProbeFile: sourceFile,
+                            RawLines: string.Join(",", probe.Where?.Lines ?? Array.Empty<string>()),
+                            ProbeId: probe.Id));
                 }
 
                 if (!TryFindAssemblyContainingFile(sourceFile, out var filePathFromPdb, out var assembly))
                 {
-                    return new LineProbeResolveResult(LiveProbeResolveStatus.Unbound, "Source file location for probe was not found, possibly because the relevant assembly was not yet loaded.");
+                    var searchDiagnostics = CollectAssemblySearchDiagnostics(sourceFile);
+                    return new LineProbeResolveResult(
+                        LiveProbeResolveStatus.Unbound,
+                        LineProbeResolveReason.AssemblyNotLoadedOrSourceFileMismatch,
+                        "Source file location for probe was not found, possibly because the relevant assembly was not yet loaded.",
+                        searchDiagnostics.ToDiagnostics(lineNum, probe.Id));
                 }
 
                 using var pdbReader = DatadogMetadataReader.CreatePdbReader(assembly);
                 if (pdbReader is not { IsPdbExist: true })
                 {
-                    return new LineProbeResolveResult(LiveProbeResolveStatus.Error, "Failed to read from PDB");
-                }
-
-                if (probe.Where?.Lines?.Length != 1 || !int.TryParse(probe.Where.Lines[0], out var lineNum))
-                {
-                    return new LineProbeResolveResult(LiveProbeResolveStatus.Error, "Failed to parse line number.");
+                    return new LineProbeResolveResult(
+                        LiveProbeResolveStatus.Error,
+                        LineProbeResolveReason.MissingPdb,
+                        "Failed to read from PDB",
+                        BuildResolvedAssemblyDiagnostics(sourceFile, lineNum, filePathFromPdb, assembly, probe.Id));
                 }
 
                 var method = pdbReader.GetContainingMethodTokenAndOffset(filePathFromPdb, lineNum, column: null, out var bytecodeOffset);
                 if (bytecodeOffset.HasValue == false || method.HasValue == false)
                 {
-                    return new LineProbeResolveResult(LiveProbeResolveStatus.Error, "Probe location did not map out to a valid bytecode offset");
+                    return new LineProbeResolveResult(
+                        LiveProbeResolveStatus.Error,
+                        LineProbeResolveReason.MissingSequencePoint,
+                        "Probe location did not map out to a valid bytecode offset",
+                        BuildResolvedAssemblyDiagnostics(sourceFile, lineNum, filePathFromPdb, assembly, probe.Id));
                 }
 
                 location = new BoundLineProbeLocation(probe, assembly.ManifestModule.ModuleVersionId, method.Value, bytecodeOffset.Value, lineNum);
-                return new LineProbeResolveResult(LiveProbeResolveStatus.Bound);
+                return new LineProbeResolveResult(
+                    LiveProbeResolveStatus.Bound,
+                    Diagnostics: BuildResolvedAssemblyDiagnostics(sourceFile, lineNum, filePathFromPdb, assembly, probe.Id));
             }
             catch (Exception e)
             {
                 Log.Error(e, "Failed to resolve line probe for ProbeID {ProbeId}", probe.Id);
-                return new LineProbeResolveResult(LiveProbeResolveStatus.Error, "An error occurred while trying to resolve probe location");
+                return new LineProbeResolveResult(
+                    LiveProbeResolveStatus.Error,
+                    LineProbeResolveReason.UnexpectedException,
+                    "An error occurred while trying to resolve probe location",
+                    new LineProbeResolutionDiagnostics(
+                        ProbeFile: probe.Where?.SourceFile ?? "<empty>",
+                        ProbeId: probe.Id,
+                        ExceptionType: e.GetType().FullName));
             }
+        }
+
+        private static LineProbeResolutionDiagnostics BuildResolvedAssemblyDiagnostics(string sourceFile, int lineNum, string filePathFromPdb, Assembly assembly, string probeId)
+        {
+            return new LineProbeResolutionDiagnostics(
+                ProbeFile: sourceFile,
+                ProbeLine: lineNum,
+                ResolvedSourceFile: filePathFromPdb,
+                AssemblyName: assembly.GetName().Name,
+                AssemblyLocation: assembly.Location,
+                ModuleVersionId: assembly.ManifestModule.ModuleVersionId,
+                ProbeId: probeId);
         }
 
         internal sealed class FilePathLookup
         {
-            private static readonly string[] DirectorySeparatorsCrossPlatform = { @"\", @"/" };
             private readonly Trie _trie = new();
+            private readonly Dictionary<string, string> _documentPathsByFileName = new(StringComparer.OrdinalIgnoreCase);
             private string? _directoryPathSeparator;
 
             public void InsertPath(string path)
@@ -169,6 +244,11 @@ namespace Datadog.Trace.Debugger
                 // This should be fine because the inserted paths are generated by the compiler, not by humans, so we can assume that they are all consistent.
                 _directoryPathSeparator ??= DirectorySeparatorsCrossPlatform.FirstOrDefault(path.Contains);
                 _trie.Insert(GetReversePath(path));
+                var fileName = GetFileName(path);
+                if (!string.IsNullOrEmpty(fileName) && !_documentPathsByFileName.ContainsKey(fileName))
+                {
+                    _documentPathsByFileName[fileName] = path;
+                }
             }
 
             public string? FindPathThatEndsWith(string path)
@@ -182,6 +262,11 @@ namespace Datadog.Trace.Debugger
                 var reversePath = GetReversePath(path);
                 var match = _trie.GetStringStartingWith(reversePath);
                 return match != null ? GetReversePath(match) : null;
+            }
+
+            public bool TryGetDocumentPathByFileName(string fileName, [NotNullWhen(true)] out string? documentPath)
+            {
+                return _documentPathsByFileName.TryGetValue(fileName, out documentPath);
             }
 
             private string GetReversePath(string documentFullPath)
@@ -206,6 +291,53 @@ namespace Datadog.Trace.Debugger
             public int BytecodeOffset { get; set; } = bytecodeOffset;
 
             public int LineNumber { get; set; } = lineNumber;
+        }
+
+        private sealed class AssemblySearchDiagnostics
+        {
+            private const int MaxExamples = 3;
+            private readonly List<string> _sameFileNameMatches = new();
+
+            public AssemblySearchDiagnostics(string probeFilePath)
+            {
+                ProbeFilePath = probeFilePath;
+                ProbeFileName = GetFileName(probeFilePath);
+            }
+
+            public string ProbeFilePath { get; }
+
+            public string ProbeFileName { get; }
+
+            public int LoadedAssemblyCount { get; private set; }
+
+            public int SymbolicatedAssemblyCount { get; private set; }
+
+            public int SameFileNameMatchCount { get; private set; }
+
+            public void IncrementLoadedAssemblies() => LoadedAssemblyCount++;
+
+            public void IncrementSymbolicatedAssemblies() => SymbolicatedAssemblyCount++;
+
+            public void AddSameFileNameMatch(Assembly assembly, string documentPath)
+            {
+                SameFileNameMatchCount++;
+                if (_sameFileNameMatches.Count < MaxExamples)
+                {
+                    _sameFileNameMatches.Add($"{assembly.GetName().Name}:{documentPath}");
+                }
+            }
+
+            public LineProbeResolutionDiagnostics ToDiagnostics(int lineNumber, string probeId)
+            {
+                return new LineProbeResolutionDiagnostics(
+                    ProbeFile: ProbeFilePath,
+                    ProbeLine: lineNumber,
+                    ProbeId: probeId,
+                    LoadedAssemblyCount: LoadedAssemblyCount,
+                    SymbolicatedAssemblyCount: SymbolicatedAssemblyCount,
+                    SameFileNameMatchCount: SameFileNameMatchCount,
+                    SameFileNameExamples: _sameFileNameMatches.ToArray());
+            }
         }
     }
 }

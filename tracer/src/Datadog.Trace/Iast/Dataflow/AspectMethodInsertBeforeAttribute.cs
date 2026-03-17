@@ -11,12 +11,12 @@ namespace Datadog.Trace.Iast.Dataflow;
 internal class AspectMethodInsertBeforeAttribute : AspectAttribute
 {
     public AspectMethodInsertBeforeAttribute(string targetMethod, params int[] paramShift)
-        : base(targetMethod, string.Empty, paramShift, new bool[0], new AspectFilter[0], AspectType.Default)
+        : base(targetMethod, string.Empty, paramShift, [], [], AspectType.Default)
     {
     }
 
     public AspectMethodInsertBeforeAttribute(string targetMethod, int[] paramShift, bool[] boxParam)
-        : base(targetMethod, string.Empty, paramShift, boxParam, new AspectFilter[0], AspectType.Default)
+        : base(targetMethod, string.Empty, paramShift, boxParam, [], AspectType.Default)
     {
     }
 }

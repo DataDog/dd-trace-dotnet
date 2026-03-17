@@ -162,7 +162,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
                 }
 
                 // Handle status (Note if there's a pending flush request we skip the delay)
-                await HandleCircuitStatus(circuitStatus, _flushCompletionSources.Count > 0).ConfigureAwait(false);
+                await HandleCircuitStatus(circuitStatus, !_flushCompletionSources.IsEmpty).ConfigureAwait(false);
             }
 
             _log.Debug("Terminating Log submission loop");

@@ -20,7 +20,7 @@ internal sealed class ExtraServicesProvider
 
     // no concurrent hash set, so use a dictionary with empty values
     private readonly ConcurrentDictionary<string, string?> _extraServices = new(StringComparer.OrdinalIgnoreCase);
-    private int _serviceCount = 0;
+    private int _serviceCount;
     private string[] _cachedExtraServices = [];
 
     internal void AddService(string serviceName)

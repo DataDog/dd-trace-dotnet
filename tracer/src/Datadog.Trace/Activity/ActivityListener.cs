@@ -29,8 +29,8 @@ namespace Datadog.Trace.Activity
         private static Func<object>? _getCurrentActivity;
         private static Action<object, int>? _setKindProperty;
 
-        private static int _initialized = 0;
-        private static int _stopped = 0;
+        private static int _initialized;
+        private static int _stopped;
 
         public static bool IsRunning
         {

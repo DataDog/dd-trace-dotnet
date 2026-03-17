@@ -19,7 +19,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventHubs;
 
 internal static class EventHubsCommon
 {
-    private const int DefaultEventHubsPort = 5671;
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(EventHubsCommon));
 
     internal static CallTargetState CreateSenderSpan(

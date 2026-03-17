@@ -29,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Log4Net.DirectSu
     public sealed class AppenderCollectionIntegration
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AppenderCollectionIntegration));
-        private static bool _logWritten = false;
+        private static bool _logWritten;
 
         /// <summary>
         /// OnMethodEnd callback
