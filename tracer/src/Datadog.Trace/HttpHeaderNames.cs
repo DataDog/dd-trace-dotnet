@@ -57,6 +57,11 @@ namespace Datadog.Trace
         internal const string PropagatedTags = "x-datadog-tags";
 
         /// <summary>
+        /// Organization propagation marker used for cross-org propagation guard.
+        /// </summary>
+        internal const string OrganizationPropagationMarker = "x-dd-opm";
+
+        /// <summary>
         /// ID of a span.
         /// Used in a serverless context only.
         /// </summary>

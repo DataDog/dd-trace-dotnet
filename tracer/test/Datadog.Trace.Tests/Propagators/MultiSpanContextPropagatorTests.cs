@@ -1239,6 +1239,60 @@ namespace Datadog.Trace.Tests.Propagators
             resultB3W3C.LastParentId.Should().Be(expectedParentTag);
         }
 
+        [Fact]
+        public void Extract_W3C_OrgMarkerMismatch_DropsDatadogStateKeepsParent()
+        {
+            var propagator = SpanContextPropagatorFactory.GetSpanContextPropagator(
+                [ContextPropagationHeaderStyle.W3CTraceContext],
+                [ContextPropagationHeaderStyle.W3CTraceContext],
+                propagationExtractFirst: false,
+                orgGuardEnforce: true,
+                orgPropagationMarker: "local-opm");
+
+            var headers = new NameValueHeadersCollection(new NameValueCollection());
+            headers.Add("traceparent", "00-000000000000000000000000075bcd15-000000003ade68b1-01");
+            headers.Add("tracestate", "dd=s:2;o:rum;opm:foreign-opm;p:0123456789abcdef;t.dm:-4,foo=1");
+
+            var result = propagator.Extract(headers);
+
+            result.SpanContext.Should().NotBeNull();
+            result.SpanContext!.TraceId.Should().Be(123456789);
+            result.SpanContext.SpanId.Should().Be(987654321);
+            result.SpanContext.SamplingPriority.Should().BeNull();
+            result.SpanContext.Origin.Should().BeNull();
+            result.SpanContext.PropagatedTags.Should().BeEquivalentTo(EmptyPropagatedTags);
+            result.SpanContext.AdditionalW3CTraceState.Should().Be("foo=1");
+            result.SpanContext.LastParentId.Should().Be(ZeroLastParentId);
+        }
+
+        [Fact]
+        public void Extract_Datadog_OrgMarkerMismatch_DropsDatadogStateKeepsParent()
+        {
+            var propagator = SpanContextPropagatorFactory.GetSpanContextPropagator(
+                [ContextPropagationHeaderStyle.Datadog],
+                [ContextPropagationHeaderStyle.Datadog],
+                propagationExtractFirst: false,
+                orgGuardEnforce: true,
+                orgPropagationMarker: "local-opm");
+
+            var headers = new NameValueHeadersCollection(new NameValueCollection());
+            headers.Add("x-datadog-trace-id", "123456789");
+            headers.Add("x-datadog-parent-id", "987654321");
+            headers.Add("x-datadog-sampling-priority", "2");
+            headers.Add("x-datadog-origin", "rum");
+            headers.Add("x-datadog-tags", "_dd.p.dm=-4");
+            headers.Add("x-dd-opm", "foreign-opm");
+
+            var result = propagator.Extract(headers);
+
+            result.SpanContext.Should().NotBeNull();
+            result.SpanContext!.TraceId.Should().Be(123456789);
+            result.SpanContext.SpanId.Should().Be(987654321);
+            result.SpanContext.SamplingPriority.Should().BeNull();
+            result.SpanContext.Origin.Should().BeNull();
+            result.SpanContext.PropagatedTags.Should().BeEquivalentTo(EmptyPropagatedTags);
+        }
+
         private static SpanContextPropagator GetPropagatorToTest(bool extractFirst, bool w3CHeaderFirst)
             => (w3CHeaderFirst, extractFirst) switch
         {
