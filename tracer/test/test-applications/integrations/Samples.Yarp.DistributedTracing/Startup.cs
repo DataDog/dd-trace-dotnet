@@ -8,6 +8,9 @@ using System;
 using System.Collections.Generic;
 using Yarp.ReverseProxy.Configuration;
 using Yarp.ReverseProxy.Transforms;
+#if NET6_0_OR_GREATER
+using OpenTelemetry.Trace;
+#endif
 
 namespace Samples.Yarp.DistributedTracing
 {
@@ -29,6 +32,11 @@ namespace Samples.Yarp.DistributedTracing
                 .AddReverseProxy();
 
             services.AddHostedService<Worker>();
+
+#if NET6_0_OR_GREATER
+            services.AddOpenTelemetry()
+                .WithTracing(tracing => tracing.AddHttpClientInstrumentation());
+#endif
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
