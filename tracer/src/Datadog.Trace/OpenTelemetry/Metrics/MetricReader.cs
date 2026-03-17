@@ -29,6 +29,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
         private readonly MetricExporter _exporter;
         private MeterListener? _listener;
         private Timer? _timer;
+        private int _exporting;
 
         public MetricReader(TracerSettings settings, MetricReaderHandler handler, MetricExporter exporter)
         {
@@ -119,6 +120,11 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
 
         public async Task ForceCollectAndExportAsync()
         {
+            if (Interlocked.CompareExchange(ref _exporting, 1, 0) != 0)
+            {
+                return;
+            }
+
             try
             {
                 CollectObservableInstruments();
@@ -138,6 +144,10 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
             catch (Exception ex)
             {
                 Log.Error(ex, "Error in metrics export process");
+            }
+            finally
+            {
+                Volatile.Write(ref _exporting, 0);
             }
         }
     }

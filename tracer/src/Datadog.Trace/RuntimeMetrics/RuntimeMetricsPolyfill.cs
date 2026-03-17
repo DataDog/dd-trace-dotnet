@@ -35,19 +35,22 @@ internal sealed class RuntimeMetricsPolyfill : IDisposable
     private static readonly string[] GenNames = ["gen0", "gen1", "gen2", "loh", "poh"];
     private static readonly int MaxGenerations = Math.Min(GC.GetGCMemoryInfo().GenerationInfo.Length, GenNames.Length);
 
-    // Matches the .NET 9 RuntimeMetrics ThreadStatic pattern to prevent recursion
-    // in FirstChanceException handler. The t_ prefix is the .NET convention for ThreadStatic fields.
 #pragma warning disable SA1308
     [ThreadStatic]
     private static bool t_handlingFirstChanceException;
 #pragma warning restore SA1308
 
     private readonly Meter _meter;
+    private readonly Process _process;
     private readonly Counter<long>? _exceptions;
+
+    private GCMemoryInfo _cachedGcInfo;
+    private long _gcInfoTimestamp;
 
     public RuntimeMetricsPolyfill()
     {
         _meter = new Meter(MeterName);
+        _process = Process.GetCurrentProcess();
 
         // --- GC ---
 
@@ -71,7 +74,7 @@ internal sealed class RuntimeMetricsPolyfill : IDisposable
 
         _meter.CreateObservableGauge(
             "dotnet.gc.last_collection.memory.committed_size",
-            () => GC.GetGCMemoryInfo().TotalCommittedBytes,
+            () => GetCachedGcInfo().TotalCommittedBytes,
             unit: "By",
             description: "The amount of committed virtual memory in use by the .NET GC, as observed during the latest garbage collection.");
 
@@ -186,6 +189,7 @@ internal sealed class RuntimeMetricsPolyfill : IDisposable
     {
         AppDomain.CurrentDomain.FirstChanceException -= OnFirstChanceException;
         _meter.Dispose();
+        _process.Dispose();
     }
 
     private static Func<double>? CreateGetTotalPauseSecondsDelegate()
@@ -217,16 +221,28 @@ internal sealed class RuntimeMetricsPolyfill : IDisposable
         }
     }
 
-    private static IEnumerable<Measurement<double>> GetCpuTime()
+    private GCMemoryInfo GetCachedGcInfo()
     {
-        using var process = Process.GetCurrentProcess();
-        yield return new(process.UserProcessorTime.TotalSeconds, new KeyValuePair<string, object?>("cpu.mode", "user"));
-        yield return new(process.PrivilegedProcessorTime.TotalSeconds, new KeyValuePair<string, object?>("cpu.mode", "system"));
+        var now = Environment.TickCount64;
+        if (now - Volatile.Read(ref _gcInfoTimestamp) > 1000)
+        {
+            _cachedGcInfo = GC.GetGCMemoryInfo();
+            Volatile.Write(ref _gcInfoTimestamp, now);
+        }
+
+        return _cachedGcInfo;
     }
 
-    private static IEnumerable<Measurement<long>> GetHeapSizes()
+    private IEnumerable<Measurement<double>> GetCpuTime()
     {
-        var gcInfo = GC.GetGCMemoryInfo();
+        _process.Refresh();
+        yield return new(_process.UserProcessorTime.TotalSeconds, new KeyValuePair<string, object?>("cpu.mode", "user"));
+        yield return new(_process.PrivilegedProcessorTime.TotalSeconds, new KeyValuePair<string, object?>("cpu.mode", "system"));
+    }
+
+    private IEnumerable<Measurement<long>> GetHeapSizes()
+    {
+        var gcInfo = GetCachedGcInfo();
 
         for (int i = 0; i < MaxGenerations; ++i)
         {
@@ -234,9 +250,9 @@ internal sealed class RuntimeMetricsPolyfill : IDisposable
         }
     }
 
-    private static IEnumerable<Measurement<long>> GetHeapFragmentation()
+    private IEnumerable<Measurement<long>> GetHeapFragmentation()
     {
-        var gcInfo = GC.GetGCMemoryInfo();
+        var gcInfo = GetCachedGcInfo();
 
         for (int i = 0; i < MaxGenerations; ++i)
         {

@@ -8,6 +8,7 @@
 #nullable enable
 
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
@@ -21,6 +22,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
     internal static class MetricsRuntime
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(MetricsRuntime));
+        private static readonly object StartLock = new();
         private static OtelMetricsPipeline? _instance;
         private static RuntimeMetricsPolyfill? _runtimeMetricsPolyfill;
 
@@ -28,28 +30,36 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
         {
             if (_instance != null)
             {
-                Log.Debug("MetricsRuntime already started");
                 return;
             }
 
-            var exporter = new OtlpExporter(settings);
-            _instance = new OtelMetricsPipeline(settings, exporter);
-            _instance.Start();
-
-            if (Environment.Version.Major < 9)
+            lock (StartLock)
             {
-                try
+                if (_instance != null)
                 {
-                    _runtimeMetricsPolyfill = new RuntimeMetricsPolyfill();
-                    Log.Debug("Started RuntimeMetricsPolyfill for .NET {Version} (System.Runtime meter instruments not natively available until .NET 9)", Environment.Version);
+                    Log.Debug("MetricsRuntime already started");
+                    return;
                 }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "Failed to initialize RuntimeMetricsPolyfill for OTLP export");
-                }
-            }
 
-            LifetimeManager.Instance.AddAsyncShutdownTask((_) => StopAsync());
+                var exporter = new OtlpExporter(settings);
+                _instance = new OtelMetricsPipeline(settings, exporter);
+                _instance.Start();
+
+                if (Environment.Version.Major < 9)
+                {
+                    try
+                    {
+                        _runtimeMetricsPolyfill = new RuntimeMetricsPolyfill();
+                        Log.Debug("Started RuntimeMetricsPolyfill for .NET {Version} (System.Runtime meter instruments not natively available until .NET 9)", Environment.Version);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error(ex, "Failed to initialize RuntimeMetricsPolyfill for OTLP export");
+                    }
+                }
+
+                LifetimeManager.Instance.AddAsyncShutdownTask((_) => StopAsync());
+            }
         }
 
         public static Task ForceFlushAsync()
