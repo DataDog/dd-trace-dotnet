@@ -33,7 +33,7 @@ namespace Datadog.Trace.AppSec.Waf
         private readonly IEncoder _encoder;
         private readonly IntPtr _wafBuilderHandle;
         private IntPtr _wafHandle;
-        private bool? _isKnowAddressesSuported = null;
+        private bool? _isKnowAddressesSuported;
 
         internal Waf(IntPtr wafBuilderHandle, IntPtr wafHandle, WafLibraryInvoker wafLibraryInvoker, IEncoder encoder)
         {
