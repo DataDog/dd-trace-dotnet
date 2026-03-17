@@ -27,7 +27,7 @@ experiments:
         # master results from S3.
         baseline_branch: ""
 
-        # CPU affinity: NUMA node 0 (24 CPUs) + NUMA node 1 (24 CPUs)
+        # CPU affinity: NUMA node 0 (24 CPUs)
         # Format: "numa_node,cpu_mask"
         cpus: "1,0xFFFFFF"
         parallelize:
