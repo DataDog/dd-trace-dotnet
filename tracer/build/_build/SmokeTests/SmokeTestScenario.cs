@@ -129,6 +129,12 @@ public record WindowsNuGetScenario : SmokeTestScenario
     public required string NuGetPackageName { get; init; }
     public bool IncludeDdDotnetScenario { get; init; }
 
+    public override string SnapshotIgnoredAttrs => NuGetPackageName switch
+    {
+        Projects.DatadogAzureFunctions => DefaultSnapshotIgnoredAttrs + ",meta.aas.environment.instance_name",
+        _ => base.SnapshotIgnoredAttrs,
+    };
+
     public override string SnapshotFile => NuGetPackageName switch
     {
         Projects.DatadogAzureFunctions => "smoke_test_azurefunctions_snapshots",
