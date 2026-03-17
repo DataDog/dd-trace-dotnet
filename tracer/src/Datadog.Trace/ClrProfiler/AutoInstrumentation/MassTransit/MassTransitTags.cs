@@ -5,6 +5,7 @@
 
 #nullable enable
 
+using System;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Tagging;
 
@@ -12,6 +13,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
 {
     internal sealed partial class MassTransitTags : InstrumentationTags
     {
+        // For the sake of unit tests, define a default constructor
+        // though the MassTransit integration should use the constructor that takes a spanKind
+        // so the setter is only invoked once
+        [Obsolete("Use constructor that takes a SpanKind")]
+        public MassTransitTags()
+            : this(SpanKinds.Producer)
+        {
+        }
+
         public MassTransitTags(string spanKind)
         {
             SpanKind = spanKind;
