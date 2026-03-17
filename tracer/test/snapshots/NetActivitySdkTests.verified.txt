@@ -376,7 +376,6 @@
       runtime-id: Guid_2,
       span.kind: server,
       _dd.base_service: Samples.NetActivitySdk,
-      _dd.svc_src: m
     },
     Metrics: {
       process_id: 0,
