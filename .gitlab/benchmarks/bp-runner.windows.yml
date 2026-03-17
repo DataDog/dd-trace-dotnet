@@ -23,17 +23,41 @@ experiments:
         repo: DataDog/dd-trace-dotnet
 
         # Empty baseline_branch means we only run benchmarks for the candidate.
-        # Comparison with baseline will be done by fetching previously stored
-        # master results from S3 (in a future phase).
+        # Comparison with baseline is by fetching previously stored
+        # master results from S3.
         baseline_branch: ""
 
-        # CPU affinity for the benchmark process (hex mask or comma-separated list)
-        cpus: "0,0x3"
-
-        # Parallelize benchmarks by category
-        # Each item is a BenchmarkDotNet filter pattern
+        # CPU affinity: NUMA node 0 (24 CPUs) + NUMA node 1 (24 CPUs)
+        # Format: "numa_node,cpu_mask"
+        cpus: "1,0xFFFFFF"
         parallelize:
-          items: "*SpanBenchmark* *AgentWriterBenchmark* *AspNetCoreBenchmark*"
+          items: >-
+            *ActivityBenchmark*
+            *AgentWriterBenchmark*
+            *AspNetCoreBenchmark*
+            *CharSliceBenchmark*
+            *CIVisibilityProtocolWriterBenchmark*
+            *DbCommandBenchmark*
+            *ElasticsearchBenchmark*
+            *GraphQLBenchmark*
+            *HttpClientBenchmark*
+            *ILoggerBenchmark*
+            *Log4netBenchmark*
+            *NLogBenchmark*
+            *RedisBenchmark*
+            *SerilogBenchmark*
+            *SpanBenchmark*
+            *TraceAnnotationsBenchmark*
+            *TraceProcessorBenchmark*
+            *AppSecBodyBenchmark*
+            *AppSecEncodeBenchmark*
+            *AppSecWafBenchmark*
+            *DuckTypeMethodBenchmark*
+            *DuckTypeMethodCallComparisonBenchmark*
+            *DuckTypeStructCopyValueTypePropertyBenchmark*
+            *DuckTypeValueTypeFieldBenchmark*
+            *DuckTypeValueTypePropertyBenchmark*
+            *StringAspectsBenchmark*
           cpus_per_item: 1
 
         # Script to clone repo AND build tracer + benchmarks (runs ONCE before parallel benchmarks)
