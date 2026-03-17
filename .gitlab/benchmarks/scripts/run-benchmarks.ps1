@@ -43,6 +43,11 @@ if (-not $Filter) {
     exit 1
 }
 
+if (-not $ArtifactsIndex) {
+    Write-Error "PARALLEL_INDEX environment variable (or -ArtifactsIndex parameter) is not set"
+    exit 1
+}
+
 # Paths
 $tracerRoot = "$env:CODE_SRC\tracer"
 $monitoringHome = "$tracerRoot\bin\monitoring-home"
