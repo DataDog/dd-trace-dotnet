@@ -192,11 +192,13 @@ namespace Datadog.Trace.Activity
             // Update Service with a reasonable default
             if (span.ServiceName is null)
             {
-                span.Context.ServiceName = span.GetTag("peer.service") switch
-                {
-                    string peerService when !string.IsNullOrEmpty(peerService) => peerService,
-                    _ => "OTLPResourceNoServiceName",
-                };
+                span.SetService(
+                    span.GetTag("peer.service") switch
+                    {
+                        string peerService when !string.IsNullOrEmpty(peerService) => peerService,
+                        _ => "OTLPResourceNoServiceName",
+                    },
+                    source: null);
             }
 
             // Update Resource with a reasonable default
@@ -481,7 +483,7 @@ namespace Datadog.Trace.Activity
                 case "service.name":
                     if (setKnownValues)
                     {
-                        span.Context.ServiceName = value;
+                        span.SetService(value, source: null);
                     }
 
                     break;
