@@ -98,6 +98,10 @@ public class MassTransit7Tests : TracingIntegrationTest
             var sagaQueueRegex = new Regex(@"order-state_[a-z0-9]+");
             settings.AddRegexScrubber(sagaQueueRegex, "SagaQueueName");
 
+            // Scrub RabbitMQ broker host which varies by environment (e.g., localhost vs rabbitmq_arm64)
+            var rabbitMqHostRegex = new Regex(@"rabbitmq://[^/]+/");
+            settings.AddRegexScrubber(rabbitMqHostRegex, "rabbitmq://rabbitmq-host/");
+
             await VerifyHelper.VerifySpans(
                 massTransitSpans,
                 settings,

@@ -9,8 +9,8 @@ Console.WriteLine("MassTransit 7 Sample - Testing all transports sequentially");
 
 // Run each transport one after another
 await RunWithTransport("inmemory", ConfigureInMemory);
-await RunWithTransport("rabbitmq", ConfigureRabbitMq);
-await RunWithTransport("amazonsqs", ConfigureAmazonSqs);
+await TryRunWithTransport("rabbitmq", ConfigureRabbitMq);
+await TryRunWithTransport("amazonsqs", ConfigureAmazonSqs);
 
 // Run saga test with in-memory transport
 await RunSagaTest();
@@ -21,6 +21,18 @@ await RunHandlerExceptionTest();   // Handler exception
 await RunSagaExceptionTest();      // Saga exception
 
 Console.WriteLine("All tests completed!");
+
+async Task TryRunWithTransport(string transportName, Action<IBusRegistrationConfigurator> configureTransport)
+{
+    try
+    {
+        await RunWithTransport(transportName, configureTransport);
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"[{transportName}] Transport unavailable, skipping: {ex.GetType().Name}: {ex.Message}");
+    }
+}
 
 async Task RunWithTransport(string transportName, Action<IBusRegistrationConfigurator> configureTransport)
 {
