@@ -58,6 +58,12 @@
         "http.url": "http://localhost:5000/api/values",
         "language": "dotnet",
         "network.client.ip": "127.0.0.1",
+        "_dd.code_origin.frames.0.column": "13",
+        "_dd.code_origin.frames.0.index": "0",
+        "_dd.code_origin.frames.0.line": "19",
+        "_dd.code_origin.frames.0.method": "Get",
+        "_dd.code_origin.frames.0.type": "AspNetCoreSmokeTest.ValuesController",
+        "_dd.code_origin.type": "entry",
         "runtime-id": "b34b2bed-9444-4597-87f6-b8202b03b1b8",
         "span.kind": "server"
       },
