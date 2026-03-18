@@ -8,9 +8,11 @@ if (EXISTS "${PROJECT_NAME}_gitclone")
   return()
 endif()
 
+find_program(GIT_EXECUTABLE git REQUIRED)
+
 set(error_code 1)
 execute_process(
-  COMMAND "/usr/bin/git" clone --quiet --depth 1 --config advice.detachedHead=false --branch ${PROJECT_BRANCH} --origin "origin" "${PROJECT_REPOSITORY}" "${PROJECT_NAME}"
+  COMMAND "${GIT_EXECUTABLE}" clone --quiet --depth 1 --config advice.detachedHead=false --branch ${PROJECT_BRANCH} --origin "origin" "${PROJECT_REPOSITORY}" "${PROJECT_NAME}"
   RESULT_VARIABLE error_code
   )
 
