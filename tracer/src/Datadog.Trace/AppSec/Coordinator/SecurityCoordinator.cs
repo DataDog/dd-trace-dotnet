@@ -215,7 +215,9 @@ internal readonly partial struct SecurityCoordinator
         return null;
     }
 
+#pragma warning disable CA1859 // Use concrete types where possible for improved performance - It's not actually possible here
     private static Dictionary<string, object>? ExtractHeaders(ICollection<string> keys, Func<string, object> getHeaderValue)
+#pragma warning restore CA1859
     {
         if (keys.Count > 0)
         {
