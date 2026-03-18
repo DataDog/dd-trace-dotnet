@@ -21,6 +21,25 @@ internal static class Common
 {
     internal static readonly IDatadogLogger Log = TestOptimization.Instance.Log;
 
+    internal static void ApplyRetryTags(TestSpanTags tags, bool isRetry, TestRetryMode retryMode)
+    {
+        if (!isRetry || retryMode == TestRetryMode.None)
+        {
+            tags.TestIsRetry = null;
+            tags.TestRetryReason = null;
+            return;
+        }
+
+        tags.TestIsRetry = "true";
+        tags.TestRetryReason = retryMode switch
+        {
+            TestRetryMode.EarlyFlakeDetection => TestTags.TestRetryReasonEfd,
+            TestRetryMode.AutomaticTestRetry => TestTags.TestRetryReasonAtr,
+            TestRetryMode.AttemptToFix => TestTags.TestRetryReasonAttemptToFix,
+            _ => null
+        };
+    }
+
     internal static string GetParametersValueData(object? paramValue)
     {
         if (paramValue is null)
@@ -188,8 +207,7 @@ internal static class Common
             {
                 if (isRetry)
                 {
-                    testTags.TestIsRetry = "true";
-                    testTags.TestRetryReason = TestTags.TestRetryReasonEfd;
+                    ApplyRetryTags(testTags, isRetry, TestRetryMode.EarlyFlakeDetection);
                 }
                 else
                 {
@@ -210,9 +228,7 @@ internal static class Common
         var flakyRetryFeature = TestOptimization.Instance.FlakyRetryFeature?.Enabled == true;
         if (flakyRetryFeature && isRetry)
         {
-            var testTags = test.GetTags();
-            testTags.TestIsRetry = "true";
-            testTags.TestRetryReason = TestTags.TestRetryReasonAtr;
+            ApplyRetryTags(test.GetTags(), isRetry, TestRetryMode.AutomaticTestRetry);
         }
 
         return flakyRetryFeature;
@@ -244,8 +260,7 @@ internal static class Common
                 testTags.IsAttemptToFix = "true";
                 if (isRetry)
                 {
-                    testTags.TestIsRetry = "true";
-                    testTags.TestRetryReason = TestTags.TestRetryReasonAttemptToFix;
+                    ApplyRetryTags(testTags, isRetry, TestRetryMode.AttemptToFix);
                 }
             }
 

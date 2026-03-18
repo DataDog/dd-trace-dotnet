@@ -11,9 +11,8 @@ internal class TestCaseMetadata
     {
         TotalExecutions = totalExecution;
         CountDownExecutionNumber = countDownExecutionNumber;
-        EarlyFlakeDetectionEnabled = false;
         AbortByThreshold = false;
-        FlakyRetryEnabled = false;
+        SelectedRetryMode = TestRetryMode.None;
         UniqueID = uniqueID;
     }
 
@@ -23,17 +22,19 @@ internal class TestCaseMetadata
 
     public int ExecutionIndex => TotalExecutions - (CountDownExecutionNumber + 1);
 
-    public bool EarlyFlakeDetectionEnabled { get; set; }
-
     public bool AbortByThreshold { get; set; }
 
-    public bool FlakyRetryEnabled { get; set; }
+    public TestRetryMode SelectedRetryMode { get; set; }
+
+    public bool IsEarlyFlakeDetection => SelectedRetryMode == TestRetryMode.EarlyFlakeDetection;
+
+    public bool IsFlakyRetry => SelectedRetryMode == TestRetryMode.AutomaticTestRetry;
 
     public bool IsQuarantinedTest { get; set; }
 
     public bool IsDisabledTest { get; set; }
 
-    public bool IsAttemptToFix { get; set; }
+    public bool IsAttemptToFix => SelectedRetryMode == TestRetryMode.AttemptToFix;
 
     public bool IsRetry { get; set; }
 
