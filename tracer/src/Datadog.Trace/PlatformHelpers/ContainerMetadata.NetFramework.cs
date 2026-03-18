@@ -18,7 +18,7 @@ namespace Datadog.Trace.PlatformHelpers;
 internal sealed class ContainerMetadata
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ContainerMetadata));
-    private static bool _warnedOnSet = false; // to log only once
+    private static bool _warnedOnSet; // to log only once
 
     public static readonly ContainerMetadata Instance = new();
 
