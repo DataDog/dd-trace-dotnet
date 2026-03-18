@@ -89,13 +89,7 @@ namespace Datadog.Trace
         {
             get => Context.ServiceName;
             [Obsolete("Use SetService(serviceName, source) instead to explicitly provide a source.")]
-            set
-            {
-                Context.ServiceName = value;
-                Context.ServiceNameSource = value is not null
-                    ? Configuration.Schema.ServiceNameMetadata.Manual
-                    : null;
-            }
+            set => SetService(value, value is not null ? Configuration.Schema.ServiceNameMetadata.Manual : null);
         }
 
         /// <summary>
