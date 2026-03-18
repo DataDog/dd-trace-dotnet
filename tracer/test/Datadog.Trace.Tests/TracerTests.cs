@@ -262,47 +262,51 @@ namespace Datadog.Trace.Tests
         public void StartActive_SetServiceName_ServiceNameIsSet()
         {
             var scope = _tracer.StartActive("Operation");
-            scope.Span.SetService("MyAwesomeService", null);
+            var span = (Span)scope.Span;
+            span.SetService("MyAwesomeService", null);
 
-            Assert.Equal("MyAwesomeService", scope.Span.ServiceName);
-            Assert.Null(((Span)scope.Span).Context.ServiceNameSource);
+            Assert.Equal("MyAwesomeService", span.ServiceName);
+            Assert.Null(span.Context.ServiceNameSource);
         }
 
         [Fact]
         public void StartActive_SetServiceName_WithManualSource()
         {
             var scope = _tracer.StartActive("Operation");
-            scope.Span.SetService("MyAwesomeService", Configuration.Schema.ServiceNameMetadata.Manual);
+            var span = (Span)scope.Span;
+            span.SetService("MyAwesomeService", Datadog.Trace.Configuration.Schema.ServiceNameMetadata.Manual);
 
-            Assert.Equal("MyAwesomeService", scope.Span.ServiceName);
-            Assert.Equal("m", ((Span)scope.Span).Context.ServiceNameSource);
+            Assert.Equal("MyAwesomeService", span.ServiceName);
+            Assert.Equal("m", span.Context.ServiceNameSource);
         }
 
         [Fact]
         public void StartActive_SetServiceName_ViaISpanSetter_SetsManualSource()
         {
-            ISpan span = _tracer.StartActive("Operation").Span;
-            span.ServiceName = "MyAwesomeService";
+            var scope = _tracer.StartActive("Operation");
+            var span = (Span)scope.Span;
+            ((ISpan)span).ServiceName = "MyAwesomeService";
 
             Assert.Equal("MyAwesomeService", span.ServiceName);
-            Assert.Equal("m", ((Span)span).Context.ServiceNameSource);
+            Assert.Equal("m", span.Context.ServiceNameSource);
         }
 
         [Fact]
         public void StartActive_SetServiceName_ViaISpanSetter_NullClearsSource()
         {
-            ISpan span = _tracer.StartActive("Operation").Span;
-            span.ServiceName = "MyAwesomeService";
-            span.ServiceName = null;
+            var scope = _tracer.StartActive("Operation");
+            var span = (Span)scope.Span;
+            ((ISpan)span).ServiceName = "MyAwesomeService";
+            ((ISpan)span).ServiceName = null;
 
-            Assert.Null(((Span)span).Context.ServiceNameSource);
+            Assert.Null(span.Context.ServiceNameSource);
         }
 
         [Fact]
         public void StartActive_SetParentServiceName_ChildServiceNameIsDefaultServiceName()
         {
             var parent = _tracer.StartActive("Parent");
-            parent.Span.SetService("MyAwesomeService", null);
+            ((Span)parent.Span).SetService("MyAwesomeService", null);
             var child = _tracer.StartActive("Child");
 
             Assert.NotEqual("MyAwesomeService", child.Span.ServiceName);
