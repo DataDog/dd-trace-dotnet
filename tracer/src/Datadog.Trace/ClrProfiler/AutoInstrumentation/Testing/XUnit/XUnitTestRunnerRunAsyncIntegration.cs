@@ -169,7 +169,7 @@ public static class XUnitTestRunnerRunAsyncIntegration
 
         switch (testCaseMetadata)
         {
-            case { SelectedRetryMode: not TestCaseRetryMode.None } when !testCaseMetadata.AbortByThreshold:
+            case { SelectedRetryMode: not TestCaseRetryMode.None, AbortByThreshold: false }:
             {
                 var selectedRetryMode = testCaseMetadata.SelectedRetryMode;
                 var isAtrRetry = selectedRetryMode == TestCaseRetryMode.AutomaticTestRetry;

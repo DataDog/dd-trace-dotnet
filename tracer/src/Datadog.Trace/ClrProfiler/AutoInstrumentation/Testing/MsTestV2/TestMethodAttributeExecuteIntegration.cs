@@ -561,9 +561,12 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
         }
 
         testTags.TestIsRetry = "true";
-        testTags.TestRetryReason = retryState.IsAttemptToFix ? TestTags.TestRetryReasonAttemptToFix
-                               : retryState.IsEfdOrAtfTest ? TestTags.TestRetryReasonEfd
-                               : TestTags.TestRetryReasonAtr;
+        testTags.TestRetryReason = retryState switch
+        {
+            { IsAttemptToFix: true } => TestTags.TestRetryReasonAttemptToFix,
+            { IsEfdOrAtfTest: true } => TestTags.TestRetryReasonEfd,
+            _ => TestTags.TestRetryReasonAtr
+        };
     }
 
     private static TestStatus GetStatusFromOutcome(UnitTestOutcome outcome)

@@ -134,8 +134,8 @@ internal static class XUnitIntegration
             var selectedRetryMode = SelectRetryMode(testOptimization, testIsNew, testManagementData.AttemptToFix);
 
             testCaseMetadata.SelectedRetryMode = selectedRetryMode;
-            testCaseMetadata.EarlyFlakeDetectionEnabled = selectedRetryMode == TestCaseRetryMode.EarlyFlakeDetection;
-            testCaseMetadata.FlakyRetryEnabled = selectedRetryMode == TestCaseRetryMode.AutomaticTestRetry;
+            testCaseMetadata.EarlyFlakeDetectionActive = selectedRetryMode == TestCaseRetryMode.EarlyFlakeDetection;
+            testCaseMetadata.FlakyRetryActive = selectedRetryMode == TestCaseRetryMode.AutomaticTestRetry;
             testCaseMetadata.IsRetry = isRetry;
             testCaseMetadata.IsQuarantinedTest = testManagementData.Quarantined;
             testCaseMetadata.IsDisabledTest = testManagementData.Disabled;
@@ -175,7 +175,7 @@ internal static class XUnitIntegration
 
             if (TestCasesMetadata.TryGetValue(test, out var testCaseMetadata) && testCaseMetadata is not null)
             {
-                if (testCaseMetadata.EarlyFlakeDetectionEnabled)
+                if (testCaseMetadata.EarlyFlakeDetectionActive)
                 {
                     var testTags = test.GetTags();
                     if (testTags.TestIsNew == "true" && test.GetInternalSpan() is { } internalSpan)
@@ -333,8 +333,7 @@ internal static class XUnitIntegration
         }
 
         // ATR early exit detection
-        var isAtrRetry = testCaseMetadata.IsRetry &&
-                         testCaseMetadata.SelectedRetryMode == TestCaseRetryMode.AutomaticTestRetry;
+        var isAtrRetry = testCaseMetadata is { IsRetry: true, SelectedRetryMode: TestCaseRetryMode.AutomaticTestRetry };
         var isAtrEarlyExit = isAtrRetry &&
                              testCaseMetadata is { HasAnException: false, Skipped: false, IsLastRetry: false };
 
