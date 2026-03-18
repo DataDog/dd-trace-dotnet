@@ -330,6 +330,7 @@
     <ClInclude Include="ExceptionsProvider.h" />
     <ClInclude Include="FfiHelper.h" />
     <ClInclude Include="FrameStore.h" />
+    <ClInclude Include="ManagedCodeCache.h" />
     <ClInclude Include="IAppDomainStore.h" />
     <ClInclude Include="IApplicationStore.h" />
     <ClInclude Include="ICollector.h" />
@@ -431,6 +432,7 @@
     <ClCompile Include="Exporter.cpp" />
     <ClCompile Include="FfiHelper.cpp" />
     <ClCompile Include="FrameStore.cpp" />
+    <ClCompile Include="ManagedCodeCache.cpp" />
     <ClCompile Include="GarbageCollectionProvider.cpp" />
     <ClCompile Include="GCThreadsCpuProvider.cpp" />
     <ClCompile Include="MetadataProvider.cpp" />
