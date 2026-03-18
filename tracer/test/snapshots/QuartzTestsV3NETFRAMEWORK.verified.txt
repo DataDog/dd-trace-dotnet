@@ -8,6 +8,7 @@
     Type: custom,
     Error: 1,
     Tags: {
+      component: quartz,
       env: integration_tests,
       error.msg: Expected InvalidOperationException thrown,
       error.stack:
@@ -44,6 +45,7 @@ at QuartzSampleApp.Jobs.ExceptionJob.<Quartz-IJob-Execute>d__0.MoveNext(),
     Service: Samples.Quartz,
     Type: custom,
     Tags: {
+      component: quartz,
       env: integration_tests,
       fire.instance.id: <fire.instance.id>,
       job.group: group1,
