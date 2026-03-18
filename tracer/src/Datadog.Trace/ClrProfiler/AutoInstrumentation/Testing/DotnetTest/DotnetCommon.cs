@@ -374,7 +374,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
                 var cleanItem = item.Replace(collectProperty, string.Empty)
                                     .Replace("\"", string.Empty);
                 Log.Debug("InjectCodeCoverageCollector.DotnetTest: Existing clean collect property values: {CollectProperty}", cleanItem);
-                var values = cleanItem.Split(new[] { ';' }, StringSplitOptions.None);
+                var values = cleanItem.Split(Separators.SemiColon, StringSplitOptions.None);
 
                 if (!values.Contains(datadogCoverageCollector, StringComparer.OrdinalIgnoreCase))
                 {
@@ -403,7 +403,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
                     var cleanItem = item.Replace(testAdapterPathProperty, string.Empty)
                                         .Replace("\"", string.Empty);
                     Log.Debug("InjectCodeCoverageCollector.DotnetTest: Existing testAdapter property values: {CollectProperty}", cleanItem);
-                    var values = cleanItem.Split(new[] { ';' }, StringSplitOptions.None);
+                    var values = cleanItem.Split(Separators.SemiColon, StringSplitOptions.None);
 
                     if (!values.Contains(codeCoverageCollectorPath))
                     {
