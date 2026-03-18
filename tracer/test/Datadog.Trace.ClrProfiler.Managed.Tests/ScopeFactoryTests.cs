@@ -167,7 +167,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             {
                 manualScope.Span.Type = SpanTypes.Http;
                 manualScope.Span.ResourceName = $"{method} {url}";
-                manualScope.Span.SetService($"{tracer.DefaultServiceName}-http-client", "http-client");
+                ((Span)manualScope.Span).SetService($"{tracer.DefaultServiceName}-http-client", null);
 
                 using (var automaticScope1 = ScopeFactory.CreateOutboundHttpScope(tracer, method, new Uri(url), (IntegrationId)integration1, out _))
                 {
