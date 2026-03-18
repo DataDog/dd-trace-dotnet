@@ -141,7 +141,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                                                      ? functionName.Substring(10)
                                                      : functionName;
                         AzureFunctionsTags.SetRootSpanTags(
-                            rootSpan,
+                            rootSpan.Tags,
                             shortName: remoteFunctionName,
                             fullName: rootSpan.Tags is AzureFunctionsTags t ? t.FullName : null, // can't get anything meaningful here, so leave it as-is
                             bindingSource: bindingSourceType.FullName,
