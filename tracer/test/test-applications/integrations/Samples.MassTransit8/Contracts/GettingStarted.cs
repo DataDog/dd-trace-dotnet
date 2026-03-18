@@ -1,19 +1,19 @@
 namespace Samples.MassTransit8.Contracts;
 
-public record GettingStartedMessage
+public class GettingStartedMessage
 {
-    public string Value { get; init; } = string.Empty;
+    public string Value { get; set; } = string.Empty;
 }
 
-public record FailingMessage
+public class FailingMessage
 {
-    public string Value { get; init; } = string.Empty;
+    public string Value { get; set; } = string.Empty;
 }
 
 /// <summary>
 /// Message for testing handler-based exception handling (uses Handler instead of Consumer)
 /// </summary>
-public record HandlerFailingMessage
+public class HandlerFailingMessage
 {
-    public string Value { get; init; } = string.Empty;
+    public string Value { get; set; } = string.Empty;
 }
