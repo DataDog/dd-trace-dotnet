@@ -15,9 +15,9 @@ namespace Datadog.Trace.Ci.Ipc;
 
 internal abstract class IpcDualChannel : IDisposable
 {
-    private readonly IChannel _recvChannel;
+    private readonly CircularChannel _recvChannel;
     private readonly IChannelReader _recvChannelReader;
-    private readonly IChannel _sendChannel;
+    private readonly CircularChannel _sendChannel;
     private readonly IChannelWriter _sendChannelWriter;
     private readonly JsonSerializer _jsonSerializer;
     private Action<object>? _callback;
