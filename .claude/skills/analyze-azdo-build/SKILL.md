@@ -3,7 +3,7 @@ name: analyze-azdo-build
 description: Analyze Azure DevOps CI build failures in dd-trace-dotnet pipeline. Use this skill whenever the user mentions a failing CI build, PR checks failing, Azure DevOps pipeline failures, test failures in CI, or when they share a build ID or PR number and want to understand what went wrong. Analyzes build failures, categorizes them (infrastructure/flaky/real), and provides actionable recommendations.
 argument-hint: <pr NUMBER | build BUILD_ID>
 user-invocable: true
-allowed-tools: WebFetch, Bash(pwsh -Version*), Bash(pwsh *Get-AzureDevOpsBuildAnalysis.ps1*), Bash(pwsh *Retry-AzureDevOpsFailedStages.ps1*), Bash(gh pr checks:*), Bash(az devops invoke:*), Bash(az pipelines build list:*), Bash(az pipelines build show:*), Bash(az pipelines runs artifact list:*), Bash(az pipelines runs list:*), Bash(az pipelines runs show:*)
+allowed-tools: WebFetch, Bash(pwsh -Version*), Bash(pwsh *Get-AzureDevOpsBuildAnalysis.ps1*), Bash(pwsh *Retry-AzureDevOpsFailedStages.ps1*), Bash(gh pr checks:*), Bash(az account show*), Bash(az account set*), Bash(az devops invoke:*), Bash(az pipelines build list:*), Bash(az pipelines build show:*), Bash(az pipelines runs artifact list:*), Bash(az pipelines runs list:*), Bash(az pipelines runs show:*)
 ---
 
 # Troubleshoot Azure DevOps Builds for dd-trace-dotnet
@@ -141,14 +141,26 @@ If snapshot failures are detected:
 
 When the user selects "Retry failed stages" from the investigation menu:
 
-1. **Show what would be retried** — Run with `-WhatIf` first to preview:
+1. **Verify Azure account** — Before retrying, ensure the correct Azure subscription is active:
+   ```bash
+   az account show --query "{name:name, id:id}" -o table
+   ```
+   The active account **must** be the `apm-libraries-build-and-sandbox` subscription.
+   Run `az account list -o table` to find the correct subscription if needed, then switch:
+   ```bash
+   az account set --subscription <subscription-id>
+   ```
+
+   Do NOT proceed with the retry until the correct account is confirmed.
+
+3. **Show what would be retried** — Run with `-WhatIf` first to preview:
    ```bash
    pwsh -NoProfile -Command ".\tracer\tools\Retry-AzureDevOpsFailedStages.ps1 -BuildId $BUILD_ID -All -WhatIf"
    ```
 
-2. **Confirm with user** — Show the list of stages that would be retried and ask for confirmation.
+4. **Confirm with user** — Show the list of stages that would be retried and ask for confirmation.
 
-3. **Run the retry** — After confirmation:
+5. **Run the retry** — After confirmation:
    ```bash
    pwsh -NoProfile -Command ".\tracer\tools\Retry-AzureDevOpsFailedStages.ps1 -BuildId $BUILD_ID -All"
    ```
@@ -158,7 +170,7 @@ When the user selects "Retry failed stages" from the investigation menu:
    pwsh -NoProfile -Command ".\tracer\tools\Retry-AzureDevOpsFailedStages.ps1 -BuildId $BUILD_ID -Stage stage_identifier_1, stage_identifier_2"
    ```
 
-4. **Optionally re-check status** — After retrying, offer to re-run the analysis script later to check the new results.
+6. **Optionally re-check status** — After retrying, offer to re-run the analysis script later to check the new results.
 
 **Note**: Use `-ForceRetryAllJobs` if the user wants to rerun all jobs in a stage, not just the failed ones.
 
