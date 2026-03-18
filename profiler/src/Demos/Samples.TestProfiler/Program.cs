@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
@@ -63,11 +64,11 @@ namespace Samples.TestProfiler
             }
 
             // --output is mandatory
-            Console.Error.WriteLine("ERROR: --output argument is required");
+            Console.Error.WriteLine($"ERROR: --output argument is required. Command-line: {string.Join(" ", args)} ");
             Console.Error.WriteLine("Usage: Samples.TestProfiler --output <path>");
             Environment.Exit(1);
             return null; // Never reached
-        }   
+        }
 
         static async Task Main(string[] args)
         {

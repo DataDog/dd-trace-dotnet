@@ -49,6 +49,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             Directory.CreateDirectory(_testBaseOutputDir);
             _appAssembly = appAssembly;
             _output = new XUnitFileLogger(output, Path.Combine(logPath, "xunit.txt"));
+            _commandLine = commandLine ?? string.Empty;
             ServiceName = $"IntegrationTest-{_appName}";
         }
 
