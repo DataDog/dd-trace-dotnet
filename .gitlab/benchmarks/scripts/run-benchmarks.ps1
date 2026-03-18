@@ -98,7 +98,7 @@ $arguments = @("-r") + $runtimes + @(
     "-m",
     "-f", $Filter,
     "--allCategories", $Category,
-    "--iterationTime", "500",
+    "--iterationTime", "200",
     "--launchCount", "10",
     "--warmupCount", "20",
     "--iterationCount", "10",
