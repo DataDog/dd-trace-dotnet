@@ -427,7 +427,7 @@ internal static class RaspModule
         }
         catch (Exception ex) when (ex is not BlockException)
         {
-            Log.Error(ex, "RASP: Error while checking downstream request body.");
+            Log.Error(ex, "RASP: Error while checking downstream response body.");
         }
     }
 
@@ -441,28 +441,16 @@ internal static class RaspModule
                 if (contentType is "application/json")
                 {
                     var len = content.Headers?.ContentLength ?? 0;
-                    if (len > bodySizeLimit)
+                    if (len == 0 || len > bodySizeLimit)
                     {
                         return;
                     }
 
-                    try
+                    await content.LoadIntoBufferAsync(len).ConfigureAwait(false);
+                    using var stream = await content.ReadAsStreamAsync().ConfigureAwait(false);
+                    if (BodyParser.Parse(stream) is { } parsedBody)
                     {
-                        await content.LoadIntoBufferAsync(len > 0 ? len : bodySizeLimit).ConfigureAwait(false);
-                        len = content.Headers?.ContentLength ?? 0;
-                    }
-                    catch (System.Net.Http.HttpRequestException)
-                    {
-                        len = 0;
-                    }
-
-                    if (len > 0 && len <= bodySizeLimit)
-                    {
-                        using var stream = await content.ReadAsStreamAsync().ConfigureAwait(false);
-                        if (BodyParser.Parse(stream) is { } parsedBody)
-                        {
-                            wafArgs[wafAddress] = parsedBody;
-                        }
+                        wafArgs[wafAddress] = parsedBody;
                     }
                 }
             }
