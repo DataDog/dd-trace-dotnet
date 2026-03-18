@@ -26,7 +26,7 @@ fi
 for CONVERTED_JSON in "${converted_files[@]}"; do
     echo "Uploading $(basename "$CONVERTED_JSON") to Benchmarking Platform..."
 
-    STATUS_CODE=$(curl --retry 3 --retry-max-time 60 \
+    STATUS_CODE=$(curl --retry 3 --retry-max-time 300 \
         -s -o /dev/null -w "%{http_code}" \
         --form file=@"$CONVERTED_JSON" \
         "https://benchmarking-service.us1.prod.dog/benchmarks/upload/$CI_PROJECT_NAME?baseline_commit_sha=${BASELINE_CI_COMMIT_SHORT_SHA:-}&baseline_ci_pipeline_id=${BASELINE_CI_PIPELINE_ID:-}")
