@@ -100,11 +100,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity
                 // Update service name if not yet set
                 if (span.ServiceName is null)
                 {
-                    span.ServiceName = span.GetTag("peer.service") switch
-                    {
-                        string peerService when !string.IsNullOrEmpty(peerService) => peerService,
-                        _ => "OTLPResourceNoServiceName",
-                    };
+                    span.SetService(
+                        span.GetTag("peer.service") switch
+                        {
+                            string peerService when !string.IsNullOrEmpty(peerService) => peerService,
+                            _ => "OTLPResourceNoServiceName",
+                        },
+                        source: null);
                 }
 
                 if (span.Tags is OpenTelemetryTags otelTags)
