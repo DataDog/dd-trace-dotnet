@@ -6,6 +6,7 @@
 #if !NETFRAMEWORK
 #nullable enable
 
+using System.Collections;
 using System.ComponentModel;
 using System.Data;
 using Datadog.Trace.AppSec;
@@ -81,11 +82,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
                                 span.Context?.TraceContext?.IastRequestContext?.AddRequestBody(defaultModelBindingContext.Result.Model, bodyExtracted);
                             }
                         }
-                        else
+                        else if (defaultModelBindingContext.ValueProvider is IList valueProviderList)
                         {
-                            for (var i = 0; i < defaultModelBindingContext.ValueProvider.Count; i++)
+                            for (var i = 0; i < valueProviderList.Count; i++)
                             {
-                                var provider = defaultModelBindingContext.ValueProvider[i];
+                                var provider = valueProviderList[i];
                                 if (provider.TryDuckCast(out BindingSourceValueProvider prov))
                                 {
                                     if (prov.BindingSource.Id is "Form" or "Body")
