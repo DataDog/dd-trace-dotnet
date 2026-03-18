@@ -107,7 +107,8 @@ internal static partial class ConfigurationKeys
         /// <summary>
         /// Enables CallTarget-based interception of System.Diagnostics.Activity methods (Start, Stop, AddTag,
         /// SetTag, SetStatus, and the DisplayName setter) as a replacement for the managed ActivityListener approach.
-        /// When enabled, the managed ActivityListener is not registered. Default value is false (disabled).
+        /// When enabled, the managed ActivityListener is not registered, and Activity lifecycle is tracked via
+        /// the native CallTarget instrumentation framework. Default value is false (disabled).
         /// </summary>
         public const string ActivityInterceptionEnabled = "DD_TRACE_OTEL_ACTIVITY_INTERCEPTION_ENABLED";
 
