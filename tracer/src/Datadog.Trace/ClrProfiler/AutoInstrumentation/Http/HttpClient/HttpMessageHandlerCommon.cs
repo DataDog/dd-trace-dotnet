@@ -98,7 +98,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
                 if (responseMessage is System.Net.Http.HttpResponseMessage response)
                 {
                     var statusCode = (int)response.StatusCode;
-                    RaspModule.OnDownstreamResponse(response, scope.Span.SpanId);
+                    if (state.State is true)
+                    {
+                        RaspModule.OnDownstreamResponse(response, scope.Span.SpanId);
+                    }
 #else
                 if (responseMessage.Instance is not null)
                 {

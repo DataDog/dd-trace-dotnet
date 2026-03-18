@@ -62,14 +62,7 @@ internal static class HttpMocks
     }
 
     public static HttpContent CreateMockContent(string body, string contentType, long? length = null)
-        => new ChunkedContent(Encoding.UTF8.GetBytes(body), contentType);
-
-    /// <summary>
-    /// Creates an HttpContent that has no Content-Length header, simulating chunked transfer encoding.
-    /// TryComputeLength returns false so ContentLength remains null even after LoadIntoBufferAsync.
-    /// </summary>
-    public static HttpContent CreateChunkedContent(string body, string contentType)
-        => new ChunkedContent(Encoding.UTF8.GetBytes(body), contentType);
+        => new ChunkedContent(Encoding.UTF8.GetBytes(body), contentType, length);
 
     /// <summary>
     /// Creates an HttpContent that exceeds the size limit but has no Content-Length header.
@@ -111,11 +104,15 @@ internal static class HttpMocks
     {
         private readonly byte[] _data;
 
-        public ChunkedContent(byte[] data, string contentType)
+        public ChunkedContent(byte[] data, string contentType, long? length = null)
         {
             _data = data;
             Headers.ContentType = MediaTypeHeaderValue.Parse(contentType);
-            // Deliberately NOT setting ContentLength — simulates Transfer-Encoding: chunked
+
+            if (length is > 0)
+            {
+                Headers.ContentLength = length;
+            }
         }
 
         protected override Task SerializeToStreamAsync(Stream stream, TransportContext? context)
