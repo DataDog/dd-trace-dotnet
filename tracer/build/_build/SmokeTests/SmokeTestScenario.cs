@@ -84,6 +84,10 @@ public record NuGetScenario : SmokeTestScenario
             env["LD_PRELOAD"] = "";
             // Pretend to be in AAS, to avoid trying to use libdatadog for config.
             env["WEBSITE_SITE_NAME"] = "AspNetCoreSmokeTest";
+            env["WEBSITE_OWNER_NAME"] = "datadog";
+            env["WEBSITE_RESOURCE_GROUP"] = "smoketests";
+            // Super hacky way to try to stop sending config to the profiler
+            env["AWS_LAMBDA_FUNCTION_NAME"] = "AspNetCoreSmokeTest";
             // Need to have this so it counts as "safe to trace"
             env["DD_API_KEY"] = "123";
         }
@@ -152,6 +156,8 @@ public record WindowsNuGetScenario : SmokeTestScenario
             env["LD_PRELOAD"] = "";
             // Pretend to be in AAS, to avoid trying to use libdatadog for config.
             env["WEBSITE_SITE_NAME"] = "AspNetCoreSmokeTest";
+            env["WEBSITE_OWNER_NAME"] = "datadog";
+            env["WEBSITE_RESOURCE_GROUP"] = "smoketests";
             // Need to have this so it counts as "safe to trace"
             env["DD_API_KEY"] = "123";
         }

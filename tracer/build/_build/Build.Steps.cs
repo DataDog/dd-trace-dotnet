@@ -2575,7 +2575,10 @@ partial class Build
            {
                // AzureFunctions NuGet currently uses the same loader.conf which attempts to load the profiler, even though no such file exists
                knownPatterns.Add(new(
-                   @".*DynamicDispatcherImpl::LoadConfiguration: \[PROFILER\] Dynamic library for '/app/datadog/linux-x64/\./Datadog\.Profiler\.Native\.so' cannot be loaded.*",
+                   @".*DynamicDispatcherImpl::LoadConfiguration: \[PROFILER\] Dynamic library for '.*Datadog\.Profiler\.Native\..*' cannot be loaded, file doesn't exist.*",
+                   RegexOptions.Compiled));
+               knownPatterns.Add(new(
+                   @".*Skipping hands-off configuration: as LibDatadog is not available.*",
                    RegexOptions.Compiled));
            }
 
