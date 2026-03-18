@@ -22,6 +22,6 @@ internal struct DictionarySendHeadersInnerCopy
     /// <summary>
     /// The underlying headers dictionary from DictionarySendHeaders._headers.
     /// </summary>
-    [Duck(Name = "_headers", Kind = DuckKind.Field, BindingFlags = BindingFlags.NonPublic | BindingFlags.Instance)]
+    [DuckField(Name = "_headers", BindingFlags = BindingFlags.NonPublic | BindingFlags.Instance)]
     public IDictionary<string, object>? Headers;
 }
