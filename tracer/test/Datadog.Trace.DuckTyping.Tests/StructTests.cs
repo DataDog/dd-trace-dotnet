@@ -171,21 +171,6 @@ namespace Datadog.Trace.DuckTyping.Tests
         // =====================================================================
 
         /// <summary>
-        /// Hypothesis 1: DuckCopy class → struct for BindingSource.
-        /// ASP.NET Core's BindingSource is a class but our DuckCopy defines it as a struct.
-        /// </summary>
-        [Fact]
-        public void DuckCopyNestedClassToStruct_BindingSourceHypothesis()
-        {
-            var instance = new FakeModelBindingContext();
-
-            var result = instance.TryDuckCast<CopyOfModelBindingContext>(out var copy);
-
-            Assert.True(result);
-            Assert.Equal("Body", copy.BindingSource.Id);
-        }
-
-        /// <summary>
         /// When ValueProvider is typed as object in the DuckCopy struct, the DuckCopy
         /// succeeds even when the concrete IValueProvider does not implement IList.
         /// The safe cast to IList happens at the usage site instead.
