@@ -30,17 +30,20 @@
   <PropertyGroup>
     <NativeWindowsDeployFilesSrcDir>$(BaseOutputPath)\$(ConfigBasedRelativeOutputPath)\profiler\src\ProfilerEngine\Datadog.Profiler.Native.Windows</NativeWindowsDeployFilesSrcDir>
     <NativeLinuxDeployFilesSrcDir>$(BaseOutputPath)\$(ConfigBasedRelativeOutputPath)\profiler\src\ProfilerEngine\Datadog.Profiler.Native.Linux</NativeLinuxDeployFilesSrcDir>
+    <NativeWindowsTestDeployFilesSrcDir>$(BaseOutputPath)\$(ConfigBasedRelativeOutputPath)\profiler\test\Datadog.TestProfiler</NativeWindowsTestDeployFilesSrcDir>
   </PropertyGroup>
 
   <Target Name="CopyVcpkgPDBs" AfterTargets="Build">
     <Message Text="[PrepareDeployDirectory] NativeWindowsDeployFilesSrcDir: '$(NativeWindowsDeployFilesSrcDir)'" Importance="high" />
     <Message Text="[PrepareDeployDirectory] NativeLinuxDeployFilesSrcDir: '$(NativeLinuxDeployFilesSrcDir)'" Importance="high" />
+    <Message Text="[PrepareDeployDirectory] NativeWindowsTestDeployFilesSrcDir: '$(NativeWindowsTestDeployFilesSrcDir)'" Importance="high" />
     <ItemGroup>
       <VcpkgPDBs Condition="'$(Configuration)'=='Release'" Include="$(VcpkgInstalledDir)\$(VcpkgTriplet)\bin\*.pdb" />
       <VcpkgPDBs Condition="'$(Configuration)'=='Debug'" Include="$(VcpkgInstalledDir)\$(VcpkgTriplet)\debug\bin\*.pdb" />
     </ItemGroup>
     <Copy SourceFiles="@(VcpkgPDBs)" DestinationFiles="@(VcpkgPDBs->'$(DeployDirectoryBase)\%(RecursiveDir)%(Filename)%(Extension)')" />
     <Copy SourceFiles="@(VcpkgPDBs)" DestinationFiles="@(VcpkgPDBs->'$(NativeWindowsDeployFilesSrcDir)\%(Filename)%(Extension)')" />
+    <Copy SourceFiles="@(VcpkgPDBs)" DestinationFiles="@(VcpkgPDBs->'$(NativeWindowsTestDeployFilesSrcDir)\%(Filename)%(Extension)')" />
   </Target>
   <Target Name="CleanVcpkPDBs" AfterTargets="Clean">
     <ItemGroup>

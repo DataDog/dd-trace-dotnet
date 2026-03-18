@@ -7,10 +7,7 @@ project(Datadog.TestProfiler)
 # Set C++ standard
 set(CMAKE_CXX_STANDARD 20)
 
-# Set output directory to align with production profiler structure
-# Production: _build/DDProf-Deploy/${ARCH_BASENAME}-${ARCH_POSTFIX}
-# Test:       _build/DDProf-Test/${ARCH_BASENAME}-${ARCH_POSTFIX}
-SET(TEST_PROFILER_DEPLOY_DIR ${OUTPUT_BUILD_DIR}/DDProf-Test/${ARCH_BASENAME}-${ARCH_POSTFIX})
+SET(TEST_PROFILER_DEPLOY_DIR ${OUTPUT_BUILD_DIR}/DDProf-Deploy/${ARCH_BASENAME}-${ARCH_POSTFIX})
 SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${TEST_PROFILER_DEPLOY_DIR})
 
 # Source files

@@ -67,7 +67,7 @@ namespace Samples.TestProfiler
             Console.Error.WriteLine("Usage: Samples.TestProfiler --output <path>");
             Environment.Exit(1);
             return null; // Never reached
-        }
+        }   
 
         static async Task Main(string[] args)
         {

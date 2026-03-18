@@ -1,0 +1,36 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.targets', '$(MSBuildThisFileDirectory)../'))" />
+  <Target Name="PrepareDeployDirectory" AfterTargets="Build">
+
+        <ItemGroup>
+            <NativeDeployFiles Include="$(NativeWindowsTestDeployFilesSrcDir)\*.dll" />
+            <NativeDeployFiles Include="$(NativeWindowsTestDeployFilesSrcDir)\*.pdb" />
+
+            <AllDeployFiles Include="@(NativeDeployFiles)" />
+        </ItemGroup>
+
+        <!-- Debug messages. Uncomment as needed. -->
+        <!--
+        <Message Text="[PrepareDeployDirectory] NativeWindowsTestDeployFilesSrcDir: '$(NativeWindowsTestDeployFilesSrcDir)'" Importance="high" />
+
+        <Message Text="[PrepareDeployDirectory] NativeDeployFiles:       '%(NativeDeployFiles.Identity)'" Importance="high" />
+
+        <Message Text="[PrepareDeployDirectory] AllDeployFiles:             '%(AllDeployFiles.Identity)'" Importance="high" />
+        -->
+
+        <Copy SourceFiles="@(AllDeployFiles)"
+              DestinationFiles="@(AllDeployFiles->'$(DeployDirectoryBase)\%(RecursiveDir)%(Filename)%(Extension)')"
+              Retries="5"
+              RetryDelayMilliseconds="500"
+              OverwriteReadOnlyFiles="true"
+              SkipUnchangedFiles="true"
+              UseHardlinksIfPossible="false"
+              CopiedFiles="@(CopiedDeployFiles)">
+                <Output TaskParameter="CopiedFiles" ItemName="FilesInDeployDirectory" />
+        </Copy>
+
+        <Message Text="[PrepareDeployDirectory] Project: '$(MSBuildProjectFile)' (Configuration='$(Configuration)', TargetFramework='$(TargetFramework)', Platform='$(Platform)'). FilesInDeployDirectory: @(FilesInDeployDirectory->Count())." Importance="high" />
+
+    </Target>
+</Project>
