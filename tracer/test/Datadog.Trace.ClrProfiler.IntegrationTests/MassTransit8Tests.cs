@@ -98,6 +98,10 @@ public class MassTransit8Tests : TracingIntegrationTest
             var sagaQueueRegex = new Regex(@"order-state_[a-z0-9]+");
             settings.AddRegexScrubber(sagaQueueRegex, "SagaQueueName");
 
+            // Scrub RabbitMQ broker host which varies by environment (e.g., localhost vs rabbitmq in Docker)
+            var rabbitMqHostRegex = new Regex(@"rabbitmq://[^/]+/");
+            settings.AddRegexScrubber(rabbitMqHostRegex, "rabbitmq://rabbitmq-host/");
+
             // Scrub message payload sizes which vary (e.g., "1095", "1128", etc.)
             var payloadSizeRegex = new Regex(@"messaging\.message\.payload_size_bytes: \d+");
             settings.AddRegexScrubber(payloadSizeRegex, "messaging.message.payload_size_bytes: size_bytes");
