@@ -99,7 +99,9 @@ $arguments = @("-r") + $runtimes + @(
     "-f", $Filter,
     "--allCategories", $Category,
     "--iterationTime", "500",
-    "--launchCount", "5",
+    "--launchCount", "10",
+    "--warmupCount", "20",
+    "--iterationCount", "10",
     "--buildTimeout", "3600",
     "--keepFiles",
     "--artifacts", $localArtifactsDir
