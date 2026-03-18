@@ -256,7 +256,7 @@ internal static class MethodMatcher
         return method.Name.StartsWith("<") && method.Name.Contains(">");
     }
 
-    private static MethodBase? ResolveAsyncMethod(MethodBase moveNextMethod)
+    private static MethodInfo? ResolveAsyncMethod(MethodBase moveNextMethod)
     {
         var stateMachineType = moveNextMethod.DeclaringType;
         if (stateMachineType == null)
@@ -334,7 +334,7 @@ internal static class MethodMatcher
                     .Any(attr => attr.GetType().Name.EndsWith("AsyncStateMachineAttribute"));
     }
 
-    private static MethodBase? ResolveIteratorMethod(MethodBase moveNextMethod)
+    private static MethodInfo? ResolveIteratorMethod(MethodBase moveNextMethod)
     {
         // Similar to async method resolution but looking for iterator patterns
         var stateMachineType = moveNextMethod.DeclaringType;
@@ -368,7 +368,7 @@ internal static class MethodMatcher
                (returnType.IsGenericType && returnType.GetGenericTypeDefinition() == typeof(IEnumerable<>));
     }
 
-    private static MethodBase? ResolveLocalFunction(MethodBase method)
+    private static MethodInfo? ResolveLocalFunction(MethodBase method)
     {
         // Extract the original method name from the local function name
         var localFunctionName = method.Name;

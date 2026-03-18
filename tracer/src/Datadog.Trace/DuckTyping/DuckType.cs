@@ -446,7 +446,7 @@ namespace Datadog.Trace.DuckTyping
             }
         }
 
-        private static FieldInfo CreateIDuckTypeImplementation(TypeBuilder proxyTypeBuilder, Type targetType)
+        private static FieldBuilder CreateIDuckTypeImplementation(TypeBuilder proxyTypeBuilder, Type targetType)
         {
             Type instanceType = targetType;
             if (!UseDirectAccessTo(proxyTypeBuilder, targetType))
