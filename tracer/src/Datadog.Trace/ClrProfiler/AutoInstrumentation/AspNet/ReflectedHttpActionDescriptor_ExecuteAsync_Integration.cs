@@ -16,8 +16,11 @@ using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.AspNet;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Debugger;
+using Datadog.Trace.Debugger.SpanCodeOrigin;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 {
@@ -33,7 +36,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         MinimumVersion = "5.1",
         MaximumVersion = "5",
         IntegrationName = IntegrationName,
-        InstrumentationCategory = InstrumentationCategory.AppSec | InstrumentationCategory.Iast)]
+        InstrumentationCategory = InstrumentationCategory.Tracing | InstrumentationCategory.AppSec | InstrumentationCategory.Iast)]
     // ReSharper disable once InconsistentNaming
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
@@ -70,7 +73,60 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 Log.Error(ex, "Error instrumenting method {MethodName}", "System.Web.Http.Controllers.ReflectedHttpActionDescriptor.ExecuteAsync()");
             }
 
+            try
+            {
+                var codeOrigin = DebuggerManager.Instance.CodeOrigin;
+                if (codeOrigin is { Settings.CodeOriginForSpansEnabled: true })
+                {
+                    AddSpanCodeOrigin(instance, codeOrigin);
+                }
+            }
+            catch (Exception ex) when (BlockException.GetBlockException(ex) is null)
+            {
+                Log.Error(ex, "Error adding code origin for spans in {MethodName}", "System.Web.Http.Controllers.ReflectedHttpActionDescriptor.ExecuteAsync()");
+            }
+
             return CallTargetState.GetDefault();
+        }
+
+        private static void AddSpanCodeOrigin<TTarget>(TTarget instance, SpanCodeOrigin codeOrigin)
+        {
+            if (instance == null)
+            {
+                return;
+            }
+
+            var httpContext = HttpContext.Current;
+            if (SharedItems.TryPeekScope(httpContext, AspNetWebApi2Integration.HttpContextKey) is not { Root.Span: { } rootSpan })
+            {
+                if (Log.IsEnabled(LogEventLevel.Debug))
+                {
+                    Log.Debug(
+                        "Code origin is enabled but scope was not found in HttpContext (key: {HttpContextKey}, httpContextNull: {HttpContextIsNull}, itemsCount: {HttpContextItemsCount}, actionDescriptorType: {ActionDescriptorType}).",
+                        AspNetWebApi2Integration.HttpContextKey,
+                        httpContext is null,
+                        httpContext?.Items?.Count ?? 0,
+                        instance.GetType());
+                }
+
+                return;
+            }
+
+            if (!instance.TryDuckCast<ActionDescriptorWithMethodInfo>(out var reflected)
+             || reflected.MethodInfo is not { } actionMethod
+             || actionMethod.DeclaringType is not { } actionType)
+            {
+                if (Log.IsEnabled(LogEventLevel.Debug))
+                {
+                    Log.Debug(
+                        "Code origin is enabled but could not extract action from HttpActionDescriptor type {ActionDescriptorType} or action has no DeclaringType.",
+                        instance.GetType());
+                }
+
+                return;
+            }
+
+            codeOrigin.SetCodeOriginForEntrySpan(rootSpan, actionType, actionMethod);
         }
 
         internal static TResponse? OnAsyncMethodEnd<TTarget, TResponse>(TTarget instance, TResponse? response, Exception? exception, in CallTargetState state)
