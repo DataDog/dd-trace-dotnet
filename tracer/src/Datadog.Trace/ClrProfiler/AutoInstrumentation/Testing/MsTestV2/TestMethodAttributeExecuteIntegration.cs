@@ -195,7 +195,7 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
 
                         var retryState = new RetryState
                         {
-                            IsEfdOrAtfTest = testIsEfd || testIsAtf
+                            SelectedRetryMode = testIsAtf ? TestRetryMode.AttemptToFix : testIsEfd ? TestRetryMode.EarlyFlakeDetection : TestRetryMode.None
                         };
                         resultStatus = HandleTestResult(test, testMethod, testResult, exception, retryState);
                         allowRetries = allowRetries || resultStatus != TestStatus.Skip;
@@ -247,8 +247,7 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
                     var retryState = new RetryState
                     {
                         IsARetry = true,
-                        IsAttemptToFix = isAttemptToFix,
-                        IsEfdOrAtfTest = true,
+                        SelectedRetryMode = isAttemptToFix ? TestRetryMode.AttemptToFix : TestRetryMode.EarlyFlakeDetection,
                         TotalExecutions = 1 + remainingRetries,
                         InitialExecutionPassed = initialExecutionPassed,
                         InitialExecutionFailed = initialExecutionFailed,
@@ -287,8 +286,7 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
                     var retryState = new RetryState
                     {
                         IsARetry = true,
-                        IsAttemptToFix = false,
-                        IsEfdOrAtfTest = false,
+                        SelectedRetryMode = TestRetryMode.AutomaticTestRetry,
                         TotalExecutions = 1 + remainingRetries,
                         InitialExecutionPassed = initialExecutionPassed,
                         InitialExecutionFailed = initialExecutionFailed,
@@ -427,7 +425,7 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
             if (exception is not null)
             {
                 // Track failure for ATF - both shared state and per-row cache
-                if (retryState.IsAttemptToFix)
+                if (retryState.SelectedRetryMode == TestRetryMode.AttemptToFix)
                 {
                     retryState.AllAttemptsPassed = false;
 
@@ -473,7 +471,7 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
                     // Cache per-row retry pass result for parameterized tests
                     SetAnyRetryPassed(testMethod, cacheKey, true);
                 }
-                else if (retryState.IsAttemptToFix && testStatus == TestStatus.Fail && testMethod is not null)
+                else if (retryState.SelectedRetryMode == TestRetryMode.AttemptToFix && testStatus == TestStatus.Fail && testMethod is not null)
                 {
                     retryState.AllAttemptsPassed = false;
 
@@ -518,7 +516,7 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
 
                 // Only mask outcome on final execution for ATF
                 // Quarantined and disabled tests always mask outcome
-                if (isQuarantined || isDisabled || (isAttemptToFix && (retryState.IsLastRetry || (!retryState.IsARetry && !retryState.IsEfdOrAtfTest))))
+                if (isQuarantined || isDisabled || (isAttemptToFix && (retryState.IsLastRetry || (!retryState.IsARetry && !retryState.RetriesUnconditionally))))
                 {
                     shouldMaskOutcome = true;
                 }
@@ -553,20 +551,7 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
 
     private static void ApplyRetryTags(Ci.Tagging.TestSpanTags testTags, RetryState retryState)
     {
-        if (!retryState.IsARetry)
-        {
-            testTags.TestIsRetry = null;
-            testTags.TestRetryReason = null;
-            return;
-        }
-
-        testTags.TestIsRetry = "true";
-        testTags.TestRetryReason = retryState switch
-        {
-            { IsAttemptToFix: true } => TestTags.TestRetryReasonAttemptToFix,
-            { IsEfdOrAtfTest: true } => TestTags.TestRetryReasonEfd,
-            _ => TestTags.TestRetryReasonAtr
-        };
+        Common.ApplyRetryTags(testTags, retryState.IsARetry, retryState.SelectedRetryMode);
     }
 
     private static TestStatus GetStatusFromOutcome(UnitTestOutcome outcome)
@@ -606,7 +591,7 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
         if (retryState.IsARetry)
         {
             // For retries, check various conditions
-            var isAtrRetry = retryState is { IsAttemptToFix: false, IsEfdOrAtfTest: false };
+            var isAtrRetry = retryState.SelectedRetryMode == TestRetryMode.AutomaticTestRetry;
 
             // ATR early exit: test actually passed (Skip doesn't trigger early exit)
             var isAtrEarlyExit = isAtrRetry && testStatus == TestStatus.Pass;
@@ -625,7 +610,7 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
             // For ATR, retries happen only if test fails and ATR is enabled
             var atrEnabled = TestOptimization.Instance.FlakyRetryFeature?.Enabled == true;
             var willHaveAtrRetries = atrEnabled && testStatus == TestStatus.Fail;
-            isFinalExecution = !retryState.IsEfdOrAtfTest && !willHaveAtrRetries;
+            isFinalExecution = !retryState.RetriesUnconditionally && !willHaveAtrRetries;
         }
 
         if (!isFinalExecution)
@@ -678,7 +663,7 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
 
         // ATF: AttemptToFixPassed should be consistent with final_status
         // If any execution failed, the fix didn't work
-        if (retryState.TotalExecutions > 1 && retryState.IsAttemptToFix)
+        if (retryState.TotalExecutions > 1 && retryState.SelectedRetryMode == TestRetryMode.AttemptToFix)
         {
             testTags.AttemptToFixPassed = anyExecutionFailed ? "false" : "true";
         }
@@ -891,12 +876,9 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
 
         public bool AllRetriesFailed { get; set; } = true;
 
-        public bool IsAttemptToFix { get; set; }
+        public TestRetryMode SelectedRetryMode { get; set; } = TestRetryMode.None;
 
-        /// <summary>
-        /// Gets or sets a value indicating whether this test is an EFD or ATF test (retries will always happen).
-        /// </summary>
-        public bool IsEfdOrAtfTest { get; set; }
+        public bool RetriesUnconditionally => SelectedRetryMode is TestRetryMode.EarlyFlakeDetection or TestRetryMode.AttemptToFix;
 
         /// <summary>
         /// Gets or sets a value indicating whether the initial execution passed. Only PASS counts as passed, not SKIP.

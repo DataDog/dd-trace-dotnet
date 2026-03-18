@@ -162,18 +162,15 @@ internal sealed class TestOptimizationTestCommand
 
     private static void ApplyRetryTags(TestSpanTags testTags, in RetryState retryState)
     {
-        if (!retryState.IsARetry || retryState.BehaviorType is null)
-        {
-            testTags.TestIsRetry = null;
-            testTags.TestRetryReason = null;
-            return;
-        }
+        Common.ApplyRetryTags(testTags, retryState.IsARetry, GetRetryMode(retryState));
+    }
 
-        testTags.TestIsRetry = "true";
-        testTags.TestRetryReason = retryState.BehaviorType == typeof(EarlyFlakeDetectionRetryBehavior) ? TestTags.TestRetryReasonEfd
-                               : retryState.BehaviorType == typeof(FlakyRetryBehavior) ? TestTags.TestRetryReasonAtr
-                               : retryState.BehaviorType == typeof(AttemptToFixRetryBehavior) ? TestTags.TestRetryReasonAttemptToFix
-                               : null;
+    private static TestRetryMode GetRetryMode(in RetryState retryState)
+    {
+        return retryState.BehaviorType == typeof(EarlyFlakeDetectionRetryBehavior) ? TestRetryMode.EarlyFlakeDetection
+             : retryState.BehaviorType == typeof(FlakyRetryBehavior) ? TestRetryMode.AutomaticTestRetry
+             : retryState.BehaviorType == typeof(AttemptToFixRetryBehavior) ? TestRetryMode.AttemptToFix
+             : TestRetryMode.None;
     }
 
     private void ClearResultForRetry(ITestExecutionContext context)

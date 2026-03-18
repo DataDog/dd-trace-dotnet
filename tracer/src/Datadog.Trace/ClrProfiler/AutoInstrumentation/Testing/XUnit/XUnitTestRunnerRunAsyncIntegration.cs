@@ -169,54 +169,25 @@ public static class XUnitTestRunnerRunAsyncIntegration
 
         switch (testCaseMetadata)
         {
-            case { SelectedRetryMode: not TestCaseRetryMode.None, AbortByThreshold: false }:
+            case { SelectedRetryMode: not TestRetryMode.None, AbortByThreshold: false }:
             {
-                var selectedRetryMode = testCaseMetadata.SelectedRetryMode;
-                var isAtrRetry = selectedRetryMode == TestCaseRetryMode.AutomaticTestRetry;
                 var isFirstExecution = testCaseMetadata.ExecutionIndex == 0;
 
                 // If it's the first execution then let's calculate the total executions
                 if (isFirstExecution)
                 {
-                    // Let's make decisions regarding slow tests, retry failed test feature or an attempt to fix
-                    testCaseMetadata.TotalExecutions = selectedRetryMode switch
-                    {
-                        TestCaseRetryMode.AutomaticTestRetry => (testOptimization.FlakyRetryFeature?.FlakyRetryCount ?? TestOptimizationFlakyRetryFeature.FlakyRetryCountDefault) + 1,
-                        TestCaseRetryMode.AttemptToFix => testOptimization.TestManagementFeature?.TestManagementAttemptToFixRetryCount ?? TestOptimizationTestManagementFeature.TestManagementAttemptToFixRetryCountDefault,
-                        _ => Common.GetNumberOfExecutionsForDuration(TraceClock.Instance.UtcNow - testRunnerState.StartTime)
-                    };
-
-                    testCaseMetadata.CountDownExecutionNumber = testCaseMetadata.TotalExecutions - 1;
+                    XUnitIntegration.InitializeTotalExecutions(testOptimization, testCaseMetadata, () => Common.GetNumberOfExecutionsForDuration(TraceClock.Instance.UtcNow - testRunnerState.StartTime));
                 }
 
                 if (testCaseMetadata.CountDownExecutionNumber > 0)
                 {
-                    // If we are not in the latest execution, we need to retry the test
-                    var doRetry = true;
-                    if (isAtrRetry)
+                    var retryDecision = XUnitIntegration.GetRetryExecutionDecision(testCaseMetadata, hasFailures: runSummary.Failed > 0, hasNotRun: false, ref _totalRetries);
+                    if (retryDecision == XUnitRetryExecutionDecision.Retry)
                     {
-                        // For flaky retry feature, we need to check if the test has failed or if the total retries are exceeded
-                        var remainingTotalRetries = Interlocked.Decrement(ref _totalRetries);
-                        if (runSummary.Failed == 0)
+                        if (XUnitIntegration.ShouldWaitForExceptionInstrumentation(testOptimization, testCaseMetadata))
                         {
-                            Common.Log.Debug("XUnitTestRunnerRunAsyncIntegration: EFD/Retry: [FlakyRetryEnabled] A non failed test execution was detected, skipping the remaining executions.");
-                            doRetry = false;
-                        }
-                        else if (remainingTotalRetries < 1)
-                        {
-                            Common.Log.Debug("XUnitTestRunnerRunAsyncIntegration: EFD/Retry: [FlakyRetryEnabled] Exceeded number of total retries. [{Number}]", testOptimization.FlakyRetryFeature?.TotalFlakyRetryCount);
-                            doRetry = false;
-                        }
-                    }
-
-                    if (doRetry)
-                    {
-                        // check if is the first execution and the dynamic instrumentation feature is enabled
-                        if (isAtrRetry && isFirstExecution && testCaseMetadata.HasAnException && testOptimization.DynamicInstrumentationFeature?.Enabled == true)
-                        {
-                            // let's wait for the instrumentation of an exception has been done
                             Common.Log.Debug("XUnitTestRunnerRunAsyncIntegration: First execution with an exception detected. Waiting for the exception instrumentation.");
-                            await testOptimization.DynamicInstrumentationFeature.WaitForExceptionInstrumentation(TestOptimizationDynamicInstrumentationFeature.DefaultExceptionHandlerTimeout).ConfigureAwait(false);
+                            await testOptimization.DynamicInstrumentationFeature!.WaitForExceptionInstrumentation(TestOptimizationDynamicInstrumentationFeature.DefaultExceptionHandlerTimeout).ConfigureAwait(false);
                             Common.Log.Debug("XUnitTestRunnerRunAsyncIntegration: Exception instrumentation was set or timed out.");
                         }
 
@@ -236,11 +207,19 @@ public static class XUnitTestRunnerRunAsyncIntegration
                             Common.Log.Error<int>("XUnitTestRunnerRunAsyncIntegration: EFD/Retry: [Retry {Num}] Unable to duck cast the return value to IRunSummary.", retryNumber);
                         }
                     }
+                    else if (retryDecision == XUnitRetryExecutionDecision.SuccessfulExecution)
+                    {
+                        Common.Log.Debug("XUnitTestRunnerRunAsyncIntegration: EFD/Retry: [FlakyRetryEnabled] A non failed test execution was detected, skipping the remaining executions.");
+                    }
+                    else if (retryDecision == XUnitRetryExecutionDecision.RetryBudgetExhausted)
+                    {
+                        Common.Log.Debug("XUnitTestRunnerRunAsyncIntegration: EFD/Retry: [FlakyRetryEnabled] Exceeded number of total retries. [{Number}]", testOptimization.FlakyRetryFeature?.TotalFlakyRetryCount);
+                    }
                 }
                 else
                 {
                     // If we are in the last execution, we write some debug logs
-                    if (isAtrRetry && runSummary.Failed == 0)
+                    if (testCaseMetadata.IsFlakyRetry && runSummary.Failed == 0)
                     {
                         Common.Log.Debug("XUnitTestRunnerRunAsyncIntegration: EFD/Retry: [FlakyRetryEnabled] A non failed test execution was detected.");
                     }

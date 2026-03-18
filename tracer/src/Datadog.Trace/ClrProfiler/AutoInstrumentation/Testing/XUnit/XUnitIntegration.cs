@@ -134,14 +134,11 @@ internal static class XUnitIntegration
             var selectedRetryMode = SelectRetryMode(testOptimization, testIsNew, testManagementData.AttemptToFix);
 
             testCaseMetadata.SelectedRetryMode = selectedRetryMode;
-            testCaseMetadata.EarlyFlakeDetectionActive = selectedRetryMode == TestCaseRetryMode.EarlyFlakeDetection;
-            testCaseMetadata.FlakyRetryActive = selectedRetryMode == TestCaseRetryMode.AutomaticTestRetry;
             testCaseMetadata.IsRetry = isRetry;
             testCaseMetadata.IsQuarantinedTest = testManagementData.Quarantined;
             testCaseMetadata.IsDisabledTest = testManagementData.Disabled;
-            testCaseMetadata.IsAttemptToFix = selectedRetryMode == TestCaseRetryMode.AttemptToFix;
 
-            ApplyRetryTags(testTags, isRetry, selectedRetryMode);
+            Common.ApplyRetryTags(testTags, isRetry, selectedRetryMode);
         }
 
         // Test code and code owners
@@ -175,7 +172,7 @@ internal static class XUnitIntegration
 
             if (TestCasesMetadata.TryGetValue(test, out var testCaseMetadata) && testCaseMetadata is not null)
             {
-                if (testCaseMetadata.EarlyFlakeDetectionActive)
+                if (testCaseMetadata.IsEarlyFlakeDetection)
                 {
                     var testTags = test.GetTags();
                     if (testTags.TestIsNew == "true" && test.GetInternalSpan() is { } internalSpan)
@@ -325,15 +322,15 @@ internal static class XUnitIntegration
         {
             willHaveRetries = testCaseMetadata.SelectedRetryMode switch
             {
-                TestCaseRetryMode.EarlyFlakeDetection => true,
-                TestCaseRetryMode.AttemptToFix => true,
-                TestCaseRetryMode.AutomaticTestRetry => !isSkip && testCaseMetadata.HasAnException && GetRemainingAtrBudget() != 0,
+                TestRetryMode.EarlyFlakeDetection => true,
+                TestRetryMode.AttemptToFix => true,
+                TestRetryMode.AutomaticTestRetry => !isSkip && testCaseMetadata.HasAnException && GetRemainingAtrBudget() != 0,
                 _ => false
             };
         }
 
         // ATR early exit detection
-        var isAtrRetry = testCaseMetadata is { IsRetry: true, SelectedRetryMode: TestCaseRetryMode.AutomaticTestRetry };
+        var isAtrRetry = testCaseMetadata.IsRetry && testCaseMetadata.IsFlakyRetry;
         var isAtrEarlyExit = isAtrRetry &&
                              testCaseMetadata is { HasAnException: false, Skipped: false, IsLastRetry: false };
 
@@ -389,43 +386,65 @@ internal static class XUnitIntegration
         }
     }
 
-    internal static TestCaseRetryMode SelectRetryMode(ITestOptimization testOptimization, bool testIsNew, bool isAttemptToFix)
+    internal static TestRetryMode SelectRetryMode(ITestOptimization testOptimization, bool testIsNew, bool isAttemptToFix)
     {
         if (isAttemptToFix)
         {
-            return TestCaseRetryMode.AttemptToFix;
+            return TestRetryMode.AttemptToFix;
         }
 
         if (testOptimization.EarlyFlakeDetectionFeature?.Enabled == true && testIsNew)
         {
-            return TestCaseRetryMode.EarlyFlakeDetection;
+            return TestRetryMode.EarlyFlakeDetection;
         }
 
         if (testOptimization.FlakyRetryFeature?.Enabled == true)
         {
-            return TestCaseRetryMode.AutomaticTestRetry;
+            return TestRetryMode.AutomaticTestRetry;
         }
 
-        return TestCaseRetryMode.None;
+        return TestRetryMode.None;
     }
 
-    internal static void ApplyRetryTags(Ci.Tagging.TestSpanTags tags, bool isRetry, TestCaseRetryMode selectedRetryMode)
+    internal static void InitializeTotalExecutions(ITestOptimization testOptimization, TestCaseMetadata testCaseMetadata, Func<int> getEarlyFlakeDetectionExecutions)
     {
-        if (!isRetry || selectedRetryMode == TestCaseRetryMode.None)
+        testCaseMetadata.TotalExecutions = testCaseMetadata.SelectedRetryMode switch
         {
-            tags.TestIsRetry = null;
-            tags.TestRetryReason = null;
-            return;
+            TestRetryMode.AutomaticTestRetry => (testOptimization.FlakyRetryFeature?.FlakyRetryCount ?? TestOptimizationFlakyRetryFeature.FlakyRetryCountDefault) + 1,
+            TestRetryMode.AttemptToFix => testOptimization.TestManagementFeature?.TestManagementAttemptToFixRetryCount ?? TestOptimizationTestManagementFeature.TestManagementAttemptToFixRetryCountDefault,
+            _ => getEarlyFlakeDetectionExecutions()
+        };
+
+        testCaseMetadata.CountDownExecutionNumber = testCaseMetadata.TotalExecutions - 1;
+    }
+
+    internal static XUnitRetryExecutionDecision GetRetryExecutionDecision(TestCaseMetadata testCaseMetadata, bool hasFailures, bool hasNotRun, ref int totalRetries)
+    {
+        if (!testCaseMetadata.IsFlakyRetry)
+        {
+            return XUnitRetryExecutionDecision.Retry;
         }
 
-        tags.TestIsRetry = "true";
-        tags.TestRetryReason = selectedRetryMode switch
+        var remainingTotalRetries = Interlocked.Decrement(ref totalRetries);
+        if (!hasFailures)
         {
-            TestCaseRetryMode.EarlyFlakeDetection => TestTags.TestRetryReasonEfd,
-            TestCaseRetryMode.AutomaticTestRetry => TestTags.TestRetryReasonAtr,
-            TestCaseRetryMode.AttemptToFix => TestTags.TestRetryReasonAttemptToFix,
-            _ => null
-        };
+            return XUnitRetryExecutionDecision.SuccessfulExecution;
+        }
+
+        if (hasNotRun)
+        {
+            return XUnitRetryExecutionDecision.NotRun;
+        }
+
+        return remainingTotalRetries < 1 ? XUnitRetryExecutionDecision.RetryBudgetExhausted : XUnitRetryExecutionDecision.Retry;
+    }
+
+    internal static bool ShouldWaitForExceptionInstrumentation(ITestOptimization testOptimization, TestCaseMetadata testCaseMetadata)
+    {
+        return testCaseMetadata.IsFlakyRetry &&
+               testCaseMetadata.ExecutionIndex == 0 &&
+               testCaseMetadata.HasAnException &&
+               testOptimization.DynamicInstrumentationFeature?.Enabled == true;
     }
 
     internal static bool ShouldSkip(ref TestRunnerStruct runnerInstance, out bool isUnskippable, out bool isForcedRun, Dictionary<string, List<string>?>? traits = null)
