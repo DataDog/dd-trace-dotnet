@@ -102,7 +102,8 @@ namespace Datadog.Trace.Agent
 
         private static void SerializeBucket(Stream stream, StatsBucket bucket)
         {
-            MessagePackBinary.WriteMapHeader(stream, 12);
+            var mapSize = bucket.Key.ServiceSource is not null ? 13 : 12;
+            MessagePackBinary.WriteMapHeader(stream, mapSize);
 
             MessagePackBinary.WriteString(stream, "Service");
             MessagePackBinary.WriteString(stream, bucket.Key.Service ?? string.Empty);
@@ -121,6 +122,12 @@ namespace Datadog.Trace.Agent
 
             MessagePackBinary.WriteString(stream, "Type");
             MessagePackBinary.WriteString(stream, bucket.Key.Type ?? string.Empty);
+
+            if (bucket.Key.ServiceSource is not null)
+            {
+                MessagePackBinary.WriteString(stream, "srv_src");
+                MessagePackBinary.WriteString(stream, bucket.Key.ServiceSource);
+            }
 
             MessagePackBinary.WriteString(stream, "Hits");
             MessagePackBinary.WriteInt64(stream, bucket.Hits);
