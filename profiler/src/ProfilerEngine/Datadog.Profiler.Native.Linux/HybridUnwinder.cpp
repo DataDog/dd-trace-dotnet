@@ -94,6 +94,7 @@ std::int32_t HybridUnwinder::Unwind(void* ctx, std::uintptr_t* buffer, std::size
         }
         if (_codeCache->IsManaged(ip))
         {
+            result = 1; // success, let's continue
             break;
         }
         result = unw_step(&cursor);
