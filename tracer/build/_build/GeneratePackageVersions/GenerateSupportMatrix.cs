@@ -127,7 +127,7 @@ public static class GenerateSupportMatrix
         /// If applicable, the name of the NuGet package in which we expect to find the assemblies.
         /// If empty, the package is not available in NuGet packages (e.g. installed as part of the framework)
         /// </summary>
-        public List<SupportedNuGetPackage> Packages { get; } = new();
+        public List<SupportedNuGetPackage> Packages { get; set; } = new();
     }
 
     public class SupportedNuGetPackage
