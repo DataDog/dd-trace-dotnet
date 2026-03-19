@@ -15,6 +15,12 @@ namespace Datadog.Trace.Agent
         public readonly string Type;
         public readonly int HttpStatusCode;
         public readonly bool IsSyntheticsRequest;
+        public readonly string SpanKind;
+        public readonly int IsTraceRoot; // 0=NotSet, 1=True, 2=False
+        public readonly string PeerTagsHash;
+        public readonly string HttpMethod;
+        public readonly string HttpEndpoint;
+        public readonly string GrpcStatusCode;
 
         public StatsAggregationKey(
             string resource,
@@ -22,7 +28,13 @@ namespace Datadog.Trace.Agent
             string operationName,
             string type,
             int httpStatusCode,
-            bool isSyntheticsRequest)
+            bool isSyntheticsRequest,
+            string spanKind,
+            int isTraceRoot,
+            string peerTagsHash,
+            string httpMethod,
+            string httpEndpoint,
+            string grpcStatusCode)
         {
             Resource = resource;
             Service = service;
@@ -30,6 +42,12 @@ namespace Datadog.Trace.Agent
             Type = type;
             HttpStatusCode = httpStatusCode;
             IsSyntheticsRequest = isSyntheticsRequest;
+            SpanKind = spanKind;
+            IsTraceRoot = isTraceRoot;
+            PeerTagsHash = peerTagsHash;
+            HttpMethod = httpMethod;
+            HttpEndpoint = httpEndpoint;
+            GrpcStatusCode = grpcStatusCode;
         }
 
         public bool Equals(StatsAggregationKey other)
@@ -40,7 +58,13 @@ namespace Datadog.Trace.Agent
                 && OperationName == other.OperationName
                 && Type == other.Type
                 && HttpStatusCode == other.HttpStatusCode
-                && IsSyntheticsRequest == other.IsSyntheticsRequest;
+                && IsSyntheticsRequest == other.IsSyntheticsRequest
+                && SpanKind == other.SpanKind
+                && IsTraceRoot == other.IsTraceRoot
+                && PeerTagsHash == other.PeerTagsHash
+                && HttpMethod == other.HttpMethod
+                && HttpEndpoint == other.HttpEndpoint
+                && GrpcStatusCode == other.GrpcStatusCode;
         }
 
         public override bool Equals(object obj)
@@ -52,12 +76,18 @@ namespace Datadog.Trace.Agent
         {
             unchecked
             {
-                var hashCode = (Resource != null ? Resource.GetHashCode() : 0);
-                hashCode = (hashCode * 397) ^ (Service != null ? Service.GetHashCode() : 0);
-                hashCode = (hashCode * 397) ^ (OperationName != null ? OperationName.GetHashCode() : 0);
-                hashCode = (hashCode * 397) ^ (Type != null ? Type.GetHashCode() : 0);
+                var hashCode = (Resource is not null ? Resource.GetHashCode() : 0);
+                hashCode = (hashCode * 397) ^ (Service is not null ? Service.GetHashCode() : 0);
+                hashCode = (hashCode * 397) ^ (OperationName is not null ? OperationName.GetHashCode() : 0);
+                hashCode = (hashCode * 397) ^ (Type is not null ? Type.GetHashCode() : 0);
                 hashCode = (hashCode * 397) ^ HttpStatusCode;
                 hashCode = (hashCode * 397) ^ IsSyntheticsRequest.GetHashCode();
+                hashCode = (hashCode * 397) ^ (SpanKind is not null ? SpanKind.GetHashCode() : 0);
+                hashCode = (hashCode * 397) ^ IsTraceRoot;
+                hashCode = (hashCode * 397) ^ (PeerTagsHash is not null ? PeerTagsHash.GetHashCode() : 0);
+                hashCode = (hashCode * 397) ^ (HttpMethod is not null ? HttpMethod.GetHashCode() : 0);
+                hashCode = (hashCode * 397) ^ (HttpEndpoint is not null ? HttpEndpoint.GetHashCode() : 0);
+                hashCode = (hashCode * 397) ^ (GrpcStatusCode is not null ? GrpcStatusCode.GetHashCode() : 0);
                 return hashCode;
             }
         }

@@ -365,6 +365,320 @@ namespace Datadog.Trace.Tests.Agent
         }
 
         [Fact]
+        public async Task CreatesDistinctBucketsBySpanKind()
+        {
+            var start = DateTimeOffset.UtcNow;
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>());
+
+            try
+            {
+                var serverSpan = CreateTopLevelSpan(1, start, 100);
+                serverSpan.SetTag(Tags.SpanKind, SpanKinds.Server);
+
+                var clientSpan = CreateTopLevelSpan(2, start, 100);
+                clientSpan.SetTag(Tags.SpanKind, SpanKinds.Client);
+
+                var noKindSpan = CreateTopLevelSpan(3, start, 100);
+
+                aggregator.Add(serverSpan, clientSpan, noKindSpan);
+
+                var buffer = aggregator.CurrentBuffer;
+                buffer.Buckets.Should().HaveCount(3);
+
+                var serverKey = StatsAggregator.BuildKey(serverSpan);
+                serverKey.SpanKind.Should().Be("server");
+
+                var clientKey = StatsAggregator.BuildKey(clientSpan);
+                clientKey.SpanKind.Should().Be("client");
+
+                var noKindKey = StatsAggregator.BuildKey(noKindSpan);
+                noKindKey.SpanKind.Should().BeEmpty();
+            }
+            finally
+            {
+                await aggregator.DisposeAsync();
+            }
+        }
+
+        [Fact]
+        public async Task CreatesDistinctBucketsByIsTraceRoot()
+        {
+            var start = DateTimeOffset.UtcNow;
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>());
+
+            try
+            {
+                // Root span (no parent) => IsTraceRoot = 1
+                var rootSpan = new Span(new SpanContext(1, 1, serviceName: "service"), start);
+                rootSpan.OperationName = "op";
+                rootSpan.SetDuration(TimeSpan.FromMilliseconds(100));
+
+                // Child span (has parent) => IsTraceRoot = 2
+                // This child is a service entry span (different service) so it is top-level
+                var childSpan = new Span(new SpanContext(rootSpan.Context, new TraceContext(new StubDatadogTracer()), "other-service"), start);
+                childSpan.OperationName = "op";
+                childSpan.SetDuration(TimeSpan.FromMilliseconds(100));
+
+                aggregator.Add(rootSpan, childSpan);
+
+                var buffer = aggregator.CurrentBuffer;
+                buffer.Buckets.Should().HaveCount(2);
+
+                var rootKey = StatsAggregator.BuildKey(rootSpan);
+                rootKey.IsTraceRoot.Should().Be(1);
+
+                var childKey = StatsAggregator.BuildKey(childSpan);
+                childKey.IsTraceRoot.Should().Be(2);
+            }
+            finally
+            {
+                await aggregator.DisposeAsync();
+            }
+        }
+
+        [Theory]
+        [InlineData("rpc.grpc.status_code", "0")]
+        [InlineData("grpc.code", "1")]
+        [InlineData("rpc.grpc.status.code", "2")]
+        [InlineData("grpc.status.code", "13")]
+        public void ExtractsGrpcStatusCodeFromCorrectTag(string tagName, string expectedValue)
+        {
+            var start = DateTimeOffset.UtcNow;
+            var span = CreateTopLevelSpan(1, start, 100);
+            span.SetTag(tagName, expectedValue);
+
+            var key = StatsAggregator.BuildKey(span);
+            key.GrpcStatusCode.Should().Be(expectedValue);
+        }
+
+        [Fact]
+        public void GrpcStatusCodePriorityOrder()
+        {
+            var start = DateTimeOffset.UtcNow;
+            var span = CreateTopLevelSpan(1, start, 100);
+
+            // Set all four tags; the first in priority order should win
+            span.SetTag("rpc.grpc.status_code", "first");
+            span.SetTag("grpc.code", "second");
+            span.SetTag("rpc.grpc.status.code", "third");
+            span.SetTag(Tags.GrpcStatusCode, "fourth");
+
+            var key = StatsAggregator.BuildKey(span);
+            key.GrpcStatusCode.Should().Be("first");
+        }
+
+        [Fact]
+        public async Task CreatesDistinctBucketsByHttpMethod()
+        {
+            var start = DateTimeOffset.UtcNow;
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>());
+
+            try
+            {
+                var getSpan = CreateTopLevelSpan(1, start, 100);
+                getSpan.SetTag(Tags.HttpMethod, "GET");
+
+                var postSpan = CreateTopLevelSpan(2, start, 100);
+                postSpan.SetTag(Tags.HttpMethod, "POST");
+
+                aggregator.Add(getSpan, postSpan);
+
+                var buffer = aggregator.CurrentBuffer;
+                buffer.Buckets.Should().HaveCount(2);
+
+                StatsAggregator.BuildKey(getSpan).HttpMethod.Should().Be("GET");
+                StatsAggregator.BuildKey(postSpan).HttpMethod.Should().Be("POST");
+            }
+            finally
+            {
+                await aggregator.DisposeAsync();
+            }
+        }
+
+        [Fact]
+        public async Task CreatesDistinctBucketsByHttpEndpoint()
+        {
+            var start = DateTimeOffset.UtcNow;
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>());
+
+            try
+            {
+                var endpoint1Span = CreateTopLevelSpan(1, start, 100);
+                endpoint1Span.SetTag(Tags.HttpEndpoint, "/api/v1/users");
+
+                var endpoint2Span = CreateTopLevelSpan(2, start, 100);
+                endpoint2Span.SetTag(Tags.HttpEndpoint, "/api/v1/orders");
+
+                aggregator.Add(endpoint1Span, endpoint2Span);
+
+                var buffer = aggregator.CurrentBuffer;
+                buffer.Buckets.Should().HaveCount(2);
+
+                StatsAggregator.BuildKey(endpoint1Span).HttpEndpoint.Should().Be("/api/v1/users");
+                StatsAggregator.BuildKey(endpoint2Span).HttpEndpoint.Should().Be("/api/v1/orders");
+            }
+            finally
+            {
+                await aggregator.DisposeAsync();
+            }
+        }
+
+        [Fact]
+        public void PeerTagsComputedOnlyForClientProducerConsumer()
+        {
+            var start = DateTimeOffset.UtcNow;
+            var peerTagKeys = new[] { "db.instance", "db.system" };
+
+            // Client span => peer tags should be computed
+            var clientSpan = CreateTopLevelSpan(1, start, 100);
+            clientSpan.SetTag(Tags.SpanKind, SpanKinds.Client);
+            clientSpan.SetTag("db.instance", "my-db");
+            clientSpan.SetTag("db.system", "postgres");
+
+            var clientKey = StatsAggregator.BuildKey(clientSpan, peerTagKeys);
+            clientKey.PeerTagsHash.Should().NotBeEmpty();
+            clientKey.PeerTagsHash.Should().Contain("db.instance:my-db");
+
+            // Server span => peer tags should NOT be computed
+            var serverSpan = CreateTopLevelSpan(2, start, 100);
+            serverSpan.SetTag(Tags.SpanKind, SpanKinds.Server);
+            serverSpan.SetTag("db.instance", "my-db");
+
+            var serverKey = StatsAggregator.BuildKey(serverSpan, peerTagKeys);
+            serverKey.PeerTagsHash.Should().BeEmpty();
+
+            // Producer span => peer tags should be computed
+            var producerSpan = CreateTopLevelSpan(3, start, 100);
+            producerSpan.SetTag(Tags.SpanKind, SpanKinds.Producer);
+            producerSpan.SetTag("db.instance", "my-queue");
+
+            var producerKey = StatsAggregator.BuildKey(producerSpan, peerTagKeys);
+            producerKey.PeerTagsHash.Should().NotBeEmpty();
+
+            // Consumer span => peer tags should be computed
+            var consumerSpan = CreateTopLevelSpan(4, start, 100);
+            consumerSpan.SetTag(Tags.SpanKind, SpanKinds.Consumer);
+            consumerSpan.SetTag("db.instance", "my-queue");
+
+            var consumerKey = StatsAggregator.BuildKey(consumerSpan, peerTagKeys);
+            consumerKey.PeerTagsHash.Should().NotBeEmpty();
+        }
+
+        [Fact]
+        public void PeerTagsHashIsSortedAndConsistent()
+        {
+            var start = DateTimeOffset.UtcNow;
+            var peerTagKeys = new[] { "z.tag", "a.tag", "m.tag" };
+
+            var span = CreateTopLevelSpan(1, start, 100);
+            span.SetTag(Tags.SpanKind, SpanKinds.Client);
+            span.SetTag("z.tag", "zval");
+            span.SetTag("a.tag", "aval");
+            span.SetTag("m.tag", "mval");
+
+            var key = StatsAggregator.BuildKey(span, peerTagKeys);
+
+            // Should be sorted by key name (ordinal)
+            key.PeerTagsHash.Should().Be("a.tag:aval,m.tag:mval,z.tag:zval");
+        }
+
+        [Fact]
+        public void PeerTagsHashOmitsMissingKeys()
+        {
+            var start = DateTimeOffset.UtcNow;
+            var peerTagKeys = new[] { "db.instance", "db.system", "net.peer.name" };
+
+            var span = CreateTopLevelSpan(1, start, 100);
+            span.SetTag(Tags.SpanKind, SpanKinds.Client);
+            span.SetTag("db.instance", "my-db");
+            // db.system and net.peer.name are not set
+
+            var key = StatsAggregator.BuildKey(span, peerTagKeys);
+            key.PeerTagsHash.Should().Be("db.instance:my-db");
+        }
+
+        [Fact]
+        public void SpanKindBasedEligibility()
+        {
+            var start = DateTimeOffset.UtcNow;
+
+            // Non-top-level, non-measured span with span.kind=server should be eligible
+            var parentSpan = new Span(new SpanContext(1, 1, serviceName: "service"), start);
+            parentSpan.SetDuration(TimeSpan.FromMilliseconds(100));
+
+            var serverChild = new Span(new SpanContext(parentSpan.Context, new TraceContext(new StubDatadogTracer()), "service"), start);
+            serverChild.SetTag(Tags.SpanKind, SpanKinds.Server);
+            serverChild.SetDuration(TimeSpan.FromMilliseconds(100));
+            StatsAggregator.IsEligibleForStats(serverChild).Should().BeTrue();
+
+            var clientChild = new Span(new SpanContext(parentSpan.Context, new TraceContext(new StubDatadogTracer()), "service"), start);
+            clientChild.SetTag(Tags.SpanKind, SpanKinds.Client);
+            clientChild.SetDuration(TimeSpan.FromMilliseconds(100));
+            StatsAggregator.IsEligibleForStats(clientChild).Should().BeTrue();
+
+            var producerChild = new Span(new SpanContext(parentSpan.Context, new TraceContext(new StubDatadogTracer()), "service"), start);
+            producerChild.SetTag(Tags.SpanKind, SpanKinds.Producer);
+            producerChild.SetDuration(TimeSpan.FromMilliseconds(100));
+            StatsAggregator.IsEligibleForStats(producerChild).Should().BeTrue();
+
+            var consumerChild = new Span(new SpanContext(parentSpan.Context, new TraceContext(new StubDatadogTracer()), "service"), start);
+            consumerChild.SetTag(Tags.SpanKind, SpanKinds.Consumer);
+            consumerChild.SetDuration(TimeSpan.FromMilliseconds(100));
+            StatsAggregator.IsEligibleForStats(consumerChild).Should().BeTrue();
+
+            // Internal span kind should NOT be eligible (not top-level, not measured)
+            var internalChild = new Span(new SpanContext(parentSpan.Context, new TraceContext(new StubDatadogTracer()), "service"), start);
+            internalChild.SetTag(Tags.SpanKind, SpanKinds.Internal);
+            internalChild.SetDuration(TimeSpan.FromMilliseconds(100));
+            StatsAggregator.IsEligibleForStats(internalChild).Should().BeFalse();
+
+            // No span kind, not top-level, not measured => not eligible
+            var plainChild = new Span(new SpanContext(parentSpan.Context, new TraceContext(new StubDatadogTracer()), "service"), start);
+            plainChild.SetDuration(TimeSpan.FromMilliseconds(100));
+            StatsAggregator.IsEligibleForStats(plainChild).Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task NewDimensionsCreateDistinctBuckets()
+        {
+            var start = DateTimeOffset.UtcNow;
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>());
+
+            try
+            {
+                ulong id = 0;
+
+                // Baseline
+                var baselineSpan = CreateTopLevelSpan(++id, start, 100);
+
+                // Unique SpanKind
+                var spanKindSpan = CreateTopLevelSpan(++id, start, 100);
+                spanKindSpan.SetTag(Tags.SpanKind, SpanKinds.Server);
+
+                // Unique GrpcStatusCode
+                var grpcSpan = CreateTopLevelSpan(++id, start, 100);
+                grpcSpan.SetTag("rpc.grpc.status_code", "0");
+
+                // Unique HttpMethod
+                var httpMethodSpan = CreateTopLevelSpan(++id, start, 100);
+                httpMethodSpan.SetTag(Tags.HttpMethod, "POST");
+
+                // Unique HttpEndpoint
+                var httpEndpointSpan = CreateTopLevelSpan(++id, start, 100);
+                httpEndpointSpan.SetTag(Tags.HttpEndpoint, "/api/test");
+
+                aggregator.Add(baselineSpan, spanKindSpan, grpcSpan, httpMethodSpan, httpEndpointSpan);
+
+                var buffer = aggregator.CurrentBuffer;
+                buffer.Buckets.Should().HaveCount(5, "each new dimension value should create a distinct bucket");
+            }
+            finally
+            {
+                await aggregator.DisposeAsync();
+            }
+        }
+
+        [Fact]
         public async Task RelativeErrorIsAccurate_TS009()
         {
             var start = DateTimeOffset.UtcNow;
@@ -413,6 +727,14 @@ namespace Datadog.Trace.Tests.Agent
                 var numberOfElementsLessThanOrEqualTo = (int)Math.Floor(1 + (quantile * (arrayLength - 1)));
                 return numberOfElementsLessThanOrEqualTo - 1;
             }
+        }
+
+        private static Span CreateTopLevelSpan(ulong id, DateTimeOffset start, long durationMs, string serviceName = "service", string operationName = "op")
+        {
+            var span = new Span(new SpanContext(id, id, serviceName: serviceName), start);
+            span.OperationName = operationName;
+            span.SetDuration(TimeSpan.FromMilliseconds(durationMs));
+            return span;
         }
 
         private static TracerSettings GetSettings(int? statsComputationIntervalSeconds = null)

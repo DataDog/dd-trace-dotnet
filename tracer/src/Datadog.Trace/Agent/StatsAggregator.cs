@@ -1,4 +1,4 @@
-﻿// <copyright file="StatsAggregator.cs" company="Datadog">
+// <copyright file="StatsAggregator.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Agent.TraceSamplers;
@@ -45,6 +46,8 @@ namespace Datadog.Trace.Agent
         private readonly RareSampler _rareSampler;
         private readonly AnalyticsEventsSampler _analyticsEventSampler;
         private readonly IDisposable _settingSubscription;
+
+        private string[] _peerTagKeys = Array.Empty<string>();
 
         private int _currentBuffer;
 
@@ -168,11 +171,38 @@ namespace Datadog.Trace.Agent
 
         internal static StatsAggregationKey BuildKey(Span span)
         {
+            return BuildKey(span, null);
+        }
+
+        internal static StatsAggregationKey BuildKey(Span span, string[] peerTagKeys)
+        {
             var rawHttpStatusCode = span.GetTag(Tags.HttpStatusCode);
 
-            if (rawHttpStatusCode == null || !int.TryParse(rawHttpStatusCode, out var httpStatusCode))
+            if (rawHttpStatusCode is null || !int.TryParse(rawHttpStatusCode, out var httpStatusCode))
             {
                 httpStatusCode = 0;
+            }
+
+            var spanKind = span.GetTag(Tags.SpanKind) ?? string.Empty;
+
+            // IsTraceRoot: 1=True (parentID==0, i.e. no parent), 2=False
+            var isTraceRoot = span.Context.ParentId is null or 0 ? 1 : 2;
+
+            // gRPC status code extraction order per spec
+            var grpcStatusCode = span.GetTag("rpc.grpc.status_code")
+                              ?? span.GetTag("grpc.code")
+                              ?? span.GetTag("rpc.grpc.status.code")
+                              ?? span.GetTag(Tags.GrpcStatusCode)
+                              ?? string.Empty;
+
+            var httpMethod = span.GetTag(Tags.HttpMethod) ?? string.Empty;
+            var httpEndpoint = span.GetTag(Tags.HttpEndpoint) ?? string.Empty;
+
+            // Peer tags: only for client/producer/consumer
+            var peerTagsHash = string.Empty;
+            if (peerTagKeys is { Length: > 0 } && IsClientOrProducerOrConsumer(spanKind))
+            {
+                peerTagsHash = ComputePeerTagsHash(span, peerTagKeys);
             }
 
             return new StatsAggregationKey(
@@ -181,7 +211,73 @@ namespace Datadog.Trace.Agent
                 span.OperationName,
                 span.Type,
                 httpStatusCode,
-                span.Context.Origin == "synthetics");
+                span.Context.Origin == "synthetics",
+                spanKind,
+                isTraceRoot,
+                peerTagsHash,
+                httpMethod,
+                httpEndpoint,
+                grpcStatusCode);
+        }
+
+        internal static bool IsEligibleForStats(Span span)
+        {
+            if (span.GetMetric(Tags.PartialSnapshot) > 0)
+            {
+                return false;
+            }
+
+            if (span.IsTopLevel)
+            {
+                return true;
+            }
+
+            if (span.GetMetric(Tags.Measured) == 1.0)
+            {
+                return true;
+            }
+
+            var spanKind = span.GetTag(Tags.SpanKind);
+            return spanKind == SpanKinds.Server
+                || spanKind == SpanKinds.Client
+                || spanKind == SpanKinds.Producer
+                || spanKind == SpanKinds.Consumer;
+        }
+
+        internal static bool IsClientOrProducerOrConsumer(string spanKind)
+        {
+            return spanKind == SpanKinds.Client
+                || spanKind == SpanKinds.Producer
+                || spanKind == SpanKinds.Consumer;
+        }
+
+        internal static string ComputePeerTagsHash(Span span, string[] peerTagKeys)
+        {
+            // Sort the keys to ensure consistent ordering
+            var sortedKeys = new string[peerTagKeys.Length];
+            Array.Copy(peerTagKeys, sortedKeys, peerTagKeys.Length);
+            Array.Sort(sortedKeys, StringComparer.Ordinal);
+
+            var sb = new StringBuilder();
+            var first = true;
+            foreach (var key in sortedKeys)
+            {
+                var value = span.GetTag(key);
+                if (value is not null)
+                {
+                    if (!first)
+                    {
+                        sb.Append(',');
+                    }
+
+                    sb.Append(key);
+                    sb.Append(':');
+                    sb.Append(value);
+                    first = false;
+                }
+            }
+
+            return sb.ToString();
         }
 
         internal async Task Flush()
@@ -246,12 +342,12 @@ namespace Datadog.Trace.Agent
 
         private void AddToBuffer(Span span)
         {
-            if ((!span.IsTopLevel && span.GetMetric(Tags.Measured) != 1.0) || span.GetMetric(Tags.PartialSnapshot) > 0)
+            if (!IsEligibleForStats(span))
             {
                 return;
             }
 
-            var key = BuildKey(span);
+            var key = BuildKey(span, _peerTagKeys);
 
             var buffer = CurrentBuffer;
 
@@ -286,6 +382,11 @@ namespace Datadog.Trace.Agent
         private void HandleConfigUpdate(AgentConfiguration config)
         {
             CanComputeStats = !string.IsNullOrWhiteSpace(config.StatsEndpoint) && config.ClientDropP0s == true;
+
+            if (config.PeerTags is { Length: > 0 })
+            {
+                _peerTagKeys = config.PeerTags;
+            }
 
             if (CanComputeStats.Value)
             {

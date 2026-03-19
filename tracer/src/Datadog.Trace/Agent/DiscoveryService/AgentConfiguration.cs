@@ -23,7 +23,8 @@ internal sealed record AgentConfiguration
         string? tracerFlareEndpoint,
         bool clientDropP0,
         bool spanMetaStructs,
-        bool? spanEvents)
+        bool? spanEvents,
+        string[]? peerTags = null)
     {
         ConfigurationEndpoint = configurationEndpoint;
         DebuggerEndpoint = debuggerEndpoint;
@@ -39,6 +40,7 @@ internal sealed record AgentConfiguration
         ClientDropP0s = clientDropP0;
         SpanMetaStructs = spanMetaStructs;
         SpanEvents = spanEvents ?? false;
+        PeerTags = peerTags ?? [];
     }
 
     public string? ConfigurationEndpoint { get; }
@@ -80,4 +82,6 @@ internal sealed record AgentConfiguration
     public bool SpanMetaStructs { get; }
 
     public bool SpanEvents { get; }
+
+    public string[] PeerTags { get; }
 }

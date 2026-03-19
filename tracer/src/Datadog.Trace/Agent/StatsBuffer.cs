@@ -1,4 +1,4 @@
-﻿// <copyright file="StatsBuffer.cs" company="Datadog">
+// <copyright file="StatsBuffer.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -102,7 +102,7 @@ namespace Datadog.Trace.Agent
 
         private static void SerializeBucket(Stream stream, StatsBucket bucket)
         {
-            MessagePackBinary.WriteMapHeader(stream, 12);
+            MessagePackBinary.WriteMapHeader(stream, 18);
 
             MessagePackBinary.WriteString(stream, "Service");
             MessagePackBinary.WriteString(stream, bucket.Key.Service ?? string.Empty);
@@ -121,6 +121,24 @@ namespace Datadog.Trace.Agent
 
             MessagePackBinary.WriteString(stream, "Type");
             MessagePackBinary.WriteString(stream, bucket.Key.Type ?? string.Empty);
+
+            MessagePackBinary.WriteString(stream, "SpanKind");
+            MessagePackBinary.WriteString(stream, bucket.Key.SpanKind ?? string.Empty);
+
+            MessagePackBinary.WriteString(stream, "IsTraceRoot");
+            MessagePackBinary.WriteInt32(stream, bucket.Key.IsTraceRoot);
+
+            MessagePackBinary.WriteString(stream, "PeerTags");
+            MessagePackBinary.WriteString(stream, bucket.Key.PeerTagsHash ?? string.Empty);
+
+            MessagePackBinary.WriteString(stream, "GRPCStatusCode");
+            MessagePackBinary.WriteString(stream, bucket.Key.GrpcStatusCode ?? string.Empty);
+
+            MessagePackBinary.WriteString(stream, "HTTPMethod");
+            MessagePackBinary.WriteString(stream, bucket.Key.HttpMethod ?? string.Empty);
+
+            MessagePackBinary.WriteString(stream, "HTTPEndpoint");
+            MessagePackBinary.WriteString(stream, bucket.Key.HttpEndpoint ?? string.Empty);
 
             MessagePackBinary.WriteString(stream, "Hits");
             MessagePackBinary.WriteInt64(stream, bucket.Hits);
