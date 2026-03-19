@@ -147,7 +147,7 @@ namespace Honeypot
             Version maximumVersion,
             List<PackageVersionGenerator.TestedPackage> testedVersions,
             Func<string, bool> shouldUpdatePackage,
-            Dictionary<string, GenerateSupportMatrix.SupportedNuGetPackage> previousSupportedVersions)
+            Dictionary<(string AssemblyName, string PackageName), GenerateSupportMatrix.SupportedNuGetPackage> previousSupportedVersions)
         {
             if (!NugetPackages.ContainsKey(name))
             {
@@ -183,13 +183,13 @@ namespace Honeypot
         private async Task PopulatePackages(
             List<PackageVersionGenerator.TestedPackage> testedVersions,
             Func<string, bool> shouldUpdatePackage,
-            Dictionary<string, GenerateSupportMatrix.SupportedNuGetPackage> previousSupportedVersions)
+            Dictionary<(string AssemblyName, string PackageName), GenerateSupportMatrix.SupportedNuGetPackage> previousSupportedVersions)
         {
             var packageNames = NugetPackages[Name];
             foreach (var packageName in packageNames)
             {
                 if (!shouldUpdatePackage(packageName)
-                    && previousSupportedVersions.TryGetValue(packageName, out var prev))
+                    && previousSupportedVersions.TryGetValue((AssemblyName, packageName), out var prev))
                 {
                     // Use cached data from previous supported_versions.json
                     var cachedAllTestedVersions = testedVersions

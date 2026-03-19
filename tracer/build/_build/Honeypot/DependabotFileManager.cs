@@ -72,7 +72,7 @@ namespace Honeypot
             List<InstrumentedAssembly> targets,
             List<PackageVersionGenerator.TestedPackage> testedVersions,
             Func<string, bool> shouldQueryNuGet,
-            Dictionary<string, GeneratePackageVersions.GenerateSupportMatrix.SupportedNuGetPackage> previousSupportedVersions)
+            Dictionary<(string AssemblyName, string PackageName), GeneratePackageVersions.GenerateSupportMatrix.SupportedNuGetPackage> previousSupportedVersions)
         {
             var distinctIntegrations = new List<IntegrationMap>();
 

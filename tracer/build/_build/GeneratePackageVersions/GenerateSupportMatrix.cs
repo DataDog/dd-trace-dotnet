@@ -65,14 +65,16 @@ public static class GenerateSupportMatrix
 
     /// <summary>
     /// Load the previously generated supported_versions.json and return a lookup
-    /// keyed by NuGet package name, mapping to its <see cref="SupportedNuGetPackage"/> data.
+    /// keyed by (assemblyName, packageName), mapping to its <see cref="SupportedNuGetPackage"/> data.
+    /// The composite key ensures that integrations sharing a NuGet package but with different
+    /// support bounds each get their own entry.
     /// Returns an empty dictionary if the file doesn't exist.
     /// </summary>
-    public static async Task<Dictionary<string, SupportedNuGetPackage>> LoadPreviousVersions(string path)
+    public static async Task<Dictionary<(string AssemblyName, string PackageName), SupportedNuGetPackage>> LoadPreviousVersions(string path)
     {
         if (!File.Exists(path))
         {
-            return new Dictionary<string, SupportedNuGetPackage>(StringComparer.OrdinalIgnoreCase);
+            return new Dictionary<(string, string), SupportedNuGetPackage>();
         }
 
         var JsonOptions = new JsonSerializerOptions
@@ -82,7 +84,7 @@ public static class GenerateSupportMatrix
         await using var openStream = File.OpenRead(path);
         var integrations = await JsonSerializer.DeserializeAsync<List<Integration>>(openStream, JsonOptions);
 
-        var result = new Dictionary<string, SupportedNuGetPackage>(StringComparer.OrdinalIgnoreCase);
+        var result = new Dictionary<(string AssemblyName, string PackageName), SupportedNuGetPackage>();
         if (integrations is null)
         {
             return result;
@@ -92,8 +94,7 @@ public static class GenerateSupportMatrix
         {
             foreach (var package in integration.Packages)
             {
-                // Last write wins if a package appears under multiple assemblies
-                result[package.Name] = package;
+                result[(integration.AssemblyName, package.Name)] = package;
             }
         }
 
