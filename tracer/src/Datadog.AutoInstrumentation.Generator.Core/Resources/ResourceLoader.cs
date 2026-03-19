@@ -6,7 +6,7 @@
 using System.IO;
 using System.Reflection;
 
-namespace Datadog.AutoInstrumentation.Generator.Resources;
+namespace Datadog.AutoInstrumentation.Generator.Core.Resources;
 
 internal class ResourceLoader
 {
