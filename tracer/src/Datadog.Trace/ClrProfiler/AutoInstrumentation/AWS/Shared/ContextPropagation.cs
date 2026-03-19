@@ -9,7 +9,9 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using Datadog.Trace.DataStreamsMonitoring;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.Util.Json;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared
 {
@@ -85,11 +87,91 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared
             }
         }
 
+        /// <summary>
+        /// Extracts trace context from message attributes.
+        /// </summary>
+        public static PropagationContext ExtractHeadersFromMessage(Tracer tracer, IContainsMessageAttributes? carrier)
+        {
+            if (carrier?.MessageAttributes == null)
+            {
+                return default;
+            }
+
+            try
+            {
+                // First try extracting from the _datadog attribute (standard AWS SDK format)
+                var datadogAttribute = carrier.MessageAttributes[InjectionKey];
+                if (datadogAttribute != null)
+                {
+                    var messageAttributeValue = datadogAttribute.DuckCast<IMessageAttributeValue>();
+                    if (messageAttributeValue != null)
+                    {
+                        string? jsonString = messageAttributeValue.StringValue;
+                        if (!StringUtil.IsNullOrEmpty(jsonString))
+                        {
+                            var headers = JsonHelper.DeserializeObject<Dictionary<string, string>>(jsonString);
+                            if (headers != null)
+                            {
+                                return tracer.TracerManager.SpanContextPropagator
+                                             .Extract(headers, default(DictionaryCarrierGetter))
+                                             .MergeBaggageInto(Baggage.Current);
+                            }
+                        }
+                    }
+                }
+
+                // Fall back to checking individual message attributes for trace headers
+                // (e.g., MassTransit may inject headers as separate attributes)
+                var headerDict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                foreach (var key in carrier.MessageAttributes.Keys)
+                {
+                    if (key is string keyString)
+                    {
+                        var attributeValue = carrier.MessageAttributes[keyString]?.DuckCast<IMessageAttributeValue>();
+                        if (attributeValue?.StringValue != null)
+                        {
+                            headerDict[keyString] = attributeValue.StringValue;
+                        }
+                    }
+                }
+
+                if (headerDict.Count > 0)
+                {
+                    var extracted = tracer.TracerManager.SpanContextPropagator
+                                          .Extract(headerDict, default(DictionaryCarrierGetter));
+                    if (extracted.SpanContext != null)
+                    {
+                        return extracted.MergeBaggageInto(Baggage.Current);
+                    }
+                }
+
+                return default;
+            }
+            catch
+            {
+                // Ignore extraction errors, will create a new root span
+                return default;
+            }
+        }
+
         private readonly struct StringBuilderCarrierSetter : ICarrierSetter<StringBuilder>
         {
             public void Set(StringBuilder carrier, string key, string value)
             {
                 carrier.AppendFormat("\"{0}\":\"{1}\",", key, value);
+            }
+        }
+
+        private readonly struct DictionaryCarrierGetter : ICarrierGetter<Dictionary<string, string>>
+        {
+            public IEnumerable<string> Get(Dictionary<string, string> carrier, string key)
+            {
+                if (carrier.TryGetValue(key, out var value))
+                {
+                    return new[] { value };
+                }
+
+                return Array.Empty<string>();
             }
         }
     }

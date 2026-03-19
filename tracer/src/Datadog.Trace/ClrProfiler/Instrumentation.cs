@@ -491,6 +491,7 @@ namespace Datadog.Trace.ClrProfiler
             }
 
             observers.Add(new QuartzDiagnosticObserver());
+            observers.Add(new MassTransitDiagnosticObserver());
 
             var diagnosticManager = new DiagnosticManager(observers);
             diagnosticManager.Start();

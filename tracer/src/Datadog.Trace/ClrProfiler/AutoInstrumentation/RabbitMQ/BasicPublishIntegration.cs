@@ -53,12 +53,31 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
             where TBody : IBody, IDuckType // Versions < 6.0.0: TBody is byte[] // Versions >= 6.0.0: TBody is ReadOnlyMemory<byte>
             where TTarget : IModelBase
         {
-            var scope = RabbitMQIntegration.CreateScope(Tracer.Instance, out var tags, Command, spanKind: SpanKinds.Producer, exchange: exchange, routingKey: routingKey, host: instance?.Session?.Connection?.Endpoint?.HostName);
+            var tracer = Tracer.Instance;
+
+            // Check if headers already contain trace context (e.g., injected by MassTransit or other messaging frameworks).
+            // This allows the RabbitMQ span to be a child of the framework's producer span, maintaining trace continuity
+            // even when the framework uses async batching that decouples the publish call from the actual RabbitMQ send.
+            PropagationContext extractedContext = default;
+            if (basicProperties.Instance != null && basicProperties.Headers is IDictionary<string, object> headers)
+            {
+                try
+                {
+                    extractedContext = tracer.TracerManager.SpanContextPropagator
+                                             .Extract(headers, default(ContextPropagation))
+                                             .MergeBaggageInto(Baggage.Current);
+                }
+                catch
+                {
+                    // Ignore extraction errors, will create a new root span
+                }
+            }
+
+            var scope = RabbitMQIntegration.CreateScope(tracer, out var tags, Command, spanKind: SpanKinds.Producer, exchange: exchange, routingKey: routingKey, host: instance?.Session?.Connection?.Endpoint?.HostName, context: extractedContext);
 
             // Tags is not null if span is not null, but keep analysis happy, as there's no attribute for that
             if (scope != null && tags is not null)
             {
-                var tracer = Tracer.Instance;
                 tracer.CurrentTraceSettings.Schema.RemapPeerService(tags);
 
                 string exchangeDisplayName = string.IsNullOrEmpty(exchange) ? "<default>" : exchange;

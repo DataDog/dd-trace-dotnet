@@ -25,6 +25,9 @@ namespace Datadog.Trace.Activity.Handlers
             // Azure Service Bus handlers
             new AzureServiceBusActivityHandler(),
 
+            // MassTransit handlers (8.x and later)
+            new MassTransitActivityHandler(),
+
             // Quartz handlers
             new QuartzActivityHandler(),
 

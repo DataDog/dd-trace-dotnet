@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0</TargetFrameworks>
+    <RootNamespace>Datadog.Dependabot.Honeypot</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Integration: MassTransit -->
+    <!--    Assembly: MassTransit -->
+    <!-- Latest package https://www.nuget.org/packages/MassTransit/9.0.1 -->
+    <PackageReference Include="MassTransit" Version="7.3.1" />
+  </ItemGroup>
+
+</Project>
