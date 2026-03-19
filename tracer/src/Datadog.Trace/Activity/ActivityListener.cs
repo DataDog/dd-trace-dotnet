@@ -155,16 +155,7 @@ namespace Datadog.Trace.Activity
                 else
                 {
                     // if Version is 4.0.4 or greater (Uses DiagnosticListener implementation / Nuget version 4.6.0)
-#if NETFRAMEWORK
-                    var iObserverType = typeof(IObserver<>).MakeGenericType(diagnosticListenerType);
-                    var observer = new FrameworkDiagnosticObserverListenerObserver();
-                    var implementation = observer.DuckImplement(iObserverType);
-                    var allListenersProperty = diagnosticListenerType.GetProperty("AllListeners", BindingFlags.Public | BindingFlags.Static);
-                    var allListeners = allListenersProperty?.GetValue(null);
-                    allListenersProperty?.PropertyType.GetMethod("Subscribe")?.Invoke(allListeners, new[] { implementation });
-#else
                     CreateDiagnosticSourceListenerInstance(diagnosticListenerType);
-#endif
                 }
 
                 return;
