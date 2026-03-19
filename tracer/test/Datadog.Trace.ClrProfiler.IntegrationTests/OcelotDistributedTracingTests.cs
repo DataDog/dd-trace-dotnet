@@ -3,7 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if NET8_0_OR_GREATER
+#if NET6_0_OR_GREATER
 
 using System.Linq;
 using System.Threading.Tasks;
