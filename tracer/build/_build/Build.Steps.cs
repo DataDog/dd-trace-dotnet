@@ -13,6 +13,7 @@ using CodeGenerators;
 using ICSharpCode.SharpZipLib.Zip;
 using LogParsing;
 using Mono.Cecil;
+using MsiValidation;
 using Nuke.Common;
 using Nuke.Common.IO;
 using Nuke.Common.ProjectModel;
@@ -996,17 +997,21 @@ partial class Build
             // We don't produce an x86-only MSI any more
             var architectures = ArchitecturesForPlatformForTracer.Where(x => x != MSBuildTargetPlatform.x86);
 
-            MSBuild(s => s
-                    .SetTargetPath(SharedDirectory / "src" / "msi-installer" / "WindowsInstaller.wixproj")
+            DotNetBuild(s => s
+                    .SetProjectFile(SharedDirectory / "src" / "msi-installer" / "WindowsInstaller.wixproj")
                     .SetConfiguration(BuildConfiguration)
-                    .SetMSBuildPath()
-                    .AddProperty("RunWixToolsOutOfProc", true)
                     .SetProperty("MonitoringHomeDirectory", MonitoringHomeDirectory)
-                    .SetMaxCpuCount(null)
                     .CombineWith(architectures, (o, arch) => o
                         .SetProperty("MsiOutputPath", ArtifactsDirectory / arch.ToString())
-                        .SetTargetPlatform(arch)),
+                        .SetProperty("Platform", arch.ToString())),
                 degreeOfParallelism: 2);
+
+            foreach (var arch in architectures)
+            {
+                var msiPath = ArtifactsDirectory / arch / "en-us" / $"datadog-dotnet-apm-{FullVersion}-{arch}.msi";
+                var verifiedPath = BuildProjectDirectory / nameof(MsiValidation) / $"msi-{arch}.verified.yml";
+                MsiSnapshot.ValidateMsiSnapshot(msiPath, verifiedPath, Version, FullVersion);
+            }
         });
 
     Target CreateBundleHome => _ => _
@@ -2548,6 +2553,7 @@ partial class Build
     Target CheckSmokeTestsForErrors => _ => _
        .Unlisted()
        .Description("Reads the logs from build_data and checks for error lines in the smoke test logs")
+       .After(RunArtifactSmokeTests)
        .Executes(async () =>
        {
            var knownPatterns = new List<Regex>();
@@ -2616,6 +2622,8 @@ partial class Build
     Target ExtractMetricsFromLogs => _ => _
        .Unlisted()
        .Description("Reads the logs from build_data, extracts the metrics, and submits them to Datadog")
+       .After(RunArtifactSmokeTests)
+       .Before(CheckSmokeTestsForErrors)
        .Executes(async () =>
        {
            var logDirectory = BuildDataDirectory / "logs";

@@ -57,7 +57,7 @@ namespace Datadog.Trace.Tagging
 
     internal sealed partial class KafkaV1Tags : KafkaTags
     {
-        private string _peerServiceOverride = null;
+        private string _peerServiceOverride;
 
         // For the sake of unit tests, define a default constructor
         // though the Kafka integration should use the constructor that takes a spanKind

@@ -14,7 +14,8 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Aerospike
+      _dd.base_service: Samples.Aerospike,
+      _dd.svc_src: aerospike
     },
     Metrics: {
       process_id: 0,
@@ -38,7 +39,8 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Aerospike
+      _dd.base_service: Samples.Aerospike,
+      _dd.svc_src: aerospike
     },
     Metrics: {
       process_id: 0,
@@ -62,7 +64,8 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Aerospike
+      _dd.base_service: Samples.Aerospike,
+      _dd.svc_src: aerospike
     },
     Metrics: {
       process_id: 0,
@@ -86,7 +89,8 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Aerospike
+      _dd.base_service: Samples.Aerospike,
+      _dd.svc_src: aerospike
     },
     Metrics: {
       process_id: 0,
@@ -112,7 +116,8 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Aerospike
+      _dd.base_service: Samples.Aerospike,
+      _dd.svc_src: aerospike
     },
     Metrics: {
       process_id: 0,
@@ -138,7 +143,8 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Aerospike
+      _dd.base_service: Samples.Aerospike,
+      _dd.svc_src: aerospike
     },
     Metrics: {
       process_id: 0,
@@ -164,7 +170,8 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Aerospike
+      _dd.base_service: Samples.Aerospike,
+      _dd.svc_src: aerospike
     },
     Metrics: {
       process_id: 0,
@@ -190,7 +197,8 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Aerospike
+      _dd.base_service: Samples.Aerospike,
+      _dd.svc_src: aerospike
     },
     Metrics: {
       process_id: 0,
@@ -215,7 +223,8 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Aerospike
+      _dd.base_service: Samples.Aerospike,
+      _dd.svc_src: aerospike
     },
     Metrics: {
       process_id: 0,
@@ -241,7 +250,8 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Aerospike
+      _dd.base_service: Samples.Aerospike,
+      _dd.svc_src: aerospike
     },
     Metrics: {
       process_id: 0,
@@ -267,7 +277,8 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Aerospike
+      _dd.base_service: Samples.Aerospike,
+      _dd.svc_src: aerospike
     },
     Metrics: {
       process_id: 0,
@@ -293,7 +304,8 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Aerospike
+      _dd.base_service: Samples.Aerospike,
+      _dd.svc_src: aerospike
     },
     Metrics: {
       process_id: 0,
@@ -319,7 +331,8 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Aerospike
+      _dd.base_service: Samples.Aerospike,
+      _dd.svc_src: aerospike
     },
     Metrics: {
       process_id: 0,
@@ -345,7 +358,8 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Aerospike
+      _dd.base_service: Samples.Aerospike,
+      _dd.svc_src: aerospike
     },
     Metrics: {
       process_id: 0,
@@ -371,7 +385,8 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Aerospike
+      _dd.base_service: Samples.Aerospike,
+      _dd.svc_src: aerospike
     },
     Metrics: {
       process_id: 0,
@@ -397,7 +412,8 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Aerospike
+      _dd.base_service: Samples.Aerospike,
+      _dd.svc_src: aerospike
     },
     Metrics: {
       process_id: 0,
@@ -423,7 +439,8 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Aerospike
+      _dd.base_service: Samples.Aerospike,
+      _dd.svc_src: aerospike
     },
     Metrics: {
       process_id: 0,
@@ -449,7 +466,8 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Aerospike
+      _dd.base_service: Samples.Aerospike,
+      _dd.svc_src: aerospike
     },
     Metrics: {
       process_id: 0,
@@ -475,7 +493,8 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Aerospike
+      _dd.base_service: Samples.Aerospike,
+      _dd.svc_src: aerospike
     },
     Metrics: {
       process_id: 0,

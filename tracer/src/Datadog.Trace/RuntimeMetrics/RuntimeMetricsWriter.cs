@@ -1,4 +1,4 @@
-﻿// <copyright file="RuntimeMetricsWriter.cs" company="Datadog">
+// <copyright file="RuntimeMetricsWriter.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -53,7 +53,7 @@ namespace Datadog.Trace.RuntimeMetrics
 #if NETSTANDARD
         // In .NET Core <3.1 on non-Windows, Process.PrivateMemorySize64 returns 0, so we disable this.
         // https://github.com/dotnet/runtime/issues/23284
-        private readonly bool _enableProcessMemory = false;
+        private readonly bool _enableProcessMemory;
 #endif
 
         private readonly ConcurrentDictionary<string, int> _exceptionCounts = new ConcurrentDictionary<string, int>();
@@ -172,9 +172,16 @@ namespace Datadog.Trace.RuntimeMetrics
 #endif
             Log.Debug("Disposing other resources for Runtime Metrics");
             AppDomain.CurrentDomain.FirstChanceException -= FirstChanceException;
-            // We don't dispose runtime metrics on .NET Core because of https://github.com/dotnet/runtime/issues/103480
 #if NETFRAMEWORK
             _listener?.Dispose();
+#elif NET6_0_OR_GREATER
+            // DiagnosticsMetricsRuntimeMetricsListener uses MeterListener which is safe to dispose.
+            // RuntimeEventListener extends EventListener which is NOT safe to dispose on .NET Core
+            // due to https://github.com/dotnet/runtime/issues/103480
+            if (_listener is DiagnosticsMetricsRuntimeMetricsListener)
+            {
+                _listener.Dispose();
+            }
 #endif
             _exceptionCounts.Clear();
         }

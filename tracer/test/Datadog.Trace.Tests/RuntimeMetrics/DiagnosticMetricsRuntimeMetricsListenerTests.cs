@@ -64,7 +64,7 @@ public class DiagnosticMetricsRuntimeMetricsListenerTests
         statsd.Verify(s => s.Gauge(MetricsNames.Gen2HeapSize,  It.IsInRange(0d, long.MaxValue, Range.Exclusive), It.IsAny<double>(), null), Times.AtLeastOnce);
         statsd.Verify(s => s.Gauge(MetricsNames.LohSize, It.IsAny<double>(), It.IsAny<double>(), null), Times.AtLeastOnce);
         statsd.Verify(s => s.Gauge(MetricsNames.GcMemoryLoad, It.IsInRange(0d, 100, Range.Inclusive), It.IsAny<double>(), null), Times.AtLeastOnce);
-        statsd.Verify(s => s.Timer(MetricsNames.GcPauseTime, It.IsAny<double>(), It.IsAny<double>(), null), Times.AtLeastOnce);
+        statsd.Verify(s => s.Counter(MetricsNames.GcPauseTimeTotal, It.IsAny<double>(), It.IsAny<double>(), null), Times.AtLeastOnce);
         statsd.Verify(s => s.Increment(MetricsNames.Gen2CollectionsCount, 1, It.IsAny<double>(), null), Times.AtLeastOnce);
     }
 
