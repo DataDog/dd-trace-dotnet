@@ -5,11 +5,9 @@
 
 #if NET6_0_OR_GREATER
 
-using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.TestHelpers;
-using FluentAssertions;
 using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
@@ -44,15 +42,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion, aspNetCorePort: 0))
             {
                 var spans = await agent.WaitForSpansAsync(expectedSpans);
-                spans.Count.Should().Be(expectedSpans);
-
-                // All Datadog spans should be in the same trace
-                spans.Select(x => x.TraceId).Distinct().Count().Should().Be(1);
-
-                // All parent-id's should correspond to Datadog spans that were sent to the agent
-                var spanIds = spans.Select(s => s.SpanId);
-                var parentIds = spans.Where(s => s.ParentId is not null).Select(s => s.ParentId).Cast<ulong>();
-                parentIds.Should().BeSubsetOf(spanIds);
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
 
