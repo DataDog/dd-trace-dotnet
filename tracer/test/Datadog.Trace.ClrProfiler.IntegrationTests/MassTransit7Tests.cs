@@ -21,6 +21,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests;
 
 [UsesVerify]
 [Trait("RequiresDockerDependency", "true")]
+[Trait("DockerGroup", "2")]
 public class MassTransit7Tests : TracingIntegrationTest
 {
     public MassTransit7Tests(ITestOutputHelper output)
@@ -37,9 +38,9 @@ public class MassTransit7Tests : TracingIntegrationTest
     [SkippableTheory]
     [MemberData(nameof(GetData))]
     [Trait("Category", "EndToEnd")]
-    [Trait("RunOnWindows", "True")]
     public async Task SubmitsTraces(string packageVersion)
     {
+
         // Set environment variables for RabbitMQ and LocalStack (for SQS/SNS)
         var rabbitHost = Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? "localhost";
         var localStackEndpoint = Environment.GetEnvironmentVariable("AWS_SDK_HOST") ?? "localhost:4566";
