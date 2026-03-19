@@ -148,6 +148,12 @@
 # Run experiments in parallel (each on different NUMA node)
 parallelize: true
 
+# Benchmarks are split into two batches:
+# - batch-1: STABLE benchmarks (200ms iteration time, fast, low variance)
+# - batch-2: FLAKY benchmarks (500ms iteration time, need isolation)
+#
+# This separation reduces memory contention between flaky benchmarks.
+
 experiments:
   - name: batch-1
     steps:
@@ -158,17 +164,19 @@ experiments:
 
         cpus: "0,0xFFFFF"
         parallelize:
+          # STABLE benchmarks (200ms iteration time, 0% FP rate)
           items: >-
             *ActivityBenchmark*
             *AgentWriterBenchmark*
-            *AspNetCoreBenchmark*
-            *CharSliceBenchmark*
-            *CIVisibilityProtocolWriterBenchmark*
+            *AppSecBodyBenchmark*
+            *AppSecWafBenchmark*
             *DbCommandBenchmark*
-            *ElasticsearchBenchmark*
-            *GraphQLBenchmark*
             *HttpClientBenchmark*
             *ILoggerBenchmark*
+            *NLogBenchmark*
+            *RedisBenchmark*
+            *SpanBenchmark*
+            *TraceAnnotationsBenchmark*
           cpus_per_item: 2
 
         how_to_fetch_release: *how_to_fetch_release_build
@@ -183,16 +191,16 @@ experiments:
 
         cpus: "1,0xFFFFF"
         parallelize:
+          # FLAKY benchmarks (500ms iteration time, need isolation)
           items: >-
-            *Log4netBenchmark*
-            *NLogBenchmark*
-            *RedisBenchmark*
-            *SerilogBenchmark*
-            *SpanBenchmark*
-            *TraceAnnotationsBenchmark*
-            *AppSecBodyBenchmark*
             *AppSecEncoderBenchmark*
-            *AppSecWafBenchmark*
+            *AspNetCoreBenchmark*
+            *CharSliceBenchmark*
+            *CIVisibilityProtocolWriterBenchmark*
+            *ElasticsearchBenchmark*
+            *GraphQLBenchmark*
+            *Log4netBenchmark*
+            *SerilogBenchmark*
             *StringAspectsBenchmark*
           cpus_per_item: 2
 
