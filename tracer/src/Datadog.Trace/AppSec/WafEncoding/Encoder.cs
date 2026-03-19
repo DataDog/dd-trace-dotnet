@@ -281,6 +281,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
             }
             else
             {
+#pragma warning disable CA1851 // Possible multiple enumeration of collections - This _should_ be fixed, unless we verify that only non-IEnumerable types are provided
                 var childrenCount = 0;
                 // Let's enumerate first.
                 foreach (var val in enumerable)
@@ -321,6 +322,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
                     ddwafObjectStruct.NbEntries = (ulong)childrenCount;
                     context.Buffers.Add(childrenData);
                 }
+#pragma warning restore CA1851 // Possible multiple enumeration of collections
             }
 
             return ddwafObjectStruct;
@@ -476,6 +478,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
             }
             else
             {
+#pragma warning disable CA1851 // Possible multiple enumeration of collections - This _should_ be fixed, unless we verify that only non-IEnumerable types are provided
                 var itemData = childrenData;
                 var maxChildrenCount = childrenCount;
 
@@ -497,6 +500,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
                     *(DdwafObjectStruct*)itemData = Encode(ref context, remainingDepth, elementKey, getValue(element));
                     itemData += ObjectStructSize;
                 }
+#pragma warning restore CA1851 // Possible multiple enumeration of collections
             }
 
             ddWafObjectMap.Array = childrenData;
