@@ -10,7 +10,7 @@
 - shared — Cross-cutting native libs/utilities.
 - docs — Product and developer docs.
 - docker-compose.yml — Test dependencies (databases, brokers, etc.).
-- Solutions: `Datadog.Trace.sln`, `Datadog.Profiler.sln` (IDE).
+- Solutions: `Datadog.Trace.sln`, `Datadog.Profiler.sln`, `Datadog.Trace.Native.sln` (IDE). Solution filters (`.slnf`): `Datadog.Trace.Minimal`, `Datadog.Trace.Debugger`, `Datadog.Trace.Security`, `Datadog.Trace.TestOptimization`, `Datadog.Trace.OSX`. macOS users should always use `Datadog.Trace.OSX.slnf`.
 
 ## Architecture Overview
 
@@ -57,13 +57,14 @@ Auto-instrumentation comes from the tracer "monitoring home" deployed separately
   - `DuckTyping` — Duck typing runtime and attributes.
   - `ExtensionMethods` — Internal extension helpers.
   - `FaultTolerant` — Retry/backoff/resiliency helpers.
+  - `FeatureFlags` — Feature flag evaluation, exposure tracking, and RCM integration.
   - `Generated` — Generated sources (source generators output).
   - `Headers` — HTTP header constants/parsing.
   - `HttpOverStreams` — Socket/pipe HTTP transport to the agent.
   - `Iast` — Interactive App Security Testing.
   - `LibDatadog` — Native interop wrappers.
   - `Logging` — Internal logging abstractions.
-  - `OTelMetrics` / `OpenTelemetry` — OTEL interop and exporters.
+  - `OpenTelemetry` — OTEL interop and exporters.
   - `PDBs` — Symbol/PDB helpers.
   - `PlatformHelpers` — OS/arch/runtime helpers.
   - `Processors` — Pipelines and span processors.
@@ -93,12 +94,12 @@ Auto-instrumentation comes from the tracer "monitoring home" deployed separately
 <details>
 <summary>Key Component Sub-structure</summary>
 
-- **ClrProfiler** — AutoInstrumentation (integrations grouped by tech: AWS, AdoNet, AspNet/AspNetCore, Azure, Couchbase, Elasticsearch, GraphQL, Grpc, Http, IbmMq, Kafka, Logging, MongoDb, Msmq, OpenTelemetry, Process, Protobuf, RabbitMQ, Redis, Remoting, RestSharp, Testing, TraceAnnotations, Wcf), CallTarget (invoker, handlers, state structs, async continuations), Helpers (IL/interop, native definitions), ServerlessInstrumentation.
+- **ClrProfiler** — AutoInstrumentation (integrations grouped by tech: AWS, AdoNet, Aerospike, AspNet, AspNetCore, Azure, CosmosDb, Couchbase, CryptographyAlgorithm, Elasticsearch, GraphQL, Grpc, Hangfire, HashAlgorithm, Http, IbmMq, Kafka, Logging, ManualInstrumentation, MongoDb, Msmq, OpenTelemetry, Process, Protobuf, Proxy, Quartz, RabbitMQ, Redis, Remoting, RestSharp, StackTraceLeak, Testing, TraceAnnotations, VersionConflict, Wcf), CallTarget (invoker, handlers, state structs, async continuations), Helpers (IL/interop, native definitions), ServerlessInstrumentation.
 - **Agent** — DiscoveryService, MessagePack (trace payload encoding), StreamFactories (HTTP/Unix/Windows), TraceSamplers, Transports (HTTP/pipes).
 - **Configuration** — ConfigurationSources (env vars, JSON, args, RCM), Schema (span attribute schema), Core (`TracerSettings`, `ExporterSettings`, `IntegrationSettings`, git metadata).
 - **Propagators** — Datadog, W3C (tracecontext/baggage), B3 (single/multiple header), factories/utilities.
 - **Telemetry** — Collectors (feature/runtime), DTOs (payload models), Metrics (counters/series), Transports (HTTP).
-- **Debugger** — Instrumentation, Snapshots, Upload, Caching, Configurations, Expressions, PInvoke, Symbols, ExceptionAutoInstrumentation, RateLimiting, Sink, SpanCodeOrigin.
+- **Debugger** — Caching, Configurations, ExceptionAutoInstrumentation, Expressions, Helpers, Instrumentation, Models, PInvoke, ProbeStatuses, RateLimiting, Sink, Snapshots, SpanCodeOrigin, Symbols, Upload.
 - **Iast** — Aspects (sources/sinks), Dataflow (taint tracking), Propagation, SensitiveData, Settings, Telemetry, Analyzers, Helpers.
 - **DataStreamsMonitoring** — Aggregation, Transport, Hashes, Utils; manager/writer and context propagator.
 
@@ -309,6 +310,9 @@ The tracer runs in-process with customer applications and must have minimal perf
 - `docs/development/AwsLambdaIntegrationTests.md` — AWS Lambda integration tests
 - `docs/development/UpdatingTheSdk.md` — SDK updates
 - `docs/development/QueryingDatadogAPIs.md` — Querying Datadog APIs for debugging (spans, logs)
+- `docs/development/SystemTests.md` — Cross-language system tests setup
+- `docs/development/XunitCombinatorial.md` — Pairwise/combinatorial testing to speed up integration tests
+- `docs/development/StoredProcedureInjection.md` — Stored procedure instrumentation details
 
 **CI & Testing:**
 - `docs/development/CI/TroubleshootingCIFailures.md` — Investigating build/test failures in Azure DevOps
