@@ -12,9 +12,7 @@ init_environment:
   BP_INFRA_ARTIFACTS_BUCKET_NAME: "windows-benchmarking-results-us-east-1"
 
 source_ami:
-  # Test AMI with bp-runner from dev branch
-  # Built from benchmarking-platform/dd-trace-dotnet-micro/ephemeral-infra/ami-test.yaml
-  ami_id_ssm_parameter: "/windows-benchmarking/dd-trace-dotnet-microbenchmarks-ami-test-id"
+  ami_id_ssm_parameter: "/windows-benchmarking/dd-trace-dotnet-microbenchmarks-ami-id"
 
 tags:
   Name: *provision_name
