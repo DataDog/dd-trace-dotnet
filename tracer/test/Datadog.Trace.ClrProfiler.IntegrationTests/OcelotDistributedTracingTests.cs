@@ -7,6 +7,7 @@
 
 using System.Linq;
 using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using VerifyXunit;
@@ -32,8 +33,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [SkippableTheory]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        [MemberData(nameof(PackageVersions.Ocelot), MemberType = typeof(PackageVersions))]
-        public async Task SubmitsTraces(string packageVersion)
+        [CombinatorialOrPairwiseData]
+        public async Task SubmitsTraces([PackageVersionData(nameof(PackageVersions.Ocelot))] string packageVersion)
         {
             // We expect the following trace to be generated:
             // http.request => aspnet_core.request => http.request => aspnet_core.request
