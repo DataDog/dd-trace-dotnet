@@ -421,6 +421,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
                KafkaCreateConsumerScopeEnabled == other.KafkaCreateConsumerScopeEnabled &&
                GitRepositoryUrl == other.GitRepositoryUrl &&
                GitCommitSha == other.GitCommitSha &&
+               ProcessTags?.SerializedTags == other.ProcessTags?.SerializedTags &&
                // Do collection comparisons at the end, as generally more expensive
                AreEqual(GlobalTags, other.GlobalTags) &&
                AreEqual(HeaderTags, other.HeaderTags) &&
@@ -520,6 +521,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         // hashCode.Add(ServiceNameMappings);
         hashCode.Add(GitRepositoryUrl);
         hashCode.Add(GitCommitSha);
+        hashCode.Add(ProcessTags?.SerializedTags);
         return hashCode.ToHashCode();
     }
 
