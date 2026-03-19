@@ -1,6 +1,6 @@
-# run-benchmarks.ps1
-#
 # Runs pre-built benchmark executables directly, bypassing Nuke.
+#
+# Is called by running "bp-runner bp-runner.windows.yml" on the CI.
 #
 # This script exists because parallel bp-runner invocations would race to
 # compile/load Nuke's _build.dll, causing file lock errors. By running the
@@ -33,18 +33,39 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+# Validate all required environment variables
+$missingEnvVars = @()
+
 if (-not $env:CODE_SRC) {
-    Write-Error "CODE_SRC environment variable is not set"
-    exit 1
+    $missingEnvVars += "CODE_SRC"
 }
 
 if (-not $Filter) {
-    Write-Error "PARALLEL_ITEM environment variable (or -Filter parameter) is not set"
-    exit 1
+    $missingEnvVars += "PARALLEL_ITEM (or -Filter parameter)"
+}
+
+if (-not $Category) {
+    $missingEnvVars += "BENCHMARK_CATEGORY (or -Category parameter)"
+}
+
+if (-not $Project) {
+    $missingEnvVars += "BENCHMARK_PROJECT (or -Project parameter)"
 }
 
 if (-not $ArtifactsIndex) {
-    Write-Error "PARALLEL_INDEX environment variable (or -ArtifactsIndex parameter) is not set"
+    $missingEnvVars += "PARALLEL_INDEX (or -ArtifactsIndex parameter)"
+}
+
+if (-not $env:BASELINE_OR_CANDIDATE) {
+    $missingEnvVars += "BASELINE_OR_CANDIDATE"
+}
+
+if (-not $env:ARTIFACTS_DIR) {
+    $missingEnvVars += "ARTIFACTS_DIR"
+}
+
+if ($missingEnvVars.Count -gt 0) {
+    Write-Error "Missing required environment variables:`n  - $($missingEnvVars -join "`n  - ")"
     exit 1
 }
 
@@ -98,7 +119,7 @@ $arguments = @("-r") + $runtimes + @(
     "-m",
     "-f", $Filter,
     "--allCategories", $Category,
-    "--iterationTime", "200",
+    "--iterationTime", "200",  # Increased to 500 ms for flaky benchmarks
     "--launchCount", "10",
     "--warmupCount", "10",
     "--iterationCount", "10",
