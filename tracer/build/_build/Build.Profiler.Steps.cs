@@ -329,7 +329,7 @@ partial class Build
     Target BuildAndRunProfilerCpuLimitTests => _ => _
         .After(BuildProfilerSamples)
         .Description("Run the profiler container tests")
-        .Requires(() => IsLinux && !IsArm64)
+        .Requires(() => IsLinux)
         .Executes(() =>
         {
             BuildAndRunProfilerIntegrationTestsInternal("(Category=CpuLimitTest)");
@@ -338,7 +338,6 @@ partial class Build
     Target BuildAndRunProfilerIntegrationTests => _ => _
         .After(BuildProfilerSamples)
         .Description("Builds and runs the profiler integration tests")
-        .Requires(() => !IsArm64)
         .Executes(() =>
         {
             // Exclude CpuLimitTest from this path: They are already launched in a specific step + specific setup

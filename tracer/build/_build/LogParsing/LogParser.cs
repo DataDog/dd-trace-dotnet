@@ -76,7 +76,7 @@ public static partial class LogParser
                             || (managedFiles.Count > 0
                                 // && libdatadogFiles.Count > 0 Libdatadog exporter is off by default, so we don't require it to be there
                              && nativeTracerFiles.Count > 0
-                             && (nativeProfilerFiles.Count > 0 || EnvironmentInfo.IsOsx || EnvironmentInfo.IsArm64) // profiler doesn't support mac or ARM64
+                             && (nativeProfilerFiles.Count > 0 || EnvironmentInfo.IsOsx) // profiler doesn't support mac
                              && nativeLoaderFiles.Count > 0);
         var hasErrors = managedErrors.Count != 0
                      || libdatadogErrors.Count != 0
