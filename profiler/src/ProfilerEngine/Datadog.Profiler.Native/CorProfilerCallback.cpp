@@ -56,12 +56,17 @@
 #include "ThreadsCpuManager.h"
 #include "WallTimeProvider.h"
 #ifdef LINUX
+#ifdef ARM64
+#include "HybridUnwinder.h"
+#else
 #include "Backtrace2Unwinder.h"
+#endif
 #include "ProfilerSignalManager.h"
 #include "SystemCallsShield.h"
 #include "TimerCreateCpuProfiler.h"
 #include "LibrariesInfoCache.h"
 #include "CpuSampleProvider.h"
+#include <pthread.h>
 #endif
 
 #include "shared/src/native-src/pal.h"
@@ -620,7 +625,11 @@ void CorProfilerCallback::InitializeServices()
 #ifdef LINUX
     if (_pConfiguration->IsCpuProfilingEnabled() && _pConfiguration->GetCpuProfilerType() == CpuProfilerType::TimerCreate)
     {
+#ifdef ARM64
+        _pUnwinder = std::make_unique<HybridUnwinder>(_managedCodeCache.get());
+#else
         _pUnwinder = std::make_unique<Backtrace2Unwinder>();
+#endif
         // Other alternative in case of crash-at-shutdown, do not register it as a service
         // we will have to start it by hand (already stopped by hand)
         _pCpuProfiler = std::make_unique<TimerCreateCpuProfiler>(
@@ -1546,6 +1555,8 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         }
     }
 
+    OsSpecificApi::InitializeUnwinder(_managedCodeCache.get());
+
     // create services without starting them
     InitializeServices();
 
@@ -2257,7 +2268,23 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadAssignedToOSThread(ThreadID
     _pManagedThreadList->SetThreadOsInfo(managedThreadId, osThreadId, dupOsThreadHandle);
 
 #ifdef LINUX
-    // This call must be made *after* we assigne the SetThreadOsInfo function call.
+    {
+        pthread_attr_t attr;
+        if (pthread_getattr_np(pthread_self(), &attr) == 0)
+        {
+            void* stackAddr;
+            size_t stackSize;
+            if (pthread_attr_getstack(&attr, &stackAddr, &stackSize) == 0)
+            {
+                auto stackBase = reinterpret_cast<std::uintptr_t>(stackAddr);
+                auto stackEnd = stackBase + stackSize;
+                threadInfo->SetStackBounds(stackBase, stackEnd);
+            }
+            pthread_attr_destroy(&attr);
+        }
+    }
+
+    // This call must be made *after* we assign the SetThreadOsInfo function call.
     // Otherwise the threadInfo won't have it's OsThread field set and timer_create
     // will have random behavior.
     if (_pCpuProfiler != nullptr)
@@ -2277,16 +2304,20 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadAssignedToOSThread(ThreadID
     }
 
     // TL;DR prevent the profiler from deadlocking application thread on malloc
-    // Backtrace2Unwinder relies on libunwind. We need to call it to make sure
+    // The unwinder relies on libunwind. We need to call it to make sure
     // libunwind allocates and initializes TLS (Thread Local Storage) data structures for the current
     // thread.
     // Initialization of TLS object does call malloc. Unfortunately, if those calls to malloc
     // occurs in our profiler signal handler, we end up deadlocking the application.
-    // To prevent that, we call unw_backtrace here for the current thread, to force libunwind
+    // To prevent that, we call the unwinder here for the current thread, to force libunwind
     // initializing the TLS'd data structures for the current thread.
-    Backtrace2Unwinder bt2;
+#ifdef ARM64
+    HybridUnwinder warmup(_managedCodeCache.get());
+#else
+    Backtrace2Unwinder warmup;
+#endif
     uintptr_t tab[1];
-    bt2.Unwind(nullptr, tab, 1);
+    warmup.Unwind(nullptr, tab, 1);
 
     // check if SIGUSR1 signal is blocked for current thread
     sigset_t currentMask;
