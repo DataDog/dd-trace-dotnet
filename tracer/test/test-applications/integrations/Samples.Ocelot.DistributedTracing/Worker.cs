@@ -65,7 +65,7 @@ namespace Samples.Ocelot.DistributedTracing
                 // originates outside the process, so there is no in-process OTel SDK conflict.
                 //
                 // In this test, however, the Worker lives in the same process as the OTel SDK
-                // registered via AddHttpClientInstrumentation() in Startup.cs. Without nulling
+                // registered via AddHttpClientInstrumentation() in Program.cs. Without nulling
                 // out ActivityHeadersPropagator, the OTel SDK's DiagnosticsHandler overwrites
                 // Datadog's trace context headers on this request, causing the first
                 // aspnet_core.request span to have a parent ID from the OTel-generated context
