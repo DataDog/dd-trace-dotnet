@@ -87,8 +87,7 @@ run-benchmarks:
       when: never
     - if: $CI_COMMIT_REF_NAME == "master"
       interruptible: false
-    # TODO: Set interruptible to true
-    - interruptible: false
+    - interruptible: true
   artifacts:
     name: "artifacts"
     when: always
