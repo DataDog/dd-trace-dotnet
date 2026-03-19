@@ -41,7 +41,7 @@ internal sealed class ContainerMetadata
             if (!_warnedOnSet)
             {
                 _warnedOnSet = true;
-                Log.Warning("The code is trying to set the value '{Value}' to {Prop}, but this has no effect in NetFramework.", value, nameof(ContainerTagsHash));
+                Log.Error("The code is trying to set the value '{Value}' to {Prop}, but this has no effect in NetFramework.", value, nameof(ContainerTagsHash));
             }
         }
     }
