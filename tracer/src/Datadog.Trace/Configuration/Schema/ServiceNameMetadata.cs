@@ -17,6 +17,7 @@ namespace Datadog.Trace.Configuration.Schema;
 internal readonly struct ServiceNameMetadata
 {
     internal const string OptServiceMapping = "opt.service_mapping";
+    internal const string Manual = "m";
 
     public ServiceNameMetadata(string serviceName, string? source)
     {

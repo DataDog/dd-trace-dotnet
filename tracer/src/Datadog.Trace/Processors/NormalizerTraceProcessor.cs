@@ -71,7 +71,7 @@ namespace Datadog.Trace.Processors
         public Span Process(Span span)
         {
             // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/agent/normalizer.go#L51-L63
-            span.ServiceName = NormalizeService(span.ServiceName);
+            span.SetService(NormalizeService(span.ServiceName), span.Context.ServiceNameSource);
 
             // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/agent/normalizer.go#L76-L87
             span.OperationName = NormalizeName(span.OperationName);
