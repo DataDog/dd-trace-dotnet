@@ -86,7 +86,7 @@ internal sealed class ProfilerSettings
             var fd = FrameworkDescription.Instance;
             return
                 (fd.OSPlatform == OSPlatformName.Windows && fd.ProcessArchitecture is ProcessArchitecture.X64 or ProcessArchitecture.X86) ||
-                (fd.OSPlatform == OSPlatformName.Linux && fd.ProcessArchitecture is ProcessArchitecture.X64);
+                (fd.OSPlatform == OSPlatformName.Linux && fd.ProcessArchitecture is ProcessArchitecture.X64 or ProcessArchitecture.Arm64);
         }
     }
 
