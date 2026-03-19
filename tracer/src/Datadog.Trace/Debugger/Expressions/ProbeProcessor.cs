@@ -413,7 +413,7 @@ namespace Datadog.Trace.Debugger.Expressions
                     var instance = methodScopeMembers.InvocationTarget;
                     var members = methodScopeMembers.Members?.Select(m => new { Name = m.Name, Type = m.Type?.FullName ?? m.Type?.Name }).ToList();
                     string? membersAsString = null;
-                    if (members?.Any() == true)
+                    if (members?.Count > 0)
                     {
                         membersAsString = string.Join(";", members);
                     }

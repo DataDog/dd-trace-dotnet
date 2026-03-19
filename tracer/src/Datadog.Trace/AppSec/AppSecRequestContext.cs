@@ -26,9 +26,9 @@ internal sealed partial class AppSecRequestContext
     private readonly object _sync = new();
     private readonly RaspMetricsHelper? _raspMetricsHelper = Security.Instance.RaspEnabled ? new RaspMetricsHelper() : null;
     private readonly List<object> _wafSecurityEvents = new();
-    private int _wafTimeout = 0;
-    private int? _wafError = null;
-    private int? _wafRaspError = null;
+    private int _wafTimeout;
+    private int? _wafError;
+    private int? _wafRaspError;
     private Dictionary<string, List<Dictionary<string, object>>>? _raspStackTraces;
 
     internal void CloseWebSpan(Span span)
@@ -128,11 +128,11 @@ internal sealed partial class AppSecRequestContext
         {
             _raspStackTraces ??= new();
 
-            if (!_raspStackTraces.ContainsKey(stackCategory))
+            if (!_raspStackTraces.TryGetValue(stackCategory, out var value))
             {
                 _raspStackTraces.Add(stackCategory, new());
             }
-            else if (maxStackTraces > 0 && _raspStackTraces[stackCategory].Count >= maxStackTraces)
+            else if (maxStackTraces > 0 && value.Count >= maxStackTraces)
             {
                 return;
             }

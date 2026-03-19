@@ -7,6 +7,7 @@
 using System;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
+using Datadog.Trace.PlatformHelpers;
 
 namespace Datadog.Trace.LibDatadog.ServiceDiscovery;
 
@@ -37,7 +38,9 @@ internal static class ServiceDiscoveryHelper
                     Environment.MachineName,
                     mutableSettings.DefaultServiceName,
                     mutableSettings.Environment,
-                    mutableSettings.ServiceVersion);
+                    mutableSettings.ServiceVersion,
+                    tracerSettings.PropagateProcessTags ? ProcessTags.SerializedTags : string.Empty, // TODO get the process tags from MutableSettings after https://github.com/DataDog/dd-trace-dotnet/pull/8106 is merged
+                    ContainerMetadata.Instance.ContainerId ?? string.Empty);
 
                 if (result.Tag == ResultTag.Error)
                 {
@@ -71,7 +74,9 @@ internal static class ServiceDiscoveryHelper
         string? hostname,
         string? serviceName,
         string? serviceEnv,
-        string? serviceVersion)
+        string? serviceVersion,
+        string processTags,
+        string containerId)
     {
         IntPtr ptr = IntPtr.Zero;
         try
@@ -84,6 +89,8 @@ internal static class ServiceDiscoveryHelper
             SetMetadata(ptr, MetadataKind.ServiceName, serviceName);
             SetMetadata(ptr, MetadataKind.ServiceEnvironment, serviceEnv);
             SetMetadata(ptr, MetadataKind.ServiceVersion, serviceVersion);
+            SetMetadata(ptr, MetadataKind.ProcessTags, processTags);
+            SetMetadata(ptr, MetadataKind.ContainerId, containerId);
 
             return NativeInterop.LibraryConfig.StoreTracerMetadata(ptr);
         }

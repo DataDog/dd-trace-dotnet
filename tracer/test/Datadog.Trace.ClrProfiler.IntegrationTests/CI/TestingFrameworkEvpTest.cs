@@ -72,7 +72,7 @@ public abstract class TestingFrameworkEvpTest : TestHelper
     protected static bool IsMacOS()
         => string.Equals(FrameworkDescription.Instance.OSPlatform, OSPlatformName.MacOS, StringComparison.OrdinalIgnoreCase);
 
-    protected static string GetSettingsJson(string earlyFlakeDetection, string testsSkipping, string testManagementEnabled, string attemptToFixRetries)
+    protected static string GetSettingsJson(string earlyFlakeDetection, string testsSkipping, string testManagementEnabled, string attemptToFixRetries, string flakyTestRetriesEnabled = "false")
     {
         return $$"""
                  {
@@ -91,7 +91,7 @@ public abstract class TestingFrameworkEvpTest : TestHelper
                                  },
                                  "faulty_session_threshold": 100
                              },
-                             "flaky_test_retries_enabled": false,
+                             "flaky_test_retries_enabled": {{flakyTestRetriesEnabled}},
                              "itr_enabled": true,
                              "require_git": false,
                              "tests_skipping": {{testsSkipping}},
@@ -104,6 +104,20 @@ public abstract class TestingFrameworkEvpTest : TestHelper
                      }
                  }
                  """;
+    }
+
+    protected static void AssertEfdSelectedOverAtr(ExecutionData data, string simplePassResource)
+    {
+        var retryTests = data.Tests.Where(t => t.Meta.TryGetValue(TestTags.TestIsRetry, out var isRetry) && isRetry == "true").ToList();
+        retryTests.Should().NotBeEmpty();
+        foreach (var retryTest in retryTests)
+        {
+            retryTest.Meta.Should().ContainKey(TestTags.TestRetryReason);
+            retryTest.Meta[TestTags.TestRetryReason].Should().Be(TestTags.TestRetryReasonEfd);
+        }
+
+        var simplePassTests = data.Tests.Where(t => t.Resource == simplePassResource).ToList();
+        simplePassTests.Should().HaveCountGreaterThan(1);
     }
 
     protected virtual void WriteSpans(List<MockCIVisibilityTest>? tests)

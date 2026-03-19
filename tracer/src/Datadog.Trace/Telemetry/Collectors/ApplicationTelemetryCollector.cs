@@ -13,9 +13,9 @@ namespace Datadog.Trace.Telemetry.Collectors;
 
 internal sealed class ApplicationTelemetryCollector
 {
-    private GitMetadata? _gitMetadata = null;
-    private ApplicationTelemetryData? _applicationData = null;
-    private HostTelemetryData? _hostData = null;
+    private GitMetadata? _gitMetadata;
+    private ApplicationTelemetryData? _applicationData;
+    private HostTelemetryData? _hostData;
 
     public void RecordTracerSettings(TracerSettings tracerSettings)
     {

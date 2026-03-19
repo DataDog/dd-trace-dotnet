@@ -53,7 +53,7 @@ namespace Datadog.Trace.RuntimeMetrics
 #if NETSTANDARD
         // In .NET Core <3.1 on non-Windows, Process.PrivateMemorySize64 returns 0, so we disable this.
         // https://github.com/dotnet/runtime/issues/23284
-        private readonly bool _enableProcessMemory = false;
+        private readonly bool _enableProcessMemory;
 #endif
 
         private readonly ConcurrentDictionary<string, int> _exceptionCounts = new ConcurrentDictionary<string, int>();

@@ -274,7 +274,7 @@ namespace Datadog.Trace.Logging.DirectSubmission
         /// Gets a value indicating whether direct log submission is enabled for the Azure Functions host.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.DirectLogSubmission.AzureFunctionsHostEnabled"/>
-        internal bool AzureFunctionsHostEnabled { get; } = false;
+        internal bool AzureFunctionsHostEnabled { get; }
 
         /// <summary>
         /// Gets the Datadog API key
