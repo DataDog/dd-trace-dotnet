@@ -75,18 +75,21 @@ namespace GeneratePackageVersions
 
                 var requiresDockerDependency = project.RequiresDockerDependency().ToString();
 
-                List<string> packageVersions;
+                // Get all versions for this package (unfiltered), using cache when possible
+                List<string> allPackageVersions;
                 if (!_shouldQueryNuGet(entry.NugetPackageSearchName)
                     && VersionCache.TryGetValue(entry.NugetPackageSearchName, out var cached))
                 {
-                    packageVersions = cached;
+                    allPackageVersions = cached;
                 }
                 else
                 {
-                    // Fallback: no cache entry or force query NuGet
-                    packageVersions = (await NuGetPackageHelper.GetNugetPackageVersions(entry)).ToList();
-                    VersionCache[entry.NugetPackageSearchName] = packageVersions;
+                    allPackageVersions = await NuGetPackageHelper.GetAllNugetPackageVersions(entry.NugetPackageSearchName);
+                    VersionCache[entry.NugetPackageSearchName] = allPackageVersions;
                 }
+
+                // Filter to this entry's version range
+                var packageVersions = NuGetPackageHelper.FilterVersions(allPackageVersions, entry);
 
                 var orderedPackageVersions =
                     packageVersions

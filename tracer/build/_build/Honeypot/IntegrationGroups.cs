@@ -210,15 +210,7 @@ namespace Honeypot
                 }
 
                 // Query NuGet for this package
-                var searchCriteria = new PackageSearchCriteria
-                {
-                    IntegrationName = Name,
-                    NugetPackageSearchName = packageName,
-                    MinVersion = "0.0.1",
-                    MaxVersionExclusive = "255.255.255"
-                };
-
-                var packages = await NuGetPackageHelper.GetPackageMetadatas(searchCriteria);
+                var packages = await NuGetPackageHelper.GetPackageMetadatas(packageName);
 
                 var potentiallySupportedPackages = packages
                                                   .Where(p => p.Identity.HasVersion)
