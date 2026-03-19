@@ -97,6 +97,20 @@ Some benchmarks test too much at once. Consider splitting:
 - Launch count: **10**
 - Fixed counts: **20 warmup, 10 iteration**
 
+### Batch Organization (bp-runner.windows.yml)
+
+Benchmarks are split into two batches to reduce memory contention:
+
+**batch-1 (STABLE, 200ms iteration time):**
+- ActivityBenchmark, AgentWriterBenchmark, AppSecBodyBenchmark, AppSecWafBenchmark
+- DbCommandBenchmark, HttpClientBenchmark, ILoggerBenchmark, NLogBenchmark
+- RedisBenchmark, SpanBenchmark, TraceAnnotationsBenchmark
+
+**batch-2 (FLAKY, 500ms iteration time):**
+- AppSecEncoderBenchmark, AspNetCoreBenchmark, CharSliceBenchmark
+- CIVisibilityProtocolWriterBenchmark, ElasticsearchBenchmark, GraphQLBenchmark
+- Log4netBenchmark, SerilogBenchmark, StringAspectsBenchmark
+
 ### Per-Benchmark Overrides
 Added `[IterationTime(500)]` to flaky benchmark classes:
 
@@ -115,4 +129,5 @@ Added `[IterationTime(500)]` to flaky benchmark classes:
 ## Files Changed
 
 - `.gitlab/benchmarks/scripts/run-benchmarks.ps1` - Global benchmark configuration (200ms default)
+- `.gitlab/benchmarks/bp-runner.windows.yml` - Batch organization (stable vs flaky)
 - `tracer/test/benchmarks/Benchmarks.Trace/*.cs` - Per-benchmark iteration time overrides
