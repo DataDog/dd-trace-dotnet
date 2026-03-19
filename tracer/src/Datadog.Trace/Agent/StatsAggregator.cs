@@ -28,6 +28,22 @@ namespace Datadog.Trace.Agent
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<StatsAggregator>();
 
+        /// <summary>
+        /// Default peer tag keys matching the Go agent standard.
+        /// These are used when the agent does not provide a list of peer tag keys.
+        /// </summary>
+        private static readonly string[] DefaultPeerTagKeys =
+        {
+            "_dd.base_service",
+            "peer.service",
+            "peer.hostname",
+            "out.host",
+            "db.instance",
+            "db.system",
+            "messaging.destination",
+            "network.destination.name",
+        };
+
         private readonly StatsBuffer[] _buffers;
 
         private readonly IApi _api;
@@ -47,7 +63,7 @@ namespace Datadog.Trace.Agent
         private readonly AnalyticsEventsSampler _analyticsEventSampler;
         private readonly IDisposable _settingSubscription;
 
-        private string[] _peerTagKeys = Array.Empty<string>();
+        private string[] _peerTagKeys = DefaultPeerTagKeys;
 
         private int _currentBuffer;
 
@@ -198,11 +214,14 @@ namespace Datadog.Trace.Agent
             var httpMethod = span.GetTag(Tags.HttpMethod) ?? string.Empty;
             var httpEndpoint = span.GetTag(Tags.HttpEndpoint) ?? string.Empty;
 
-            // Peer tags: only for client/producer/consumer
+            // Peer tags: for client/producer/consumer spans,
+            // or for internal spans that have a _dd.base_service tag (service override)
             var peerTagsHash = string.Empty;
-            if (peerTagKeys is { Length: > 0 } && IsClientOrProducerOrConsumer(spanKind))
+            string[] peerTags = Array.Empty<string>();
+            if (peerTagKeys is { Length: > 0 } && ShouldExtractPeerTags(span, spanKind))
             {
-                peerTagsHash = ComputePeerTagsHash(span, peerTagKeys);
+                peerTags = ComputePeerTags(span, peerTagKeys);
+                peerTagsHash = ComputePeerTagsHash(peerTags);
             }
 
             return new StatsAggregationKey(
@@ -215,6 +234,7 @@ namespace Datadog.Trace.Agent
                 spanKind,
                 isTraceRoot,
                 peerTagsHash,
+                peerTags,
                 httpMethod,
                 httpEndpoint,
                 grpcStatusCode);
@@ -251,33 +271,73 @@ namespace Datadog.Trace.Agent
                 || spanKind == SpanKinds.Consumer;
         }
 
-        internal static string ComputePeerTagsHash(Span span, string[] peerTagKeys)
+        /// <summary>
+        /// Determines whether peer tags should be extracted for a span.
+        /// Peer tags are extracted for client/producer/consumer spans,
+        /// and also for internal spans that have a _dd.base_service tag (service override).
+        /// This matches the Go agent behavior.
+        /// </summary>
+        internal static bool ShouldExtractPeerTags(Span span, string spanKind)
+        {
+            if (IsClientOrProducerOrConsumer(spanKind))
+            {
+                return true;
+            }
+
+            // Internal spans with _dd.base_service should also have peer tags extracted
+            if (spanKind == SpanKinds.Internal && span.GetTag(Tags.BaseService) is not null)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Computes the peer tags array as "key:value" strings for a span.
+        /// The returned array is sorted by key name (ordinal) for consistent ordering.
+        /// </summary>
+        internal static string[] ComputePeerTags(Span span, string[] peerTagKeys)
         {
             // Sort the keys to ensure consistent ordering
             var sortedKeys = new string[peerTagKeys.Length];
             Array.Copy(peerTagKeys, sortedKeys, peerTagKeys.Length);
             Array.Sort(sortedKeys, StringComparer.Ordinal);
 
-            var sb = new StringBuilder();
-            var first = true;
+            var tags = new List<string>();
             foreach (var key in sortedKeys)
             {
                 var value = span.GetTag(key);
                 if (value is not null)
                 {
-                    if (!first)
-                    {
-                        sb.Append(',');
-                    }
-
-                    sb.Append(key);
-                    sb.Append(':');
-                    sb.Append(value);
-                    first = false;
+                    tags.Add(key + ":" + value);
                 }
             }
 
-            return sb.ToString();
+            return tags.ToArray();
+        }
+
+        /// <summary>
+        /// Computes a hash string from a peer tags array for use as an aggregation key.
+        /// The hash is simply the comma-joined "key:value" pairs (tags must already be sorted).
+        /// </summary>
+        internal static string ComputePeerTagsHash(string[] peerTags)
+        {
+            if (peerTags is not { Length: > 0 })
+            {
+                return string.Empty;
+            }
+
+            return string.Join(",", peerTags);
+        }
+
+        /// <summary>
+        /// Legacy overload for backwards compatibility in tests.
+        /// </summary>
+        internal static string ComputePeerTagsHash(Span span, string[] peerTagKeys)
+        {
+            var peerTags = ComputePeerTags(span, peerTagKeys);
+            return ComputePeerTagsHash(peerTags);
         }
 
         internal async Task Flush()

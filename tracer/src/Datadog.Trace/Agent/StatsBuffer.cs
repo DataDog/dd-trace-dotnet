@@ -129,7 +129,19 @@ namespace Datadog.Trace.Agent
             MessagePackBinary.WriteInt32(stream, bucket.Key.IsTraceRoot);
 
             MessagePackBinary.WriteString(stream, "PeerTags");
-            MessagePackBinary.WriteString(stream, bucket.Key.PeerTagsHash ?? string.Empty);
+            var peerTags = bucket.Key.PeerTags;
+            if (peerTags is { Length: > 0 })
+            {
+                MessagePackBinary.WriteArrayHeader(stream, peerTags.Length);
+                foreach (var tag in peerTags)
+                {
+                    MessagePackBinary.WriteString(stream, tag);
+                }
+            }
+            else
+            {
+                MessagePackBinary.WriteArrayHeader(stream, 0);
+            }
 
             MessagePackBinary.WriteString(stream, "GRPCStatusCode");
             MessagePackBinary.WriteString(stream, bucket.Key.GrpcStatusCode ?? string.Empty);

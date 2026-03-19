@@ -56,7 +56,7 @@ public class MockClientGroupedStats
     public int IsTraceRoot { get; set; }
 
     [Key("PeerTags")]
-    public string PeerTags { get; set; }
+    public string[] PeerTags { get; set; }
 
     [Key("GRPCStatusCode")]
     public string GrpcStatusCode { get; set; }

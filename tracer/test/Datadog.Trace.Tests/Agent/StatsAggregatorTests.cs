@@ -598,6 +598,64 @@ namespace Datadog.Trace.Tests.Agent
         }
 
         [Fact]
+        public void InternalSpanWithBaseServiceGetsPeerTags()
+        {
+            var start = DateTimeOffset.UtcNow;
+            var peerTagKeys = new[] { "_dd.base_service", "peer.service", "db.instance" };
+
+            // Internal span with _dd.base_service should get peer tags
+            var internalSpan = CreateTopLevelSpan(1, start, 100);
+            internalSpan.SetTag(Tags.SpanKind, SpanKinds.Internal);
+            internalSpan.SetTag("_dd.base_service", "original-service");
+            internalSpan.SetTag("db.instance", "my-db");
+
+            var internalKey = StatsAggregator.BuildKey(internalSpan, peerTagKeys);
+            internalKey.PeerTagsHash.Should().NotBeEmpty();
+            internalKey.PeerTags.Should().Contain("_dd.base_service:original-service");
+            internalKey.PeerTags.Should().Contain("db.instance:my-db");
+
+            // Internal span without _dd.base_service should NOT get peer tags
+            var internalSpanNoBase = CreateTopLevelSpan(2, start, 100);
+            internalSpanNoBase.SetTag(Tags.SpanKind, SpanKinds.Internal);
+            internalSpanNoBase.SetTag("db.instance", "my-db");
+
+            var noBaseKey = StatsAggregator.BuildKey(internalSpanNoBase, peerTagKeys);
+            noBaseKey.PeerTagsHash.Should().BeEmpty();
+            noBaseKey.PeerTags.Should().BeEmpty();
+
+            // Server span should still NOT get peer tags (unchanged behavior)
+            var serverSpan = CreateTopLevelSpan(3, start, 100);
+            serverSpan.SetTag(Tags.SpanKind, SpanKinds.Server);
+            serverSpan.SetTag("_dd.base_service", "original-service");
+
+            var serverKey = StatsAggregator.BuildKey(serverSpan, peerTagKeys);
+            serverKey.PeerTagsHash.Should().BeEmpty();
+            serverKey.PeerTags.Should().BeEmpty();
+        }
+
+        [Fact]
+        public void PeerTagsArrayMatchesHash()
+        {
+            var start = DateTimeOffset.UtcNow;
+            var peerTagKeys = new[] { "db.instance", "db.system", "peer.service" };
+
+            var span = CreateTopLevelSpan(1, start, 100);
+            span.SetTag(Tags.SpanKind, SpanKinds.Client);
+            span.SetTag("db.instance", "my-db");
+            span.SetTag("db.system", "postgres");
+
+            var key = StatsAggregator.BuildKey(span, peerTagKeys);
+
+            // PeerTags array should contain the individual "key:value" entries
+            key.PeerTags.Should().HaveCount(2);
+            key.PeerTags.Should().Contain("db.instance:my-db");
+            key.PeerTags.Should().Contain("db.system:postgres");
+
+            // PeerTagsHash should be the comma-joined version of the sorted tags
+            key.PeerTagsHash.Should().Be("db.instance:my-db,db.system:postgres");
+        }
+
+        [Fact]
         public void SpanKindBasedEligibility()
         {
             var start = DateTimeOffset.UtcNow;

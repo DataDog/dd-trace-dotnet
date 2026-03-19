@@ -18,6 +18,7 @@ namespace Datadog.Trace.Agent
         public readonly string SpanKind;
         public readonly int IsTraceRoot; // 0=NotSet, 1=True, 2=False
         public readonly string PeerTagsHash;
+        public readonly string[] PeerTags; // Array of "key:value" strings for serialization
         public readonly string HttpMethod;
         public readonly string HttpEndpoint;
         public readonly string GrpcStatusCode;
@@ -32,6 +33,7 @@ namespace Datadog.Trace.Agent
             string spanKind,
             int isTraceRoot,
             string peerTagsHash,
+            string[] peerTags,
             string httpMethod,
             string httpEndpoint,
             string grpcStatusCode)
@@ -45,6 +47,7 @@ namespace Datadog.Trace.Agent
             SpanKind = spanKind;
             IsTraceRoot = isTraceRoot;
             PeerTagsHash = peerTagsHash;
+            PeerTags = peerTags ?? Array.Empty<string>();
             HttpMethod = httpMethod;
             HttpEndpoint = httpEndpoint;
             GrpcStatusCode = grpcStatusCode;
