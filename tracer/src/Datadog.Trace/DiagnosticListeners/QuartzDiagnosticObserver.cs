@@ -3,7 +3,10 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using Datadog.Trace.Activity;
+using Datadog.Trace.Activity.DuckTypes;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Quartz;
+using Datadog.Trace.Logging;
 
 #nullable enable
 
@@ -19,10 +22,44 @@ internal sealed class QuartzDiagnosticObserver : DiagnosticObserver
 {
     private const string DiagnosticListenerName = "Quartz";
 
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<QuartzDiagnosticObserver>();
+
     protected override string ListenerName => DiagnosticListenerName;
 
     protected override void OnNext(string eventName, object arg)
     {
-        QuartzCommon.HandleDiagnosticEvent(eventName, arg);
+        switch (eventName)
+        {
+            case "Quartz.Job.Execute.Start":
+            case "Quartz.Job.Veto.Start":
+                var activity = ActivityListener.GetCurrentActivity();
+                if (activity is IActivity5 activity5)
+                {
+                    QuartzCommon.SetActivityKind(activity5);
+                }
+                else
+                {
+                    Log.Debug("The loaded System.Diagnostics.Activity type does not have a Kind property. Unable to populate the Kind property.");
+                }
+
+                if (activity?.Instance is not null)
+                {
+                    QuartzCommon.EnhanceActivityMetadata(activity);
+                }
+
+                break;
+            case "Quartz.Job.Execute.Stop":
+            case "Quartz.Job.Veto.Stop":
+                break;
+            case "Quartz.Job.Execute.Exception":
+            case "Quartz.Job.Veto.Exception":
+                var closingActivity = ActivityListener.GetCurrentActivity();
+                if (closingActivity?.Instance is not null)
+                {
+                    QuartzCommon.AddException(arg, closingActivity);
+                }
+
+                break;
+        }
     }
 }

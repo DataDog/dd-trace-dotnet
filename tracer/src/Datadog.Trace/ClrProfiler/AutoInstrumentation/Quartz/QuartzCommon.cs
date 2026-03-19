@@ -114,47 +114,5 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Quartz
             activity.AddTag(Tags.ErrorStack, exception.ToString());
             activity.AddTag("otel.status_code", "STATUS_CODE_ERROR");
         }
-
-        /// <summary>
-        /// Handles Quartz diagnostic events.
-        /// This method is shared between the DiagnosticObserver (modern .NET) and reflection-based observer (.NET Framework).
-        /// </summary>
-        internal static void HandleDiagnosticEvent(string eventName, object arg)
-        {
-            switch (eventName)
-            {
-                case "Quartz.Job.Execute.Start":
-                case "Quartz.Job.Veto.Start":
-                    var activity = ActivityListener.GetCurrentActivity();
-                    if (activity is IActivity5 activity5)
-                    {
-                        SetActivityKind(activity5);
-                    }
-                    else
-                    {
-                        Log.Debug("The loaded System.Diagnostics.Activity type does not have a Kind property. Unable to populate the Kind property.");
-                    }
-
-                    if (activity?.Instance is not null)
-                    {
-                        EnhanceActivityMetadata(activity);
-                    }
-
-                    break;
-                case "Quartz.Job.Execute.Stop":
-                case "Quartz.Job.Veto.Stop":
-                    break;
-                case "Quartz.Job.Execute.Exception":
-                case "Quartz.Job.Veto.Exception":
-                    // setting an exception manually
-                    var closingActivity = ActivityListener.GetCurrentActivity();
-                    if (closingActivity?.Instance is not null)
-                    {
-                        AddException(arg, closingActivity);
-                    }
-
-                    break;
-            }
-        }
     }
 }
