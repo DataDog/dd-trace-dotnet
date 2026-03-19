@@ -81,7 +81,8 @@ bool ManagedCodeCache::IsCodeInR2RModule(std::uintptr_t ip) const noexcept
 
     if (moduleCodeRange->isRemoved)
     {
-        LogOnce(Debug, "ManagedCodeCache::IsCodeInR2RModule: Module code range was removed for ip: 0x", std::hex, ip);
+        // No print, can be called in a signal handler
+        // LogOnce(Debug, "ManagedCodeCache::IsCodeInR2RModule: Module code range was removed for ip: 0x", std::hex, ip);
         return false;
     }
 
@@ -181,22 +182,19 @@ bool ManagedCodeCache::IsManaged(std::uintptr_t ip) const noexcept
         // Level 1: Find the page (shared lock on map structure)
         std::shared_lock<std::shared_mutex> mapLock(_pagesMutex);
         auto pageIt = _pagesMap.find(page);
-        if (pageIt == _pagesMap.end())
+        if (pageIt != _pagesMap.end())
         {
-            return false;  // No code on this page
-        }
-        
-        // Level 2: Binary search within the page's ranges (shared lock on page)
-   
-        std::shared_lock<std::shared_mutex> pageLock(pageIt->second.lock);
-        auto range = FindRange(pageIt->second.ranges, static_cast<UINT_PTR>(ip));
-        if (range.has_value())
-        {
-            return true;
+            // Level 2: Binary search within the page's ranges (shared lock on page)
+            std::shared_lock<std::shared_mutex> pageLock(pageIt->second.lock);
+            auto range = FindRange(pageIt->second.ranges, static_cast<UINT_PTR>(ip));
+            if (range.has_value())
+            {
+                return true;
+            }
         }
     }
 
-    // Check if the IP is within a module code range
+    // Page not found or IP not in any JIT-compiled range: check R2R modules
     return IsCodeInR2RModule(ip);
 }
 
