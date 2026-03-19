@@ -5,6 +5,8 @@
 
 #nullable enable
 
+using System.Collections.Generic;
+
 namespace Datadog.Trace.Agent.DiscoveryService;
 
 internal sealed record AgentConfiguration
@@ -24,7 +26,9 @@ internal sealed record AgentConfiguration
         string? containerTagsHash,
         bool clientDropP0,
         bool spanMetaStructs,
-        bool? spanEvents)
+        bool? spanEvents,
+        List<string>? peerTags = null,
+        List<string>? spanKindsStatsComputed = null)
     {
         ConfigurationEndpoint = configurationEndpoint;
         DebuggerEndpoint = debuggerEndpoint;
@@ -41,6 +45,8 @@ internal sealed record AgentConfiguration
         ClientDropP0s = clientDropP0;
         SpanMetaStructs = spanMetaStructs;
         SpanEvents = spanEvents ?? false;
+        PeerTags = peerTags;
+        SpanKindsStatsComputed = spanKindsStatsComputed;
     }
 
     public string? ConfigurationEndpoint { get; }
@@ -84,4 +90,8 @@ internal sealed record AgentConfiguration
     public bool SpanMetaStructs { get; }
 
     public bool SpanEvents { get; }
+
+    public List<string>? PeerTags { get; }
+
+    public List<string>? SpanKindsStatsComputed { get; }
 }
