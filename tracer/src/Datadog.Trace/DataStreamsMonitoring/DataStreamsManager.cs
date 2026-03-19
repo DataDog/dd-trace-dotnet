@@ -44,8 +44,7 @@ internal sealed class DataStreamsManager
         TracerSettings tracerSettings,
         IDataStreamsWriter? writer,
         IDiscoveryService discoveryService,
-        string? processTags,
-        ContainerMetadata containerMetadata)
+        string? processTags)
     {
         _isEnabled = writer is not null;
         _isLegacyDsmHeadersEnabled = tracerSettings.IsDataStreamsLegacyHeadersEnabled;
@@ -55,8 +54,7 @@ internal sealed class DataStreamsManager
         _isInDefaultState = tracerSettings.IsDataStreamsMonitoringInDefaultState;
 
         _previousMutableSettings = tracerSettings.Manager.InitialMutableSettings;
-        _previousContainerTagsHash = containerMetadata.ContainerTagsHash;
-        UpdateNodeHash(_previousMutableSettings, _previousContainerTagsHash);
+        // subscribing to changes calls the callback immediately if a value is present
         discoveryService.SubscribeToChanges(UpdateHashWithContainerTags);
         _updateSubscription = tracerSettings.Manager.SubscribeToChanges(UpdateHashWithNewSettings);
     }
@@ -113,7 +111,7 @@ internal sealed class DataStreamsManager
                          ? DataStreamsWriter.Create(settings, profilerSettings, discoveryService)
                          : null;
 
-        return new DataStreamsManager(settings, writer, discoveryService, settings.PropagateProcessTags ? ProcessTags.SerializedTags : null, ContainerMetadata.Instance);
+        return new DataStreamsManager(settings, writer, discoveryService, settings.PropagateProcessTags ? ProcessTags.SerializedTags : null);
     }
 
     public async Task DisposeAsync()

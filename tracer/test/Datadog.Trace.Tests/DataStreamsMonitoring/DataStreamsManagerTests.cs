@@ -347,7 +347,7 @@ public class DataStreamsManagerTests
                 { ConfigurationKeys.ServiceName, "bar" },
                 { ConfigurationKeys.DataStreamsMonitoring.Enabled, enabled.ToString() },
             });
-        return new DataStreamsManager(settings, writer, Mock.Of<IDiscoveryService>(), processTags: null, new ContainerMetadata(containerId: null, entityId: null));
+        return new DataStreamsManager(settings, writer, Mock.Of<IDiscoveryService>(), processTags: null);
     }
 
     internal class DataStreamsWriterMock : IDataStreamsWriter
