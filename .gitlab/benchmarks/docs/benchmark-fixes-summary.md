@@ -90,7 +90,29 @@ Some benchmarks test too much at once. Consider splitting:
 4. **Consider per-benchmark tuning** for the worst offenders
 5. **Accept some flakiness** - I/O-bound benchmarks will always have variance
 
+## Implementation
+
+### Global Configuration
+- Default iteration time: **200ms** (in `run-benchmarks.ps1`)
+- Launch count: **10**
+- Fixed counts: **20 warmup, 10 iteration**
+
+### Per-Benchmark Overrides
+Added `[IterationTime(500)]` to flaky benchmark classes:
+
+| File | Class |
+|------|-------|
+| `AspNetCoreBenchmark.cs` | `AspNetCoreBenchmark`, `SingleSpanAspNetCoreBenchmark` |
+| `ElasticsearchBenchmark.cs` | `ElasticsearchBenchmark` |
+| `CharSliceBenchmark.cs` | `CharSliceBenchmark` |
+| `CIVisibilityProtocolWriterBenchmark.cs` | `CIVisibilityProtocolWriterBenchmark` |
+| `GraphQLBenchmark.cs` | `GraphQLBenchmark` |
+| `Iast/StringAspectsBenchmark.cs` | `StringAspectsBenchmark` |
+| `Log4netBenchmark.cs` | `Log4netBenchmark` |
+| `SerilogBenchmark.cs` | `SerilogBenchmark` |
+| `Asm/AppSecEncodeBenchmark.cs` | `AppSecEncoderBenchmark` |
+
 ## Files Changed
 
-- `.gitlab/benchmarks/scripts/run-benchmarks.ps1` - Global benchmark configuration
-- Individual benchmark files could be modified for per-benchmark tuning
+- `.gitlab/benchmarks/scripts/run-benchmarks.ps1` - Global benchmark configuration (200ms default)
+- `tracer/test/benchmarks/Benchmarks.Trace/*.cs` - Per-benchmark iteration time overrides
