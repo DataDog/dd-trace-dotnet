@@ -3,8 +3,10 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 
@@ -33,8 +35,8 @@ public static class NuGetVersionCache
 
         await using var openStream = File.OpenRead(path);
 
-        var result = await JsonSerializer.DeserializeAsync<Dictionary<string, List<string>>>(openStream, JsonOptions);
-        return result ?? new Dictionary<string, List<string>>();
+        var result = await JsonSerializer.DeserializeAsync<List<KeyValuePair<string, List<string>>>>(openStream, JsonOptions);
+        return new Dictionary<string, List<string>>(result);
     }
 
     /// <summary>
@@ -42,7 +44,16 @@ public static class NuGetVersionCache
     /// </summary>
     public static async Task Save(string path, Dictionary<string, List<string>> cache)
     {
+        // convert to a list to make sure it has deterministic ordering
+        var ordered = cache
+            .OrderBy(x => x.Key)
+            .Select(x => new KeyValuePair<string, IEnumerable<string>>(
+                x.Key,
+                x.Value
+                    .Select(Version.Parse)
+                    .OrderBy(version => version)
+                    .Select(version => version.ToString())));
         await using var createStream = File.Create(path);
-        await JsonSerializer.SerializeAsync(createStream, cache, JsonOptions);
+        await JsonSerializer.SerializeAsync(createStream, ordered, JsonOptions);
     }
 }
