@@ -15,6 +15,8 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
 using Datadog.Trace.Logging;
+using Datadog.Trace.SourceGenerators;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
@@ -371,7 +373,8 @@ namespace Datadog.Trace.FeatureFlags
             return false;
         }
 
-        private static int GetShard(string salt, string? targetingKey, int totalShards)
+        [TestingAndPrivateOnly]
+        internal static int GetShard(string salt, string? targetingKey, int totalShards)
         {
             if (StringUtil.IsNullOrEmpty(targetingKey))
             {
@@ -379,24 +382,15 @@ namespace Datadog.Trace.FeatureFlags
             }
 
             var hashKey = $"{salt}-{targetingKey}";
-            var md5Hash = GetMd5Hash(hashKey);
-            var first8Chars = md5Hash.Substring(0, Math.Min(8, md5Hash.Length));
-            var intFromHash = Convert.ToInt64(first8Chars, 16);
+#if NETCOREAPP
+            // MD5 always produces a 16 byte hash
+            Span<byte> hashBytes = stackalloc byte[16];
+            Md5Helper.ComputeMd5Hash(hashKey, hashBytes);
+#else
+            var hashBytes = Md5Helper.ComputeMd5Hash(hashKey);
+#endif
+            var intFromHash = (long)BinaryPrimitives.ReadUInt32BigEndian(hashBytes);
             return (int)(intFromHash % totalShards);
-        }
-
-        private static string GetMd5Hash(string input)
-        {
-            using var md5 = MD5.Create();
-            var bytes = Encoding.UTF8.GetBytes(input);
-            var hashBytes = md5.ComputeHash(bytes);
-            var sb = new StringBuilder();
-            foreach (var b in hashBytes)
-            {
-                sb.Append(b.ToString("x2"));
-            }
-
-            return sb.ToString();
         }
 
         private static DateTime? ParseDate(string? dateString)
