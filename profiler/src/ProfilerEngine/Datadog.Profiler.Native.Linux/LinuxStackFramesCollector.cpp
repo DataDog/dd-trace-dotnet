@@ -221,7 +221,14 @@ std::int32_t LinuxStackFramesCollector::CollectCallStackCurrentThread(void* ctx)
 inline std::int32_t LinuxStackFramesCollector::CollectStack(void* ctx)
 {
     auto buffer = Data();
-    auto count = _pUnwinder->Unwind(ctx, reinterpret_cast<std::uintptr_t*>(buffer.data()), buffer.size());
+    std::uintptr_t stackBase = 0;
+    std::uintptr_t stackEnd = 0;
+    auto& threadInfo = ManagedThreadInfo::CurrentThreadInfo;
+    if (threadInfo)
+    {
+        std::tie(stackBase, stackEnd) = threadInfo->GetStackBounds();
+    }
+    auto count = _pUnwinder->Unwind(ctx, reinterpret_cast<std::uintptr_t*>(buffer.data()), buffer.size(), stackBase, stackEnd);
 
     if (count == 0)
     {

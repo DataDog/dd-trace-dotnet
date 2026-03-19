@@ -4,16 +4,18 @@
 #pragma once
 
 #include "IUnwinder.h"
-#include <cstdint>
 
-class Backtrace2Unwinder : public IUnwinder
+class ManagedCodeCache;
+
+class HybridUnwinder: public IUnwinder
 {
 public:
-    Backtrace2Unwinder();
-    ~Backtrace2Unwinder() override = default;
+    HybridUnwinder(ManagedCodeCache* managedCodeCache);
+    ~HybridUnwinder() override = default;
 
-    // Returns the number of frames unwound
     std::int32_t Unwind(void* ctx, std::uintptr_t* buffer, std::size_t bufferSize,
                         std::uintptr_t stackBase = 0, std::uintptr_t stackEnd = 0) const override;
 
+private:
+    ManagedCodeCache* _codeCache;
 };

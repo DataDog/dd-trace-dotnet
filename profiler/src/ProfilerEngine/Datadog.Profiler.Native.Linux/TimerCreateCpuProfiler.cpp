@@ -254,8 +254,15 @@ bool TimerCreateCpuProfiler::Collect(void* ctx)
         return false;
     }
 
+    std::uintptr_t stackBase = 0;
+    std::uintptr_t stackEnd = 0;
+    if (threadInfo)
+    {
+        std::tie(stackBase, stackEnd) = threadInfo->GetStackBounds();
+    }
+
     auto buffer = rawCpuSample->Stack.AsSpan();
-    auto count = _pUnwinder->Unwind(ctx, buffer.data(), buffer.size());
+    auto count = _pUnwinder->Unwind(ctx, buffer.data(), buffer.size(), stackBase, stackEnd);
     rawCpuSample->Stack.SetCount(count);
 
     if (count == 0)
