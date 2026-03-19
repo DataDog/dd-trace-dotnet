@@ -39,6 +39,7 @@ stages:
       - integration_tests_linux_debugger
       - profiler_integration_tests_windows
       - profiler_integration_tests_linux
+      - profiler_integration_tests_arm64
       - asan_profiler_tests
       - ubsan_profiler_tests
       - tsan_profiler_tests
@@ -118,6 +119,7 @@ stages:
          in(dependencies.integration_tests_linux_debugger.result, 'Succeeded','SucceededWithIssues','Skipped'),
          in(dependencies.profiler_integration_tests_windows.result, 'Succeeded','SucceededWithIssues','Skipped'),
          in(dependencies.profiler_integration_tests_linux.result, 'Succeeded','SucceededWithIssues','Skipped'),
+         in(dependencies.profiler_integration_tests_arm64.result, 'Succeeded','SucceededWithIssues','Skipped'),
          in(dependencies.asan_profiler_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
          in(dependencies.ubsan_profiler_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
          in(dependencies.tsan_profiler_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
@@ -209,6 +211,7 @@ stages:
       - integration_tests_linux_debugger
       - profiler_integration_tests_windows
       - profiler_integration_tests_linux
+      - profiler_integration_tests_arm64
       - asan_profiler_tests
       - ubsan_profiler_tests
       - tsan_profiler_tests
@@ -288,6 +291,7 @@ stages:
          in(dependencies.integration_tests_linux_debugger.result, 'Succeeded','SucceededWithIssues','Skipped'),
          in(dependencies.profiler_integration_tests_windows.result, 'Succeeded','SucceededWithIssues','Skipped'),
          in(dependencies.profiler_integration_tests_linux.result, 'Succeeded','SucceededWithIssues','Skipped'),
+         in(dependencies.profiler_integration_tests_arm64.result, 'Succeeded','SucceededWithIssues','Skipped'),
          in(dependencies.asan_profiler_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
          in(dependencies.ubsan_profiler_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
          in(dependencies.tsan_profiler_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
