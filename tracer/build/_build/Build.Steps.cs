@@ -360,6 +360,14 @@ partial class Build
             var buildDirectory = NativeBuildDirectory + "_" + finalArchs.Replace(';', '_');
             EnsureExistingDirectory(buildDirectory);
 
+            // Resolve the macOS SDK path so we can point the linker at it.
+            // Homebrew llvm@15 installs an x86_64-only libunwind.dylib in
+            // /usr/local/lib which shadows the system's universal version.
+            // Passing the SDK sysroot ensures the linker finds the real one.
+            var sdkProcess = ProcessTasks.StartProcess("xcrun", "--show-sdk-path");
+            sdkProcess.WaitForExit();
+            var sdkPath = sdkProcess.Output.Select(o => o.Text).First().Trim();
+
             var envVariables = new Dictionary<string, string>
             {
                 ["HOME"] = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
@@ -376,7 +384,7 @@ partial class Build
 
             // Build native
             CMake.Value(
-                arguments: $"-B {buildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}",
+                arguments: $"-B {buildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration} -DCMAKE_OSX_SYSROOT={sdkPath}",
                 environmentVariables: envVariables);
             CMake.Value(
                 arguments: $"--build {buildDirectory} --parallel {Environment.ProcessorCount} --target {FileNames.NativeTracer}",
