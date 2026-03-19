@@ -8,7 +8,7 @@ To run the smoke tests locally, you can do the following.
 
 **Windows (PowerShell):**
 ```powershell
-tracer\build.cmd RunArtifactSmokeTests CheckSmokeTestsForErrors -SmokeTestCategory 'LinuxX64Installer' -SmokeTestScenario 'ubuntu_10_0-noble' --Artifacts './artifacts'
+.\tracer\build.ps1 RunArtifactSmokeTests CheckSmokeTestsForErrors -SmokeTestCategory 'LinuxX64Installer' -SmokeTestScenario 'ubuntu_10_0-noble' --Artifacts './artifacts'
 ```
 
 **macOS/Linux:**
