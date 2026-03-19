@@ -61,7 +61,9 @@ namespace Datadog.Trace.Agent
             var count = 8;
             var details = _header.Details;
 
-            if (!StringUtil.IsNullOrEmpty(details.ProcessTags?.SerializedTags))
+            var serializedTags = details.ProcessTags?.SerializedTags;
+            var writeTags = !StringUtil.IsNullOrEmpty(serializedTags);
+            if (writeTags)
             {
                 count++;
             }
@@ -77,10 +79,10 @@ namespace Datadog.Trace.Agent
             MessagePackBinary.WriteString(stream, "Version");
             MessagePackBinary.WriteString(stream, details.Version ?? string.Empty);
 
-            if (!StringUtil.IsNullOrEmpty(details.ProcessTags?.SerializedTags))
+            if (writeTags)
             {
                 MessagePackBinary.WriteString(stream, "ProcessTags");
-                MessagePackBinary.WriteString(stream, details.ProcessTags.SerializedTags);
+                MessagePackBinary.WriteString(stream, serializedTags);
             }
 
             MessagePackBinary.WriteString(stream, "Stats");
