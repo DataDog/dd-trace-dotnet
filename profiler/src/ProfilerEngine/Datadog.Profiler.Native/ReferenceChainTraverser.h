@@ -9,6 +9,7 @@
 #include "TypeReferenceTree.h"
 #include "VisitedObjectSet.h"
 #include "ReferenceChainTypes.h"
+#include <chrono>
 #include <string>
 #include <vector>
 
@@ -91,4 +92,5 @@ private:
     uint64_t _objectsTraversed;
     uint64_t _rootsProcessed;
     uint64_t _rootCategoryCounts[8] = {};
+    std::chrono::nanoseconds _totalTraversalDuration{0};
 };

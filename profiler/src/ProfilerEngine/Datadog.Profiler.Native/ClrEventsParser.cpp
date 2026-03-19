@@ -343,8 +343,6 @@ ClrEventsParser::ParseGcEvent(std::chrono::nanoseconds timestamp, DWORD id, DWOR
                 auto fieldName = EventsParserHelper::ReadWideString(pEventData, cbEventData, &offset);
 
                 auto fieldNameStr = shared::ToString(fieldName);
-                LogGcEvent("    field= ", fieldNameStr);
-
                 _pGCDumpListener->OnBulkRootStaticVar(value, fieldNameStr);
             }
         }

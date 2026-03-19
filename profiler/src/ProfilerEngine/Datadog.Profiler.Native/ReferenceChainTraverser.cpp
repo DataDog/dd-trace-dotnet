@@ -3,6 +3,7 @@
 
 #include "ReferenceChainTraverser.h"
 #include "Log.h"
+#include "OpSysTools.h"
 
 // CLR object layout:
 //   ObjectID + 0              : MethodTable* (the "reference points to the MethodTable")
@@ -29,13 +30,7 @@ ReferenceChainTraverser::ReferenceChainTraverser(
 
 void ReferenceChainTraverser::TraverseFromSingleRoot(const RootInfo& root)
 {
-    if (Log::IsDebugEnabled())
-    {
-        Log::Debug("[ROOT] type='", GetClassName(root.classID),
-                   "' category=", RootCategoryToString(root.category),
-                   " address=", root.address, " size=", root.objectSize);
-    }
-
+    auto startTime = OpSysTools::GetHighPrecisionTimestamp();
     _rootCategoryCounts[static_cast<int>(root.category)]++;
 
     // Add the root to the tree and get the tree node to navigate from
@@ -51,13 +46,16 @@ void ReferenceChainTraverser::TraverseFromSingleRoot(const RootInfo& root)
     TraverseObject(root.address, visited, rootNode, 1);
 
     _rootsProcessed++;
+    _totalTraversalDuration += OpSysTools::GetHighPrecisionTimestamp() - startTime;
 }
 
 void ReferenceChainTraverser::LogStats() const
 {
-    Log::Debug("Reference chain traversal completed: ",
-               _rootsProcessed, " roots, ",
-               _objectsTraversed, " objects traversed");
+    auto durationMs = std::chrono::duration_cast<std::chrono::milliseconds>(_totalTraversalDuration).count();
+
+    Log::Debug("Reference chain traversal completed in ", durationMs, "ms: ",
+              _rootsProcessed, " roots, ",
+              _objectsTraversed, " objects traversed");
 
     for (int i = 0; i <= static_cast<int>(RootCategory::Unknown); i++)
     {
