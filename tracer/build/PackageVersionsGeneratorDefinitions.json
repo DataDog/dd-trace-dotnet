@@ -390,14 +390,15 @@
     "SampleProjectName": "Samples.Microsoft.Data.SqlClient",
     "NugetPackageSearchName": "Microsoft.Data.SqlClient",
     "MinVersion": "1.0.0",
-    "MaxVersionExclusive": "7.0.0",
+    "MaxVersionExclusive": "8.0.0",
     "SpecificVersions": [
       "1.*.*",
       "2.*.*",
       "3.*.*",
       "4.*.*",
       "5.*.*",
-      "6.*.*"
+      "6.*.*",
+      "7.*.*"
     ],
     "VersionConditions": [{
       "MinVersion": "5.1.0",
