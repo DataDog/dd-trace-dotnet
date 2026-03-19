@@ -5,6 +5,10 @@
 #include "INativeThreadList.h"
 #include "OpSysTools.h"
 #include "ThreadsCpuManager.h"
+#include "TypeReferenceTree.h"
+#include "ReferenceChainTraverser.h"
+#include "TypeReferenceTreeJsonSerializer.h"
+#include "ReferenceChainTypes.h"
 
 #include "Log.h"
 
@@ -43,9 +47,19 @@ HeapSnapshotManager::HeapSnapshotManager(
     _inducedGCNumber.store(-1);
     _shouldStartHeapDump.store(false);
     _shouldCleanupHeapDumpSession.store(false);
-    _heapDumpInterval = pConfiguration->GetHeapSnapshotInterval();
     _memPressureThreshold = pConfiguration->GetHeapSnapshotMemoryPressureThreshold();
     _snapshotCheckInterval = pConfiguration->GetHeapSnapshotCheckInterval();
+
+    auto testInterval = pConfiguration->GetTestHeapSnapshotInterval();
+    _delayFirstSnapshot = (testInterval.count() > 0);
+    if (_delayFirstSnapshot)
+    {
+        _heapDumpInterval = testInterval;
+    }
+    else
+    {
+        _heapDumpInterval = std::chrono::duration_cast<std::chrono::seconds>(pConfiguration->GetHeapSnapshotInterval());
+    }
 
     _heapSnapshotDurationMetric = metricsRegistry.GetOrRegister<ProxyMetric>("dotnet_heapsnapshot_duration", [this]() {
         return static_cast<double>(_duration);
@@ -61,6 +75,9 @@ HeapSnapshotManager::HeapSnapshotManager(
 
 
     _pCorProfilerInfo->AddRef();
+
+    // Initialize reference tree
+    _typeReferenceTree = std::make_unique<TypeReferenceTree>();
 }
 
 HeapSnapshotManager::~HeapSnapshotManager()
@@ -151,6 +168,10 @@ void HeapSnapshotManager::MainLoopIteration()
         // close the session + start/stop the fake session to reset the keywords/verbosity
         _shouldCleanupHeapDumpSession.store(false);
         CleanupSession();
+
+        // Note: GetClassFromObject/GetObjectSize2 can only be called from within ICorProfilerCallback methods.
+        // They fail with CORPROF_E_UNSUPPORTED_CALL_SEQUENCE from another thread, and crash the CLR after a GC.
+        // --> Traversal is done during the OnBulkRoot* event handlers (see OnBulkRootEdges/OnBulkRootStaticVar).
     }
     else
     if (_shouldStartHeapDump.load())
@@ -172,6 +193,23 @@ std::string HeapSnapshotManager::GetAndClearHeapSnapshotText()
     _cachedItemsSize.store(0, std::memory_order_relaxed);
 
     return heapSnapshotText;
+}
+
+std::string HeapSnapshotManager::GetAndClearReferenceTreeJson()
+{
+    std::lock_guard lock(_histogramLock);
+
+    if (!_typeReferenceTree || _typeReferenceTree->IsEmpty())
+    {
+        return "{}";
+    }
+
+    std::string json = TypeReferenceTreeJsonSerializer::Serialize(*_typeReferenceTree, _pFrameStore);
+
+    // Clear after serialization
+    _typeReferenceTree->Clear();
+
+    return json;
 }
 
 // NOTE: must be called under the lock
@@ -266,6 +304,114 @@ void HeapSnapshotManager::OnBulkEdges(
     // TODO: should be used to rebuild the reference chain. For more details,
     //       the array of edges is strongly related to the array of nodes received in OnBulkNodes.
     // read https://chnasarre.medium.com/net-gcdump-internals-fcce5d327be7?source=friends_link&sk=3225ff119458adafc0e6935951fcc323
+    // NOTE: We're using root-based traversal instead, so this is not needed
+}
+
+void HeapSnapshotManager::OnBulkRootEdges(
+    uint32_t index,
+    uint32_t count,
+    GCBulkRootEdgeValue* pRoots)
+{
+    std::lock_guard lock(_histogramLock);
+
+    Log::Debug("OnBulkRootEdges: index=", index, " count=", count);
+
+    uint32_t successCount = 0;
+    uint32_t failCount = 0;
+
+    for (size_t i = 0; i < count; i++)
+    {
+        auto& root = pRoots[i];
+
+        // Map GCRootKind to RootCategory
+        RootCategory category;
+        if (root.Kind == GCRootKind::Stack)
+        {
+            category = RootCategory::Stack;  // local variable
+        }
+        else if (root.Kind == GCRootKind::Finalizer)
+        {
+            category = RootCategory::Finalizer;
+        }
+        else if (root.Kind == GCRootKind::Handle)
+        {
+            if ((static_cast<uint32_t>(root.Flags) & static_cast<uint32_t>(GCRootFlags::Pinning)) != 0)
+            {
+                category = RootCategory::Pinning;
+            }
+            else
+            {
+                category = RootCategory::Handle;
+            }
+        }
+        else if (root.Kind == GCRootKind::Other)
+        {
+            category = RootCategory::StaticVariable;
+        }
+        else
+        {
+            category = RootCategory::Unknown;
+        }
+
+
+        // GetClassFromObject/GetObjectSize2 can only be called from within ICorProfilerCallback methods
+        // (i.e. NOT from another thread and NOT after a GC)
+        ClassID rootClassID;
+        HRESULT hr = _pCorProfilerInfo->GetClassFromObject(root.RootedNodeAddress, &rootClassID);
+        if (FAILED(hr))
+        {
+            failCount++;
+            continue;
+        }
+
+        SIZE_T size = 0;
+        hr = _pCorProfilerInfo->GetObjectSize2(root.RootedNodeAddress, &size);
+        if (FAILED(hr))
+        {
+            failCount++;
+
+            continue;
+        }
+
+        successCount++;
+        RootInfo rootInfo(root.RootedNodeAddress, category, rootClassID, size);
+
+        // Traverse the object graph from this root immediately (while still in GC callback context)
+        if (_pReferenceChainTraverser)
+        {
+            _pReferenceChainTraverser->TraverseFromSingleRoot(rootInfo);
+        }
+    }
+
+    Log::Debug("OnBulkRootEdges: batch done, success=", successCount, " failed=", failCount);
+}
+
+void HeapSnapshotManager::OnBulkRootStaticVar(const GCBulkRootStaticVarValue& root, const std::string& fieldName)
+{
+    std::lock_guard lock(_histogramLock);
+
+    // GetClassFromObject/GetObjectSize2 can only be called from within ICorProfilerCallback methods
+    SIZE_T size = 0;
+    HRESULT hr = _pCorProfilerInfo->GetObjectSize2(root.ObjectID, &size);
+    if (FAILED(hr))
+    {
+        if (Log::IsDebugEnabled())
+        {
+            std::string typeName;
+            _pFrameStore->GetTypeName(static_cast<ClassID>(root.TypeID), typeName);
+            Log::Debug("[STATIC_ROOT] GetObjectSize2 failed for field='", fieldName,
+                       "' type='", typeName, "' hr=", hr);
+        }
+        return;
+    }
+
+    RootInfo rootInfo(root.ObjectID, RootCategory::StaticVariable, root.TypeID, size, fieldName);
+
+    // Traverse the object graph from this root immediately (while still in GC callback context)
+    if (_pReferenceChainTraverser)
+    {
+        _pReferenceChainTraverser->TraverseFromSingleRoot(rootInfo);
+    }
 }
 
 void HeapSnapshotManager::OnGarbageCollectionStart(
@@ -373,14 +519,14 @@ void HeapSnapshotManager::StartAsyncSnapshotIfNeeded()
     auto now = OpSysTools::GetHighPrecisionTimestamp();
     if (_lastTimestamp == 0ns)
     {
-        // for tests purposes, we start the first snapshot right away
         if (_memPressureThreshold == 0)
         {
-
-            // wait at least _heapDumpInterval after the first snapshot
             _lastTimestamp = now;
 
-            _shouldStartHeapDump.store(true);
+            if (!_delayFirstSnapshot)
+            {
+                _shouldStartHeapDump.store(true);
+            }
             return;
         }
     }
@@ -403,10 +549,18 @@ void HeapSnapshotManager::StartGCDump()
         return;
     }
 
-    // reset the class histogram
+    // reset the class histogram and reference tree
     {
         std::lock_guard lock(_histogramLock);
         _classHistogram.clear();
+        if (_typeReferenceTree)
+        {
+            _typeReferenceTree->Clear();
+        }
+
+        // Create/reset the traverser so it is ready to process roots during GC callbacks
+        _pReferenceChainTraverser = std::make_unique<ReferenceChainTraverser>(
+            _pCorProfilerInfo, _pFrameStore, *_typeReferenceTree);
 
         _cachedItemsSize.store(0, std::memory_order_relaxed);
     }
@@ -448,14 +602,14 @@ void HeapSnapshotManager::OnEndGCDump()
     // for debugging purpose only
     std::cout << _objectCount << " objects for " << _totalSize / (1024 * 1024) << " MB during " << _duration << "ms" << std::endl
               << std::endl;
-
-//    {
-//        // dump each entry in _classHistogram
-//        std::lock_guard lock(_histogramLock);
-//        auto content = GetHeapSnapshotText();
-//        std::cout << content << std::endl;
-//    }
 #endif
+
+    // Log traversal statistics.
+    // Traversal itself was done incrementally during OnBulkRoot* callbacks.
+    if (_pReferenceChainTraverser)
+    {
+        _pReferenceChainTraverser->LogStats();
+    }
 
     // DEBUG: we cannot stop here the session + start/stop a fake one to reset the keywords/verbosity
     //        because it could deadlock the GC

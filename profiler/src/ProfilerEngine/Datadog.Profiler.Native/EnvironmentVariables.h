@@ -81,6 +81,7 @@ public:
 
     // used for tests only
     inline static const shared::WSTRING ForceHttpSampling           = WStr("DD_INTERNAL_PROFILING_FORCE_HTTP_SAMPLING");
+    inline static const shared::WSTRING TestHeapSnapshotInterval    = WStr("DD_INTERNAL_PROFILING_TEST_HEAPSNAPSHOT_INTERVAL");
 
     inline static const shared::WSTRING CIVisibilityEnabled         = WStr("DD_CIVISIBILITY_ENABLED");
     inline static const shared::WSTRING InternalCIVisibilitySpanId  = WStr("DD_INTERNAL_CIVISIBILITY_SPANID");
