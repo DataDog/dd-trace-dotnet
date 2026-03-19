@@ -35,7 +35,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
 
     internal sealed partial class MongoDbV1Tags : MongoDbTags
     {
-        private string _peerServiceOverride = null;
+        private string _peerServiceOverride;
 
         // Use a private setter for setting the "peer.service" tag so we avoid
         // accidentally setting the value ourselves and instead calculate the

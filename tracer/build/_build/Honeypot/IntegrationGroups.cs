@@ -140,13 +140,21 @@ namespace Honeypot
         { 
         }
 
-        public static async Task<IntegrationMap> Create(string name, string integrationId, string assemblyName, Version minimumVersion, Version maximumVersion, List<PackageVersionGenerator.TestedPackage> testedVersions)
+        public static async Task<IntegrationMap> Create(
+            string name,
+            string integrationId,
+            string assemblyName,
+            Version minimumVersion,
+            Version maximumVersion,
+            List<PackageVersionGenerator.TestedPackage> testedVersions,
+            Func<string, bool> shouldUpdatePackage,
+            Dictionary<(string AssemblyName, string PackageName), GenerateSupportMatrix.SupportedNuGetPackage> previousSupportedVersions)
         {
             if (!NugetPackages.ContainsKey(name))
             {
                 throw new Exception($"Missing key: {name} - Every integration must be represented in the packages map.");
             }
-            
+
             var instance = new IntegrationMap
             {
                 Name = name,
@@ -156,7 +164,7 @@ namespace Honeypot
                 MaximumSupportedAssemblyVersion = maximumVersion
             };
 
-            await instance.PopulatePackages(testedVersions);
+            await instance.PopulatePackages(testedVersions, shouldUpdatePackage, previousSupportedVersions);
 
             return instance;
         }
@@ -173,20 +181,37 @@ namespace Honeypot
 
         public List<IntegrationPackage> Packages { get; } = new();
 
-        private async Task PopulatePackages(List<PackageVersionGenerator.TestedPackage> testedVersions)
+        private async Task PopulatePackages(
+            List<PackageVersionGenerator.TestedPackage> testedVersions,
+            Func<string, bool> shouldUpdatePackage,
+            Dictionary<(string AssemblyName, string PackageName), GenerateSupportMatrix.SupportedNuGetPackage> previousSupportedVersions)
         {
             var packageNames = NugetPackages[Name];
             foreach (var packageName in packageNames)
             {
-                var searchCriteria = new PackageSearchCriteria
+                if (!shouldUpdatePackage(packageName)
+                    && previousSupportedVersions.TryGetValue((AssemblyName, packageName), out var prev))
                 {
-                    IntegrationName = Name,
-                    NugetPackageSearchName = packageName,
-                    MinVersion = "0.0.1",
-                    MaxVersionExclusive = "255.255.255"
-                };
+                    // Use cached data from previous supported_versions.json
+                    var cachedAllTestedVersions = testedVersions
+                                           .Where(x => x.NugetPackageSearchName.Equals(packageName))
+                                           .ToList();
+                    var cachedFirstTestedVersion = cachedAllTestedVersions.MinBy(x => x.MinVersion)?.MinVersion;
+                    var cachedLatestTestedVersion = cachedAllTestedVersions.MaxBy(x => x.MaxVersion)?.MaxVersion;
 
-                var packages = await NuGetPackageHelper.GetPackageMetadatas(searchCriteria);
+                    Packages.Add(new IntegrationPackage(
+                                     NugetName: packageName,
+                                     LatestVersion: Version.Parse(prev.MaxVersionAvailableInclusive),
+                                     LatestSupportedVersion: Version.Parse(prev.MaxVersionSupportedInclusive),
+                                     LatestTestedVersion: cachedLatestTestedVersion ?? (prev.MaxVersionTestedInclusive is not null ? Version.Parse(prev.MaxVersionTestedInclusive) : null),
+                                     FirstVersion: Version.Parse(prev.MinVersionAvailableInclusive),
+                                     FirstSupportedVersion: Version.Parse(prev.MinVersionSupportedInclusive),
+                                     FirstTestedVersion: cachedFirstTestedVersion ?? (prev.MinVersionTestedInclusive is not null ? Version.Parse(prev.MinVersionTestedInclusive) : null)));
+                    continue;
+                }
+
+                // Query NuGet for this package
+                var packages = await NuGetPackageHelper.GetPackageMetadatas(packageName);
 
                 var potentiallySupportedPackages = packages
                                                   .Where(p => p.Identity.HasVersion)

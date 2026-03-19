@@ -16,8 +16,8 @@ namespace Datadog.Trace.Telemetry
         private readonly IntegrationDetail[] _integrationsById;
         private readonly IntegrationTelemetryData[] _previousValues;
 
-        private int _hasChangesFlag = 0;
-        private bool _hasSentFirstValues = false;
+        private int _hasChangesFlag;
+        private bool _hasSentFirstValues;
 
         public IntegrationTelemetryCollector()
         {

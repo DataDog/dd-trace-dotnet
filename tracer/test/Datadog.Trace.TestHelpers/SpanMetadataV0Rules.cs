@@ -841,6 +841,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("otel.library.version")
                 .IsPresent("otel.trace_id")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.svc_src")
                 .MatchesOneOf("otel.status_code", "STATUS_CODE_UNSET", "STATUS_CODE_OK", "STATUS_CODE_ERROR")
                 .IsOptional("otel.status_description")
                 .MatchesOneOf("span.kind", "internal", "server", "client", "producer", "consumer"));
@@ -1047,6 +1048,7 @@ namespace Datadog.Trace.TestHelpers
 
         public static Result IsQuartzV0(this MockSpan span) => Result.FromSpan(span)
              .Tags(s => s
+                .Matches("component", "quartz")
                 .IsOptional("events")
                 .IsPresent("fire.instance.id")
                 .IsPresent("job.group")

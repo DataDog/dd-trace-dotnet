@@ -18,7 +18,7 @@ internal sealed class Logger
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Logger>();
 
-    private bool _loggingEnabled = false;
+    private bool _loggingEnabled;
 
     public static Logger Instance { get; } = new();
 

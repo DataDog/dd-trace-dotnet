@@ -6,6 +6,7 @@
 #nullable enable
 
 using System.Threading;
+using Datadog.Trace.Logging;
 
 #if NETFRAMEWORK
 
@@ -16,6 +17,9 @@ namespace Datadog.Trace.PlatformHelpers;
 /// </summary>
 internal sealed class ContainerMetadata
 {
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ContainerMetadata));
+    private static bool _warnedOnSet; // to log only once
+
     public static readonly ContainerMetadata Instance = new();
 
     private ContainerMetadata()
@@ -28,14 +32,18 @@ internal sealed class ContainerMetadata
         // nothing to do, just to match the other version
     }
 
-    /// <summary>
-    /// Gets or sets the container tags hash received from the agent, used by DBM/DSM
-    /// This is set when we receive a value for it in an http response from the agent
-    /// </summary>
+    // always null in this implementation
     public string? ContainerTagsHash
     {
-        get => Volatile.Read(ref field);
-        set => Volatile.Write(ref field, value);
+        get => null;
+        set
+        {
+            if (!_warnedOnSet)
+            {
+                _warnedOnSet = true;
+                Log.Error("The code is trying to set the value '{Value}' to {Prop}, but this has no effect in .NET Framework.", value, nameof(ContainerTagsHash));
+            }
+        }
     }
 
     /// <summary>

@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using Datadog.Trace.FeatureFlags;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
 using Datadog.Trace.TestHelpers;
+using FluentAssertions;
 using Xunit;
 using ValueType = Datadog.Trace.FeatureFlags.ValueType;
 
@@ -452,6 +453,16 @@ public partial class FeatureFlagsEvaluatorTests
         Assert.Equal("default", result.Value);
         Assert.Equal(EvaluationReason.Error, result.Reason);
         Assert.Equal("PARSE_ERROR", result.Error);
+    }
+
+    [Theory]
+    [InlineData("salt", "key", 1718670776)]
+    [InlineData("test", "else", 1298484211)]
+    [InlineData("some-very-long-value-that's-really-quite-big", "something-else", 293177727)]
+    [InlineData("12346", "78910", 1442496069)]
+    public void GetLongFromMd5Tests(string salt, string targetingKey, int expected)
+    {
+        FeatureFlagsEvaluator.GetShard(salt, targetingKey, int.MaxValue).Should().Be(expected);
     }
 
     private static Flag CreateTimeBasedFlagWithDates(string key, string startAt, string endAt)

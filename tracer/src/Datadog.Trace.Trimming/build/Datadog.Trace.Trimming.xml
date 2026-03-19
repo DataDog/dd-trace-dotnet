@@ -508,6 +508,7 @@
    </assembly>
    <assembly fullname="System.Resources.ResourceManager">
       <type fullname="System.Resources.MissingManifestResourceException" />
+      <type fullname="System.Resources.NeutralResourcesLanguageAttribute" />
       <type fullname="System.Resources.ResourceManager" />
    </assembly>
    <assembly fullname="System.Resources.Writer">
@@ -721,6 +722,7 @@
       <type fullname="System.PlatformNotSupportedException" />
       <type fullname="System.Predicate`1" />
       <type fullname="System.Random" />
+      <type fullname="System.ReadOnlyMemory`1" />
       <type fullname="System.ReadOnlySpan`1" />
       <type fullname="System.ReadOnlySpan`1/Enumerator" />
       <type fullname="System.Reflection.AmbiguousMatchException" />
@@ -775,6 +777,7 @@
       <type fullname="System.Reflection.TypeInfo" />
       <type fullname="System.ResolveEventArgs" />
       <type fullname="System.Resources.MissingManifestResourceException" />
+      <type fullname="System.Resources.NeutralResourcesLanguageAttribute" />
       <type fullname="System.Resources.ResourceManager" />
       <type fullname="System.Runtime.CompilerServices.AsyncIteratorStateMachineAttribute" />
       <type fullname="System.Runtime.CompilerServices.AsyncStateMachineAttribute" />
