@@ -167,7 +167,6 @@ experiments:
           # STABLE benchmarks (200ms iteration time, 0% FP rate)
           items: >-
             *ActivityBenchmark*
-            *AgentWriterBenchmark*
             *AppSecBodyBenchmark*
             *AppSecWafBenchmark*
             *DbCommandBenchmark*
@@ -193,6 +192,7 @@ experiments:
         parallelize:
           # FLAKY benchmarks (500ms iteration time, need isolation)
           items: >-
+            *AgentWriterBenchmark*
             *AppSecEncoderBenchmark*
             *AspNetCoreBenchmark*
             *CharSliceBenchmark*
