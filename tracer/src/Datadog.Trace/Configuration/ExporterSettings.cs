@@ -10,9 +10,12 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
+using System.Reflection;
+using System.Runtime.InteropServices;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration.ConfigurationSources;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.Logging;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
@@ -26,6 +29,24 @@ namespace Datadog.Trace.Configuration
     /// </summary>
     public sealed partial class ExporterSettings
     {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ExporterSettings));
+
+        /// <summary>
+        /// Backing field for AzureFunctionsGeneratedTracesPipeName.
+        /// Initialized statically by checking environment variables directly.
+        /// Only generates a name when running in Azure Functions without AAS Site Extension
+        /// and without an explicit DD_TRACE_PIPE_NAME configuration.
+        /// </summary>
+        private static readonly string? _azureFunctionsGeneratedTracesPipeName = InitAzureFunctionsTracesPipeName();
+
+        /// <summary>
+        /// Backing field for AzureFunctionsGeneratedMetricsPipeName.
+        /// Initialized statically by checking environment variables directly.
+        /// Only generates a name when running in Azure Functions without AAS Site Extension
+        /// and without an explicit DD_DOGSTATSD_PIPE_NAME configuration.
+        /// </summary>
+        private static readonly string? _azureFunctionsGeneratedMetricsPipeName = InitAzureFunctionsMetricsPipeName();
+
         /// <summary>
         /// Allows overriding of file system access for tests.
         /// </summary>
@@ -87,9 +108,16 @@ namespace Datadog.Trace.Configuration
 
             ValidationWarnings = new List<string>();
 
+            // Use statically-generated pipe names for Azure Functions if available.
+            // The generated names already incorporate any explicit DD_TRACE_PIPE_NAME / DD_DOGSTATSD_PIPE_NAME
+            // as the base, with a unique GUID suffix appended. This ensures each function instance gets
+            // its own pipe even when sharing a hosting plan.
+            var tracesPipeName = _azureFunctionsGeneratedTracesPipeName ?? rawSettings.TracesPipeName;
+            var metricsPipeName = _azureFunctionsGeneratedMetricsPipeName ?? rawSettings.MetricsPipeName;
+
             var traceSettings = GetTraceTransport(
                 agentUri: rawSettings.TraceAgentUri,
-                tracesPipeName: rawSettings.TracesPipeName,
+                tracesPipeName: tracesPipeName,
                 agentHost: rawSettings.TraceAgentHost,
                 agentPort: rawSettings.TraceAgentPort,
                 tracesUnixDomainSocketPath: rawSettings.TracesUnixDomainSocketPath);
@@ -104,7 +132,7 @@ namespace Datadog.Trace.Configuration
                 traceAgentUrl: rawSettings.TraceAgentUri,
                 agentHost: rawSettings.TraceAgentHost,
                 dogStatsdPort: rawSettings.DogStatsdPort,
-                metricsPipeName: rawSettings.MetricsPipeName,
+                metricsPipeName: metricsPipeName,
                 metricsUnixDomainSocketPath: rawSettings.MetricsUnixDomainSocketPath);
 
             MetricsHostname = metricsSettings.Hostname;
@@ -117,6 +145,20 @@ namespace Datadog.Trace.Configuration
 
             TracesPipeTimeoutMs = rawSettings.TracesPipeTimeoutMs;
         }
+
+        /// <summary>
+        /// Gets the generated trace pipe name for Azure Functions coordination.
+        /// This is set when running in Azure Functions without explicit pipe name configuration.
+        /// Used by ServerlessCompat instrumentation to coordinate pipe names with compat layer.
+        /// </summary>
+        internal static string? AzureFunctionsGeneratedTracesPipeName => _azureFunctionsGeneratedTracesPipeName;
+
+        /// <summary>
+        /// Gets the generated metrics pipe name for Azure Functions coordination.
+        /// This is set when running in Azure Functions without explicit pipe name configuration.
+        /// Used by ServerlessCompat instrumentation to coordinate pipe names with compat layer.
+        /// </summary>
+        internal static string? AzureFunctionsGeneratedMetricsPipeName => _azureFunctionsGeneratedMetricsPipeName;
 
         /// <summary>
         /// Gets the Uri where the Tracer can connect to the Agent.
@@ -216,6 +258,107 @@ namespace Datadog.Trace.Configuration
             var traceHostname = agentUri.DnsSafeHost;
             return string.IsNullOrEmpty(traceHostname) ? DefaultDogstatsdHostname : traceHostname;
         }
+
+        private static string? InitAzureFunctionsTracesPipeName()
+        {
+            if (Util.EnvironmentHelpers.IsAzureFunctions()
+                && !Util.EnvironmentHelpers.IsUsingAzureAppServicesSiteExtension()
+                && IsCompatLayerAvailableWithPipeSupport())
+            {
+                var baseName = Util.EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.TracesPipeName);
+                if (StringUtil.IsNullOrEmpty(baseName))
+                {
+                    baseName = "dd_trace";
+                }
+
+                var name = GenerateUniquePipeName(baseName!);
+                Log.Information("Azure Functions environment detected. Using trace pipe base name '{BaseName}', generated unique pipe name: {TracesPipeName}", baseName, name);
+                return name;
+            }
+
+            return null;
+        }
+
+        private static string? InitAzureFunctionsMetricsPipeName()
+        {
+            if (Util.EnvironmentHelpers.IsAzureFunctions()
+                && !Util.EnvironmentHelpers.IsUsingAzureAppServicesSiteExtension()
+                && IsCompatLayerAvailableWithPipeSupport())
+            {
+                var baseName = Util.EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.MetricsPipeName);
+                if (StringUtil.IsNullOrEmpty(baseName))
+                {
+                    baseName = "dd_dogstatsd";
+                }
+
+                var name = GenerateUniquePipeName(baseName!);
+                Log.Information("Azure Functions environment detected. Using metrics pipe base name '{BaseName}', generated unique pipe name: {MetricsPipeName}", baseName, name);
+                return name;
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Checks whether the Datadog Serverless Compat layer is deployed and has a version
+        /// that supports named pipe transport. This is called during static initialization
+        /// (before the compat assembly is loaded) so it checks files on disk rather than
+        /// loaded assemblies.
+        /// </summary>
+        private static bool IsCompatLayerAvailableWithPipeSupport()
+        {
+            try
+            {
+                // Named pipes are Windows-only
+#if !NETFRAMEWORK
+                if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    return false;
+                }
+#endif
+
+                // Check that the compat binary exists — it's what actually listens on the named pipe
+                // Check that the compat DLL exists and has a version that supports named pipes.
+                // Named pipe support was added in compat version 1.4.0 (dev builds use 0.0.0).
+                const string compatBinaryPath = @"C:\home\site\wwwroot\datadog\bin\windows-amd64\datadog-serverless-compat.exe";
+                var compatDllPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory ?? string.Empty, "Datadog.Serverless.Compat.dll");
+                if (!File.Exists(compatBinaryPath) || !File.Exists(compatDllPath))
+                {
+                    Log.Debug("Did not find Serverless Compatibility Layer or related DLLs.");
+                    return false;
+                }
+
+                var assemblyName = AssemblyName.GetAssemblyName(compatDllPath);
+                var version = assemblyName.Version;
+
+                if (version is null)
+                {
+                    Log.Warning("Could not read Serverless Compatibility Layer details at {Path}, using fallback agent communication methods. (No Named Pipes)", compatDllPath);
+                    return false;
+                }
+
+                // Allow 0.0.0 (dev builds) or >= 1.4.0 (first release with pipe support)
+                var minVersion = new Version(1, 4, 0);
+                var devVersion = new Version(0, 0, 0);
+
+                if (version == devVersion || version >= minVersion)
+                {
+                    Log.Debug("Compat layer version {Version} supports named pipes.", version);
+                    return true;
+                }
+
+                Log.Debug("Compat layer version {Version} does not support named pipes (requires v{MinVersion} or greater. Using fallback communication methods.)", version, minVersion);
+                return false;
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Failed to determine Serverless Compatibility layer availability or Named Pipe Support.");
+                return false;
+            }
+        }
+
+        private static string GenerateUniquePipeName(string baseName)
+            => ClrProfiler.AutoInstrumentation.Serverless.ServerlessCompatPipeNameHelper.GenerateUniquePipeName(baseName, "ExporterSettings");
 
         private MetricsTransportSettings ConfigureMetricsTransport(string? metricsUrl, string? traceAgentUrl, string? agentHost, int dogStatsdPort, string? metricsPipeName, string? metricsUnixDomainSocketPath)
         {
