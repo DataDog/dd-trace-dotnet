@@ -35,7 +35,8 @@ public static class NuGetVersionCache
 
         await using var openStream = File.OpenRead(path);
 
-        var result = await JsonSerializer.DeserializeAsync<List<KeyValuePair<string, List<string>>>>(openStream, JsonOptions);
+        var result = await JsonSerializer.DeserializeAsync<List<KeyValuePair<string, List<string>>>>(openStream, JsonOptions)
+                     ?? new List<KeyValuePair<string, List<string>>>();
         return new Dictionary<string, List<string>>(result);
     }
 
