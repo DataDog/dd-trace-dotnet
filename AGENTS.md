@@ -94,7 +94,7 @@ Auto-instrumentation comes from the tracer "monitoring home" deployed separately
 <details>
 <summary>Key Component Sub-structure</summary>
 
-- **ClrProfiler** — AutoInstrumentation (integrations grouped by tech: AWS, AdoNet, Aerospike, AspNet, AspNetCore, Azure, CosmosDb, Couchbase, CryptographyAlgorithm, Elasticsearch, GraphQL, Grpc, Hangfire, HashAlgorithm, Http, IbmMq, Kafka, Logging, ManualInstrumentation, MongoDb, Msmq, OpenTelemetry, Process, Protobuf, Proxy, Quartz, RabbitMQ, Redis, Remoting, RestSharp, StackTraceLeak, Testing, TraceAnnotations, VersionConflict, Wcf), CallTarget (invoker, handlers, state structs, async continuations), Helpers (IL/interop, native definitions), ServerlessInstrumentation.
+- **ClrProfiler** — AutoInstrumentation (browse `tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/` for all integrations), CallTarget (invoker, handlers, state structs, async continuations), Helpers (IL/interop, native definitions), ServerlessInstrumentation.
 - **Agent** — DiscoveryService, MessagePack (trace payload encoding), StreamFactories (HTTP/Unix/Windows), TraceSamplers, Transports (HTTP/pipes).
 - **Configuration** — ConfigurationSources (env vars, JSON, args, RCM), Schema (span attribute schema), Core (`TracerSettings`, `ExporterSettings`, `IntegrationSettings`, git metadata).
 - **Propagators** — Datadog, W3C (tracecontext/baggage), B3 (single/multiple header), factories/utilities.
