@@ -54,6 +54,9 @@ internal sealed class DataStreamsManager
         _isInDefaultState = tracerSettings.IsDataStreamsMonitoringInDefaultState;
 
         _previousMutableSettings = tracerSettings.Manager.InitialMutableSettings;
+        // even though the value will probably get updated by a callback when subscriptions happen just after,
+        // we still need to initialize it to a value from initial settings in case no callback fire
+        UpdateNodeHash(_previousMutableSettings, containerTagsHash: null);
         // subscribing to changes calls the callback immediately if a value is present
         discoveryService.SubscribeToChanges(UpdateHashWithContainerTags);
         _updateSubscription = tracerSettings.Manager.SubscribeToChanges(UpdateHashWithNewSettings);
