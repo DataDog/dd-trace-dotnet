@@ -16,8 +16,10 @@ namespace Datadog.Trace.Agent.StreamFactories
     {
         private const string ServerName = ".";
         private const PipeOptions PipeOptions = System.IO.Pipes.PipeOptions.Asynchronous;
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(NamedPipeClientStreamFactory));
 
+#if NET5_0_OR_GREATER
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(NamedPipeClientStreamFactory));
+#endif
         private readonly string _pipeName;
         private readonly int _timeoutMs;
 

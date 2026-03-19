@@ -78,7 +78,8 @@
       region: canada central,
       runtime-id: Guid_2,
       span.kind: server,
-      _dd.base_service: AzureFunctionsAllTriggers
+      _dd.base_service: AzureFunctionsAllTriggers,
+      _dd.svc_src: azure-apim
     },
     Metrics: {
       process_id: 0,

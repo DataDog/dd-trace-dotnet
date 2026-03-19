@@ -291,7 +291,11 @@ namespace Datadog.Trace.AppSec
                 // It will happen if the WAF version used does not support new operators defined in the rules
                 foreach (var error in errors)
                 {
+#if NETCOREAPP
+                    if (!error.Key.Contains("unknown matcher:", StringComparison.OrdinalIgnoreCase))
+#else
                     if (!error.Key.ToLower().Contains("unknown matcher:"))
+#endif
                     {
                         return false;
                     }
@@ -415,7 +419,7 @@ namespace Datadog.Trace.AppSec
                         blockingAction.SecurityResponseId = securityResponseId;
                     }
 
-                    if (location is string locationString && locationString != string.Empty)
+                    if (location is string locationString && !string.IsNullOrEmpty(locationString))
                     {
                         var statusCode = GetStatusCode(redirectInfo, 303);
                         blockingAction.StatusCode = statusCode is >= 300 and < 400 ? statusCode : 303;

@@ -11,9 +11,8 @@ internal class TestCaseMetadata
     {
         TotalExecutions = totalExecution;
         CountDownExecutionNumber = countDownExecutionNumber;
-        EarlyFlakeDetectionEnabled = false;
         AbortByThreshold = false;
-        FlakyRetryEnabled = false;
+        SelectedRetryMode = TestRetryMode.None;
         UniqueID = uniqueID;
     }
 
@@ -23,17 +22,19 @@ internal class TestCaseMetadata
 
     public int ExecutionIndex => TotalExecutions - (CountDownExecutionNumber + 1);
 
-    public bool EarlyFlakeDetectionEnabled { get; set; }
-
     public bool AbortByThreshold { get; set; }
 
-    public bool FlakyRetryEnabled { get; set; }
+    public TestRetryMode SelectedRetryMode { get; set; }
+
+    public bool IsEarlyFlakeDetection => SelectedRetryMode == TestRetryMode.EarlyFlakeDetection;
+
+    public bool IsFlakyRetry => SelectedRetryMode == TestRetryMode.AutomaticTestRetry;
 
     public bool IsQuarantinedTest { get; set; }
 
     public bool IsDisabledTest { get; set; }
 
-    public bool IsAttemptToFix { get; set; }
+    public bool IsAttemptToFix => SelectedRetryMode == TestRetryMode.AttemptToFix;
 
     public bool IsRetry { get; set; }
 
@@ -43,26 +44,26 @@ internal class TestCaseMetadata
 
     public bool AllRetriesFailed { get; set; } = true;
 
-    public bool Skipped { get; set; } = false;
+    public bool Skipped { get; set; }
 
-    public bool HasAnException { get; set; } = false;
+    public bool HasAnException { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether the initial execution passed. Only PASS counts as passed, not SKIP.
     /// </summary>
-    public bool InitialExecutionPassed { get; set; } = false;
+    public bool InitialExecutionPassed { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether the initial execution failed. Only actual FAIL counts, not SKIP.
     /// Used for ATF final_status calculation.
     /// </summary>
-    public bool InitialExecutionFailed { get; set; } = false;
+    public bool InitialExecutionFailed { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether any retry execution passed. Only PASS counts as passed, not SKIP.
     /// Used for final_status calculation (distinct from AllRetriesFailed which clears on pass OR skip).
     /// </summary>
-    public bool AnyRetryPassed { get; set; } = false;
+    public bool AnyRetryPassed { get; set; }
 
     public string UniqueID { get; }
 }

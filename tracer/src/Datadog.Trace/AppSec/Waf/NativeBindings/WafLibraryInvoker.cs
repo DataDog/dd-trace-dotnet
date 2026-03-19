@@ -15,11 +15,6 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 {
     internal sealed class WafLibraryInvoker : IWafLibraryInvoker
     {
-#if NETFRAMEWORK
-        private const string DllName = "ddwaf.dll";
-#else
-        private const string DllName = "ddwaf";
-#endif
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(WafLibraryInvoker));
         private readonly GetVersionDelegate _getVersionField;
 
