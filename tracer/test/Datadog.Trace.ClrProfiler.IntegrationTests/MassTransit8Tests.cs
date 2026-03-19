@@ -40,7 +40,6 @@ public class MassTransit8Tests : TracingIntegrationTest
     [Trait("Category", "EndToEnd")]
     public async Task SubmitsTraces(string packageVersion)
     {
-
         // Set environment variables for RabbitMQ and LocalStack (for SQS/SNS)
         var rabbitHost = Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? "localhost";
         var localStackEndpoint = Environment.GetEnvironmentVariable("AWS_SDK_HOST") ?? "localhost:4566";
