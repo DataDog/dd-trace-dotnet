@@ -451,7 +451,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error extracting cluster_id from Kafka metadata");
+                Log.Warning(ex, "Error extracting cluster_id from Kafka metadata");
                 return null;
             }
         }
