@@ -368,6 +368,10 @@ partial class Build
                 ["CMAKE_MAKE_PROGRAM"] = "make",
                 ["CMAKE_CXX_COMPILER"] = "clang++",
                 ["CMAKE_C_COMPILER"] = "clang",
+                // Clear Homebrew-injected flags that can cause linker failures when
+                // cross-compiling for arm64 (e.g. llvm@15's x86_64-only libunwind).
+                ["LDFLAGS"] = "",
+                ["LIBRARY_PATH"] = "",
             };
 
             // Build native
