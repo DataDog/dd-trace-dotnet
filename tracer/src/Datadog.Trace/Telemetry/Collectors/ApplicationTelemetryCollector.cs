@@ -82,7 +82,7 @@ internal sealed class ApplicationTelemetryCollector
             runtimeVersion: frameworkDescription.ProductVersion,
             commitSha: gitMetadata?.CommitSha,
             repositoryUrl: gitMetadata?.RepositoryUrl,
-            processTags: processTags ?? Volatile.Read(ref _applicationData)?.ProcessTags);
+            processTags: processTags);
 
         Interlocked.Exchange(ref _applicationData, application);
     }
