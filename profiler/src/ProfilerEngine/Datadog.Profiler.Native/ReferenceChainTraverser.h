@@ -39,35 +39,32 @@ public:
     void LogStats() const;
 
 private:
-    // Traverse an object and its referenced children.
-    // currentNode: the position in the type tree where this object's children will be added.
-    // depth: current tree depth for limiting pathological cases.
-    void TraverseObject(
-        uintptr_t objectAddress,
-        VisitedObjectSet& visited,
-        TypeTreeNode* currentNode,
-        uint32_t depth);
+    struct TraversalFrame
+    {
+        uintptr_t objectAddress;
+        TypeTreeNode* treeNode;
+        uint32_t depth;
+    };
 
-    // Traverse array elements using GetArrayObjectInfo.
-    // Handles all array types: single-dimension (SZArray), jagged (arrays of arrays),
-    // and multi-dimensional (matrices). Also handles value type arrays whose element
-    // struct contains reference fields (e.g., Dictionary<K,V>.Entry[]).
-    void TraverseArray(
+    // Iterative object graph traversal using an explicit stack.
+    // Seeds the stack with the initial frame and processes until empty.
+    void TraverseObjectGraph(uintptr_t objectAddress, TypeTreeNode* currentNode, uint32_t depth);
+
+    // Enqueue array element children onto _traversalStack.
+    // Handles reference type arrays, value type arrays with reference fields,
+    // jagged arrays, and multi-dimensional arrays.
+    void EnqueueArrayChildren(
         uintptr_t arrayAddress,
         ClassID arrayClassID,
         const ClassLayoutCache::ClassLayoutData& layout,
-        VisitedObjectSet& visited,
         TypeTreeNode* currentNode,
         uint32_t depth);
 
-    // Traverse inline value type elements in an array, following their reference fields.
-    // Value types are stored inline (no per-element MethodTable pointer), so field offsets
-    // from GetClassLayout are applied directly to each element's base address.
-    void TraverseValueTypeArrayElements(
+    // Enqueue reference fields from inline value type array elements onto _traversalStack.
+    void EnqueueValueTypeArrayChildren(
         BYTE* pData,
         uint64_t totalElements,
         const ClassLayoutCache::ClassLayoutData& elementLayout,
-        VisitedObjectSet& visited,
         TypeTreeNode* currentNode,
         uint32_t depth);
 
@@ -87,6 +84,12 @@ private:
 
     // Shared across root traversals (class layouts don't change between roots)
     ClassLayoutCache _layoutCache;
+
+    // Reused across roots: cleared between roots to avoid reallocating the bucket array.
+    VisitedObjectSet _visited;
+
+    // Reused across roots to avoid repeated heap allocations.
+    std::vector<TraversalFrame> _traversalStack;
 
     // Statistics
     uint64_t _objectsTraversed;

@@ -36,14 +36,15 @@ void ReferenceChainTraverser::TraverseFromSingleRoot(const RootInfo& root)
     // Add the root to the tree and get the tree node to navigate from
     TypeTreeNode* rootNode = _tree.AddRoot(root.classID, root.category, root.objectSize, root.fieldName);
 
-    // Fresh visited set for this root: detects cycles within this root's graph
-    // while allowing the same object to be reached from different roots
-    VisitedObjectSet visited;
+    // Clear visited set for this root: detects cycles within this root's graph
+    // while allowing the same object to be reached from different roots.
+    // Reusing the member set avoids reallocating the bucket array for each root.
+    _visited.Clear();
 
-    // Traverse the object graph from this root.
+    // Traverse the object graph from this root iteratively.
     // rootNode is the tree position; children will be added under it.
     // Depth starts at 1 (the root itself).
-    TraverseObject(root.address, visited, rootNode, 1);
+    TraverseObjectGraph(root.address, rootNode, 1);
 
     _rootsProcessed++;
     _totalTraversalDuration += OpSysTools::GetHighPrecisionTimestamp() - startTime;
@@ -67,115 +68,100 @@ void ReferenceChainTraverser::LogStats() const
     }
 }
 
-void ReferenceChainTraverser::TraverseObject(
+void ReferenceChainTraverser::TraverseObjectGraph(
     uintptr_t objectAddress,
-    VisitedObjectSet& visited,
     TypeTreeNode* currentNode,
     uint32_t depth)
 {
-    // Check if already visited in this root's traversal (cycle detection)
-    if (visited.IsVisited(objectAddress))
+    _traversalStack.clear();
+    _traversalStack.push_back({objectAddress, currentNode, depth});
+
+    while (!_traversalStack.empty())
     {
-        return;
-    }
+        auto frame = _traversalStack.back();
+        _traversalStack.pop_back();
 
-    // Depth limit to prevent pathological cases (e.g., million-element linked lists)
-    if (depth > MaxTreeDepth)
-    {
-        return;
-    }
-
-    // Mark as visited
-    visited.MarkVisited(objectAddress);
-    _objectsTraversed++;
-
-    // Get object's ClassID
-    ClassID classID = 0;
-    HRESULT hr = _pCorProfilerInfo->GetClassFromObject(objectAddress, &classID);
-    if (FAILED(hr) || classID == 0)
-    {
-        return;  // Invalid object
-    }
-
-    // Get object size using GetObjectSize2 (supports objects > 4GB)
-    SIZE_T objectSize = 0;
-    hr = _pCorProfilerInfo->GetObjectSize2(objectAddress, &objectSize);
-    if (FAILED(hr) || objectSize == 0)
-    {
-        return;
-    }
-
-    // Get class layout
-    const ClassLayoutCache::ClassLayoutData* layout = _layoutCache.GetLayout(classID);
-    if (layout == nullptr)
-    {
-        return;
-    }
-
-    // Handle arrays
-    if (layout->isArray)
-    {
-        TraverseArray(objectAddress, classID, *layout, visited, currentNode, depth);
-        return;
-    }
-
-    // Traverse reference fields
-    for (const auto& field : layout->fields)
-    {
-        if (!field.isReferenceType)
-        {
-            continue;  // Skip non-reference fields
-        }
-
-        // Read the field value (object reference) with bounds checking.
-        uintptr_t fieldValue = ReadFieldReference(objectAddress, field.offset, objectSize);
-
-        if (fieldValue == 0)
-        {
-            continue;  // Null reference or invalid read
-        }
-
-        // Verify it's a valid object address
-        if (!IsValidObjectAddress(fieldValue))
+        if (_visited.IsVisited(frame.objectAddress))
         {
             continue;
         }
 
-        // If this object was already visited in the current root traversal,
-        // it's a back-reference (cycle). Skip it.
-        if (visited.IsVisited(fieldValue))
+        if (frame.depth > MaxTreeDepth)
         {
             continue;
         }
 
-        // Get the target object's type
-        ClassID targetClassID = 0;
-        hr = _pCorProfilerInfo->GetClassFromObject(fieldValue, &targetClassID);
-        if (FAILED(hr) || targetClassID == 0)
+        _visited.MarkVisited(frame.objectAddress);
+        _objectsTraversed++;
+
+        ClassID classID = 0;
+        HRESULT hr = _pCorProfilerInfo->GetClassFromObject(frame.objectAddress, &classID);
+        if (FAILED(hr) || classID == 0)
         {
             continue;
         }
 
-        // Get target size
-        SIZE_T targetSize = 0;
-        _pCorProfilerInfo->GetObjectSize2(fieldValue, &targetSize);
+        SIZE_T objectSize = 0;
+        hr = _pCorProfilerInfo->GetObjectSize2(frame.objectAddress, &objectSize);
+        if (FAILED(hr) || objectSize == 0)
+        {
+            continue;
+        }
 
-        // Navigate the tree: get or create a child node for this target type
-        // under the CURRENT tree position. This preserves the full path context.
-        TypeTreeNode* childNode = currentNode->GetOrCreateChild(targetClassID);
-        childNode->AddInstance(targetSize);
+        const ClassLayoutCache::ClassLayoutData* layout = _layoutCache.GetLayout(classID);
+        if (layout == nullptr)
+        {
+            continue;
+        }
 
-        // Recursively traverse the referenced object, passing the child node
-        // as the new tree position.
-        TraverseObject(fieldValue, visited, childNode, depth + 1);
+        if (layout->isArray)
+        {
+            EnqueueArrayChildren(frame.objectAddress, classID, *layout, frame.treeNode, frame.depth);
+            continue;
+        }
+
+        for (const auto& field : layout->fields)
+        {
+            if (!field.isReferenceType)
+            {
+                continue;
+            }
+
+            uintptr_t fieldValue = ReadFieldReference(frame.objectAddress, field.offset, objectSize);
+            if (fieldValue == 0 || !IsValidObjectAddress(fieldValue))
+            {
+                continue;
+            }
+
+            // Early visited check avoids unnecessary CLR calls and stack push.
+            // The authoritative check is at the top of the loop after popping.
+            if (_visited.IsVisited(fieldValue))
+            {
+                continue;
+            }
+
+            ClassID targetClassID = 0;
+            hr = _pCorProfilerInfo->GetClassFromObject(fieldValue, &targetClassID);
+            if (FAILED(hr) || targetClassID == 0)
+            {
+                continue;
+            }
+
+            SIZE_T targetSize = 0;
+            _pCorProfilerInfo->GetObjectSize2(fieldValue, &targetSize);
+
+            TypeTreeNode* childNode = frame.treeNode->GetOrCreateChild(targetClassID);
+            childNode->AddInstance(targetSize);
+
+            _traversalStack.push_back({fieldValue, childNode, frame.depth + 1});
+        }
     }
 }
 
-void ReferenceChainTraverser::TraverseArray(
+void ReferenceChainTraverser::EnqueueArrayChildren(
     uintptr_t arrayAddress,
     ClassID arrayClassID,
     const ClassLayoutCache::ClassLayoutData& layout,
-    VisitedObjectSet& visited,
     TypeTreeNode* currentNode,
     uint32_t depth)
 {
@@ -193,8 +179,6 @@ void ReferenceChainTraverser::TraverseArray(
         return;
     }
 
-    // For value type arrays, check if the element struct has any reference fields.
-    // If not (e.g., Point[] with only int fields), there's nothing to traverse.
     const ClassLayoutCache::ClassLayoutData* elementLayout = nullptr;
     if (isValueTypeArray)
     {
@@ -223,19 +207,36 @@ void ReferenceChainTraverser::TraverseArray(
     ULONG32 rank = layout.arrayRank;
     if (rank == 0)
     {
-        return;  // Invalid rank
+        return;
     }
 
-    // Use GetArrayObjectInfo to safely get dimension sizes and a pointer to the data.
-    std::vector<ULONG32> dimensionSizes(rank);
-    std::vector<int> dimensionLowerBounds(rank);
+    // Stack-allocate for rank 1 (99%+ of .NET arrays); heap-allocate only for multi-dimensional.
+    ULONG32 dimSize1;
+    int dimBound1;
+    ULONG32* dimensionSizes;
+    int* dimensionLowerBounds;
+    std::vector<ULONG32> dimSizesVec;
+    std::vector<int> dimBoundsVec;
+    if (rank == 1)
+    {
+        dimensionSizes = &dimSize1;
+        dimensionLowerBounds = &dimBound1;
+    }
+    else
+    {
+        dimSizesVec.resize(rank);
+        dimBoundsVec.resize(rank);
+        dimensionSizes = dimSizesVec.data();
+        dimensionLowerBounds = dimBoundsVec.data();
+    }
+
     BYTE* pData = nullptr;
 
     HRESULT hr = _pCorProfilerInfo->GetArrayObjectInfo(
         static_cast<ObjectID>(arrayAddress),
         rank,
-        dimensionSizes.data(),
-        dimensionLowerBounds.data(),
+        dimensionSizes,
+        dimensionLowerBounds,
         &pData);
 
     if (FAILED(hr) || pData == nullptr)
@@ -243,7 +244,6 @@ void ReferenceChainTraverser::TraverseArray(
         return;
     }
 
-    // Compute total number of elements (product of all dimension sizes)
     uint64_t totalElements = 1;
     for (ULONG32 d = 0; d < rank; d++)
     {
@@ -252,12 +252,12 @@ void ReferenceChainTraverser::TraverseArray(
 
     if (totalElements == 0)
     {
-        return;  // Empty array
+        return;
     }
 
     if (isValueTypeArray)
     {
-        TraverseValueTypeArrayElements(pData, totalElements, *elementLayout, visited, currentNode, depth);
+        EnqueueValueTypeArrayChildren(pData, totalElements, *elementLayout, currentNode, depth);
         return;
     }
 
@@ -268,24 +268,16 @@ void ReferenceChainTraverser::TraverseArray(
     {
         uintptr_t elementAddress = pElements[i];
 
-        if (elementAddress == 0)
-        {
-            continue;  // Null element
-        }
-
-        // Verify valid object
-        if (!IsValidObjectAddress(elementAddress))
+        if (elementAddress == 0 || !IsValidObjectAddress(elementAddress))
         {
             continue;
         }
 
-        // Skip already-visited objects (cycle / shared reference).
-        if (visited.IsVisited(elementAddress))
+        if (_visited.IsVisited(elementAddress))
         {
             continue;
         }
 
-        // Get element type
         ClassID elementClassID = 0;
         hr = _pCorProfilerInfo->GetClassFromObject(elementAddress, &elementClassID);
         if (FAILED(hr) || elementClassID == 0)
@@ -293,24 +285,20 @@ void ReferenceChainTraverser::TraverseArray(
             continue;
         }
 
-        // Get element size
         SIZE_T elementSizeBytes = 0;
         _pCorProfilerInfo->GetObjectSize2(elementAddress, &elementSizeBytes);
 
-        // Navigate the tree: get or create child node under current position
         TypeTreeNode* childNode = currentNode->GetOrCreateChild(elementClassID);
         childNode->AddInstance(elementSizeBytes);
 
-        // Recursively traverse the element
-        TraverseObject(elementAddress, visited, childNode, depth + 1);
+        _traversalStack.push_back({elementAddress, childNode, depth + 1});
     }
 }
 
-void ReferenceChainTraverser::TraverseValueTypeArrayElements(
+void ReferenceChainTraverser::EnqueueValueTypeArrayChildren(
     BYTE* pData,
     uint64_t totalElements,
     const ClassLayoutCache::ClassLayoutData& elementLayout,
-    VisitedObjectSet& visited,
     TypeTreeNode* currentNode,
     uint32_t depth)
 {
@@ -340,7 +328,7 @@ void ReferenceChainTraverser::TraverseValueTypeArrayElements(
                 continue;
             }
 
-            if (visited.IsVisited(fieldValue))
+            if (_visited.IsVisited(fieldValue))
             {
                 continue;
             }
@@ -358,7 +346,7 @@ void ReferenceChainTraverser::TraverseValueTypeArrayElements(
             TypeTreeNode* childNode = currentNode->GetOrCreateChild(targetClassID);
             childNode->AddInstance(targetSize);
 
-            TraverseObject(fieldValue, visited, childNode, depth + 1);
+            _traversalStack.push_back({fieldValue, childNode, depth + 1});
         }
     }
 }

@@ -4,9 +4,7 @@
 #include "TypeReferenceTreeJsonSerializer.h"
 #include "Log.h"
 #include "OpSysTools.h"
-#include <algorithm>
 #include <cstdio>
-#include <sstream>
 
 std::string TypeReferenceTreeJsonSerializer::Serialize(const TypeReferenceTree& tree, IFrameStore* pFrameStore)
 {
@@ -17,179 +15,176 @@ std::string TypeReferenceTreeJsonSerializer::Serialize(const TypeReferenceTree& 
         return "{}";
     }
 
-    // Build type table by walking the entire tree.
-    // This assigns each unique ClassID an index for compact JSON output.
+    // B4: Single-pass -- types are collected lazily during OutputNode.
+    // The type table is emitted after the tree (roots first, then type table).
     std::unordered_map<ClassID, uint32_t> typeToIndex;
-    std::vector<std::string> typeTable;
+    std::vector<std::string_view> typeTable; // B5: string_view into FrameStore's cache
     uint32_t nextIndex = 0;
 
-    for (const auto& [key, rootNode] : tree._roots)
-    {
-        CollectTypes(rootNode->node, typeToIndex, typeTable, nextIndex, pFrameStore);
-    }
+    // B1: Use std::string buffer instead of std::stringstream.
+    std::string out;
+    out.reserve(4096);
 
-    std::stringstream ss;
-    ss << std::fixed;  // No scientific notation
-
-    // Output version
-    ss << "{\"v\":1";
-
-    // Output type table
-    if (!typeTable.empty())
-    {
-        ss << ",\"tt\":[";
-        for (size_t i = 0; i < typeTable.size(); i++)
-        {
-            if (i > 0)
-            {
-                ss << ",";
-            }
-            ss << "\"" << EscapeJson(typeTable[i]) << "\"";
-        }
-        ss << "]";
-    }
-
-    // Output roots array with hierarchical tree
-    ss << ",\"r\":[";
+    // Phase 1: emit roots (types are collected lazily via OutputNode)
+    std::string rootsJson;
+    rootsJson.reserve(2048);
+    rootsJson += '[';
 
     bool firstRoot = true;
     for (const auto& [key, rootNode] : tree._roots)
     {
-        auto it = typeToIndex.find(key.typeID);
-        if (it == typeToIndex.end())
+        // Lazily register root type
+        auto [it, inserted] = typeToIndex.try_emplace(key.typeID, nextIndex);
+        if (inserted)
         {
-            continue;  // Type not in table (GetTypeName failed)
+            std::string_view typeName;
+            if (pFrameStore->GetTypeName(key.typeID, typeName))
+            {
+                typeTable.push_back(typeName);
+            }
+            else
+            {
+                typeTable.emplace_back("?");
+            }
+            nextIndex++;
         }
 
         if (!firstRoot)
         {
-            ss << ",";
+            rootsJson += ',';
         }
         firstRoot = false;
 
-        uint32_t typeIndex = it->second;
-        const char* categoryCode = GetRootCategoryCode(rootNode->category);
+        rootsJson += "{\"t\":";
+        AppendUInt32(rootsJson, it->second);
 
-        ss << "{\"t\":" << typeIndex
-           << ",\"c\":\"" << categoryCode << "\""
-           << ",\"ic\":" << rootNode->node.instanceCount
-           << ",\"ts\":" << rootNode->node.totalSize;
+        const char* categoryCode = GetRootCategoryCode(rootNode->category);
+        rootsJson += ",\"c\":\"";
+        rootsJson += categoryCode;
+        rootsJson += '"';
+
+        rootsJson += ",\"ic\":";
+        AppendUInt64(rootsJson, rootNode->node.instanceCount);
+
+        rootsJson += ",\"ts\":";
+        AppendUInt64(rootsJson, rootNode->node.totalSize);
 
         if (!rootNode->fieldName.empty())
         {
-            ss << ",\"fn\":\"" << EscapeJson(rootNode->fieldName) << "\"";
+            rootsJson += ",\"fn\":\"";
+            AppendEscapedJson(rootsJson, rootNode->fieldName);
+            rootsJson += '"';
         }
 
-        // Output children
         if (!rootNode->node.children.empty())
         {
-            ss << ",\"ch\":[";
+            rootsJson += ",\"ch\":[";
             bool firstChild = true;
             for (const auto& [childTypeID, childNode] : rootNode->node.children)
             {
                 if (!firstChild)
                 {
-                    ss << ",";
+                    rootsJson += ',';
                 }
                 firstChild = false;
-                OutputNode(*childNode, typeToIndex, ss);
+                OutputNode(*childNode, typeToIndex, typeTable, nextIndex, pFrameStore, rootsJson);
             }
-            ss << "]";
+            rootsJson += ']';
         }
-        ss << "}";
+        rootsJson += '}';
     }
 
-    ss << "]}";
+    rootsJson += ']';
 
-    std::string result = ss.str();
+    // Phase 2: assemble final JSON -- type table first (now fully populated), then roots
+    out += "{\"v\":1";
+
+    if (!typeTable.empty())
+    {
+        out += ",\"tt\":[";
+        for (size_t i = 0; i < typeTable.size(); i++)
+        {
+            if (i > 0)
+            {
+                out += ',';
+            }
+            out += '"';
+            AppendEscapedJson(out, typeTable[i]);
+            out += '"';
+        }
+        out += ']';
+    }
+
+    out += ",\"r\":";
+    out += rootsJson;
+    out += '}';
 
     auto endTime = OpSysTools::GetHighPrecisionTimestamp();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count();
 
     Log::Debug("Reference tree JSON serialization completed: ", duration, "ms, ",
-               result.size(), " bytes, ", typeTable.size(), " types, ",
+               out.size(), " bytes, ", typeTable.size(), " types, ",
                tree._roots.size(), " roots");
 
-    return result;
+    return out;
 }
 
 void TypeReferenceTreeJsonSerializer::OutputNode(
     const TypeTreeNode& node,
-    const std::unordered_map<ClassID, uint32_t>& typeToIndex,
-    std::stringstream& ss)
+    std::unordered_map<ClassID, uint32_t>& typeToIndex,
+    std::vector<std::string_view>& typeTable,
+    uint32_t& nextIndex,
+    IFrameStore* pFrameStore,
+    std::string& out)
 {
-    auto it = typeToIndex.find(node.typeID);
-    if (it == typeToIndex.end())
+    // B3+B4: Lazily register type on first encounter (single lookup via try_emplace)
+    auto [it, inserted] = typeToIndex.try_emplace(node.typeID, nextIndex);
+    if (inserted)
     {
-        ss << "{}";  // Unknown type — emit empty node to keep JSON valid
-        return;
+        // B5: Use string_view overload — no copy, view into FrameStore's cache
+        std::string_view typeName;
+        if (pFrameStore->GetTypeName(node.typeID, typeName))
+        {
+            typeTable.push_back(typeName);
+        }
+        else
+        {
+            typeTable.emplace_back("?");
+        }
+        nextIndex++;
     }
 
-    uint32_t typeIndex = it->second;
-
-    ss << "{\"t\":" << typeIndex;
+    out += "{\"t\":";
+    AppendUInt32(out, it->second);
 
     if (node.instanceCount > 0)
     {
-        ss << ",\"ic\":" << node.instanceCount;
+        out += ",\"ic\":";
+        AppendUInt64(out, node.instanceCount);
     }
     if (node.totalSize > 0)
     {
-        ss << ",\"ts\":" << node.totalSize;
+        out += ",\"ts\":";
+        AppendUInt64(out, node.totalSize);
     }
 
-    // Output children (no cycle detection needed — the tree is acyclic by construction)
     if (!node.children.empty())
     {
-        ss << ",\"ch\":[";
+        out += ",\"ch\":[";
         bool firstChild = true;
         for (const auto& [childTypeID, childNode] : node.children)
         {
             if (!firstChild)
             {
-                ss << ",";
+                out += ',';
             }
             firstChild = false;
-            OutputNode(*childNode, typeToIndex, ss);
+            OutputNode(*childNode, typeToIndex, typeTable, nextIndex, pFrameStore, out);
         }
-        ss << "]";
+        out += ']';
     }
 
-    ss << "}";
-}
-
-void TypeReferenceTreeJsonSerializer::CollectTypes(
-    const TypeTreeNode& node,
-    std::unordered_map<ClassID, uint32_t>& typeToIndex,
-    std::vector<std::string>& typeTable,
-    uint32_t& nextIndex,
-    IFrameStore* pFrameStore)
-{
-    // Add this type if not already in the table
-    if (typeToIndex.find(node.typeID) == typeToIndex.end())
-    {
-        std::string typeName;
-        if (pFrameStore->GetTypeName(node.typeID, typeName))
-        {
-            typeToIndex[node.typeID] = nextIndex++;
-            typeTable.push_back(std::move(typeName));
-        }
-        else
-        {
-            // Fallback: include root even when GetTypeName fails
-            // so we don't silently drop roots (use unique placeholder per type)
-            char buf[32];
-            snprintf(buf, sizeof(buf), "?0x%llx", static_cast<unsigned long long>(node.typeID));
-            typeToIndex[node.typeID] = nextIndex++;
-            typeTable.push_back(buf);
-        }
-    }
-
-    // Recurse into children
-    for (const auto& [childTypeID, childNode] : node.children)
-    {
-        CollectTypes(*childNode, typeToIndex, typeTable, nextIndex, pFrameStore);
-    }
+    out += '}';
 }
 
 const char* TypeReferenceTreeJsonSerializer::GetRootCategoryCode(RootCategory category)
@@ -208,36 +203,66 @@ const char* TypeReferenceTreeJsonSerializer::GetRootCategoryCode(RootCategory ca
     }
 }
 
-std::string TypeReferenceTreeJsonSerializer::EscapeJson(const std::string& str)
+void TypeReferenceTreeJsonSerializer::AppendUInt64(std::string& out, uint64_t v)
 {
-    std::string escaped;
-    escaped.reserve(str.length() + 10);
+    char buf[24];
+    int n = snprintf(buf, sizeof(buf), "%llu", static_cast<unsigned long long>(v));
+    out.append(buf, n);
+}
 
+void TypeReferenceTreeJsonSerializer::AppendUInt32(std::string& out, uint32_t v)
+{
+    char buf[12];
+    int n = snprintf(buf, sizeof(buf), "%u", v);
+    out.append(buf, n);
+}
+
+// B2: Fast path — scan for chars needing escape first. If none found,
+// append the entire string in one operation (zero per-char overhead).
+void TypeReferenceTreeJsonSerializer::AppendEscapedJson(std::string& out, std::string_view str)
+{
+    // Fast path: check if any character needs escaping
+    bool needsEscape = false;
+    for (char c : str)
+    {
+        if (c == '"' || c == '\\' || static_cast<unsigned char>(c) < 0x20)
+        {
+            needsEscape = true;
+            break;
+        }
+    }
+
+    if (!needsEscape)
+    {
+        out.append(str.data(), str.size());
+        return;
+    }
+
+    // Slow path: escape character by character
+    out.reserve(out.size() + str.size() + 16);
     for (char c : str)
     {
         switch (c)
         {
-            case '"': escaped += "\\\""; break;
-            case '\\': escaped += "\\\\"; break;
-            case '\b': escaped += "\\b"; break;
-            case '\f': escaped += "\\f"; break;
-            case '\n': escaped += "\\n"; break;
-            case '\r': escaped += "\\r"; break;
-            case '\t': escaped += "\\t"; break;
+            case '"': out += "\\\""; break;
+            case '\\': out += "\\\\"; break;
+            case '\b': out += "\\b"; break;
+            case '\f': out += "\\f"; break;
+            case '\n': out += "\\n"; break;
+            case '\r': out += "\\r"; break;
+            case '\t': out += "\\t"; break;
             default:
                 if (static_cast<unsigned char>(c) < 0x20)
                 {
                     char buf[7];
                     snprintf(buf, sizeof(buf), "\\u%04x", static_cast<unsigned char>(c));
-                    escaped += buf;
+                    out.append(buf, 6);
                 }
                 else
                 {
-                    escaped += c;
+                    out += c;
                 }
                 break;
         }
     }
-
-    return escaped;
 }

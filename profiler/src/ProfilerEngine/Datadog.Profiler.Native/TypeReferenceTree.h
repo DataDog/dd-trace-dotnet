@@ -43,15 +43,12 @@ struct TypeTreeNode
     // Get or create a child node for the given type.
     TypeTreeNode* GetOrCreateChild(ClassID childTypeID)
     {
-        auto it = children.find(childTypeID);
-        if (it != children.end())
+        auto [it, inserted] = children.try_emplace(childTypeID, nullptr);
+        if (inserted)
         {
-            return it->second.get();
+            it->second = std::make_unique<TypeTreeNode>(childTypeID);
         }
-        auto child = std::make_unique<TypeTreeNode>(childTypeID);
-        auto* ptr = child.get();
-        children[childTypeID] = std::move(child);
-        return ptr;
+        return it->second.get();
     }
 
     // Get an existing child node (returns nullptr if not found).
@@ -122,17 +119,13 @@ public:
     TypeTreeNode* AddRoot(ClassID typeID, RootCategory category, uint64_t size, const std::string& fieldName = "")
     {
         RootKey key{typeID, category};
-        auto it = _roots.find(key);
-        if (it != _roots.end())
+        auto [it, inserted] = _roots.try_emplace(key, nullptr);
+        if (inserted)
         {
-            it->second->AddInstance(size, fieldName);
-            return &it->second->node;
+            it->second = std::make_unique<TypeRootNode>(typeID, category);
         }
-        auto root = std::make_unique<TypeRootNode>(typeID, category);
-        root->AddInstance(size, fieldName);
-        auto* nodePtr = &root->node;
-        _roots[key] = std::move(root);
-        return nodePtr;
+        it->second->AddInstance(size, fieldName);
+        return &it->second->node;
     }
 
     bool IsEmpty() const

@@ -52,11 +52,12 @@ public:
     void Clear()
     {
         _cache.clear();
+        _referenceTypeCache.clear();
     }
 
 private:
     ClassLayoutData BuildLayout(ClassID classID);
-    bool IsReferenceType(ClassID classID, mdTypeDef typeDef, ModuleID moduleID);
+    bool IsReferenceType(mdTypeDef typeDef, IMetaDataImport* pMetadataImport);
     bool IsClassIDReferenceType(ClassID classID);
     void GetParentClassFields(ClassID parentClassID, std::vector<FieldInfo>& fields);
     bool IsFieldReferenceType(
@@ -70,4 +71,5 @@ private:
     ICorProfilerInfo12* _pCorProfilerInfo;
     IFrameStore* _pFrameStore;
     std::unordered_map<ClassID, ClassLayoutData> _cache;
+    std::unordered_map<ClassID, bool> _referenceTypeCache;
 };

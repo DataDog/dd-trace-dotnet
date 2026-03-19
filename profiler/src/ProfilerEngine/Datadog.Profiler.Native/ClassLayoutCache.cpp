@@ -31,8 +31,8 @@ const ClassLayoutCache::ClassLayoutData* ClassLayoutCache::GetLayout(ClassID cla
         return nullptr;  // Failed to build layout
     }
 
-    _cache[classID] = layout;
-    return &_cache[classID];
+    auto [insertedIt, wasInserted] = _cache.emplace(classID, std::move(layout));
+    return &insertedIt->second;
 }
 
 ClassLayoutCache::ClassLayoutData ClassLayoutCache::BuildLayout(ClassID classID)
@@ -271,12 +271,19 @@ bool ClassLayoutCache::IsClassIDReferenceType(ClassID classID)
         return false;
     }
 
+    auto cacheIt = _referenceTypeCache.find(classID);
+    if (cacheIt != _referenceTypeCache.end())
+    {
+        return cacheIt->second;
+    }
+
     // Arrays are always reference types
     CorElementType et;
     ClassID elemID;
     ULONG rank;
     if (_pCorProfilerInfo->IsArrayClass(classID, &et, &elemID, &rank) == S_OK)
     {
+        _referenceTypeCache[classID] = true;
         return true;
     }
 
@@ -286,20 +293,36 @@ bool ClassLayoutCache::IsClassIDReferenceType(ClassID classID)
         classID, &moduleID, &typeDef, nullptr, 0, nullptr, nullptr);
     if (FAILED(hr))
     {
+        _referenceTypeCache[classID] = true;
         return true;
     }
 
-    return IsReferenceType(classID, typeDef, moduleID);
+    ComPtr<IMetaDataImport> pMetadataImport;
+    hr = _pCorProfilerInfo->GetModuleMetaData(
+        moduleID, ofRead, IID_IMetaDataImport,
+        reinterpret_cast<IUnknown**>(pMetadataImport.GetAddressOf()));
+
+    if (FAILED(hr) || pMetadataImport.Get() == nullptr)
+    {
+        _referenceTypeCache[classID] = false;
+        return false;
+    }
+
+    bool result = IsReferenceType(typeDef, pMetadataImport.Get());
+    _referenceTypeCache[classID] = result;
+    return result;
 }
 
 void ClassLayoutCache::GetParentClassFields(ClassID parentClassID, std::vector<FieldInfo>& fields)
 {
-    // Recursively get parent class fields
     const ClassLayoutData* parentLayout = GetLayout(parentClassID);
-    if (parentLayout != nullptr)
+    if (parentLayout != nullptr && !parentLayout->fields.empty())
     {
-        // Append parent fields (they come before child fields in memory)
-        fields.insert(fields.begin(), parentLayout->fields.begin(), parentLayout->fields.end());
+        // Parent fields logically precede child fields (lower offsets in memory).
+        // Append then rotate to front: O(N) instead of O(N*D) insert-at-begin.
+        size_t childCount = fields.size();
+        fields.insert(fields.end(), parentLayout->fields.begin(), parentLayout->fields.end());
+        std::rotate(fields.begin(), fields.begin() + childCount, fields.end());
     }
 }
 
@@ -313,15 +336,9 @@ std::string ClassLayoutCache::GetClassName(ClassID classID) const
     return "<classID=" + std::to_string(classID) + ">";
 }
 
-bool ClassLayoutCache::IsReferenceType(ClassID classID, mdTypeDef typeDef, ModuleID moduleID)
+bool ClassLayoutCache::IsReferenceType(mdTypeDef typeDef, IMetaDataImport* pMetadataImport)
 {
-    // Get metadata import for the module
-    ComPtr<IMetaDataImport> pMetadataImport;
-    HRESULT hr = _pCorProfilerInfo->GetModuleMetaData(
-        moduleID, ofRead, IID_IMetaDataImport,
-        reinterpret_cast<IUnknown**>(pMetadataImport.GetAddressOf()));
-
-    if (FAILED(hr) || pMetadataImport.Get() == nullptr)
+    if (pMetadataImport == nullptr)
     {
         return false;
     }
@@ -331,7 +348,7 @@ bool ClassLayoutCache::IsReferenceType(ClassID classID, mdTypeDef typeDef, Modul
     mdToken extendsToken = mdTokenNil;
     ULONG nameLen = 0;
 
-    hr = pMetadataImport->GetTypeDefProps(
+    HRESULT hr = pMetadataImport->GetTypeDefProps(
         typeDef, nullptr, 0, &nameLen, &flags, &extendsToken);
 
     if (FAILED(hr))
