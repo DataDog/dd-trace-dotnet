@@ -7,7 +7,12 @@
 #include "profiler/src/ProfilerEngine/Datadog.Profiler.Native.Linux/LinuxStackFramesCollector.h"
 #include "profiler/src/ProfilerEngine/Datadog.Profiler.Native.Linux/ProfilerSignalManager.h"
 
+#ifdef ARM64
+#include "HybridUnwinder.h"
+#include "ManagedCodeCache.h"
+#else
 #include "Backtrace2Unwinder.h"
+#endif
 #include "CallstackProvider.h"
 #include "ManagedThreadInfo.h"
 #include "MemoryResourceManager.h"
@@ -159,7 +164,13 @@ public:
         _stopWorker = false;
         _workerThread = std::make_unique<WorkerThread>(_stopWorker);
 
+#ifdef ARM64
+        // TODO maybe a mock of ICorProfilerInfo to avoid crashing
+        _pManagedCodeCache = std::make_unique<ManagedCodeCache>(nullptr);
+        _pUnwinder = std::make_unique<HybridUnwinder>(_pManagedCodeCache.get());
+#else
         _pUnwinder = std::make_unique<Backtrace2Unwinder>();
+#endif
 
         ResetCallbackState();
 
@@ -326,6 +337,9 @@ private:
     std::future<void> _callbackCalledFuture;
     std::unique_ptr<WorkerThread> _workerThread;
     std::unique_ptr<LibrariesInfoCache> _librariesInfoCache;
+#ifdef ARM64
+    std::unique_ptr<ManagedCodeCache> _pManagedCodeCache;
+#endif
     std::unique_ptr<IUnwinder> _pUnwinder;
 };
 
