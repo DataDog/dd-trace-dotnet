@@ -39,7 +39,7 @@ internal static class ServiceDiscoveryHelper
                     mutableSettings.DefaultServiceName,
                     mutableSettings.Environment,
                     mutableSettings.ServiceVersion,
-                    tracerSettings.PropagateProcessTags ? ProcessTags.SerializedTags : string.Empty, // TODO get the process tags from MutableSettings after https://github.com/DataDog/dd-trace-dotnet/pull/8106 is merged
+                    mutableSettings.ProcessTags?.SerializedTags ?? string.Empty,
                     ContainerMetadata.Instance.ContainerId ?? string.Empty);
 
                 if (result.Tag == ResultTag.Error)
