@@ -61,8 +61,8 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         public static IEnumerable<object[]> GetEnabledDbmData()
             => from command in (IEnumerable<object[]>)GetDbmCommands()
                from dbm in new[] { "service", "full" }
-               from storedProcInject in new[] { false, true }
-               select new[] { command[0], dbm, storedProcInject };
+               from enabled in new[] { false, true }
+               select new[] { command[0], dbm, enabled };
 
         [Theory]
         [MemberData(nameof(GetDbCommands))]
@@ -149,6 +149,37 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             // Create scope
             using var scope = CreateDbCommandScope(tracer, command);
             Assert.NotEqual("my-custom-type", scope.Span.ServiceName);
+        }
+
+        [Theory]
+        [MemberData(nameof(GetEnabledDbmData))]
+        public async Task CreateDbCommandScope_HasBaseHashWhenConfigured(Type commandType, string dbmMode, bool hashPropagationEnabled)
+        {
+            var command = (IDbCommand)Activator.CreateInstance(commandType)!;
+            command.CommandText = DbmCommandText;
+
+            var tracerSettings = TracerSettings.Create(new Dictionary<string, object>
+            {
+                // hash propagation requires both those settings to be true
+                { ConfigurationKeys.PropagateProcessTags, hashPropagationEnabled.ToString() },
+                { ConfigurationKeys.DbmInjectSqlBasehash, hashPropagationEnabled.ToString() },
+                { ConfigurationKeys.DbmPropagationMode, dbmMode }
+            });
+            await using var tracer = TracerHelper.Create(tracerSettings);
+
+            using var scope = CreateDbCommandScope(tracer, command, "my_hash");
+
+            scope.Should().NotBeNull();
+            if (hashPropagationEnabled)
+            {
+                scope.Span.GetTag(Tags.BaseHash).Should().Be("my_hash");
+                command.CommandText.Should().Contain("ddsh='my_hash'");
+            }
+            else
+            {
+                scope.Span.GetTag(Tags.BaseHash).Should().BeNull();
+                command.CommandText.Should().NotContain("ddsh=");
+            }
         }
 
         [Theory]
@@ -757,10 +788,10 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             return TracerHelper.Create(tracerSettings);
         }
 
-        private static Scope CreateDbCommandScope(Tracer tracer, IDbCommand command)
+        private static Scope CreateDbCommandScope(Tracer tracer, IDbCommand command, string baseHash = null)
         {
             var methodName = nameof(DbScopeFactory.Cache<object>.CreateDbCommandScope);
-            var arguments = new object[] { tracer, command };
+            var arguments = new object[] { tracer, command, baseHash };
 
             return (Scope)typeof(DbScopeFactory.Cache<>).MakeGenericType(command.GetType())
                                                         .GetMethod(methodName)

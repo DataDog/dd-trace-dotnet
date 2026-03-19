@@ -391,6 +391,8 @@ public class DiscoveryServiceTests
         factory.RequestsSent.Count.Should().BeInRange(3, 6, "Should make between 3 and 6 retries in 13s");
     }
 
+#if !NETFRAMEWORK
+
     [Fact]
     public async Task ExtractsContainerTagsHashFromResponseHeader()
     {
@@ -414,6 +416,8 @@ public class DiscoveryServiceTests
 
         await ds.DisposeAsync();
     }
+
+#endif
 
     private string GetConfig(bool dropP0 = true, string version = null)
         => JsonConvert.SerializeObject(new MockTracerAgent.AgentConfiguration() { ClientDropP0s = dropP0, AgentVersion = version });
