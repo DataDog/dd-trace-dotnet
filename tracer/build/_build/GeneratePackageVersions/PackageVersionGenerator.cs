@@ -16,19 +16,27 @@ namespace GeneratePackageVersions
 {
     public class PackageVersionGenerator
     {
-        private readonly Dictionary<string, Version> FixedMaxDependencies;
+        private readonly Func<string, bool> _shouldQueryNuGet;
         private readonly AbsolutePath _definitionsFilePath;
         private readonly PackageGroup _latestMinors;
         private readonly PackageGroup _latestMajors;
         private readonly PackageGroup _latestSpecific;
         private readonly XunitStrategyFileGenerator _strategyGenerator;
 
+        /// <summary>
+        /// The version cache, populated during generation. Entries are added for every
+        /// package that is queried from NuGet. Pre-populated with cached entries on construction.
+        /// </summary>
+        public Dictionary<string, List<string>> VersionCache { get; }
+
         public PackageVersionGenerator(
             AbsolutePath tracerDirectory,
             AbsolutePath testProjectDirectory,
-            Dictionary<string, Version> fixedMaxDependencies)
+            Func<string, bool> shouldQueryNuGet,
+            Dictionary<string, List<string>> previousVersionCache)
         {
-            FixedMaxDependencies = fixedMaxDependencies;
+            _shouldQueryNuGet = shouldQueryNuGet;
+            VersionCache = new Dictionary<string, List<string>>(previousVersionCache);
             var propsDirectory = tracerDirectory / "build";
             _definitionsFilePath = tracerDirectory / "build" / "PackageVersionsGeneratorDefinitions.json";
             _latestMinors = new PackageGroup(propsDirectory, testProjectDirectory, "LatestMinors");
@@ -67,17 +75,23 @@ namespace GeneratePackageVersions
 
                 var requiresDockerDependency = project.RequiresDockerDependency().ToString();
 
-                var packageVersions = await NuGetPackageHelper.GetNugetPackageVersions(entry);
+                List<string> packageVersions;
+                if (!_shouldQueryNuGet(entry.NugetPackageSearchName)
+                    && VersionCache.TryGetValue(entry.NugetPackageSearchName, out var cached))
+                {
+                    packageVersions = cached;
+                }
+                else
+                {
+                    // Fallback: no cache entry or force query NuGet
+                    packageVersions = (await NuGetPackageHelper.GetNugetPackageVersions(entry)).ToList();
+                    VersionCache[entry.NugetPackageSearchName] = packageVersions;
+                }
+
                 var orderedPackageVersions =
                     packageVersions
                        .Distinct()
                        .Select(versionText => new Version(versionText));
-
-                if (FixedMaxDependencies.TryGetValue(entry.NugetPackageSearchName, out var fixedVersion))
-                {
-                    orderedPackageVersions = orderedPackageVersions
-                       .Where(x => x <= fixedVersion);
-                }
 
                 var orderedWithFramework = (
                     from version in orderedPackageVersions.OrderBy(x => x)

@@ -13,7 +13,7 @@ namespace GeneratePackageVersions;
 /// <summary>
 /// Used to generate the matrix of dependencies that we support
 /// </summary>
-internal static class GenerateSupportMatrix
+public static class GenerateSupportMatrix
 {
     public static async Task GenerateInstrumentationSupportMatrix(
         string outputPath,
@@ -63,6 +63,42 @@ internal static class GenerateSupportMatrix
         await JsonSerializer.SerializeAsync(file, toWrite, jsonSerializerOptions );
     }
 
+    /// <summary>
+    /// Load the previously generated supported_versions.json and return a lookup
+    /// keyed by NuGet package name, mapping to its <see cref="SupportedNuGetPackage"/> data.
+    /// Returns an empty dictionary if the file doesn't exist.
+    /// </summary>
+    public static async Task<Dictionary<string, SupportedNuGetPackage>> LoadPreviousVersions(string path)
+    {
+        if (!File.Exists(path))
+        {
+            return new Dictionary<string, SupportedNuGetPackage>(StringComparer.OrdinalIgnoreCase);
+        }
+
+        var JsonOptions = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        };
+        await using var openStream = File.OpenRead(path);
+        var integrations = await JsonSerializer.DeserializeAsync<List<Integration>>(openStream, JsonOptions);
+
+        var result = new Dictionary<string, SupportedNuGetPackage>(StringComparer.OrdinalIgnoreCase);
+        if (integrations is null)
+        {
+            return result;
+        }
+
+        foreach (var integration in integrations)
+        {
+            foreach (var package in integration.Packages)
+            {
+                // Last write wins if a package appears under multiple assemblies
+                result[package.Name] = package;
+            }
+        }
+
+        return result;
+    }
 
     public class Integration
     {
