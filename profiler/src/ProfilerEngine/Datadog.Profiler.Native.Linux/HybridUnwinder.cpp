@@ -63,7 +63,6 @@ std::int32_t HybridUnwinder::Unwind(void* ctx, std::uintptr_t* buffer, std::size
         auto result = unw_getcontext(&localContext);
         if (result != 0)
         {
-            // metric failed getting context
             return -1;
         }
         context = &localContext;
@@ -74,76 +73,73 @@ std::int32_t HybridUnwinder::Unwind(void* ctx, std::uintptr_t* buffer, std::size
 
     if (result != 0)
     {
-        // metric failed initializing cursor
         return -1;
     }
 
+    // === Phase 1: Walk native frames with libunwind ===
+    // Push only native IPs. Stop when we reach managed code.
     std::size_t i = 0;
-    unw_word_t ip;
-    do {
+    unw_word_t ip = 0;
+    bool isManagedIp = false;
+    do
+    {
         result = unw_get_reg(&cursor, UNW_REG_IP, &ip);
         if (result != 0 || ip == 0)
         {
-            // log/metric if result != 0
             return i;
         }
+
+        if (isManagedIp = _codeCache->IsManaged(ip); isManagedIp)
+        {
+            break;
+        }
+
         buffer[i++] = ip;
         if (i >= bufferSize)
         {
             return i;
         }
-        if (_codeCache->IsManaged(ip))
-        {
-            result = 1; // success, let's continue
-            break;
-        }
+
         result = unw_step(&cursor);
     } while (result > 0);
 
-    // it was the last stack frame
-    // or failed at moving forward
-    // TODO log/metric this
-    if (result <= 0)
+    if (!isManagedIp)
     {
-        // log/metric if result < 0
         return i;
     }
+
+    // === Phase 2: Walk managed frames using FP chain ===
+    // .NET JIT always emits frame pointer chains, so we switch
+    // to manual FP walking once we've entered managed code.
+    buffer[i++] = ip;
     if (i >= bufferSize)
     {
         return i;
     }
 
-    // .NET JIT always emits frame pointer chains, so we can
-    // switch to manual FP walking once we've entered managed code.
     bool hasStackBounds = (stackBase != 0) && (stackEnd != 0);
 
-    // Only do manual FP walk when we have stack bounds to validate against.
-    // Without bounds, we cannot safely dereference arbitrary pointers.
-    if (!hasStackBounds)
+    unw_word_t fp = 0;
+    if (hasStackBounds)
     {
-        return i;
+        result = unw_get_reg(&cursor, UNW_REG_FP, &fp);
     }
 
-    unw_word_t fp;
-    result = unw_get_reg(&cursor, UNW_REG_FP, &fp);
-    if (result != 0)
+    if (!hasStackBounds || result != 0 || !IsValidFp(fp, 0, stackBase, stackEnd))
     {
-        // log/metric if result != 0
         return i;
     }
 
     uintptr_t prevFp = 0;
-
-    if (!IsValidFp(fp, prevFp, stackBase, stackEnd))
-    {
-        // log/metric invalid fp
-        return i;
-    }
-
     do
     {
         ip = *reinterpret_cast<uintptr_t*>(fp + sizeof(void*));
         if (ip == 0) [[unlikely]]
+        {
+            break;
+        }
+
+        if (!_codeCache->IsManaged(ip))
         {
             break;
         }
@@ -156,13 +152,6 @@ std::int32_t HybridUnwinder::Unwind(void* ctx, std::uintptr_t* buffer, std::size
         {
             break;
         }
-
-        if (!_codeCache->IsManaged(ip))
-        {
-            break;
-        }
-        // TODO check if we need ip validation too :thinking:
-        // No risk of crash but more of data quality matter
     } while (i < bufferSize);
 
     return i;
