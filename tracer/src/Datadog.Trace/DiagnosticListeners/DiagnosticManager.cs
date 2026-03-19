@@ -44,9 +44,7 @@ namespace Datadog.Trace.DiagnosticListeners
             if (_allListenersSubscription == null)
             {
                 Log.Debug("Starting DiagnosticListener.AllListeners subscription");
-#if !NETFRAMEWORK
-                _allListenersSubscription = DiagnosticListener.AllListeners.Subscribe(new DiagnosticListenerObserver(this));
-#else
+#if NETFRAMEWORK
                 try
                 {
                     var diagnosticListenerType = Type.GetType("System.Diagnostics.DiagnosticListener, System.Diagnostics.DiagnosticSource");
@@ -74,6 +72,8 @@ namespace Datadog.Trace.DiagnosticListeners
                 {
                     Log.Error(ex, "Error starting DiagnosticListener.AllListeners subscription");
                 }
+#else
+                _allListenersSubscription = DiagnosticListener.AllListeners.Subscribe(new DiagnosticListenerObserver(this));
 #endif
             }
         }
