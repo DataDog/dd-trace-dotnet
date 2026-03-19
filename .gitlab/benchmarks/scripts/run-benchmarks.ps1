@@ -100,7 +100,7 @@ $arguments = @("-r") + $runtimes + @(
     "--allCategories", $Category,
     "--iterationTime", "200",
     "--launchCount", "10",
-    "--warmupCount", "20",
+    "--warmupCount", "10",
     "--iterationCount", "10",
     "--buildTimeout", "3600",
     "--keepFiles",
