@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Fetches benchmark results from S3 after bp-runner completes.
 #
-# bp-runner uploads results to S3 during how_to_run_benchmarks. This script
-# downloads those results for analysis.
+# Downloads both candidate results (from current run) and baseline results
+# (from _latest, i.e., the last master run) for comparison.
 #
 # Required environment variables:
 #   BP_INFRA_ARTIFACTS_BUCKET_NAME - S3 bucket name
@@ -35,15 +35,47 @@ export AWS_PROFILE=ephemeral-infra-ci
 
 # Download candidate results
 S3_PREFIX="$CI_PROJECT_NAME/$CI_COMMIT_REF_NAME/$CI_JOB_ID/reports"
-echo "Downloading candidate results from s3://$BP_INFRA_ARTIFACTS_BUCKET_NAME/$S3_PREFIX"
+echo "=== Downloading candidate results ==="
+echo "Source: s3://$BP_INFRA_ARTIFACTS_BUCKET_NAME/$S3_PREFIX"
 aws s3 cp "s3://$BP_INFRA_ARTIFACTS_BUCKET_NAME/$S3_PREFIX" "$ARTIFACTS_DIR/" \
     --region "$AWS_REGION" \
     --profile "$AWS_PROFILE" \
     --recursive || echo "Warning: No candidate results found in S3"
 
-# Rename files to candidate.* format if needed
-# bp-runner already names files as candidate.Trace.SpanBenchmark.json
-echo "Downloaded files:"
+# Download baseline results from _latest (master)
+BASELINE_PREFIX="$CI_PROJECT_NAME/_latest"
+BASELINE_DIR="$ARTIFACTS_DIR/baseline_raw"
+mkdir -p "$BASELINE_DIR"
+
+echo ""
+echo "=== Downloading baseline results from master ==="
+echo "Source: s3://$BP_INFRA_ARTIFACTS_BUCKET_NAME/$BASELINE_PREFIX"
+aws s3 cp "s3://$BP_INFRA_ARTIFACTS_BUCKET_NAME/$BASELINE_PREFIX" "$BASELINE_DIR/" \
+    --region "$AWS_REGION" \
+    --profile "$AWS_PROFILE" \
+    --recursive || echo "Warning: No baseline results found in S3 (first run?)"
+
+# Rename baseline files from candidate.* to baseline.*
+# The _latest files were uploaded as candidate.* when master ran
+echo ""
+echo "=== Renaming baseline files ==="
+for file in "$BASELINE_DIR"/candidate.*.json; do
+    [ -e "$file" ] || continue
+    basename=$(basename "$file")
+    newname="${basename/candidate./baseline.}"
+    echo "  $basename -> $newname"
+    mv "$file" "$ARTIFACTS_DIR/$newname"
+done
+
+# Copy baseline_env_vars.txt if present
+if [ -f "$BASELINE_DIR/env_vars.txt" ]; then
+    cp "$BASELINE_DIR/env_vars.txt" "$ARTIFACTS_DIR/baseline_env_vars.txt"
+    echo "Copied baseline_env_vars.txt"
+fi
+
+echo ""
+echo "=== Downloaded files ==="
 ls -la "$ARTIFACTS_DIR/" || true
 
+echo ""
 echo "Fetch complete!"
