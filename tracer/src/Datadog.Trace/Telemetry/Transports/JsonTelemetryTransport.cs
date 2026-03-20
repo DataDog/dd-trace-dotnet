@@ -13,6 +13,7 @@ using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Util;
 using Datadog.Trace.Util.Http;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Serialization;
@@ -54,6 +55,14 @@ namespace Datadog.Trace.Telemetry.Transports
                 if (_enableDebug)
                 {
                     request.AddHeader(TelemetryConstants.DebugHeader, "true");
+                }
+
+                var sessionId = RuntimeId.Get();
+                request.AddHeader(TelemetryConstants.SessionIdHeader, sessionId);
+                var rootSessionId = RuntimeId.GetRootSessionId();
+                if (rootSessionId != sessionId)
+                {
+                    request.AddHeader(TelemetryConstants.RootSessionIdHeader, rootSessionId);
                 }
 
                 request.AddContainerMetadataHeaders(_containerMetadata);

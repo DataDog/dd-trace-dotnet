@@ -11,12 +11,17 @@ namespace Datadog.Trace.Util
 {
     internal static class RuntimeId
     {
+        internal const string RootSessionEnvVar = "_DD_ROOT_DOTNET_SESSION_ID";
+
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RuntimeId));
         private static string _runtimeId;
+        private static string _rootSessionId;
 
-        public static string Get() => LazyInitializer.EnsureInitialized(ref _runtimeId, () => GetImpl());
+        public static string Get() => LazyInitializer.EnsureInitialized(ref _runtimeId, () => GetRuntimeIdImpl());
 
-        private static string GetImpl()
+        public static string GetRootSessionId() => LazyInitializer.EnsureInitialized(ref _rootSessionId, () => GetRootSessionIdImpl());
+
+        private static string GetRuntimeIdImpl()
         {
             if (NativeLoader.TryGetRuntimeIdFromNative(out var runtimeId))
             {
@@ -28,6 +33,20 @@ namespace Datadog.Trace.Util
             Log.Debug("Unable to get the runtime id from native. Fallback to Guid.NewGuid() : {NewGuid}", guid);
 
             return guid;
+        }
+
+        private static string GetRootSessionIdImpl()
+        {
+            var inherited = Environment.GetEnvironmentVariable(RootSessionEnvVar);
+            if (!string.IsNullOrEmpty(inherited))
+            {
+                Log.Debug("Inherited root session ID from parent: {RootSessionId}", inherited);
+                return inherited;
+            }
+
+            var rootId = Get();
+            Environment.SetEnvironmentVariable(RootSessionEnvVar, rootId);
+            return rootId;
         }
     }
 }
