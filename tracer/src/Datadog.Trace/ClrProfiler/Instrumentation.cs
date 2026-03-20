@@ -334,7 +334,6 @@ namespace Datadog.Trace.ClrProfiler
                 Log.Error(ex, "Error initializing Security");
             }
 
-#if !NETFRAMEWORK
             try
             {
                 if (GlobalSettings.Instance.DiagnosticSourceEnabled)
@@ -357,7 +356,7 @@ namespace Datadog.Trace.ClrProfiler
             {
                 // ignore
             }
-
+#if !NETFRAMEWORK
             // we only support Service Fabric Service Remoting instrumentation on .NET Core (including .NET 5+)
             if (FrameworkDescription.Instance.IsCoreClr())
             {
@@ -519,7 +518,19 @@ namespace Datadog.Trace.ClrProfiler
             return EnvironmentHelpers.IsAzureFunctions();
         }
 
-#endif // #if !NETFRAMEWORK
+#else
+        private static void StartDiagnosticManager()
+        {
+            var observers = new List<DiagnosticObserver>
+            {
+                new QuartzDiagnosticObserver(),
+            };
+
+            var diagnosticManager = new DiagnosticManager(observers);
+            diagnosticManager.Start();
+            DiagnosticManager.Instance = diagnosticManager;
+        }
+#endif
 
         private static void InitializeDebugger(TracerSettings tracerSettings)
         {
