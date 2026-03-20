@@ -2772,6 +2772,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
+#if NET6_0
+                new object[] { "23.4.3" },
+#endif
+#if NET7_0
+                new object[] { "23.4.3" },
+#endif
 #if NET8_0
                 new object[] { "23.4.3" },
                 new object[] { "24.1.0" },
