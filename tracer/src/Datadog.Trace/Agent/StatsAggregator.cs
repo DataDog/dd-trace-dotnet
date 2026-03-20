@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Agent.TraceSamplers;
@@ -15,6 +16,7 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Processors;
 using Datadog.Trace.SourceGenerators;
+using Datadog.Trace.Tagging;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
@@ -26,6 +28,8 @@ namespace Datadog.Trace.Agent
         private const int BufferCount = 2;
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<StatsAggregator>();
+        private static readonly List<byte[]> EmptyPeerTags = [];
+        private static readonly byte[] PeerTagSeparator = [0];
 
         private readonly StatsBuffer[] _buffers;
 
@@ -49,6 +53,18 @@ namespace Datadog.Trace.Agent
 
         private int _currentBuffer;
 
+        private List<string> _peerTagKeys = [];
+        // Based on https://github.com/DataDog/datadog-agent/blob/ce22e11ee71e55be717b9d9a3f8f3d7721a9c6d7/pkg/trace/stats/span_concentrator.go#L210-L213
+        private List<string> _spanKindsStatsComputed =
+        [
+            SpanKinds.Client,
+            SpanKinds.Server,
+            SpanKinds.Producer,
+            SpanKinds.Consumer,
+        ];
+
+        private string _defaultServiceName;
+
         internal StatsAggregator(IApi api, TracerSettings settings, IDiscoveryService discoveryService, bool isOtlp)
         {
             _api = api;
@@ -64,8 +80,9 @@ namespace Datadog.Trace.Agent
 
             _prioritySampler = new PrioritySampler();
             _errorSampler = new ErrorSampler();
-            _rareSampler = new RareSampler(settings, isOtlp);
+            _rareSampler = new RareSampler(settings, this);
             _analyticsEventSampler = new AnalyticsEventsSampler();
+            _defaultServiceName = settings.Manager.InitialMutableSettings.DefaultServiceName;
 
             // Create with the initial mutable settings, but be aware that this could change later
             var header = new ClientStatsPayload(settings.Manager.InitialMutableSettings)
@@ -78,6 +95,7 @@ namespace Datadog.Trace.Agent
                 if (changes.UpdatedMutable is { } mutable)
                 {
                     header.UpdateDetails(mutable);
+                    Interlocked.Exchange(ref _defaultServiceName, mutable.DefaultServiceName);
                 }
             });
 
@@ -182,7 +200,10 @@ namespace Datadog.Trace.Agent
             return spans;
         }
 
-        internal static StatsAggregationKey BuildKey(Span span, bool isOtlp = false)
+        internal StatsAggregationKey BuildKey(Span span, out List<byte[]> utf8PeerTags)
+            => BuildKey(span, _peerTagKeys, out utf8PeerTags);
+
+        internal StatsAggregationKey BuildKey(Span span, List<string> peerTagKeys, out List<byte[]> utf8PeerTags)
         {
             var rawHttpStatusCode = span.GetTag(Tags.HttpStatusCode);
 
@@ -190,6 +211,19 @@ namespace Datadog.Trace.Agent
             {
                 httpStatusCode = 0;
             }
+
+            var rawGrpcStatusCode = span.GetTag(Tags.GrpcStatusCode);
+            if (rawGrpcStatusCode == null || !int.TryParse(rawGrpcStatusCode, out var grpcStatusCode))
+            {
+                grpcStatusCode = 0;
+            }
+
+            // Based on https://github.com/DataDog/datadog-agent/blob/ce22e11ee71e55be717b9d9a3f8f3d7721a9c6d7/pkg/trace/stats/aggregation.go
+            var spanKind = (span.Tags is InstrumentationTags t ? t.SpanKind : span.GetTag(Tags.SpanKind)) ?? string.Empty;
+            var isTraceRoot = span.Context.ParentId is null or 0;
+            var httpMethod = span.GetTag(Tags.HttpMethod) ?? string.Empty;
+            var httpEndpoint = span.GetTag(Tags.HttpRoute) ?? string.Empty;
+            var serviceName = span.ServiceName;
 
             // Normalize service source to match trace serialization behavior:
             // clear the source when service name equals the default, unless it's
@@ -201,6 +235,63 @@ namespace Datadog.Trace.Agent
                 serviceNameSource = null;
             }
 
+            var serviceNameIsDefault = span.ServiceName == Volatile.Read(ref _defaultServiceName);
+
+            // Based on https://github.com/DataDog/datadog-agent/blob/ce22e11ee71e55be717b9d9a3f8f3d7721a9c6d7/pkg/trace/stats/span_concentrator.go#L53-L99
+            // Peer tags are extracted for client/producer/consumer spans
+            // If the span kind is missing or internal, and we have a "base service" tag `_dd.base_service`
+            // then we only aggregate based on the `_dd.base_service`
+            // TODO: work out how to optimize the peer tags allocations, to avoid all the extra utf8 allocations
+            // - on .NET Core these are only necessary for the first instance of the key, but this makes for a tricky
+            // chicken and egg - we need to convert everything to utf-8, so that we can get the hash, so that we
+            // know whether we need the tags as byte[] or not..
+            ulong peerTagsHash;
+            if (!serviceNameIsDefault && (string.IsNullOrEmpty(spanKind) || spanKind is SpanKinds.Internal))
+            {
+                utf8PeerTags = [EncodingHelpers.Utf8NoBom.GetBytes($"{Tags.BaseService}:{serviceName}")];
+                peerTagsHash = FnvHash64.GenerateHash(utf8PeerTags[0], FnvHash64.Version.V1A);
+            }
+            else if (spanKind is SpanKinds.Client or SpanKinds.Producer or SpanKinds.Consumer)
+            {
+                // Hash should be generated as TAGNAME:TAGVALUE, and should be in sorted order (we sort ahead of time)
+                // peerTagKeys should already be in sorted order
+                // We serialize to the utf-8 bytes because we need to serialize them during sending anyway
+                // TODO: Verify we get the same results as the go code
+                utf8PeerTags = EmptyPeerTags;
+                peerTagsHash = 0;
+                foreach (var tagKey in peerTagKeys)
+                {
+                    var tagValue = span.GetTag(tagKey);
+                    if (string.IsNullOrEmpty(tagValue))
+                    {
+                        continue;
+                    }
+
+                    // TODO: Quantize ip address
+
+                    if (ReferenceEquals(utf8PeerTags, EmptyPeerTags))
+                    {
+                        // We're not setting the capacity here, because there's
+                        // a _lot_ of potential peer tags, and _most_ of them won't apply
+                        utf8PeerTags = new();
+                    }
+                    else
+                    {
+                        // add the separator
+                        peerTagsHash = FnvHash64.GenerateHash(PeerTagSeparator, FnvHash64.Version.V1A, peerTagsHash);
+                    }
+
+                    var bytes = EncodingHelpers.Utf8NoBom.GetBytes($"{tagKey}:{tagValue}");
+                    peerTagsHash = FnvHash64.GenerateHash(bytes, FnvHash64.Version.V1A, peerTagsHash);
+                    utf8PeerTags.Add(bytes);
+                }
+            }
+            else
+            {
+                peerTagsHash = 0;
+                utf8PeerTags = EmptyPeerTags;
+            }
+
             // When submitting trace metrics over OTLP, we must create inidividual timeseries
             // timeseries for each unique set of attributes, including the Error and IsTopLevel attributes.
             // As a result, we must create distinct Aggregation keys (and consequently, unique stats) by these attributes.
@@ -210,11 +301,17 @@ namespace Datadog.Trace.Agent
                 span.ServiceName,
                 span.OperationName,
                 span.Type,
-                serviceNameSource,
                 httpStatusCode,
                 span.Context.Origin == "synthetics",
-                isOtlp ? span.Error : false,
-                isOtlp ? span.IsTopLevel : false);
+                _isOtlp ? span.Error : false,
+                _isOtlp ? span.IsTopLevel : false,
+                spanKind,
+                isTraceRoot,
+                httpMethod,
+                httpEndpoint,
+                grpcStatusCode,
+                serviceSource,
+                peerTagsHash);
         }
 
         internal async Task Flush()
@@ -277,29 +374,42 @@ namespace Datadog.Trace.Agent
             return ns << shift;
         }
 
+        // Based on https://github.com/DataDog/datadog-agent/blob/ce22e11ee71e55be717b9d9a3f8f3d7721a9c6d7/pkg/trace/stats/weight.go
+        private static double GetWeight(Span span)
+        {
+            var rate = span.Context.TraceContext.AppliedSamplingRate;
+            return (rate is > 0) ? 1.0 / rate.Value : 1.0;
+        }
+
         private void AddToBuffer(Span span)
         {
+            // Based on https://github.com/DataDog/datadog-agent/blob/ce22e11ee71e55be717b9d9a3f8f3d7721a9c6d7/pkg/trace/stats/span_concentrator.go#L210-L217
+            var spanKind = (span.Tags is InstrumentationTags t ? t.SpanKind : span.GetTag(Tags.SpanKind));
+            var isSpanKindEligible = !string.IsNullOrEmpty(spanKind) && _spanKindsStatsComputed.Contains(spanKind);
+
             if (!_isOtlp // If we are using OTLP, we include both top-level and non-top-level spans
-                && ((!span.IsTopLevel && span.GetMetric(Tags.Measured) != 1.0) || span.GetMetric(Tags.PartialSnapshot) > 0))
+                && (!(span.IsTopLevel || isSpanKindEligible || span.GetMetric(Tags.Measured) == 1.0)
+                 || span.GetMetric(Tags.PartialSnapshot) > 0))
             {
                 return;
             }
 
-            var key = BuildKey(span, _isOtlp);
+            var key = BuildKey(span, _peerTagKeys, out var peerTags);
 
             var buffer = CurrentBuffer;
 
             if (!buffer.Buckets.TryGetValue(key, out var bucket))
             {
-                bucket = new StatsBucket(key);
+                bucket = new StatsBucket(key, peerTags);
                 buffer.Buckets.Add(key, bucket);
             }
 
-            bucket.Hits++;
+            var weight = GetWeight(span);
+            bucket.Hits += weight;
 
             if (span.IsTopLevel)
             {
-                bucket.TopLevelHits++;
+                bucket.TopLevelHits += weight;
             }
 
             var duration = span.Duration.ToNanoseconds();
@@ -310,7 +420,7 @@ namespace Datadog.Trace.Agent
             // As a result, if using OTLP we always add to the OkSummary sketch.
             if (span.Error && !_isOtlp)
             {
-                bucket.Errors++;
+                bucket.Errors += weight;
                 bucket.ErrorSummary.Add(ConvertTimestamp(duration));
             }
             else
@@ -322,6 +432,16 @@ namespace Datadog.Trace.Agent
         private void HandleConfigUpdate(AgentConfiguration config)
         {
             CanComputeStats = !string.IsNullOrWhiteSpace(config.StatsEndpoint) && config.ClientDropP0s == true;
+
+            if (config.SpanKindsStatsComputed is not null)
+            {
+                Interlocked.Exchange(ref _spanKindsStatsComputed, config.SpanKindsStatsComputed);
+            }
+
+            if (config.PeerTags is not null)
+            {
+                Interlocked.Exchange(ref _peerTagKeys, config.PeerTags);
+            }
 
             if (CanComputeStats.Value)
             {
