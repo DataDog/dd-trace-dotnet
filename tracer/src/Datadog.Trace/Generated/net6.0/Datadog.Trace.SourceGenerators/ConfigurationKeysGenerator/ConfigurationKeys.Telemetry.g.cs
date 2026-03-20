@@ -105,11 +105,5 @@ internal static partial class ConfigurationKeys
         /// <see cref="Datadog.Trace.Telemetry.TelemetrySettings.MetricsEnabled"/>
         /// </summary>
         public const string MetricsEnabled = "DD_TELEMETRY_METRICS_ENABLED";
-
-        /// <summary>
-        /// Internal env var for propagating the root session ID to child processes.
-        /// Set automatically by the tracer at init time; not user-configurable.
-        /// </summary>
-        public const string RootSessionId = "_DD_ROOT_DOTNET_SESSION_ID";
     }
 }

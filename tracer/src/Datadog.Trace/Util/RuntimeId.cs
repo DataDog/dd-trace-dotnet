@@ -5,13 +5,15 @@
 
 using System;
 using System.Threading;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Util
 {
     internal static class RuntimeId
     {
+        // Internal propagation env var, not user-configurable — intentionally not in ConfigurationKeys.
+        internal const string RootSessionEnvVar = "_DD_ROOT_DOTNET_SESSION_ID";
+
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RuntimeId));
         private static string _runtimeId;
         private static string _rootSessionId;
@@ -36,7 +38,9 @@ namespace Datadog.Trace.Util
 
         private static string GetRootSessionIdImpl()
         {
-            var inherited = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.Telemetry.RootSessionId);
+#pragma warning disable DD0011 // internal propagation env var, not user-configurable
+            var inherited = EnvironmentHelpers.GetEnvironmentVariable(RootSessionEnvVar);
+#pragma warning restore DD0011
             if (!string.IsNullOrEmpty(inherited))
             {
                 Log.Debug("Inherited root session ID from parent: {RootSessionId}", inherited);
@@ -44,7 +48,7 @@ namespace Datadog.Trace.Util
             }
 
             var rootId = Get();
-            EnvironmentHelpers.SetEnvironmentVariable(ConfigurationKeys.Telemetry.RootSessionId, rootId);
+            EnvironmentHelpers.SetEnvironmentVariable(RootSessionEnvVar, rootId);
             return rootId;
         }
     }
