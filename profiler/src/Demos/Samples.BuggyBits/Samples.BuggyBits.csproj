@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
+    <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">netcoreapp3.1;net6.0;net7.0;net8.0;net9.0;net10.0</TargetFrameworks>
     <TargetFrameworks Condition="'$(OS)' != 'Windows_NT' And '$([System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture)' != 'Arm64'">netcoreapp3.1;net6.0;net7.0;net8.0;net9.0;net10.0</TargetFrameworks>
     <TargetFrameworks Condition="'$(OS)' != 'Windows_NT' And '$([System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture)' == 'Arm64'">net6.0;net7.0;net8.0;net9.0;net10.0</TargetFrameworks>
     <Platforms>AnyCPU;x64;x86</Platforms>
