@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using System.Net;
+using System.Net.Sockets;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Processors
@@ -19,18 +20,6 @@ namespace Datadog.Trace.Processors
     internal static class IpAddressObfuscationUtil
     {
         private const string BlockedIpAddress = "blocked-ip-address";
-
-        private static readonly HashSet<string> AllowedIpAddresses = new(
-            [
-                "127.0.0.1", // localhost
-                "::1", // IPv6 localhost
-                "169.254.169.254", // link-local cloud metadata
-                "fd00:ec2::254", // EC2 IPv6 metadata
-                "169.254.170.2", // ECS task metadata
-            ],
-            StringComparer.Ordinal);
-
-        private static readonly string[] Schemes = ["dnspoll://", "ftp://", "file://", "http://", "https://"];
 
         /// <summary>
         /// Quantizes IP addresses in a comma-separated list of peer addresses.
@@ -44,29 +33,33 @@ namespace Datadog.Trace.Processors
                 return raw;
             }
 
-            // Fast path: no commas, single entry
+            // Fast path: no commas, single entry — can return original string if unchanged
             if (raw.IndexOf(',') < 0)
             {
-                return QuantizeIp(raw);
+                return QuantizeIpSingle(raw);
             }
 
-            // we don't expect many instances so just use a list instead of a HashSet
             var seen = new HashSet<string>(StringComparer.Ordinal);
             var sb = StringBuilderCache.Acquire(raw.Length);
+            var remaining = raw.AsSpan();
 
-            var start = 0;
-            while (start <= raw.Length)
+            while (remaining.Length > 0)
             {
-                var commaIndex = raw.IndexOf(',', start);
-                if (commaIndex < 0)
+                // Get the next entry
+                ReadOnlySpan<char> entry;
+                var commaIdx = remaining.IndexOf(',');
+                if (commaIdx < 0)
                 {
-                    commaIndex = raw.Length;
+                    entry = remaining;
+                    remaining = default;
+                }
+                else
+                {
+                    entry = remaining.Slice(0, commaIdx);
+                    remaining = remaining.Slice(commaIdx + 1);
                 }
 
-                var entry = raw.Substring(start, commaIndex - start);
-                start = commaIndex + 1;
-
-                var quantized = QuantizeIp(entry);
+                var quantized = QuantizeIpToString(entry);
                 if (seen.Add(quantized))
                 {
                     if (sb.Length > 0)
@@ -81,29 +74,66 @@ namespace Datadog.Trace.Processors
             return StringBuilderCache.GetStringAndRelease(sb);
         }
 
-        private static string QuantizeIp(string raw)
+        /// <summary>
+        /// Quantizes a single IP entry. Returns the original string if no change is needed (zero-alloc fast path).
+        /// </summary>
+        private static string QuantizeIpSingle(string raw)
+        {
+            if (string.IsNullOrEmpty(raw))
+            {
+                return raw;
+            }
+
+            var span = raw.AsSpan();
+            var prefixLen = GetPrefixLength(span);
+            var after = span.Slice(prefixLen);
+
+            if (!ParseIpAndPort(after, out var hostEnd, out var suffixEnd, out var portStart, out var portEnd))
+            {
+                return raw;
+            }
+
+            var host = after.Slice(0, hostEnd);
+
+            if (IsAllowedIp(host))
+            {
+                return raw;
+            }
+
+            return BuildBlockedResult(span.Slice(0, prefixLen), after.Slice(hostEnd, suffixEnd - hostEnd), after.Slice(portStart, portEnd - portStart));
+        }
+
+        /// <summary>
+        /// Quantizes a single IP entry from a span. Always allocates a string result (used in multi-entry path).
+        /// </summary>
+        private static string QuantizeIpToString(ReadOnlySpan<char> raw)
         {
             if (raw.Length == 0)
             {
-                return raw;
+                return string.Empty;
             }
 
-            var prefix = SplitPrefix(raw, out var after);
+            var prefixLen = GetPrefixLength(raw);
+            var after = raw.Slice(prefixLen);
 
-            ParseIpAndPort(after, out var host, out var port, out var suffix);
-
-            if (AllowedIpAddresses.Contains(host))
+            if (!ParseIpAndPort(after, out var hostEnd, out var suffixEnd, out var portStart, out var portEnd))
             {
-                return raw;
+                return raw.ToString();
             }
 
-            if (!IsParseableIp(host))
+            var host = after.Slice(0, hostEnd);
+
+            if (IsAllowedIp(host))
             {
-                return raw;
+                return raw.ToString();
             }
 
-            // Reconstruct: prefix + blocked + suffix + port
-            var sb = StringBuilderCache.Acquire(raw.Length);
+            return BuildBlockedResult(raw.Slice(0, prefixLen), after.Slice(hostEnd, suffixEnd - hostEnd), after.Slice(portStart, portEnd - portStart));
+        }
+
+        private static string BuildBlockedResult(ReadOnlySpan<char> prefix, ReadOnlySpan<char> suffix, ReadOnlySpan<char> port)
+        {
+            var sb = StringBuilderCache.Acquire(prefix.Length + BlockedIpAddress.Length + suffix.Length + port.Length + 1);
             sb.Append(prefix);
             sb.Append(BlockedIpAddress);
             sb.Append(suffix);
@@ -117,171 +147,203 @@ namespace Datadog.Trace.Processors
         }
 
         /// <summary>
-        /// Extracts a URL scheme prefix (e.g. "http://", "dnspoll:///") or "ip-" prefix.
-        /// Returns the prefix and sets <paramref name="after"/> to the remainder.
+        /// Returns the length of a URL scheme prefix (e.g. "http://", "dnspoll:///") or "ip-" prefix.
         /// </summary>
-        private static string SplitPrefix(string raw, out string after)
+        private static int GetPrefixLength(ReadOnlySpan<char> raw)
         {
-            // Check for scheme prefixes
-            foreach (var scheme in Schemes)
+            // All schemes contain "://" so check for that first as a fast reject
+            var colonIndex = raw.IndexOf(':');
+            if (colonIndex > 0 && colonIndex + 2 < raw.Length && raw[colonIndex + 1] == '/' && raw[colonIndex + 2] == '/')
             {
-                if (raw.StartsWith(scheme, StringComparison.OrdinalIgnoreCase))
+                if (MatchesScheme(raw, "dnspoll") ||
+                    MatchesScheme(raw, "ftp") ||
+                    MatchesScheme(raw, "file") ||
+                    MatchesScheme(raw, "http") ||
+                    MatchesScheme(raw, "https"))
                 {
-                    var idx = scheme.Length;
+                    // past "://"
+                    var index = colonIndex + 3;
                     // consume any additional slashes (e.g. "dnspoll:///")
-                    while (idx < raw.Length && raw[idx] == '/')
+                    while (index < raw.Length && raw[index] == '/')
                     {
-                        idx++;
+                        index++;
                     }
 
-                    after = raw.Substring(idx);
-                    return raw.Substring(0, idx);
+                    return index;
                 }
             }
 
             // Check for "ip-" prefix (AWS EC2 hostnames)
             if (raw.Length > 3 && raw[0] == 'i' && raw[1] == 'p' && raw[2] == '-')
             {
-                after = raw.Substring(3);
-                return "ip-";
+                return 3;
             }
 
-            after = raw;
-            return string.Empty;
+            return 0;
+        }
+
+        private static bool MatchesScheme(ReadOnlySpan<char> raw, string scheme)
+        {
+            // scheme + "://"
+            if (raw.Length < scheme.Length + 3)
+            {
+                return false;
+            }
+
+            for (var i = 0; i < scheme.Length; i++)
+            {
+                if ((raw[i] | 0x20) != scheme[i])
+                {
+                    return false;
+                }
+            }
+
+            return raw[scheme.Length] == ':' && raw[scheme.Length + 1] == '/' && raw[scheme.Length + 2] == '/';
         }
 
         /// <summary>
-        /// Splits input into host, port, and suffix.
-        /// Handles bracketed IPv6 ([host]:port), IPv4:port, and alternate-separator IPs with suffixes.
+        /// Parses input into host, suffix, and port regions AND determines whether the host is an IP address.
+        /// Returns true if the host is a recognized IP address, false if it's a hostname or other non-IP string.
+        /// All output indices are relative to <paramref name="input"/>:
+        /// host=[0..hostEnd), suffix=[hostEnd..suffixEnd), port=[portStart..portEnd).
         /// </summary>
-        private static void ParseIpAndPort(string input, out string host, out string port, out string suffix)
+        private static bool ParseIpAndPort(ReadOnlySpan<char> input, out int hostEnd, out int suffixEnd, out int portStart, out int portEnd)
         {
-            suffix = string.Empty;
-
-            // Bracketed IPv6: [host]:port
+            // Bracketed IPv6: [host]:port — brackets definitively indicate IPv6
             if (input.Length > 0 && input[0] == '[')
             {
                 var closeBracket = input.IndexOf(']');
-                if (closeBracket > 0)
+                if (closeBracket > 1)
                 {
-                    host = input.Substring(1, closeBracket - 1);
+                    // Validate the content between brackets is actually IPv6
+                    var inner = input.Slice(1, closeBracket - 1);
+                    if (!IsIPv6(inner))
+                    {
+                        return SetDefault(input.Length, out hostEnd, out suffixEnd, out portStart, out portEnd);
+                    }
+
+                    // Host includes brackets; callers use it only for allowed-IP checks and building the result
+                    hostEnd = closeBracket + 1;
+                    suffixEnd = closeBracket + 1;
                     if (closeBracket + 1 < input.Length && input[closeBracket + 1] == ':')
                     {
-                        port = input.Substring(closeBracket + 2);
+                        portStart = closeBracket + 2;
+                        portEnd = input.Length;
                     }
                     else
                     {
-                        port = string.Empty;
+                        portStart = 0;
+                        portEnd = 0;
                     }
 
-                    return;
+                    return true;
                 }
             }
 
-            // Try standard dot-separated IPv4 first
-            if (ParseIPv4(input, '.', out var lastDotIndex))
+            // Try dot-separated IPv4 — handles "1.2.3.4", "1.2.3.4:port", and "1.2.3.4.suffix"
+            if (ParseIPv4(input, '.', out var ipEnd))
             {
-                host = input.Substring(0, lastDotIndex);
-                suffix = input.Substring(lastDotIndex); // includes any trailing ".foo.bar"
-                // Check for port on the full host (host might be "1.2.3.4:port")
-                // Actually, with dot separator, port comes after the IP: "1.2.3.4:1234"
-                SplitHostPort(input, out host, out port, out suffix);
-                return;
+                SplitDottedHostPort(input, out hostEnd, out suffixEnd, out portStart, out portEnd);
+                return true;
             }
 
-            // Try underscore-separated IPv4
-            if (ParseIPv4(input, '_', out var lastUnderscoreIndex))
+            // Try underscore-separated IPv4 (e.g. "192_168_1_1" or "192_168_1_1.suffix")
+            if (ParseIPv4(input, '_', out ipEnd))
             {
-                host = input.Substring(0, lastUnderscoreIndex);
-                suffix = input.Substring(lastUnderscoreIndex);
-                port = string.Empty;
-                return;
+                hostEnd = ipEnd;
+                suffixEnd = input.Length;
+                portStart = 0;
+                portEnd = 0;
+                return true;
             }
 
-            // Try hyphen-separated IPv4
-            if (ParseIPv4(input, '-', out var lastHyphenIndex))
+            // Try hyphen-separated IPv4 (e.g. "192-168-1-1" or "192-168-1-1-suffix")
+            if (ParseIPv4(input, '-', out ipEnd))
             {
-                host = input.Substring(0, lastHyphenIndex);
-                suffix = input.Substring(lastHyphenIndex);
-                port = string.Empty;
-                return;
+                hostEnd = ipEnd;
+                suffixEnd = input.Length;
+                portStart = 0;
+                portEnd = 0;
+                return true;
             }
 
-            // Try IPv6 (without brackets)
-            if (IPAddress.TryParse(input, out var addr) && addr.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6)
+            // Try bare IPv6 (e.g. "2001:db8::1") — no port possible without brackets.
+            // Use IPAddress.TryParse for IPv6 validation; the colon guard inside IsIPv6
+            // ensures we skip the call entirely for hostnames.
+            if (IsIPv6(input))
             {
-                host = input;
-                port = string.Empty;
-                return;
+                hostEnd = input.Length;
+                suffixEnd = input.Length;
+                portStart = 0;
+                portEnd = 0;
+                return true;
             }
 
-            // Try host:port for non-alternate-separator cases
-            var colonIdx = input.LastIndexOf(':');
-            if (colonIdx > 0)
+            // Try host:port for non-IP hosts (e.g. "foo.dog:1234")
+            var colonPos = input.IndexOf(':');
+            if (colonPos > 0 && IsValidPort(input.Slice(colonPos + 1)))
             {
-                var potentialHost = input.Substring(0, colonIdx);
-                var potentialPort = input.Substring(colonIdx + 1);
-
-                // Only treat as port if the part after colon looks like a port number
-                if (IsNumeric(potentialPort))
-                {
-                    host = potentialHost;
-                    port = potentialPort;
-                    return;
-                }
+                // Check if the host part is an IP — this handles "10.0.0.1:8080" when it
+                // didn't match the dot-IPv4 path above (shouldn't happen, but be safe)
+                hostEnd = colonPos;
+                suffixEnd = colonPos;
+                portStart = colonPos + 1;
+                portEnd = input.Length;
+                return false;
             }
 
-            host = input;
-            port = string.Empty;
+            return SetDefault(input.Length, out hostEnd, out suffixEnd, out portStart, out portEnd);
+        }
+
+        private static bool SetDefault(int inputLength, out int hostEnd, out int suffixEnd, out int portStart, out int portEnd)
+        {
+            hostEnd = inputLength;
+            suffixEnd = inputLength;
+            portStart = 0;
+            portEnd = 0;
+            return false;
         }
 
         /// <summary>
-        /// Splits a dot-separated input into host (the IP part), port, and suffix.
-        /// For "192.168.1.1:1234", host="192.168.1.1", port="1234", suffix="".
-        /// For "192.168.1.1.foo", host="192.168.1.1", port="", suffix=".foo".
+        /// For dot-separated IPv4 input, splits into host (the 4-octet IP), suffix (trailing ".foo"), and port.
         /// </summary>
-        private static void SplitHostPort(string input, out string host, out string port, out string suffix)
+        private static void SplitDottedHostPort(ReadOnlySpan<char> input, out int hostEnd, out int suffixEnd, out int portStart, out int portEnd)
         {
-            // First, check if there's a colon for port
+            // Check for colon (port separator)
             var colonIdx = input.IndexOf(':');
-            string withoutPort;
+            ReadOnlySpan<char> withoutPort;
             if (colonIdx > 0)
             {
-                withoutPort = input.Substring(0, colonIdx);
-                port = input.Substring(colonIdx + 1);
+                withoutPort = input.Slice(0, colonIdx);
+                portStart = colonIdx + 1;
+                portEnd = input.Length;
             }
             else
             {
                 withoutPort = input;
-                port = string.Empty;
+                portStart = 0;
+                portEnd = 0;
             }
 
-            // Now find where the IP ends in the dotted string
-            // Parse up to 4 octets
+            // Find where the 4-octet IP ends within the dot-separated string
             var octetCount = 0;
             var i = 0;
             var lastIpEnd = 0;
             while (i < withoutPort.Length && octetCount < 4)
             {
                 var octetStart = i;
-                while (i < withoutPort.Length && withoutPort[i] >= '0' && withoutPort[i] <= '9')
+                while (i < withoutPort.Length && CharHelpers.IsAsciiDigit(withoutPort[i]))
                 {
                     i++;
                 }
 
                 if (i == octetStart)
                 {
-                    break; // no digit found
-                }
-
-                var octetLen = i - octetStart;
-                if (octetLen > 3)
-                {
                     break;
                 }
 
-                var val = ParseOctetValue(withoutPort, octetStart, octetLen);
-                if (val > 255)
+                var octetLen = i - octetStart;
+                if (octetLen > 3 || !IsValidOctet(withoutPort.Slice(octetStart, octetLen)))
                 {
                     break;
                 }
@@ -291,7 +353,7 @@ namespace Datadog.Trace.Processors
 
                 if (octetCount < 4 && i < withoutPort.Length && withoutPort[i] == '.')
                 {
-                    i++; // skip dot
+                    i++;
                 }
                 else
                 {
@@ -301,56 +363,57 @@ namespace Datadog.Trace.Processors
 
             if (octetCount == 4)
             {
-                host = withoutPort.Substring(0, lastIpEnd);
-                suffix = withoutPort.Substring(lastIpEnd);
+                hostEnd = lastIpEnd;
+                suffixEnd = withoutPort.Length;
             }
             else
             {
-                host = withoutPort;
-                suffix = string.Empty;
+                hostEnd = withoutPort.Length;
+                suffixEnd = withoutPort.Length;
             }
         }
 
         /// <summary>
-        /// Checks if the string starts with a valid IP address (IPv4 with any separator, or IPv6).
+        /// Checks if a host span is one of the allowed IP addresses that should not be blocked.
         /// </summary>
-        private static bool IsParseableIp(string s)
+        private static bool IsAllowedIp(ReadOnlySpan<char> host)
         {
-            int lastIndex;
+            return host.SequenceEqual("127.0.0.1".AsSpan()) ||
+                   host.SequenceEqual("::1".AsSpan()) ||
+                   host.SequenceEqual("169.254.169.254".AsSpan()) ||
+                   host.SequenceEqual("fd00:ec2::254".AsSpan()) ||
+                   host.SequenceEqual("169.254.170.2".AsSpan());
+        }
 
-            if (s.Length == 0)
+        /// <summary>
+        /// Checks if the span is a valid IPv6 address.
+        /// Valid IPv6 always contains at least 2 colons (e.g. "::1"), so we use that as a
+        /// cheap guard to skip the IPAddress.TryParse call for hostnames and other non-IPv6 strings.
+        /// On older TFMs where IPAddress.TryParse requires a string, the colon guard ensures
+        /// we only allocate for inputs that actually look like IPv6.
+        /// </summary>
+        private static bool IsIPv6(ReadOnlySpan<char> s)
+        {
+            var firstColon = s.IndexOf(':');
+            if (firstColon < 0 || s.Slice(firstColon + 1).IndexOf(':') < 0)
             {
                 return false;
             }
 
-            // Try dot-separated IPv4
-            if (ParseIPv4(s, '.', out lastIndex) && lastIndex == s.Length)
-            {
-                return true;
-            }
-
-            // Try underscore-separated IPv4
-            if (ParseIPv4(s, '_', out lastIndex) && lastIndex == s.Length)
-            {
-                return true;
-            }
-
-            // Try hyphen-separated IPv4
-            if (ParseIPv4(s, '-', out lastIndex) && lastIndex == s.Length)
-            {
-                return true;
-            }
-
-            // Try IPv6
-            if (IPAddress.TryParse(s, out var addr) && addr.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6)
-            {
-                return true;
-            }
-
-            return false;
+#if NETCOREAPP3_1_OR_GREATER
+            return IPAddress.TryParse(s, out var addr) && addr.AddressFamily == AddressFamily.InterNetworkV6;
+#else
+            return IPAddress.TryParse(s.ToString(), out var addr) && addr.AddressFamily == AddressFamily.InterNetworkV6;
+#endif
         }
 
-        private static bool ParseIPv4(string s, char sep, out int lastIndex)
+        /// <summary>
+        /// Checks if the input starts with 4 valid octets separated by the given character.
+        /// Returns true if found, with <paramref name="lastIndex"/> set to the index just past the 4th octet.
+        /// The custom parser is needed because IPAddress.TryParse doesn't handle alternate
+        /// separators ('_', '-'), and can't find IP boundaries within larger strings like "1.2.3.4.suffix".
+        /// </summary>
+        private static bool ParseIPv4(ReadOnlySpan<char> s, char sep, out int lastIndex)
         {
             lastIndex = 0;
             var octetCount = 0;
@@ -359,19 +422,13 @@ namespace Datadog.Trace.Processors
             while (i < s.Length && octetCount < 4)
             {
                 var octetStart = i;
-                while (i < s.Length && s[i] >= '0' && s[i] <= '9')
+                while (i < s.Length && CharHelpers.IsAsciiDigit(s[i]))
                 {
                     i++;
                 }
 
                 var octetLen = i - octetStart;
-                if (octetLen == 0 || octetLen > 3)
-                {
-                    return false;
-                }
-
-                var val = ParseOctetValue(s, octetStart, octetLen);
-                if (val > 255)
+                if (octetLen == 0 || octetLen > 3 || !IsValidOctet(s.Slice(octetStart, octetLen)))
                 {
                     return false;
                 }
@@ -382,7 +439,7 @@ namespace Datadog.Trace.Processors
                 {
                     if (i < s.Length && s[i] == sep)
                     {
-                        i++; // skip separator
+                        i++;
                     }
                     else
                     {
@@ -400,19 +457,26 @@ namespace Datadog.Trace.Processors
             return false;
         }
 
-        private static int ParseOctetValue(string s, int start, int length)
+        private static bool IsValidOctet(ReadOnlySpan<char> s)
         {
+#if NETCOREAPP
+            return byte.TryParse(s, out _);
+#else
             var val = 0;
-            for (var i = start; i < start + length; i++)
+            for (var i = 0; i < s.Length; i++)
             {
                 val = (val * 10) + (s[i] - '0');
             }
 
-            return val;
+            return val <= 255;
+#endif
         }
 
-        private static bool IsNumeric(string s)
+        private static bool IsValidPort(ReadOnlySpan<char> s)
         {
+#if NETCOREAPP
+            return ushort.TryParse(s, out _);
+#else
             if (s.Length == 0)
             {
                 return false;
@@ -420,13 +484,14 @@ namespace Datadog.Trace.Processors
 
             for (var i = 0; i < s.Length; i++)
             {
-                if (s[i] < '0' || s[i] > '9')
+                if (!char.IsAsciiDigit(s[i]))
                 {
                     return false;
                 }
             }
 
             return true;
+#endif
         }
     }
 }
