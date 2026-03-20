@@ -71,7 +71,7 @@ namespace Datadog.Trace.Configuration
         /// <param name="isLibDatadogAvailable">Used to check whether the libdatadog library is available. Useful for integration tests</param>
         internal TracerSettings(IConfigurationSource? source, IConfigurationTelemetry telemetry, OverrideErrorLog errorLog, LibDatadogAvailableResult isLibDatadogAvailable)
         {
-            var commaSeparator = new[] { ',' };
+            var commaSeparator = Separators.Comma;
             source ??= NullConfigurationSource.Instance;
             ErrorLog = errorLog;
             var config = new ConfigurationBuilder(source, telemetry);

@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Specialized;
 using System.Diagnostics.CodeAnalysis;
+using Datadog.Trace.Util;
 
 #pragma warning disable CS1570
 
@@ -67,7 +68,7 @@ internal sealed class AzureDevOpsSourceLinkUrlParser : SourceLinkUrlParser
 
     private static string? BuildRepositoryUrl(Uri uri)
     {
-        var segments = uri.AbsolutePath.Split(new char[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+        var segments = uri.AbsolutePath.Split(Separators.ForwardSlash, StringSplitOptions.RemoveEmptyEntries);
         if (segments.Length < 5)
         {
             return null;
@@ -100,10 +101,10 @@ internal sealed class AzureDevOpsSourceLinkUrlParser : SourceLinkUrlParser
         // Instead, we parse the query string manually by simply splitting on the '&' character,
         // as in our particular use case, there is no need to decode the values.
         var query = new NameValueCollection();
-        var pairs = queryString.Split(new[] { '&' }, StringSplitOptions.RemoveEmptyEntries);
+        var pairs = queryString.Split(Separators.Ampersand, StringSplitOptions.RemoveEmptyEntries);
         foreach (var pair in pairs)
         {
-            var parts = pair.Split(new char[] { '=' }, 2);
+            var parts = pair.Split(Separators.EqualsSign, 2);
             if (parts.Length == 2)
             {
                 query.Add(parts[0], parts[1]);
