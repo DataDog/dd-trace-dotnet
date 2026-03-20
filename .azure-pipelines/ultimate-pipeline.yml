@@ -1721,6 +1721,7 @@ stages:
         Filter: $(IntegrationTestFilter)
         SampleName: $(IntegrationTestSampleName)
         Area: $(area)
+        DOCKER_API_VERSION: '1.43'
 
     - script: tracer\build.cmd RunIntegrationTests RunWindowsRegressionTests -Framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
       displayName: Run integration tests (ASM)
@@ -1732,6 +1733,7 @@ stages:
         Filter: $(IntegrationTestFilter)
         SampleName: $(IntegrationTestSampleName)
         Area: $(area)
+        DOCKER_API_VERSION: '1.43'
 
 #    TODO: Re-enable test-agent.windows once VM images are updated (hitting rate limits for docker)
 #    - script: docker compose -f docker-compose.windows.yml down
