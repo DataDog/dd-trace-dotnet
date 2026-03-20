@@ -211,7 +211,9 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesHeaders"/>
         /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpHeaders"/>
+#pragma warning disable CA1819 // Properties should not return arrays - This is not mutated so it's fine
         public KeyValuePair<string, string>[]? OtlpTracesHeaders { get; }
+#pragma warning restore CA1819 // Properties should not return arrays
 
         /// <summary>
         /// Gets the OTLP traces timeout.
@@ -288,7 +290,9 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsHeaders"/>
         /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpHeaders"/>
+#pragma warning disable CA1819 // Properties should not return arrays - This is not mutated so it's fine
         public KeyValuePair<string, string>[] OtlpMetricsHeaders { get; }
+#pragma warning restore CA1819 // Properties should not return arrays
 
         /// <summary>
         /// Gets the OTLP timeout for metrics export.

@@ -26,8 +26,6 @@ namespace Datadog.Trace.Agent
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AgentWriter>();
 
-        private static readonly ArraySegment<byte> EmptyPayload = new([0x90]);
-
         private readonly ConcurrentQueue<WorkItem> _pendingTraces = new ConcurrentQueue<WorkItem>();
         private readonly IStatsdManager _statsd;
         private readonly Task _flushTask;

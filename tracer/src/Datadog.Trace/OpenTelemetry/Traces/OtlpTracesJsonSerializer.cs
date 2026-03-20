@@ -26,11 +26,11 @@ namespace Datadog.Trace.OpenTelemetry.Traces;
 /// </summary>
 internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
 {
-    internal static readonly int SpanAttributeCountLimit = 128;
-    internal static readonly int EventCountLimit = 128;
-    internal static readonly int LinkCountLimit = 128;
-    internal static readonly int AttributePerEventCountLimit = 128;
-    internal static readonly int AttributePerLinkCountLimit = 128;
+    internal const int SpanAttributeCountLimit = 128;
+    internal const int EventCountLimit = 128;
+    internal const int LinkCountLimit = 128;
+    internal const int AttributePerEventCountLimit = 128;
+    internal const int AttributePerLinkCountLimit = 128;
 
     // Cache several strings required for encoding OTLP JSON
     private readonly byte[] _closingTracesBytes = EncodingHelpers.Utf8NoBom.GetBytes("]}]}]}");
