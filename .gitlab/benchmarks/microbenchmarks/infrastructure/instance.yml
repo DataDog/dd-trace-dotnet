@@ -77,6 +77,34 @@ run_benchmarks:
 
     # DD_API_KEY is passed from the CI job via --env-regex
 
+    $env:ARTIFACTS_DIR = "C:\artifacts"
+    New-Item -ItemType Directory -Path $env:ARTIFACTS_DIR -Force | Out-Null
+
+    # BP_INFRA_TEST mode: skip benchmarks and use _latest results as candidate
+    # Useful for testing the pipeline without running actual benchmarks
+    if ($env:BP_INFRA_TEST -eq "true") {
+        Write-Output "=== BP_INFRA_TEST mode: mocking benchmarks with _latest results ==="
+        $s3Bucket = $env:BP_INFRA_ARTIFACTS_BUCKET_NAME
+        $latestPrefix = "$env:CI_PROJECT_NAME/_latest"
+
+        Write-Output "Downloading from s3://$s3Bucket/$latestPrefix..."
+        try {
+            Read-S3Object `
+                -BucketName $s3Bucket `
+                -KeyPrefix $latestPrefix `
+                -Folder $env:ARTIFACTS_DIR
+
+            # Rename files to candidate.* format (they're already named candidate.* in _latest)
+            $files = Get-ChildItem -Path $env:ARTIFACTS_DIR -Filter "*.json"
+            Write-Output "Downloaded $($files.Count) files for mock benchmarks"
+        }
+        catch {
+            Write-Error "Failed to download mock benchmark results: $_"
+            exit 1
+        }
+        return
+    }
+
     # Clone dd-trace-dotnet to get the bp-runner config
     $branch = if ($env:CI_COMMIT_REF_NAME) { $env:CI_COMMIT_REF_NAME } else { "master" }
     $repoDir = "C:\app\dd-trace-dotnet-config"
@@ -87,10 +115,6 @@ run_benchmarks:
     } else {
         git clone -b $branch --single-branch --depth 1 "https://github.com/DataDog/dd-trace-dotnet.git" $repoDir
     }
-
-    # Set ARTIFACTS_DIR for bp-runner output
-    $env:ARTIFACTS_DIR = "C:\artifacts"
-    New-Item -ItemType Directory -Path $env:ARTIFACTS_DIR -Force | Out-Null
 
     # Run bp-runner with the benchmark config
     # bp-runner will handle cloning the repo for benchmarks into C:\app\candidate
