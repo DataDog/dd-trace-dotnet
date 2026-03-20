@@ -32,7 +32,6 @@ internal sealed class DataStreamsManager
     private readonly IDisposable _updateSubscription;
     private readonly bool _isLegacyDsmHeadersEnabled;
     private readonly IDiscoveryService _discoveryService; // only saved to be able to unsubscribe
-    private readonly string? _processTags;
     private long _nodeHashBase; // note that this actually represents a `ulong` that we have done an unsafe cast for
     private MutableSettings _previousMutableSettings;
     private string? _previousContainerTagsHash;
@@ -43,14 +42,12 @@ internal sealed class DataStreamsManager
     public DataStreamsManager(
         TracerSettings tracerSettings,
         IDataStreamsWriter? writer,
-        IDiscoveryService discoveryService,
-        string? processTags)
+        IDiscoveryService discoveryService)
     {
         _isEnabled = writer is not null;
         _isLegacyDsmHeadersEnabled = tracerSettings.IsDataStreamsLegacyHeadersEnabled;
         _writer = writer;
         _discoveryService = discoveryService;
-        _processTags = processTags;
         _isInDefaultState = tracerSettings.IsDataStreamsMonitoringInDefaultState;
 
         _previousMutableSettings = tracerSettings.Manager.InitialMutableSettings;
@@ -62,9 +59,15 @@ internal sealed class DataStreamsManager
         _updateSubscription = tracerSettings.Manager.SubscribeToChanges(UpdateHashWithNewSettings);
     }
 
-    public bool IsEnabled => Volatile.Read(ref _isEnabled);
+    public bool IsEnabled
+    {
+        get => Volatile.Read(ref _isEnabled);
+    }
 
-    public bool IsInDefaultState => Volatile.Read(ref _isInDefaultState);
+    public bool IsInDefaultState
+    {
+        get => Volatile.Read(ref _isInDefaultState);
+    }
 
     /// <summary> Callback for AgentConfiguration updates </summary>
     private void UpdateHashWithContainerTags(AgentConfiguration conf)
@@ -97,7 +100,7 @@ internal sealed class DataStreamsManager
     private void UpdateNodeHash(MutableSettings settings, string? containerTagsHash)
     {
         // We don't yet support primary tag in .NET yet
-        var value = HashHelper.CalculateNodeHashBase(settings.DefaultServiceName, settings.Environment, primaryTag: null, _processTags, containerTagsHash);
+        var value = HashHelper.CalculateNodeHashBase(settings.DefaultServiceName, settings.Environment, primaryTag: null, settings.ProcessTags?.SerializedTags, containerTagsHash);
         // Working around the fact we can't do Interlocked.Exchange with the struct
         // and also that we can't do Interlocked.Exchange with a ulong in < .NET 5
         Interlocked.Exchange(
@@ -114,7 +117,7 @@ internal sealed class DataStreamsManager
                          ? DataStreamsWriter.Create(settings, profilerSettings, discoveryService)
                          : null;
 
-        return new DataStreamsManager(settings, writer, discoveryService, settings.PropagateProcessTags ? ProcessTags.SerializedTags : null);
+        return new DataStreamsManager(settings, writer, discoveryService);
     }
 
     public async Task DisposeAsync()
