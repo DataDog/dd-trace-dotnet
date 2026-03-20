@@ -47,16 +47,16 @@ namespace Datadog.Trace.Processors
             {
                 // Get the next entry
                 ReadOnlySpan<char> entry;
-                var commaIdx = remaining.IndexOf(',');
-                if (commaIdx < 0)
+                var commaIndex = remaining.IndexOf(',');
+                if (commaIndex < 0)
                 {
                     entry = remaining;
                     remaining = default;
                 }
                 else
                 {
-                    entry = remaining.Slice(0, commaIdx);
-                    remaining = remaining.Slice(commaIdx + 1);
+                    entry = remaining.Slice(0, commaIndex);
+                    remaining = remaining.Slice(commaIndex + 1);
                 }
 
                 var quantized = QuantizeIpToString(entry);
@@ -243,7 +243,7 @@ namespace Datadog.Trace.Processors
             // Try dot-separated IPv4 — handles "1.2.3.4", "1.2.3.4:port", and "1.2.3.4.suffix"
             if (ParseIPv4(input, '.', out var ipEnd))
             {
-                SplitDottedHostPort(input, out hostEnd, out suffixEnd, out portStart, out portEnd);
+                SplitDottedHostPort(input, ipEnd, out hostEnd, out suffixEnd, out portStart, out portEnd);
                 return true;
             }
 
@@ -280,14 +280,14 @@ namespace Datadog.Trace.Processors
             }
 
             // Try host:port for non-IP hosts (e.g. "foo.dog:1234")
-            var colonPos = input.IndexOf(':');
-            if (colonPos > 0 && IsValidPort(input.Slice(colonPos + 1)))
+            var colonIndex = input.IndexOf(':');
+            if (colonIndex > 0 && IsValidPort(input.Slice(colonIndex + 1)))
             {
                 // Check if the host part is an IP — this handles "10.0.0.1:8080" when it
                 // didn't match the dot-IPv4 path above (shouldn't happen, but be safe)
-                hostEnd = colonPos;
-                suffixEnd = colonPos;
-                portStart = colonPos + 1;
+                hostEnd = colonIndex;
+                suffixEnd = colonIndex;
+                portStart = colonIndex + 1;
                 portEnd = input.Length;
                 return false;
             }
@@ -305,71 +305,27 @@ namespace Datadog.Trace.Processors
         }
 
         /// <summary>
-        /// For dot-separated IPv4 input, splits into host (the 4-octet IP), suffix (trailing ".foo"), and port.
+        /// For dot-separated IPv4 input, uses the already-known IP end position
+        /// to split into host, suffix, and port regions.
         /// </summary>
-        private static void SplitDottedHostPort(ReadOnlySpan<char> input, out int hostEnd, out int suffixEnd, out int portStart, out int portEnd)
+        private static void SplitDottedHostPort(ReadOnlySpan<char> input, int ipEnd, out int hostEnd, out int suffixEnd, out int portStart, out int portEnd)
         {
-            // Check for colon (port separator)
-            var colonIdx = input.IndexOf(':');
-            ReadOnlySpan<char> withoutPort;
-            if (colonIdx > 0)
+            hostEnd = ipEnd;
+
+            // Check whether the content after the IP is a port (":1234") or suffix (".foo")
+            var colonIndex = input.IndexOf(':');
+            if (colonIndex >= ipEnd && IsValidPort(input.Slice(colonIndex + 1)))
             {
-                withoutPort = input.Slice(0, colonIdx);
-                portStart = colonIdx + 1;
+                // Everything between IP end and colon is suffix, everything after colon is port
+                suffixEnd = colonIndex;
+                portStart = colonIndex + 1;
                 portEnd = input.Length;
             }
             else
             {
-                withoutPort = input;
+                suffixEnd = colonIndex > 0 ? colonIndex : input.Length;
                 portStart = 0;
                 portEnd = 0;
-            }
-
-            // Find where the 4-octet IP ends within the dot-separated string
-            var octetCount = 0;
-            var i = 0;
-            var lastIpEnd = 0;
-            while (i < withoutPort.Length && octetCount < 4)
-            {
-                var octetStart = i;
-                while (i < withoutPort.Length && CharHelpers.IsAsciiDigit(withoutPort[i]))
-                {
-                    i++;
-                }
-
-                if (i == octetStart)
-                {
-                    break;
-                }
-
-                var octetLen = i - octetStart;
-                if (octetLen > 3 || !IsValidOctet(withoutPort.Slice(octetStart, octetLen)))
-                {
-                    break;
-                }
-
-                octetCount++;
-                lastIpEnd = i;
-
-                if (octetCount < 4 && i < withoutPort.Length && withoutPort[i] == '.')
-                {
-                    i++;
-                }
-                else
-                {
-                    break;
-                }
-            }
-
-            if (octetCount == 4)
-            {
-                hostEnd = lastIpEnd;
-                suffixEnd = withoutPort.Length;
-            }
-            else
-            {
-                hostEnd = withoutPort.Length;
-                suffixEnd = withoutPort.Length;
             }
         }
 
@@ -403,6 +359,7 @@ namespace Datadog.Trace.Processors
 #if NETCOREAPP3_1_OR_GREATER
             return IPAddress.TryParse(s, out var addr) && addr.AddressFamily == AddressFamily.InterNetworkV6;
 #else
+            // Yeah, this is nasty, but the parsing rules for ipv6 are too gnarly
             return IPAddress.TryParse(s.ToString(), out var addr) && addr.AddressFamily == AddressFamily.InterNetworkV6;
 #endif
         }
@@ -413,58 +370,75 @@ namespace Datadog.Trace.Processors
         /// The custom parser is needed because IPAddress.TryParse doesn't handle alternate
         /// separators ('_', '-'), and can't find IP boundaries within larger strings like "1.2.3.4.suffix".
         /// </summary>
-        private static bool ParseIPv4(ReadOnlySpan<char> s, char sep, out int lastIndex)
+        private static bool ParseIPv4(ReadOnlySpan<char> s, char separator, out int lastIndex)
         {
             lastIndex = 0;
-            var octetCount = 0;
-            var i = 0;
+            var remaining = s;
+            var pos = 0;
 
-            while (i < s.Length && octetCount < 4)
+            for (var octet = 0; octet < 4; octet++)
             {
-                var octetStart = i;
-                while (i < s.Length && CharHelpers.IsAsciiDigit(s[i]))
-                {
-                    i++;
-                }
+                ReadOnlySpan<char> octetSpan;
+                var separatorIndex = remaining.IndexOf(separator);
 
-                var octetLen = i - octetStart;
-                if (octetLen == 0 || octetLen > 3 || !IsValidOctet(s.Slice(octetStart, octetLen)))
+                if (octet < 3)
                 {
-                    return false;
-                }
-
-                octetCount++;
-
-                if (octetCount < 4)
-                {
-                    if (i < s.Length && s[i] == sep)
-                    {
-                        i++;
-                    }
-                    else
+                    // First 3 octets must be followed by a separator
+                    if (separatorIndex <= 0)
                     {
                         return false;
                     }
+
+                    octetSpan = remaining.Slice(0, separatorIndex);
+                    if (!IsValidOctet(octetSpan))
+                    {
+                        return false;
+                    }
+
+                    pos += separatorIndex + 1;
+                    remaining = remaining.Slice(separatorIndex + 1);
+                }
+                else
+                {
+                    // 4th octet: scan leading digits only — anything after (port, suffix) is not part of the octet.
+                    var octetEnd = 0;
+                    while (octetEnd < remaining.Length && char.IsAsciiDigit(remaining[octetEnd]))
+                    {
+                        octetEnd++;
+                    }
+
+                    octetSpan = remaining.Slice(0, octetEnd);
+                    if (!IsValidOctet(octetSpan))
+                    {
+                        return false;
+                    }
+
+                    pos += octetEnd;
                 }
             }
 
-            if (octetCount == 4)
-            {
-                lastIndex = i;
-                return true;
-            }
-
-            return false;
+            lastIndex = pos;
+            return true;
         }
 
         private static bool IsValidOctet(ReadOnlySpan<char> s)
         {
+            if (s.Length == 0 || s.Length > 3)
+            {
+                return false;
+            }
+
 #if NETCOREAPP
             return byte.TryParse(s, out _);
 #else
             var val = 0;
             for (var i = 0; i < s.Length; i++)
             {
+                if (!char.IsAsciiDigit(s[i]))
+                {
+                    return false;
+                }
+
                 val = (val * 10) + (s[i] - '0');
             }
 
