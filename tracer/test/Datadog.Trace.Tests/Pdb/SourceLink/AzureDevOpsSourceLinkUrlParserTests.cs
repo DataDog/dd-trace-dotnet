@@ -49,6 +49,7 @@ public class AzureDevOpsSourceLinkUrlParserTests
     [InlineData("https://github.com/org/_apis/git/repositories/repo/items?api-version=1.0&versionType=commit&version=" + ValidSha + "&path=/*")] // unsupported host
     [InlineData("https://test.visualstudio.com/_apis/git/repositories/items?api-version=1.0&versionType=commit&version=" + ValidSha + "&path=/*")] // too few path segments (< 5)
     [InlineData("https://test.visualstudio.com/test-org/_apis/git/repositories/my-repo/items?api-version=1.0&versionType=commit&version=&path=/*")] // empty version value
+    [InlineData("https://dev.azure.com/org/proj/_apis/git/repositories/?versionType=commit&version=" + ValidSha + "&path=/*")] // missing repo name (trailing slash, empty segment)
     public void TryParseSourceLinkUrl_InvalidUrl_ReturnsFalse(string url)
     {
         var result = _parser.TryParseSourceLinkUrl(new Uri(url), out _, out var repositoryUrl);
