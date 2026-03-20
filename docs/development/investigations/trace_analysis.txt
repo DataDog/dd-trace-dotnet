@@ -1,0 +1,22 @@
+Trace Analysis for trace_id: 697be6d40000000000710c25e093bbc4
+========================================================================
+
+HOST PROCESS (process_id: 27, runtime_id: 25315714-e55b-41b8-b358-eab44613c666):
+└─ azure_functions.invoke (span: 14649688245808190204) [ROOT - parent_id: 0]
+   └─ (calls worker via HTTP - span: 4769262256366565961 not visible in this query)
+
+WORKER PROCESS (process_id: 58, runtime_id: 22d8b248-da2a-40f0-aaab-8d4b41bcd166):
+└─ aspnet_core.request (span: 6489312288077679870)
+   └─ parent_id: 4769262256366565961 (host's http.request span)
+   │
+   └─ azure_functions.invoke (span: 15431669645236193747) ✅ CORRECTLY PARENTED!
+      └─ parent_id: 6489312288077679870 (aspnet_core.request)
+      │
+      └─ test_span (span: 2340021095460581344)
+         └─ parent_id: 15431669645236193747 (azure_functions.invoke)
+
+VERIFICATION:
+✅ Worker's azure_functions.invoke (15431669645236193747) is correctly parented to aspnet_core.request (6489312288077679870)
+✅ All spans in same trace
+✅ Proper span hierarchy in worker process
+⚠️  Host span still present (14649688245808190204) - secondary priority to remove

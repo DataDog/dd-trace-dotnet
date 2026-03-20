@@ -16,6 +16,7 @@ using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Agent
 {
@@ -363,6 +364,78 @@ namespace Datadog.Trace.Agent
                         else
                         {
                             Log.Debug<int, int>("Flushing {Spans} spans across {Traces} traces. CanComputeStats is disabled.", buffer.SpanCount, buffer.TraceCount);
+                        }
+
+                        string logDirectory;
+                        var isWindows = FrameworkDescription.Instance.IsWindows();
+
+                        if (EnvironmentHelpers.IsAzureAppServices())
+                        {
+                            logDirectory = isWindows ? @"C:\home\LogFiles\datadog" : "/home/LogFiles/datadog";
+                        }
+                        else
+                        {
+                            if (isWindows)
+                            {
+                                var programData = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
+                                if (string.IsNullOrEmpty(programData))
+                                {
+                                    programData = EnvironmentHelpersNoLogging.ProgramData();
+                                    if (string.IsNullOrEmpty(programData))
+                                    {
+                                        programData = @"C:\ProgramData";
+                                    }
+                                }
+
+                                logDirectory = System.IO.Path.Combine(programData, "Datadog .NET Tracer", "logs");
+                            }
+                            else
+                            {
+                                logDirectory = "/var/log/datadog/dotnet";
+                            }
+                        }
+
+                        var traceOutputPath = System.IO.Path.Combine(logDirectory, "traces");
+                        System.IO.Directory.CreateDirectory(traceOutputPath);
+
+                        // write trace to disk
+                        if (buffer is { SpanCount: > 0, Data.Count: > 0 })
+                        {
+                            var bufferData = buffer.Data;
+
+                            // compute file names
+                            var now = DateTimeOffset.UtcNow;
+                            var jsonFileName = System.IO.Path.Combine(traceOutputPath, $"trace_payload_{now:yyyy-MM-dd_HH-mm-ss-fffffff}_{Guid.NewGuid():N}.json");
+                            var msgPackFileName = System.IO.Path.Combine(traceOutputPath, $"trace_payload_{now:yyyy-MM-dd_HH-mm-ss-fffffff}_{Guid.NewGuid():N}.msgpack");
+
+                            // save MessagePack to file
+                            using var msgPackFileStream = System.IO.File.Open(msgPackFileName, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.Read);
+                            msgPackFileStream.Write(bufferData.Array!, bufferData.Offset, bufferData.Count);
+
+                            // copy MessagePack bytes into a byte[], convert to JSON, and save to file
+                            var bytes = new byte[bufferData.Count];
+                            Buffer.BlockCopy(bufferData.Array!, bufferData.Offset, bytes, 0, bufferData.Count);
+                            var json = Vendors.MessagePack.MessagePackSerializer.ToJson(bytes);
+                            System.IO.File.WriteAllText(jsonFileName, json, Vendors.MessagePack.StringEncoding.UTF8);
+                        }
+
+                        // delete traces older than 1 hour
+                        var cutoffTime = DateTimeOffset.UtcNow.AddHours(-1);
+
+                        foreach (var file in System.IO.Directory.EnumerateFiles(traceOutputPath, "trace_payload_*.*"))
+                        {
+                            try
+                            {
+                                if (new System.IO.FileInfo(file).LastWriteTimeUtc < cutoffTime)
+                                {
+                                    System.IO.File.Delete(file);
+                                    Log.Debug("Deleted old trace file: {File}", file);
+                                }
+                            }
+                            catch (Exception e)
+                            {
+                                Log.Debug(e, "Failed to delete old trace file: {File}", file);
+                            }
                         }
 
                         var success = await _api.SendTracesAsync(buffer.Data, buffer.TraceCount, CanComputeStats, droppedP0Traces, droppedP0Spans, _apmTracingEnabled).ConfigureAwait(false);

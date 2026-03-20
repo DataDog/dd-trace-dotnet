@@ -18,6 +18,8 @@ internal interface IFunctionContext
     FunctionDefinitionStruct FunctionDefinition { get; }
 
     IEnumerable<KeyValuePair<Type, object?>>? Features { get; }
+
+    IDictionary<object, object>? Items { get; }
 }
 
 #endif
