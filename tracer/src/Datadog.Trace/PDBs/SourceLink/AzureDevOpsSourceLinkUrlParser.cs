@@ -5,7 +5,6 @@
 
 #nullable enable
 using System;
-using System.Collections.Specialized;
 using System.Diagnostics.CodeAnalysis;
 using Datadog.Trace.Util;
 
@@ -46,17 +45,34 @@ internal sealed class AzureDevOpsSourceLinkUrlParser : SourceLinkUrlParser
                 return false;
             }
 
-            // Extract the query string of the URI and check if the required parameters exist.
-            var query = ParseQueryString(uri.Query);
-            commitSha = query["version"];
-            if (!IsValidCommitSha(commitSha))
+            // Extract the commit sha from the query string.
+            ReadOnlySpan<char> shaSpan = default;
+            foreach (var pair in uri.Query.SplitIntoSpans('&'))
+            {
+                ReadOnlySpan<char> pairSpan = pair;
+                var eqIndex = pairSpan.IndexOf('=');
+                if (eqIndex < 0)
+                {
+                    continue;
+                }
+
+                var key = pairSpan.Slice(0, eqIndex).TrimStart('?');
+                if (key.SequenceEqual("version".AsSpan()))
+                {
+                    shaSpan = pairSpan.Slice(eqIndex + 1);
+                    break;
+                }
+            }
+
+            if (!IsValidCommitSha(shaSpan))
             {
                 return false;
             }
 
+            commitSha = shaSpan.ToString();
             repositoryUrl = BuildRepositoryUrl(uri);
 
-            return repositoryUrl != null;
+            return repositoryUrl is not null;
         }
         catch (Exception ex)
         {
@@ -68,49 +84,62 @@ internal sealed class AzureDevOpsSourceLinkUrlParser : SourceLinkUrlParser
 
     private static string? BuildRepositoryUrl(Uri uri)
     {
-        var segments = uri.AbsolutePath.Split(Separators.ForwardSlash, StringSplitOptions.RemoveEmptyEntries);
-        if (segments.Length < 5)
+        ReadOnlySpan<char> segment0 = default;
+        ReadOnlySpan<char> segment1 = default;
+        ReadOnlySpan<char> segment4 = default;
+        ReadOnlySpan<char> segment5 = default;
+        var segmentCount = 0;
+
+        foreach (var segment in uri.AbsolutePath.SplitIntoSpans('/'))
         {
-            return null;
+            ReadOnlySpan<char> span = segment;
+            if (span.IsEmpty)
+            {
+                continue;
+            }
+
+            switch (segmentCount)
+            {
+                case 0: segment0 = span; break;
+                case 1: segment1 = span; break;
+                case 4: segment4 = span; break;
+                case 5: segment5 = span; break;
+            }
+
+            segmentCount++;
         }
 
         if (uri.Host.EndsWith("visualstudio.com", StringComparison.OrdinalIgnoreCase))
         {
+            if (segmentCount < 5)
+            {
+                return null;
+            }
+
             // Legacy format: https://{organization}.visualstudio.com
-            var project = segments[0];
-            var repoName = segments[4];
-            return $"https://{uri.Host}/{project}/_git/{repoName}";
+#if NET6_0_OR_GREATER
+            return $"https://{uri.Host}/{segment0}/_git/{segment4}";
+#else
+            return $"https://{uri.Host}/{segment0.ToString()}/_git/{segment4.ToString()}";
+#endif
         }
 
         if (uri.Host.EndsWith("dev.azure.com", StringComparison.OrdinalIgnoreCase))
         {
+            if (segmentCount < 6)
+            {
+                return null;
+            }
+
             // New format: https://dev.azure.com/{organization}
-            var organization = segments[0];
-            var project = segments[1];
-            var repoName = segments[5];
-            return $"https://{uri.Host}/{organization}/{project}/_git/{repoName}";
+#if NET6_0_OR_GREATER
+            return $"https://{uri.Host}/{segment0}/{segment1}/_git/{segment5}";
+#else
+            return $"https://{uri.Host}/{segment0.ToString()}/{segment1.ToString()}/_git/{segment5.ToString()}";
+#endif
         }
 
         Log.Error("Unsupported Azure DevOps host: {Host}", uri.Host);
         return null;
-    }
-
-    private static NameValueCollection ParseQueryString(string queryString)
-    {
-        // We can't use HttpUtility.ParseQueryString because it would mean taking a dependency on System.Web.
-        // Instead, we parse the query string manually by simply splitting on the '&' character,
-        // as in our particular use case, there is no need to decode the values.
-        var query = new NameValueCollection();
-        var pairs = queryString.Split(Separators.Ampersand, StringSplitOptions.RemoveEmptyEntries);
-        foreach (var pair in pairs)
-        {
-            var parts = pair.Split(Separators.EqualsSign, 2);
-            if (parts.Length == 2)
-            {
-                query.Add(parts[0], parts[1]);
-            }
-        }
-
-        return query;
     }
 }
