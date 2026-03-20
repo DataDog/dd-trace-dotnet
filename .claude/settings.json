@@ -1,4 +1,17 @@
 {
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/pretool-bash-guards.sh"
+          }
+        ]
+      }
+    ]
+  },
   "extraKnownMarketplaces": {
     "datadog-claude-plugins": {
       "source": {
