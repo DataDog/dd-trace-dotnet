@@ -103,7 +103,7 @@ run-benchmarks:
     # Cleanup instances after benchmarks
     CLEANUP: "true"
     # Set to "true" to skip actual benchmarks and use _latest results (for testing the pipeline)
-    BP_INFRA_TEST: "true"
+    BP_INFRA_TEST: "false"
   before_script:
     - !reference [.dd-octo-sts-setup, before_script]
   script:
