@@ -241,8 +241,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var runtimeMajor = Environment.Version.Major;
             var isJson = protocol == "http/json" && datadogTracesEnabled.Equals("true");
 
-            var snapshotName = string.Empty;
-            snapshotName = otelTracesEnabled.Equals("true") ? $"{snapshotName}_OTEL" : $"{snapshotName}_DD_{protocol.Replace("/", "_")}";
+            var snapshotName = otelTracesEnabled switch
+            {
+                "true" when parsedVersion >= new Version("1.15.0") => "1_15_0",
+                "true" when parsedVersion >= new Version("1.5.1") => "1_5_1",
+                "true" when parsedVersion >= new Version("1.3.2") => "1_3_2",
+                "true" when parsedVersion <= new Version("1.0.1") => throw new SkipException($"Skipping test due to unrelated issue with OTel SDK version 1.0.1"),
+                _ => string.Empty
+            };
+
+            snapshotName = otelTracesEnabled.Equals("true") ? $"_OTELv{snapshotName}" : $"{snapshotName}_DD_{protocol.Replace("/", "_")}";
 
             var testAgentHost = Environment.GetEnvironmentVariable("TEST_AGENT_HOST") ?? "localhost";
             var otlpPort = protocol == "grpc" ? 4317 : 4318;
