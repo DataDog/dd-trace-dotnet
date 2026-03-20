@@ -107,6 +107,10 @@ std::int32_t HybridUnwinder::Unwind(void* ctx, std::uintptr_t* buffer, std::size
     {
         return i;
     }
+    if (i >= bufferSize)
+    {
+        return i;
+    }
 
     // === Phase 2: Walk managed frames using FP chain ===
     // .NET JIT always emits frame pointer chains, so we switch
@@ -128,6 +132,28 @@ std::int32_t HybridUnwinder::Unwind(void* ctx, std::uintptr_t* buffer, std::size
     if (!hasStackBounds || result != 0 || !IsValidFp(fp, 0, stackBase, stackEnd))
     {
         return i;
+    }
+
+    // When libunwind encounters a frame without DWARF unwind info and no
+    // discoverable frame record (e.g., a CLR leaf stub at the managed/native
+    // boundary), it falls back to LR-only unwinding: IP is set from X30 but
+    // X29 (FP) is left unchanged from the previous frame (see Gstep.c in
+    // libunwind, "No frame record, fallback to link register" path).
+    // This causes *(FP+8) to resolve back into the same function we already
+    // pushed above. Detect and skip this stale frame.
+    //
+    // The LR-only fallback can be confirmed by observing fpBeforeStep == fpAfterStep
+    // on the last unw_step iteration (FP unchanged across the step that landed on
+    // managed code).
+    auto firstLr = *reinterpret_cast<uintptr_t*>(fp + sizeof(void*));
+    if (firstLr == ip)
+    {
+        uintptr_t staleFp = fp;
+        fp = *reinterpret_cast<uintptr_t*>(fp);
+        if (!IsValidFp(fp, staleFp, stackBase, stackEnd))
+        {
+            return i;
+        }
     }
 
     uintptr_t prevFp = 0;
