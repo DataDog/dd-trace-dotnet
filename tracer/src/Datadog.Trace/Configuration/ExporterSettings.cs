@@ -101,7 +101,7 @@ namespace Datadog.Trace.Configuration
             TracesUnixDomainSocketPath = traceSettings.UdsPath;
             AgentUri = traceSettings.AgentUri;
 
-            var otlpTraceSettings = GetOtlpTracesTransport(signalEndpoint: rawSettings.OtlpTracesEndpoint, generalEndpoint: rawSettings.OtlpEndpoint, signalProtocol: rawSettings.OtlpTracesProtocol, generalProtocol: rawSettings.OtlpProtocol);
+            var otlpTraceSettings = GetOtlpTracesTransport(signalEndpoint: rawSettings.OtlpTracesEndpoint, generalEndpoint: rawSettings.OtlpEndpoint, signalProtocol: rawSettings.OtlpTracesProtocol, generalProtocol: rawSettings.OtlpProtocol, agentHost: rawSettings.TraceAgentHost);
             OtlpTracesEndpoint = otlpTraceSettings.OtlpSignalEndpoint;
             OtlpTracesProtocol = otlpTraceSettings.OtlpProtocol;
             var tracesHeaders = StringConfigurationSource.ParseCustomKeyValues(rawSettings.OtlpTracesHeaders, allowOptionalMappings: false, separator: '=')
@@ -141,7 +141,7 @@ namespace Datadog.Trace.Configuration
                                 ? metricsSettings.DogStatsdPort
                                 : (rawSettings.DogStatsdPort > 0 ? rawSettings.DogStatsdPort : DefaultDogstatsdPort);
 
-            var otlpMetricsSettings = GetOtlpMetricsTransport(signalEndpoint: rawSettings.OtlpMetricsEndpoint, generalEndpoint: rawSettings.OtlpEndpoint, signalProtocol: rawSettings.OtlpMetricsProtocol, generalProtocol: rawSettings.OtlpProtocol);
+            var otlpMetricsSettings = GetOtlpMetricsTransport(signalEndpoint: rawSettings.OtlpMetricsEndpoint, generalEndpoint: rawSettings.OtlpEndpoint, signalProtocol: rawSettings.OtlpMetricsProtocol, generalProtocol: rawSettings.OtlpProtocol, agentHost: rawSettings.TraceAgentHost);
             OtlpMetricsEndpoint = otlpMetricsSettings.OtlpSignalEndpoint;
             OtlpMetricsProtocol = otlpMetricsSettings.OtlpProtocol;
             var metricsHeaders = StringConfigurationSource.ParseCustomKeyValues(rawSettings.OtlpMetricsHeaders, allowOptionalMappings: false, separator: '=')

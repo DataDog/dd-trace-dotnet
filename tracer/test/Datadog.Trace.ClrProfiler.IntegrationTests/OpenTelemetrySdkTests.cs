@@ -96,10 +96,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             foreach (var packageVersion in PackageVersions.OpenTelemetry)
             {
-                yield return [packageVersion[0], "false", "true", "grpc"];
-                yield return [packageVersion[0], "true", "false", "grpc"];
-                yield return [packageVersion[0], "false", "true", "http/protobuf"];
-                yield return [packageVersion[0], "true", "false", "http/protobuf"];
+                yield return [packageVersion[0], "false", "true", "grpc", false];
+                yield return [packageVersion[0], "true", "false", "grpc", false];
+                yield return [packageVersion[0], "true", "false", "grpc", true];
+                yield return [packageVersion[0], "false", "true", "http/protobuf", false];
+                yield return [packageVersion[0], "true", "false", "http/protobuf", false];
+                yield return [packageVersion[0], "true", "false", "http/protobuf", true];
             }
         }
 
@@ -107,8 +109,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             foreach (var packageVersion in PackageVersions.OpenTelemetry)
             {
-                yield return [packageVersion[0], "false", "true", "http/protobuf"];
-                yield return [packageVersion[0], "true", "false", "http/json"];
+                yield return [packageVersion[0], "false", "true", "http/protobuf", false];
+                yield return [packageVersion[0], "true", "false", "http/json", false];
+                yield return [packageVersion[0], "true", "false", "http/json", true];
             }
         }
 
@@ -230,7 +233,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [SkippableTheory]
         [Trait("Category", "EndToEnd")]
         [MemberData(nameof(GetOtlpTracesTestData))]
-        public async Task SubmitsOtlpTraces(string packageVersion, string datadogTracesEnabled, string otelTracesEnabled, string protocol)
+        public async Task SubmitsOtlpTraces(string packageVersion, string datadogTracesEnabled, string otelTracesEnabled, string protocol, bool useAgentHostBackup)
         {
             SetServiceVersion("1.0.x"); // We need this to be consistent with the in-code 1.0.x version set in the OTel SDK builder
 
@@ -258,11 +261,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetEnvironmentVariable("DD_SERVICE", string.Empty);
             SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", datadogTracesEnabled);
 
+            SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENABLED", otelTracesEnabled);
             SetEnvironmentVariable("OTEL_EXPORTER_OTLP_PROTOCOL", protocol);
-            SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", $"http://{testAgentHost}:{otlpPort}");
-            if (otelTracesEnabled.Equals("true"))
+            if (useAgentHostBackup)
             {
-                SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENABLED", "true");
+                SetEnvironmentVariable("DD_AGENT_HOST", testAgentHost);
+            }
+            else
+            {
+                SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", $"http://{testAgentHost}:{otlpPort}");
             }
 
             var applicationStartTimeUnixNano = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
@@ -486,7 +493,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Flaky("New test agent seems to not always be ready", maxRetries: 3)]
         [Trait("Category", "EndToEnd")]
         [MemberData(nameof(GetOtlpTestData))]
-        public async Task SubmitsOtlpMetrics(string packageVersion, string datadogMetricsEnabled, string otelMetricsEnabled, string protocol)
+        public async Task SubmitsOtlpMetrics(string packageVersion, string datadogMetricsEnabled, string otelMetricsEnabled, string protocol, bool useAgentHostBackup)
         {
             var parsedVersion = Version.Parse(!string.IsNullOrEmpty(packageVersion) ? packageVersion : "1.13.1");
             var runtimeMajor = Environment.Version.Major;
@@ -515,8 +522,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetEnvironmentVariable("DD_METRICS_OTEL_ENABLED", datadogMetricsEnabled);
             SetEnvironmentVariable("OTEL_METRICS_EXPORTER_ENABLED", otelMetricsEnabled);
             SetEnvironmentVariable("OTEL_EXPORTER_OTLP_PROTOCOL", protocol);
-            SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", $"http://{testAgentHost}:{otlpPort}");
             SetEnvironmentVariable("OTEL_METRIC_EXPORT_INTERVAL", "1000");
+
+            if (useAgentHostBackup)
+            {
+                SetEnvironmentVariable("DD_AGENT_HOST", testAgentHost);
+            }
+            else
+            {
+                SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", $"http://{testAgentHost}:{otlpPort}");
+            }
 
             // Up until Sdk version 1.6.0 Otel didn't support reading from the env var
             SetEnvironmentVariable("OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE", runtimeMajor >= 9 ? "delta" : "cumulative");
@@ -575,7 +590,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Flaky("New test agent seems to not always be ready", maxRetries: 3)]
         [Trait("Category", "EndToEnd")]
         [MemberData(nameof(GetOtlpTestData))]
-        public async Task SubmitsOtlpLogs(string packageVersion, string datadogLogsEnabled, string otelLogsEnabled, string protocol)
+        public async Task SubmitsOtlpLogs(string packageVersion, string datadogLogsEnabled, string otelLogsEnabled, string protocol, bool useAgentHostBackup)
         {
             var parsedVersion = Version.Parse(!string.IsNullOrEmpty(packageVersion) ? packageVersion : "1.13.1");
             var runtimeMajor = Environment.Version.Major;
@@ -602,9 +617,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetEnvironmentVariable("DD_LOGS_OTEL_ENABLED", datadogLogsEnabled);
             SetEnvironmentVariable("OTEL_LOGS_EXPORTER_ENABLED", otelLogsEnabled);
             SetEnvironmentVariable("OTEL_EXPORTER_OTLP_PROTOCOL", protocol);
-            SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", $"http://{testAgentHost}:{otlpPort}");
             SetEnvironmentVariable("OTEL_LOG_EXPORT_INTERVAL", "1000");
             SetEnvironmentVariable("DD_LOGS_DIRECT_SUBMISSION_MINIMUM_LEVEL", "Verbose");
+
+            if (useAgentHostBackup)
+            {
+                SetEnvironmentVariable("DD_AGENT_HOST", testAgentHost);
+            }
+            else
+            {
+                SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", $"http://{testAgentHost}:{otlpPort}");
+            }
 
             var startTimeNanoseconds = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
 
