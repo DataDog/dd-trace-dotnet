@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.Collections.Generic;
 using Datadog.Trace.Vendors.Datadog.Sketches;
 using Datadog.Trace.Vendors.Datadog.Sketches.Mappings;
 using Datadog.Trace.Vendors.Datadog.Sketches.Stores;
@@ -11,18 +12,21 @@ namespace Datadog.Trace.Agent
 {
     internal sealed class StatsBucket
     {
-        public StatsBucket(StatsAggregationKey key)
+        public StatsBucket(StatsAggregationKey key, List<byte[]> peerTags)
         {
             Key = key;
             OkSummary = CreateSketch();
             ErrorSummary = CreateSketch();
+            PeerTags = peerTags;
         }
 
         public StatsAggregationKey Key { get; }
 
-        public long Hits { get; set; }
+        // Based on https://github.com/DataDog/datadog-agent/blob/main/pkg/trace/stats/weight.go
+        // Hits, Errors, and TopLevelHits are doubles to accumulate fractional sampling weights (1/rate)
+        public double Hits { get; set; }
 
-        public long Errors { get; set; }
+        public double Errors { get; set; }
 
         public long Duration { get; set; }
 
@@ -30,7 +34,9 @@ namespace Datadog.Trace.Agent
 
         public DDSketch ErrorSummary { get; }
 
-        public long TopLevelHits { get; set; }
+        public double TopLevelHits { get; set; }
+
+        public List<byte[]> PeerTags { get; }
 
         public void Clear()
         {

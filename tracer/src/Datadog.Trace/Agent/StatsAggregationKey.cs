@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 
 namespace Datadog.Trace.Agent
@@ -13,11 +15,17 @@ namespace Datadog.Trace.Agent
         public readonly string Service;
         public readonly string OperationName;
         public readonly string Type;
-        public readonly string ServiceSource;
         public readonly int HttpStatusCode;
         public readonly bool IsSyntheticsRequest;
         public readonly bool IsError;
         public readonly bool IsTopLevel;
+        public readonly string SpanKind;
+        public readonly bool IsTraceRoot;
+        public readonly string HttpMethod;
+        public readonly string HttpEndpoint;
+        public readonly int GrpcStatusCode;
+        public readonly string ServiceSource;
+        public readonly ulong PeerTagsHash;
 
         // Constructs a StatsAgregationKey that represents the aggregation key used by Datadog,
         // which does not include IsError and IsTopLevel, since these should be part of the same timeseries
@@ -26,29 +34,42 @@ namespace Datadog.Trace.Agent
             string service,
             string operationName,
             string type,
-            string serviceSource,
             int httpStatusCode,
-            bool isSyntheticsRequest)
+            bool isSyntheticsRequest,
+            string spanKind,
+            bool isTraceRoot,
+            string httpMethod,
+            string httpEndpoint,
+            int grpcStatusCode,
+            string serviceSource,
+            ulong peerTagsHash)
         {
             Resource = resource;
             Service = service;
             OperationName = operationName;
             Type = type;
-            ServiceSource = serviceSource;
             HttpStatusCode = httpStatusCode;
             IsSyntheticsRequest = isSyntheticsRequest;
             IsError = false;
             IsTopLevel = false;
+            SpanKind = spanKind;
+            IsTraceRoot = isTraceRoot;
+            HttpMethod = httpMethod;
+            HttpEndpoint = httpEndpoint;
+            GrpcStatusCode = grpcStatusCode;
+            ServiceSource = serviceSource;
+            PeerTagsHash = peerTagsHash;
         }
 
         // Constructs a StatsAgregationKey that represents the aggregation key used by OpenTelemetry,
         // which considers IsError and IsTopLevel since these should be considered as unique timeseries
+        // but does not currently include the new additional fields
+        // TODO: Confirm whether the aggergations that we include _should_ be used by OTel too?
         public StatsAggregationKey(
             string resource,
             string service,
             string operationName,
             string type,
-            string serviceSource,
             int httpStatusCode,
             bool isSyntheticsRequest,
             bool isError,
@@ -58,11 +79,17 @@ namespace Datadog.Trace.Agent
             Service = service;
             OperationName = operationName;
             Type = type;
-            ServiceSource = serviceSource;
             HttpStatusCode = httpStatusCode;
             IsSyntheticsRequest = isSyntheticsRequest;
             IsError = isError;
             IsTopLevel = isTopLevel;
+            SpanKind = string.Empty;
+            IsTraceRoot = false;
+            HttpMethod = string.Empty;
+            HttpEndpoint = string.Empty;
+            GrpcStatusCode = 0;
+            ServiceSource = string.Empty;
+            PeerTagsHash = 0;
         }
 
         public bool Equals(StatsAggregationKey other)
@@ -72,33 +99,44 @@ namespace Datadog.Trace.Agent
                 && Service == other.Service
                 && OperationName == other.OperationName
                 && Type == other.Type
-                && ServiceSource == other.ServiceSource
                 && HttpStatusCode == other.HttpStatusCode
                 && IsSyntheticsRequest == other.IsSyntheticsRequest
                 && IsError == other.IsError
-                && IsTopLevel == other.IsTopLevel;
+                && IsTopLevel == other.IsTopLevel
+                && IsSyntheticsRequest == other.IsSyntheticsRequest
+                && SpanKind == other.SpanKind
+                && IsTraceRoot == other.IsTraceRoot
+                && HttpMethod == other.HttpMethod
+                && HttpEndpoint == other.HttpEndpoint
+                && GrpcStatusCode == other.GrpcStatusCode
+                && ServiceSource == other.ServiceSource
+                && PeerTagsHash == other.PeerTagsHash;
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             return obj is StatsAggregationKey other && Equals(other);
         }
 
         public override int GetHashCode()
         {
-            unchecked
-            {
-                var hashCode = (Resource != null ? Resource.GetHashCode() : 0);
-                hashCode = (hashCode * 397) ^ (Service != null ? Service.GetHashCode() : 0);
-                hashCode = (hashCode * 397) ^ (OperationName != null ? OperationName.GetHashCode() : 0);
-                hashCode = (hashCode * 397) ^ (Type != null ? Type.GetHashCode() : 0);
-                hashCode = (hashCode * 397) ^ (ServiceSource != null ? ServiceSource.GetHashCode() : 0);
-                hashCode = (hashCode * 397) ^ HttpStatusCode;
-                hashCode = (hashCode * 397) ^ IsSyntheticsRequest.GetHashCode();
-                hashCode = (hashCode * 397) ^ IsError.GetHashCode();
-                hashCode = (hashCode * 397) ^ IsTopLevel.GetHashCode();
-                return hashCode;
-            }
+            var hashCode = new HashCode();
+            hashCode.Add(Resource);
+            hashCode.Add(Service);
+            hashCode.Add(OperationName);
+            hashCode.Add(Type);
+            hashCode.Add(HttpStatusCode);
+            hashCode.Add(IsSyntheticsRequest);
+            hashCode.Add(IsError);
+            hashCode.Add(IsTopLevel);
+            hashCode.Add(SpanKind);
+            hashCode.Add(IsTraceRoot);
+            hashCode.Add(HttpMethod);
+            hashCode.Add(HttpEndpoint);
+            hashCode.Add(GrpcStatusCode);
+            hashCode.Add(ServiceSource);
+            hashCode.Add(PeerTagsHash);
+            return hashCode.ToHashCode();
         }
     }
 }
