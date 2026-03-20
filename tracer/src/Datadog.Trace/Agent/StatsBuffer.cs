@@ -108,17 +108,20 @@ namespace Datadog.Trace.Agent
         private static void SerializeBucket(Stream stream, StatsBucket bucket)
         {
             var hasServiceSource = !string.IsNullOrEmpty(bucket.Key.ServiceSource);
-            var mapSize = hasServiceSource ? 13 : 12;
-            MessagePackBinary.WriteMapHeader(stream, mapSize);
+            var fieldCount = bucket.PeerTags.Count == 0
+                                 ? (hasServiceSource ? 19 : 18)
+                                 : (hasServiceSource ? 20 : 19);
+            MessagePackBinary.WriteMapHeader(stream, fieldCount);
 
+            // TODO: precompute the string constants in this file
             MessagePackBinary.WriteString(stream, "Service");
-            MessagePackBinary.WriteString(stream, bucket.Key.Service ?? string.Empty);
+            MessagePackBinary.WriteString(stream, bucket.Key.Service);
 
             MessagePackBinary.WriteString(stream, "Name");
-            MessagePackBinary.WriteString(stream, bucket.Key.OperationName ?? string.Empty);
+            MessagePackBinary.WriteString(stream, bucket.Key.OperationName);
 
             MessagePackBinary.WriteString(stream, "Resource");
-            MessagePackBinary.WriteString(stream, bucket.Key.Resource ?? string.Empty);
+            MessagePackBinary.WriteString(stream, bucket.Key.Resource);
 
             MessagePackBinary.WriteString(stream, "Synthetics");
             MessagePackBinary.WriteBoolean(stream, bucket.Key.IsSyntheticsRequest);
@@ -127,19 +130,15 @@ namespace Datadog.Trace.Agent
             MessagePackBinary.WriteInt32(stream, bucket.Key.HttpStatusCode);
 
             MessagePackBinary.WriteString(stream, "Type");
-            MessagePackBinary.WriteString(stream, bucket.Key.Type ?? string.Empty);
+            MessagePackBinary.WriteString(stream, bucket.Key.Type);
 
-            if (hasServiceSource)
-            {
-                MessagePackBinary.WriteString(stream, "srv_src");
-                MessagePackBinary.WriteString(stream, bucket.Key.ServiceSource);
-            }
-
+            // Based on https://github.com/DataDog/datadog-agent/blob/main/pkg/trace/stats/weight.go
+            // Hits, Errors, TopLevelHits are weighted by 1/sampling_rate; cast to long for wire format
             MessagePackBinary.WriteString(stream, "Hits");
-            MessagePackBinary.WriteInt64(stream, bucket.Hits);
+            MessagePackBinary.WriteInt64(stream, (long)bucket.Hits);
 
             MessagePackBinary.WriteString(stream, "Errors");
-            MessagePackBinary.WriteInt64(stream, bucket.Errors);
+            MessagePackBinary.WriteInt64(stream, (long)bucket.Errors);
 
             MessagePackBinary.WriteString(stream, "Duration");
             MessagePackBinary.WriteInt64(stream, bucket.Duration);
@@ -151,7 +150,40 @@ namespace Datadog.Trace.Agent
             SerializeSketch(stream, bucket.ErrorSummary);
 
             MessagePackBinary.WriteString(stream, "TopLevelHits");
-            MessagePackBinary.WriteInt64(stream, bucket.TopLevelHits);
+            MessagePackBinary.WriteInt64(stream, (long)bucket.TopLevelHits);
+
+            // Based on https://github.com/DataDog/datadog-agent/blob/main/pkg/trace/stats/aggregation.go
+            MessagePackBinary.WriteString(stream, "SpanKind");
+            MessagePackBinary.WriteString(stream, bucket.Key.SpanKind);
+
+            MessagePackBinary.WriteString(stream, "IsTraceRoot");
+            MessagePackBinary.WriteBoolean(stream, bucket.Key.IsTraceRoot);
+
+            MessagePackBinary.WriteString(stream, "HTTPMethod");
+            MessagePackBinary.WriteString(stream, bucket.Key.HttpMethod);
+
+            MessagePackBinary.WriteString(stream, "HTTPEndpoint");
+            MessagePackBinary.WriteString(stream, bucket.Key.HttpEndpoint);
+
+            MessagePackBinary.WriteString(stream, "GRPCStatusCode");
+            MessagePackBinary.WriteInt32(stream, bucket.Key.GrpcStatusCode);
+
+            if (hasServiceSource)
+            {
+                MessagePackBinary.WriteString(stream, "srv_src");
+                MessagePackBinary.WriteString(stream, bucket.Key.ServiceSource);
+            }
+
+            // Based on https://github.com/DataDog/datadog-agent/blob/main/pkg/trace/stats/span_concentrator.go#L53-L99
+            if (bucket.PeerTags.Count != 0)
+            {
+                MessagePackBinary.WriteString(stream, "PeerTags");
+                MessagePackBinary.WriteArrayHeader(stream, bucket.PeerTags.Count);
+                foreach (var tag in bucket.PeerTags)
+                {
+                    MessagePackBinary.WriteStringBytes(stream, tag);
+                }
+            }
         }
 
         private static void SerializeSketch(Stream stream, DDSketch sketch)
