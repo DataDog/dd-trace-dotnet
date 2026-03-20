@@ -111,7 +111,7 @@
   [Environment]::SetEnvironmentVariable("PATH", "C:\dotnet;" + [Environment]::GetEnvironmentVariable("PATH", [EnvironmentVariableTarget]::Process), [EnvironmentVariableTarget]::Process)
 
   # Run benchmarks - each parallel run gets unique artifacts dir via prefixed index
-  & "$env:CODE_SRC\.gitlab\benchmarks\scripts\run-benchmarks.ps1" `
+  & "$env:CODE_SRC\.gitlab\benchmarks\microbenchmarks\scripts\run-benchmarks.ps1" `
     -Filter "$env:PARALLEL_ITEM" `
     -ArtifactsIndex "$artifactsIndex"
 
@@ -143,7 +143,7 @@
   [Environment]::SetEnvironmentVariable("PATH", "C:\dotnet;" + [Environment]::GetEnvironmentVariable("PATH", [EnvironmentVariableTarget]::Process), [EnvironmentVariableTarget]::Process)
 
   # Run benchmarks - each parallel run gets unique artifacts dir via prefixed index
-  & "$env:CODE_SRC\.gitlab\benchmarks\scripts\run-benchmarks.ps1" `
+  & "$env:CODE_SRC\.gitlab\benchmarks\microbenchmarks\scripts\run-benchmarks.ps1" `
     -Filter "$env:PARALLEL_ITEM" `
     -ArtifactsIndex "$artifactsIndex"
 
