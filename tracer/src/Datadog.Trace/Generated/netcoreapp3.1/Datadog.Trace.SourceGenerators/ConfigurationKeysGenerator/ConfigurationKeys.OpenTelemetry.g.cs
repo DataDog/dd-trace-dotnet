@@ -136,7 +136,7 @@ internal static partial class ConfigurationKeys
         /// <summary>
         /// Configuration key to set the OTLP protocol for traces export.
         /// Takes precedence over <see cref="ExporterOtlpProtocol"/>.
-        /// Valid values: http/json, defaults to http/json
+        /// Valid values: http/json. Default: http/json
         /// </summary>
         public const string ExporterOtlpTracesProtocol = "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL";
 
@@ -208,9 +208,10 @@ internal static partial class ConfigurationKeys
 
         /// <summary>
         /// Configuration key to set the exporter for traces.
-        /// We only recognize the value 'none', which is the
-        /// equivalent of setting <see cref="ConfigurationKeys.TraceEnabled"/>
-        /// to false.
+        /// We only recognize the values 'otlp' and 'none'. The value 'otlp' enables
+        /// the experimental export of traces using OTLP. The value 'none' disables
+        /// the export of traces entirely, which is the equivalent of setting 
+        /// <see cref="ConfigurationKeys.TraceEnabled"/> to false.
         /// </summary>
         public const string TracesExporter = "OTEL_TRACES_EXPORTER";
 
