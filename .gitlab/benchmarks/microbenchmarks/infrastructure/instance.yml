@@ -58,7 +58,7 @@ run_benchmarks:
     # bp-runner will handle cloning the repo for benchmarks into C:\app\candidate
     Write-Output "Running bp-runner..."
     Set-Location $repoDir
-    bp-runner .gitlab\benchmarks\bp-runner.windows.yml --debug
+    bp-runner .gitlab\benchmarks\microbenchmarks\bp-runner.windows.yml --debug
 
 upload_results:
   populate_env: true

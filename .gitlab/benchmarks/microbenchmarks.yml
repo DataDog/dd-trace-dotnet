@@ -113,7 +113,7 @@ run-benchmarks:
     # Run benchmarks on ephemeral instance
     - |
       bp-infra launch \
-        --provision .gitlab/benchmarks/infrastructure/instance.yml \
+        --provision .gitlab/benchmarks/microbenchmarks/infrastructure/instance.yml \
         --region "${AWS_REGION}" \
         --os windows \
         --env-regex "^(CI_|DD_|BP_|GITHUB_|ARTIFACTS_)" \
@@ -121,14 +121,14 @@ run-benchmarks:
         $CLEANUP_ARG
     # Fetch results from S3, analyze, and upload
     - export ARTIFACTS_DIR="$(pwd)/artifacts"
-    - .gitlab/benchmarks/steps/fetch-results.sh
-    - .gitlab/benchmarks/steps/analyze-results.sh
-    - .gitlab/benchmarks/steps/upload-to-bp-ui.sh
+    - .gitlab/benchmarks/microbenchmarks/scripts/fetch-results.sh
+    - .gitlab/benchmarks/microbenchmarks/scripts/analyze-results.sh
+    - .gitlab/benchmarks/microbenchmarks/scripts/upload-to-bp-ui.sh
   after_script:
     - |
       if [ "$CLEANUP" == "true" ]; then
         bp-infra cleanup \
-          --provision .gitlab/benchmarks/infrastructure/instance.yml \
+          --provision .gitlab/benchmarks/microbenchmarks/infrastructure/instance.yml \
           --region "${AWS_REGION}" \
           --os windows \
           --bypass-stack-destroy || true
