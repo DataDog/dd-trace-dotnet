@@ -135,16 +135,40 @@ std::int32_t HybridUnwinder::Unwind(void* ctx, std::uintptr_t* buffer, std::size
         }
     }
 
+    // Walk the FP chain, skipping non-managed (native/stub) frames.
+    // In .NET 9+, user managed code calls throw via 3 native frames before reaching
+    // the managed RhThrowEx:
+    //   IL_Throw (asm stub) → IL_Throw_Impl (C++) → DispatchManagedException (C++) → RhThrowEx (managed)
+    // We must skip these native frames rather than stopping, or we lose the caller frame.
+    // The limit of 4 consecutive non-managed frames (3 + 1 margin) stops useless walking
+    // once we leave the managed portion of the stack entirely (e.g., thread startup code).
     uintptr_t prevFp = 0;
-    while (i < bufferSize)
+    int consecutiveNativeFrames = 0;
+    while (true)
     {
         ip = *reinterpret_cast<uintptr_t*>(fp + sizeof(void*));
-        if (ip == 0 || !_codeCache->IsManaged(ip))
+        if (ip == 0)
         {
             break;
         }
 
-        buffer[i++] = ip;
+        if (_codeCache->IsManaged(ip))
+        {
+            if (i >= bufferSize)
+            {
+                break;
+            }
+            buffer[i++] = ip;
+            consecutiveNativeFrames = 0;
+        }
+        else
+        {
+            if (++consecutiveNativeFrames > 4)
+            {
+                break;
+            }
+        }
+
         prevFp = fp;
         fp = *reinterpret_cast<uintptr_t*>(fp);
         if (!IsValidFp(fp, prevFp, stackBase, stackEnd))
