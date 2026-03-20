@@ -4,7 +4,7 @@
 #
 # Steps:
 # 1. Verify the CPU model (for reproducibility)
-# 2. Fetch baseline results from S3 (_latest from master)
+# 2. Fetch baseline metadata from S3 (_latest/env_vars.txt from master)
 # 3. Run bp-runner with the benchmark config
 # 4. Upload results to S3 (and update _latest if on master)
 
@@ -22,7 +22,7 @@ tags:
 
 provision_steps:
   - check_cpu_model
-  - fetch_baseline_results
+  - fetch_baseline_metadata
   - run_benchmarks
   - upload_results
 
@@ -36,7 +36,7 @@ check_cpu_model:
     }
     Write-Output "CPU model verified: Intel(R) Xeon(R) Platinum 8259CL"
 
-fetch_baseline_results:
+fetch_baseline_metadata:
   populate_env: true
   remote_command: |
     $ErrorActionPreference = "Stop"
@@ -45,39 +45,29 @@ fetch_baseline_results:
     $latestPrefix = "$env:CI_PROJECT_NAME/_latest"
     $baselineDir = "C:\baseline"
 
-    Write-Output "=== Fetching baseline results from master ==="
-    Write-Output "S3 source: s3://$s3Bucket/$latestPrefix"
-    Write-Output "Local destination: $baselineDir"
+    Write-Output "=== Fetching baseline metadata from master ==="
+    Write-Output "S3 source: s3://$s3Bucket/$latestPrefix/env_vars.txt"
 
     New-Item -ItemType Directory -Path $baselineDir -Force | Out-Null
 
     try {
+        # Only download env_vars.txt - baseline JSON files are fetched by GitLab runner
         Read-S3Object `
             -BucketName $s3Bucket `
-            -KeyPrefix $latestPrefix `
-            -Folder $baselineDir
+            -Key "$latestPrefix/env_vars.txt" `
+            -File "$baselineDir\env_vars.txt"
 
-        $baselineFiles = Get-ChildItem -Path $baselineDir -Filter "*.json" -ErrorAction SilentlyContinue
-        if ($baselineFiles) {
-            Write-Output "Downloaded $($baselineFiles.Count) baseline files"
-
-            # Copy env_vars.txt to baseline_env_vars.txt if it exists
-            $envVarsFile = Join-Path $baselineDir "env_vars.txt"
-            if (Test-Path $envVarsFile) {
-                $baselineEnvVarsFile = Join-Path $baselineDir "baseline_env_vars.txt"
-                Copy-Item -Path $envVarsFile -Destination $baselineEnvVarsFile
-                Write-Output "Created baseline_env_vars.txt from master's env_vars.txt"
-                Get-Content $baselineEnvVarsFile
-            } else {
-                Write-Output "No env_vars.txt found in baseline results"
-            }
-        } else {
-            Write-Output "No baseline JSON files found (first run on new infrastructure?)"
+        $envVarsFile = Join-Path $baselineDir "env_vars.txt"
+        if (Test-Path $envVarsFile) {
+            $baselineEnvVarsFile = Join-Path $baselineDir "baseline_env_vars.txt"
+            Copy-Item -Path $envVarsFile -Destination $baselineEnvVarsFile
+            Write-Output "Created baseline_env_vars.txt from master's env_vars.txt:"
+            Get-Content $baselineEnvVarsFile
         }
     }
     catch {
-        Write-Output "Warning: Could not fetch baseline results: $_"
-        Write-Output "Continuing without baseline comparison..."
+        Write-Output "Warning: Could not fetch baseline metadata: $_"
+        Write-Output "Continuing without baseline comparison (first run?)..."
     }
 
 run_benchmarks:
