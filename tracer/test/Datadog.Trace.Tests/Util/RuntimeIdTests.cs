@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Util;
 using FluentAssertions;
 using Xunit;
@@ -26,7 +27,7 @@ public class RuntimeIdTests
     {
         var rootSessionId = RuntimeId.GetRootSessionId();
 
-        Environment.GetEnvironmentVariable(RuntimeId.RootSessionEnvVar)
+        Environment.GetEnvironmentVariable(PlatformKeys.RootSessionId)
                    .Should().Be(rootSessionId);
     }
 }

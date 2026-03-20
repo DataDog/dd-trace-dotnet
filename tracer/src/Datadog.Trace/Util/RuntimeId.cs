@@ -5,14 +5,13 @@
 
 using System;
 using System.Threading;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Util
 {
     internal static class RuntimeId
     {
-        internal const string RootSessionEnvVar = "_DD_ROOT_DOTNET_SESSION_ID";
-
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RuntimeId));
         private static string _runtimeId;
         private static string _rootSessionId;
@@ -37,7 +36,7 @@ namespace Datadog.Trace.Util
 
         private static string GetRootSessionIdImpl()
         {
-            var inherited = Environment.GetEnvironmentVariable(RootSessionEnvVar);
+            var inherited = EnvironmentHelpers.GetEnvironmentVariable(PlatformKeys.RootSessionId);
             if (!string.IsNullOrEmpty(inherited))
             {
                 Log.Debug("Inherited root session ID from parent: {RootSessionId}", inherited);
@@ -45,7 +44,7 @@ namespace Datadog.Trace.Util
             }
 
             var rootId = Get();
-            Environment.SetEnvironmentVariable(RootSessionEnvVar, rootId);
+            EnvironmentHelpers.SetEnvironmentVariable(PlatformKeys.RootSessionId, rootId);
             return rootId;
         }
     }

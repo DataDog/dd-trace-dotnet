@@ -14,4 +14,10 @@ internal static partial class PlatformKeys
     /// Also, the instance name in Azure App Services where the instrumented application is running.
     /// </summary>
     internal const string ComputerNameKey = "COMPUTERNAME";
+
+    /// <summary>
+    /// Internal env var for propagating the root session ID to child processes.
+    /// Set automatically by the tracer; not user-configurable.
+    /// </summary>
+    internal const string RootSessionId = "_DD_ROOT_DOTNET_SESSION_ID";
 }
