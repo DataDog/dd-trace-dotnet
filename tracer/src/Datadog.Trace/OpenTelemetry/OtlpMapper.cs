@@ -182,12 +182,21 @@ internal static class OtlpMapper
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Process(TagItem<string> item)
         {
+            // We are using the original key since we're not serializing MessagePack
+            string key = item.Key;
+            string value = item.Value;
+
+            // Do not record the resource-level attributes telemetry SDK attributes
+            // as span attributes. Silently drop them.
+            if (key == "telemetry.sdk.name"
+                || key == "telemetry.sdk.language"
+                || key == "telemetry.sdk.version")
+            {
+                return;
+            }
+
             if (Count < _limit)
             {
-                // We are using the original key since we're not serializing MessagePack
-                string key = item.Key;
-                string value = item.Value;
-
                 if (_tagProcessors is not null)
                 {
                     for (var i = 0; i < _tagProcessors.Length; i++)

@@ -108,24 +108,6 @@
                   }
                 },
                 {
-                  "key": "telemetry.sdk.name",
-                  "value": {
-                    "stringValue": "opentelemetry"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.language",
-                  "value": {
-                    "stringValue": "dotnet"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.version",
-                  "value": {
-                    "stringValue": "1.13.1"
-                  }
-                },
-                {
                   "key": "http.status_code",
                   "value": {
                     "stringValue": "404"
@@ -182,24 +164,6 @@
                   "key": "service.instance.id",
                   "value": {
                     "stringValue": "Guid_2"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.name",
-                  "value": {
-                    "stringValue": "opentelemetry"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.language",
-                  "value": {
-                    "stringValue": "dotnet"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.version",
-                  "value": {
-                    "stringValue": "1.13.1"
                   }
                 },
                 {
@@ -270,24 +234,6 @@
                   "value": {
                     "stringValue": "Guid_2"
                   }
-                },
-                {
-                  "key": "telemetry.sdk.name",
-                  "value": {
-                    "stringValue": "opentelemetry"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.language",
-                  "value": {
-                    "stringValue": "dotnet"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.version",
-                  "value": {
-                    "stringValue": "1.13.1"
-                  }
                 }
               ],
               "status": {
@@ -343,24 +289,6 @@
                   "key": "service.instance.id",
                   "value": {
                     "stringValue": "Guid_2"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.name",
-                  "value": {
-                    "stringValue": "opentelemetry"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.language",
-                  "value": {
-                    "stringValue": "dotnet"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.version",
-                  "value": {
-                    "stringValue": "1.13.1"
                   }
                 },
                 {
@@ -470,24 +398,6 @@
                   }
                 },
                 {
-                  "key": "telemetry.sdk.name",
-                  "value": {
-                    "stringValue": "opentelemetry"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.language",
-                  "value": {
-                    "stringValue": "dotnet"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.version",
-                  "value": {
-                    "stringValue": "1.13.1"
-                  }
-                },
-                {
                   "key": "runtime-id",
                   "value": {
                     "stringValue": "Guid_1"
@@ -547,24 +457,6 @@
                   }
                 },
                 {
-                  "key": "telemetry.sdk.name",
-                  "value": {
-                    "stringValue": "opentelemetry"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.language",
-                  "value": {
-                    "stringValue": "dotnet"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.version",
-                  "value": {
-                    "stringValue": "1.13.1"
-                  }
-                },
-                {
                   "key": "http.request.method",
                   "value": {
                     "stringValue": "GET"
@@ -624,24 +516,6 @@
                   }
                 },
                 {
-                  "key": "telemetry.sdk.name",
-                  "value": {
-                    "stringValue": "opentelemetry"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.language",
-                  "value": {
-                    "stringValue": "dotnet"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.version",
-                  "value": {
-                    "stringValue": "1.13.1"
-                  }
-                },
-                {
                   "key": "http.request.method",
                   "value": {
                     "stringValue": "GET"
@@ -698,24 +572,6 @@
                   "key": "service.instance.id",
                   "value": {
                     "stringValue": "Guid_2"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.name",
-                  "value": {
-                    "stringValue": "opentelemetry"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.language",
-                  "value": {
-                    "stringValue": "dotnet"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.version",
-                  "value": {
-                    "stringValue": "1.13.1"
                   }
                 },
                 {
@@ -775,24 +631,6 @@
                   "key": "service.instance.id",
                   "value": {
                     "stringValue": "Guid_2"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.name",
-                  "value": {
-                    "stringValue": "opentelemetry"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.language",
-                  "value": {
-                    "stringValue": "dotnet"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.version",
-                  "value": {
-                    "stringValue": "1.13.1"
                   }
                 },
                 {
@@ -858,24 +696,6 @@
                   "key": "service.instance.id",
                   "value": {
                     "stringValue": "Guid_2"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.name",
-                  "value": {
-                    "stringValue": "opentelemetry"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.language",
-                  "value": {
-                    "stringValue": "dotnet"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.version",
-                  "value": {
-                    "stringValue": "1.13.1"
                   }
                 },
                 {
@@ -944,24 +764,6 @@
                   }
                 },
                 {
-                  "key": "telemetry.sdk.name",
-                  "value": {
-                    "stringValue": "opentelemetry"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.language",
-                  "value": {
-                    "stringValue": "dotnet"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.version",
-                  "value": {
-                    "stringValue": "1.13.1"
-                  }
-                },
-                {
                   "key": "messaging.system",
                   "value": {
                     "stringValue": "Kafka"
@@ -1027,24 +829,6 @@
                   }
                 },
                 {
-                  "key": "telemetry.sdk.name",
-                  "value": {
-                    "stringValue": "opentelemetry"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.language",
-                  "value": {
-                    "stringValue": "dotnet"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.version",
-                  "value": {
-                    "stringValue": "1.13.1"
-                  }
-                },
-                {
                   "key": "messaging.system",
                   "value": {
                     "stringValue": "Kafka"
@@ -1107,24 +891,6 @@
                   "key": "service.instance.id",
                   "value": {
                     "stringValue": "Guid_2"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.name",
-                  "value": {
-                    "stringValue": "opentelemetry"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.language",
-                  "value": {
-                    "stringValue": "dotnet"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.version",
-                  "value": {
-                    "stringValue": "1.13.1"
                   }
                 },
                 {
@@ -1193,24 +959,6 @@
                   }
                 },
                 {
-                  "key": "telemetry.sdk.name",
-                  "value": {
-                    "stringValue": "opentelemetry"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.language",
-                  "value": {
-                    "stringValue": "dotnet"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.version",
-                  "value": {
-                    "stringValue": "1.13.1"
-                  }
-                },
-                {
                   "key": "rpc.system",
                   "value": {
                     "stringValue": "aws-api"
@@ -1267,24 +1015,6 @@
                   "key": "service.instance.id",
                   "value": {
                     "stringValue": "Guid_2"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.name",
-                  "value": {
-                    "stringValue": "opentelemetry"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.language",
-                  "value": {
-                    "stringValue": "dotnet"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.version",
-                  "value": {
-                    "stringValue": "1.13.1"
                   }
                 },
                 {
@@ -1347,24 +1077,6 @@
                   }
                 },
                 {
-                  "key": "telemetry.sdk.name",
-                  "value": {
-                    "stringValue": "opentelemetry"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.language",
-                  "value": {
-                    "stringValue": "dotnet"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.version",
-                  "value": {
-                    "stringValue": "1.13.1"
-                  }
-                },
-                {
                   "key": "rpc.system",
                   "value": {
                     "stringValue": "GRPC"
@@ -1421,24 +1133,6 @@
                   "key": "service.instance.id",
                   "value": {
                     "stringValue": "Guid_2"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.name",
-                  "value": {
-                    "stringValue": "opentelemetry"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.language",
-                  "value": {
-                    "stringValue": "dotnet"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.version",
-                  "value": {
-                    "stringValue": "1.13.1"
                   }
                 },
                 {
@@ -1507,24 +1201,6 @@
                   }
                 },
                 {
-                  "key": "telemetry.sdk.name",
-                  "value": {
-                    "stringValue": "opentelemetry"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.language",
-                  "value": {
-                    "stringValue": "dotnet"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.version",
-                  "value": {
-                    "stringValue": "1.13.1"
-                  }
-                },
-                {
                   "key": "faas.trigger",
                   "value": {
                     "stringValue": "Datasource"
@@ -1581,24 +1257,6 @@
                   "key": "service.instance.id",
                   "value": {
                     "stringValue": "Guid_2"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.name",
-                  "value": {
-                    "stringValue": "opentelemetry"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.language",
-                  "value": {
-                    "stringValue": "dotnet"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.version",
-                  "value": {
-                    "stringValue": "1.13.1"
                   }
                 },
                 {
@@ -1661,24 +1319,6 @@
                   }
                 },
                 {
-                  "key": "telemetry.sdk.name",
-                  "value": {
-                    "stringValue": "opentelemetry"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.language",
-                  "value": {
-                    "stringValue": "dotnet"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.version",
-                  "value": {
-                    "stringValue": "1.13.1"
-                  }
-                },
-                {
                   "key": "network.protocol.name",
                   "value": {
                     "stringValue": "Amqp"
@@ -1736,24 +1376,6 @@
                   "value": {
                     "stringValue": "Guid_2"
                   }
-                },
-                {
-                  "key": "telemetry.sdk.name",
-                  "value": {
-                    "stringValue": "opentelemetry"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.language",
-                  "value": {
-                    "stringValue": "dotnet"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.version",
-                  "value": {
-                    "stringValue": "1.13.1"
-                  }
                 }
               ]
             },
@@ -1806,24 +1428,6 @@
                   "key": "service.instance.id",
                   "value": {
                     "stringValue": "Guid_2"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.name",
-                  "value": {
-                    "stringValue": "opentelemetry"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.language",
-                  "value": {
-                    "stringValue": "dotnet"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.version",
-                  "value": {
-                    "stringValue": "1.13.1"
                   }
                 },
                 {
@@ -1883,24 +1487,6 @@
                   "key": "service.instance.id",
                   "value": {
                     "stringValue": "Guid_2"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.name",
-                  "value": {
-                    "stringValue": "opentelemetry"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.language",
-                  "value": {
-                    "stringValue": "dotnet"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.version",
-                  "value": {
-                    "stringValue": "1.13.1"
                   }
                 }
               ]
@@ -1955,24 +1541,6 @@
                   "value": {
                     "stringValue": "Guid_2"
                   }
-                },
-                {
-                  "key": "telemetry.sdk.name",
-                  "value": {
-                    "stringValue": "opentelemetry"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.language",
-                  "value": {
-                    "stringValue": "dotnet"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.version",
-                  "value": {
-                    "stringValue": "1.13.1"
-                  }
                 }
               ]
             },
@@ -2025,24 +1593,6 @@
                   "key": "service.instance.id",
                   "value": {
                     "stringValue": "Guid_2"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.name",
-                  "value": {
-                    "stringValue": "opentelemetry"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.language",
-                  "value": {
-                    "stringValue": "dotnet"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.version",
-                  "value": {
-                    "stringValue": "1.13.1"
                   }
                 }
               ]
@@ -2097,24 +1647,6 @@
                   "value": {
                     "stringValue": "Guid_2"
                   }
-                },
-                {
-                  "key": "telemetry.sdk.name",
-                  "value": {
-                    "stringValue": "opentelemetry"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.language",
-                  "value": {
-                    "stringValue": "dotnet"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.version",
-                  "value": {
-                    "stringValue": "1.13.1"
-                  }
                 }
               ]
             },
@@ -2167,24 +1699,6 @@
                   "key": "service.instance.id",
                   "value": {
                     "stringValue": "Guid_2"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.name",
-                  "value": {
-                    "stringValue": "opentelemetry"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.language",
-                  "value": {
-                    "stringValue": "dotnet"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.version",
-                  "value": {
-                    "stringValue": "1.13.1"
                   }
                 },
                 {
@@ -2263,24 +1777,6 @@
                   "value": {
                     "stringValue": "Guid_2"
                   }
-                },
-                {
-                  "key": "telemetry.sdk.name",
-                  "value": {
-                    "stringValue": "opentelemetry"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.language",
-                  "value": {
-                    "stringValue": "dotnet"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.version",
-                  "value": {
-                    "stringValue": "1.13.1"
-                  }
                 }
               ]
             },
@@ -2332,24 +1828,6 @@
                   "key": "service.instance.id",
                   "value": {
                     "stringValue": "Guid_2"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.name",
-                  "value": {
-                    "stringValue": "opentelemetry"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.language",
-                  "value": {
-                    "stringValue": "dotnet"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.version",
-                  "value": {
-                    "stringValue": "1.13.1"
                   }
                 },
                 {
@@ -2637,24 +2115,6 @@
                   }
                 },
                 {
-                  "key": "telemetry.sdk.name",
-                  "value": {
-                    "stringValue": "opentelemetry"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.language",
-                  "value": {
-                    "stringValue": "dotnet"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.version",
-                  "value": {
-                    "stringValue": "1.13.1"
-                  }
-                },
-                {
                   "key": "runtime-id",
                   "value": {
                     "stringValue": "Guid_1"
@@ -2720,24 +2180,6 @@
                   }
                 },
                 {
-                  "key": "telemetry.sdk.name",
-                  "value": {
-                    "stringValue": "opentelemetry"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.language",
-                  "value": {
-                    "stringValue": "dotnet"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.version",
-                  "value": {
-                    "stringValue": "1.13.1"
-                  }
-                },
-                {
                   "key": "runtime-id",
                   "value": {
                     "stringValue": "Guid_1"
@@ -2787,24 +2229,6 @@
                   "key": "otel.status_code",
                   "value": {
                     "stringValue": "STATUS_CODE_UNSET"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.name",
-                  "value": {
-                    "stringValue": "opentelemetry"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.language",
-                  "value": {
-                    "stringValue": "dotnet"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.version",
-                  "value": {
-                    "stringValue": "1.13.1"
                   }
                 },
                 {
@@ -2873,24 +2297,6 @@
                   }
                 },
                 {
-                  "key": "telemetry.sdk.name",
-                  "value": {
-                    "stringValue": "opentelemetry"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.language",
-                  "value": {
-                    "stringValue": "dotnet"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.version",
-                  "value": {
-                    "stringValue": "1.13.1"
-                  }
-                },
-                {
                   "key": "http.status_code",
                   "value": {
                     "stringValue": "404"
@@ -2948,24 +2354,6 @@
                   "value": {
                     "stringValue": "Guid_2"
                   }
-                },
-                {
-                  "key": "telemetry.sdk.name",
-                  "value": {
-                    "stringValue": "opentelemetry"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.language",
-                  "value": {
-                    "stringValue": "dotnet"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.version",
-                  "value": {
-                    "stringValue": "1.13.1"
-                  }
                 }
               ]
             },
@@ -3018,24 +2406,6 @@
                   "key": "service.instance.id",
                   "value": {
                     "stringValue": "Guid_2"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.name",
-                  "value": {
-                    "stringValue": "opentelemetry"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.language",
-                  "value": {
-                    "stringValue": "dotnet"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.version",
-                  "value": {
-                    "stringValue": "1.13.1"
                   }
                 }
               ]
@@ -3090,24 +2460,6 @@
                   "value": {
                     "stringValue": "Guid_2"
                   }
-                },
-                {
-                  "key": "telemetry.sdk.name",
-                  "value": {
-                    "stringValue": "opentelemetry"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.language",
-                  "value": {
-                    "stringValue": "dotnet"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.version",
-                  "value": {
-                    "stringValue": "1.13.1"
-                  }
                 }
               ]
             },
@@ -3160,24 +2512,6 @@
                   "key": "service.instance.id",
                   "value": {
                     "stringValue": "Guid_2"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.name",
-                  "value": {
-                    "stringValue": "opentelemetry"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.language",
-                  "value": {
-                    "stringValue": "dotnet"
-                  }
-                },
-                {
-                  "key": "telemetry.sdk.version",
-                  "value": {
-                    "stringValue": "1.13.1"
                   }
                 }
               ]
