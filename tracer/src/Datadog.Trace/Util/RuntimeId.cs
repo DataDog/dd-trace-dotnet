@@ -36,7 +36,7 @@ namespace Datadog.Trace.Util
 
         private static string GetRootSessionIdImpl()
         {
-            var inherited = EnvironmentHelpers.GetEnvironmentVariable(PlatformKeys.RootSessionId);
+            var inherited = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.Telemetry.RootSessionId);
             if (!string.IsNullOrEmpty(inherited))
             {
                 Log.Debug("Inherited root session ID from parent: {RootSessionId}", inherited);
@@ -44,7 +44,7 @@ namespace Datadog.Trace.Util
             }
 
             var rootId = Get();
-            EnvironmentHelpers.SetEnvironmentVariable(PlatformKeys.RootSessionId, rootId);
+            EnvironmentHelpers.SetEnvironmentVariable(ConfigurationKeys.Telemetry.RootSessionId, rootId);
             return rootId;
         }
     }

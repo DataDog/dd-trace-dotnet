@@ -27,7 +27,7 @@ public class RuntimeIdTests
     {
         var rootSessionId = RuntimeId.GetRootSessionId();
 
-        Environment.GetEnvironmentVariable(PlatformKeys.RootSessionId)
+        Environment.GetEnvironmentVariable(ConfigurationKeys.Telemetry.RootSessionId)
                    .Should().Be(rootSessionId);
     }
 }
