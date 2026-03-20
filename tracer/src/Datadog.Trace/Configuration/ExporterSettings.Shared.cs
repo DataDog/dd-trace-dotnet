@@ -317,12 +317,16 @@ namespace Datadog.Trace.Configuration
 
         private Uri CreateDefaultOtlpUri() => new Uri($"http://{DefaultOtlpHost}:{DefaultAgentPort}");
 
-        private Uri CreateDefaultOtlpUri(OtlpProtocol protocol, string signal, string? agentHost) => protocol switch
+        private Uri CreateDefaultOtlpUri(OtlpProtocol protocol, string signal, string? agentHost)
         {
-            OtlpProtocol.Grpc => new Uri($"http://{agentHost ?? DefaultAgentHost}:{DefaultOtlpGrpcPort}"),
-            OtlpProtocol.HttpProtobuf or OtlpProtocol.HttpJson => new Uri($"http://{agentHost ?? DefaultAgentHost}:{DefaultOtlpHttpPort}/v1/{signal}"),
-            _ => throw new ArgumentException($"Invalid protocol: {protocol}"),
-        };
+            var defaultHost = string.IsNullOrEmpty(agentHost) ? DefaultOtlpHost : agentHost;
+            return protocol switch
+            {
+                OtlpProtocol.Grpc => new Uri($"http://{defaultHost}:{DefaultOtlpGrpcPort}"),
+                OtlpProtocol.HttpProtobuf or OtlpProtocol.HttpJson => new Uri($"http://{defaultHost}:{DefaultOtlpHttpPort}/v1/{signal}"),
+                _ => throw new ArgumentException($"Invalid protocol: {protocol}"),
+            };
+        }
 
         private readonly record struct TraceTransportSettings(TracesTransportType Transport, Uri AgentUri, string? UdsPath = null, string? PipeName = null);
 
