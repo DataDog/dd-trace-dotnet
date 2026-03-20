@@ -1,11 +1,11 @@
 include(ExternalProject)
 
-SET(RE2_VERSION "2018-10-01")
+set(RE2_VERSION "2018-10-01")
 
 set (DOWNLOAD_COMMAND ${CMAKE_COMMAND} -DPROJECT_NAME=re2 -DPROJECT_REPOSITORY=https://github.com/google/re2.git -DPROJECT_BRANCH=${RE2_VERSION} -P ${CMAKE_SOURCE_DIR}/build/cmake/git-clone-quiet-once.cmake)
 
 if (ISMACOS)
-    SET (OSXRE2BUILDCOMMAND
+    set(OSXRE2BUILDCOMMAND
             echo "Building Re2 Arm64" &&
             rm -f -r ${CMAKE_CURRENT_BINARY_DIR}/re2-prefix/src/re2/obj &&
             ${CMAKE_COMMAND} -E env MAKEFLAGS=-s LDFLAGS=-arch\ arm64 ARFLAGS=-r\ -s\ -c CXXFLAGS=-O3\ -g\ -fPIC\ -target\ arm64-apple-darwin${CMAKE_HOST_SYSTEM_VERSION}\ -Wno-unused-but-set-variable\ -D_GLIBCXX_USE_CXX11_ABI=0 $(MAKE) -j obj/libre2.a &&

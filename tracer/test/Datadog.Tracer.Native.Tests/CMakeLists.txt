@@ -2,10 +2,8 @@ include(GoogleTest)
 # ******************************************************
 # Compiler options
 # ******************************************************
-set(CMAKE_CXX_STANDARD 20)
-
 # Sets compiler options
-add_compile_options(-std=c++20 -fms-extensions)
+add_compile_options(-fms-extensions)
 add_compile_options(-DPAL_STDCPP_COMPAT -DPLATFORM_UNIX -DUNICODE)
 add_compile_options(-Wno-invalid-noreturn -Wno-macro-redefined -Wc++20-extensions)
 
@@ -28,15 +26,9 @@ elseif (ISARM)
     add_compile_options(-DARM)
 endif()
 
-SET(TEST_EXECUTABLE_NAME "Datadog.Tracer.Native.Tests")
-# ======================= change the output dir
-SET(OUTPUT_BIN_DIR ${CMAKE_CURRENT_SOURCE_DIR}/bin)
+set(TEST_EXECUTABLE_NAME "Datadog.Tracer.Native.Tests")
 
-SET(TEST_OUTPUT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/bin/)
-SET(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${TEST_OUTPUT_DIR})
-SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${TEST_OUTPUT_DIR})
-SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${TEST_OUTPUT_DIR})
-
+set(TEST_OUTPUT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/bin/)
 
 add_executable(${TEST_EXECUTABLE_NAME}
     pch.cpp
@@ -47,21 +39,29 @@ add_executable(${TEST_EXECUTABLE_NAME}
 	util_test.cpp
 )
 
-# Define directories includes
-target_include_directories(${TEST_EXECUTABLE_NAME}
-    PUBLIC ${googletest_SOURCE_DIR}/googlemock/include
+set_target_properties(${TEST_EXECUTABLE_NAME} PROPERTIES
+    ARCHIVE_OUTPUT_DIRECTORY ${TEST_OUTPUT_DIR}
+    LIBRARY_OUTPUT_DIRECTORY ${TEST_OUTPUT_DIR}
+    RUNTIME_OUTPUT_DIRECTORY ${TEST_OUTPUT_DIR}
 )
 
-add_dependencies(${TEST_EXECUTABLE_NAME} gtest Datadog.Tracer.Native.static coreclr)
+# Define directories includes
+target_include_directories(${TEST_EXECUTABLE_NAME}
+    PRIVATE ${googletest_SOURCE_DIR}/googlemock/include
+)
+
+target_compile_options(${TEST_EXECUTABLE_NAME} PRIVATE -Wc++20-extensions)
 
 target_link_libraries(${TEST_EXECUTABLE_NAME}
   Datadog.Tracer.Native.static
   coreclr
   gtest_main
+  -lstdc++fs
+)
+
+target_link_options(${TEST_EXECUTABLE_NAME} PRIVATE
   -static-libgcc
   -static-libstdc++
-  -lstdc++fs
-  -Wc++20-extensions
 )
 
 gtest_discover_tests(${TEST_EXECUTABLE_NAME})
