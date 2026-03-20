@@ -11,7 +11,7 @@ namespace Datadog.Trace.Iast.Dataflow;
 internal class AspectMethodInsertAfterAttribute : AspectAttribute
 {
     public AspectMethodInsertAfterAttribute(string targetMethod)
-        : base(targetMethod, string.Empty, new int[0], new bool[0], new AspectFilter[0], AspectType.Default)
+        : base(targetMethod, string.Empty, [], [], [], AspectType.Default)
     {
     }
 }

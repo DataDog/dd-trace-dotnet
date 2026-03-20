@@ -24,7 +24,7 @@ internal sealed class CookieAnalyzer
 {
     private static readonly Lazy<CookieAnalyzer> Instance = new Lazy<CookieAnalyzer>();
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(CookieAnalyzer));
-    private readonly Regex? _cookieFilterRegex = null;
+    private readonly Regex? _cookieFilterRegex;
 
     public CookieAnalyzer()
         : this(Iast.Instance.Settings)

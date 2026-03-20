@@ -259,8 +259,8 @@ namespace Datadog.Trace
 
             if (serviceName != null)
             {
-                // if specified, override the default service name
-                span.ServiceName = serviceName;
+                // if specified, override the default service name (OpenTracing = manual)
+                span.SetService(serviceName, Configuration.Schema.ServiceNameMetadata.Manual);
             }
 
             return span;
@@ -371,7 +371,7 @@ namespace Datadog.Trace
                         // if there's an existing Activity we try to use its TraceId,
                         // but if Activity.IdFormat is not ActivityIdFormat.W3C, it may be null or unparsable
                         rawTraceId = activityTraceId;
-                        HexString.TryParseTraceId(activityTraceId, out traceId);
+                        traceId = HexString.TryParseTraceId(activityTraceId, out var r) ? r : TraceId.Zero;
                     }
                 }
             }

@@ -230,22 +230,27 @@ partial class Build
            var testDir = Solution.GetProject(Projects.ClrProfilerIntegrationTests).Directory;
            var dependabotFolder = TracerDirectory / "dependabot" / "integrations";
            var definitionsFile = BuildDirectory / FileNames.DefinitionsJson;
-           var currentDependencies = DependabotFileManager.GetCurrentlyTestedVersions(dependabotFolder);
-           Logger.Information("Found {CurrentDependenciesCount} existing dependencies", currentDependencies.Count);
-           var excludedFromUpdates = ((IncludePackages, ExcludePackages) switch
-                                         {
-                                             (_, { } exclude) => currentDependencies.Where(x => ExcludePackages.Contains(x.NugetName, StringComparer.OrdinalIgnoreCase)),
-                                             ({ } include, _) => currentDependencies.Where(x => !IncludePackages.Contains(x.NugetName, StringComparer.OrdinalIgnoreCase)),
-                                             _ => Enumerable.Empty<(string NugetName, Version LatestTestedVersion)>()
-                                         }).ToDictionary(x => x.NugetName, x => x.LatestTestedVersion, StringComparer.OrdinalIgnoreCase);
+           var supportedVersionsPath = BuildDirectory / "supported_versions.json";
 
-           foreach (var dep in excludedFromUpdates)
+           // Build the shouldQueryNuGet predicate from include/exclude filters
+           Func<string, bool> shouldUpdatePackage = (IncludePackages, ExcludePackages) switch
            {
-               Logger.Information("Excluding package {NugetName} from update. Fixing at {Version}", dep.Key, dep.Value);
-           }
+               ({ } include, _) => name => include.Contains(name, StringComparer.OrdinalIgnoreCase),
+               (_, { } exclude) => name => !exclude.Contains(name, StringComparer.OrdinalIgnoreCase),
+               _ => _ => true
+           };
 
-           var versionGenerator = new PackageVersionGenerator(TracerDirectory, testDir, excludedFromUpdates);
+           // Load caches for both pipelines
+           var cacheFilePath = BuildDirectory / "nuget_version_cache.json";
+           var previousVersionCache = await NuGetVersionCache.Load(cacheFilePath);
+           Logger.Information("Loaded NuGet version cache with {Count} entries", previousVersionCache.Count);
+           var previousSupportedVersions = await GenerateSupportMatrix.LoadPreviousVersions(supportedVersionsPath);
+           Logger.Information("Loaded previous supported versions with {Count} entries", previousSupportedVersions.Count);
+
+           // Pipeline A: generate .g.props/.g.cs files
+           var versionGenerator = new PackageVersionGenerator(TracerDirectory, testDir, shouldUpdatePackage, previousVersionCache);
            var testedVersions = await versionGenerator.GenerateVersions(Solution);
+           await NuGetVersionCache.Save(cacheFilePath, versionGenerator.VersionCache);
 
            var assemblies = MonitoringHomeDirectory
                            .GlobFiles("**/Datadog.Trace.dll")
@@ -253,7 +258,10 @@ partial class Build
                            .ToList();
 
            var integrations = GenerateIntegrationDefinitions.GetAllIntegrations(assemblies, definitionsFile);
-           var distinctIntegrations = await DependabotFileManager.BuildDistinctIntegrationMaps(integrations, testedVersions);
+
+           // Pipeline B: generate dependabot files + supported_versions.json
+           var distinctIntegrations = await DependabotFileManager.BuildDistinctIntegrationMaps(
+               integrations, testedVersions, shouldUpdatePackage, previousSupportedVersions);
 
            await DependabotFileManager.UpdateIntegrations(dependabotFolder, distinctIntegrations);
 

@@ -1,4 +1,4 @@
-// <copyright file="StatsdManagerTests.cs" company="Datadog">
+﻿// <copyright file="StatsdManagerTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -111,7 +111,7 @@ public class StatsdManagerTests
     public async Task InitialState_ClientNotCreated()
     {
         var clientCount = 0;
-        var manager = new StatsdManager(new TracerSettings(), (_, _, _) =>
+        var manager = new StatsdManager(new TracerSettings(), (_, _) =>
         {
             Interlocked.Increment(ref clientCount);
             return new(new MockStatsdClient());
@@ -128,7 +128,7 @@ public class StatsdManagerTests
     public async Task SetRequired_CreatesClient()
     {
         var clientCount = 0;
-        var manager = new StatsdManager(new TracerSettings(), (_, _, _) =>
+        var manager = new StatsdManager(new TracerSettings(), (_, _) =>
         {
             Interlocked.Increment(ref clientCount);
             return new(new MockStatsdClient());
@@ -147,7 +147,7 @@ public class StatsdManagerTests
     public async Task SetRequired_False_DisposesClient()
     {
         var holder = new StatsdManager.StatsdClientHolder(new MockStatsdClient());
-        var manager = new StatsdManager(new TracerSettings(), (_, _, _) => holder);
+        var manager = new StatsdManager(new TracerSettings(), (_, _) => holder);
 
         manager.SetRequired(StatsdConsumer.RuntimeMetricsWriter, true);
         using (manager.TryGetClientLease())
@@ -164,7 +164,7 @@ public class StatsdManagerTests
     public async Task MultipleConsumers_AllRequire_SingleClient()
     {
         var clientCount = 0;
-        var manager = new StatsdManager(new TracerSettings(), (_, _, _) =>
+        var manager = new StatsdManager(new TracerSettings(), (_, _) =>
         {
             Interlocked.Increment(ref clientCount);
             return new(new MockStatsdClient());
@@ -183,7 +183,7 @@ public class StatsdManagerTests
     {
         var clientCount = 0;
         var holder = new StatsdManager.StatsdClientHolder(new MockStatsdClient());
-        var manager = new StatsdManager(new TracerSettings(), (_, _, _) =>
+        var manager = new StatsdManager(new TracerSettings(), (_, _) =>
         {
             Interlocked.Increment(ref clientCount);
             return holder;
@@ -204,7 +204,7 @@ public class StatsdManagerTests
     {
         var clientCount = 0;
         var holder = new StatsdManager.StatsdClientHolder(new MockStatsdClient());
-        var manager = new StatsdManager(new TracerSettings(), (_, _, _) =>
+        var manager = new StatsdManager(new TracerSettings(), (_, _) =>
         {
             Interlocked.Increment(ref clientCount);
             return holder;
@@ -230,7 +230,7 @@ public class StatsdManagerTests
     {
         var clientCount = 0;
         StatsdManager.StatsdClientHolder holder = null;
-        var manager = new StatsdManager(new TracerSettings(), (_, _, _) =>
+        var manager = new StatsdManager(new TracerSettings(), (_, _) =>
         {
             Interlocked.Increment(ref clientCount);
             var newClient = new StatsdManager.StatsdClientHolder(new MockStatsdClient());
@@ -253,7 +253,7 @@ public class StatsdManagerTests
     public async Task Lease_ProvidesAccessToClient()
     {
         var holder = new StatsdManager.StatsdClientHolder(new MockStatsdClient());
-        var manager = new StatsdManager(new TracerSettings(), (_, _, _) => holder);
+        var manager = new StatsdManager(new TracerSettings(), (_, _) => holder);
         manager.SetRequired(StatsdConsumer.RuntimeMetricsWriter, true);
 
         var lease = manager.TryGetClientLease();
@@ -267,7 +267,7 @@ public class StatsdManagerTests
     public async Task MultipleLeasesSimultaneously_ShareSameClient()
     {
         var holder = new StatsdManager.StatsdClientHolder(new MockStatsdClient());
-        var manager = new StatsdManager(new TracerSettings(), (_, _, _) => holder);
+        var manager = new StatsdManager(new TracerSettings(), (_, _) => holder);
         manager.SetRequired(StatsdConsumer.RuntimeMetricsWriter, true);
 
         var lease1 = manager.TryGetClientLease();
@@ -287,7 +287,7 @@ public class StatsdManagerTests
     public async Task DisposingLease_DoesNotDisposeClient_WhileOtherLeasesActive()
     {
         var holder = new StatsdManager.StatsdClientHolder(new MockStatsdClient());
-        var manager = new StatsdManager(new TracerSettings(), (_, _, _) => holder);
+        var manager = new StatsdManager(new TracerSettings(), (_, _) => holder);
         manager.SetRequired(StatsdConsumer.RuntimeMetricsWriter, true);
 
         var lease1 = manager.TryGetClientLease();
@@ -306,7 +306,7 @@ public class StatsdManagerTests
     public async Task NeverReturnsDisposedClient()
     {
         StatsdManager.StatsdClientHolder holder = null;
-        var manager = new StatsdManager(new TracerSettings(), (_, _, _) =>
+        var manager = new StatsdManager(new TracerSettings(), (_, _) =>
         {
             var newClient = new StatsdManager.StatsdClientHolder(new MockStatsdClient());
             Volatile.Write(ref holder, newClient);
@@ -337,7 +337,7 @@ public class StatsdManagerTests
     public async Task ReferenceCountingPreventsDisposalWhileLeasesActive()
     {
         var holder = new StatsdManager.StatsdClientHolder(new MockStatsdClient());
-        var manager = new StatsdManager(new TracerSettings(), (_, _, _) => holder);
+        var manager = new StatsdManager(new TracerSettings(), (_, _) => holder);
         manager.SetRequired(StatsdConsumer.RuntimeMetricsWriter, true);
 
         var lease = manager.TryGetClientLease();
@@ -355,7 +355,7 @@ public class StatsdManagerTests
     public async Task DisposeAsync_WithActiveLease_DisposesAfterLeaseReleased()
     {
         var holder = new StatsdManager.StatsdClientHolder(new MockStatsdClient());
-        var manager = new StatsdManager(new TracerSettings(), (_, _, _) => holder);
+        var manager = new StatsdManager(new TracerSettings(), (_, _) => holder);
         manager.SetRequired(StatsdConsumer.RuntimeMetricsWriter, true);
 
         var lease = manager.TryGetClientLease();
@@ -375,7 +375,7 @@ public class StatsdManagerTests
     {
         var clientCount = 0;
         var tracerSettings = new TracerSettings();
-        var manager = new StatsdManager(tracerSettings, (_, _, _) =>
+        var manager = new StatsdManager(tracerSettings, (_, _) =>
         {
             Interlocked.Increment(ref  clientCount);
             return new(new MockStatsdClient());
@@ -407,7 +407,7 @@ public class StatsdManagerTests
         var tracerSettings = new TracerSettings();
 
         StatsdManager.StatsdClientHolder holder = null;
-        var manager = new StatsdManager(tracerSettings, (_, _, _) =>
+        var manager = new StatsdManager(tracerSettings, (_, _) =>
         {
             var newClient = new StatsdManager.StatsdClientHolder(new MockStatsdClient());
             Volatile.Write(ref holder, newClient);
@@ -445,7 +445,7 @@ public class StatsdManagerTests
     {
         var tracerSettings = new TracerSettings();
         var clientCount = 0;
-        var manager = new StatsdManager(tracerSettings, (_, _, _) =>
+        var manager = new StatsdManager(tracerSettings, (_, _) =>
         {
             Interlocked.Increment(ref clientCount);
             return new(new MockStatsdClient());
@@ -468,7 +468,7 @@ public class StatsdManagerTests
     {
         var tracerSettings = new TracerSettings();
         var clientCount = 0;
-        var manager = new StatsdManager(tracerSettings, (_, _, _) =>
+        var manager = new StatsdManager(tracerSettings, (_, _) =>
         {
             Interlocked.Increment(ref clientCount);
             return new(new MockStatsdClient());
@@ -492,7 +492,7 @@ public class StatsdManagerTests
     {
         var tracerSettings = new TracerSettings();
         var clientCount = 0;
-        var manager = new StatsdManager(tracerSettings, (_, _, _) =>
+        var manager = new StatsdManager(tracerSettings, (_, _) =>
         {
             Interlocked.Increment(ref clientCount);
             return new(new MockStatsdClient());
@@ -516,7 +516,7 @@ public class StatsdManagerTests
     public async Task ConcurrentLeaseAcquisition_AllSucceed()
     {
         var holder = new StatsdManager.StatsdClientHolder(new MockStatsdClient());
-        var manager = new StatsdManager(new TracerSettings(), (_, _, _) => holder);
+        var manager = new StatsdManager(new TracerSettings(), (_, _) => holder);
         manager.SetRequired(StatsdConsumer.RuntimeMetricsWriter, true);
 
         var leases = new ConcurrentQueue<StatsdManager.StatsdClientLease>();
@@ -543,7 +543,7 @@ public class StatsdManagerTests
     {
         var clientCount = 0;
         var holder = new StatsdManager.StatsdClientHolder(new MockStatsdClient());
-        var manager = new StatsdManager(new TracerSettings(), (_, _, _) =>
+        var manager = new StatsdManager(new TracerSettings(), (_, _) =>
         {
             Interlocked.Increment(ref clientCount);
             return holder;
@@ -592,7 +592,7 @@ public class StatsdManagerTests
     public async Task ConcurrentSetRequired_ThreadSafe()
     {
         var clientCount = 0;
-        var manager = new StatsdManager(new TracerSettings(), (_, _, _) =>
+        var manager = new StatsdManager(new TracerSettings(), (_, _) =>
         {
             Interlocked.Increment(ref clientCount);
             return new(new MockStatsdClient());
@@ -619,7 +619,7 @@ public class StatsdManagerTests
     {
         var tracerSettings = new TracerSettings();
         var clientCount = 0;
-        var manager = new StatsdManager(tracerSettings, (_, _, _) =>
+        var manager = new StatsdManager(tracerSettings, (_, _) =>
         {
             Interlocked.Increment(ref clientCount);
             return new(new MockStatsdClient());
@@ -674,7 +674,7 @@ public class StatsdManagerTests
     public async Task ConcurrentLeaseDisposalDuringClientRecreation_ThreadSafe()
     {
         var holders = new ConcurrentQueue<StatsdManager.StatsdClientHolder>();
-        var manager = new StatsdManager(new TracerSettings(), (_, _, _) =>
+        var manager = new StatsdManager(new TracerSettings(), (_, _) =>
         {
             var client = new StatsdManager.StatsdClientHolder(new MockStatsdClient());
             holders.Enqueue(client);
@@ -722,7 +722,7 @@ public class StatsdManagerTests
     public async Task MultipleTransitionsBetweenRequiredAndNotRequired()
     {
         var holders = new List<StatsdManager.StatsdClientHolder>();
-        var manager = new StatsdManager(new TracerSettings(), (_, _, _) =>
+        var manager = new StatsdManager(new TracerSettings(), (_, _) =>
         {
             var client = new StatsdManager.StatsdClientHolder(new MockStatsdClient());
             holders.Add(client);
@@ -745,7 +745,7 @@ public class StatsdManagerTests
     [Fact]
     public async Task DisposeAsync_MultipleTimes_IsSafe()
     {
-        var manager = new StatsdManager(new TracerSettings(), (_, _, _) => new(new MockStatsdClient()));
+        var manager = new StatsdManager(new TracerSettings(), (_, _) => new(new MockStatsdClient()));
         manager.SetRequired(StatsdConsumer.RuntimeMetricsWriter, true);
 
         await manager.DisposeAsync();
@@ -753,48 +753,40 @@ public class StatsdManagerTests
         await manager.DisposeAsync();
     }
 
-    [Fact]
-    public async Task ProcessTags_PassedToFactory_WhenEnabled()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void ProcessTags_PassedToFactory(bool propagateProcessTags)
     {
         IReadOnlyCollection<string> capturedProcessTags = null;
-        var settings = TracerSettings.Create(new() { { ConfigurationKeys.PropagateProcessTags, true } });
-        var manager = new StatsdManager(settings, (_, _, processTags) =>
-        {
-            capturedProcessTags = processTags;
-            return new StatsdManager.StatsdClientHolder(new MockStatsdClient());
-        });
+        var settings = TracerSettings.Create(new() { { ConfigurationKeys.PropagateProcessTags, propagateProcessTags } });
+        var manager = new StatsdManager(
+            settings,
+            (mutableSettings, _) =>
+            {
+                capturedProcessTags = mutableSettings.ProcessTags?.TagsList;
+                return new StatsdManager.StatsdClientHolder(new MockStatsdClient());
+            });
 
         manager.SetRequired(StatsdConsumer.RuntimeMetricsWriter, true);
 
-        capturedProcessTags.Should().NotBeNull();
-        capturedProcessTags.Should().NotBeEmpty("process tags should be passed to factory when enabled");
-        // Verify the format is key:value
-        capturedProcessTags.Should().AllSatisfy(tag => tag.Should().Contain(":"));
-        await manager.DisposeAsync();
-    }
-
-    [Fact]
-    public async Task ProcessTags_NotPassedToFactory_WhenDisabled()
-    {
-        IReadOnlyCollection<string> capturedProcessTags = null;
-        var settings = TracerSettings.Create(new() { { ConfigurationKeys.PropagateProcessTags, false } });
-        var manager = new StatsdManager(settings, (_, _, processTags) =>
+        if (propagateProcessTags)
         {
-            capturedProcessTags = processTags;
-            return new StatsdManager.StatsdClientHolder(new MockStatsdClient());
-        });
-
-        manager.SetRequired(StatsdConsumer.RuntimeMetricsWriter, true);
-
-        capturedProcessTags.Should().NotBeNull();
-        capturedProcessTags.Should().BeEmpty("process tags should not be passed to factory when disabled");
-        await manager.DisposeAsync();
+            capturedProcessTags.Should().NotBeNull();
+            capturedProcessTags.Should().NotBeEmpty("process tags should be passed to factory when enabled");
+            // Verify the format is key:value
+            capturedProcessTags.Should().AllSatisfy(tag => tag.Should().Contain(":"));
+        }
+        else
+        {
+            capturedProcessTags.Should().BeNull("process tags should not be passed to factory when disabled");
+        }
     }
 
     [Fact]
     public async Task DefaultLease_CanDisposeSafely()
     {
-        var manager = new StatsdManager(new TracerSettings(), (_, _, _) => new(new MockStatsdClient()));
+        var manager = new StatsdManager(new TracerSettings(), (_, _) => new(new MockStatsdClient()));
 
         var lease = manager.TryGetClientLease();
 
@@ -807,7 +799,7 @@ public class StatsdManagerTests
     public async Task DisposingLease_MultipleTimes_DoesNotDisposeStatsDMultipleTimes()
     {
         var holder = new StatsdManager.StatsdClientHolder(new MockStatsdClient());
-        var manager = new StatsdManager(new TracerSettings(), (_, _, _) => holder);
+        var manager = new StatsdManager(new TracerSettings(), (_, _) => holder);
         manager.SetRequired(StatsdConsumer.RuntimeMetricsWriter, true);
 
         var lease = manager.TryGetClientLease();
