@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Fetches benchmark results from S3 after bp-runner completes.
+# Fetches benchmark results from S3 after bp-infra completes.
 #
 # Downloads both candidate results (from current run) and baseline results
 # (from _latest, i.e., the last master run) for comparison.
@@ -29,47 +29,55 @@ fi
 ARTIFACTS_DIR="${ARTIFACTS_DIR:-./artifacts}"
 mkdir -p "$ARTIFACTS_DIR"
 
+# Prepare baseline results for analysis by renaming to baseline.* format.
+# Handles two input formats:
+#   1. candidate.Trace.Foo.json (from new master runs with in-instance renaming)
+#   2. Benchmarks.Trace.Foo-report-full-compressed.json (legacy raw BenchmarkDotNet output)
+#
+# TODO: Remove legacy format handling once _latest is populated by a post-merge master run.
+prepare_baseline_results() {
+    local BASELINE_DIR=$1
+
+    if [ ! -d "$BASELINE_DIR" ]; then
+        echo "Warning: Baseline directory $BASELINE_DIR not found"
+        return
+    fi
+
+    echo "Preparing baseline results..."
+
+    # Handle new format: candidate.*.json -> baseline.*.json
+    for file in "$BASELINE_DIR"/candidate.*.json; do
+        [ -e "$file" ] || continue
+        filename=$(basename "$file")
+        newname="${filename/candidate./baseline.}"
+        echo "  $filename -> $newname"
+        mv "$file" "$ARTIFACTS_DIR/$newname"
+    done
+
+    # Handle legacy format: Benchmarks.Trace.Foo-report-full-compressed.json -> baseline.Trace.Foo.json
+    for file in "$BASELINE_DIR"/Benchmarks.*-report-full-compressed.json; do
+        [ -e "$file" ] || continue
+        filename=$(basename "$file")
+        # Remove 'Benchmarks.' prefix and '-report-full-compressed.json' suffix
+        middle_part=$(echo "$filename" | sed 's/^Benchmarks\.//' | sed 's/-report-full-compressed\.json$//')
+        newname="baseline.$middle_part.json"
+        echo "  $filename -> $newname"
+        mv "$file" "$ARTIFACTS_DIR/$newname"
+    done
+}
+
 # Setup AWS credentials for ephemeral infrastructure
 bp-infra setup --region "$AWS_REGION" --os "windows"
 export AWS_PROFILE=ephemeral-infra-ci
 
-# Download candidate results to a temp directory first
+# Download candidate results (already in candidate.*.json format from instance)
 S3_PREFIX="$CI_PROJECT_NAME/$CI_COMMIT_REF_NAME/$CI_JOB_ID/reports"
-CANDIDATE_DIR="$ARTIFACTS_DIR/candidate_raw"
-mkdir -p "$CANDIDATE_DIR"
-
 echo "=== Downloading candidate results ==="
 echo "Source: s3://$BP_INFRA_ARTIFACTS_BUCKET_NAME/$S3_PREFIX"
-aws s3 cp "s3://$BP_INFRA_ARTIFACTS_BUCKET_NAME/$S3_PREFIX" "$CANDIDATE_DIR/" \
+aws s3 cp "s3://$BP_INFRA_ARTIFACTS_BUCKET_NAME/$S3_PREFIX" "$ARTIFACTS_DIR/" \
     --region "$AWS_REGION" \
     --profile "$AWS_PROFILE" \
     --recursive || echo "Warning: No candidate results found in S3"
-
-# Rename candidate files to have candidate. prefix
-# bp-runner outputs files as candidate.Benchmarks.*, but in BP_INFRA_TEST mode
-# we download raw BenchmarkDotNet files that need renaming
-echo ""
-echo "=== Renaming candidate files ==="
-for file in "$CANDIDATE_DIR"/*.json; do
-    [ -e "$file" ] || continue
-    basename=$(basename "$file")
-    # Skip if already has candidate. prefix
-    if [[ "$basename" == candidate.* ]]; then
-        mv "$file" "$ARTIFACTS_DIR/$basename"
-        echo "  $basename (already prefixed)"
-    else
-        newname="candidate.$basename"
-        echo "  $basename -> $newname"
-        mv "$file" "$ARTIFACTS_DIR/$newname"
-    fi
-done
-
-# Copy env_vars.txt and other non-JSON files
-for file in "$CANDIDATE_DIR"/*; do
-    [ -e "$file" ] || continue
-    [[ "$file" == *.json ]] && continue
-    cp "$file" "$ARTIFACTS_DIR/"
-done
 
 # Download baseline results from _latest (master)
 BASELINE_PREFIX="$CI_PROJECT_NAME/_latest"
@@ -84,31 +92,11 @@ aws s3 cp "s3://$BP_INFRA_ARTIFACTS_BUCKET_NAME/$BASELINE_PREFIX" "$BASELINE_DIR
     --profile "$AWS_PROFILE" \
     --recursive || echo "Warning: No baseline results found in S3 (first run?)"
 
-# Rename baseline files to have baseline. prefix
-# The _latest files may have candidate.* prefix (from master run) or raw names (BP_INFRA_TEST)
+# Rename baseline files
 echo ""
-echo "=== Renaming baseline files ==="
-for file in "$BASELINE_DIR"/*.json; do
-    [ -e "$file" ] || continue
-    basename=$(basename "$file")
-    if [[ "$basename" == candidate.* ]]; then
-        # Replace candidate. with baseline.
-        newname="${basename/candidate./baseline.}"
-        echo "  $basename -> $newname"
-        mv "$file" "$ARTIFACTS_DIR/$newname"
-    elif [[ "$basename" == baseline.* ]]; then
-        # Already has baseline. prefix
-        mv "$file" "$ARTIFACTS_DIR/$basename"
-        echo "  $basename (already prefixed)"
-    else
-        # Raw BenchmarkDotNet file, add baseline. prefix
-        newname="baseline.$basename"
-        echo "  $basename -> $newname"
-        mv "$file" "$ARTIFACTS_DIR/$newname"
-    fi
-done
+prepare_baseline_results "$BASELINE_DIR"
 
-# Copy baseline_env_vars.txt if present
+# Copy baseline_env_vars.txt if present (env_vars.txt from _latest becomes baseline_env_vars.txt)
 if [ -f "$BASELINE_DIR/env_vars.txt" ]; then
     cp "$BASELINE_DIR/env_vars.txt" "$ARTIFACTS_DIR/baseline_env_vars.txt"
     echo "Copied baseline_env_vars.txt"
@@ -116,7 +104,7 @@ fi
 
 echo ""
 echo "=== Downloaded files ==="
-ls -la "$ARTIFACTS_DIR/" || true
+ls -la "$ARTIFACTS_DIR/"*.json 2>/dev/null | head -30 || echo "No JSON files found"
 
 echo ""
 echo "Fetch complete!"
