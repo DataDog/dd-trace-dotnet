@@ -180,6 +180,7 @@ namespace Datadog.Trace.Agent
                 span.ServiceName,
                 span.OperationName,
                 span.Type,
+                span.Context.ServiceNameSource,
                 httpStatusCode,
                 span.Context.Origin == "synthetics");
         }
