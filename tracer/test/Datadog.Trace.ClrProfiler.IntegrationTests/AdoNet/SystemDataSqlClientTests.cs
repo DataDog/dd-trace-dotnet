@@ -12,6 +12,7 @@ using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.AutoInstrumentation.Containers;
 using FluentAssertions;
 using VerifyXunit;
 using Xunit;
@@ -22,12 +23,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
     [Trait("RequiresDockerDependency", "true")]
     [Trait("DockerGroup", "1")]
     [UsesVerify]
+    [Collection(SqlServerCollection.Name)]
     public class SystemDataSqlClientTests : TracingIntegrationTest
     {
-        public SystemDataSqlClientTests(ITestOutputHelper output)
+        public SystemDataSqlClientTests(ITestOutputHelper output, SqlServerFixture sqlServerFixture)
             : base("SqlServer", output)
         {
             SetServiceVersion("1.0.0");
+            ConfigureContainers(sqlServerFixture);
         }
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsSqlClient(metadataSchemaVersion);
@@ -88,10 +91,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             settings.AddRegexScrubber(new Regex("System-Data-SqlClient-Test-[a-zA-Z0-9]{32}"), "System-Data-SqlClient-Test-GUID");
             settings.AddSimpleScrubber("out.host: localhost", "out.host: sqlserver");
             settings.AddSimpleScrubber("out.host: (localdb)\\MSSQLLocalDB", "out.host: sqlserver");
-            settings.AddSimpleScrubber("out.host: sqledge_arm64", "out.host: sqlserver");
             settings.AddSimpleScrubber("peer.service: localhost", "peer.service: sqlserver");
             settings.AddSimpleScrubber("peer.service: (localdb)\\MSSQLLocalDB", "peer.service: sqlserver");
-            settings.AddSimpleScrubber("peer.service: sqledge_arm64", "peer.service: sqlserver");
             settings.AddRegexScrubber(new Regex("dd.instrumentation.time_ms: \\d+.\\d+"), "dd.instrumentation.time_ms: 123.456");
 
             var fileName = nameof(SystemDataSqlClientTests);

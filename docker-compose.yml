@@ -57,14 +57,6 @@ services:
     ports:
     - "6379"
 
-  sqledge_arm64:
-    image: mcr.microsoft.com/azure-sql-edge:latest
-    ports:
-    - "1433"
-    environment:
-    - ACCEPT_EULA=Y
-    - SA_PASSWORD=Strong!Passw0rd
-
   cosmosdb-emulator_arm64:
     image: mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:vnext-preview
     command: ["--protocol", "https"]
@@ -218,15 +210,6 @@ services:
     - MYSQL_PASSWORD=mysqldb
     ports:
     - "127.0.0.1:3407:3306"
-
-  sqlserver:
-    image: mcr.microsoft.com/mssql/server:latest
-    profiles: ["group1"]
-    ports:
-    - "127.0.0.1:1433:1433"
-    environment:
-    - ACCEPT_EULA=Y
-    - SA_PASSWORD=Strong!Passw0rd
 
   sqledge:
     image: mcr.microsoft.com/azure-sql-edge:latest
@@ -485,7 +468,6 @@ services:
       - ELASTICSEARCH7_HOST=elasticsearch7:9200
       - ELASTICSEARCH6_HOST=elasticsearch6:9200
       - ELASTICSEARCH5_HOST=elasticsearch5:9200
-      - SQLSERVER_CONNECTION_STRING=Server=sqlserver;User=sa;Password=Strong!Passw0rd;TrustServerCertificate=true
       - POSTGRES_HOST=postgres
       - MYSQL_HOST=mysql
       - MYSQL_PORT=3306
@@ -700,7 +682,6 @@ services:
       - stackexchangeredis
       - stackexchangeredis-replica
       - stackexchangeredis-single
-      - sqlserver
       - postgres
       - mysql
       - mysql57
@@ -711,7 +692,7 @@ services:
       - test-agent
     environment:
       - TIMEOUT_LENGTH=120
-    command: servicestackredis:6379 stackexchangeredis:6379 stackexchangeredis-replica:6379 stackexchangeredis-single:6379 sqlserver:1433 postgres:5432 mysql:3306 mysql57:3306 rabbitmq:5672 kafka-broker:9092 kafka-zookeeper:2181 couchbase:11210 test-agent:8126
+    command: servicestackredis:6379 stackexchangeredis:6379 stackexchangeredis-replica:6379 stackexchangeredis-single:6379 postgres:5432 mysql:3306 mysql57:3306 rabbitmq:5672 kafka-broker:9092 kafka-zookeeper:2181 couchbase:11210 test-agent:8126
 
   StartDependencies.Group2:
     image: andrewlock/wait-for-dependencies
@@ -742,6 +723,7 @@ services:
     command: dotnet /build/bin/Debug/_build.dll RunIntegrationTests
     volumes:
       - ./:/project
+      - /var/run/docker.sock:/var/run/docker.sock
     cap_add:
       - SYS_PTRACE
     environment:
@@ -758,6 +740,7 @@ services:
       - Verify_DisableClipboard=true
       - DiffEngine_Disabled=true
       - TESTCONTAINERS_RYUK_DISABLED
+      - DOCKER_API_VERSION=1.43
       - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-1}
       - IncludeAllTestFrameworks
       - MONGO_HOST=mongo_arm64
@@ -767,7 +750,6 @@ services:
       - ELASTICSEARCH7_HOST=elasticsearch7_arm64:9200
       - ELASTICSEARCH6_HOST=elasticsearch7_arm64:9200
       - ELASTICSEARCH5_HOST=elasticsearch7_arm64:9200
-      - SQLSERVER_CONNECTION_STRING=Server=sqledge_arm64;User=sa;Password=Strong!Passw0rd;TrustServerCertificate=true
       - POSTGRES_HOST=postgres_arm64
       - MYSQL_HOST=mysql_arm64
       - MYSQL_PORT=3306
@@ -808,7 +790,6 @@ services:
       - stackexchangeredis_arm64-replica
       - stackexchangeredis_arm64-single
       - elasticsearch7_arm64
-      - sqledge_arm64
       - mongo_arm64
       - postgres_arm64
       - mysql_arm64
@@ -825,7 +806,6 @@ services:
       - stackexchangeredis_arm64-replica
       - stackexchangeredis_arm64-single
       - elasticsearch7_arm64
-      - sqledge_arm64
       - mongo_arm64
       - postgres_arm64
       - mysql_arm64
@@ -835,7 +815,7 @@ services:
       - cosmosdb-emulator_arm64
     environment:
       - TIMEOUT_LENGTH=120
-    command: servicestackredis_arm64:6379 stackexchangeredis_arm64:6379 stackexchangeredis_arm64-replica:6379 stackexchangeredis_arm64-single:6379 elasticsearch7_arm64:9200 sqledge_arm64:1433 mongo_arm64:27017 postgres_arm64:5432 mysql_arm64:3306 rabbitmq_arm64:5672 localstack_arm64:4566 test-agent:8126 cosmosdb-emulator_arm64:8081
+    command: servicestackredis_arm64:6379 stackexchangeredis_arm64:6379 stackexchangeredis_arm64-replica:6379 stackexchangeredis_arm64-single:6379 elasticsearch7_arm64:9200 mongo_arm64:27017 postgres_arm64:5432 mysql_arm64:3306 rabbitmq_arm64:5672 localstack_arm64:4566 test-agent:8126 cosmosdb-emulator_arm64:8081
 
   IntegrationTests.ARM64.Debugger:
     build:
@@ -911,7 +891,6 @@ services:
       - stackexchangeredis_osx_arm64-replica
       - stackexchangeredis_osx_arm64-single
       - elasticsearch7_osx_arm64
-      - sqledge_osx_arm64
       - mongo_osx_arm64
       - postgres_osx_arm64
       - mysql_osx_arm64
@@ -919,7 +898,7 @@ services:
       - localstack_osx_arm64
     environment:
       - TIMEOUT_LENGTH=120
-    command: servicestackredis_osx_arm64:6379 stackexchangeredis_osx_arm64:6379 stackexchangeredis_osx_arm64-replica:6379 stackexchangeredis_osx_arm64-single:6379 elasticsearch7_osx_arm64:9200 sqledge_osx_arm64:1433 mongo_osx_arm64:27017 postgres_osx_arm64:5432 mysql_osx_arm64:3306 rabbitmq_osx_arm64:5672 localstack_osx_arm64:4566
+    command: servicestackredis_osx_arm64:6379 stackexchangeredis_osx_arm64:6379 stackexchangeredis_osx_arm64-replica:6379 stackexchangeredis_osx_arm64-single:6379 elasticsearch7_osx_arm64:9200 mongo_osx_arm64:27017 postgres_osx_arm64:5432 mysql_osx_arm64:3306 rabbitmq_osx_arm64:5672 localstack_osx_arm64:4566
 
   # OSX ARM64 dependencies
 
@@ -1003,14 +982,18 @@ services:
     ports:
       - "6391:6379"
 
-  sqledge_osx_arm64:
-    image: mcr.microsoft.com/azure-sql-edge:latest
-    ports:
-      - "1433:1433"
-    environment:
-      - ACCEPT_EULA=Y
-      - SA_PASSWORD=Strong!Passw0rd
+  # Testcontainers pre-pull
+  # These service definitions exist only to pre-pull container images into the CI cache.
+  # They are not started as live services; the actual containers are managed by Testcontainers.
 
   # keep syncronized image version with tracer\test\Datadog.Trace.TestHelpers.AutoInstrumentation\Containers\AerospikeFixture.cs
   aerospike:
     image: aerospike/aerospike-server:6.2.0.6
+
+  # Used on x86_64; keep synchronized with tracer\test\Datadog.Trace.TestHelpers.AutoInstrumentation\Containers\SqlServerFixture.cs
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:latest
+
+  # Used on arm64 (no native mssql/server image); keep synchronized with tracer\test\Datadog.Trace.TestHelpers.AutoInstrumentation\Containers\SqlServerFixture.cs
+  azure-sql-edge:
+    image: mcr.microsoft.com/azure-sql-edge:latest
