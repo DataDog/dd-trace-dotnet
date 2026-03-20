@@ -121,11 +121,12 @@ run-benchmarks:
         --env-regex "^(CI_|DD_|BP_|GITHUB_|ARTIFACTS_)" \
         --bypass-stack-destroy \
         $CLEANUP_ARG
-    # Fetch results from S3, analyze, and upload
+    # Fetch results from S3, analyze, upload, and post PR comment
     - export ARTIFACTS_DIR="$(pwd)/artifacts"
     - .gitlab/benchmarks/microbenchmarks/scripts/fetch-results.sh
     - .gitlab/benchmarks/microbenchmarks/scripts/analyze-results.sh
     - .gitlab/benchmarks/microbenchmarks/scripts/upload-to-bp-ui.sh
+    - .gitlab/benchmarks/microbenchmarks/scripts/post-pr-comment.sh
   after_script:
     - |
       if [ "$CLEANUP" == "true" ]; then
