@@ -70,6 +70,27 @@ prepare_baseline_results() {
 bp-infra setup --region "$AWS_REGION" --os "windows"
 export AWS_PROFILE=ephemeral-infra-ci
 
+# Prepare candidate results for analysis.
+# Normally, bp-runner renames files to candidate.*.json format inside the instance.
+# However, in BP_INFRA_TEST mode, _latest files are used as mock candidates and may be
+# in legacy format (Benchmarks.Trace.Foo-report-full-compressed.json).
+#
+# TODO: Remove legacy format handling once _latest is populated by a post-merge master run.
+prepare_candidate_results() {
+    echo "Preparing candidate results..."
+
+    # Handle legacy format: Benchmarks.Trace.Foo-report-full-compressed.json -> candidate.Trace.Foo.json
+    for file in "$ARTIFACTS_DIR"/Benchmarks.*-report-full-compressed.json; do
+        [ -e "$file" ] || continue
+        filename=$(basename "$file")
+        # Remove 'Benchmarks.' prefix and '-report-full-compressed.json' suffix
+        middle_part=$(echo "$filename" | sed 's/^Benchmarks\.//' | sed 's/-report-full-compressed\.json$//')
+        newname="candidate.$middle_part.json"
+        echo "  $filename -> $newname"
+        mv "$file" "$ARTIFACTS_DIR/$newname"
+    done
+}
+
 # Download candidate results (already in candidate.*.json format from instance)
 S3_PREFIX="$CI_PROJECT_NAME/$CI_COMMIT_REF_NAME/$CI_JOB_ID/reports"
 echo "=== Downloading candidate results ==="
@@ -78,6 +99,9 @@ aws s3 cp "s3://$BP_INFRA_ARTIFACTS_BUCKET_NAME/$S3_PREFIX" "$ARTIFACTS_DIR/" \
     --region "$AWS_REGION" \
     --profile "$AWS_PROFILE" \
     --recursive || echo "Warning: No candidate results found in S3"
+
+# Handle legacy format for candidate files (BP_INFRA_TEST mode)
+prepare_candidate_results
 
 # Download baseline results from _latest (master)
 BASELINE_PREFIX="$CI_PROJECT_NAME/_latest"
