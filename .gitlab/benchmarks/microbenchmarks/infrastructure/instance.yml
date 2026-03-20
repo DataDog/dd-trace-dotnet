@@ -137,14 +137,14 @@ upload_results:
     # Create env_vars.txt with current run metadata
     $envVarsFile = Join-Path $artifactsDir "env_vars.txt"
     $ciJobDate = [int][double](Get-Date -UFormat %s)
-    $envVarsContent = @"
-CI_COMMIT_SHA=$env:CI_COMMIT_SHA
-CI_COMMIT_SHORT_SHA=$env:CI_COMMIT_SHORT_SHA
-CI_PIPELINE_ID=$env:CI_PIPELINE_ID
-CI_JOB_ID=$env:CI_JOB_ID
-CI_JOB_DATE=$ciJobDate
-"@
-    Set-Content -Path $envVarsFile -Value $envVarsContent
+    $lines = @(
+        "CI_COMMIT_SHA=$env:CI_COMMIT_SHA",
+        "CI_COMMIT_SHORT_SHA=$env:CI_COMMIT_SHORT_SHA",
+        "CI_PIPELINE_ID=$env:CI_PIPELINE_ID",
+        "CI_JOB_ID=$env:CI_JOB_ID",
+        "CI_JOB_DATE=$ciJobDate"
+    )
+    Set-Content -Path $envVarsFile -Value ($lines -join "`n")
     Write-Output "Created env_vars.txt:"
     Get-Content $envVarsFile
 
