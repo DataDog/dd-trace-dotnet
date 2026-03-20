@@ -2565,7 +2565,7 @@ supportedConfigurations:
   OTEL_EXPORTER_OTLP_TRACES_ENDPOINT:
   - implementation: B
     type: string
-    default: http://localhost:4318/v1/traces
+    default: null
     product: OpenTelemetry
     const_name: ExporterOtlpTracesEndpoint
     documentation: |-
@@ -2587,7 +2587,7 @@ supportedConfigurations:
       Takes precedence over <see cref="ExporterOtlpHeaders"/>.
       Format: api-key=key,other=value.
   OTEL_EXPORTER_OTLP_TRACES_PROTOCOL:
-  - implementation: C
+  - implementation: B
     type: string
     default: http/json
     product: OpenTelemetry
@@ -2597,7 +2597,7 @@ supportedConfigurations:
     documentation: |-
       Configuration key to set the OTLP protocol for traces export.
       Takes precedence over <see cref="ExporterOtlpProtocol"/>.
-      Valid values: http/json, defaults to http/json
+      Valid values: http/json. Default: http/json
   OTEL_EXPORTER_OTLP_TRACES_TIMEOUT:
   - implementation: B
     type: int
@@ -2686,16 +2686,17 @@ supportedConfigurations:
     const_name: ServiceName
     documentation: Configuration key to set the application's default service name.
   OTEL_TRACES_EXPORTER:
-  - implementation: C
+  - implementation: G
     type: string
     default: null
     product: OpenTelemetry
     const_name: TracesExporter
     documentation: |-
       Configuration key to set the exporter for traces.
-      We only recognize the value 'none', which is the
-      equivalent of setting <see cref="ConfigurationKeys.TraceEnabled"/>
-      to false.
+      We only recognize the values 'otlp' and 'none'. The value 'otlp' enables
+      the experimental export of traces using OTLP. The value 'none' disables
+      the export of traces entirely, which is the equivalent of setting 
+      <see cref="ConfigurationKeys.TraceEnabled"/> to false.
   OTEL_TRACES_SAMPLER:
   - implementation: C
     type: string
