@@ -11,6 +11,8 @@ namespace Datadog.Trace.Tagging
     internal sealed partial class WcfTags : WebTags
     {
         [Tag(Trace.Tags.InstrumentationName)]
+#pragma warning disable CA1822 // Mark members as static
         public string InstrumentationName => nameof(IntegrationId.Wcf);
+#pragma warning restore CA1822 // Mark members as static
     }
 }

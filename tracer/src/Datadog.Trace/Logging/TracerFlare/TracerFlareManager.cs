@@ -414,7 +414,7 @@ internal sealed class TracerFlareManager : ITracerFlareManager
         }
     }
 
-    private JObject? TryDeserialize(byte[] contents)
+    private static JObject? TryDeserialize(byte[] contents)
     {
         try
         {

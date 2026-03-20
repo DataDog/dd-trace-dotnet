@@ -397,7 +397,7 @@ namespace Datadog.Trace.Debugger.Symbols
             return true;
         }
 
-        private bool TryBuildPrefixAndSuffix(string rootAsString, out string prefix, out string suffix)
+        private static bool TryBuildPrefixAndSuffix(string rootAsString, out string prefix, out string suffix)
         {
             const string scopesNull = "\"scopes\":null";
 

@@ -167,7 +167,7 @@ internal sealed unsafe class UnmanagedMemoryPool : IDisposable
         }
     }
 
-    private void ReturnSlow(IntPtr block)
+    private static void ReturnSlow(IntPtr block)
     {
         Marshal.FreeCoTaskMem(block);
     }

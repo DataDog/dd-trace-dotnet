@@ -30,7 +30,9 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Protocol
         public ICollection<string> Products { get; set; } = [];
 
         [JsonProperty("is_tracer")]
+#pragma warning disable CA1822 //  Member 'IsTracer' does not access instance data and can be marked as static
         public bool IsTracer => true;
+#pragma warning restore CA1822
 
         [JsonProperty("client_tracer")]
         public RcmClientTracer ClientTracer { get; set; }

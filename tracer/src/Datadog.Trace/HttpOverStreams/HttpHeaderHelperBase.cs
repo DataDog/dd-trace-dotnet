@@ -25,7 +25,7 @@ namespace Datadog.Trace.HttpOverStreams
             return writer.WriteAsync(leadingHeaders);
         }
 
-        public Task WriteHeader(TextWriter writer, HttpHeaders.HttpHeader header)
+        public static Task WriteHeader(TextWriter writer, HttpHeaders.HttpHeader header)
         {
             return writer.WriteAsync($"{header.Name}: {header.Value}{DatadogHttpValues.CrLf}");
         }

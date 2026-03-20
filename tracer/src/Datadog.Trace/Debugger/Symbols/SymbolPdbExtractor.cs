@@ -60,7 +60,7 @@ internal sealed class SymbolPdbExtractor : SymbolExtractor
         return true;
     }
 
-    private SourceLocationInfo GetSourceLocationInfo(ReadOnlySpan<DatadogMetadataReader.DatadogSequencePoint> span)
+    private static SourceLocationInfo GetSourceLocationInfo(ReadOnlySpan<DatadogMetadataReader.DatadogSequencePoint> span)
     {
         ref var firstSq = ref MemoryMarshal.GetReference(span);
         var startLine = firstSq.StartLine == 0 ? UnknownMethodStartLine : firstSq.StartLine;
@@ -429,7 +429,7 @@ internal sealed class SymbolPdbExtractor : SymbolExtractor
         return scopes?.ToArray();
     }
 
-    private Model.Scope[]? ConcatMethodScopes(Model.Scope[]? oldScopes, Model.Scope[]? localScopes)
+    private static Model.Scope[]? ConcatMethodScopes(Model.Scope[]? oldScopes, Model.Scope[]? localScopes)
     {
         var localScopesLength = localScopes?.Length ?? 0;
         var oldScopesLength = oldScopes?.Length ?? 0;
@@ -452,7 +452,7 @@ internal sealed class SymbolPdbExtractor : SymbolExtractor
         return scopes.Slice(0, scopesLength).ToArray();
     }
 
-    private bool IsArgument(Symbol[]? args, string name, string type)
+    private static bool IsArgument(Symbol[]? args, string name, string type)
     {
         if (args == null)
         {

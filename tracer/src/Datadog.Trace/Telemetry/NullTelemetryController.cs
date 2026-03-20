@@ -27,10 +27,6 @@ namespace Datadog.Trace.Telemetry
         {
         }
 
-        public void RecordTracerSettings(TracerSettings settings, string defaultServiceName)
-        {
-        }
-
         public void RecordProfilerSettings(Profiler profiler)
         {
         }

@@ -183,7 +183,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                         tracer.TracerManager.SpanContextPropagator.AddHeadersToSpanAsTags(span, headers.Value, tracer.CurrentTraceSettings.Settings.HeaderTags, SpanContextPropagator.HttpRequestHeadersTagPrefix);
                     }
 
-                    tracer.TracerManager.SpanContextPropagator.AddBaggageToSpanAsTags(span, extractedContext.Baggage, tracer.Settings.BaggageTagKeys);
+                    SpanContextPropagator.AddBaggageToSpanAsTags(span, extractedContext.Baggage, tracer.Settings.BaggageTagKeys);
 
                     if (tracer.Settings.IpHeaderEnabled || Security.Instance.AppsecEnabled)
                     {

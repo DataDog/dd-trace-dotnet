@@ -48,7 +48,7 @@ namespace Datadog.Trace.PlatformHelpers
             _requestInOperationName = requestInOperationName;
         }
 
-        public string GetDefaultResourceName(HttpRequest request)
+        public static string GetDefaultResourceName(HttpRequest request)
         {
             string httpMethod = request.Method?.ToUpperInvariant() ?? "UNKNOWN";
 
@@ -142,7 +142,7 @@ namespace Datadog.Trace.PlatformHelpers
                 AddHeaderTagsToSpan(scope.Span, request, tracer, headerTagsInternal);
             }
 
-            tracer.TracerManager.SpanContextPropagator.AddBaggageToSpanAsTags(scope.Span, extractedContext.Baggage, tracer.Settings.BaggageTagKeys);
+            SpanContextPropagator.AddBaggageToSpanAsTags(scope.Span, extractedContext.Baggage, tracer.Settings.BaggageTagKeys);
 
             var originalPath = request.PathBase.HasValue ? request.PathBase.Add(request.Path) : request.Path;
 #if NET6_0_OR_GREATER
@@ -226,10 +226,10 @@ namespace Datadog.Trace.PlatformHelpers
             }
         }
 
-        public void HandleAspNetCoreException(Tracer tracer, Security security, Span rootSpan, HttpContext httpContext, Exception exception)
+        public static void HandleAspNetCoreException(Tracer tracer, Security security, Span rootSpan, HttpContext httpContext, Exception exception)
             => HandleAspNetCoreException(tracer, security, rootSpan, httpContext, exception, proxyScope: (httpContext.Items[HttpContextTrackingKey] as RequestTrackingFeature)?.ProxyScope);
 
-        public void HandleAspNetCoreException(Tracer tracer, Security security, Span rootSpan, HttpContext httpContext, Exception exception, Scope proxyScope)
+        public static void HandleAspNetCoreException(Tracer tracer, Security security, Span rootSpan, HttpContext httpContext, Exception exception, Scope proxyScope)
         {
             // WARNING: This code assumes that the rootSpan passed in is the aspnetcore.request
             // root span. In "normal" operation, this will be the same span returned by

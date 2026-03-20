@@ -106,7 +106,7 @@ internal abstract partial class MetricsTelemetryCollectorBase
         }
     }
 
-    protected void AddPublicApiMetricData(AggregatedMetric[] publicApis, List<MetricData> data)
+    protected static void AddPublicApiMetricData(AggregatedMetric[] publicApis, List<MetricData> data)
     {
         for (var i = publicApis.Length - 1; i >= 0; i--)
         {

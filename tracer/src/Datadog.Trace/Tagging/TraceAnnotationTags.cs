@@ -11,7 +11,9 @@ namespace Datadog.Trace.Tagging
     {
         private const string ComponentName = "trace";
 
+#pragma warning disable CA1822 // Mark members as static
         [Tag(Trace.Tags.InstrumentationName)]
         public string InstrumentationName => ComponentName;
+#pragma warning restore CA1822 // Mark members as static
     }
 }

@@ -184,7 +184,7 @@ namespace Datadog.Trace.RuntimeMetrics
             }
         }
 
-        private void ExtractCounters(IDogStatsd statsd, ReadOnlyCollection<object> payload)
+        private static void ExtractCounters(IDogStatsd statsd, ReadOnlyCollection<object> payload)
         {
             for (int i = 0; i < payload.Count; ++i)
             {

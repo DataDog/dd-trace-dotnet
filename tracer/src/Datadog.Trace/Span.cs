@@ -536,7 +536,7 @@ namespace Datadog.Trace
             Duration = duration;
         }
 
-        internal void MarkSpanForExceptionReplay()
+        internal static void MarkSpanForExceptionReplay()
         {
             DebuggerManager.Instance.ExceptionReplay?.BeginRequest();
         }

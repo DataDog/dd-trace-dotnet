@@ -142,7 +142,7 @@ namespace DatadogDebugger.Util
             }
         }
 
-        internal State? ParseObject(SnapshotPruner pruner, char c, int index)
+        internal static State? ParseObject(SnapshotPruner pruner, char c, int index)
         {
             switch (c)
             {
@@ -221,7 +221,7 @@ namespace DatadogDebugger.Util
             }
         }
 
-        internal State? ParseNotCaptured(SnapshotPruner pruner, char c)
+        internal static State? ParseNotCaptured(SnapshotPruner pruner, char c)
         {
             switch (c)
             {
@@ -243,7 +243,7 @@ namespace DatadogDebugger.Util
             }
         }
 
-        internal State? ParseEscape(SnapshotPruner pruner, char c)
+        internal static State? ParseEscape(SnapshotPruner pruner, char c)
         {
             return State.String;
         }

@@ -31,7 +31,9 @@ namespace Datadog.Trace.Telemetry
             Payload = payload;
         }
 
+#pragma warning disable CA1822 // Mark members as static
         public string ApiVersion => TelemetryConstants.ApiVersionV2;
+#pragma warning restore CA1822 // Mark members as static
 
         /// <summary>
         /// Gets or sets integer denoting the naming schema version used by the tracer. Empty by default. Possible values are "0", "1"

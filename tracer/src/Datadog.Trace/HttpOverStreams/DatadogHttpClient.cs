@@ -47,7 +47,7 @@ namespace Datadog.Trace.HttpOverStreams
 
                 foreach (var header in request.Headers)
                 {
-                    await _headerHelper.WriteHeader(writer, header).ConfigureAwait(false);
+                    await HttpHeaderHelperBase.WriteHeader(writer, header).ConfigureAwait(false);
                 }
 
                 // Empty line to signify end of headers
@@ -67,7 +67,7 @@ namespace Datadog.Trace.HttpOverStreams
             await requestStream.FlushAsync().ConfigureAwait(false);
         }
 
-        private async Task<HttpResponse> ReadResponseAsync(Stream responseStream)
+        private static async Task<HttpResponse> ReadResponseAsync(Stream responseStream)
         {
             var headers = new HttpHeaders();
             char currentChar = char.MinValue;

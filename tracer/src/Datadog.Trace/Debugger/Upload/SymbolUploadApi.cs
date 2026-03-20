@@ -164,7 +164,7 @@ namespace Datadog.Trace.Debugger.Upload
             return false;
         }
 
-        internal async Task<ArraySegment<byte>?> CompressDataAsync(ArraySegment<byte> data)
+        internal static async Task<ArraySegment<byte>?> CompressDataAsync(ArraySegment<byte> data)
         {
             using var memoryStream = new MemoryStream();
 
