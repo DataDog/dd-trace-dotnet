@@ -41,8 +41,6 @@ jobs:
         secrets:
             AZURE_DEVOPS_TOKEN: ${{ secrets.AZURE_DEVOPS_TOKEN }}
             NUGET_TRUSTED_PUBLISHING_USERNAME: ${{ secrets.NUGET_TRUSTED_PUBLISHING_USERNAME }}
-            GH_APP_ID: ${{ secrets.GH_APP_ID }}
-            GH_APP_PRIVATE_KEY: ${{ secrets.GH_APP_PRIVATE_KEY }}
             DD_PUBLIC_SYMBOL_PREPROD_API_KEY: ${{ secrets.DD_PUBLIC_SYMBOL_PREPROD_API_KEY }}
             DD_PUBLIC_SYMBOL_API_KEY_US1: ${{ secrets.DD_PUBLIC_SYMBOL_API_KEY_US1 }}
             DD_PUBLIC_SYMBOL_API_KEY_US3: ${{ secrets.DD_PUBLIC_SYMBOL_API_KEY_US3 }}

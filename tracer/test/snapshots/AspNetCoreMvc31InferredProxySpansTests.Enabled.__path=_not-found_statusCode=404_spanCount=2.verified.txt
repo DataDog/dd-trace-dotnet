@@ -46,7 +46,8 @@
       runtime-id: Guid_1,
       span.kind: server,
       stage: prod,
-      _dd.base_service: Samples.AspNetCoreMvc31
+      _dd.base_service: Samples.AspNetCoreMvc31,
+      _dd.svc_src: aws-apigateway
     },
     Metrics: {
       process_id: 0,

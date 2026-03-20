@@ -18,7 +18,8 @@
         "out.host": "localhost",
         "runtime-id": "11c61d09-16bb-477f-87ab-4f81d656c5ca",
         "span.kind": "client",
-        "_dd.base_service": "AspNetCoreSmokeTest"
+        "_dd.base_service": "AspNetCoreSmokeTest",
+        "_dd.svc_src": "http-client"
       },
       "metrics": {
         "_dd.top_level": 1.0,

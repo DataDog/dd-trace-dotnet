@@ -17,7 +17,8 @@
       out.host: https://cosmosdb-emulator:8081/,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.CosmosDb.Vnext
+      _dd.base_service: Samples.CosmosDb.Vnext,
+      _dd.svc_src: cosmosdb
     },
     Metrics: {
       process_id: 0,
@@ -44,7 +45,8 @@
       out.host: https://cosmosdb-emulator:8081/,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.CosmosDb.Vnext
+      _dd.base_service: Samples.CosmosDb.Vnext,
+      _dd.svc_src: cosmosdb
     },
     Metrics: {
       process_id: 0,
@@ -73,7 +75,8 @@
       out.host: https://cosmosdb-emulator:8081/,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.CosmosDb.Vnext
+      _dd.base_service: Samples.CosmosDb.Vnext,
+      _dd.svc_src: cosmosdb
     },
     Metrics: {
       process_id: 0,
@@ -102,7 +105,8 @@
       out.host: https://cosmosdb-emulator:8081/,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.CosmosDb.Vnext
+      _dd.base_service: Samples.CosmosDb.Vnext,
+      _dd.svc_src: cosmosdb
     },
     Metrics: {
       process_id: 0,
@@ -129,7 +133,8 @@
       out.host: https://cosmosdb-emulator:8081/,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.CosmosDb.Vnext
+      _dd.base_service: Samples.CosmosDb.Vnext,
+      _dd.svc_src: cosmosdb
     },
     Metrics: {
       process_id: 0,
@@ -156,7 +161,8 @@
       out.host: https://cosmosdb-emulator:8081/,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.CosmosDb.Vnext
+      _dd.base_service: Samples.CosmosDb.Vnext,
+      _dd.svc_src: cosmosdb
     },
     Metrics: {
       process_id: 0,
@@ -183,7 +189,8 @@
       out.host: https://cosmosdb-emulator:8081/,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.CosmosDb.Vnext
+      _dd.base_service: Samples.CosmosDb.Vnext,
+      _dd.svc_src: cosmosdb
     },
     Metrics: {
       process_id: 0,
@@ -212,7 +219,8 @@
       out.host: https://cosmosdb-emulator:8081/,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.CosmosDb.Vnext
+      _dd.base_service: Samples.CosmosDb.Vnext,
+      _dd.svc_src: cosmosdb
     },
     Metrics: {
       process_id: 0,
@@ -241,7 +249,8 @@
       out.host: https://cosmosdb-emulator:8081/,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.CosmosDb.Vnext
+      _dd.base_service: Samples.CosmosDb.Vnext,
+      _dd.svc_src: cosmosdb
     },
     Metrics: {
       process_id: 0,
@@ -267,7 +276,8 @@
       out.host: https://cosmosdb-emulator:8081/,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.CosmosDb.Vnext
+      _dd.base_service: Samples.CosmosDb.Vnext,
+      _dd.svc_src: cosmosdb
     },
     Metrics: {
       process_id: 0,
@@ -293,7 +303,8 @@
       out.host: https://cosmosdb-emulator:8081/,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.CosmosDb.Vnext
+      _dd.base_service: Samples.CosmosDb.Vnext,
+      _dd.svc_src: cosmosdb
     },
     Metrics: {
       process_id: 0,
@@ -319,7 +330,8 @@
       out.host: https://cosmosdb-emulator:8081/,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.CosmosDb.Vnext
+      _dd.base_service: Samples.CosmosDb.Vnext,
+      _dd.svc_src: cosmosdb
     },
     Metrics: {
       process_id: 0,
@@ -345,7 +357,8 @@
       out.host: https://cosmosdb-emulator:8081/,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.CosmosDb.Vnext
+      _dd.base_service: Samples.CosmosDb.Vnext,
+      _dd.svc_src: cosmosdb
     },
     Metrics: {
       process_id: 0,

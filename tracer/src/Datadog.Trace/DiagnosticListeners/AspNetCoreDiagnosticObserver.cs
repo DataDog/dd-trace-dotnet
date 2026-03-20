@@ -50,7 +50,9 @@ namespace Datadog.Trace.DiagnosticListeners
         private const string HttpRequestInOperationName = "aspnet_core.request";
         private const string MvcOperationName = "aspnet_core_mvc.request";
 
+#if NETCOREAPP
         private static readonly int PrefixLength = "Microsoft.AspNetCore.".Length;
+#endif
 
         private static readonly Type EndpointFeatureType =
             Assembly.GetAssembly(typeof(RouteValueDictionary))

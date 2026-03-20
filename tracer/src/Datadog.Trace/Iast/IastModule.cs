@@ -1075,7 +1075,7 @@ internal static partial class IastModule
 
         private sealed class DbRecordData
         {
-            public int Count { get; set; } = 0;
+            public int Count { get; set; }
         }
     }
 }
