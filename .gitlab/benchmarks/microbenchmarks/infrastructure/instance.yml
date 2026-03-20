@@ -1,9 +1,12 @@
 # Instance provision file for running dd-trace-dotnet microbenchmarks
 #
 # This file is used by bp-infra to provision a Windows instance and run benchmarks.
-# The bp-runner template handles cloning the repo, so we only need to:
+#
+# Steps:
 # 1. Verify the CPU model (for reproducibility)
-# 2. Run bp-runner with the benchmark config
+# 2. Fetch baseline results from S3 (_latest from master)
+# 3. Run bp-runner with the benchmark config
+# 4. Upload results to S3 (and update _latest if on master)
 
 name: &provision_name "dd-trace-dotnet-microbenchmarks"
 
@@ -19,6 +22,7 @@ tags:
 
 provision_steps:
   - check_cpu_model
+  - fetch_baseline_results
   - run_benchmarks
   - upload_results
 
@@ -31,6 +35,50 @@ check_cpu_model:
         exit 1
     }
     Write-Output "CPU model verified: Intel(R) Xeon(R) Platinum 8259CL"
+
+fetch_baseline_results:
+  populate_env: true
+  remote_command: |
+    $ErrorActionPreference = "Stop"
+
+    $s3Bucket = $env:BP_INFRA_ARTIFACTS_BUCKET_NAME
+    $latestPrefix = "$env:CI_PROJECT_NAME/_latest"
+    $baselineDir = "C:\baseline"
+
+    Write-Output "=== Fetching baseline results from master ==="
+    Write-Output "S3 source: s3://$s3Bucket/$latestPrefix"
+    Write-Output "Local destination: $baselineDir"
+
+    New-Item -ItemType Directory -Path $baselineDir -Force | Out-Null
+
+    try {
+        Read-S3Object `
+            -BucketName $s3Bucket `
+            -KeyPrefix $latestPrefix `
+            -Folder $baselineDir
+
+        $baselineFiles = Get-ChildItem -Path $baselineDir -Filter "*.json" -ErrorAction SilentlyContinue
+        if ($baselineFiles) {
+            Write-Output "Downloaded $($baselineFiles.Count) baseline files"
+
+            # Copy env_vars.txt to baseline_env_vars.txt if it exists
+            $envVarsFile = Join-Path $baselineDir "env_vars.txt"
+            if (Test-Path $envVarsFile) {
+                $baselineEnvVarsFile = Join-Path $baselineDir "baseline_env_vars.txt"
+                Copy-Item -Path $envVarsFile -Destination $baselineEnvVarsFile
+                Write-Output "Created baseline_env_vars.txt from master's env_vars.txt"
+                Get-Content $baselineEnvVarsFile
+            } else {
+                Write-Output "No env_vars.txt found in baseline results"
+            }
+        } else {
+            Write-Output "No baseline JSON files found (first run on new infrastructure?)"
+        }
+    }
+    catch {
+        Write-Output "Warning: Could not fetch baseline results: $_"
+        Write-Output "Continuing without baseline comparison..."
+    }
 
 run_benchmarks:
   populate_env: true
@@ -66,17 +114,42 @@ upload_results:
     $ErrorActionPreference = "Stop"
 
     $artifactsDir = "C:\artifacts"
+    $baselineDir = "C:\baseline"
     $s3Bucket = $env:BP_INFRA_ARTIFACTS_BUCKET_NAME
     $s3Prefix = "$env:CI_PROJECT_NAME/$env:CI_COMMIT_REF_NAME/$env:CI_JOB_ID/reports"
+
+    Write-Output "=== Preparing benchmark results ==="
+
+    # Create env_vars.txt with current run metadata
+    $envVarsFile = Join-Path $artifactsDir "env_vars.txt"
+    $ciJobDate = [int][double](Get-Date -UFormat %s)
+    $envVarsContent = @"
+CI_COMMIT_SHA=$env:CI_COMMIT_SHA
+CI_COMMIT_SHORT_SHA=$env:CI_COMMIT_SHORT_SHA
+CI_PIPELINE_ID=$env:CI_PIPELINE_ID
+CI_JOB_ID=$env:CI_JOB_ID
+CI_JOB_DATE=$ciJobDate
+"@
+    Set-Content -Path $envVarsFile -Value $envVarsContent
+    Write-Output "Created env_vars.txt:"
+    Get-Content $envVarsFile
+
+    # Copy baseline_env_vars.txt from baseline dir if it exists
+    $baselineEnvVarsSource = Join-Path $baselineDir "baseline_env_vars.txt"
+    if (Test-Path $baselineEnvVarsSource) {
+        $baselineEnvVarsDest = Join-Path $artifactsDir "baseline_env_vars.txt"
+        Copy-Item -Path $baselineEnvVarsSource -Destination $baselineEnvVarsDest
+        Write-Output "Copied baseline_env_vars.txt to artifacts"
+    }
 
     Write-Output "=== Uploading benchmark results to S3 ==="
     Write-Output "Artifacts directory: $artifactsDir"
     Write-Output "S3 destination: s3://$s3Bucket/$s3Prefix"
 
     # List files to upload
-    $files = Get-ChildItem -Path $artifactsDir -Filter "*.json" -ErrorAction SilentlyContinue
+    $files = Get-ChildItem -Path $artifactsDir -ErrorAction SilentlyContinue
     if ($files) {
-        Write-Output "Found $($files.Count) JSON files to upload"
+        Write-Output "Found $($files.Count) files to upload"
         foreach ($file in $files) {
             Write-Output "  - $($file.Name)"
         }
@@ -103,6 +176,6 @@ upload_results:
                 -Recurse
         }
     } else {
-        Write-Warning "No JSON files found in $artifactsDir"
+        Write-Warning "No files found in $artifactsDir"
         Get-ChildItem -Path $artifactsDir -Recurse | ForEach-Object { Write-Output $_.FullName }
     }
