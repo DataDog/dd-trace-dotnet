@@ -109,13 +109,13 @@ internal sealed class AzureDevOpsSourceLinkUrlParser : SourceLinkUrlParser
             segmentCount++;
         }
 
-        if (segmentCount < 5)
-        {
-            return null;
-        }
-
         if (uri.Host.EndsWith("visualstudio.com", StringComparison.OrdinalIgnoreCase))
         {
+            if (segmentCount < 5)
+            {
+                return null;
+            }
+
             // Legacy format: https://{organization}.visualstudio.com
 #if NET6_0_OR_GREATER
             return $"https://{uri.Host}/{segment0}/_git/{segment4}";
@@ -126,6 +126,11 @@ internal sealed class AzureDevOpsSourceLinkUrlParser : SourceLinkUrlParser
 
         if (uri.Host.EndsWith("dev.azure.com", StringComparison.OrdinalIgnoreCase))
         {
+            if (segmentCount < 6)
+            {
+                return null;
+            }
+
             // New format: https://dev.azure.com/{organization}
 #if NET6_0_OR_GREATER
             return $"https://{uri.Host}/{segment0}/{segment1}/_git/{segment5}";
