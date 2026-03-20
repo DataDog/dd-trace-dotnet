@@ -20,12 +20,16 @@
 
 set -e
 
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
 ARTIFACTS_DIR="${ARTIFACTS_DIR:-./artifacts}"
 
 if [ ! -d "$ARTIFACTS_DIR" ]; then
     echo "ERROR: Artifacts directory '$ARTIFACTS_DIR' does not exist"
     exit 1
 fi
+
+# Load baseline env vars with BASELINE_ prefix
+source "$SCRIPT_DIR/read-baseline-env.sh"
 
 # Metadata for converted results
 CI_JOB_DATE=$(date +%s)
@@ -37,13 +41,12 @@ convert_results() {
     local BASELINE_OR_CANDIDATE=$1
     local BRANCH=$2
     local COMMIT_SHA=$3
-    local JOB_ID=$4
-    local PIPELINE_ID=$5
+    local COMMIT_DATE=$4
+    local JOB_ID=$5
+    local PIPELINE_ID=$6
+    local JOB_DATE=$7
 
     echo "Converting $BASELINE_OR_CANDIDATE results..."
-
-    local COMMIT_DATE
-    COMMIT_DATE=$(git show -s --format=%ct "$COMMIT_SHA" 2>/dev/null || echo "$CI_JOB_DATE")
 
     local files_found=false
     for INPUT_FILE in "$ARTIFACTS_DIR/$BASELINE_OR_CANDIDATE".*.json; do
@@ -63,7 +66,7 @@ convert_results() {
                 \"baseline_or_candidate\":\"$BASELINE_OR_CANDIDATE\", \
                 \"cpu_model\":\"$CPU_MODEL\", \
                 \"kernel_version\":\"$KERNEL_VERSION\", \
-                \"ci_job_date\":\"$CI_JOB_DATE\", \
+                \"ci_job_date\":\"$JOB_DATE\", \
                 \"ci_job_id\":\"$JOB_ID\", \
                 \"ci_pipeline_id\":\"$PIPELINE_ID\", \
                 \"git_commit_sha\":\"$COMMIT_SHA\", \
@@ -81,25 +84,20 @@ convert_results() {
 }
 
 # Convert candidate results
-convert_results "candidate" "$CI_COMMIT_REF_NAME" "$CI_COMMIT_SHORT_SHA" "$CI_JOB_ID" "$CI_PIPELINE_ID"
+CANDIDATE_COMMIT_DATE=$(git show -s --format=%ct "$CI_COMMIT_SHORT_SHA" 2>/dev/null || echo "$CI_JOB_DATE")
+convert_results "candidate" "$CI_COMMIT_REF_NAME" \
+    "$CI_COMMIT_SHORT_SHA" "$CANDIDATE_COMMIT_DATE" "$CI_JOB_ID" "$CI_PIPELINE_ID" "$CI_JOB_DATE"
 
 # Convert baseline results (from master _latest)
-# Read metadata from baseline_env_vars.txt if available
-BASELINE_ENV_VARS_FILE="$ARTIFACTS_DIR/baseline_env_vars.txt"
-if [ -f "$BASELINE_ENV_VARS_FILE" ]; then
-    echo ""
-    echo "Reading baseline metadata from $BASELINE_ENV_VARS_FILE..."
-    # shellcheck disable=SC1090
-    source "$BASELINE_ENV_VARS_FILE"
+if [ -n "$BASELINE_CI_COMMIT_SHORT_SHA" ]; then
+    BASELINE_COMMIT_DATE=$(git show -s --format=%ct "$BASELINE_CI_COMMIT_SHORT_SHA" 2>/dev/null || echo "${BASELINE_CI_JOB_DATE:-$CI_JOB_DATE}")
+    BASELINE_JOB_DATE="${BASELINE_CI_JOB_DATE:-$BASELINE_COMMIT_DATE}"
 
-    BASELINE_COMMIT_SHA="${CI_COMMIT_SHORT_SHA:-unknown}"
-    BASELINE_JOB_ID="${CI_JOB_ID:-0}"
-    BASELINE_PIPELINE_ID="${CI_PIPELINE_ID:-0}"
-
-    convert_results "baseline" "master" "$BASELINE_COMMIT_SHA" "$BASELINE_JOB_ID" "$BASELINE_PIPELINE_ID"
+    convert_results "baseline" "master" \
+        "$BASELINE_CI_COMMIT_SHORT_SHA" "$BASELINE_COMMIT_DATE" "$BASELINE_CI_JOB_ID" "$BASELINE_CI_PIPELINE_ID" "$BASELINE_JOB_DATE"
 else
     echo ""
-    echo "Warning: No baseline_env_vars.txt found - skipping baseline conversion"
+    echo "Warning: No baseline metadata found (BASELINE_CI_COMMIT_SHORT_SHA not set)."
     echo "This is expected on the first run or when no master baseline exists yet."
 fi
 

@@ -6,12 +6,14 @@
 #
 # Optional:
 #   ARTIFACTS_DIR - Directory containing converted results (default: ./artifacts)
-#   BASELINE_CI_COMMIT_SHORT_SHA - Baseline commit SHA for comparison
-#   BASELINE_CI_PIPELINE_ID - Baseline pipeline ID
 
 set -e
 
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
 ARTIFACTS_DIR="${ARTIFACTS_DIR:-./artifacts}"
+
+# Load baseline env vars with BASELINE_ prefix
+source "$SCRIPT_DIR/read-baseline-env.sh"
 
 shopt -s nullglob
 converted_files=("$ARTIFACTS_DIR"/candidate*.converted.json)
