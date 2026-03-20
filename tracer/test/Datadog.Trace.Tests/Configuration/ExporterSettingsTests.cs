@@ -79,7 +79,7 @@ namespace Datadog.Trace.Tests.Configuration
         {
             var path = @"C:\temp\someval";
             var socketPath = path.Replace("\\", "/");
-            var settingsFromSource = Setup(FileExistsMock(socketPath), $"DD_DOGSTATSD_URL:unix://{path}", "DD_TRACE_AGENT_URL:http://localhost:8126");
+            var settingsFromSource = Setup(FileExistsMock(socketPath), $"DD_DOGSTATSD_URL:unix://{path}", "DD_TRACE_AGENT_URL:http://localhost:8126", "OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4318");
             AssertMetricsUdsIsConfigured(settingsFromSource, socketPath);
             settingsFromSource.ValidationWarnings.Should().BeEmpty();
         }
@@ -88,7 +88,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void Metrics_DogStatsdUrl_UdsOnLinux()
         {
             var socketPath = @"/some/socket.soc";
-            var settingsFromSource = Setup(FileExistsMock(socketPath), $"DD_DOGSTATSD_URL:unix://{socketPath}", "DD_TRACE_AGENT_URL:http://localhost:8126");
+            var settingsFromSource = Setup(FileExistsMock(socketPath), $"DD_DOGSTATSD_URL:unix://{socketPath}", "DD_TRACE_AGENT_URL:http://localhost:8126", "OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4318");
             AssertMetricsUdsIsConfigured(settingsFromSource, socketPath);
             settingsFromSource.ValidationWarnings.Should().BeEmpty();
         }
@@ -98,7 +98,7 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData("/some/socket.soc")]
         public void Metrics_UdsTraceAgent_UsesDefaultUdp(string socket)
         {
-            var config = Setup(FileExistsMock(socket.Replace('\\', '/')), $"DD_TRACE_AGENT_URL:{ExporterSettings.UnixDomainSocketPrefix}{socket}");
+            var config = Setup(FileExistsMock(socket.Replace('\\', '/')), $"DD_TRACE_AGENT_URL:{ExporterSettings.UnixDomainSocketPrefix}{socket}", "OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4318");
             AssertUdsIsConfigured(config, socket.Replace('\\', '/'));
             AssertMetricsUdpIsConfigured(config);
             config.ValidationWarnings.Should().BeEmpty();
@@ -111,7 +111,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void Metrics_UdsTraceAgent_EmptyDogStatsdUrl_UsesDefaultUdp(string metricsSocket)
         {
             var socket = "/some/socket.soc";
-            var config = Setup(FileExistsMock(socket.Replace('\\', '/')), $"DD_DOGSTATSD_URL:{metricsSocket}", $"DD_TRACE_AGENT_URL:{ExporterSettings.UnixDomainSocketPrefix}{socket}");
+            var config = Setup(FileExistsMock(socket.Replace('\\', '/')), $"DD_DOGSTATSD_URL:{metricsSocket}", $"DD_TRACE_AGENT_URL:{ExporterSettings.UnixDomainSocketPrefix}{socket}", "OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4318");
             AssertUdsIsConfigured(config, socket);
             AssertMetricsUdpIsConfigured(config);
             config.ValidationWarnings.Should().BeEmpty();
@@ -124,7 +124,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void Metrics_UdsTraceAgent_EmptyDogStatsdSocket_UsesDefaultUdp(string metricsSocket)
         {
             var socket = "/some/socket.soc";
-            var config = Setup(FileExistsMock(socket.Replace('\\', '/')), $"DD_DOGSTATSD_SOCKET:{metricsSocket}", $"DD_TRACE_AGENT_URL:{ExporterSettings.UnixDomainSocketPrefix}{socket}");
+            var config = Setup(FileExistsMock(socket.Replace('\\', '/')), $"DD_DOGSTATSD_SOCKET:{metricsSocket}", $"DD_TRACE_AGENT_URL:{ExporterSettings.UnixDomainSocketPrefix}{socket}", "OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4318");
             AssertUdsIsConfigured(config, socket);
             AssertMetricsUdpIsConfigured(config);
             config.ValidationWarnings.Should().BeEmpty();
