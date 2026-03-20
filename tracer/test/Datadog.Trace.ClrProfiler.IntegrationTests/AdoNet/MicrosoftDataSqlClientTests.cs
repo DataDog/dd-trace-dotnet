@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.AutoInstrumentation.Containers;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
@@ -18,12 +19,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 {
     [Trait("RequiresDockerDependency", "true")]
     [Trait("DockerGroup", "1")]
+    [Collection(SqlServerCollection.Name)]
     public class MicrosoftDataSqlClientTests : TracingIntegrationTest
     {
-        public MicrosoftDataSqlClientTests(ITestOutputHelper output)
+        public MicrosoftDataSqlClientTests(ITestOutputHelper output, SqlServerFixture sqlServerFixture)
             : base("Microsoft.Data.SqlClient", output)
         {
             SetServiceVersion("1.0.0");
+            ConfigureContainers(sqlServerFixture);
         }
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsSqlClient(metadataSchemaVersion);
