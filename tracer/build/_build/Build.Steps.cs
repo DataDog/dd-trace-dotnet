@@ -2582,6 +2582,18 @@ partial class Build
                knownPatterns.Add(new(@".*Profiler is deactivated because it runs on an unsupported architecture", RegexOptions.Compiled));
            }
 
+           var isAzureFunctionsScenario = SmokeTestCategory is SmokeTests.SmokeTestCategory.LinuxAzureFunctionsNuGet or SmokeTests.SmokeTestCategory.WindowsAzureFunctionsNuGet;
+           if (isAzureFunctionsScenario)
+           {
+               // AzureFunctions NuGet currently uses the same loader.conf which attempts to load the profiler, even though no such file exists
+               knownPatterns.Add(new(
+                   @".*DynamicDispatcherImpl::LoadConfiguration: \[PROFILER\] Dynamic library for '.*Datadog\.Profiler\.Native\..*' cannot be loaded, file doesn't exist.*",
+                   RegexOptions.Compiled));
+               knownPatterns.Add(new(
+                   @".*Skipping hands-off configuration: as LibDatadog is not available.*",
+                   RegexOptions.Compiled));
+           }
+
            // We disable the profiler in crash tests, so we expect these logs
            knownPatterns.Add(new(@".*Error getting IClassFactory from: .*/Datadog\.Profiler\.Native\.so", RegexOptions.Compiled));
            knownPatterns.Add(new(@".*DynamicDispatcherImpl::LoadClassFactory: Error trying to load continuous profiler class factory.*", RegexOptions.Compiled));
@@ -2628,7 +2640,8 @@ partial class Build
                new("rejit_thread_timeout", new(@".*Timeout while waiting for the rejit requests to be processed. Rejit will continue asynchronously, but some initial calls may not be instrumented.*", RegexOptions.Compiled))
            };
 
-           await CheckLogsForErrors(knownPatterns, allFilesMustExist: true, minLogLevel: LogLevel.Warning, reportablePatterns);
+           // We won't have all the files in an Azure Functions scenario, so allow it
+           await CheckLogsForErrors(knownPatterns, allFilesMustExist: !isAzureFunctionsScenario, minLogLevel: LogLevel.Warning, reportablePatterns);
        });
 
     Target ExtractMetricsFromLogs => _ => _
@@ -2648,6 +2661,7 @@ partial class Build
         if (await LogParser.DoLogsContainErrors(logDirectory, knownPatterns, allFilesMustExist, minLogLevel, reportablePatterns))
         {
             ExitCode = 1;
+            throw new Exception("Found errors in the logs");
         }
     }
 
