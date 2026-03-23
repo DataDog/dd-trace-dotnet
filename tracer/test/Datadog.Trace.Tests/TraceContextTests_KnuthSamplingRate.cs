@@ -97,8 +97,8 @@ public class TraceContextTests_KnuthSamplingRate
         [InlineData(0.1f, "0.1")]
         [InlineData(0.123456f, "0.123456")]
         [InlineData(0.1234567f, "0.123457")]
-        [InlineData(0.00001f, "1E-05")]
-        public void KsrTag_FormattedWithSixSignificantDigits(float rate, string expected)
+        [InlineData(0.00001f, "0.00001")]
+        public void KsrTag_FormattedWithUpToSixDecimalDigits(float rate, string expected)
         {
             var tracer = new StubDatadogTracer();
             var traceContext = new TraceContext(tracer);
