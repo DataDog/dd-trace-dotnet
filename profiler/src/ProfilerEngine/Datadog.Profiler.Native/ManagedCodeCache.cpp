@@ -69,9 +69,23 @@ bool ManagedCodeCache::Initialize()
     return false;
 }
 
-bool ManagedCodeCache::IsCodeInR2RModule(std::uintptr_t ip) const noexcept
+bool ManagedCodeCache::IsCodeInR2RModule(std::uintptr_t ip, bool signalSafe) const noexcept
 {
-    std::shared_lock<std::shared_mutex> moduleLock(_modulesMutex);
+    // IsCodeInR2RModule can be called in a signal handler or not.
+    // If it's called in a signal handler, we need to use a shared lock with try_to_lock.
+    // If it's called not in a signal handler, we need to use a shared lock with defer_lock.
+    auto moduleLock = [](std::shared_mutex& mutex, bool signalSafe) {
+        if (signalSafe)
+        {
+            return std::shared_lock<std::shared_mutex>(mutex, std::try_to_lock);
+        }
+        return std::shared_lock<std::shared_mutex>(mutex);
+    }(_modulesMutex, signalSafe);
+
+    if (!moduleLock.owns_lock())
+    {
+        return false;
+    }
 
     auto moduleCodeRange = FindRange(_modulesCodeRanges, ip);
     if (!moduleCodeRange.has_value())
@@ -101,7 +115,7 @@ std::optional<FunctionID> ManagedCodeCache::GetFunctionId(std::uintptr_t ip) noe
 
     // Level 2: Check if the IP is within a module code range
     
-    if (IsCodeInR2RModule(ip))
+    if (IsCodeInR2RModule(ip, false))
     {
         auto functionId = GetFunctionFromIP_Original(ip);
         if (functionId.has_value()) {
@@ -180,12 +194,20 @@ bool ManagedCodeCache::IsManaged(std::uintptr_t ip) const noexcept
     
     {
         // Level 1: Find the page (shared lock on map structure)
-        std::shared_lock<std::shared_mutex> mapLock(_pagesMutex);
+        std::shared_lock<std::shared_mutex> mapLock(_pagesMutex, std::try_to_lock);
+        if (!mapLock.owns_lock())
+        {
+            return false;
+        }
         auto pageIt = _pagesMap.find(page);
         if (pageIt != _pagesMap.end())
         {
             // Level 2: Binary search within the page's ranges (shared lock on page)
-            std::shared_lock<std::shared_mutex> pageLock(pageIt->second.lock);
+            std::shared_lock<std::shared_mutex> pageLock(pageIt->second.lock, std::try_to_lock);
+            if (!pageLock.owns_lock())
+            {
+                return false;
+            }
             auto range = FindRange(pageIt->second.ranges, static_cast<UINT_PTR>(ip));
             if (range.has_value())
             {
@@ -195,7 +217,7 @@ bool ManagedCodeCache::IsManaged(std::uintptr_t ip) const noexcept
     }
 
     // Page not found or IP not in any JIT-compiled range: check R2R modules
-    return IsCodeInR2RModule(ip);
+    return IsCodeInR2RModule(ip, true);
 }
 
 void ManagedCodeCache::AddFunction(FunctionID functionId)
