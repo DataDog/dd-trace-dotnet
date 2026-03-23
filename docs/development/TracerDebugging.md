@@ -66,5 +66,4 @@ When debugging with the tracer locally, set these environment variables:
 
 - [AutomaticInstrumentation.md](AutomaticInstrumentation.md) - Creating and testing integrations
 - [DuckTyping.md](DuckTyping.md) - Duck typing patterns for instrumentation
-- [../CONTRIBUTING.md](../CONTRIBUTING.md) - General contribution guidelines
 - [../../tracer/README.MD](../../tracer/README.MD) - Build and development setup
