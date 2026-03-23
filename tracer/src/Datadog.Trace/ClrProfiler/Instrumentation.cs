@@ -479,15 +479,16 @@ namespace Datadog.Trace.ClrProfiler
             }
         }
 
-#if !NETFRAMEWORK
         private static void StartDiagnosticManager()
         {
             var observers = new List<DiagnosticObserver>();
 
+#if !NETFRAMEWORK
             if (!SkipAspNetCoreDiagnosticObserver())
             {
                 observers.Add(GetAspNetCoreDiagnosticObserver());
             }
+#endif
 
             observers.Add(new QuartzDiagnosticObserver());
 
@@ -496,6 +497,7 @@ namespace Datadog.Trace.ClrProfiler
             DiagnosticManager.Instance = diagnosticManager;
         }
 
+#if !NETFRAMEWORK
         private static DiagnosticObserver GetAspNetCoreDiagnosticObserver()
         {
             // Tracer and Security should both have been initialized by now.
@@ -516,19 +518,6 @@ namespace Datadog.Trace.ClrProfiler
         {
             // this is extremely simple now, but will get more complex soon...
             return EnvironmentHelpers.IsAzureFunctions();
-        }
-
-#else
-        private static void StartDiagnosticManager()
-        {
-            var observers = new List<DiagnosticObserver>
-            {
-                new QuartzDiagnosticObserver(),
-            };
-
-            var diagnosticManager = new DiagnosticManager(observers);
-            diagnosticManager.Start();
-            DiagnosticManager.Instance = diagnosticManager;
         }
 #endif
 
