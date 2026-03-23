@@ -165,7 +165,8 @@ std::int32_t HybridUnwinder::Unwind(void* ctx, std::uintptr_t* buffer, std::size
         }
         else
         {
-            if (++consecutiveNativeFrames > 8)
+            // Try 20 to see if CI fails or not.
+            if (++consecutiveNativeFrames > 20)
             {
                 break;
             }
