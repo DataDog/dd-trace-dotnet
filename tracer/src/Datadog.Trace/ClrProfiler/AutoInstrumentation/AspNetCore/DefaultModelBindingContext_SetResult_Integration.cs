@@ -107,6 +107,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
                                 }
                             }
                         }
+                        else if (defaultModelBindingContext.ValueProvider.TryDuckCast(out BindingSourceValueProvider prov) && prov.BindingSource.Id is "Form" or "Body")
+                        {
+                            object? bodyExtracted = null;
+                            if (security.AppsecEnabled)
+                            {
+                                bodyExtracted = security.CheckBody(defaultModelBindingContext.HttpContext, span, defaultModelBindingContext.Result.Model, false);
+                            }
+
+                            if (iast.Settings.Enabled)
+                            {
+                                span.Context?.TraceContext?.IastRequestContext?.AddRequestBody(defaultModelBindingContext.Result.Model, bodyExtracted);
+                            }
+                        }
                     }
                 }
             }
