@@ -1,96 +1,47 @@
 include(GoogleTest)
 
-
 # ******************************************************
 # Compiler options
 # ******************************************************
-set(CMAKE_CXX_STANDARD 20)
 
-# Sets compiler options
-add_compile_options(-fPIC -fms-extensions)
-add_compile_options(-DPAL_STDCPP_COMPAT -DPLATFORM_UNIX -DUNICODE)
-add_compile_options(-Wno-invalid-noreturn -Wno-macro-redefined -Wc++20-extensions -DDD_TEST)
+set(TEST_EXECUTABLE_NAME "Datadog.Profiler.Native.Tests")
 
-target_compile_options(Datadog.Profiler.Native.static PRIVATE -DDD_TEST)
+set(TEST_OUTPUT_DIR ${OUTPUT_BUILD_DIR}/bin/${TEST_EXECUTABLE_NAME})
 
-if (IS_ALPINE)
-    add_compile_options(-DDD_ALPINE)
-endif()
-
-if (RUN_ASAN)
-    add_compile_options(-g -fsanitize=address -fno-omit-frame-pointer)
-endif()
-
-if (RUN_UBSAN)
-    add_compile_options(-fsanitize=undefined -g -fno-omit-frame-pointer -fno-sanitize-recover=all)
-endif()
-
-if (RUN_TSAN)
-    add_compile_options(-fsanitize=thread -g -fno-omit-frame-pointer -DDD_SANITIZERS)
-endif()
-
-if(ISLINUX)
-    add_compile_options(-stdlib=libstdc++ -DLINUX -Wno-pragmas)
-endif()
-
-if (BIT64)
-    add_compile_options(-DBIT64)
-    add_compile_options(-DHOST_64BIT)
-endif()
-
-if (ISAMD64)
-    add_compile_options(-DAMD64)
-elseif (ISX86)
-    add_compile_options(-DBX86)
-elseif (ISARM64)
-    add_compile_options(-DARM64)
-elseif (ISARM)
-    add_compile_options(-DARM)
-endif()
-
-SET(TEST_EXECUTABLE_NAME "Datadog.Profiler.Native.Tests")
-SET(PROFILER_SHARED ${CMAKE_SOURCE_DIR}/src/ProfilerEngine/Datadog.Profiler.Native)
-
-SET(TEST_OUTPUT_DIR ${OUTPUT_BUILD_DIR}/bin/${TEST_EXECUTABLE_NAME})
-SET(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${TEST_OUTPUT_DIR})
-SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${TEST_OUTPUT_DIR})
-SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${TEST_OUTPUT_DIR})
-
-FILE(GLOB PROFILER_NATIVE_TEST_SRC CONFIGURE_DEPENDS "*.cpp")
+file(GLOB PROFILER_NATIVE_TEST_SRC CONFIGURE_DEPENDS "*.cpp")
 
 add_executable(${TEST_EXECUTABLE_NAME}
     ${PROFILER_NATIVE_TEST_SRC}
     ../../src/ProfilerEngine/Datadog.Profiler.Native.Linux/OsSpecificApi.cpp
 )
 
-# Define directories includes
-target_include_directories(${TEST_EXECUTABLE_NAME}
-    PUBLIC ../../src/ProfilerEngine/Datadog.Profiler.Native
-    PUBLIC ${googletest_SOURCE_DIR}/googlemock/include
+set_target_properties(${TEST_EXECUTABLE_NAME} PROPERTIES
+    ARCHIVE_OUTPUT_DIRECTORY ${TEST_OUTPUT_DIR}
+    LIBRARY_OUTPUT_DIRECTORY ${TEST_OUTPUT_DIR}
+    RUNTIME_OUTPUT_DIRECTORY ${TEST_OUTPUT_DIR}
 )
 
-add_dependencies(${TEST_EXECUTABLE_NAME} gmock gtest Datadog.Profiler.Native.static libunwind)
+target_compile_options(${TEST_EXECUTABLE_NAME} PRIVATE -Wc++20-extensions)
+target_compile_definitions(${TEST_EXECUTABLE_NAME} PRIVATE DD_TEST)
+target_compile_options(Datadog.Profiler.Native.static PRIVATE -DDD_TEST)
 
-if (RUN_ASAN)
-    target_link_libraries(${TEST_EXECUTABLE_NAME} -fsanitize=address)
-endif()
-
-if (RUN_UBSAN)
-    target_link_libraries(${TEST_EXECUTABLE_NAME} -fsanitize=undefined)
-endif()
-
-if (RUN_TSAN)
-    target_link_libraries(${TEST_EXECUTABLE_NAME} -fsanitize=thread)
-endif()
+# Define directories includes
+target_include_directories(${TEST_EXECUTABLE_NAME}
+    PRIVATE ../../src/ProfilerEngine/Datadog.Profiler.Native
+    PRIVATE ${googletest_SOURCE_DIR}/googlemock/include
+)
 
 target_link_libraries(${TEST_EXECUTABLE_NAME}
-  Datadog.Profiler.Native.static
-  gtest_main
-  gmock_main
-  -static-libgcc
-  -static-libstdc++
-  -lstdc++fs
-  -Wc++20-extensions
+    profiler_compile_options
+    Datadog.Profiler.Native.static
+    gtest_main
+    gmock_main
+    -lstdc++fs
+)
+
+target_link_options(${TEST_EXECUTABLE_NAME} PRIVATE
+    -static-libgcc
+    -static-libstdc++
 )
 
 gtest_discover_tests(${TEST_EXECUTABLE_NAME})

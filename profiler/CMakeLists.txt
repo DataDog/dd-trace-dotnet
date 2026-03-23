@@ -1,82 +1,8 @@
-cmake_minimum_required (VERSION 3.13.4)
-cmake_policy(SET CMP0015 NEW)
-
-# macOS uses 3.30 which deprecates FetchContent_Populate in favor of FetchContent_MakeAvailable,
-# but we're using 3.13.4 on Linux, which doesn't have FetchContent_MakeAvailable
-
-if(POLICY CMP0169)
-    cmake_policy(SET CMP0169 OLD)
-endif()
-
-# ******************************************************
-# Environment detection
-# ******************************************************
-
-# Detect operating system
-if (CMAKE_SYSTEM_NAME MATCHES "Windows")
-    message(FATAL_ERROR "Windows builds are not supported using CMAKE. Please use Visual Studio")
-    SET(ISWINDOWS true)
-elseif (CMAKE_SYSTEM_NAME MATCHES "Linux")
-    message(STATUS "Preparing Linux build")
-    SET(ISLINUX true)
-elseif (CMAKE_SYSTEM_NAME MATCHES "Darwin")
-    message(FATAL_ERROR "MACOS builds are not supported yet.")
-    SET(ISMACOS true)
-endif()
-
-# Detect bitness of the build
-if (CMAKE_SIZEOF_VOID_P EQUAL 8)
-    message(STATUS "Setting compilation for 64bits processor")
-    SET(BIT64 true)
-endif()
-
-# Detect architecture
-if (CMAKE_SYSTEM_PROCESSOR STREQUAL x86_64 OR CMAKE_SYSTEM_PROCESSOR STREQUAL amd64)
-    message(STATUS "Architecture is x64/AMD64")
-    SET(ISAMD64 true)
-elseif (CMAKE_SYSTEM_PROCESSOR STREQUAL x86 OR CMAKE_SYSTEM_PROCESSOR STREQUAL i686)
-    message(STATUS "Architecture is x86")
-    SET(ISX86 true)
-elseif (CMAKE_SYSTEM_PROCESSOR STREQUAL aarch64)
-    message(STATUS "Architecture is ARM64")
-    SET(ISARM64 true)
-elseif (CMAKE_SYSTEM_PROCESSOR STREQUAL armv7l OR CMAKE_SYSTEM_PROCESSOR STREQUAL arm)
-    message(STATUS "Architecture is ARM")
-    SET(ISARM true)
-endif()
-
 # Out of source build directory
-SET(OUTPUT_BUILD_DIR ${CMAKE_CURRENT_SOURCE_DIR}/_build)
+set(OUTPUT_BUILD_DIR ${CMAKE_CURRENT_SOURCE_DIR}/_build)
 
 if (DEFINED RUN_ANALYSIS AND NOT RUN_ANALYSIS EQUAL 0)
-    SET(CMAKE_EXPORT_COMPILE_COMMANDS 1)
-endif()
-
-# ******************************************************
-# Detect prerequisites
-# ******************************************************
-
-find_program(FOUND_CLANG clang)
-
-if (NOT FOUND_CLANG)
-    message(FATAL_ERROR "CLANG is required to build the project")
-else()
-    message(STATUS "CLANG was found")
-endif()
-
-find_program(FOUND_CLANGPP clang++)
-if (NOT FOUND_CLANGPP)
-    message(FATAL_ERROR "CLANG++ is required to build the project")
-else()
-    message(STATUS "CLANG++ was found")
-endif()
-
-find_program(FOUND_GIT "git")
-
-if (NOT FOUND_GIT)
-    message(FATAL_ERROR "GIT is required to build the project")
-else()
-    message(STATUS "GIT was found")
+    set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 endif()
 
 if (DEFINED RUN_ANALYSIS AND RUN_ANALYSIS EQUAL 1)
@@ -88,8 +14,6 @@ if (DEFINED RUN_ANALYSIS AND RUN_ANALYSIS EQUAL 1)
     endif()
 endif()
 
-add_definitions("-D_GLIBCXX_USE_CXX11_ABI=0")
-
 # ******************************************************
 # Output folders
 # ******************************************************
@@ -97,28 +21,94 @@ add_definitions("-D_GLIBCXX_USE_CXX11_ABI=0")
 # Deployment directory
 
 if (ISAMD64)
-    SET(ARCH_POSTFIX "x64")
+    set(ARCH_POSTFIX "x64")
 elseif (ISARM64)
-    SET(ARCH_POSTFIX "arm64")
+    set(ARCH_POSTFIX "arm64")
 elseif (ISARM)
-    SET(ARCH_POSTFIX "arm")
+    set(ARCH_POSTFIX "arm")
 else()
-    SET(ARCH_POSTFIX "x86")
+    set(ARCH_POSTFIX "x86")
 endif()
 
-SET(ARCH_BASENAME "linux")
+set(ARCH_BASENAME "linux")
 if (DEFINED ENV{IsAlpine} AND "$ENV{IsAlpine}" MATCHES "true")
-    SET(IS_ALPINE)
-    SET(ARCH_BASENAME "${ARCH_BASENAME}-musl")
+    set(IS_ALPINE TRUE)
+    set(ARCH_BASENAME "${ARCH_BASENAME}-musl")
 endif()
 
-SET(DEPLOY_DIR ${OUTPUT_BUILD_DIR}/DDProf-Deploy/${ARCH_BASENAME}-${ARCH_POSTFIX})
+set(DEPLOY_DIR ${OUTPUT_BUILD_DIR}/DDProf-Deploy/${ARCH_BASENAME}-${ARCH_POSTFIX})
+
+# ******************************************************
+# Common compile options (INTERFACE library)
+# ******************************************************
+# Targets link against this to inherit shared compiler/linker settings.
+
+add_library(profiler_compile_options INTERFACE)
+
+target_compile_options(profiler_compile_options INTERFACE
+    -fPIC -fms-extensions
+    -Wno-invalid-noreturn -Wno-macro-redefined
+)
+
+target_compile_definitions(profiler_compile_options INTERFACE
+    PAL_STDCPP_COMPAT PLATFORM_UNIX UNICODE
+)
+
+if (IS_ALPINE)
+    target_compile_definitions(profiler_compile_options INTERFACE DD_ALPINE)
+endif()
+
+if (ISLINUX)
+    target_compile_options(profiler_compile_options INTERFACE -stdlib=libstdc++ -Wno-pragmas)
+    target_compile_definitions(profiler_compile_options INTERFACE LINUX)
+endif()
+
+if (BIT64)
+    target_compile_definitions(profiler_compile_options INTERFACE BIT64 HOST_64BIT)
+endif()
+
+if (ISAMD64)
+    target_compile_definitions(profiler_compile_options INTERFACE AMD64)
+elseif (ISX86)
+    target_compile_definitions(profiler_compile_options INTERFACE BX86)
+elseif (ISARM64)
+    target_compile_definitions(profiler_compile_options INTERFACE ARM64)
+elseif (ISARM)
+    target_compile_definitions(profiler_compile_options INTERFACE ARM)
+endif()
+
+# Sanitizers (compile + link)
+option(RUN_ASAN "Build with Clang Address Sanitizer" OFF)
+option(RUN_UBSAN "Build with Clang Undefined-Behavior Sanitizer" OFF)
+option(RUN_TSAN "Build with Clang Thread Sanitizer" OFF)
+
+message(STATUS "Run Clang Address Sanitizer: " ${RUN_ASAN})
+message(STATUS "Run Clang Undefined-Behavior Sanitizer: " ${RUN_UBSAN})
+message(STATUS "Run Clang Thread Sanitizer: " ${RUN_TSAN})
+
+if (RUN_ASAN)
+    target_compile_options(profiler_compile_options INTERFACE -g -fsanitize=address -fno-omit-frame-pointer)
+    target_compile_definitions(profiler_compile_options INTERFACE DD_SANITIZERS)
+    target_link_options(profiler_compile_options INTERFACE -fsanitize=address)
+endif()
+
+if (RUN_UBSAN)
+    target_compile_options(profiler_compile_options INTERFACE -fsanitize=undefined -g -fno-omit-frame-pointer -fno-sanitize-recover=all)
+    target_compile_definitions(profiler_compile_options INTERFACE DD_SANITIZERS)
+    target_link_options(profiler_compile_options INTERFACE -fsanitize=undefined)
+endif()
+
+if (RUN_TSAN)
+    target_compile_options(profiler_compile_options INTERFACE -fsanitize=thread -g -fno-omit-frame-pointer)
+    target_compile_definitions(profiler_compile_options INTERFACE DD_SANITIZERS)
+    target_link_options(profiler_compile_options INTERFACE -fsanitize=thread)
+endif()
 
 # Set output folders
-SET(OUTPUT_TMP_DIR ${CMAKE_BINARY_DIR}/tmp.${CMAKE_SYSTEM_NAME}_${CMAKE_SYSTEM_PROCESSOR})
-SET(OUTPUT_DEPS_DIR ${CMAKE_BINARY_DIR}/deps)
-FILE(MAKE_DIRECTORY ${OUTPUT_DEPS_DIR})
-FILE(MAKE_DIRECTORY ${OUTPUT_TMP_DIR})
+set(OUTPUT_TMP_DIR ${CMAKE_BINARY_DIR}/tmp.${CMAKE_SYSTEM_NAME}_${CMAKE_SYSTEM_PROCESSOR})
+set(OUTPUT_DEPS_DIR ${CMAKE_BINARY_DIR}/deps)
+file(MAKE_DIRECTORY ${OUTPUT_DEPS_DIR})
+file(MAKE_DIRECTORY ${OUTPUT_TMP_DIR})
 
 add_subdirectory(src/ProfilerEngine/Datadog.Profiler.Native.Linux)
 add_subdirectory(src/ProfilerEngine/Datadog.Linux.ApiWrapper)

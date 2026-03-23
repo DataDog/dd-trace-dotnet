@@ -97,7 +97,7 @@ static void ensure_libpthread_is_loaded()
     }
 }
 
-__attribute__((visibility("hidden"))) static int __dd_pthread_once(pthread_once_t* control, void (*init)(void))
+__attribute__((visibility("hidden"))) int __dd_pthread_once(pthread_once_t* control, void (*init)(void))
 {
     static __typeof(pthread_once)* pthread_once_ptr = &pthread_once;
     if (!pthread_once_ptr)
@@ -126,7 +126,7 @@ __attribute__((visibility("hidden"))) static int __dd_pthread_once(pthread_once_
     return pthread_once_ptr(control, init);
 }
 
-__attribute__((visibility("hidden"))) static void* __dd_dlsym(void* handle, const char* symbol)
+__attribute__((visibility("hidden"))) void* __dd_dlsym(void* handle, const char* symbol)
 {
     static __typeof(dlsym)* dlsym_ptr = &dlsym;
     if (!dlsym_ptr)

@@ -19,9 +19,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
         URL_HASH SHA256=${SHA256_LIBDATADOG_ARM64}
         SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/libdatadog-install-arm64
     )
-    if(NOT libdatadog-install-arm64_POPULATED)
-        FetchContent_Populate(libdatadog-install-arm64)
-    endif()
+    FetchContent_MakeAvailable(libdatadog-install-arm64)
 
     # Download x86_64 version
     FetchContent_Declare(libdatadog-install-x86_64
@@ -29,9 +27,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
         URL_HASH SHA256=${SHA256_LIBDATADOG_X86_64}
         SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/libdatadog-install-x86_64
     )
-    if(NOT libdatadog-install-x86_64_POPULATED)
-        FetchContent_Populate(libdatadog-install-x86_64)
-    endif()
+    FetchContent_MakeAvailable(libdatadog-install-x86_64)
 
     set(LIBDATADOG_BASE_DIR_ARM64 ${libdatadog-install-arm64_SOURCE_DIR})
     set(LIBDATADOG_BASE_DIR_X86_64 ${libdatadog-install-x86_64_SOURCE_DIR})
@@ -83,8 +79,12 @@ else()
         URL_HASH SHA256=${SHA256_LIBDATADOG}
         SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/libdatadog-install
     )
-    if(NOT libdatadog-install_POPULATED)
-        FetchContent_Populate(libdatadog-install)
+    if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.14.0")
+        FetchContent_MakeAvailable(libdatadog-install)
+    else()
+        if(NOT libdatadog-install_POPULATED)
+            FetchContent_Populate(libdatadog-install)
+        endif()
     endif()
 
     set(LIBDATADOG_BASE_DIR ${libdatadog-install_SOURCE_DIR})
@@ -100,19 +100,17 @@ else()
 endif()
 
 
-# Override target_link_libraries
-function(target_link_libraries target)
-    # Call the original target_link_libraries
-    _target_link_libraries(${ARGV})
-
-    if("libdatadog-lib" IN_LIST ARGN)
-        add_custom_command(
-            TARGET ${target}
-            POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                $<TARGET_FILE:libdatadog-lib>
-                $<TARGET_FILE_DIR:${target}>
-            COMMENT "Copying libdatadog to ${target} output directory"
-        )
-    endif()
+# Link libdatadog and copy the shared library to the target's output directory.
+# Use this instead of plain target_link_libraries() when you need the .so/.dylib
+# copied next to the built binary.
+function(datadog_target_link_libdatadog target)
+    target_link_libraries(${target} libdatadog-lib)
+    add_custom_command(
+        TARGET ${target}
+        POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            $<TARGET_FILE:libdatadog-lib>
+            $<TARGET_FILE_DIR:${target}>
+        COMMENT "Copying libdatadog to ${target} output directory"
+    )
 endfunction()
