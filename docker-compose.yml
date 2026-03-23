@@ -992,7 +992,7 @@ services:
 
   # Used on x86_64; keep synchronized with tracer\test\Datadog.Trace.TestHelpers.AutoInstrumentation\Containers\SqlServerFixture.cs
   sqlserver:
-    image: mcr.microsoft.com/mssql/server:latest
+    image: mcr.microsoft.com/mssql/server:2022-latest
 
   # Used on arm64 (no native mssql/server image); keep synchronized with tracer\test\Datadog.Trace.TestHelpers.AutoInstrumentation\Containers\SqlServerFixture.cs
   azure-sql-edge:

@@ -20,7 +20,14 @@ public class SqlServerFixture : ContainerFixture
 
     public override IEnumerable<KeyValuePair<string, string>> GetEnvironmentVariables()
     {
-        yield return new("SQLSERVER_CONNECTION_STRING", Container.GetConnectionString());
+        // Build the connection string manually to match the old docker-compose format
+        // (Server + User + Password only). The default GetConnectionString() includes
+        // Database=master and User Id=sa which adds db.name/db.user tags and changes
+        // the peer.service source from out.host to db.name.
+        var host = Container.Hostname;
+        var port = Container.GetMappedPublicPort(MsSqlBuilder.MsSqlPort);
+        var connectionString = $"Server={host},{port};User=sa;Password=Strong!Passw0rd";
+        yield return new("SQLSERVER_CONNECTION_STRING", connectionString);
     }
 
     protected override async Task InitializeResources(Action<string, object> registerResource)
@@ -28,7 +35,7 @@ public class SqlServerFixture : ContainerFixture
         // mssql/server has no native arm64 image; use Azure SQL Edge on arm64 instead
         var image = RuntimeInformation.ProcessArchitecture == Architecture.Arm64
             ? new DockerImage("mcr.microsoft.com/azure-sql-edge:latest")
-            : new DockerImage("mcr.microsoft.com/mssql/server:latest");
+            : new DockerImage("mcr.microsoft.com/mssql/server:2022-latest");
 
         var container = new MsSqlBuilder(image)
                        .WithPassword("Strong!Passw0rd")
