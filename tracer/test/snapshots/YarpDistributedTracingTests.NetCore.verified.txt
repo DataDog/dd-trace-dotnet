@@ -9,7 +9,7 @@
     Tags: {
       component: HttpMessageHandler,
       env: integration_tests,
-      http-client-handler-type: System.Net.Http.SocketsHttpHandler,
+      http-client-handler-type: System.Net.Http.HttpClientHandler,
       http.method: GET,
       http.status_code: 200,
       http.url: http://localhost:00000/proxy,

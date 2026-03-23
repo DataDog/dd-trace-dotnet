@@ -8,6 +8,10 @@ using System;
 using System.Collections.Generic;
 using Yarp.ReverseProxy.Configuration;
 using Yarp.ReverseProxy.Transforms;
+#if NET6_0_OR_GREATER
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
+#endif
 
 namespace Samples.Yarp.DistributedTracing
 {
@@ -29,6 +33,23 @@ namespace Samples.Yarp.DistributedTracing
                 .AddReverseProxy();
 
             services.AddHostedService<Worker>();
+
+#if NET6_0_OR_GREATER
+            // Simulate a customer environment where the OpenTelemetry SDK is configured.
+            // The OTel SDK replaces DistributedContextPropagator.Current with its own propagator,
+            // which causes SocketsHttpHandler's internal DiagnosticsHandler to overwrite Datadog
+            // trace context headers on forwarded requests.
+            services.AddOpenTelemetry()
+                .ConfigureResource(r => r.AddService("yarp-sample"))
+                .WithTracing(tracing => tracing
+                    .AddAspNetCoreInstrumentation()
+                    .AddHttpClientInstrumentation()
+                    .AddOtlpExporter(o =>
+                    {
+                        // Use a non-routable endpoint so exports silently fail
+                        o.Endpoint = new Uri("http://192.0.2.1:4317");
+                    }));
+#endif
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
