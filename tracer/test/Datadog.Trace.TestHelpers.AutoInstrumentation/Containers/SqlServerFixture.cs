@@ -22,9 +22,9 @@ public class SqlServerFixture : ContainerFixture
     {
         if (_container is null)
         {
-            // No container was started; SQLSERVER_CONNECTION_STRING was already
-            // set externally (e.g., by the Nuke build) or the sample will fall
-            // back to LocalDB.
+            // SQLSERVER_CONNECTION_STRING was already set externally (e.g., by
+            // the CI pipeline pointing at LocalDB) or the sample will fall back
+            // to its default connection string.
             yield break;
         }
 
@@ -34,14 +34,14 @@ public class SqlServerFixture : ContainerFixture
         // the peer.service source from out.host to db.name.
         var host = _container.Hostname;
         var port = _container.GetMappedPublicPort(MsSqlBuilder.MsSqlPort);
-        var connectionString = $"Server={host},{port};User=sa;Password=Strong!Passw0rd";
+        var connectionString = $"Server={host},{port};User=sa;Password=Strong!Passw0rd;TrustServerCertificate=True";
         yield return new("SQLSERVER_CONNECTION_STRING", connectionString);
     }
 
     protected override async Task InitializeResources(Action<string, object> registerResource)
     {
-        // If the connection string is already provided (e.g., by the Nuke build
-        // pointing at a pre-installed SQL Server), skip container creation.
+        // If a connection string is already provided (e.g., CI pipeline pointing
+        // at LocalDB or a pre-existing SQL Server), skip container creation.
         if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("SQLSERVER_CONNECTION_STRING")))
         {
             return;
