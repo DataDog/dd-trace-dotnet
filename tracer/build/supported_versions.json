@@ -1258,16 +1258,16 @@
     "integrationName": "SqlClient",
     "assemblyName": "Microsoft.Data.SqlClient",
     "minAssemblyVersionInclusive": "1.0.0",
-    "maxAssemblyVersionInclusive": "6.65535.65535",
+    "maxAssemblyVersionInclusive": "7.65535.65535",
     "packages": [
       {
         "name": "Microsoft.Data.SqlClient",
         "minVersionAvailableInclusive": "1.0.19239.1",
         "minVersionSupportedInclusive": "1.0.19239.1",
         "minVersionTestedInclusive": "1.1.4",
-        "maxVersionSupportedInclusive": "6.1.4",
-        "maxVersionAvailableInclusive": "6.1.4",
-        "maxVersionTestedInclusive": "6.1.4"
+        "maxVersionSupportedInclusive": "7.0.0",
+        "maxVersionAvailableInclusive": "7.0.0",
+        "maxVersionTestedInclusive": "7.0.0"
       }
     ]
   },

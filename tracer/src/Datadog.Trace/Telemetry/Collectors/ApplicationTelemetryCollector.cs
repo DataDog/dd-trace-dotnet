@@ -19,17 +19,7 @@ internal sealed class ApplicationTelemetryCollector
 
     public void RecordTracerSettings(TracerSettings tracerSettings)
     {
-        string? processTags = null;
-        if (tracerSettings.PropagateProcessTags)
-        {
-            var pTags = ProcessTags.SerializedTags;
-            if (!string.IsNullOrEmpty(pTags))
-            {
-                processTags = pTags;
-            }
-        }
-
-        RecordMutableSettings(tracerSettings, tracerSettings.Manager.InitialMutableSettings, processTags);
+        RecordMutableSettings(tracerSettings, tracerSettings.Manager.InitialMutableSettings);
 
         // The host properties can't change, so only need to set them the first time
         if (Volatile.Read(ref _hostData) is not null)
@@ -56,9 +46,6 @@ internal sealed class ApplicationTelemetryCollector
     }
 
     public void RecordMutableSettings(TracerSettings tracerSettings, MutableSettings mutableSettings)
-        => RecordMutableSettings(tracerSettings, mutableSettings, null);
-
-    private void RecordMutableSettings(TracerSettings tracerSettings, MutableSettings mutableSettings, string? processTags)
     {
         // Try to retrieve config based Git Info
         GitMetadata? gitMetadata;
@@ -73,6 +60,16 @@ internal sealed class ApplicationTelemetryCollector
             gitMetadata = Volatile.Read(ref _gitMetadata);
         }
 
+        string? processTags = null;
+        if (tracerSettings.PropagateProcessTags)
+        {
+            var pTags = mutableSettings.ProcessTags?.SerializedTags;
+            if (!string.IsNullOrEmpty(pTags))
+            {
+                processTags = pTags;
+            }
+        }
+
         var frameworkDescription = FrameworkDescription.Instance;
         var application = new ApplicationTelemetryData(
             serviceName: mutableSettings.DefaultServiceName,
@@ -85,7 +82,7 @@ internal sealed class ApplicationTelemetryCollector
             runtimeVersion: frameworkDescription.ProductVersion,
             commitSha: gitMetadata?.CommitSha,
             repositoryUrl: gitMetadata?.RepositoryUrl,
-            processTags: processTags ?? Volatile.Read(ref _applicationData)?.ProcessTags);
+            processTags: processTags);
 
         Interlocked.Exchange(ref _applicationData, application);
     }
