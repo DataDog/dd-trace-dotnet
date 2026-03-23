@@ -102,8 +102,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 
             settings.AddSimpleScrubber("out.host: localhost", "out.host: sqlserver");
             settings.AddSimpleScrubber("out.host: (localdb)\\MSSQLLocalDB", "out.host: sqlserver");
+            settings.AddRegexScrubber(new Regex(@"out\.host: [\d.]+,\d+"), "out.host: sqlserver");
             settings.AddSimpleScrubber("peer.service: localhost", "peer.service: sqlserver");
             settings.AddSimpleScrubber("peer.service: (localdb)\\MSSQLLocalDB", "peer.service: sqlserver");
+            settings.AddRegexScrubber(new Regex(@"peer\.service: [\d.]+,\d+"), "peer.service: sqlserver");
             settings.AddRegexScrubber(new Regex("dd.instrumentation.time_ms: \\d+.\\d+"), "dd.instrumentation.time_ms: 123.456");
 
             var fileName = nameof(SystemDataSqlClientTests);
