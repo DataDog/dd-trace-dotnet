@@ -38,7 +38,7 @@ internal sealed class TracerFlareManager : ITracerFlareManager
 
     private string? _debugEnabledConfigPath;
     private ISubscription? _subscription;
-    private Timer? _resetTimer = null;
+    private Timer? _resetTimer;
 
     private bool _wasDebugLogEnabled;
 
@@ -54,7 +54,7 @@ internal sealed class TracerFlareManager : ITracerFlareManager
         _discoveryService = discoveryService;
     }
 
-    public bool? CanSendTracerFlare { get; private set; } = null;
+    public bool? CanSendTracerFlare { get; private set; }
 
     public void Start()
     {

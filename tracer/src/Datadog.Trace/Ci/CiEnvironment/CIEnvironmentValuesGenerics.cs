@@ -133,7 +133,7 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
                 var fieldName = field.GetValue(null) as string;
                 if (!StringUtil.IsNullOrEmpty(fieldName) && values.TryGetValue<string>(fieldName, out var value))
                 {
-                    sb.AppendFormat("\t{0}={1}{2}", fieldName, value == string.Empty ? "(empty)" : $"\"{value}\"", Environment.NewLine);
+                    sb.AppendFormat("\t{0}={1}{2}", fieldName, string.IsNullOrEmpty(value) ? "(empty)" : $"\"{value}\"", Environment.NewLine);
                 }
             }
 
@@ -449,7 +449,11 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
                             Environment.OSVersion.Platform == PlatformID.MacOSX)
                                ? ValueProvider.GetValue(PlatformKeys.Ci.Home)
                                : ValueProvider.GetValue(PlatformKeys.Ci.UserProfile);
+#if NETCOREAPP
+            path = string.Concat(homePath, path.AsSpan(1));
+#else
             path = homePath + path.Substring(1);
+#endif
         }
 
         return path;

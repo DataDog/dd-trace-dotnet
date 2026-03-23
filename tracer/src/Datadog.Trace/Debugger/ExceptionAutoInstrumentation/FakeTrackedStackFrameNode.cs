@@ -29,7 +29,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             {
                 ClearNonRelevantChildNodes();
 
-                if (ActiveChildNodes?.Any() == true)
+                if (ActiveChildNodes?.Count > 0)
                 {
                     var firstChild = ActiveChildNodes.First();
                     return firstChild.LeaveSequenceHash;

@@ -142,7 +142,7 @@ namespace Datadog.Trace.PlatformHelpers
                 var tuple = ParseControllerAndPathFromCgroupLine(line);
                 if (tuple is not null
                  && !string.IsNullOrEmpty(tuple.Item2)
-                 && (tuple.Item1 == string.Empty || string.Equals(tuple.Item1, "memory", StringComparison.OrdinalIgnoreCase)))
+                 && (string.IsNullOrEmpty(tuple.Item1) || string.Equals(tuple.Item1, "memory", StringComparison.OrdinalIgnoreCase)))
                 {
                     string controller = tuple.Item1;
                     string cgroupNodePath = tuple.Item2;
