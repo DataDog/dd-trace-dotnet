@@ -330,14 +330,15 @@ namespace Datadog.Trace
                 Tags.RemoveTag(Trace.Tags.Propagated.DecisionMaker);
             }
 
-            // set Knuth sampling rate as a propagated tag for agent and rule-based sampling
+            // set Knuth sampling rate as a propagated tag for agent and rule-based sampling.
+            // use TryAddTag to preserve the original rate, consistent with AppliedSamplingRate ??= rate above.
             if (rate is { } samplingRate && mechanism is Sampling.SamplingMechanism.AgentRate
                                                       or Sampling.SamplingMechanism.LocalTraceSamplingRule
                                                       or Sampling.SamplingMechanism.RemoteAdaptiveSamplingRule
                                                       or Sampling.SamplingMechanism.RemoteUserSamplingRule)
             {
                 // format with up to 6 significant digits, no trailing zeros
-                Tags.SetTag(Trace.Tags.Propagated.KnuthSamplingRate, samplingRate.ToString("G6", CultureInfo.InvariantCulture));
+                Tags.TryAddTag(Trace.Tags.Propagated.KnuthSamplingRate, samplingRate.ToString("G6", CultureInfo.InvariantCulture));
             }
 
             if (notifyDistributedTracer)
