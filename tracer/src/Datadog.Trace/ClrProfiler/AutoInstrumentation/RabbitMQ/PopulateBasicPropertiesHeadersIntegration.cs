@@ -42,9 +42,25 @@ public sealed class PopulateBasicPropertiesHeadersIntegration
     internal static CallTargetReturn<TReturn?> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception? exception, in CallTargetState state)
     {
         var tracer = Tracer.Instance;
-        var activeSpan = tracer.ActiveScope?.Span;
-        if (activeSpan is not Span { Tags: RabbitMQTags tags } span
-            || !RabbitMQIntegration.IsRabbitMqSpan(tracer, span, SpanKinds.Producer))
+
+        // Walk the internal scope chain to find the dd-trace RabbitMQ producer span.
+        Span? span = null;
+        RabbitMQTags? tags = null;
+        var scope = tracer.InternalActiveScope;
+        while (scope is not null)
+        {
+            if (scope.Span is Span { Tags: RabbitMQTags candidateTags } candidateSpan
+                && RabbitMQIntegration.IsRabbitMqSpan(tracer, candidateSpan, SpanKinds.Producer))
+            {
+                span = candidateSpan;
+                tags = candidateTags;
+                break;
+            }
+
+            scope = scope.Parent;
+        }
+
+        if (span is null || tags is null)
         {
             // We're not in a RabbitMQ span "produce", so bail out - either
             // we didn't create an active scope for some reason (e.g integration disabled),
