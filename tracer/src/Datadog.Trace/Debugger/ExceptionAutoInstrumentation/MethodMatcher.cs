@@ -403,9 +403,16 @@ internal static class MethodMatcher
                 var lastDotBeforeStateMachine = fullName.LastIndexOf('.', stateMachineIndex);
                 if (lastDotBeforeStateMachine > 0)
                 {
+#if NETCOREAPP
+                    normalizedName = string.Concat(
+                        fullName.AsSpan(0, lastDotBeforeStateMachine),
+                        "+",
+                        fullName.AsSpan(lastDotBeforeStateMachine + 1));
+#else
                     normalizedName = fullName.Substring(0, lastDotBeforeStateMachine) +
                                      "+" +
                                      fullName.Substring(lastDotBeforeStateMachine + 1);
+#endif
                 }
             }
         }

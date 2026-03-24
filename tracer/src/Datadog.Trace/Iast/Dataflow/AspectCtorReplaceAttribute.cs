@@ -13,12 +13,12 @@ namespace Datadog.Trace.Iast.Dataflow;
 internal class AspectCtorReplaceAttribute : AspectAttribute
 {
     public AspectCtorReplaceAttribute(string targetMethod)
-        : base(targetMethod, string.Empty, new int[0], new bool[0], new AspectFilter[0], AspectType.Default)
+        : base(targetMethod, string.Empty, [], [], [], AspectType.Default)
     {
     }
 
     public AspectCtorReplaceAttribute(string targetMethod, params AspectFilter[] filters)
-        : base(targetMethod, string.Empty, new int[0], new bool[0], filters, AspectType.Default)
+        : base(targetMethod, string.Empty, [], [], filters, AspectType.Default)
     {
     }
 }

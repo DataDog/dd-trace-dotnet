@@ -377,6 +377,11 @@ namespace Datadog.Trace
         internal const string KafkaBootstrapServers = "messaging.kafka.bootstrap.servers";
 
         /// <summary>
+        /// The unique identifier for the Kafka cluster
+        /// </summary>
+        internal const string KafkaClusterId = "messaging.kafka.cluster_id";
+
+        /// <summary>
         /// The partition associated with a record
         /// </summary>
         internal const string KafkaPartition = "kafka.partition";
@@ -804,6 +809,13 @@ namespace Datadog.Trace
         /// Holds the original value for Service when Service is overriden after span creation
         /// </summary>
         internal const string BaseService = "_dd.base_service";
+
+        /// <summary>
+        /// Indicates the source that set the service name on a span.
+        /// The value is the integration name (e.g. "redis", "kafka") when the service name
+        /// was set by an integration, or null when the default service name is used.
+        /// </summary>
+        internal const string ServiceNameSource = "_dd.svc_src";
 
         /// <summary>
         /// Tag used to propagate the unsigned  64 bits last parent Id

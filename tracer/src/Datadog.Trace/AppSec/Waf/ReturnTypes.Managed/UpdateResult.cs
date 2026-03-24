@@ -37,7 +37,7 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
         private UpdateResult(string errorMessage, in DdwafObjectStruct diagObject, IntPtr builderHandle = default(IntPtr), WafLibraryInvoker? invoker = null, IEncoder? encoder = null)
             : this(diagObject, builderHandle, IntPtr.Zero, invoker, encoder)
         {
-            ErrorMessage = ErrorMessage != string.Empty ? string.Join(Environment.NewLine, errorMessage, ErrorMessage) : errorMessage;
+            ErrorMessage = !string.IsNullOrEmpty(ErrorMessage) ? string.Join(Environment.NewLine, errorMessage, ErrorMessage) : errorMessage;
         }
 
         internal bool Success => WafHandle != IntPtr.Zero;

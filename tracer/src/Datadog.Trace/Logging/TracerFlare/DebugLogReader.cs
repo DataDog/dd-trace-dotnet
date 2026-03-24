@@ -197,7 +197,7 @@ internal static class DebugLogReader
 
     public sealed class WriteCountingStream(Stream innerStream) : LeaveOpenDelegatingStream(innerStream)
     {
-        private long _position = 0;
+        private long _position;
 
         public override long Position
         {

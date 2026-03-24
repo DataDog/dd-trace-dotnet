@@ -24,7 +24,7 @@ internal sealed class ExecutedTelemetryHelper
     private int[] _executedSinks = new int[Trace.Telemetry.Metrics.IastVulnerabilityTypeExtensions.Length];
     private int[] _executedSources = new int[Trace.Telemetry.Metrics.IastSourceTypeExtensions.Length];
     private int[] _supressedVulnerabilities = new int[Trace.Telemetry.Metrics.IastVulnerabilityTypeExtensions.Length];
-    private int _executedPropagations = 0;
+    private int _executedPropagations;
     private object _metricsLock = new();
 
     static ExecutedTelemetryHelper()
