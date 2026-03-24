@@ -24,6 +24,7 @@ using Datadog.Trace.LibDatadog.ServiceDiscovery;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.TracerFlare;
+using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Processors;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.RemoteConfigurationManagement;
@@ -77,6 +78,7 @@ namespace Datadog.Trace
             ITracerFlareManager tracerFlareManager,
             ISpanEventsManager spanEventsManager,
             FeatureFlagsModule featureFlagsModule,
+            ServiceRemappingHash serviceRemappingHash,
             ITraceProcessor[] traceProcessors = null)
         {
             Settings = settings;
@@ -107,6 +109,8 @@ namespace Datadog.Trace
             TracerFlareManager = tracerFlareManager;
             SpanEventsManager = spanEventsManager;
             FeatureFlags = featureFlagsModule;
+
+            ServiceRemappingHash = serviceRemappingHash;
 
             SpanContextPropagator = SpanContextPropagatorFactory.GetSpanContextPropagator(settings.PropagationStyleInject, settings.PropagationStyleExtract, settings.PropagationExtractFirstOnly, settings.PropagationBehaviorExtract);
             UpdatePerTraceSettings(settings.Manager.InitialMutableSettings);
@@ -186,6 +190,8 @@ namespace Datadog.Trace
         public PerTraceSettings PerTraceSettings => Volatile.Read(ref _perTraceSettings);
 
         public SpanContextPropagator SpanContextPropagator { get; }
+
+        public ServiceRemappingHash ServiceRemappingHash { get; }
 
         /// <summary>
         /// Replaces the global <see cref="TracerManager"/> settings. This affects all <see cref="Tracer"/> instances

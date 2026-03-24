@@ -118,7 +118,7 @@ namespace Datadog.Trace.Tests.Configuration
         private class LockedTracerManager : TracerManager, ILockedTracer
         {
             public LockedTracerManager(TracerSettings tracerSettings)
-                : base(tracerSettings, null, Mock.Of<IScopeManager>(), null, null, null, null, null, null, null, null, null, null, null, null, null, null)
+                : base(tracerSettings, agentWriter: null, Mock.Of<IScopeManager>(), statsd: null, runtimeMetricsWriter: null, directLogSubmission: null, telemetry: null, discoveryService: null, dataStreamsManager: null, gitMetadataTagsProvider: null, traceSampler: null, spanSampler: null, remoteConfigurationManager: null, dynamicConfigurationManager: null, tracerFlareManager: null, spanEventsManager: null, featureFlagsModule: null, serviceRemappingHash: null)
             {
             }
         }

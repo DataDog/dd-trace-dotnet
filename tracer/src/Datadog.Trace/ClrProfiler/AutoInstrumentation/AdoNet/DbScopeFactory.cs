@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DbScopeFactory));
         private static bool _dbCommandCachingLogged;
 
-        private static Scope? CreateDbCommandScope(Tracer tracer, IDbCommand command, IntegrationId integrationId, string dbType, string operationName, string serviceName, string? serviceNameSource, string baseHash, ref DbCommandCache.TagsCacheItem tagsFromConnectionString)
+        private static Scope? CreateDbCommandScope(Tracer tracer, IDbCommand command, IntegrationId integrationId, string dbType, string operationName, string serviceName, string? serviceNameSource, string? baseHash, ref DbCommandCache.TagsCacheItem tagsFromConnectionString)
         {
             var perTraceSettings = tracer.CurrentTraceSettings;
             if (!perTraceSettings.Settings.IsIntegrationEnabled(integrationId) || !perTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AdoNet))
@@ -262,9 +262,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 }
             }
 
-            public static Scope? CreateDbCommandScope(Tracer tracer, IDbCommand command, string baseHash)
+            public static Scope? CreateDbCommandScope(Tracer tracer, IDbCommand command)
             {
                 var commandType = command.GetType();
+                var baseHash = tracer.TracerManager.ServiceRemappingHash?.B64Value;
 
                 if (commandType == CommandType && DbTypeName is not null && OperationName is not null)
                 {

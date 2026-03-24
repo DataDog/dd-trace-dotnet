@@ -17,18 +17,50 @@ namespace Datadog.Trace;
 /// Used by DBM to retrieve all the tag values from the spans, from just a single parameter (this hash),
 /// Used by DSM in the pathway to identify different sources that could have been service-remapped
 /// </summary>
-internal static class ServiceRemappingHash
+internal sealed class ServiceRemappingHash
 {
+    private readonly ProcessTags? _processTags;
+
+    public ServiceRemappingHash(ProcessTags? processTags)
+    {
+        _processTags = processTags;
+        if (processTags != null)
+        {
+            // containers tags hash is always null at creation, because we discover it later (if any)
+            B64Value = Compute(processTags.SerializedTags, containerTagsHash: null);
+        }
+    }
+
+    /// <summary>
+    /// Gets the container tags hash received from the agent, used by DBM/DSM
+    /// This is set when we receive a value for it in an http response from the agent
+    /// </summary>
+    public string? ContainerTagsHash
+    {
+        get;
+        private set;
+    }
+
     /// <summary>
     /// Gets the base64 representation of the hash
     /// </summary>
-    public static string B64Value
+    public string? B64Value
     {
-        get => Volatile.Read(ref field) ?? Recompute(ProcessTags.SerializedTags, ContainerMetadata.Instance.ContainerTagsHash);
-        private set => Volatile.Write(ref field, value);
+        get;
+        private set;
     }
 
-    public static string Recompute(string processTags, string? containerTagsHash)
+    public void UpdateContainerTagsHash(string containerTagsHash)
+    {
+        ContainerTagsHash = containerTagsHash;
+
+        if (_processTags != null)
+        {
+            B64Value = Compute(_processTags.SerializedTags, containerTagsHash);
+        }
+    }
+
+    private static string Compute(string processTags, string? containerTagsHash)
     {
         var hash = FnvHash64.GenerateHash(processTags, FnvHash64.Version.V1);
         if (containerTagsHash != null)
@@ -36,6 +68,6 @@ internal static class ServiceRemappingHash
             hash = FnvHash64.GenerateHash(containerTagsHash, FnvHash64.Version.V1, hash);
         }
 
-        return B64Value = Convert.ToBase64String(BitConverter.GetBytes(hash));
+        return Convert.ToBase64String(BitConverter.GetBytes(hash));
     }
 }
