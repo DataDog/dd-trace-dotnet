@@ -42,7 +42,7 @@ ENV DD_REMOTE_CONFIGURATION_ENABLED=0
 
 # We explicitly set the log location to the default because in some scenarios
 # (e.g. Azure Functions) we "emulate" an AAS environment
-# Which ovverides the log directory
+# Which overrides the log directory
 ENV DD_TRACE_LOG_DIRECTORY=/var/log/datadog/dotnet
 
 ## SSI variables
