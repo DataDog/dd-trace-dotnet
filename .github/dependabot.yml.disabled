@@ -1,0 +1,106 @@
+# yaml-language-server: $schema=https://json.schemastore.org/dependabot-2.0.json
+version: 2
+
+registries:
+# Dependabot doesn't need to use this, so try to stop it doing so
+  azure-nuget:
+    type: nuget-feed
+    url: https://pkgs.dev.azure.com/datadoghq/dd-trace-dotnet/_packaging/Public_Feed/nuget/v3/index.json
+  public-nuget:
+    type: nuget-feed
+    url: https://api.nuget.org/v3/index.json
+
+
+updates:
+  # Mocked projects for vendored dependency notifications
+  - package-ecosystem: "nuget"
+    directory: "/tracer/dependabot"
+    registries: "*"
+    exclude-paths:
+      - "integrations"
+    schedule:
+      interval: "weekly" # these don't change often
+    labels:
+      - "dependencies"
+      - "area:dependabot"
+    ignore:
+      - dependency-name: "MessagePack" # Locked at a version that supports our net452 build target
+      - dependency-name: "*" # Ignore patches for all integrations
+        update-types: ["version-update:semver-patch"]
+
+  # Mocked projects for integration dependency notifications
+  - package-ecosystem: "nuget"
+    directory: "/tracer/dependabot/integrations"
+    registries: "*"
+    open-pull-requests-limit: 1
+    schedule:
+      interval: "daily"
+    labels:
+      - "dependencies"
+      - "area:dependabot"
+
+  # Azure functions explicit testing - we can't include these with our "normal" process checks
+  # Because they aren't compatible with the dotnet msbuild approach we're using
+  - package-ecosystem: "nuget"
+    directory: "/tracer/test/test-applications/azure-functions/Samples.AzureFunctions.V4Isolated"
+    registries: "*"
+    schedule:
+      interval: "daily"
+    labels:
+      - "dependencies"
+      - "area:dependabot"
+    ignore:
+      - dependency-name: "*" # Ignore patches for all integrations
+        update-types: ["version-update:semver-patch"]
+
+  # Src libraries
+  - package-ecosystem: "nuget"
+    directory: "/tracer/src"
+    # This is a hacky way to get Dependabot to care primarily about
+    # - Datadog.Trace
+    # - Datadog.Trace.OpenTracing
+    # - Datadog.Trace.BenchmarkDotNet
+    exclude-paths:
+      - "Datadog.AutoInstrumentation.Generator/**"
+      - "Datadog.AzureFunctions/**"
+      - "Datadog.InstrumentedAssemblyGenerator/**"
+      - "Datadog.InstrumentedAssemblyVerification/**"
+      - "Datadog.Trace.Bundle/**"
+      - "Datadog.Trace.SourceGenerators/**"
+      - "Datadog.Trace.Tools.Analyzers/**"
+      - "Datadog.Trace.Tools.Analyzers.CodeFixes/**"
+      - "Datadog.Trace.Tools.dd_dotnet.SourceGenerators/**"
+    registries: "*"
+    schedule:
+      interval: "daily"
+    labels:
+      - "dependencies"
+    ignore:
+      ### Start Datadog.Trace.csproj ignored dependencies
+      # DiagnosticSource is kept at the lowest supported version for widest compatibility
+      - dependency-name: "System.Diagnostics.DiagnosticSource"
+
+      # AspNetCore reference libraries are kept at the lowest supported version for compatibility on netstandard2.0
+      - dependency-name: "Microsoft.AspNetCore.Hosting.Abstractions"
+      - dependency-name: "Microsoft.AspNetCore.Mvc.Abstractions"
+      - dependency-name: "Microsoft.AspNetCore.Routing"
+
+      # DuckTyping libraries are kept at the lowest supported version for compatibility on netstandard2.0
+      - dependency-name: "System.Reflection.Emit"
+      - dependency-name: "System.Reflection.Emit.Lightweight"
+      ### End Datadog.Trace.csproj ignored dependencies
+
+      # Lock Microsoft.Build.Framework for widest compatibility when instrumenting builds
+      - dependency-name: "Microsoft.Build.Framework"
+
+  - package-ecosystem: "github-actions"
+    directories:
+      - "/"
+      - "/.github/actions/*"
+      - "/.github/actions/*/*"
+    schedule:
+      interval: "monthly"
+    groups:
+      gh-actions-packages:
+        patterns:
+          - "*"
