@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Tests">
@@ -60,6 +60,9 @@
       <Filter>Helpers</Filter>
     </ClCompile>
     <ClCompile Include="LogTest.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="ManagedCodeCacheTest.cpp">
       <Filter>Tests</Filter>
     </ClCompile>
     <ClCompile Include="EnvironmentHelper.cpp">
@@ -205,6 +208,12 @@
     <ClCompile Include="ManagedThreadInfoTest.cpp">
       <Filter>Tests</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native\ManagedCodeCache.cpp">
+      <Filter>Referenced from: Datadog.Profiler.Native</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\AutoResetEvent.cpp">
+      <Filter>Referenced from: Datadog.Profiler.Native</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native\HResultConverter.h">
@@ -230,6 +239,9 @@
     </ClInclude>
     <ClInclude Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\SecurityDescriptorHelpers.h" />
     <ClInclude Include="FakeSamples.h">
+      <Filter>Helpers</Filter>
+    </ClInclude>
+    <ClInclude Include="MockProfilerInfo.h">
       <Filter>Helpers</Filter>
     </ClInclude>
     <ClInclude Include="resource.h" />

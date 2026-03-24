@@ -99,7 +99,8 @@ at Samples.AspNetMvc5.Controllers.HomeController.BadRequestWithStatusCode(Int32 
       runtime-id: Guid_1,
       span.kind: server,
       stage: prod,
-      _dd.base_service: sample
+      _dd.base_service: sample,
+      _dd.svc_src: aws-apigateway
     },
     Metrics: {
       process_id: 0,

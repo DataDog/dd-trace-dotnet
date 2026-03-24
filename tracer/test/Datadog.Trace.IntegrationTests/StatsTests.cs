@@ -184,7 +184,7 @@ namespace Datadog.Trace.IntegrationTests
                     span.ResourceName = resourceName ?? "default-resource";
                     span.Type = type ?? "default-type";
                     span.SetTag(Tags.HttpStatusCode, httpStatusCode ?? "200");
-                    span.ServiceName = serviceName ?? "default-service";
+                    span.SetService(serviceName ?? "default-service", null);
 
                     return span;
                 }

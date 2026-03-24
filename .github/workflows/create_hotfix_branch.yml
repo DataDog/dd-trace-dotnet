@@ -12,7 +12,19 @@ on:
         required: true
 
 jobs:
+  check_tag:
+    runs-on: ubuntu-latest
+    steps:
+        - name: Verify running from a tag
+          run: |
+            if [[ "${{  github.ref }}" != refs/tags/* ]]; then
+              echo "Error: This workflow can only be run from a tag"
+              echo "Current ref: ${{ github.ref }}"
+              exit 1
+            fi
+
   bump_version:
+    needs: check_tag
     runs-on: windows-latest
     permissions:
       contents: write # Push branches
