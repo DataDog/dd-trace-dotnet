@@ -212,8 +212,12 @@ namespace Datadog.Trace.Agent
                 httpStatusCode = 0;
             }
 
-            var rawGrpcStatusCode = span.GetTag(Tags.GrpcStatusCode);
-            if (rawGrpcStatusCode == null || !int.TryParse(rawGrpcStatusCode, out var grpcStatusCode))
+            // Check gRPC status code tags in priority order per CSS v1.3.0 spec
+            var rawGrpcStatusCode = span.GetTag("rpc.grpc.status_code")
+                                 ?? span.GetTag("grpc.code")
+                                 ?? span.GetTag("rpc.grpc.status.code")
+                                 ?? span.GetTag(Tags.GrpcStatusCode);
+            if (rawGrpcStatusCode is null || !int.TryParse(rawGrpcStatusCode, out var grpcStatusCode))
             {
                 grpcStatusCode = 0;
             }
