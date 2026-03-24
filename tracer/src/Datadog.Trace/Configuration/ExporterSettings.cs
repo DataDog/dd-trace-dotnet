@@ -96,8 +96,21 @@ namespace Datadog.Trace.Configuration
             // In Azure Functions (without AAS Site Extension), generate unique pipe names so each
             // function instance gets its own pipe even when sharing a hosting plan. The generated names
             // use the user-configured base name (from any config source) with a unique GUID suffix.
-            var tracesPipeName = GetAzureFunctionsTracesPipeName(rawSettings) ?? rawSettings.TracesPipeName;
-            var metricsPipeName = GetAzureFunctionsMetricsPipeName(rawSettings) ?? rawSettings.MetricsPipeName;
+            string? tracesPipeName;
+            string? metricsPipeName;
+
+            if (Util.EnvironmentHelpers.IsAzureFunctions()
+                && !Util.EnvironmentHelpers.IsUsingAzureAppServicesSiteExtension()
+                && IsCompatLayerAvailableWithPipeSupport())
+            {
+                tracesPipeName = GenerateUniquePipeName(rawSettings.TracesPipeName, "dd_trace", ConfigurationKeys.TracesPipeName);
+                metricsPipeName = GenerateUniquePipeName(rawSettings.MetricsPipeName, "dd_dogstatsd", ConfigurationKeys.MetricsPipeName);
+            }
+            else
+            {
+                tracesPipeName = rawSettings.TracesPipeName;
+                metricsPipeName = rawSettings.MetricsPipeName;
+            }
 
             var traceSettings = GetTraceTransport(
                 agentUri: rawSettings.TraceAgentUri,
@@ -336,46 +349,13 @@ namespace Datadog.Trace.Configuration
             return string.IsNullOrEmpty(traceHostname) ? DefaultDogstatsdHostname : traceHostname;
         }
 
-        private string? GetAzureFunctionsTracesPipeName(Raw rawSettings)
+        private string GenerateUniquePipeName(string? configuredBaseName, string defaultBaseName, string configKey)
         {
-            if (Util.EnvironmentHelpers.IsAzureFunctions()
-                && !Util.EnvironmentHelpers.IsUsingAzureAppServicesSiteExtension()
-                && IsCompatLayerAvailableWithPipeSupport())
-            {
-                var baseName = rawSettings.TracesPipeName;
-                if (StringUtil.IsNullOrEmpty(baseName))
-                {
-                    baseName = "dd_trace";
-                }
-
-                var name = GenerateUniquePipeName(baseName!);
-                Log.Information("Azure Functions environment detected. Using trace pipe base name '{BaseName}', generated unique pipe name: {TracesPipeName}", baseName, name);
-                _telemetry.Record(ConfigurationKeys.TracesPipeName, name, recordValue: true, ConfigurationOrigins.Calculated);
-                return name;
-            }
-
-            return null;
-        }
-
-        private string? GetAzureFunctionsMetricsPipeName(Raw rawSettings)
-        {
-            if (Util.EnvironmentHelpers.IsAzureFunctions()
-                && !Util.EnvironmentHelpers.IsUsingAzureAppServicesSiteExtension()
-                && IsCompatLayerAvailableWithPipeSupport())
-            {
-                var baseName = rawSettings.MetricsPipeName;
-                if (StringUtil.IsNullOrEmpty(baseName))
-                {
-                    baseName = "dd_dogstatsd";
-                }
-
-                var name = GenerateUniquePipeName(baseName!);
-                Log.Information("Azure Functions environment detected. Using metrics pipe base name '{BaseName}', generated unique pipe name: {MetricsPipeName}", baseName, name);
-                _telemetry.Record(ConfigurationKeys.MetricsPipeName, name, recordValue: true, ConfigurationOrigins.Calculated);
-                return name;
-            }
-
-            return null;
+            var baseName = StringUtil.IsNullOrEmpty(configuredBaseName) ? defaultBaseName : configuredBaseName!;
+            var name = GenerateUniquePipeName(baseName);
+            Log.Information("Azure Functions environment detected. Using pipe base name '{BaseName}', generated unique pipe name: {PipeName}", baseName, name);
+            _telemetry.Record(configKey, name, recordValue: true, ConfigurationOrigins.Calculated);
+            return name;
         }
 
         /// <summary>
