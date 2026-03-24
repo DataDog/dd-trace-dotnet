@@ -1842,6 +1842,7 @@ partial class Build
                     // Don't apply a custom filter to these tests, they should all be able to be run
                     .When(!string.IsNullOrWhiteSpace(AddAreaFilter(Filter)), c => c.SetFilter(AddAreaFilter(Filter)))
                     .When(TestAllPackageVersions, o => o.SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
+                    .When(IsWin, o => o.SetProcessEnvironmentVariable("SQLSERVER_CONNECTION_STRING", @"Server=(localdb)\MSSQLLocalDB;Integrated Security=true;Connection Timeout=60"))
                     .When(CodeCoverageEnabled, ConfigureCodeCoverage)
                     .CombineWith(parallelJobs, (s, project) => s
                         .EnableTrxLogOutput(GetResultsDirectory(project))
@@ -1864,6 +1865,7 @@ partial class Build
                     .SetLogsDirectory(TestLogsDirectory)
                     .When(!string.IsNullOrWhiteSpace(filter), c => c.SetFilter(filter))
                     .When(TestAllPackageVersions, o => o.SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
+                    .When(IsWin, o => o.SetProcessEnvironmentVariable("SQLSERVER_CONNECTION_STRING", @"Server=(localdb)\MSSQLLocalDB;Integrated Security=true;Connection Timeout=60"))
                     .When(CodeCoverageEnabled, ConfigureCodeCoverage)
                     .CombineWith(ClrProfilerIntegrationTests, (s, project) => s
                         .EnableTrxLogOutput(GetResultsDirectory(project))
