@@ -13,7 +13,6 @@ using System.Threading;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.DataStreamsMonitoring.TransactionTracking;
-using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Datadog.Sketches;
 using Datadog.Trace.Vendors.MessagePack;
 
@@ -126,9 +125,9 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
             long bucketDurationNs,
             List<SerializableStatsBucket> statsBuckets,
             List<SerializableBacklogBucket> backlogsBuckets,
-            DataStreamsTransactionContainer dataStreamsTransactionContainer)
+            byte[] transactionData)
         {
-            var hasTransactions = dataStreamsTransactionContainer.Size() > 0;
+            var hasTransactions = transactionData.Length > 0;
             var withProcessTags = _writeProcessTags && _processTags?.TagsList.Count > 0;
             var processTags = _writeProcessTags ? _processTags?.TagsList : null;
             var bytesWritten = 0;
@@ -160,19 +159,15 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
 
             if (hasTransactions)
             {
-                var startBytes = bytesWritten;
                 var currentTs = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
                 var bucketStartTime = currentTs - (currentTs % bucketDurationNs);
                 bytesWritten += WriteBucketsHeader(stream, bucketStartTime, bucketDurationNs, 0, 0, true);
 
                 bytesWritten += MessagePackBinary.WriteStringBytes(stream, _transactions);
-                bytesWritten += MessagePackBinary.WriteBytes(stream, dataStreamsTransactionContainer.GetDataAndReset());
+                bytesWritten += MessagePackBinary.WriteBytes(stream, transactionData);
 
                 bytesWritten += MessagePackBinary.WriteStringBytes(stream, _transactionCheckpointIds);
                 bytesWritten += MessagePackBinary.WriteBytes(stream, DataStreamsTransactionInfo.GetCacheBytes());
-
-                var transactionsSize = bytesWritten - startBytes;
-                Console.WriteLine($@"### Written {transactionsSize} for transactions");
             }
 
             foreach (var backlogBucket in backlogsBuckets)

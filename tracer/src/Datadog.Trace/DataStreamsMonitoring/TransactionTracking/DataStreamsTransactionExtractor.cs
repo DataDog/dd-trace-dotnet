@@ -4,16 +4,25 @@
 // </copyright>
 #nullable enable
 
-using System;
-using System.Runtime.Serialization;
+using System.Collections.Generic;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Converters;
 
 namespace Datadog.Trace.DataStreamsMonitoring.TransactionTracking;
 
-[Serializable]
 internal sealed class DataStreamsTransactionExtractor
 {
+    // issue 10: static dictionary avoids a switch allocation on every access
+    private static readonly Dictionary<string, Type> TypeMap = new(System.StringComparer.Ordinal)
+    {
+        ["HTTP_OUT_HEADERS"] = Type.HttpOutHeaders,
+        ["HTTP_IN_HEADERS"] = Type.HttpInHeaders,
+        ["KAFKA_CONSUME_HEADERS"] = Type.KafkaConsumeHeaders,
+        ["KAFKA_PRODUCE_HEADERS"] = Type.KafkaProduceHeaders,
+    };
+
+    // issue 8: cached so the dictionary lookup runs only once per instance
+    private Type? _cachedType;
+
     public enum Type
     {
         Unknown,
@@ -40,19 +49,12 @@ internal sealed class DataStreamsTransactionExtractor
     {
         get
         {
-            switch (StringType)
+            if (_cachedType is null)
             {
-                case "HTTP_OUT_HEADERS":
-                    return Type.HttpOutHeaders;
-                case "HTTP_IN_HEADERS":
-                    return Type.HttpInHeaders;
-                case "KAFKA_CONSUME_HEADERS":
-                    return Type.KafkaConsumeHeaders;
-                case "KAFKA_PRODUCE_HEADERS":
-                    return Type.KafkaProduceHeaders;
-                default:
-                    return Type.Unknown;
+                _cachedType = TypeMap.TryGetValue(StringType, out var t) ? t : Type.Unknown;
             }
+
+            return _cachedType.Value;
         }
     }
 }

@@ -16,20 +16,20 @@ internal readonly struct DataStreamsTransactionInfo
     private static readonly ConcurrentDictionary<string, int> Cache = new();
     private static int _counter;
 
-    private readonly string _id;
+    private readonly byte[] _idBytes; // issue 12: cache UTF-8 encoding once
     private readonly long _timestamp;
     private readonly int _checkpointId;
 
     internal DataStreamsTransactionInfo(string id, long timestamp, string checkpoint)
     {
-        _id = id;
+        _idBytes = Encoding.UTF8.GetBytes(id);
         _timestamp = timestamp;
         _checkpointId = Cache.GetOrAdd(checkpoint, Interlocked.Increment(ref _counter));
     }
 
     internal long TimestampNs { get => _timestamp; }
 
-    internal string TransactionId { get => _id;  }
+    internal string TransactionId { get => Encoding.UTF8.GetString(_idBytes); }
 
     internal static byte[] GetCacheBytes()
     {
@@ -61,35 +61,42 @@ internal readonly struct DataStreamsTransactionInfo
         return trimmed;
     }
 
-    // ClearCache is for using in tests only
+    // ClearCache is for using in tests only — resets both the map and the counter so IDs are deterministic
     internal static void ClearCache()
     {
         Cache.Clear();
+        Interlocked.Exchange(ref _counter, 0);
+    }
+
+    // Issue 6: callers that own the destination buffer can write directly, avoiding an intermediate allocation.
+    internal int GetByteCount() => _idBytes.Length + 10;
+
+    internal void WriteTo(byte[] buffer, int offset)
+    {
+        // up to 1 byte for checkpoint id
+        buffer[offset] = (byte)_checkpointId;
+
+        // 8 bytes for timestamp
+        buffer[offset + 1] = (byte)(_timestamp >> 56);
+        buffer[offset + 2] = (byte)(_timestamp >> 48);
+        buffer[offset + 3] = (byte)(_timestamp >> 40);
+        buffer[offset + 4] = (byte)(_timestamp >> 32);
+        buffer[offset + 5] = (byte)(_timestamp >> 24);
+        buffer[offset + 6] = (byte)(_timestamp >> 16);
+        buffer[offset + 7] = (byte)(_timestamp >> 8);
+        buffer[offset + 8] = (byte)_timestamp;
+
+        // id size, up to 256 bytes
+        buffer[offset + 9] = (byte)_idBytes.Length;
+
+        // copy the ID
+        Array.Copy(_idBytes, 0, buffer, offset + 10, _idBytes.Length);
     }
 
     internal byte[] GetBytes()
     {
-        var idBytes = Encoding.UTF8.GetBytes(_id);
-        var result = new byte[idBytes.Length + 10];
-
-        // up to 1 byte for checkpoint id
-        result[0] = (byte)_checkpointId;
-
-        // 8 bytes for timestamp
-        result[1] = (byte)(_timestamp >> 56);
-        result[2] = (byte)(_timestamp >> 48);
-        result[3] = (byte)(_timestamp >> 40);
-        result[4] = (byte)(_timestamp >> 32);
-        result[5] = (byte)(_timestamp >> 24);
-        result[6] = (byte)(_timestamp >> 16);
-        result[7] = (byte)(_timestamp >> 8);
-        result[8] = (byte)_timestamp;
-
-        // id size, up to 256 bytes
-        result[9] = (byte)(idBytes.Length);
-
-        // copy the ID
-        Array.Copy(idBytes, 0, result, 10, idBytes.Length);
+        var result = new byte[GetByteCount()];
+        WriteTo(result, 0);
         return result;
     }
 }

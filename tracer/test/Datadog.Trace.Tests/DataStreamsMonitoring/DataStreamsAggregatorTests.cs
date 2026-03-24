@@ -11,6 +11,7 @@ using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DataStreamsMonitoring.Aggregation;
 using Datadog.Trace.DataStreamsMonitoring.Hashes;
+using Datadog.Trace.DataStreamsMonitoring.TransactionTracking;
 using Datadog.Trace.DataStreamsMonitoring.Utils;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers.TestTracer;
@@ -125,6 +126,38 @@ public class DataStreamsAggregatorTests
         AssertStats(stats, TimestampType.Origin, BucketStartTimeForTimestamp(T2 - (5 * OneSecondNs)));
         AssertBucket(stats, hash: 2, CreateSketch(1, 5), CreateSketch(1, 2));
         AssertBucket(stats, hash: 3, CreateSketch(5), CreateSketch(2));
+    }
+
+    // Issue 11: serializing only transactions (no stats/backlogs) must still return true and consume the data.
+    [Fact]
+    public async Task Serialize_ReturnsTrue_WhenOnlyTransactionsPresent()
+    {
+        await using var tracer = TracerHelper.Create();
+        var aggregator = new DataStreamsAggregator(
+            new DataStreamsMessagePackFormatter(tracer.Settings, new ProfilerSettings(ProfilerState.Disabled)),
+            BucketDurationMs);
+
+        aggregator.AddTransaction(new DataStreamsTransactionInfo("tx-1", DateTimeOffset.UtcNow.ToUnixTimeNanoseconds(), "checkpoint"));
+
+        using var stream = new MemoryStream();
+        aggregator.Serialize(stream, long.MaxValue).Should().BeTrue();
+
+        // second call must return false — transactions were already consumed on the first call
+        using var stream2 = new MemoryStream();
+        aggregator.Serialize(stream2, long.MaxValue).Should().BeFalse();
+    }
+
+    // Issue 11: Serialize returns false when nothing has been added.
+    [Fact]
+    public async Task Serialize_ReturnsFalse_WhenEmpty()
+    {
+        await using var tracer = TracerHelper.Create();
+        var aggregator = new DataStreamsAggregator(
+            new DataStreamsMessagePackFormatter(tracer.Settings, new ProfilerSettings(ProfilerState.Disabled)),
+            BucketDurationMs);
+
+        using var stream = new MemoryStream();
+        aggregator.Serialize(stream, long.MaxValue).Should().BeFalse();
     }
 
     private static DataStreamsAggregator CreateAggregatorWithData(Tracer tracer, long t1, long t2)

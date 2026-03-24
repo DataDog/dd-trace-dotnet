@@ -26,20 +26,19 @@ internal sealed class DataStreamsTransactionContainer
     {
         lock (_lock)
         {
-            // check if we need to resize
-            var transactionBytes = transactionInfo.GetBytes();
+            var byteCount = transactionInfo.GetByteCount();
 
-            // resize buffer if needed
-            if (_data.Length - _size <= transactionBytes.Length)
+            // issue 1: use < (not <=) so we only resize when space is genuinely insufficient
+            if (_data.Length - _size < byteCount)
             {
-                var resized = new byte[_data.Length * 2];
+                var resized = new byte[Math.Max(_data.Length * 2, _size + byteCount)];
                 Array.Copy(_data, 0, resized, 0, _size);
                 _data = resized;
             }
 
-            // add data
-            Array.Copy(transactionBytes, 0, _data, _size, transactionBytes.Length);
-            _size += transactionBytes.Length;
+            // issue 6: write directly into the buffer — no intermediate byte[] allocation
+            transactionInfo.WriteTo(_data, _size);
+            _size += byteCount;
         }
     }
 

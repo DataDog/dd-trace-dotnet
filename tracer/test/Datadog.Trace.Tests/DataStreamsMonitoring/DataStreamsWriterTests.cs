@@ -76,7 +76,6 @@ public class DataStreamsWriterTests
         var writer = CreateWriter(api, out var discovery, bucketDurationMs);
         TriggerSupportUpdate(discovery, isSupported: true);
 
-        DataStreamsTransactionInfo.ClearCache();
         writer.AddTransaction(new DataStreamsTransactionInfo("id", 1, "checkpoint"));
         await api.WaitForCount(1, 30_000);
 
