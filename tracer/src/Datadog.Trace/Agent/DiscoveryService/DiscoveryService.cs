@@ -352,6 +352,21 @@ namespace Datadog.Trace.Agent.DiscoveryService
             var spanKindsStatsComputed = (jObject["span_kinds_stats_computed"] as JArray)?.Values<string>().Where(x => !string.IsNullOrEmpty(x)).ToList();
             var obfuscationVersion = jObject["obfuscation_version"]?.Value<int>() ?? 0;
 
+            // Parse trace filter configuration
+            var filterTags = jObject["filter_tags"];
+            var filterTagsRegex = jObject["filter_tags_regex"];
+            var ignoreResources = (jObject["ignore_resources"] as JArray)?.Values<string>().Where(x => !string.IsNullOrEmpty(x)).ToList();
+            var filterTagsRequire = (filterTags?["require"] as JArray)?.Values<string>().Where(x => !string.IsNullOrEmpty(x)).ToList();
+            var filterTagsReject = (filterTags?["reject"] as JArray)?.Values<string>().Where(x => !string.IsNullOrEmpty(x)).ToList();
+            var filterTagsRegexRequire = (filterTagsRegex?["require"] as JArray)?.Values<string>().Where(x => !string.IsNullOrEmpty(x)).ToList();
+            var filterTagsRegexReject = (filterTagsRegex?["reject"] as JArray)?.Values<string>().Where(x => !string.IsNullOrEmpty(x)).ToList();
+
+            AgentTraceFilterConfig? traceFilterConfig = null;
+            if (ignoreResources is not null || filterTagsRequire is not null || filterTagsReject is not null || filterTagsRegexRequire is not null || filterTagsRegexReject is not null)
+            {
+                traceFilterConfig = new AgentTraceFilterConfig(filterTagsRequire!, filterTagsReject!, filterTagsRegexRequire!, filterTagsRegexReject!, ignoreResources!);
+            }
+
             var discoveredEndpoints = (jObject["endpoints"] as JArray)?.Values<string>().ToArray();
             string? configurationEndpoint = null;
             string? debuggerEndpoint = null;
@@ -443,7 +458,7 @@ namespace Datadog.Trace.Agent.DiscoveryService
                 peerTags: peerTags!,
                 spanKindsStatsComputed: spanKindsStatsComputed!,
                 obfuscationVersion: obfuscationVersion,
-                spanDerivedPrimaryTags: spanDerivedPrimaryTags!);
+                traceFilterConfig: traceFilterConfig);
 
             // Save the hash, whether the details we care about changed or not
             _configurationHash = HexString.ToHexString(sha256.Hash);

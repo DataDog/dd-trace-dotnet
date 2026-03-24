@@ -30,7 +30,7 @@ internal sealed record AgentConfiguration
         List<string>? peerTags = null,
         List<string>? spanKindsStatsComputed = null,
         int obfuscationVersion = 0,
-        List<string>? spanDerivedPrimaryTags = null)
+        AgentTraceFilterConfig? traceFilterConfig = null)
     {
         ConfigurationEndpoint = configurationEndpoint;
         DebuggerEndpoint = debuggerEndpoint;
@@ -50,7 +50,7 @@ internal sealed record AgentConfiguration
         PeerTags = peerTags;
         SpanKindsStatsComputed = spanKindsStatsComputed;
         ObfuscationVersion = obfuscationVersion;
-        SpanDerivedPrimaryTags = spanDerivedPrimaryTags;
+        TraceFilterConfig = traceFilterConfig ?? AgentTraceFilterConfig.Empty;
     }
 
     public string? ConfigurationEndpoint { get; }
@@ -101,5 +101,5 @@ internal sealed record AgentConfiguration
 
     public int ObfuscationVersion { get; }
 
-    public List<string>? SpanDerivedPrimaryTags { get; }
+    public AgentTraceFilterConfig TraceFilterConfig { get; }
 }
