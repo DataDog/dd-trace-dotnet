@@ -306,12 +306,14 @@ namespace Datadog.Trace.Agent.DiscoveryService
 
         private async Task ProcessDiscoveryResponse(IApiResponse response)
         {
+#if !NETFRAMEWORK
             // Extract and store container tags hash from response headers
             var containerTagsHash = response.GetHeader(AgentHttpHeaderNames.ContainerTagsHash);
             if (containerTagsHash != null)
             {
                 _containerMetadata.ContainerTagsHash = containerTagsHash;
             }
+#endif
 
             // Grab the original stream
             var stream = await response.GetStreamAsync().ConfigureAwait(false);
