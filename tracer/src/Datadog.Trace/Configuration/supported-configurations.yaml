@@ -526,8 +526,8 @@ supportedConfigurations:
       <see cref="Datadog.Trace.Configuration.TracerSettings.IsDataStreamsLegacyHeadersEnabled"/>
   DD_DATA_STREAMS_TRANSACTION_EXTRACTORS:
   - implementation: A
-    type: string
-    default: ''
+    type: array
+    default: null
     product: DataStreamsMonitoring
     const_name: TransactionExtractors
     documentation: |-
