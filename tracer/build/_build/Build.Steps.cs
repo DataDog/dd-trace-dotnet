@@ -2013,6 +2013,7 @@ partial class Build
                     .SetIsDebugRun(isDebugRun)
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                     .SetLogsDirectory(TestLogsDirectory)
+                    .SetProcessEnvironmentVariable("SQLSERVER_CONNECTION_STRING", @"Server=(localdb)\MSSQLLocalDB;Integrated Security=true;Connection Timeout=60")
                     .When(CodeCoverageEnabled, ConfigureCodeCoverage)
                     .CombineWith(ClrProfilerIntegrationTests, (s, project) => s
                         .EnableTrxLogOutput(GetResultsDirectory(project))
