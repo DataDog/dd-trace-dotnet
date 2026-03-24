@@ -77,7 +77,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Serverless
                 // DD_SERVERLESS_COMPAT_PATH overrides the default binary location
                 // (matches CompatibilityLayer.cs in datadog-serverless-compat-dotnet).
                 const string defaultCompatBinaryPath = @"C:\home\site\wwwroot\datadog\bin\windows-amd64\datadog-serverless-compat.exe";
-                var compatBinaryPath = Util.EnvironmentHelpers.GetEnvironmentVariable("DD_SERVERLESS_COMPAT_PATH")
+                var compatBinaryPath = Util.EnvironmentHelpers.GetEnvironmentVariable(Configuration.ConfigurationKeys.ServerlessCompatPath)
                     ?? defaultCompatBinaryPath;
 
                 // Check that the compat DLL exists and has a version that supports named pipes.
