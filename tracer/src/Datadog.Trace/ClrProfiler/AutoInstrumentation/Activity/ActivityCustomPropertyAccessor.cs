@@ -24,6 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity
     internal static class ActivityCustomPropertyAccessor<TTarget>
     {
         private const string SpanPropertyKey = "__dd_span__";
+        private const string InitialOpNameKey = "__dd_initial_op__";
 
         /// <summary>
         /// Open-instance delegate for <c>Activity.GetCustomProperty(string)</c>.
@@ -49,6 +50,20 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity
         /// </summary>
         public static void SetScope(TTarget instance, Scope? scope)
             => SetCustomProperty?.Invoke(instance, SpanPropertyKey, scope);
+
+        /// <summary>
+        /// Retrieves the initial operation name saved at Activity.Start() time.
+        /// Used by <c>ActivityStopIntegration</c> to detect whether the user explicitly
+        /// overrode the operation name via an "operation.name" tag.
+        /// </summary>
+        public static string? GetInitialOperationName(TTarget instance)
+            => GetCustomProperty?.Invoke(instance, InitialOpNameKey) as string;
+
+        /// <summary>
+        /// Stores the initial operation name on the activity.
+        /// </summary>
+        public static void SetInitialOperationName(TTarget instance, string? operationName)
+            => SetCustomProperty?.Invoke(instance, InitialOpNameKey, operationName);
 
         private static Func<TTarget, string, object?>? CreateGetDelegate()
         {
@@ -108,7 +123,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity
                 il.Emit(OpCodes.Ldarg_1);       // string propertyName
                 il.Emit(OpCodes.Ldarg_2);       // object? propertyValue
                 il.Emit(OpCodes.Callvirt, method);
-                il.Emit(OpCodes.Pop);           // discard Activity return value
+
+                if (method.ReturnType != typeof(void))
+                {
+                    il.Emit(OpCodes.Pop);       // discard non-void return value
+                }
+
                 il.Emit(OpCodes.Ret);
 
                 return (Action<TTarget, string, object?>)dm.CreateDelegate(typeof(Action<TTarget, string, object?>));

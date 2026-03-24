@@ -6,12 +6,16 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
+using System.Text.RegularExpressions;
+using Datadog.Trace.Sampling;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity
 {
     /// <summary>
     /// Shared filter for Activity source names that should be ignored because they are already handled
-    /// by dedicated Datadog integrations (e.g. ASP.NET Core, HttpClient, SqlClient).
+    /// by dedicated Datadog integrations (e.g. ASP.NET Core, HttpClient, SqlClient) or because they
+    /// have been explicitly disabled via <c>DD_TRACE_DISABLED_ACTIVITY_SOURCES</c>.
     /// This mirrors the <c>IgnoreActivityHandler.SourcesNames</c> list used by the managed ActivityListener.
     /// </summary>
     internal static class ActivitySourceFilter
@@ -31,9 +35,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity
             "Experimental.System.Net.Sockets",
         };
 
+        private static List<Regex>? _disabledSourceGlobs;
+        private static bool _disableAll;
+
         /// <summary>
         /// Returns true if the Activity from the given source should be ignored by the CallTarget
-        /// interception path (because it is handled by a separate Datadog integration).
+        /// interception path (because it is handled by a separate Datadog integration or was
+        /// explicitly disabled via configuration).
         /// </summary>
         public static bool ShouldIgnore(string sourceName, string? version)
         {
@@ -50,7 +58,46 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity
                 }
             }
 
+            // Check DD_TRACE_DISABLED_ACTIVITY_SOURCES glob patterns
+            if (_disableAll)
+            {
+                return true;
+            }
+
+            _disabledSourceGlobs ??= PopulateDisabledGlobs();
+            foreach (var regex in _disabledSourceGlobs)
+            {
+                if (regex.IsMatch(sourceName))
+                {
+                    return true;
+                }
+            }
+
             return false;
+        }
+
+        private static List<Regex> PopulateDisabledGlobs()
+        {
+            var globs = new List<Regex>();
+            var toDisable = Tracer.Instance.Settings.DisabledActivitySources;
+            if (toDisable is null || toDisable.Length == 0)
+            {
+                return globs;
+            }
+
+            foreach (var disabledSourceNameGlob in toDisable)
+            {
+                var globRegex = RegexBuilder.Build(disabledSourceNameGlob, SamplingRulesFormat.Glob, RegexBuilder.DefaultTimeout);
+                if (globRegex is null)
+                {
+                    _disableAll = true;
+                    return [];
+                }
+
+                globs.Add(globRegex);
+            }
+
+            return globs;
         }
     }
 }
