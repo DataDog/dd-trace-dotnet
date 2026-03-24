@@ -41,8 +41,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Serverless
                 baseName = baseName.Substring(0, maxBaseLength);
             }
 
-            var guid = Guid.NewGuid().ToString("N"); // "N" format removes hyphens (32 chars)
-            var uniqueName = $"{baseName}_{guid}";
+            // "N" format removes hyphens (32 chars)
+            var uniqueName = $"{baseName}_{Guid.NewGuid():N}";
 
             return uniqueName;
         }

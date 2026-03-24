@@ -29,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Serverless
         ReturnTypeName = ClrNames.String,
         ParameterTypeNames = [],
         MinimumVersion = "0.0.0",
-        MaximumVersion = "2.*.*",
+        MaximumVersion = "1.*.*",
         IntegrationName = nameof(IntegrationId.ServerlessCompat),
         InstrumentationCategory = InstrumentationCategory.Tracing)]
     [Browsable(false)]
