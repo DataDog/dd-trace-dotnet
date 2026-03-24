@@ -378,6 +378,7 @@
   "DD_TRACE_X_DATADOG_TAGS_MAX_LENGTH": "trace_x_datadog_tags_max_length",
   "DD_DATA_STREAMS_ENABLED": "data_streams_enabled",
   "DD_DATA_STREAMS_LEGACY_HEADERS": "data_streams_legacy_headers",
+  "DD_DATA_STREAMS_TRANSACTION_EXTRACTORS": "data_streams_transaction_extractors",
   "DD_CIVISIBILITY_ENABLED": "ci_visibility_enabled",
   "DD_CIVISIBILITY_AGENTLESS_ENABLED": "ci_visibility_agentless_enabled",
   "DD_CIVISIBILITY_AGENTLESS_URL": "ci_visibility_agentless_url",
