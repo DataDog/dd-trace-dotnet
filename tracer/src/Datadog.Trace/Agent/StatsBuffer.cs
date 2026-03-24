@@ -77,7 +77,7 @@ namespace Datadog.Trace.Agent
             MessagePackBinary.WriteString(stream, _header.HostName ?? string.Empty);
 
             MessagePackBinary.WriteString(stream, "Env");
-            MessagePackBinary.WriteString(stream, details.Environment ?? string.Empty);
+            MessagePackBinary.WriteString(stream, StringUtil.IsNullOrEmpty(details.Environment) ? "unknown-env" : details.Environment);
 
             MessagePackBinary.WriteString(stream, "Version");
             MessagePackBinary.WriteString(stream, details.Version ?? string.Empty);
