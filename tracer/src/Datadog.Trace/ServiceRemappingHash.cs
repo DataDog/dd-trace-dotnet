@@ -68,6 +68,11 @@ internal sealed class ServiceRemappingHash
             hash = FnvHash64.GenerateHash(containerTagsHash, FnvHash64.Version.V1, hash);
         }
 
-        return Convert.ToBase64String(BitConverter.GetBytes(hash));
+        var b64 = Convert.ToBase64String(BitConverter.GetBytes(hash));
+        return b64
+            .TrimEnd('=') // remove padding
+            // use url-safe characters
+            .Replace(oldChar: '+', newChar: '-')
+            .Replace(oldChar: '/', newChar: '_');
     }
 }
