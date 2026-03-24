@@ -349,7 +349,7 @@ namespace Datadog.Trace.Configuration
 
         private string GenerateUniquePipeName(string? configuredBaseName, string defaultBaseName, string configKey)
         {
-            var baseName = StringUtil.IsNullOrEmpty(configuredBaseName) ? defaultBaseName : configuredBaseName!;
+            var baseName = StringUtil.IsNullOrEmpty(configuredBaseName) ? defaultBaseName : configuredBaseName;
             var name = ClrProfiler.AutoInstrumentation.Serverless.ServerlessCompatPipeNameHelper.GenerateUniquePipeName(baseName, "ExporterSettings");
             Log.Information("Azure Functions environment detected. Using pipe base name '{BaseName}', generated unique pipe name: {PipeName}", baseName, name);
             _telemetry.Record(configKey, name, recordValue: true, ConfigurationOrigins.Calculated);
