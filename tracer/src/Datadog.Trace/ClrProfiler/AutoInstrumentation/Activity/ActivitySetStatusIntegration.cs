@@ -94,12 +94,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity
                         span.SetTag(Tags.ErrorMsg, description);
                     }
 
-                    // Also set status description tag
-                    if (!string.IsNullOrEmpty(description))
-                    {
-                        span.SetTag("otel.status_description", description);
-                    }
-
                     break;
                 default:
                     tags.OtelStatusCode = "STATUS_CODE_UNSET";

@@ -52,10 +52,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity
             }
 
             // Retrieve scope early; save in state so OnMethodEnd can access it after Stop() sets Duration.
-            // Also save the initial operation name so OnMethodEnd can detect whether the user explicitly
-            // changed it via an "operation.name" tag (which routes through AgentSetOtlpTag → span.OperationName).
+            // Also retrieve the initial operation name saved at Start() time so OnMethodEnd can detect
+            // whether the user explicitly changed it via an "operation.name" tag.
             var scope = ActivityCustomPropertyAccessor<TTarget>.GetScope(instance);
-            return new CallTargetState(scope, state: scope?.Span.OperationName);
+            var initialOpName = ActivityCustomPropertyAccessor<TTarget>.GetInitialOperationName(instance);
+            return new CallTargetState(scope, state: initialOpName);
         }
 
         /// <summary>
