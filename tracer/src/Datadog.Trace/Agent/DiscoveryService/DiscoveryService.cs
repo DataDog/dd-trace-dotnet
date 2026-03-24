@@ -442,7 +442,8 @@ namespace Datadog.Trace.Agent.DiscoveryService
                 spanEvents: spanEvents,
                 peerTags: peerTags!,
                 spanKindsStatsComputed: spanKindsStatsComputed!,
-                obfuscationVersion: obfuscationVersion);
+                obfuscationVersion: obfuscationVersion,
+                spanDerivedPrimaryTags: spanDerivedPrimaryTags!);
 
             // Save the hash, whether the details we care about changed or not
             _configurationHash = HexString.ToHexString(sha256.Hash);
