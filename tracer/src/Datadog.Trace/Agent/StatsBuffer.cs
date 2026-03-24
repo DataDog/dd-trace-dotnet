@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Datadog.Sketches;
 using Datadog.Trace.Vendors.MessagePack;
 
@@ -133,12 +134,13 @@ namespace Datadog.Trace.Agent
             MessagePackBinary.WriteString(stream, bucket.Key.Type);
 
             // Based on https://github.com/DataDog/datadog-agent/blob/main/pkg/trace/stats/weight.go
-            // Hits, Errors, TopLevelHits are weighted by 1/sampling_rate; cast to long for wire format
+            // Hits, Errors, TopLevelHits are weighted by 1/sampling_rate.
+            // Use stochastic rounding to convert to int64 to prevent systematic bias.
             MessagePackBinary.WriteString(stream, "Hits");
-            MessagePackBinary.WriteInt64(stream, (long)bucket.Hits);
+            MessagePackBinary.WriteInt64(stream, StochasticRound(bucket.Hits));
 
             MessagePackBinary.WriteString(stream, "Errors");
-            MessagePackBinary.WriteInt64(stream, (long)bucket.Errors);
+            MessagePackBinary.WriteInt64(stream, StochasticRound(bucket.Errors));
 
             MessagePackBinary.WriteString(stream, "Duration");
             MessagePackBinary.WriteInt64(stream, bucket.Duration);
@@ -150,7 +152,7 @@ namespace Datadog.Trace.Agent
             SerializeSketch(stream, bucket.ErrorSummary);
 
             MessagePackBinary.WriteString(stream, "TopLevelHits");
-            MessagePackBinary.WriteInt64(stream, (long)bucket.TopLevelHits);
+            MessagePackBinary.WriteInt64(stream, StochasticRound(bucket.TopLevelHits));
 
             // Based on https://github.com/DataDog/datadog-agent/blob/main/pkg/trace/stats/aggregation.go
             MessagePackBinary.WriteString(stream, "SpanKind");
@@ -198,6 +200,22 @@ namespace Datadog.Trace.Agent
             stream.WriteByte((byte)size);
 
             sketch.Serialize(stream);
+        }
+
+        /// <summary>
+        /// Converts a floating-point value to long using stochastic rounding.
+        /// The fractional part is used as a probability of rounding up, preventing
+        /// systematic bias that occurs with simple truncation.
+        /// </summary>
+        private static long StochasticRound(double value)
+        {
+            var truncated = (long)value;
+            if (ThreadSafeRandom.Shared.NextDouble() < value - truncated)
+            {
+                return truncated + 1;
+            }
+
+            return truncated;
         }
 
         private void SerializeBuckets(Stream stream, long bucketDuration)
