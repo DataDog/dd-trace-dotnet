@@ -123,6 +123,67 @@ public class MassTransit7Tests : TracingIntegrationTest
         PrintMassTransitLogs("/tmp/dd-logs");
     }
 
+    [SkippableTheory]
+    [MemberData(nameof(GetData))]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    public async Task SubmitsTracesWindowsInMemoryOnly(string packageVersion)
+    {
+        SetEnvironmentVariable("MASSTRANSIT_INMEMORY_ONLY", "true");
+        SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "false");
+
+        using (var telemetry = this.ConfigureTelemetry())
+        using (var agent = EnvironmentHelper.GetMockAgent())
+        using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
+        {
+            // In-memory only: 1 transport × 2 messages × 2 spans = 4
+            // Saga: 3 events × 2 spans = 6
+            // Consumer exception: 3 spans
+            // Handler exception: 3 spans
+            // Saga exception: ~5 spans
+            // Total expected: ~21 MassTransit spans
+            const int expectedMassTransitSpanCount = 21;
+            var spans = await agent.WaitForSpansAsync(expectedMassTransitSpanCount, timeoutInMilliseconds: 60000);
+
+            using var s = new AssertionScope();
+
+            var massTransitSpans = spans.Where(span => span.GetTag("component") == "masstransit").ToList();
+            massTransitSpans.Count.Should().BeGreaterOrEqualTo(expectedMassTransitSpanCount, $"should have at least {expectedMassTransitSpanCount} MassTransit spans");
+
+            ValidateIntegrationSpans(massTransitSpans, metadataSchemaVersion: "v0", expectedServiceName: "Samples.MassTransit7", isExternalSpan: false);
+
+            var settings = VerifyHelper.GetSpanVerifierSettings();
+
+            var busEndpointRegex = new Regex(@"[A-Z0-9]+_SamplesMassTransit7_bus_[a-z0-9]+");
+            settings.AddRegexScrubber(busEndpointRegex, "BusEndpoint");
+
+            var queueNameRegex = new Regex(@"getting-started-message_[a-z0-9]+");
+            settings.AddRegexScrubber(queueNameRegex, "QueueName");
+
+            var sagaIdRegex = new Regex(@"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", RegexOptions.IgnoreCase);
+            settings.AddRegexScrubber(sagaIdRegex, "SagaGuid");
+
+            var sagaQueueRegex = new Regex(@"order-state_[a-z0-9]+");
+            settings.AddRegexScrubber(sagaQueueRegex, "SagaQueueName");
+
+            await VerifyHelper.VerifySpans(
+                massTransitSpans,
+                settings,
+                orderSpans: spans => spans
+                    .OrderBy(x => x.Resource.Split(' ')[0])
+                    .ThenBy(x => x.GetTag("messaging.operation") switch
+                    {
+                        "send" => 0,
+                        "receive" => 1,
+                        "process" => 2,
+                        _ => 3
+                    }))
+                .UseFileName(nameof(MassTransit7Tests) + "Windows");
+
+            await telemetry.AssertIntegrationEnabledAsync(IntegrationId.MassTransit);
+        }
+    }
+
     private void PrintMassTransitLogs(string logDir)
     {
         Output.WriteLine($"Log directory: {logDir}");

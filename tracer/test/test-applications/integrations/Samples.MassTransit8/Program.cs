@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using MassTransit;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -9,8 +10,15 @@ Console.WriteLine("MassTransit 8 Sample - Testing all transports sequentially");
 
 // Run each transport one after another
 await RunWithTransport("inmemory", ConfigureInMemory);
-await TryRunWithTransport("rabbitmq", ConfigureRabbitMq);
-await TryRunWithTransport("amazonsqs", ConfigureAmazonSqs);
+
+// Skip external transports when explicitly requested or when running on Windows (no Docker)
+var inMemoryOnly = string.Equals(Environment.GetEnvironmentVariable("MASSTRANSIT_INMEMORY_ONLY"), "true", StringComparison.OrdinalIgnoreCase)
+                   || RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+if (!inMemoryOnly)
+{
+    await TryRunWithTransport("rabbitmq", ConfigureRabbitMq);
+    await TryRunWithTransport("amazonsqs", ConfigureAmazonSqs);
+}
 
 // Run saga test with in-memory transport
 await RunSagaTest();
