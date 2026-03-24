@@ -2578,6 +2578,18 @@ partial class Build
                knownPatterns.Add(new(@".*'dddlopen' dddlerror returned: Library linux-vdso\.so\.1 is not already loaded", RegexOptions.Compiled));
            }
 
+           var isAzureFunctionsScenario = SmokeTestCategory is SmokeTests.SmokeTestCategory.LinuxAzureFunctionsNuGet or SmokeTests.SmokeTestCategory.WindowsAzureFunctionsNuGet;
+           if (isAzureFunctionsScenario)
+           {
+               // AzureFunctions NuGet currently uses the same loader.conf which attempts to load the profiler, even though no such file exists
+               knownPatterns.Add(new(
+                   @".*DynamicDispatcherImpl::LoadConfiguration: \[PROFILER\] Dynamic library for '.*Datadog\.Profiler\.Native\..*' cannot be loaded, file doesn't exist.*",
+                   RegexOptions.Compiled));
+               knownPatterns.Add(new(
+                   @".*Skipping hands-off configuration: as LibDatadog is not available.*",
+                   RegexOptions.Compiled));
+           }
+
            // We disable the profiler in crash tests, so we expect these logs
            knownPatterns.Add(new(@".*Error getting IClassFactory from: .*/Datadog\.Profiler\.Native\.so", RegexOptions.Compiled));
            knownPatterns.Add(new(@".*DynamicDispatcherImpl::LoadClassFactory: Error trying to load continuous profiler class factory.*", RegexOptions.Compiled));
