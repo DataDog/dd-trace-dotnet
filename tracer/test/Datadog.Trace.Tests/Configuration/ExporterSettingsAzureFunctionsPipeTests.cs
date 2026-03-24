@@ -39,10 +39,11 @@ namespace Datadog.Trace.Tests.Configuration
             }
             else
             {
-                // When no explicit pipe name and no Azure Functions generated name,
-                // pipe name should be null or the Azure Functions generated value
-                var azureFuncName = ExporterSettings.AzureFunctionsGeneratedTracesPipeName;
-                settings.TracesPipeName.Should().Be(azureFuncName);
+                // When no explicit pipe name is configured and not in Azure Functions,
+                // pipe transport is not used so TracesPipeName should be null.
+                // In Azure Functions, the constructor generates a unique name which
+                // is covered by integration tests.
+                settings.TracesPipeName.Should().BeNull();
             }
         }
 
@@ -68,39 +69,11 @@ namespace Datadog.Trace.Tests.Configuration
             }
             else
             {
-                var azureFuncName = ExporterSettings.AzureFunctionsGeneratedMetricsPipeName;
-                settings.MetricsPipeName.Should().Be(azureFuncName);
-            }
-        }
-
-        // Note: AzureFunctionsGeneratedPipeName_IsSet_WhenInAzureFunctionsWithoutExplicitConfig
-        // and AzureFunctionsGeneratedPipeName_IsNull_WhenExplicitPipeNameConfigured cannot be
-        // reliably tested as unit tests because the static fields are initialized at type-load
-        // time from real environment variables (WEBSITE_SITE_NAME, FUNCTIONS_WORKER_RUNTIME,
-        // FUNCTIONS_EXTENSION_VERSION). By the time tests run, ExporterSettings is already loaded.
-        // These scenarios are covered by the Azure Functions integration tests instead.
-
-        [Fact]
-        public void AzureFunctionsGeneratedTracesPipeName_IsNullOrValidFormat()
-        {
-            // We can't control the env vars at type-load time, but we can verify
-            // that whatever value was generated (or not) has the correct format
-            var name = ExporterSettings.AzureFunctionsGeneratedTracesPipeName;
-            if (name is not null)
-            {
-                name.Should().StartWith("dd_trace_");
-                name.Should().HaveLength("dd_trace_".Length + 32);
-            }
-        }
-
-        [Fact]
-        public void AzureFunctionsGeneratedMetricsPipeName_IsNullOrValidFormat()
-        {
-            var name = ExporterSettings.AzureFunctionsGeneratedMetricsPipeName;
-            if (name is not null)
-            {
-                name.Should().StartWith("dd_dogstatsd_");
-                name.Should().HaveLength("dd_dogstatsd_".Length + 32);
+                // When no explicit pipe name is configured and not in Azure Functions,
+                // pipe transport is not used so MetricsPipeName should be null.
+                // In Azure Functions, the constructor generates a unique name which
+                // is covered by integration tests.
+                settings.MetricsPipeName.Should().BeNull();
             }
         }
     }

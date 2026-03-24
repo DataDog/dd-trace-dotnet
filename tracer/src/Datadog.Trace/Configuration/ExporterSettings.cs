@@ -33,22 +33,6 @@ namespace Datadog.Trace.Configuration
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ExporterSettings));
 
         /// <summary>
-        /// Backing field for AzureFunctionsGeneratedTracesPipeName.
-        /// Initialized statically by checking environment variables directly.
-        /// Only generates a name when running in Azure Functions without AAS Site Extension
-        /// and without an explicit DD_TRACE_PIPE_NAME configuration.
-        /// </summary>
-        private static readonly string? _azureFunctionsGeneratedTracesPipeName = InitAzureFunctionsTracesPipeName();
-
-        /// <summary>
-        /// Backing field for AzureFunctionsGeneratedMetricsPipeName.
-        /// Initialized statically by checking environment variables directly.
-        /// Only generates a name when running in Azure Functions without AAS Site Extension
-        /// and without an explicit DD_DOGSTATSD_PIPE_NAME configuration.
-        /// </summary>
-        private static readonly string? _azureFunctionsGeneratedMetricsPipeName = InitAzureFunctionsMetricsPipeName();
-
-        /// <summary>
         /// Allows overriding of file system access for tests.
         /// </summary>
         private readonly Func<string, bool> _fileExists;
@@ -109,12 +93,11 @@ namespace Datadog.Trace.Configuration
 
             ValidationWarnings = new List<string>();
 
-            // Use statically-generated pipe names for Azure Functions if available.
-            // The generated names already incorporate any explicit DD_TRACE_PIPE_NAME / DD_DOGSTATSD_PIPE_NAME
-            // as the base, with a unique GUID suffix appended. This ensures each function instance gets
-            // its own pipe even when sharing a hosting plan.
-            var tracesPipeName = _azureFunctionsGeneratedTracesPipeName ?? rawSettings.TracesPipeName;
-            var metricsPipeName = _azureFunctionsGeneratedMetricsPipeName ?? rawSettings.MetricsPipeName;
+            // In Azure Functions (without AAS Site Extension), generate unique pipe names so each
+            // function instance gets its own pipe even when sharing a hosting plan. The generated names
+            // use the user-configured base name (from any config source) with a unique GUID suffix.
+            var tracesPipeName = GetAzureFunctionsTracesPipeName(rawSettings) ?? rawSettings.TracesPipeName;
+            var metricsPipeName = GetAzureFunctionsMetricsPipeName(rawSettings) ?? rawSettings.MetricsPipeName;
 
             var traceSettings = GetTraceTransport(
                 agentUri: rawSettings.TraceAgentUri,
@@ -179,20 +162,6 @@ namespace Datadog.Trace.Configuration
 
             TracesPipeTimeoutMs = rawSettings.TracesPipeTimeoutMs;
         }
-
-        /// <summary>
-        /// Gets the generated trace pipe name for Azure Functions coordination.
-        /// This is set when running in Azure Functions without explicit pipe name configuration.
-        /// Used by ServerlessCompat instrumentation to coordinate pipe names with compat layer.
-        /// </summary>
-        internal static string? AzureFunctionsGeneratedTracesPipeName => _azureFunctionsGeneratedTracesPipeName;
-
-        /// <summary>
-        /// Gets the generated metrics pipe name for Azure Functions coordination.
-        /// This is set when running in Azure Functions without explicit pipe name configuration.
-        /// Used by ServerlessCompat instrumentation to coordinate pipe names with compat layer.
-        /// </summary>
-        internal static string? AzureFunctionsGeneratedMetricsPipeName => _azureFunctionsGeneratedMetricsPipeName;
 
         /// <summary>
         /// Gets the Uri where the Tracer can connect to the Agent.
@@ -367,13 +336,13 @@ namespace Datadog.Trace.Configuration
             return string.IsNullOrEmpty(traceHostname) ? DefaultDogstatsdHostname : traceHostname;
         }
 
-        private static string? InitAzureFunctionsTracesPipeName()
+        private string? GetAzureFunctionsTracesPipeName(Raw rawSettings)
         {
             if (Util.EnvironmentHelpers.IsAzureFunctions()
                 && !Util.EnvironmentHelpers.IsUsingAzureAppServicesSiteExtension()
                 && IsCompatLayerAvailableWithPipeSupport())
             {
-                var baseName = Util.EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.TracesPipeName);
+                var baseName = rawSettings.TracesPipeName;
                 if (StringUtil.IsNullOrEmpty(baseName))
                 {
                     baseName = "dd_trace";
@@ -381,19 +350,20 @@ namespace Datadog.Trace.Configuration
 
                 var name = GenerateUniquePipeName(baseName!);
                 Log.Information("Azure Functions environment detected. Using trace pipe base name '{BaseName}', generated unique pipe name: {TracesPipeName}", baseName, name);
+                _telemetry.Record(ConfigurationKeys.TracesPipeName, name, recordValue: true, ConfigurationOrigins.Calculated);
                 return name;
             }
 
             return null;
         }
 
-        private static string? InitAzureFunctionsMetricsPipeName()
+        private string? GetAzureFunctionsMetricsPipeName(Raw rawSettings)
         {
             if (Util.EnvironmentHelpers.IsAzureFunctions()
                 && !Util.EnvironmentHelpers.IsUsingAzureAppServicesSiteExtension()
                 && IsCompatLayerAvailableWithPipeSupport())
             {
-                var baseName = Util.EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.MetricsPipeName);
+                var baseName = rawSettings.MetricsPipeName;
                 if (StringUtil.IsNullOrEmpty(baseName))
                 {
                     baseName = "dd_dogstatsd";
@@ -401,6 +371,7 @@ namespace Datadog.Trace.Configuration
 
                 var name = GenerateUniquePipeName(baseName!);
                 Log.Information("Azure Functions environment detected. Using metrics pipe base name '{BaseName}', generated unique pipe name: {MetricsPipeName}", baseName, name);
+                _telemetry.Record(ConfigurationKeys.MetricsPipeName, name, recordValue: true, ConfigurationOrigins.Calculated);
                 return name;
             }
 
@@ -409,7 +380,7 @@ namespace Datadog.Trace.Configuration
 
         /// <summary>
         /// Checks whether the Datadog Serverless Compat layer is deployed and has a version
-        /// that supports named pipe transport. This is called during static initialization
+        /// that supports named pipe transport. This is called during construction
         /// (before the compat assembly is loaded) so it checks files on disk rather than
         /// loaded assemblies.
         /// </summary>
