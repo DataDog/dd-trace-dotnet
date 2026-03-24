@@ -20,6 +20,7 @@ using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.Logging;
+using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.ServiceFabric;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
@@ -104,7 +105,7 @@ namespace Datadog.Trace.ClrProfiler
 
             if (tracerSettings.PropagateProcessTags)
             {
-                config.ProcessTags = ProcessTags.SerializedTags;
+                config.ProcessTags = mutableSettings.ProcessTags?.SerializedTags;
             }
 
             // Make sure nothing bubbles up, even if there are issues
@@ -294,6 +295,17 @@ namespace Datadog.Trace.ClrProfiler
                 Log.Error(ex, "Error printing assembly metadata");
             }
 
+#if NET6_0_OR_GREATER
+            if (TrimmingDetector.DetectedTrimmingState == TrimmingDetector.TrimState.TrimmedAppMissingTrimmingFile)
+            {
+                Log.Warning(
+                    "Application trimming detected: a standard .NET type could not be loaded. "
+                  + "Some Datadog instrumentation may not work correctly. "
+                  + "To make your app compatible with trimming, add a reference to the "
+                  + "Datadog.Trace.Trimming NuGet package.");
+            }
+#endif
+
             try
             {
                 // ensure global instance is created if it's not already
@@ -322,7 +334,6 @@ namespace Datadog.Trace.ClrProfiler
                 Log.Error(ex, "Error initializing Security");
             }
 
-#if !NETFRAMEWORK
             try
             {
                 if (GlobalSettings.Instance.DiagnosticSourceEnabled)
@@ -345,7 +356,7 @@ namespace Datadog.Trace.ClrProfiler
             {
                 // ignore
             }
-
+#if !NETFRAMEWORK
             // we only support Service Fabric Service Remoting instrumentation on .NET Core (including .NET 5+)
             if (FrameworkDescription.Instance.IsCoreClr())
             {
@@ -468,15 +479,16 @@ namespace Datadog.Trace.ClrProfiler
             }
         }
 
-#if !NETFRAMEWORK
         private static void StartDiagnosticManager()
         {
             var observers = new List<DiagnosticObserver>();
 
+#if !NETFRAMEWORK
             if (!SkipAspNetCoreDiagnosticObserver())
             {
                 observers.Add(GetAspNetCoreDiagnosticObserver());
             }
+#endif
 
             observers.Add(new QuartzDiagnosticObserver());
 
@@ -485,6 +497,7 @@ namespace Datadog.Trace.ClrProfiler
             DiagnosticManager.Instance = diagnosticManager;
         }
 
+#if !NETFRAMEWORK
         private static DiagnosticObserver GetAspNetCoreDiagnosticObserver()
         {
             // Tracer and Security should both have been initialized by now.
@@ -506,8 +519,7 @@ namespace Datadog.Trace.ClrProfiler
             // this is extremely simple now, but will get more complex soon...
             return EnvironmentHelpers.IsAzureFunctions();
         }
-
-#endif // #if !NETFRAMEWORK
+#endif
 
         private static void InitializeDebugger(TracerSettings tracerSettings)
         {

@@ -90,6 +90,12 @@ internal abstract class DelegatingStream(Stream innerStream) : Stream
     }
 
 #if NETCOREAPP
+    public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
+        => _innerStream.ReadAsync(buffer, cancellationToken);
+
+    public override ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default)
+        => _innerStream.WriteAsync(buffer, cancellationToken);
+
     public override ValueTask DisposeAsync() => _innerStream.DisposeAsync();
 #endif
 }

@@ -104,8 +104,8 @@ internal sealed class DefaultMemoryChecker : IMemoryChecker
             }
 
             var asBytes = MemoryMarshal.AsBytes(memAvailable);
-            Utf8Parser.TryParse(asBytes, out long availableKb, out var bytes);
-            if (bytes > 0 && availableKb > 0)
+            if (Utf8Parser.TryParse(asBytes, out long availableKb, out var bytes)
+             && bytes > 0 && availableKb > 0)
             {
                 return availableKb * 1024 < LowMemoryThreshold;
             }

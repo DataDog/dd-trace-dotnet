@@ -326,7 +326,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
 
                     if (statusCode == 400)
                     {
-                        Log.Warning("Bad Request (400) - not retrying: {StatusCode}", response.StatusCode);
+                        Log.Error("Bad Request (400) - not retrying: {StatusCode}", response.StatusCode);
                         return false;
                     }
 
@@ -349,6 +349,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
                         }
                     }
 
+                    Log.ErrorSkipTelemetry("An error occurred while sending OTLP request to {AgentEndpoint}. If the error isn't transient, please check https://docs.datadoghq.com/tracing/troubleshooting/connection_errors/?code-lang=dotnet for guidance.", _endpoint);
                     return false;
                 }
                 catch (TaskCanceledException) when (attempt < maxRetries)
@@ -358,7 +359,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
                 }
                 catch (Exception ex)
                 {
-                    Log.Error(ex, "Error sending OTLP request (attempt {Attempt})", (attempt + 1).ToString());
+                    Log.Debug<int>(ex, "Error sending OTLP request (attempt {Attempt})", attempt + 1);
                     if (attempt < maxRetries)
                     {
                         retryDelay = TimeSpan.FromMilliseconds((long)(retryDelay.TotalMilliseconds * 2));
@@ -366,6 +367,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
                     }
                     else
                     {
+                        Log.ErrorSkipTelemetry("An error occurred after {Attempt} attempts while sending OTLP request to {AgentEndpoint}. If the error isn't transient, please check https://docs.datadoghq.com/tracing/troubleshooting/connection_errors/?code-lang=dotnet for guidance.", attempt + 1, _endpoint);
                         return false;
                     }
                 }

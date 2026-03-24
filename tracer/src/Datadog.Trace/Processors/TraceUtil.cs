@@ -227,7 +227,7 @@ namespace Datadog.Trace.Processors
         // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/traceutil/normalize.go#L223-L274
         public static string NormalizeMetricName(string name, int limit)
         {
-            if (name == string.Empty || Encoding.GetByteCount(name) > limit)
+            if (string.IsNullOrEmpty(name) || Encoding.GetByteCount(name) > limit)
             {
                 return null;
             }

@@ -125,7 +125,7 @@ namespace Datadog.Trace.Debugger.ProbeStatuses
 
         private void OnProbeStatusesPoll()
         {
-            if (!_probes.Any() || _isDisposed)
+            if (_probes.Count == 0 || _isDisposed)
             {
                 return;
             }
@@ -139,12 +139,12 @@ namespace Datadog.Trace.Debugger.ProbeStatuses
                                        .Select(p => p.ProbeStatus)
                                        .ToList();
 
-            if (probesToFetch.Any())
+            if (probesToFetch.Length != 0)
             {
                 probeStatuses.AddRange(DebuggerNativeMethods.GetProbesStatuses(probesToFetch));
             }
 
-            if (!probeStatuses.Any())
+            if (probeStatuses.Count == 0)
             {
                 return;
             }

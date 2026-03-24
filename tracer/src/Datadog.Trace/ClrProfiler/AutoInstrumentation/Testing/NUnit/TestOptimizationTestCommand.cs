@@ -160,6 +160,19 @@ internal sealed class TestOptimizationTestCommand
         result.SetResult(result.ResultState.StaticIgnored, message, string.Empty);
     }
 
+    private static void ApplyRetryTags(TestSpanTags testTags, in RetryState retryState)
+    {
+        Common.ApplyRetryTags(testTags, retryState.IsARetry, GetRetryMode(retryState));
+    }
+
+    private static TestRetryMode GetRetryMode(in RetryState retryState)
+    {
+        return retryState.BehaviorType == typeof(EarlyFlakeDetectionRetryBehavior) ? TestRetryMode.EarlyFlakeDetection
+             : retryState.BehaviorType == typeof(FlakyRetryBehavior) ? TestRetryMode.AutomaticTestRetry
+             : retryState.BehaviorType == typeof(AttemptToFixRetryBehavior) ? TestRetryMode.AttemptToFix
+             : TestRetryMode.None;
+    }
+
     private void ClearResultForRetry(ITestExecutionContext context)
     {
         context.CurrentResult = context.CurrentTest.MakeTestResult();
@@ -221,6 +234,8 @@ internal sealed class TestOptimizationTestCommand
 
         if (test is not null && testTags is not null)
         {
+            ApplyRetryTags(testTags, retryState);
+
             // Non-retry execution: emit final_status only when no retry will be scheduled.
             // Final retry executions are handled in the isFinalExecution block below.
             if (!retryState.IsARetry && testTags.FinalStatus is null)
