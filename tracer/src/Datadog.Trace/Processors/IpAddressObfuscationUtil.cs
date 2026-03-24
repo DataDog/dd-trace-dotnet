@@ -40,7 +40,7 @@ namespace Datadog.Trace.Processors
                 return QuantizeIpSingle(raw);
             }
 
-            // Track seen entries as (start, length) ranges into the StringBuilder to avoid string allocations for dedup
+            // Track seen entries as (start, length) ranges into the StringBuilder to avoid string allocations for deduplication
             var seen = new List<KeyValuePair<int, int>>();
             var sb = StringBuilderCache.Acquire();
             var remaining = raw.AsSpan();
@@ -61,31 +61,38 @@ namespace Datadog.Trace.Processors
                     remaining = remaining.Slice(commaIndex + 1);
                 }
 
-                // Speculatively append comma + quantized entry, rollback if duplicate
-                var rollbackLength = sb.Length;
-                if (sb.Length > 0)
-                {
-                    sb.Append(',');
-                }
-
-                var entryStart = sb.Length;
                 if (IsBlockedIp(entry, out var prefixLength, out var hostEnd, out var suffixEnd, out var portStart, out var portEnd))
                 {
-                    AppendBlockedIp(sb, entry, prefixLength, hostEnd, suffixEnd, portStart, portEnd);
-                }
-                else
-                {
-                    sb.Append(entry);
-                }
+                    // Blocked IP: must build result before we can check for duplicates
+                    var rollbackLength = sb.Length;
+                    if (sb.Length > 0)
+                    {
+                        sb.Append(',');
+                    }
 
-                var entryLength = sb.Length - entryStart;
-                if (IsDuplicate(sb, entryStart, entryLength, seen))
-                {
-                    sb.Length = rollbackLength;
+                    var entryStart = sb.Length;
+                    AppendBlockedIp(sb, entry, prefixLength, hostEnd, suffixEnd, portStart, portEnd);
+                    var entryLength = sb.Length - entryStart;
+                    if (IsDuplicate(sb, entryStart, entryLength, seen))
+                    {
+                        // undo the add!
+                        sb.Length = rollbackLength;
+                    }
+                    else
+                    {
+                        seen.Add(new KeyValuePair<int, int>(entryStart, entryLength));
+                    }
                 }
-                else
+                else if (!IsDuplicateSpan(sb, entry, seen))
                 {
-                    seen.Add(new KeyValuePair<int, int>(entryStart, entryLength));
+                    // Non-blocked: quantized result == original entry, check before appending
+                    if (sb.Length > 0)
+                    {
+                        sb.Append(',');
+                    }
+
+                    seen.Add(new KeyValuePair<int, int>(sb.Length, entry.Length));
+                    sb.Append(entry);
                 }
             }
 
@@ -108,7 +115,7 @@ namespace Datadog.Trace.Processors
                 return raw;
             }
 
-            var sb = StringBuilderCache.Acquire(raw.Length);
+            var sb = StringBuilderCache.Acquire();
             AppendBlockedIp(sb, span, prefixLength, hostEnd, suffixEnd, portStart, portEnd);
             return StringBuilderCache.GetStringAndRelease(sb);
         }
@@ -175,6 +182,35 @@ namespace Datadog.Trace.Processors
                 for (var i = 0; i < newLength; i++)
                 {
                     if (sb[existing.Key + i] != sb[newStart + i])
+                    {
+                        match = false;
+                        break;
+                    }
+                }
+
+                if (match)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool IsDuplicateSpan(StringBuilder sb, ReadOnlySpan<char> candidate, List<KeyValuePair<int, int>> seen)
+        {
+            for (var s = 0; s < seen.Count; s++)
+            {
+                var existing = seen[s];
+                if (existing.Value != candidate.Length)
+                {
+                    continue;
+                }
+
+                var match = true;
+                for (var i = 0; i < candidate.Length; i++)
+                {
+                    if (sb[existing.Key + i] != candidate[i])
                     {
                         match = false;
                         break;
