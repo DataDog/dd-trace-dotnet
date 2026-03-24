@@ -1,4 +1,4 @@
-﻿// <copyright file="StatsBucket.cs" company="Datadog">
+// <copyright file="StatsBucket.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -42,6 +42,8 @@ namespace Datadog.Trace.Agent
             ErrorSummary.Clear();
         }
 
+        // TODO: For OTLP, we amy want to use the AGENT_RELATIVE_ACCURACY
+        // Currently, we only use the BACKEND_GAMMA and BACKEND_INDEX_OFFSET
         private static DDSketch CreateSketch()
         {
             return new DDSketch(
