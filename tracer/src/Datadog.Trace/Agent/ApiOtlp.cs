@@ -74,11 +74,11 @@ namespace Datadog.Trace.Agent
         // return true.
         public Task<bool> Ping() => Task.FromResult(true);
 
-        public Task<bool> SendStatsAsync(StatsBuffer stats, long bucketDuration)
+        public Task<bool> SendStatsAsync(StatsBuffer stats, long bucketDuration, int tracerObfuscationVersion)
         {
             _log.Debug("Sending trace stats to the OTLP Metrics endpoint.");
 
-            var state = new SendStatsState(stats, bucketDuration);
+            var state = new SendStatsState(stats, bucketDuration, tracerObfuscationVersion);
 
             return SendWithRetry(_statsEndpoint, _sendStats, state);
         }
@@ -293,11 +293,13 @@ namespace Datadog.Trace.Agent
         {
             public readonly StatsBuffer Stats;
             public readonly long BucketDuration;
+            public readonly int TracerObfuscationVersion;
 
-            public SendStatsState(StatsBuffer stats, long bucketDuration)
+            public SendStatsState(StatsBuffer stats, long bucketDuration, int tracerObfuscationVersion)
             {
                 Stats = stats;
                 BucketDuration = bucketDuration;
+                TracerObfuscationVersion = tracerObfuscationVersion;
             }
         }
     }

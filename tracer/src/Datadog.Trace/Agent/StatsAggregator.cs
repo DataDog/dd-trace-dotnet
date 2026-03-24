@@ -53,6 +53,7 @@ namespace Datadog.Trace.Agent
 
         private int _currentBuffer;
 
+        private int _tracerObfuscationVersion;
         private List<string> _peerTagKeys = [];
         // Based on https://github.com/DataDog/datadog-agent/blob/ce22e11ee71e55be717b9d9a3f8f3d7721a9c6d7/pkg/trace/stats/span_concentrator.go#L210-L213
         private List<string> _spanKindsStatsComputed =
@@ -346,7 +347,7 @@ namespace Datadog.Trace.Agent
                     // Push the metrics
                     if (CanComputeStats == true)
                     {
-                        await _api.SendStatsAsync(buffer, _bucketDuration.ToNanoseconds()).ConfigureAwait(false);
+                        await _api.SendStatsAsync(buffer, _bucketDuration.ToNanoseconds(), Volatile.Read(ref _tracerObfuscationVersion)).ConfigureAwait(false);
                     }
 
                     buffer.Reset();
@@ -446,6 +447,11 @@ namespace Datadog.Trace.Agent
             {
                 Interlocked.Exchange(ref _peerTagKeys, config.PeerTags);
             }
+
+            // Tracer obfuscation version is 1. If the agent's version is > 0 and <= ours, the tracer obfuscates.
+            const int tracerObfuscationVersion = 1;
+            var agentVersion = config.ObfuscationVersion;
+            Volatile.Write(ref _tracerObfuscationVersion, agentVersion > 0 && agentVersion <= tracerObfuscationVersion ? tracerObfuscationVersion : 0);
 
             if (CanComputeStats.Value)
             {
