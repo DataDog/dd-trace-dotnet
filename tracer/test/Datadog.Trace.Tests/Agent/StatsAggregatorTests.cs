@@ -660,6 +660,64 @@ namespace Datadog.Trace.Tests.Agent
             }
         }
 
+        [Theory]
+        [InlineData("rpc.grpc.status_code", "5")]
+        [InlineData("grpc.code", "5")]
+        [InlineData("rpc.grpc.status.code", "5")]
+        [InlineData("grpc.status.code", "5")]
+        public async Task GrpcStatusCodeFallbackTags(string tagName, string tagValue)
+        {
+            var start = DateTimeOffset.UtcNow;
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), isOtlp: false);
+
+            try
+            {
+                var span = CreateTopLevelSpan(start, "svc");
+                span.OperationName = "grpc.call";
+                span.SetTag(tagName, tagValue);
+                span.SetDuration(TimeSpan.FromMilliseconds(100));
+
+                aggregator.Add(span);
+
+                var buffer = aggregator.CurrentBuffer;
+                buffer.Buckets.Should().HaveCount(1);
+                var key = buffer.Buckets.Keys.First();
+                key.GrpcStatusCode.Should().Be(5);
+            }
+            finally
+            {
+                await aggregator.DisposeAsync();
+            }
+        }
+
+        [Fact]
+        public async Task GrpcStatusCodePriorityOrder()
+        {
+            var start = DateTimeOffset.UtcNow;
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), isOtlp: false);
+
+            try
+            {
+                // When multiple gRPC tags are present, the highest priority one wins
+                var span = CreateTopLevelSpan(start, "svc");
+                span.OperationName = "grpc.call";
+                span.SetTag("rpc.grpc.status_code", "1");
+                span.SetTag("grpc.status.code", "2");
+                span.SetDuration(TimeSpan.FromMilliseconds(100));
+
+                aggregator.Add(span);
+
+                var buffer = aggregator.CurrentBuffer;
+                buffer.Buckets.Should().HaveCount(1);
+                var key = buffer.Buckets.Keys.First();
+                key.GrpcStatusCode.Should().Be(1);
+            }
+            finally
+            {
+                await aggregator.DisposeAsync();
+            }
+        }
+
         [Fact]
         public async Task ServiceSourceCreatesDistinctBuckets()
         {
