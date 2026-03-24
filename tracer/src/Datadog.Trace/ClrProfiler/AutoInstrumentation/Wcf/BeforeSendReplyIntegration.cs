@@ -51,7 +51,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
             if (rpcProxy.OperationContext.RequestContext?.Instance is { } requestContextInstance
                 && WcfCommon.Scopes.TryGetValue(requestContextInstance, out var scope))
             {
-                return new CallTargetState(scope);
+                return new CallTargetState(scope, requestContextInstance);
             }
 
             return CallTargetState.GetDefault();
@@ -68,6 +68,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
         internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception? exception, in CallTargetState state)
         {
             state.Scope.DisposeWithException(exception);
+            if (state.State is { } requestContextInstance)
+            {
+                WcfCommon.Scopes.Remove(requestContextInstance);
+            }
+
             return CallTargetReturn.GetDefault();
         }
     }

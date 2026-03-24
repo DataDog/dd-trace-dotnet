@@ -8,6 +8,7 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Pdb.SourceLink;
 
@@ -28,7 +29,7 @@ internal sealed class GitHubSourceLinkUrlParser : SourceLinkUrlParser
 
         try
         {
-            var segments = uri.AbsolutePath.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+            var segments = uri.AbsolutePath.Split(Separators.ForwardSlash, StringSplitOptions.RemoveEmptyEntries);
 
             if (uri.Host != "raw.githubusercontent.com" || segments.Length != 4 || !IsValidCommitSha(segments[2]))
             {

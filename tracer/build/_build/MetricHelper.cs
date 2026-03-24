@@ -12,6 +12,7 @@ using System.Text;
 using System.Threading.Tasks;
 using LogParsing;
 using Serilog;
+using Serilog.Events;
 
 public static class MetricHelper
 {
@@ -151,7 +152,9 @@ public static class MetricHelper
             var result = response.IsSuccessStatusCode
                              ? "Successfully submitted metric"
                              : "Failed to submit metric";
-            log.Warning("{Result} {MetricName} to {Uri}. Response was: Code: {ResponseStatusCode}. Response: {ResponseContent}. Payload sent was: \"{Payload}\"", result, metricName, uri, response.StatusCode, responseContent, payload);
+            var level = response.IsSuccessStatusCode ? LogEventLevel.Debug : LogEventLevel.Warning;
+            log.Write(level, "{Result} {MetricName} to {Uri}. Response was: Code: {ResponseStatusCode}. Response: {ResponseContent}. Payload sent was: \"{Payload}\"", result,
+                metricName, uri, response.StatusCode, responseContent, payload);
         }
         catch (Exception ex)
         {

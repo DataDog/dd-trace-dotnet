@@ -20,7 +20,7 @@ namespace Datadog.Trace.Configuration.Telemetry
     {
         private readonly List<List<ConfigurationKeyValue>> _allData = new();
         private ConcurrentQueue<ConfigurationTelemetryEntry> _backBuffer = new();
-        private int _reportedCount = 0;
+        private int _reportedCount;
 
         public bool HasChanges() => !_entries.IsEmpty || !_backBuffer.IsEmpty;
 
@@ -45,7 +45,7 @@ namespace Datadog.Trace.Configuration.Telemetry
         /// Get the latest data to send to the intake.
         /// </summary>
         /// <returns>Null if there are no changes, or the collector is not yet initialized</returns>
-        public ICollection<ConfigurationKeyValue>? GetData()
+        public ICollection<ConfigurationKeyValue>? GetIncrementalData()
         {
             lock (_allData)
             {

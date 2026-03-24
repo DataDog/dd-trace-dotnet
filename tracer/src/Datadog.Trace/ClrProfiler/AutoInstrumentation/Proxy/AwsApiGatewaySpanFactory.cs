@@ -36,7 +36,7 @@ internal sealed class AwsApiGatewaySpanFactory : IInferredSpanFactory
                 InferredSpan = 1,
             };
 
-            var scope = tracer.StartActiveInternal(operationName: OperationName, parent: parent, startTime: data.StartTime, tags: tags, serviceName: data.DomainName);
+            var scope = tracer.StartActiveInternal(operationName: OperationName, parent: parent, startTime: data.StartTime, tags: tags, serviceName: data.DomainName, serviceNameSource: "aws-apigateway");
             scope.Span.ResourceName = data.HttpMethod is null ? resourceUrl : $"{data.HttpMethod} {resourceUrl}";
             scope.Span.Type = SpanTypes.Web;
 

@@ -78,7 +78,7 @@ namespace Datadog.Trace.ServiceFabric
 
     internal sealed partial class ServiceRemotingClientV1Tags : ServiceRemotingClientTags
     {
-        private string? _peerServiceOverride = null;
+        private string? _peerServiceOverride;
 
         public ServiceRemotingClientV1Tags()
             : base()
