@@ -120,10 +120,18 @@ namespace Datadog.Trace.Agent
 
         private static void SerializeBucket(Stream stream, StatsBucket bucket)
         {
+            var fieldCount = 18;
+            if (bucket.PeerTags.Count != 0)
+            {
+                fieldCount++;
+            }
+
             var hasServiceSource = !string.IsNullOrEmpty(bucket.Key.ServiceSource);
-            var fieldCount = bucket.PeerTags.Count == 0
-                                 ? (hasServiceSource ? 19 : 18)
-                                 : (hasServiceSource ? 20 : 19);
+            if (hasServiceSource)
+            {
+                fieldCount++;
+            }
+
             MessagePackBinary.WriteMapHeader(stream, fieldCount);
 
             // TODO: precompute the string constants in this file

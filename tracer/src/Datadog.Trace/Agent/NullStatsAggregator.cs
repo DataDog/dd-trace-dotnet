@@ -33,6 +33,7 @@ namespace Datadog.Trace.Agent
         public StatsAggregationKey BuildKey(Span span, out List<byte[]> utf8PeerTags)
         {
             utf8PeerTags = [];
+            utf8SpanDerivedPrimaryTags = [];
             return new();
         }
     }
