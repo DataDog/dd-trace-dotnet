@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.Threading.Tasks;
+using Datadog.Trace.TestHelpers.AutoInstrumentation.Containers;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -11,11 +12,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
 {
     [Trait("RequiresDockerDependency", "true")]
     [Trait("DockerGroup", "2")]
-    public class ServiceBusMinimalMassTransitTest : SmokeTestBase
+    public class ServiceBusMinimalMassTransitTest : SmokeTestBase, IClassFixture<SqlServerFixture>
     {
-        public ServiceBusMinimalMassTransitTest(ITestOutputHelper output)
+        public ServiceBusMinimalMassTransitTest(ITestOutputHelper output, SqlServerFixture sqlServerFixture)
             : base(output, "ServiceBus.Minimal.MassTransit", maxTestRunSeconds: 60)
         {
+            foreach (var kvp in sqlServerFixture.GetEnvironmentVariables())
+            {
+                SetEnvironmentVariable(kvp.Key, kvp.Value);
+            }
+
             AssumeSuccessOnTimeout = true;
         }
 
