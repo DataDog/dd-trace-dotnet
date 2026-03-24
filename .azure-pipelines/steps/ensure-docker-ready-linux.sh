@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
+# Linux Docker readiness check — mirrors the Windows PowerShell logic in ensure-docker-ready.yml.
+# Waits for the Docker daemon, attempts service restarts if needed, and fails fast
+# so the job can be rescheduled on a different agent.
 
 set -u
 
-MAX_RETRIES="${DOCKER_CGROUP_RETRY_MAX_RETRIES:-3}"
-INITIAL_BACKOFF_SECONDS="${DOCKER_CGROUP_RETRY_INITIAL_BACKOFF_SECONDS:-5}"
 DOCKER_READY_TIMEOUT_SECONDS="${DOCKER_READY_TIMEOUT_SECONDS:-300}"
 DOCKER_READY_CHECK_INTERVAL_SECONDS="${DOCKER_READY_CHECK_INTERVAL_SECONDS:-10}"
+DOCKER_MAX_RESTARTS="${DOCKER_MAX_RESTARTS:-3}"
 
 log()
 {
@@ -14,7 +16,7 @@ log()
 
 log_diagnostics()
 {
-    log "Collecting diagnostics..."
+    log "--- Diagnostics ---"
     local cgroup_version="unknown"
     if [ -f "/sys/fs/cgroup/cgroup.controllers" ]; then
         cgroup_version="v2"
@@ -45,89 +47,65 @@ log_diagnostics()
     docker info || true
 }
 
+try_restart_docker()
+{
+    if command -v systemctl >/dev/null 2>&1; then
+        log "Attempting Docker service restart..."
+        if systemctl restart docker 2>&1; then
+            log "systemctl restart docker completed"
+            return 0
+        else
+            log "systemctl restart docker failed"
+            return 1
+        fi
+    else
+        log "systemctl not available, cannot restart Docker service"
+        return 1
+    fi
+}
+
 wait_for_docker()
 {
     local elapsed=0
-    log "Waiting up to ${DOCKER_READY_TIMEOUT_SECONDS}s for Docker daemon..."
+    local restart_count=0
+
+    log "Waiting up to ${DOCKER_READY_TIMEOUT_SECONDS}s for Docker daemon (will attempt up to ${DOCKER_MAX_RESTARTS} service restarts)..."
+
+    # Log initial service state
+    if command -v systemctl >/dev/null 2>&1; then
+        local initial_status
+        initial_status=$(systemctl is-active docker 2>&1 || true)
+        log "Docker service initial state: ${initial_status}"
+    fi
 
     while [ "${elapsed}" -lt "${DOCKER_READY_TIMEOUT_SECONDS}" ]; do
         if docker info >/dev/null 2>&1; then
-            log "Docker daemon is ready after ${elapsed}s"
+            log "Docker daemon is ready (waited ${elapsed}s, ${restart_count} restart(s) performed)"
+            docker info
             return 0
         fi
 
-        log "Docker daemon not ready yet (${elapsed}s elapsed), retrying in ${DOCKER_READY_CHECK_INTERVAL_SECONDS}s..."
+        # If Docker is not responding, try restarting the service
+        if command -v systemctl >/dev/null 2>&1; then
+            local svc_status
+            svc_status=$(systemctl is-active docker 2>&1 || true)
+            if [ "${svc_status}" != "active" ] && [ "${restart_count}" -lt "${DOCKER_MAX_RESTARTS}" ]; then
+                restart_count=$((restart_count + 1))
+                log "Docker service is ${svc_status}. Attempting restart ${restart_count}/${DOCKER_MAX_RESTARTS}..."
+                try_restart_docker
+            elif [ "${svc_status}" != "active" ] && [ "${restart_count}" -ge "${DOCKER_MAX_RESTARTS}" ]; then
+                log "Docker service is ${svc_status} but max restarts (${DOCKER_MAX_RESTARTS}) exhausted"
+            fi
+        fi
+
+        log "Docker not ready yet (${elapsed}s elapsed), retrying in ${DOCKER_READY_CHECK_INTERVAL_SECONDS}s..."
         sleep "${DOCKER_READY_CHECK_INTERVAL_SECONDS}"
         elapsed=$((elapsed + DOCKER_READY_CHECK_INTERVAL_SECONDS))
     done
 
-    log "Docker daemon did not become ready within ${DOCKER_READY_TIMEOUT_SECONDS}s"
+    log "Docker daemon did not become ready within ${DOCKER_READY_TIMEOUT_SECONDS}s after ${restart_count} restart(s)"
     log_diagnostics
     return 1
 }
 
-run_with_oci_retry()
-{
-    local retry_count=0
-    local total_attempts=$((MAX_RETRIES + 1))
-    local command=("$@")
-
-    while true; do
-        local attempt=$((retry_count + 1))
-        log "Running Docker command (attempt ${attempt}/${total_attempts}): ${command[*]}"
-        "${command[@]}"
-        local exit_code=$?
-        if [ "${exit_code}" -eq 0 ]; then
-            log "Docker command succeeded"
-            return 0
-        fi
-
-        if [ "${exit_code}" -ne 125 ]; then
-            log "Docker command failed with non-retryable exit code ${exit_code}"
-            log_diagnostics
-            return "${exit_code}"
-        fi
-
-        if [ "${retry_count}" -ge "${MAX_RETRIES}" ]; then
-            log "Docker command failed with exit code 125 and max retries (${MAX_RETRIES}) were exhausted"
-            log_diagnostics
-            return "${exit_code}"
-        fi
-
-        local backoff_seconds=$((INITIAL_BACKOFF_SECONDS * (2 ** retry_count)))
-        retry_count=$((retry_count + 1))
-        log "Docker command failed with exit code 125 (likely transient OCI/cgroup issue). Retrying in ${backoff_seconds}s (${retry_count}/${MAX_RETRIES})..."
-        sleep "${backoff_seconds}"
-    done
-}
-
-main()
-{
-    if [ "${1:-}" = "--health-check" ]; then
-        shift
-        wait_for_docker
-        return $?
-    fi
-
-    local skip_wait=false
-    if [ "${1:-}" = "--retry-only" ]; then
-        skip_wait=true
-        shift
-    fi
-
-    if [ "${skip_wait}" = "false" ]; then
-        wait_for_docker || return $?
-    fi
-
-    if [ "${1:-}" = "--" ]; then
-        shift
-    fi
-
-    if [ "$#" -eq 0 ]; then
-        return 0
-    fi
-
-    run_with_oci_retry "$@"
-}
-
-main "$@"
+wait_for_docker

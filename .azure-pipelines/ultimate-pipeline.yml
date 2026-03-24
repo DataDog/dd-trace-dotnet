@@ -3320,13 +3320,12 @@ stages:
             apiKey: $(DD_LOGGER_DD_API_KEY)
 
         - script: |
-            bash ./.azure-pipelines/steps/ensure-docker-ready-linux.sh --retry-only -- \
-              docker-compose -f docker-compose.yml -p $(DockerComposeProjectName) \
-                run --no-deps --rm \
-                -e baseImage=$(baseImage) \
-                -e framework=$(publishTargetFramework) \
-                -e CodeCoverageEnabled=$(CodeCoverageEnabled) \
-                IntegrationTests.ARM64.Debugger
+            docker-compose -f docker-compose.yml -p $(DockerComposeProjectName) \
+              run --no-deps --rm \
+              -e baseImage=$(baseImage) \
+              -e framework=$(publishTargetFramework) \
+              -e CodeCoverageEnabled=$(CodeCoverageEnabled) \
+              IntegrationTests.ARM64.Debugger
           displayName: docker-compose run --no-deps IntegrationTests.ARM64.Debugger
           env:
             DD_LOGGER_DD_API_KEY: $(ddApiKey)

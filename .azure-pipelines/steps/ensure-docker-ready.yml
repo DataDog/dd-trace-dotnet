@@ -9,11 +9,12 @@ parameters:
 steps:
 - bash: |
     set -euo pipefail
-    bash ./.azure-pipelines/steps/ensure-docker-ready-linux.sh --health-check
+    bash ./.azure-pipelines/steps/ensure-docker-ready-linux.sh
   displayName: Ensure Docker daemon is ready (Linux)
   condition: ne(variables['Agent.OS'], 'Windows_NT')
   env:
     DOCKER_READY_TIMEOUT_SECONDS: ${{ parameters.timeoutSeconds }}
+    DOCKER_MAX_RESTARTS: ${{ parameters.maxRestarts }}
 
 - powershell: |
     # Prevent PowerShell from treating native command stderr as a terminating error
