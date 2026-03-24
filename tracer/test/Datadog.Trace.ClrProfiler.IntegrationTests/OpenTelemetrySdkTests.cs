@@ -264,6 +264,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             // This is the key configuration that is set differently from previous test cases:
             // OTEL_TRACES_EXPORTER=otlp enables the DD SDK to emit traces (and trace stats) via OTLP
             SetEnvironmentVariable("OTEL_TRACES_EXPORTER", datadogTracesEnabled == "true" ? "otlp" : "none");
+
+            // While the feature does not need DD_TRACE_OTEL_ENABLED=true to be set, spans are only written with the OTel API in this test application
+            SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
             SetEnvironmentVariable("DD_TRACE_DEBUG", "true");
 
             SetEnvironmentVariable("DD_ENV", string.Empty);
