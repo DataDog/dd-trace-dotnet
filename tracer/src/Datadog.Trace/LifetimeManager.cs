@@ -27,6 +27,10 @@ namespace Datadog.Trace
         private static LifetimeManager? _instance;
         private readonly ConcurrentQueue<object> _shutdownHooks = new();
 
+        // Signaled when RunShutdownTasks finishes. Subsequent callers wait on this
+        // instead of returning early, preventing the runtime from tearing down the process prematurely.
+        private readonly ManualResetEventSlim _shutdownComplete = new(false);
+
         // We can be triggered by multiple shutdown paths (ProcessExit, CancelKeyPress, signal handlers, etc).
         // This flag ensures shutdown hooks run at most once.
         private int _shutdownStarted;
@@ -136,35 +140,18 @@ namespace Datadog.Trace
             // Ensure shutdown runs once even if multiple events fire.
             if (Interlocked.Exchange(ref _shutdownStarted, 1) != 0)
             {
+                // Shutdown already started — wait for it to finish instead of returning immediately.
+                // This prevents the runtime from tearing down the process (e.g. after ProcessExit returns)
+                // before hooks have completed.
+                _shutdownComplete.Wait();
                 return;
             }
 
-#if NET6_0_OR_GREATER
-            // Unregister our termination handlers once shutdown begins (best-effort).
-            // This avoids re-entrancy and keeps the intent clear: after shutdown starts, we don't want to
-            // initiate additional termination paths.
-            try
-            {
-                _sigtermRegistration?.Dispose();
-                _sigtermRegistration = null;
-            }
-            catch (Exception ex)
-            {
-                // Best-effort: logging during shutdown should never prevent shutdown from continuing.
-                Log.Warning(ex, "Failed to dispose SIGTERM termination signal handler registration.");
-            }
-
-            try
-            {
-                _sighupRegistration?.Dispose();
-                _sighupRegistration = null;
-            }
-            catch (Exception ex)
-            {
-                // Best-effort: logging during shutdown should never prevent shutdown from continuing.
-                Log.Warning(ex, "Failed to dispose SIGHUP termination signal handler registration.");
-            }
-#endif
+            // Note: we intentionally do NOT dispose signal registrations here.
+            // They must stay alive so that duplicate signals arriving during shutdown
+            // are still handled (and canceled) by our handler, preventing the OS from
+            // killing the process before hooks finish. They'll be cleaned up by the
+            // GC/finalizer when the process exits.
 
             try
             {
@@ -209,6 +196,10 @@ namespace Datadog.Trace
             catch
             {
                 // Swallow as there's nothing we can with it anyway
+            }
+            finally
+            {
+                _shutdownComplete.Set();
             }
 
             static void SetSynchronizationContext(SynchronizationContext? context)
@@ -263,49 +254,45 @@ namespace Datadog.Trace
 
         private void TerminationSignalHandler(PosixSignalContext context)
         {
-            // Ensure this handler initiates termination at most once.
             if (Interlocked.Exchange(ref _terminationExitInitiated, 1) != 0)
             {
-                // Another signal already initiated termination; do nothing.
+                // Duplicate signal while shutdown is in progress.
+
+                try
+                {
+                    // On Unix, Cancel prevents the OS default handler from immediately terminating the process.
+                    // (On Windows, SIGTERM/SIGHUP can't be canceled.)
+                    if (!OperatingSystem.IsWindows())
+                    {
+                        // See PosixSignalRegistration.Create remarks:
+                        // https://learn.microsoft.com/en-us/dotnet/api/system.runtime.interopservices.posixsignalregistration.create
+                        context.Cancel = true; // Keep the process alive long enough to take the managed shutdown path.
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Best-effort. If we can't cancel default handling, still attempt a managed exit.
+                    Log.Warning(ex, "Failed to cancel default termination signal handling. Graceful shutdown may not run.");
+                }
+
+                // Wait for the first handler to finish running shutdown tasks.
+                _shutdownComplete.Wait();
                 return;
             }
 
-            try
-            {
-                // On Unix, Cancel prevents the OS default handler from immediately terminating the process.
-                // (On Windows, SIGTERM/SIGHUP can't be canceled.)
-                if (!OperatingSystem.IsWindows())
-                {
-                    // See PosixSignalRegistration.Create remarks:
-                    // https://learn.microsoft.com/en-us/dotnet/api/system.runtime.interopservices.posixsignalregistration.create
-                    context.Cancel = true; // Keep the process alive long enough to take the managed shutdown path.
-                }
-            }
-            catch (Exception ex)
-            {
-                // Best-effort. If we can't cancel default handling, still attempt a managed exit.
-                Log.Warning(ex, "Failed to cancel default termination signal handling. Graceful shutdown may not run.");
-            }
+            // Calling Environment.Exit(0); caused an issue in Microsoft Orleans (look https://github.com/DataDog/dd-trace-dotnet/issues/8165)
+            // The Posix signals registration mechanism doesn't use a normal MulticastDelegate kind of list; it's using a HashSet<Token> internally.
+            // meaning that the call order is not deterministic, creating a flaky behavior between all the handlers.
+            // The fact that there's no way to guarantee that we are the last handler means that we cannot force the exit of the process to raise
+            // the finalization events calls because that means other handlers will not be called, for that reason we will just proceed with a manual
+            // cleanup of our tasks without forcing the exit so other handlers can be executed as well.
 
-            // Intentionally do NOT call RunShutdownTasks() directly here.
-            //
-            // Reason: pre-.NET 10 behavior was "termination signal => graceful managed exit => ProcessExit event".
-            // Our existing shutdown flow is attached to AppDomain.CurrentDomain.ProcessExit (CurrentDomain_ProcessExit),
-            // so we initiate a managed shutdown and let ProcessExit invoke RunShutdownTasks just like before.
-            //
-            // Supporting runtime source references:
-            // - Environment.Exit is an internal runtime call:
-            //   https://github.com/dotnet/runtime/blob/main/src/coreclr/System.Private.CoreLib/src/System/Environment.CoreCLR.cs
-            // - ProcessExit is raised by the runtime via AppDomain.OnProcessExit():
-            //   https://github.com/dotnet/runtime/blob/main/src/libraries/System.Private.CoreLib/src/System/AppDomain.cs
+            // First signal: run shutdown tasks synchronously before the handler returns.
+            // We intentionally do NOT set context.Cancel here — after the handler returns,
+            // the runtime/OS will perform the default action (terminate the process with
+            // exit code 143), which is the desired behavior once hooks have completed.
             try
             {
-                // Calling Environment.Exit(0); caused an issue in Microsoft Orleans (look https://github.com/DataDog/dd-trace-dotnet/issues/8165)
-                // The Posix signals registration mechanism doesn't use a normal MulticastDelegate kind of list; it's using a HashSet<Token> internally.
-                // meaning that the call order is not deterministic, creating a flaky behavior between all the handlers.
-                // The fact that there's no way to guarantee that we are the last handler means that we cannot force the exit of the process to raise
-                // the finialization events calls because that means other handlers will not be called, for that reason we will just proceed with a manual
-                // cleanup of our tasks without forcing the exit so other handlers can be executed as well.
                 RunShutdownTasks();
             }
             catch (Exception ex)
