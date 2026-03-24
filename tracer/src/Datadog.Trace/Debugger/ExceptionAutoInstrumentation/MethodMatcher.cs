@@ -19,6 +19,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation;
 internal static class MethodMatcher
 {
     private static readonly ConcurrentDictionary<MethodBase, MethodBase?> AsyncMethodCache = new();
+    private static readonly char[] LambdaIdentifierMatchCandidates = ['>', '(', '.', 'd'];
 
     /// <summary>
     /// Attempts to match a method name from a stack trace with a MethodBase,
@@ -214,7 +215,7 @@ internal static class MethodMatcher
         var startIndex = methodName.LastIndexOf('<', lambdaMarkerIndex);
         startIndex = startIndex >= 0 ? startIndex + 1 : lambdaMarkerIndex;
 
-        var endIndex = methodName.IndexOfAny(new[] { '>', '(', '.', 'd' }, lambdaMarkerIndex);
+        var endIndex = methodName.IndexOfAny(LambdaIdentifierMatchCandidates, lambdaMarkerIndex);
         if (endIndex < 0)
         {
             endIndex = methodName.Length;

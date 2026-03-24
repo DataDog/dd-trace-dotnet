@@ -36,6 +36,9 @@ namespace Datadog.Trace.Tagging
         [Tag(Trace.Tags.KafkaBootstrapServers)]
         public string BootstrapServers { get; set; }
 
+        [Tag(Trace.Tags.KafkaClusterId)]
+        public string ClusterId { get; set; }
+
         [Tag(Trace.Tags.MessagingDestinationName)]
         public string Topic { get; set; }
 

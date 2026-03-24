@@ -80,6 +80,6 @@ public class SpanContextDataStreamsManagerTests
                 { ConfigurationKeys.ServiceName, "service" },
                 { ConfigurationKeys.DataStreamsMonitoring.Enabled, "1" },
             });
-        return new DataStreamsManager(settings, Mock.Of<IDataStreamsWriter>(), Mock.Of<IDiscoveryService>(), processTags: null);
+        return new DataStreamsManager(settings, Mock.Of<IDataStreamsWriter>(), Mock.Of<IDiscoveryService>());
     }
 }

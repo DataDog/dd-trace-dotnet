@@ -118,6 +118,36 @@ internal static partial class ConfigurationKeys
         public const string ExporterOtlpTimeoutMs = "OTEL_EXPORTER_OTLP_TIMEOUT";
 
         /// <summary>
+        /// Configuration key to set the OTLP endpoint URL for traces.
+        /// Takes precedence over <see cref="ExporterOtlpEndpoint"/>.
+        /// This value typically ends with `/v1/traces` when using OTLP/HTTP.
+        /// Expects values like `unix:///path/to/socket.sock` for UDS, `\\.\pipe\name` for Windows Named Pipes.
+        /// Default values: gRPC: http://localhost:4317, HTTP: http://localhost:4318/v1/traces
+        /// </summary>
+        public const string ExporterOtlpTracesEndpoint = "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT";
+
+        /// <summary>
+        /// Configuration key to set custom headers for OTLP traces export.
+        /// Takes precedence over <see cref="ExporterOtlpHeaders"/>.
+        /// Format: api-key=key,other=value.
+        /// </summary>
+        public const string ExporterOtlpTracesHeaders = "OTEL_EXPORTER_OTLP_TRACES_HEADERS";
+
+        /// <summary>
+        /// Configuration key to set the OTLP protocol for traces export.
+        /// Takes precedence over <see cref="ExporterOtlpProtocol"/>.
+        /// Valid values: http/json. Default: http/json
+        /// </summary>
+        public const string ExporterOtlpTracesProtocol = "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL";
+
+        /// <summary>
+        /// Configuration key to set the request timeout for OTLP traces export in milliseconds.
+        /// Takes precedence over <see cref="ExporterOtlpTimeoutMs"/>.
+        /// Default value is 10000ms.
+        /// </summary>
+        public const string ExporterOtlpTracesTimeoutMs = "OTEL_EXPORTER_OTLP_TRACES_TIMEOUT";
+
+        /// <summary>
         /// Configuration key to set the log level.
         /// </summary>
         public const string LogLevel = "OTEL_LOG_LEVEL";
@@ -178,9 +208,10 @@ internal static partial class ConfigurationKeys
 
         /// <summary>
         /// Configuration key to set the exporter for traces.
-        /// We only recognize the value 'none', which is the
-        /// equivalent of setting <see cref="ConfigurationKeys.TraceEnabled"/>
-        /// to false.
+        /// We only recognize the values 'otlp' and 'none'. The value 'otlp' enables
+        /// the experimental export of traces using OTLP. The value 'none' disables
+        /// the export of traces entirely, which is the equivalent of setting 
+        /// <see cref="ConfigurationKeys.TraceEnabled"/> to false.
         /// </summary>
         public const string TracesExporter = "OTEL_TRACES_EXPORTER";
 

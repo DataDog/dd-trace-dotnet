@@ -20,7 +20,7 @@ jobs:
 
       - name: Trigger AAS release
         run: |
-          curl -X POST \
+          curl -fX POST \
           -H "Accept: application/vnd.github.v3+json" \
           -H "Authorization: Bearer ${{ steps.octo-sts.outputs.token }}" \
           https://api.github.com/repos/DataDog/datadog-aas-extension/dispatches \

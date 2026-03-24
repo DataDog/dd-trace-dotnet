@@ -62,6 +62,7 @@ stages:
       - smoke_musl_x64_installer_tests
       - smoke_x64_nuget_tests
       - smoke_arm64_nuget_tests
+      - smoke_x64_azurefunctions_tests
       - smoke_x64_tool_tests
       - smoke_arm64_tool_tests
       - smoke_x64_tool_nuget_tests
@@ -72,6 +73,7 @@ stages:
       - smoke_x64_self_instrument_tests
       - smoke_win_msi_tests
       - smoke_win_nuget_tests
+      - smoke_win_azurefunctions_tests
       - smoke_win_tool_tests
       - smoke_win_tracer_home_tests
       - smoke_win_fleet_tests
@@ -139,6 +141,7 @@ stages:
          in(dependencies.smoke_musl_x64_installer_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
          in(dependencies.smoke_x64_nuget_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
          in(dependencies.smoke_arm64_nuget_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
+         in(dependencies.smoke_x64_azurefunctions_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
          in(dependencies.smoke_x64_tool_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
          in(dependencies.smoke_arm64_tool_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
          in(dependencies.smoke_x64_tool_nuget_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
@@ -149,6 +152,7 @@ stages:
          in(dependencies.smoke_x64_self_instrument_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
          in(dependencies.smoke_win_msi_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
          in(dependencies.smoke_win_nuget_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
+         in(dependencies.smoke_win_azurefunctions_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
          in(dependencies.smoke_win_tool_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
          in(dependencies.smoke_win_tracer_home_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
          in(dependencies.smoke_win_fleet_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
@@ -228,6 +232,7 @@ stages:
       - smoke_musl_x64_installer_tests
       - smoke_x64_nuget_tests
       - smoke_arm64_nuget_tests
+      - smoke_x64_azurefunctions_tests
       - smoke_x64_tool_tests
       - smoke_arm64_tool_tests
       - smoke_x64_tool_nuget_tests
@@ -238,6 +243,7 @@ stages:
       - smoke_x64_self_instrument_tests
       - smoke_win_msi_tests
       - smoke_win_nuget_tests
+      - smoke_win_azurefunctions_tests
       - smoke_win_tool_tests
       - smoke_win_tracer_home_tests
       - smoke_win_fleet_tests
@@ -305,6 +311,7 @@ stages:
          in(dependencies.smoke_musl_x64_installer_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
          in(dependencies.smoke_x64_nuget_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
          in(dependencies.smoke_arm64_nuget_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
+         in(dependencies.smoke_x64_azurefunctions_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
          in(dependencies.smoke_x64_tool_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
          in(dependencies.smoke_arm64_tool_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
          in(dependencies.smoke_x64_tool_nuget_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
@@ -315,6 +322,7 @@ stages:
          in(dependencies.smoke_x64_self_instrument_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
          in(dependencies.smoke_win_msi_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
          in(dependencies.smoke_win_nuget_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
+         in(dependencies.smoke_win_azurefunctions_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
          in(dependencies.smoke_win_tool_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
          in(dependencies.smoke_win_tracer_home_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
          in(dependencies.smoke_win_fleet_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),

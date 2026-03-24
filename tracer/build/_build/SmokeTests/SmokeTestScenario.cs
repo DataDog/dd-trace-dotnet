@@ -35,6 +35,18 @@ public abstract record SmokeTestScenario
     public string DockerTag => $"dd-trace-dotnet/{JobName}-tester";
     public string RuntimeImage => $"{DockerImageRepo}:{RuntimeTag}";
     public bool IsWindows => Os == "windows";
+
+    public virtual Dictionary<string, string> GetEnvironment(bool isCrashTest) =>
+        isCrashTest
+            ? new()
+            {
+                {"DD_PROFILING_ENABLED", "0"},
+                {"CRASH_APP_ON_STARTUP", "1"},
+                {"DD_CRASHTRACKING_INTERNAL_LOG_TO_CONSOLE", "1"},
+                {"COMPlus_DbgEnableMiniDump", "0"},
+            }
+            : new() {{"DD_PROFILING_ENABLED", "1"}};
+
 }
 
 public record InstallerScenario : SmokeTestScenario
@@ -51,8 +63,37 @@ public record ChiseledScenario : SmokeTestScenario
 public record NuGetScenario : SmokeTestScenario
 {
     public required string RuntimeId { get; init; }
+    public required string NuGetPackageName { get; init; }
     public string RelativeProfilerPath => $"datadog/{RuntimeId}/Datadog.Trace.ClrProfiler.Native.so";
     public string RelativeApiWrapperPath => $"datadog/{RuntimeId}/Datadog.Linux.ApiWrapper.x64.so";
+
+    public override string SnapshotFile => NuGetPackageName switch
+    {
+        Projects.DatadogAzureFunctions => "smoke_test_azurefunctions_snapshots",
+        _ => base.SnapshotFile,
+    };
+
+    public override Dictionary<string, string> GetEnvironment(bool isCrashTest)
+    {
+        var env = base.GetEnvironment(isCrashTest);
+        // profiler, libdatadog, libddwaf, Datadog.Linux.ApiWrapper.x64.so aren't available in the package
+        if (NuGetPackageName == Projects.DatadogAzureFunctions)
+        {
+            env["DD_PROFILING_ENABLED"] = "0";
+            env["DD_APPSEC_ENABLED"] = "0";
+            env["LD_PRELOAD"] = "";
+            // Pretend to be in AAS, to avoid trying to use libdatadog for config.
+            env["WEBSITE_SITE_NAME"] = "AspNetCoreSmokeTest";
+            env["WEBSITE_OWNER_NAME"] = "datadog";
+            env["WEBSITE_RESOURCE_GROUP"] = "smoketests";
+            // Super hacky way to try to stop sending config to the profiler
+            env["AWS_LAMBDA_FUNCTION_NAME"] = "AspNetCoreSmokeTest";
+            // Need to have this so it counts as "safe to trace"
+            env["DD_API_KEY"] = "123";
+        }
+
+        return env;
+    }
 }
 
 public record DotnetToolScenario : SmokeTestScenario
@@ -89,6 +130,40 @@ public record WindowsNuGetScenario : SmokeTestScenario
 {
     public required string Channel32Bit { get; init; }
     public required string RelativeProfilerPath { get; init; }
+    public required string NuGetPackageName { get; init; }
+    public bool IncludeDdDotnetScenario { get; init; }
+
+    public override string SnapshotIgnoredAttrs => NuGetPackageName switch
+    {
+        Projects.DatadogAzureFunctions => DefaultSnapshotIgnoredAttrs + ",meta.aas.environment.instance_name",
+        _ => base.SnapshotIgnoredAttrs,
+    };
+
+    public override string SnapshotFile => NuGetPackageName switch
+    {
+        Projects.DatadogAzureFunctions => "smoke_test_azurefunctions_snapshots",
+        _ => base.SnapshotFile,
+    };
+
+    public override Dictionary<string, string> GetEnvironment(bool isCrashTest)
+    {
+        var env = base.GetEnvironment(isCrashTest);
+        // profiler, libdatadog, libddwaf, Datadog.Linux.ApiWrapper.x64.so aren't available in the package
+        if (NuGetPackageName == Projects.DatadogAzureFunctions)
+        {
+            env["DD_PROFILING_ENABLED"] = "0";
+            env["DD_APPSEC_ENABLED"] = "0";
+            env["LD_PRELOAD"] = "";
+            // Pretend to be in AAS, to avoid trying to use libdatadog for config.
+            env["WEBSITE_SITE_NAME"] = "AspNetCoreSmokeTest";
+            env["WEBSITE_OWNER_NAME"] = "datadog";
+            env["WEBSITE_RESOURCE_GROUP"] = "smoketests";
+            // Need to have this so it counts as "safe to trace"
+            env["DD_API_KEY"] = "123";
+        }
+
+        return env;
+    }
 }
 
 public record WindowsDotnetToolScenario : SmokeTestScenario

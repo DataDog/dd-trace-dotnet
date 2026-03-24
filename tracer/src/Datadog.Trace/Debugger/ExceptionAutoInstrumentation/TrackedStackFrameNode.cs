@@ -134,7 +134,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 MaxFieldCount: DebuggerSettings.DefaultMaxNumberOfFieldsToCopy,
                 MaxLength: DebuggerSettings.DefaultMaxStringLength);
 
-            using var snapshotCreator = new ExceptionReplaySnapshotCreator(isFullSnapshot: true, ProbeLocation.Method, hasCondition: false, [], members, limitInfo, Tracer.Instance.Settings.PropagateProcessTags, DebuggerManager.ServiceNameProvider);
+            using var snapshotCreator = new ExceptionReplaySnapshotCreator(isFullSnapshot: true, ProbeLocation.Method, hasCondition: false, [], members, limitInfo, DebuggerManager.ProcessTagsProvider, DebuggerManager.ServiceNameProvider);
 
             _snapshotId = snapshotCreator.SnapshotId;
 

@@ -6,6 +6,7 @@
 #nullable enable
 using System;
 using System.Diagnostics.CodeAnalysis;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Pdb.SourceLink;
 
@@ -26,7 +27,7 @@ internal sealed class GitLabSourceLinkUrlParser : SourceLinkUrlParser
 
         try
         {
-            var segments = uri.AbsolutePath.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+            var segments = uri.AbsolutePath.Split(Separators.ForwardSlash, StringSplitOptions.RemoveEmptyEntries);
             if (segments.Length != 5 || segments[2] != "raw" || segments[4] != "*" || !IsValidCommitSha(segments[3]))
             {
                 return false;

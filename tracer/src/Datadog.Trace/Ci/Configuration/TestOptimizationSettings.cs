@@ -37,7 +37,7 @@ namespace Datadog.Trace.Ci.Configuration
 
             ProxyHttps = config.WithKeys(ConfigurationKeys.Proxy.ProxyHttps).AsString();
             var proxyNoProxy = config.WithKeys(ConfigurationKeys.Proxy.ProxyNoProxy).AsString() ?? string.Empty;
-            ProxyNoProxy = proxyNoProxy.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            ProxyNoProxy = proxyNoProxy.Split(Separators.Space, StringSplitOptions.RemoveEmptyEntries);
 
             // Intelligent Test Runner
             IntelligentTestRunnerEnabled = config.WithKeys(ConfigurationKeys.CIVisibility.IntelligentTestRunnerEnabled).AsBool(true);

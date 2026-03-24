@@ -7,6 +7,7 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Pdb.SourceLink
 {
@@ -27,7 +28,7 @@ namespace Datadog.Trace.Pdb.SourceLink
 
             try
             {
-                var segments = uri.AbsolutePath.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+                var segments = uri.AbsolutePath.Split(Separators.ForwardSlash, StringSplitOptions.RemoveEmptyEntries);
                 if (!uri.OriginalString.StartsWith(@"https://api.bitbucket.org/2.0/repositories/") || segments.Length < 6 || !IsValidCommitSha(segments[5]))
                 {
                     return false;

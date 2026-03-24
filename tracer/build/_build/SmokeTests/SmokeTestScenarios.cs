@@ -26,6 +26,7 @@ public static class SmokeTestScenarios
             SmokeTestCategory.LinuxChiseledInstaller => LinuxChiseledInstallerScenarios(),
             SmokeTestCategory.LinuxChiseledArm64Installer => LinuxChiseledArm64InstallerScenarios(),
             SmokeTestCategory.LinuxNuGet => LinuxNuGetScenarios(),
+            SmokeTestCategory.LinuxAzureFunctionsNuGet => LinuxAzureFunctionsNuGetScenarios(),
             SmokeTestCategory.LinuxNuGetArm64 => LinuxNuGetArm64Scenarios(),
             SmokeTestCategory.LinuxDotnetTool => LinuxDotnetToolScenarios(),
             SmokeTestCategory.LinuxDotnetToolArm64 => LinuxDotnetToolArm64Scenarios(),
@@ -38,6 +39,7 @@ public static class SmokeTestScenarios
             SmokeTestCategory.LinuxSelfInstrument => LinuxSelfInstrumentScenarios(),
             SmokeTestCategory.WindowsMsi => WindowsMsiScenarios(),
             SmokeTestCategory.WindowsNuGet => WindowsNuGetScenarios(),
+            SmokeTestCategory.WindowsAzureFunctionsNuGet => WindowsAzureFunctionsNuGetScenarios(),
             SmokeTestCategory.WindowsDotnetTool => WindowsDotnetToolScenarios(),
             SmokeTestCategory.WindowsTracerHome => WindowsTracerHomeScenarios(),
             SmokeTestCategory.WindowsFleetInstallerIis => WindowsFleetInstallerIisScenarios(),
@@ -489,6 +491,37 @@ public static class SmokeTestScenarios
                 });
         }
 
+        static IEnumerable<IEnumerable<SmokeTestScenario>> LinuxAzureFunctionsNuGetScenarios()
+        {
+            yield return GetAzureFunctionsNuGet(
+                shortName: "debian",
+                os: "debian",
+                runtimeId: "linux-x64",
+                scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion)[]
+                {
+                    (TargetFramework.NET10_0, "mcr.microsoft.com/dotnet/aspnet", "10.0-noble", "noble"),
+                    (TargetFramework.NET6_0, "mcr.microsoft.com/dotnet/aspnet", "6.0-bullseye-slim", "bullseye"),
+                });
+
+            yield return GetAzureFunctionsNuGet(
+                shortName: "centos",
+                os: "centos",
+                runtimeId: "linux-x64",
+                scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion)[]
+                {
+                    (TargetFramework.NET6_0, "andrewlock/dotnet-centos", "7-6.0", "7"),
+                });
+
+            yield return GetAzureFunctionsNuGet(
+                shortName: "opensuse",
+                os: "opensuse",
+                runtimeId: "linux-x64",
+                scenarios: new (string PublishFramework, string Image, string Tag, string OsVersion)[]
+                {
+                    (TargetFramework.NET10_0, "andrewlock/dotnet-opensuse", "15-10.0", "15"),
+                });
+        }
+
         // ─────────────────────────────────────────────────────────
         // DotnetTool categories
         // ─────────────────────────────────────────────────────────
@@ -832,6 +865,25 @@ public static class SmokeTestScenarios
                 Os = os,
                 OsVersion = scenario.OsVersion,
                 RunCrashTest = scenario.RunCrashTest,
+                NuGetPackageName = Projects.DatadogTraceBundle,
+            });
+
+        static IEnumerable<NuGetScenario> GetAzureFunctionsNuGet(
+            string shortName,
+            string os,
+            string runtimeId,
+            params (string PublishFramework, string Image, string Tag, string OsVersion)[] scenarios)
+            => scenarios.Select(scenario => new NuGetScenario
+            {
+                ShortName = shortName,
+                PublishFramework = scenario.PublishFramework,
+                RuntimeTag = scenario.Tag,
+                DockerImageRepo = scenario.Image,
+                RuntimeId = runtimeId,
+                Os = os,
+                OsVersion = scenario.OsVersion,
+                RunCrashTest = false, // there's no profiler, so we have no crash tracking
+                NuGetPackageName = Projects.DatadogAzureFunctions,
             });
 
         static IEnumerable<DotnetToolScenario> GetDotnetTool(
@@ -969,6 +1021,36 @@ public static class SmokeTestScenarios
                              RunCrashTest = false,
                              Channel32Bit = channel32Bit,
                              RelativeProfilerPath = $"datadog/win-{platform}/Datadog.Trace.ClrProfiler.Native.dll",
+                             NuGetPackageName = Projects.DatadogTraceBundle,
+                             IncludeDdDotnetScenario = true,
+                         };
+        }
+
+        static IEnumerable<IEnumerable<SmokeTestScenario>> WindowsAzureFunctionsNuGetScenarios()
+        {
+            // NuGet: x64 and x86
+            var platforms = new[] { "x64", "x86" };
+
+            yield return from platform in platforms
+                         from image in GetWindowsRuntimeImages()
+                        // just test the highest and lowest LTS versions for brevity
+                         where image.PublishFramework == TargetFramework.NET10_0 || image.PublishFramework ==  TargetFramework.NET6_0
+                         let channel32Bit = platform == "x86"
+                             ? GetInstallerChannel(image.PublishFramework)
+                             : ""
+                         select new WindowsNuGetScenario
+                         {
+                             ShortName = $"{platform}",
+                             PublishFramework = image.PublishFramework,
+                             RuntimeTag = image.Tag,
+                             DockerImageRepo = "mcr.microsoft.com/dotnet/aspnet",
+                             Os = "windows",
+                             OsVersion = image.OsVersion,
+                             RunCrashTest = false,
+                             Channel32Bit = channel32Bit,
+                             RelativeProfilerPath = $"datadog/win-{platform}/Datadog.Trace.ClrProfiler.Native.dll",
+                             NuGetPackageName = Projects.DatadogAzureFunctions,
+                             IncludeDdDotnetScenario = false,
                          };
         }
 

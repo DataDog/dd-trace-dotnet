@@ -711,7 +711,7 @@ services:
       - test-agent
     environment:
       - TIMEOUT_LENGTH=120
-    command: servicestackredis:6379 stackexchangeredis:6379 stackexchangeredis-replica:6379 stackexchangeredis-single:6379 sqlserver:1433 postgres:5432 mysql:3306 mysql57:3306 rabbitmq:5672 kafka-broker:9092 kafka-zookeeper:2181 couchbase:11210 test-agent:8126
+    command: servicestackredis:6379 stackexchangeredis:6379 stackexchangeredis-replica:6379 stackexchangeredis-single:6379 sqlserver:1433 postgres:5432 mysql:3306 mysql57:3306 rabbitmq:5672 kafka-broker:9092 kafka-zookeeper:2181 couchbase:11210 test-agent:8126 test-agent:4317 test-agent:4318
 
   StartDependencies.Group2:
     image: andrewlock/wait-for-dependencies
@@ -731,7 +731,7 @@ services:
       - test-agent
     environment:
       - TIMEOUT_LENGTH=120
-    command: elasticsearch5:9200 elasticsearch6:9200 elasticsearch7:9200 mongo:27017 localstack:4566 sqledge:1433 azureservicebus-emulator:5672 azure-eventhubs-emulator:5672 cosmosdb-emulator:8081 rabbitmq:5672 test-agent:8126
+    command: elasticsearch5:9200 elasticsearch6:9200 elasticsearch7:9200 mongo:27017 localstack:4566 sqledge:1433 azureservicebus-emulator:5672 azure-eventhubs-emulator:5672 cosmosdb-emulator:8081 rabbitmq:5672 test-agent:8126 test-agent:4317 test-agent:4318
 
   IntegrationTests.ARM64:
     build:
@@ -836,7 +836,7 @@ services:
       - cosmosdb-emulator_arm64
     environment:
       - TIMEOUT_LENGTH=120
-    command: servicestackredis_arm64:6379 stackexchangeredis_arm64:6379 stackexchangeredis_arm64-replica:6379 stackexchangeredis_arm64-single:6379 elasticsearch7_arm64:9200 sqledge_arm64:1433 mongo_arm64:27017 postgres_arm64:5432 mysql_arm64:3306 rabbitmq_arm64:5672 localstack_arm64:4566 test-agent:8126 cosmosdb-emulator_arm64:8081
+    command: servicestackredis_arm64:6379 stackexchangeredis_arm64:6379 stackexchangeredis_arm64-replica:6379 stackexchangeredis_arm64-single:6379 elasticsearch7_arm64:9200 sqledge_arm64:1433 mongo_arm64:27017 postgres_arm64:5432 mysql_arm64:3306 rabbitmq_arm64:5672 localstack_arm64:4566 test-agent:8126 test-agent:4317 test-agent:4318 cosmosdb-emulator_arm64:8081
 
   IntegrationTests.ARM64.Debugger:
     build:
