@@ -40,10 +40,14 @@ namespace Datadog.Trace.Processors
                 return QuantizeIpSingle(raw);
             }
 
-            // Track seen entries as (start, length) ranges into the StringBuilder to avoid string allocations for deduplication
-            var seen = new List<KeyValuePair<int, int>>();
+            // Dedup uses two separate seen lists indexed into the original 'raw' string,
+            // avoiding StringBuilder indexer access (which is O(chunks) per character).
+            // Cross-list duplicates can't occur: blocked results always contain "blocked-ip-address", non-blocked never do.
+            List<KeyValuePair<int, int>>? seenRaw = null;
+            List<BlockedIpParts>? seenBlocked = null;
             var sb = StringBuilderCache.Acquire();
             var remaining = raw.AsSpan();
+            var position = 0;
 
             while (remaining.Length > 0)
             {
@@ -61,37 +65,37 @@ namespace Datadog.Trace.Processors
                     remaining = remaining.Slice(commaIndex + 1);
                 }
 
+                var rawOffset = position;
+                position += entry.Length + 1; // +1 for comma separator
+
                 if (IsBlockedIp(entry, out var prefixLength, out var hostEnd, out var suffixEnd, out var portStart, out var portEnd))
                 {
-                    // Blocked IP: must build result before we can check for duplicates
-                    var rollbackLength = sb.Length;
-                    if (sb.Length > 0)
+                    // Blocked IP: check duplicate by comparing the variable parts (prefix, suffix, port)
+                    // as spans of the original string — the "blocked-ip-address" middle is constant.
+                    var afterOffset = rawOffset + prefixLength;
+                    var parts = new BlockedIpParts(rawOffset, prefixLength, afterOffset + hostEnd, suffixEnd - hostEnd, afterOffset + portStart, portEnd - portStart);
+                    if (seenBlocked is null || !IsDuplicateBlocked(raw, in parts, seenBlocked))
                     {
-                        sb.Append(',');
-                    }
+                        if (sb.Length > 0)
+                        {
+                            sb.Append(',');
+                        }
 
-                    var entryStart = sb.Length;
-                    AppendBlockedIp(sb, entry, prefixLength, hostEnd, suffixEnd, portStart, portEnd);
-                    var entryLength = sb.Length - entryStart;
-                    if (IsDuplicate(sb, entryStart, entryLength, seen))
-                    {
-                        // undo the add!
-                        sb.Length = rollbackLength;
-                    }
-                    else
-                    {
-                        seen.Add(new KeyValuePair<int, int>(entryStart, entryLength));
+                        AppendBlockedIp(sb, entry, prefixLength, hostEnd, suffixEnd, portStart, portEnd);
+                        seenBlocked ??= new();
+                        seenBlocked.Add(parts);
                     }
                 }
-                else if (!IsDuplicateSpan(sb, entry, seen))
+                else if (seenRaw is null || !IsDuplicateRaw(raw, rawOffset, entry.Length, seenRaw))
                 {
-                    // Non-blocked: quantized result == original entry, check before appending
+                    // Non-blocked: quantized result == original entry, compare spans directly
                     if (sb.Length > 0)
                     {
                         sb.Append(',');
                     }
 
-                    seen.Add(new KeyValuePair<int, int>(sb.Length, entry.Length));
+                    seenRaw ??= new();
+                    seenRaw.Add(new KeyValuePair<int, int>(rawOffset, entry.Length));
                     sb.Append(entry);
                 }
             }
@@ -168,27 +172,12 @@ namespace Datadog.Trace.Processors
             }
         }
 
-        private static bool IsDuplicate(StringBuilder sb, int newStart, int newLength, List<KeyValuePair<int, int>> seen)
+        private static bool IsDuplicateRaw(string raw, int candidateOffset, int candidateLength, List<KeyValuePair<int, int>> seenRaw)
         {
-            for (var s = 0; s < seen.Count; s++)
+            var candidate = raw.AsSpan(candidateOffset, candidateLength);
+            foreach (var existing in seenRaw)
             {
-                var existing = seen[s];
-                if (existing.Value != newLength)
-                {
-                    continue;
-                }
-
-                var match = true;
-                for (var i = 0; i < newLength; i++)
-                {
-                    if (sb[existing.Key + i] != sb[newStart + i])
-                    {
-                        match = false;
-                        break;
-                    }
-                }
-
-                if (match)
+                if (raw.AsSpan(existing.Key, existing.Value).SequenceEqual(candidate))
                 {
                     return true;
                 }
@@ -197,27 +186,13 @@ namespace Datadog.Trace.Processors
             return false;
         }
 
-        private static bool IsDuplicateSpan(StringBuilder sb, ReadOnlySpan<char> candidate, List<KeyValuePair<int, int>> seen)
+        private static bool IsDuplicateBlocked(string raw, in BlockedIpParts candidate, List<BlockedIpParts> seenBlocked)
         {
-            for (var s = 0; s < seen.Count; s++)
+            foreach (var existing in seenBlocked)
             {
-                var existing = seen[s];
-                if (existing.Value != candidate.Length)
-                {
-                    continue;
-                }
-
-                var match = true;
-                for (var i = 0; i < candidate.Length; i++)
-                {
-                    if (sb[existing.Key + i] != candidate[i])
-                    {
-                        match = false;
-                        break;
-                    }
-                }
-
-                if (match)
+                if (raw.AsSpan(existing.PrefixOffset, existing.PrefixLength).SequenceEqual(raw.AsSpan(candidate.PrefixOffset, candidate.PrefixLength))
+                  && raw.AsSpan(existing.SuffixOffset, existing.SuffixLength).SequenceEqual(raw.AsSpan(candidate.SuffixOffset, candidate.SuffixLength))
+                  && raw.AsSpan(existing.PortOffset, existing.PortLength).SequenceEqual(raw.AsSpan(candidate.PortOffset, candidate.PortLength)))
                 {
                     return true;
                 }
@@ -546,6 +521,21 @@ namespace Datadog.Trace.Processors
 
             return true;
 #endif
+        }
+
+        /// <summary>
+        /// Stores the variable parts of a blocked IP result as offsets into the original string.
+        /// The blocked result is: prefix + "blocked-ip-address" + suffix + ":" + port.
+        /// Two blocked results are equal iff their prefix, suffix, and port spans are equal.
+        /// </summary>
+        private readonly struct BlockedIpParts(int prefixOffset, int prefixLength, int suffixOffset, int suffixLength, int portOffset, int portLength)
+        {
+            public readonly int PrefixOffset = prefixOffset;
+            public readonly int PrefixLength = prefixLength;
+            public readonly int SuffixOffset = suffixOffset;
+            public readonly int SuffixLength = suffixLength;
+            public readonly int PortOffset = portOffset;
+            public readonly int PortLength = portLength;
         }
     }
 }
