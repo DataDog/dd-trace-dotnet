@@ -5,7 +5,6 @@
 
 #nullable enable
 
-#if !NETFRAMEWORK
 using System;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.DuckTypes;
@@ -60,20 +59,6 @@ namespace Datadog.Trace.DiagnosticListeners
             var enabled = Tracer.Instance.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.MassTransit);
             Log.Debug("MassTransitDiagnosticObserver.IsSubscriberEnabled: {Enabled}", enabled);
             return enabled;
-        }
-
-        public override IDisposable? SubscribeIfMatch(System.Diagnostics.DiagnosticListener diagnosticListener)
-        {
-            Log.Debug("MassTransitDiagnosticObserver.SubscribeIfMatch: Checking listener '{ListenerName}'", diagnosticListener.Name);
-
-            if (diagnosticListener.Name == ListenerName)
-            {
-                var subscription = diagnosticListener.Subscribe(this);
-                Log.Debug("MassTransitDiagnosticObserver: Subscribed to '{ListenerName}'", diagnosticListener.Name);
-                return subscription;
-            }
-
-            return null;
         }
 
         protected override void OnNext(string eventName, object arg)
@@ -355,4 +340,3 @@ namespace Datadog.Trace.DiagnosticListeners
         }
     }
 }
-#endif

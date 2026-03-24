@@ -137,6 +137,7 @@ public class MassTransit8Tests : TracingIntegrationTest
     [Trait("RunOnWindows", "True")]
     public async Task SubmitsTracesWindowsInMemoryOnly(string packageVersion)
     {
+        SkipOn.AllExcept(SkipOn.PlatformValue.Windows);
         SetEnvironmentVariable("MASSTRANSIT_INMEMORY_ONLY", "true");
         SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
 
