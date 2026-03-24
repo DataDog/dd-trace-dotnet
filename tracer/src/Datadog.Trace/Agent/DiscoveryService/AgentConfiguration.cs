@@ -28,7 +28,8 @@ internal sealed record AgentConfiguration
         bool spanMetaStructs,
         bool? spanEvents,
         List<string>? peerTags = null,
-        List<string>? spanKindsStatsComputed = null)
+        List<string>? spanKindsStatsComputed = null,
+        int obfuscationVersion = 0)
     {
         ConfigurationEndpoint = configurationEndpoint;
         DebuggerEndpoint = debuggerEndpoint;
@@ -47,6 +48,7 @@ internal sealed record AgentConfiguration
         SpanEvents = spanEvents ?? false;
         PeerTags = peerTags;
         SpanKindsStatsComputed = spanKindsStatsComputed;
+        ObfuscationVersion = obfuscationVersion;
     }
 
     public string? ConfigurationEndpoint { get; }
@@ -94,4 +96,6 @@ internal sealed record AgentConfiguration
     public List<string>? PeerTags { get; }
 
     public List<string>? SpanKindsStatsComputed { get; }
+
+    public int ObfuscationVersion { get; }
 }

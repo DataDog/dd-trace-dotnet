@@ -350,6 +350,7 @@ namespace Datadog.Trace.Agent.DiscoveryService
             var spanEvents = jObject["span_events"]?.Value<bool>() ?? false;
             var peerTags = (jObject["peer_tags"] as JArray)?.Values<string>().Where(x => !string.IsNullOrEmpty(x)).Distinct().OrderBy(x => x).ToList();
             var spanKindsStatsComputed = (jObject["span_kinds_stats_computed"] as JArray)?.Values<string>().Where(x => !string.IsNullOrEmpty(x)).ToList();
+            var obfuscationVersion = jObject["obfuscation_version"]?.Value<int>() ?? 0;
 
             var discoveredEndpoints = (jObject["endpoints"] as JArray)?.Values<string>().ToArray();
             string? configurationEndpoint = null;
@@ -440,7 +441,8 @@ namespace Datadog.Trace.Agent.DiscoveryService
                 spanMetaStructs: spanMetaStructs,
                 spanEvents: spanEvents,
                 peerTags: peerTags!,
-                spanKindsStatsComputed: spanKindsStatsComputed!);
+                spanKindsStatsComputed: spanKindsStatsComputed!,
+                obfuscationVersion: obfuscationVersion);
 
             // Save the hash, whether the details we care about changed or not
             _configurationHash = HexString.ToHexString(sha256.Hash);
