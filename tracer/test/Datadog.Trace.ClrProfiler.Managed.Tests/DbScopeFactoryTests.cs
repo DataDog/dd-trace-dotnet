@@ -165,15 +165,16 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
                 { ConfigurationKeys.DbmInjectSqlBasehash, hashPropagationEnabled.ToString() },
                 { ConfigurationKeys.DbmPropagationMode, dbmMode }
             });
-            await using var tracer = TracerHelper.Create(tracerSettings);
+            var serviceRemappingHash = new ServiceRemappingHash(new ProcessTags(serviceNameUserDefined: false, "service"));
+            await using var tracer = TracerHelper.Create(tracerSettings, serviceRemappingHash: serviceRemappingHash);
 
-            using var scope = CreateDbCommandScope(tracer, command, "my_hash");
+            using var scope = CreateDbCommandScope(tracer, command);
 
             scope.Should().NotBeNull();
             if (hashPropagationEnabled)
             {
-                scope.Span.GetTag(Tags.BaseHash).Should().Be("my_hash");
-                command.CommandText.Should().Contain("ddsh='my_hash'");
+                scope.Span.GetTag(Tags.BaseHash).Should().Be(serviceRemappingHash.B64Value);
+                command.CommandText.Should().Contain($"ddsh='{serviceRemappingHash.B64Value}'");
             }
             else
             {
@@ -788,10 +789,10 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             return TracerHelper.Create(tracerSettings);
         }
 
-        private static Scope CreateDbCommandScope(Tracer tracer, IDbCommand command, string baseHash = null)
+        private static Scope CreateDbCommandScope(Tracer tracer, IDbCommand command)
         {
             var methodName = nameof(DbScopeFactory.Cache<object>.CreateDbCommandScope);
-            var arguments = new object[] { tracer, command, baseHash };
+            var arguments = new object[] { tracer, command };
 
             return (Scope)typeof(DbScopeFactory.Cache<>).MakeGenericType(command.GetType())
                                                         .GetMethod(methodName)

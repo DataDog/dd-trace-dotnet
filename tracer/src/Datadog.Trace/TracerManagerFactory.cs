@@ -91,7 +91,7 @@ namespace Datadog.Trace
 
         /// <summary>
         /// Internal for use in tests that create "standalone" <see cref="TracerManager"/> by
-        /// <see cref="Tracer(TracerSettings, IAgentWriter, ITraceSampler, IScopeManager, IStatsdManager, ITelemetryController, IDiscoveryService)"/>
+        /// <see cref="Tracer(TracerSettings, IAgentWriter, ITraceSampler, IScopeManager, IStatsdManager, ITelemetryController, IDiscoveryService, ServiceRemappingHash)"/>
         /// </summary>
         internal TracerManager CreateTracerManager(
             TracerSettings settings,
@@ -108,7 +108,8 @@ namespace Datadog.Trace
             IDynamicConfigurationManager dynamicConfigurationManager,
             ITracerFlareManager tracerFlareManager,
             ISpanEventsManager spanEventsManager,
-            FeatureFlagsModule featureFlags)
+            FeatureFlagsModule featureFlags,
+            ServiceRemappingHash serviceRemappingHash = null)
         {
             settings ??= TracerSettings.FromDefaultSourcesInternal();
             var result = GlobalConfigurationSource.CreationResult;
@@ -123,7 +124,7 @@ namespace Datadog.Trace
                 Log.Warning(libdatadogAvailaibility.Exception, "An exception occurred while checking if libdatadog is available");
             }
 
-            var serviceRemappingHash = new ServiceRemappingHash(settings.Manager.InitialMutableSettings.ProcessTags);
+            serviceRemappingHash ??= new ServiceRemappingHash(settings.Manager.InitialMutableSettings.ProcessTags);
             discoveryService ??= GetDiscoveryService(settings, serviceRemappingHash);
             var telemetrySettings = CreateTelemetrySettings(settings);
             telemetry ??= CreateTelemetryController(settings, discoveryService, telemetrySettings);
