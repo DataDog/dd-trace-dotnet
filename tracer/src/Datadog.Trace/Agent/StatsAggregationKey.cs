@@ -59,6 +59,7 @@ namespace Datadog.Trace.Agent
             GrpcStatusCode = grpcStatusCode;
             ServiceSource = serviceSource;
             PeerTagsHash = peerTagsHash;
+            SpanDerivedPrimaryTagsHash = spanDerivedPrimaryTagsHash;
         }
 
         // Constructs a StatsAgregationKey that represents the aggregation key used by OpenTelemetry,

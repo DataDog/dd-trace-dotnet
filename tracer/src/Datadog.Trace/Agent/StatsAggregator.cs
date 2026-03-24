@@ -399,7 +399,7 @@ namespace Datadog.Trace.Agent
                 return;
             }
 
-            var key = BuildKey(span, _peerTagKeys, out var peerTags);
+            var key = BuildKey(span, out var peerTags);
 
             var buffer = CurrentBuffer;
 
@@ -446,6 +446,11 @@ namespace Datadog.Trace.Agent
             if (config.PeerTags is not null)
             {
                 Interlocked.Exchange(ref _peerTagKeys, config.PeerTags);
+            }
+
+            if (config.SpanDerivedPrimaryTags is not null)
+            {
+                Interlocked.Exchange(ref _spanDerivedPrimaryTagKeys, config.SpanDerivedPrimaryTags);
             }
 
             // Tracer obfuscation version is 1. If the agent's version is > 0 and <= ours, the tracer obfuscates.
