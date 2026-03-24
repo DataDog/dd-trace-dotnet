@@ -243,7 +243,8 @@ namespace Datadog.Trace.Tests.Agent
             group.HttpStatusCode.Should().Be(expectedKey.HttpStatusCode);
             group.Type.Should().Be(expectedKey.Type);
             group.DbType.Should().BeNull();
-            // Hits/Errors/TopLevelHits are doubles in StatsBucket but longs on the wire
+            // Hits/Errors/TopLevelHits use stochastic rounding from double to long.
+            // Test values are whole numbers, so stochastic rounding == truncation.
             group.Hits.Should().Be((long)expectedBucket.Hits);
             group.Errors.Should().Be((long)expectedBucket.Errors);
             group.Duration.Should().Be(expectedBucket.Duration);
