@@ -29,7 +29,8 @@ internal sealed record AgentConfiguration
         bool? spanEvents,
         List<string>? peerTags = null,
         List<string>? spanKindsStatsComputed = null,
-        int obfuscationVersion = 0)
+        int obfuscationVersion = 0,
+        List<string>? spanDerivedPrimaryTags = null)
     {
         ConfigurationEndpoint = configurationEndpoint;
         DebuggerEndpoint = debuggerEndpoint;
@@ -49,6 +50,7 @@ internal sealed record AgentConfiguration
         PeerTags = peerTags;
         SpanKindsStatsComputed = spanKindsStatsComputed;
         ObfuscationVersion = obfuscationVersion;
+        SpanDerivedPrimaryTags = spanDerivedPrimaryTags;
     }
 
     public string? ConfigurationEndpoint { get; }
@@ -98,4 +100,6 @@ internal sealed record AgentConfiguration
     public List<string>? SpanKindsStatsComputed { get; }
 
     public int ObfuscationVersion { get; }
+
+    public List<string>? SpanDerivedPrimaryTags { get; }
 }
