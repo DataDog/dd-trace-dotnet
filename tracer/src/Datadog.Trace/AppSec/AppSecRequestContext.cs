@@ -11,6 +11,7 @@ using Datadog.Trace.AppSec.Rasp;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.AppSec;
@@ -25,9 +26,9 @@ internal sealed partial class AppSecRequestContext
     private readonly object _sync = new();
     private readonly RaspMetricsHelper? _raspMetricsHelper = Security.Instance.RaspEnabled ? new RaspMetricsHelper() : null;
     private readonly List<object> _wafSecurityEvents = new();
-    private int _wafTimeout = 0;
-    private int? _wafError = null;
-    private int? _wafRaspError = null;
+    private int _wafTimeout;
+    private int? _wafError;
+    private int? _wafRaspError;
     private Dictionary<string, List<Dictionary<string, object>>>? _raspStackTraces;
 
     internal void CloseWebSpan(Span span)
@@ -44,7 +45,7 @@ internal sealed partial class AppSecRequestContext
                 }
                 else
                 {
-                    var triggers = JsonConvert.SerializeObject(_wafSecurityEvents);
+                    var triggers = JsonHelper.SerializeObject(_wafSecurityEvents);
                     span.Tags.SetTag(Tags.AppSecJson, "{\"triggers\":" + triggers + "}");
                 }
             }
@@ -127,11 +128,11 @@ internal sealed partial class AppSecRequestContext
         {
             _raspStackTraces ??= new();
 
-            if (!_raspStackTraces.ContainsKey(stackCategory))
+            if (!_raspStackTraces.TryGetValue(stackCategory, out var value))
             {
                 _raspStackTraces.Add(stackCategory, new());
             }
-            else if (maxStackTraces > 0 && _raspStackTraces[stackCategory].Count >= maxStackTraces)
+            else if (maxStackTraces > 0 && value.Count >= maxStackTraces)
             {
                 return;
             }

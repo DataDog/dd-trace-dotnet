@@ -49,7 +49,7 @@ namespace Datadog.Trace
         string? ISpan.ServiceName
         {
             get => ServiceName;
-            set => ServiceName = value;
+            set => SetService(value, value is not null ? Configuration.Schema.ServiceNameMetadata.Manual : null);
         }
 
         /// <inheritdoc />

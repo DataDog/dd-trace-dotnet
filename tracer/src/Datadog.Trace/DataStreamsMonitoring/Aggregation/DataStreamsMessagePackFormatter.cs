@@ -60,6 +60,7 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
 
         private byte[] _environmentValueBytes;
         private byte[] _serviceValueBytes;
+        private ProcessTags? _processTags;
 
         public DataStreamsMessagePackFormatter(TracerSettings tracerSettings, ProfilerSettings profilerSettings)
         {
@@ -88,6 +89,8 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
 
                 var service = StringUtil.IsNullOrEmpty(settings.DefaultServiceName) ? [] : StringEncoding.UTF8.GetBytes(settings.DefaultServiceName);
                 Interlocked.Exchange(ref _serviceValueBytes!, service);
+
+                Interlocked.Exchange(ref _processTags, settings.ProcessTags);
             }
         }
 
@@ -126,7 +129,8 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
             DataStreamsTransactionContainer dataStreamsTransactionContainer)
         {
             var hasTransactions = dataStreamsTransactionContainer.Size() > 0;
-            var withProcessTags = _writeProcessTags && !string.IsNullOrEmpty(ProcessTags.SerializedTags);
+            var withProcessTags = _writeProcessTags && _processTags?.TagsList.Count > 0;
+            var processTags = _writeProcessTags ? _processTags?.TagsList : null;
             var bytesWritten = 0;
 
             // Should be in sync with Java
@@ -244,10 +248,14 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
             bytesWritten += MessagePackBinary.WriteStringBytes(stream, _productMaskBytes);
             bytesWritten += MessagePackBinary.WriteInt64(stream, _productMask);
 
-            if (withProcessTags)
+            if (processTags is not null)
             {
                 bytesWritten += MessagePackBinary.WriteStringBytes(stream, _processTagsBytes);
-                bytesWritten += MessagePackBinary.WriteString(stream, ProcessTags.SerializedTags);
+                bytesWritten += MessagePackBinary.WriteArrayHeader(stream, processTags.Count);
+                foreach (var tag in processTags)
+                {
+                    bytesWritten += MessagePackBinary.WriteString(stream, tag);
+                }
             }
 
             bytesWritten += MessagePackBinary.WriteStringBytes(stream, _isInDefaultStateBytes);

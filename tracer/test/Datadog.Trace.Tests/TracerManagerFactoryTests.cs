@@ -1,4 +1,4 @@
-﻿// <copyright file="TracerManagerFactoryTests.cs" company="Datadog">
+// <copyright file="TracerManagerFactoryTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -13,6 +13,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.TracerFlare;
+using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.RuntimeMetrics;
 using Datadog.Trace.Sampling;
@@ -139,11 +140,12 @@ public class TracerManagerFactoryTests : IAsyncLifetime
             BuildLogSubmissionManager(),
             Mock.Of<ITelemetryController>(),
             Mock.Of<IDiscoveryService>(),
-            new DataStreamsManager(settings, Mock.Of<IDataStreamsWriter>(), processTags: null),
+            new DataStreamsManager(settings, Mock.Of<IDataStreamsWriter>(), Mock.Of<IDiscoveryService>()),
             remoteConfigurationManager: null,
             dynamicConfigurationManager: null,
             tracerFlareManager: null,
-            spanEventsManager: null);
+            spanEventsManager: null,
+            featureFlags: null);
 
         static DirectLogSubmissionManager BuildLogSubmissionManager()
             => DirectLogSubmissionManager.Create(
@@ -158,7 +160,7 @@ public class TracerManagerFactoryTests : IAsyncLifetime
                 gitMetadataTagsProvider: Mock.Of<IGitMetadataTagsProvider>());
 
         static RuntimeMetricsWriter BuildRuntimeMetrics()
-            => new(new TestStatsdManager(Mock.Of<IDogStatsd>()), TimeSpan.FromMinutes(1), inAzureAppServiceContext: false, (_, _, _) => Mock.Of<IRuntimeMetricsListener>());
+            => new(new TestStatsdManager(Mock.Of<IDogStatsd>()), TimeSpan.FromMinutes(1), inAzureAppServiceContext: false, useDiagnosticsApiListener: false, initializeListener: (_, _, _, _) => Mock.Of<IRuntimeMetricsListener>());
     }
 
     private static IConfigurationSource CreateConfigurationSource(params (string Key, string Value)[] values)

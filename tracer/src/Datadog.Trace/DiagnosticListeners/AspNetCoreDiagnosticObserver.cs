@@ -50,7 +50,9 @@ namespace Datadog.Trace.DiagnosticListeners
         private const string HttpRequestInOperationName = "aspnet_core.request";
         private const string MvcOperationName = "aspnet_core_mvc.request";
 
+#if NETCOREAPP
         private static readonly int PrefixLength = "Microsoft.AspNetCore.".Length;
+#endif
 
         private static readonly Type EndpointFeatureType =
             Assembly.GetAssembly(typeof(RouteValueDictionary))
@@ -404,7 +406,6 @@ namespace Datadog.Trace.DiagnosticListeners
                 // these will already be set correctly
                 rootSpanTags.AspNetCoreRoute = aspNetRoute;
                 rootSpan.ResourceName = span.ResourceName;
-                rootSpanTags.HttpRoute = aspNetRoute;
             }
 
             return span;
@@ -451,7 +452,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (arg.TryDuckCast<HttpRequestInEndpointMatchedStruct>(out var typedArg)
              && typedArg.HttpContext is { } httpContext
-             && httpContext.Items[AspNetCoreHttpRequestHandler.HttpContextItemsKey] is AspNetCoreHttpRequestHandler.RequestTrackingFeature { RootScope.Span: { } rootSpan } trackingFeature)
+             && httpContext.Items[AspNetCoreHttpRequestHandler.HttpContextTrackingKey] is AspNetCoreHttpRequestHandler.RequestTrackingFeature { RootScope.Span: { } rootSpan } trackingFeature)
             {
                 if (rootSpan.Tags is not AspNetCoreEndpointTags tags)
                 {
@@ -569,13 +570,12 @@ namespace Datadog.Trace.DiagnosticListeners
                 // But instead we re-extract them in the MVC endpoint as these are MVC
                 // constructs. this is likely marginally less efficient, but simplifies the
                 // already complex logic in the MVC handler
-                // Overwrite the route in the parent span
                 trackingFeature.ResourceName = resourceName;
                 if (isFirstExecution)
                 {
+                    // Overwrite the route in the parent span
                     rootSpan.ResourceName = resourceName;
                     tags.AspNetCoreRoute = normalizedRoute;
-                    tags.HttpRoute = normalizedRoute;
                 }
 
                 _security.CheckPathParamsAndSessionId(httpContext, rootSpan, routeValues);
@@ -601,7 +601,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (arg.TryDuckCast<BeforeActionStruct>(out var typedArg)
              && typedArg.HttpContext is { } httpContext
-             && httpContext.Items[AspNetCoreHttpRequestHandler.HttpContextItemsKey] is AspNetCoreHttpRequestHandler.RequestTrackingFeature { RootScope.Span: { } rootSpan } trackingFeature)
+             && httpContext.Items[AspNetCoreHttpRequestHandler.HttpContextTrackingKey] is AspNetCoreHttpRequestHandler.RequestTrackingFeature { RootScope.Span: { } rootSpan } trackingFeature)
             {
                 HttpRequest request = httpContext.Request;
 
@@ -645,7 +645,7 @@ namespace Datadog.Trace.DiagnosticListeners
             }
         }
 
-        private bool TryGetTypeAndMethod(BeforeActionStruct beforeAction, out Type type, out MethodInfo method)
+        internal static bool TryGetTypeAndMethod(BeforeActionStruct beforeAction, [NotNullWhen(true)] out Type type, [NotNullWhen(true)] out MethodInfo method)
         {
             try
             {
@@ -702,30 +702,6 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (scope is not null && ReferenceEquals(scope.Span.OperationName, MvcOperationName))
             {
-                try
-                {
-                    // Extract data from the Activity
-                    var activity = Activity.ActivityListener.GetCurrentActivity();
-#pragma warning disable DDDUCK001 // Checking IDuckType for null
-                    if (activity is not null)
-                    {
-                        foreach (var activityTag in activity.Tags)
-                        {
-                            scope.Span.SetTag(activityTag.Key, activityTag.Value);
-                        }
-
-                        foreach (var activityBag in activity.Baggage)
-                        {
-                            scope.Span.SetTag(activityBag.Key, activityBag.Value);
-                        }
-                    }
-#pragma warning restore DDDUCK001 // Checking IDuckType for null
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "Error extracting activity data.");
-                }
-
                 scope.Dispose();
             }
         }
@@ -738,7 +714,7 @@ namespace Datadog.Trace.DiagnosticListeners
             }
 
             if (arg.DuckCast<HttpRequestInStopStruct>().HttpContext is { } httpContext
-             && httpContext.Items[AspNetCoreHttpRequestHandler.HttpContextItemsKey] is AspNetCoreHttpRequestHandler.RequestTrackingFeature { RootScope: { } rootScope })
+             && httpContext.Items[AspNetCoreHttpRequestHandler.HttpContextTrackingKey] is AspNetCoreHttpRequestHandler.RequestTrackingFeature { RootScope: { } rootScope })
             {
                 AspNetCoreRequestHandler.StopAspNetCorePipelineScope(_tracer, _security, rootScope, httpContext);
             }
@@ -756,7 +732,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (arg.TryDuckCast<UnhandledExceptionStruct>(out var unhandledStruct)
              && unhandledStruct.HttpContext is { } httpContext
-             && httpContext.Items[AspNetCoreHttpRequestHandler.HttpContextItemsKey] is AspNetCoreHttpRequestHandler.RequestTrackingFeature { RootScope.Span: { } rootSpan })
+             && httpContext.Items[AspNetCoreHttpRequestHandler.HttpContextTrackingKey] is AspNetCoreHttpRequestHandler.RequestTrackingFeature { RootScope.Span: { } rootSpan })
             {
                 AspNetCoreRequestHandler.HandleAspNetCoreException(_tracer, _security, rootSpan, httpContext, unhandledStruct.Exception);
             }

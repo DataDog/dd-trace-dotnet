@@ -43,4 +43,17 @@ internal static class ProxyTestHelpers
         headers.Set(InferredProxyHeaders.Stage, "prod");
         return headers;
     }
+
+    internal static NameValueHeadersCollection CreateValidAzureHeaders(string? start = null)
+    {
+        start ??= DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString();
+
+        var headers = new NameValueHeadersCollection([]);
+        headers.Set(InferredProxyHeaders.Name, "azure-apim");
+        headers.Set(InferredProxyHeaders.StartTime, start);
+        headers.Set(InferredProxyHeaders.HttpMethod, "POST");
+        headers.Set(InferredProxyHeaders.Path, "/api/v1/users");
+        headers.Set(InferredProxyHeaders.Region, "canada central");
+        return headers;
+    }
 }

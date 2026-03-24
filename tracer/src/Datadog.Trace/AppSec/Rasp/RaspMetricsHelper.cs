@@ -10,10 +10,10 @@ namespace Datadog.Trace.AppSec.Rasp;
 
 internal sealed class RaspMetricsHelper
 {
-    private ulong _raspWafDuration = 0;
-    private ulong _raspWafAndBindingsDuration = 0;
-    private uint _raspRuleEval = 0;
-    private bool _raspTimeout = false;
+    private ulong _raspWafDuration;
+    private ulong _raspWafAndBindingsDuration;
+    private uint _raspRuleEval;
+    private bool _raspTimeout;
 
     public void AddRaspSpanMetrics(ulong duration, ulong durationWithBindings, bool timeout)
     {

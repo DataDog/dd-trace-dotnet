@@ -42,18 +42,27 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             "baggage.account.id",
         };
 
-        private readonly bool _enableRouteTemplateResourceNames;
+        private readonly AspNetCoreFeatureFlags _flags;
 
         protected AspNetCoreMvcTestBase(string sampleName, AspNetCoreTestFixture fixture, ITestOutputHelper output, bool enableRouteTemplateResourceNames)
+            : this(sampleName, fixture, output, enableRouteTemplateResourceNames ? AspNetCoreFeatureFlags.RouteTemplateResourceNames : AspNetCoreFeatureFlags.None)
+        {
+        }
+
+        protected AspNetCoreMvcTestBase(string sampleName, AspNetCoreTestFixture fixture, ITestOutputHelper output, AspNetCoreFeatureFlags flags)
             : base(sampleName, output)
         {
-            _enableRouteTemplateResourceNames = enableRouteTemplateResourceNames;
+            _flags = flags;
             SetEnvironmentVariable(ConfigurationKeys.HeaderTags, $"{HeaderName1UpperWithMapping}:{HeaderTagName1WithMapping},{HeaderName2},{HeaderName3}");
             SetEnvironmentVariable(ConfigurationKeys.HttpServerErrorStatusCodes, "400-403, 500-503");
 
             SetServiceVersion("1.0.0");
 
-            SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled, enableRouteTemplateResourceNames.ToString());
+            SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled, (flags == AspNetCoreFeatureFlags.RouteTemplateResourceNames).ToString());
+            SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.SingleSpanAspNetCoreEnabled, (flags == AspNetCoreFeatureFlags.SingleSpan).ToString());
+
+            // Enable OpenTelemetry interop to test that the OTel Baggage API integration works correctly.
+            SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
 
             Fixture = fixture;
             Fixture.SetOutput(output);
@@ -94,7 +103,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         protected virtual string GetTestName(string testName)
         {
             return testName
-                 + (_enableRouteTemplateResourceNames ? ".WithFF" : ".NoFF");
+                 + _flags switch
+                   {
+                       AspNetCoreFeatureFlags.RouteTemplateResourceNames => ".WithFF",
+                       AspNetCoreFeatureFlags.SingleSpan => ".Single",
+                       _ => ".NoFF",
+                   };
         }
     }
 }

@@ -61,7 +61,8 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         ReadOnlyDictionary<string, string> serviceNameMappings,
         string? gitRepositoryUrl,
         string? gitCommitSha,
-        OverrideErrorLog errorLog)
+        OverrideErrorLog errorLog,
+        bool propagateProcessTags)
     {
         IsInitialSettings = isInitialSettings;
         TraceEnabled = traceEnabled;
@@ -91,6 +92,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         GitRepositoryUrl = gitRepositoryUrl;
         GitCommitSha = gitCommitSha;
         ErrorLog = errorLog;
+        ProcessTags = propagateProcessTags ? new ProcessTags(!string.IsNullOrWhiteSpace(serviceName), defaultServiceName) : null;
     }
 
     // Settings that can be set via remote config
@@ -247,19 +249,25 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
     /// <summary>
     /// Gets the application's git repository url.
     /// </summary>
-    /// <seealso cref="ConfigurationKeys.GitRepositoryUrl"/>
+    /// <seealso cref="ConfigurationKeys.CIVisibility.GitRepositoryUrl"/>
     public string? GitRepositoryUrl { get; }
 
     /// <summary>
     /// Gets the application's git commit hash.
     /// </summary>
-    /// <seealso cref="ConfigurationKeys.GitCommitSha"/>
+    /// <seealso cref="ConfigurationKeys.CIVisibility.GitCommitSha"/>
     public string? GitCommitSha { get; }
 
     // Infra
     internal bool IsInitialSettings { get; }
 
     internal OverrideErrorLog ErrorLog { get; }
+
+    /// <summary>
+    /// Gets the process tags instance including the service_name.user_defined tag.
+    /// Will be null if propagateProcessTags is null
+    /// </summary>
+    internal ProcessTags? ProcessTags { get; }
 
     internal static ReadOnlyDictionary<string, string>? InitializeHeaderTags(in ConfigurationBuilder.HasKeys key, bool headerTagsNormalizationFixEnabled)
         => InitializeHeaderTags(
@@ -413,6 +421,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
                KafkaCreateConsumerScopeEnabled == other.KafkaCreateConsumerScopeEnabled &&
                GitRepositoryUrl == other.GitRepositoryUrl &&
                GitCommitSha == other.GitCommitSha &&
+               ProcessTags?.SerializedTags == other.ProcessTags?.SerializedTags &&
                // Do collection comparisons at the end, as generally more expensive
                AreEqual(GlobalTags, other.GlobalTags) &&
                AreEqual(HeaderTags, other.HeaderTags) &&
@@ -512,6 +521,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         // hashCode.Add(ServiceNameMappings);
         hashCode.Add(GitRepositoryUrl);
         hashCode.Add(GitCommitSha);
+        hashCode.Add(ProcessTags?.SerializedTags);
         return hashCode.ToHashCode();
     }
 
@@ -733,7 +743,8 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
             serviceNameMappings: serviceNameMappings,
             gitRepositoryUrl: gitRepositoryUrl,
             gitCommitSha: gitCommitSha,
-            errorLog: errorLog);
+            errorLog: errorLog,
+            propagateProcessTags: tracerSettings.PropagateProcessTags);
 
         static ReadOnlyDictionary<string, string> GetHeaderTagsResult(
             ConfigurationBuilder.ClassConfigurationResultWithKey<IDictionary<string, string>> result,
@@ -934,18 +945,18 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         serviceVersion = GetExplicitSettingOrTag(serviceVersion, globalTags, Tags.Version, ConfigurationKeys.ServiceVersion, telemetry);
 
         var gitCommitSha = config
-                          .WithKeys(ConfigurationKeys.GitCommitSha)
+                          .WithKeys(ConfigurationKeys.CIVisibility.GitCommitSha)
                           .AsString();
 
         // DD_GIT_COMMIT_SHA has precedence over DD_TAGS
-        gitCommitSha = GetExplicitSettingOrTag(gitCommitSha, globalTags, Ci.Tags.CommonTags.GitCommit, ConfigurationKeys.GitCommitSha, telemetry);
+        gitCommitSha = GetExplicitSettingOrTag(gitCommitSha, globalTags, Ci.Tags.CommonTags.GitCommit, ConfigurationKeys.CIVisibility.GitCommitSha, telemetry);
 
         var gitRepositoryUrl = config
-                              .WithKeys(ConfigurationKeys.GitRepositoryUrl)
+                              .WithKeys(ConfigurationKeys.CIVisibility.GitRepositoryUrl)
                               .AsString();
 
         // DD_GIT_REPOSITORY_URL has precedence over DD_TAGS
-        gitRepositoryUrl = GetExplicitSettingOrTag(gitRepositoryUrl, globalTags, Ci.Tags.CommonTags.GitRepository, ConfigurationKeys.GitRepositoryUrl, telemetry);
+        gitRepositoryUrl = GetExplicitSettingOrTag(gitRepositoryUrl, globalTags, Ci.Tags.CommonTags.GitRepository, ConfigurationKeys.CIVisibility.GitRepositoryUrl, telemetry);
 
         var otelTraceEnabled = config
                               .WithKeys(ConfigurationKeys.OpenTelemetry.TracesExporter)
@@ -1064,7 +1075,8 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
             serviceNameMappings: serviceNameMappings,
             gitRepositoryUrl: gitRepositoryUrl,
             gitCommitSha: gitCommitSha,
-            errorLog: errorLog);
+            errorLog: errorLog,
+            propagateProcessTags: tracerSettings.PropagateProcessTags);
     }
 
     /// <summary>

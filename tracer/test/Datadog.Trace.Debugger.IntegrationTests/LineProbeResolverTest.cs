@@ -7,10 +7,15 @@ using System.Linq;
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.IntegrationTests.Helpers;
 using Datadog.Trace.Debugger.Models;
-using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
 using FluentAssertions;
 using Samples.Probes.TestRuns.SmokeTests;
 using Xunit;
+
+#if NETCOREAPP3_1_OR_GREATER
+using System.Collections.Immutable;
+#else
+using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
+#endif
 
 namespace Datadog.Trace.Debugger.IntegrationTests;
 
@@ -79,6 +84,38 @@ public class LineProbeResolverTest
         var result = _lineProbeResolver.TryResolveLineProbe(_probeDefinition, out var loc);
 
         result.Status.Should().Be(LiveProbeResolveStatus.Error);
+        result.Reason.Should().Be(LineProbeResolveReason.MissingSequencePoint);
+        result.Diagnostics.ProbeLine.Should().Be(999999);
+        loc.Should().BeNull();
+    }
+
+    [Fact]
+    public void InvalidLineNumberReturnsRawLinesDiagnostics()
+    {
+        _probeDefinition.Where.Lines[0] = "not-a-number";
+
+        var result = _lineProbeResolver.TryResolveLineProbe(_probeDefinition, out var loc);
+
+        result.Status.Should().Be(LiveProbeResolveStatus.Error);
+        result.Reason.Should().Be(LineProbeResolveReason.InvalidLineNumber);
+        result.Diagnostics.RawLines.Should().Be("not-a-number");
+        result.Diagnostics.ProbeLine.Should().BeNull();
+        loc.Should().BeNull();
+    }
+
+    [Fact]
+    public void MismatchedPathReturnsUnboundWithFileNameDiagnostics()
+    {
+        _probeDefinition.Where.SourceFile = @"some\other\folder\LambdaSingleLine.cs";
+
+        var result = _lineProbeResolver.TryResolveLineProbe(_probeDefinition, out var loc);
+
+        result.Status.Should().Be(LiveProbeResolveStatus.Unbound);
+        result.Reason.Should().Be(LineProbeResolveReason.AssemblyNotLoadedOrSourceFileMismatch);
+        result.Diagnostics.LoadedAssemblyCount.Should().BeGreaterThan(0);
+        result.Diagnostics.SymbolicatedAssemblyCount.Should().BeGreaterThan(0);
+        result.Diagnostics.SameFileNameMatchCount.Should().BeGreaterThan(0);
+        result.Diagnostics.SameFileNameExamples.Should().NotBeNullOrEmpty();
         loc.Should().BeNull();
     }
 

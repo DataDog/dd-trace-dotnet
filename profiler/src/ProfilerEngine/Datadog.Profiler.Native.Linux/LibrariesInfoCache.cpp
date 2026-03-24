@@ -215,3 +215,10 @@ void LibrariesInfoCache::NotifyCacheUpdateImpl()
 {
     _event.Set();
 }
+
+#ifdef DD_TEST
+void* LibrariesInfoCache::GetLocalAddressSpace()
+{
+    return unw_local_addr_space;
+}
+#endif

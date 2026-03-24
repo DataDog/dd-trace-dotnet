@@ -18,6 +18,7 @@ using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util.Http;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Serilog.Events;
 using Datadog.Trace.Vendors.StatsdClient;
@@ -39,6 +40,7 @@ namespace Datadog.Trace.Agent
         private readonly Uri _tracesEndpoint;
         private readonly Uri _statsEndpoint;
         private readonly Action<Dictionary<string, float>> _updateSampleRates;
+        private readonly Action<string> _updateConfigState;
         private readonly bool _partialFlushEnabled;
         private readonly SendCallback<SendStatsState> _sendStats;
         private readonly SendCallback<SendTracesState> _sendTraces;
@@ -51,6 +53,7 @@ namespace Datadog.Trace.Agent
             IStatsdManager statsd,
             ContainerMetadata containerMetadata,
             Action<Dictionary<string, float>> updateSampleRates,
+            Action<string> updateConfigState,
             bool partialFlushEnabled,
             bool healthMetricsEnabled,
             IDatadogLogger log = null)
@@ -61,6 +64,7 @@ namespace Datadog.Trace.Agent
             _sendStats = SendStatsAsyncImpl;
             _sendTraces = SendTracesAsyncImpl;
             _updateSampleRates = updateSampleRates;
+            _updateConfigState = updateConfigState;
             _statsd = statsd;
             ToggleTracerHealthMetrics(healthMetricsEnabled);
             _containerMetadata = containerMetadata;
@@ -365,12 +369,17 @@ namespace Datadog.Trace.Agent
 
                         if (responseContent != _cachedResponse)
                         {
-                            var apiResponse = JsonConvert.DeserializeObject<ApiResponse>(responseContent);
+                            var apiResponse = JsonHelper.DeserializeObject<ApiResponse>(responseContent);
 
                             _updateSampleRates(apiResponse.RateByService);
 
                             _cachedResponse = responseContent;
                         }
+                    }
+
+                    if (_updateConfigState is not null && response.GetHeader(AgentHttpHeaderNames.AgentState) is { } configState)
+                    {
+                        _updateConfigState.Invoke(configState);
                     }
                 }
                 catch (Exception ex)

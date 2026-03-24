@@ -6,9 +6,8 @@
 #nullable enable
 
 using System;
-using System.Runtime.InteropServices;
+using System.Runtime.CompilerServices;
 using Datadog.Trace.ClrProfiler;
-using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 using Datadog.Trace.Configuration;
 
 namespace Datadog.Trace.Util;
@@ -23,30 +22,32 @@ internal static class EnvironmentHelpersNoLogging
         // Track the first exception encountered while reading env vars
         Exception? firstException = null;
 
-        var isServerless = CheckEnvVar(LambdaMetadata.FunctionNameEnvVar, ref firstException)
-                        || (CheckEnvVar(PlatformKeys.AzureAppService.SiteNameKey, ref firstException)
-                         && !CheckEnvVar(ConfigurationKeys.AzureAppService.AzureAppServicesContextKey, ref firstException))
-                        || (CheckEnvVar(PlatformKeys.GcpFunction.FunctionNameKey, ref firstException)
-                         && CheckEnvVar(PlatformKeys.GcpFunction.FunctionTargetKey, ref firstException))
-                        || (CheckEnvVar(PlatformKeys.GcpFunction.DeprecatedFunctionNameKey, ref firstException)
-                         && CheckEnvVar(PlatformKeys.GcpFunction.DeprecatedProjectKey, ref firstException));
-
+        var isServerless = EnvironmentVariableExists(PlatformKeys.Aws.LambdaFunctionName, ref firstException)
+                        || (EnvironmentVariableExists(PlatformKeys.AzureAppService.SiteNameKey, ref firstException)
+                         && !EnvironmentVariableExists(ConfigurationKeys.AzureAppService.AzureAppServicesContextKey, ref firstException))
+                        || (EnvironmentVariableExists(PlatformKeys.GcpFunction.FunctionNameKey, ref firstException)
+                         && EnvironmentVariableExists(PlatformKeys.GcpFunction.FunctionTargetKey, ref firstException))
+                        || (EnvironmentVariableExists(PlatformKeys.GcpFunction.DeprecatedFunctionNameKey, ref firstException)
+                         && EnvironmentVariableExists(PlatformKeys.GcpFunction.DeprecatedProjectKey, ref firstException));
         exceptionInReading = firstException;
         return isServerless;
+    }
 
-        static bool CheckEnvVar(string key, ref Exception? storedException)
+    private static bool EnvironmentVariableExists(string key, ref Exception? storedException)
+    {
+        try
         {
-            try
-            {
-                var value = Environment.GetEnvironmentVariable(key);
-                return !string.IsNullOrEmpty(value);
-            }
-            catch (Exception ex)
-            {
-                // Store only the first exception encountered
-                storedException ??= ex;
-                return false;
-            }
+// this access is allowed here as it's controlled by analyzer EnvironmentGetEnvironmentVariableAnalyzer making sure it's using a key from ConfigurationKeys/PlatformKeys
+#pragma warning disable DD0012
+            var value = GetEnvironmentVariable(key);
+#pragma warning restore DD0012
+            return !string.IsNullOrEmpty(value);
+        }
+        catch (Exception ex)
+        {
+            // Store only the first exception encountered
+            storedException ??= ex;
+            return false;
         }
     }
 
@@ -61,4 +62,15 @@ internal static class EnvironmentHelpersNoLogging
             return false;
         }
     }
+
+    public static string? SsiDeployedEnvVar() => GetEnvironmentVariable(ConfigurationKeys.SsiDeployed);
+
+    public static string? ProgramData() => GetEnvironmentVariable(PlatformKeys.ProgramData);
+
+#pragma warning disable RS0030
+    // -> Don't rename unless you adapt EnvironmentGetEnvironmentVariableAnalyzer
+    // this access is allowed here as it's controlled by analyzer EnvironmentGetEnvironmentVariableAnalyzer making sure it's using a key from ConfigurationKeys/PlatformKeys
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static string? GetEnvironmentVariable(string key) => Environment.GetEnvironmentVariable(key);
+#pragma warning restore RS0030
 }

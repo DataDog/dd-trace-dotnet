@@ -43,6 +43,7 @@
 #include "IEtwEventsManager.h"
 #include "ISsiLifetime.h"
 #include "HeapSnapshotManager.h"
+#include "GCThreadsCpuProvider.h"
 #include "PInvoke.h"
 
 #include "shared/src/native-src/dd_memory_resource.hpp"
@@ -62,6 +63,7 @@ class IExporter;
 class RawSampleTransformer;
 class RuntimeIdStore;
 class CpuSampleProvider;
+class ManagedCodeCache;
 class NetworkProvider;
 class IUnwinder;
 
@@ -290,7 +292,8 @@ private :
     std::shared_ptr<ProxyMetric> _managedThreadsMetric;
     std::shared_ptr<ProxyMetric> _managedThreadsWithContextMetric;
 
-    std::unique_ptr<ISamplesProvider> _gcThreadsCpuProvider = nullptr;
+    // Note: can't use an interface because this class is implementing... 2 needed interfaces
+    std::unique_ptr<GCThreadsCpuProvider> _gcThreadsCpuProvider = nullptr;
     std::unique_ptr<IMetadataProvider> _pMetadataProvider = nullptr;
     std::unique_ptr<IEtwEventsManager> _pEtwEventsManager = nullptr;
     bool _isETWStarted = false;
@@ -298,6 +301,8 @@ private :
 
     std::unique_ptr<ISsiManager> _pSsiManager = nullptr;
     std::unique_ptr<RawSampleTransformer> _rawSampleTransformer;
+
+    std::unique_ptr<ManagedCodeCache> _managedCodeCache = nullptr;
 
 private:
     static void ConfigureDebugLog();
@@ -312,7 +317,7 @@ private:
     void GetFullFrameworkVersion(ModuleID moduleId);
 #endif
 
-void DisposeInternal();
+    void DisposeInternal();
     void InitializeServices();
     bool DisposeServices();
     bool StartServices();

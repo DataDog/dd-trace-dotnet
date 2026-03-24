@@ -3,7 +3,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
 using System.Collections.Immutable;
+using Datadog.Trace.Tools.Analyzers.Helpers;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -19,34 +21,34 @@ namespace Datadog.Trace.Tools.Analyzers.ConfigurationAnalyzers
     public class ConfigurationBuilderWithKeysAnalyzer : DiagnosticAnalyzer
     {
         /// <summary>
-        /// Diagnostic descriptor for when WithKeys or Or is called with a hardcoded string instead of a constant from PlatformKeys or ConfigurationKeys.
+        /// Diagnostic descriptor for when WithKeys is called with a hardcoded string instead of a constant from PlatformKeys or ConfigurationKeys.
         /// </summary>
-        public static readonly DiagnosticDescriptor UseConfigurationConstantsRule = new(
+        private static readonly DiagnosticDescriptor UseConfigurationConstantsRule = new(
             id: "DD0007",
-            title: "Use configuration constants instead of hardcoded strings in WithKeys/Or calls",
+            title: "Use configuration constants instead of hardcoded strings in WithKeys calls",
             messageFormat: "{0} method should use constants from PlatformKeys or ConfigurationKeys classes instead of hardcoded string '{1}'",
             category: "Usage",
             defaultSeverity: DiagnosticSeverity.Error,
             isEnabledByDefault: true,
-            description: "ConfigurationBuilder.WithKeys and HasKeys.Or method calls should only accept string constants from PlatformKeys or ConfigurationKeys classes to ensure consistency and avoid typos.");
+            description: "ConfigurationBuilder.WithKeys method calls should only accept string constants from PlatformKeys or ConfigurationKeys classes to ensure consistency and avoid typos.");
 
         /// <summary>
-        /// Diagnostic descriptor for when WithKeys or Or is called with a variable instead of a constant from PlatformKeys or ConfigurationKeys.
+        /// Diagnostic descriptor for when WithKeys is called with a variable instead of a constant from PlatformKeys or ConfigurationKeys.
         /// </summary>
-        public static readonly DiagnosticDescriptor UseConfigurationConstantsNotVariablesRule = new(
+        private static readonly DiagnosticDescriptor UseConfigurationConstantsNotVariablesRule = new(
             id: "DD0008",
-            title: "Use configuration constants instead of variables in WithKeys/Or calls",
+            title: "Use configuration constants instead of variables in WithKeys calls",
             messageFormat: "{0} method should use constants from PlatformKeys or ConfigurationKeys classes instead of variable '{1}'",
             category: "Usage",
             defaultSeverity: DiagnosticSeverity.Error,
             isEnabledByDefault: true,
-            description: "ConfigurationBuilder.WithKeys and HasKeys.Or method calls should only accept string constants from PlatformKeys or ConfigurationKeys classes, not variables or computed values.");
+            description: "ConfigurationBuilder.WithKeys method calls should only accept string constants from PlatformKeys or ConfigurationKeys classes, not variables or computed values.");
 
         /// <summary>
         /// Gets the supported diagnostics
         /// </summary>
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
-            ImmutableArray.Create(UseConfigurationConstantsRule, UseConfigurationConstantsNotVariablesRule);
+            [UseConfigurationConstantsRule, UseConfigurationConstantsNotVariablesRule, Diagnostics.MissingRequiredType];
 
         /// <summary>
         /// Initialize the analyzer
@@ -56,70 +58,71 @@ namespace Datadog.Trace.Tools.Analyzers.ConfigurationAnalyzers
         {
             context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
             context.EnableConcurrentExecution();
-            context.RegisterSyntaxNodeAction(AnalyzeInvocationExpression, SyntaxKind.InvocationExpression);
+            context.RegisterCompilationStartAction(compilationContext =>
+            {
+                var wellKnownTypeProvider = WellKnownTypeProvider.GetOrCreate(compilationContext.Compilation);
+
+                var configurationBuilder = wellKnownTypeProvider.GetOrCreateTypeByMetadataName(WellKnownTypeNames.ConfigurationBuilder);
+                if (Diagnostics.IsTypeNullAndReportForDatadogTrace(compilationContext, configurationBuilder, nameof(ConfigurationBuilderWithKeysAnalyzer), WellKnownTypeNames.ConfigurationBuilder))
+                {
+                    return;
+                }
+
+                var configurationKeys = wellKnownTypeProvider.GetOrCreateTypeByMetadataName(WellKnownTypeNames.ConfigurationKeys);
+                if (Diagnostics.IsTypeNullAndReportForDatadogTrace(compilationContext, configurationKeys, nameof(ConfigurationBuilderWithKeysAnalyzer), WellKnownTypeNames.ConfigurationKeys))
+                {
+                    return;
+                }
+
+                var platformKeys = wellKnownTypeProvider.GetOrCreateTypeByMetadataName(WellKnownTypeNames.PlatformKeys);
+                if (Diagnostics.IsTypeNullAndReportForDatadogTrace(compilationContext, platformKeys, nameof(ConfigurationBuilderWithKeysAnalyzer), WellKnownTypeNames.PlatformKeys))
+                {
+                    return;
+                }
+
+                var targetTypes = new TargetTypeSymbols(configurationBuilder, configurationKeys, platformKeys);
+
+                compilationContext.RegisterSyntaxNodeAction(
+                    c => AnalyzeInvocationExpression(c, in targetTypes),
+                    SyntaxKind.InvocationExpression);
+            });
         }
 
-        private static void AnalyzeInvocationExpression(SyntaxNodeAnalysisContext context)
+        private static void AnalyzeInvocationExpression(SyntaxNodeAnalysisContext context, in TargetTypeSymbols targetTypes)
         {
             var invocation = (InvocationExpressionSyntax)context.Node;
 
-            // Check if this is a WithKeys or Or method call
-            var methodName = GetConfigurationMethodName(invocation, context.SemanticModel);
-            if (methodName == null)
+            // Bail out early: check if this is a member access with WithKeys method name or with no arguments
+            if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess
+             || memberAccess.Name.Identifier.Text != WellKnownTypeNames.WithKeysMethodName
+             || invocation.ArgumentList?.Arguments.Count == 0)
             {
                 return;
             }
 
-            // Analyze each argument to the method
+            // Check if this is a WithKeys method call
+            var symbolInfo = context.SemanticModel.GetSymbolInfo(memberAccess);
+            if (symbolInfo.Symbol is not IMethodSymbol method)
+            {
+                return;
+            }
+
+            // Verify it's ConfigurationBuilder.WithKeys
+            if (!SymbolEqualityComparer.Default.Equals(method.ContainingType, targetTypes.ConfigurationBuilder))
+            {
+                return;
+            }
+
+            // Analyze the first argument
             var argumentList = invocation.ArgumentList;
             if (argumentList?.Arguments.Count > 0)
             {
-                var argument = argumentList.Arguments[0]; // Both WithKeys and Or take a single string argument
-                AnalyzeConfigurationArgument(context, argument, methodName);
+                var argument = argumentList.Arguments[0];
+                AnalyzeConfigurationArgument(context, argument, WellKnownTypeNames.WithKeysMethodName, targetTypes);
             }
         }
 
-        private static string GetConfigurationMethodName(InvocationExpressionSyntax invocation, SemanticModel semanticModel)
-        {
-            if (invocation.Expression is MemberAccessExpressionSyntax memberAccess)
-            {
-                var methodName = memberAccess.Name.Identifier.ValueText;
-
-                // Check if the method being called is "WithKeys" or "Or"
-                const string withKeysMethodName = "WithKeys";
-                const string orMethodName = "Or";
-                if (methodName is withKeysMethodName or orMethodName)
-                {
-                    // Get the symbol info for the method
-                    var symbolInfo = semanticModel.GetSymbolInfo(memberAccess);
-                    if (symbolInfo.Symbol is IMethodSymbol method)
-                    {
-                        var containingType = method.ContainingType?.Name;
-                        var containingNamespace = method.ContainingNamespace?.ToDisplayString();
-
-                        // Check if this is the ConfigurationBuilder.WithKeys method
-                        if (methodName == withKeysMethodName &&
-                            containingType == "ConfigurationBuilder" &&
-                            containingNamespace == "Datadog.Trace.Configuration.Telemetry")
-                        {
-                            return withKeysMethodName;
-                        }
-
-                        // Check if this is the HasKeys.Or method
-                        if (methodName == orMethodName &&
-                            containingType == "HasKeys" &&
-                            containingNamespace == "Datadog.Trace.Configuration.Telemetry")
-                        {
-                            return orMethodName;
-                        }
-                    }
-                }
-            }
-
-            return null;
-        }
-
-        private static void AnalyzeConfigurationArgument(SyntaxNodeAnalysisContext context, ArgumentSyntax argument, string methodName)
+        private static void AnalyzeConfigurationArgument(SyntaxNodeAnalysisContext context, ArgumentSyntax argument, string methodName, TargetTypeSymbols targetTypes)
         {
             var expression = argument.Expression;
 
@@ -138,7 +141,7 @@ namespace Datadog.Trace.Tools.Analyzers.ConfigurationAnalyzers
 
                 case MemberAccessExpressionSyntax memberAccess:
                     // Check if this is accessing a constant from PlatformKeys or ConfigurationKeys
-                    if (!IsValidConfigurationConstant(memberAccess, context.SemanticModel))
+                    if (!IsValidConfigurationConstant(memberAccess, context.SemanticModel, targetTypes))
                     {
                         // This is accessing something else - report diagnostic
                         var memberName = memberAccess.ToString();
@@ -176,7 +179,7 @@ namespace Datadog.Trace.Tools.Analyzers.ConfigurationAnalyzers
             }
         }
 
-        private static bool IsValidConfigurationConstant(MemberAccessExpressionSyntax memberAccess, SemanticModel semanticModel)
+        private static bool IsValidConfigurationConstant(MemberAccessExpressionSyntax memberAccess, SemanticModel semanticModel, TargetTypeSymbols targetTypes)
         {
             var symbolInfo = semanticModel.GetSymbolInfo(memberAccess);
             if (symbolInfo.Symbol is IFieldSymbol field)
@@ -188,7 +191,7 @@ namespace Datadog.Trace.Tools.Analyzers.ConfigurationAnalyzers
                     if (containingType != null)
                     {
                         // Check if the containing type is PlatformKeys or ConfigurationKeys (or their nested classes)
-                        return IsValidConfigurationClass(containingType);
+                        return IsValidConfigurationClass(containingType, targetTypes);
                     }
                 }
             }
@@ -196,23 +199,14 @@ namespace Datadog.Trace.Tools.Analyzers.ConfigurationAnalyzers
             return false;
         }
 
-        private static bool IsValidConfigurationClass(INamedTypeSymbol typeSymbol)
+        private static bool IsValidConfigurationClass(INamedTypeSymbol typeSymbol, TargetTypeSymbols targetTypes)
         {
             // Check if this is PlatformKeys or ConfigurationKeys class or their nested classes
             var currentType = typeSymbol;
             while (currentType != null)
             {
-                var typeName = currentType.Name;
-                var namespaceName = currentType.ContainingNamespace?.ToDisplayString();
-
-                // Check for PlatformKeys class
-                if (typeName == "PlatformKeys" && namespaceName == "Datadog.Trace.Configuration")
-                {
-                    return true;
-                }
-
-                // Check for ConfigurationKeys class
-                if (typeName == "ConfigurationKeys" && namespaceName == "Datadog.Trace.Configuration")
+                if (SymbolEqualityComparer.Default.Equals(currentType, targetTypes.ConfigurationKeys)
+                 || SymbolEqualityComparer.Default.Equals(currentType, targetTypes.PlatformKeys))
                 {
                     return true;
                 }
@@ -222,6 +216,23 @@ namespace Datadog.Trace.Tools.Analyzers.ConfigurationAnalyzers
             }
 
             return false;
+        }
+
+        private readonly struct TargetTypeSymbols
+        {
+            public readonly INamedTypeSymbol ConfigurationBuilder;
+            public readonly INamedTypeSymbol ConfigurationKeys;
+            public readonly INamedTypeSymbol PlatformKeys;
+
+            public TargetTypeSymbols(
+                INamedTypeSymbol configurationBuilder,
+                INamedTypeSymbol configurationKeys,
+                INamedTypeSymbol platformKeys)
+            {
+                ConfigurationBuilder = configurationBuilder;
+                ConfigurationKeys = configurationKeys;
+                PlatformKeys = platformKeys;
+            }
         }
     }
 }

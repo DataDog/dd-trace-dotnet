@@ -16,6 +16,7 @@ using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.LibDatadog;
 using Datadog.Trace.LibDatadog.DataPipeline;
+using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.Stats;
@@ -76,7 +77,7 @@ public class TraceExporterTests
 
         var sampleRateResponses = new ConcurrentQueue<Dictionary<string, float>>();
 
-        var discovery = DiscoveryService.CreateUnmanaged(tracerSettings.Manager.InitialExporterSettings);
+        var discovery = DiscoveryService.CreateUnmanaged(tracerSettings.Manager.InitialExporterSettings, new ContainerMetadata(containerId: null, entityId: null));
         var statsd = new NoOpStatsd();
 
         // We have to replace the agent writer so that we can intercept the sample rate responses

@@ -11,6 +11,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.PInvoke;
 using Datadog.Trace.Debugger.Sink.Models;
@@ -275,7 +276,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                     var participatingFrame = allFrames[frameIndex--];
                     var noCaptureReason = GetNoCaptureReason(participatingFrame, allProbes.FirstOrDefault(p => MethodMatcher.IsMethodMatch(participatingFrame, p.Method.Method)));
 
-                    if (noCaptureReason != string.Empty)
+                    if (!string.IsNullOrEmpty(noCaptureReason))
                     {
                         TagMissingFrame(rootSpan, $"{debugErrorPrefix}.{assignIndex}.", participatingFrame, noCaptureReason);
                     }
@@ -318,7 +319,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
                         var receivedOrRequestedRejitStatusProbeIds = trackedExceptionCase.ExceptionCase.Probes.Where(p => p.IsInstrumented && (p.ProbeStatus == Status.RECEIVED || p.ProbeStatus == Status.INSTALLED)).ToList();
 
-                        if (receivedOrRequestedRejitStatusProbeIds.Any())
+                        if (receivedOrRequestedRejitStatusProbeIds.Count != 0)
                         {
                             var statuses = DebuggerNativeMethods.GetProbesStatuses(receivedOrRequestedRejitStatusProbeIds.Select(p => p.ProbeId).ToArray());
 
@@ -399,7 +400,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                         var probe = @case.Probes[0];
                         var noCaptureReason = GetNoCaptureReason(probe.Method.Method.Name, probe);
 
-                        if (noCaptureReason != string.Empty)
+                        if (!string.IsNullOrEmpty(noCaptureReason))
                         {
                             while (frameIndex >= 0 && !MethodMatcher.IsMethodMatch(allFrames[frameIndex], @case.Probes[0].Method.Method))
                             {
@@ -426,7 +427,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                             {
                                 var noCaptureReason = GetNoCaptureReason(@case.Probes[probeIndex].Method.Method.Name, @case.Probes[probeIndex]);
 
-                                if (noCaptureReason != string.Empty)
+                                if (!string.IsNullOrEmpty(noCaptureReason))
                                 {
                                     while (frameIndex < allFrames.Count && !MethodMatcher.IsMethodMatch(allFrames[frameIndex], @case.Probes[probeIndex].Method.Method))
                                     {
@@ -463,7 +464,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
                             var noCaptureReason = GetNoCaptureReason(@case.Probes[probeIndex].Method.Method.Name, @case.Probes[probeIndex]);
 
-                            if (noCaptureReason != string.Empty)
+                            if (!string.IsNullOrEmpty(noCaptureReason))
                             {
                                 while (frameIndex < allFrames.Count && !MethodMatcher.IsMethodMatch(allFrames[frameIndex], @case.Probes[probeIndex].Method.Method))
                                 {
@@ -618,7 +619,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         /// </summary>
         private bool IsEnCFeatureEnabled()
         {
-            var encEnabled = EnvironmentHelpers.GetEnvironmentVariable("COMPLUS_ForceEnc");
+            var encEnabled = EnvironmentHelpers.GetEnvironmentVariable(PlatformKeys.ForceEnc);
             return !string.IsNullOrEmpty(encEnabled) && (encEnabled == "1" || encEnabled == "true");
         }
 
@@ -813,7 +814,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 _ => NoCaptureReason.GeneralError,
             };
 
-            if (noCaptureReason != string.Empty)
+            if (!string.IsNullOrEmpty(noCaptureReason))
             {
                 span.Tags.SetTag("error.debug_info_captured", "true");
                 span.Tags.SetTag("_dd.debug.error.no_capture_reason", noCaptureReason);

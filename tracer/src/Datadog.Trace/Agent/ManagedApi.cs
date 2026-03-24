@@ -28,6 +28,7 @@ internal sealed class ManagedApi : IApi
         TracerSettings.SettingsManager settings,
         IStatsdManager statsd,
         Action<Dictionary<string, float>> updateSampleRates,
+        Action<string>? updateConfigState,
         bool partialFlushEnabled)
     {
         UpdateApi(settings.InitialExporterSettings, settings.InitialMutableSettings.TracerMetricsEnabled);
@@ -49,7 +50,7 @@ internal sealed class ManagedApi : IApi
         void UpdateApi(ExporterSettings exporterSettings, bool healthMetricsEnabled)
         {
             var apiRequestFactory = TracesTransportStrategy.Get(exporterSettings);
-            var api = new Api(apiRequestFactory, statsd, ContainerMetadata.Instance, updateSampleRates, partialFlushEnabled, healthMetricsEnabled);
+            var api = new Api(apiRequestFactory, statsd, ContainerMetadata.Instance, updateSampleRates, updateConfigState, partialFlushEnabled, healthMetricsEnabled);
             Interlocked.Exchange(ref _api!, api);
         }
     }

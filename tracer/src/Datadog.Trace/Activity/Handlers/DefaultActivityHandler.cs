@@ -22,7 +22,7 @@ namespace Datadog.Trace.Activity.Handlers
 
         public void ActivityStarted<T>(string sourceName, T activity)
             where T : IActivity
-            => ActivityHandlerCommon.ActivityStarted(sourceName, activity, tags: new OpenTelemetryTags(), out _);
+            => ActivityHandlerCommon.ActivityStarted(sourceName, activity, tags: null, out _);
 
         public void ActivityStopped<T>(string sourceName, T activity)
             where T : IActivity

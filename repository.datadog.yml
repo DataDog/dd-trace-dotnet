@@ -6,6 +6,8 @@ enable: false
 schema-version: v1
 kind: mergegate
 rules:
+  - require: pull-request-freshness
+    enforcement: disabled
   - require: commit-signatures
     excluded_emails:
       - '49699333+dependabot[bot]@users.noreply.github.com' # dependabot

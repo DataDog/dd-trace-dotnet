@@ -43,6 +43,7 @@
       test.bundle: Samples.Selenium,
       test.codeowners: [ "@MyTeam" ],
       test.command: Command,
+      test.final_status: pass,
       test.framework: xUnit,
       test.framework_version: FrameworkVersion,
       test.is_rum_active: true,

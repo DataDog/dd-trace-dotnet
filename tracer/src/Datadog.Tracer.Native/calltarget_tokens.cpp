@@ -358,9 +358,9 @@ mdMethodSpec CallTargetTokens::GetCallTargetDefaultValueMethodSpec(const TypeSig
 }
 
 HRESULT CallTargetTokens::ModifyLocalSig(ILRewriter* reWriter, TypeSignature* methodReturnValue,
-                                         std::vector<TypeSignature>* methodTypeArguments,
+                                         std::vector<TypeSignature>* methodTypeArguments, FunctionInfo* caller,
                                          ULONG* callTargetStateIndex, ULONG* exceptionIndex,
-                                         ULONG* callTargetReturnIndex, ULONG* returnValueIndex,
+                                         ULONG* callTargetReturnIndex, ULONG* staticValueTypeIndex, ULONG* returnValueIndex,
                                          mdToken* callTargetStateToken, mdToken* exceptionToken,
                                          mdToken* callTargetReturnToken, std::vector<ULONG>& additionalLocalIndices, bool isAsyncMethod)
 {
@@ -399,7 +399,17 @@ HRESULT CallTargetTokens::ModifyLocalSig(ILRewriter* reWriter, TypeSignature* me
     }
     constexpr int variableNumber = 3;
     const auto additionalLocalsCount = GetAdditionalLocalsCount(*methodTypeArguments);
-    ULONG newLocalsCount = variableNumber + additionalLocalsCount;
+
+    // For instrumenting static methods in value types, see if we can get the TypeRef for the type.
+    // If so, include add a local variable with the value type in the signature.
+    bool isValueType = caller->type.valueType;
+    bool isStaticValueType = isValueType && !(caller->method_signature.CallingConvention() & IMAGE_CEE_CS_CALLCONV_HASTHIS) && GetCurrentTypeRef(&caller->type, isValueType) != mdTokenNil;
+
+    ULONG newLocalsCount = variableNumber + additionalLocalsCount + (isStaticValueType ? 1 : 0);
+
+    // Gets the static value type buffer and size
+    unsigned staticValueTypeTypeRefBuffer;
+    auto staticValueTypeTypeRefSize = CorSigCompressToken(caller->type.id, &staticValueTypeTypeRefBuffer);
 
     // Gets the calltarget state type buffer and size
     unsigned callTargetStateTypeRefBuffer;
@@ -496,6 +506,13 @@ HRESULT CallTargetTokens::ModifyLocalSig(ILRewriter* reWriter, TypeSignature* me
         newSignature.Append(ELEMENT_TYPE_VALUETYPE);
         newSignature.Append(&callTargetReturnBuffer, callTargetReturnSize);
     }
+
+    // Static method in a ValueType
+    if (isStaticValueType)
+    {
+        newSignature.Append(ELEMENT_TYPE_VALUETYPE);
+        newSignature.Append(&staticValueTypeTypeRefBuffer, staticValueTypeTypeRefSize);
+    }
     
     // Add custom locals
     AddAdditionalLocals(methodReturnValue, methodTypeArguments, newSignature, isAsyncMethod);
@@ -519,7 +536,7 @@ HRESULT CallTargetTokens::ModifyLocalSig(ILRewriter* reWriter, TypeSignature* me
     *callTargetReturnToken = callTargetReturn;
 
     const auto sizeOfOtherIndexes = additionalLocalIndices.size();
-    auto indexStart = variableNumber + additionalLocalsCount;
+    auto indexStart = variableNumber + additionalLocalsCount + (isStaticValueType ? 1 : 0);
 
     if (returnSignatureType != nullptr)
     {
@@ -532,6 +549,15 @@ HRESULT CallTargetTokens::ModifyLocalSig(ILRewriter* reWriter, TypeSignature* me
 
     *exceptionIndex = newLocalsCount - indexStart--;
     *callTargetReturnIndex = newLocalsCount - indexStart--;
+
+    if (isStaticValueType)
+    {
+        *staticValueTypeIndex = newLocalsCount - indexStart--;
+    }
+    else
+    {
+        *staticValueTypeIndex = static_cast<ULONG>(ULONG_MAX);
+    }
 
     for (unsigned int i = 0; i < sizeOfOtherIndexes; i++)
     {
@@ -870,9 +896,9 @@ mdAssemblyRef CallTargetTokens::GetCorLibAssemblyRef()
 }
 
 HRESULT CallTargetTokens::ModifyLocalSigAndInitialize(void* rewriterWrapperPtr, TypeSignature* methodReturnType,
-                                                      std::vector<TypeSignature>* methodTypeArguments,
+                                                      std::vector<TypeSignature>* methodTypeArguments, FunctionInfo* caller,
                                                       ULONG* callTargetStateIndex, ULONG* exceptionIndex,
-                                                      ULONG* callTargetReturnIndex, ULONG* returnValueIndex,
+                                                      ULONG* callTargetReturnIndex, ULONG* staticValueTypeIndex, ULONG* returnValueIndex,
                                                       mdToken* callTargetStateToken, mdToken* exceptionToken,
                                                       mdToken* callTargetReturnToken, ILInstr** firstInstruction,
                                                       std::vector<ULONG>& additionalLocalIndices, bool isAsyncMethod)
@@ -881,8 +907,8 @@ HRESULT CallTargetTokens::ModifyLocalSigAndInitialize(void* rewriterWrapperPtr, 
 
     // Modify the Local Var Signature of the method
 
-    auto hr = ModifyLocalSig(rewriterWrapper->GetILRewriter(), methodReturnType, methodTypeArguments,
-                             callTargetStateIndex, exceptionIndex, callTargetReturnIndex,
+    auto hr = ModifyLocalSig(rewriterWrapper->GetILRewriter(), methodReturnType, methodTypeArguments, caller,
+                             callTargetStateIndex, exceptionIndex, callTargetReturnIndex, staticValueTypeIndex,
                              returnValueIndex, callTargetStateToken, exceptionToken, callTargetReturnToken,
                              additionalLocalIndices, isAsyncMethod);
 

@@ -342,7 +342,7 @@ partial class Build
         .Executes(() =>
         {
             // Exclude CpuLimitTest from this path: They are already launched in a specific step + specific setup
-            var filter = $"{(IsLinux ? "(Category!=WindowsOnly)" : "(Category!=LinuxOnly)")}&(Category!=CpuLimitTest)";
+            var filter = string.IsNullOrWhiteSpace(Filter) ? $"{(IsLinux ? "(Category!=WindowsOnly)" : "(Category!=LinuxOnly)")}&(Category!=CpuLimitTest)" : Filter;
             BuildAndRunProfilerIntegrationTestsInternal(filter);
         });
 

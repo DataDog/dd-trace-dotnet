@@ -1,4 +1,4 @@
-﻿// <copyright file="ProbeProcessor.cs" company="Datadog">
+// <copyright file="ProbeProcessor.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -121,7 +121,7 @@ namespace Datadog.Trace.Debugger.Expressions
 
         public IDebuggerSnapshotCreator CreateSnapshotCreator()
         {
-            return new DebuggerSnapshotCreator(ProbeInfo.IsFullSnapshot, ProbeInfo.ProbeLocation, ProbeInfo.HasCondition, ProbeInfo.Tags, ProbeInfo.CaptureLimitInfo, Tracer.Instance.Settings.PropagateProcessTags);
+            return new DebuggerSnapshotCreator(ProbeInfo.IsFullSnapshot, ProbeInfo.ProbeLocation, ProbeInfo.HasCondition, ProbeInfo.Tags, ProbeInfo.CaptureLimitInfo, DebuggerManager.ProcessTagsProvider, DebuggerManager.ServiceNameProvider);
         }
 
         private void SetExpressions(ProbeDefinition probe)
@@ -332,7 +332,7 @@ namespace Datadog.Trace.Debugger.Expressions
                 {
                     // we are taking the duration at the evaluation time - this might be different from what we have in the snapshot
                     snapshotCreator.SetDuration();
-                    evaluationResult = GetOrCreateEvaluator().Evaluate(snapshotCreator.MethodScopeMembers);
+                    evaluationResult = GetOrCreateEvaluator().Evaluate(snapshotCreator.MethodScopeMembers!);
                 }
             }
             catch (Exception e)
@@ -350,7 +350,7 @@ namespace Datadog.Trace.Debugger.Expressions
 
             if (evaluationResult.IsNull())
             {
-                LogEvaluationState(snapshotCreator.MethodScopeMembers);
+                LogEvaluationState(snapshotCreator.MethodScopeMembers!);
 
                 Log.Error("Evaluation result should not be null. Probe: {ProbeId}", ProbeInfo.ProbeId);
                 evaluationResult.Errors = new List<EvaluationError> { new() { Message = $"Evaluation result is null. Probe ID: {ProbeInfo.ProbeId}" } };
@@ -413,7 +413,7 @@ namespace Datadog.Trace.Debugger.Expressions
                     var instance = methodScopeMembers.InvocationTarget;
                     var members = methodScopeMembers.Members?.Select(m => new { Name = m.Name, Type = m.Type?.FullName ?? m.Type?.Name }).ToList();
                     string? membersAsString = null;
-                    if (members?.Any() == true)
+                    if (members?.Count > 0)
                     {
                         membersAsString = string.Join(";", members);
                     }
@@ -623,7 +623,7 @@ namespace Datadog.Trace.Debugger.Expressions
                     }
 
                     snapshotCreator.ProcessDelayedSnapshot(ref info, HasCondition());
-                    snapshotCreator.CaptureEntryMethodEndMarker(info.Value, info.Type, info.HasLocalOrArgument ?? false);
+                    snapshotCreator.CaptureEntryMethodEndMarker(info.Value, info.Type);
 
                     break;
                 case MethodState.ExitStart:

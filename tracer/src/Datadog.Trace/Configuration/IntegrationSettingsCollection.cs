@@ -60,7 +60,7 @@ namespace Datadog.Trace.Configuration
         {
             var integrations = new IntegrationSettings[IntegrationRegistry.Names.Length];
 
-            for (int i = 0; i < integrations.Length; i++)
+            for (var i = 0; i < integrations.Length; i++)
             {
                 var name = IntegrationRegistry.Names[i];
 

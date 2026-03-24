@@ -13,6 +13,7 @@
 #include "IApplicationStore.h"
 #include "IContentionListener.h"
 #include "IExporter.h"
+#include "IGcSettingsProvider.h"
 #include "IMetricsSender.h"
 #include "IRuntimeIdStore.h"
 #include "ISamplesCollector.h"
@@ -98,6 +99,8 @@ public:
     MOCK_METHOD(std::chrono::milliseconds, GetHeapSnapshotCheckInterval, (), (const override));
     MOCK_METHOD(uint32_t, GetHeapSnapshotMemoryPressureThreshold, (), (const override));
     MOCK_METHOD(uint32_t, GetHeapHandleLimit, (), (const override));
+    MOCK_METHOD(bool, UseManagedCodeCache, (), (const override));
+    MOCK_METHOD(bool, IsMemoryFootprintEnabled, (), (const override));
 };
 
 class MockExporter : public IExporter
@@ -110,6 +113,7 @@ public:
     MOCK_METHOD(void, RegisterUpscalePoissonProvider, (IUpscalePoissonProvider * provider), (override));
     MOCK_METHOD(void, RegisterProcessSamplesProvider, (ISamplesProvider * provider), (override));
     MOCK_METHOD(void, RegisterApplication, (std::string_view runtimeId), (override));
+    MOCK_METHOD(void, RegisterGcSettingsProvider, (IGcSettingsProvider * provider), (override));
 };
 
 class MockSamplesCollector : public ISamplesCollector
@@ -177,14 +181,22 @@ class MockApplicationStore : public IApplicationStore
 {
 public:
     MOCK_METHOD(ApplicationInfo, GetApplicationInfo, (const std::string& runtimeId), (override));
-    MOCK_METHOD(void, SetApplicationInfo, (const std::string&, const std::string&, const std::string&, const std::string&), (override));
+    MOCK_METHOD(void, SetApplicationInfo, (const std::string&, const std::string&, const std::string&, const std::string&, const std::string&), (override));
     MOCK_METHOD(void, SetGitMetadata, (std::string, std::string, std::string), (override));
+
+    // IMemoryFootprintProvider
+    MOCK_METHOD(size_t, GetMemorySize, (), (const override));
+    MOCK_METHOD(void, LogMemoryBreakdown, (), (const override));
 };
 
 class MockRuntimeIdStore : public IRuntimeIdStore
 {
 public:
     MOCK_METHOD(const char*, GetId, (AppDomainID appDomainId), (override));
+
+    // IMemoryFootprintProvider
+    MOCK_METHOD(size_t, GetMemorySize, (), (const override));
+    MOCK_METHOD(void, LogMemoryBreakdown, (), (const override));
 };
 
 class MockProcessSamplesProvider : public ISamplesProvider

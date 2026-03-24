@@ -5,6 +5,7 @@
 #nullable enable
 
 using System.Collections.Generic;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Ci
@@ -28,7 +29,7 @@ namespace Datadog.Trace.Ci
 
         internal string ToJSON()
         {
-            return JsonConvert.SerializeObject(this);
+            return JsonHelper.SerializeObject(this);
         }
     }
 }

@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.Linq;
+using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
 
@@ -11,10 +12,13 @@ namespace Datadog.Trace.Tests;
 
 public class ProcessTagsTests
 {
-    [Fact]
-    public void TagsPresentWhenEnabled()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void TagsPresentWhenServiceNameUserDefined(bool isServiceNameUserDefined)
     {
-        var tags = ProcessTags.SerializedTags;
+        var processTags = new ProcessTags(serviceNameUserDefined: isServiceNameUserDefined, autoServiceName: "auto-service");
+        var tags = processTags.SerializedTags;
 
         tags.Should().ContainAll(ProcessTags.EntrypointBasedir, ProcessTags.EntrypointWorkdir);
         // EntrypointName may not be present, especially when ran in the CI
@@ -28,6 +32,51 @@ public class ProcessTagsTests
             {
                 s.Count(c => c == ':').Should().Be(1);
             });
-        // cannot really assert on content because it depends on how the tests are run.
+
+        if (isServiceNameUserDefined)
+        {
+            tags.Should().Contain("svc.user:true");
+            tags.Should().NotContain("svc.auto");
+        }
+        else
+        {
+            tags.Should().NotContain("svc.user");
+            tags.Should().Contain("svc.auto:auto-service");
+        }
+
+        // cannot really assert the rest of the content because it depends on how the tests are run.
+    }
+
+    [SkippableTheory]
+    [InlineData(@"C:\Users\MyUser\Documents", "Documents")]  // no trailing separator
+    [InlineData(@"C:\Users\MyUser\Documents\", "Documents")] // with trailing separator
+    [InlineData(@"C:\Program Files\", "Program Files")]      // with space
+    [InlineData(@"simple", "simple")]                        // not rooted, no trailing separator
+    [InlineData(@"simple/", "simple")]                       // not rooted, with trailing separator
+    [InlineData(@"C:\", @"C:\")]                             // root
+    [InlineData(@"", "")]                                    // empty
+    [InlineData(null, "")]                                   // null
+    public void GetLastPathSegment_ReturnsLastDirectory_Windows(string path, string expected)
+    {
+        // run these on Windows only
+        SkipOn.AllExcept(SkipOn.PlatformValue.Windows);
+
+        ProcessTags.GetLastPathSegment(path).Should().Be(expected);
+    }
+
+    [SkippableTheory]
+    [InlineData(@"/home/user/projects", "projects")]  // no trailing separator
+    [InlineData(@"/home/user/projects/", "projects")] // with trailing separator
+    [InlineData(@"simple", "simple")]                 // not rooted, no trailing separator
+    [InlineData(@"simple/", "simple")]                // not rooted, with trailing separator
+    [InlineData(@"/", @"/")]                          // root
+    [InlineData(@"", "")]                             // empty
+    [InlineData(null, "")]                            // null
+    public void GetLastPathSegment_ReturnsLastDirectory_NonWindows(string path, string expected)
+    {
+        // do not run these on Windows
+        SkipOn.Platform(SkipOn.PlatformValue.Windows);
+
+        ProcessTags.GetLastPathSegment(path).Should().Be(expected);
     }
 }

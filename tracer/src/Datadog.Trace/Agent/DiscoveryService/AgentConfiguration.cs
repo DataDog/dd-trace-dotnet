@@ -1,4 +1,4 @@
-﻿// <copyright file="AgentConfiguration.cs" company="Datadog">
+// <copyright file="AgentConfiguration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -21,6 +21,7 @@ internal sealed record AgentConfiguration
         string? eventPlatformProxyEndpoint,
         string? telemetryProxyEndpoint,
         string? tracerFlareEndpoint,
+        string? containerTagsHash,
         bool clientDropP0,
         bool spanMetaStructs,
         bool? spanEvents)
@@ -36,6 +37,7 @@ internal sealed record AgentConfiguration
         EventPlatformProxyEndpoint = eventPlatformProxyEndpoint;
         TelemetryProxyEndpoint = telemetryProxyEndpoint;
         TracerFlareEndpoint = tracerFlareEndpoint;
+        ContainerTagsHash = containerTagsHash;
         ClientDropP0s = clientDropP0;
         SpanMetaStructs = spanMetaStructs;
         SpanEvents = spanEvents ?? false;
@@ -48,6 +50,18 @@ internal sealed record AgentConfiguration
     public string? DebuggerV2Endpoint { get; }
 
     public string? DiagnosticsEndpoint { get; }
+
+    /// <summary>
+    /// Gets the preferred endpoint for debugger uploads that support the v2 intake.
+    /// Falls back to the diagnostics endpoint when the v2 endpoint is not available.
+    /// </summary>
+    public string? DebuggerUploadEndpoint => DebuggerV2Endpoint ?? DiagnosticsEndpoint;
+
+    /// <summary>
+    /// Gets the preferred endpoint for debugger diagnostics uploads.
+    /// Falls back to the v1 debugger input endpoint when the diagnostics endpoint is not available.
+    /// </summary>
+    public string? DebuggerDiagnosticsUploadEndpoint => DiagnosticsEndpoint ?? DebuggerEndpoint;
 
     public string? SymbolDbEndpoint { get; }
 
@@ -62,6 +76,8 @@ internal sealed record AgentConfiguration
     public string? TelemetryProxyEndpoint { get; }
 
     public string? TracerFlareEndpoint { get; }
+
+    public string? ContainerTagsHash { get; }
 
     public bool ClientDropP0s { get; }
 

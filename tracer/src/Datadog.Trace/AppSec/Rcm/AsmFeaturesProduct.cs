@@ -1,4 +1,4 @@
-﻿// <copyright file="AsmFeaturesProduct.cs" company="Datadog">
+// <copyright file="AsmFeaturesProduct.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -13,32 +13,35 @@ namespace Datadog.Trace.AppSec.Rcm;
 
 internal sealed class AsmFeaturesProduct : IAsmConfigUpdater
 {
-    public void ProcessUpdates(ConfigurationState configurationStatus, List<RemoteConfiguration> files)
+    public void ProcessUpdates(ConfigurationState configurationStatus, List<RemoteConfigurationPath>? removedConfigs, List<RemoteConfiguration>? files)
     {
-        foreach (var file in files)
+        if (removedConfigs is { Count: > 0 })
         {
-            var asmFeatures = new NamedRawFile(file.Path, file.Contents).Deserialize<AsmFeatures>();
-            if (asmFeatures.TypedFile != null)
+            foreach (var removedConfig in removedConfigs)
             {
-                if (asmFeatures.TypedFile.Asm?.Enabled is not null)
-                {
-                    configurationStatus.AsmFeaturesByFile[file.Path.Path] = asmFeatures.TypedFile.Asm;
-                }
-
-                if (asmFeatures.TypedFile.AutoUserInstrum?.Mode is not null)
-                {
-                    configurationStatus.AutoUserInstrumByFile[file.Path.Path] = asmFeatures.TypedFile.AutoUserInstrum;
-                }
+                configurationStatus.AsmFeaturesByFile.Remove(removedConfig.Path);
+                configurationStatus.AutoUserInstrumByFile.Remove(removedConfig.Path);
             }
         }
-    }
 
-    public void ProcessRemovals(ConfigurationState configurationStatus, List<RemoteConfigurationPath> removedConfigsForThisProduct)
-    {
-        foreach (var removedConfig in removedConfigsForThisProduct)
+        if (files is { Count: > 0 })
         {
-            configurationStatus.AsmFeaturesByFile.Remove(removedConfig.Path);
-            configurationStatus.AutoUserInstrumByFile.Remove(removedConfig.Path);
+            foreach (var file in files)
+            {
+                var asmFeatures = new NamedRawFile(file.Path, file.Contents).Deserialize<AsmFeatures>();
+                if (asmFeatures.TypedFile != null)
+                {
+                    if (asmFeatures.TypedFile.Asm?.Enabled is not null)
+                    {
+                        configurationStatus.AsmFeaturesByFile[file.Path.Path] = asmFeatures.TypedFile.Asm;
+                    }
+
+                    if (asmFeatures.TypedFile.AutoUserInstrum?.Mode is not null)
+                    {
+                        configurationStatus.AutoUserInstrumByFile[file.Path.Path] = asmFeatures.TypedFile.AutoUserInstrum;
+                    }
+                }
+            }
         }
     }
 }

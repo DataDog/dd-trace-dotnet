@@ -23,6 +23,12 @@ namespace Datadog.Trace.Tagging
         [Metric(Trace.Tags.Analytics)]
         public double? AnalyticsSampleRate { get; set; }
 
+        [Tag(Tags.MessagingSystem)]
+        public string MessagingSystem { get; set; }
+
+        [Tag(Tags.MessagingOperation)]
+        public string MessagingOperation { get; set; }
+
         [Tag(Trace.Tags.MessagingSourceName)]
         public string MessagingSourceName { get; set; }
 
@@ -57,7 +63,7 @@ namespace Datadog.Trace.Tagging
 
     internal sealed partial class AzureServiceBusV1Tags : AzureServiceBusTags
     {
-        private string _peerServiceOverride = null;
+        private string _peerServiceOverride;
 
         // Use a private setter for setting the "peer.service" tag so we avoid
         // accidentally setting the value ourselves and instead calculate the

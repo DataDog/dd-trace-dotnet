@@ -17,17 +17,17 @@ namespace Datadog.Trace.Ci.Processors
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<OriginTagTraceProcessor>();
 
-        private readonly bool _isPartialFlushEnabled = false;
-        private readonly bool _isCiVisibilityProtocol = false;
+        private readonly bool _isPartialFlushEnabled;
+        private readonly bool _isCiVisibilityProtocol;
         private DateTimeOffset _warningLastTime = DateTimeOffset.MinValue;
-        private int _count = 0;
+        private int _count;
 
         public OriginTagTraceProcessor(bool isPartialFlushEnabled, bool isCiVisibilityProtocol)
         {
             _isPartialFlushEnabled = isPartialFlushEnabled;
             _isCiVisibilityProtocol = isCiVisibilityProtocol;
 
-            Log.Information("OriginTraceProcessor initialized.");
+            Log.Debug("OriginTraceProcessor initialized.");
         }
 
         public SpanCollection Process(in SpanCollection trace)

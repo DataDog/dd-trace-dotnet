@@ -43,6 +43,7 @@ namespace Samples.Computer01
         LinuxDlIteratePhdrDeadlock,
         SyncOverAsyncWithResult,
         SyncOverAsyncWithGetAwaiterGetResult,
+        AppDomainCrash,
     }
 
     public class Program

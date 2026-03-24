@@ -1,4 +1,4 @@
-﻿// <copyright file="StatsdManager.cs" company="Datadog">
+// <copyright file="StatsdManager.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
@@ -33,9 +34,11 @@ internal sealed class StatsdManager : IStatsdManager
     }
 
     // Internal for testing
-    internal StatsdManager(TracerSettings tracerSettings, Func<MutableSettings, ExporterSettings, StatsdClientHolder> statsdFactory)
+    internal StatsdManager(
+        TracerSettings tracerSettings,
+        Func<MutableSettings, ExporterSettings, StatsdClientHolder> statsdFactory)
     {
-        // The initial factory, assuming there's no updates
+        // The initial factory, assuming there are no updates
         _factory = () => statsdFactory(
             tracerSettings.Manager.InitialMutableSettings,
             tracerSettings.Manager.InitialExporterSettings);
@@ -152,11 +155,15 @@ internal sealed class StatsdManager : IStatsdManager
         }
     }
 
-    public void Dispose()
+    public async Task DisposeAsync()
     {
         _settingSubscription.Dispose();
-        // We swap out the client to make sure we do any flushes.
-        EnsureClient(ensureCreated: false, forceRecreate: true);
+        EnsureClient(ensureCreated: false, forceRecreate: true, out var previous);
+
+        if (previous is not null)
+        {
+            await previous.WaitForDisposalAsync().ConfigureAwait(false);
+        }
     }
 
     // Internal for testing
@@ -173,12 +180,19 @@ internal sealed class StatsdManager : IStatsdManager
         return hasChanges;
     }
 
-    private static StatsdClientHolder CreateClient(MutableSettings settings, ExporterSettings exporter)
-        => new(StatsdFactory.CreateDogStatsdClient(settings, exporter, includeDefaultTags: true));
+    private static StatsdClientHolder CreateClient(
+        MutableSettings settings,
+        ExporterSettings exporter)
+    {
+        var client = StatsdFactory.CreateDogStatsdClient(settings, exporter, includeDefaultTags: true);
+        return new StatsdClientHolder(client);
+    }
 
     private void EnsureClient(bool ensureCreated, bool forceRecreate)
+        => EnsureClient(ensureCreated, forceRecreate, out _);
+
+    private void EnsureClient(bool ensureCreated, bool forceRecreate, out StatsdClientHolder? previous)
     {
-        StatsdClientHolder? previous;
         Log.Debug("Recreating statsdClient: Create new client: {CreateClient}, Force recreate: {ForceRecreate}", ensureCreated, forceRecreate);
 
         lock (_lock)
@@ -186,7 +200,7 @@ internal sealed class StatsdManager : IStatsdManager
             previous = _current;
             if (ensureCreated && previous != null && !forceRecreate)
             {
-                // Already created
+                previous = null;
                 return;
             }
 
@@ -208,6 +222,9 @@ internal sealed class StatsdManager : IStatsdManager
     internal sealed class StatsdClientHolder(IDogStatsd client)
     {
         private const int ClosingBit = 1 << 31;  // sign bit = closing
+
+        // Bridges sync ref-counted disposal (Release/MarkClosing) with async shutdown (StatsdManager.DisposeAsync)
+        private readonly TaskCompletionSource<bool> _disposalComplete = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
         // Logically, _state represents two values we need to check:
         // - Was MarkClosing() called?
@@ -289,23 +306,33 @@ internal sealed class StatsdManager : IStatsdManager
             }
         }
 
+        public Task WaitForDisposalAsync() => _disposalComplete.Task;
+
         private void Dispose()
         {
             if (Interlocked.Exchange(ref _disposed, 1) == 0)
             {
                 Log.Debug("Disposing DogStatsdService");
+                // We push this to a background thread to avoid disposals running in-line
+                // in consuming code. This flushes any outstanding data too
+                // so could take a relatively long time
+                _ = Task.Run(DisposeClientAsync);
+            }
+        }
 
-                // We push this all to a background thread to avoid the disposes running in-line
-                // the DogStatsdService does sync-over-async, and this can cause thread exhaustion
-                _ = Task.Run(() =>
-                {
-                    if (Client is DogStatsdService dogStatsd)
-                    {
-                        dogStatsd.Flush();
-                    }
-
-                    Client.Dispose();
-                });
+        private async Task DisposeClientAsync()
+        {
+            try
+            {
+                await Client.DisposeAsync().ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error disposing DogStatsdService");
+            }
+            finally
+            {
+                _disposalComplete.TrySetResult(true);
             }
         }
     }

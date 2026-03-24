@@ -5,7 +5,7 @@
 #nullable enable
 
 using System.Collections.Generic;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Util.Json;
 
 namespace Datadog.Trace.DataStreamsMonitoring.TransactionTracking;
 
@@ -20,7 +20,7 @@ internal sealed class DataStreamsExtractorRegistry
             return;
         }
 
-        var deserialized = JsonConvert.DeserializeObject<List<DataStreamsTransactionExtractor>>(extractorsJson);
+        var deserialized = JsonHelper.DeserializeObject<List<DataStreamsTransactionExtractor>>(extractorsJson);
         if (deserialized == null)
         {
             return;
@@ -36,7 +36,7 @@ internal sealed class DataStreamsExtractorRegistry
 
     internal string AsJson()
     {
-        return JsonConvert.SerializeObject(_extractors);
+        return JsonHelper.SerializeObject(_extractors);
     }
 
     internal List<DataStreamsTransactionExtractor>? GetExtractorsByType(DataStreamsTransactionExtractor.Type extractorType)

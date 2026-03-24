@@ -125,6 +125,9 @@ public:
     inline void SetContentionType(ContentionType contentionType) { _contentionType = contentionType; }
     ContentionType GetContentionType() { return _contentionType; }
 
+    // Memory measurement
+    inline size_t GetMemorySize() const;
+
 private:
     inline std::string BuildProfileThreadId();
     inline std::string BuildProfileThreadName();
@@ -220,7 +223,7 @@ inline void ManagedThreadInfo::ReleaseLock()
 inline std::string ManagedThreadInfo::BuildProfileThreadId()
 {
     std::stringstream builder;
-    builder << "<" << std::dec << _profilerThreadInfoId << "> [#" << _osThreadId << "]";
+    builder << std::dec << _osThreadId;
 
     return builder.str();
 }
@@ -231,13 +234,10 @@ inline std::string ManagedThreadInfo::BuildProfileThreadName()
     auto threadName = _threadName;
     if (threadName.empty())
     {
-        nameBuilder << "Managed thread (name unknown)";
+        return "";
     }
-    else
-    {
-        nameBuilder << shared::ToString(std::move(threadName));
-    }
-    nameBuilder << " [#" << _osThreadId << "]";
+
+    nameBuilder << shared::ToString(std::move(threadName));
 
     return nameBuilder.str();
 }
@@ -440,7 +440,11 @@ inline AppDomainID ManagedThreadInfo::GetAppDomainId()
     // the AppDomainID from a signal handler.
     AppDomainID appDomainId{0};
     HRESULT hr = _info->GetThreadAppDomain(_clrThreadId, &appDomainId);
-    return appDomainId;
+    if (SUCCEEDED(hr))
+    {
+        return appDomainId;
+    }
+    return 0;
 }
 
 inline std::pair<std::uint64_t, std::uint64_t> ManagedThreadInfo::GetTracingContext() const
@@ -455,4 +459,18 @@ inline std::pair<std::uint64_t, std::uint64_t> ManagedThreadInfo::GetTracingCont
     }
 
     return {localRootSpanId, spanId};
+}
+
+inline size_t ManagedThreadInfo::GetMemorySize() const
+{
+    // Base size of the object
+    size_t size = sizeof(ManagedThreadInfo);
+
+    // Add dynamic string allocations
+    size += _threadName.capacity() * sizeof(shared::WSTRING::value_type);
+    size += _profileThreadId.capacity();
+    size += _profileThreadName.capacity();
+    size += _blockingThreadName.capacity() * sizeof(shared::WSTRING::value_type);
+
+    return size;
 }

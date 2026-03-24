@@ -12,7 +12,6 @@
 
 using System;
 using System.Diagnostics;
-using Datadog.Trace.VendoredMicrosoftCode.System.Diagnostics;
 
 namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
 {

@@ -82,3 +82,20 @@ csharp_new_line_before_members_in_anonymous_types = true
 # Rider
 csharp_keep_existing_initializer_arrangement=true
 csharp_keep_existing_arrangement=true
+
+# Config registry banned api configuration
+# Error when static analyzers aren't respected
+dotnet_diagnostic.RS0030.severity = error
+
+## Exceptions for banned apis:
+# - EnvironmentHelpers.GetEnvironmentVariable (DD0011/DD0012)
+# - EnvironmentHelpersNoLogging.GetEnvironmentVariable (DD0011/DD0012)
+# - EnvironmentHelpers.EnvironmentVariableExists (DD0011/DD0012)
+# - EnvironmentHelpersNoLogging.EnvironmentVariableExists (DD0011/DD0012)
+# - EnvironmentVariablesProvider.GetValue (DD0011/DD0012)
+# - EnvironmentConfigurationSource.GetEnvironmentVariable (RS0030)
+# - IConfigurationSource.Get* methods (GetString, GetInt32, GetDouble, GetBool, GetDictionary, GetAs) (DD0013/DD0014)
+
+# Disables static analyzer errors for a specific folder
+[/tracer/src/Datadog.Trace/Vendors/**.*]
+dotnet_diagnostic.RS0030.severity = none

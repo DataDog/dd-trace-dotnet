@@ -16,7 +16,7 @@ using Xunit;
 namespace Datadog.Trace.Tests.Configuration;
 
 [Collection(nameof(EnvironmentVariablesTestCollection))]
-[EnvironmentRestorer(LambdaMetadata.FunctionNameEnvVar, LambdaMetadata.HandlerEnvVar, LambdaMetadata.ExtensionPathEnvVar)]
+[EnvironmentRestorer(PlatformKeys.Aws.LambdaFunctionName, PlatformKeys.Aws.LambdaHandler, ConfigurationKeys.Aws.LambdaExtensionPath)]
 public class TracerSettingsAwsLambdaTests : SettingsTestsBase
 {
     // These tests rely on Lambda.Create() which uses environment variables
@@ -31,9 +31,9 @@ public class TracerSettingsAwsLambdaTests : SettingsTestsBase
     {
         if (isRunningInLambda)
         {
-            Environment.SetEnvironmentVariable(LambdaMetadata.FunctionNameEnvVar, "functionName");
-            Environment.SetEnvironmentVariable(LambdaMetadata.HandlerEnvVar, "serviceName::handlerName");
-            Environment.SetEnvironmentVariable(LambdaMetadata.ExtensionPathEnvVar, GetCallerFilePath());
+            Environment.SetEnvironmentVariable(PlatformKeys.Aws.LambdaFunctionName, "functionName");
+            Environment.SetEnvironmentVariable(PlatformKeys.Aws.LambdaHandler, "serviceName::handlerName");
+            Environment.SetEnvironmentVariable(ConfigurationKeys.Aws.LambdaExtensionPath, GetCallerFilePath());
         }
 
         var source = CreateConfigurationSource((ConfigurationKeys.HttpClientExcludedUrlSubstrings, value));

@@ -17,12 +17,13 @@ jobs:
       pull-requests: read # Fetches PRs
       issues: write # Opens milestones
       statuses: write # add a commit status check
+      id-token: write # required for dd-octo-sts OIDC token
     env:
       GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
 
     steps:
       - name: Clone dd-trace-dotnet repository
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - uses: octokit/request-action@786351db496fa66730d8faa09ef279108da175a3 # v2.x
         name: 'Open Code Freeze Milestone'
@@ -43,8 +44,14 @@ jobs:
           state: failure
           workflow_name: code_freeze_start.yml # this allows for a click through to go to the action
 
+      - name: Get GitHub Token via dd-octo-sts
+        id: octo-sts
+        uses: DataDog/dd-octo-sts-action@acaa02eee7e3bb0839e4272dacb37b8f3b58ba80 # v1.0.3
+        with:
+          scope: DataDog/datadog-aas-extension
+          policy: dd-trace-dotnet.github.deploy-aas-dev-apps
+
       - uses: ./.github/actions/deploy-aas-dev-apps
         name: 'Trigger AAS deploy'
         with:
-          github_app_id: ${{ secrets.GH_APP_ID }}
-          github_app_private_key: ${{ secrets.GH_APP_PRIVATE_KEY }}
+          github_token: ${{ steps.octo-sts.outputs.token }}

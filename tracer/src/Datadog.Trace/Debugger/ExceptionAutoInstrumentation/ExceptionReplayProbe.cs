@@ -22,7 +22,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         private readonly int _hashCode;
         private readonly object _locker = new();
         private readonly List<ExceptionCase> _exceptionCases = new();
-        private int _isInstrumented = 0;
+        private int _isInstrumented;
         private int _maxFramesToCapture;
 
         public ExceptionReplayProbe(MethodUniqueIdentifier method, int maxFramesToCapture)
@@ -73,7 +73,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         private bool CheckIfMethodMayBeOmittedFromCallStack()
         {
             return ExceptionTrackManager.IsEditAndContinueFeatureEnabled &&
-                   FrameworkDescription.Instance.IsCoreClr() && RuntimeHelper.IsNetOnward(6) && Method.Method.DeclaringType?.Assembly != null && RuntimeHelper.IsModuleDebugCompiled(Method.Method.DeclaringType.Assembly);
+                   FrameworkDescription.Instance.RuntimeVersion.Major >= 6 && Method.Method.DeclaringType?.Assembly != null && RuntimeHelper.IsModuleDebugCompiled(Method.Method.DeclaringType.Assembly);
         }
 
         private void ProcessCase(ExceptionCase @case)

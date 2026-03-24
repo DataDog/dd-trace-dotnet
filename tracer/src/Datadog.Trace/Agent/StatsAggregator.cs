@@ -57,7 +57,7 @@ namespace Datadog.Trace.Agent
             _traceProcessors = new ITraceProcessor[]
             {
                 new Processors.NormalizerTraceProcessor(),
-                new Processors.ObfuscatorTraceProcessor(false),
+                new Processors.ObfuscatorTraceProcessor(),
             };
 
             _prioritySampler = new PrioritySampler();
@@ -69,8 +69,8 @@ namespace Datadog.Trace.Agent
             var header = new ClientStatsPayload(settings.Manager.InitialMutableSettings)
             {
                 HostName = HostMetadata.Instance.Hostname,
-                ProcessTags = settings.PropagateProcessTags ? ProcessTags.SerializedTags : null
             };
+
             _settingSubscription = settings.Manager.SubscribeToChanges(changes =>
             {
                 if (changes.UpdatedMutable is { } mutable)
@@ -98,7 +98,7 @@ namespace Datadog.Trace.Agent
         /// </summary>
         internal StatsBuffer CurrentBuffer => _buffers[_currentBuffer];
 
-        public bool? CanComputeStats { get; private set; } = null;
+        public bool? CanComputeStats { get; private set; }
 
         public static IStatsAggregator Create(IApi api, TracerSettings settings, IDiscoveryService discoveryService)
         {

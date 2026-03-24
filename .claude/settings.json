@@ -1,0 +1,10 @@
+{
+  "extraKnownMarketplaces": {
+    "datadog-claude-plugins": {
+      "source": {
+        "source": "github",
+        "repo": "DataDog/claude-marketplace"
+      }
+    }
+  }
+}

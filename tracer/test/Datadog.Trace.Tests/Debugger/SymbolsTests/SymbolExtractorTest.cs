@@ -107,6 +107,88 @@ public class SymbolExtractorTest
 #endif
     }
 
+    [SkippableFact]
+    private void StaticMethodClosureScopeDoesNotExposeThisSymbol()
+    {
+#if DEBUG
+        throw new SkipException("This test requires RELEASE mode and will always fail in DEBUG mode");
+#elif NETFRAMEWORK
+        throw new SkipException("This test is flaky - The .NET Framework snapshots produced are different in CI and locally");
+#else
+        if (!EnvironmentTools.IsWindows())
+        {
+            throw new SkipException("PDB test only on windows");
+        }
+
+        var type = typeof(TestSamples.StaticHoistedLocalsInStateMachine);
+        var assembly = Assembly.GetAssembly(type);
+        Assert.NotNull(assembly);
+
+        var root = GetSymbols(assembly, type.FullName);
+        var classScope = root.Scopes.Single().Scopes.Single();
+
+        Assert.NotNull(classScope.Scopes);
+        var doMethod = classScope.Scopes.Single(s => s.ScopeType == ScopeType.Method && s.Name == "DoAsyncWork");
+
+        Assert.NotNull(doMethod.Scopes);
+        var closureScopes = doMethod.Scopes.Where(s => s.ScopeType == ScopeType.Closure).ToArray();
+        Assert.NotEmpty(closureScopes);
+
+        foreach (var closureScope in closureScopes)
+        {
+            if (closureScope.Symbols is null)
+            {
+                continue;
+            }
+
+            Assert.DoesNotContain(closureScope.Symbols, s => s.SymbolType == SymbolType.Arg && s.Name == "this");
+        }
+#endif
+    }
+
+    [SkippableFact]
+    private void StaticMethodClosureScopeWithOtherArgsStillDoesNotExposeThisSymbol()
+    {
+#if DEBUG
+        throw new SkipException("This test requires RELEASE mode and will always fail in DEBUG mode");
+#elif NETFRAMEWORK
+        throw new SkipException("This test is flaky - The .NET Framework snapshots produced are different in CI and locally");
+#else
+        if (!EnvironmentTools.IsWindows())
+        {
+            throw new SkipException("PDB test only on windows");
+        }
+
+        var type = typeof(TestSamples.StaticLambdaWithParameter);
+        var assembly = Assembly.GetAssembly(type);
+        Assert.NotNull(assembly);
+
+        var root = GetSymbols(assembly, type.FullName);
+        var classScope = root.Scopes.Single().Scopes.Single();
+
+        Assert.NotNull(classScope.Scopes);
+        var fooMethod = classScope.Scopes.Single(s => s.ScopeType == ScopeType.Method && s.Name == "Foo");
+
+        Assert.NotNull(fooMethod.Scopes);
+        var closureScopes = fooMethod.Scopes.Where(s => s.ScopeType == ScopeType.Closure).ToArray();
+        Assert.NotEmpty(closureScopes);
+
+        // Ensure we have at least one closure scope that still exposes non-this args,
+        // and verify none of them include a 'this' arg.
+        var foundClosureWithArgs = false;
+        foreach (var closureScope in closureScopes)
+        {
+            if (closureScope.Symbols is { Length: > 0 } symbols)
+            {
+                foundClosureWithArgs = true;
+                Assert.DoesNotContain(symbols, s => s.SymbolType == SymbolType.Arg && s.Name == "this");
+            }
+        }
+
+        Assert.True(foundClosureWithArgs);
+#endif
+    }
+
     private string GetStringToVerify(Root root)
     {
         var assembly = root.Scopes[0];
@@ -195,5 +277,39 @@ public class SymbolExtractorTest
         };
 
         return root;
+    }
+
+    [SkippableFact]
+    [Trait("Category", "LinuxUnsupported")]
+    private void DoesNotDropClosureMethodsWhenThereAreMany()
+    {
+#if DEBUG
+        throw new SkipException("This test requires RELEASE mode (PDB/sequence points differ in DEBUG mode)");
+#elif NETFRAMEWORK
+        throw new SkipException("PDB-based symbol extraction tests are flaky on .NET Framework");
+#else
+        if (!EnvironmentTools.IsWindows())
+        {
+            throw new SkipException("PDB test only on windows");
+        }
+
+        var type = typeof(ClosureOverflowSamples.ManyClosures);
+        var assembly = Assembly.GetAssembly(type);
+        Assert.NotNull(assembly);
+
+        var extractor = SymbolExtractor.Create(assembly);
+        Assert.NotNull(extractor);
+
+        var classSymbol = extractor.GetClassSymbols(type.FullName);
+        Assert.True(classSymbol.HasValue);
+
+        var classScope = classSymbol.Value;
+        Assert.NotNull(classScope.Scopes);
+
+        var runMethodScope = classScope.Scopes.Single(s => s.ScopeType == ScopeType.Method && s.Name == nameof(ClosureOverflowSamples.ManyClosures.Run));
+        var closureCount = runMethodScope.Scopes?.Count(s => s.ScopeType == ScopeType.Closure) ?? 0;
+
+        Assert.Equal(ClosureOverflowSamples.ManyClosures.ClosureCount, closureCount);
+#endif
     }
 }

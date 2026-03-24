@@ -21,6 +21,7 @@ namespace Datadog.Trace.Telemetry
             AgentlessSettings? agentlessSettings,
             bool agentProxyEnabled,
             TimeSpan heartbeatInterval,
+            TimeSpan extendedHeartbeatInterval,
             bool dependencyCollectionEnabled,
             bool metricsEnabled,
             bool debugEnabled,
@@ -31,6 +32,7 @@ namespace Datadog.Trace.Telemetry
             Agentless = agentlessSettings;
             AgentProxyEnabled = agentProxyEnabled;
             HeartbeatInterval = heartbeatInterval;
+            ExtendedHeartbeatInterval = extendedHeartbeatInterval;
             DependencyCollectionEnabled = dependencyCollectionEnabled;
             MetricsEnabled = metricsEnabled;
             DebugEnabled = debugEnabled;
@@ -48,6 +50,8 @@ namespace Datadog.Trace.Telemetry
         public AgentlessSettings? Agentless { get; }
 
         public TimeSpan HeartbeatInterval { get; }
+
+        public TimeSpan ExtendedHeartbeatInterval { get; }
 
         public bool AgentProxyEnabled { get; }
 
@@ -141,6 +145,11 @@ namespace Datadog.Trace.Telemetry
                                    .AsDouble(defaultValue: 60, rawInterval => rawInterval is > 0 and <= 3600)
                                    .Value;
 
+            var extendedHeartbeatInterval = config
+                                           .WithKeys(ConfigurationKeys.Telemetry.ExtendedHeartbeatIntervalSeconds)
+                                           .AsInt32(defaultValue: 86400, rawInterval => rawInterval is > 0 and <= 604800)
+                                           .Value;
+
             var dependencyCollectionEnabled = config.WithKeys(ConfigurationKeys.Telemetry.DependencyCollectionEnabled).AsBool(true);
 
             var telemetryCompressionMethod = config.WithKeys(ConfigurationKeys.Telemetry.TelemetryCompressionMethod).AsString("gzip");
@@ -168,6 +177,7 @@ namespace Datadog.Trace.Telemetry
                 agentless,
                 agentProxyEnabled,
                 TimeSpan.FromSeconds(heartbeatInterval),
+                TimeSpan.FromSeconds(extendedHeartbeatInterval),
                 dependencyCollectionEnabled,
                 metricsEnabled,
                 debugEnabled,
@@ -205,18 +215,18 @@ namespace Datadog.Trace.Telemetry
             public static AgentlessSettings Create(Uri agentlessUri, string apiKey)
             {
                 CloudSettings? cloud = null;
-                if (EnvironmentHelpers.GetEnvironmentVariable(TelemetryConstants.GcpServiceVariable) is { Length: >0 } gcp)
+                if (EnvironmentHelpers.GetEnvironmentVariable(PlatformKeys.GcpFunction.FunctionNameKey) is { Length: >0 } gcp)
                 {
                     cloud = new("GCP", "GCPCloudRun", gcp);
                 }
-                else if (EnvironmentHelpers.GetEnvironmentVariable(TelemetryConstants.AzureContainerAppVariable) is { Length: >0 } aca)
+                else if (EnvironmentHelpers.GetEnvironmentVariable(PlatformKeys.AzureAppService.ContainerAppName) is { Length: >0 } aca)
                 {
                     cloud = new("Azure", "AzureContainerApp", aca);
                 }
-                else if (!string.IsNullOrEmpty(EnvironmentHelpers.GetEnvironmentVariable(TelemetryConstants.AzureAppServiceVariable1))
-                    || !string.IsNullOrEmpty(EnvironmentHelpers.GetEnvironmentVariable(TelemetryConstants.AzureAppServiceVariable2)))
+                else if (!string.IsNullOrEmpty(EnvironmentHelpers.GetEnvironmentVariable(PlatformKeys.AzureAppService.RunFromZipKey))
+                    || !string.IsNullOrEmpty(EnvironmentHelpers.GetEnvironmentVariable(PlatformKeys.AzureAppService.AppServiceApplogsTraceEnabledKey)))
                 {
-                    cloud = new("Azure", "AzureAppService", EnvironmentHelpers.GetEnvironmentVariable(TelemetryConstants.AzureAppServiceIdentifierVariable));
+                    cloud = new("Azure", "AzureAppService", EnvironmentHelpers.GetEnvironmentVariable(PlatformKeys.AzureAppService.SiteNameKey));
                 }
 
                 // TODO: Handle AWS Lambda. We don't currently have a good way to get the ARN as the identifier so skip for now

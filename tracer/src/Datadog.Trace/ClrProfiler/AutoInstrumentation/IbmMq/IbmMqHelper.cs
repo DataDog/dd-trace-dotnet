@@ -7,15 +7,43 @@
 
 using System;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.IbmMq;
 
 internal static class IbmMqHelper
 {
-    private const string MessagingType = "ibmmq";
+    private const string QueueUriPrefix = "queue://";
+    private const string TopicUriPrefix = "topic://";
+
+    /// <summary>
+    /// Sanitizes an IBM MQ queue name by removing URI scheme prefixes.
+    /// Converts names like "queue://my_queue" to "my_queue".
+    /// </summary>
+    internal static string SanitizeQueueName(string? queueName)
+    {
+        if (StringUtil.IsNullOrEmpty(queueName))
+        {
+            return string.Empty;
+        }
+
+        // Remove queue:// or topic:// URI prefix if present
+        if (queueName.StartsWith(QueueUriPrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            return queueName.Substring(QueueUriPrefix.Length);
+        }
+
+        if (queueName.StartsWith(TopicUriPrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            return queueName.Substring(TopicUriPrefix.Length);
+        }
+
+        return queueName;
+    }
 
     internal static IbmMqHeadersAdapterNoop GetHeadersAdapter(IMqMessage message)
     {
@@ -38,18 +66,20 @@ internal static class IbmMqHelper
                 return null;
             }
 
-            var operationName = settings.Schema.Messaging.GetOutboundOperationName(MessagingType);
-            var serviceName = settings.Schema.Messaging.GetServiceName(MessagingType);
+            var operationName = settings.Schema.Messaging.GetOutboundOperationName(MessagingSchema.OperationType.IbmMq);
+            var (serviceName, serviceNameSource) = settings.Schema.Messaging.GetServiceNameMetadata(MessagingSchema.ServiceType.IbmMq);
             var tags = settings.Schema.Messaging.CreateIbmMqTags(SpanKinds.Consumer);
-            tags.TopicName = queue.Name;
+            var queueName = SanitizeQueueName(queue.Name);
+            tags.TopicName = queueName;
 
             scope = tracer.StartActiveInternal(
                 operationName,
                 serviceName: serviceName,
+                serviceNameSource: serviceNameSource,
                 finishOnClose: true);
             tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId.IbmMq);
 
-            var resourceName = $"Produce Topic {(string.IsNullOrEmpty(queue.Name) ? "ibmmq" : queue.Name)}";
+            var resourceName = $"Produce Topic {(string.IsNullOrEmpty(queueName) ? "ibmmq" : queueName)}";
 
             var span = scope.Span;
             span.Type = SpanTypes.Queue;
@@ -84,7 +114,7 @@ internal static class IbmMqHelper
             }
 
             var parent = tracer.ActiveScope?.Span;
-            var operationName = settings.Schema.Messaging.GetInboundOperationName(MessagingType);
+            var operationName = settings.Schema.Messaging.GetInboundOperationName(MessagingSchema.OperationType.IbmMq);
             if (parent is not null &&
                 parent.OperationName == operationName &&
                 parent.GetTag(Tags.InstrumentationName) != null)
@@ -104,18 +134,20 @@ internal static class IbmMqHelper
                 Log.Error(ex, "Error extracting propagated headers from IbmMq message");
             }
 
-            var serviceName = settings.Schema.Messaging.GetServiceName(MessagingType);
+            var (serviceName, serviceNameSource) = settings.Schema.Messaging.GetServiceNameMetadata(MessagingSchema.ServiceType.IbmMq);
             var tags = settings.Schema.Messaging.CreateIbmMqTags(SpanKinds.Producer);
-            tags.TopicName = queue.Name;
+            var queueName = SanitizeQueueName(queue.Name);
+            tags.TopicName = queueName;
             scope = tracer.StartActiveInternal(
                 operationName,
                 tags: tags,
                 parent: extractedContext.SpanContext,
                 serviceName: serviceName,
+                serviceNameSource: serviceNameSource,
                 finishOnClose: true,
                 startTime: spanStartTime);
             tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId.IbmMq);
-            var resourceName = $"Consume Topic {(string.IsNullOrEmpty(queue.Name) ? "ibmmq" : queue.Name)}";
+            var resourceName = $"Consume Topic {(string.IsNullOrEmpty(queueName) ? "ibmmq" : queueName)}";
 
             var span = scope.Span;
             span.Type = SpanTypes.Queue;

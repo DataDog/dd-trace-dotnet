@@ -15,12 +15,15 @@ public static class Projects
     public const string NativeLoaderNativeTests = "Datadog.Trace.ClrProfiler.Native.Tests";
     public const string DatadogTraceTrimming = "Datadog.Trace.Trimming";
 
+    public const string DatadogFeatureFlagsOpenFeature = "Datadog.FeatureFlags.OpenFeature";
+
     public const string BenchmarksTrace = "Benchmarks.Trace";
     public const string BenchmarksOpenTelemetryApi = "Benchmarks.OpenTelemetry.Api";
     public const string BenchmarksOpenTelemetryInstrumentedApi = "Benchmarks.OpenTelemetry.InstrumentedApi";
 
     public const string TraceTests = "Datadog.Trace.Tests";
     public const string TraceIntegrationTests = "Datadog.Trace.IntegrationTests";
+    public const string FleetInstallerTests = "Datadog.FleetInstaller.IntegrationTests";
     public const string AppSecUnitTests = "Datadog.Trace.Security.Unit.Tests";
     public const string AppSecIntegrationTests = "Datadog.Trace.Security.IntegrationTests";
     public const string ClrProfilerIntegrationTests = "Datadog.Trace.ClrProfiler.IntegrationTests";

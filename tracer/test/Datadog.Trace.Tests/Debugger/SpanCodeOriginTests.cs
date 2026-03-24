@@ -4,9 +4,7 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
 using System.Collections.Specialized;
-using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
@@ -14,11 +12,13 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.SpanCodeOrigin;
+using Datadog.Trace.Tagging;
 using FluentAssertions;
 #if !NETFRAMEWORK
 using Microsoft.AspNetCore.Mvc;
 #endif
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Datadog.Trace.Tests.Debugger
 {
@@ -95,6 +95,25 @@ namespace Datadog.Trace.Tests.Debugger
                 // Arrange
                 SpanCodeOrigin spanCodeOrigin = CreateSpanCodeOrigin();
                 var span = CreateSpan();
+                var type = GetType();
+                var method = type.GetMethod(nameof(TestMethod), BindingFlags.Instance | BindingFlags.NonPublic);
+
+                // Act
+                spanCodeOrigin.SetCodeOriginForEntrySpan(span, type, method);
+
+                // Assert
+                span.GetTag($"{CodeOriginTag}.type").Should().Be("entry");
+                span.GetTag($"{CodeOriginTag}.frames.0.index").Should().Be("0");
+                span.GetTag($"{CodeOriginTag}.frames.0.method").Should().Be(nameof(TestMethod));
+                span.GetTag($"{CodeOriginTag}.frames.0.type").Should().Be(type.FullName);
+            }
+
+            [Fact]
+            public void SetCodeOriginForEntrySpan_WithWebTags_ShouldSetCorrectTags()
+            {
+                // Arrange
+                SpanCodeOrigin spanCodeOrigin = CreateSpanCodeOrigin();
+                var span = CreateWebSpan();
                 var type = GetType();
                 var method = type.GetMethod(nameof(TestMethod), BindingFlags.Instance | BindingFlags.NonPublic);
 
@@ -203,6 +222,12 @@ namespace Datadog.Trace.Tests.Debugger
             {
                 var spanContext = new SpanContext(1234, 5678);
                 return new Span(spanContext, DateTimeOffset.UtcNow);
+            }
+
+            private Span CreateWebSpan()
+            {
+                var spanContext = new SpanContext(1234, 5678);
+                return new Span(spanContext, DateTimeOffset.UtcNow, new WebTags());
             }
 
             private int TestMethod() => 42;

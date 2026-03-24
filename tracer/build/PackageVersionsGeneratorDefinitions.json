@@ -390,14 +390,14 @@
     "SampleProjectName": "Samples.Microsoft.Data.SqlClient",
     "NugetPackageSearchName": "Microsoft.Data.SqlClient",
     "MinVersion": "1.0.0",
-    "MaxVersionExclusive": "7.0.0",
+    "MaxVersionExclusive": "8.0.0",
     "SpecificVersions": [
       "1.*.*",
       "2.*.*",
       "3.*.*",
       "4.*.*",
-      "5.*.*",
-      "6.*.*"
+      "6.*.*",
+      "7.*.*"
     ],
     "VersionConditions": [{
       "MinVersion": "5.1.0",
@@ -962,6 +962,17 @@
       "4.15.*",
       "4.20.*",
       "4.*.*"
+    ]
+  },
+  {
+    "IntegrationName": "OpenFeature",
+    "SampleProjectName": "Samples.OpenFeature",
+    "NugetPackageSearchName": "OpenFeature",
+    "MinVersion": "2.0.0",
+    "MaxVersionExclusive": "3.0.0",
+    "SpecificVersions": [
+      "2.0.0",
+      "2.10.0"
     ]
   }
 ]

@@ -208,7 +208,7 @@ public class AASTagsTests
             { PlatformKeys.AzureAppService.SiteNameKey, "SiteName" },
             { PlatformKeys.AzureAppService.OperatingSystemKey, "windows" },
             { PlatformKeys.AzureAppService.InstanceIdKey, "InstanceId" },
-            { PlatformKeys.AzureAppService.InstanceNameKey, "InstanceName" },
+            { PlatformKeys.ComputerNameKey, "InstanceName" },
         };
 
         return new NameValueConfigurationSource(collection);

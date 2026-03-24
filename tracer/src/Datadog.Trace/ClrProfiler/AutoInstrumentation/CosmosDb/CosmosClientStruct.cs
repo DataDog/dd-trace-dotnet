@@ -26,5 +26,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
         /// </value>
         [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
         public Uri Endpoint;
+
+        /// <summary>
+        /// Gets the client context.
+        /// </summary>
+        [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase | BindingFlags.NonPublic)]
+        public object ClientContext;
     }
 }

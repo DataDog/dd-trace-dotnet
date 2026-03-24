@@ -12,10 +12,6 @@
     <ProjectReference Include="..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
   </ItemGroup>
 
-  <ItemGroup Condition=" $(TargetFramework.StartsWith('net4')) ">
-    <ProjectReference Include="..\..\src\Datadog.FleetInstaller\Datadog.FleetInstaller.csproj" />
-  </ItemGroup>
-
   <ItemGroup>
     <Content Remove="xunit.runner.json" />
     <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />

@@ -13,7 +13,9 @@ namespace Datadog.Trace.Iast
 {
     internal sealed class TaintedObjects
     {
-        private static readonly bool _largeNumericCache = false;
+#pragma warning disable CA1802 // Use literals where appropriate - this looks like a literal, but it isn't really
+        private static readonly bool _largeNumericCache;
+#pragma warning restore CA1802
         private readonly ITaintedMap _map;
 
         static TaintedObjects()
@@ -65,7 +67,7 @@ namespace Datadog.Trace.Iast
             if (objectToTaint is not null)
             {
                 var objectAsString = objectToTaint as string;
-                if (objectAsString is null || objectAsString != string.Empty)
+                if (objectAsString is null || !string.IsNullOrEmpty(objectAsString))
                 {
                     _map.Put(new TaintedObject(objectToTaint, ranges));
                 }

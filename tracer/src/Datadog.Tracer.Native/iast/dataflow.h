@@ -52,7 +52,8 @@ namespace iast
         friend class ModuleInfo;
         friend class ModuleAspects;
     public:
-        Dataflow(ICorProfilerInfo* profiler, std::shared_ptr<RejitHandler> rejitHandler, const RuntimeInformation& runtimeInfo);
+        Dataflow(ICorProfilerInfo* profiler, std::shared_ptr<RejitHandler> rejitHandler, std::vector<ModuleID> moduleIds,
+                 const RuntimeInformation& runtimeInfo);
         virtual ~Dataflow();
     private:
         CS _cs;
@@ -60,6 +61,7 @@ namespace iast
         COR_PRF_RUNTIME_TYPE m_runtimeType = COR_PRF_DESKTOP_CLR;
         VersionInfo m_runtimeVersion = VersionInfo{4, 0, 0, 0};
 
+        std::vector<ModuleID> _preLoadedModuleIds;
         std::map<ModuleID, ModuleInfo*> _modules;
         std::map<AppDomainID, AppDomainInfo*> _appDomains;
 

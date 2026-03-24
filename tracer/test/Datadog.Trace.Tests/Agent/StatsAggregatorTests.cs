@@ -172,7 +172,7 @@ namespace Datadog.Trace.Tests.Agent
                 span.SetDuration(TimeSpan.FromMilliseconds(durationMs));
 
                 span.ResourceName = resourceName;
-                span.ServiceName = serviceName;
+                span.SetService(serviceName, null);
                 span.OperationName = operationName;
                 span.Type = type;
                 span.SetTag(Tags.HttpStatusCode, httpStatusCode);
@@ -457,6 +457,7 @@ namespace Datadog.Trace.Tests.Agent
                              eventPlatformProxyEndpoint: "eventPlatformProxyEndpoint",
                              telemetryProxyEndpoint: "telemetryProxyEndpoint",
                              tracerFlareEndpoint: "tracerFlareEndpoint",
+                             containerTagsHash: "containerTagsHash",
                              clientDropP0: true,
                              spanMetaStructs: true,
                              spanEvents: true));
@@ -467,6 +468,10 @@ namespace Datadog.Trace.Tests.Agent
             }
 
             public Task DisposeAsync() => Task.CompletedTask;
+
+            public void SetCurrentConfigStateHash(string configStateHash)
+            {
+            }
         }
     }
 }

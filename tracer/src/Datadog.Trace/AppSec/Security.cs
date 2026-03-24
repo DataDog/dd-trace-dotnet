@@ -1,4 +1,4 @@
-﻿// <copyright file="Security.cs" company="Datadog">
+// <copyright file="Security.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -291,7 +291,11 @@ namespace Datadog.Trace.AppSec
                 // It will happen if the WAF version used does not support new operators defined in the rules
                 foreach (var error in errors)
                 {
+#if NETCOREAPP
+                    if (!error.Key.Contains("unknown matcher:", StringComparison.OrdinalIgnoreCase))
+#else
                     if (!error.Key.ToLower().Contains("unknown matcher:"))
+#endif
                     {
                         return false;
                     }
@@ -415,7 +419,7 @@ namespace Datadog.Trace.AppSec
                         blockingAction.SecurityResponseId = securityResponseId;
                     }
 
-                    if (location is string locationString && locationString != string.Empty)
+                    if (location is string locationString && !string.IsNullOrEmpty(locationString))
                     {
                         var statusCode = GetStatusCode(redirectInfo, 303);
                         blockingAction.StatusCode = statusCode is >= 300 and < 400 ? statusCode : 303;
@@ -528,6 +532,8 @@ namespace Datadog.Trace.AppSec
             rcm.SetCapability(RcmCapabilitiesIndices.AsmHeaderFingerprint, _settings.NoCustomLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmHeaderFingerprint));
             rcm.SetCapability(RcmCapabilitiesIndices.AsmNetworkFingerprint, _settings.NoCustomLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmNetworkFingerprint));
             rcm.SetCapability(RcmCapabilitiesIndices.AsmSessionFingerprint, _settings.NoCustomLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmSessionFingerprint));
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmProcessorOverrides, _settings.NoCustomLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmProcessorOverrides));
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmCustomDataScanners, _settings.NoCustomLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmCustomDataScanners));
             // follows a different pattern to rest of ASM remote config, if available it's the RC value
             // that takes precedence. This follows what other products do.
             rcm.SetCapability(RcmCapabilitiesIndices.AsmAutoUserInstrumentationMode, true);
@@ -543,7 +549,7 @@ namespace Datadog.Trace.AppSec
             // initialization of WafLibraryInvoker
             if (_libraryInitializationResult == null)
             {
-                _libraryInitializationResult = WafLibraryInvoker.Initialize();
+                _libraryInitializationResult = WafLibraryInvoker.Initialize(ddDotnetTracerHome: _settings.DdDotnetTracerHome, traceNativeEnginePath: _settings.InternalTraceNativeEnginePath);
                 if (!_libraryInitializationResult.Success)
                 {
                     _configurationState.AppsecEnabled = false;
@@ -615,7 +621,7 @@ namespace Datadog.Trace.AppSec
             }
         }
 
-        internal void SetTraceSamplingPriority(Span span, bool setSource = true)
+        internal bool SetTraceSamplingPriority(Span span, bool setSource = true)
         {
             if (!_settings.KeepTraces)
             {
@@ -630,7 +636,11 @@ namespace Datadog.Trace.AppSec
                 {
                     span.Context.TraceContext?.Tags.EnableTraceSources(TraceSources.Asm);
                 }
+
+                return true;
             }
+
+            return false;
         }
 
         internal IContext? CreateAdditiveContext() => _waf?.CreateContext();

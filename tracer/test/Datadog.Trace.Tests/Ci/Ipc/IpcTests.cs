@@ -37,10 +37,9 @@ public class IpcTests
                 {
                     Thread.Sleep(500);
                 }
-
-                Interlocked.Exchange(ref finalValue, value);
             }
 
+            Interlocked.Exchange(ref finalValue, value);
             if (value.ServerValue == maxNumber)
             {
                 serverTaskCompletion.TrySetResult(true);
@@ -57,10 +56,9 @@ public class IpcTests
                 {
                     Thread.Sleep(500);
                 }
-
-                Interlocked.Exchange(ref finalValue, value);
             }
 
+            Interlocked.Exchange(ref finalValue, value);
             if (value.ClientValue == maxNumber)
             {
                 clientTaskCompletion.TrySetResult(true);

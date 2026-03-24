@@ -1,4 +1,4 @@
-﻿// <copyright file="Span.cs" company="Datadog">
+// <copyright file="Span.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -81,14 +81,15 @@ namespace Datadog.Trace
 
         /// <summary>
         /// Gets or sets the service name.
+        /// The setter marks the source as manual ("m") and exists as the
+        /// duck-typed entry point for Datadog.Trace.Manual.dll users.
+        /// Internal code should call <see cref="SetService"/> with an explicit source instead.
         /// </summary>
         internal string ServiceName
         {
             get => Context.ServiceName;
-            set
-            {
-                Context.ServiceName = value;
-            }
+            [Obsolete("Use SetService(serviceName, source) instead to explicitly provide a source.")]
+            set => SetService(value, value is not null ? Configuration.Schema.ServiceNameMetadata.Manual : null);
         }
 
         /// <summary>
@@ -155,6 +156,15 @@ namespace Datadog.Trace
         }
 
         /// <summary>
+        /// Sets the service name with an explicit source for <c>_dd.svc_src</c>.
+        /// </summary>
+        internal void SetService(string serviceName, string source)
+        {
+            Context.ServiceName = serviceName;
+            Context.ServiceNameSource = source;
+        }
+
+        /// <summary>
         /// Returns a <see cref="string" /> that represents this instance.
         /// </summary>
         /// <returns>
@@ -197,7 +207,11 @@ namespace Datadog.Trace
         {
             if (IsFinished)
             {
-                Log.Warning("SetTag should not be called after the span was closed");
+                Log.Warning(
+                    "SetTag should not be called after the span was closed. key: {Key}, span_id: {SpanId}, trace_id: {TraceId}",
+                    property0: key,
+                    property1: SpanId,
+                    property2: TraceId128);
                 return this;
             }
 

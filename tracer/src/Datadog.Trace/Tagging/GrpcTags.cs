@@ -65,7 +65,7 @@ namespace Datadog.Trace.Tagging
 
     internal sealed partial class GrpcClientV1Tags : GrpcClientTags
     {
-        private string _peerServiceOverride = null;
+        private string _peerServiceOverride;
 
         public GrpcClientV1Tags()
             : base()

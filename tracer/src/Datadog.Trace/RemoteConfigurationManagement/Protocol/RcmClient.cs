@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System.Collections.Generic;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
@@ -10,14 +12,12 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Protocol
 {
     internal sealed class RcmClient
     {
-        public RcmClient(string id, ICollection<string> products, RcmClientTracer clientTracer, RcmClientState state, byte[] capabilities)
+        public RcmClient(string id, RcmClientState state)
         {
             Id = id;
-            Products = products;
-            IsTracer = true;
-            ClientTracer = clientTracer;
             State = state;
-            Capabilities = capabilities;
+            // Client Tracer is actually required by the API, but we don't have one initially
+            ClientTracer = null!;
         }
 
         [JsonProperty("state")]
@@ -27,15 +27,15 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Protocol
         public string Id { get; }
 
         [JsonProperty("products")]
-        public ICollection<string> Products { get; }
+        public ICollection<string> Products { get; set; } = [];
 
         [JsonProperty("is_tracer")]
-        public bool IsTracer { get; }
+        public bool IsTracer => true;
 
         [JsonProperty("client_tracer")]
-        public RcmClientTracer ClientTracer { get; }
+        public RcmClientTracer ClientTracer { get; set; }
 
         [JsonProperty("capabilities")]
-        public byte[] Capabilities { get; }
+        public byte[] Capabilities { get; set; } = [];
     }
 }

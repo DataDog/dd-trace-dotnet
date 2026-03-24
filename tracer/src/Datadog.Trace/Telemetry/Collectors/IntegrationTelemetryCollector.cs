@@ -16,8 +16,8 @@ namespace Datadog.Trace.Telemetry
         private readonly IntegrationDetail[] _integrationsById;
         private readonly IntegrationTelemetryData[] _previousValues;
 
-        private int _hasChangesFlag = 0;
-        private bool _hasSentFirstValues = false;
+        private int _hasChangesFlag;
+        private bool _hasSentFirstValues;
 
         public IntegrationTelemetryCollector()
         {
@@ -106,7 +106,7 @@ namespace Datadog.Trace.Telemetry
         /// Get the latest data to send to the intake.
         /// </summary>
         /// <returns>Null if there are no changes, or the collector is not yet initialized</returns>
-        public ICollection<IntegrationTelemetryData>? GetData()
+        public ICollection<IntegrationTelemetryData>? GetIncrementalData()
         {
             var hasChanges = Interlocked.CompareExchange(ref _hasChangesFlag, 0, 1) == 1;
             if (!hasChanges)

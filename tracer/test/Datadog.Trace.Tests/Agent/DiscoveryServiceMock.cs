@@ -26,6 +26,7 @@ internal class DiscoveryServiceMock : IDiscoveryService
         string eventPlatformProxyEndpoint = "eventPlatformProxyEndpoint",
         string telemetryProxyEndpoint = "telemetryProxyEndpoint",
         string tracerFlareEndpoint = "tracerFlareEndpoint",
+        string containerTagsHash = "containerTagsHash",
         bool clientDropP0 = true,
         bool spanMetaStructs = true,
         bool spanEvents = true)
@@ -42,6 +43,7 @@ internal class DiscoveryServiceMock : IDiscoveryService
                 eventPlatformProxyEndpoint: eventPlatformProxyEndpoint,
                 telemetryProxyEndpoint: telemetryProxyEndpoint,
                 tracerFlareEndpoint: tracerFlareEndpoint,
+                containerTagsHash: containerTagsHash,
                 clientDropP0: clientDropP0,
                 spanMetaStructs: spanMetaStructs,
                 spanEvents: spanEvents));
@@ -62,6 +64,10 @@ internal class DiscoveryServiceMock : IDiscoveryService
     public void RemoveSubscription(Action<AgentConfiguration> callback)
     {
         Callbacks.Remove(callback);
+    }
+
+    public void SetCurrentConfigStateHash(string configStateHash)
+    {
     }
 
     public Task DisposeAsync() => Task.CompletedTask;

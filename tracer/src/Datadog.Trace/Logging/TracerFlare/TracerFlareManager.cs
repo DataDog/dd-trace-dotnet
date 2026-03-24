@@ -17,6 +17,7 @@ using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
@@ -37,7 +38,7 @@ internal sealed class TracerFlareManager : ITracerFlareManager
 
     private string? _debugEnabledConfigPath;
     private ISubscription? _subscription;
-    private Timer? _resetTimer = null;
+    private Timer? _resetTimer;
 
     private bool _wasDebugLogEnabled;
 
@@ -53,7 +54,7 @@ internal sealed class TracerFlareManager : ITracerFlareManager
         _discoveryService = discoveryService;
     }
 
-    public bool? CanSendTracerFlare { get; private set; } = null;
+    public bool? CanSendTracerFlare { get; private set; }
 
     public void Start()
     {
@@ -361,7 +362,7 @@ internal sealed class TracerFlareManager : ITracerFlareManager
                 return true;
             }
 
-            var json = JObject.Parse(EncodingHelpers.Utf8NoBom.GetString(remoteConfig.Contents));
+            var json = JsonHelper.ParseJObject(remoteConfig.Contents, EncodingHelpers.Utf8NoBom);
 
             var logLevel = json["config"]?["log_level"]?.Value<string>();
 
@@ -419,7 +420,7 @@ internal sealed class TracerFlareManager : ITracerFlareManager
         {
             using var stream = new MemoryStream(contents);
             using var streamReader = new StreamReader(stream);
-            using var jsonReader = new JsonTextReader(streamReader);
+            using var jsonReader = new JsonTextReader(streamReader) { ArrayPool = JsonArrayPool.Shared };
             return JObject.Load(jsonReader);
         }
         catch (Exception ex)

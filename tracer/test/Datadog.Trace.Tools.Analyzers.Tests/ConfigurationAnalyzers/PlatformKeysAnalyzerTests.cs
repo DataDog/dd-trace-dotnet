@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.Threading.Tasks;
+using Datadog.Trace.Tools.Analyzers.ConfigurationAnalyzers;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
@@ -51,7 +52,7 @@ public class PlatformKeysAnalyzerTests
                    }
                    """;
 
-        await Verifier.VerifyAnalyzerAsync(code);
+        await AnalyzerTestHelper.VerifyDatadogAnalyzerAsync<PlatformKeysAnalyzer>(code);
     }
 
     [Theory]
@@ -80,7 +81,7 @@ public class PlatformKeysAnalyzerTests
                       .WithLocation(0)
                       .WithArguments(invalidValue, expectedPrefix);
 
-        await Verifier.VerifyAnalyzerAsync(code, expected);
+        await AnalyzerTestHelper.VerifyDatadogAnalyzerAsync<PlatformKeysAnalyzer>(code, expected);
     }
 
     [Fact]
@@ -116,7 +117,7 @@ public class PlatformKeysAnalyzerTests
                        .WithLocation(2)
                        .WithArguments("_DD_PROFILER_ENABLED", "_DD_");
 
-        await Verifier.VerifyAnalyzerAsync(code, expected1, expected2, expected3);
+        await AnalyzerTestHelper.VerifyDatadogAnalyzerAsync<PlatformKeysAnalyzer>(code, expected1, expected2, expected3);
     }
 
     [Fact]
@@ -134,6 +135,11 @@ public class PlatformKeysAnalyzerTests
 
                    namespace Datadog.Trace.Configuration
                    {
+                       internal static partial class PlatformKeys
+                       {
+                           public const string ValidKey = "AWS_LAMBDA_FUNCTION_NAME";
+                       }
+                       
                        internal static partial class ConfigurationKeys
                        {
                            public const string AlsoNotAnalyzed = "OTEL_SERVICE_NAME";
@@ -141,6 +147,27 @@ public class PlatformKeysAnalyzerTests
                    }
                    """;
 
-        await Verifier.VerifyAnalyzerAsync(code);
+        await AnalyzerTestHelper.VerifyDatadogAnalyzerAsync<PlatformKeysAnalyzer>(code);
+    }
+
+    [Fact]
+    public async Task MissingRequiredType_ShouldReportDD0009()
+    {
+        // Only define ConfigurationKeys, missing PlatformKeys
+        var code = """
+                   namespace Datadog.Trace.Configuration
+                   {
+                       public static class ConfigurationKeys
+                       {
+                           public const string ApiKey = "DD_API_KEY";
+                       }
+                   }
+                   """;
+
+        var expected = new DiagnosticResult("DD0009", DiagnosticSeverity.Error)
+                      .WithNoLocation()
+                      .WithArguments("PlatformKeysAnalyzer", "Datadog.Trace.Configuration.PlatformKeys");
+
+        await AnalyzerTestHelper.VerifyDatadogAnalyzerAsync<PlatformKeysAnalyzer>(code, expected);
     }
 }

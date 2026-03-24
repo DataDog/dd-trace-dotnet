@@ -98,12 +98,12 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
 
     public static ITestOptimizationClient Create(string workingDirectory, ITestOptimization testOptimization)
     {
-        return new TestOptimizationClient(workingDirectory, testOptimization);
+        return new FileTestOptimizationClient(new TestOptimizationClient(workingDirectory, testOptimization), testOptimization);
     }
 
     public static ITestOptimizationClient CreateCached(string workingDirectory, ITestOptimization testOptimization)
     {
-        return new CachedTestOptimizationClient(new TestOptimizationClient(workingDirectory, testOptimization));
+        return new CachedTestOptimizationClient(new FileTestOptimizationClient(new TestOptimizationClient(workingDirectory, testOptimization), testOptimization));
     }
 
     internal static Dictionary<string, string>? GetCustomTestsConfigurations(IReadOnlyDictionary<string, string> globalTags)
@@ -337,7 +337,7 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
                            }
                            finally
                            {
-                               callbacks.OnAfterSend(sw.Elapsed.TotalMilliseconds);
+                               callbacks.OnAfterSend(sw.GetElapsedMilliseconds());
                            }
                        },
                        new UriAndBodyState<TCallbacks>(this, uri, body, callbacks),
@@ -397,7 +397,7 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
                            }
                            finally
                            {
-                               callbacks.OnAfterSend(sw.Elapsed.TotalMilliseconds);
+                               callbacks.OnAfterSend(sw.GetElapsedMilliseconds());
                            }
                        },
                        new UriAndMultipartFormBodyState<TCallbacks>(this, uri, items, callbacks),

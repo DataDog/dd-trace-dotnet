@@ -18,7 +18,7 @@ namespace Datadog.Trace.Activity.DuckTypes
 
         ActivityKind Kind { get; }
 
-        IEnumerable<KeyValuePair<string, object>> TagObjects { get; }
+        IEnumerable<KeyValuePair<string, object?>> TagObjects { get; }
 
         ActivitySource Source { get; }
 

@@ -111,7 +111,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
             var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedUrl);
             var spans = await SendRequestsAsync(agent, url, null, 1, 1, string.Empty);
-            await VerifySpans(spans, settings, testName: Prefix + "AspNetCore5.SecurityEnabled.MetaStruct", forceMetaStruct: true);
+            await VerifySpans(spans, settings, testName: Prefix + "AspNetCore5.SecurityEnabled.MetaStruct");
         }
 
         [Trait("RunOnWindows", "True")]

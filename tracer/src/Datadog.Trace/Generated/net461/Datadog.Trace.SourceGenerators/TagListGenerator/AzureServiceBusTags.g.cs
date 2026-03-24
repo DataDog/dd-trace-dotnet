@@ -32,6 +32,18 @@ namespace Datadog.Trace.Tagging
 #else
         private static readonly byte[] InstrumentationNameBytes = new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
 #endif
+        // MessagingSystemBytes = MessagePack.Serialize("messaging.system");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> MessagingSystemBytes => new byte[] { 176, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 115, 121, 115, 116, 101, 109 };
+#else
+        private static readonly byte[] MessagingSystemBytes = new byte[] { 176, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 115, 121, 115, 116, 101, 109 };
+#endif
+        // MessagingOperationBytes = MessagePack.Serialize("messaging.operation");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> MessagingOperationBytes => new byte[] { 179, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 111, 112, 101, 114, 97, 116, 105, 111, 110 };
+#else
+        private static readonly byte[] MessagingOperationBytes = new byte[] { 179, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 111, 112, 101, 114, 97, 116, 105, 111, 110 };
+#endif
         // MessagingSourceNameBytes = MessagePack.Serialize("messaging.source.name");
 #if NETCOREAPP
         private static ReadOnlySpan<byte> MessagingSourceNameBytes => new byte[] { 181, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 115, 111, 117, 114, 99, 101, 46, 110, 97, 109, 101 };
@@ -74,6 +86,8 @@ namespace Datadog.Trace.Tagging
             return key switch
             {
                 "component" => InstrumentationName,
+                "messaging.system" => MessagingSystem,
+                "messaging.operation" => MessagingOperation,
                 "messaging.source.name" => MessagingSourceName,
                 "messaging.destination.name" => MessagingDestinationName,
                 "message_bus.destination" => LegacyMessageBusDestination,
@@ -88,6 +102,12 @@ namespace Datadog.Trace.Tagging
         {
             switch(key)
             {
+                case "messaging.system": 
+                    MessagingSystem = value;
+                    break;
+                case "messaging.operation": 
+                    MessagingOperation = value;
+                    break;
                 case "messaging.source.name": 
                     MessagingSourceName = value;
                     break;
@@ -120,6 +140,16 @@ namespace Datadog.Trace.Tagging
             if (InstrumentationName is not null)
             {
                 processor.Process(new TagItem<string>("component", InstrumentationName, InstrumentationNameBytes));
+            }
+
+            if (MessagingSystem is not null)
+            {
+                processor.Process(new TagItem<string>("messaging.system", MessagingSystem, MessagingSystemBytes));
+            }
+
+            if (MessagingOperation is not null)
+            {
+                processor.Process(new TagItem<string>("messaging.operation", MessagingOperation, MessagingOperationBytes));
             }
 
             if (MessagingSourceName is not null)
@@ -161,6 +191,20 @@ namespace Datadog.Trace.Tagging
             {
                 sb.Append("component (tag):")
                   .Append(InstrumentationName)
+                  .Append(',');
+            }
+
+            if (MessagingSystem is not null)
+            {
+                sb.Append("messaging.system (tag):")
+                  .Append(MessagingSystem)
+                  .Append(',');
+            }
+
+            if (MessagingOperation is not null)
+            {
+                sb.Append("messaging.operation (tag):")
+                  .Append(MessagingOperation)
                   .Append(',');
             }
 

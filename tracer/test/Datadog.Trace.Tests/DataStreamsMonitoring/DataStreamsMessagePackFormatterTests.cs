@@ -198,7 +198,7 @@ public class DataStreamsMessagePackFormatterTests
 
         // content varies depending on how the tests are run, so we cannot really assert on the content.
         result.ProcessTags.Should().NotBeEmpty();
-        result.ProcessTags.Should().Contain(":");
+        result.ProcessTags.Should().AllSatisfy(t => t.Should().Contain(":"));
     }
 
     private static DDSketch CreateSketch(params int[] values)

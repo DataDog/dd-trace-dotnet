@@ -108,10 +108,10 @@ public class StatsdManagerTests
     }
 
     [Fact]
-    public void InitialState_ClientNotCreated()
+    public async Task InitialState_ClientNotCreated()
     {
         var clientCount = 0;
-        using var manager = new StatsdManager(new TracerSettings(), (_, _) =>
+        var manager = new StatsdManager(new TracerSettings(), (_, _) =>
         {
             Interlocked.Increment(ref clientCount);
             return new(new MockStatsdClient());
@@ -121,13 +121,14 @@ public class StatsdManagerTests
 
         lease.Client.Should().BeNull("client should not be created unless required");
         clientCount.Should().Be(0, "factory should not be called");
+        await manager.DisposeAsync();
     }
 
     [Fact]
-    public void SetRequired_CreatesClient()
+    public async Task SetRequired_CreatesClient()
     {
         var clientCount = 0;
-        using var manager = new StatsdManager(new TracerSettings(), (_, _) =>
+        var manager = new StatsdManager(new TracerSettings(), (_, _) =>
         {
             Interlocked.Increment(ref clientCount);
             return new(new MockStatsdClient());
@@ -138,13 +139,15 @@ public class StatsdManagerTests
 
         lease.Client.Should().NotBeNull("client should be created when required");
         clientCount.Should().Be(1, "factory should be called exactly once");
+        lease.Dispose();
+        await manager.DisposeAsync();
     }
 
     [Fact]
-    public void SetRequired_False_DisposesClient()
+    public async Task SetRequired_False_DisposesClient()
     {
         var holder = new StatsdManager.StatsdClientHolder(new MockStatsdClient());
-        using var manager = new StatsdManager(new TracerSettings(), (_, _) => holder);
+        var manager = new StatsdManager(new TracerSettings(), (_, _) => holder);
 
         manager.SetRequired(StatsdConsumer.RuntimeMetricsWriter, true);
         using (manager.TryGetClientLease())
@@ -154,13 +157,14 @@ public class StatsdManagerTests
         manager.SetRequired(StatsdConsumer.RuntimeMetricsWriter, false);
 
         holder.IsDisposed.Should().BeTrue("client should be disposed when no longer required and not in use");
+        await manager.DisposeAsync();
     }
 
     [Fact]
-    public void MultipleConsumers_AllRequire_SingleClient()
+    public async Task MultipleConsumers_AllRequire_SingleClient()
     {
         var clientCount = 0;
-        using var manager = new StatsdManager(new TracerSettings(), (_, _) =>
+        var manager = new StatsdManager(new TracerSettings(), (_, _) =>
         {
             Interlocked.Increment(ref clientCount);
             return new(new MockStatsdClient());
@@ -171,14 +175,15 @@ public class StatsdManagerTests
         manager.SetRequired(StatsdConsumer.AgentWriter, true);
 
         clientCount.Should().Be(1, "only one client should be created for multiple consumers");
+        await manager.DisposeAsync();
     }
 
     [Fact]
-    public void MultipleConsumers_PartialUnrequire_KeepsClient()
+    public async Task MultipleConsumers_PartialUnrequire_KeepsClient()
     {
         var clientCount = 0;
         var holder = new StatsdManager.StatsdClientHolder(new MockStatsdClient());
-        using var manager = new StatsdManager(new TracerSettings(), (_, _) =>
+        var manager = new StatsdManager(new TracerSettings(), (_, _) =>
         {
             Interlocked.Increment(ref clientCount);
             return holder;
@@ -191,14 +196,15 @@ public class StatsdManagerTests
 
         clientCount.Should().Be(1, "only one client should be created for multiple consumers");
         holder.IsDisposed.Should().BeFalse("client should remain when at least one consumer requires it");
+        await manager.DisposeAsync();
     }
 
     [Fact]
-    public void MultipleConsumers_AllUnrequire_DisposesClient()
+    public async Task MultipleConsumers_AllUnrequire_DisposesClient()
     {
         var clientCount = 0;
         var holder = new StatsdManager.StatsdClientHolder(new MockStatsdClient());
-        using var manager = new StatsdManager(new TracerSettings(), (_, _) =>
+        var manager = new StatsdManager(new TracerSettings(), (_, _) =>
         {
             Interlocked.Increment(ref clientCount);
             return holder;
@@ -216,14 +222,15 @@ public class StatsdManagerTests
         }
 
         holder.IsDisposed.Should().BeTrue("client should be disposed when all consumers unrequire it");
+        await manager.DisposeAsync();
     }
 
     [Fact]
-    public void MultipleConsumers_ReRequire_CreatesNewClient()
+    public async Task MultipleConsumers_ReRequire_CreatesNewClient()
     {
         var clientCount = 0;
         StatsdManager.StatsdClientHolder holder = null;
-        using var manager = new StatsdManager(new TracerSettings(), (_, _) =>
+        var manager = new StatsdManager(new TracerSettings(), (_, _) =>
         {
             Interlocked.Increment(ref clientCount);
             var newClient = new StatsdManager.StatsdClientHolder(new MockStatsdClient());
@@ -239,41 +246,48 @@ public class StatsdManagerTests
 
         clientCount.Should().Be(3);
         Volatile.Read(ref holder).IsDisposed.Should().BeFalse("client should remain when at least one consumer requires it");
+        await manager.DisposeAsync();
     }
 
     [Fact]
-    public void Lease_ProvidesAccessToClient()
+    public async Task Lease_ProvidesAccessToClient()
     {
         var holder = new StatsdManager.StatsdClientHolder(new MockStatsdClient());
-        using var manager = new StatsdManager(new TracerSettings(), (_, _) => holder);
+        var manager = new StatsdManager(new TracerSettings(), (_, _) => holder);
         manager.SetRequired(StatsdConsumer.RuntimeMetricsWriter, true);
 
-        using var lease = manager.TryGetClientLease();
+        var lease = manager.TryGetClientLease();
 
         lease.Client.Should().BeSameAs(holder.Client);
+        lease.Dispose();
+        await manager.DisposeAsync();
     }
 
     [Fact]
-    public void MultipleLeasesSimultaneously_ShareSameClient()
+    public async Task MultipleLeasesSimultaneously_ShareSameClient()
     {
         var holder = new StatsdManager.StatsdClientHolder(new MockStatsdClient());
-        using var manager = new StatsdManager(new TracerSettings(), (_, _) => holder);
+        var manager = new StatsdManager(new TracerSettings(), (_, _) => holder);
         manager.SetRequired(StatsdConsumer.RuntimeMetricsWriter, true);
 
-        using var lease1 = manager.TryGetClientLease();
-        using var lease2 = manager.TryGetClientLease();
-        using var lease3 = manager.TryGetClientLease();
+        var lease1 = manager.TryGetClientLease();
+        var lease2 = manager.TryGetClientLease();
+        var lease3 = manager.TryGetClientLease();
 
         lease1.Client.Should().BeSameAs(holder.Client);
         lease2.Client.Should().BeSameAs(holder.Client);
         lease3.Client.Should().BeSameAs(holder.Client);
+        lease1.Dispose();
+        lease2.Dispose();
+        lease3.Dispose();
+        await manager.DisposeAsync();
     }
 
     [Fact]
-    public void DisposingLease_DoesNotDisposeClient_WhileOtherLeasesActive()
+    public async Task DisposingLease_DoesNotDisposeClient_WhileOtherLeasesActive()
     {
         var holder = new StatsdManager.StatsdClientHolder(new MockStatsdClient());
-        using var manager = new StatsdManager(new TracerSettings(), (_, _) => holder);
+        var manager = new StatsdManager(new TracerSettings(), (_, _) => holder);
         manager.SetRequired(StatsdConsumer.RuntimeMetricsWriter, true);
 
         var lease1 = manager.TryGetClientLease();
@@ -285,13 +299,14 @@ public class StatsdManagerTests
         holder.IsDisposed.Should().BeFalse("client should not be disposed while other leases are active");
         lease2.Dispose();
         holder.IsDisposed.Should().BeTrue();
+        await manager.DisposeAsync();
     }
 
     [Fact]
-    public void NeverReturnsDisposedClient()
+    public async Task NeverReturnsDisposedClient()
     {
         StatsdManager.StatsdClientHolder holder = null;
-        using var manager = new StatsdManager(new TracerSettings(), (_, _) =>
+        var manager = new StatsdManager(new TracerSettings(), (_, _) =>
         {
             var newClient = new StatsdManager.StatsdClientHolder(new MockStatsdClient());
             Volatile.Write(ref holder, newClient);
@@ -315,13 +330,14 @@ public class StatsdManagerTests
 
         // Cleanup
         lease2.Dispose();
+        await manager.DisposeAsync();
     }
 
     [Fact]
-    public void ReferenceCountingPreventsDisposalWhileLeasesActive()
+    public async Task ReferenceCountingPreventsDisposalWhileLeasesActive()
     {
         var holder = new StatsdManager.StatsdClientHolder(new MockStatsdClient());
-        using var manager = new StatsdManager(new TracerSettings(), (_, _) => holder);
+        var manager = new StatsdManager(new TracerSettings(), (_, _) => holder);
         manager.SetRequired(StatsdConsumer.RuntimeMetricsWriter, true);
 
         var lease = manager.TryGetClientLease();
@@ -332,33 +348,34 @@ public class StatsdManagerTests
         lease.Dispose();
 
         holder.IsDisposed.Should().BeTrue("client should be disposed after lease is released");
+        await manager.DisposeAsync();
     }
 
     [Fact]
-    public void Dispose_WithActiveLease_DisposesAfterLeaseReleased()
+    public async Task DisposeAsync_WithActiveLease_DisposesAfterLeaseReleased()
     {
         var holder = new StatsdManager.StatsdClientHolder(new MockStatsdClient());
         var manager = new StatsdManager(new TracerSettings(), (_, _) => holder);
         manager.SetRequired(StatsdConsumer.RuntimeMetricsWriter, true);
 
         var lease = manager.TryGetClientLease();
-        manager.Dispose(); // note _manager_ disposed
+        var disposeTask = manager.DisposeAsync();
 
         holder.IsDisposed.Should().BeFalse("client should not be disposed while lease is active");
 
-        // Dispose the lease
         lease.Dispose();
 
-        // Now it should be disposed
+        await disposeTask;
+
         holder.IsDisposed.Should().BeTrue("client should be disposed after lease is released");
     }
 
     [Fact]
-    public void SettingsUpdate_RecreatesClient_WhenRequired()
+    public async Task SettingsUpdate_RecreatesClient_WhenRequired()
     {
         var clientCount = 0;
         var tracerSettings = new TracerSettings();
-        using var manager = new StatsdManager(tracerSettings, (_, _) =>
+        var manager = new StatsdManager(tracerSettings, (_, _) =>
         {
             Interlocked.Increment(ref  clientCount);
             return new(new MockStatsdClient());
@@ -381,15 +398,16 @@ public class StatsdManagerTests
         lease2.Client.Should().NotBeSameAs(client1, "should get a new client after settings update");
 
         lease2.Dispose();
+        await manager.DisposeAsync();
     }
 
     [Fact]
-    public void SettingsUpdate_OldLeaseContinuesWorkingWithOldClient()
+    public async Task SettingsUpdate_OldLeaseContinuesWorkingWithOldClient()
     {
         var tracerSettings = new TracerSettings();
 
         StatsdManager.StatsdClientHolder holder = null;
-        using var manager = new StatsdManager(tracerSettings, (_, _) =>
+        var manager = new StatsdManager(tracerSettings, (_, _) =>
         {
             var newClient = new StatsdManager.StatsdClientHolder(new MockStatsdClient());
             Volatile.Write(ref holder, newClient);
@@ -419,14 +437,15 @@ public class StatsdManagerTests
         oldHolder.IsDisposed.Should().BeTrue("old client should be disposed after lease is released");
         lease2.Dispose();
         Volatile.Read(ref holder)!.IsDisposed.Should().BeFalse("new client is still in use");
+        await manager.DisposeAsync();
     }
 
     [Fact]
-    public void SettingsUpdate_DoesNotRecreateClient_WhenNotRequired()
+    public async Task SettingsUpdate_DoesNotRecreateClient_WhenNotRequired()
     {
         var tracerSettings = new TracerSettings();
         var clientCount = 0;
-        using var manager = new StatsdManager(tracerSettings, (_, _) =>
+        var manager = new StatsdManager(tracerSettings, (_, _) =>
         {
             Interlocked.Increment(ref clientCount);
             return new(new MockStatsdClient());
@@ -441,14 +460,15 @@ public class StatsdManagerTests
             NullConfigurationTelemetry.Instance);
 
         clientCount.Should().Be(0, "client should not be created for settings update when not required");
+        await manager.DisposeAsync();
     }
 
     [Fact]
-    public void SettingsUpdate_DoesNotRecreateClient_WhenSettingsDontChange()
+    public async Task SettingsUpdate_DoesNotRecreateClient_WhenSettingsDontChange()
     {
         var tracerSettings = new TracerSettings();
         var clientCount = 0;
-        using var manager = new StatsdManager(tracerSettings, (_, _) =>
+        var manager = new StatsdManager(tracerSettings, (_, _) =>
         {
             Interlocked.Increment(ref clientCount);
             return new(new MockStatsdClient());
@@ -464,14 +484,15 @@ public class StatsdManagerTests
             NullConfigurationTelemetry.Instance);
 
         clientCount.Should().Be(1, "client should not be recreated for settings update when no changes");
+        await manager.DisposeAsync();
     }
 
     [Fact]
-    public void SettingsUpdate_DoesNotRecreateClient_WhenRelevantSettingsDontChange()
+    public async Task SettingsUpdate_DoesNotRecreateClient_WhenRelevantSettingsDontChange()
     {
         var tracerSettings = new TracerSettings();
         var clientCount = 0;
-        using var manager = new StatsdManager(tracerSettings, (_, _) =>
+        var manager = new StatsdManager(tracerSettings, (_, _) =>
         {
             Interlocked.Increment(ref clientCount);
             return new(new MockStatsdClient());
@@ -488,13 +509,14 @@ public class StatsdManagerTests
             NullConfigurationTelemetry.Instance);
 
         clientCount.Should().Be(1, "client should not be recreated for settings update when no changes");
+        await manager.DisposeAsync();
     }
 
     [Fact]
-    public void ConcurrentLeaseAcquisition_AllSucceed()
+    public async Task ConcurrentLeaseAcquisition_AllSucceed()
     {
         var holder = new StatsdManager.StatsdClientHolder(new MockStatsdClient());
-        using var manager = new StatsdManager(new TracerSettings(), (_, _) => holder);
+        var manager = new StatsdManager(new TracerSettings(), (_, _) => holder);
         manager.SetRequired(StatsdConsumer.RuntimeMetricsWriter, true);
 
         var leases = new ConcurrentQueue<StatsdManager.StatsdClientLease>();
@@ -512,6 +534,8 @@ public class StatsdManagerTests
         {
             lease.Dispose();
         }
+
+        await manager.DisposeAsync();
     }
 
     [Fact]
@@ -519,7 +543,7 @@ public class StatsdManagerTests
     {
         var clientCount = 0;
         var holder = new StatsdManager.StatsdClientHolder(new MockStatsdClient());
-        using var manager = new StatsdManager(new TracerSettings(), (_, _) =>
+        var manager = new StatsdManager(new TracerSettings(), (_, _) =>
         {
             Interlocked.Increment(ref clientCount);
             return holder;
@@ -561,13 +585,14 @@ public class StatsdManagerTests
         await Task.WhenAll(tasks);
         clientCount.Should().Be(1, "client should not be recreated for settings update when no changes");
         holder.IsDisposed.Should().BeFalse("client should not be disposed while still required");
+        await manager.DisposeAsync();
     }
 
     [Fact]
-    public void ConcurrentSetRequired_ThreadSafe()
+    public async Task ConcurrentSetRequired_ThreadSafe()
     {
         var clientCount = 0;
-        using var manager = new StatsdManager(new TracerSettings(), (_, _) =>
+        var manager = new StatsdManager(new TracerSettings(), (_, _) =>
         {
             Interlocked.Increment(ref clientCount);
             return new(new MockStatsdClient());
@@ -586,6 +611,7 @@ public class StatsdManagerTests
 
         // The exact client count is non-deterministic, but should be reasonable
         clientCount.Should().BeLessThan(50, "should not create excessive clients");
+        await manager.DisposeAsync();
     }
 
     [Fact]
@@ -593,7 +619,7 @@ public class StatsdManagerTests
     {
         var tracerSettings = new TracerSettings();
         var clientCount = 0;
-        using var manager = new StatsdManager(tracerSettings, (_, _) =>
+        var manager = new StatsdManager(tracerSettings, (_, _) =>
         {
             Interlocked.Increment(ref clientCount);
             return new(new MockStatsdClient());
@@ -641,13 +667,14 @@ public class StatsdManagerTests
 
         await Task.WhenAll(tasks);
         disposedClientReturned.Should().Be(0, "should never return a disposed client while holding a lease");
+        await manager.DisposeAsync();
     }
 
     [Fact]
     public async Task ConcurrentLeaseDisposalDuringClientRecreation_ThreadSafe()
     {
         var holders = new ConcurrentQueue<StatsdManager.StatsdClientHolder>();
-        using var manager = new StatsdManager(new TracerSettings(), (_, _) =>
+        var manager = new StatsdManager(new TracerSettings(), (_, _) =>
         {
             var client = new StatsdManager.StatsdClientHolder(new MockStatsdClient());
             holders.Enqueue(client);
@@ -688,13 +715,14 @@ public class StatsdManagerTests
         client1.IsDisposed.Should().BeTrue("old client should be disposed");
         holders.TryDequeue(out var client2).Should().BeTrue();
         client2.IsDisposed.Should().BeFalse("latest client should not be disposed");
+        await manager.DisposeAsync();
     }
 
     [Fact]
-    public void MultipleTransitionsBetweenRequiredAndNotRequired()
+    public async Task MultipleTransitionsBetweenRequiredAndNotRequired()
     {
         var holders = new List<StatsdManager.StatsdClientHolder>();
-        using var manager = new StatsdManager(new TracerSettings(), (_, _) =>
+        var manager = new StatsdManager(new TracerSettings(), (_, _) =>
         {
             var client = new StatsdManager.StatsdClientHolder(new MockStatsdClient());
             holders.Add(client);
@@ -711,35 +739,67 @@ public class StatsdManagerTests
 
         holders.Count.Should().Be(5, "should create a new client for each transition");
         holders.Should().AllSatisfy(client => client.IsDisposed.Should().BeTrue("all old clients should be disposed"));
+        await manager.DisposeAsync();
     }
 
     [Fact]
-    public void Dispose_MultipleTimes_IsSafe()
+    public async Task DisposeAsync_MultipleTimes_IsSafe()
     {
-        using var manager = new StatsdManager(new TracerSettings(), (_, _) => new(new MockStatsdClient()));
+        var manager = new StatsdManager(new TracerSettings(), (_, _) => new(new MockStatsdClient()));
         manager.SetRequired(StatsdConsumer.RuntimeMetricsWriter, true);
 
-        manager.Dispose();
-        manager.Dispose();
-        manager.Dispose();
+        await manager.DisposeAsync();
+        await manager.DisposeAsync();
+        await manager.DisposeAsync();
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void ProcessTags_PassedToFactory(bool propagateProcessTags)
+    {
+        IReadOnlyCollection<string> capturedProcessTags = null;
+        var settings = TracerSettings.Create(new() { { ConfigurationKeys.PropagateProcessTags, propagateProcessTags } });
+        var manager = new StatsdManager(
+            settings,
+            (mutableSettings, _) =>
+            {
+                capturedProcessTags = mutableSettings.ProcessTags?.TagsList;
+                return new StatsdManager.StatsdClientHolder(new MockStatsdClient());
+            });
+
+        manager.SetRequired(StatsdConsumer.RuntimeMetricsWriter, true);
+
+        if (propagateProcessTags)
+        {
+            capturedProcessTags.Should().NotBeNull();
+            capturedProcessTags.Should().NotBeEmpty("process tags should be passed to factory when enabled");
+            // Verify the format is key:value
+            capturedProcessTags.Should().AllSatisfy(tag => tag.Should().Contain(":"));
+        }
+        else
+        {
+            capturedProcessTags.Should().BeNull("process tags should not be passed to factory when disabled");
+        }
     }
 
     [Fact]
-    public void DefaultLease_CanDisposeSafely()
+    public async Task DefaultLease_CanDisposeSafely()
     {
-        using var manager = new StatsdManager(new TracerSettings(), (_, _) => new(new MockStatsdClient()));
+        var manager = new StatsdManager(new TracerSettings(), (_, _) => new(new MockStatsdClient()));
 
         var lease = manager.TryGetClientLease();
 
         lease.Client.Should().BeNull();
         lease.Dispose();
+        await manager.DisposeAsync();
     }
 
     [Fact]
-    public void DisposingLease_MultipleTimes_DoesNotDisposeStatsDMultipleTimes()
+    public async Task DisposingLease_MultipleTimes_DoesNotDisposeStatsDMultipleTimes()
     {
         var holder = new StatsdManager.StatsdClientHolder(new MockStatsdClient());
-        using var manager = new StatsdManager(new TracerSettings(), (_, _) => holder);
+        var manager = new StatsdManager(new TracerSettings(), (_, _) => holder);
         manager.SetRequired(StatsdConsumer.RuntimeMetricsWriter, true);
 
         var lease = manager.TryGetClientLease();
@@ -750,6 +810,7 @@ public class StatsdManagerTests
         lease.Dispose();
         holder.IsDisposed.Should().BeTrue();
         statsdClient.DisposeCount.Should().BeLessThanOrEqualTo(1); // we dispose in the background, so may not have happened yet
+        await manager.DisposeAsync();
     }
 
     private class MockStatsdClient : IDogStatsd
@@ -822,9 +883,10 @@ public class StatsdManagerTests
         {
         }
 
-        public void Dispose()
+        public Task DisposeAsync()
         {
             Interlocked.Increment(ref _disposeCount);
+            return Task.CompletedTask;
         }
     }
 }

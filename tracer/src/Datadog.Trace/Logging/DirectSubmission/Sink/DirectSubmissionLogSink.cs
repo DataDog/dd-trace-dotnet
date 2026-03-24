@@ -45,8 +45,8 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink
         private readonly Action<DirectSubmissionLogEvent>? _oversizeLogCallback;
         private readonly StringBuilder _logStringBuilder = new(InitialBuilderSizeBytes);
         private byte[] _serializedLogs = new byte[InitialAllLogsSizeBytes];
-        private int _byteCount = 0;
-        private int _logCount = 0;
+        private int _byteCount;
+        private int _logCount;
 
         public DirectSubmissionLogSink(ILogsApi api, LogFormatter formatter, BatchingSinkOptions sinkOptions)
             : this(api, formatter, sinkOptions, oversizeLogCallback: null, sinkDisabledCallback: null)
@@ -100,7 +100,15 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink
                         _logStringBuilder.Capacity = InitialBuilderSizeBytes;
                     }
 
-                    log.Format(_logStringBuilder, _formatter);
+                    try
+                    {
+                        log.Format(_logStringBuilder, _formatter);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.Error(ex, "Log dropped due to an error during serialization");
+                        continue;
+                    }
 
                     // would be nice to avoid this, but can't see a way without direct UTF8 serialization (System.Text.Json)
                     // Currently a rogue giant message still pays the serialization cost but is then thrown away
