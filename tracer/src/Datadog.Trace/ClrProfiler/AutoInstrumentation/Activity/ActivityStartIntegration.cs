@@ -6,10 +6,12 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using Datadog.Trace.Activity;
 using Datadog.Trace.Activity.DuckTypes;
 using Datadog.Trace.Activity.Handlers;
+using Datadog.Trace.Activity.Helpers;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
@@ -209,8 +211,42 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity
             tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
             var scope = tracer.ActivateSpan(span, finishOnClose: false);
 
+            // Set ResourceName before copying tags so that reserved tag "operation.name"
+            // (which changes OperationName) doesn't accidentally override the resource.
+            // ResourceName will default to OperationName at Finish() if still null, but we
+            // want to preserve the original activity name as the resource.
+            span.ResourceName = activity5.DisplayName is { Length: > 0 } displayName
+                ? displayName
+                : activity5.OperationName;
+
+            // Save the initial operation name BEFORE copying tags so ActivityStopIntegration can
+            // detect explicit overrides via "operation.name" tag. Initial tags (passed to StartActivity)
+            // may include "operation.name" which changes OperationName during tag copy below.
+            var initialOperationName = span.OperationName;
+
+            // Copy existing tags from the Activity to the Span. Tags may have been set before
+            // Activity.Start() returned (e.g., via initial tags passed to StartActivity()), so
+            // they're in Activity.TagObjects but haven't been captured by our AddTag/SetTag integrations
+            // (those require the scope to be set on the Activity's custom property, which isn't done yet).
+            if (activity5.HasTagObjects())
+            {
+                var state = new OtelTagsEnumerationState(span);
+                ActivityEnumerationHelper.EnumerateTagObjects(activity5, ref state, static (ref OtelTagsEnumerationState s, KeyValuePair<string, object?> kvp) =>
+                {
+                    OtlpHelpers.SetTagObject(s.Span, kvp.Key, kvp.Value);
+                    return true;
+                });
+            }
+
+            // Apply OTel resource attributes (service.name, service.version, etc.) to the span.
+            // In the managed ActivityListener path, resource attributes are applied by the
+            // ResourceAttributeProcessor.OnStart callback which fires during Activity.Start().
+            // With interception, that callback fires before we create the span, so we apply them here.
+            OpenTelemetry.ResourceAttributeProcessorHelper.ApplyCachedResourceAttributes(span);
+
             // Bi-directional link: Activity → Scope (via custom property — zero-alloc cached delegate)
             ActivityCustomPropertyAccessor<TTarget>.SetScope(instance, scope);
+            ActivityCustomPropertyAccessor<TTarget>.SetInitialOperationName(instance, initialOperationName);
 
             // Ensure IsAllDataRequested is true so that user code guarded by
             // `if (activity.IsAllDataRequested) { activity.AddTag(...); }` will actually run.
