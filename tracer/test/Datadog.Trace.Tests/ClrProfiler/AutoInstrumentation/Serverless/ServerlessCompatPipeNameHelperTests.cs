@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Runtime.InteropServices;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Serverless;
 using FluentAssertions;
 using Xunit;
@@ -59,6 +60,128 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.Serverless
             var second = ServerlessCompatPipeNameHelper.GenerateUniquePipeName("dd_trace", "test");
 
             first.Should().NotBe(second);
+        }
+
+        [Fact]
+        public void IsCompatLayerAvailableWithPipeSupport_DoesNotThrow()
+        {
+            // Should never throw regardless of environment — errors are caught internally
+            var act = () => ServerlessCompatPipeNameHelper.IsCompatLayerAvailableWithPipeSupport();
+
+            act.Should().NotThrow();
+        }
+
+        [Fact]
+        public void IsCompatLayerAvailableWithPipeSupport_ReturnsFalse_WhenNotOnWindows()
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                // This test only validates non-Windows behavior
+                return;
+            }
+
+            var result = ServerlessCompatPipeNameHelper.IsCompatLayerAvailableWithPipeSupport();
+
+            result.Should().BeFalse();
+        }
+
+        [Fact]
+        public void IsCompatLayerAvailableWithPipeSupport_ReturnsFalse_WhenCompatBinaryMissing()
+        {
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                return;
+            }
+
+            // Binary missing, DLL present
+            var result = ServerlessCompatPipeNameHelper.IsCompatLayerAvailableWithPipeSupport(
+                fileExists: path => !path.EndsWith(".exe"),
+                getAssemblyVersion: _ => new Version(1, 4, 0));
+
+            result.Should().BeFalse();
+        }
+
+        [Fact]
+        public void IsCompatLayerAvailableWithPipeSupport_ReturnsFalse_WhenCompatDllMissing()
+        {
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                return;
+            }
+
+            // Binary present, DLL missing
+            var result = ServerlessCompatPipeNameHelper.IsCompatLayerAvailableWithPipeSupport(
+                fileExists: path => !path.EndsWith(".dll"),
+                getAssemblyVersion: _ => new Version(1, 4, 0));
+
+            result.Should().BeFalse();
+        }
+
+        [Fact]
+        public void IsCompatLayerAvailableWithPipeSupport_ReturnsFalse_WhenVersionIsNull()
+        {
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                return;
+            }
+
+            var result = ServerlessCompatPipeNameHelper.IsCompatLayerAvailableWithPipeSupport(
+                fileExists: _ => true,
+                getAssemblyVersion: _ => null);
+
+            result.Should().BeFalse();
+        }
+
+        [Theory]
+        [InlineData(1, 3, 0)]
+        [InlineData(1, 0, 0)]
+        [InlineData(0, 1, 0)]
+        public void IsCompatLayerAvailableWithPipeSupport_ReturnsFalse_WhenVersionTooOld(int major, int minor, int build)
+        {
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                return;
+            }
+
+            var result = ServerlessCompatPipeNameHelper.IsCompatLayerAvailableWithPipeSupport(
+                fileExists: _ => true,
+                getAssemblyVersion: _ => new Version(major, minor, build));
+
+            result.Should().BeFalse();
+        }
+
+        [Theory]
+        [InlineData(0, 0, 0)]  // dev build
+        [InlineData(1, 4, 0)]  // minimum supported
+        [InlineData(1, 5, 0)]  // above minimum
+        [InlineData(2, 0, 0)]  // major version bump
+        public void IsCompatLayerAvailableWithPipeSupport_ReturnsTrue_WhenVersionSupported(int major, int minor, int build)
+        {
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                return;
+            }
+
+            var result = ServerlessCompatPipeNameHelper.IsCompatLayerAvailableWithPipeSupport(
+                fileExists: _ => true,
+                getAssemblyVersion: _ => new Version(major, minor, build));
+
+            result.Should().BeTrue();
+        }
+
+        [Fact]
+        public void IsCompatLayerAvailableWithPipeSupport_ReturnsFalse_WhenGetVersionThrows()
+        {
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                return;
+            }
+
+            var result = ServerlessCompatPipeNameHelper.IsCompatLayerAvailableWithPipeSupport(
+                fileExists: _ => true,
+                getAssemblyVersion: _ => throw new BadImageFormatException("not a valid assembly"));
+
+            result.Should().BeFalse();
         }
     }
 }
