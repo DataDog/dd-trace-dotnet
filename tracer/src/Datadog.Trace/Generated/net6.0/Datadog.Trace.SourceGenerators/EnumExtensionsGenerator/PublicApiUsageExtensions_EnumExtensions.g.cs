@@ -17,7 +17,7 @@ internal static partial class PublicApiUsageExtensions
     /// The number of members in the enum.
     /// This is a non-distinct count of defined names.
     /// </summary>
-    public const int Length = 105;
+    public const int Length = 106;
 
     /// <summary>
     /// Returns the string representation of the <see cref="Datadog.Trace.Telemetry.Metrics.PublicApiUsage"/> value.
@@ -46,6 +46,7 @@ internal static partial class PublicApiUsageExtensions
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanContextInjector_InjectIncludingDsm => "name:spancontextinjector_injectincludingdsm",
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanContextInjector_Inject => "name:spancontextinjector_inject",
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanContextInjector_Ctor => "name:spancontextinjector_ctor",
+            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.DataStreams_TrackTransaction => "name:datastreams_tracktransaction",
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanExtensions_SetUser => "name:spanextensions_setuser",
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanExtensions_SetTag => "name:spanextensions_settag",
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanExtensions_SetTraceSamplingPriority => "name:spanextensions_settracesamplingpriority",
@@ -164,6 +165,7 @@ internal static partial class PublicApiUsageExtensions
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanContextInjector_InjectIncludingDsm,
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanContextInjector_Inject,
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanContextInjector_Ctor,
+            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.DataStreams_TrackTransaction,
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanExtensions_SetUser,
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanExtensions_SetTag,
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanExtensions_SetTraceSamplingPriority,
@@ -282,6 +284,7 @@ internal static partial class PublicApiUsageExtensions
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanContextInjector_InjectIncludingDsm),
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanContextInjector_Inject),
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanContextInjector_Ctor),
+            nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.DataStreams_TrackTransaction),
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanExtensions_SetUser),
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanExtensions_SetTag),
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanExtensions_SetTraceSamplingPriority),
@@ -400,6 +403,7 @@ internal static partial class PublicApiUsageExtensions
             "name:spancontextinjector_injectincludingdsm",
             "name:spancontextinjector_inject",
             "name:spancontextinjector_ctor",
+            "name:datastreams_tracktransaction",
             "name:spanextensions_setuser",
             "name:spanextensions_settag",
             "name:spanextensions_settracesamplingpriority",

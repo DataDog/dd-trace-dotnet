@@ -27,10 +27,14 @@ public class Program
 
         await Task.Delay(millisecondsDelay: 100);
 
+        var transactionId = Guid.NewGuid().ToString();
+        Datadog.Trace.DataStreams.TrackTransaction(scope.Span, transactionId, "queue-produce");
+
         Console.WriteLine("Sending one message to the queue...");
         var sb = new StringBuilder();
         var injector = new SpanContextInjector();
         injector.InjectIncludingDsm(sb, (b, k, v) => b.Append($"{k}:{v};"), scope.Span.Context, "ConcurrentQueue", nameof(_queue));
+        sb.Append($"tx:{transactionId};");
         sb.Append(message);
         _queue.Enqueue(sb.ToString());
         Console.WriteLine("message sent");
@@ -46,7 +50,7 @@ public class Program
             Console.WriteLine("Retrying to receive");
         }
 
-        var headers = Parse(result, out var content);
+        var headers = Parse(result, out var content, out var transactionId);
         Console.WriteLine($"Parsed {headers.Count} headers");
         var extractor = new SpanContextExtractor();
         var extractedContext = extractor.ExtractIncludingDsm(
@@ -65,18 +69,25 @@ public class Program
             nameof(_queue));
         using var scope = Tracer.Instance.StartActive("Samples.DataStreams.ManualAPI.Receive", new SpanCreationSettings { Parent = extractedContext });
 
+        if (transactionId is not null)
+        {
+            Datadog.Trace.DataStreams.TrackTransaction(scope.Span, transactionId, "queue-consume");
+        }
+
         Console.WriteLine("Done");
         return content;
     }
 
     /// <returns>headers and message</returns>
-    private static Dictionary<string, string> Parse(string raw, out string msg)
+    private static Dictionary<string, string> Parse(string raw, out string msg, out string transactionId)
     {
         var content = raw.Split(separator: ';');
-        var headers = content
-                     .Take(content.Length - 1) // SkipLast() is unavailable in older versions that we are testing on
-                     .Select(s => s.Split(separator: ':'))
-                     .ToDictionary(a => a[0], a => a[1]);
+        var pairs = content
+                   .Take(content.Length - 1) // SkipLast() is unavailable in older versions that we are testing on
+                   .Select(s => s.Split(separator: ':'))
+                   .ToDictionary(a => a[0], a => a[1]);
+        pairs.TryGetValue("tx", out transactionId);
+        var headers = pairs.Where(kv => kv.Key != "tx").ToDictionary(kv => kv.Key, kv => kv.Value);
         msg = content.Last();
         return headers;
     }

@@ -36,6 +36,8 @@ internal enum PublicApiUsage
     [Description("name:spancontextinjector_inject")] SpanContextInjector_Inject,
     [Description("name:spancontextinjector_ctor")] SpanContextInjector_Ctor,
 
+    [Description("name:datastreams_tracktransaction")] DataStreams_TrackTransaction,
+
     [Description("name:spanextensions_setuser")] SpanExtensions_SetUser,
     [Description("name:spanextensions_settag")] SpanExtensions_SetTag,
     [Description("name:spanextensions_settracesamplingpriority")] SpanExtensions_SetTraceSamplingPriority,
