@@ -206,6 +206,10 @@ namespace Samples.Computer01
                     break;
 #endif
 
+                case Scenario.ManagedStackExercise:
+                    StartManagedStackExercise();
+                    break;
+
                 default:
                     throw new ArgumentOutOfRangeException(nameof(scenario), $"Unsupported scenario #{_scenario}");
             }
@@ -349,6 +353,10 @@ namespace Samples.Computer01
                     _appDomainCrash.Stop();
                     break;
 #endif
+
+                case Scenario.ManagedStackExercise:
+                    StopManagedStackExercise();
+                    break;
             }
         }
 
@@ -493,6 +501,11 @@ namespace Samples.Computer01
                         RunAppDomainCrash(parameter);
                         break;
 #endif
+
+                    case Scenario.ManagedStackExercise:
+                        RunManagedStackExercise();
+                        break;
+
                     default:
                         throw new ArgumentOutOfRangeException(nameof(scenario), $"Unsupported scenario #{_scenario}");
                 }
@@ -1029,6 +1042,21 @@ namespace Samples.Computer01
             test.Run();
         }
 #endif
+
+        private void StartManagedStackExercise()
+        {
+            Task.Run(ManagedStackExercise.Run);
+        }
+
+        private void StopManagedStackExercise()
+        {
+            ManagedStackExercise.Stop();
+        }
+
+        private void RunManagedStackExercise()
+        {
+            ManagedStackExercise.Run();
+        }
 
         public class MySpecialClassA
         {

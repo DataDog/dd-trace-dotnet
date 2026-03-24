@@ -44,6 +44,7 @@ namespace Samples.Computer01
         SyncOverAsyncWithResult,
         SyncOverAsyncWithGetAwaiterGetResult,
         AppDomainCrash,
+        ManagedStackExercise,
     }
 
     public class Program
@@ -83,6 +84,8 @@ namespace Samples.Computer01
             // 27: custom dl_iterate_phdr deadlock
             // 28: sync over async with Result property for n threads
             // 29: sync over async with GetAwaiter().GetResult() for n threads
+            // 30: crash appdomains
+            // 31: managed stack exercise (deep managed call chain for hybrid unwinding tests)
             //
             Console.WriteLine($"{Environment.NewLine}Usage:{Environment.NewLine} > {Process.GetCurrentProcess().ProcessName} " +
             $"[--service] [--iterations <number of iterations to execute>] " +

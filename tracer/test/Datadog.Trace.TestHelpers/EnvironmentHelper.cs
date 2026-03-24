@@ -623,7 +623,10 @@ namespace Datadog.Trace.TestHelpers
                 return string.Empty;
             }
 
-            return Path.Combine(GetMonitoringHomePath(), archFolder, "Datadog.Linux.ApiWrapper.x64.so");
+            var wrapperName = archFolder.Contains("arm64")
+                ? "Datadog.Linux.ApiWrapper.arm64.so"
+                : "Datadog.Linux.ApiWrapper.x64.so";
+            return Path.Combine(GetMonitoringHomePath(), archFolder, wrapperName);
         }
 
         private bool IsEnvironmentVariableSet(string ev)

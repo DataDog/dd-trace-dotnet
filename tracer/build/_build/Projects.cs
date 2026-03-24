@@ -54,7 +54,8 @@ public static class FileNames
     public const string NativeTracer = "Datadog.Tracer.Native";
     public const string NativeTracerTests = "Datadog.Tracer.Native.Tests";
     public const string NativeProfiler = "Datadog.Profiler.Native";
-    public const string ProfilerLinuxApiWrapper = "Datadog.Linux.ApiWrapper.x64.so";
+    public const string ProfilerLinuxApiWrapperX64 = "Datadog.Linux.ApiWrapper.x64.so";
+    public const string ProfilerLinuxApiWrapperArm64 = "Datadog.Linux.ApiWrapper.arm64.so";
     public const string AppSecLinuxWaf = "libddwaf.so";
 
     public const string LoaderConf = "loader.conf";
@@ -63,4 +64,21 @@ public static class FileNames
     public const string AfterRemoveScript = "after-remove.sh";
 
     public const string DefinitionsJson = "supported_calltargets.g.json";
+
+    public static string GetProfilerLinuxApiWrapper(string archFolder)
+    {
+        if (string.IsNullOrEmpty(archFolder))
+        {
+            return ProfilerLinuxApiWrapperX64;
+        }
+
+        var normalized = archFolder.ToLowerInvariant();
+
+        if (normalized.Contains("arm64"))
+        {
+            return ProfilerLinuxApiWrapperArm64;
+        }
+
+        return ProfilerLinuxApiWrapperX64;
+    }
 }

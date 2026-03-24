@@ -44,5 +44,6 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         public const string HeapSnapshotMemoryPressureThreshold = "DD_INTERNAL_PROFILING_HEAPSNAPSHOT_MEMORY_PRESSURE_THRESHOLD";
         public const string UseManagedCodeCache = "DD_INTERNAL_PROFILING_USE_MANAGED_CODE_CACHE";
         public const string MemoryFootprintEnabled = "DD_INTERNAL_PROFILING_MEMORY_FOOTPRINT_ENABLED";
+        public const string UseHybridUnwinding = "DD_INTERNAL_USE_HYBRID_UNWINDING";
     }
 }

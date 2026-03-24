@@ -113,6 +113,11 @@ if (DEFINED ENV{IsAlpine} AND "$ENV{IsAlpine}" MATCHES "true")
 endif()
 
 SET(DEPLOY_DIR ${OUTPUT_BUILD_DIR}/DDProf-Deploy/${ARCH_BASENAME}-${ARCH_POSTFIX})
+if (NOT DEFINED ARCH_POSTFIX OR "${ARCH_POSTFIX}" STREQUAL "")
+    set(API_WRAPPER_TARGET "Datadog.Linux.ApiWrapper.x64")
+else()
+    set(API_WRAPPER_TARGET "Datadog.Linux.ApiWrapper.${ARCH_POSTFIX}")
+endif()
 
 # Set output folders
 SET(OUTPUT_TMP_DIR ${CMAKE_BINARY_DIR}/tmp.${CMAKE_SYSTEM_NAME}_${CMAKE_SYSTEM_PROCESSOR})
@@ -132,7 +137,7 @@ add_custom_target(all-profiler)
 add_dependencies(all-profiler profiler profiler-native-tests)
 
 add_custom_target(wrapper)
-add_dependencies(wrapper Datadog.Linux.ApiWrapper.x64)
+add_dependencies(wrapper ${API_WRAPPER_TARGET})
 
 add_custom_target(all-wrapper)
 add_dependencies(all-wrapper wrapper wrapper-native-tests)

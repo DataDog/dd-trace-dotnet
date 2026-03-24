@@ -153,7 +153,8 @@ partial class Build
         .Executes(() =>
         {
             var (arch, _) = GetUnixArchitectureAndExtension();
-            var libraryPath = ProfilerDeployDirectory / arch / FileNames.ProfilerLinuxApiWrapper;
+            var wrapperFileName = FileNames.GetProfilerLinuxApiWrapper(arch);
+            var libraryPath = ProfilerDeployDirectory / arch / wrapperFileName;
             var snapshotName = $"native-wrapper-symbols-{UnixArchitectureIdentifier}";
             var nativeLibHelper = new NativeValidationHelper(Nm, IsAlpine, BuildProjectDirectory);
             nativeLibHelper.ValidateNativeSymbols(libraryPath, snapshotName);
@@ -193,7 +194,8 @@ partial class Build
         {
             // LD_PRELOAD must be set for this test library to validate that it works correctly.
             var (arch, _) = GetUnixArchitectureAndExtension();
-            var envVars = new[] { $"LD_PRELOAD={ProfilerDeployDirectory / arch / FileNames.ProfilerLinuxApiWrapper}" };
+            var wrapperFileName = FileNames.GetProfilerLinuxApiWrapper(arch);
+            var envVars = new[] { $"LD_PRELOAD={ProfilerDeployDirectory / arch / wrapperFileName}" };
             RunProfilerUnitTests("Datadog.Linux.ApiWrapper.Tests", Configuration.Release, MSBuildTargetPlatform.x64, SanitizerKind.None, envVars);
         });
 
@@ -273,11 +275,12 @@ partial class Build
         .Executes(() =>
         {
             var (arch, _) = GetUnixArchitectureAndExtension();
+            var wrapperFileName = FileNames.GetProfilerLinuxApiWrapper(arch);
             var sourceDir = ProfilerDeployDirectory / arch;
-            EnsureExistingDirectory(MonitoringHomeDirectory / arch);
+            var source = sourceDir / wrapperFileName;
+            var dest = MonitoringHomeDirectory / arch / wrapperFileName;
 
-            var source = sourceDir / FileNames.ProfilerLinuxApiWrapper;
-            var dest = MonitoringHomeDirectory / arch / FileNames.ProfilerLinuxApiWrapper;
+            EnsureExistingDirectory(MonitoringHomeDirectory / arch);
             CopyFile(source, dest, FileExistsPolicy.Overwrite);
 
             if (AsUniversal)
