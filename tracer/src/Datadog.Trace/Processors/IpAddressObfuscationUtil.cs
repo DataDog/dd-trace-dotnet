@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
+using System.Text;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Processors
@@ -39,13 +40,14 @@ namespace Datadog.Trace.Processors
                 return QuantizeIpSingle(raw);
             }
 
-            var seen = new HashSet<string>(StringComparer.Ordinal);
-            var sb = StringBuilderCache.Acquire(raw.Length);
+            // Track seen entries as (start, length) ranges into the StringBuilder to avoid string allocations for dedup
+            var seen = new List<KeyValuePair<int, int>>();
+            var sb = StringBuilderCache.Acquire();
             var remaining = raw.AsSpan();
 
             while (remaining.Length > 0)
             {
-                // Get the next entry
+                // Get the next entry as a span of the original string
                 ReadOnlySpan<char> entry;
                 var commaIndex = remaining.IndexOf(',');
                 if (commaIndex < 0)
@@ -59,15 +61,31 @@ namespace Datadog.Trace.Processors
                     remaining = remaining.Slice(commaIndex + 1);
                 }
 
-                var quantized = QuantizeIpToString(entry);
-                if (seen.Add(quantized))
+                // Speculatively append comma + quantized entry, rollback if duplicate
+                var rollbackLength = sb.Length;
+                if (sb.Length > 0)
                 {
-                    if (sb.Length > 0)
-                    {
-                        sb.Append(',');
-                    }
+                    sb.Append(',');
+                }
 
-                    sb.Append(quantized);
+                var entryStart = sb.Length;
+                if (IsBlockedIp(entry, out var prefixLength, out var hostEnd, out var suffixEnd, out var portStart, out var portEnd))
+                {
+                    AppendBlockedIp(sb, entry, prefixLength, hostEnd, suffixEnd, portStart, portEnd);
+                }
+                else
+                {
+                    sb.Append(entry);
+                }
+
+                var entryLength = sb.Length - entryStart;
+                if (IsDuplicate(sb, entryStart, entryLength, seen))
+                {
+                    sb.Length = rollbackLength;
+                }
+                else
+                {
+                    seen.Add(new KeyValuePair<int, int>(entryStart, entryLength));
                 }
             }
 
@@ -85,65 +103,91 @@ namespace Datadog.Trace.Processors
             }
 
             var span = raw.AsSpan();
-            var prefixLen = GetPrefixLength(span);
-            var after = span.Slice(prefixLen);
-
-            if (!ParseIpAndPort(after, out var hostEnd, out var suffixEnd, out var portStart, out var portEnd))
+            if (!IsBlockedIp(span, out var prefixLength, out var hostEnd, out var suffixEnd, out var portStart, out var portEnd))
             {
                 return raw;
             }
 
-            var host = after.Slice(0, hostEnd);
-
-            if (IsAllowedIp(host))
-            {
-                return raw;
-            }
-
-            return BuildBlockedResult(span.Slice(0, prefixLen), after.Slice(hostEnd, suffixEnd - hostEnd), after.Slice(portStart, portEnd - portStart));
+            var sb = StringBuilderCache.Acquire(raw.Length);
+            AppendBlockedIp(sb, span, prefixLength, hostEnd, suffixEnd, portStart, portEnd);
+            return StringBuilderCache.GetStringAndRelease(sb);
         }
 
         /// <summary>
-        /// Quantizes a single IP entry from a span. Always allocates a string result (used in multi-entry path).
+        /// Determines whether an entry contains a non-allowed IP that should be blocked.
+        /// When true, the output indices describe the prefix, host, suffix, and port regions
+        /// relative to the after-prefix portion of <paramref name="raw"/> for building the blocked result.
         /// </summary>
-        private static string QuantizeIpToString(ReadOnlySpan<char> raw)
+        private static bool IsBlockedIp(
+            ReadOnlySpan<char> raw,
+            out int prefixLength,
+            out int hostEnd,
+            out int suffixEnd,
+            out int portStart,
+            out int portEnd)
         {
-            if (raw.Length == 0)
+            prefixLength = GetPrefixLength(raw);
+            var after = raw.Slice(prefixLength);
+
+            if (!ParseIpAndPort(after, out hostEnd, out suffixEnd, out portStart, out portEnd))
             {
-                return string.Empty;
+                return false;
             }
 
-            var prefixLen = GetPrefixLength(raw);
-            var after = raw.Slice(prefixLen);
-
-            if (!ParseIpAndPort(after, out var hostEnd, out var suffixEnd, out var portStart, out var portEnd))
-            {
-                return raw.ToString();
-            }
-
-            var host = after.Slice(0, hostEnd);
-
-            if (IsAllowedIp(host))
-            {
-                return raw.ToString();
-            }
-
-            return BuildBlockedResult(raw.Slice(0, prefixLen), after.Slice(hostEnd, suffixEnd - hostEnd), after.Slice(portStart, portEnd - portStart));
+            return !IsAllowedIp(after.Slice(0, hostEnd));
         }
 
-        private static string BuildBlockedResult(ReadOnlySpan<char> prefix, ReadOnlySpan<char> suffix, ReadOnlySpan<char> port)
+        /// <summary>
+        /// Appends the blocked IP result (prefix + "blocked-ip-address" + suffix + port) to <paramref name="sb"/>.
+        /// The indices are relative to the after-prefix portion of <paramref name="raw"/>.
+        /// </summary>
+        private static void AppendBlockedIp(
+            StringBuilder sb,
+            ReadOnlySpan<char> raw,
+            int prefixLength,
+            int hostEnd,
+            int suffixEnd,
+            int portStart,
+            int portEnd)
         {
-            var sb = StringBuilderCache.Acquire(prefix.Length + BlockedIpAddress.Length + suffix.Length + port.Length + 1);
-            sb.Append(prefix);
+            var after = raw.Slice(prefixLength);
+            sb.Append(raw.Slice(0, prefixLength));
             sb.Append(BlockedIpAddress);
-            sb.Append(suffix);
-            if (port.Length > 0)
+            sb.Append(after.Slice(hostEnd, suffixEnd - hostEnd));
+            if (portEnd > portStart)
             {
                 sb.Append(':');
-                sb.Append(port);
+                sb.Append(after.Slice(portStart, portEnd - portStart));
+            }
+        }
+
+        private static bool IsDuplicate(StringBuilder sb, int newStart, int newLength, List<KeyValuePair<int, int>> seen)
+        {
+            for (var s = 0; s < seen.Count; s++)
+            {
+                var existing = seen[s];
+                if (existing.Value != newLength)
+                {
+                    continue;
+                }
+
+                var match = true;
+                for (var i = 0; i < newLength; i++)
+                {
+                    if (sb[existing.Key + i] != sb[newStart + i])
+                    {
+                        match = false;
+                        break;
+                    }
+                }
+
+                if (match)
+                {
+                    return true;
+                }
             }
 
-            return StringBuilderCache.GetStringAndRelease(sb);
+            return false;
         }
 
         /// <summary>
