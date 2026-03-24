@@ -199,7 +199,14 @@ if ($PSCmdlet.ShouldProcess("$AppName ($platform)", "Set $($settings.Count) app 
     # Build the --settings arguments as an array
     $settingsArgs = @()
     foreach ($key in $settings.Keys) {
-        $settingsArgs += "$key=$($settings[$key])"
+        $value = $settings[$key]
+        if ($value.Contains('"')) {
+            # Wrap value in single quotes for az CLI — prevents cmd.exe from
+            # mangling JSON and other values containing double quotes
+            $settingsArgs += "${key}='${value}'"
+        } else {
+            $settingsArgs += "${key}=${value}"
+        }
     }
 
     try {
