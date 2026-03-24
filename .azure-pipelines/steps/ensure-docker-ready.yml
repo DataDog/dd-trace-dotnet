@@ -14,7 +14,6 @@ steps:
   condition: ne(variables['Agent.OS'], 'Windows_NT')
   env:
     DOCKER_READY_TIMEOUT_SECONDS: ${{ parameters.timeoutSeconds }}
-    DOCKER_CGROUP_RETRY_MAX_RETRIES: ${{ parameters.maxRestarts }}
 
 - powershell: |
     # Prevent PowerShell from treating native command stderr as a terminating error

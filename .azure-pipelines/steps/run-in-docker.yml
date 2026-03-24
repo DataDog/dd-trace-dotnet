@@ -50,7 +50,7 @@ steps:
           --file "$(System.DefaultWorkingDirectory)/tracer/build/_build/docker/${{ parameters.baseImage }}.dockerfile" \
           "$(System.DefaultWorkingDirectory)/tracer/build/_build"
     displayName: Build ${{ parameters.baseImage }} Docker image
-    retryCountOnTaskFailure: 5
+    retryCountOnTaskFailure: 2
 - script: |
     if [ -z "${{ parameters.useNativeSdkVersion }}" ]; then
       sdkVersion=$(dotnetCoreSdkLatestVersion)

@@ -109,7 +109,15 @@ main()
         return $?
     fi
 
-    wait_for_docker || return $?
+    local skip_wait=false
+    if [ "${1:-}" = "--retry-only" ]; then
+        skip_wait=true
+        shift
+    fi
+
+    if [ "${skip_wait}" = "false" ]; then
+        wait_for_docker || return $?
+    fi
 
     if [ "${1:-}" = "--" ]; then
         shift
