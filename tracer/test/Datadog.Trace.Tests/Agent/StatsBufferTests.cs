@@ -250,7 +250,8 @@ namespace Datadog.Trace.Tests.Agent
             group.Synthetics.Should().Be(expectedKey.IsSyntheticsRequest);
             group.TopLevelHits.Should().Be((long)expectedBucket.TopLevelHits);
             group.SpanKind.Should().Be(expectedKey.SpanKind);
-            group.IsTraceRoot.Should().Be(expectedKey.IsTraceRoot);
+            // Trilean: NOT_SET=0, TRUE=1, FALSE=2
+            group.IsTraceRoot.Should().Be(expectedKey.IsTraceRoot ? 1 : 2);
             group.HttpMethod.Should().Be(expectedKey.HttpMethod);
             group.HttpEndpoint.Should().Be(expectedKey.HttpEndpoint);
             group.GrpcStatusCode.Should().Be(expectedKey.GrpcStatusCode);

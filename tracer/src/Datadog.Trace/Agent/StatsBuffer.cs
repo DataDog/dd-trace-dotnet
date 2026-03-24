@@ -156,8 +156,9 @@ namespace Datadog.Trace.Agent
             MessagePackBinary.WriteString(stream, "SpanKind");
             MessagePackBinary.WriteString(stream, bucket.Key.SpanKind);
 
+            // Spec defines Trilean: NOT_SET=0, TRUE=1, FALSE=2
             MessagePackBinary.WriteString(stream, "IsTraceRoot");
-            MessagePackBinary.WriteBoolean(stream, bucket.Key.IsTraceRoot);
+            MessagePackBinary.WriteInt32(stream, bucket.Key.IsTraceRoot ? 1 : 2);
 
             MessagePackBinary.WriteString(stream, "HTTPMethod");
             MessagePackBinary.WriteString(stream, bucket.Key.HttpMethod);

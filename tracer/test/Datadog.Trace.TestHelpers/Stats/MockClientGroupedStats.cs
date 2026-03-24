@@ -53,7 +53,7 @@ public class MockClientGroupedStats
     public string SpanKind { get; set; }
 
     [Key("IsTraceRoot")]
-    public bool IsTraceRoot { get; set; }
+    public int IsTraceRoot { get; set; }
 
     [Key("HTTPMethod")]
     public string HttpMethod { get; set; }
