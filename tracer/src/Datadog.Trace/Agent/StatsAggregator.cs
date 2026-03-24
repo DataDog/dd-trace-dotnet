@@ -54,6 +54,7 @@ namespace Datadog.Trace.Agent
         private int _currentBuffer;
 
         private int _tracerObfuscationVersion;
+        private TraceFilter _traceFilter;
         private List<string> _peerTagKeys = [];
         // Based on https://github.com/DataDog/datadog-agent/blob/ce22e11ee71e55be717b9d9a3f8f3d7721a9c6d7/pkg/trace/stats/span_concentrator.go#L210-L213
         private List<string> _spanKindsStatsComputed =
@@ -149,6 +150,13 @@ namespace Datadog.Trace.Agent
 
         public void AddRange(in SpanCollection spans)
         {
+            // Trace-level filters from the agent must be applied before stats computation.
+            // Rejected traces should not contribute to stats.
+            if (IsTraceFiltered(in spans))
+            {
+                return;
+            }
+
             // Contention around this lock is expected to be very small:
             // AddRange is called from the serialization thread, and concurrent serialization
             // of traces is a rare corner-case (happening only during shutdown).
@@ -169,6 +177,12 @@ namespace Datadog.Trace.Agent
             if (_isOtlp)
             {
                 return _prioritySampler.Sample(in trace);
+            }
+
+            // Trace-level filters from the agent must reject traces before sampling.
+            if (IsTraceFiltered(in trace))
+            {
+                return false;
             }
 
             // Note: The RareSampler must be run before all other samplers so that
@@ -434,6 +448,26 @@ namespace Datadog.Trace.Agent
             }
         }
 
+        private bool IsTraceFiltered(in SpanCollection spans)
+        {
+            var filter = Volatile.Read(ref _traceFilter);
+            if (filter is null)
+            {
+                return false;
+            }
+
+            // Find the root span (ParentId == null or 0) and apply the filter
+            foreach (var span in spans)
+            {
+                if (span.Context.ParentId is null or 0)
+                {
+                    return !filter.ShouldKeepTrace(span);
+                }
+            }
+
+            return false;
+        }
+
         private void HandleConfigUpdate(AgentConfiguration config)
         {
             CanComputeStats = !string.IsNullOrWhiteSpace(config.StatsEndpoint) && config.ClientDropP0s == true;
@@ -448,9 +482,14 @@ namespace Datadog.Trace.Agent
                 Interlocked.Exchange(ref _peerTagKeys, config.PeerTags);
             }
 
-            if (config.SpanDerivedPrimaryTags is not null)
+            // Update trace filter from agent configuration
+            if (config.TraceFilterConfig.HasFilters)
             {
-                Interlocked.Exchange(ref _spanDerivedPrimaryTagKeys, config.SpanDerivedPrimaryTags);
+                Volatile.Write(ref _traceFilter, new TraceFilter(config.TraceFilterConfig));
+            }
+            else
+            {
+                Volatile.Write(ref _traceFilter, null);
             }
 
             // Tracer obfuscation version is 1. If the agent's version is > 0 and <= ours, the tracer obfuscates.
