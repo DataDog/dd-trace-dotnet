@@ -267,7 +267,7 @@ namespace Datadog.Trace.Agent
                         continue;
                     }
 
-                    // TODO: Quantize ip address
+                    tagValue = IpAddressObfuscationUtil.QuantizePeerIpAddresses(tagValue);
 
                     if (ReferenceEquals(utf8PeerTags, EmptyPeerTags))
                     {
