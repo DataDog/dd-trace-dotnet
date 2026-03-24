@@ -125,7 +125,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 settings.AddRegexScrubber(traceIdRegexLow, "TraceIdLow: LinkIdLow");
                 settings.AddRegexScrubber(_timeUnixNanoRegex, @"time_unix_nano"":<DateTimeOffset.Now>");
                 await VerifyHelper.VerifySpans(spans, settings)
-                                  .UseFileName(nameof(NetActivitySdkTests))
+                                  .UseFileName(nameof(NetActivitySdkTests) + ".Interception")
                                   .DisableRequireUniquePrefix();
 
                 await telemetry.AssertIntegrationEnabledAsync(IntegrationId.OpenTelemetry);
