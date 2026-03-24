@@ -72,6 +72,12 @@ namespace Datadog.Trace.Agent
                 count++;
             }
 
+            var writeGitCommitSha = !StringUtil.IsNullOrEmpty(details.GitCommitSha);
+            if (writeGitCommitSha)
+            {
+                count++;
+            }
+
             MessagePackBinary.WriteMapHeader(stream, count);
 
             MessagePackBinary.WriteString(stream, "Hostname");
@@ -104,6 +110,12 @@ namespace Datadog.Trace.Agent
 
             MessagePackBinary.WriteString(stream, "Sequence");
             MessagePackBinary.WriteInt64(stream, _header.GetSequenceNumber());
+
+            if (writeGitCommitSha)
+            {
+                MessagePackBinary.WriteString(stream, "GitCommitSha");
+                MessagePackBinary.WriteString(stream, details.GitCommitSha);
+            }
         }
 
         private static void SerializeBucket(Stream stream, StatsBucket bucket)

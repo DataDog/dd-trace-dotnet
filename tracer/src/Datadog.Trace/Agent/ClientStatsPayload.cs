@@ -24,8 +24,8 @@ namespace Datadog.Trace.Agent
             => Interlocked.Exchange(ref _settings, CreateSettings(settings));
 
         private static AppSettings CreateSettings(MutableSettings settings)
-            => new(settings.Environment, settings.ServiceVersion, settings.ProcessTags);
+            => new(settings.Environment, settings.ServiceVersion, settings.ProcessTags, settings.GitCommitSha);
 
-        internal sealed record AppSettings(string? Environment, string? Version, ProcessTags? ProcessTags);
+        internal sealed record AppSettings(string? Environment, string? Version, ProcessTags? ProcessTags, string? GitCommitSha);
     }
 }
