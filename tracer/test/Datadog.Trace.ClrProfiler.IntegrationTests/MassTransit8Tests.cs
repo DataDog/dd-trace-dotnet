@@ -183,6 +183,10 @@ public class MassTransit8Tests : TracingIntegrationTest
             var eventsRegex = new Regex(@"events: \[.*?\}\](?=,|\s*$)", RegexOptions.Singleline);
             settings.AddRegexScrubber(eventsRegex, "events: [scrubbed]");
 
+            // Scrub error.stack to avoid .NET Framework vs .NET Core stack trace format differences
+            var errorStackRegex = new Regex(@"error\.stack:\n(?:[^\n]*\n)*?(?=\s{6}\w)", RegexOptions.Multiline);
+            settings.AddRegexScrubber(errorStackRegex, "error.stack: Scrubbed\n      ");
+
             await VerifyHelper.VerifySpans(
                 massTransitSpans,
                 settings,

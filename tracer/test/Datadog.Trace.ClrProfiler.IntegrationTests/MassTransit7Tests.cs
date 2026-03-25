@@ -167,6 +167,10 @@ public class MassTransit7Tests : TracingIntegrationTest
             var sagaQueueRegex = new Regex(@"order-state_[a-z0-9]+");
             settings.AddRegexScrubber(sagaQueueRegex, "SagaQueueName");
 
+            // Scrub error.stack to avoid .NET Framework vs .NET Core stack trace format differences
+            var errorStackRegex = new Regex(@"error\.stack:\n(?:[^\n]*\n)*?(?=\s{6}\w)", RegexOptions.Multiline);
+            settings.AddRegexScrubber(errorStackRegex, "error.stack: Scrubbed\n      ");
+
             await VerifyHelper.VerifySpans(
                 massTransitSpans,
                 settings,
