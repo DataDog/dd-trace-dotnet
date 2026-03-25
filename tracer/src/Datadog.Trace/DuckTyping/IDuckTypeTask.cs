@@ -4,6 +4,8 @@
 // </copyright>
 
 #nullable enable
+using System.Threading.Tasks;
+
 namespace Datadog.Trace.DuckTyping;
 
 /// <summary>
@@ -13,9 +15,9 @@ namespace Datadog.Trace.DuckTyping;
 public interface IDuckTypeTask<out T> : IDuckType
 {
     /// <summary>
-    /// Gets a value indicating whether if the task is completed
+    /// Gets the status of the task
     /// </summary>
-    bool IsCompletedSuccessfully { get; }
+    TaskStatus Status { get; }
 
     /// <summary>
     /// Gets the result of the task
@@ -35,9 +37,9 @@ public interface IDuckTypeTask<out T> : IDuckType
 public interface IDuckTypeTask : IDuckType
 {
     /// <summary>
-    /// Gets a value indicating whether if the task is completed
+    /// Gets the status of the task
     /// </summary>
-    bool IsCompletedSuccessfully { get; }
+    TaskStatus Status { get; }
 
     /// <summary>
     /// Gets the awaiter for the task
