@@ -68,12 +68,13 @@ internal static class IbmMqHelper
 
             var operationName = settings.Schema.Messaging.GetOutboundOperationName(MessagingSchema.OperationType.IbmMq);
             var (serviceName, serviceNameSource) = settings.Schema.Messaging.GetServiceNameMetadata(MessagingSchema.ServiceType.IbmMq);
-            var tags = settings.Schema.Messaging.CreateIbmMqTags(SpanKinds.Consumer);
+            var tags = settings.Schema.Messaging.CreateIbmMqTags(SpanKinds.Producer);
             var queueName = SanitizeQueueName(queue.Name);
             tags.TopicName = queueName;
 
             scope = tracer.StartActiveInternal(
                 operationName,
+                tags: tags,
                 serviceName: serviceName,
                 serviceNameSource: serviceNameSource,
                 finishOnClose: true);
@@ -135,7 +136,7 @@ internal static class IbmMqHelper
             }
 
             var (serviceName, serviceNameSource) = settings.Schema.Messaging.GetServiceNameMetadata(MessagingSchema.ServiceType.IbmMq);
-            var tags = settings.Schema.Messaging.CreateIbmMqTags(SpanKinds.Producer);
+            var tags = settings.Schema.Messaging.CreateIbmMqTags(SpanKinds.Consumer);
             var queueName = SanitizeQueueName(queue.Name);
             tags.TopicName = queueName;
             scope = tracer.StartActiveInternal(
