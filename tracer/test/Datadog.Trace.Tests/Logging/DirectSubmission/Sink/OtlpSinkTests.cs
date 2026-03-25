@@ -17,6 +17,7 @@ using Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching;
 using Datadog.Trace.OpenTelemetry;
 using Datadog.Trace.OpenTelemetry.Logs;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.FluentAssertionsExtensions;
 using Datadog.Trace.Util;
 using FluentAssertions;
 using Xunit;
@@ -107,9 +108,10 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
 
             sink.Start();
 
-            var traceId = RandomIdGenerator.Shared.NextTraceId(useAllBits: true);
-            var spanId = RandomIdGenerator.Shared.NextSpanId();
-            var logEvent = CreateTestLogEvent("Log with trace context", logLevel: 4, traceId: traceId, spanId: spanId);
+            var traceId = HexString.ToHexString(RandomIdGenerator.Shared.NextTraceId(useAllBits: true));
+            var spanId = HexString.ToHexString(RandomIdGenerator.Shared.NextSpanId());
+            var flags = 1;
+            var logEvent = CreateTestLogEvent("Log with trace context", logLevel: 4, traceId: traceId, spanId: spanId, flags: flags);
 
             sink.EnqueueLog(logEvent);
 
@@ -117,6 +119,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
             capturedLogs.Should().ContainSingle();
             capturedLogs[0].TraceId.Should().Be(traceId);
             capturedLogs[0].SpanId.Should().Be(spanId);
+            capturedLogs[0].Flags.Should().Be(flags);
         }
 
         [Fact]
@@ -225,8 +228,9 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
         private static LoggerDirectSubmissionLogEvent CreateTestLogEvent(
             string message,
             int logLevel,
-            TraceId? traceId = null,
-            ulong? spanId = null,
+            string traceId = null,
+            string spanId = null,
+            int? flags = null,
             Dictionary<string, object> attributes = null,
             string categoryName = "TestCategory")
         {
@@ -239,9 +243,9 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
                     CategoryName = categoryName,
                     Timestamp = DateTime.UtcNow,
                     Attributes = attributes ?? new Dictionary<string, object>(),
-                    TraceId = traceId ?? TraceId.Zero,
-                    SpanId = spanId ?? 0,
-                    Flags = traceId.HasValue ? 1 : 0
+                    TraceId = traceId,
+                    SpanId = spanId,
+                    Flags = flags,
                 }
             };
         }

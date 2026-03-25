@@ -76,7 +76,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
             return attributes;
         }
 
-        private static (TraceId TraceId, ulong SpanId, int Flags) ExtractTraceContext()
+        private static (string? TraceId, string? SpanId, int Flags) ExtractTraceContext()
         {
             // Prefer Datadog's trace context for accurate correlation with DD spans
             // Fallback to Activity if Datadog tracing is not active
@@ -84,21 +84,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
             if (ddSpan != null)
             {
                 var flags = ddSpan.Context.SamplingPriority is { } samplingPriority && SamplingPriorityValues.IsKeep(samplingPriority) ? 1 : 0;
-                return (ddSpan.TraceId128, ddSpan.SpanId, flags);
+                return (ddSpan.Context.RawTraceId, ddSpan.Context.RawSpanId, flags);
             }
 
             var activity = System.Diagnostics.Activity.Current;
             if (activity != null && activity.IdFormat == System.Diagnostics.ActivityIdFormat.W3C)
             {
-                if (HexString.TryParseTraceId(activity.TraceId.ToHexString(), out var activityTraceId) &&
-                    HexString.TryParseUInt64(activity.SpanId.ToHexString(), out var activitySpanId))
-                {
-                    var flags = activity.Recorded ? 1 : 0;
-                    return (activityTraceId, activitySpanId, flags);
-                }
+                var flags = activity.Recorded ? 1 : 0;
+                return (activity.TraceId.ToHexString(), activity.SpanId.ToHexString(), flags);
             }
 
-            return (TraceId.Zero, 0, 0);
+            return (null, null, 0);
         }
     }
 }

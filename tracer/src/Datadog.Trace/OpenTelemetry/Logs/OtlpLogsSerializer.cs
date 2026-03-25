@@ -1,4 +1,4 @@
-﻿// <copyright file="OtlpLogsSerializer.cs" company="Datadog">
+// <copyright file="OtlpLogsSerializer.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.OpenTelemetry.Exporter.OpenTelemetryProtocol.Implementation.Serializer;
 using static Datadog.Trace.Vendors.OpenTelemetry.Exporter.OpenTelemetryProtocol.Implementation.Serializer.ProtobufOtlpCommonFieldNumberConstants;
 using static Datadog.Trace.Vendors.OpenTelemetry.Exporter.OpenTelemetryProtocol.Implementation.Serializer.ProtobufOtlpLogFieldNumberConstants;
@@ -166,21 +167,24 @@ internal static class OtlpLogsSerializer
             writePosition = WriteKeyValueAttribute(buffer, writePosition, attr.Key, attr.Value?.ToString() ?? string.Empty);
         }
 
-        if (log.TraceId != TraceId.Zero)
+        if (log.TraceId is not null)
         {
             writePosition = ProtobufSerializer.WriteTag(buffer, writePosition, LogRecord_Trace_Id, ProtobufWireType.LEN);
             writePosition = ProtobufSerializer.WriteLength(buffer, writePosition, TraceIdSize);
             writePosition = WriteTraceId(buffer, writePosition, log.TraceId);
         }
 
-        if (log.SpanId != 0)
+        if (log.SpanId is not null)
         {
             writePosition = ProtobufSerializer.WriteTag(buffer, writePosition, LogRecord_Span_Id, ProtobufWireType.LEN);
             writePosition = ProtobufSerializer.WriteLength(buffer, writePosition, SpanIdSize);
             writePosition = WriteSpanId(buffer, writePosition, log.SpanId);
         }
 
-        writePosition = ProtobufSerializer.WriteFixed32WithTag(buffer, writePosition, LogRecord_Flags, (uint)log.Flags);
+        if (log.Flags is not null)
+        {
+            writePosition = ProtobufSerializer.WriteFixed32WithTag(buffer, writePosition, LogRecord_Flags, (uint)log.Flags.Value);
+        }
 
         if (!StringUtil.IsNullOrEmpty(log.Source))
         {
@@ -247,26 +251,44 @@ internal static class OtlpLogsSerializer
         return writePosition;
     }
 
-    private static int WriteTraceId(byte[] buffer, int writePosition, TraceId traceId)
+    private static int WriteTraceId(byte[] buffer, int writePosition, string traceId)
     {
-        System.Buffers.Binary.BinaryPrimitives.WriteUInt64BigEndian(
-            new Span<byte>(buffer, writePosition, 8),
-            traceId.Upper);
+        var traceIdInputChars = traceId.AsSpan();
+        var traceIdOutputBytes = new Span<byte>(buffer, writePosition, TraceIdSize);
 
-        System.Buffers.Binary.BinaryPrimitives.WriteUInt64BigEndian(
-            new Span<byte>(buffer, writePosition + 8, 8),
-            traceId.Lower);
+        for (int i = 0; i < traceIdOutputBytes.Length; i++)
+        {
+            traceIdOutputBytes[i] = HexByteFromChars(traceIdInputChars[i * 2], traceIdInputChars[(i * 2) + 1]);
+        }
 
         return writePosition + TraceIdSize;
     }
 
-    private static int WriteSpanId(byte[] buffer, int writePosition, ulong spanId)
+    private static int WriteSpanId(byte[] buffer, int writePosition, string spanId)
     {
-        System.Buffers.Binary.BinaryPrimitives.WriteUInt64BigEndian(
-            new System.Span<byte>(buffer, writePosition, 8),
-            spanId);
+        var spanIdInputChars = spanId.AsSpan();
+        var spanIdOutputBytes = new Span<byte>(buffer, writePosition, SpanIdSize);
+
+        for (int i = 0; i < spanIdOutputBytes.Length; i++)
+        {
+            spanIdOutputBytes[i] = HexByteFromChars(spanIdInputChars[i * 2], spanIdInputChars[(i * 2) + 1]);
+        }
 
         return writePosition + SpanIdSize;
+    }
+
+    // Adopted directly from System.Diagnostics.Activity
+    // Soure: https://github.com/dotnet/runtime/blob/ed438603f5d5587bf20638cea254ecec56f8ce85/src/libraries/System.Diagnostics.DiagnosticSource/src/System/Diagnostics/Activity.cs#L2041
+    private static byte HexByteFromChars(char char1, char char2)
+    {
+        int hi = HexConverter.FromChar(char1);
+        int lo = HexConverter.FromChar(char2);
+        if ((hi | lo) == 0xFF)
+        {
+            throw new ArgumentOutOfRangeException("idData");
+        }
+
+        return (byte)((hi << 4) | lo);
     }
 
     private static bool IsHandledResourceAttribute(string tagKey)

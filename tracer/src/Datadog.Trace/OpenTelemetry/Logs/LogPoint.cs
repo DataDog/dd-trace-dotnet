@@ -1,4 +1,4 @@
-﻿// <copyright file="LogPoint.cs" company="Datadog">
+// <copyright file="LogPoint.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -31,11 +31,11 @@ internal sealed class LogPoint
 
     public Dictionary<string, object?> Attributes { get; set; } = new();
 
-    public int Flags { get; set; }
+    public int? Flags { get; set; }
 
-    public TraceId TraceId { get; set; }
+    public string? TraceId { get; set; }
 
-    public ulong SpanId { get; set; }
+    public string? SpanId { get; set; }
 
     public Exception? Exception { get; set; }
 
