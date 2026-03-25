@@ -819,6 +819,9 @@ namespace Datadog.Trace
         /// </summary>
         internal const string DbmTraceInjected = "_dd.dbm_trace_injected";
 
+        /// <summary> contains a hash of container tags (for now), to be matched with the hash injected in queries, so that we can retrieve the corresponding values from the span</summary>
+        internal const string BaseHash = "_dd.propagated_hash";
+
         // Data Streams Monitoring
         internal const string SchemaDefinition = "schema.definition";
         internal const string SchemaWeight = "schema.weight";
@@ -887,6 +890,13 @@ namespace Datadog.Trace
             /// A two char hex string with the product being the trace source
             /// </summary>
             internal const string TraceSource = "_dd.p.ts";
+
+            /// <summary>
+            /// Tag used to propagate the Knuth sampling rate applied to the trace.
+            /// Set when a sampling decision is made using agent-based or rule-based sampling.
+            /// The value is the applied sampling rate formatted as a string with up to 6 significant digits.
+            /// </summary>
+            internal const string KnuthSamplingRate = "_dd.p.ksr";
         }
     }
 }

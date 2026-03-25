@@ -91,7 +91,7 @@ namespace Datadog.Trace
 
         /// <summary>
         /// Internal for use in tests that create "standalone" <see cref="TracerManager"/> by
-        /// <see cref="Tracer(TracerSettings, IAgentWriter, ITraceSampler, IScopeManager, IStatsdManager, ITelemetryController, IDiscoveryService)"/>
+        /// <see cref="Tracer(TracerSettings, IAgentWriter, ITraceSampler, IScopeManager, IStatsdManager, ITelemetryController, IDiscoveryService, ServiceRemappingHash)"/>
         /// </summary>
         internal TracerManager CreateTracerManager(
             TracerSettings settings,
@@ -108,7 +108,8 @@ namespace Datadog.Trace
             IDynamicConfigurationManager dynamicConfigurationManager,
             ITracerFlareManager tracerFlareManager,
             ISpanEventsManager spanEventsManager,
-            FeatureFlagsModule featureFlags)
+            FeatureFlagsModule featureFlags,
+            ServiceRemappingHash serviceRemappingHash = null)
         {
             settings ??= TracerSettings.FromDefaultSourcesInternal();
             var result = GlobalConfigurationSource.CreationResult;
@@ -123,7 +124,8 @@ namespace Datadog.Trace
                 Log.Warning(libdatadogAvailaibility.Exception, "An exception occurred while checking if libdatadog is available");
             }
 
-            discoveryService ??= GetDiscoveryService(settings);
+            serviceRemappingHash ??= new ServiceRemappingHash(settings.Manager.InitialMutableSettings.ProcessTags?.SerializedTags);
+            discoveryService ??= GetDiscoveryService(settings, serviceRemappingHash);
             var telemetrySettings = CreateTelemetrySettings(settings);
             telemetry ??= CreateTelemetryController(settings, discoveryService, telemetrySettings);
 
@@ -214,7 +216,8 @@ namespace Datadog.Trace
                 dynamicConfigurationManager,
                 tracerFlareManager,
                 spanEventsManager,
-                featureFlags);
+                featureFlags,
+                serviceRemappingHash);
         }
 
         protected virtual TelemetrySettings CreateTelemetrySettings(TracerSettings settings) =>
@@ -255,8 +258,11 @@ namespace Datadog.Trace
             IDynamicConfigurationManager dynamicConfigurationManager,
             ITracerFlareManager tracerFlareManager,
             ISpanEventsManager spanEventsManager,
-            FeatureFlagsModule featureFlagsModule)
-            => new TracerManager(settings, agentWriter, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, gitMetadataTagsProvider, traceSampler, spanSampler, remoteConfigurationManager, dynamicConfigurationManager, tracerFlareManager, spanEventsManager, featureFlagsModule);
+            FeatureFlagsModule featureFlagsModule,
+            ServiceRemappingHash serviceRemappingHash)
+        {
+            return new TracerManager(settings, agentWriter, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, gitMetadataTagsProvider, traceSampler, spanSampler, remoteConfigurationManager, dynamicConfigurationManager, tracerFlareManager, spanEventsManager, featureFlagsModule, serviceRemappingHash);
+        }
 
         protected virtual ITraceSampler GetSampler(TracerSettings settings)
         {
@@ -306,9 +312,11 @@ namespace Datadog.Trace
             return new AgentWriter(api, statsAggregator, statsd, settings);
         }
 
-        internal virtual IDiscoveryService GetDiscoveryService(TracerSettings settings)
-            => settings.AgentFeaturePollingEnabled ? DiscoveryService.CreateManaged(settings, ContainerMetadata.Instance)
-                   :
-                   NullDiscoveryService.Instance;
+        internal virtual IDiscoveryService GetDiscoveryService(TracerSettings settings, ServiceRemappingHash serviceRemappingHash)
+        {
+            return settings.AgentFeaturePollingEnabled
+                       ? DiscoveryService.CreateManaged(settings, ContainerMetadata.Instance, serviceRemappingHash)
+                       : NullDiscoveryService.Instance;
+        }
     }
 }
