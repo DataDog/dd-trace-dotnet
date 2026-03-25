@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Formats.Tar;
 using System.IO;
 using System.Linq;
@@ -284,10 +283,6 @@ public static partial class SmokeTestRunner
         var timeout = TimeSpan.FromSeconds(60);
         using var timeoutCts = new CancellationTokenSource(timeout);
         var ct = timeoutCts.Token;
-        var stopwatch = Stopwatch.StartNew();
-        var retryDelay = TimeSpan.FromMilliseconds(500);
-        var retryDelayIncrement = TimeSpan.FromMilliseconds(500);
-        var maxRetryDelay = TimeSpan.FromSeconds(3);
         var attempt = 0;
 
         try
@@ -304,16 +299,11 @@ public static partial class SmokeTestRunner
                 {
                     attempt++;
                     Logger.Warning(
-                        "Test agent readiness check failed on attempt {Attempt}. Waiting {Delay} before retry (elapsed: {Elapsed}). Error: {ErrorMessage}",
+                        "Test agent readiness check failed (attempt {Attempt}): {ErrorMessage}",
                         attempt,
-                        retryDelay,
-                        stopwatch.Elapsed,
                         ex.Message);
 
-                    await Task.Delay(retryDelay, ct);
-
-                    var nextRetryDelay = retryDelay + retryDelayIncrement;
-                    retryDelay = nextRetryDelay > maxRetryDelay ? maxRetryDelay : nextRetryDelay;
+                    await Task.Delay(500, ct);
                 }
             }
         }
