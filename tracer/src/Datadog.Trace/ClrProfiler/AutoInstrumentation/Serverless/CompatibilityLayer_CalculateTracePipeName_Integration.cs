@@ -18,7 +18,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Serverless
     /// Instrumentation for Datadog.Serverless.CompatibilityLayer.CalculateTracePipeName method.
     /// This instrumentation overrides the return value with the tracer's pre-generated pipe name,
     /// ensuring both the tracer and the compat layer use the same pipe name for communication.
-    /// Version range 0.0.0–2.*.* matches all versions, including the 0.0.0 dev build.
+    /// Version range 0.0.0–1.*.* matches all 0.x and 1.x versions, including the 0.0.0 dev build.
     /// If the target method doesn't exist (e.g. older/newer compat assembly), the native profiler
     /// silently skips instrumentation — no exception is thrown.
     /// </summary>

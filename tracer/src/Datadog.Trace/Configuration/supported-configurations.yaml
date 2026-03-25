@@ -1520,8 +1520,9 @@ supportedConfigurations:
     default: null
     const_name: ServerlessCompatPath
     documentation: |-
-      Overrides the default path to the serverless compat layer binary.
-      Default value is <c>C:\home\site\wwwroot\datadog\bin\windows-amd64\datadog-serverless-compat.exe</c>.
+      Overrides the default path to the serverless compatability layer binary.
+      Default value in windows is <c>C:\home\site\wwwroot\datadog\bin\windows-amd64\datadog-serverless-compat.exe</c>.
+      Default value in linux is <c>/bin/linux-amd64/datadog-serverless-compat</c>.
   DD_SYMBOL_DATABASE_BATCH_SIZE_BYTES:
   - implementation: A
     type: int
