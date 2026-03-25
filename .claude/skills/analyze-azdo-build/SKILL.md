@@ -145,7 +145,6 @@ When the user selects "Retry failed stages" from the investigation menu:
    ```bash
    az account show --query "{name:name, id:id}" -o table
    ```
-   The active account **must** be the `apm-libraries-build-and-sandbox` subscription.
    Run `az account list -o table` to find the correct subscription if needed, then switch:
    ```bash
    az account set --subscription <subscription-id>
