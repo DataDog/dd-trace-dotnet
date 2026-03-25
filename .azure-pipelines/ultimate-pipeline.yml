@@ -3306,8 +3306,6 @@ stages:
             targetShaId: $(targetShaId)
             targetBranch: $(targetBranch)
 
-        - template: steps/ensure-docker-ready.yml
-
         - template: steps/restore-working-directory-for-tests.yml
           parameters:
             artifactSuffix: $(artifactSuffix)
