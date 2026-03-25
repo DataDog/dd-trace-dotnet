@@ -30,7 +30,9 @@ namespace Samples.RuntimeMetrics
              * We wait 30 seconds here to ensure that we'll have at least two refreshes.
              */
 
-            Thread.Sleep(30000);
+            var duration = int.TryParse(Environment.GetEnvironmentVariable("SAMPLE_DURATION_SECONDS"), out var d) ? d : 30;
+            Console.WriteLine($"Running for {duration} seconds...");
+            Thread.Sleep(duration * 1000);
 
             Console.WriteLine("Exiting");
         }

@@ -130,7 +130,7 @@ namespace Datadog.Trace
             telemetry ??= CreateTelemetryController(settings, discoveryService, telemetrySettings);
 
             statsd ??= new StatsdManager(settings);
-            runtimeMetrics ??= settings.RuntimeMetricsEnabled && !DistributedTracer.Instance.IsChildTracer
+            runtimeMetrics ??= settings.RuntimeMetricsEnabled && !settings.OtlpRuntimeMetricsEnabled && !DistributedTracer.Instance.IsChildTracer
                                    ? new RuntimeMetricsWriter(statsd, TimeSpan.FromSeconds(10), settings.IsRunningInAzureAppService, settings.RuntimeMetricsDiagnosticsMetricsApiEnabled)
                                    : null;
 

@@ -399,11 +399,10 @@ namespace Datadog.Trace.ClrProfiler
             try
             {
                 var s = Tracer.Instance.Settings;
-                if (s.OtelMetricsExporterEnabled is true
-                    && (s.OpenTelemetryMetricsEnabled is true || s.OtelMetricsExporterExplicitlyConfigured))
+                if (s.OtlpRuntimeMetricsEnabled || (s.OpenTelemetryMetricsEnabled && s.OtelMetricsExporterEnabled))
                 {
-                    Log.Debug("Initializing Opentelemetry Protocol Metrics collection.");
-                    OpenTelemetry.Metrics.MetricsRuntime.Start(Tracer.Instance.Settings);
+                    Log.Debug("Initializing OTLP metrics pipeline. OtlpRuntimeMetrics={OtlpRuntimeMetrics}, OtelMetricsEnabled={OtelMetricsEnabled}.", s.OtlpRuntimeMetricsEnabled, s.OpenTelemetryMetricsEnabled);
+                    OpenTelemetry.Metrics.MetricsRuntime.Start(s);
                 }
             }
             catch (Exception ex)
