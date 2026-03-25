@@ -15,5 +15,5 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;
 /// </summary>
 internal interface IAdminClient : IDuckType, IDisposable
 {
-    IDuckTypeTask<IDescribeClusterResult> DescribeClusterAsync(object? options);
+    IDescribeClusterTask DescribeClusterAsync(object? options);
 }

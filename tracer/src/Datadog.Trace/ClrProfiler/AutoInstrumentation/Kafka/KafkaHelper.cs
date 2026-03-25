@@ -463,32 +463,25 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
             options.DuckCast<IDescribeClusterOptions>().RequestTimeout = TimeSpan.FromSeconds(2);
 
             var duckTask = adminClient.DescribeClusterAsync(options);
-            var describeResult = SafeGetResult<IDuckTypeTask<IDescribeClusterResult>, IDescribeClusterResult>(duckTask);
-            return describeResult?.ClusterId;
 
-            static TResult? SafeGetResult<TTask, TResult>(TTask task)
-                where TTask : IDuckTypeTask<TResult>
-                where TResult : IDescribeClusterResult
+            if (duckTask.Status == TaskStatus.RanToCompletion)
             {
-                if (task.Status == TaskStatus.RanToCompletion)
-                {
-                    return task.Result;
-                }
+                return duckTask.Result?.ClusterId;
+            }
 
-                var originalContext = SynchronizationContext.Current;
-                try
-                {
-                    // Set the synchronization context to null to avoid deadlocks.
-                    SynchronizationContext.SetSynchronizationContext(null);
+            var originalContext = SynchronizationContext.Current;
+            try
+            {
+                // Set the synchronization context to null to avoid deadlocks.
+                SynchronizationContext.SetSynchronizationContext(null);
 
-                    // Wait synchronously for the task to complete.
-                    return task.GetAwaiter().GetResult();
-                }
-                finally
-                {
-                    // Restore the original synchronization context.
-                    SynchronizationContext.SetSynchronizationContext(originalContext);
-                }
+                // Wait synchronously for the task to complete.
+                return duckTask.GetAwaiter().GetResult()?.ClusterId;
+            }
+            finally
+            {
+                // Restore the original synchronization context.
+                SynchronizationContext.SetSynchronizationContext(originalContext);
             }
         }
 
