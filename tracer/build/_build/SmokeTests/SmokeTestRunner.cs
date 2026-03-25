@@ -280,8 +280,10 @@ public static partial class SmokeTestRunner
     {
         Logger.Information("Waiting for test agent to be ready...");
 
-        using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        var timeout = TimeSpan.FromSeconds(60);
+        using var timeoutCts = new CancellationTokenSource(timeout);
         var ct = timeoutCts.Token;
+        var attempt = 0;
 
         try
         {
@@ -293,15 +295,21 @@ public static partial class SmokeTestRunner
                     Logger.Information("Test agent is ready (status: {Status})", response.StatusCode);
                     return;
                 }
-                catch (Exception) when (!ct.IsCancellationRequested)
+                catch (Exception ex) when (!ct.IsCancellationRequested)
                 {
+                    attempt++;
+                    Logger.Warning(
+                        "Test agent readiness check failed (attempt {Attempt}): {ErrorMessage}",
+                        attempt,
+                        ex.Message);
+
                     await Task.Delay(500, ct);
                 }
             }
         }
         catch (OperationCanceledException)
         {
-            throw new TimeoutException("Test agent did not become ready within 30 seconds");
+            throw new TimeoutException($"Test agent did not become ready within {timeout.TotalSeconds} seconds");
         }
     }
 
