@@ -55,11 +55,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
         {
             var tracer = Tracer.Instance;
 
-            // Check if headers already contain trace context (e.g., injected by MassTransit or other messaging frameworks).
-            // This allows the RabbitMQ span to be a child of the framework's producer span, maintaining trace continuity
-            // even when the framework uses async batching that decouples the publish call from the actual RabbitMQ send.
+            // If we already have an active scope, prefer that as the parent so we don't
+            // change the RabbitMQ integration's existing parent/child relationships.
+            // Only fall back to extracting from headers when publish is decoupled from the
+            // original producer scope, e.g. transport-layer batching in frameworks.
             PropagationContext extractedContext = default;
-            if (basicProperties.Instance != null && basicProperties.Headers is IDictionary<string, object> headers)
+            if (tracer.ActiveScope is null && basicProperties.Instance != null && basicProperties.Headers is IDictionary<string, object> headers)
             {
                 try
                 {
