@@ -11,6 +11,7 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Telemetry;
+using Datadog.Trace.Util;
 using Datadog.Trace.Telemetry.Transports;
 using Datadog.Trace.TestHelpers.FluentAssertionsExtensions.Json;
 using Datadog.Trace.TestHelpers.TransportHelpers;
@@ -74,7 +75,8 @@ namespace Datadog.Trace.Tests.Telemetry.Transports
                 { "DD-Telemetry-API-Version", TelemetryConstants.ApiVersionV2 },
                 { "DD-Telemetry-Request-Type", "my-request-type" },
                 { "Datadog-Container-ID", "my-container-id" },
-                { "Datadog-Entity-ID", "my-entity-id" }
+                { "Datadog-Entity-ID", "my-entity-id" },
+                { TelemetryConstants.SessionIdHeader, RuntimeId.Get() },
             };
             if (debugEnabled)
             {

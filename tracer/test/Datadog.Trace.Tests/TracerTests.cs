@@ -562,6 +562,21 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
+        public void RootSessionId_DefaultsToRuntimeId()
+        {
+            var rootSessionId = Datadog.Trace.Util.RuntimeId.GetRootSessionId();
+            rootSessionId.Should().Be(Datadog.Trace.Util.RuntimeId.Get());
+        }
+
+        [Fact]
+        public void RootSessionId_SetsEnvVar()
+        {
+            var rootSessionId = Datadog.Trace.Util.RuntimeId.GetRootSessionId();
+            Environment.GetEnvironmentVariable(ConfigurationKeys.Telemetry.RootSessionId)
+                       .Should().Be(rootSessionId);
+        }
+
+        [Fact]
         public async Task ForceFlush()
         {
             var agent = new Mock<IAgentWriter>();
