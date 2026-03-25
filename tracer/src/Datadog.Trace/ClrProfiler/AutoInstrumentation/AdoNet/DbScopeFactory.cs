@@ -103,8 +103,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                     }
                     else
                     {
-                        var writeBaseHash = tracer.Settings.PropagateProcessTags && tracer.Settings.DbmInjectSqlBasehash && !string.IsNullOrEmpty(baseHash);
-                        if (writeBaseHash)
+                        if (baseHash != null)
                         {
                             // note: it's ok that we don't write the basehash in the span if "alreadyInjected" because we only need one span to get the tag values
                             tags.BaseHash = baseHash;
@@ -112,7 +111,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
                         // PropagateDataViaComment (service) - this injects various trace information as a comment in the query
                         // PropagateDataViaContext (full)    - this makes a special set context_info for Microsoft SQL Server (nothing else supported)
-                        var traceParentInjectedInComment = DatabaseMonitoringPropagator.PropagateDataViaComment(tracer.Settings.DbmPropagationMode, integrationId, command, tracer.DefaultServiceName, tagsFromConnectionString.DbName, tagsFromConnectionString.OutHost, scope.Span, tracer.Settings.InjectContextIntoStoredProceduresEnabled, writeBaseHash ? baseHash : null);
+                        var traceParentInjectedInComment = DatabaseMonitoringPropagator.PropagateDataViaComment(tracer.Settings.DbmPropagationMode, integrationId, command, tracer.DefaultServiceName, tagsFromConnectionString.DbName, tagsFromConnectionString.OutHost, scope.Span, tracer.Settings.InjectContextIntoStoredProceduresEnabled, baseHash);
                         // try context injection only after comment injection, so that if it fails, we still have service level propagation
                         var traceParentInjectedInContext = DatabaseMonitoringPropagator.PropagateDataViaContext(tracer.Settings.DbmPropagationMode, integrationId, command, scope.Span);
 
@@ -266,7 +265,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             public static Scope? CreateDbCommandScope(Tracer tracer, IDbCommand command)
             {
                 var commandType = command.GetType();
-                var baseHash = tracer.TracerManager.ServiceRemappingHash?.Base64Value;
+                var baseHash = tracer.Settings.PropagateProcessTags && tracer.Settings.DbmInjectSqlBasehash
+                                   ? tracer.TracerManager.ServiceRemappingHash?.Base64Value
+                                   : null; // null if disabled
 
                 if (commandType == CommandType && DbTypeName is not null && OperationName is not null)
                 {
