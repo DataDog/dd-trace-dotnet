@@ -26,6 +26,7 @@ class IConfiguration;
 class CallstackProvider;
 class DiscardMetrics;
 class IUnwinder;
+class UnwinderTracer;
 
 class LinuxStackFramesCollector : public StackFramesCollectorBase
 {
@@ -71,6 +72,7 @@ private:
     bool CanCollect(int32_t threadId, siginfo_t* info, void* ucontext) const;
     std::int32_t CollectStack(void* ctx);
     void MarkAsInterrupted();
+    void SetTracer(UnwinderTracer* tracer);
 
     std::int32_t _lastStackWalkErrorCode;
     std::condition_variable _stackWalkInProgressWaiter;
@@ -97,4 +99,5 @@ private:
 
     std::shared_ptr<DiscardMetrics> _discardMetrics;
     IUnwinder* _pUnwinder;
+    UnwinderTracer* _tracer;
 };
