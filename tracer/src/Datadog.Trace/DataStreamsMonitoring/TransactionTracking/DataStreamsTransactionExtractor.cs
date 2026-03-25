@@ -11,7 +11,6 @@ namespace Datadog.Trace.DataStreamsMonitoring.TransactionTracking;
 
 internal sealed class DataStreamsTransactionExtractor
 {
-    // issue 10: static dictionary avoids a switch allocation on every access
     private static readonly Dictionary<string, Type> TypeMap = new(System.StringComparer.Ordinal)
     {
         ["HTTP_OUT_HEADERS"] = Type.HttpOutHeaders,
@@ -20,7 +19,6 @@ internal sealed class DataStreamsTransactionExtractor
         ["KAFKA_PRODUCE_HEADERS"] = Type.KafkaProduceHeaders,
     };
 
-    // issue 8: cached so the dictionary lookup runs only once per instance
     private Type? _cachedType;
 
     public enum Type

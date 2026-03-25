@@ -28,7 +28,6 @@ internal sealed class DataStreamsTransactionContainer
         {
             var byteCount = transactionInfo.GetByteCount();
 
-            // issue 1: use < (not <=) so we only resize when space is genuinely insufficient
             if (_data.Length - _size < byteCount)
             {
                 var resized = new byte[Math.Max(_data.Length * 2, _size + byteCount)];
@@ -36,7 +35,6 @@ internal sealed class DataStreamsTransactionContainer
                 _data = resized;
             }
 
-            // issue 6: write directly into the buffer — no intermediate byte[] allocation
             transactionInfo.WriteTo(_data, _size);
             _size += byteCount;
         }

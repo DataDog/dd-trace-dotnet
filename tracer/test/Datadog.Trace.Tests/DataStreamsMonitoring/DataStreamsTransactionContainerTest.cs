@@ -26,8 +26,6 @@ public class DataStreamsTransactionContainerTest
         bytes.Should().BeEquivalentTo(new byte[] { 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 49 });
     }
 
-    // Issue 1: verifies correct storage when available space exactly equals transaction byte count.
-    // The off-by-one bug (<=) would trigger an unnecessary resize but still store correctly.
     [Fact]
     public void Add_WhenRemainingSpaceExactlyEqualsTransactionSize_StoresDataCorrectly()
     {
@@ -40,7 +38,6 @@ public class DataStreamsTransactionContainerTest
         container.GetDataAndReset().Should().BeEquivalentTo(expectedBytes);
     }
 
-    // Issue 6: verifies that multiple transactions accumulate correctly (covers the direct-write path after fix).
     [Fact]
     public void Add_MultipleTransactions_AccumulatesBytes()
     {

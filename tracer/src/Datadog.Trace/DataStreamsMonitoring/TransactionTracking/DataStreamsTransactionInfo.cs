@@ -16,7 +16,7 @@ internal readonly struct DataStreamsTransactionInfo
     private static readonly ConcurrentDictionary<string, int> Cache = new();
     private static int _counter;
 
-    private readonly byte[] _idBytes; // issue 12: cache UTF-8 encoding once
+    private readonly byte[] _idBytes;
     private readonly long _timestamp;
     private readonly int _checkpointId;
 
@@ -68,7 +68,6 @@ internal readonly struct DataStreamsTransactionInfo
         Interlocked.Exchange(ref _counter, 0);
     }
 
-    // Issue 6: callers that own the destination buffer can write directly, avoiding an intermediate allocation.
     internal int GetByteCount() => _idBytes.Length + 10;
 
     internal void WriteTo(byte[] buffer, int offset)

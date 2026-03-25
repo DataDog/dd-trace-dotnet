@@ -31,7 +31,6 @@ public class DataStreamsTransactionExtractorTests
                 .Which.ExtractorType.Should().Be(expected);
     }
 
-    // Issue 8: ExtractorType must return the same value on every access (validates caching is safe).
     [Fact]
     public void ExtractorType_ReturnsSameValue_OnMultipleCalls()
     {

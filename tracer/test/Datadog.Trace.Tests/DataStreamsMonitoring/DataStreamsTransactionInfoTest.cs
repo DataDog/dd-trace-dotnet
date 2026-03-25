@@ -30,7 +30,6 @@ public class DataStreamsTransactionInfoTest
         cacheBytes.Should().BeEquivalentTo(new byte[] { 1, 1, 49 });
     }
 
-    // Issue 12: GetBytes must return identical bytes on every call (validates that caching _idBytes is safe).
     [Fact]
     public void GetBytes_ReturnsSameBytesOnSubsequentCalls()
     {
@@ -38,7 +37,6 @@ public class DataStreamsTransactionInfoTest
         transaction.GetBytes().Should().BeEquivalentTo(transaction.GetBytes());
     }
 
-    // Issue 6: WriteTo must write exactly the same bytes as GetBytes into an arbitrary offset of a buffer.
     [Fact]
     public void WriteTo_WritesSameBytesAsGetBytes()
     {
@@ -59,7 +57,6 @@ public class DataStreamsTransactionInfoTest
         buffer[3 + expected.Length].Should().Be(0);
     }
 
-    // Issue 6: GetByteCount must equal the length returned by GetBytes.
     [Fact]
     public void GetByteCount_MatchesGetBytesLength()
     {

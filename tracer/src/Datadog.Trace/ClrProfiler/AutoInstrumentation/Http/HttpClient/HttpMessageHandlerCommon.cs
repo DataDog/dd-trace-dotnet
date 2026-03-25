@@ -56,7 +56,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
                 }
 
                 var dataStreamsManager = tracer.TracerManager.DataStreamsManager;
-                if (dataStreamsManager.IsEnabled)
+                if (dataStreamsManager.TransactionTrackingEnabled)
                 {
                     var extractors = dataStreamsManager.GetExtractorsByType(DataStreamsTransactionExtractor.Type.HttpOutHeaders);
                     if (extractors != null)

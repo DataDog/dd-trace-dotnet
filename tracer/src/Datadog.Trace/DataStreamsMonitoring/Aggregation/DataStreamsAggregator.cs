@@ -83,8 +83,6 @@ internal sealed class DataStreamsAggregator(DataStreamsMessagePackFormatter form
         var statsToAdd = Export(maxBucketFlushTimeNs) ?? new();
         var backlogsToAdd = ExportBacklogs(maxBucketFlushTimeNs) ?? new();
 
-        // issue 11: drain the container once so we hold the bytes before the condition check,
-        // avoiding a second Size() lock acquisition and a potential race between check and drain.
         var transactionData = _dataStreamsTransactionContainer.GetDataAndReset();
         if (statsToAdd.Count > 0 || backlogsToAdd.Count > 0 || transactionData.Length > 0)
         {

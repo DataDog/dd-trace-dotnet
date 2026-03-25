@@ -76,6 +76,11 @@ internal sealed class DataStreamsManager
         get => Volatile.Read(ref _isInDefaultState);
     }
 
+    public bool TransactionTrackingEnabled
+    {
+        get => !IsInDefaultState && IsEnabled;
+    }
+
     /// <summary> Callback for AgentConfiguration updates </summary>
     private void UpdateHashWithContainerTags(AgentConfiguration conf)
     {

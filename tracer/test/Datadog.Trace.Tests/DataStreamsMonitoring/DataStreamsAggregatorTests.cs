@@ -128,7 +128,6 @@ public class DataStreamsAggregatorTests
         AssertBucket(stats, hash: 3, CreateSketch(5), CreateSketch(2));
     }
 
-    // Issue 11: serializing only transactions (no stats/backlogs) must still return true and consume the data.
     [Fact]
     public async Task Serialize_ReturnsTrue_WhenOnlyTransactionsPresent()
     {
@@ -147,7 +146,6 @@ public class DataStreamsAggregatorTests
         aggregator.Serialize(stream2, long.MaxValue).Should().BeFalse();
     }
 
-    // Issue 11: Serialize returns false when nothing has been added.
     [Fact]
     public async Task Serialize_ReturnsFalse_WhenEmpty()
     {
