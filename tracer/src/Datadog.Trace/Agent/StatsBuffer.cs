@@ -62,7 +62,7 @@ namespace Datadog.Trace.Agent
 
         public void Serialize(Stream stream, long bucketDuration)
         {
-            var count = 8;
+            var count = 9; // Base: Hostname, Env, Version, Stats, Lang, TracerVersion, RuntimeID, Sequence, Service
             var details = _header.Details;
 
             var serializedTags = details.ProcessTags?.SerializedTags;
@@ -110,6 +110,9 @@ namespace Datadog.Trace.Agent
 
             MessagePackBinary.WriteString(stream, "Sequence");
             MessagePackBinary.WriteInt64(stream, _header.GetSequenceNumber());
+
+            MessagePackBinary.WriteString(stream, "Service");
+            MessagePackBinary.WriteString(stream, details.DefaultServiceName ?? string.Empty);
 
             if (writeGitCommitSha)
             {
@@ -193,6 +196,7 @@ namespace Datadog.Trace.Agent
 
             if (hasServiceSource)
             {
+                // Wire name is "srv_src" per the Go agent's generated msgpack code
                 MessagePackBinary.WriteString(stream, "srv_src");
                 MessagePackBinary.WriteString(stream, bucket.Key.ServiceSource);
             }
