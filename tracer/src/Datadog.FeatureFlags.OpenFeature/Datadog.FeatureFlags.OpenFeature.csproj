@@ -46,7 +46,7 @@
 
   <ItemGroup>
      <!-- If you update this version, be sure to update the TargetFrameworks element above-->
-    <PackageReference Include="OpenFeature" Version="2.0.0" />
+    <PackageReference Include="OpenFeature" Version="2.3.0" />
   </ItemGroup>
 
   <PropertyGroup>

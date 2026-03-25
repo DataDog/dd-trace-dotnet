@@ -258,7 +258,7 @@
         "name": "AWSSDK.DynamoDBv2",
         "minVersionAvailableInclusive": "3.1.0",
         "minVersionSupportedInclusive": "3.1.0",
-        "minVersionTestedInclusive": "3.1.5.3",
+        "minVersionTestedInclusive": "3.3.106.47",
         "maxVersionSupportedInclusive": "4.0.17.1",
         "maxVersionAvailableInclusive": "4.0.17.1",
         "maxVersionTestedInclusive": "4.0.17.1"
@@ -292,7 +292,7 @@
         "name": "AWSSDK.Kinesis",
         "minVersionAvailableInclusive": "3.1.0",
         "minVersionSupportedInclusive": "3.1.0",
-        "minVersionTestedInclusive": "3.1.3.5",
+        "minVersionTestedInclusive": "3.3.101.1",
         "maxVersionSupportedInclusive": "4.0.8.4",
         "maxVersionAvailableInclusive": "4.0.8.4",
         "maxVersionTestedInclusive": "4.0.8.4"
@@ -327,8 +327,8 @@
         "minVersionAvailableInclusive": "3.1.0",
         "minVersionSupportedInclusive": "3.3.0",
         "minVersionTestedInclusive": "3.3.113.2",
-        "maxVersionSupportedInclusive": "4.0.19.2",
-        "maxVersionAvailableInclusive": "4.0.19.2",
+        "maxVersionSupportedInclusive": "4.0.19.1",
+        "maxVersionAvailableInclusive": "4.0.19.1",
         "maxVersionTestedInclusive": "4.0.19.1"
       }
     ]
@@ -343,9 +343,9 @@
         "name": "AWSSDK.Core",
         "minVersionAvailableInclusive": "3.1.0",
         "minVersionSupportedInclusive": "3.1.0",
-        "minVersionTestedInclusive": "3.1.11",
-        "maxVersionSupportedInclusive": "4.0.3.22",
-        "maxVersionAvailableInclusive": "4.0.3.22",
+        "minVersionTestedInclusive": "3.3.107.40",
+        "maxVersionSupportedInclusive": "4.0.3.21",
+        "maxVersionAvailableInclusive": "4.0.3.21",
         "maxVersionTestedInclusive": "4.0.3.21"
       }
     ]
@@ -360,7 +360,7 @@
         "name": "AWSSDK.SimpleNotificationService",
         "minVersionAvailableInclusive": "3.1.0",
         "minVersionSupportedInclusive": "3.1.0",
-        "minVersionTestedInclusive": "3.1.2.1",
+        "minVersionTestedInclusive": "3.3.102.17",
         "maxVersionSupportedInclusive": "4.0.2.20",
         "maxVersionAvailableInclusive": "4.0.2.20",
         "maxVersionTestedInclusive": "4.0.2.20"
@@ -377,7 +377,7 @@
         "name": "AWSSDK.SQS",
         "minVersionAvailableInclusive": "3.1.0",
         "minVersionSupportedInclusive": "3.1.0",
-        "minVersionTestedInclusive": "3.1.0.13",
+        "minVersionTestedInclusive": "3.3.103.26",
         "maxVersionSupportedInclusive": "4.0.2.18",
         "maxVersionAvailableInclusive": "4.0.2.18",
         "maxVersionTestedInclusive": "4.0.2.18"
@@ -699,13 +699,13 @@
     "maxAssemblyVersionInclusive": "1.65535.65535",
     "packages": [
       {
-        "name": "Hangfire.Core",
+        "name": "Hangfire",
         "minVersionAvailableInclusive": "0.1.0",
         "minVersionSupportedInclusive": "1.7.0",
-        "minVersionTestedInclusive": "1.7.37",
+        "minVersionTestedInclusive": null,
         "maxVersionSupportedInclusive": "1.8.23",
         "maxVersionAvailableInclusive": "1.8.23",
-        "maxVersionTestedInclusive": "1.8.23"
+        "maxVersionTestedInclusive": null
       }
     ]
   },
@@ -886,7 +886,7 @@
         "name": "log4net",
         "minVersionAvailableInclusive": "1.2.10",
         "minVersionSupportedInclusive": "1.2.10",
-        "minVersionTestedInclusive": "1.2.11",
+        "minVersionTestedInclusive": "2.0.17",
         "maxVersionSupportedInclusive": "3.3.0",
         "maxVersionAvailableInclusive": "3.3.0",
         "maxVersionTestedInclusive": "3.3.0"
@@ -903,7 +903,7 @@
         "name": "MongoDB.Driver",
         "minVersionAvailableInclusive": "1.0.3744.30075",
         "minVersionSupportedInclusive": "2.1.0",
-        "minVersionTestedInclusive": "2.0.2",
+        "minVersionTestedInclusive": "2.30.0",
         "maxVersionSupportedInclusive": "3.7.1",
         "maxVersionAvailableInclusive": "3.7.1",
         "maxVersionTestedInclusive": "3.7.1"
@@ -920,7 +920,7 @@
         "name": "MongoDB.Driver",
         "minVersionAvailableInclusive": "1.0.3744.30075",
         "minVersionSupportedInclusive": "2.1.0",
-        "minVersionTestedInclusive": "2.0.2",
+        "minVersionTestedInclusive": "2.30.0",
         "maxVersionSupportedInclusive": "3.5.2",
         "maxVersionAvailableInclusive": "3.7.1",
         "maxVersionTestedInclusive": "3.7.1"
@@ -1006,17 +1006,7 @@
     "assemblyName": "MSTest.TestFramework",
     "minAssemblyVersionInclusive": "4.0.0",
     "maxAssemblyVersionInclusive": "4.65535.65535",
-    "packages": [
-      {
-        "name": "MSTest.TestFramework",
-        "minVersionAvailableInclusive": "1.1.11",
-        "minVersionSupportedInclusive": "4.0.0",
-        "minVersionTestedInclusive": "2.0.0",
-        "maxVersionSupportedInclusive": "4.1.0",
-        "maxVersionAvailableInclusive": "4.1.0",
-        "maxVersionTestedInclusive": "4.1.0"
-      }
-    ]
+    "packages": []
   },
   {
     "integrationName": "MsTestV2",
@@ -1069,7 +1059,7 @@
         "name": "NLog",
         "minVersionAvailableInclusive": "1.0.0.505",
         "minVersionSupportedInclusive": "1.0.0.505",
-        "minVersionTestedInclusive": "1.0.0.505",
+        "minVersionTestedInclusive": "4.7.15",
         "maxVersionSupportedInclusive": "6.1.1",
         "maxVersionAvailableInclusive": "6.1.1",
         "maxVersionTestedInclusive": "6.1.1"
@@ -1115,17 +1105,7 @@
     "assemblyName": "Datadog.FeatureFlags.OpenFeature",
     "minAssemblyVersionInclusive": "2.0.0",
     "maxAssemblyVersionInclusive": "2.65535.65535",
-    "packages": [
-      {
-        "name": "OpenFeature",
-        "minVersionAvailableInclusive": "0.1.0",
-        "minVersionSupportedInclusive": "2.0.0",
-        "minVersionTestedInclusive": "2.0.0",
-        "maxVersionSupportedInclusive": "2.11.1",
-        "maxVersionAvailableInclusive": "2.11.1",
-        "maxVersionTestedInclusive": "2.10.0"
-      }
-    ]
+    "packages": []
   },
   {
     "integrationName": "OpenTelemetry",
@@ -1250,7 +1230,7 @@
         "name": "Serilog",
         "minVersionAvailableInclusive": "0.1.6",
         "minVersionSupportedInclusive": "1.0.1",
-        "minVersionTestedInclusive": "1.4.214",
+        "minVersionTestedInclusive": "2.12.0",
         "maxVersionSupportedInclusive": "4.3.1",
         "maxVersionAvailableInclusive": "4.3.1",
         "maxVersionTestedInclusive": "4.3.1"
@@ -1267,7 +1247,7 @@
         "name": "ServiceStack.Redis",
         "minVersionAvailableInclusive": "2.9.0",
         "minVersionSupportedInclusive": "4.0.2",
-        "minVersionTestedInclusive": "4.5.14",
+        "minVersionTestedInclusive": "6.1.0",
         "maxVersionSupportedInclusive": "10.0.6",
         "maxVersionAvailableInclusive": "10.0.6",
         "maxVersionTestedInclusive": "10.0.6"
@@ -1359,10 +1339,10 @@
         "name": "StackExchange.Redis",
         "minVersionAvailableInclusive": "1.0.187",
         "minVersionSupportedInclusive": "1.0.187",
-        "minVersionTestedInclusive": "1.0.488",
+        "minVersionTestedInclusive": "1.2.6",
         "maxVersionSupportedInclusive": "2.12.8",
         "maxVersionAvailableInclusive": "2.12.8",
-        "maxVersionTestedInclusive": "2.12.4"
+        "maxVersionTestedInclusive": "2.12.8"
       }
     ]
   },
