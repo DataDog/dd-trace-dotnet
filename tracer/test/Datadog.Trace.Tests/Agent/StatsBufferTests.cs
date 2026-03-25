@@ -82,7 +82,7 @@ namespace Datadog.Trace.Tests.Agent
             result.RuntimeId.Should().Be(Tracer.RuntimeId);
             result.Sequence.Should().Be(1);
             result.AgentAggregation.Should().BeNull();
-            result.Service.Should().BeNull();
+            result.Service.Should().Be(payload.Details.DefaultServiceName);
             result.Stats.Should().HaveCount(1);
 
             if (propagateProcessTags)
