@@ -41,7 +41,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
                     return;
                 }
 
-                var exporter = new OtlpExporter(settings);
+                var exporter = new OtlpExporter(settings, settings.Manager.InitialExporterSettings);
                 _instance = new OtelMetricsPipeline(settings, exporter);
                 _instance.Start();
 
@@ -87,4 +87,3 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
     }
 }
 #endif
-

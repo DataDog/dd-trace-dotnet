@@ -16,6 +16,7 @@ using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Ci.Telemetry;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Util;
 using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
@@ -194,7 +195,7 @@ internal sealed partial class TestOptimizationClient
             }
         }
 
-        var packObjectsSha = packObjectsResultCommand.Output.Split(new[] { "\n" }, StringSplitOptions.RemoveEmptyEntries);
+        var packObjectsSha = packObjectsResultCommand.Output.Split(Separators.NewLine, StringSplitOptions.RemoveEmptyEntries);
 
         // We try to return an array with the path in the same order as has been returned by the git command.
         var tempFolder = Path.GetDirectoryName(temporaryPath) ?? string.Empty;

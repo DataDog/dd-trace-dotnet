@@ -6,6 +6,7 @@
 #nullable enable
 using System;
 using System.Diagnostics.CodeAnalysis;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Pdb.SourceLink;
 
@@ -26,14 +27,54 @@ internal sealed class GitLabSourceLinkUrlParser : SourceLinkUrlParser
 
         try
         {
-            var segments = uri.AbsolutePath.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
-            if (segments.Length != 5 || segments[2] != "raw" || segments[4] != "*" || !IsValidCommitSha(segments[3]))
+            ReadOnlySpan<char> org = default;
+            ReadOnlySpan<char> repo = default;
+            ReadOnlySpan<char> sha = default;
+            var segmentCount = 0;
+
+            foreach (var segment in uri.AbsolutePath.SplitIntoSpans('/'))
+            {
+                ReadOnlySpan<char> span = segment;
+                if (span.IsEmpty)
+                {
+                    continue;
+                }
+
+                switch (segmentCount)
+                {
+                    case 0: org = span; break;
+                    case 1: repo = span; break;
+                    case 2:
+                        if (!span.SequenceEqual("raw".AsSpan()))
+                        {
+                            return false;
+                        }
+
+                        break;
+                    case 3: sha = span; break;
+                    case 4:
+                        if (!span.SequenceEqual("*".AsSpan()))
+                        {
+                            return false;
+                        }
+
+                        break;
+                }
+
+                segmentCount++;
+            }
+
+            if (segmentCount != 5 || !IsValidCommitSha(sha))
             {
                 return false;
             }
 
-            repositoryUrl = $"{uri.Scheme}://{uri.Authority}/{segments[0]}/{segments[1]}";
-            commitSha = segments[3];
+#if NET6_0_OR_GREATER
+            repositoryUrl = $"{uri.Scheme}://{uri.Authority}/{org}/{repo}";
+#else
+            repositoryUrl = $"{uri.Scheme}://{uri.Authority}/{org.ToString()}/{repo.ToString()}";
+#endif
+            commitSha = sha.ToString();
             return true;
         }
         catch (Exception ex)

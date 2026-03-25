@@ -3,7 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Datadog.Trace.Configuration;
 using Datadog.Trace.SourceGenerators;
 
 #pragma warning disable SA1402 // File must contain single type
@@ -14,23 +13,26 @@ namespace Datadog.Trace.Tagging
         [Tag(Trace.Tags.SpanKind)]
         public override string SpanKind => SpanKinds.Client;
 
-        [Tag(Trace.Tags.DbType)]
+        [Tag(Tags.DbType)]
         public string DbType { get; set; }
 
-        [Tag(Trace.Tags.InstrumentationName)]
+        [Tag(Tags.InstrumentationName)]
         public string InstrumentationName { get; set; }
 
-        [Tag(Trace.Tags.DbName)]
+        [Tag(Tags.DbName)]
         public string DbName { get; set; }
 
-        [Tag(Trace.Tags.DbUser)]
+        [Tag(Tags.DbUser)]
         public string DbUser { get; set; }
 
-        [Tag(Trace.Tags.OutHost)]
+        [Tag(Tags.OutHost)]
         public string OutHost { get; set; }
 
-        [Tag(Trace.Tags.DbmTraceInjected)]
+        [Tag(Tags.DbmTraceInjected)]
         public string DbmTraceInjected { get; set; }
+
+        [Tag(Tags.BaseHash)]
+        public string BaseHash { get; set; }
     }
 
     internal sealed partial class SqlV1Tags : SqlTags
@@ -42,14 +44,14 @@ namespace Datadog.Trace.Tagging
         // value from predefined precursor attributes.
         // However, this can still be set from ITags.SetTag so the user can
         // customize the value if they wish.
-        [Tag(Trace.Tags.PeerService)]
+        [Tag(Tags.PeerService)]
         public string PeerService
         {
             get => _peerServiceOverride ?? DbName ?? OutHost;
             private set => _peerServiceOverride = value;
         }
 
-        [Tag(Trace.Tags.PeerServiceSource)]
+        [Tag(Tags.PeerServiceSource)]
         public string PeerServiceSource
         {
             get

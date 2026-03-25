@@ -116,7 +116,7 @@ public class TracerManagerFactoryTests : IAsyncLifetime
         settings.AgentFeaturePollingEnabled.Should().Be(enabled);
 
         var factory = new TracerManagerFactory();
-        var discoveryService = factory.GetDiscoveryService(settings);
+        var discoveryService = factory.GetDiscoveryService(settings, new ServiceRemappingHash(null));
 
         if (enabled)
         {
@@ -140,7 +140,7 @@ public class TracerManagerFactoryTests : IAsyncLifetime
             BuildLogSubmissionManager(),
             Mock.Of<ITelemetryController>(),
             Mock.Of<IDiscoveryService>(),
-            new DataStreamsManager(settings, Mock.Of<IDataStreamsWriter>(), Mock.Of<IDiscoveryService>(), processTags: null),
+            new DataStreamsManager(settings, Mock.Of<IDataStreamsWriter>(), Mock.Of<IDiscoveryService>()),
             remoteConfigurationManager: null,
             dynamicConfigurationManager: null,
             tracerFlareManager: null,

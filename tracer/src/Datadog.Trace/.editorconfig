@@ -53,7 +53,7 @@ dotnet_diagnostic.CA1857.severity = error # A constant is expected for the param
 dotnet_diagnostic.CA1858.severity = error # Use StartsWith instead of IndexOf
 # dotnet_diagnostic.CA1859.severity = error # Use concrete types when possible -- too many violations, we'll fix later
 dotnet_diagnostic.CA1860.severity = error # Avoid using Enumerable.Any() extension method
-# dotnet_diagnostic.CA1861.severity = error # Avoid constant arrays as arguments - too many changes, will do in a separate PR
+dotnet_diagnostic.CA1861.severity = error # Avoid constant arrays as arguments
 dotnet_diagnostic.CA1862.severity = error # Use StringComparison method overloads for case-insensitive comparisons
 dotnet_diagnostic.CA1863.severity = error # Use char overload
 dotnet_diagnostic.CA1864.severity = error # Prefer the IDictionary.TryAdd(TKey, TValue) method
@@ -64,5 +64,5 @@ dotnet_diagnostic.CA1868.severity = error # Unnecessary call to Contains for set
 dotnet_diagnostic.CA1869.severity = error # Cache and reuse JsonSerializerOptions instances
 dotnet_diagnostic.CA1870.severity = error # Use a cached SearchValues instance
 dotnet_diagnostic.CA1871.severity = error # Do not pass a nullable struct to ArgumentNullException.ThrowIfNull.
-# dotnet_diagnostic.CA1872.severity = error # Prefer Convert.ToHexString over BitConverter.ToString
+dotnet_diagnostic.CA1872.severity = error # Prefer Convert.ToHexString over BitConverter.ToString
 

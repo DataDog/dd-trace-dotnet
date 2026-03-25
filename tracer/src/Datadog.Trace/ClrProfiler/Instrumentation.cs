@@ -105,7 +105,7 @@ namespace Datadog.Trace.ClrProfiler
 
             if (tracerSettings.PropagateProcessTags)
             {
-                config.ProcessTags = ProcessTags.SerializedTags;
+                config.ProcessTags = mutableSettings.ProcessTags?.SerializedTags;
             }
 
             // Make sure nothing bubbles up, even if there are issues
@@ -334,7 +334,6 @@ namespace Datadog.Trace.ClrProfiler
                 Log.Error(ex, "Error initializing Security");
             }
 
-#if !NETFRAMEWORK
             try
             {
                 if (GlobalSettings.Instance.DiagnosticSourceEnabled)
@@ -357,7 +356,7 @@ namespace Datadog.Trace.ClrProfiler
             {
                 // ignore
             }
-
+#if !NETFRAMEWORK
             // we only support Service Fabric Service Remoting instrumentation on .NET Core (including .NET 5+)
             if (FrameworkDescription.Instance.IsCoreClr())
             {
@@ -482,15 +481,16 @@ namespace Datadog.Trace.ClrProfiler
             }
         }
 
-#if !NETFRAMEWORK
         private static void StartDiagnosticManager()
         {
             var observers = new List<DiagnosticObserver>();
 
+#if !NETFRAMEWORK
             if (!SkipAspNetCoreDiagnosticObserver())
             {
                 observers.Add(GetAspNetCoreDiagnosticObserver());
             }
+#endif
 
             observers.Add(new QuartzDiagnosticObserver());
 
@@ -499,6 +499,7 @@ namespace Datadog.Trace.ClrProfiler
             DiagnosticManager.Instance = diagnosticManager;
         }
 
+#if !NETFRAMEWORK
         private static DiagnosticObserver GetAspNetCoreDiagnosticObserver()
         {
             // Tracer and Security should both have been initialized by now.
@@ -520,8 +521,7 @@ namespace Datadog.Trace.ClrProfiler
             // this is extremely simple now, but will get more complex soon...
             return EnvironmentHelpers.IsAzureFunctions();
         }
-
-#endif // #if !NETFRAMEWORK
+#endif
 
         private static void InitializeDebugger(TracerSettings tracerSettings)
         {

@@ -219,10 +219,7 @@ namespace Datadog.Trace.Tests.Agent
 
             var api = new Api(factoryMock.Object, TestStatsdManager.NoOp, new ContainerMetadata(containerId: null, entityId: null), updateSampleRates: null, updateConfigState: null, partialFlushEnabled: false, healthMetricsEnabled: false);
 
-            var statsBuffer = new StatsBuffer(new ClientStatsPayload(MutableSettings.CreateForTesting(new(), []))
-            {
-                ProcessTags = "tag.a:b,tag.c:d"
-            });
+            var statsBuffer = new StatsBuffer(new ClientStatsPayload(MutableSettings.CreateForTesting(new(), [])));
 
             await api.SendStatsAsync(statsBuffer, 1);
 
