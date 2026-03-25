@@ -99,7 +99,7 @@ namespace Datadog.Trace.Configuration
 
             if (Util.EnvironmentHelpers.IsAzureFunctions()
                 && !Util.EnvironmentHelpers.IsUsingAzureAppServicesSiteExtension()
-                && ClrProfiler.AutoInstrumentation.Serverless.ServerlessCompatPipeNameHelper.IsCompatLayerAvailableWithPipeSupport())
+                && Serverless.ServerlessCompatPipeNameHelper.IsCompatLayerAvailableWithPipeSupport())
             {
                 tracesPipeName = GenerateUniquePipeName(rawSettings.TracesPipeName, "dd_trace", ConfigurationKeys.TracesPipeName);
                 metricsPipeName = GenerateUniquePipeName(rawSettings.MetricsPipeName, "dd_dogstatsd", ConfigurationKeys.MetricsPipeName);
@@ -350,7 +350,7 @@ namespace Datadog.Trace.Configuration
         private string GenerateUniquePipeName(string? configuredBaseName, string defaultBaseName, string configKey)
         {
             var baseName = StringUtil.IsNullOrEmpty(configuredBaseName) ? defaultBaseName : configuredBaseName;
-            var name = ClrProfiler.AutoInstrumentation.Serverless.ServerlessCompatPipeNameHelper.GenerateUniquePipeName(baseName, "ExporterSettings");
+            var name = Serverless.ServerlessCompatPipeNameHelper.GenerateUniquePipeName(baseName, "ExporterSettings");
             Log.Information("Azure Functions environment detected. Using pipe base name '{BaseName}', generated unique pipe name: {PipeName}", baseName, name);
             _telemetry.Record(configKey, name, recordValue: true, ConfigurationOrigins.Calculated);
             return name;

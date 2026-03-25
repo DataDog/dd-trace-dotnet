@@ -6,12 +6,12 @@
 #nullable enable
 
 using System;
-using System.Runtime.InteropServices;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.Serverless;
+using Datadog.Trace.Serverless;
+using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
 
-namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.Serverless
+namespace Datadog.Trace.Tests.Serverless
 {
     public class ServerlessCompatPipeNameHelperTests
     {
@@ -71,27 +71,20 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.Serverless
             act.Should().NotThrow();
         }
 
-        [Fact]
+        [SkippableFact]
         public void IsCompatLayerAvailableWithPipeSupport_ReturnsFalse_WhenNotOnWindows()
         {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                // This test only validates non-Windows behavior
-                return;
-            }
+            SkipOn.Platform(SkipOn.PlatformValue.Windows);
 
             var result = ServerlessCompatPipeNameHelper.IsCompatLayerAvailableWithPipeSupport();
 
             result.Should().BeFalse();
         }
 
-        [Fact]
+        [SkippableFact]
         public void IsCompatLayerAvailableWithPipeSupport_ReturnsFalse_WhenCompatBinaryMissing()
         {
-            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                return;
-            }
+            SkipOn.AllExcept(SkipOn.PlatformValue.Windows);
 
             // Binary missing, DLL present
             var result = ServerlessCompatPipeNameHelper.IsCompatLayerAvailableWithPipeSupport(
@@ -101,13 +94,10 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.Serverless
             result.Should().BeFalse();
         }
 
-        [Fact]
+        [SkippableFact]
         public void IsCompatLayerAvailableWithPipeSupport_ReturnsFalse_WhenCompatDllMissing()
         {
-            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                return;
-            }
+            SkipOn.AllExcept(SkipOn.PlatformValue.Windows);
 
             // Binary present, DLL missing
             var result = ServerlessCompatPipeNameHelper.IsCompatLayerAvailableWithPipeSupport(
@@ -117,13 +107,10 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.Serverless
             result.Should().BeFalse();
         }
 
-        [Fact]
+        [SkippableFact]
         public void IsCompatLayerAvailableWithPipeSupport_ReturnsFalse_WhenVersionIsNull()
         {
-            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                return;
-            }
+            SkipOn.AllExcept(SkipOn.PlatformValue.Windows);
 
             var result = ServerlessCompatPipeNameHelper.IsCompatLayerAvailableWithPipeSupport(
                 fileExists: _ => true,
@@ -132,16 +119,13 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.Serverless
             result.Should().BeFalse();
         }
 
-        [Theory]
+        [SkippableTheory]
         [InlineData(1, 3, 0)]
         [InlineData(1, 0, 0)]
         [InlineData(0, 1, 0)]
         public void IsCompatLayerAvailableWithPipeSupport_ReturnsFalse_WhenVersionTooOld(int major, int minor, int build)
         {
-            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                return;
-            }
+            SkipOn.AllExcept(SkipOn.PlatformValue.Windows);
 
             var result = ServerlessCompatPipeNameHelper.IsCompatLayerAvailableWithPipeSupport(
                 fileExists: _ => true,
@@ -150,17 +134,14 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.Serverless
             result.Should().BeFalse();
         }
 
-        [Theory]
+        [SkippableTheory]
         [InlineData(0, 0, 0)]  // dev build
         [InlineData(1, 4, 0)]  // minimum supported
         [InlineData(1, 5, 0)]  // above minimum
         [InlineData(2, 0, 0)]  // major version bump
         public void IsCompatLayerAvailableWithPipeSupport_ReturnsTrue_WhenVersionSupported(int major, int minor, int build)
         {
-            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                return;
-            }
+            SkipOn.AllExcept(SkipOn.PlatformValue.Windows);
 
             var result = ServerlessCompatPipeNameHelper.IsCompatLayerAvailableWithPipeSupport(
                 fileExists: _ => true,
@@ -169,13 +150,10 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.Serverless
             result.Should().BeTrue();
         }
 
-        [Fact]
+        [SkippableFact]
         public void IsCompatLayerAvailableWithPipeSupport_ReturnsFalse_WhenGetVersionThrows()
         {
-            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                return;
-            }
+            SkipOn.AllExcept(SkipOn.PlatformValue.Windows);
 
             var result = ServerlessCompatPipeNameHelper.IsCompatLayerAvailableWithPipeSupport(
                 fileExists: _ => true,

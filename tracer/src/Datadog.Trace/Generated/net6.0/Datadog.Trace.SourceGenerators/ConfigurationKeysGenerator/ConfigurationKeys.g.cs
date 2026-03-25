@@ -250,7 +250,7 @@ internal static partial class ConfigurationKeys
     public const string RuntimeMetricsEnabled = "DD_RUNTIME_METRICS_ENABLED";
 
     /// <summary>
-    /// Overrides the default path to the serverless compatability layer binary.
+    /// Overrides the default path to the serverless compatibility layer binary.
     /// Default value in windows is <c>C:\home\site\wwwroot\datadog\bin\windows-amd64\datadog-serverless-compat.exe</c>.
     /// Default value in linux is <c>/bin/linux-amd64/datadog-serverless-compat</c>.
     /// </summary>

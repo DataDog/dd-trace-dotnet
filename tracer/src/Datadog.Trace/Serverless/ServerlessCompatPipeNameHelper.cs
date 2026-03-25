@@ -11,7 +11,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using Datadog.Trace.Logging;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Serverless
+namespace Datadog.Trace.Serverless
 {
     /// <summary>
     /// Helper class for generating unique pipe names for serverless compat layer coordination.
