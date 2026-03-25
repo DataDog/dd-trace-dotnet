@@ -97,7 +97,7 @@ internal sealed class ServiceRemappingHash
         }
 
 #if NETCOREAPP3_1_OR_GREATER
-        return Encoding.ASCII.GetString(buf[..bytesWritten]);
+        return Encoding.ASCII.GetString(buf.Slice(0, bytesWritten));
 #else
         // can't use Range
         return Encoding.ASCII.GetString(buf, index: 0, bytesWritten);
