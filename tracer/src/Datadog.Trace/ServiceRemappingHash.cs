@@ -79,10 +79,9 @@ internal sealed class ServiceRemappingHash
         Base64.EncodeToUtf8InPlace(buf, dataLength: 8, out var bytesWritten);
 
         // no padding
-        while (bytesWritten > 0 && buf[bytesWritten - 1] == (byte)'=')
-        {
-            bytesWritten--;
-        }
+        // Base64 always pads input to multiples of 3, so we know that we will
+        // always have 11 bytes of "real" data, and one of padding `=`.
+        bytesWritten--;
 
         // use url-safe characters (for the SQL comment)
         for (var i = 0; i < bytesWritten; i++)
