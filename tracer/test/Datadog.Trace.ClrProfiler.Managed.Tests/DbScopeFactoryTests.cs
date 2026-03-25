@@ -173,8 +173,8 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             scope.Should().NotBeNull();
             if (hashPropagationEnabled)
             {
-                scope.Span.GetTag(Tags.BaseHash).Should().Be(serviceRemappingHash.B64Value);
-                command.CommandText.Should().Contain($"ddsh='{serviceRemappingHash.B64Value}'");
+                scope.Span.GetTag(Tags.BaseHash).Should().Be(serviceRemappingHash.Base64Value);
+                command.CommandText.Should().Contain($"ddsh='{serviceRemappingHash.Base64Value}'");
             }
             else
             {

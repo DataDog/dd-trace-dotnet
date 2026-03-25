@@ -106,6 +106,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                         var writeBaseHash = tracer.Settings.PropagateProcessTags && tracer.Settings.DbmInjectSqlBasehash && !string.IsNullOrEmpty(baseHash);
                         if (writeBaseHash)
                         {
+                            // note: it's ok that we don't write the basehash in the span if "alreadyInjected" because we only need one span to get the tag values
                             tags.BaseHash = baseHash;
                         }
 
@@ -265,7 +266,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             public static Scope? CreateDbCommandScope(Tracer tracer, IDbCommand command)
             {
                 var commandType = command.GetType();
-                var baseHash = tracer.TracerManager.ServiceRemappingHash?.B64Value;
+                var baseHash = tracer.TracerManager.ServiceRemappingHash?.Base64Value;
 
                 if (commandType == CommandType && DbTypeName is not null && OperationName is not null)
                 {

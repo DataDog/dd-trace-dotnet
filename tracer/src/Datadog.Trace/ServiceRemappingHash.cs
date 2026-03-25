@@ -6,8 +6,8 @@
 #nullable enable
 
 using System;
+using System.Text;
 using System.Threading;
-using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace;
@@ -27,7 +27,7 @@ internal sealed class ServiceRemappingHash
         if (processTags != null)
         {
             // containers tags hash is always null at creation, because we discover it later (if any)
-            B64Value = Compute(processTags.SerializedTags, containerTagsHash: null);
+            Base64Value = Compute(processTags.SerializedTags, containerTagsHash: null);
         }
     }
 
@@ -37,17 +37,17 @@ internal sealed class ServiceRemappingHash
     /// </summary>
     public string? ContainerTagsHash
     {
-        get;
-        private set;
+        get => Volatile.Read(ref field);
+        private set => Volatile.Write(ref field, value);
     }
 
     /// <summary>
     /// Gets the base64 representation of the hash
     /// </summary>
-    public string? B64Value
+    public string? Base64Value
     {
-        get;
-        private set;
+        get => Volatile.Read(ref field);
+        private set => Volatile.Write(ref field, value);
     }
 
     public void UpdateContainerTagsHash(string containerTagsHash)
@@ -56,7 +56,7 @@ internal sealed class ServiceRemappingHash
 
         if (_processTags != null)
         {
-            B64Value = Compute(_processTags.SerializedTags, containerTagsHash);
+            Base64Value = Compute(_processTags.SerializedTags, containerTagsHash);
         }
     }
 
@@ -68,11 +68,40 @@ internal sealed class ServiceRemappingHash
             hash = FnvHash64.GenerateHash(containerTagsHash, FnvHash64.Version.V1, hash);
         }
 
-        var b64 = Convert.ToBase64String(BitConverter.GetBytes(hash));
-        return b64
-            .TrimEnd('=') // remove padding
-            // use url-safe characters
-            .Replace(oldChar: '+', newChar: '-')
-            .Replace(oldChar: '/', newChar: '_');
+#if NETCOREAPP3_1_OR_GREATER
+        Span<byte> buf = stackalloc byte[12];
+#else
+        // can't stackalloc into the vendored Span<T>
+        var buf = new byte[12];
+#endif
+
+        BinaryPrimitives.WriteUInt64LittleEndian(buf, hash); // write 8 bytes into a 12-byte buffer
+        Base64.EncodeToUtf8InPlace(buf, dataLength: 8, out var bytesWritten);
+
+        // no padding
+        while (bytesWritten > 0 && buf[bytesWritten - 1] == (byte)'=')
+        {
+            bytesWritten--;
+        }
+
+        // use url-safe characters (for the SQL comment)
+        for (var i = 0; i < bytesWritten; i++)
+        {
+            if (buf[i] == (byte)'+')
+            {
+                buf[i] = (byte)'-';
+            }
+            else if (buf[i] == (byte)'/')
+            {
+                buf[i] = (byte)'_';
+            }
+        }
+
+#if NETCOREAPP3_1_OR_GREATER
+        return Encoding.ASCII.GetString(buf[..bytesWritten]);
+#else
+        // can't use Range
+        return Encoding.ASCII.GetString(buf, index: 0, bytesWritten);
+#endif
     }
 }
