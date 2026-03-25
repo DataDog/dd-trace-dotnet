@@ -19,15 +19,15 @@ namespace Datadog.Trace;
 /// </summary>
 internal sealed class ServiceRemappingHash
 {
-    private readonly ProcessTags? _processTags;
+    private readonly string? _serializedProcessTags;
 
-    public ServiceRemappingHash(ProcessTags? processTags)
+    public ServiceRemappingHash(string? serializedProcessTags)
     {
-        _processTags = processTags;
-        if (processTags != null)
+        _serializedProcessTags = serializedProcessTags;
+        if (serializedProcessTags != null)
         {
             // containers tags hash is always null at creation, because we discover it later (if any)
-            Base64Value = Compute(processTags.SerializedTags, containerTagsHash: null);
+            Base64Value = Compute(serializedProcessTags, containerTagsHash: null);
         }
     }
 
@@ -54,9 +54,9 @@ internal sealed class ServiceRemappingHash
     {
         ContainerTagsHash = containerTagsHash;
 
-        if (_processTags != null)
+        if (_serializedProcessTags != null)
         {
-            Base64Value = Compute(_processTags.SerializedTags, containerTagsHash);
+            Base64Value = Compute(_serializedProcessTags, containerTagsHash);
         }
     }
 

@@ -124,7 +124,7 @@ namespace Datadog.Trace
                 Log.Warning(libdatadogAvailaibility.Exception, "An exception occurred while checking if libdatadog is available");
             }
 
-            serviceRemappingHash ??= new ServiceRemappingHash(settings.Manager.InitialMutableSettings.ProcessTags);
+            serviceRemappingHash ??= new ServiceRemappingHash(settings.Manager.InitialMutableSettings.ProcessTags?.SerializedTags);
             discoveryService ??= GetDiscoveryService(settings, serviceRemappingHash);
             var telemetrySettings = CreateTelemetrySettings(settings);
             telemetry ??= CreateTelemetryController(settings, discoveryService, telemetrySettings);

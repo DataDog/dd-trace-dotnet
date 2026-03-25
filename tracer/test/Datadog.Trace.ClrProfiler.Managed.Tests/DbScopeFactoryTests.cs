@@ -165,7 +165,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
                 { ConfigurationKeys.DbmInjectSqlBasehash, hashPropagationEnabled.ToString() },
                 { ConfigurationKeys.DbmPropagationMode, dbmMode }
             });
-            var serviceRemappingHash = new ServiceRemappingHash(new ProcessTags(serviceNameUserDefined: false, "service"));
+            var serviceRemappingHash = new ServiceRemappingHash("process:tag,service:service");
             await using var tracer = TracerHelper.Create(tracerSettings, serviceRemappingHash: serviceRemappingHash);
 
             using var scope = CreateDbCommandScope(tracer, command);

@@ -407,7 +407,7 @@ public class DiscoveryServiceTests
             responseContent: GetConfig(),
             responseHeaders: new Dictionary<string, string> { { AgentHttpHeaderNames.ContainerTagsHash, expectedTagsHash } }));
 
-        var serviceRemappingHash = new ServiceRemappingHash(new ProcessTags(false, "service name"));
+        var serviceRemappingHash = new ServiceRemappingHash("process:tag,service:service-name");
 
         var ds = new DiscoveryService(factory, serviceRemappingHash, InitialRetryDelayMs, MaxRetryDelayMs, RecheckIntervalMs);
         ds.SubscribeToChanges(x => mutex.Set());
