@@ -39,10 +39,8 @@
       component: masstransit,
       env: integration_tests,
       error.msg: Intentional failure for testing: Consumer failure test,
-      error.stack:
-System.InvalidOperationException: Intentional failure for testing: Consumer failure test
-at Samples.MassTransit7.Consumers.FailingConsumer.Consume(ConsumeContext`1 context),
-      error.type: System.InvalidOperationException,
+      error.stack: Scrubbed
+            error.type: System.InvalidOperationException,
       language: dotnet,
       messaging.destination.name: Failing,
       messaging.masstransit.input_address: loopback://localhost/Failing,
@@ -247,11 +245,8 @@ at Samples.MassTransit7.Consumers.FailingConsumer.Consume(ConsumeContext`1 conte
       component: masstransit,
       env: integration_tests,
       error.msg: Handler failure test: Handler will fail,
-      error.stack:
-System.InvalidOperationException: Handler failure test: Handler will fail
---- End of stack trace from previous location ---
-at MassTransit.Pipeline.Filters.HandlerMessageFilter`1.GreenPipes.IFilter<MassTransit.ConsumeContext<TMessage>>.Send(ConsumeContext`1 context, IPipe`1 next),
-      error.type: System.InvalidOperationException,
+      error.stack: Scrubbed
+            error.type: System.InvalidOperationException,
       language: dotnet,
       messaging.destination.name: handler-failing,
       messaging.masstransit.input_address: loopback://localhost/handler-failing,
@@ -383,10 +378,8 @@ at MassTransit.Pipeline.Filters.HandlerMessageFilter`1.GreenPipes.IFilter<MassTr
       component: masstransit,
       env: integration_tests,
       error.msg: Saga failure test: Intentional saga failure for testing,
-      error.stack:
-System.InvalidOperationException: Saga failure test: Intentional saga failure for testing
-at Samples.MassTransit7.Sagas.OrderStateMachine.<>c.<.ctor>b__0_11(BehaviorContext`2 context),
-      error.type: System.InvalidOperationException,
+      error.stack: Scrubbed
+            error.type: System.InvalidOperationException,
       language: dotnet,
       messaging.destination.name: OrderState,
       messaging.masstransit.input_address: loopback://localhost/OrderState,

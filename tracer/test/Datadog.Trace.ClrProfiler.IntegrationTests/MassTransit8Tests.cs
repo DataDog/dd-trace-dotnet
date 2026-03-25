@@ -83,7 +83,7 @@ public class MassTransit8Tests : TracingIntegrationTest
             settings.ModifySerialization(s => s.IgnoreMember<MockSpan>(x => x.Metrics));
 
             // Scrub dynamic bus endpoint names (e.g., COMPFC3GTGXWHN_SamplesMassTransit8_bus_sf3yyyf1sq3y63brbdxf8pr6na)
-            var busEndpointRegex = new Regex(@"[A-Z0-9]+_SamplesMassTransit8_bus_[a-z0-9]+");
+            var busEndpointRegex = new Regex(@"[A-Za-z0-9]+_SamplesMassTransit8_bus_[a-z0-9]+");
             settings.AddRegexScrubber(busEndpointRegex, "BusEndpoint");
 
             // Scrub dynamic queue names for RabbitMQ and SQS
@@ -165,7 +165,7 @@ public class MassTransit8Tests : TracingIntegrationTest
 
             settings.ModifySerialization(s => s.IgnoreMember<MockSpan>(x => x.Metrics));
 
-            var busEndpointRegex = new Regex(@"[A-Z0-9]+_SamplesMassTransit8_bus_[a-z0-9]+");
+            var busEndpointRegex = new Regex(@"[A-Za-z0-9]+_SamplesMassTransit8_bus_[a-z0-9]+");
             settings.AddRegexScrubber(busEndpointRegex, "BusEndpoint");
 
             var queueNameRegex = new Regex(@"getting-started-message_[a-z0-9]+");
