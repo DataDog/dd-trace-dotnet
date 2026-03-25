@@ -43,10 +43,9 @@ public sealed class PopulateBasicPropertiesHeadersIntegration
     {
         var tracer = Tracer.Instance;
 
-        // Walk the internal scope chain to find the dd-trace RabbitMQ producer span.
         Span? span = null;
         RabbitMQTags? tags = null;
-        var scope = tracer.InternalActiveScope;
+        var scope = tracer.ActiveScope as Scope;
         while (scope is not null)
         {
             if (scope.Span is Span { Tags: RabbitMQTags candidateTags } candidateSpan
