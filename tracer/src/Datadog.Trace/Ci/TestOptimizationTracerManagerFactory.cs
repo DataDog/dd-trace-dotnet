@@ -56,15 +56,16 @@ namespace Datadog.Trace.Ci
             IDynamicConfigurationManager dynamicConfigurationManager,
             ITracerFlareManager tracerFlareManager,
             ISpanEventsManager spanEventsManager,
-            FeatureFlagsModule featureFlags)
+            FeatureFlagsModule featureFlags,
+            ServiceRemappingHash serviceRemappingHash)
         {
             telemetry.RecordTestOptimizationSettings(_settings);
             if (_testOptimizationTracerManagement.UseLockedTracerManager)
             {
-                return new TestOptimizationTracerManager.LockedManager(settings, agentWriter, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, gitMetadataTagsProvider, traceSampler, spanSampler, remoteConfigurationManager, dynamicConfigurationManager, tracerFlareManager, spanEventsManager, featureFlags);
+                return new TestOptimizationTracerManager.LockedManager(settings, agentWriter, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, gitMetadataTagsProvider, traceSampler, spanSampler, remoteConfigurationManager, dynamicConfigurationManager, tracerFlareManager, spanEventsManager, featureFlags, serviceRemappingHash);
             }
 
-            return new TestOptimizationTracerManager(settings, agentWriter, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, gitMetadataTagsProvider, traceSampler, spanSampler, remoteConfigurationManager, dynamicConfigurationManager, tracerFlareManager, spanEventsManager, featureFlags);
+            return new TestOptimizationTracerManager(settings, agentWriter, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, gitMetadataTagsProvider, traceSampler, spanSampler, remoteConfigurationManager, dynamicConfigurationManager, tracerFlareManager, spanEventsManager, featureFlags, serviceRemappingHash);
         }
 
         protected override TelemetrySettings CreateTelemetrySettings(TracerSettings settings)
@@ -116,7 +117,7 @@ namespace Datadog.Trace.Ci
             return new ApmAgentWriter(settings, updateSampleRates, updateConfigHash, discoveryService, traceBufferSize);
         }
 
-        internal override IDiscoveryService GetDiscoveryService(TracerSettings settings)
+        internal override IDiscoveryService GetDiscoveryService(TracerSettings settings, ServiceRemappingHash serviceRemappingHash)
             => _testOptimizationTracerManagement.DiscoveryService;
     }
 }
