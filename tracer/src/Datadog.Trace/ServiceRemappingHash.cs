@@ -68,13 +68,14 @@ internal sealed class ServiceRemappingHash
             hash = FnvHash64.GenerateHash(containerTagsHash, FnvHash64.Version.V1, hash);
         }
 
+        // ulong/UInt64 is 8 bytes
+        // Encoding to Base64 expands the number of bytes by 4 * ceil(n / 3) = 12 bytes
 #if NETCOREAPP3_1_OR_GREATER
         Span<byte> buf = stackalloc byte[12];
 #else
         // can't stackalloc into the vendored Span<T>
         var buf = new byte[12];
 #endif
-
         BinaryPrimitives.WriteUInt64LittleEndian(buf, hash); // write 8 bytes into a 12-byte buffer
         Base64.EncodeToUtf8InPlace(buf, dataLength: 8, out var bytesWritten);
 
