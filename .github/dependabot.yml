@@ -1,0 +1,91 @@
+version: 2
+registries:
+  azure-nuget:
+    type: nuget-feed
+    url: https://pkgs.dev.azure.com/datadoghq/dd-trace-dotnet/_packaging/Public_Feed/nuget/v3/index.json
+  public-nuget:
+    type: nuget-feed
+    url: https://api.nuget.org/v3/index.json
+updates:
+- package-ecosystem: nuget
+  directory: /tracer/dependabot
+  registries: '*'
+  exclude-paths:
+  - integrations
+  schedule:
+    interval: weekly
+  labels:
+  - dependencies
+  - area:dependabot
+  ignore:
+  - dependency-name: MessagePack
+  - dependency-name: '*'
+    update-types:
+    - version-update:semver-patch
+  cooldown:
+    default-days: 14
+- package-ecosystem: nuget
+  directory: /tracer/dependabot/integrations
+  registries: '*'
+  open-pull-requests-limit: 1
+  schedule:
+    interval: daily
+  labels:
+  - dependencies
+  - area:dependabot
+  cooldown:
+    default-days: 14
+- package-ecosystem: nuget
+  directory: /tracer/test/test-applications/azure-functions/Samples.AzureFunctions.V4Isolated
+  registries: '*'
+  schedule:
+    interval: daily
+  labels:
+  - dependencies
+  - area:dependabot
+  ignore:
+  - dependency-name: '*'
+    update-types:
+    - version-update:semver-patch
+  cooldown:
+    default-days: 14
+- package-ecosystem: nuget
+  directory: /tracer/src
+  exclude-paths:
+  - Datadog.AutoInstrumentation.Generator/**
+  - Datadog.AzureFunctions/**
+  - Datadog.InstrumentedAssemblyGenerator/**
+  - Datadog.InstrumentedAssemblyVerification/**
+  - Datadog.Trace.Bundle/**
+  - Datadog.Trace.SourceGenerators/**
+  - Datadog.Trace.Tools.Analyzers/**
+  - Datadog.Trace.Tools.Analyzers.CodeFixes/**
+  - Datadog.Trace.Tools.dd_dotnet.SourceGenerators/**
+  registries: '*'
+  schedule:
+    interval: daily
+  labels:
+  - dependencies
+  ignore:
+  - dependency-name: System.Diagnostics.DiagnosticSource
+  - dependency-name: Microsoft.AspNetCore.Hosting.Abstractions
+  - dependency-name: Microsoft.AspNetCore.Mvc.Abstractions
+  - dependency-name: Microsoft.AspNetCore.Routing
+  - dependency-name: System.Reflection.Emit
+  - dependency-name: System.Reflection.Emit.Lightweight
+  - dependency-name: Microsoft.Build.Framework
+  cooldown:
+    default-days: 14
+- package-ecosystem: github-actions
+  directories:
+  - /
+  - /.github/actions/*
+  - /.github/actions/*/*
+  schedule:
+    interval: monthly
+  groups:
+    gh-actions-packages:
+      patterns:
+      - '*'
+  cooldown:
+    default-days: 14
