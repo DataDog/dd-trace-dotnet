@@ -4,6 +4,8 @@
 #include "HybridUnwinder.h"
 #include "ManagedCodeCache.h"
 
+#include "UnwinderTracer.h"
+
 #define UNW_LOCAL_ONLY
 #include <libunwind.h>
 
@@ -39,12 +41,15 @@ HybridUnwinder::HybridUnwinder(ManagedCodeCache* managedCodeCache) :
 }
 
 std::int32_t HybridUnwinder::Unwind(void* ctx, std::uintptr_t* buffer, std::size_t bufferSize,
-                                    uintptr_t stackBase, uintptr_t stackEnd) const
+                                    uintptr_t stackBase, uintptr_t stackEnd,
+                                    UnwinderTracer* tracer) const
 {
     if (bufferSize == 0) [[unlikely]]
     {
         return 0;
     }
+
+    if (tracer) tracer->Record(EventType::Start);
 
     auto* context = reinterpret_cast<unw_context_t*>(ctx);
     auto flag = static_cast<unw_init_local2_flags_t>(UNW_INIT_SIGNAL_FRAME);
@@ -53,16 +58,20 @@ std::int32_t HybridUnwinder::Unwind(void* ctx, std::uintptr_t* buffer, std::size
     if (ctx == nullptr)
     {
         flag = static_cast<unw_init_local2_flags_t>(0);
-        if (unw_getcontext(&localContext) != 0)
+        if (auto getResult =unw_getcontext(&localContext) != 0)
         {
+            if (tracer) tracer->RecordFinish(getResult, FinishReason::FailedGetContext);
             return -1;
         }
         context = &localContext;
     }
 
     unw_cursor_t cursor;
-    if (unw_init_local2(&cursor, context, flag) != 0)
+    auto initResult = unw_init_local2(&cursor, context, flag);
+    if (tracer) tracer->Record(EventType::InitCursor, initResult, cursor);
+    if (initResult != 0)
     {
+        if (tracer) tracer->RecordFinish(initResult, FinishReason::FailedInitLocal2);
         return -1;
     }
 
@@ -71,28 +80,51 @@ std::int32_t HybridUnwinder::Unwind(void* ctx, std::uintptr_t* buffer, std::size
     unw_word_t ip = 0;
     while (true)
     {
-        if (unw_get_reg(&cursor, UNW_REG_IP, &ip) != 0 || ip == 0)
+        if (auto getResult = unw_get_reg(&cursor, UNW_REG_IP, &ip) != 0 || ip == 0)
         {
+            if (tracer) tracer->RecordFinish(getResult, FinishReason::FailedGetReg);
             return i;
         }
 
         if (_codeCache->IsManaged(ip))
+        {
+            if (tracer)
+            {
+                unw_word_t managedFp = 0;
+                unw_get_reg(&cursor, UNW_REG_FP, &managedFp);
+                tracer->Record(EventType::ManagedTransition, ip, managedFp);
+            }
             break;
+        }
+
+        if (tracer)
+        {
+            unw_word_t sp = 0;
+            unw_word_t nativeFp = 0;
+            unw_get_reg(&cursor, UNW_AARCH64_SP, &sp);
+            unw_get_reg(&cursor, UNW_REG_FP, &nativeFp);
+            tracer->Record(EventType::NativeFrame, ip, nativeFp, sp);
+        }
 
         buffer[i++] = ip;
         if (i >= bufferSize)
         {
+            if (tracer) tracer->RecordFinish(static_cast<std::int32_t>(i), FinishReason::BufferFull);
             return i;
         }
 
-        if (unw_step(&cursor) <= 0)
+        auto stepResult = unw_step(&cursor);
+        if (tracer) tracer->Record(EventType::LibunwindStep, stepResult, cursor);
+        if (stepResult <= 0)
         {
+            if (tracer) tracer->RecordFinish(static_cast<std::int32_t>(i), FinishReason::FailedLibunwindStep);
             return i;
         }
     }
 
     if (i >= bufferSize)
     {
+        if (tracer) tracer->RecordFinish(static_cast<std::int32_t>(i), FinishReason::BufferFull);
         return i;
     }
 
@@ -102,17 +134,20 @@ std::int32_t HybridUnwinder::Unwind(void* ctx, std::uintptr_t* buffer, std::size
     buffer[i++] = ip;
     if (i >= bufferSize)
     {
+        if (tracer) tracer->RecordFinish(static_cast<std::int32_t>(i), FinishReason::BufferFull);
         return i;
     }
 
     if (stackBase == 0 || stackEnd == 0)
     {
+        if (tracer) tracer->RecordFinish(static_cast<std::int32_t>(i), FinishReason::NoStackBounds);
         return i;
     }
 
     unw_word_t fp = 0;
     if (unw_get_reg(&cursor, UNW_REG_FP, &fp) != 0 || !IsValidFp(fp, 0, stackBase, stackEnd))
     {
+        if (tracer) tracer->RecordFinish(static_cast<std::int32_t>(i), FinishReason::InvalidFp);
         return i;
     }
 
@@ -131,6 +166,7 @@ std::int32_t HybridUnwinder::Unwind(void* ctx, std::uintptr_t* buffer, std::size
         fp = *reinterpret_cast<uintptr_t*>(staleFp);
         if (!IsValidFp(fp, staleFp, stackBase, stackEnd))
         {
+            if (tracer) tracer->RecordFinish(static_cast<std::int32_t>(i), FinishReason::InvalidFp);
             return i;
         }
     }
@@ -146,18 +182,23 @@ std::int32_t HybridUnwinder::Unwind(void* ctx, std::uintptr_t* buffer, std::size
     // once we leave the managed portion of the stack entirely (e.g., thread startup code).
     uintptr_t prevFp = 0;
     int consecutiveNativeFrames = 0;
+    FinishReason finishReason = FinishReason::Success;
     while (true)
     {
         ip = *reinterpret_cast<uintptr_t*>(fp + sizeof(void*));
         if (ip == 0)
         {
+            finishReason = FinishReason::InvalidIp;
             break;
         }
+
+        if (tracer) tracer->Record(EventType::FrameChainStep, ip, fp);
 
         if (_codeCache->IsManaged(ip))
         {
             if (i >= bufferSize)
             {
+                finishReason = FinishReason::BufferFull;
                 break;
             }
             buffer[i++] = ip;
@@ -168,6 +209,7 @@ std::int32_t HybridUnwinder::Unwind(void* ctx, std::uintptr_t* buffer, std::size
             // Try 20 to see if CI fails or not.
             if (++consecutiveNativeFrames > 20)
             {
+                finishReason = FinishReason::TooManyNativeFrames;
                 break;
             }
         }
@@ -176,9 +218,11 @@ std::int32_t HybridUnwinder::Unwind(void* ctx, std::uintptr_t* buffer, std::size
         fp = *reinterpret_cast<uintptr_t*>(fp);
         if (!IsValidFp(fp, prevFp, stackBase, stackEnd))
         {
+            finishReason = FinishReason::InvalidFp;
             break;
         }
     }
 
+    if (tracer) tracer->RecordFinish(static_cast<std::int32_t>(i), finishReason);
     return i;
 }

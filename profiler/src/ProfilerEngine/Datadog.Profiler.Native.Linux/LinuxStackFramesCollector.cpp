@@ -24,6 +24,10 @@
 #include "ScopeFinalizer.h"
 #include "StackSnapshotResultBuffer.h"
 
+#ifdef ARM64
+#include "UnwinderTracer.h"
+#endif
+
 using namespace std::chrono_literals;
 
 std::mutex LinuxStackFramesCollector::s_stackWalkInProgressMutex;
@@ -41,7 +45,8 @@ LinuxStackFramesCollector::LinuxStackFramesCollector(
     _processId{OpSysTools::GetProcId()},
     _signalManager{signalManager},
     _errorStatistics{},
-    _pUnwinder{pUnwinder}
+    _pUnwinder{pUnwinder},
+    _tracer{nullptr}
 {
     if (_signalManager != nullptr)
     {
@@ -57,6 +62,11 @@ LinuxStackFramesCollector::LinuxStackFramesCollector(
 LinuxStackFramesCollector::~LinuxStackFramesCollector()
 {
     _errorStatistics.Log();
+}
+
+void LinuxStackFramesCollector::SetTracer(UnwinderTracer* tracer)
+{
+    _tracer = tracer;
 }
 
 bool LinuxStackFramesCollector::ShouldLogStats()
@@ -132,8 +142,12 @@ StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplemen
         const auto threadId = static_cast<::pid_t>(pThreadInfo->GetOsThreadId());
 
         s_pInstanceCurrentlyStackWalking = this;
+#ifdef ARM64
+        auto tracer = std::make_unique<UnwinderTracer>();
+        s_pInstanceCurrentlyStackWalking->SetTracer(tracer.get());
+#endif
 
-        on_leave { s_pInstanceCurrentlyStackWalking = nullptr; };
+        on_leave { s_pInstanceCurrentlyStackWalking->SetTracer(nullptr); s_pInstanceCurrentlyStackWalking = nullptr; };
 
         _stackWalkFinished = false;
 
@@ -228,7 +242,7 @@ inline std::int32_t LinuxStackFramesCollector::CollectStack(void* ctx)
     {
         std::tie(stackBase, stackEnd) = threadInfo->GetStackBounds();
     }
-    auto count = _pUnwinder->Unwind(ctx, reinterpret_cast<std::uintptr_t*>(buffer.data()), buffer.size(), stackBase, stackEnd);
+    auto count = _pUnwinder->Unwind(ctx, reinterpret_cast<std::uintptr_t*>(buffer.data()), buffer.size(), stackBase, stackEnd, _tracer);
 
     if (count == 0)
     {
