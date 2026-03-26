@@ -2393,6 +2393,10 @@ stages:
         retryCountForRunCommand: 3
 
     - script: |
+        docker pull ghcr.io/datadog/dd-apm-test-agent/ddapm-test-agent:latest
+      displayName: docker pull latest ddapm-test-agent image (we rely on a newer version than the one in the base image)
+
+    - script: |
         docker-compose -p $(DockerComposeProjectName)-g$(dockerGroup) build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) --build-arg CodeCoverageEnabled=$(CodeCoverageEnabled) --build-arg Filter=$(IntegrationTestFilter) --build-arg SampleName=$(IntegrationTestSampleName) IntegrationTests
         docker-compose -p $(DockerComposeProjectName)-g$(dockerGroup) run --rm StartDependencies.Group$(dockerGroup)
       env:
@@ -3207,6 +3211,10 @@ stages:
             command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework) --IncludeTestsRequiringDocker true --Filter \"$(IntegrationTestFilter)\" --SampleName \"$(IntegrationTestSampleName)\""
             apiKey: $(DD_LOGGER_DD_API_KEY)
             retryCountForRunCommand: 3
+
+        - script: |
+            docker pull ghcr.io/datadog/dd-apm-test-agent/ddapm-test-agent:latest
+          displayName: docker pull latest ddapm-test-agent image (we rely on a newer version than the one in the base image)
 
         - script: |
             docker-compose -p $(DockerComposeProjectName) build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) --build-arg CodeCoverageEnabled=$(CodeCoverageEnabled) IntegrationTests.ARM64
@@ -5056,6 +5064,20 @@ stages:
         - bundle-nuget-package
         - nuget-packages
 
+  # AzureFunctions Nuget x64 (LinuxAzureFunctionsNuGet)
+- stage: smoke_x64_azurefunctions_tests
+  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
+  dependsOn: [dotnet_tool, package_windows, generate_variables, merge_commit_id]
+  pool:
+    name: $(linuxX64SmokePool)
+  jobs:
+    - template: steps/run-smoke-tests-linux.yml
+      parameters:
+        matrixVariable: smoke_x64_azurefunctions_matrix
+        artifacts:
+          - azurefunctions-nuget-package
+          - nuget-packages
+
 # DotnetTool x64 (LinuxDotnetTool)
 - stage: smoke_x64_tool_tests
   condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
@@ -5186,6 +5208,20 @@ stages:
       matrixVariable: smoke_win_nuget_matrix
       artifacts:
         - bundle-nuget-package
+        - nuget-packages
+
+# Windows Azure Functions NuGet (WindowsAzureFunctionsNuGet)
+- stage: smoke_win_azurefunctions_tests
+  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
+  dependsOn: [dotnet_tool, package_windows, generate_variables, merge_commit_id]
+  pool:
+    vmImage: windows-2022
+  jobs:
+  - template: steps/run-smoke-tests-windows.yml
+    parameters:
+      matrixVariable: smoke_win_azurefunctions_matrix
+      artifacts:
+        - azurefunctions-nuget-package
         - nuget-packages
 
 # Windows DotnetTool (WindowsDotnetTool)

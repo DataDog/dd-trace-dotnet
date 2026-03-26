@@ -1,4 +1,4 @@
-﻿// <copyright file="StatsAggregator.cs" company="Datadog">
+// <copyright file="StatsAggregator.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -30,6 +30,7 @@ namespace Datadog.Trace.Agent
         private readonly StatsBuffer[] _buffers;
 
         private readonly IApi _api;
+        private readonly bool _isOtlp;
         private readonly ITraceProcessor[] _traceProcessors;
 
         private readonly TaskCompletionSource<bool> _processExit;
@@ -48,9 +49,10 @@ namespace Datadog.Trace.Agent
 
         private int _currentBuffer;
 
-        internal StatsAggregator(IApi api, TracerSettings settings, IDiscoveryService discoveryService)
+        internal StatsAggregator(IApi api, TracerSettings settings, IDiscoveryService discoveryService, bool isOtlp)
         {
             _api = api;
+            _isOtlp = isOtlp;
             _processExit = new TaskCompletionSource<bool>();
             _bucketDuration = TimeSpan.FromSeconds(settings.StatsComputationInterval);
             _buffers = new StatsBuffer[BufferCount];
@@ -62,7 +64,7 @@ namespace Datadog.Trace.Agent
 
             _prioritySampler = new PrioritySampler();
             _errorSampler = new ErrorSampler();
-            _rareSampler = new RareSampler(settings);
+            _rareSampler = new RareSampler(settings, isOtlp);
             _analyticsEventSampler = new AnalyticsEventsSampler();
 
             // Create with the initial mutable settings, but be aware that this could change later
@@ -87,8 +89,15 @@ namespace Datadog.Trace.Agent
             _flushTask = Task.Run(Flush);
             _flushTask.ContinueWith(t => Log.Error(t.Exception, "Error in StatsAggregator"), TaskContinuationOptions.OnlyOnFaulted);
 
-            _discoveryService = discoveryService;
-            discoveryService.SubscribeToChanges(HandleConfigUpdate);
+            if (_isOtlp)
+            {
+                CanComputeStats = true;
+            }
+            else
+            {
+                _discoveryService = discoveryService;
+                discoveryService.SubscribeToChanges(HandleConfigUpdate);
+            }
         }
 
         /// <summary>
@@ -100,14 +109,14 @@ namespace Datadog.Trace.Agent
 
         public bool? CanComputeStats { get; private set; }
 
-        public static IStatsAggregator Create(IApi api, TracerSettings settings, IDiscoveryService discoveryService)
+        public static IStatsAggregator Create(IApi api, TracerSettings settings, IDiscoveryService discoveryService, bool isOtlp)
         {
-            return settings.StatsComputationEnabled ? new StatsAggregator(api, settings, discoveryService) : new NullStatsAggregator();
+            return isOtlp || settings.StatsComputationEnabled ? new StatsAggregator(api, settings, discoveryService, isOtlp) : new NullStatsAggregator();
         }
 
         public Task DisposeAsync()
         {
-            _discoveryService.RemoveSubscription(HandleConfigUpdate);
+            _discoveryService?.RemoveSubscription(HandleConfigUpdate);
             _processExit.TrySetResult(true);
             _settingSubscription.Dispose();
             return _flushTask;
@@ -136,6 +145,13 @@ namespace Datadog.Trace.Agent
 
         public bool ShouldKeepTrace(in SpanCollection trace)
         {
+            // For OTLP, align with the OpenTelemetry SDK behavior to export a trace based
+            // solely on its sampling decision.
+            if (_isOtlp)
+            {
+                return _prioritySampler.Sample(in trace);
+            }
+
             // Note: The RareSampler must be run before all other samplers so that
             // the first rare span in the trace chunk (if any) is marked with "_dd.rare".
             // The sampling decision is only used if no other samplers choose to keep the trace chunk.
@@ -166,7 +182,7 @@ namespace Datadog.Trace.Agent
             return spans;
         }
 
-        internal static StatsAggregationKey BuildKey(Span span)
+        internal static StatsAggregationKey BuildKey(Span span, bool isOtlp = false)
         {
             var rawHttpStatusCode = span.GetTag(Tags.HttpStatusCode);
 
@@ -175,13 +191,19 @@ namespace Datadog.Trace.Agent
                 httpStatusCode = 0;
             }
 
+            // When submitting trace metrics over OTLP, we must create inidividual timeseries
+            // timeseries for each unique set of attributes, including the Error and IsTopLevel attributes.
+            // As a result, we must create distinct Aggregation keys (and consequently, unique stats) by these attributes.
+            // Outside of OTLP, we make no distinction between these attributes for histograms, so we can set a constant 'false' value for each.
             return new StatsAggregationKey(
                 span.ResourceName,
                 span.ServiceName,
                 span.OperationName,
                 span.Type,
                 httpStatusCode,
-                span.Context.Origin == "synthetics");
+                span.Context.Origin == "synthetics",
+                isOtlp ? span.Error : false,
+                isOtlp ? span.IsTopLevel : false);
         }
 
         internal async Task Flush()
@@ -246,12 +268,13 @@ namespace Datadog.Trace.Agent
 
         private void AddToBuffer(Span span)
         {
-            if ((!span.IsTopLevel && span.GetMetric(Tags.Measured) != 1.0) || span.GetMetric(Tags.PartialSnapshot) > 0)
+            if (!_isOtlp // If we are using OTLP, we include both top-level and non-top-level spans
+                && ((!span.IsTopLevel && span.GetMetric(Tags.Measured) != 1.0) || span.GetMetric(Tags.PartialSnapshot) > 0))
             {
                 return;
             }
 
-            var key = BuildKey(span);
+            var key = BuildKey(span, _isOtlp);
 
             var buffer = CurrentBuffer;
 
@@ -272,7 +295,9 @@ namespace Datadog.Trace.Agent
 
             bucket.Duration += duration;
 
-            if (span.Error)
+            // If we are using OTLP, the errors are tracked as a separate aggregation entirely (different AggregationKey)
+            // As a result, if using OTLP we always add to the OkSummary sketch.
+            if (span.Error && !_isOtlp)
             {
                 bucket.Errors++;
                 bucket.ErrorSummary.Add(ConvertTimestamp(duration));

@@ -10,9 +10,10 @@ COPY ./test/test-applications/regression/AspNetCoreSmokeTest/ .
 
 ARG TOOL_VERSION
 ARG PUBLISH_FRAMEWORK
+ARG NUGET_PACKAGE
 RUN dotnet restore "AspNetCoreSmokeTest.csproj" \
     && dotnet nuget add source /src/artifacts \
-    && dotnet add package "Datadog.Trace.Bundle" --version $TOOL_VERSION \
+    && dotnet add package $NUGET_PACKAGE --version $TOOL_VERSION \
     && dotnet publish "AspNetCoreSmokeTest.csproj" -c Release --framework $PUBLISH_FRAMEWORK -o /src/publish
 
 FROM $RUNTIME_IMAGE AS publish
@@ -38,6 +39,11 @@ ENV DD_PROFILING_ENABLED=1
 ENV DD_APPSEC_ENABLED=1
 ENV DD_TRACE_DEBUG=1
 ENV DD_REMOTE_CONFIGURATION_ENABLED=0
+
+# We explicitly set the log location to the default because in some scenarios
+# (e.g. Azure Functions) we "emulate" an AAS environment
+# Which overrides the log directory
+ENV DD_TRACE_LOG_DIRECTORY=/var/log/datadog/dotnet
 
 ## SSI variables
 ENV DD_INJECTION_ENABLED=tracer

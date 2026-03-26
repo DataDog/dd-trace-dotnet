@@ -77,7 +77,7 @@ public sealed class AmqpConsumerReceiveAsyncIntegration
         scope?.Dispose();
     }
 
-    private static IEnumerable<SpanLink>? ExtractSpanLinksFromMessages(Tracer tracer, IReadOnlyList<object> eventsList)
+    private static List<SpanLink>? ExtractSpanLinksFromMessages(Tracer tracer, IReadOnlyList<object> eventsList)
     {
         var extractedContexts = new HashSet<SpanContext>(new SpanContextComparer());
 

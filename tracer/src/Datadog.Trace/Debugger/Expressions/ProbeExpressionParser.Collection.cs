@@ -37,7 +37,8 @@ internal partial class ProbeExpressionParser<T>
 
     private Expression Predicate(JsonTextReader reader, List<ParameterExpression> parameters, MethodInfo predicateMethod)
     {
-        Expression source = null, callExpression = null;
+        Expression source = null;
+        MethodCallExpression callExpression = null;
         try
         {
             source = ParseTree(reader, parameters, null);

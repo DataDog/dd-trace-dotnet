@@ -498,7 +498,11 @@ namespace Datadog.Trace.ClrProfiler
         }
 
 #if !NETFRAMEWORK
+#if NET6_0_OR_GREATER
         private static DiagnosticObserver GetAspNetCoreDiagnosticObserver()
+#else
+        private static AspNetCoreDiagnosticObserver GetAspNetCoreDiagnosticObserver()
+#endif
         {
             // Tracer and Security should both have been initialized by now.
             // Iast hasn't yet, but doing it now is fine.
