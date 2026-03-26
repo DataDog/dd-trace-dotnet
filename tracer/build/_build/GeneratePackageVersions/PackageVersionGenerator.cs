@@ -22,21 +22,34 @@ namespace GeneratePackageVersions
         private readonly PackageGroup _latestMajors;
         private readonly PackageGroup _latestSpecific;
         private readonly XunitStrategyFileGenerator _strategyGenerator;
+        private readonly DateTimeOffset _cutoffDate;
+        private readonly Dictionary<string, Version> _baseline;
 
         /// <summary>
         /// The version cache, populated during generation. Entries are added for every
         /// package that is queried from NuGet. Pre-populated with cached entries on construction.
         /// </summary>
-        public Dictionary<string, List<string>> VersionCache { get; }
+        public Dictionary<string, List<VersionWithDate>> VersionCache { get; }
+
+        /// <summary>
+        /// Report of package versions that were excluded by the cooldown filter.
+        /// </summary>
+        public CooldownReport CooldownReport { get; }
+
 
         public PackageVersionGenerator(
             AbsolutePath tracerDirectory,
             AbsolutePath testProjectDirectory,
             Func<string, bool> shouldQueryNuGet,
-            Dictionary<string, List<string>> previousVersionCache)
+            Dictionary<string, List<VersionWithDate>> previousVersionCache,
+            int cooldownDays,
+            Dictionary<string, Version> baseline)
         {
             _shouldQueryNuGet = shouldQueryNuGet;
-            VersionCache = new Dictionary<string, List<string>>(previousVersionCache);
+            VersionCache = new Dictionary<string, List<VersionWithDate>>(previousVersionCache);
+            _cutoffDate = DateTimeOffset.UtcNow.AddDays(-cooldownDays);
+            _baseline = baseline;
+            CooldownReport = new CooldownReport(cooldownDays);
             var propsDirectory = tracerDirectory / "build";
             _definitionsFilePath = tracerDirectory / "build" / "PackageVersionsGeneratorDefinitions.json";
             _latestMinors = new PackageGroup(propsDirectory, testProjectDirectory, "LatestMinors");
@@ -76,7 +89,7 @@ namespace GeneratePackageVersions
                 var requiresDockerDependency = project.RequiresDockerDependency().ToString();
 
                 // Get all versions for this package (unfiltered), using cache when possible
-                List<string> allPackageVersions;
+                List<VersionWithDate> allPackageVersions;
                 if (!_shouldQueryNuGet(entry.NugetPackageSearchName)
                     && VersionCache.TryGetValue(entry.NugetPackageSearchName, out var cached))
                 {
@@ -91,8 +104,14 @@ namespace GeneratePackageVersions
                 // Filter to this entry's version range
                 var packageVersions = NuGetPackageHelper.FilterVersions(allPackageVersions, entry);
 
+                // Build a publish-date lookup for cooldown filtering
+                var publishDateLookup = packageVersions
+                    .GroupBy(v => v.Version)
+                    .ToDictionary(g => g.Key, g => g.First().Published);
+
                 var orderedPackageVersions =
                     packageVersions
+                       .Select(v => v.Version)
                        .Distinct()
                        .Select(versionText => new Version(versionText));
 
@@ -110,22 +129,31 @@ namespace GeneratePackageVersions
                     ? latestMajors
                     : SelectPackagesFromGlobs(orderedWithFramework, entry.SpecificVersions).ToList();
 
+                // Apply cooldown: override versions that are too new with older resolved versions
+                latestMajors = ApplyCooldown(entry, latestMajors, orderedWithFramework, publishDateLookup, v => v.Major).ToList();
+                latestMinors = ApplyCooldown(entry, latestMinors, orderedWithFramework, publishDateLookup, v => $"{v.Major}.{v.Minor}").ToList();
+                latestSpecific = ApplyCooldown(entry, latestSpecific, orderedWithFramework, publishDateLookup, v => v.Major).ToList();
+
                 _latestMinors.Write(entry, latestMinors, requiresDockerDependency);
                 _latestMajors.Write(entry, latestMajors, requiresDockerDependency);
                 _latestSpecific.Write(entry, latestSpecific, requiresDockerDependency);
 
                 _strategyGenerator.Write(entry, null, requiresDockerDependency);
-                
-                // we test the latestSpecific versions by default
+
+                // we test the cooldown-filtered latestSpecific versions
                 var allVersions = latestSpecific
                     .SelectMany(x => x.versions)
                     .OrderBy(x => x.Major)
                     .ThenBy(x => x.Minor)
                     .ThenBy(x => x.Revision)
                     .ToList();
-                var earliestVersion = allVersions.First();
-                var lastVersion = allVersions.Last();
-                testedVersions.Add(new (entry.NugetPackageSearchName, earliestVersion, lastVersion));
+
+                if (allVersions.Count > 0)
+                {
+                    var earliestVersion = allVersions.First();
+                    var lastVersion = allVersions.Last();
+                    testedVersions.Add(new(entry.NugetPackageSearchName, earliestVersion, lastVersion));
+                }
             }
 
             _latestMinors.Finish();
@@ -133,6 +161,102 @@ namespace GeneratePackageVersions
             _latestSpecific.Finish();
             _strategyGenerator.Finish();
             return testedVersions;
+        }
+
+        /// <summary>
+        /// Applies cooldown filtering to selected versions. For each version that was published
+        /// within the cooldown period, checks if it was already accepted (at or below baseline).
+        /// If already accepted, keeps it. Otherwise, finds the best resolved version that is
+        /// either outside the cooldown or at the baseline. Overridden versions are added to CooldownReport.
+        /// </summary>
+        private List<(TargetFramework framework, IEnumerable<Version> versions)> ApplyCooldown<T>(
+            PackageVersionEntry entry,
+            List<(TargetFramework framework, IEnumerable<Version> versions)> selectedVersions,
+            List<(Version version, TargetFramework framework)> allOrderedVersions,
+            Dictionary<string, DateTimeOffset?> publishDateLookup,
+            Func<Version, T> groupBy)
+        {
+            _baseline.TryGetValue(entry.NugetPackageSearchName, out var baselineVersion);
+
+            var result = new List<(TargetFramework framework, IEnumerable<Version> versions)>();
+
+            foreach (var (framework, versions) in selectedVersions)
+            {
+                // All versions available for this framework, grouped the same way as selection
+                var allForFramework = allOrderedVersions
+                    .Where(x => x.framework == framework)
+                    .Select(x => x.version)
+                    .ToList();
+
+                var filteredVersions = new List<Version>();
+                foreach (var version in versions)
+                {
+                    var versionKey = version.ToString();
+                    publishDateLookup.TryGetValue(versionKey, out var publishedDate);
+
+                    if (!IsWithinCooldown(publishedDate))
+                    {
+                        // Outside cooldown -- always accept
+                        filteredVersions.Add(version);
+                        continue;
+                    }
+
+                    if (baselineVersion is not null && version <= baselineVersion)
+                    {
+                        // Within cooldown but already accepted in a previous run -- keep it
+                        filteredVersions.Add(version);
+                        continue;
+                    }
+
+                    // Within cooldown and above baseline -- override to the best available:
+                    // the baseline version if it exists in this group, otherwise the latest
+                    // version outside cooldown
+                    var groupKey = groupBy(version);
+                    var versionsInGroup = allForFramework
+                        .Where(v => EqualityComparer<T>.Default.Equals(groupBy(v), groupKey))
+                        .Where(v => v < version)
+                        .OrderByDescending(v => v);
+
+                    // Prefer baseline version if it's in this group
+                    Version resolved = null;
+                    if (baselineVersion is not null)
+                    {
+                        resolved = versionsInGroup.FirstOrDefault(v => v <= baselineVersion);
+                    }
+
+                    // Fall back to latest outside cooldown
+                    resolved ??= versionsInGroup.FirstOrDefault(v =>
+                    {
+                        publishDateLookup.TryGetValue(v.ToString(), out var rDate);
+                        return !IsWithinCooldown(rDate);
+                    });
+
+                    CooldownReport.Add(new CooldownReport.CooldownEntry(
+                        entry.NugetPackageSearchName,
+                        entry.IntegrationName,
+                        versionKey,
+                        publishedDate,
+                        resolved?.ToString()));
+
+                    if (resolved is not null)
+                    {
+                        filteredVersions.Add(resolved);
+                    }
+                }
+
+                if (filteredVersions.Count > 0)
+                {
+                    result.Add((framework, filteredVersions.Distinct().OrderBy(v => v).ToList()));
+                }
+            }
+
+            return result;
+        }
+
+        private bool IsWithinCooldown(DateTimeOffset? publishedDate)
+        {
+            // Null published date means the package predates NuGet tracking -- treat as safe
+            return publishedDate.HasValue && publishedDate.Value > _cutoffDate;
         }
 
         static IEnumerable<(TargetFramework framework, IEnumerable<Version> versions)> SelectMax<T>(
@@ -218,7 +342,7 @@ namespace GeneratePackageVersions
 
                 return true;
             }
-            
+
             static bool AppliesToPackageVersion(
                 PackageVersionEntry entry,
                 string packageVersionText,
