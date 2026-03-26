@@ -56,15 +56,8 @@ public class MassTransit7Tests : TracingIntegrationTest
         using (var agent = EnvironmentHelper.GetMockAgent())
         using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
         {
-            // Wait for spans to arrive
-            // The sample tests:
-            // - 3 transports (inmemory, rabbitmq, amazonsqs) × 2 messages × 2 spans = 12 spans
-            // - Saga state machine test: 3 events × 2 spans (send + process) = 6 spans
-            // - Consumer exception test: 1 message × 3 spans (publish send + send + process) = 3 spans
-            // - Handler exception test: 1 message × 3 spans (send + send + process) = 3 spans
-            // - Saga exception test: 2 events × ~2.5 spans each = 5 spans
-            // Total expected: ~29 MassTransit spans
-            const int expectedMassTransitSpanCount = 29;
+            // Wait for the full exported trace set, including the late exception-path spans.
+            const int expectedMassTransitSpanCount = 42;
             var spans = await agent.WaitForSpansAsync(expectedMassTransitSpanCount, timeoutInMilliseconds: 60000);
 
             using var s = new AssertionScope();
@@ -137,13 +130,8 @@ public class MassTransit7Tests : TracingIntegrationTest
         using (var agent = EnvironmentHelper.GetMockAgent())
         using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
         {
-            // In-memory only: 1 transport × 2 messages × 2 spans = 4
-            // Saga: 3 events × 2 spans = 6
-            // Consumer exception: 3 spans
-            // Handler exception: 3 spans
-            // Saga exception: ~5 spans
-            // Total expected: ~21 MassTransit spans
-            const int expectedMassTransitSpanCount = 21;
+            // Wait for the full exported trace set, including the late exception-path spans.
+            const int expectedMassTransitSpanCount = 30;
             var spans = await agent.WaitForSpansAsync(expectedMassTransitSpanCount, timeoutInMilliseconds: 60000);
 
             using var s = new AssertionScope();
@@ -167,8 +155,12 @@ public class MassTransit7Tests : TracingIntegrationTest
             var sagaQueueRegex = new Regex(@"order-state_[a-z0-9]+");
             settings.AddRegexScrubber(sagaQueueRegex, "SagaQueueName");
 
+            // Remove optional messaging.message.body.size tag (only present in some MassTransit versions)
+            var bodySizeRegex = new Regex(@"\n      messaging\.message\.body\.size: \d+");
+            settings.AddRegexScrubber(bodySizeRegex, string.Empty);
+
             // Scrub error.stack to avoid .NET Framework vs .NET Core stack trace format differences
-            var errorStackRegex = new Regex(@"error\.stack:\n(?:[^\n]*\n)*?(?=\s{6}\w)", RegexOptions.Multiline);
+            var errorStackRegex = new Regex(@"error\.stack:[^\n]*\n(?:[^\n]*\n)*?(?=\s{6}\w)", RegexOptions.Multiline);
             settings.AddRegexScrubber(errorStackRegex, "error.stack: Scrubbed\n      ");
 
             await VerifyHelper.VerifySpans(

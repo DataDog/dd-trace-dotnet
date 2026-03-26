@@ -106,6 +106,10 @@ public class MassTransit8Tests : TracingIntegrationTest
             var payloadSizeRegex = new Regex(@"messaging\.message\.payload_size_bytes: \d+");
             settings.AddRegexScrubber(payloadSizeRegex, "messaging.message.payload_size_bytes: size_bytes");
 
+            // Remove optional messaging.message.body.size tag (only present in some MassTransit versions)
+            var bodySizeRegex = new Regex(@"\n      messaging\.message\.body\.size: \d+");
+            settings.AddRegexScrubber(bodySizeRegex, string.Empty);
+
             // Scrub OTEL events (contains timestamps and file paths that vary)
             var eventsRegex = new Regex(@"events: \[.*?\}\](?=,|\s*$)", RegexOptions.Singleline);
             settings.AddRegexScrubber(eventsRegex, "events: [scrubbed]");
@@ -180,11 +184,15 @@ public class MassTransit8Tests : TracingIntegrationTest
             var payloadSizeRegex = new Regex(@"messaging\.message\.payload_size_bytes: \d+");
             settings.AddRegexScrubber(payloadSizeRegex, "messaging.message.payload_size_bytes: size_bytes");
 
+            // Remove optional messaging.message.body.size tag (only present in some MassTransit versions)
+            var bodySizeRegex = new Regex(@"\n      messaging\.message\.body\.size: \d+");
+            settings.AddRegexScrubber(bodySizeRegex, string.Empty);
+
             var eventsRegex = new Regex(@"events: \[.*?\}\](?=,|\s*$)", RegexOptions.Singleline);
             settings.AddRegexScrubber(eventsRegex, "events: [scrubbed]");
 
             // Scrub error.stack to avoid .NET Framework vs .NET Core stack trace format differences
-            var errorStackRegex = new Regex(@"error\.stack:\n(?:[^\n]*\n)*?(?=\s{6}\w)", RegexOptions.Multiline);
+            var errorStackRegex = new Regex(@"error\.stack:[^\n]*\n(?:[^\n]*\n)*?(?=\s{6}\w)", RegexOptions.Multiline);
             settings.AddRegexScrubber(errorStackRegex, "error.stack: Scrubbed\n      ");
 
             await VerifyHelper.VerifySpans(

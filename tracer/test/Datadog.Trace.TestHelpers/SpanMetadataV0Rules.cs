@@ -694,6 +694,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("messaging.masstransit.end_state")
                 .IsOptional("messaging.message.conversation_id")
                 .IsOptional("messaging.message.payload_size_bytes")
+                .IsOptional("messaging.message.body.size")
                 .IsOptional("messaging.message.id")
                 .IsOptional("peer.address")
                 .IsOptional("otel.trace_id")
