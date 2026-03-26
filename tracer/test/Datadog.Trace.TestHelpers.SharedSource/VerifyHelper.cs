@@ -217,6 +217,8 @@ namespace Datadog.Trace.TestHelpers
                            Tags.ErrorStack => new(kvp.Key, ScrubStackTrace(kvp.Value)),
                            // sort environment variables
                            Tags.ProcessEnvironmentVariables => new(kvp.Key, string.Join("\n", kvp.Value.Split('\n').OrderBy(x => x.Split('=')[0]))),
+                           // process tag values depend on the local process environment and paths
+                           Tags.ProcessTags => new(kvp.Key, ScrubProcessTags(kvp.Value)),
                            _ => kvp
                        })
                   .OrderBy(x => x.Key)
@@ -377,6 +379,23 @@ namespace Datadog.Trace.TestHelpers
             }
 
             return sb.ToString();
+        }
+
+        private static string ScrubProcessTags(string processTags)
+        {
+            var scrubbedTags = processTags
+                              .Split(',')
+                              .Select(static tag => tag.Trim())
+                              .Where(static tag => !string.IsNullOrEmpty(tag))
+                              .Select(
+                                   static tag => tag.Split(':', 2) switch
+                                   {
+                                       [var key, _] => $"{key}:VALUE",
+                                       _ => tag,
+                                   })
+                              .OrderBy(static tag => tag, StringComparer.Ordinal);
+
+            return string.Join(",", scrubbedTags);
         }
 
         // Based on https://github.com/VerifyTests/Verify.DiffPlex/blob/9f9f2a18f35074680be47c9043e95d1857e457e0/src/Verify.DiffPlex/VerifyDiffPlex.cs
