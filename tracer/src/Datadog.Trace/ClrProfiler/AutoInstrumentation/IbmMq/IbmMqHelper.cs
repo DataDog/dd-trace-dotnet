@@ -85,7 +85,6 @@ internal static class IbmMqHelper
             var span = scope.Span;
             span.Type = SpanTypes.Queue;
             span.ResourceName = resourceName;
-            span.SetTag(Tags.SpanKind, SpanKinds.Producer);
 
             var context = new PropagationContext(span.Context, Baggage.Current);
             tracer.TracerManager.SpanContextPropagator.Inject(context, GetHeadersAdapter(message));
@@ -153,7 +152,6 @@ internal static class IbmMqHelper
             var span = scope.Span;
             span.Type = SpanTypes.Queue;
             span.ResourceName = resourceName;
-            span.SetTag(Tags.SpanKind, SpanKinds.Consumer);
         }
         catch (Exception ex)
         {
