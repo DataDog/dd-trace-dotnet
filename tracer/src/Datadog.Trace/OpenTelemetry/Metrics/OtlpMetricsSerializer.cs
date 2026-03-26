@@ -180,7 +180,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
             return buffer.ToArray();
         }
 
-        private byte[] SerializeScopeMetrics(IReadOnlyList<MetricPoint> metrics)
+        private byte[] SerializeScopeMetrics(List<MetricPoint> metrics)
         {
             using var buffer = new MemoryStream();
             using var writer = new BinaryWriter(buffer, Encoding.UTF8);

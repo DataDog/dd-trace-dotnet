@@ -65,7 +65,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
             return assembly.GetManifestResourceStream("Datadog.Trace.AppSec.Waf.ConfigFiles.rule-set.json");
         }
 
-        private static Stream? GetRulesFileStream(string rulesFile)
+        private static FileStream? GetRulesFileStream(string rulesFile)
         {
             if (!File.Exists(rulesFile))
             {
