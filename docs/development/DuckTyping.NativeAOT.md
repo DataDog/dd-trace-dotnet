@@ -21,6 +21,7 @@ Use this document as the entrypoint, then drill into companion docs:
 3. [DuckTyping.NativeAOT.CompatibilityMatrix.md](./DuckTyping.NativeAOT.CompatibilityMatrix.md): parity summary against dynamic DuckTyping and Bible scenario families.
 4. [DuckTyping.NativeAOT.Troubleshooting.md](./DuckTyping.NativeAOT.Troubleshooting.md): failure diagnosis and remediation playbook.
 5. [DuckTyping.NativeAOT.Testing.md](./DuckTyping.NativeAOT.Testing.md): test commands, gates, and release-readiness checks.
+6. [DuckTyping.NativeAOT.MinimalSample.md](./DuckTyping.NativeAOT.MinimalSample.md): smallest end-to-end sample app layout and commands.
 
 ## Scope and Non-Goals
 
