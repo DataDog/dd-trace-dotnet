@@ -23,7 +23,7 @@ internal static class TracerSettingsHelpers
 
         public static TracerSettings Create(Dictionary<string, object> settings, LibDatadogAvailableResult isLibDatadogAvailable) =>
             new(
-                new DictionaryConfigurationSource(settings.ToDictionary(x => x.Key, x => FormattableString.Invariant($"{x.Value}")!)),
+                new DictionaryConfigurationSource(settings.ToDictionary(x => x.Key, x => FormattableString.Invariant($"{x.Value}"))),
                 new ConfigurationTelemetry(),
                 new OverrideErrorLog(),
                 isLibDatadogAvailable);
