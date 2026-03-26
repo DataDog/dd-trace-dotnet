@@ -24,6 +24,7 @@ namespace Datadog.Trace.Activity.Handlers
             "Microsoft.EntityFrameworkCore",
             "MongoDB.Driver",
             "MySqlConnector",
+            "connector-net",
             "Npgsql",
             "RabbitMQ.Client.Publisher",
             "RabbitMQ.Client.Subscriber",
