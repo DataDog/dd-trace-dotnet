@@ -1447,7 +1447,7 @@ namespace Datadog.Trace.Configuration
 
         internal static TracerSettings Create(Dictionary<string, object?> settings, LibDatadogAvailableResult isLibDatadogAvailable) =>
             new(
-                new DictionaryConfigurationSource(settings.ToDictionary(x => x.Key, x => FormattableString.Invariant($"{x.Value}"))),
+                new DictionaryConfigurationSource(settings.ToDictionary(x => x.Key, x => x.Value?.ToString()!)),
                 new ConfigurationTelemetry(),
                 new OverrideErrorLog(),
                 isLibDatadogAvailable);
