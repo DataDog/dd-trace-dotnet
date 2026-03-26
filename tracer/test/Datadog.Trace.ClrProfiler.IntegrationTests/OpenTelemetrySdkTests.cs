@@ -676,6 +676,39 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 foreach (var logRecord in logsData.SelectTokens("$..log_records[*]"))
                 {
+                    static string ToHexString(byte[] bytes, int length)
+                    {
+                        bytes.Length.Should().Be(length);
+
+                        var traceId = new byte[length * 2];
+                        for (int i = 0; i < length; i++)
+                        {
+                            traceId[2 * i] = (byte)(bytes[i] >> 4);         // high 4 bits
+                            traceId[(2 * i) + 1] = (byte)(bytes[i] & 0x0F); // low 4 bits
+                        }
+
+                        // Convert each nibble (0-15) to its hex character
+                        var result = new char[length * 2];
+                        for (int i = 0; i < length * 2; i++)
+                        {
+                            result[i] = (char)(traceId[i] < 10 ? '0' + traceId[i] : 'a' + traceId[i] - 10);
+                        }
+
+                        return new string(result);
+                    }
+
+                    static string ToTraceId(byte[] bytes) => ToHexString(bytes, 16);
+
+                    static string ToSpanId(byte[] bytes) => ToHexString(bytes, 8);
+
+                    // Parse unstable information from the span
+                    string traceIdData = ToTraceId(Convert.FromBase64String(logRecord["trace_id"].ToString()));
+                    string spanIdData = ToSpanId(Convert.FromBase64String(logRecord["span_id"].ToString()));
+
+                    // Add strong assertions on unstable span information
+                    traceIdData.Should().MatchRegex(_traceIdRegex);
+                    spanIdData.Should().MatchRegex(_spanIdRegex);
+
                     logRecord["time_unix_nano"] = "0";
                     logRecord["observed_time_unix_nano"] = "0";
 
