@@ -524,6 +524,15 @@ supportedConfigurations:
       Configuration key for enabling legacy binary headers in Data Streams Monitoring.
       false by default if DSM is in default state, true otherwise
       <see cref="Datadog.Trace.Configuration.TracerSettings.IsDataStreamsLegacyHeadersEnabled"/>
+  DD_DATA_STREAMS_TRANSACTION_EXTRACTORS:
+  - implementation: A
+    type: array
+    default: null
+    product: DataStreamsMonitoring
+    const_name: TransactionExtractors
+    documentation: |-
+      Configuration key for transaction extractors in Data Streams Monitoring.
+      <see cref="Datadog.Trace.Configuration.TracerSettings.DataStreamsTransactionExtractors"/>
   DD_DBM_PROPAGATION_MODE:
   - implementation: A
     type: string
@@ -533,6 +542,15 @@ supportedConfigurations:
       Configuration key for setting DBM propagation mode
       Default value is disabled, expected values are either: disabled, service or full
       <seealso cref="Datadog.Trace.Configuration.TracerSettings.DbmPropagationMode"/>
+  DD_DBM_INJECT_SQL_BASEHASH:
+  - implementation: A
+    type: boolean
+    default: 'false'
+    const_name: DbmInjectSqlBasehash
+    documentation: |-
+      Configuration key for enabling or disabling the injection of Base Hash in SQL Comments.
+      Default value is false (disabled).
+      <seealso cref="Datadog.Trace.Configuration.TracerSettings.DbmInjectSqlBasehash"/>
   DD_DIAGNOSTIC_SOURCE_ENABLED:
   - implementation: A
     type: boolean
@@ -2562,6 +2580,54 @@ supportedConfigurations:
       Configuration key to set the request timeout for OTLP export (fallback for metrics-specific timeout).
       Used when <see cref="ExporterOtlpMetricsTimeoutMs"/> is not set.
       Default value is 10000ms.
+  OTEL_EXPORTER_OTLP_TRACES_ENDPOINT:
+  - implementation: B
+    type: string
+    default: null
+    product: OpenTelemetry
+    const_name: ExporterOtlpTracesEndpoint
+    documentation: |-
+      Configuration key to set the OTLP endpoint URL for traces.
+      Takes precedence over <see cref="ExporterOtlpEndpoint"/>.
+      This value typically ends with `/v1/traces` when using OTLP/HTTP.
+      Expects values like `unix:///path/to/socket.sock` for UDS, `\\.\pipe\name` for Windows Named Pipes.
+      Default values: gRPC: http://localhost:4317, HTTP: http://localhost:4318/v1/traces
+  OTEL_EXPORTER_OTLP_TRACES_HEADERS:
+  - implementation: B
+    type: map
+    default: null
+    product: OpenTelemetry
+    aliases:
+    - OTEL_EXPORTER_OTLP_HEADERS
+    const_name: ExporterOtlpTracesHeaders
+    documentation: |-
+      Configuration key to set custom headers for OTLP traces export.
+      Takes precedence over <see cref="ExporterOtlpHeaders"/>.
+      Format: api-key=key,other=value.
+  OTEL_EXPORTER_OTLP_TRACES_PROTOCOL:
+  - implementation: B
+    type: string
+    default: http/json
+    product: OpenTelemetry
+    aliases:
+    - OTEL_EXPORTER_OTLP_PROTOCOL
+    const_name: ExporterOtlpTracesProtocol
+    documentation: |-
+      Configuration key to set the OTLP protocol for traces export.
+      Takes precedence over <see cref="ExporterOtlpProtocol"/>.
+      Valid values: http/json. Default: http/json
+  OTEL_EXPORTER_OTLP_TRACES_TIMEOUT:
+  - implementation: B
+    type: int
+    default: '10000'
+    product: OpenTelemetry
+    aliases:
+    - OTEL_EXPORTER_OTLP_TIMEOUT
+    const_name: ExporterOtlpTracesTimeoutMs
+    documentation: |-
+      Configuration key to set the request timeout for OTLP traces export in milliseconds.
+      Takes precedence over <see cref="ExporterOtlpTimeoutMs"/>.
+      Default value is 10000ms.
   OTEL_LOG_LEVEL:
   - implementation: C
     type: string
@@ -2638,16 +2704,17 @@ supportedConfigurations:
     const_name: ServiceName
     documentation: Configuration key to set the application's default service name.
   OTEL_TRACES_EXPORTER:
-  - implementation: C
+  - implementation: G
     type: string
     default: null
     product: OpenTelemetry
     const_name: TracesExporter
     documentation: |-
       Configuration key to set the exporter for traces.
-      We only recognize the value 'none', which is the
-      equivalent of setting <see cref="ConfigurationKeys.TraceEnabled"/>
-      to false.
+      We only recognize the values 'otlp' and 'none'. The value 'otlp' enables
+      the experimental export of traces using OTLP. The value 'none' disables
+      the export of traces entirely, which is the equivalent of setting 
+      <see cref="ConfigurationKeys.TraceEnabled"/> to false.
   OTEL_TRACES_SAMPLER:
   - implementation: C
     type: string

@@ -10,6 +10,24 @@ namespace Datadog.Trace.DataStreamsMonitoring;
 internal static class SpanExtensions
 {
     /// <summary>
+    /// Tracks a transaction at the given checkpoint and tags the span with the transaction ID.
+    /// </summary>
+    /// <param name="span">The span instance</param>
+    /// <param name="manager">The <see cref="DataStreamsManager"/> to use</param>
+    /// <param name="transactionId">The transaction identifier</param>
+    /// <param name="checkpointName">The checkpoint name at which the transaction is being tracked</param>
+    internal static void TrackTransaction(this Span span, DataStreamsManager? manager, string transactionId, string checkpointName)
+    {
+        if (manager is null)
+        {
+            return;
+        }
+
+        span.SetTag("dsm.transaction.id", transactionId);
+        manager.TrackTransaction(transactionId, checkpointName);
+    }
+
+    /// <summary>
     /// Sets a DataStreams checkpoint and adds pathway tag to the span
     /// </summary>
     /// <param name="span">The span instance</param>

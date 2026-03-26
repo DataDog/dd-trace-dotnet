@@ -91,7 +91,7 @@ public class DataStreamsMessagePackFormatterTests
         };
 
         using var ms = new MemoryStream();
-        formatter.Serialize(ms, bucketDurationNs: bucketDuration, statsBuckets: buckets, backlogBuckets);
+        formatter.Serialize(ms, bucketDurationNs: bucketDuration, statsBuckets: buckets, backlogBuckets, System.Array.Empty<byte>());
 
         var data = new ArraySegment<byte>(ms.GetBuffer());
 
@@ -192,7 +192,7 @@ public class DataStreamsMessagePackFormatterTests
         var formatter = new DataStreamsMessagePackFormatter(settings, new ProfilerSettings(ProfilerState.Disabled));
 
         using var ms = new MemoryStream();
-        formatter.Serialize(ms, bucketDuration, [], []);
+        formatter.Serialize(ms, bucketDuration, [], [], System.Array.Empty<byte>());
         var result = MessagePackSerializer.Deserialize<MockDataStreamsPayload>(new ArraySegment<byte>(ms.GetBuffer()));
 
         // content varies depending on how the tests are run, so we cannot really assert on the content.

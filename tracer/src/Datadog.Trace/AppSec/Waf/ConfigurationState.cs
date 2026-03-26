@@ -33,7 +33,7 @@ internal sealed record ConfigurationState
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ConfigurationState>();
 
-    private readonly IAsmConfigUpdater _asmFeatureProduct = new AsmFeaturesProduct();
+    private readonly AsmFeaturesProduct _asmFeatureProduct = new AsmFeaturesProduct();
 
     private readonly IReadOnlyDictionary<string, IAsmConfigUpdater> _productConfigUpdaters;
 

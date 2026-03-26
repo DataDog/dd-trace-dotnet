@@ -15,6 +15,7 @@ using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DataStreamsMonitoring.Aggregation;
 using Datadog.Trace.DataStreamsMonitoring.Hashes;
+using Datadog.Trace.DataStreamsMonitoring.TransactionTracking;
 using Datadog.Trace.DataStreamsMonitoring.Transport;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers.DataStreamsMonitoring;
@@ -65,6 +66,44 @@ public class DataStreamsWriterTests
         await writer.DisposeAsync();
 
         api.Sent.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task WhenSupported_TracksTransactions()
+    {
+        var bucketDurationMs = 100;
+        var api = new StubApi();
+        var writer = CreateWriter(api, out var discovery, bucketDurationMs);
+        TriggerSupportUpdate(discovery, isSupported: true);
+
+        writer.AddTransaction(new DataStreamsTransactionInfo("id", 1, "checkpoint"));
+        await api.WaitForCount(1, 30_000);
+
+        HasOneOrTwoPoints(api);
+        await writer.DisposeAsync();
+    }
+
+    [Fact]
+    public async Task WhenSupported_TriggersEarlyFlush_WhenTransactionsExceedThreshold()
+    {
+        var bucketDuration = int.MaxValue; // timer will never fire
+        var api = new StubApi();
+        var writer = CreateWriter(api, out var discovery, bucketDuration);
+        TriggerSupportUpdate(discovery, isSupported: true);
+
+        var id = new string('x', 512);
+        var byteCount = new DataStreamsTransactionInfo(id, 0L, "cp").GetByteCount();
+        var count = (512 * 1024 / byteCount) + 1;
+
+        for (var i = 0; i < count; i++)
+        {
+            writer.AddTransaction(new DataStreamsTransactionInfo(id, (long)i, "cp"));
+        }
+
+        await api.WaitForCount(1, 30_000);
+        api.Sent.Should().NotBeEmpty();
+
+        await writer.DisposeAsync();
     }
 
     [Fact]

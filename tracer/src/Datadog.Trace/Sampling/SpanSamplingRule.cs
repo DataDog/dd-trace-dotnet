@@ -28,7 +28,7 @@ namespace Datadog.Trace.Sampling
         private readonly Regex _resourceNameRegex;
         private readonly List<KeyValuePair<string, Regex>> _tagRegexes;
 
-        private readonly IRateLimiter _limiter;
+        private readonly SpanRateLimiter _limiter;
         private bool _regexTimedOut;
 
         /// <summary>

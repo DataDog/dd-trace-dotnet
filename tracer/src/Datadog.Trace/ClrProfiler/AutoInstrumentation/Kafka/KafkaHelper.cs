@@ -12,6 +12,7 @@ using System.Text;
 using System.Threading;
 using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.DataStreamsMonitoring;
+using Datadog.Trace.DataStreamsMonitoring.TransactionTracking;
 using Datadog.Trace.DataStreamsMonitoring.Utils;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
@@ -288,6 +289,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                         var base64PathwayContext = Convert.ToBase64String(BitConverter.GetBytes(span.Context.PathwayContext.Value.Hash.Value));
                         message.Headers.Add(DataStreamsPropagationHeaders.TemporaryBase64PathwayContext, Encoding.UTF8.GetBytes(base64PathwayContext));
                     }
+
+                    if (!dataStreamsManager.IsInDefaultState)
+                    {
+                        ApplyDataStreamsExtractors(dataStreamsManager, DataStreamsTransactionExtractor.Type.KafkaConsumeHeaders, message);
+                    }
                 }
             }
             catch (Exception ex)
@@ -324,6 +330,30 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
             catch (Exception ex)
             {
                 Log.Error(ex, "Error closing Kafka consumer scope");
+            }
+        }
+
+        internal static void ApplyDataStreamsExtractors<TMessage>(
+            DataStreamsManager dataStreamsManager,
+            DataStreamsTransactionExtractor.Type extractorType,
+            TMessage? message)
+            where TMessage : IMessage
+        {
+            if (message?.Instance == null)
+            {
+                return;
+            }
+
+            var extractors = dataStreamsManager.GetExtractorsByType(extractorType);
+            if (extractors != null && message.Headers != null)
+            {
+                foreach (var extractor in extractors)
+                {
+                    if (message.Headers.TryGetLastBytes(extractor.Value, out var transactionId))
+                    {
+                        dataStreamsManager.TrackTransaction(transactionId, extractor.Name);
+                    }
+                }
             }
         }
 
@@ -392,6 +422,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     }
 
                     dataStreamsManager.InjectPathwayContext(span.Context.PathwayContext, adapter);
+                    if (!dataStreamsManager.IsInDefaultState)
+                    {
+                        ApplyDataStreamsExtractors(dataStreamsManager, DataStreamsTransactionExtractor.Type.KafkaProduceHeaders, message);
+                    }
                 }
             }
             catch (Exception ex)
