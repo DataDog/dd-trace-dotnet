@@ -26,7 +26,7 @@ public static class Program
 
     public static async Task Main(string[] args)
     {
-        var serviceName = "MyServiceName";
+        var serviceName = "Samples.OpenTelemetrySdk.OTel";
         var serviceVersion = "1.0.x";
 
         var otherLibraryName = "OtherLibrary";
@@ -38,7 +38,7 @@ public static class Program
             .AddActivitySourceIfEnvironmentVariablePresent()
             .SetResourceBuilder(
                 ResourceBuilder.CreateDefault()
-                    .AddService(serviceName: serviceName, serviceVersion: serviceVersion))
+                    .AddService(serviceName: Environment.GetEnvironmentVariable("DD_SERVICE") ?? serviceName, serviceVersion: serviceVersion))
             .AddConsoleExporter()
             .AddOtlpExporterIfEnvironmentVariablePresent()
             .Build();
@@ -321,7 +321,7 @@ public static class Program
         tags.Add("http.request.method", "GET"); // operation name would be "http.server.request" (without the override)
         tags.Add("resource.name", "ResourceNameOverride");
         tags.Add("operation.name", "OperationNameOverride");
-        tags.Add("service.name", "ServiceNameOverride");
+        // tags.Add("service.name", "ServiceNameOverride");
         tags.Add("span.type", "SpanTypeOverride");
         tags.Add("analytics.event", "true"); // metric->  _dd1.sr.eausr: 1.0
         SpanAttributes attributes = new SpanAttributes(tags);

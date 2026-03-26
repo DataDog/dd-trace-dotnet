@@ -3,7 +3,7 @@
     "WithDatadog": {
       "commandName": "Project",
       "environmentVariables": {
-        "DD_SERVICE": "CustomServiceName",
+        "DD_SERVICE": "Samples.OpenTelemetrySdk.Datadog",
         "DD_VERSION": "",
 
         "COR_ENABLE_PROFILING": "1",
@@ -15,19 +15,51 @@
         "CORECLR_PROFILER_PATH": "$(SolutionDir)shared\\bin\\monitoring-home\\win-x64\\Datadog.Trace.ClrProfiler.Native.dll",
 
         "DD_DOTNET_TRACER_HOME": "$(SolutionDir)shared\\bin\\monitoring-home",
-        "DD_TRACE_OTEL_ENABLED": "true"
+        "OTEL_EXPORTER_OTLP_LOGS_ENDPOINT": "http://localhost:4418/v1/logs",
+        "OTEL_EXPORTER_OTLP_LOGS_PROTOCOL": "http/protobuf",
+        "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT": "http://localhost:4418",
+        "DD_TRACE_OTEL_ENABLED": "true",
+        "DD_LOGS_OTEL_ENABLED": "true"
       },
       "nativeDebugging": false
     },
-    "NoDatadog": {
+    "WithDatadogOTLP": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "DD_SERVICE": "Samples.OpenTelemetrySdk.DatadogOTLP",
+        "DD_VERSION": "",
+
+        "COR_ENABLE_PROFILING": "1",
+        "COR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}",
+        "COR_PROFILER_PATH": "$(SolutionDir)shared\\bin\\monitoring-home\\win-x64\\Datadog.Trace.ClrProfiler.Native.dll",
+
+        "CORECLR_ENABLE_PROFILING": "1",
+        "CORECLR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}",
+        "CORECLR_PROFILER_PATH": "$(SolutionDir)shared\\bin\\monitoring-home\\win-x64\\Datadog.Trace.ClrProfiler.Native.dll",
+
+        "DD_DOTNET_TRACER_HOME": "$(SolutionDir)shared\\bin\\monitoring-home",
+        //"OTEL_EXPORTER_OTLP_LOGS_ENDPOINT": "http://localhost:4418/v1/logs",
+        "OTEL_EXPORTER_OTLP_LOGS_ENDPOINT": "http://localhost:4318/v1/logs",
+        "OTEL_EXPORTER_OTLP_LOGS_PROTOCOL": "http/protobuf",
+        //"OTEL_EXPORTER_OTLP_TRACES_ENDPOINT": "http://localhost:4418/v1/traces",
+        "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT": "http://localhost:4318/v1/traces",
+        "OTEL_TRACES_EXPORTER": "otlp",
+        "DD_TRACE_OTEL_ENABLED": "true",
+        "DD_LOGS_OTEL_ENABLED": "true"
+      },
+      "nativeDebugging": true
+    },
+    "WithOTel": {
       "commandName": "Project",
       "environmentVariables": {
         "DD_ENV": "",
         "DD_SERVICE": "",
         "DD_VERSION": "",
 
+        "OTEL_EXPORTER_OTLP_ENDPOINT": "http://localhost:4418",
         "OTEL_EXPORTER_OTLP_PROTOCOL": "http/protobuf",
-        "OTEL_EXPORTER_OTLP_ENABLED": "true"
+        "OTEL_EXPORTER_OTLP_ENABLED": "true",
+        "OTEL_LOGS_EXPORTER_ENABLED": "true"
       },
       "nativeDebugging": false
     }
