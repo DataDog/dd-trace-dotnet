@@ -346,6 +346,7 @@ public class DataStreamsManagerTests
                 { ConfigurationKeys.Environment, "foo" },
                 { ConfigurationKeys.ServiceName, "bar" },
                 { ConfigurationKeys.DataStreamsMonitoring.Enabled, enabled.ToString() },
+                { ConfigurationKeys.PropagateProcessTags, "false" }
             });
         return new DataStreamsManager(settings, writer, Mock.Of<IDiscoveryService>());
     }
