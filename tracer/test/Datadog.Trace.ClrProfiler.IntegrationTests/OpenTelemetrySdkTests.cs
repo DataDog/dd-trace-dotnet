@@ -215,6 +215,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [MemberData(nameof(PackageVersions.OpenTelemetry), MemberType = typeof(PackageVersions))]
         public async Task IntegrationDisabled(string packageVersion)
         {
+            SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "false");
             using (var telemetry = this.ConfigureTelemetry())
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
