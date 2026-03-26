@@ -25,6 +25,8 @@ namespace Datadog.Trace.Activity.Handlers
             "MongoDB.Driver",
             "MySqlConnector",
             "Npgsql",
+            "RabbitMQ.Client.Publisher",
+            "RabbitMQ.Client.Subscriber",
             "System.Net.Http.Desktop",
             "SqlClientDiagnosticListener",
             "Experimental.System.Net.NameResolution",
