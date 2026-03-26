@@ -80,7 +80,7 @@ public sealed class ServiceBusReceiverReceiveMessagesAsyncIntegration
         return returnValue;
     }
 
-    private static IEnumerable<SpanLink>? ExtractSpanLinksFromMessages(Tracer tracer, System.Collections.IList? messagesList)
+    private static List<SpanLink>? ExtractSpanLinksFromMessages(Tracer tracer, System.Collections.IList? messagesList)
     {
         if (messagesList == null || messagesList.Count == 0)
         {

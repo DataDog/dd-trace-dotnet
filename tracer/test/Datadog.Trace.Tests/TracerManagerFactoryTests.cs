@@ -116,7 +116,7 @@ public class TracerManagerFactoryTests : IAsyncLifetime
         settings.AgentFeaturePollingEnabled.Should().Be(enabled);
 
         var factory = new TracerManagerFactory();
-        var discoveryService = factory.GetDiscoveryService(settings);
+        var discoveryService = factory.GetDiscoveryService(settings, new ServiceRemappingHash(null));
 
         if (enabled)
         {

@@ -147,7 +147,7 @@ internal sealed partial class ProbeExpressionParser<T>
         }
     }
 
-    private Expression StringLexicographicComparison(Expression left, Expression right, string operand)
+    private BinaryExpression StringLexicographicComparison(Expression left, Expression right, string operand)
     {
         switch (operand)
         {

@@ -5,7 +5,6 @@
 
 #nullable enable
 using System;
-using System.Linq;
 using Datadog.Trace.Activity;
 using Datadog.Trace.Activity.DuckTypes;
 using Datadog.Trace.Logging;
@@ -47,14 +46,59 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Quartz
         {
             activity.AddTag("operation.name", activity.DisplayName);
             activity.AddTag(Tags.InstrumentationName, ComponentName);
-            var jobName = activity.Tags.FirstOrDefault(kv => kv.Key == "job.name").Value ?? string.Empty;
+
+            string? jobName = null;
+            foreach (var tag in activity.TagObjects)
+            {
+                if (tag.Key == "job.name")
+                {
+                    jobName = tag.Value as string;
+                    break;
+                }
+            }
+
             if (string.IsNullOrEmpty(jobName))
             {
                 Log.Debug("Unable to update Quartz Span's resource name: job.name tag was not found.");
                 return;
             }
 
-            activity.DisplayName = CreateResourceName(activity.DisplayName, jobName);
+            activity.DisplayName = CreateResourceName(activity.DisplayName, jobName!);
+        }
+
+        internal static void EnhanceActivityMetadata(IActivity activity)
+        {
+            if (activity is IActivity5 activity5)
+            {
+                EnhanceActivityMetadata(activity5);
+                return;
+            }
+
+            if (activity.OperationName is null)
+            {
+                return;
+            }
+
+            activity.AddTag("operation.name", activity.OperationName);
+            activity.AddTag(Tags.InstrumentationName, ComponentName);
+
+            string? jobName = null;
+            foreach (var tag in activity.Tags)
+            {
+                if (tag.Key == "job.name")
+                {
+                    jobName = tag.Value;
+                    break;
+                }
+            }
+
+            if (string.IsNullOrEmpty(jobName))
+            {
+                Log.Debug("Unable to update Quartz Span's resource name: job.name tag was not found.");
+                return;
+            }
+
+            activity.AddTag("resource.name", CreateResourceName(activity.OperationName, jobName!));
         }
 
         internal static void AddException(object exceptionArg, IActivity activity)

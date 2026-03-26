@@ -8,6 +8,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using Datadog.Trace.Agent;
@@ -327,6 +328,17 @@ namespace Datadog.Trace
                 // do not set SamplingMechanism = null because that would allow changing the mechanism later,
                 // which is not allowed.
                 Tags.RemoveTag(Trace.Tags.Propagated.DecisionMaker);
+            }
+
+            // set Knuth sampling rate as a propagated tag for agent and rule-based sampling.
+            // use TryAddTag to preserve the original rate, consistent with AppliedSamplingRate ??= rate above.
+            if (rate is { } samplingRate && mechanism is Sampling.SamplingMechanism.AgentRate
+                                                      or Sampling.SamplingMechanism.LocalTraceSamplingRule
+                                                      or Sampling.SamplingMechanism.RemoteAdaptiveSamplingRule
+                                                      or Sampling.SamplingMechanism.RemoteUserSamplingRule)
+            {
+                // format with up to 6 decimal digits, no trailing zeros (per RFC)
+                Tags.TryAddTag(Trace.Tags.Propagated.KnuthSamplingRate, samplingRate.ToString("0.######", CultureInfo.InvariantCulture));
             }
 
             if (notifyDistributedTracer)
