@@ -257,24 +257,6 @@ namespace Datadog.Trace
             if (Interlocked.Exchange(ref _terminationExitInitiated, 1) != 0)
             {
                 // Duplicate signal while shutdown is in progress.
-
-                try
-                {
-                    // On Unix, Cancel prevents the OS default handler from immediately terminating the process.
-                    // (On Windows, SIGTERM/SIGHUP can't be canceled.)
-                    if (!OperatingSystem.IsWindows())
-                    {
-                        // See PosixSignalRegistration.Create remarks:
-                        // https://learn.microsoft.com/en-us/dotnet/api/system.runtime.interopservices.posixsignalregistration.create
-                        context.Cancel = true; // Keep the process alive long enough to take the managed shutdown path.
-                    }
-                }
-                catch (Exception ex)
-                {
-                    // Best-effort. If we can't cancel default handling, still attempt a managed exit.
-                    Log.Warning(ex, "Failed to cancel default termination signal handling. Graceful shutdown may not run.");
-                }
-
                 // Wait for the first handler to finish running shutdown tasks.
                 _shutdownComplete.Wait();
                 return;
