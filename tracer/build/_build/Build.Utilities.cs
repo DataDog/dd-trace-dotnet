@@ -59,8 +59,8 @@ partial class Build
     [Parameter("Only update package versions for packages with the following names")]
     readonly string[] IncludePackages;
 
-    [Parameter("Minimum age in days a NuGet package version must have been published before auto-including (default: 0, no filtering)")]
-    readonly int PackageVersionCooldownDays;
+    [Parameter("Minimum age in days a NuGet package version must have been published before auto-including (default: 2)")]
+    readonly int PackageVersionCooldownDays = 2;
 
     [LazyLocalExecutable(@"C:\Program Files (x86)\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.8 Tools\gacutil.exe")]
     readonly Lazy<Tool> GacUtil;
@@ -323,7 +323,7 @@ partial class Build
                        resolvedText);
                }
 
-               var reportPath = BuildDirectory / "cooldown_report.md";
+               var reportPath = TemporaryDirectory / "cooldown_report.md";
                await versionGenerator.CooldownReport.SaveToFile(reportPath);
                Logger.Information("Cooldown report saved to {Path}", reportPath);
            }

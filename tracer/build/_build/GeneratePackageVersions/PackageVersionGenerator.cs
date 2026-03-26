@@ -122,17 +122,17 @@ namespace GeneratePackageVersions
                     select (version, framework))
                    .ToList();
 
+                // Apply cooldown once on the full version list before selection.
+                // This removes versions within the cooldown period (unless already at/below baseline)
+                // so that SelectMax/SelectPackagesFromGlobs never see them.
+                orderedWithFramework = ApplyCooldown(entry, orderedWithFramework, publishDateLookup);
+
                 // Add the last for every minor
                 var latestMajors = SelectMax(orderedWithFramework, v => v.Major).ToList();
                 var latestMinors = SelectMax(orderedWithFramework, v => $"{v.Major}.{v.Minor}").ToList();
                 var latestSpecific = entry.SpecificVersions.Length == 0
                     ? latestMajors
                     : SelectPackagesFromGlobs(orderedWithFramework, entry.SpecificVersions).ToList();
-
-                // Apply cooldown: override versions that are too new with older resolved versions
-                latestMajors = ApplyCooldown(entry, latestMajors, orderedWithFramework, publishDateLookup, v => v.Major).ToList();
-                latestMinors = ApplyCooldown(entry, latestMinors, orderedWithFramework, publishDateLookup, v => $"{v.Major}.{v.Minor}").ToList();
-                latestSpecific = ApplyCooldown(entry, latestSpecific, orderedWithFramework, publishDateLookup, v => v.Major).ToList();
 
                 _latestMinors.Write(entry, latestMinors, requiresDockerDependency);
                 _latestMajors.Write(entry, latestMajors, requiresDockerDependency);
@@ -164,90 +164,59 @@ namespace GeneratePackageVersions
         }
 
         /// <summary>
-        /// Applies cooldown filtering to selected versions. For each version that was published
+        /// Applies cooldown filtering to the full ordered version list. For each version published
         /// within the cooldown period, checks if it was already accepted (at or below baseline).
-        /// If already accepted, keeps it. Otherwise, finds the best resolved version that is
-        /// either outside the cooldown or at the baseline. Overridden versions are added to CooldownReport.
+        /// If already accepted, keeps it. Otherwise, removes it so that downstream selection
+        /// (SelectMax/SelectPackagesFromGlobs) naturally picks the next-best version.
+        /// Removed versions are recorded in CooldownReport.
         /// </summary>
-        private List<(TargetFramework framework, IEnumerable<Version> versions)> ApplyCooldown<T>(
+        private List<(Version version, TargetFramework framework)> ApplyCooldown(
             PackageVersionEntry entry,
-            List<(TargetFramework framework, IEnumerable<Version> versions)> selectedVersions,
-            List<(Version version, TargetFramework framework)> allOrderedVersions,
-            Dictionary<string, DateTimeOffset?> publishDateLookup,
-            Func<Version, T> groupBy)
+            List<(Version version, TargetFramework framework)> orderedVersions,
+            Dictionary<string, DateTimeOffset?> publishDateLookup)
         {
             _baseline.TryGetValue(entry.NugetPackageSearchName, out var baselineVersion);
 
-            var result = new List<(TargetFramework framework, IEnumerable<Version> versions)>();
+            var result = new List<(Version version, TargetFramework framework)>();
 
-            foreach (var (framework, versions) in selectedVersions)
+            foreach (var (version, framework) in orderedVersions)
             {
-                // All versions available for this framework, grouped the same way as selection
-                var allForFramework = allOrderedVersions
-                    .Where(x => x.framework == framework)
-                    .Select(x => x.version)
-                    .ToList();
+                var versionKey = version.ToString();
+                publishDateLookup.TryGetValue(versionKey, out var publishedDate);
 
-                var filteredVersions = new List<Version>();
-                foreach (var version in versions)
+                if (!IsWithinCooldown(publishedDate))
                 {
-                    var versionKey = version.ToString();
-                    publishDateLookup.TryGetValue(versionKey, out var publishedDate);
+                    // Outside cooldown -- always accept
+                    result.Add((version, framework));
+                    continue;
+                }
 
-                    if (!IsWithinCooldown(publishedDate))
+                if (baselineVersion is not null && version <= baselineVersion)
+                {
+                    // Within cooldown but already accepted in a previous run -- keep it
+                    result.Add((version, framework));
+                    continue;
+                }
+
+                // Within cooldown and above baseline -- remove from the list.
+                // The best fallback is whatever SelectMax ends up picking from the remaining versions.
+                // Find what that would be for reporting purposes.
+                var fallback = orderedVersions
+                    .Where(v => v.framework == framework && v.version < version)
+                    .Select(v => v.version)
+                    .OrderByDescending(v => v)
+                    .FirstOrDefault(v =>
                     {
-                        // Outside cooldown -- always accept
-                        filteredVersions.Add(version);
-                        continue;
-                    }
-
-                    if (baselineVersion is not null && version <= baselineVersion)
-                    {
-                        // Within cooldown but already accepted in a previous run -- keep it
-                        filteredVersions.Add(version);
-                        continue;
-                    }
-
-                    // Within cooldown and above baseline -- override to the best available:
-                    // the baseline version if it exists in this group, otherwise the latest
-                    // version outside cooldown
-                    var groupKey = groupBy(version);
-                    var versionsInGroup = allForFramework
-                        .Where(v => EqualityComparer<T>.Default.Equals(groupBy(v), groupKey))
-                        .Where(v => v < version)
-                        .OrderByDescending(v => v);
-
-                    // Prefer baseline version if it's in this group
-                    Version resolved = null;
-                    if (baselineVersion is not null)
-                    {
-                        resolved = versionsInGroup.FirstOrDefault(v => v <= baselineVersion);
-                    }
-
-                    // Fall back to latest outside cooldown
-                    resolved ??= versionsInGroup.FirstOrDefault(v =>
-                    {
-                        publishDateLookup.TryGetValue(v.ToString(), out var rDate);
-                        return !IsWithinCooldown(rDate);
+                        publishDateLookup.TryGetValue(v.ToString(), out var d);
+                        return !IsWithinCooldown(d) || (baselineVersion is not null && v <= baselineVersion);
                     });
 
-                    CooldownReport.Add(new CooldownReport.CooldownEntry(
-                        entry.NugetPackageSearchName,
-                        entry.IntegrationName,
-                        versionKey,
-                        publishedDate,
-                        resolved?.ToString()));
-
-                    if (resolved is not null)
-                    {
-                        filteredVersions.Add(resolved);
-                    }
-                }
-
-                if (filteredVersions.Count > 0)
-                {
-                    result.Add((framework, filteredVersions.Distinct().OrderBy(v => v).ToList()));
-                }
+                CooldownReport.Add(new CooldownReport.CooldownEntry(
+                    entry.NugetPackageSearchName,
+                    entry.IntegrationName,
+                    versionKey,
+                    publishedDate,
+                    fallback?.ToString()));
             }
 
             return result;

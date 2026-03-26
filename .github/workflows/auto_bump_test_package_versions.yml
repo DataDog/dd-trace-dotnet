@@ -46,7 +46,7 @@ jobs:
         shell: pwsh
         run: |
           $report = ""
-          $reportPath = "tracer/build/cooldown_report.md"
+          $reportPath = ".nuke/temp/cooldown_report.md"
           if (Test-Path $reportPath) {
             $report = Get-Content $reportPath -Raw
           }
