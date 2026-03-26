@@ -68,12 +68,13 @@ internal static class IbmMqHelper
 
             var operationName = settings.Schema.Messaging.GetOutboundOperationName(MessagingSchema.OperationType.IbmMq);
             var (serviceName, serviceNameSource) = settings.Schema.Messaging.GetServiceNameMetadata(MessagingSchema.ServiceType.IbmMq);
-            var tags = settings.Schema.Messaging.CreateIbmMqTags(SpanKinds.Consumer);
+            var tags = settings.Schema.Messaging.CreateIbmMqTags(SpanKinds.Producer);
             var queueName = SanitizeQueueName(queue.Name);
             tags.TopicName = queueName;
 
             scope = tracer.StartActiveInternal(
                 operationName,
+                tags: tags,
                 serviceName: serviceName,
                 serviceNameSource: serviceNameSource,
                 finishOnClose: true);
@@ -84,7 +85,6 @@ internal static class IbmMqHelper
             var span = scope.Span;
             span.Type = SpanTypes.Queue;
             span.ResourceName = resourceName;
-            span.SetTag(Tags.SpanKind, SpanKinds.Producer);
 
             var context = new PropagationContext(span.Context, Baggage.Current);
             tracer.TracerManager.SpanContextPropagator.Inject(context, GetHeadersAdapter(message));
@@ -135,7 +135,7 @@ internal static class IbmMqHelper
             }
 
             var (serviceName, serviceNameSource) = settings.Schema.Messaging.GetServiceNameMetadata(MessagingSchema.ServiceType.IbmMq);
-            var tags = settings.Schema.Messaging.CreateIbmMqTags(SpanKinds.Producer);
+            var tags = settings.Schema.Messaging.CreateIbmMqTags(SpanKinds.Consumer);
             var queueName = SanitizeQueueName(queue.Name);
             tags.TopicName = queueName;
             scope = tracer.StartActiveInternal(
@@ -152,7 +152,6 @@ internal static class IbmMqHelper
             var span = scope.Span;
             span.Type = SpanTypes.Queue;
             span.ResourceName = resourceName;
-            span.SetTag(Tags.SpanKind, SpanKinds.Consumer);
         }
         catch (Exception ex)
         {
