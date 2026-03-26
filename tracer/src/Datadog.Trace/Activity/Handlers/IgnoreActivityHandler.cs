@@ -19,6 +19,7 @@ namespace Datadog.Trace.Activity.Handlers
         private static readonly string[] SourcesNames =
         {
             "Couchbase.DotnetSdk.RequestTracer",
+            "Couchbase.DotnetSdk.OpenTelemetryRequestTracer",
             "HttpHandlerDiagnosticListener",
             "Microsoft.AspNetCore",
             "Microsoft.EntityFrameworkCore",
