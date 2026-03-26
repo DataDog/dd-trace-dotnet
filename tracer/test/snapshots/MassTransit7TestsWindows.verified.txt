@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -40,8 +40,7 @@
       env: integration_tests,
       error.msg: Intentional failure for testing: Consumer failure test,
       error.stack: Scrubbed
-            error.type: System.InvalidOperationException,
-      language: dotnet,
+            language: dotnet,
       messaging.destination.name: Failing,
       messaging.masstransit.input_address: loopback://localhost/Failing,
       messaging.masstransit.message_types: FailingMessage,
@@ -246,8 +245,7 @@
       env: integration_tests,
       error.msg: Handler failure test: Handler will fail,
       error.stack: Scrubbed
-            error.type: System.InvalidOperationException,
-      language: dotnet,
+            language: dotnet,
       messaging.destination.name: handler-failing,
       messaging.masstransit.input_address: loopback://localhost/handler-failing,
       messaging.masstransit.message_types: HandlerFailingMessage,
@@ -379,8 +377,7 @@
       env: integration_tests,
       error.msg: Saga failure test: Intentional saga failure for testing,
       error.stack: Scrubbed
-            error.type: System.InvalidOperationException,
-      language: dotnet,
+            language: dotnet,
       messaging.destination.name: OrderState,
       messaging.masstransit.input_address: loopback://localhost/OrderState,
       messaging.operation: receive,

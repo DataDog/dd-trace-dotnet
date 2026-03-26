@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -41,9 +41,8 @@
       component: masstransit,
       env: integration_tests,
       error.msg: Intentional failure for testing: Consumer failure test,
-      error.stack: at Samples.MassTransit8.Consumers.FailingConsumer.Consume(ConsumeContext`1 context),
-      error.type: System.InvalidOperationException,
-      events: [scrubbed],
+      error.stack: Scrubbed
+            events: [scrubbed],
       language: dotnet,
       messaging.masstransit.consumer_type: Samples.MassTransit8.Consumers.FailingConsumer,
       messaging.operation: process,
@@ -261,8 +260,7 @@
       env: integration_tests,
       error.msg: Handler failure test: Handler will fail,
       error.stack: Scrubbed
-            error.type: System.InvalidOperationException,
-      events: [scrubbed],
+            events: [scrubbed],
       language: dotnet,
       messaging.masstransit.consumer_type: Handler,
       messaging.operation: process,
@@ -340,9 +338,8 @@
       component: masstransit,
       env: integration_tests,
       error.msg: Saga failure test: Intentional saga failure for testing,
-      error.stack: at Samples.MassTransit8.Sagas.OrderStateMachine.<>c.<.ctor>b__0_11(BehaviorContext`2 context),
-      error.type: System.InvalidOperationException,
-      events: [scrubbed],
+      error.stack: Scrubbed
+            events: [scrubbed],
       language: dotnet,
       messaging.masstransit.begin_state: Submitted,
       messaging.masstransit.consumer_type: OrderStateMachine,
