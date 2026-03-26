@@ -48,6 +48,7 @@ namespace Datadog.Trace.Agent
             string service,
             string operationName,
             string type,
+            string serviceSource,
             int httpStatusCode,
             bool isSyntheticsRequest,
             bool isError,
@@ -57,6 +58,7 @@ namespace Datadog.Trace.Agent
             Service = service;
             OperationName = operationName;
             Type = type;
+            ServiceSource = serviceSource;
             HttpStatusCode = httpStatusCode;
             IsSyntheticsRequest = isSyntheticsRequest;
             IsError = isError;
