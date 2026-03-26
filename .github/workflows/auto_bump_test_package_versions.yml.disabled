@@ -38,7 +38,7 @@ jobs:
           global-json-file: global.json
 
       - name: "Regenerating package versions"
-        run: .\tracer\build.ps1 GeneratePackageVersions --PackageVersionCooldownDays 3
+        run: .\tracer\build.ps1 GeneratePackageVersions --PackageVersionCooldownDays 2
 
       - name: Read cooldown report
         id: cooldown
