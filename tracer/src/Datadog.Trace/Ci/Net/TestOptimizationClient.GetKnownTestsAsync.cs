@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Ci.Telemetry;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Util;
 using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
@@ -67,7 +68,7 @@ internal sealed partial class TestOptimizationClient
             }
 
             Log.Debug("TestOptimizationClient: KnownTests.JSON RS (page {PageNumber}) = {Json}", pageNumber, queryResponse);
-            if (string.IsNullOrEmpty(queryResponse))
+            if (StringUtil.IsNullOrEmpty(queryResponse))
             {
                 break;
             }
@@ -80,31 +81,33 @@ internal sealed partial class TestOptimizationClient
                 break;
             }
 
+            var page = pageResponse.Value;
+
             // Merge page tests into aggregate
-            MergeKnownTests(ref aggregateTests, pageResponse.Value.Tests);
+            MergeKnownTests(ref aggregateTests, page.Tests);
 
             // Check pagination
-            var pageInfo = pageResponse.Value.PageInfo;
+            var pageInfo = page.PageInfo;
             if (pageInfo is not { HasNext: true })
             {
                 // No page_info or has_next is false — we're done
                 break;
             }
 
-            if (string.IsNullOrEmpty(pageInfo.Value.Cursor))
+            var cursor = pageInfo.Value.Cursor;
+            if (StringUtil.IsNullOrEmpty(cursor))
             {
                 Log.Warning<int>("TestOptimizationClient: Known tests response has has_next=true but no cursor on page {PageNumber}. Aborting pagination.", pageNumber);
                 return default;
             }
 
-            pageState = pageInfo.Value.Cursor;
+            pageState = cursor;
         }
         while (pageNumber < MaxKnownTestsPages);
 
         if (pageNumber >= MaxKnownTestsPages)
         {
-            Log.Warning<int>("TestOptimizationClient: Known tests pagination exceeded maximum of {MaxPages} pages. Aborting.", MaxKnownTestsPages);
-            return default;
+            Log.Warning<int>("TestOptimizationClient: Known tests pagination exceeded maximum of {MaxPages} pages. Returning data collected so far.", MaxKnownTestsPages);
         }
 
         var finalResponse = new KnownTestsResponse(aggregateTests);
@@ -119,7 +122,7 @@ internal sealed partial class TestOptimizationClient
                 {
                     foreach (var testsArray in suitesDictionary.Values)
                     {
-                        testsCount += testsArray?.Length ?? 0;
+                        testsCount += testsArray?.Count ?? 0;
                     }
                 }
             }
@@ -153,7 +156,7 @@ internal sealed partial class TestOptimizationClient
 
             foreach (var suiteEntry in moduleEntry.Value)
             {
-                if (suiteEntry.Value is null or { Length: 0 })
+                if (suiteEntry.Value is null or { Count: 0 })
                 {
                     continue;
                 }
@@ -164,10 +167,7 @@ internal sealed partial class TestOptimizationClient
                 }
                 else
                 {
-                    var merged = new string[existingTests.Length + suiteEntry.Value.Length];
-                    existingTests.CopyTo(merged, 0);
-                    suiteEntry.Value.CopyTo(merged, existingTests.Length);
-                    existingSuites[suiteEntry.Key] = merged;
+                    existingTests.AddRange(suiteEntry.Value);
                 }
             }
         }
@@ -272,7 +272,7 @@ internal sealed partial class TestOptimizationClient
             Tests = tests;
         }
 
-        public sealed class KnownTestsSuites : Dictionary<string, string[]?>
+        public sealed class KnownTestsSuites : Dictionary<string, List<string>?>
         {
         }
 

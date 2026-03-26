@@ -470,7 +470,7 @@ public abstract class TestingFrameworkEvpTest : TestHelper
 
                 if (e.Value.PathAndQuery.EndsWith("api/v2/ci/libraries/tests"))
                 {
-                    if (testScenario.MockData.TestsJsonPages is { Length: > 0 } pages)
+                    if (testScenario.MockData.KnownTestsJsonPages is { Length: > 0 } pages)
                     {
                         // Serve paginated responses sequentially
                         var idx = knownTestsPageIndex++;
@@ -599,22 +599,22 @@ public abstract class TestingFrameworkEvpTest : TestHelper
         /// pages sequentially instead of <see cref="TestsJson"/>. Each entry must be a complete
         /// JSON response including page_info with cursor/has_next.
         /// </summary>
-        public readonly string[]? TestsJsonPages;
+        public readonly string[]? KnownTestsJsonPages;
 
         public MockData(string settingsJson, string testsJson, string testManagementTestsJson)
         {
             SettingsJson = settingsJson;
             TestsJson = testsJson;
             TestManagementTestsJson = testManagementTestsJson;
-            TestsJsonPages = null;
+            KnownTestsJsonPages = null;
         }
 
-        public MockData(string settingsJson, string[] testsJsonPages, string testManagementTestsJson)
+        public MockData(string settingsJson, string[] knownTestsJsonPages, string testManagementTestsJson)
         {
             SettingsJson = settingsJson;
             TestsJson = string.Empty;
             TestManagementTestsJson = testManagementTestsJson;
-            TestsJsonPages = testsJsonPages;
+            KnownTestsJsonPages = knownTestsJsonPages;
         }
 
         public override string ToString()
