@@ -1115,7 +1115,17 @@
     "assemblyName": "Datadog.FeatureFlags.OpenFeature",
     "minAssemblyVersionInclusive": "2.0.0",
     "maxAssemblyVersionInclusive": "2.65535.65535",
-    "packages": []
+    "packages": [
+      {
+        "name": "OpenFeature",
+        "minVersionAvailableInclusive": "0.1.0",
+        "minVersionSupportedInclusive": "2.0.0",
+        "minVersionTestedInclusive": "2.0.0",
+        "maxVersionSupportedInclusive": "2.11.1",
+        "maxVersionAvailableInclusive": "2.11.1",
+        "maxVersionTestedInclusive": "2.10.0"
+      }
+    ]
   },
   {
     "integrationName": "OpenTelemetry",
