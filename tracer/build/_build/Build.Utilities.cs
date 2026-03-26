@@ -266,6 +266,45 @@ partial class Build
            var testedVersions = await versionGenerator.GenerateVersions(Solution);
            await NuGetVersionCache.Save(cacheFilePath, versionGenerator.VersionCache);
 
+           // Log version changes: bumps, unchanged, and overridden
+           var versionCache = versionGenerator.VersionCache;
+           var bumped = 0;
+           var unchanged = 0;
+           foreach (var tested in testedVersions)
+           {
+               var packageName = tested.NugetPackageSearchName;
+               baseline.TryGetValue(packageName, out var previousMax);
+
+               if (previousMax is null || tested.MaxVersion > previousMax)
+               {
+                   bumped++;
+                   var publishedDate = "(unknown)";
+                   if (versionCache.TryGetValue(packageName, out var cachedVersions))
+                   {
+                       var match = cachedVersions.FirstOrDefault(v => v.Version == tested.MaxVersion.ToString());
+                       if (match?.Published is not null)
+                       {
+                           publishedDate = match.Published.Value.ToString("yyyy-MM-dd");
+                       }
+                   }
+
+                   Logger.Information(
+                       "  {Package} {Previous} -> {Current} (published {Date}, https://www.nuget.org/packages/{Package}/{Current})",
+                       packageName,
+                       previousMax?.ToString() ?? "(new)",
+                       tested.MaxVersion,
+                       publishedDate,
+                       packageName,
+                       tested.MaxVersion);
+               }
+               else
+               {
+                   unchanged++;
+               }
+           }
+
+           Logger.Information("{Bumped} package(s) bumped, {Unchanged} unchanged", bumped, unchanged);
+
            if (versionGenerator.CooldownReport.HasEntries)
            {
                Logger.Warning(
