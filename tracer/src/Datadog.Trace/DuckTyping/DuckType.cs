@@ -368,8 +368,12 @@ namespace Datadog.Trace.DuckTyping
                 // Include target assembly name and public token.
                 AssemblyName asmName = typeToDelegateTo.Assembly.GetName();
                 assembly = asmName.Name ?? string.Empty;
-                byte[] pbToken = asmName.GetPublicKeyToken() ?? Array.Empty<byte>();
-                assembly += "__" + BitConverter.ToString(pbToken).Replace("-", string.Empty);
+                var pbToken = asmName.GetPublicKeyToken();
+#if NET6_0_OR_GREATER
+                assembly += "__" + (pbToken is null ? string.Empty : Convert.ToHexString(pbToken));
+#else
+                assembly += "__" + (pbToken is null ? string.Empty : HexConverter.ToString(pbToken));
+#endif
                 assembly = assembly.Replace(".", "_").Replace("+", "__");
             }
 
@@ -442,7 +446,7 @@ namespace Datadog.Trace.DuckTyping
             }
         }
 
-        private static FieldInfo CreateIDuckTypeImplementation(TypeBuilder proxyTypeBuilder, Type targetType)
+        private static FieldBuilder CreateIDuckTypeImplementation(TypeBuilder proxyTypeBuilder, Type targetType)
         {
             Type instanceType = targetType;
             if (!UseDirectAccessTo(proxyTypeBuilder, targetType))

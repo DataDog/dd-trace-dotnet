@@ -38,7 +38,10 @@ internal sealed class ProcessTags
     // two views on the same data
     public List<string> TagsList => field ??= GetTagsList(_serviceNameUserDefined, _autoServiceName);
 
-    public string SerializedTags => field ??= string.Join(",", TagsList);
+    public string SerializedTags
+    {
+        get => field ??= string.Join(",", TagsList); // don't forget to refresh the hash in ServiceRemappingHash on write if this value becomes mutable
+    }
 
     private static List<string> GetTagsList(bool serviceNameUserDefined, string autoServiceName)
     {

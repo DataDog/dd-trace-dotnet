@@ -276,7 +276,7 @@ namespace Datadog.Trace.Debugger
             }
         }
 
-        private static object? JoinLogValues(string[]? values)
+        private static string? JoinLogValues(string[]? values)
         {
             return values is { Length: > 0 } ? string.Join(" | ", values) : null;
         }

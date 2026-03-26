@@ -17,9 +17,6 @@ namespace Datadog.Trace.PlatformHelpers;
 /// </summary>
 internal sealed class ContainerMetadata
 {
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ContainerMetadata));
-    private static bool _warnedOnSet; // to log only once
-
     public static readonly ContainerMetadata Instance = new();
 
     private ContainerMetadata()
@@ -30,20 +27,6 @@ internal sealed class ContainerMetadata
     public ContainerMetadata(string containerId, string entityId)
     {
         // nothing to do, just to match the other version
-    }
-
-    // always null in this implementation
-    public string? ContainerTagsHash
-    {
-        get => null;
-        set
-        {
-            if (!_warnedOnSet)
-            {
-                _warnedOnSet = true;
-                Log.Error("The code is trying to set the value '{Value}' to {Prop}, but this has no effect in .NET Framework.", value, nameof(ContainerTagsHash));
-            }
-        }
     }
 
     /// <summary>

@@ -25,8 +25,9 @@ internal static class TracerHelper
         IScopeManager scopeManager = null,
         IDogStatsd statsd = null,
         ITelemetryController telemetryController = null,
-        IDiscoveryService discoveryService = null) =>
-        new(settings, agentWriter, sampler, scopeManager, statsd, discoveryService: discoveryService, telemetryController: telemetryController);
+        IDiscoveryService discoveryService = null,
+        ServiceRemappingHash serviceRemappingHash = null) =>
+        new(settings, agentWriter, sampler, scopeManager, statsd, discoveryService: discoveryService, telemetryController: telemetryController, serviceRemappingHash: serviceRemappingHash);
 
     /// <summary>
     /// Create a test instance of the Tracer, that doesn't use any shared instances

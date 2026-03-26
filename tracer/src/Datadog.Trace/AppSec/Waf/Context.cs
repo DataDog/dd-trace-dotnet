@@ -122,7 +122,7 @@ internal sealed class Context : IContext
         return differentValue && (fromSdk || !previousValueFromSdk);
     }
 
-    private unsafe IResult? RunInternal(IDictionary<string, object>? persistentAddressData, IDictionary<string, object>? ephemeralAddressData, ulong timeoutMicroSeconds, bool isRasp = false)
+    private unsafe Result? RunInternal(IDictionary<string, object>? persistentAddressData, IDictionary<string, object>? ephemeralAddressData, ulong timeoutMicroSeconds, bool isRasp = false)
     {
         DdwafObjectStruct retNative = default;
 

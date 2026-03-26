@@ -71,7 +71,7 @@ namespace Datadog.Trace.Configuration
         /// <param name="isLibDatadogAvailable">Used to check whether the libdatadog library is available. Useful for integration tests</param>
         internal TracerSettings(IConfigurationSource? source, IConfigurationTelemetry telemetry, OverrideErrorLog errorLog, LibDatadogAvailableResult isLibDatadogAvailable)
         {
-            var commaSeparator = new[] { ',' };
+            var commaSeparator = Separators.Comma;
             source ??= NullConfigurationSource.Instance;
             ErrorLog = errorLog;
             var config = new ConfigurationBuilder(source, telemetry);
@@ -628,6 +628,10 @@ namespace Datadog.Trace.Configuration
                                      defaultValue: new(DbmPropagationLevel.Disabled, nameof(DbmPropagationLevel.Disabled)),
                                      converter: x => ToDbmPropagationInput(x) ?? ParsingResult<DbmPropagationLevel>.Failure(),
                                      validator: null);
+
+            DbmInjectSqlBasehash = config
+                .WithKeys(ConfigurationKeys.DbmInjectSqlBasehash)
+                .AsBool(false);
 
             RemoteConfigurationEnabled = config.WithKeys(ConfigurationKeys.Rcm.RemoteConfigurationEnabled).AsBool(true);
 
@@ -1242,6 +1246,12 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating whether the tracer should propagate service data in db queries
         /// </summary>
         internal DbmPropagationLevel DbmPropagationMode { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the tracer should inject Base Hash in SQL Comments.
+        /// Default value is false (disabled).
+        /// </summary>
+        internal bool DbmInjectSqlBasehash { get; }
 
         /// <summary>
         /// Gets a value indicating whether the tracer will generate 128-bit trace ids

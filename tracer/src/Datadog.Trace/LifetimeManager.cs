@@ -39,8 +39,8 @@ namespace Datadog.Trace
         // and Windows equivalents). Without a custom handler, the OS default behavior can terminate the process
         // immediately, skipping managed shutdown events like AppDomain.ProcessExit. We keep these registrations
         // alive for the lifetime of the process to restore the previous behavior.
-        private IDisposable? _sigtermRegistration;
-        private IDisposable? _sighupRegistration;
+        private PosixSignalRegistration? _sigtermRegistration;
+        private PosixSignalRegistration? _sighupRegistration;
 
         // Prevent multiple concurrent calls to Environment.Exit if multiple termination signals are received.
         private int _terminationExitInitiated;
