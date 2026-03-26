@@ -780,7 +780,7 @@ supportedConfigurations:
     default: 'true'
     const_name: PropagateProcessTags
     documentation: |-
-      Enables propagation of process-level tags across traces. Type: `boolean`. Default: `false`
+      Enables propagation of process-level tags across traces. Type: `boolean`. Default: `true`
   DD_GIT_BRANCH:
   - implementation: A
     type: string
