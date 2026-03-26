@@ -1,4 +1,4 @@
-﻿// <copyright file="TestOptimizationClient.GetKnownTestsAsync.cs" company="Datadog">
+// <copyright file="TestOptimizationClient.GetKnownTestsAsync.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -23,6 +23,7 @@ internal sealed partial class TestOptimizationClient
 {
     private const string KnownTestsUrlPath = "api/v2/ci/libraries/tests";
     private const string KnownTestsType = "ci_app_libraries_tests_request";
+    private const int MaxKnownTestsPages = 10_000;
     private Uri? _knownTestsUrl;
 
     public async Task<KnownTestsResponse> GetKnownTestsAsync()
@@ -34,36 +35,79 @@ internal sealed partial class TestOptimizationClient
         }
 
         _knownTestsUrl ??= GetUriFromPath(KnownTestsUrlPath);
-        var query = new DataEnvelope<Data<KnownTestsQuery>>(
-            new Data<KnownTestsQuery>(
-                _commitSha,
-                KnownTestsType,
-                new KnownTestsQuery(_serviceName, _environment, _repositoryUrl, GetTestConfigurations())),
-            null);
 
-        var jsonQuery = JsonHelper.SerializeObject(query, SerializerSettings);
-        Log.Debug("TestOptimizationClient: KnownTests.JSON RQ = {Json}", jsonQuery);
+        var configurations = GetTestConfigurations();
+        KnownTestsResponse.KnownTestsModules? aggregateTests = null;
+        string? pageState = null;
+        var pageNumber = 0;
 
-        string? queryResponse;
-        try
+        do
         {
-            queryResponse = await SendJsonRequestAsync<KnownTestsCallbacks>(_knownTestsUrl, jsonQuery).ConfigureAwait(false);
+            pageNumber++;
+            var query = new DataEnvelope<Data<KnownTestsQuery>>(
+                new Data<KnownTestsQuery>(
+                    _commitSha,
+                    KnownTestsType,
+                    new KnownTestsQuery(_serviceName, _environment, _repositoryUrl, configurations, new PageInfoRequest(pageState))),
+                null);
+
+            var jsonQuery = JsonHelper.SerializeObject(query, SerializerSettings);
+            Log.Debug("TestOptimizationClient: KnownTests.JSON RQ (page {PageNumber}) = {Json}", pageNumber, jsonQuery);
+
+            string? queryResponse;
+            try
+            {
+                queryResponse = await SendJsonRequestAsync<KnownTestsCallbacks>(_knownTestsUrl, jsonQuery).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                TelemetryFactory.Metrics.RecordCountCIVisibilityKnownTestsRequestErrors(MetricTags.CIVisibilityErrorType.Network);
+                Log.Error<int>(ex, "TestOptimizationClient: Known tests request failed on page {PageNumber}.", pageNumber);
+                throw;
+            }
+
+            Log.Debug("TestOptimizationClient: KnownTests.JSON RS (page {PageNumber}) = {Json}", pageNumber, queryResponse);
+            if (string.IsNullOrEmpty(queryResponse))
+            {
+                break;
+            }
+
+            var deserializedResult = JsonHelper.DeserializeObject<DataEnvelope<Data<KnownTestsPageResponse>?>>(queryResponse);
+            var pageResponse = deserializedResult.Data?.Attributes;
+
+            if (pageResponse is null)
+            {
+                break;
+            }
+
+            // Merge page tests into aggregate
+            MergeKnownTests(ref aggregateTests, pageResponse.Value.Tests);
+
+            // Check pagination
+            var pageInfo = pageResponse.Value.PageInfo;
+            if (pageInfo is not { HasNext: true })
+            {
+                // No page_info or has_next is false — we're done
+                break;
+            }
+
+            if (string.IsNullOrEmpty(pageInfo.Value.Cursor))
+            {
+                Log.Warning<int>("TestOptimizationClient: Known tests response has has_next=true but no cursor on page {PageNumber}. Aborting pagination.", pageNumber);
+                return default;
+            }
+
+            pageState = pageInfo.Value.Cursor;
         }
-        catch (Exception ex)
-        {
-            TelemetryFactory.Metrics.RecordCountCIVisibilityKnownTestsRequestErrors(MetricTags.CIVisibilityErrorType.Network);
-            Log.Error(ex, "TestOptimizationClient: Known tests request failed.");
-            throw;
-        }
+        while (pageNumber < MaxKnownTestsPages);
 
-        Log.Debug("TestOptimizationClient: KnownTests.JSON RS = {Json}", queryResponse);
-        if (string.IsNullOrEmpty(queryResponse))
+        if (pageNumber >= MaxKnownTestsPages)
         {
+            Log.Warning<int>("TestOptimizationClient: Known tests pagination exceeded maximum of {MaxPages} pages. Aborting.", MaxKnownTestsPages);
             return default;
         }
 
-        var deserializedResult = JsonHelper.DeserializeObject<DataEnvelope<Data<KnownTestsResponse>?>>(queryResponse);
-        var finalResponse = deserializedResult.Data?.Attributes ?? default;
+        var finalResponse = new KnownTestsResponse(aggregateTests);
 
         // Count the number of tests for telemetry
         var testsCount = 0;
@@ -83,6 +127,50 @@ internal sealed partial class TestOptimizationClient
 
         TelemetryFactory.Metrics.RecordDistributionCIVisibilityKnownTestsResponseTests(testsCount);
         return finalResponse;
+    }
+
+    private static void MergeKnownTests(ref KnownTestsResponse.KnownTestsModules? aggregate, KnownTestsResponse.KnownTestsModules? page)
+    {
+        if (page is null or { Count: 0 })
+        {
+            return;
+        }
+
+        aggregate ??= new KnownTestsResponse.KnownTestsModules();
+
+        foreach (var moduleEntry in page)
+        {
+            if (moduleEntry.Value is null)
+            {
+                continue;
+            }
+
+            if (!aggregate.TryGetValue(moduleEntry.Key, out var existingSuites) || existingSuites is null)
+            {
+                existingSuites = new KnownTestsResponse.KnownTestsSuites();
+                aggregate[moduleEntry.Key] = existingSuites;
+            }
+
+            foreach (var suiteEntry in moduleEntry.Value)
+            {
+                if (suiteEntry.Value is null or { Length: 0 })
+                {
+                    continue;
+                }
+
+                if (!existingSuites.TryGetValue(suiteEntry.Key, out var existingTests) || existingTests is null)
+                {
+                    existingSuites[suiteEntry.Key] = suiteEntry.Value;
+                }
+                else
+                {
+                    var merged = new string[existingTests.Length + suiteEntry.Value.Length];
+                    existingTests.CopyTo(merged, 0);
+                    suiteEntry.Value.CopyTo(merged, existingTests.Length);
+                    existingSuites[suiteEntry.Key] = merged;
+                }
+            }
+        }
     }
 
     private readonly struct KnownTestsCallbacks : ICallbacks
@@ -126,19 +214,63 @@ internal sealed partial class TestOptimizationClient
         [JsonProperty("configurations")]
         public readonly TestsConfigurations Configurations;
 
-        public KnownTestsQuery(string service, string environment, string repositoryUrl, TestsConfigurations configurations)
+        [JsonProperty("page_info")]
+        public readonly PageInfoRequest PageInfo;
+
+        public KnownTestsQuery(string service, string environment, string repositoryUrl, TestsConfigurations configurations, PageInfoRequest pageInfo)
         {
             Service = service;
             Environment = environment;
             RepositoryUrl = repositoryUrl;
             Configurations = configurations;
+            PageInfo = pageInfo;
         }
+    }
+
+    private readonly struct PageInfoRequest
+    {
+        [JsonProperty("page_state")]
+        public readonly string? PageState;
+
+        public PageInfoRequest(string? pageState)
+        {
+            PageState = pageState;
+        }
+    }
+
+    private readonly struct PageInfoResponse
+    {
+        [JsonProperty("cursor")]
+        public readonly string? Cursor;
+
+        [JsonProperty("size")]
+        public readonly int Size;
+
+        [JsonProperty("has_next")]
+        public readonly bool HasNext;
+    }
+
+    /// <summary>
+    /// Internal response type for deserializing individual pages, which includes page_info.
+    /// </summary>
+    private readonly struct KnownTestsPageResponse
+    {
+        [JsonProperty("tests")]
+        public readonly KnownTestsResponse.KnownTestsModules? Tests;
+
+        [JsonProperty("page_info")]
+        public readonly PageInfoResponse? PageInfo;
     }
 
     public readonly struct KnownTestsResponse
     {
         [JsonProperty("tests")]
         public readonly KnownTestsModules? Tests;
+
+        public KnownTestsResponse(KnownTestsModules? tests)
+        {
+            Tests = tests;
+        }
 
         public sealed class KnownTestsSuites : Dictionary<string, string[]?>
         {

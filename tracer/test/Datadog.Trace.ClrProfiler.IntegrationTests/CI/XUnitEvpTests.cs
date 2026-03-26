@@ -118,6 +118,53 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
                 1,
                 115,
                 "efd_with_test_bypass");
+
+            // EFD with paginated known tests (TraitPassTest arrives on page 2)
+            yield return row.Concat(
+                new MockData(
+                    GetSettingsJson("true", "true", "false", "0"),
+                    [
+                        """
+                        {
+                            "data":{
+                                "id":"lNemDTwOV8U",
+                                "type":"ci_app_libraries_tests",
+                                "attributes":{
+                                    "tests":{},
+                                    "page_info":{
+                                        "cursor":"page-2-cursor",
+                                        "size":0,
+                                        "has_next":true
+                                    }
+                                }
+                            }
+                        }
+                        """,
+                        """
+                        {
+                            "data":{
+                                "id":"lNemDTwOV8U",
+                                "type":"ci_app_libraries_tests",
+                                "attributes":{
+                                    "tests":{
+                                        "Samples.XUnitTests":{
+                                            "Samples.XUnitTests.TestSuite":["TraitPassTest"]
+                                        }
+                                    },
+                                    "page_info":{
+                                        "cursor":"",
+                                        "size":1,
+                                        "has_next":false
+                                    }
+                                }
+                            }
+                        }
+                        """
+                    ],
+                    string.Empty),
+                1,
+                115,
+                "efd_with_test_bypass_paginated");
         }
     }
 

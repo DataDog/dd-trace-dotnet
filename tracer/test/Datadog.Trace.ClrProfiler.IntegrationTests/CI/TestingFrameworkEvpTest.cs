@@ -459,6 +459,7 @@ public abstract class TestingFrameworkEvpTest : TestHelper
             agent.Configuration.Endpoints = agent.Configuration.Endpoints.Where(e => !e.Contains(evpVersionToRemove)).ToArray();
 
             const string correlationId = "2e8a36bda770b683345957cc6c15baf9";
+            var knownTestsPageIndex = 0;
             agent.EventPlatformProxyPayloadReceived += (sender, e) =>
             {
                 if (e.Value.PathAndQuery.EndsWith("api/v2/libraries/tests/services/setting"))
@@ -469,7 +470,24 @@ public abstract class TestingFrameworkEvpTest : TestHelper
 
                 if (e.Value.PathAndQuery.EndsWith("api/v2/ci/libraries/tests"))
                 {
-                    e.Value.Response = string.IsNullOrEmpty(testScenario.MockData.TestsJson) ? new MockTracerResponse(string.Empty, 404) : new MockTracerResponse(testScenario.MockData.TestsJson, 200);
+                    if (testScenario.MockData.TestsJsonPages is { Length: > 0 } pages)
+                    {
+                        // Serve paginated responses sequentially
+                        var idx = knownTestsPageIndex++;
+                        if (idx < pages.Length)
+                        {
+                            e.Value.Response = new MockTracerResponse(pages[idx], 200);
+                        }
+                        else
+                        {
+                            e.Value.Response = new MockTracerResponse(string.Empty, 404);
+                        }
+                    }
+                    else
+                    {
+                        e.Value.Response = string.IsNullOrEmpty(testScenario.MockData.TestsJson) ? new MockTracerResponse(string.Empty, 404) : new MockTracerResponse(testScenario.MockData.TestsJson, 200);
+                    }
+
                     return;
                 }
 
@@ -576,11 +594,27 @@ public abstract class TestingFrameworkEvpTest : TestHelper
         public readonly string TestsJson;
         public readonly string TestManagementTestsJson;
 
+        /// <summary>
+        /// Optional paginated known tests responses. When non-null, the handler returns these
+        /// pages sequentially instead of <see cref="TestsJson"/>. Each entry must be a complete
+        /// JSON response including page_info with cursor/has_next.
+        /// </summary>
+        public readonly string[]? TestsJsonPages;
+
         public MockData(string settingsJson, string testsJson, string testManagementTestsJson)
         {
             SettingsJson = settingsJson;
             TestsJson = testsJson;
             TestManagementTestsJson = testManagementTestsJson;
+            TestsJsonPages = null;
+        }
+
+        public MockData(string settingsJson, string[] testsJsonPages, string testManagementTestsJson)
+        {
+            SettingsJson = settingsJson;
+            TestsJson = string.Empty;
+            TestManagementTestsJson = testManagementTestsJson;
+            TestsJsonPages = testsJsonPages;
         }
 
         public override string ToString()
