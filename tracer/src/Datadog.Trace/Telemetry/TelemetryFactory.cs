@@ -154,7 +154,7 @@ namespace Datadog.Trace.Telemetry
             }
         }
 
-        private ITelemetryController CreateController(
+        private TelemetryController CreateController(
             TracerSettings tracerSettings,
             TelemetryTransportFactory telemetryTransports,
             TelemetrySettings settings,
