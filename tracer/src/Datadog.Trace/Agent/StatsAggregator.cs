@@ -36,6 +36,7 @@ namespace Datadog.Trace.Agent
         private readonly IApi _api;
         private readonly bool _isOtlp;
         private readonly ITraceProcessor[] _traceProcessors;
+        private readonly ITraceProcessor _obfuscatorProcessor;
 
         private readonly TaskCompletionSource<bool> _processExit;
 
@@ -77,8 +78,9 @@ namespace Datadog.Trace.Agent
             _traceProcessors = new ITraceProcessor[]
             {
                 new Processors.NormalizerTraceProcessor(),
-                new Processors.ObfuscatorTraceProcessor(),
             };
+
+            _obfuscatorProcessor = new Processors.ObfuscatorTraceProcessor();
 
             _prioritySampler = new PrioritySampler();
             _errorSampler = new ErrorSampler();
@@ -209,6 +211,20 @@ namespace Datadog.Trace.Agent
                 catch (Exception e)
                 {
                     Log.Error(e, "Error executing trace processor {TraceProcessorType}", processor?.GetType());
+                }
+            }
+
+            // Only obfuscate resources when the tracer has negotiated obfuscation responsibility.
+            // The tracer currently only supports obfuscation version 1 (SQL, Cassandra, Redis).
+            if (Volatile.Read(ref _tracerObfuscationVersion) == 1)
+            {
+                try
+                {
+                    spans = _obfuscatorProcessor.Process(in spans);
+                }
+                catch (Exception e)
+                {
+                    Log.Error(e, "Error executing obfuscator trace processor");
                 }
             }
 
