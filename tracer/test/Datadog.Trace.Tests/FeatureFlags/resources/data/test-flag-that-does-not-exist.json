@@ -9,6 +9,7 @@
       "country": "US"
     },
     "result": {
+      "reason": "Error",
       "value": 0.0
     }
   },
@@ -22,6 +23,7 @@
       "country": "Canada"
     },
     "result": {
+      "reason": "Error",
       "value": 0.0
     }
   },
@@ -34,6 +36,7 @@
       "age": 50
     },
     "result": {
+      "reason": "Error",
       "value": 0.0
     }
   }

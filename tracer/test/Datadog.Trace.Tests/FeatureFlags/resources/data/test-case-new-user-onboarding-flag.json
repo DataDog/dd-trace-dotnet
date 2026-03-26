@@ -9,6 +9,7 @@
       "country": "US"
     },
     "result": {
+      "reason": "TargetingMatch",
       "value": "green",
       "variant": "green",
       "flagMetadata": {
@@ -28,6 +29,7 @@
       "country": "Canada"
     },
     "result": {
+      "reason": "Default",
       "value": "default"
     }
   },
@@ -40,6 +42,7 @@
       "age": 50
     },
     "result": {
+      "reason": "Default",
       "value": "default"
     }
   },
@@ -54,6 +57,7 @@
       "age": 25
     },
     "result": {
+      "reason": "TargetingMatch",
       "value": "blue",
       "variant": "blue",
       "flagMetadata": {
@@ -74,6 +78,7 @@
       "age": 25
     },
     "result": {
+      "reason": "TargetingMatch",
       "value": "purple",
       "variant": "purple",
       "flagMetadata": {
@@ -95,6 +100,7 @@
       "age": 25
     },
     "result": {
+      "reason": "TargetingMatch",
       "value": "blue",
       "variant": "blue",
       "flagMetadata": {
@@ -115,6 +121,7 @@
       "age": 25
     },
     "result": {
+      "reason": "Default",
       "value": "default"
     }
   },
@@ -125,6 +132,7 @@
     "targetingKey": "1",
     "attributes": {},
     "result": {
+      "reason": "Default",
       "value": "default"
     }
   },
@@ -137,6 +145,7 @@
       "country": "Mexico"
     },
     "result": {
+      "reason": "TargetingMatch",
       "value": "blue",
       "variant": "blue",
       "flagMetadata": {
@@ -156,6 +165,7 @@
       "age": 33
     },
     "result": {
+      "reason": "TargetingMatch",
       "value": "control",
       "variant": "control",
       "flagMetadata": {
@@ -174,6 +184,7 @@
       "country": "Germany"
     },
     "result": {
+      "reason": "TargetingMatch",
       "value": "red",
       "variant": "red",
       "flagMetadata": {
@@ -192,6 +203,7 @@
       "country": "Germany"
     },
     "result": {
+      "reason": "TargetingMatch",
       "value": "yellow",
       "variant": "yellow",
       "flagMetadata": {
@@ -210,6 +222,7 @@
       "country": "Germany"
     },
     "result": {
+      "reason": "TargetingMatch",
       "value": "yellow",
       "variant": "yellow",
       "flagMetadata": {
@@ -228,6 +241,7 @@
       "country": "US"
     },
     "result": {
+      "reason": "TargetingMatch",
       "value": "blue",
       "variant": "blue",
       "flagMetadata": {
@@ -246,6 +260,7 @@
       "country": "Italy"
     },
     "result": {
+      "reason": "TargetingMatch",
       "value": "red",
       "variant": "red",
       "flagMetadata": {
@@ -264,6 +279,7 @@
       "email": "email@email.com"
     },
     "result": {
+      "reason": "Default",
       "value": "default"
     }
   },
@@ -274,6 +290,7 @@
     "targetingKey": "10",
     "attributes": {},
     "result": {
+      "reason": "Default",
       "value": "default"
     }
   },
@@ -284,6 +301,7 @@
     "targetingKey": "11",
     "attributes": {},
     "result": {
+      "reason": "Default",
       "value": "default"
     }
   },
@@ -296,6 +314,7 @@
       "country": "US"
     },
     "result": {
+      "reason": "TargetingMatch",
       "value": "blue",
       "variant": "blue",
       "flagMetadata": {
@@ -314,6 +333,7 @@
       "country": "Canada"
     },
     "result": {
+      "reason": "TargetingMatch",
       "value": "blue",
       "variant": "blue",
       "flagMetadata": {
@@ -330,6 +350,7 @@
     "targetingKey": "14",
     "attributes": {},
     "result": {
+      "reason": "Default",
       "value": "default"
     }
   },
@@ -342,6 +363,7 @@
       "country": "Denmark"
     },
     "result": {
+      "reason": "TargetingMatch",
       "value": "yellow",
       "variant": "yellow",
       "flagMetadata": {
@@ -360,6 +382,7 @@
       "country": "Norway"
     },
     "result": {
+      "reason": "TargetingMatch",
       "value": "control",
       "variant": "control",
       "flagMetadata": {
@@ -378,6 +401,7 @@
       "country": "UK"
     },
     "result": {
+      "reason": "TargetingMatch",
       "value": "control",
       "variant": "control",
       "flagMetadata": {
@@ -396,6 +420,7 @@
       "country": "UK"
     },
     "result": {
+      "reason": "Default",
       "value": "default"
     }
   },
@@ -408,6 +433,7 @@
       "country": "UK"
     },
     "result": {
+      "reason": "TargetingMatch",
       "value": "red",
       "variant": "red",
       "flagMetadata": {

@@ -6,6 +6,7 @@
     "targetingKey": "alice",
     "attributes": {},
     "result": {
+      "reason": "Static",
       "value": "active",
       "variant": "active",
       "flagMetadata": {
@@ -24,6 +25,7 @@
       "country": "US"
     },
     "result": {
+      "reason": "Static",
       "value": "active",
       "variant": "active",
       "flagMetadata": {
@@ -42,6 +44,7 @@
       "version": "1.0.0"
     },
     "result": {
+      "reason": "Static",
       "value": "active",
       "variant": "active",
       "flagMetadata": {

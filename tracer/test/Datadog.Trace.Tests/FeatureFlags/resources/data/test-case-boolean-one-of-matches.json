@@ -8,6 +8,7 @@
       "one_of_flag": true
     },
     "result": {
+      "reason": "TargetingMatch",
       "value": 1,
       "variant": "1",
       "flagMetadata": {
@@ -26,6 +27,7 @@
       "one_of_flag": false
     },
     "result": {
+      "reason": "Default",
       "value": 0
     }
   },
@@ -38,6 +40,7 @@
       "one_of_flag": "True"
     },
     "result": {
+      "reason": "Default",
       "value": 0
     }
   },
@@ -50,6 +53,7 @@
       "matches_flag": true
     },
     "result": {
+      "reason": "TargetingMatch",
       "value": 2,
       "variant": "2",
       "flagMetadata": {
@@ -68,6 +72,7 @@
       "matches_flag": false
     },
     "result": {
+      "reason": "Default",
       "value": 0
     }
   },
@@ -80,6 +85,7 @@
       "not_matches_flag": false
     },
     "result": {
+      "reason": "Default",
       "value": 0
     }
   },
@@ -92,6 +98,7 @@
       "not_matches_flag": true
     },
     "result": {
+      "reason": "TargetingMatch",
       "value": 4,
       "variant": "4",
       "flagMetadata": {
@@ -110,6 +117,7 @@
       "not_matches_flag": "False"
     },
     "result": {
+      "reason": "TargetingMatch",
       "value": 4,
       "variant": "4",
       "flagMetadata": {
@@ -128,6 +136,7 @@
       "not_one_of_flag": true
     },
     "result": {
+      "reason": "TargetingMatch",
       "value": 3,
       "variant": "3",
       "flagMetadata": {
@@ -146,6 +155,7 @@
       "not_one_of_flag": false
     },
     "result": {
+      "reason": "Default",
       "value": 0
     }
   },
@@ -158,6 +168,7 @@
       "not_one_of_flag": "False"
     },
     "result": {
+      "reason": "TargetingMatch",
       "value": 3,
       "variant": "3",
       "flagMetadata": {
@@ -176,6 +187,7 @@
       "not_one_of_flag": "true"
     },
     "result": {
+      "reason": "TargetingMatch",
       "value": 3,
       "variant": "3",
       "flagMetadata": {
@@ -194,6 +206,7 @@
       "not_one_of_flag": "false"
     },
     "result": {
+      "reason": "Default",
       "value": 0
     }
   },
@@ -206,6 +219,7 @@
       "null_flag": "null"
     },
     "result": {
+      "reason": "TargetingMatch",
       "value": 5,
       "variant": "5",
       "flagMetadata": {
@@ -224,6 +238,7 @@
       "null_flag": null
     },
     "result": {
+      "reason": "Default",
       "value": 0
     }
   },
@@ -234,6 +249,7 @@
     "targetingKey": "pete",
     "attributes": {},
     "result": {
+      "reason": "Default",
       "value": 0
     }
   }

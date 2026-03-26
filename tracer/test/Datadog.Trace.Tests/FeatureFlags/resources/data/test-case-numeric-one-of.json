@@ -8,6 +8,7 @@
       "number": 1
     },
     "result": {
+      "reason": "TargetingMatch",
       "value": 1,
       "variant": "1",
       "flagMetadata": {
@@ -26,6 +27,7 @@
       "number": 2
     },
     "result": {
+      "reason": "Default",
       "value": 0
     }
   },
@@ -38,6 +40,7 @@
       "number": 3
     },
     "result": {
+      "reason": "TargetingMatch",
       "value": 3,
       "variant": "3",
       "flagMetadata": {
@@ -56,6 +59,7 @@
       "number": 4
     },
     "result": {
+      "reason": "TargetingMatch",
       "value": 3,
       "variant": "3",
       "flagMetadata": {
@@ -74,6 +78,7 @@
       "number": "1"
     },
     "result": {
+      "reason": "TargetingMatch",
       "value": 1,
       "variant": "1",
       "flagMetadata": {
@@ -92,6 +97,7 @@
       "number": 1
     },
     "result": {
+      "reason": "TargetingMatch",
       "value": 1,
       "variant": "1",
       "flagMetadata": {
@@ -110,6 +116,7 @@
       "number": 123456789
     },
     "result": {
+      "reason": "TargetingMatch",
       "value": 2,
       "variant": "2",
       "flagMetadata": {

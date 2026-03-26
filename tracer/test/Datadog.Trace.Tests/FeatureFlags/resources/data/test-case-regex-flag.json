@@ -9,6 +9,7 @@
       "email": "alice@example.com"
     },
     "result": {
+      "reason": "TargetingMatch",
       "value": "partial-example",
       "variant": "partial-example",
       "flagMetadata": {
@@ -28,6 +29,7 @@
       "email": "bob@test.com"
     },
     "result": {
+      "reason": "TargetingMatch",
       "value": "test",
       "variant": "test",
       "flagMetadata": {
@@ -46,6 +48,7 @@
       "version": "2.1.13"
     },
     "result": {
+      "reason": "Default",
       "value": "none"
     }
   },
@@ -59,6 +62,7 @@
       "email": "derek@gmail.com"
     },
     "result": {
+      "reason": "Default",
       "value": "none"
     }
   }

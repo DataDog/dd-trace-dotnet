@@ -50,6 +50,7 @@ public partial class FeatureFlagsEvaluatorTests
 
         AssertEqual(testCase.Result.Value, result.Value);
         AssertEqual(testCase.Result.Variant, result.Variant);
+        Assert.Equal(testCase.Result.Reason, result.Reason);
 
         Assert.NotNull(description);
 

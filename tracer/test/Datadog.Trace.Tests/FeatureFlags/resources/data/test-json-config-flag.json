@@ -11,6 +11,7 @@
       "country": "US"
     },
     "result": {
+      "reason": "Split",
       "value": {
         "integer": 1,
         "string": "one",
@@ -36,6 +37,7 @@
       "country": "Canada"
     },
     "result": {
+      "reason": "Split",
       "value": {
         "integer": 2,
         "string": "two",
@@ -60,6 +62,7 @@
       "age": 50
     },
     "result": {
+      "reason": "Split",
       "value": {
         "integer": 2,
         "string": "two",
@@ -84,6 +87,7 @@
       "Force Empty": true
     },
     "result": {
+      "reason": "TargetingMatch",
       "value": {},
       "variant": "empty",
       "flagMetadata": {

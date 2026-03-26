@@ -9,6 +9,7 @@
       "country": "US"
     },
     "result": {
+      "reason": "Static",
       "value": "current",
       "variant": "current",
       "flagMetadata": {
@@ -28,6 +29,7 @@
       "country": "Canada"
     },
     "result": {
+      "reason": "Static",
       "value": "current",
       "variant": "current",
       "flagMetadata": {
@@ -46,6 +48,7 @@
       "version": "2.1.13"
     },
     "result": {
+      "reason": "Static",
       "value": "current",
       "variant": "current",
       "flagMetadata": {

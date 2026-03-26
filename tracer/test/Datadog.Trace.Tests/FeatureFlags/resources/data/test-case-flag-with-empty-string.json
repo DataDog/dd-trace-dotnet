@@ -8,6 +8,7 @@
       "country": "US"
     },
     "result": {
+      "reason": "TargetingMatch",
       "value": "",
       "variant": "empty_string",
       "flagMetadata": {
@@ -24,6 +25,7 @@
     "targetingKey": "bob",
     "attributes": {},
     "result": {
+      "reason": "Split",
       "value": "non_empty",
       "variant": "non_empty",
       "flagMetadata": {

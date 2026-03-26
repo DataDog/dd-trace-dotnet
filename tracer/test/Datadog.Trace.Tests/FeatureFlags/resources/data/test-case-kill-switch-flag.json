@@ -9,6 +9,7 @@
       "country": "US"
     },
     "result": {
+      "reason": "TargetingMatch",
       "value": true,
       "variant": "on",
       "flagMetadata": {
@@ -28,6 +29,7 @@
       "country": "Canada"
     },
     "result": {
+      "reason": "TargetingMatch",
       "value": true,
       "variant": "on",
       "flagMetadata": {
@@ -47,6 +49,7 @@
       "country": "canada"
     },
     "result": {
+      "reason": "Static",
       "value": false,
       "variant": "off",
       "flagMetadata": {
@@ -65,6 +68,7 @@
       "age": 40
     },
     "result": {
+      "reason": "Static",
       "value": false,
       "variant": "off",
       "flagMetadata": {
@@ -85,6 +89,7 @@
       "age": 25
     },
     "result": {
+      "reason": "TargetingMatch",
       "value": true,
       "variant": "on",
       "flagMetadata": {
@@ -101,6 +106,7 @@
     "targetingKey": "1",
     "attributes": {},
     "result": {
+      "reason": "Static",
       "value": false,
       "variant": "off",
       "flagMetadata": {
@@ -119,6 +125,7 @@
       "country": "Mexico"
     },
     "result": {
+      "reason": "TargetingMatch",
       "value": true,
       "variant": "on",
       "flagMetadata": {
@@ -138,6 +145,7 @@
       "age": 50
     },
     "result": {
+      "reason": "TargetingMatch",
       "value": true,
       "variant": "on",
       "flagMetadata": {
@@ -156,6 +164,7 @@
       "country": "Germany"
     },
     "result": {
+      "reason": "Static",
       "value": false,
       "variant": "off",
       "flagMetadata": {
@@ -174,6 +183,7 @@
       "country": "Germany"
     },
     "result": {
+      "reason": "Static",
       "value": false,
       "variant": "off",
       "flagMetadata": {
@@ -192,6 +202,7 @@
       "country": "Germany"
     },
     "result": {
+      "reason": "Static",
       "value": false,
       "variant": "off",
       "flagMetadata": {
@@ -211,6 +222,7 @@
       "age": 12
     },
     "result": {
+      "reason": "TargetingMatch",
       "value": true,
       "variant": "on",
       "flagMetadata": {
@@ -230,6 +242,7 @@
       "age": 60
     },
     "result": {
+      "reason": "TargetingMatch",
       "value": true,
       "variant": "on",
       "flagMetadata": {
@@ -248,6 +261,7 @@
       "email": "email@email.com"
     },
     "result": {
+      "reason": "Static",
       "value": false,
       "variant": "off",
       "flagMetadata": {
@@ -264,6 +278,7 @@
     "targetingKey": "10",
     "attributes": {},
     "result": {
+      "reason": "Static",
       "value": false,
       "variant": "off",
       "flagMetadata": {
@@ -280,6 +295,7 @@
     "targetingKey": "11",
     "attributes": {},
     "result": {
+      "reason": "Static",
       "value": false,
       "variant": "off",
       "flagMetadata": {
@@ -298,6 +314,7 @@
       "country": "US"
     },
     "result": {
+      "reason": "TargetingMatch",
       "value": true,
       "variant": "on",
       "flagMetadata": {
@@ -316,6 +333,7 @@
       "country": "Canada"
     },
     "result": {
+      "reason": "TargetingMatch",
       "value": true,
       "variant": "on",
       "flagMetadata": {
@@ -332,6 +350,7 @@
     "targetingKey": "14",
     "attributes": {},
     "result": {
+      "reason": "Static",
       "value": false,
       "variant": "off",
       "flagMetadata": {
@@ -350,6 +369,7 @@
       "country": "Denmark"
     },
     "result": {
+      "reason": "Static",
       "value": false,
       "variant": "off",
       "flagMetadata": {
@@ -368,6 +388,7 @@
       "country": "Norway"
     },
     "result": {
+      "reason": "Static",
       "value": false,
       "variant": "off",
       "flagMetadata": {
@@ -386,6 +407,7 @@
       "country": "UK"
     },
     "result": {
+      "reason": "Static",
       "value": false,
       "variant": "off",
       "flagMetadata": {
@@ -404,6 +426,7 @@
       "country": "UK"
     },
     "result": {
+      "reason": "Static",
       "value": false,
       "variant": "off",
       "flagMetadata": {
@@ -422,6 +445,7 @@
       "country": "UK"
     },
     "result": {
+      "reason": "Static",
       "value": false,
       "variant": "off",
       "flagMetadata": {

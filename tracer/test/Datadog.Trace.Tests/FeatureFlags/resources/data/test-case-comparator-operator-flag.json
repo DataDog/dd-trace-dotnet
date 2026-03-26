@@ -9,6 +9,7 @@
       "country": "US"
     },
     "result": {
+      "reason": "TargetingMatch",
       "value": "small",
       "variant": "small",
       "flagMetadata": {
@@ -28,6 +29,7 @@
       "country": "Canada"
     },
     "result": {
+      "reason": "TargetingMatch",
       "value": "medium",
       "variant": "medium",
       "flagMetadata": {
@@ -46,6 +48,7 @@
       "size": 25
     },
     "result": {
+      "reason": "Default",
       "value": "unknown"
     }
   },
@@ -58,6 +61,7 @@
       "size": 26
     },
     "result": {
+      "reason": "TargetingMatch",
       "value": "large",
       "variant": "large",
       "flagMetadata": {
@@ -76,6 +80,7 @@
       "country": "UK"
     },
     "result": {
+      "reason": "Default",
       "value": "unknown"
     }
   }

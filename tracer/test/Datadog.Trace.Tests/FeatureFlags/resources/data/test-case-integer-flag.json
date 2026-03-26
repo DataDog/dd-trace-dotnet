@@ -9,6 +9,7 @@
       "country": "US"
     },
     "result": {
+      "reason": "TargetingMatch",
       "value": 3,
       "variant": "three",
       "flagMetadata": {
@@ -28,6 +29,7 @@
       "country": "Canada"
     },
     "result": {
+      "reason": "TargetingMatch",
       "value": 3,
       "variant": "three",
       "flagMetadata": {
@@ -46,6 +48,7 @@
       "age": 50
     },
     "result": {
+      "reason": "Split",
       "value": 2,
       "variant": "two",
       "flagMetadata": {
@@ -66,6 +69,7 @@
       "age": 25
     },
     "result": {
+      "reason": "TargetingMatch",
       "value": 3,
       "variant": "three",
       "flagMetadata": {
@@ -82,6 +86,7 @@
     "targetingKey": "1",
     "attributes": {},
     "result": {
+      "reason": "Split",
       "value": 2,
       "variant": "two",
       "flagMetadata": {
@@ -98,6 +103,7 @@
     "targetingKey": "2",
     "attributes": {},
     "result": {
+      "reason": "Split",
       "value": 2,
       "variant": "two",
       "flagMetadata": {
@@ -114,6 +120,7 @@
     "targetingKey": "3",
     "attributes": {},
     "result": {
+      "reason": "Split",
       "value": 2,
       "variant": "two",
       "flagMetadata": {
@@ -130,6 +137,7 @@
     "targetingKey": "4",
     "attributes": {},
     "result": {
+      "reason": "Split",
       "value": 2,
       "variant": "two",
       "flagMetadata": {
@@ -146,6 +154,7 @@
     "targetingKey": "5",
     "attributes": {},
     "result": {
+      "reason": "Split",
       "value": 1,
       "variant": "one",
       "flagMetadata": {
@@ -162,6 +171,7 @@
     "targetingKey": "6",
     "attributes": {},
     "result": {
+      "reason": "Split",
       "value": 2,
       "variant": "two",
       "flagMetadata": {
@@ -178,6 +188,7 @@
     "targetingKey": "7",
     "attributes": {},
     "result": {
+      "reason": "Split",
       "value": 1,
       "variant": "one",
       "flagMetadata": {
@@ -194,6 +205,7 @@
     "targetingKey": "8",
     "attributes": {},
     "result": {
+      "reason": "Split",
       "value": 1,
       "variant": "one",
       "flagMetadata": {
@@ -210,6 +222,7 @@
     "targetingKey": "9",
     "attributes": {},
     "result": {
+      "reason": "Split",
       "value": 2,
       "variant": "two",
       "flagMetadata": {
@@ -226,6 +239,7 @@
     "targetingKey": "10",
     "attributes": {},
     "result": {
+      "reason": "Split",
       "value": 2,
       "variant": "two",
       "flagMetadata": {
@@ -242,6 +256,7 @@
     "targetingKey": "11",
     "attributes": {},
     "result": {
+      "reason": "Split",
       "value": 1,
       "variant": "one",
       "flagMetadata": {
@@ -258,6 +273,7 @@
     "targetingKey": "12",
     "attributes": {},
     "result": {
+      "reason": "Split",
       "value": 1,
       "variant": "one",
       "flagMetadata": {
@@ -274,6 +290,7 @@
     "targetingKey": "13",
     "attributes": {},
     "result": {
+      "reason": "Split",
       "value": 2,
       "variant": "two",
       "flagMetadata": {
@@ -290,6 +307,7 @@
     "targetingKey": "14",
     "attributes": {},
     "result": {
+      "reason": "Split",
       "value": 1,
       "variant": "one",
       "flagMetadata": {
@@ -306,6 +324,7 @@
     "targetingKey": "15",
     "attributes": {},
     "result": {
+      "reason": "Split",
       "value": 2,
       "variant": "two",
       "flagMetadata": {
@@ -322,6 +341,7 @@
     "targetingKey": "16",
     "attributes": {},
     "result": {
+      "reason": "Split",
       "value": 2,
       "variant": "two",
       "flagMetadata": {
@@ -338,6 +358,7 @@
     "targetingKey": "17",
     "attributes": {},
     "result": {
+      "reason": "Split",
       "value": 1,
       "variant": "one",
       "flagMetadata": {
@@ -354,6 +375,7 @@
     "targetingKey": "18",
     "attributes": {},
     "result": {
+      "reason": "Split",
       "value": 1,
       "variant": "one",
       "flagMetadata": {
@@ -370,6 +392,7 @@
     "targetingKey": "19",
     "attributes": {},
     "result": {
+      "reason": "Split",
       "value": 1,
       "variant": "one",
       "flagMetadata": {

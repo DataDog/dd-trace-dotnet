@@ -9,6 +9,7 @@
       "country": "US"
     },
     "result": {
+      "reason": "Default",
       "value": "default_value"
     }
   },
@@ -22,6 +23,7 @@
       "country": "Canada"
     },
     "result": {
+      "reason": "Default",
       "value": "default_value"
     }
   },
@@ -34,6 +36,7 @@
       "age": 50
     },
     "result": {
+      "reason": "Default",
       "value": "default_value"
     }
   }

@@ -6,6 +6,7 @@
     "targetingKey": "ash",
     "attributes": {},
     "result": {
+      "reason": "Split",
       "value": {
         "a": "kümmert",
         "b": "schön"
@@ -25,6 +26,7 @@
     "targetingKey": "ben",
     "attributes": {},
     "result": {
+      "reason": "Split",
       "value": {
         "a": "піклуватися",
         "b": "любов"
@@ -44,6 +46,7 @@
     "targetingKey": "cameron",
     "attributes": {},
     "result": {
+      "reason": "Split",
       "value": {
         "a": "照顾",
         "b": "漂亮"
@@ -63,6 +66,7 @@
     "targetingKey": "darryl",
     "attributes": {},
     "result": {
+      "reason": "Split",
       "value": {
         "a": "🤗",
         "b": "🌸"
