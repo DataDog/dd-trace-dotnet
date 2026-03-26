@@ -2368,8 +2368,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { string.Empty },
 #else
 #if NET48
-                new object[] { "1.5.14" },
                 new object[] { "1.4.214" },
+                new object[] { "1.5.14" },
                 new object[] { "2.12.0" },
                 new object[] { "3.1.1" },
                 new object[] { "4.3.1" },
