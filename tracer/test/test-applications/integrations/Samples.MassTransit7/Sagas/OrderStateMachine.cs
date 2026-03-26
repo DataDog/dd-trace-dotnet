@@ -28,6 +28,7 @@ public class OrderStateMachine : MassTransitStateMachine<OrderState>
                     context.Instance.CustomerName = context.Data.CustomerName;
                     context.Instance.Amount = context.Data.Amount;
                     context.Instance.SubmittedAt = DateTime.UtcNow;
+                    TestSignal.Set($"saga:submitted:{context.Data.OrderId}");
                 })
                 .TransitionTo(Submitted));
 
@@ -38,6 +39,7 @@ public class OrderStateMachine : MassTransitStateMachine<OrderState>
                 {
                     Console.WriteLine($"[Saga] Order {context.Data.OrderId} accepted");
                     context.Instance.AcceptedAt = DateTime.UtcNow;
+                    TestSignal.Set($"saga:accepted:{context.Data.OrderId}");
                 })
                 .TransitionTo(Accepted),
             When(OrderFailed)
@@ -55,6 +57,7 @@ public class OrderStateMachine : MassTransitStateMachine<OrderState>
                 {
                     Console.WriteLine($"[Saga] Order {context.Data.OrderId} completed");
                     context.Instance.CompletedAt = DateTime.UtcNow;
+                    TestSignal.Set($"saga:completed:{context.Data.OrderId}");
                 })
                 .TransitionTo(Completed)
                 .Finalize());

@@ -17,6 +17,7 @@ public class GettingStartedConsumer : IConsumer<GettingStartedMessage>
     {
         Console.WriteLine($"CONSUMER: {context.Message.Value}");
         _logger.LogInformation("Received Text: {Text}", context.Message.Value);
+        TestSignal.Set(context.Message.Value);
         return Task.CompletedTask;
     }
 }
