@@ -106,6 +106,10 @@ public class MassTransit8Tests : TracingIntegrationTest
             var payloadSizeRegex = new Regex(@"messaging\.message\.payload_size_bytes: \d+");
             settings.AddRegexScrubber(payloadSizeRegex, "messaging.message.payload_size_bytes: size_bytes");
 
+            // Scrub MassTransit OTEL library version, which varies with the tested package version
+            var otelLibraryVersionRegex = new Regex(@"otel\.library\.version: [\d\.]+");
+            settings.AddRegexScrubber(otelLibraryVersionRegex, "otel.library.version: mass-transit-version");
+
             // Remove optional messaging.message.body.size tag (only present in some MassTransit versions)
             var bodySizeRegex = new Regex(@"\n      messaging\.message\.body\.size: \d+");
             settings.AddRegexScrubber(bodySizeRegex, string.Empty);
@@ -183,6 +187,9 @@ public class MassTransit8Tests : TracingIntegrationTest
 
             var payloadSizeRegex = new Regex(@"messaging\.message\.payload_size_bytes: \d+");
             settings.AddRegexScrubber(payloadSizeRegex, "messaging.message.payload_size_bytes: size_bytes");
+
+            var otelLibraryVersionRegex = new Regex(@"otel\.library\.version: [\d\.]+");
+            settings.AddRegexScrubber(otelLibraryVersionRegex, "otel.library.version: mass-transit-version");
 
             // Remove optional messaging.message.body.size tag (only present in some MassTransit versions)
             var bodySizeRegex = new Regex(@"\n      messaging\.message\.body\.size: \d+");
