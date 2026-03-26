@@ -113,6 +113,11 @@ namespace Datadog.Trace
             ServiceRemappingHash = serviceRemappingHash;
 
             SpanContextPropagator = SpanContextPropagatorFactory.GetSpanContextPropagator(settings.PropagationStyleInject, settings.PropagationStyleExtract, settings.PropagationExtractFirstOnly, settings.PropagationBehaviorExtract);
+
+            // Eagerly initialize the root session ID so child processes inherit it
+            // even if spawned before the first telemetry flush.
+            _ = RuntimeId.GetRootSessionId();
+
             UpdatePerTraceSettings(settings.Manager.InitialMutableSettings);
             _settingSubscription = settings.Manager.SubscribeToChanges(changes =>
             {
