@@ -51,11 +51,13 @@ try_restart_docker()
 {
     if command -v systemctl >/dev/null 2>&1; then
         log "Attempting Docker service restart..."
-        if systemctl restart docker 2>&1; then
+        local output
+        output=$(systemctl restart docker 2>&1)
+        if [ $? -eq 0 ]; then
             log "systemctl restart docker completed"
             return 0
         else
-            log "systemctl restart docker failed"
+            log "systemctl restart docker failed: ${output}"
             return 1
         fi
     else
