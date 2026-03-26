@@ -86,11 +86,27 @@ internal static class FeatureFlagsSdk
             evaluation.FlagKey,
             (T)value,
             ToErrorType(evaluation.Reason, evaluation.Error),
-            evaluation.Reason.ToString(),
+            ToReasonString(evaluation.Reason),
             evaluation.Variant,
             evaluation.Error,
             ToMetadata(evaluation.FlagMetadata));
         return res;
+    }
+
+    private static string ToReasonString(Datadog.Trace.FeatureFlags.EvaluationReason reason)
+    {
+        return reason switch
+        {
+            Datadog.Trace.FeatureFlags.EvaluationReason.Default => "DEFAULT",
+            Datadog.Trace.FeatureFlags.EvaluationReason.Static => "STATIC",
+            Datadog.Trace.FeatureFlags.EvaluationReason.TargetingMatch => "TARGETING_MATCH",
+            Datadog.Trace.FeatureFlags.EvaluationReason.Split => "SPLIT",
+            Datadog.Trace.FeatureFlags.EvaluationReason.Disabled => "DISABLED",
+            Datadog.Trace.FeatureFlags.EvaluationReason.Cached => "CACHED",
+            Datadog.Trace.FeatureFlags.EvaluationReason.Unknown => "UNKNOWN",
+            Datadog.Trace.FeatureFlags.EvaluationReason.Error => "ERROR",
+            _ => reason.ToString(),
+        };
     }
 
     private static ErrorType ToErrorType(Datadog.Trace.FeatureFlags.EvaluationReason reason, string? errorMessage)

@@ -149,7 +149,12 @@ namespace Datadog.Trace.FeatureFlags
 
                             if (allShardsMatch)
                             {
-                                return ResolveVariant(flagKey, resultType, defaultValue, flag, split.VariationKey, allocation, now, context);
+                                var reason = allocation.Rules is { Count: > 0 }
+                                    ? EvaluationReason.TargetingMatch
+                                    : split.Shards is { Count: > 0 }
+                                        ? EvaluationReason.Split
+                                        : EvaluationReason.Static;
+                                return ResolveVariant(flagKey, resultType, defaultValue, flag, split.VariationKey, allocation, reason, now, context);
                             }
                         }
                     }
@@ -616,6 +621,7 @@ namespace Datadog.Trace.FeatureFlags
             Flag flag,
             string variationKey,
             Allocation allocation,
+            EvaluationReason reason,
             DateTime evalTime,
             EvaluationContext? context)
         {
@@ -643,7 +649,7 @@ namespace Datadog.Trace.FeatureFlags
             var evaluation = new Evaluation(
                 flagKey,
                 mappedValue,
-                EvaluationReason.TargetingMatch,
+                reason,
                 variant: variant.Key,
                 metadata: metadata);
 
