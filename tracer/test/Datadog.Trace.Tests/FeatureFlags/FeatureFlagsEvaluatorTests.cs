@@ -524,11 +524,42 @@ public partial class FeatureFlagsEvaluatorTests
     }
 
     [Fact]
+    public void NullTargetingKey_RuleWithIdAttribute_ReturnsTargetingKeyMissing()
+    {
+        // Rule that matches on "id" attribute — with null targeting key, the "id" fallback
+        // throws MissingTargetingKeyException because there's no targeting key to use
+        var variants = new Dictionary<string, Variant>
+        {
+            ["matched"] = new Variant { Key = "matched", Value = "matched-value" },
+        };
+
+        var conditions = new List<ConditionConfiguration>
+        {
+            new ConditionConfiguration { Operator = ConditionOperator.MATCHES, Attribute = "id", Value = ".*" },
+        };
+
+        var rules = new List<Rule> { new Rule(conditions) };
+        var splits = new List<Split> { new Split { Shards = new List<Shard>(), VariationKey = "matched" } };
+        var alloc = new Allocation { Key = "id-alloc", Rules = rules, Splits = splits, DoLog = false };
+        var flag = new Flag { Key = "id-rule-flag", Enabled = true, VariationType = ValueType.String, Variations = variants, Allocations = new List<Allocation> { alloc } };
+
+        var flags = new Dictionary<string, Flag> { ["id-rule-flag"] = flag };
+        var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration { Flags = flags });
+        var ctx = new EvaluationContext(null);
+
+        var result = evaluator.Evaluate("id-rule-flag", Trace.FeatureFlags.ValueType.String, "default", ctx);
+
+        Assert.Equal("default", result.Value);
+        Assert.Equal(EvaluationReason.Error, result.Reason);
+        Assert.Equal("TARGETING_KEY_MISSING", result.Error);
+    }
+
+    [Fact]
     public void EmptyStringTargetingKey_ShardedFlag_ReturnsValue()
     {
         var flags = new Dictionary<string, Flag>
         {
-            ["simple-string"] = FeatureFlagsHelpers.CreateSimpleFlag("simple-string", ValueType.String, "default", "on")
+            ["simple-string"] = FeatureFlagsHelpers.CreateSimpleFlag("simple-string", ValueType.String, "sharded-value", "on")
         };
 
         var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration { Flags = flags });
@@ -536,7 +567,7 @@ public partial class FeatureFlagsEvaluatorTests
 
         var result = evaluator.Evaluate("simple-string", Trace.FeatureFlags.ValueType.String, "fallback", ctx);
 
-        Assert.Equal("default", result.Value);
+        Assert.Equal("sharded-value", result.Value);
         Assert.NotEqual(EvaluationReason.Error, result.Reason);
         Assert.Equal("on", result.Variant);
         Assert.Null(result.Error);
