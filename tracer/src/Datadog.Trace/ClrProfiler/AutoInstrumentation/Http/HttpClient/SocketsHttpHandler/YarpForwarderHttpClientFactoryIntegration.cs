@@ -22,7 +22,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.SocketsH
     MethodName = "ConfigureHandler",
     ReturnTypeName = ClrNames.Void,
     ParameterTypeNames = new[] { "Yarp.ReverseProxy.Forwarder.ForwarderHttpClientContext", "System.Net.Http.SocketsHttpHandler" },
-    MinimumVersion = "1.1.0",
+    MinimumVersion = "1.0.0",
     MaximumVersion = "2.*.*",
     IntegrationName = IntegrationName)]
 [Browsable(false)]

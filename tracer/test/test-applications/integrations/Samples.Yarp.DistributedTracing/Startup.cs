@@ -43,12 +43,7 @@ namespace Samples.Yarp.DistributedTracing
                 .ConfigureResource(r => r.AddService("yarp-sample"))
                 .WithTracing(tracing => tracing
                     .AddAspNetCoreInstrumentation()
-                    .AddHttpClientInstrumentation()
-                    .AddOtlpExporter(o =>
-                    {
-                        // Use a non-routable endpoint so exports silently fail
-                        o.Endpoint = new Uri("http://192.0.2.1:4317");
-                    }));
+                    .AddHttpClientInstrumentation());
 #endif
         }
 

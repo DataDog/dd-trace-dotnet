@@ -8967,7 +8967,7 @@
     ],
     "MinimumVersion": {
       "Item1": 1,
-      "Item2": 1,
+      "Item2": 0,
       "Item3": 0
     },
     "MaximumVersion": {
