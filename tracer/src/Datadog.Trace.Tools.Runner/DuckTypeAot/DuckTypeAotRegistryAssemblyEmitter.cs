@@ -3226,6 +3226,9 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <param name="typeName">The closed generic type name value.</param>
         /// <param name="runtimeType">The resolved runtime type value.</param>
         /// <returns>true when the closed generic type was resolved; otherwise, false.</returns>
+#if NET6_0_OR_GREATER
+        [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2055", Justification = "The ducktype AOT runner closes generic types from build-time metadata while emitting registry assemblies; this path does not execute inside the trimmed customer application.")]
+#endif
         private static bool TryResolveClosedGenericRuntimeType(string assemblyName, string assemblyPath, string typeName, out Type? runtimeType)
         {
             runtimeType = null;
@@ -3360,6 +3363,9 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <param name="normalizedAssemblyName">The normalized assembly name value.</param>
         /// <param name="assemblyPath">The assembly path value.</param>
         /// <returns>The resolved assembly when available; otherwise, null.</returns>
+#if NET6_0_OR_GREATER
+        [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "The ducktype AOT runner probes discovered assemblies on disk as a build-time tool; the standalone tool build is trimmed, but the emitted customer payload is not using this reflection path.")]
+#endif
         private static Assembly? TryResolvePreferredRuntimeAssembly(string normalizedAssemblyName, string assemblyPath)
         {
             var cacheKey = string.Concat(normalizedAssemblyName.ToUpperInvariant(), "|", assemblyPath ?? string.Empty);
@@ -3457,6 +3463,9 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <param name="assemblyPath">The preferred assembly path value.</param>
         /// <param name="candidateAssembly">The candidate assembly value.</param>
         /// <returns>The resolved assembly when available; otherwise, null.</returns>
+#if NET6_0_OR_GREATER
+        [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "The ducktype AOT runner resolves referenced assemblies from build outputs while generating metadata. This reflective probing is intentional and confined to the build-time tool.")]
+#endif
         private static Assembly? ResolveRuntimeTypeAssembly(
             AssemblyName requestedAssemblyName,
             string normalizedAssemblyName,
@@ -11368,6 +11377,9 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 _typesByName = typesByName;
             }
 
+#if NET6_0_OR_GREATER
+            [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "The ducktype AOT runner indexes runtime assembly types during build-time analysis only. The standalone tool build is trimmed, but this reflection is not part of the emitted application runtime.")]
+#endif
             internal static RuntimeAssemblyTypeIndex Create(Assembly assembly)
             {
                 var typesByName = new Dictionary<string, Type>(StringComparer.Ordinal);
