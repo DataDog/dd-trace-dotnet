@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Tagging;
@@ -21,16 +22,16 @@ internal sealed class TraceFilter
 {
     private readonly List<string> _filterTagsRequire;
     private readonly List<string> _filterTagsReject;
-    private readonly List<Regex> _filterTagsRegexRequire;
-    private readonly List<Regex> _filterTagsRegexReject;
+    private readonly List<RegexTagFilter> _filterTagsRegexRequire;
+    private readonly List<RegexTagFilter> _filterTagsRegexReject;
     private readonly List<Regex> _ignoreResources;
 
     public TraceFilter(AgentTraceFilterConfig config)
     {
         _filterTagsRequire = config.FilterTagsRequire ?? [];
         _filterTagsReject = config.FilterTagsReject ?? [];
-        _filterTagsRegexRequire = CompilePatterns(config.FilterTagsRegexRequire);
-        _filterTagsRegexReject = CompilePatterns(config.FilterTagsRegexReject);
+        _filterTagsRegexRequire = CompileTagFilters(config.FilterTagsRegexRequire);
+        _filterTagsRegexReject = CompileTagFilters(config.FilterTagsRegexReject);
         _ignoreResources = CompilePatterns(config.IgnoreResources);
     }
 
@@ -61,9 +62,9 @@ internal sealed class TraceFilter
             }
         }
 
-        foreach (var pattern in _filterTagsRegexReject)
+        foreach (var filter in _filterTagsRegexReject)
         {
-            if (MatchesRegexFilter(rootSpan, pattern))
+            if (MatchesRegexTagFilter(rootSpan, filter))
             {
                 return false;
             }
@@ -78,9 +79,9 @@ internal sealed class TraceFilter
             }
         }
 
-        foreach (var pattern in _filterTagsRegexRequire)
+        foreach (var filter in _filterTagsRegexRequire)
         {
-            if (!MatchesRegexFilter(rootSpan, pattern))
+            if (!MatchesRegexTagFilter(rootSpan, filter))
             {
                 return false;
             }
@@ -108,12 +109,13 @@ internal sealed class TraceFilter
     }
 
     /// <summary>
-    /// Matches a regex filter against span tags.
-    /// The regex is matched against the "key:value" string of each tag.
+    /// Matches a regex tag filter against span tags.
+    /// Per the spec, patterns are either "key_pattern" (matches any tag whose key matches)
+    /// or "key_pattern:value_pattern" (both key and value must match their respective patterns).
     /// </summary>
-    private static bool MatchesRegexFilter(Span span, Regex pattern)
+    private static bool MatchesRegexTagFilter(Span span, RegexTagFilter filter)
     {
-        var processor = new RegexTagMatchProcessor(pattern);
+        var processor = new RegexTagFilterProcessor(filter);
         span.Tags.EnumerateTags(ref processor);
         return processor.Matched;
     }
@@ -137,22 +139,84 @@ internal sealed class TraceFilter
         return compiled;
     }
 
-    private struct RegexTagMatchProcessor : IItemProcessor<string>
+    /// <summary>
+    /// Parses regex filter patterns into structured filters that match key and value separately.
+    /// Format: "key_pattern" (key-only) or "key_pattern:value_pattern" (key and value).
+    /// </summary>
+    private static List<RegexTagFilter> CompileTagFilters(List<string>? patterns)
     {
-        private readonly Regex _pattern;
+        if (patterns is null or { Count: 0 })
+        {
+            return [];
+        }
+
+        var filters = new List<RegexTagFilter>(patterns.Count);
+        foreach (var pattern in patterns)
+        {
+            if (string.IsNullOrEmpty(pattern))
+            {
+                continue;
+            }
+
+            var colonIndex = pattern.IndexOf(':');
+            if (colonIndex < 0)
+            {
+                // Key-only pattern: matches any tag whose key matches
+                filters.Add(new RegexTagFilter(
+                    new Regex(pattern, RegexOptions.Compiled, matchTimeout: TimeSpan.FromSeconds(1)),
+                    valuePattern: null));
+            }
+            else
+            {
+                // key_pattern:value_pattern — both must match
+                var keyPart = pattern.Substring(0, colonIndex);
+                var valuePart = pattern.Substring(colonIndex + 1);
+                filters.Add(new RegexTagFilter(
+                    new Regex(keyPart, RegexOptions.Compiled, matchTimeout: TimeSpan.FromSeconds(1)),
+                    new Regex(valuePart, RegexOptions.Compiled, matchTimeout: TimeSpan.FromSeconds(1))));
+            }
+        }
+
+        return filters;
+    }
+
+    /// <summary>
+    /// A parsed regex tag filter with separate key and optional value patterns.
+    /// </summary>
+    private readonly struct RegexTagFilter
+    {
+        public readonly Regex KeyPattern;
+        public readonly Regex? ValuePattern;
+
+        public RegexTagFilter(Regex keyPattern, Regex? valuePattern)
+        {
+            KeyPattern = keyPattern;
+            ValuePattern = valuePattern;
+        }
+    }
+
+    private struct RegexTagFilterProcessor : IItemProcessor<string>
+    {
+        private readonly RegexTagFilter _filter;
         public bool Matched;
 
-        public RegexTagMatchProcessor(Regex pattern)
+        public RegexTagFilterProcessor(RegexTagFilter filter)
         {
-            _pattern = pattern;
+            _filter = filter;
             Matched = false;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Process(TagItem<string> item)
         {
             if (!Matched && item.Value is not null)
             {
-                Matched = _pattern.IsMatch($"{item.Key}:{item.Value}");
+                if (_filter.KeyPattern.IsMatch(item.Key))
+                {
+                    // Key-only filter: any matching key is sufficient
+                    // Key:Value filter: value must also match
+                    Matched = _filter.ValuePattern is null || _filter.ValuePattern.IsMatch(item.Value);
+                }
             }
         }
     }
