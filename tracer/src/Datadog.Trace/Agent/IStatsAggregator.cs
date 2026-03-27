@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Datadog.Trace.SourceGenerators;
 
@@ -50,5 +51,7 @@ namespace Datadog.Trace.Agent
         SpanCollection ProcessTrace(in SpanCollection trace);
 
         Task DisposeAsync();
+
+        StatsAggregationKey BuildKey(Span span, out List<byte[]> utf8PeerTags);
     }
 }
