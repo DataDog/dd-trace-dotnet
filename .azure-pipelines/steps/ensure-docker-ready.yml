@@ -9,7 +9,7 @@ parameters:
 steps:
 - bash: |
     set -euo pipefail
-    bash ./.azure-pipelines/steps/ensure-docker-ready-linux.sh
+    ./.azure-pipelines/steps/ensure-docker-ready-linux.sh
   displayName: Ensure Docker daemon is ready (Linux)
   condition: ne(variables['Agent.OS'], 'Windows_NT')
   env:
