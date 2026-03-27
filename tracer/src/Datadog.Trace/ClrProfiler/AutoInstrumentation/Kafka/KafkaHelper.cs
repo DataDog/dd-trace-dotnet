@@ -10,7 +10,6 @@ using System.Collections.Concurrent;
 using System.Reflection;
 using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DataStreamsMonitoring.Utils;
@@ -463,11 +462,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
             options.DuckCast<IDescribeClusterOptions>().RequestTimeout = TimeSpan.FromSeconds(2);
 
             var duckTask = adminClient.DescribeClusterAsync(options);
-
-            if (duckTask.Status == TaskStatus.RanToCompletion)
-            {
-                return duckTask.Result?.ClusterId;
-            }
 
             var originalContext = SynchronizationContext.Current;
             try
