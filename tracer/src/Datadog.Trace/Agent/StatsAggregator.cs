@@ -200,7 +200,7 @@ namespace Datadog.Trace.Agent
             return spans;
         }
 
-        internal StatsAggregationKey BuildKey(Span span, out List<byte[]> utf8PeerTags)
+        public StatsAggregationKey BuildKey(Span span, out List<byte[]> utf8PeerTags)
             => BuildKey(span, _peerTagKeys, out utf8PeerTags);
 
         internal StatsAggregationKey BuildKey(Span span, List<string> peerTagKeys, out List<byte[]> utf8PeerTags)

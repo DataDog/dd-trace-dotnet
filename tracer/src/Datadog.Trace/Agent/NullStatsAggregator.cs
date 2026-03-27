@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Datadog.Trace.Agent
@@ -27,6 +28,12 @@ namespace Datadog.Trace.Agent
         public Task DisposeAsync()
         {
             return Task.CompletedTask;
+        }
+
+        public StatsAggregationKey BuildKey(Span span, out List<byte[]> utf8PeerTags)
+        {
+            utf8PeerTags = [];
+            return new();
         }
     }
 }
