@@ -249,7 +249,7 @@ namespace Datadog.Trace.Tests.Agent
             // Test values are whole numbers, so stochastic rounding == truncation.
             group.Hits.Should().Be((long)expectedBucket.Hits);
             group.Errors.Should().Be((long)expectedBucket.Errors);
-            group.Duration.Should().Be(expectedBucket.Duration);
+            group.Duration.Should().Be((long)expectedBucket.Duration);
             group.Synthetics.Should().Be(expectedKey.IsSyntheticsRequest);
             group.TopLevelHits.Should().Be((long)expectedBucket.TopLevelHits);
             group.SpanKind.Should().Be(expectedKey.SpanKind);

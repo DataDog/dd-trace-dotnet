@@ -28,7 +28,9 @@ namespace Datadog.Trace.Agent
 
         public double Errors { get; set; }
 
-        public long Duration { get; set; }
+        // Duration is a double to accumulate fractional sampling weights (1/rate), like Hits/Errors/TopLevelHits.
+        // Based on https://github.com/DataDog/datadog-agent/blob/main/pkg/trace/stats/statsraw.go
+        public double Duration { get; set; }
 
         public DDSketch OkSummary { get; }
 
