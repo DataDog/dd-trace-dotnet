@@ -77,20 +77,7 @@ internal static class OtlpMapper
         int count = 0;
         int droppedAttributesCount = 0;
 
-        // Write span tags
-        ITagProcessor[]? tagProcessors = null;
-        if (spanModel.Span.Context.TraceContext?.Tracer is Tracer tracer)
-        {
-            tagProcessors = tracer.TracerManager?.TagProcessors;
-        }
-
-        var tagWriter = new TagWriter(writeKeyValue, tagProcessors, count, limit);
-        spanModel.Span.Tags.EnumerateTags(ref tagWriter);
-        count += tagWriter.Count;
-        droppedAttributesCount += tagWriter.DroppedCount;
-
         // Write trace tags
-
         if (!string.IsNullOrEmpty(spanModel.Span.Context.LastParentId))
         {
             if (count < limit)
@@ -142,6 +129,18 @@ internal static class OtlpMapper
         // SCI tags will be sent only once per trace
         // if (Security.Instance.AppsecEnabled && model.IsLocalRoot && span.Context.TraceContext?.WafExecuted is true)
         // AAS tags need to be set on any span for the backend to properly handle the billing.
+
+        // Write span tags
+        ITagProcessor[]? tagProcessors = null;
+        if (spanModel.Span.Context.TraceContext?.Tracer is Tracer tracer)
+        {
+            tagProcessors = tracer.TracerManager?.TagProcessors;
+        }
+
+        var tagWriter = new TagWriter(writeKeyValue, tagProcessors, count, limit);
+        spanModel.Span.Tags.EnumerateTags(ref tagWriter);
+        count += tagWriter.Count;
+        droppedAttributesCount += tagWriter.DroppedCount;
 
         // Write span metrics
         // Note: I could have done this earlier but I wanted to simulate the same behavior as the MessagePack formatter.
