@@ -15,6 +15,10 @@ namespace CodeGenerators
     {
         private const string NullLiteral = "null";
 
+        // CallTarget NativeAOT sample integrations are only consumed by the dedicated AOT workflow and must not change
+        // the standard runtime calltarget registry that ships with the tracer.
+        private const string CallTargetNativeAotTestingNamespace = "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.CallTargetNativeAot";
+
         public static void GenerateCallTargets(IEnumerable<TargetFramework> targetFrameworks, Func<string, string> getDllPath, AbsolutePath outputPath, string version, AbsolutePath dependabotPath) 
         {
             Logger.Debug("Generating CallTarget definitions file ...");
@@ -47,6 +51,11 @@ namespace CodeGenerators
         {
             foreach (var type in EnumTypes(assembly.MainModule.Types))
             {
+                if (type.FullName.StartsWith(CallTargetNativeAotTestingNamespace, StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
                 foreach (var attribute in type.CustomAttributes.Where(IsTargetAttribute))
                 {
                     foreach (var definition in GetCallTargetDefinition(type, attribute))

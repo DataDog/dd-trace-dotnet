@@ -2596,6 +2596,13 @@ partial class Build
             {
                 foreach (var type in asmDefinition.MainModule.Types)
                 {
+                    // The CallTarget NativeAOT sample integrations point at throwaway sample assemblies used only by the
+                    // dedicated AOT publish tests. They must not expand the shipping trimming descriptor.
+                    if (type.FullName.StartsWith("Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.CallTargetNativeAot", StringComparison.Ordinal))
+                    {
+                        continue;
+                    }
+
                     if (type.HasCustomAttributes)
                     {
                         foreach (var attr in type.CustomAttributes)
