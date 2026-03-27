@@ -9,6 +9,7 @@ description: >-
   touch hot paths (span creation, context propagation, instrumentation callbacks,
   serialization) and the user wants to check for unnecessary allocations. Covers both
   scanning existing code and reviewing diffs/PRs for missed optimization opportunities.
+argument-hint: "[pr <number> | <file-or-directory>]"
 ---
 
 # Find Allocation Opportunities
