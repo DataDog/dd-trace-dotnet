@@ -306,6 +306,10 @@ namespace Datadog.Trace.ClrProfiler
             }
 #endif
 
+            // Eagerly initialize the root session ID so child processes
+            // inherit it even if spawned before the first telemetry flush.
+            _ = RuntimeId.GetRootSessionId();
+
             try
             {
                 // ensure global instance is created if it's not already
