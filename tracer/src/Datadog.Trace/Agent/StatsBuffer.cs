@@ -166,7 +166,7 @@ namespace Datadog.Trace.Agent
             MessagePackBinary.WriteInt64(stream, StochasticRound(bucket.Errors));
 
             MessagePackBinary.WriteString(stream, "Duration");
-            MessagePackBinary.WriteInt64(stream, bucket.Duration);
+            MessagePackBinary.WriteInt64(stream, StochasticRound(bucket.Duration));
 
             MessagePackBinary.WriteString(stream, "OkSummary");
             SerializeSketch(stream, bucket.OkSummary);

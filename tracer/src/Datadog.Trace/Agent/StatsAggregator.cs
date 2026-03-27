@@ -449,7 +449,9 @@ namespace Datadog.Trace.Agent
 
             var duration = span.Duration.ToNanoseconds();
 
-            bucket.Duration += duration;
+            // Duration is weighted by sampling rate, matching the Go agent behavior:
+            // https://github.com/DataDog/datadog-agent/blob/main/pkg/trace/stats/statsraw.go
+            bucket.Duration += duration * weight;
 
             // If we are using OTLP, the errors are tracked as a separate aggregation entirely (different AggregationKey)
             // As a result, if using OTLP we always add to the OkSummary sketch.
