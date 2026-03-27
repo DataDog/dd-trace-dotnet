@@ -93,12 +93,8 @@ wait_for_docker()
             svc_status=$(systemctl is-active docker 2>&1 || true)
             if [ "${svc_status}" != "active" ] && [ "${restart_count}" -lt "${DOCKER_MAX_RESTARTS}" ]; then
                 restart_count=$((restart_count + 1))
-                if ! command -v systemctl >/dev/null 2>&1; then
-                    log "Docker service is ${svc_status}, but systmctl is not available, so unable to explicitly restart service."
-                else
-                    log "Docker service is ${svc_status}. Attempting restart ${restart_count}/${DOCKER_MAX_RESTARTS}..."
-                    try_restart_docker
-                fi
+                log "Docker service is ${svc_status}. Attempting restart ${restart_count}/${DOCKER_MAX_RESTARTS}..."
+                try_restart_docker
             elif [ "${svc_status}" != "active" ] && [ "${restart_count}" -ge "${DOCKER_MAX_RESTARTS}" ]; then
                 log "Docker service is ${svc_status} but max restarts (${DOCKER_MAX_RESTARTS}) exhausted"
             fi
