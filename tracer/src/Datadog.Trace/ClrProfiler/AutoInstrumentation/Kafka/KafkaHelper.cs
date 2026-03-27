@@ -6,7 +6,10 @@
 #nullable enable
 
 using System;
+using System.Collections.Concurrent;
+using System.Reflection;
 using System.Text;
+using System.Threading;
 using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DataStreamsMonitoring.Utils;
@@ -24,6 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         internal const string EnableDeliveryReportsField = "dotnet.producer.enable.delivery.reports";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(KafkaHelper));
         private static readonly string[] DefaultProduceEdgeTags = ["direction:out", "type:kafka"];
+        private static readonly ConcurrentDictionary<string, string?> ClusterIdCache = new();
         private static bool _headersInjectionEnabled = true;
 
         internal static Scope? CreateProducerScope(
@@ -53,13 +57,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     return null;
                 }
 
-                string serviceName = settings.Schema.Messaging.GetServiceName(MessagingSchema.ServiceType.Kafka);
+                var (serviceName, serviceNameSource) = settings.Schema.Messaging.GetServiceNameMetadata(MessagingSchema.ServiceType.Kafka);
                 KafkaTags tags = settings.Schema.Messaging.CreateKafkaTags(SpanKinds.Producer);
 
                 scope = tracer.StartActiveInternal(
                     operationName,
                     tags: tags,
                     serviceName: serviceName,
+                    serviceNameSource: serviceNameSource,
                     finishOnClose: finishOnClose);
 
                 string resourceName = $"Produce Topic {(string.IsNullOrEmpty(topicPartition?.Topic) ? "kafka" : topicPartition?.Topic)}";
@@ -72,9 +77,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     tags.Partition = (topicPartition?.Partition).ToString();
                 }
 
-                if (ProducerCache.TryGetProducer(producer, out var bootstrapServers))
+                if (ProducerCache.TryGetProducer(producer, out var bootstrapServers, out var clusterId))
                 {
                     tags.BootstrapServers = bootstrapServers;
+                    if (!string.IsNullOrEmpty(clusterId))
+                    {
+                        tags.ClusterId = clusterId;
+                    }
                 }
 
                 if (isTombstone)
@@ -190,10 +199,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     }
                 }
 
-                var serviceName = tracer.CurrentTraceSettings.Schema.Messaging.GetServiceName(MessagingSchema.ServiceType.Kafka);
+                var (serviceName, serviceNameSource) = tracer.CurrentTraceSettings.Schema.Messaging.GetServiceNameMetadata(MessagingSchema.ServiceType.Kafka);
                 var tags = tracer.CurrentTraceSettings.Schema.Messaging.CreateKafkaTags(SpanKinds.Consumer);
 
-                scope = tracer.StartActiveInternal(operationName, parent: extractedContext.SpanContext, tags: tags, serviceName: serviceName);
+                scope = tracer.StartActiveInternal(operationName, parent: extractedContext.SpanContext, tags: tags, serviceName: serviceName, serviceNameSource: serviceNameSource);
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(KafkaConstants.IntegrationId);
 
                 string resourceName = $"Consume Topic {(string.IsNullOrEmpty(topic) ? "kafka" : topic)}";
@@ -212,10 +221,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     tags.Offset = offset.ToString();
                 }
 
-                if (ConsumerCache.TryGetConsumerGroup(consumer, out var groupId, out var bootstrapServers))
+                if (ConsumerCache.TryGetConsumerGroup(consumer, out var groupId, out var bootstrapServers, out var consumerClusterId))
                 {
                     tags.ConsumerGroup = groupId;
                     tags.BootstrapServers = bootstrapServers;
+                    if (!StringUtil.IsNullOrEmpty(consumerClusterId))
+                    {
+                        tags.ClusterId = consumerClusterId;
+                    }
                 }
 
                 if (message?.Instance is not null && message.Timestamp.Type != 0)
@@ -244,9 +257,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 {
                     // TODO: we could pool these arrays to reduce allocations
                     // NOTE: the tags must be sorted in alphabetical order
-                    var edgeTags = string.IsNullOrEmpty(topic)
+                    string[] edgeTags;
+                    if (!StringUtil.IsNullOrEmpty(consumerClusterId))
+                    {
+                        edgeTags = StringUtil.IsNullOrEmpty(topic)
+                                       ? new[] { "direction:in", $"group:{groupId}", $"kafka_cluster_id:{consumerClusterId}", "type:kafka" }
+                                       : new[] { "direction:in", $"group:{groupId}", $"kafka_cluster_id:{consumerClusterId}", $"topic:{topic}", "type:kafka" };
+                    }
+                    else
+                    {
+                        edgeTags = StringUtil.IsNullOrEmpty(topic)
                                        ? new[] { "direction:in", $"group:{groupId}", "type:kafka" }
                                        : new[] { "direction:in", $"group:{groupId}", $"topic:{topic}", "type:kafka" };
+                    }
 
                     span.SetDataStreamsCheckpoint(
                         dataStreamsManager,
@@ -311,13 +334,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         /// <param name="dataStreamsManager">The global data streams manager</param>
         /// <param name="topic">Topic name</param>
         /// <param name="message">The duck-typed Kafka Message object</param>
+        /// <param name="producer">The Kafka producer instance, used to look up cluster_id from the cache</param>
         /// <typeparam name="TTopicPartitionMarker">The TopicPartition type (used  optimisation purposes)</typeparam>
         /// <typeparam name="TMessage">The type of the duck-type proxy</typeparam>
         internal static void TryInjectHeaders<TTopicPartitionMarker, TMessage>(
             Span span,
             DataStreamsManager dataStreamsManager,
             string topic,
-            TMessage message)
+            TMessage message,
+            object producer)
             where TMessage : IMessage
         {
             if (!_headersInjectionEnabled || message.Instance is null)
@@ -339,9 +364,22 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
                 if (dataStreamsManager.IsEnabled)
                 {
-                    var edgeTags = string.IsNullOrEmpty(topic)
+                    ProducerCache.TryGetProducer(producer, out _, out var producerClusterId);
+
+                    string[] edgeTags;
+                    if (!StringUtil.IsNullOrEmpty(producerClusterId))
+                    {
+                        edgeTags = StringUtil.IsNullOrEmpty(topic)
+                                       ? ["direction:out", $"kafka_cluster_id:{producerClusterId}", "type:kafka"]
+                                       : ["direction:out", $"kafka_cluster_id:{producerClusterId}", $"topic:{topic}", "type:kafka"];
+                    }
+                    else
+                    {
+                        edgeTags = StringUtil.IsNullOrEmpty(topic)
                                        ? DefaultProduceEdgeTags
                                        : ["direction:out", $"topic:{topic}", "type:kafka"];
+                    }
+
                     var msgSize = dataStreamsManager.IsInDefaultState ? 0 : GetMessageSize(message);
                     // produce is always the start of the edge, so defaultEdgeStartMs is always 0
                     span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, msgSize, 0);
@@ -361,6 +399,95 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 // don't keep trying if we run into problems
                 _headersInjectionEnabled = false;
                 Log.Warning(ex, "There was a problem injecting headers into the Kafka record. Disabling Headers injection");
+            }
+        }
+
+        internal static string? GetClusterId(string? bootstrapServers, object clientInstance)
+        {
+            if (StringUtil.IsNullOrEmpty(bootstrapServers))
+            {
+                return null;
+            }
+
+            if (ClusterIdCache.TryGetValue(bootstrapServers, out var cached))
+            {
+                return cached;
+            }
+
+            try
+            {
+                var kafkaAssembly = clientInstance.GetType().Assembly;
+
+                // DescribeClusterAsync and DescribeClusterOptions were added in Confluent.Kafka 2.3.0
+                var describeClusterOptionsType = kafkaAssembly.GetType("Confluent.Kafka.Admin.DescribeClusterOptions");
+                if (describeClusterOptionsType is null)
+                {
+                    Log.Debug("Confluent.Kafka.Admin.DescribeClusterOptions not found; cluster_id tag requires Confluent.Kafka >= 2.3.0");
+                    ClusterIdCache.TryAdd(bootstrapServers, string.Empty);
+                    return string.Empty;
+                }
+
+                var builderType = kafkaAssembly.GetType("Confluent.Kafka.DependentAdminClientBuilder");
+                if (builderType is null)
+                {
+                    Log.Error("Failed to find Confluent.Kafka.DependentAdminClientBuilder in the Confluent.Kafka assembly");
+                    ClusterIdCache.TryAdd(bootstrapServers, string.Empty);
+                    return string.Empty;
+                }
+
+                var clientHandle = clientInstance.DuckCast<IClientHandle>();
+                var handle = clientHandle.Handle;
+                if (handle is null)
+                {
+                    Log.Error("Kafka client handle is null; unable to extract cluster_id");
+                    return null;
+                }
+
+                var builder = Activator.CreateInstance(builderType, handle)!;
+                using var adminClient = builder.DuckCast<IAdminClientBuilder>().Build();
+                var clusterId = DescribeClusterWithTimeout(adminClient, describeClusterOptionsType);
+                ClusterIdCache.TryAdd(bootstrapServers, clusterId);
+                return clusterId;
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Error extracting cluster_id from Kafka metadata");
+                return null;
+            }
+        }
+
+        private static string? DescribeClusterWithTimeout(IAdminClient adminClient, Type describeClusterOptionsType)
+        {
+            var options = Activator.CreateInstance(describeClusterOptionsType)!;
+            options.DuckCast<IDescribeClusterOptions>().RequestTimeout = TimeSpan.FromSeconds(2);
+
+            var duckTask = adminClient.DescribeClusterAsync(options);
+            var describeResult = SafeGetResult<IDuckTypeTask<IDescribeClusterResult>, IDescribeClusterResult>(duckTask);
+            return describeResult?.ClusterId;
+
+            static TResult? SafeGetResult<TTask, TResult>(TTask task)
+                where TTask : IDuckTypeTask<TResult>
+                where TResult : IDescribeClusterResult
+            {
+                if (task.IsCompletedSuccessfully)
+                {
+                    return task.Result;
+                }
+
+                var originalContext = SynchronizationContext.Current;
+                try
+                {
+                    // Set the synchronization context to null to avoid deadlocks.
+                    SynchronizationContext.SetSynchronizationContext(null);
+
+                    // Wait synchronously for the task to complete.
+                    return task.GetAwaiter().GetResult();
+                }
+                finally
+                {
+                    // Restore the original synchronization context.
+                    SynchronizationContext.SetSynchronizationContext(originalContext);
+                }
             }
         }
 

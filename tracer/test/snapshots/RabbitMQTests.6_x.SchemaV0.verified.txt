@@ -14,7 +14,8 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: consumer,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       process_id: 0,
@@ -38,7 +39,8 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: consumer,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       process_id: 0,
@@ -62,7 +64,8 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: consumer,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       process_id: 0,
@@ -86,7 +89,8 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: consumer,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       process_id: 0,
@@ -130,7 +134,8 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: consumer,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -155,7 +160,8 @@
       out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: producer,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -178,7 +184,8 @@
       out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -203,7 +210,8 @@
       out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -226,7 +234,8 @@
       out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -249,7 +258,8 @@
       message.size: 80,
       runtime-id: Guid_1,
       span.kind: consumer,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       process_id: 0,
@@ -293,7 +303,8 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: consumer,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -318,7 +329,8 @@
       out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: producer,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -341,7 +353,8 @@
       out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -364,7 +377,8 @@
       message.size: 79,
       runtime-id: Guid_1,
       span.kind: consumer,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       process_id: 0,
@@ -408,7 +422,8 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: consumer,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -433,7 +448,8 @@
       out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: producer,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -456,7 +472,8 @@
       out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -481,7 +498,8 @@
       out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -504,7 +522,8 @@
       out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -527,7 +546,8 @@
       message.size: 80,
       runtime-id: Guid_1,
       span.kind: consumer,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       process_id: 0,
@@ -571,7 +591,8 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: consumer,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -596,7 +617,8 @@
       out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: producer,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -619,7 +641,8 @@
       out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -642,7 +665,8 @@
       message.size: 79,
       runtime-id: Guid_1,
       span.kind: consumer,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       process_id: 0,
@@ -686,7 +710,8 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: consumer,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -711,7 +736,8 @@
       out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: producer,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -734,7 +760,8 @@
       out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -759,7 +786,8 @@
       out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -782,7 +810,8 @@
       out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -805,7 +834,8 @@
       message.size: 84,
       runtime-id: Guid_1,
       span.kind: consumer,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       process_id: 0,
@@ -849,7 +879,8 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: consumer,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -874,7 +905,8 @@
       out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: producer,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -897,7 +929,8 @@
       out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -920,7 +953,8 @@
       message.size: 83,
       runtime-id: Guid_1,
       span.kind: consumer,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       process_id: 0,
@@ -964,7 +998,8 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: consumer,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -989,7 +1024,8 @@
       out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: producer,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1012,7 +1048,8 @@
       out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1037,7 +1074,8 @@
       out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1060,7 +1098,8 @@
       out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1083,7 +1122,8 @@
       message.size: 83,
       runtime-id: Guid_1,
       span.kind: consumer,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       process_id: 0,
@@ -1127,7 +1167,8 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: consumer,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1152,7 +1193,8 @@
       out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: producer,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1175,7 +1217,8 @@
       out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1198,7 +1241,8 @@
       message.size: 82,
       runtime-id: Guid_1,
       span.kind: consumer,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       process_id: 0,
@@ -1245,7 +1289,8 @@
       out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: producer,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1270,7 +1315,8 @@
       message.size: 17,
       runtime-id: Guid_1,
       span.kind: consumer,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       process_id: 0,
@@ -1337,7 +1383,8 @@
       out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: producer,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1362,7 +1409,8 @@
       message.size: 17,
       runtime-id: Guid_1,
       span.kind: consumer,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       process_id: 0,
@@ -1429,7 +1477,8 @@
       out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: producer,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1454,7 +1503,8 @@
       message.size: 17,
       runtime-id: Guid_1,
       span.kind: consumer,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       process_id: 0,
@@ -1521,7 +1571,8 @@
       out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: producer,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1546,7 +1597,8 @@
       message.size: 17,
       runtime-id: Guid_1,
       span.kind: consumer,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       process_id: 0,
@@ -1613,7 +1665,8 @@
       out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: producer,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1638,7 +1691,8 @@
       message.size: 17,
       runtime-id: Guid_1,
       span.kind: consumer,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       process_id: 0,
@@ -1705,7 +1759,8 @@
       out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: producer,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1730,7 +1785,8 @@
       message.size: 17,
       runtime-id: Guid_1,
       span.kind: consumer,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       process_id: 0,
@@ -1797,7 +1853,8 @@
       out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: producer,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1822,7 +1879,8 @@
       message.size: 17,
       runtime-id: Guid_1,
       span.kind: consumer,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       process_id: 0,
@@ -1889,7 +1947,8 @@
       out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: producer,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1914,7 +1973,8 @@
       message.size: 17,
       runtime-id: Guid_1,
       span.kind: consumer,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       process_id: 0,
@@ -1981,7 +2041,8 @@
       out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: producer,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2006,7 +2067,8 @@
       message.size: 17,
       runtime-id: Guid_1,
       span.kind: consumer,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       process_id: 0,
@@ -2073,7 +2135,8 @@
       out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: producer,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2098,7 +2161,8 @@
       message.size: 17,
       runtime-id: Guid_1,
       span.kind: consumer,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       process_id: 0,
@@ -2165,7 +2229,8 @@
       out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: producer,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2190,7 +2255,8 @@
       message.size: 17,
       runtime-id: Guid_1,
       span.kind: consumer,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       process_id: 0,
@@ -2257,7 +2323,8 @@
       out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: producer,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2282,7 +2349,8 @@
       message.size: 17,
       runtime-id: Guid_1,
       span.kind: consumer,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       process_id: 0,
@@ -2327,7 +2395,8 @@
       out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       process_id: 0,
@@ -2352,7 +2421,8 @@
       out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       process_id: 0,
@@ -2377,7 +2447,8 @@
       out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       process_id: 0,
@@ -2402,7 +2473,8 @@
       out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       process_id: 0,
@@ -2427,7 +2499,8 @@
       out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       process_id: 0,
@@ -2452,7 +2525,8 @@
       out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       process_id: 0,
@@ -2477,7 +2551,8 @@
       out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       process_id: 0,
@@ -2502,7 +2577,8 @@
       out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.RabbitMQ
+      _dd.base_service: Samples.RabbitMQ,
+      _dd.svc_src: rabbitmq
     },
     Metrics: {
       process_id: 0,

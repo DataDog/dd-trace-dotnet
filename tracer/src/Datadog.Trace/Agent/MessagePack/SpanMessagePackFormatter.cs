@@ -1,4 +1,4 @@
-﻿// <copyright file="SpanMessagePackFormatter.cs" company="Datadog">
+// <copyright file="SpanMessagePackFormatter.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -12,6 +12,7 @@ using Datadog.Trace.Propagators;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.MessagePack;
 using Datadog.Trace.Vendors.MessagePack.Formatters;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -68,12 +69,7 @@ namespace Datadog.Trace.Agent.MessagePack
         private readonly byte[] _runtimeIdNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.RuntimeId);
         private readonly byte[] _runtimeIdValueBytes = StringEncoding.UTF8.GetBytes(Tracer.RuntimeId);
 
-        // using a Lazy here to make sure we don't compute the value of the process tags too early in the life of the app,
-        // some values may need a bit of time to be accessible.
-        // With this construct, it should be queried after the first span(s) get closed, which should be late enough.
-        private readonly Lazy<byte[]> _processTagsValueBytes = new(() => StringEncoding.UTF8.GetBytes(ProcessTags.SerializedTags));
         private readonly byte[] _processTagsNameBytes = StringEncoding.UTF8.GetBytes(Tags.ProcessTags);
-
         private readonly byte[] _environmentNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Env);
         private readonly byte[] _gitCommitShaNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.GitCommitSha);
         private readonly byte[] _gitRepositoryUrlNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.GitRepositoryUrl);
@@ -81,6 +77,7 @@ namespace Datadog.Trace.Agent.MessagePack
         private readonly byte[] _originNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Origin);
         private readonly byte[] _lastParentIdBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.LastParentId);
         private readonly byte[] _baseServiceNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.BaseService);
+        private readonly byte[] _serviceNameSourceNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.ServiceNameSource);
 
         // numeric tags
         private readonly byte[] _metricsBytes = StringEncoding.UTF8.GetBytes("metrics");
@@ -460,7 +457,7 @@ namespace Datadog.Trace.Agent.MessagePack
             int originalOffset = offset;
 
             var settings = new JsonSerializerSettings { Converters = new List<JsonConverter> { new SpanEventConverter() }, Formatting = Formatting.None };
-            var eventsJson = JsonConvert.SerializeObject(spanModel.Span.SpanEvents, settings);
+            var eventsJson = JsonHelper.SerializeObject(spanModel.Span.SpanEvents, settings);
 
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _eventBytes);
             offset += MessagePackBinary.WriteString(ref bytes, offset, eventsJson);
@@ -596,7 +593,7 @@ namespace Datadog.Trace.Agent.MessagePack
                 }
             }
 
-            // add _dd.base_service tag to spans where the service name has been overrideen
+            // add _dd.base_service tag to spans where the service name has been overridden
             if (!serviceNameEqualsDefault && !string.IsNullOrEmpty(model.TraceChunk.DefaultServiceName))
             {
                 var serviceNameRawBytes = MessagePackStringCache.GetServiceBytes(model.TraceChunk.DefaultServiceName);
@@ -609,15 +606,32 @@ namespace Datadog.Trace.Agent.MessagePack
                 }
             }
 
-            // Process tags will be sent only once per buffer/payload (one payload can contain many chunks from different traces)
-            if (model.IsFirstSpanInChunk && model.TraceChunk.IsFirstChunkInPayload && model.TraceChunk.ShouldPropagateProcessTags)
+            // add _dd.svc_src tag to indicate which integration set the service name
+            // Safety: if the service name equals the default, clear the source — unless it's a
+            // configuration-driven override (opt.*), which should always be preserved.
+            var serviceNameSource = span.Context.ServiceNameSource;
+            if (serviceNameEqualsDefault && serviceNameSource?.StartsWith("opt.", StringComparison.Ordinal) != true)
             {
-                var processTagsRawBytes = _processTagsValueBytes.Value;
-                if (processTagsRawBytes.Length > 0)
+                serviceNameSource = null;
+            }
+
+            if (serviceNameSource is not null)
+            {
+                count++;
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _serviceNameSourceNameBytes);
+                offset += MessagePackBinary.WriteString(ref bytes, offset, serviceNameSource);
+            }
+
+            // Process tags will be sent only once per buffer/payload (one payload can contain many chunks from different traces)
+            if (model.IsFirstSpanInChunk && model.TraceChunk.IsFirstChunkInPayload && model.TraceChunk.ProcessTags is not null)
+            {
+                var processTagsRawBytes = MessagePackStringCache.GetProcessTagsBytes(model.TraceChunk.ProcessTags.SerializedTags);
+
+                if (processTagsRawBytes is not null)
                 {
                     count++;
                     offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _processTagsNameBytes);
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, processTagsRawBytes);
+                    offset += MessagePackBinary.WriteRaw(ref bytes, offset, processTagsRawBytes);
                 }
             }
 

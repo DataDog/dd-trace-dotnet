@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.AppSec.WafEncoding;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
@@ -28,7 +29,7 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
                 if (ReportedDiagnostics.Rules.Errors is { Count: > 0 })
                 {
                     HasRuleErrors = true;
-                    ErrorMessage = JsonConvert.SerializeObject(ReportedDiagnostics.Rules.Errors);
+                    ErrorMessage = JsonHelper.SerializeObject(ReportedDiagnostics.Rules.Errors);
                 }
             }
         }
@@ -36,7 +37,7 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
         private UpdateResult(string errorMessage, in DdwafObjectStruct diagObject, IntPtr builderHandle = default(IntPtr), WafLibraryInvoker? invoker = null, IEncoder? encoder = null)
             : this(diagObject, builderHandle, IntPtr.Zero, invoker, encoder)
         {
-            ErrorMessage = ErrorMessage != string.Empty ? string.Join(Environment.NewLine, errorMessage, ErrorMessage) : errorMessage;
+            ErrorMessage = !string.IsNullOrEmpty(ErrorMessage) ? string.Join(Environment.NewLine, errorMessage, ErrorMessage) : errorMessage;
         }
 
         internal bool Success => WafHandle != IntPtr.Zero;

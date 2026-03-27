@@ -23,4 +23,15 @@ namespace Datadog.Trace.Debugger.Models
         /// </summary>
         Error
     }
+
+    internal enum LineProbeResolveReason
+    {
+        None,
+        MissingSourceFile,
+        AssemblyNotLoadedOrSourceFileMismatch,
+        MissingPdb,
+        InvalidLineNumber,
+        MissingSequencePoint,
+        UnexpectedException
+    }
 }

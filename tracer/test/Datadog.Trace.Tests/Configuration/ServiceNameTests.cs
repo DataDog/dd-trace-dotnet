@@ -48,7 +48,7 @@ namespace Datadog.Trace.Tests.Configuration
 
             foreach (var kvp in Mappings)
             {
-                tracer.CurrentTraceSettings.GetServiceName(kvp.Key).Should().Be(kvp.Value);
+                tracer.CurrentTraceSettings.GetServiceNameMetadata(kvp.Key).ServiceName.Should().Be(kvp.Value);
             }
         }
 
@@ -76,7 +76,7 @@ namespace Datadog.Trace.Tests.Configuration
                     _ => tracer.DefaultServiceName,
                 };
 
-                tracer.CurrentTraceSettings.GetServiceName(key).Should().Be(expectedServiceName);
+                tracer.CurrentTraceSettings.GetServiceNameMetadata(key).ServiceName.Should().Be(expectedServiceName);
             }
         }
 
@@ -103,7 +103,7 @@ namespace Datadog.Trace.Tests.Configuration
                     _ => tracer.DefaultServiceName,
                 };
 
-                tracer.CurrentTraceSettings.GetServiceName(key).Should().Be(expectedServiceName);
+                tracer.CurrentTraceSettings.GetServiceNameMetadata(key).ServiceName.Should().Be(expectedServiceName);
             }
         }
 
@@ -118,7 +118,7 @@ namespace Datadog.Trace.Tests.Configuration
         private class LockedTracerManager : TracerManager, ILockedTracer
         {
             public LockedTracerManager(TracerSettings tracerSettings)
-                : base(tracerSettings, null, Mock.Of<IScopeManager>(), null, null, null, null, null, null, null, null, null, null, null, null, null, null)
+                : base(tracerSettings, null, Mock.Of<IScopeManager>(), null, null, null, null, null, null, null, null, null, null, null, null, null, null, null)
             {
             }
         }

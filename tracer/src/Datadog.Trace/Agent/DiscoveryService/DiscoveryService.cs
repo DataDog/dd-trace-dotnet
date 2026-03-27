@@ -47,7 +47,7 @@ namespace Datadog.Trace.Agent.DiscoveryService
         private readonly object _lock = new();
         private readonly Task _discoveryTask;
         private readonly IDisposable? _settingSubscription;
-        private readonly ContainerMetadata _containerMetadata;
+        private readonly ServiceRemappingHash _serviceRemappingHash;
         private IApiRequestFactory _apiRequestFactory;
         private AgentConfiguration? _configuration;
         private string? _configurationHash;
@@ -57,11 +57,12 @@ namespace Datadog.Trace.Agent.DiscoveryService
         public DiscoveryService(
             TracerSettings.SettingsManager settings,
             ContainerMetadata containerMetadata,
+            ServiceRemappingHash serviceRemappingHash,
             TimeSpan tcpTimeout,
             int initialRetryDelayMs,
             int maxRetryDelayMs,
             int recheckIntervalMs)
-            : this(CreateApiRequestFactory(settings.InitialExporterSettings, containerMetadata.ContainerId, tcpTimeout), containerMetadata, initialRetryDelayMs, maxRetryDelayMs, recheckIntervalMs)
+            : this(CreateApiRequestFactory(settings.InitialExporterSettings, containerMetadata.ContainerId, tcpTimeout), serviceRemappingHash, initialRetryDelayMs, maxRetryDelayMs, recheckIntervalMs)
         {
             // Create as a "managed" service that can update the request factory
             _settingSubscription = settings.SubscribeToChanges(changes =>
@@ -80,13 +81,13 @@ namespace Datadog.Trace.Agent.DiscoveryService
         /// </summary>
         public DiscoveryService(
             IApiRequestFactory apiRequestFactory,
-            ContainerMetadata containerMetadata,
+            ServiceRemappingHash serviceRemappingHash,
             int initialRetryDelayMs,
             int maxRetryDelayMs,
             int recheckIntervalMs)
         {
             _apiRequestFactory = apiRequestFactory;
-            _containerMetadata = containerMetadata;
+            _serviceRemappingHash = serviceRemappingHash;
             _initialRetryDelayMs = initialRetryDelayMs;
             _maxRetryDelayMs = maxRetryDelayMs;
             _recheckIntervalMs = recheckIntervalMs;
@@ -119,10 +120,11 @@ namespace Datadog.Trace.Agent.DiscoveryService
         /// <summary>
         /// Create a <see cref="DiscoveryService"/> instance that responds to runtime changes in settings
         /// </summary>
-        public static DiscoveryService CreateManaged(TracerSettings settings, ContainerMetadata containerMetadata)
+        public static DiscoveryService CreateManaged(TracerSettings settings, ContainerMetadata containerMetadata, ServiceRemappingHash serviceRemappingHash)
             => new(
                 settings.Manager,
                 containerMetadata,
+                serviceRemappingHash,
                 tcpTimeout: TimeSpan.FromSeconds(15),
                 initialRetryDelayMs: 500,
                 maxRetryDelayMs: 5_000,
@@ -131,10 +133,11 @@ namespace Datadog.Trace.Agent.DiscoveryService
         /// <summary>
         /// Create a <see cref="DiscoveryService"/> instance that does _not_ respond to runtime changes in settings
         /// </summary>
-        public static DiscoveryService CreateUnmanaged(ExporterSettings exporterSettings, ContainerMetadata containerMetadata)
+        public static DiscoveryService CreateUnmanaged(ExporterSettings exporterSettings, ContainerMetadata containerMetadata, ServiceRemappingHash serviceRemappingHash)
             => CreateUnmanaged(
                 exporterSettings,
                 containerMetadata,
+                serviceRemappingHash,
                 tcpTimeout: TimeSpan.FromSeconds(15),
                 initialRetryDelayMs: 500,
                 maxRetryDelayMs: 5_000,
@@ -146,13 +149,14 @@ namespace Datadog.Trace.Agent.DiscoveryService
         public static DiscoveryService CreateUnmanaged(
             ExporterSettings exporterSettings,
             ContainerMetadata containerMetadata,
+            ServiceRemappingHash serviceRemappingHash,
             TimeSpan tcpTimeout,
             int initialRetryDelayMs,
             int maxRetryDelayMs,
             int recheckIntervalMs)
             => new(
                 CreateApiRequestFactory(exporterSettings, containerMetadata.ContainerId, tcpTimeout),
-                containerMetadata,
+                serviceRemappingHash,
                 initialRetryDelayMs,
                 maxRetryDelayMs,
                 recheckIntervalMs);
@@ -310,7 +314,7 @@ namespace Datadog.Trace.Agent.DiscoveryService
             var containerTagsHash = response.GetHeader(AgentHttpHeaderNames.ContainerTagsHash);
             if (containerTagsHash != null)
             {
-                _containerMetadata.ContainerTagsHash = containerTagsHash;
+                _serviceRemappingHash.UpdateContainerTagsHash(containerTagsHash);
             }
 
             // Grab the original stream
@@ -429,6 +433,7 @@ namespace Datadog.Trace.Agent.DiscoveryService
                 eventPlatformProxyEndpoint: eventPlatformProxyEndpoint,
                 telemetryProxyEndpoint: telemetryProxyEndpoint,
                 tracerFlareEndpoint: tracerFlareEndpoint,
+                containerTagsHash: _serviceRemappingHash.ContainerTagsHash, // either the value just received, or the one we stored before (prevents overriding with null)
                 clientDropP0: clientDropP0,
                 spanMetaStructs: spanMetaStructs,
                 spanEvents: spanEvents);

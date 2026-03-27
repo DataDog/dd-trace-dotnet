@@ -35,7 +35,8 @@
       out.host: aws_sns,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.SimpleNotificationService
+      _dd.base_service: Samples.AWS.SimpleNotificationService,
+      _dd.svc_src: http-client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -66,7 +67,8 @@
       runtime-id: Guid_1,
       span.kind: client,
       topicname: MyTopic,
-      _dd.base_service: Samples.AWS.SimpleNotificationService
+      _dd.base_service: Samples.AWS.SimpleNotificationService,
+      _dd.svc_src: aws-sns
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -97,7 +99,8 @@
       runtime-id: Guid_1,
       span.kind: client,
       topicname: MyTopic,
-      _dd.base_service: Samples.AWS.SimpleNotificationService
+      _dd.base_service: Samples.AWS.SimpleNotificationService,
+      _dd.svc_src: aws-sns
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -121,7 +124,8 @@
       out.host: aws_sns,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.SimpleNotificationService
+      _dd.base_service: Samples.AWS.SimpleNotificationService,
+      _dd.svc_src: http-client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -163,7 +167,8 @@
       out.host: aws_sns,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.SimpleNotificationService
+      _dd.base_service: Samples.AWS.SimpleNotificationService,
+      _dd.svc_src: http-client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -194,7 +199,8 @@
       runtime-id: Guid_1,
       span.kind: client,
       topicname: MyTopic,
-      _dd.base_service: Samples.AWS.SimpleNotificationService
+      _dd.base_service: Samples.AWS.SimpleNotificationService,
+      _dd.svc_src: aws-sns
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -225,7 +231,8 @@
       runtime-id: Guid_1,
       span.kind: client,
       topicname: MyTopic,
-      _dd.base_service: Samples.AWS.SimpleNotificationService
+      _dd.base_service: Samples.AWS.SimpleNotificationService,
+      _dd.svc_src: aws-sns
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -249,7 +256,8 @@
       out.host: aws_sns,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.SimpleNotificationService
+      _dd.base_service: Samples.AWS.SimpleNotificationService,
+      _dd.svc_src: http-client
     },
     Metrics: {
       _dd.top_level: 1.0

@@ -65,7 +65,7 @@ partial class Build : NukeBuild
     const int LatestMajorVersion = 3;
 
     [Parameter("The current version of the source and build")]
-    readonly string Version = "3.39.0";
+    readonly string Version = "3.41.0";
 
     [Parameter("Whether the current build version is a prerelease(for packaging purposes)")]
     readonly bool IsPrerelease = false;
@@ -430,8 +430,7 @@ partial class Build : NukeBuild
                 .EnableNoDependencies()
                 .SetConfiguration(BuildConfiguration)
                 .SetNoWarnDotNetCore3()
-                .SetProperty("PackageOutputPath", ArtifactsDirectory / "nuget" / "azure-functions")
-                .SetVersion(Version));
+                .SetProperty("PackageOutputPath", ArtifactsDirectory / "nuget" / "azure-functions"));
         });
 
     Target BuildBenchmarkNuget => _ => _

@@ -48,7 +48,8 @@
       runtime-id: Guid_2,
       servermeta: other-server-value,
       span.kind: client,
-      _dd.base_service: Samples.GrpcLegacy
+      _dd.base_service: Samples.GrpcLegacy,
+      _dd.svc_src: grpc-client
     },
     Metrics: {
       process_id: 0,
@@ -138,7 +139,8 @@
       runtime-id: Guid_2,
       servermeta: other-server-value,
       span.kind: client,
-      _dd.base_service: Samples.GrpcLegacy
+      _dd.base_service: Samples.GrpcLegacy,
+      _dd.svc_src: grpc-client
     },
     Metrics: {
       process_id: 0,
@@ -234,7 +236,8 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       runtime-id: Guid_2,
       servermeta: other-server-value,
       span.kind: client,
-      _dd.base_service: Samples.GrpcLegacy
+      _dd.base_service: Samples.GrpcLegacy,
+      _dd.svc_src: grpc-client
     },
     Metrics: {
       process_id: 0,
@@ -332,7 +335,8 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       runtime-id: Guid_2,
       servermeta: other-server-value,
       span.kind: client,
-      _dd.base_service: Samples.GrpcLegacy
+      _dd.base_service: Samples.GrpcLegacy,
+      _dd.svc_src: grpc-client
     },
     Metrics: {
       process_id: 0,
@@ -430,7 +434,8 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       runtime-id: Guid_2,
       servermeta: other-server-value,
       span.kind: client,
-      _dd.base_service: Samples.GrpcLegacy
+      _dd.base_service: Samples.GrpcLegacy,
+      _dd.svc_src: grpc-client
     },
     Metrics: {
       process_id: 0,
@@ -528,7 +533,8 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       runtime-id: Guid_2,
       servermeta: other-server-value,
       span.kind: client,
-      _dd.base_service: Samples.GrpcLegacy
+      _dd.base_service: Samples.GrpcLegacy,
+      _dd.svc_src: grpc-client
     },
     Metrics: {
       process_id: 0,
@@ -626,7 +632,8 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       runtime-id: Guid_2,
       servermeta: other-server-value,
       span.kind: client,
-      _dd.base_service: Samples.GrpcLegacy
+      _dd.base_service: Samples.GrpcLegacy,
+      _dd.svc_src: grpc-client
     },
     Metrics: {
       process_id: 0,
@@ -724,7 +731,8 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       runtime-id: Guid_2,
       servermeta: other-server-value,
       span.kind: client,
-      _dd.base_service: Samples.GrpcLegacy
+      _dd.base_service: Samples.GrpcLegacy,
+      _dd.svc_src: grpc-client
     },
     Metrics: {
       process_id: 0,
@@ -822,7 +830,8 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       runtime-id: Guid_2,
       servermeta: other-server-value,
       span.kind: client,
-      _dd.base_service: Samples.GrpcLegacy
+      _dd.base_service: Samples.GrpcLegacy,
+      _dd.svc_src: grpc-client
     },
     Metrics: {
       process_id: 0,
@@ -920,7 +929,8 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       runtime-id: Guid_2,
       servermeta: other-server-value,
       span.kind: client,
-      _dd.base_service: Samples.GrpcLegacy
+      _dd.base_service: Samples.GrpcLegacy,
+      _dd.svc_src: grpc-client
     },
     Metrics: {
       process_id: 0,
@@ -1012,7 +1022,8 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       runtime-id: Guid_2,
       servermeta: other-server-value,
       span.kind: client,
-      _dd.base_service: Samples.GrpcLegacy
+      _dd.base_service: Samples.GrpcLegacy,
+      _dd.svc_src: grpc-client
     },
     Metrics: {
       process_id: 0,
@@ -1102,7 +1113,8 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       runtime-id: Guid_2,
       servermeta: other-server-value,
       span.kind: client,
-      _dd.base_service: Samples.GrpcLegacy
+      _dd.base_service: Samples.GrpcLegacy,
+      _dd.svc_src: grpc-client
     },
     Metrics: {
       process_id: 0,
@@ -1192,7 +1204,8 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       runtime-id: Guid_2,
       servermeta: other-server-value,
       span.kind: client,
-      _dd.base_service: Samples.GrpcLegacy
+      _dd.base_service: Samples.GrpcLegacy,
+      _dd.svc_src: grpc-client
     },
     Metrics: {
       process_id: 0,
@@ -1283,7 +1296,8 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       peer.hostname: 127.0.0.1,
       runtime-id: Guid_2,
       span.kind: client,
-      _dd.base_service: Samples.GrpcLegacy
+      _dd.base_service: Samples.GrpcLegacy,
+      _dd.svc_src: grpc-client
     },
     Metrics: {
       process_id: 0,

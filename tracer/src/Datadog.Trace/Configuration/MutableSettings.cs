@@ -1,4 +1,4 @@
-﻿// <copyright file="MutableSettings.cs" company="Datadog">
+// <copyright file="MutableSettings.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -61,7 +61,8 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         ReadOnlyDictionary<string, string> serviceNameMappings,
         string? gitRepositoryUrl,
         string? gitCommitSha,
-        OverrideErrorLog errorLog)
+        OverrideErrorLog errorLog,
+        bool propagateProcessTags)
     {
         IsInitialSettings = isInitialSettings;
         TraceEnabled = traceEnabled;
@@ -91,6 +92,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         GitRepositoryUrl = gitRepositoryUrl;
         GitCommitSha = gitCommitSha;
         ErrorLog = errorLog;
+        ProcessTags = propagateProcessTags ? new ProcessTags(!string.IsNullOrWhiteSpace(serviceName), defaultServiceName) : null;
     }
 
     // Settings that can be set via remote config
@@ -261,6 +263,12 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
 
     internal OverrideErrorLog ErrorLog { get; }
 
+    /// <summary>
+    /// Gets the process tags instance including the service_name.user_defined tag.
+    /// Will be null if propagateProcessTags is null
+    /// </summary>
+    internal ProcessTags? ProcessTags { get; }
+
     internal static ReadOnlyDictionary<string, string>? InitializeHeaderTags(in ConfigurationBuilder.HasKeys key, bool headerTagsNormalizationFixEnabled)
         => InitializeHeaderTags(
             key.AsDictionaryResult(allowOptionalMappings: true),
@@ -413,6 +421,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
                KafkaCreateConsumerScopeEnabled == other.KafkaCreateConsumerScopeEnabled &&
                GitRepositoryUrl == other.GitRepositoryUrl &&
                GitCommitSha == other.GitCommitSha &&
+               ProcessTags?.SerializedTags == other.ProcessTags?.SerializedTags &&
                // Do collection comparisons at the end, as generally more expensive
                AreEqual(GlobalTags, other.GlobalTags) &&
                AreEqual(HeaderTags, other.HeaderTags) &&
@@ -512,6 +521,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         // hashCode.Add(ServiceNameMappings);
         hashCode.Add(GitRepositoryUrl);
         hashCode.Add(GitCommitSha);
+        hashCode.Add(ProcessTags?.SerializedTags);
         return hashCode.ToHashCode();
     }
 
@@ -733,7 +743,8 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
             serviceNameMappings: serviceNameMappings,
             gitRepositoryUrl: gitRepositoryUrl,
             gitCommitSha: gitCommitSha,
-            errorLog: errorLog);
+            errorLog: errorLog,
+            propagateProcessTags: tracerSettings.PropagateProcessTags);
 
         static ReadOnlyDictionary<string, string> GetHeaderTagsResult(
             ConfigurationBuilder.ClassConfigurationResultWithKey<IDictionary<string, string>> result,
@@ -951,7 +962,9 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
                               .WithKeys(ConfigurationKeys.OpenTelemetry.TracesExporter)
                               .AsBoolResult(value => string.Equals(value, "none", StringComparison.OrdinalIgnoreCase)
                                                          ? ParsingResult<bool>.Success(result: false)
-                                                         : ParsingResult<bool>.Failure());
+                                                         : string.Equals(value, "otlp", StringComparison.OrdinalIgnoreCase)
+                                                           ? ParsingResult<bool>.Success(result: true)
+                                                           : ParsingResult<bool>.Failure());
         var traceEnabled = config
                           .WithKeys(ConfigurationKeys.TraceEnabled)
                           .AsBoolResult()
@@ -1064,7 +1077,8 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
             serviceNameMappings: serviceNameMappings,
             gitRepositoryUrl: gitRepositoryUrl,
             gitCommitSha: gitCommitSha,
-            errorLog: errorLog);
+            errorLog: errorLog,
+            propagateProcessTags: tracerSettings.PropagateProcessTags);
     }
 
     /// <summary>
@@ -1140,6 +1154,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         var ddSampleRate = config.WithKeys(ConfigurationKeys.GlobalSamplingRate).AsDoubleResult();
         var otelSampleType = config.WithKeys(ConfigurationKeys.OpenTelemetry.TracesSampler).AsStringResult();
         var otelSampleRate = config.WithKeys(ConfigurationKeys.OpenTelemetry.TracesSamplerArg).AsDoubleResult();
+        var otlpTracesExporter = config.WithKeys(ConfigurationKeys.OpenTelemetry.TracesExporter).AsStringResult();
 
         double? ddResult = ddSampleRate.ConfigurationResult.IsValid ? ddSampleRate.ConfigurationResult.Result : null;
 
@@ -1204,6 +1219,13 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
             }
 
             log.LogInvalidConfiguration(otelSampleRate.Key);
+        }
+
+        if (!ddSampleRate.ConfigurationResult.IsPresent &&
+                otlpTracesExporter.ConfigurationResult is { IsValid: true, Result: { } exporter }
+                 && string.Equals(exporter, "otlp", StringComparison.OrdinalIgnoreCase))
+        {
+            return 1.0;
         }
 
         return ddResult;

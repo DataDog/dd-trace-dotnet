@@ -13,6 +13,7 @@ using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 using Datadog.Trace.AppSec.WafEncoding;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using Datadog.Trace.Vendors.Serilog.Events;
@@ -64,7 +65,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
             return assembly.GetManifestResourceStream("Datadog.Trace.AppSec.Waf.ConfigFiles.rule-set.json");
         }
 
-        private static Stream? GetRulesFileStream(string rulesFile)
+        private static FileStream? GetRulesFileStream(string rulesFile)
         {
             if (!File.Exists(rulesFile))
             {
@@ -95,7 +96,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                 }
 
                 using var reader = new StreamReader(stream);
-                using var jsonReader = new JsonTextReader(reader);
+                using var jsonReader = new JsonTextReader(reader) { ArrayPool = JsonArrayPool.Shared };
                 root = JToken.ReadFrom(jsonReader);
                 LogRuleDetailsIfDebugEnabled(root);
             }

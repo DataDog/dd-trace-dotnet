@@ -17,11 +17,13 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.Logging;
+using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry.Collectors;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Telemetry.Transports;
 using Datadog.Trace.Util;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using ConfigurationKeys = Datadog.Trace.Configuration.ConfigurationKeys;
 
@@ -199,7 +201,7 @@ internal sealed class TelemetryController : ITelemetryController
                 _configuration.GetFullData(),
                 _dependencies.GetFullData(),
                 _integrations.GetFullData(),
-                _appEndpoints.GetData(),
+                _appEndpoints.GetIncrementalData(),
                 metrics: null,
                 _products.GetFullData(),
                 sendAppStarted: false);
@@ -212,7 +214,8 @@ internal sealed class TelemetryController : ITelemetryController
             var serializer = JsonSerializer.Create(JsonTelemetryTransport.SerializerSettings);
             using var file = File.Open(filePath, FileMode.Create, FileAccess.Write);
             using var writer = new StreamWriter(file);
-            serializer.Serialize(writer, data);
+            using var jsonWriter = new JsonTextWriter(writer) { ArrayPool = JsonArrayPool.Shared };
+            serializer.Serialize(jsonWriter, data);
             await writer.FlushAsync().ConfigureAwait(false);
             Log.Debug("Telemetry dump complete");
         }
@@ -338,12 +341,12 @@ internal sealed class TelemetryController : ITelemetryController
 
             // use values from previous failed attempt if necessary
             var input = _aggregator.Combine(
-                _configuration.GetData(),
-                _dependencies.GetData(),
-                _integrations.GetData(),
-                _appEndpoints.GetData(),
+                _configuration.GetIncrementalData(),
+                _dependencies.GetIncrementalData(),
+                _integrations.GetIncrementalData(),
+                _appEndpoints.GetIncrementalData(),
                 in metrics,
-                _products.GetData());
+                _products.GetIncrementalData());
 
             var data = _dataBuilder.BuildTelemetryData(application, host, in input, _namingVersion, sendAppClosing);
 
@@ -437,11 +440,19 @@ internal sealed class TelemetryController : ITelemetryController
             if (_isUpdateRequired || _tags is null)
             {
                 _isUpdateRequired = false;
+#if NET6_0_OR_GREATER
+                var trimState = TrimmingDetector.DetectedTrimmingState;
+#endif
                 // using 1/0 to save bytes!
                 _tags = $"ci:{(_isCiVisEnabled ? '1' : '0')}" +
                         $",asm:{(_isAsmEnabled ? '1' : '0')}" +
                         $",prof:{(_isProfilingEnabled ? '1' : '0')}" +
                         $",dyn:{(_isDynamicInstrumentationEnabled ? '1' : '0')}" +
+#if NET6_0_OR_GREATER
+                        $",trim:{(trimState == TrimmingDetector.TrimState.TrimmedAppMissingTrimmingFile
+                                      ? "err"
+                                      : trimState == TrimmingDetector.TrimState.TrimmedAppUsingTrimmingFile ? "yes" : "no")}" +
+#endif
                         $"{_cloudEnv}";
             }
 
@@ -469,7 +480,7 @@ internal sealed class TelemetryController : ITelemetryController
         private TimeSpan _flushInterval;
         private DateTime _lastFlush;
         private DateTime _lastExtendedFlush;
-        private bool _initializationFlushExecuted = false;
+        private bool _initializationFlushExecuted;
 
         public Scheduler(TimeSpan flushInterval, TimeSpan extendHeartbeatInterval, Func<Task> logQueueTaskGenerator, TaskCompletionSource<bool> processExitSource)
             : this(flushInterval, extendHeartbeatInterval, logQueueTaskGenerator, processExitSource, new Clock(), new DelayFactory())

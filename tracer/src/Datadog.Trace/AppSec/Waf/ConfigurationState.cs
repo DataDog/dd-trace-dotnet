@@ -33,7 +33,7 @@ internal sealed record ConfigurationState
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ConfigurationState>();
 
-    private readonly IAsmConfigUpdater _asmFeatureProduct = new AsmFeaturesProduct();
+    private readonly AsmFeaturesProduct _asmFeatureProduct = new AsmFeaturesProduct();
 
     private readonly IReadOnlyDictionary<string, IAsmConfigUpdater> _productConfigUpdaters;
 
@@ -43,7 +43,7 @@ internal sealed record ConfigurationState
     private readonly bool _canBeToggled;
     private readonly Dictionary<string, List<RemoteConfiguration>> _fileUpdates = new();
     private readonly Dictionary<string, List<RemoteConfigurationPath>> _fileRemoves = new();
-    private bool _defaultRulesetApplied = false;
+    private bool _defaultRulesetApplied;
 
     public ConfigurationState(SecuritySettings settings, IConfigurationTelemetry telemetry, bool wafIsNull)
     {
@@ -84,7 +84,7 @@ internal sealed record ConfigurationState
 
     public bool AppsecEnabled { get; set; }
 
-    internal string? AutoUserInstrumMode { get; set; } = null;
+    internal string? AutoUserInstrumMode { get; set; }
 
     // RC Product: ASM_FEATURES
     internal Dictionary<string, AsmFeature> AsmFeaturesByFile { get; } = new();
@@ -249,9 +249,9 @@ internal sealed record ConfigurationState
                         hasUpdateConfigurations = true;
                     }
 
-                    if (_fileRemoves.ContainsKey(configByProductToRemove.Key))
+                    if (_fileRemoves.TryGetValue(configByProductToRemove.Key, out var remove))
                     {
-                        _fileRemoves[configByProductToRemove.Key].AddRange(configByProductToRemove.Value);
+                        remove.AddRange(configByProductToRemove.Value);
                     }
                     else
                     {
@@ -267,9 +267,9 @@ internal sealed record ConfigurationState
                     hasUpdateConfigurations = true;
                 }
 
-                if (_fileUpdates.ContainsKey(configByProduct.Key))
+                if (_fileUpdates.TryGetValue(configByProduct.Key, out var update))
                 {
-                    _fileUpdates[configByProduct.Key].AddRange(configByProduct.Value);
+                    update.AddRange(configByProduct.Value);
                 }
                 else
                 {
@@ -343,11 +343,11 @@ internal sealed record ConfigurationState
 
     internal sealed record IncomingUpdateStatus : IDisposable
     {
-        internal bool ShouldInitAppsec { get; set; } = false;
+        internal bool ShouldInitAppsec { get; set; }
 
-        internal bool ShouldUpdateAppsec { get; set; } = false;
+        internal bool ShouldUpdateAppsec { get; set; }
 
-        internal bool ShouldDisableAppsec { get; set; } = false;
+        internal bool ShouldDisableAppsec { get; set; }
 
         public void Dispose() => Reset();
 

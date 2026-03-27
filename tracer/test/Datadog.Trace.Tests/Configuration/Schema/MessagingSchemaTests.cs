@@ -33,7 +33,7 @@ namespace Datadog.Trace.Tests.Configuration.Schema
             yield return (1, (int)MessagingSchema.OperationType.AwsSqs, "aws.sqs.process", "aws.sqs.send");
         }
 
-        public static IEnumerable<(int SchemaVersion, int ServiceType, string ExpectedValue, bool RemoveClientServiceNamesEnabled)> GetServiceNameData()
+        public static IEnumerable<(int SchemaVersion, int ServiceType, string ExpectedValue, bool RemoveClientServiceNamesEnabled)> GetServiceNameMetadataData()
         {
             // Mapped service names (always return mapped value)
             yield return (0, (int)MessagingSchema.ServiceType.Kafka, "custom-kafka", true);
@@ -73,13 +73,13 @@ namespace Datadog.Trace.Tests.Configuration.Schema
 
         [Theory]
         [CombinatorialData]
-        public void GetServiceNameIsCorrect(
-            [CombinatorialMemberData(nameof(GetServiceNameData))] (int SchemaVersion, int MessagingSystem, string ExpectedValue, bool RemoveClientServiceNamesEnabled) values,
+        public void GetServiceNameMetadataIsCorrect(
+            [CombinatorialMemberData(nameof(GetServiceNameMetadataData))] (int SchemaVersion, int MessagingSystem, string ExpectedValue, bool RemoveClientServiceNamesEnabled) values,
             bool peerServiceTagsEnabled)
         {
             var schemaVersion = (SchemaVersion)values.SchemaVersion;
             var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, values.RemoveClientServiceNamesEnabled, DefaultServiceName, _mappings, new Dictionary<string, string>());
-            namingSchema.Messaging.GetServiceName((MessagingSchema.ServiceType)values.MessagingSystem).Should().Be(values.ExpectedValue);
+            namingSchema.Messaging.GetServiceNameMetadata((MessagingSchema.ServiceType)values.MessagingSystem).ServiceName.Should().Be(values.ExpectedValue);
         }
 
         [Theory]
@@ -181,13 +181,70 @@ namespace Datadog.Trace.Tests.Configuration.Schema
 
         [Theory]
         [CombinatorialData]
-        public void GetServiceName_SupportsAllEnumValues([CombinatorialValues(0, 1)]int schemaVersion, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
+        public void GetServiceNameMetadata_SupportsAllEnumValues([CombinatorialValues(0, 1)]int schemaVersion, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
         {
             var namingSchema = new NamingSchema((SchemaVersion)schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings, new Dictionary<string, string>());
             foreach (var value in Enum.GetValues(typeof(MessagingSchema.ServiceType)).Cast<MessagingSchema.ServiceType>())
             {
-                namingSchema.Messaging.GetServiceName(value).Should().NotBeNull();
+                namingSchema.Messaging.GetServiceNameMetadata(value).Should().NotBeNull();
             }
+        }
+
+        [Theory]
+        [CombinatorialData]
+        public void GetServiceNameMetadata_SourceSupportsAllEnumValues([CombinatorialValues(0, 1)]int schemaVersion, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
+        {
+            var namingSchema = new NamingSchema((SchemaVersion)schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, new Dictionary<string, string>(), new Dictionary<string, string>());
+            foreach (var value in Enum.GetValues(typeof(MessagingSchema.ServiceType)).Cast<MessagingSchema.ServiceType>())
+            {
+                // Should not throw IndexOutOfRangeException
+                var action = () => namingSchema.Messaging.GetServiceNameMetadata(value).Source;
+                action.Should().NotThrow();
+            }
+        }
+
+        [Fact]
+        public void GetServiceNameMetadata_SourceReturnsNonNull_WhenServiceNameDiffersFromDefault()
+        {
+            var namingSchema = new NamingSchema(SchemaVersion.V0, peerServiceTagsEnabled: false, removeClientServiceNamesEnabled: false, DefaultServiceName, new Dictionary<string, string>(), new Dictionary<string, string>());
+            foreach (var value in Enum.GetValues(typeof(MessagingSchema.ServiceType)).Cast<MessagingSchema.ServiceType>())
+            {
+                namingSchema.Messaging.GetServiceNameMetadata(value).Source.Should().NotBeNull($"ServiceType.{value} should have a corresponding IntegrationSourceNames entry");
+            }
+        }
+
+        [Fact]
+        public void GetServiceNameMetadata_SourceReturnsNull_WhenServiceNameIsDefault()
+        {
+            var namingSchema = new NamingSchema(SchemaVersion.V1, peerServiceTagsEnabled: false, removeClientServiceNamesEnabled: false, DefaultServiceName, new Dictionary<string, string>(), new Dictionary<string, string>());
+            foreach (var value in Enum.GetValues(typeof(MessagingSchema.ServiceType)).Cast<MessagingSchema.ServiceType>())
+            {
+                namingSchema.Messaging.GetServiceNameMetadata(value).Source.Should().BeNull();
+            }
+        }
+
+        [Fact]
+        public void GetServiceNameMetadata_SourceReturnsIntegrationKey_WhenV0Suffix()
+        {
+            var namingSchema = new NamingSchema(SchemaVersion.V0, peerServiceTagsEnabled: false, removeClientServiceNamesEnabled: false, DefaultServiceName, new Dictionary<string, string>(), new Dictionary<string, string>());
+            namingSchema.Messaging.GetServiceNameMetadata(MessagingSchema.ServiceType.Kafka).Source.Should().Be("kafka");
+            namingSchema.Messaging.GetServiceNameMetadata(MessagingSchema.ServiceType.AwsSqs).Source.Should().Be("aws.sqs");
+        }
+
+        [Fact]
+        public void GetServiceNameMetadata_SourceReturnsOptServiceMapping_WhenMapped()
+        {
+            var namingSchema = new NamingSchema(SchemaVersion.V0, peerServiceTagsEnabled: false, removeClientServiceNamesEnabled: false, DefaultServiceName, _mappings, new Dictionary<string, string>());
+            namingSchema.Messaging.GetServiceNameMetadata(MessagingSchema.ServiceType.Kafka).Source.Should().Be(ServiceNameMetadata.OptServiceMapping);
+            namingSchema.Messaging.GetServiceNameMetadata(MessagingSchema.ServiceType.RabbitMq).Source.Should().Be(ServiceNameMetadata.OptServiceMapping);
+        }
+
+        [Fact]
+        public void GetServiceNameMetadata_SourceReturnsOptServiceMapping_WhenMappedToDefault()
+        {
+            var mappings = new Dictionary<string, string> { { "kafka", DefaultServiceName } };
+            var namingSchema = new NamingSchema(SchemaVersion.V0, peerServiceTagsEnabled: false, removeClientServiceNamesEnabled: false, DefaultServiceName, mappings, new Dictionary<string, string>());
+            namingSchema.Messaging.GetServiceNameMetadata(MessagingSchema.ServiceType.Kafka).Source.Should().Be(ServiceNameMetadata.OptServiceMapping);
         }
     }
 }

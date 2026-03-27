@@ -13,6 +13,7 @@ using System.Linq;
 using System.Threading;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Util;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.DuckTyping
@@ -148,7 +149,7 @@ namespace Datadog.Trace.DuckTyping
                                   .ToList()
                     };
 
-                    var json = JsonConvert.SerializeObject(document, Formatting.Indented);
+                    var json = JsonHelper.SerializeObject(document, Formatting.Indented, new JsonSerializerSettings());
                     var temporaryOutputPath = OutputPath + ".tmp";
                     File.WriteAllText(temporaryOutputPath, json);
                     File.Copy(temporaryOutputPath, OutputPath, overwrite: true);

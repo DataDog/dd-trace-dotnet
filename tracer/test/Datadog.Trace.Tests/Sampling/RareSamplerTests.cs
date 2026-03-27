@@ -21,7 +21,7 @@ namespace Datadog.Trace.Tests.Sampling
         {
             await using var tracer = TracerHelper.CreateWithFakeAgent();
             var settings = TracerSettings.Create(new() { { ConfigurationKeys.RareSamplerEnabled, true } });
-            var sampler = new RareSampler(settings);
+            var sampler = new RareSampler(settings, isOtlp: false);
 
             var trace1 = new[] { tracer.StartSpan("1"), tracer.StartSpan("1") };
             trace1[0].Context.TraceContext.SetSamplingPriority(SamplingPriorityValues.AutoReject);
@@ -50,7 +50,7 @@ namespace Datadog.Trace.Tests.Sampling
         {
             await using var tracer = TracerHelper.CreateWithFakeAgent();
             var settings = TracerSettings.Create(new() { { ConfigurationKeys.RareSamplerEnabled, true } });
-            var sampler = new RareSampler(settings);
+            var sampler = new RareSampler(settings, isOtlp: false);
 
             var trace = new[] { tracer.StartSpan("1") };
             trace[0].Context.TraceContext.SetSamplingPriority(priority);
@@ -70,7 +70,7 @@ namespace Datadog.Trace.Tests.Sampling
         [Fact]
         public void DisabledByDefault()
         {
-            var sampler = new RareSampler(new TracerSettings());
+            var sampler = new RareSampler(new TracerSettings(), isOtlp: false);
 
             sampler.IsEnabled.Should().BeFalse();
         }
@@ -81,7 +81,7 @@ namespace Datadog.Trace.Tests.Sampling
         public void Configuration(bool enabled)
         {
             var settings = TracerSettings.Create(new() { { ConfigurationKeys.RareSamplerEnabled, enabled } });
-            var sampler = new RareSampler(settings);
+            var sampler = new RareSampler(settings, isOtlp: false);
 
             sampler.IsEnabled.Should().Be(enabled);
         }
@@ -90,7 +90,7 @@ namespace Datadog.Trace.Tests.Sampling
         public void DoNotSampleIfDisabled()
         {
             var settings = TracerSettings.Create(new() { { ConfigurationKeys.RareSamplerEnabled, false } });
-            var sampler = new RareSampler(settings);
+            var sampler = new RareSampler(settings, isOtlp: false);
 
             var trace = new[] { Tracer.Instance.StartSpan("1") };
             trace[0].Context.TraceContext.SetSamplingPriority(SamplingPriorityValues.AutoReject);
@@ -104,7 +104,7 @@ namespace Datadog.Trace.Tests.Sampling
         {
             await using var tracer = TracerHelper.CreateWithFakeAgent();
             var settings = TracerSettings.Create(new() { { ConfigurationKeys.RareSamplerEnabled, true } });
-            var sampler = new RareSampler(settings);
+            var sampler = new RareSampler(settings, isOtlp: false);
 
             var knownTrace = new[] { tracer.StartSpan("1") };
             knownTrace[0].Context.TraceContext.SetSamplingPriority(SamplingPriorityValues.AutoReject);
@@ -130,7 +130,7 @@ namespace Datadog.Trace.Tests.Sampling
         {
             await using var tracer = TracerHelper.CreateWithFakeAgent();
             var settings = TracerSettings.Create(new() { { ConfigurationKeys.RareSamplerEnabled, true } });
-            var sampler = new RareSampler(settings);
+            var sampler = new RareSampler(settings, isOtlp: false);
 
             var knownTrace = new[] { tracer.StartSpan("1") };
             knownTrace[0].Context.TraceContext.SetSamplingPriority(SamplingPriorityValues.AutoReject);

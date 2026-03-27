@@ -13,6 +13,7 @@ jobs:
       contents: read
       actions: read # read secrets
       issues: read # Read milestones milestones
+      id-token: write # required for dd-octo-sts OIDC token
     env:
       GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
 
@@ -47,9 +48,16 @@ jobs:
             echo "No code freeze in place. Triggering a deployment."
           fi
 
+      - name: Get GitHub Token via dd-octo-sts
+        if: env.stop != 'true'
+        id: octo-sts
+        uses: DataDog/dd-octo-sts-action@acaa02eee7e3bb0839e4272dacb37b8f3b58ba80 # v1.0.3
+        with:
+          scope: DataDog/datadog-aas-extension
+          policy: dd-trace-dotnet.github.deploy-aas-dev-apps
+
       - uses: ./.github/actions/deploy-aas-dev-apps
         name: 'Trigger AAS deploy'
         if: env.stop != 'true'
         with:
-          github_app_id: ${{ secrets.GH_APP_ID }}
-          github_app_private_key: ${{ secrets.GH_APP_PRIVATE_KEY }}
+          github_token: ${{ steps.octo-sts.outputs.token }}

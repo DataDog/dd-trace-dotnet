@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System;
 using System.Collections.Generic;
@@ -16,6 +17,7 @@ using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.Models;
 using Datadog.Trace.Util;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using ProbeLocation = Datadog.Trace.Debugger.Expressions.ProbeLocation;
 
@@ -33,15 +35,15 @@ namespace Datadog.Trace.Debugger.Snapshots
         private readonly bool _isFullSnapshot;
         private readonly ProbeLocation _probeLocation;
         private readonly CaptureLimitInfo _limitInfo;
-        private readonly bool _injectProcessTags;
         private readonly Func<string> _serviceNameProvider;
+        private readonly Func<string?> _processTagsProvider;
 
         private long _lastSampledTime;
         private TimeSpan _accumulatedDuration;
         private CaptureBehaviour _captureBehaviour;
-        private string _message;
-        private List<EvaluationError> _errors;
-        private string _snapshotId;
+        private string? _message;
+        private List<EvaluationError>? _errors;
+        private string? _snapshotId;
         private ObjectPool<MethodScopeMembers, MethodScopeMembersParameters> _scopeMembersPool;
 
         // Track opened JSON containers explicitly to avoid using JsonWriter.Path (allocations + heuristic parsing).
@@ -55,28 +57,28 @@ namespace Datadog.Trace.Debugger.Snapshots
         private bool _lineNumberOpen;
         private LocalsOrArgsContainer _localsOrArgsOpen;
 
-        public DebuggerSnapshotCreator(bool isFullSnapshot, ProbeLocation location, bool hasCondition, string[] tags, CaptureLimitInfo limitInfo, bool withProcessTags, Func<string> serviceNameProvider)
+        public DebuggerSnapshotCreator(bool isFullSnapshot, ProbeLocation location, bool hasCondition, string[] tags, CaptureLimitInfo limitInfo, Func<string?> processTagsProvider, Func<string> serviceNameProvider)
         {
             _isFullSnapshot = isFullSnapshot;
             _probeLocation = location;
             _jsonUnderlyingString = StringBuilderCache.Acquire();
-            JsonWriter = new JsonTextWriter(new StringWriter(_jsonUnderlyingString));
-            MethodScopeMembers = default;
+            JsonWriter = new JsonTextWriter(new StringWriter(_jsonUnderlyingString)) { ArrayPool = JsonArrayPool.Shared };
+            MethodScopeMembers = null;
             _captureBehaviour = CaptureBehaviour.Capture;
             _errors = null;
             _message = null;
             ProbeHasCondition = hasCondition;
             Tags = tags;
             _limitInfo = limitInfo;
-            _injectProcessTags = withProcessTags;
+            _processTagsProvider = processTagsProvider;
             _serviceNameProvider = serviceNameProvider;
             _accumulatedDuration = new TimeSpan(0, 0, 0, 0, 0);
             _scopeMembersPool = new ObjectPool<MethodScopeMembers, MethodScopeMembersParameters>();
             Initialize();
         }
 
-        public DebuggerSnapshotCreator(bool isFullSnapshot, ProbeLocation location, bool hasCondition, string[] tags, MethodScopeMembers methodScopeMembers, CaptureLimitInfo limitInfo, bool withProcessTags, Func<string> serviceNameProvider)
-            : this(isFullSnapshot, location, hasCondition, tags, limitInfo, withProcessTags, serviceNameProvider)
+        public DebuggerSnapshotCreator(bool isFullSnapshot, ProbeLocation location, bool hasCondition, string[] tags, MethodScopeMembers methodScopeMembers, CaptureLimitInfo limitInfo, Func<string?> processTagsProvider, Func<string> serviceNameProvider)
+            : this(isFullSnapshot, location, hasCondition, tags, limitInfo, processTagsProvider, serviceNameProvider)
         {
             MethodScopeMembers = methodScopeMembers;
         }
@@ -99,7 +101,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             }
         }
 
-        internal MethodScopeMembers MethodScopeMembers { get; private set; }
+        internal MethodScopeMembers? MethodScopeMembers { get; private set; }
 
         internal bool ProbeHasCondition { get; }
 
@@ -215,7 +217,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             }
             else
             {
-                MethodScopeMembers = _scopeMembersPool.Get(new MethodScopeMembersParameters(info.LocalsCount.Value, info.ArgumentsCount.Value));
+                MethodScopeMembers = _scopeMembersPool.Get(new MethodScopeMembersParameters(info.LocalsCount ?? 0, info.ArgumentsCount ?? 0));
             }
         }
 
@@ -247,7 +249,10 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         internal void SetDuration()
         {
-            MethodScopeMembers.Duration = new ScopeMember("duration", typeof(double), _accumulatedDuration.TotalMilliseconds, ScopeMemberKind.Duration);
+            if (MethodScopeMembers is not null)
+            {
+                MethodScopeMembers.Duration = new ScopeMember("duration", typeof(double), _accumulatedDuration.TotalMilliseconds, ScopeMemberKind.Duration);
+            }
         }
 
         internal void Initialize()
@@ -487,14 +492,14 @@ namespace Datadog.Trace.Debugger.Snapshots
             }
         }
 
-        internal void CaptureArgument<TArg>(TArg value, string name, Type type = null)
+        internal void CaptureArgument<TArg>(TArg value, string name, Type? type = null)
         {
             StartLocalsOrArgsIfNeeded("arguments");
             // in case TArg is object and we have the concrete type, use it
             DebuggerSnapshotSerializer.Serialize(value, type ?? typeof(TArg), name, JsonWriter, _limitInfo);
         }
 
-        internal void CaptureLocal<TLocal>(TLocal value, string name, Type type = null)
+        internal void CaptureLocal<TLocal>(TLocal value, string name, Type? type = null)
         {
             StartLocalsOrArgsIfNeeded("locals");
             // in case TLocal is object and we have the concrete type, use it
@@ -554,9 +559,9 @@ namespace Datadog.Trace.Debugger.Snapshots
             {
                 case MethodState.ExitStartAsync:
                 case MethodState.ExitStart:
-                    if (info.MemberKind == ScopeMemberKind.Exception && info.Value != null)
+                    if (info.MemberKind == ScopeMemberKind.Exception && info.Value is Exception exception)
                     {
-                        CaptureException(info.Value as Exception);
+                        CaptureException(exception);
                         CaptureLocal(info.Value, "@exception", info.Type);
                     }
                     else if (info.MemberKind == ScopeMemberKind.Return)
@@ -567,12 +572,12 @@ namespace Datadog.Trace.Debugger.Snapshots
                     break;
                 case MethodState.ExitEndAsync:
                 case MethodState.ExitEnd:
-                    if (MethodScopeMembers.Exception != null)
+                    if (MethodScopeMembers?.Exception != null)
                     {
                         CaptureException(MethodScopeMembers.Exception);
                         CaptureLocal(MethodScopeMembers.Exception, "@exception", MethodScopeMembers.Exception.GetType());
                     }
-                    else if (MethodScopeMembers.Return.Type != null)
+                    else if (MethodScopeMembers?.Return.Type != null)
                     {
                         CaptureLocal(MethodScopeMembers.Return.Value, "@return", MethodScopeMembers.Return.Type);
                     }
@@ -701,7 +706,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                         break;
                     case MethodState.ExitEndAsync:
                         CaptureExitMethodStartMarker(ref captureInfo);
-                        CaptureScopeMembers(MethodScopeMembers.Members, ScopeMemberKind.Local);
+                        CaptureScopeMembers(MethodScopeMembers?.Members, ScopeMemberKind.Local);
                         return true;
                     case MethodState.EndLine:
                     case MethodState.EndLineAsync:
@@ -711,15 +716,20 @@ namespace Datadog.Trace.Debugger.Snapshots
                         throw new ArgumentOutOfRangeException(nameof(captureInfo.MethodState), captureInfo.MethodState, null);
                 }
 
-                CaptureScopeMembers(MethodScopeMembers.Members);
+                CaptureScopeMembers(MethodScopeMembers?.Members);
                 return true;
             }
 
             return false;
         }
 
-        internal void CaptureScopeMembers(ScopeMember[] members, ScopeMemberKind? kind = null)
+        internal void CaptureScopeMembers(ScopeMember[]? members, ScopeMemberKind? kind = null)
         {
+            if (members is null)
+            {
+                return;
+            }
+
             foreach (var member in members)
             {
                 if (member.Type == null)
@@ -780,7 +790,7 @@ namespace Datadog.Trace.Debugger.Snapshots
         }
 
         // Finalize snapshot
-        internal string FinalizeLineSnapshot<T>(string probeId, int probeVersion, ref CaptureInfo<T> info)
+        internal string FinalizeLineSnapshot<T>(string? probeId, int probeVersion, ref CaptureInfo<T> info)
         {
             using (this)
             {
@@ -808,7 +818,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             }
         }
 
-        internal string FinalizeMethodSnapshot<T>(string probeId, int probeVersion, ref CaptureInfo<T> info)
+        internal string FinalizeMethodSnapshot<T>(string? probeId, int probeVersion, ref CaptureInfo<T> info)
         {
             using (this)
             {
@@ -835,7 +845,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             }
         }
 
-        internal void FinalizeSnapshot(string methodName, string typeFullName, string probeFilePath)
+        internal void FinalizeSnapshot(string? methodName, string? typeFullName, string? probeFilePath)
         {
             var activeScope = Tracer.Instance.InternalActiveScope;
 
@@ -847,7 +857,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             .EndSnapshot()
             .EndDebugger()
             .AddLoggerInfo(methodName, typeFullName, probeFilePath)
-            .AddGeneralInfo(_serviceNameProvider(), ProcessTags.SerializedTags, traceId, spanId)
+            .AddGeneralInfo(_serviceNameProvider(), _processTagsProvider(), traceId, spanId)
             .AddMessage()
             .Complete();
         }
@@ -875,7 +885,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             return this;
         }
 
-        internal DebuggerSnapshotCreator AddProbeInfo<T>(string probeId, int probeVersion, T methodNameOrLineNumber, string typeFullNameOrFilePath)
+        internal DebuggerSnapshotCreator AddProbeInfo<T>(string? probeId, int probeVersion, T methodNameOrLineNumber, string? typeFullNameOrFilePath)
         {
             JsonWriter.WritePropertyName("probe");
             JsonWriter.WriteStartObject();
@@ -904,7 +914,7 @@ namespace Datadog.Trace.Debugger.Snapshots
 
                 JsonWriter.WritePropertyName("lines");
                 JsonWriter.WriteStartArray();
-                JsonWriter.WriteValue(methodNameOrLineNumber.ToString());
+                JsonWriter.WriteValue(methodNameOrLineNumber?.ToString());
                 JsonWriter.WriteEndArray();
             }
 
@@ -914,9 +924,9 @@ namespace Datadog.Trace.Debugger.Snapshots
             return this;
         }
 
-        private static string SanitizePath(string probeFilePath)
+        private static string? SanitizePath(string? probeFilePath)
         {
-            return string.IsNullOrEmpty(probeFilePath) ? null : probeFilePath.Replace('\\', '/');
+            return string.IsNullOrEmpty(probeFilePath) ? null : probeFilePath!.Replace('\\', '/');
         }
 
         private DebuggerSnapshotCreator AddStackInfo()
@@ -937,29 +947,29 @@ namespace Datadog.Trace.Debugger.Snapshots
             return this;
         }
 
-        private void AddFrames(StackFrame[] frames)
+        private void AddFrames(StackFrame?[] frames)
         {
             foreach (var frame in frames)
             {
                 JsonWriter.WriteStartObject();
                 JsonWriter.WritePropertyName("function");
-                var frameMethod = frame.GetMethod();
+                var frameMethod = frame?.GetMethod();
                 JsonWriter.WriteValue($"{frameMethod?.DeclaringType?.FullName ?? UnknownValue}.{frameMethod?.Name ?? UnknownValue}");
 
-                var fileName = frame.GetFileName();
+                var fileName = frame?.GetFileName();
                 if (fileName != null)
                 {
                     JsonWriter.WritePropertyName("fileName");
-                    JsonWriter.WriteValue(frame.GetFileName());
+                    JsonWriter.WriteValue(fileName);
                 }
 
                 JsonWriter.WritePropertyName("lineNumber");
-                JsonWriter.WriteValue(frame.GetFileLineNumber());
+                JsonWriter.WriteValue(frame?.GetFileLineNumber());
                 JsonWriter.WriteEndObject();
             }
         }
 
-        internal DebuggerSnapshotCreator AddLoggerInfo(string methodName, string typeFullName, string probeFilePath)
+        internal DebuggerSnapshotCreator AddLoggerInfo(string? methodName, string? typeFullName, string? probeFilePath)
         {
             JsonWriter.WritePropertyName("logger");
             JsonWriter.WriteStartObject();
@@ -985,12 +995,12 @@ namespace Datadog.Trace.Debugger.Snapshots
             return this;
         }
 
-        internal DebuggerSnapshotCreator AddGeneralInfo(string service, string processTags, string traceId, string spanId)
+        internal DebuggerSnapshotCreator AddGeneralInfo(string service, string? processTags, string? traceId, string? spanId)
         {
             JsonWriter.WritePropertyName("service");
             JsonWriter.WriteValue(service ?? UnknownValue);
 
-            if (_injectProcessTags && !string.IsNullOrEmpty(processTags))
+            if (!string.IsNullOrEmpty(processTags))
             {
                 JsonWriter.WritePropertyName("process_tags");
                 JsonWriter.WriteValue(processTags);

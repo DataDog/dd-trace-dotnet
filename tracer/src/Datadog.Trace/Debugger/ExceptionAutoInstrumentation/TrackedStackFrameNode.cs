@@ -134,7 +134,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 MaxFieldCount: DebuggerSettings.DefaultMaxNumberOfFieldsToCopy,
                 MaxLength: DebuggerSettings.DefaultMaxStringLength);
 
-            using var snapshotCreator = new ExceptionReplaySnapshotCreator(isFullSnapshot: true, ProbeLocation.Method, hasCondition: false, [], members, limitInfo, Tracer.Instance.Settings.PropagateProcessTags, DebuggerManager.ServiceNameProvider);
+            using var snapshotCreator = new ExceptionReplaySnapshotCreator(isFullSnapshot: true, ProbeLocation.Method, hasCondition: false, [], members, limitInfo, DebuggerManager.ProcessTagsProvider, DebuggerManager.ServiceNameProvider);
 
             _snapshotId = snapshotCreator.SnapshotId;
 
@@ -234,7 +234,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             {
                 ClearNonRelevantChildNodes();
 
-                if (ActiveChildNodes?.Any() == true)
+                if (ActiveChildNodes?.Count > 0)
                 {
                     var firstChild = ActiveChildNodes.First();
                     return Fnv1aHash.Combine(Method.MetadataToken, firstChild.LeaveSequenceHash);
@@ -318,7 +318,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                     return;
                 }
 
-                if (!ActiveChildNodes.Any())
+                if (ActiveChildNodes.Count == 0)
                 {
                     ActiveChildNodes = null;
                     return;

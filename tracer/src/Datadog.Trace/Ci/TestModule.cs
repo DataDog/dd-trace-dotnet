@@ -27,6 +27,7 @@ using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Ci;
@@ -43,7 +44,7 @@ public sealed class TestModule
     private readonly Span _span;
     private readonly Dictionary<string, TestSuite> _suites;
     private readonly TestSession? _fakeSession;
-    private IpcClient? _ipcClient = null;
+    private IpcClient? _ipcClient;
     private int _finished;
 
     private TestModule(string name, string? framework, string? frameworkVersion, DateTimeOffset? startDate)
@@ -422,7 +423,8 @@ public sealed class TestModule
                 {
                     using var fStream = File.OpenWrite(codeCoveragePath);
                     using var sWriter = new StreamWriter(fStream, Encoding.UTF8, 4096, false);
-                    new JsonSerializer().Serialize(sWriter, globalCoverage);
+                    using var jsonWriter = new JsonTextWriter(sWriter) { ArrayPool = JsonArrayPool.Shared };
+                    JsonSerializer.Create().Serialize(jsonWriter, globalCoverage);
                 }
                 catch (Exception ex)
                 {
