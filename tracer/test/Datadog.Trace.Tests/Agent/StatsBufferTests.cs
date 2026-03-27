@@ -227,6 +227,8 @@ namespace Datadog.Trace.Tests.Agent
                 httpStatusCode,
                 isSyntheticsRequest,
                 spanKind ?? string.Empty,
+                isError: false,
+                isTopLevel: false,
                 isTraceRoot,
                 httpMethod ?? string.Empty,
                 httpEndpoint ?? string.Empty,
