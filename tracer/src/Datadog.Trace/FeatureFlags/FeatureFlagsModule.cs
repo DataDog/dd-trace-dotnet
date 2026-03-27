@@ -61,7 +61,7 @@ namespace Datadog.Trace.FeatureFlags
             _onNewConfigEventHander = onNewConfig;
         }
 
-        internal Evaluation Evaluate(string flagKey, ValueType resultType, object? defaultValue, string targetingKey, IDictionary<string, object?>? attributes)
+        internal Evaluation Evaluate(string flagKey, ValueType resultType, object? defaultValue, string? targetingKey, IDictionary<string, object?>? attributes)
         {
             var evaluator = Volatile.Read(ref _evaluator);
             if (evaluator is null)
