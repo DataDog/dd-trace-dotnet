@@ -42,7 +42,8 @@
       env: integration_tests,
       error.msg: Intentional failure for testing: Consumer failure test,
       error.stack: Scrubbed
-            events: [scrubbed],
+      error.type: System.InvalidOperationException,
+      events: [scrubbed],
       language: dotnet,
       messaging.masstransit.consumer_type: Samples.MassTransit8.Consumers.FailingConsumer,
       messaging.operation: process,
@@ -260,7 +261,8 @@
       env: integration_tests,
       error.msg: Handler failure test: Handler will fail,
       error.stack: Scrubbed
-            events: [scrubbed],
+      error.type: System.InvalidOperationException,
+      events: [scrubbed],
       language: dotnet,
       messaging.masstransit.consumer_type: Handler,
       messaging.operation: process,
@@ -339,7 +341,8 @@
       env: integration_tests,
       error.msg: Saga failure test: Intentional saga failure for testing,
       error.stack: Scrubbed
-            events: [scrubbed],
+      error.type: System.InvalidOperationException,
+      events: [scrubbed],
       language: dotnet,
       messaging.masstransit.begin_state: Submitted,
       messaging.masstransit.consumer_type: OrderStateMachine,

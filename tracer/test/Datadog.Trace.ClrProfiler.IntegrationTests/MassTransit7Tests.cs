@@ -163,7 +163,7 @@ public class MassTransit7Tests : TracingIntegrationTest
 
             // Scrub error.stack to avoid .NET Framework vs .NET Core stack trace format differences
             var errorStackRegex = new Regex(@"error\.stack:[^\n]*\n(?:[^\n]*\n)*?(?=\s{6}\w)", RegexOptions.Multiline);
-            settings.AddRegexScrubber(errorStackRegex, "error.stack: Scrubbed\n      ");
+            settings.AddRegexScrubber(errorStackRegex, "error.stack: Scrubbed\n");
 
             await VerifyHelper.VerifySpans(
                 massTransitSpans,

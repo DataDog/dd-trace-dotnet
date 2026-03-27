@@ -18,12 +18,6 @@
       runtime-id: Guid_1,
       span.kind: consumer,
       version: 1.0.0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
     }
   },
   {
@@ -40,7 +34,8 @@
       env: integration_tests,
       error.msg: Intentional failure for testing: Consumer failure test,
       error.stack: Scrubbed
-            language: dotnet,
+      error.type: System.InvalidOperationException,
+      language: dotnet,
       messaging.destination.name: Failing,
       messaging.masstransit.input_address: loopback://localhost/Failing,
       messaging.masstransit.message_types: FailingMessage,
@@ -71,12 +66,6 @@
       runtime-id: Guid_1,
       span.kind: producer,
       version: 1.0.0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
     }
   },
   {
@@ -98,12 +87,6 @@
       runtime-id: Guid_1,
       span.kind: consumer,
       version: 1.0.0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
     }
   },
   {
@@ -125,12 +108,6 @@
       runtime-id: Guid_1,
       span.kind: consumer,
       version: 1.0.0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
     }
   },
   {
@@ -196,12 +173,6 @@
       runtime-id: Guid_1,
       span.kind: producer,
       version: 1.0.0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
     }
   },
   {
@@ -223,12 +194,6 @@
       runtime-id: Guid_1,
       span.kind: consumer,
       version: 1.0.0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
     }
   },
   {
@@ -245,7 +210,8 @@
       env: integration_tests,
       error.msg: Handler failure test: Handler will fail,
       error.stack: Scrubbed
-            language: dotnet,
+      error.type: System.InvalidOperationException,
+      language: dotnet,
       messaging.destination.name: handler-failing,
       messaging.masstransit.input_address: loopback://localhost/handler-failing,
       messaging.masstransit.message_types: HandlerFailingMessage,
@@ -274,12 +240,6 @@
       runtime-id: Guid_1,
       span.kind: consumer,
       version: 1.0.0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
     }
   },
   {
@@ -301,12 +261,6 @@
       runtime-id: Guid_1,
       span.kind: consumer,
       version: 1.0.0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
     }
   },
   {
@@ -328,12 +282,6 @@
       runtime-id: Guid_1,
       span.kind: consumer,
       version: 1.0.0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
     }
   },
   {
@@ -355,12 +303,6 @@
       runtime-id: Guid_1,
       span.kind: consumer,
       version: 1.0.0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
     }
   },
   {
@@ -377,7 +319,8 @@
       env: integration_tests,
       error.msg: Saga failure test: Intentional saga failure for testing,
       error.stack: Scrubbed
-            language: dotnet,
+      error.type: System.InvalidOperationException,
+      language: dotnet,
       messaging.destination.name: OrderState,
       messaging.masstransit.input_address: loopback://localhost/OrderState,
       messaging.operation: receive,
@@ -385,12 +328,6 @@
       runtime-id: Guid_1,
       span.kind: consumer,
       version: 1.0.0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
     }
   },
   {
@@ -589,12 +526,6 @@
       runtime-id: Guid_1,
       span.kind: producer,
       version: 1.0.0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
     }
   },
   {
@@ -618,12 +549,6 @@
       runtime-id: Guid_1,
       span.kind: producer,
       version: 1.0.0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
     }
   },
   {
@@ -647,12 +572,6 @@
       runtime-id: Guid_1,
       span.kind: producer,
       version: 1.0.0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
     }
   },
   {
@@ -676,12 +595,6 @@
       runtime-id: Guid_1,
       span.kind: producer,
       version: 1.0.0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
     }
   },
   {
@@ -705,12 +618,6 @@
       runtime-id: Guid_1,
       span.kind: producer,
       version: 1.0.0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
     }
   },
   {
@@ -734,12 +641,6 @@
       runtime-id: Guid_1,
       span.kind: producer,
       version: 1.0.0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
     }
   },
   {
@@ -763,12 +664,6 @@
       runtime-id: Guid_1,
       span.kind: producer,
       version: 1.0.0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
     }
   }
 ]
