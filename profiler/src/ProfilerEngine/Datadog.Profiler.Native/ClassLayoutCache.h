@@ -55,6 +55,9 @@ public:
         _referenceTypeCache.clear();
     }
 
+    size_t GetMemorySize() const;
+    size_t GetEntryCount() const { return _cache.size(); }
+
 private:
     ClassLayoutData BuildLayout(ClassID classID);
     bool IsReferenceType(mdTypeDef typeDef, IMetaDataImport* pMetadataImport);

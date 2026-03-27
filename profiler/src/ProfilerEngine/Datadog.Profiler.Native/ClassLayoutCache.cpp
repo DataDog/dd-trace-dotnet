@@ -396,3 +396,20 @@ bool ClassLayoutCache::IsReferenceType(mdTypeDef typeDef, IMetaDataImport* pMeta
     // Default: assume reference type if not explicitly a value type
     return true;
 }
+
+size_t ClassLayoutCache::GetMemorySize() const
+{
+    size_t total = sizeof(ClassLayoutCache);
+
+    total += _cache.bucket_count() * sizeof(void*);
+    for (const auto& [classID, layout] : _cache)
+    {
+        total += sizeof(ClassID) + sizeof(ClassLayoutData);
+        total += layout.fields.capacity() * sizeof(FieldInfo);
+    }
+
+    total += _referenceTypeCache.bucket_count() * sizeof(void*);
+    total += _referenceTypeCache.size() * (sizeof(ClassID) + sizeof(bool) + sizeof(void*));
+
+    return total;
+}

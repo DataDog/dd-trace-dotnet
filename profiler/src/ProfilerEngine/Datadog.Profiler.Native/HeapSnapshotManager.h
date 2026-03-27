@@ -16,6 +16,7 @@
 #include "ServiceBase.h"
 #include "MetricsRegistry.h"
 #include "ProxyMetric.h"
+#include "ClassLayoutCache.h"
 
 #include "corprof.h"
 
@@ -212,6 +213,9 @@ private:
     // Reference chain tracking
     std::unique_ptr<TypeReferenceTree> _typeReferenceTree;
     std::unique_ptr<ReferenceChainTraverser> _pReferenceChainTraverser;
+
+    // Persisted across heap dumps to avoid rebuilding class layouts via COM calls.
+    std::unique_ptr<ClassLayoutCache> _pClassLayoutCache;
 
     std::chrono::nanoseconds _startTimestamp;
 

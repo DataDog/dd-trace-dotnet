@@ -18,11 +18,12 @@ static constexpr ULONG MinFieldOffset = sizeof(void*);
 ReferenceChainTraverser::ReferenceChainTraverser(
     ICorProfilerInfo12* pCorProfilerInfo,
     IFrameStore* pFrameStore,
-    TypeReferenceTree& tree)
+    TypeReferenceTree& tree,
+    ClassLayoutCache& layoutCache)
     : _pCorProfilerInfo(pCorProfilerInfo),
       _pFrameStore(pFrameStore),
       _tree(tree),
-      _layoutCache(pCorProfilerInfo, pFrameStore),
+      _layoutCache(layoutCache),
       _objectsTraversed(0),
       _rootsProcessed(0)
 {

@@ -128,4 +128,14 @@ public:
     {
         return _count;
     }
+
+    size_t GetMemorySize() const
+    {
+        return sizeof(VisitedObjectSet) + _buckets.capacity() * sizeof(uintptr_t);
+    }
+
+    size_t GetBucketCount() const
+    {
+        return _buckets.size();
+    }
 };

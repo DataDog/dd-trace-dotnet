@@ -76,8 +76,9 @@ HeapSnapshotManager::HeapSnapshotManager(
 
     _pCorProfilerInfo->AddRef();
 
-    // Initialize reference tree
+    // Initialize reference tree and class layout cache (persisted across dumps)
     _typeReferenceTree = std::make_unique<TypeReferenceTree>();
+    _pClassLayoutCache = std::make_unique<ClassLayoutCache>(pCorProfilerInfo, pFrameStore);
 }
 
 HeapSnapshotManager::~HeapSnapshotManager()
@@ -558,9 +559,10 @@ void HeapSnapshotManager::StartGCDump()
             _typeReferenceTree->Clear();
         }
 
-        // Create/reset the traverser so it is ready to process roots during GC callbacks
+        // Create/reset the traverser so it is ready to process roots during GC callbacks.
+        // ClassLayoutCache is persisted across dumps to avoid rebuilding class layouts.
         _pReferenceChainTraverser = std::make_unique<ReferenceChainTraverser>(
-            _pCorProfilerInfo, _pFrameStore, *_typeReferenceTree);
+            _pCorProfilerInfo, _pFrameStore, *_typeReferenceTree, *_pClassLayoutCache);
 
         _cachedItemsSize.store(0, std::memory_order_relaxed);
     }
@@ -609,6 +611,12 @@ void HeapSnapshotManager::OnEndGCDump()
     if (_pReferenceChainTraverser)
     {
         _pReferenceChainTraverser->LogStats();
+    }
+
+    if (_pClassLayoutCache)
+    {
+        Log::Debug("ClassLayoutCache memory: ", _pClassLayoutCache->GetMemorySize(), " bytes (",
+                   _pClassLayoutCache->GetEntryCount(), " types)");
     }
 
     // DEBUG: we cannot stop here the session + start/stop a fake one to reset the keywords/verbosity

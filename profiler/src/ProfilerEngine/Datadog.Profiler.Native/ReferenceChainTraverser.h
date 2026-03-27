@@ -25,10 +25,18 @@ class IFrameStore;
 class ReferenceChainTraverser
 {
 public:
+    struct TraversalFrame
+    {
+        uintptr_t objectAddress;
+        TypeTreeNode* treeNode;
+        uint32_t depth;
+    };
+
     ReferenceChainTraverser(
         ICorProfilerInfo12* pCorProfilerInfo,
         IFrameStore* pFrameStore,
-        TypeReferenceTree& tree);
+        TypeReferenceTree& tree,
+        ClassLayoutCache& layoutCache);
 
     // Traverse from a single root (called from OnBulkRoot* event handlers).
     // A fresh VisitedObjectSet is used per root for cycle detection within that root's graph.
@@ -39,13 +47,6 @@ public:
     void LogStats() const;
 
 private:
-    struct TraversalFrame
-    {
-        uintptr_t objectAddress;
-        TypeTreeNode* treeNode;
-        uint32_t depth;
-    };
-
     // Iterative object graph traversal using an explicit stack.
     // Seeds the stack with the initial frame and processes until empty.
     void TraverseObjectGraph(uintptr_t objectAddress, TypeTreeNode* currentNode, uint32_t depth);
@@ -82,10 +83,10 @@ private:
     IFrameStore* _pFrameStore;
     TypeReferenceTree& _tree;
 
-    // Shared across root traversals (class layouts don't change between roots)
-    ClassLayoutCache _layoutCache;
+    // Persisted across heap dumps by HeapSnapshotManager (class layouts don't change).
+    ClassLayoutCache& _layoutCache;
 
-    // Reused across roots: cleared between roots to avoid reallocating the bucket array.
+    // Per-root cycle detection: cleared between roots to avoid reallocating the bucket array.
     VisitedObjectSet _visited;
 
     // Reused across roots to avoid repeated heap allocations.
