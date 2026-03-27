@@ -221,7 +221,7 @@ namespace Datadog.Trace.Tests.Agent
 
             var statsBuffer = new StatsBuffer(new ClientStatsPayload(MutableSettings.CreateForTesting(new(), [])));
 
-            await api.SendStatsAsync(statsBuffer, 1);
+            await api.SendStatsAsync(statsBuffer, 1, 0);
 
             requestMock.Verify(x => x.PostAsync(It.IsAny<ArraySegment<byte>>(), MimeTypes.MsgPack), Times.Once());
         }
@@ -244,7 +244,7 @@ namespace Datadog.Trace.Tests.Agent
 
             var statsBuffer = new StatsBuffer(new ClientStatsPayload(MutableSettings.CreateForTesting(new(), [])));
 
-            await api.SendStatsAsync(statsBuffer, 1);
+            await api.SendStatsAsync(statsBuffer, 1, 0);
 
             requestMock.Verify(x => x.PostAsync(It.IsAny<ArraySegment<byte>>(), MimeTypes.MsgPack), Times.Exactly(5));
         }

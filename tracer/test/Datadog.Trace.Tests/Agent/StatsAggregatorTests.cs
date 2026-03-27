@@ -36,7 +36,7 @@ namespace Datadog.Trace.Tests.Agent
             int invocationCount = 0;
 
             var api = new Mock<IApi>();
-            api.Setup(a => a.SendStatsAsync(It.IsAny<StatsBuffer>(), bucketDuration.ToNanoseconds()))
+            api.Setup(a => a.SendStatsAsync(It.IsAny<StatsBuffer>(), bucketDuration.ToNanoseconds(), It.IsAny<int>()))
                 .Callback(
                     () =>
                     {
@@ -93,7 +93,7 @@ namespace Datadog.Trace.Tests.Agent
             await aggregator.Flush();
 
             // Make sure that SendStatsAsync was called
-            api.Verify(a => a.SendStatsAsync(It.IsAny<StatsBuffer>(), It.IsAny<long>()), Times.Once);
+            api.Verify(a => a.SendStatsAsync(It.IsAny<StatsBuffer>(), It.IsAny<long>(), It.IsAny<int>()), Times.Once);
             api.Reset();
 
             // Now the actual test
@@ -103,7 +103,7 @@ namespace Datadog.Trace.Tests.Agent
             await aggregator.Flush();
 
             // No span is pushed so SendStatsAsync shouldn't be called
-            api.Verify(a => a.SendStatsAsync(It.IsAny<StatsBuffer>(), It.IsAny<long>()), Times.Never);
+            api.Verify(a => a.SendStatsAsync(It.IsAny<StatsBuffer>(), It.IsAny<long>(), It.IsAny<int>()), Times.Never);
         }
 
         [Fact]
