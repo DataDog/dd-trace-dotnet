@@ -19,12 +19,19 @@ internal static class BeginMethodHandler<TIntegration, TTarget, TArg1, TArg2, TA
     {
         try
         {
-            var tArg1ByRef = typeof(TArg1).IsByRef ? typeof(TArg1) : typeof(TArg1).MakeByRefType();
-            var tArg2ByRef = typeof(TArg2).IsByRef ? typeof(TArg2) : typeof(TArg2).MakeByRefType();
-            var tArg3ByRef = typeof(TArg3).IsByRef ? typeof(TArg3) : typeof(TArg3).MakeByRefType();
-            if (IntegrationMapper.CreateBeginMethodDelegate(typeof(TIntegration), typeof(TTarget), [tArg1ByRef, tArg2ByRef, tArg3ByRef]) is { } dynMethod)
+            if (CallTargetAot.IsAotMode())
             {
-                _invokeDelegate = (InvokeDelegate)dynMethod.CreateDelegate(typeof(InvokeDelegate));
+                _invokeDelegate = CallTargetAotEngine.CreateBeginDelegate<InvokeDelegate>(typeof(TIntegration), typeof(TTarget), typeof(TArg1), typeof(TArg2), typeof(TArg3));
+            }
+            else
+            {
+                var tArg1ByRef = typeof(TArg1).IsByRef ? typeof(TArg1) : typeof(TArg1).MakeByRefType();
+                var tArg2ByRef = typeof(TArg2).IsByRef ? typeof(TArg2) : typeof(TArg2).MakeByRefType();
+                var tArg3ByRef = typeof(TArg3).IsByRef ? typeof(TArg3) : typeof(TArg3).MakeByRefType();
+                if (IntegrationMapper.CreateBeginMethodDelegate(typeof(TIntegration), typeof(TTarget), [tArg1ByRef, tArg2ByRef, tArg3ByRef]) is { } dynMethod)
+                {
+                    _invokeDelegate = (InvokeDelegate)dynMethod.CreateDelegate(typeof(InvokeDelegate));
+                }
             }
         }
         catch (Exception ex)

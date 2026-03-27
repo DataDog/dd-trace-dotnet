@@ -57,6 +57,8 @@ namespace Datadog.Trace.ClrProfiler
             || assemblyName.StartsWith("Oracle.ManagedDataAccess,", StringComparison.Ordinal)
             || assemblyName.StartsWith("RabbitMQ.Client,", StringComparison.Ordinal)
             || assemblyName.StartsWith("RestSharp,", StringComparison.Ordinal)
+            || assemblyName.StartsWith("SampleCallTargetNativeAotApp,", StringComparison.Ordinal)
+            || assemblyName.StartsWith("SampleCallTargetNativeAotLibrary,", StringComparison.Ordinal)
             || assemblyName.StartsWith("Serilog,", StringComparison.Ordinal)
             || assemblyName.StartsWith("ServiceStack.Redis,", StringComparison.Ordinal)
             || assemblyName.StartsWith("StackExchange.Redis,", StringComparison.Ordinal)
@@ -609,6 +611,24 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.BasicGetIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.QueueBindIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.RabbitMQ,
+                "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.CallTargetNativeAot.SampleCallTargetNativeAotIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.CallTargetNativeAot.SampleCallTargetNativeAotIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.CallTargetNativeAot.SampleCallTargetNativeAotIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.CallTargetNativeAot.SampleCallTargetNativeAotIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.CallTargetNativeAot.SampleCallTargetNativeAotIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.CallTargetNativeAot.SampleCallTargetNativeAotIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.CallTargetNativeAot.SampleCallTargetNativeAotIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.CallTargetNativeAot.SampleCallTargetNativeAotDuckTypeAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.CallTargetNativeAot.SampleCallTargetNativeAotDuckTypeIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.CallTargetNativeAot.SampleCallTargetNativeAotDuckTypeIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.CallTargetNativeAot.SampleCallTargetNativeAotIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.CallTargetNativeAot.SampleCallTargetNativeAotIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.CallTargetNativeAot.SampleCallTargetNativeAotIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.CallTargetNativeAot.SampleCallTargetNativeAotIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.CallTargetNativeAot.SampleCallTargetNativeAotIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.CallTargetNativeAot.SampleCallTargetNativeAotIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.CallTargetNativeAot.SampleCallTargetNativeAotReferenceIntegration"
+                    => Datadog.Trace.Configuration.IntegrationId.SampleCallTargetNativeAotIntegration,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.Selenium.HttpCommandExecutorOnSendingRemoteHttpRequestIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.Selenium.WebDriverExecuteIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.Selenium.WebDriverExecuteIntegration"

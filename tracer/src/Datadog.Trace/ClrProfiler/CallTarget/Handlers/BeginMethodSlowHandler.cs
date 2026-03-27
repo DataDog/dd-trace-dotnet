@@ -17,7 +17,11 @@ internal static class BeginMethodSlowHandler<TIntegration, TTarget>
     {
         try
         {
-            if (IntegrationMapper.CreateSlowBeginMethodDelegate(typeof(TIntegration), typeof(TTarget)) is { } dynMethod)
+            if (CallTargetAot.IsAotMode())
+            {
+                _invokeDelegate = CallTargetAotEngine.CreateSlowBeginDelegate<InvokeDelegate>(typeof(TIntegration), typeof(TTarget));
+            }
+            else if (IntegrationMapper.CreateSlowBeginMethodDelegate(typeof(TIntegration), typeof(TTarget)) is { } dynMethod)
             {
                 _invokeDelegate = (InvokeDelegate)dynMethod.CreateDelegate(typeof(InvokeDelegate));
             }

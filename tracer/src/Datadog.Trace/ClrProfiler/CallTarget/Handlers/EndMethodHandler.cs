@@ -19,7 +19,11 @@ internal static class EndMethodHandler<TIntegration, TTarget>
     {
         try
         {
-            if (IntegrationMapper.CreateEndMethodDelegate(typeof(TIntegration), typeof(TTarget)) is { } dynMethod)
+            if (CallTargetAot.IsAotMode())
+            {
+                _invokeDelegate = CallTargetAotEngine.CreateEndDelegate<InvokeDelegate>(typeof(TIntegration), typeof(TTarget));
+            }
+            else if (IntegrationMapper.CreateEndMethodDelegate(typeof(TIntegration), typeof(TTarget)) is { } dynMethod)
             {
                 _invokeDelegate = (InvokeDelegate)dynMethod.CreateDelegate(typeof(InvokeDelegate));
             }

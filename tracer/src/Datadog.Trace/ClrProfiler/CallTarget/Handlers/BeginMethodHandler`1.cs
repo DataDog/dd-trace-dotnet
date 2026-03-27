@@ -19,10 +19,17 @@ internal static class BeginMethodHandler<TIntegration, TTarget, TArg1>
     {
         try
         {
-            var tArg1ByRef = typeof(TArg1).IsByRef ? typeof(TArg1) : typeof(TArg1).MakeByRefType();
-            if (IntegrationMapper.CreateBeginMethodDelegate(typeof(TIntegration), typeof(TTarget), [tArg1ByRef]) is { } dynMethod)
+            if (CallTargetAot.IsAotMode())
             {
-                _invokeDelegate = (InvokeDelegate)dynMethod.CreateDelegate(typeof(InvokeDelegate));
+                _invokeDelegate = CallTargetAotEngine.CreateBeginDelegate<InvokeDelegate>(typeof(TIntegration), typeof(TTarget), typeof(TArg1));
+            }
+            else
+            {
+                var tArg1ByRef = typeof(TArg1).IsByRef ? typeof(TArg1) : typeof(TArg1).MakeByRefType();
+                if (IntegrationMapper.CreateBeginMethodDelegate(typeof(TIntegration), typeof(TTarget), [tArg1ByRef]) is { } dynMethod)
+                {
+                    _invokeDelegate = (InvokeDelegate)dynMethod.CreateDelegate(typeof(InvokeDelegate));
+                }
             }
         }
         catch (Exception ex)

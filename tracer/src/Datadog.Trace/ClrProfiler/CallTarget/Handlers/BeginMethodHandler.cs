@@ -19,7 +19,11 @@ internal static class BeginMethodHandler<TIntegration, TTarget>
     {
         try
         {
-            if (IntegrationMapper.CreateBeginMethodDelegate(typeof(TIntegration), typeof(TTarget), []) is { } dynMethod)
+            if (CallTargetAot.IsAotMode())
+            {
+                _invokeDelegate = CallTargetAotEngine.CreateBeginDelegate<InvokeDelegate>(typeof(TIntegration), typeof(TTarget));
+            }
+            else if (IntegrationMapper.CreateBeginMethodDelegate(typeof(TIntegration), typeof(TTarget), []) is { } dynMethod)
             {
                 _invokeDelegate = (InvokeDelegate)dynMethod.CreateDelegate(typeof(InvokeDelegate));
             }
