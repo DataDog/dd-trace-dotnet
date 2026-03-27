@@ -22,6 +22,7 @@ Use this document as the entrypoint, then drill into companion docs:
 4. [DuckTyping.NativeAOT.Troubleshooting.md](./DuckTyping.NativeAOT.Troubleshooting.md): failure diagnosis and remediation playbook.
 5. [DuckTyping.NativeAOT.Testing.md](./DuckTyping.NativeAOT.Testing.md): test commands, gates, and release-readiness checks.
 6. [DuckTyping.NativeAOT.MinimalSample.md](./DuckTyping.NativeAOT.MinimalSample.md): smallest end-to-end sample app layout and commands.
+7. [CallTarget.NativeAOT.md](./CallTarget.NativeAOT.md): CallTarget-specific NativeAOT workflow, bootstrap contract, and the DuckType companion dependency used by constrained CallTarget bindings.
 
 ## Scope and Non-Goals
 
