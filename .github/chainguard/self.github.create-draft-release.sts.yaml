@@ -2,9 +2,10 @@
 # Called via workflow_call from create_normal_draft_release.yml (master) and create_hotfix_draft_release.yml (hotfix/*)
 issuer: https://token.actions.githubusercontent.com
 
-subject_pattern: repo:DataDog/dd-trace-dotnet:ref:refs/heads/(master|hotfix/.+)
+subject: repo:DataDog/dd-trace-dotnet:environment:publish-debug-symbols-env
 
 claim_pattern:
+  environment: publish-debug-symbols-env
   event_name: workflow_dispatch
   job_workflow_ref: DataDog/dd-trace-dotnet/\.github/workflows/_create_draft_release\.yml@refs/heads/(master|hotfix/.+)
   ref: refs/heads/(master|hotfix/.+)

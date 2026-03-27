@@ -579,6 +579,9 @@ partial class Build : NukeBuild
                     EmitMatrix("smoke_arm64_nuget_matrix",
                         allScenarios.Where(x => x.category is SmokeTests.SmokeTestCategory.LinuxNuGetArm64));
 
+                    EmitMatrix("smoke_x64_azurefunctions_matrix",
+                        allScenarios.Where(x => x.category is SmokeTests.SmokeTestCategory.LinuxAzureFunctionsNuGet));
+
                     EmitMatrix("smoke_x64_tool_matrix",
                         allScenarios.Where(x => x.category is SmokeTests.SmokeTestCategory.LinuxDotnetTool));
 
@@ -612,6 +615,9 @@ partial class Build : NukeBuild
 
                     EmitMatrix("smoke_win_nuget_matrix",
                         allScenarios.Where(x => x.category is SmokeTests.SmokeTestCategory.WindowsNuGet));
+
+                    EmitMatrix("smoke_win_azurefunctions_matrix",
+                        allScenarios.Where(x => x.category is SmokeTests.SmokeTestCategory.WindowsAzureFunctionsNuGet));
 
                     EmitMatrix("smoke_win_tool_matrix",
                         allScenarios.Where(x => x.category is SmokeTests.SmokeTestCategory.WindowsDotnetTool));

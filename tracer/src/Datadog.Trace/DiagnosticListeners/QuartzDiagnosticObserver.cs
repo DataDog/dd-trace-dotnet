@@ -3,68 +3,63 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
-using System.Linq;
+#nullable enable
+
 using Datadog.Trace.Activity;
 using Datadog.Trace.Activity.DuckTypes;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Quartz;
 using Datadog.Trace.Logging;
-#nullable enable
 
-// Currently to our DiagnosticObserver class isn't available for .NET Framework.
-// Our QuartzDiagnosticObserver only works for .NET Framework due to this limitation
-// We are purposely avoiding adding a dependency to System.Diagnostics.DiagnosticSource
-#if !NETFRAMEWORK
-namespace Datadog.Trace.DiagnosticListeners
+namespace Datadog.Trace.DiagnosticListeners;
+
+/// <summary>
+/// Instruments Quartz.NET job scheduler.
+/// <para/>
+/// This observer listens to Quartz diagnostic events to trace job execution,
+/// scheduling, and other Quartz-related operations.
+/// </summary>
+internal sealed class QuartzDiagnosticObserver : DiagnosticObserver
 {
-    /// <summary>
-    /// Instruments Quartz.NET job scheduler.
-    /// <para/>
-    /// This observer listens to Quartz diagnostic events to trace job execution,
-    /// scheduling, and other Quartz-related operations.
-    /// </summary>
-    internal sealed class QuartzDiagnosticObserver : DiagnosticObserver
+    private const string DiagnosticListenerName = "Quartz";
+
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<QuartzDiagnosticObserver>();
+
+    protected override string ListenerName => DiagnosticListenerName;
+
+    protected override void OnNext(string eventName, object arg)
     {
-        private const string DiagnosticListenerName = "Quartz";
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<QuartzDiagnosticObserver>();
-
-        protected override string ListenerName => DiagnosticListenerName;
-
-        protected override void OnNext(string eventName, object arg)
+        switch (eventName)
         {
-            switch (eventName)
-            {
-                case "Quartz.Job.Execute.Start":
-                case "Quartz.Job.Veto.Start":
-                    var currentActivity = ActivityListener.GetCurrentActivity();
-                    if (currentActivity is IActivity5 activity5)
-                    {
-                        QuartzCommon.EnhanceActivityMetadata(activity5);
-                        QuartzCommon.SetActivityKind(activity5);
-                    }
-                    else
-                    {
-                        Log.Debug("The activity was not Activity5 (Less than .NET 5.0). Unable enhance the span metadata.");
-                        currentActivity?.AddTag(Tags.InstrumentationName, QuartzCommon.ComponentName);
-                    }
+            case "Quartz.Job.Execute.Start":
+            case "Quartz.Job.Veto.Start":
+                var activity = ActivityListener.GetCurrentActivity();
+                if (activity is IActivity5 activity5)
+                {
+                    QuartzCommon.SetActivityKind(activity5);
+                }
+                else
+                {
+                    Log.Debug("The loaded System.Diagnostics.Activity type does not have a Kind property. Unable to populate the Kind property.");
+                }
 
-                    break;
-                case "Quartz.Job.Execute.Stop":
-                case "Quartz.Job.Veto.Stop":
-                    break;
-                case "Quartz.Job.Execute.Exception":
-                case "Quartz.Job.Veto.Exception":
-                    // setting an exception manually
-                    var closingActivity = ActivityListener.GetCurrentActivity();
-                    if (closingActivity?.Instance is not null)
-                    {
-                        QuartzCommon.AddException(arg, closingActivity);
-                    }
+                if (activity?.Instance is not null)
+                {
+                    QuartzCommon.EnhanceActivityMetadata(activity);
+                }
 
-                    break;
-            }
+                break;
+            case "Quartz.Job.Execute.Stop":
+            case "Quartz.Job.Veto.Stop":
+                break;
+            case "Quartz.Job.Execute.Exception":
+            case "Quartz.Job.Veto.Exception":
+                var closingActivity = ActivityListener.GetCurrentActivity();
+                if (closingActivity?.Instance is not null)
+                {
+                    QuartzCommon.AddException(arg, closingActivity);
+                }
+
+                break;
         }
     }
 }
-
-#endif

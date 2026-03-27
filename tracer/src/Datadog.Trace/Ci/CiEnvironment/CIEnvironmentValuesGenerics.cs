@@ -429,7 +429,7 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
         }
     }
 
-    private static IEnumerable<System.Reflection.FieldInfo> GetAllFieldsRecursive(Type type)
+    private static List<System.Reflection.FieldInfo> GetAllFieldsRecursive(Type type)
     {
         var fields = new List<System.Reflection.FieldInfo>(type.GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static));
         foreach (var nestedType in type.GetNestedTypes(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic))

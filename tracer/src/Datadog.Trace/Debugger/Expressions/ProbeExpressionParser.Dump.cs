@@ -54,7 +54,7 @@ internal partial class ProbeExpressionParser<T>
         return Expression.Condition(ifNull, Expression.Constant("null"), dumpExpression);
     }
 
-    private Expression DumpCollectionExpression(Expression collection, List<ParameterExpression> scopeMembers)
+    private BlockExpression DumpCollectionExpression(Expression collection, List<ParameterExpression> scopeMembers)
     {
         var loopItemType = collection.Type.IsGenericType ? collection.Type.GetGenericArguments()[0] : typeof(object);
         var enumerableType = typeof(IEnumerable<>).MakeGenericType(loopItemType);
@@ -123,7 +123,7 @@ internal partial class ProbeExpressionParser<T>
         return Expression.Block(expressions);
     }
 
-    private Expression DumpFieldsExpression(Expression expression, List<ParameterExpression> scopeMembers)
+    private BlockExpression DumpFieldsExpression(Expression expression, List<ParameterExpression> scopeMembers)
     {
         const BindingFlags flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance | BindingFlags.DeclaredOnly;
         var getTypeMethod = GetMethodByReflection(typeof(object), nameof(object.GetType), Type.EmptyTypes);

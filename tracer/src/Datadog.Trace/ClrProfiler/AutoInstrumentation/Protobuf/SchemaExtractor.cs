@@ -171,7 +171,7 @@ internal static class SchemaExtractor
                 var fieldName = field.Name;
                 string? type = null, format = null, description = null;
                 OpenApiReference? reference = null;
-                IList<IOpenApiAny>? enumValues = null;
+                List<IOpenApiAny>? enumValues = null;
 
                 // the csharp implementation of protobuf uses an enum with different values to handle types internally.
                 // we must convert it back to the "common" value for consistency with other tracers
