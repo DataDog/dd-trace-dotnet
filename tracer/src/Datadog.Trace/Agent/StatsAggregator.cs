@@ -36,7 +36,7 @@ namespace Datadog.Trace.Agent
         private readonly IApi _api;
         private readonly bool _isOtlp;
         private readonly ITraceProcessor[] _traceProcessors;
-        private readonly ITraceProcessor _obfuscatorProcessor;
+        private readonly ObfuscatorTraceProcessor _obfuscatorProcessor;
 
         private readonly TaskCompletionSource<bool> _processExit;
 
@@ -338,9 +338,9 @@ namespace Datadog.Trace.Agent
                 span.Type,
                 httpStatusCode,
                 span.Context.Origin == "synthetics",
+                spanKind,
                 _isOtlp ? span.Error : false,
                 _isOtlp ? span.IsTopLevel : false,
-                spanKind,
                 isTraceRoot,
                 httpMethod,
                 httpEndpoint,

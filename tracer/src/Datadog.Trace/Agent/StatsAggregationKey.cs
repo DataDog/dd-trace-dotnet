@@ -37,6 +37,8 @@ namespace Datadog.Trace.Agent
             int httpStatusCode,
             bool isSyntheticsRequest,
             string spanKind,
+            bool isError,
+            bool isTopLevel,
             bool isTraceRoot,
             string httpMethod,
             string httpEndpoint,
@@ -50,8 +52,8 @@ namespace Datadog.Trace.Agent
             Type = type;
             HttpStatusCode = httpStatusCode;
             IsSyntheticsRequest = isSyntheticsRequest;
-            IsError = false;
-            IsTopLevel = false;
+            IsError = isError;
+            IsTopLevel = isTopLevel;
             SpanKind = spanKind;
             IsTraceRoot = isTraceRoot;
             HttpMethod = httpMethod;
@@ -59,38 +61,6 @@ namespace Datadog.Trace.Agent
             GrpcStatusCode = grpcStatusCode;
             ServiceSource = serviceSource;
             PeerTagsHash = peerTagsHash;
-            SpanDerivedPrimaryTagsHash = spanDerivedPrimaryTagsHash;
-        }
-
-        // Constructs a StatsAgregationKey that represents the aggregation key used by OpenTelemetry,
-        // which considers IsError and IsTopLevel since these should be considered as unique timeseries
-        // but does not currently include the new additional fields
-        // TODO: Confirm whether the aggergations that we include _should_ be used by OTel too?
-        public StatsAggregationKey(
-            string resource,
-            string service,
-            string operationName,
-            string type,
-            int httpStatusCode,
-            bool isSyntheticsRequest,
-            bool isError,
-            bool isTopLevel)
-        {
-            Resource = resource;
-            Service = service;
-            OperationName = operationName;
-            Type = type;
-            HttpStatusCode = httpStatusCode;
-            IsSyntheticsRequest = isSyntheticsRequest;
-            IsError = isError;
-            IsTopLevel = isTopLevel;
-            SpanKind = string.Empty;
-            IsTraceRoot = false;
-            HttpMethod = string.Empty;
-            HttpEndpoint = string.Empty;
-            GrpcStatusCode = 0;
-            ServiceSource = string.Empty;
-            PeerTagsHash = 0;
         }
 
         public bool Equals(StatsAggregationKey other)
