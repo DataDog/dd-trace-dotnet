@@ -119,7 +119,9 @@ $arguments = @("-r") + $runtimes + @(
     "-m",
     "-f", $Filter,
     "--allCategories", $Category,
-    "--iterationTime", "200",  # Increased to 500 ms for flaky benchmarks
+    # We change this manually on benchmark methods from 200 ms to 500 ms on 
+    # less stable benchmarks with "[IterationTime(500)]"
+    "--iterationTime", "200",
     "--launchCount", "10",
     "--warmupCount", "10",
     "--iterationCount", "10",
