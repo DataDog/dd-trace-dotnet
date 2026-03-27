@@ -49,7 +49,7 @@ public sealed class OpenFeatureSdkEvaluateIntegration
         // via the manual API or an older OpenFeature package), start delivery on first evaluation.
         flags?.Activate();
 
-        var res = flags?.Evaluate(parameters.FlagKey, parameters.TargetType, parameters.DefaultValue, parameters.TargetingKey ?? string.Empty, parameters.Attributes);
+        var res = flags?.Evaluate(parameters.FlagKey, parameters.TargetType, parameters.DefaultValue, parameters.TargetingKey, parameters.Attributes);
         return new CallTargetReturn<TReturn?>(res.DuckCast<TReturn>());
     }
 
