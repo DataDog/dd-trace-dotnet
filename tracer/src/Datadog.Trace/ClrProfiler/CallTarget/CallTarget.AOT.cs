@@ -19,7 +19,6 @@ public static class CallTargetAot
 {
     private const string ManualRegistrationObsoleteMessage = "Reserved for generated NativeAOT registry bootstrap. Manual registration and registry mixing are unsupported.";
     private const int RuntimeModeStateUninitialized = 0;
-    private const int RuntimeModeStateDynamic = 1;
     private const int RuntimeModeStateAot = 2;
 
     private static int _runtimeModeState;
