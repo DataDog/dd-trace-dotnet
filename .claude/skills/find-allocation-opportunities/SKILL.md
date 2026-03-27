@@ -79,7 +79,13 @@ at the top of that file for exclusion rules (`Vendors/`, `Generated/`, `test/`).
 ### Step 4: Assess and report
 
 For each finding, determine:
-- Is this actually on a hot path? (Check callers if unclear)
+- **Does this actually cause a heap allocation?** Only report findings that produce heap
+  allocations (object/array/string/delegate/boxing). Do not report redundant calls, style
+  issues, or other inefficiencies that don't allocate — those are out of scope for this skill.
+- Is this on a hot path or eager initialization path? (Check callers if unclear)
+  Hot-path allocations are highest priority. Eager initialization allocations matter too —
+  they affect cold-start times. Prefer lazy initialization when possible. True one-shot
+  cold-path allocations (error handling, rare config changes) are lowest priority.
 - Is there already an optimization in place? (e.g., the allocation might be behind an `IsEnabled` guard)
 - What's the concrete fix using an existing pattern from this codebase?
 
