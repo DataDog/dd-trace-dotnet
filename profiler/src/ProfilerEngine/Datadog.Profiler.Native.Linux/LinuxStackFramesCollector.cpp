@@ -115,6 +115,9 @@ StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplemen
     // Otherwise, the CPU consumption to collect the callstack, will be accounted as "user app CPU time"
     auto timerId = pThreadInfo->GetTimerId();
 
+#ifdef ARM64
+    auto tracer = std::make_unique<UnwinderTracer>();
+#endif
     if (selfCollect)
     {
         // In case we are self-unwinding, we do not want to be interrupted by the signal-based profilers (walltime and cpu)
@@ -122,8 +125,12 @@ StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplemen
         // This lock is acquired by the signal-based profiler (see StackSamplerLoop->StackSamplerLoopManager)
         pThreadInfo->AcquireLock();
 
+#ifdef ARM64
+        _tracer = tracer.get();
+#endif
         on_leave
         {
+            _tracer = nullptr;
             pThreadInfo->ReleaseLock();
         };
 
@@ -143,7 +150,6 @@ StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplemen
 
         s_pInstanceCurrentlyStackWalking = this;
 #ifdef ARM64
-        auto tracer = std::make_unique<UnwinderTracer>();
         s_pInstanceCurrentlyStackWalking->SetTracer(tracer.get());
 #endif
 
