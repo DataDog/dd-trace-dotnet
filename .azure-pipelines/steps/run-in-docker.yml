@@ -29,7 +29,7 @@ parameters:
 
   - name: retryCountForRunCommand
     type: number
-    default: 1
+    default: 0
 
 steps:
 - template: ensure-docker-ready.yml
