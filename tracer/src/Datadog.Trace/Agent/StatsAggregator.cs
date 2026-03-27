@@ -195,7 +195,7 @@ namespace Datadog.Trace.Agent
             // clear the source when service name equals the default, unless it's
             // a configuration-driven override (opt.*).
             var serviceNameSource = span.Context.ServiceNameSource;
-            var serviceNameEqualsDefault = string.Equals(span.ServiceName, Tracer.Instance.DefaultServiceName, StringComparison.OrdinalIgnoreCase);
+            var serviceNameEqualsDefault = string.Equals(span.ServiceName, span.Context.TraceContext?.Tracer?.DefaultServiceName, StringComparison.OrdinalIgnoreCase);
             if (serviceNameEqualsDefault && serviceNameSource?.StartsWith("opt.", StringComparison.Ordinal) != true)
             {
                 serviceNameSource = null;
