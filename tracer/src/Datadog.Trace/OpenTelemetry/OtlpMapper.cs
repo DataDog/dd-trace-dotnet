@@ -77,6 +77,46 @@ internal static class OtlpMapper
         int count = 0;
         int droppedAttributesCount = 0;
 
+        if (count < limit)
+        {
+            writeKeyValue(new KeyValue("service.name", spanModel.Span.ServiceName));
+            count++;
+        }
+        else
+        {
+            droppedAttributesCount++;
+        }
+
+        if (count < limit)
+        {
+            writeKeyValue(new KeyValue("operation.name", spanModel.Span.OperationName));
+            count++;
+        }
+        else
+        {
+            droppedAttributesCount++;
+        }
+
+        if (count < limit)
+        {
+            writeKeyValue(new KeyValue("resource.name", spanModel.Span.ResourceName));
+            count++;
+        }
+        else
+        {
+            droppedAttributesCount++;
+        }
+
+        if (count < limit)
+        {
+            writeKeyValue(new KeyValue("span.type", spanModel.Span.Type));
+            count++;
+        }
+        else
+        {
+            droppedAttributesCount++;
+        }
+
         // Write trace tags
         if (!string.IsNullOrEmpty(spanModel.Span.Context.LastParentId))
         {
