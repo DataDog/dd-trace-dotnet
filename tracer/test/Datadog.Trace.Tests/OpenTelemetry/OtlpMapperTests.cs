@@ -154,6 +154,50 @@ public class OtlpMapperTests
     }
 
     [Fact]
+    public void EmitAttributesFromSpan_EmitsServiceName()
+    {
+        var span = CreateSpan();
+
+        var attributes = new List<KeyValue>();
+        OtlpMapper.EmitAttributesFromSpan(kv => attributes.Add(kv), CreateSpanModel(span), limit: 128);
+
+        attributes.Should().Contain(kv => kv.Key == "service.name" && (string)kv.Value! == span.ServiceName);
+    }
+
+    [Fact]
+    public void EmitAttributesFromSpan_EmitsResourceName()
+    {
+        var span = CreateSpan();
+
+        var attributes = new List<KeyValue>();
+        OtlpMapper.EmitAttributesFromSpan(kv => attributes.Add(kv), CreateSpanModel(span), limit: 128);
+
+        attributes.Should().Contain(kv => kv.Key == "resource.name" && (string)kv.Value! == span.ResourceName);
+    }
+
+    [Fact]
+    public void EmitAttributesFromSpan_EmitsOperationName()
+    {
+        var span = CreateSpan();
+
+        var attributes = new List<KeyValue>();
+        OtlpMapper.EmitAttributesFromSpan(kv => attributes.Add(kv), CreateSpanModel(span), limit: 128);
+
+        attributes.Should().Contain(kv => kv.Key == "operation.name" && (string)kv.Value! == span.OperationName);
+    }
+
+    [Fact]
+    public void EmitAttributesFromSpan_EmitsSpanType()
+    {
+        var span = CreateSpan();
+
+        var attributes = new List<KeyValue>();
+        OtlpMapper.EmitAttributesFromSpan(kv => attributes.Add(kv), CreateSpanModel(span), limit: 128);
+
+        attributes.Should().Contain(kv => kv.Key == "span.type" && (string)kv.Value! == span.Type);
+    }
+
+    [Fact]
     public void EmitAttributesFromSpan_EmitsStringTags()
     {
         var span = CreateSpan();
