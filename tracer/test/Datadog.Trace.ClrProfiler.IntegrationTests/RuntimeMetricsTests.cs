@@ -12,12 +12,16 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.RuntimeMetrics;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using VerifyTests;
+using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
+    [UsesVerify]
     [CollectionDefinition(nameof(RuntimeMetricsTests), DisableParallelization = true)]
     public class RuntimeMetricsTests : TestHelper
     {
@@ -153,6 +157,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
 
 #if NET6_0_OR_GREATER
+        /// <summary>
+        /// Validates that all 19 OTel-native .NET runtime metrics are exported via OTLP
+        /// with correct names, types, tags, and structure via snapshot testing.
+        /// Follows the same scrub-and-snapshot pattern as OpenTelemetrySdkTests.SubmitsOtlpMetrics.
+        /// Tag requirements driven by: https://github.com/DataDog/semantic-core/blob/main/sor/domains/metrics/integrations/dotnet/_equivalence/otel_dd.yaml
+        /// Instrument surface ref: https://learn.microsoft.com/en-us/dotnet/core/diagnostics/built-in-metrics-runtime
+        /// </summary>
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
@@ -167,11 +178,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 await httpClient.GetAsync($"http://{testAgentHost}:{otlpPort}/test/session/clear");
             }
 
-            SetEnvironmentVariable("OTEL_METRICS_EXPORTER", "otlp");
+            SetEnvironmentVariable("DD_RUNTIME_METRICS_ENABLED", "1");
+            SetEnvironmentVariable("DD_METRICS_OTEL_ENABLED", "1");
             SetEnvironmentVariable("OTEL_EXPORTER_OTLP_PROTOCOL", "http/protobuf");
             SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", $"http://{testAgentHost}:{otlpPort}");
             SetEnvironmentVariable("OTEL_METRIC_EXPORT_INTERVAL", "1000");
-            SetEnvironmentVariable("DD_RUNTIME_METRICS_ENABLED", "0");
 
             using var agent = EnvironmentHelper.GetMockAgent();
             using (await RunSampleAndWaitForExit(agent))
@@ -185,28 +196,156 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 metricsData.Should().NotBeNullOrEmpty();
 
+                // --- Extract and validate metric names ---
                 var metricNames = metricsData
                     .SelectTokens("$..metrics[*].name")
                     .Select(t => t.ToString())
                     .Distinct()
+                    .OrderBy(n => n)
                     .ToList();
 
-                _output.WriteLine("Received OTLP metric names: " + string.Join(", ", metricNames.OrderBy(n => n)));
+                _output.WriteLine("Received OTLP metric names:\n  " + string.Join("\n  ", metricNames));
 
-                var expectedMetrics = new List<string>
+                // All 19 OTel-native System.Runtime instruments must be present
+                var expectedMetrics = new[]
                 {
-                    "dotnet.gc.collections",
-                    "dotnet.process.memory.working_set",
-                    "dotnet.gc.heap.total_allocated",
-                    "dotnet.thread_pool.thread.count",
-                    "dotnet.monitor.lock_contentions",
                     "dotnet.assembly.count",
+                    "dotnet.exceptions",
+                    "dotnet.gc.collections",
+                    "dotnet.gc.heap.total_allocated",
+                    "dotnet.gc.last_collection.heap.fragmentation.size",
+                    "dotnet.gc.last_collection.heap.size",
+                    "dotnet.gc.last_collection.memory.committed_size",
+                    "dotnet.gc.pause.time",
+                    "dotnet.jit.compilation.time",
+                    "dotnet.jit.compiled_il.size",
+                    "dotnet.jit.compiled_methods",
+                    "dotnet.monitor.lock_contentions",
+                    "dotnet.process.cpu.count",
+                    "dotnet.process.cpu.time",
+                    "dotnet.process.memory.working_set",
+                    "dotnet.thread_pool.queue.length",
+                    "dotnet.thread_pool.thread.count",
+                    "dotnet.thread_pool.work_item.count",
+                    "dotnet.timer.count",
                 };
 
                 foreach (var expected in expectedMetrics)
                 {
                     metricNames.Should().Contain(expected, $"expected OTLP runtime metric '{expected}' to be present");
                 }
+
+                // --- Scrub volatile fields and build snapshot ---
+                // Zero out timestamps (vary per run)
+                foreach (var dataPoint in metricsData.SelectTokens("$..data_points[*]"))
+                {
+                    dataPoint["start_time_unix_nano"] = "0";
+                    dataPoint["time_unix_nano"] = "0";
+
+                    // Zero out volatile metric values (memory sizes, cpu times, counts change per run)
+                    if (dataPoint["as_int"] is not null)
+                    {
+                        dataPoint["as_int"] = "0";
+                    }
+
+                    if (dataPoint["as_double"] is not null)
+                    {
+                        dataPoint["as_double"] = 0.0;
+                    }
+                }
+
+                // Scrub resource attributes that vary (sdk version, runtime-id, etc.)
+                foreach (var attribute in metricsData.SelectTokens("$..resource.attributes[?(@.key == 'telemetry.sdk.version')]"))
+                {
+                    attribute["value"]!["string_value"] = "sdk-version";
+                }
+
+                // Keep only System.Runtime metrics, deduplicate by name to avoid
+                // multiple export intervals making the snapshot non-deterministic.
+                // For metrics with tagged data points (e.g. gc.heap.generation=gen0/gen1/gen2),
+                // merge all data points and sort by tag values for stable ordering.
+                var metricsByName = new Dictionary<string, JObject>();
+                foreach (var metric in metricsData.SelectTokens("$..metrics[*]"))
+                {
+                    var name = metric["name"]?.ToString();
+                    if (name is null || !name.StartsWith("dotnet."))
+                    {
+                        continue;
+                    }
+
+                    if (!metricsByName.ContainsKey(name))
+                    {
+                        metricsByName[name] = (JObject)metric.DeepClone();
+                    }
+                    else
+                    {
+                        // Merge data points from duplicate metric entries (multiple export intervals)
+                        var existing = metricsByName[name];
+                        var existingDps = existing.SelectTokens("$..data_points").OfType<JArray>().FirstOrDefault();
+                        var newDps = metric.SelectTokens("$..data_points").OfType<JArray>().FirstOrDefault();
+                        if (existingDps is not null && newDps is not null)
+                        {
+                            foreach (var dp in newDps)
+                            {
+                                existingDps.Add(dp.DeepClone());
+                            }
+                        }
+                    }
+                }
+
+                // For each metric, deduplicate data points by tag signature and keep one per unique tag combo.
+                // Sort data points by their tag values for deterministic ordering.
+                foreach (var metric in metricsByName.Values)
+                {
+                    var dpArrays = metric.SelectTokens("$..data_points").OfType<JArray>().ToList();
+                    foreach (var dpArray in dpArrays)
+                    {
+                        var seenTags = new HashSet<string>();
+                        var dedupedDps = new JArray();
+                        foreach (var dp in dpArray)
+                        {
+                            var tagSig = string.Join(",", dp.SelectTokens("$.attributes[*]")
+                                .Select(a => $"{a["key"]}={a["value"]?["string_value"]}")
+                                .OrderBy(t => t));
+                            if (seenTags.Add(tagSig))
+                            {
+                                dedupedDps.Add(dp.DeepClone());
+                            }
+                        }
+
+                        // Sort data points by their tag signature
+                        var sortedDps = new JArray(dedupedDps.OrderBy(dp =>
+                            string.Join(",", dp.SelectTokens("$.attributes[*]")
+                                .Select(a => $"{a["key"]}={a["value"]?["string_value"]}")
+                                .OrderBy(t => t))));
+
+                        dpArray.Clear();
+                        foreach (var dp in sortedDps)
+                        {
+                            dpArray.Add(dp);
+                        }
+                    }
+                }
+
+                var sorted = new JArray(metricsByName.Values.OrderBy(m => m["name"]?.ToString()));
+
+                // The snapshot captures: metric names, types (sum/gauge), temporality,
+                // is_monotonic, units, and tag keys+values (cpu.mode, gc.heap.generation).
+                // Volatile data (timestamps, actual values) are zeroed out.
+                var formattedJson = sorted.ToString(Formatting.Indented);
+
+                var verifySettings = VerifyHelper.GetSpanVerifierSettings();
+                VerifyHelper.InitializeGlobalSettings();
+#if NET9_0_OR_GREATER
+                const string tfm = "net9";
+#else
+                const string tfm = "net6";
+#endif
+                var fileName = $"RuntimeMetricsTests.OtlpRuntimeMetricsSubmitted_{tfm}";
+                verifySettings.UseFileName(fileName);
+                verifySettings.DisableRequireUniquePrefix();
+
+                await Verifier.Verify(formattedJson, verifySettings);
             }
         }
 #endif

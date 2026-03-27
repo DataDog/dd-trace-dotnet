@@ -198,6 +198,7 @@
    </assembly>
    <assembly fullname="System.ComponentModel.Primitives">
       <type fullname="System.ComponentModel.BrowsableAttribute" />
+      <type fullname="System.ComponentModel.Component" />
       <type fullname="System.ComponentModel.DescriptionAttribute" />
    </assembly>
    <assembly fullname="System.ComponentModel.TypeConverter">
@@ -261,10 +262,15 @@
       <type fullname="System.Diagnostics.ActivityTraceId" />
       <type fullname="System.Diagnostics.DiagnosticListener" />
       <type fullname="System.Diagnostics.DistributedContextPropagator" />
+      <type fullname="System.Diagnostics.Metrics.Counter`1" />
+      <type fullname="System.Diagnostics.Metrics.Histogram`1" />
       <type fullname="System.Diagnostics.Metrics.Instrument" />
+      <type fullname="System.Diagnostics.Metrics.Measurement`1" />
       <type fullname="System.Diagnostics.Metrics.MeasurementCallback`1" />
       <type fullname="System.Diagnostics.Metrics.Meter" />
       <type fullname="System.Diagnostics.Metrics.MeterListener" />
+      <type fullname="System.Diagnostics.Metrics.ObservableCounter`1" />
+      <type fullname="System.Diagnostics.Metrics.ObservableGauge`1" />
    </assembly>
    <assembly fullname="System.Diagnostics.Process">
       <type fullname="System.Diagnostics.Process" />
@@ -836,6 +842,7 @@
       <type fullname="System.Runtime.InteropServices.InAttribute" />
       <type fullname="System.Runtime.InteropServices.SafeBuffer" />
       <type fullname="System.Runtime.InteropServices.SafeHandle" />
+      <type fullname="System.Runtime.JitInfo" />
       <type fullname="System.Runtime.Serialization.IFormatterConverter" />
       <type fullname="System.Runtime.Serialization.ISerializable" />
       <type fullname="System.Runtime.Serialization.OnDeserializedAttribute" />
