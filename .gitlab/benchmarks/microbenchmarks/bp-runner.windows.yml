@@ -85,7 +85,7 @@
   Write-Output "Build complete marker found. Using shared CODE_SRC: $env:CODE_SRC"
   Write-Output "=== Wait complete for $env:BASELINE_OR_CANDIDATE ==="
 
-.how_to_run_benchmarks_batch0: &how_to_run_benchmarks_batch0 |
+.how_to_run_benchmarks: &how_to_run_benchmarks |
   $ErrorActionPreference = "Stop"
 
   $env:BENCHMARK_PROJECT = "Benchmarks.Trace"
@@ -94,40 +94,8 @@
     $env:BENCHMARK_CATEGORY = "master"
   }
 
-  # Prefix index with "b0-" to avoid collision with batch-1
-  $artifactsIndex = "b0-$env:PARALLEL_INDEX"
-
-  Write-Output "=== Running benchmarks ==="
-  Write-Output "BASELINE_OR_CANDIDATE: $env:BASELINE_OR_CANDIDATE"
-  Write-Output "CODE_SRC: $env:CODE_SRC"
-  Write-Output "PARALLEL_ITEM: $env:PARALLEL_ITEM"
-  Write-Output "BENCHMARK_PROJECT: $env:BENCHMARK_PROJECT"
-  Write-Output "BENCHMARK_CATEGORY: $env:BENCHMARK_CATEGORY"
-  Write-Output "PARALLEL_INDEX: $env:PARALLEL_INDEX"
-  Write-Output "ARTIFACTS_INDEX: $artifactsIndex"
-  Write-Output "ARTIFACTS_DIR: $env:ARTIFACTS_DIR"
-
-  # Add dotnet to PATH
-  [Environment]::SetEnvironmentVariable("PATH", "C:\dotnet;" + [Environment]::GetEnvironmentVariable("PATH", [EnvironmentVariableTarget]::Process), [EnvironmentVariableTarget]::Process)
-
-  # Run benchmarks - each parallel run gets unique artifacts dir via prefixed index
-  & "$env:CODE_SRC\.gitlab\benchmarks\microbenchmarks\scripts\run-benchmarks.ps1" `
-    -Filter "$env:PARALLEL_ITEM" `
-    -ArtifactsIndex "$artifactsIndex"
-
-  Write-Output "=== Benchmarks completed for filter: $env:PARALLEL_ITEM ==="
-
-.how_to_run_benchmarks_batch1: &how_to_run_benchmarks_batch1 |
-  $ErrorActionPreference = "Stop"
-
-  $env:BENCHMARK_PROJECT = "Benchmarks.Trace"
-  $env:BENCHMARK_CATEGORY = "prs"
-  if ($env:CI_COMMIT_REF_NAME -eq "master") {
-    $env:BENCHMARK_CATEGORY = "master"
-  }
-
-  # Prefix index with "b1-" to avoid collision with batch-0
-  $artifactsIndex = "b1-$env:PARALLEL_INDEX"
+  # BATCH_PREFIX set via env: in experiment step (e.g., "b0" or "b1")
+  $artifactsIndex = "$env:BATCH_PREFIX-$env:PARALLEL_INDEX"
 
   Write-Output "=== Running benchmarks ==="
   Write-Output "BASELINE_OR_CANDIDATE: $env:BASELINE_OR_CANDIDATE"
@@ -180,8 +148,10 @@ experiments:
             *TraceAnnotationsBenchmark*
           cpus_per_item: 2
 
+        env:
+          BATCH_PREFIX: "b0"
         how_to_fetch_release: *how_to_fetch_release_build
-        how_to_run_benchmarks: *how_to_run_benchmarks_batch0
+        how_to_run_benchmarks: *how_to_run_benchmarks
 
   - name: batch-1
     steps:
@@ -206,5 +176,7 @@ experiments:
             *StringAspectsBenchmark*
           cpus_per_item: 2
 
+        env:
+          BATCH_PREFIX: "b1"
         how_to_fetch_release: *how_to_fetch_release_wait
-        how_to_run_benchmarks: *how_to_run_benchmarks_batch1
+        how_to_run_benchmarks: *how_to_run_benchmarks
