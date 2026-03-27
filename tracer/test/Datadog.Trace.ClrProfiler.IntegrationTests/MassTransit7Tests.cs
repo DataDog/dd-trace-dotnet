@@ -143,6 +143,8 @@ public class MassTransit7Tests : TracingIntegrationTest
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
 
+            settings.ModifySerialization(s => s.IgnoreMember<MockSpan>(x => x.Metrics));
+
             var busEndpointRegex = new Regex(@"[A-Za-z0-9]+_SamplesMassTransit7_bus_[a-z0-9]+");
             settings.AddRegexScrubber(busEndpointRegex, "BusEndpoint");
 

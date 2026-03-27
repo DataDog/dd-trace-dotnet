@@ -78,6 +78,7 @@ public class MassTransit8Tests : TracingIntegrationTest
             ValidateIntegrationSpans(massTransitSpans, metadataSchemaVersion: "v0", expectedServiceName: "Samples.MassTransit8", isExternalSpan: false);
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
+            var fileName = nameof(MassTransit8Tests) + GetSuffix(packageVersion);
 
             // Ignore Metrics field which can vary between runs
             settings.ModifySerialization(s => s.IgnoreMember<MockSpan>(x => x.Metrics));
@@ -106,9 +107,17 @@ public class MassTransit8Tests : TracingIntegrationTest
             var payloadSizeRegex = new Regex(@"messaging\.message\.payload_size_bytes: \d+");
             settings.AddRegexScrubber(payloadSizeRegex, "messaging.message.payload_size_bytes: size_bytes");
 
+            // Network/container address tags vary between local Docker runs and CI agents.
+            // We care that MassTransit 8.5.8 emits these tags, not the specific IP/host values.
+            settings.AddRegexScrubber(new Regex(@"client\.address: [^,\r\n]+"), "client.address: client-address");
+            settings.AddRegexScrubber(new Regex(@"server\.address: [^,\r\n]+"), "server.address: server-address");
+            settings.AddRegexScrubber(new Regex(@"network\.local\.address: [^,\r\n]+"), "network.local.address: local-address");
+            settings.AddRegexScrubber(new Regex(@"network\.peer\.address: [^,\r\n]+"), "network.peer.address: peer-address");
+            settings.AddRegexScrubber(new Regex(@"network\.type: [^,\r\n]+"), "network.type: network-type");
+
             // Scrub MassTransit OTEL library version, which varies with the tested package version
             var otelLibraryVersionRegex = new Regex(@"otel\.library\.version: [\d\.]+");
-            settings.AddRegexScrubber(otelLibraryVersionRegex, "otel.library.version: mass-transit-version");
+            settings.AddRegexScrubber(otelLibraryVersionRegex, "otel.library.version: masstransit-version");
 
             // Remove optional messaging.message.body.size tag (only present in some MassTransit versions)
             var bodySizeRegex = new Regex(@"\n      messaging\.message\.body\.size: \d+");
@@ -130,7 +139,7 @@ public class MassTransit8Tests : TracingIntegrationTest
                         "process" => 2,
                         _ => 3
                     }))
-                .UseFileName(nameof(MassTransit8Tests));
+                .UseFileName(fileName);
 
             await telemetry.AssertIntegrationEnabledAsync(IntegrationId.MassTransit);
         }
@@ -170,6 +179,7 @@ public class MassTransit8Tests : TracingIntegrationTest
             ValidateIntegrationSpans(massTransitSpans, metadataSchemaVersion: "v0", expectedServiceName: "Samples.MassTransit8", isExternalSpan: false);
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
+            var fileName = nameof(MassTransit8Tests) + "Windows" + GetSuffix(packageVersion);
 
             settings.ModifySerialization(s => s.IgnoreMember<MockSpan>(x => x.Metrics));
 
@@ -188,8 +198,15 @@ public class MassTransit8Tests : TracingIntegrationTest
             var payloadSizeRegex = new Regex(@"messaging\.message\.payload_size_bytes: \d+");
             settings.AddRegexScrubber(payloadSizeRegex, "messaging.message.payload_size_bytes: size_bytes");
 
+            // Windows in-memory runs should not depend on machine-specific network/address values if they appear.
+            settings.AddRegexScrubber(new Regex(@"client\.address: [^,\r\n]+"), "client.address: client-address");
+            settings.AddRegexScrubber(new Regex(@"server\.address: [^,\r\n]+"), "server.address: server-address");
+            settings.AddRegexScrubber(new Regex(@"network\.local\.address: [^,\r\n]+"), "network.local.address: local-address");
+            settings.AddRegexScrubber(new Regex(@"network\.peer\.address: [^,\r\n]+"), "network.peer.address: peer-address");
+            settings.AddRegexScrubber(new Regex(@"network\.type: [^,\r\n]+"), "network.type: network-type");
+
             var otelLibraryVersionRegex = new Regex(@"otel\.library\.version: [\d\.]+");
-            settings.AddRegexScrubber(otelLibraryVersionRegex, "otel.library.version: mass-transit-version");
+            settings.AddRegexScrubber(otelLibraryVersionRegex, "otel.library.version: masstransit-version");
 
             // Remove optional messaging.message.body.size tag (only present in some MassTransit versions)
             var bodySizeRegex = new Regex(@"\n      messaging\.message\.body\.size: \d+");
@@ -214,10 +231,24 @@ public class MassTransit8Tests : TracingIntegrationTest
                         "process" => 2,
                         _ => 3
                     }))
-                .UseFileName(nameof(MassTransit8Tests) + "Windows");
+                .UseFileName(fileName);
 
             await telemetry.AssertIntegrationEnabledAsync(IntegrationId.MassTransit);
         }
+    }
+
+    private static string GetSuffix(string packageVersion)
+    {
+        // The default sample version is currently 8.5.8, and 8.5.8+ emits additional transport/network tags.
+        // Keep a dedicated snapshot so older MT8 output and newer output can evolve independently.
+        if (string.IsNullOrEmpty(packageVersion))
+        {
+            return ".8_5_8_plus";
+        }
+
+        return new Version(packageVersion) >= new Version("8.5.8")
+                   ? ".8_5_8_plus"
+                   : string.Empty;
     }
 
     private void PrintMassTransitLogs(string logDir)
