@@ -134,12 +134,17 @@ internal sealed partial class TestOptimizationClient
 
     private static void MergeKnownTests(ref KnownTestsResponse.KnownTestsModules? aggregate, KnownTestsResponse.KnownTestsModules? page)
     {
-        if (page is null or { Count: 0 })
+        if (page is null)
         {
             return;
         }
 
         aggregate ??= new KnownTestsResponse.KnownTestsModules();
+
+        if (page.Count == 0)
+        {
+            return;
+        }
 
         foreach (var moduleEntry in page)
         {
