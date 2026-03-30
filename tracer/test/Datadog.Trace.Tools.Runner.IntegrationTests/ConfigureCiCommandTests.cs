@@ -23,6 +23,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
         [InlineData("azp", @"##vso\[task.setvariable variable=(?<name>[A-Z1-9_]+);\](?<value>.*)")]
         [InlineData("jenkins", @"(?<name>[A-Z1-9_]+)=(?<value>.*)")]
         [InlineData("github", @"(?<name>[A-Z1-9_]+)=(?<value>.*)", "GITHUB_ENV")]
+        [EnvironmentRestorer("GITHUB_ENV")]
         public void ConfigureCi(string ciProviderName, string pattern, string envKeyWithFilePath = null)
         {
             using var agent = MockTracerAgent.Create(output, TcpPortProvider.GetOpenPort());
@@ -30,11 +31,9 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
 
             var commandLine = $"ci configure {ciProviderName} --dd-env TestEnv --dd-service TestService --dd-version TestVersion --tracer-home TestTracerHome --agent-url {agentUrl}";
 
-            string envKeyWithFilePathOriginalValue = null;
             string envKeyWithFilePathNewValue = null;
             if (!string.IsNullOrEmpty(envKeyWithFilePath))
             {
-                envKeyWithFilePathOriginalValue = EnvironmentHelpers.GetEnvironmentVariable(envKeyWithFilePath);
                 envKeyWithFilePathNewValue = Path.GetTempFileName();
                 EnvironmentHelpers.SetEnvironmentVariable(envKeyWithFilePath, envKeyWithFilePathNewValue);
             }
@@ -71,11 +70,6 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             environmentVariables.Should().Contain("DD_VERSION", "TestVersion");
             environmentVariables.Should().Contain("DD_DOTNET_TRACER_HOME", Path.GetFullPath("TestTracerHome"));
             environmentVariables.Should().Contain("DD_TRACE_AGENT_URL", agentUrl);
-
-            if (!string.IsNullOrEmpty(envKeyWithFilePath))
-            {
-                EnvironmentHelpers.SetEnvironmentVariable(envKeyWithFilePath, envKeyWithFilePathOriginalValue);
-            }
         }
 
         [SkippableTheory]

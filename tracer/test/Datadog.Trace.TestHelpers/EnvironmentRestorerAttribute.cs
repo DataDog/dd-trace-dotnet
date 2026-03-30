@@ -10,7 +10,7 @@ using Xunit.Sdk;
 
 namespace Datadog.Trace.TestHelpers;
 
-[AttributeUsage(AttributeTargets.Class)]
+[AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
 public class EnvironmentRestorerAttribute : BeforeAfterTestAttribute
 {
     private readonly string[] _variables;

@@ -101,47 +101,39 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
         [Trait("RunOnWindows", "True")]
         [InlineData(' ')]
         [InlineData('=')]
+        [EnvironmentRestorer("TF_BUILD")]
         public void SetCi(char separator)
         {
-            var tfBuild = Environment.GetEnvironmentVariable("TF_BUILD");
+            Environment.SetEnvironmentVariable("TF_BUILD", "1");
 
-            try
+            using var console = ConsoleHelper.Redirect();
+
+            var commandLine = $"--set-ci --dd-env{separator}TestEnv --dd-service{separator}TestService --dd-version{separator}TestVersion --tracer-home{separator}TestTracerHome --agent-url{separator}TestAgentUrl --env-vars{separator}VAR1=A,VAR2=B";
+
+            var exitCode = Program.Main(commandLine.Split(' '));
+
+            exitCode.Should().Be(0);
+
+            var environmentVariables = new Dictionary<string, string>();
+
+            foreach (var line in console.ReadLines())
             {
-                Environment.SetEnvironmentVariable("TF_BUILD", "1");
+                // ##vso[task.setvariable variable=DD_DOTNET_TRACER_HOME]TestTracerHome
+                var match = Regex.Match(line, @"##vso\[task.setvariable variable=(?<name>[A-Z1-9_]+);\](?<value>.*)");
 
-                using var console = ConsoleHelper.Redirect();
-
-                var commandLine = $"--set-ci --dd-env{separator}TestEnv --dd-service{separator}TestService --dd-version{separator}TestVersion --tracer-home{separator}TestTracerHome --agent-url{separator}TestAgentUrl --env-vars{separator}VAR1=A,VAR2=B";
-
-                var exitCode = Program.Main(commandLine.Split(' '));
-
-                exitCode.Should().Be(0);
-
-                var environmentVariables = new Dictionary<string, string>();
-
-                foreach (var line in console.ReadLines())
+                if (match.Success)
                 {
-                    // ##vso[task.setvariable variable=DD_DOTNET_TRACER_HOME]TestTracerHome
-                    var match = Regex.Match(line, @"##vso\[task.setvariable variable=(?<name>[A-Z1-9_]+);\](?<value>.*)");
-
-                    if (match.Success)
-                    {
-                        environmentVariables.Add(match.Groups["name"].Value, match.Groups["value"].Value);
-                    }
+                    environmentVariables.Add(match.Groups["name"].Value, match.Groups["value"].Value);
                 }
+            }
 
-                environmentVariables.Should().Contain("DD_ENV", "TestEnv");
-                environmentVariables.Should().Contain("DD_SERVICE", "TestService");
-                environmentVariables.Should().Contain("DD_VERSION", "TestVersion");
-                environmentVariables.Should().Contain("DD_DOTNET_TRACER_HOME", Path.GetFullPath("TestTracerHome"));
-                environmentVariables.Should().Contain("DD_TRACE_AGENT_URL", "TestAgentUrl");
-                environmentVariables.Should().Contain("VAR1", "A");
-                environmentVariables.Should().Contain("VAR2", "B");
-            }
-            finally
-            {
-                Environment.SetEnvironmentVariable("TF_BUILD", tfBuild);
-            }
+            environmentVariables.Should().Contain("DD_ENV", "TestEnv");
+            environmentVariables.Should().Contain("DD_SERVICE", "TestService");
+            environmentVariables.Should().Contain("DD_VERSION", "TestVersion");
+            environmentVariables.Should().Contain("DD_DOTNET_TRACER_HOME", Path.GetFullPath("TestTracerHome"));
+            environmentVariables.Should().Contain("DD_TRACE_AGENT_URL", "TestAgentUrl");
+            environmentVariables.Should().Contain("VAR1", "A");
+            environmentVariables.Should().Contain("VAR2", "B");
         }
     }
 }
