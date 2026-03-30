@@ -13,6 +13,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.TracerFlare;
+using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.RuntimeMetrics;
 using Datadog.Trace.Sampling;
@@ -115,7 +116,7 @@ public class TracerManagerFactoryTests : IAsyncLifetime
         settings.AgentFeaturePollingEnabled.Should().Be(enabled);
 
         var factory = new TracerManagerFactory();
-        var discoveryService = factory.GetDiscoveryService(settings);
+        var discoveryService = factory.GetDiscoveryService(settings, new ServiceRemappingHash(null));
 
         if (enabled)
         {
@@ -139,7 +140,7 @@ public class TracerManagerFactoryTests : IAsyncLifetime
             BuildLogSubmissionManager(),
             Mock.Of<ITelemetryController>(),
             Mock.Of<IDiscoveryService>(),
-            new DataStreamsManager(settings, Mock.Of<IDataStreamsWriter>(), processTags: null),
+            new DataStreamsManager(settings, Mock.Of<IDataStreamsWriter>(), Mock.Of<IDiscoveryService>()),
             remoteConfigurationManager: null,
             dynamicConfigurationManager: null,
             tracerFlareManager: null,
