@@ -260,6 +260,11 @@ internal sealed class DataStreamsWriter : IDataStreamsWriter
                 {
                     _aggregator.AddBacklog(in backlogPoint);
                 }
+
+                while (_transactionBuffer.TryDequeue(out var transactionPoint))
+                {
+                    _aggregator.AddTransaction(transactionPoint);
+                }
             }
             catch (Exception ex)
             {

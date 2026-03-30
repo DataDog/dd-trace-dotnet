@@ -63,4 +63,57 @@ public class DataStreamsTransactionInfoTest
         var transaction = new DataStreamsTransactionInfo("hello-world", 12345L, "my-cp");
         transaction.GetByteCount().Should().Be(transaction.GetBytes().Length);
     }
+
+    [Fact]
+    public void CheckpointId_DoesNotIncrement_WhenCheckpointAlreadyCached()
+    {
+        DataStreamsTransactionInfo.ClearCache();
+
+        // First use of "cp-a" gets id 1, first use of "cp-b" gets id 2.
+        var a1 = new DataStreamsTransactionInfo("tx1", 1, "cp-a");
+        var b1 = new DataStreamsTransactionInfo("tx2", 1, "cp-b");
+
+        // Repeated uses of existing checkpoint names must not increment the counter.
+        for (var i = 0; i < 10; i++)
+        {
+            _ = new DataStreamsTransactionInfo("tx3", 1, "cp-a");
+            _ = new DataStreamsTransactionInfo("tx4", 1, "cp-b");
+        }
+
+        // A brand-new checkpoint must still get the next sequential id (3), not some higher value.
+        var c1 = new DataStreamsTransactionInfo("tx5", 1, "cp-c");
+
+        a1.GetBytes()[0].Should().Be(1);
+        b1.GetBytes()[0].Should().Be(2);
+        c1.GetBytes()[0].Should().Be(3, "counter must only advance for new checkpoint names");
+    }
+
+    [Theory]
+    [InlineData(255)]  // exact limit — no truncation
+    [InlineData(256)]  // one byte over
+    [InlineData(512)]  // well over
+    public void LongTransactionId_IsTruncatedTo255Bytes(int idByteLength)
+    {
+        var id = new string('a', idByteLength);
+        var transaction = new DataStreamsTransactionInfo(id, 1L, "cp");
+        var bytes = transaction.GetBytes();
+
+        // byte at offset 9 is the encoded length; must never exceed 255
+        bytes[9].Should().Be(255);
+        // total payload length must match: 10 header bytes + encoded id length
+        bytes.Length.Should().Be(10 + 255);
+        // GetByteCount must agree
+        transaction.GetByteCount().Should().Be(bytes.Length);
+    }
+
+    [Fact]
+    public void LongTransactionId_FromByteArray_IsTruncatedTo255Bytes()
+    {
+        var idBytes = new byte[300];
+        var transaction = new DataStreamsTransactionInfo(idBytes, 1L, "cp");
+        var bytes = transaction.GetBytes();
+
+        bytes[9].Should().Be(255);
+        bytes.Length.Should().Be(10 + 255);
+    }
 }

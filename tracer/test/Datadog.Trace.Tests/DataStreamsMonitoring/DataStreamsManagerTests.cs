@@ -274,11 +274,14 @@ public class DataStreamsManagerTests
     [Fact]
     public void WhenDisabled_TrackTransaction_DoesNothing()
     {
-        var dsm = GetDataStreamManager(false, out _);
+        var dsm = GetDataStreamManager(false, out var writer);
         var span = new Span(new SpanContext(traceId: 123, spanId: 456), DateTimeOffset.UtcNow);
 
-        var act = () => span.TrackTransaction(dsm, "tx-abc", "some-checkpoint");
-        act.Should().NotThrow();
+        span.TrackTransaction(dsm, "tx-abc", "some-checkpoint");
+
+        span.Tags.GetTag("dsm.transaction.id").Should().BeNull();
+        // writer is null when DSM is disabled, so nothing could have been enqueued
+        writer.Should().BeNull();
     }
 
     [Fact]

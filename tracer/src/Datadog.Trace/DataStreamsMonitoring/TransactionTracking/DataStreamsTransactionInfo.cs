@@ -13,6 +13,8 @@ namespace Datadog.Trace.DataStreamsMonitoring.TransactionTracking;
 
 internal readonly struct DataStreamsTransactionInfo
 {
+    private const int MaxIdBytes = 255;
+
     private static readonly ConcurrentDictionary<string, int> Cache = new();
     private static int _counter;
 
@@ -22,21 +24,34 @@ internal readonly struct DataStreamsTransactionInfo
 
     internal DataStreamsTransactionInfo(string id, long timestamp, string checkpoint)
     {
-        _idBytes = Encoding.UTF8.GetBytes(id);
+        var encoded = Encoding.UTF8.GetBytes(id);
+        _idBytes = Truncate(encoded);
         _timestamp = timestamp;
-        _checkpointId = Cache.GetOrAdd(checkpoint, Interlocked.Increment(ref _counter));
+        _checkpointId = Cache.GetOrAdd(checkpoint, _ => Interlocked.Increment(ref _counter));
     }
 
     internal DataStreamsTransactionInfo(byte[] idBytes, long timestamp, string checkpoint)
     {
-        _idBytes = idBytes;
+        _idBytes = Truncate(idBytes);
         _timestamp = timestamp;
-        _checkpointId = Cache.GetOrAdd(checkpoint, Interlocked.Increment(ref _counter));
+        _checkpointId = Cache.GetOrAdd(checkpoint, _ => Interlocked.Increment(ref _counter));
     }
 
     internal long TimestampNs { get => _timestamp; }
 
     internal string TransactionId { get => Encoding.UTF8.GetString(_idBytes); }
+
+    private static byte[] Truncate(byte[] source)
+    {
+        if (source.Length <= MaxIdBytes)
+        {
+            return source;
+        }
+
+        var truncated = new byte[MaxIdBytes];
+        Array.Copy(source, truncated, MaxIdBytes);
+        return truncated;
+    }
 
     internal static byte[] GetCacheBytes()
     {
@@ -92,7 +107,7 @@ internal readonly struct DataStreamsTransactionInfo
         buffer[offset + 7] = (byte)(_timestamp >> 8);
         buffer[offset + 8] = (byte)_timestamp;
 
-        // id size, up to 256 bytes
+        // id size, up to 255 bytes
         buffer[offset + 9] = (byte)_idBytes.Length;
 
         // copy the ID

@@ -18,7 +18,7 @@ internal static class SpanExtensions
     /// <param name="checkpointName">The checkpoint name at which the transaction is being tracked</param>
     internal static void TrackTransaction(this Span span, DataStreamsManager? manager, string transactionId, string checkpointName)
     {
-        if (manager is null)
+        if (manager is null || !manager.IsTransactionTrackingEnabled)
         {
             return;
         }

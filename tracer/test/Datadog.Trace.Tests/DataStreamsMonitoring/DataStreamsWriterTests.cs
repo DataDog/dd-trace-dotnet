@@ -231,6 +231,41 @@ public class DataStreamsWriterTests
     }
 
     [Fact]
+    public async Task WhenSupported_WritesTransaction_OnClose()
+    {
+        // mirrors WhenSupported_WritesAStatsPoint_OnClose for transactions
+        var bucketDuration = 100_000_000;
+        var api = new StubApi();
+        var writer = CreateWriter(api, out var discovery, bucketDuration);
+        TriggerSupportUpdate(discovery, isSupported: true);
+
+        writer.AddTransaction(new DataStreamsTransactionInfo("tx-id", 1L, "cp"));
+
+        await writer.DisposeAsync();
+
+        api.Sent.Should().ContainSingle();
+    }
+
+    [Fact]
+    public async Task FlushAsync_DrainsPendingTransactions()
+    {
+        // int.MaxValue bucket: timer will never fire and ShouldFlushTransactions
+        // won't trigger for a small payload.  FlushAsync must drain _transactionBuffer
+        // directly — it is called immediately so ProcessQueueLoop has not yet woken
+        // from its initial 10 ms sleep.
+        var bucketDuration = int.MaxValue;
+        var api = new StubApi();
+        var writer = CreateWriter(api, out var discovery, bucketDuration);
+        TriggerSupportUpdate(discovery, isSupported: true);
+
+        writer.AddTransaction(new DataStreamsTransactionInfo("tx-id", 1L, "cp"));
+        await writer.FlushAsync();
+
+        api.Sent.Should().NotBeEmpty("FlushAsync must drain the transaction buffer");
+        await writer.DisposeAsync();
+    }
+
+    [Fact]
     public async Task CanCreateWriterWithDefaultBucket()
     {
         var writer = CreateWriter(new StubApi(), out _, DataStreamsConstants.DefaultBucketDurationMs);
