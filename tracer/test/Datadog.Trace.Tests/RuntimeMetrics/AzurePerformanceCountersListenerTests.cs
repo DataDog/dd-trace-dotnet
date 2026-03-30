@@ -16,7 +16,7 @@ using Xunit;
 
 namespace Datadog.Trace.Tests.RuntimeMetrics
 {
-    [EnvironmentRestorer("WEBSITE_COUNTERS_CLR")]
+    [EnvironmentRestorer(PlatformKeys.AzureAppService.CountersKey)]
     public class AzurePerformanceCountersListenerTests
     {
         [Fact]
