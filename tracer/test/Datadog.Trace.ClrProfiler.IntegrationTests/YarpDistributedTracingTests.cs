@@ -36,7 +36,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             // We expect the following trace to be generated:
             // http.request => aspnet_core.request => http.request => aspnet_core.request
-            const int expectedSpans = 5;
+            const int expectedSpans = 4;
 
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion, aspNetCorePort: 0))
