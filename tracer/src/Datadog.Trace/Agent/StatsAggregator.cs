@@ -337,7 +337,7 @@ namespace Datadog.Trace.Agent
                 span.OperationName,
                 span.Type,
                 httpStatusCode,
-                span.Context.Origin.StartsWith("synthetics"),
+                span.Context.Origin?.StartsWith("synthetics") == true,
                 spanKind,
                 _isOtlp ? span.Error : false,
                 _isOtlp ? span.IsTopLevel : false,
