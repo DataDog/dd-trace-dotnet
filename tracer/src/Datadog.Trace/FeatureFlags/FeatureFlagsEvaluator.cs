@@ -417,11 +417,6 @@ namespace Datadog.Trace.FeatureFlags
             // Special case "id": if not present, use targeting key
             if (name == "id" && !context.Attributes.ContainsKey(name))
             {
-                if (context.TargetingKey is null)
-                {
-                    throw new MissingTargetingKeyException();
-                }
-
                 return context.TargetingKey;
             }
 
