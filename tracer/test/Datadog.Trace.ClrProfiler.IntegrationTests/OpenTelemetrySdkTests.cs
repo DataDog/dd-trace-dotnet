@@ -621,6 +621,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetEnvironmentVariable("DD_ENV", "testing");
             SetEnvironmentVariable("DD_SERVICE", "OtlpLogsService");
             SetEnvironmentVariable("OTEL_RESOURCE_ATTRIBUTES", "service.name=OtlpLogsService,deployment.environment=testing");
+            // TODO: if we want to have this enabled (which we probably _should_)
+            // then it requires updating a bunch of snapshots, because it impacts the "flags" field
+            EnvironmentHelper.CustomEnvironmentVariables.Remove("DD_TRACE_OTEL_ENABLED");
             SetEnvironmentVariable("DD_LOGS_OTEL_ENABLED", datadogLogsEnabled);
             SetEnvironmentVariable("OTEL_LOGS_EXPORTER_ENABLED", otelLogsEnabled);
             SetEnvironmentVariable("OTEL_EXPORTER_OTLP_PROTOCOL", protocol);
