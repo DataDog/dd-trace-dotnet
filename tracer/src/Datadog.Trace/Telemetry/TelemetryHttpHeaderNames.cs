@@ -3,7 +3,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
+using System.Threading;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Util;
 
@@ -11,28 +13,37 @@ namespace Datadog.Trace.Telemetry
 {
     internal static class TelemetryHttpHeaderNames
     {
+        private static string _httpSerializedDefaultAgentHeaders;
+
         /// <summary>
         /// Gets the default agent headers in the format <c>Key: Value\r\n</c>. For use in HTTP headers.
-        /// Not a const because session headers depend on runtime values.
+        /// Lazily initialized because session headers depend on runtime values.
         /// </summary>
-        internal static string HttpSerializedDefaultAgentHeaders { get; } = BuildSerializedAgentHeaders();
+        internal static string HttpSerializedDefaultAgentHeaders =>
+            LazyInitializer.EnsureInitialized(ref _httpSerializedDefaultAgentHeaders, BuildSerializedAgentHeaders);
 
         /// <summary>
         /// Gets the default constant headers that should be added to any request to the agent
         /// </summary>
         internal static KeyValuePair<string, string>[] GetDefaultAgentHeaders()
         {
-            var headers = new List<KeyValuePair<string, string>>
+            var sessionId = RuntimeId.Get();
+            var rootSessionId = RuntimeId.GetRootSessionId();
+            var includeRoot = rootSessionId != sessionId;
+            var headerCount = includeRoot ? 5 : 4;
+
+            var headers = new KeyValuePair<string, string>[headerCount];
+            headers[0] = new(TelemetryConstants.ClientLibraryLanguageHeader, TracerConstants.Language);
+            headers[1] = new(TelemetryConstants.ClientLibraryVersionHeader, TracerConstants.AssemblyVersion);
+            headers[2] = new(HttpHeaderNames.TracingEnabled, "false"); // don't add automatic instrumentation to requests directed to the agent
+            headers[3] = new(TelemetryConstants.SessionIdHeader, sessionId);
+
+            if (includeRoot)
             {
-                new(TelemetryConstants.ClientLibraryLanguageHeader, TracerConstants.Language),
-                new(TelemetryConstants.ClientLibraryVersionHeader, TracerConstants.AssemblyVersion),
-                new(HttpHeaderNames.TracingEnabled, "false"), // don't add automatic instrumentation to requests directed to the agent
-                new(TelemetryConstants.SessionIdHeader, RuntimeId.Get()),
-            };
+                headers[4] = new(TelemetryConstants.RootSessionIdHeader, rootSessionId);
+            }
 
-            AddRootSessionIdHeader(headers);
-
-            return headers.ToArray();
+            return headers;
         }
 
         /// <summary>
@@ -40,53 +51,52 @@ namespace Datadog.Trace.Telemetry
         /// </summary>
         internal static KeyValuePair<string, string>[] GetDefaultIntakeHeaders(TelemetrySettings.AgentlessSettings settings)
         {
-            var headers = new List<KeyValuePair<string, string>>
-            {
-                new(TelemetryConstants.ClientLibraryLanguageHeader, TracerConstants.Language),
-                new(TelemetryConstants.ClientLibraryVersionHeader, TracerConstants.AssemblyVersion),
-                new(HttpHeaderNames.TracingEnabled, "false"),
-                new(TelemetryConstants.ApiKeyHeader, settings.ApiKey),
-                new(TelemetryConstants.SessionIdHeader, RuntimeId.Get()),
-            };
-
-            if (settings.Cloud is { } cloud)
-            {
-                headers.Add(new(TelemetryConstants.CloudProviderHeader, cloud.Provider));
-                headers.Add(new(TelemetryConstants.CloudResourceTypeHeader, cloud.ResourceType));
-                headers.Add(new(TelemetryConstants.CloudResourceIdentifierHeader, cloud.ResourceIdentifier));
-            }
-
-            AddRootSessionIdHeader(headers);
-
-            return headers.ToArray();
-        }
-
-        private static void AddRootSessionIdHeader(List<KeyValuePair<string, string>> headers)
-        {
             var sessionId = RuntimeId.Get();
             var rootSessionId = RuntimeId.GetRootSessionId();
-            if (rootSessionId != sessionId)
+            var includeRoot = rootSessionId != sessionId;
+            var baseCount = settings.Cloud is null ? 5 : 8;
+            var headerCount = includeRoot ? baseCount + 1 : baseCount;
+
+            var headers = new KeyValuePair<string, string>[headerCount];
+            headers[0] = new(TelemetryConstants.ClientLibraryLanguageHeader, TracerConstants.Language);
+            headers[1] = new(TelemetryConstants.ClientLibraryVersionHeader, TracerConstants.AssemblyVersion);
+            headers[2] = new(HttpHeaderNames.TracingEnabled, "false");
+            headers[3] = new(TelemetryConstants.ApiKeyHeader, settings.ApiKey);
+            headers[4] = new(TelemetryConstants.SessionIdHeader, sessionId);
+
+            var index = 5;
+            if (settings.Cloud is { } cloud)
             {
-                headers.Add(new(TelemetryConstants.RootSessionIdHeader, rootSessionId));
+                headers[index++] = new(TelemetryConstants.CloudProviderHeader, cloud.Provider);
+                headers[index++] = new(TelemetryConstants.CloudResourceTypeHeader, cloud.ResourceType);
+                headers[index++] = new(TelemetryConstants.CloudResourceIdentifierHeader, cloud.ResourceIdentifier);
             }
+
+            if (includeRoot)
+            {
+                headers[index] = new(TelemetryConstants.RootSessionIdHeader, rootSessionId);
+            }
+
+            return headers;
         }
 
         private static string BuildSerializedAgentHeaders()
         {
-            var serialized =
-                $"{TelemetryConstants.ClientLibraryLanguageHeader}: {TracerConstants.Language}" + DatadogHttpValues.CrLf +
-                $"{TelemetryConstants.ClientLibraryVersionHeader}: {TracerConstants.AssemblyVersion}" + DatadogHttpValues.CrLf +
-                $"{HttpHeaderNames.TracingEnabled}: false" + DatadogHttpValues.CrLf +
-                $"{TelemetryConstants.SessionIdHeader}: {RuntimeId.Get()}" + DatadogHttpValues.CrLf;
-
             var sessionId = RuntimeId.Get();
             var rootSessionId = RuntimeId.GetRootSessionId();
+
+            var sb = StringBuilderCache.Acquire();
+            sb.Append(TelemetryConstants.ClientLibraryLanguageHeader).Append(": ").Append(TracerConstants.Language).Append(DatadogHttpValues.CrLf);
+            sb.Append(TelemetryConstants.ClientLibraryVersionHeader).Append(": ").Append(TracerConstants.AssemblyVersion).Append(DatadogHttpValues.CrLf);
+            sb.Append(HttpHeaderNames.TracingEnabled).Append(": false").Append(DatadogHttpValues.CrLf);
+            sb.Append(TelemetryConstants.SessionIdHeader).Append(": ").Append(sessionId).Append(DatadogHttpValues.CrLf);
+
             if (rootSessionId != sessionId)
             {
-                serialized += $"{TelemetryConstants.RootSessionIdHeader}: {rootSessionId}" + DatadogHttpValues.CrLf;
+                sb.Append(TelemetryConstants.RootSessionIdHeader).Append(": ").Append(rootSessionId).Append(DatadogHttpValues.CrLf);
             }
 
-            return serialized;
+            return StringBuilderCache.GetStringAndRelease(sb);
         }
     }
 }
