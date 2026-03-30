@@ -11,6 +11,9 @@
 #include "OpSysTools.h"
 #include "ProfilerSignalManager.h"
 #include "IConfiguration.h"
+#ifdef ARM64
+#include "UnwindTracersProvider.h"
+#endif
 
 #include <sys/syscall.h> /* Definition of SYS_* constants */
 #include <sys/types.h>
@@ -18,6 +21,7 @@
 #include <unistd.h>
 
 std::atomic<TimerCreateCpuProfiler*> TimerCreateCpuProfiler::Instance = nullptr;
+thread_local UnwinderTracer* TimerCreateCpuProfiler::Tracer = nullptr;
 
 TimerCreateCpuProfiler::TimerCreateCpuProfiler(
     IConfiguration* pConfiguration,
@@ -261,8 +265,14 @@ bool TimerCreateCpuProfiler::Collect(void* ctx)
         std::tie(stackBase, stackEnd) = threadInfo->GetStackBounds();
     }
 
+#ifdef ARM64
+    auto tracer = UnwindTracersProvider::GetInstance().GetTracer();
+    Tracer = tracer.get();
+#else
+    Tracer = nullptr;
+#endif
     auto buffer = rawCpuSample->Stack.AsSpan();
-    auto count = _pUnwinder->Unwind(ctx, buffer.data(), buffer.size(), stackBase, stackEnd);
+    auto count = _pUnwinder->Unwind(ctx, buffer.data(), buffer.size(), stackBase, stackEnd, Tracer);
     rawCpuSample->Stack.SetCount(count);
 
     if (count == 0)

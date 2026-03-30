@@ -58,6 +58,7 @@
 #ifdef LINUX
 #ifdef ARM64
 #include "HybridUnwinder.h"
+#include "UnwindTracersProvider.h"
 #else
 #include "Backtrace2Unwinder.h"
 #endif
@@ -626,6 +627,8 @@ void CorProfilerCallback::InitializeServices()
     if (_pConfiguration->IsCpuProfilingEnabled() && _pConfiguration->GetCpuProfilerType() == CpuProfilerType::TimerCreate)
     {
 #ifdef ARM64
+        // Initialize the UnwindTracersProvider
+        UnwindTracersProvider::GetInstance();
         _pUnwinder = std::make_unique<HybridUnwinder>(_managedCodeCache.get());
 #else
         _pUnwinder = std::make_unique<Backtrace2Unwinder>();
