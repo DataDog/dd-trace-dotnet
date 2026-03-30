@@ -15,7 +15,6 @@
       messaging.masstransit.input_address: loopback://localhost/Failing,
       messaging.operation: receive,
       messaging.system: in-memory,
-      runtime-id: Guid_1,
       span.kind: consumer,
       version: 1.0.0
     }
@@ -58,12 +57,12 @@
       language: dotnet,
       messaging.destination.name: GettingStarted,
       messaging.masstransit.destination_address: loopback://localhost/GettingStarted?bind=true,
-      messaging.masstransit.message_id: Guid_2,
+      messaging.masstransit.message_id: Guid_1,
       messaging.masstransit.message_types: GettingStartedMessage,
-      messaging.message.conversation_id: Guid_3,
+      messaging.message.conversation_id: Guid_2,
       messaging.operation: send,
       messaging.system: in-memory,
-      runtime-id: Guid_1,
+      runtime-id: Guid_3,
       span.kind: producer,
       version: 1.0.0
     }
@@ -84,7 +83,6 @@
       messaging.masstransit.input_address: loopback://localhost/GettingStarted,
       messaging.operation: receive,
       messaging.system: in-memory,
-      runtime-id: Guid_1,
       span.kind: consumer,
       version: 1.0.0
     }
@@ -105,7 +103,6 @@
       messaging.masstransit.input_address: loopback://localhost/GettingStarted,
       messaging.operation: receive,
       messaging.system: in-memory,
-      runtime-id: Guid_1,
       span.kind: consumer,
       version: 1.0.0
     }
@@ -170,7 +167,7 @@
       messaging.message.conversation_id: Guid_5,
       messaging.operation: send,
       messaging.system: in-memory,
-      runtime-id: Guid_1,
+      runtime-id: Guid_3,
       span.kind: producer,
       version: 1.0.0
     }
@@ -191,7 +188,6 @@
       messaging.masstransit.input_address: loopback://localhost/handler-failing,
       messaging.operation: receive,
       messaging.system: in-memory,
-      runtime-id: Guid_1,
       span.kind: consumer,
       version: 1.0.0
     }
@@ -204,13 +200,9 @@
     Service: Samples.MassTransit7,
     Type: queue,
     ParentId: Id_15,
-    Error: 1,
     Tags: {
       component: masstransit,
       env: integration_tests,
-      error.msg: Handler failure test: Handler will fail,
-      error.stack: Scrubbed
-      error.type: System.InvalidOperationException,
       language: dotnet,
       messaging.destination.name: handler-failing,
       messaging.masstransit.input_address: loopback://localhost/handler-failing,
@@ -237,7 +229,6 @@
       messaging.masstransit.input_address: loopback://localhost/OrderState,
       messaging.operation: receive,
       messaging.system: in-memory,
-      runtime-id: Guid_1,
       span.kind: consumer,
       version: 1.0.0
     }
@@ -258,7 +249,6 @@
       messaging.masstransit.input_address: loopback://localhost/OrderState,
       messaging.operation: receive,
       messaging.system: in-memory,
-      runtime-id: Guid_1,
       span.kind: consumer,
       version: 1.0.0
     }
@@ -279,7 +269,6 @@
       messaging.masstransit.input_address: loopback://localhost/OrderState,
       messaging.operation: receive,
       messaging.system: in-memory,
-      runtime-id: Guid_1,
       span.kind: consumer,
       version: 1.0.0
     }
@@ -300,7 +289,6 @@
       messaging.masstransit.input_address: loopback://localhost/OrderState,
       messaging.operation: receive,
       messaging.system: in-memory,
-      runtime-id: Guid_1,
       span.kind: consumer,
       version: 1.0.0
     }
@@ -313,19 +301,14 @@
     Service: Samples.MassTransit7,
     Type: queue,
     ParentId: Id_31,
-    Error: 1,
     Tags: {
       component: masstransit,
       env: integration_tests,
-      error.msg: Saga failure test: Intentional saga failure for testing,
-      error.stack: Scrubbed
-      error.type: System.InvalidOperationException,
       language: dotnet,
       messaging.destination.name: OrderState,
       messaging.masstransit.input_address: loopback://localhost/OrderState,
       messaging.operation: receive,
       messaging.system: in-memory,
-      runtime-id: Guid_1,
       span.kind: consumer,
       version: 1.0.0
     }
@@ -523,7 +506,7 @@
       messaging.message.conversation_id: Guid_7,
       messaging.operation: send,
       messaging.system: in-memory,
-      runtime-id: Guid_1,
+      runtime-id: Guid_3,
       span.kind: producer,
       version: 1.0.0
     }
@@ -546,7 +529,7 @@
       messaging.message.conversation_id: Guid_14,
       messaging.operation: send,
       messaging.system: in-memory,
-      runtime-id: Guid_1,
+      runtime-id: Guid_3,
       span.kind: producer,
       version: 1.0.0
     }
@@ -569,7 +552,7 @@
       messaging.message.conversation_id: Guid_16,
       messaging.operation: send,
       messaging.system: in-memory,
-      runtime-id: Guid_1,
+      runtime-id: Guid_3,
       span.kind: producer,
       version: 1.0.0
     }
@@ -592,7 +575,7 @@
       messaging.message.conversation_id: Guid_18,
       messaging.operation: send,
       messaging.system: in-memory,
-      runtime-id: Guid_1,
+      runtime-id: Guid_3,
       span.kind: producer,
       version: 1.0.0
     }
@@ -615,7 +598,7 @@
       messaging.message.conversation_id: Guid_11,
       messaging.operation: send,
       messaging.system: in-memory,
-      runtime-id: Guid_1,
+      runtime-id: Guid_3,
       span.kind: producer,
       version: 1.0.0
     }
@@ -638,7 +621,7 @@
       messaging.message.conversation_id: Guid_21,
       messaging.operation: send,
       messaging.system: in-memory,
-      runtime-id: Guid_1,
+      runtime-id: Guid_3,
       span.kind: producer,
       version: 1.0.0
     }
@@ -661,7 +644,7 @@
       messaging.message.conversation_id: Guid_23,
       messaging.operation: send,
       messaging.system: in-memory,
-      runtime-id: Guid_1,
+      runtime-id: Guid_3,
       span.kind: producer,
       version: 1.0.0
     }

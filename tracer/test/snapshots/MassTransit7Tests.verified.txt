@@ -65,12 +65,12 @@ at Samples.MassTransit7.Consumers.FailingConsumer.Consume(ConsumeContext`1 conte
       env: integration_tests,
       language: dotnet,
       messaging.destination.name: GettingStarted,
-      messaging.masstransit.destination_address: loopback://localhost/GettingStarted?bind=true,
+      messaging.masstransit.destination_address: amazonsqs://us-east-1/GettingStarted,
       messaging.masstransit.message_id: Guid_2,
       messaging.masstransit.message_types: GettingStartedMessage,
       messaging.message.conversation_id: Guid_3,
       messaging.operation: send,
-      messaging.system: in-memory,
+      messaging.system: sqs,
       runtime-id: Guid_1,
       span.kind: producer,
       version: 1.0.0
@@ -94,12 +94,12 @@ at Samples.MassTransit7.Consumers.FailingConsumer.Consume(ConsumeContext`1 conte
       env: integration_tests,
       language: dotnet,
       messaging.destination.name: GettingStarted,
-      messaging.masstransit.destination_address: rabbitmq://rabbitmq-host/GettingStarted?bind=true,
+      messaging.masstransit.destination_address: loopback://localhost/GettingStarted?bind=true,
       messaging.masstransit.message_id: Guid_4,
       messaging.masstransit.message_types: GettingStartedMessage,
       messaging.message.conversation_id: Guid_5,
       messaging.operation: send,
-      messaging.system: rabbitmq,
+      messaging.system: in-memory,
       runtime-id: Guid_1,
       span.kind: producer,
       version: 1.0.0
@@ -123,12 +123,12 @@ at Samples.MassTransit7.Consumers.FailingConsumer.Consume(ConsumeContext`1 conte
       env: integration_tests,
       language: dotnet,
       messaging.destination.name: GettingStarted,
-      messaging.masstransit.destination_address: amazonsqs://us-east-1/GettingStarted,
+      messaging.masstransit.destination_address: rabbitmq://rabbitmq-host/GettingStarted?bind=true,
       messaging.masstransit.message_id: Guid_6,
       messaging.masstransit.message_types: GettingStartedMessage,
       messaging.message.conversation_id: Guid_7,
       messaging.operation: send,
-      messaging.system: sqs,
+      messaging.system: rabbitmq,
       runtime-id: Guid_1,
       span.kind: producer,
       version: 1.0.0
@@ -168,13 +168,13 @@ at Samples.MassTransit7.Consumers.FailingConsumer.Consume(ConsumeContext`1 conte
     }
   },
   {
-    TraceId: Id_5,
+    TraceId: Id_7,
     SpanId: Id_14,
     Name: masstransit.receive,
     Resource: GettingStarted receive,
     Service: Samples.MassTransit7,
     Type: queue,
-    ParentId: Id_6,
+    ParentId: Id_8,
     Tags: {
       component: masstransit,
       env: integration_tests,
@@ -222,7 +222,7 @@ at Samples.MassTransit7.Consumers.FailingConsumer.Consume(ConsumeContext`1 conte
     }
   },
   {
-    TraceId: Id_7,
+    TraceId: Id_9,
     SpanId: Id_18,
     Name: masstransit.receive,
     Resource: GettingStarted receive,
@@ -276,13 +276,13 @@ at Samples.MassTransit7.Consumers.FailingConsumer.Consume(ConsumeContext`1 conte
     }
   },
   {
-    TraceId: Id_9,
+    TraceId: Id_5,
     SpanId: Id_23,
     Name: masstransit.receive,
     Resource: GettingStarted receive,
     Service: Samples.MassTransit7,
     Type: queue,
-    ParentId: Id_10,
+    ParentId: Id_6,
     Tags: {
       component: masstransit,
       env: integration_tests,
@@ -324,7 +324,7 @@ at Samples.MassTransit7.Consumers.FailingConsumer.Consume(ConsumeContext`1 conte
     }
   },
   {
-    TraceId: Id_5,
+    TraceId: Id_7,
     SpanId: Id_25,
     Name: masstransit.process,
     Resource: GettingStarted process,
@@ -366,7 +366,7 @@ at Samples.MassTransit7.Consumers.FailingConsumer.Consume(ConsumeContext`1 conte
     }
   },
   {
-    TraceId: Id_7,
+    TraceId: Id_9,
     SpanId: Id_27,
     Name: masstransit.process,
     Resource: GettingStarted process,
@@ -408,7 +408,7 @@ at Samples.MassTransit7.Consumers.FailingConsumer.Consume(ConsumeContext`1 conte
     }
   },
   {
-    TraceId: Id_9,
+    TraceId: Id_5,
     SpanId: Id_29,
     Name: masstransit.process,
     Resource: GettingStarted process,
