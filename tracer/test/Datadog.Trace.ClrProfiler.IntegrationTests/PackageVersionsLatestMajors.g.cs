@@ -18,13 +18,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [SuppressMessage("StyleCop.CSharp.LayoutRules", "SA1516:Elements must be separated by blank line", Justification = "This is an auto-generated file.")]
     public class PackageVersionsLatestMajors
-    {      public static IEnumerable<object[]> MassTransit7 =>
+    {
+      public static IEnumerable<object[]> MassTransit7 =>
 
             new List<object[]>
             {
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
+#if NET48
+                new object[] { "7.3.1" },
+#endif
 #if NETCOREAPP2_1
                 new object[] { "7.3.1" },
 #endif

@@ -18,13 +18,20 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [SuppressMessage("StyleCop.CSharp.LayoutRules", "SA1516:Elements must be separated by blank line", Justification = "This is an auto-generated file.")]
     public class PackageVersionsLatestMinors
-    {      public static IEnumerable<object[]> MassTransit7 =>
+    {
+      public static IEnumerable<object[]> MassTransit7 =>
 
             new List<object[]>
             {
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
+#if NET48
+                new object[] { "7.0.7" },
+                new object[] { "7.1.8" },
+                new object[] { "7.2.4" },
+                new object[] { "7.3.1" },
+#endif
 #if NETCOREAPP2_1
                 new object[] { "7.0.7" },
                 new object[] { "7.1.8" },
@@ -90,83 +97,83 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { string.Empty },
 #else
 #if NET48
-                new object[] { "8.0.2" },
+                new object[] { "8.0.16" },
                 new object[] { "8.1.3" },
                 new object[] { "8.2.5" },
-                new object[] { "8.3.3" },
-                new object[] { "8.4.0" },
+                new object[] { "8.3.7" },
+                new object[] { "8.4.1" },
                 new object[] { "8.5.8" },
 #endif
 #if NETCOREAPP2_1
-                new object[] { "8.0.2" },
+                new object[] { "8.0.16" },
                 new object[] { "8.1.3" },
                 new object[] { "8.2.5" },
-                new object[] { "8.3.3" },
-                new object[] { "8.4.0" },
+                new object[] { "8.3.7" },
+                new object[] { "8.4.1" },
                 new object[] { "8.5.8" },
 #endif
 #if NETCOREAPP3_0
-                new object[] { "8.0.2" },
+                new object[] { "8.0.16" },
                 new object[] { "8.1.3" },
                 new object[] { "8.2.5" },
-                new object[] { "8.3.3" },
-                new object[] { "8.4.0" },
+                new object[] { "8.3.7" },
+                new object[] { "8.4.1" },
                 new object[] { "8.5.8" },
 #endif
 #if NETCOREAPP3_1
-                new object[] { "8.0.2" },
+                new object[] { "8.0.16" },
                 new object[] { "8.1.3" },
                 new object[] { "8.2.5" },
-                new object[] { "8.3.3" },
-                new object[] { "8.4.0" },
+                new object[] { "8.3.7" },
+                new object[] { "8.4.1" },
                 new object[] { "8.5.8" },
 #endif
 #if NET5_0
-                new object[] { "8.0.2" },
+                new object[] { "8.0.16" },
                 new object[] { "8.1.3" },
                 new object[] { "8.2.5" },
-                new object[] { "8.3.3" },
-                new object[] { "8.4.0" },
+                new object[] { "8.3.7" },
+                new object[] { "8.4.1" },
                 new object[] { "8.5.8" },
 #endif
 #if NET6_0
-                new object[] { "8.0.2" },
+                new object[] { "8.0.16" },
                 new object[] { "8.1.3" },
                 new object[] { "8.2.5" },
-                new object[] { "8.3.3" },
-                new object[] { "8.4.0" },
+                new object[] { "8.3.7" },
+                new object[] { "8.4.1" },
                 new object[] { "8.5.8" },
 #endif
 #if NET7_0
-                new object[] { "8.0.2" },
+                new object[] { "8.0.16" },
                 new object[] { "8.1.3" },
                 new object[] { "8.2.5" },
-                new object[] { "8.3.3" },
-                new object[] { "8.4.0" },
+                new object[] { "8.3.7" },
+                new object[] { "8.4.1" },
                 new object[] { "8.5.8" },
 #endif
 #if NET8_0
-                new object[] { "8.0.2" },
+                new object[] { "8.0.16" },
                 new object[] { "8.1.3" },
                 new object[] { "8.2.5" },
-                new object[] { "8.3.3" },
-                new object[] { "8.4.0" },
+                new object[] { "8.3.7" },
+                new object[] { "8.4.1" },
                 new object[] { "8.5.8" },
 #endif
 #if NET9_0
-                new object[] { "8.0.2" },
+                new object[] { "8.0.16" },
                 new object[] { "8.1.3" },
                 new object[] { "8.2.5" },
-                new object[] { "8.3.3" },
-                new object[] { "8.4.0" },
+                new object[] { "8.3.7" },
+                new object[] { "8.4.1" },
                 new object[] { "8.5.8" },
 #endif
 #if NET10_0
-                new object[] { "8.0.2" },
+                new object[] { "8.0.16" },
                 new object[] { "8.1.3" },
                 new object[] { "8.2.5" },
-                new object[] { "8.3.3" },
-                new object[] { "8.4.0" },
+                new object[] { "8.3.7" },
+                new object[] { "8.4.1" },
                 new object[] { "8.5.8" },
 #endif
 #endif

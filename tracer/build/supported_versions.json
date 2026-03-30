@@ -894,6 +894,23 @@
     ]
   },
   {
+    "integrationName": "MassTransit",
+    "assemblyName": "MassTransit",
+    "minAssemblyVersionInclusive": "7.0.0",
+    "maxAssemblyVersionInclusive": "7.65535.65535",
+    "packages": [
+      {
+        "name": "MassTransit",
+        "minVersionAvailableInclusive": "2.0.0",
+        "minVersionSupportedInclusive": "7.0.0",
+        "minVersionTestedInclusive": "7.3.1",
+        "maxVersionSupportedInclusive": "7.3.1",
+        "maxVersionAvailableInclusive": "9.0.1",
+        "maxVersionTestedInclusive": "8.5.8"
+      }
+    ]
+  },
+  {
     "integrationName": "MongoDb",
     "assemblyName": "MongoDB.Driver",
     "minAssemblyVersionInclusive": "2.1.0",
