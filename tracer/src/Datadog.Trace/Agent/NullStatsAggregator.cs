@@ -33,8 +33,29 @@ namespace Datadog.Trace.Agent
         public StatsAggregationKey BuildKey(Span span, out List<byte[]> utf8PeerTags)
         {
             utf8PeerTags = [];
-            utf8SpanDerivedPrimaryTags = [];
-            return new();
+
+            var rawHttpStatusCode = span.GetTag(Tags.HttpStatusCode);
+            if (rawHttpStatusCode is null || !int.TryParse(rawHttpStatusCode, out var httpStatusCode))
+            {
+                httpStatusCode = 0;
+            }
+
+            return new StatsAggregationKey(
+                span.ResourceName,
+                span.ServiceName,
+                span.OperationName,
+                span.Type,
+                httpStatusCode,
+                span.Context.Origin?.StartsWith("synthetics") == true,
+                string.Empty,
+                isError: false,
+                isTopLevel: false,
+                isTraceRoot: false,
+                string.Empty,
+                string.Empty,
+                grpcStatusCode: 0,
+                string.Empty,
+                peerTagsHash: 0);
         }
     }
 }
