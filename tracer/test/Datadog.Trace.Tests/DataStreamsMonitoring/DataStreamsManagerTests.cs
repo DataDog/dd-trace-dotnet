@@ -285,6 +285,30 @@ public class DataStreamsManagerTests
     }
 
     [Fact]
+    public void WhenInDefaultState_TrackTransaction_DoesNotSetTag()
+    {
+        // DSM is "in default state" when DD_DATA_STREAMS_MONITORING_ENABLED is absent from config.
+        // IsTransactionTrackingEnabled = !IsInDefaultState && IsEnabled, so even with a live writer
+        // the tag must not be set and nothing should be enqueued.
+        var writer = new DataStreamsWriterMock();
+        var settings = TracerSettings.Create(new()
+        {
+            { ConfigurationKeys.Environment, "foo" },
+            { ConfigurationKeys.ServiceName, "bar" },
+            // DD_DATA_STREAMS_MONITORING_ENABLED intentionally absent → IsInDefaultState = true
+        });
+        var dsm = new DataStreamsManager(settings, writer, Mock.Of<IDiscoveryService>());
+        dsm.IsInDefaultState.Should().BeTrue("precondition: DSM must be in default state");
+
+        var span = new Span(new SpanContext(traceId: 123, spanId: 456), DateTimeOffset.UtcNow);
+
+        span.TrackTransaction(dsm, "tx-abc", "some-checkpoint");
+
+        span.Tags.GetTag("dsm.transaction.id").Should().BeNull();
+        writer.DataStreamsTransactions.Size().Should().Be(0);
+    }
+
+    [Fact]
     public void WhenManagerIsNull_TrackTransaction_DoesNothing()
     {
         var span = new Span(new SpanContext(traceId: 123, spanId: 456), DateTimeOffset.UtcNow);

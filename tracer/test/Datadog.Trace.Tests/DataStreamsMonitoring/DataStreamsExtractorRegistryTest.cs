@@ -12,6 +12,18 @@ namespace Datadog.Trace.Tests.DataStreamsMonitoring;
 
 public class DataStreamsExtractorRegistryTest
 {
+    [Theory]
+    [InlineData("not valid json")]
+    [InlineData("{\"not\": \"a list\"}")]
+    [InlineData("[{\"name\": \"n\", \"type\":")]  // truncated / incomplete
+    public void MalformedJson_DoesNotThrow_AndLeavesExtractorsEmpty(string json)
+    {
+        var registry = new DataStreamsExtractorRegistry(json);
+
+        registry.GetExtractorsByType(DataStreamsTransactionExtractor.Type.HttpOutHeaders).Should().BeNull();
+        registry.GetExtractorsByType(DataStreamsTransactionExtractor.Type.HttpInHeaders).Should().BeNull();
+    }
+
     [Fact]
     public void DeserializeCorrectly()
     {
