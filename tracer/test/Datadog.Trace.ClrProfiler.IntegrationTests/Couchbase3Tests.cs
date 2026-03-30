@@ -58,9 +58,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
-                var spans = (await agent.WaitForSpansAsync(20, 500));
+                var spans = (await agent.WaitForSpansAsync(10, 500))
+                           .Where(s => s.Type == "db")
+                           .ToList();
 
-                ValidateIntegrationSpans(spans.Where(s => s.Type == "db"), metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
+                ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
                 using var scope = new AssertionScope();
 
