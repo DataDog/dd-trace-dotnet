@@ -47,6 +47,7 @@ public class MassTransit8Tests : TracingIntegrationTest
         SetEnvironmentVariable("RABBITMQ_HOST", rabbitHost);
         SetEnvironmentVariable("LOCALSTACK_ENDPOINT", $"http://{localStackEndpoint}");
         SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
+        SetEnvironmentVariable("DD_SERVICE", "Samples.MassTransit8");
 
         // Enable debug logging to investigate MassTransit DiagnosticSource
         SetEnvironmentVariable("DD_TRACE_DEBUG", "true");
@@ -104,7 +105,9 @@ public class MassTransit8Tests : TracingIntegrationTest
             settings.AddRegexScrubber(rabbitMqHostRegex, "rabbitmq://rabbitmq-host/");
 
             // Scrub message payload sizes which vary (e.g., "1095", "1128", etc.)
-            var payloadSizeRegex = new Regex(@"messaging\.message\.payload_size_bytes: \d+");
+            // Older MT8 versions use underscores (messaging.message_payload_size_bytes),
+            // newer versions use dots (messaging.message.payload_size_bytes).
+            var payloadSizeRegex = new Regex(@"messaging\.message[._]payload_size_bytes: \d+");
             settings.AddRegexScrubber(payloadSizeRegex, "messaging.message.payload_size_bytes: size_bytes");
 
             // Network/container address tags vary between local Docker runs and CI agents.
@@ -120,8 +123,8 @@ public class MassTransit8Tests : TracingIntegrationTest
             settings.AddRegexScrubber(otelLibraryVersionRegex, "otel.library.version: masstransit-version");
 
             // Remove optional messaging.message.body.size tag (only present in some MassTransit versions)
-            var bodySizeRegex = new Regex(@"\n      messaging\.message\.body\.size: \d+");
-            settings.AddRegexScrubber(bodySizeRegex, string.Empty);
+            var bodySizeRegex = new Regex(@"messaging\.message\.body\.size: \d+");
+            settings.AddRegexScrubber(bodySizeRegex, "messaging.message.body.size: body_size");
 
             // Scrub OTEL events (contains timestamps and file paths that vary)
             var eventsRegex = new Regex(@"events: \[.*?\}\](?=,|\s*$)", RegexOptions.Singleline);
@@ -138,7 +141,8 @@ public class MassTransit8Tests : TracingIntegrationTest
                         "receive" => 1,
                         "process" => 2,
                         _ => 3
-                    }))
+                    })
+                    .ThenBy(x => x.GetTag("messaging.masstransit.destination_address") ?? string.Empty))
                 .UseFileName(fileName);
 
             await telemetry.AssertIntegrationEnabledAsync(IntegrationId.MassTransit);
@@ -195,7 +199,7 @@ public class MassTransit8Tests : TracingIntegrationTest
             var sagaQueueRegex = new Regex(@"order-state_[a-z0-9]+");
             settings.AddRegexScrubber(sagaQueueRegex, "SagaQueueName");
 
-            var payloadSizeRegex = new Regex(@"messaging\.message\.payload_size_bytes: \d+");
+            var payloadSizeRegex = new Regex(@"messaging\.message[._]payload_size_bytes: \d+");
             settings.AddRegexScrubber(payloadSizeRegex, "messaging.message.payload_size_bytes: size_bytes");
 
             // Windows in-memory runs should not depend on machine-specific network/address values if they appear.
@@ -209,8 +213,8 @@ public class MassTransit8Tests : TracingIntegrationTest
             settings.AddRegexScrubber(otelLibraryVersionRegex, "otel.library.version: masstransit-version");
 
             // Remove optional messaging.message.body.size tag (only present in some MassTransit versions)
-            var bodySizeRegex = new Regex(@"\n      messaging\.message\.body\.size: \d+");
-            settings.AddRegexScrubber(bodySizeRegex, string.Empty);
+            var bodySizeRegex = new Regex(@"messaging\.message\.body\.size: \d+");
+            settings.AddRegexScrubber(bodySizeRegex, "messaging.message.body.size: body_size");
 
             var eventsRegex = new Regex(@"events: \[.*?\}\](?=,|\s*$)", RegexOptions.Singleline);
             settings.AddRegexScrubber(eventsRegex, "events: [scrubbed]");
@@ -230,7 +234,8 @@ public class MassTransit8Tests : TracingIntegrationTest
                         "receive" => 1,
                         "process" => 2,
                         _ => 3
-                    }))
+                    })
+                    .ThenBy(x => x.GetTag("messaging.masstransit.destination_address") ?? string.Empty))
                 .UseFileName(fileName);
 
             await telemetry.AssertIntegrationEnabledAsync(IntegrationId.MassTransit);
@@ -239,16 +244,25 @@ public class MassTransit8Tests : TracingIntegrationTest
 
     private static string GetSuffix(string packageVersion)
     {
-        // The default sample version is currently 8.5.8, and 8.5.8+ emits additional transport/network tags.
-        // Keep a dedicated snapshot so older MT8 output and newer output can evolve independently.
+        // Default csproj version is 8.5.8 which falls in the 8.3.2+ (base) tier.
         if (string.IsNullOrEmpty(packageVersion))
         {
-            return ".8_5_8_plus";
+            return ".pre_8_0_5";
         }
 
-        return new Version(packageVersion) >= new Version("8.5.8")
-                   ? ".8_5_8_plus"
-                   : string.Empty;
+        return new Version(packageVersion) switch
+        {
+            { } v when v <= new Version("8.0.5") => ".pre_8_0_5",
+            { } v when v <= new Version("8.0.6") => ".pre_8_0_6",
+            { } v when v <= new Version("8.0.7") => ".pre_8_0_7",
+            { } v when v <= new Version("8.0.9") => ".pre_8_0_9",
+            { } v when v <= new Version("8.0.14") => ".pre_8_0_14",
+            { } v when v <= new Version("8.0.16") => ".pre_8_0_16",
+            { } v when v <= new Version("8.1.0") => ".pre_8_1",
+            { } v when v <= new Version("8.2.0") => ".pre_8_2",
+            { } v when v <= new Version("8.3.1") => ".8_2_1_to_8_3_1",
+            _ => string.Empty, // 8.3.2+ = base snapshot
+        };
     }
 
     private void PrintMassTransitLogs(string logDir)

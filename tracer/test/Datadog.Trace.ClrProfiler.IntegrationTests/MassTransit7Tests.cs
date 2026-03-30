@@ -106,7 +106,8 @@ public class MassTransit7Tests : TracingIntegrationTest
                         "receive" => 1,
                         "process" => 2,
                         _ => 3
-                    }))
+                    })
+                    .ThenBy(x => x.GetTag("messaging.masstransit.destination_address") ?? string.Empty))
                 .UseFileName(nameof(MassTransit7Tests));
 
             await telemetry.AssertIntegrationEnabledAsync(IntegrationId.MassTransit);
@@ -158,8 +159,8 @@ public class MassTransit7Tests : TracingIntegrationTest
             settings.AddRegexScrubber(sagaQueueRegex, "SagaQueueName");
 
             // Remove optional messaging.message.body.size tag (only present in some MassTransit versions)
-            var bodySizeRegex = new Regex(@"\n      messaging\.message\.body\.size: \d+");
-            settings.AddRegexScrubber(bodySizeRegex, string.Empty);
+            var bodySizeRegex = new Regex(@"messaging\.message\.body\.size: \d+");
+            settings.AddRegexScrubber(bodySizeRegex, "messaging.message.body.size: body_size");
 
             // Scrub error.stack to avoid .NET Framework vs .NET Core stack trace format differences
             var errorStackRegex = new Regex(@"error\.stack:[^\n]*\n(?:[^\n]*\n)*?(?=\s{6}\w)", RegexOptions.Multiline);
@@ -176,7 +177,8 @@ public class MassTransit7Tests : TracingIntegrationTest
                         "receive" => 1,
                         "process" => 2,
                         _ => 3
-                    }))
+                    })
+                    .ThenBy(x => x.GetTag("messaging.masstransit.destination_address") ?? string.Empty))
                 .UseFileName(nameof(MassTransit7Tests) + "Windows");
 
             await telemetry.AssertIntegrationEnabledAsync(IntegrationId.MassTransit);

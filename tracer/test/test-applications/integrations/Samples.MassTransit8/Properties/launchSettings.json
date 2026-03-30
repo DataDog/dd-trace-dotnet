@@ -4,7 +4,7 @@
       "commandName": "Project",
       "environmentVariables": {
         "DD_VERSION": "",
-        "DD_ENV": "activity_handler_masstransit",
+        "DD_ENV": "testing",
 
         "COR_ENABLE_PROFILING": "1",
         "COR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}",

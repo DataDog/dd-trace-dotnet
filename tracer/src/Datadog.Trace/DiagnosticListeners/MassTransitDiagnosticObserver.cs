@@ -214,16 +214,17 @@ namespace Datadog.Trace.DiagnosticListeners
                 inputAddress ?? "null",
                 transportHeaders != null);
 
-            // Pass transportHeaders (already IHeaders proxy) directly to the extract adapter.
-            // ContextPropagationExtractAdapter.GetValues() iterates GetAll() and casts each item
-            // as KeyValuePair<string, object> — no duck typing of items needed.
-            PropagationContext parentContext;
+            // Try extracting trace context from transport headers first (works for RabbitMQ, in-memory).
+            // If that fails (e.g. SQS where trace headers are in the message body, not message attributes),
+            // fall back to reading from the ReceiveContext's Headers property via reflection.
+            PropagationContext parentContext = default;
             if (transportHeaders != null)
             {
                 var adapter = new ContextPropagationExtractAdapter(transportHeaders);
                 parentContext = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(adapter);
             }
-            else
+
+            if (parentContext.SpanContext is null)
             {
                 parentContext = MassTransitCommon.ExtractTraceContext(Tracer.Instance, arg);
             }
