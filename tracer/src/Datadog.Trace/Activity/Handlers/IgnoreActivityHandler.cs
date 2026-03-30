@@ -33,6 +33,7 @@ namespace Datadog.Trace.Activity.Handlers
             "SqlClientDiagnosticListener",
             "Experimental.System.Net.NameResolution",
             "Experimental.System.Net.Http.Connections",
+            "Experimental.System.Net.Security",
             "Experimental.System.Net.Sockets",
         };
 
