@@ -75,6 +75,12 @@ void ReferenceChainTraverser::TraverseObjectGraph(
     uint32_t depth)
 {
     _traversalStack.clear();
+
+    // Mark-on-push: objects are marked when discovered (before pushing),
+    // not when processed (after popping). This reduces hash table probes
+    // from 3 per new object (IsVisited miss + IsVisited miss + MarkVisited)
+    // to 1 (MarkIfAbsent), and prevents duplicate stack entries.
+    _visited.MarkVisited(objectAddress);
     _traversalStack.push_back({objectAddress, currentNode, depth});
 
     while (!_traversalStack.empty())
@@ -82,17 +88,11 @@ void ReferenceChainTraverser::TraverseObjectGraph(
         auto frame = _traversalStack.back();
         _traversalStack.pop_back();
 
-        if (_visited.IsVisited(frame.objectAddress))
-        {
-            continue;
-        }
-
         if (frame.depth > MaxTreeDepth)
         {
             continue;
         }
 
-        _visited.MarkVisited(frame.objectAddress);
         _objectsTraversed++;
 
         ClassID classID = 0;
@@ -134,9 +134,7 @@ void ReferenceChainTraverser::TraverseObjectGraph(
                 continue;
             }
 
-            // Early visited check avoids unnecessary CLR calls and stack push.
-            // The authoritative check is at the top of the loop after popping.
-            if (_visited.IsVisited(fieldValue))
+            if (!_visited.MarkIfAbsent(fieldValue))
             {
                 continue;
             }
@@ -274,7 +272,7 @@ void ReferenceChainTraverser::EnqueueArrayChildren(
             continue;
         }
 
-        if (_visited.IsVisited(elementAddress))
+        if (!_visited.MarkIfAbsent(elementAddress))
         {
             continue;
         }
@@ -329,7 +327,7 @@ void ReferenceChainTraverser::EnqueueValueTypeArrayChildren(
                 continue;
             }
 
-            if (_visited.IsVisited(fieldValue))
+            if (!_visited.MarkIfAbsent(fieldValue))
             {
                 continue;
             }
