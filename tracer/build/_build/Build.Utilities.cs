@@ -59,8 +59,8 @@ partial class Build
     [Parameter("Only update package versions for packages with the following names")]
     readonly string[] IncludePackages;
 
-    [Parameter("Minimum age in days a NuGet package version must have been published before auto-including (default: 2)")]
-    readonly int PackageVersionCooldownDays = 2;
+    [Parameter("Minimum age in days a NuGet package version must have been published before auto-including. Defaults to 2 days, or 0 when --IncludePackages is set")]
+    readonly int? PackageVersionCooldownDays;
 
     [LazyLocalExecutable(@"C:\Program Files (x86)\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.8 Tools\gacutil.exe")]
     readonly Lazy<Tool> GacUtil;
@@ -260,9 +260,14 @@ partial class Build
                    g => g.Max(kvp => new Version(kvp.Value.MaxVersionTestedInclusive!)));
            Logger.Information("Derived version baseline with {Count} entries from supported_versions.json", baseline.Count);
 
+           // Resolve effective cooldown:
+           //  - Explicit --PackageVersionCooldownDays wins
+           //  - --IncludePackages without explicit cooldown defaults to 0
+           var effectiveCooldownDays = PackageVersionCooldownDays ?? (IncludePackages is not null ? 0 : 2);
+
            // Pipeline A: generate .g.props/.g.cs files
-           Logger.Information("Using package version cooldown of {Days} days", PackageVersionCooldownDays);
-           var versionGenerator = new PackageVersionGenerator(TracerDirectory, testDir, shouldUpdatePackage, previousVersionCache, PackageVersionCooldownDays, baseline);
+           Logger.Information("Using package version cooldown of {Days} days", effectiveCooldownDays);
+           var versionGenerator = new PackageVersionGenerator(TracerDirectory, testDir, shouldUpdatePackage, previousVersionCache, effectiveCooldownDays, baseline);
            var testedVersions = await versionGenerator.GenerateVersions(Solution);
            await NuGetVersionCache.Save(cacheFilePath, versionGenerator.VersionCache);
 
@@ -310,7 +315,7 @@ partial class Build
                Logger.Warning(
                    "{Count} package version(s) were excluded due to the {Days}-day cooldown period",
                    versionGenerator.CooldownReport.Entries.Count,
-                   PackageVersionCooldownDays);
+                   effectiveCooldownDays);
 
                foreach (var entry in versionGenerator.CooldownReport.Entries)
                {
