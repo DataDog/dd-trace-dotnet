@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
@@ -101,7 +102,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
         [Trait("RunOnWindows", "True")]
         [InlineData(' ')]
         [InlineData('=')]
-        [EnvironmentRestorer("TF_BUILD")]
+        [EnvironmentRestorer(PlatformKeys.Ci.Azure.TFBuild)]
         public void SetCi(char separator)
         {
             Environment.SetEnvironmentVariable("TF_BUILD", "1");

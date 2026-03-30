@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
@@ -12,7 +13,7 @@ using Xunit;
 namespace Datadog.Trace.Tests.Telemetry;
 
 [Collection(nameof(EnvironmentVariablesTestCollection))]
-[EnvironmentRestorer("K_SERVICE", "CONTAINER_APP_NAME", "APPSVC_RUN_ZIP", "WEBSITE_APPSERVICEAPPLOGS_TRACE_ENABLED", "WEBSITE_SITE_NAME")]
+[EnvironmentRestorer(PlatformKeys.GcpFunction.FunctionNameKey, PlatformKeys.AzureAppService.ContainerAppName, PlatformKeys.AzureAppService.RunFromZipKey, PlatformKeys.AzureAppService.AppServiceApplogsTraceEnabledKey, PlatformKeys.AzureAppService.SiteNameKey)]
 public class TelemetrySettingsAgentlessSettingsTests
 {
     private const string ApiKey = "some-key";
