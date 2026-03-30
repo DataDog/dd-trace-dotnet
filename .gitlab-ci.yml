@@ -16,7 +16,7 @@ variables:
   CI_IDENTITIES_CLIENT_URL: s3://binaries-ddbuild-io-prod/ci-identities/ci-identities-gitlab-job-client/versions/v0.2.0/ci-identities-gitlab-job-client-windows-amd64.exe
   SUPPORTED_CONFIG_PATH: "tracer/src/Datadog.Trace/Configuration/supported-configurations.yaml"
   OCI_PACKAGE_MAX_SIZE_BYTES: 40000000
-  LIB_INJECTION_IMAGE_MAX_SIZE_BYTES: 70000000
+  LIB_INJECTION_IMAGE_MAX_SIZE_BYTES: 40000000
 
 build:
   except:
