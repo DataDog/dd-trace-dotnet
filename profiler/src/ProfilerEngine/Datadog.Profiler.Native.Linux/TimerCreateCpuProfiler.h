@@ -23,6 +23,7 @@ class IManagedThreadList;
 class ProfilerSignalManager;
 class CpuSampleProvider;
 class IUnwinder;
+class UnwinderTracer;
 
 class TimerCreateCpuProfiler : public ServiceBase
 {
@@ -63,4 +64,5 @@ private:
     std::shared_ptr<DiscardMetrics> _discardMetrics;
     std::atomic<std::uint64_t> _nbThreadsInSignalHandler;
     std::unique_ptr<IUnwinder> _pUnwinder;
+    static thread_local UnwinderTracer* Tracer;
 };
