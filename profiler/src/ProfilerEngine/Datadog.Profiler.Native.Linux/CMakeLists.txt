@@ -95,6 +95,7 @@ if (ISARM64)
 else()
     list(REMOVE_ITEM LINUX_PROFILER_SRC "${CMAKE_CURRENT_SOURCE_DIR}/HybridUnwinder.cpp")
     list(REMOVE_ITEM LINUX_PROFILER_SRC "${CMAKE_CURRENT_SOURCE_DIR}/UnwinderTracer.cpp")
+    list(REMOVE_ITEM LINUX_PROFILER_SRC "${CMAKE_CURRENT_SOURCE_DIR}/UnwindTracersProvider.cpp")
 endif()
 
 FILE(GLOB COMMON_PROFILER_SRC LIST_DIRECTORIES false "../Datadog.Profiler.Native/*.cpp")
