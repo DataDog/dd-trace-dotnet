@@ -23,7 +23,7 @@ namespace GeneratePackageVersions
         private readonly PackageGroup _latestSpecific;
         private readonly XunitStrategyFileGenerator _strategyGenerator;
         private readonly DateTimeOffset _cutoffDate;
-        private readonly Dictionary<string, Version> _baseline;
+        private readonly Dictionary<string, List<Version>> _baseline;
 
         /// <summary>
         /// The version cache, populated during generation. Entries are added for every
@@ -43,7 +43,7 @@ namespace GeneratePackageVersions
             Func<string, bool> shouldQueryNuGet,
             Dictionary<string, List<VersionWithDate>> previousVersionCache,
             int cooldownDays,
-            Dictionary<string, Version> baseline)
+            Dictionary<string, List<Version>> baseline)
         {
             _shouldQueryNuGet = shouldQueryNuGet;
             VersionCache = new Dictionary<string, List<VersionWithDate>>(previousVersionCache);
@@ -175,7 +175,7 @@ namespace GeneratePackageVersions
             List<(Version version, TargetFramework framework)> orderedVersions,
             Dictionary<string, DateTimeOffset?> publishDateLookup)
         {
-            _baseline.TryGetValue(entry.NugetPackageSearchName, out var baselineVersion);
+            var baselineVersion = FindBaselineForEntry(entry);
 
             var result = new List<(Version version, TargetFramework framework)>();
 
@@ -220,6 +220,28 @@ namespace GeneratePackageVersions
             }
 
             return result;
+        }
+
+        /// <summary>
+        /// Finds the baseline version for the given entry by selecting the highest previously tested
+        /// version that falls within the entry's [MinVersion, MaxVersionExclusive) range.
+        /// This prevents a high baseline from one version range (e.g., 8.x in 7.0-9.0) from
+        /// suppressing cooldown checks in a different range (e.g., 4.1-6.0) for the same package.
+        /// </summary>
+        private Version FindBaselineForEntry(PackageVersionEntry entry)
+        {
+            if (!_baseline.TryGetValue(entry.NugetPackageSearchName, out var versions))
+            {
+                return null;
+            }
+
+            var min = new Version(entry.MinVersion);
+            var max = new Version(entry.MaxVersionExclusive);
+
+            return versions
+                .Where(v => v >= min && v < max)
+                .OrderByDescending(v => v)
+                .FirstOrDefault();
         }
 
         private bool IsWithinCooldown(DateTimeOffset? publishedDate)

@@ -252,12 +252,14 @@ partial class Build
 
            // Derive baseline from supported_versions.json: the max tested version per package
            // acts as a floor to prevent cooldown filtering from downgrading previously accepted versions.
+           // We collect all max tested versions per package (not just the global max) so that
+           // split-range packages (e.g., GraphQL 4.x-6.x and 7.x-9.x) get a per-range baseline.
            var baseline = previousSupportedVersions
                .Where(kvp => kvp.Value.MaxVersionTestedInclusive is not null)
                .GroupBy(kvp => kvp.Key.PackageName)
                .ToDictionary(
                    g => g.Key,
-                   g => g.Max(kvp => new Version(kvp.Value.MaxVersionTestedInclusive!)));
+                   g => g.Select(kvp => new Version(kvp.Value.MaxVersionTestedInclusive!)).ToList());
            Logger.Information("Derived version baseline with {Count} entries from supported_versions.json", baseline.Count);
 
            // Resolve effective cooldown:
@@ -278,7 +280,11 @@ partial class Build
            foreach (var tested in testedVersions)
            {
                var packageName = tested.NugetPackageSearchName;
-               baseline.TryGetValue(packageName, out var previousMax);
+               baseline.TryGetValue(packageName, out var previousMaxVersions);
+               var previousMax = previousMaxVersions?
+                   .Where(v => v >= tested.MinVersion && v <= tested.MaxVersion)
+                   .OrderByDescending(v => v)
+                   .FirstOrDefault();
 
                if (previousMax is null || tested.MaxVersion > previousMax)
                {
