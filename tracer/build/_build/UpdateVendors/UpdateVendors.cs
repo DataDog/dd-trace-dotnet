@@ -67,9 +67,12 @@ namespace UpdateVendors
             var projFile = Path.Combine(sourceLocation, $"{libraryName}.csproj");
 
             // Rename the proj file to a txt for reference
-            File.Copy(projFile, projFile + ".txt");
-            File.Delete(projFile);
-            Console.WriteLine($"Renamed {libraryName} project file.");
+            if (File.Exists(projFile))
+            {
+                File.Copy(projFile, projFile + ".txt");
+                File.Delete(projFile);
+                Console.WriteLine($"Renamed {libraryName} project file.");
+            }
 
             // Delete the assembly info file
             var assemblyInfo = Path.Combine(sourceLocation, @"Properties", "AssemblyInfo.cs");
