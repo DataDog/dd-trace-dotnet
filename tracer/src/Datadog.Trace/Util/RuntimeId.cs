@@ -22,7 +22,7 @@ namespace Datadog.Trace.Util
 
         public static string GetRootSessionId() => LazyInitializer.EnsureInitialized(ref _rootSessionId, () => GetRootSessionIdImpl());
 
-        [InternalForTesting]
+        [TestingAndPrivateOnly]
         internal static void ResetForTests() => _rootSessionId = null;
 
         private static string GetImpl()
