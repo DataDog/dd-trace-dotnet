@@ -6,7 +6,9 @@
 using System;
 using System.Threading;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Telemetry;
 
 namespace Datadog.Trace.Util
 {
@@ -39,7 +41,8 @@ namespace Datadog.Trace.Util
 
         private static string GetRootSessionIdImpl()
         {
-            var inherited = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.Telemetry.RootSessionId);
+            var config = new ConfigurationBuilder(new EnvironmentConfigurationSource(), TelemetryFactory.Config);
+            var inherited = config.WithKeys(ConfigurationKeys.Telemetry.RootSessionId).AsString();
             if (!string.IsNullOrEmpty(inherited))
             {
                 Log.Debug("Inherited root session ID from parent: {RootSessionId}", inherited);
