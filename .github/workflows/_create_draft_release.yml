@@ -21,10 +21,6 @@ on:
         required: true
       NUGET_TRUSTED_PUBLISHING_USERNAME:
         required: true
-      GH_APP_ID:
-        required: true
-      GH_APP_PRIVATE_KEY:
-        required: true
       DD_PUBLIC_SYMBOL_PREPROD_API_KEY:
         required: true
       DD_PUBLIC_SYMBOL_API_KEY_US1:
@@ -74,7 +70,7 @@ jobs:
           echo "Using sha $commitsha"
           echo "sha=${commitsha}" >> $GITHUB_OUTPUT
 
-      - uses: actions/setup-dotnet@baa11fbfe1d6520db94683bd5c7a3818018e4309 # v5.1.0
+      - uses: actions/setup-dotnet@c2fa09f4bde5ebb9d1777cf28262a3eb3db3ced7 # v5.2.0
         with:
           global-json-file: global.json
 
@@ -114,12 +110,12 @@ jobs:
           echo "Push succeeded, cleaning up"
           rm Datadog.Trace.Annotations.1.0.0.nupkg
 
-      - name: Generate GitHub App Token
+      - name: Get GitHub Token via dd-octo-sts
         id: generate-token
-        uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1
+        uses: DataDog/dd-octo-sts-action@96a25462dbcb10ebf0bfd6e2ccc917d2ab235b9a # v1.0.4
         with:
-          app-id: ${{ secrets.GH_APP_ID }}
-          private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
+          scope: DataDog/dd-trace-dotnet
+          policy: self.github.create-draft-release
 
       - name: "Check GitLab status"
         if: ${{ !inputs.ignore_gitlab_failures }}
@@ -156,7 +152,7 @@ jobs:
           GITHUB_TOKEN: "${{ steps.generate-token.outputs.token }}"
 
       - name: Create Release
-        uses: softprops/action-gh-release@a06a81a03ee405af7f2048a818ed3f03bbf83c7b # v2.5.0
+        uses: softprops/action-gh-release@153bb8e04406b158c6c84fc1615b65b24149a1fe # v2.6.1
         with:
           token: "${{ steps.generate-token.outputs.token }}"
           draft: true

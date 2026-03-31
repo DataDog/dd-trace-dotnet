@@ -30,7 +30,7 @@ internal sealed class Context : IContext
     private readonly IEncoder _encoder;
     private readonly UserEventsState _userEventsState = new();
     private bool _disposed;
-    private ulong _totalRuntimeOverRuns = 0;
+    private ulong _totalRuntimeOverRuns;
 
     // Beware this class is created on a thread but can be disposed on another so don't trust the lock is not going to be held
     private Context(IntPtr contextHandle, IWaf waf, IWafLibraryInvoker wafLibraryInvoker, IEncoder encoder)
@@ -122,7 +122,7 @@ internal sealed class Context : IContext
         return differentValue && (fromSdk || !previousValueFromSdk);
     }
 
-    private unsafe IResult? RunInternal(IDictionary<string, object>? persistentAddressData, IDictionary<string, object>? ephemeralAddressData, ulong timeoutMicroSeconds, bool isRasp = false)
+    private unsafe Result? RunInternal(IDictionary<string, object>? persistentAddressData, IDictionary<string, object>? ephemeralAddressData, ulong timeoutMicroSeconds, bool isRasp = false)
     {
         DdwafObjectStruct retNative = default;
 

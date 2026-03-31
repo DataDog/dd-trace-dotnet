@@ -13,7 +13,8 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      _dd.base_service: Samples.GraphQL
+      _dd.base_service: Samples.GraphQL,
+      _dd.svc_src: graphql
     },
     Metrics: {
       process_id: 0,
@@ -36,7 +37,8 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      _dd.base_service: Samples.GraphQL
+      _dd.base_service: Samples.GraphQL,
+      _dd.svc_src: graphql
     },
     Metrics: {
       process_id: 0,
@@ -59,7 +61,8 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      _dd.base_service: Samples.GraphQL
+      _dd.base_service: Samples.GraphQL,
+      _dd.svc_src: graphql
     },
     Metrics: {
       process_id: 0,
@@ -82,7 +85,8 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      _dd.base_service: Samples.GraphQL
+      _dd.base_service: Samples.GraphQL,
+      _dd.svc_src: graphql
     },
     Metrics: {
       process_id: 0,
@@ -133,7 +137,8 @@ errors: [
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      _dd.base_service: Samples.GraphQL
+      _dd.base_service: Samples.GraphQL,
+      _dd.svc_src: graphql
     },
     Metrics: {
       process_id: 0,
@@ -156,7 +161,8 @@ errors: [
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      _dd.base_service: Samples.GraphQL
+      _dd.base_service: Samples.GraphQL,
+      _dd.svc_src: graphql
     },
     Metrics: {
       process_id: 0,
@@ -181,7 +187,8 @@ errors: [
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      _dd.base_service: Samples.GraphQL
+      _dd.base_service: Samples.GraphQL,
+      _dd.svc_src: graphql
     },
     Metrics: {
       process_id: 0,
@@ -206,7 +213,8 @@ errors: [
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      _dd.base_service: Samples.GraphQL
+      _dd.base_service: Samples.GraphQL,
+      _dd.svc_src: graphql
     },
     Metrics: {
       process_id: 0,
@@ -230,7 +238,8 @@ errors: [
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      _dd.base_service: Samples.GraphQL
+      _dd.base_service: Samples.GraphQL,
+      _dd.svc_src: graphql
     },
     Metrics: {
       process_id: 0,
@@ -255,7 +264,8 @@ errors: [
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      _dd.base_service: Samples.GraphQL
+      _dd.base_service: Samples.GraphQL,
+      _dd.svc_src: graphql
     },
     Metrics: {
       process_id: 0,
@@ -299,7 +309,8 @@ errors: [
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      _dd.base_service: Samples.GraphQL
+      _dd.base_service: Samples.GraphQL,
+      _dd.svc_src: graphql
     },
     Metrics: {
       process_id: 0,

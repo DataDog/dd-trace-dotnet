@@ -17,6 +17,7 @@ jobs:
       pull-requests: read # Fetches PRs
       issues: write # Opens milestones
       statuses: write # add a commit status check
+      id-token: write # required for dd-octo-sts OIDC token
     env:
       GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
 
@@ -43,8 +44,14 @@ jobs:
           state: failure
           workflow_name: code_freeze_start.yml # this allows for a click through to go to the action
 
+      - name: Get GitHub Token via dd-octo-sts
+        id: octo-sts
+        uses: DataDog/dd-octo-sts-action@96a25462dbcb10ebf0bfd6e2ccc917d2ab235b9a # v1.0.4
+        with:
+          scope: DataDog/datadog-aas-extension
+          policy: dd-trace-dotnet.github.deploy-aas-dev-apps
+
       - uses: ./.github/actions/deploy-aas-dev-apps
         name: 'Trigger AAS deploy'
         with:
-          github_app_id: ${{ secrets.GH_APP_ID }}
-          github_app_private_key: ${{ secrets.GH_APP_PRIVATE_KEY }}
+          github_token: ${{ steps.octo-sts.outputs.token }}

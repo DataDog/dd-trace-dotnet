@@ -13,6 +13,7 @@ using CodeGenerators;
 using ICSharpCode.SharpZipLib.Zip;
 using LogParsing;
 using Mono.Cecil;
+using MsiValidation;
 using Nuke.Common;
 using Nuke.Common.IO;
 using Nuke.Common.ProjectModel;
@@ -359,6 +360,14 @@ partial class Build
             var buildDirectory = NativeBuildDirectory + "_" + finalArchs.Replace(';', '_');
             EnsureExistingDirectory(buildDirectory);
 
+            // Resolve the macOS SDK path so we can point the linker at it.
+            // Homebrew llvm@15 installs an x86_64-only libunwind.dylib in
+            // /usr/local/lib which shadows the system's universal version.
+            // Passing the SDK sysroot ensures the linker finds the real one.
+            var sdkProcess = ProcessTasks.StartProcess("xcrun", "--show-sdk-path");
+            sdkProcess.WaitForExit();
+            var sdkPath = sdkProcess.Output.Select(o => o.Text).First().Trim();
+
             var envVariables = new Dictionary<string, string>
             {
                 ["HOME"] = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
@@ -367,11 +376,15 @@ partial class Build
                 ["CMAKE_MAKE_PROGRAM"] = "make",
                 ["CMAKE_CXX_COMPILER"] = "clang++",
                 ["CMAKE_C_COMPILER"] = "clang",
+                // Clear Homebrew-injected flags that can cause linker failures when
+                // cross-compiling for arm64 (e.g. llvm@15's x86_64-only libunwind).
+                ["LDFLAGS"] = "",
+                ["LIBRARY_PATH"] = "",
             };
 
             // Build native
             CMake.Value(
-                arguments: $"-B {buildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}",
+                arguments: $"-B {buildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration} -DCMAKE_OSX_SYSROOT={sdkPath}",
                 environmentVariables: envVariables);
             CMake.Value(
                 arguments: $"--build {buildDirectory} --parallel {Environment.ProcessorCount} --target {FileNames.NativeTracer}",
@@ -996,17 +1009,21 @@ partial class Build
             // We don't produce an x86-only MSI any more
             var architectures = ArchitecturesForPlatformForTracer.Where(x => x != MSBuildTargetPlatform.x86);
 
-            MSBuild(s => s
-                    .SetTargetPath(SharedDirectory / "src" / "msi-installer" / "WindowsInstaller.wixproj")
+            DotNetBuild(s => s
+                    .SetProjectFile(SharedDirectory / "src" / "msi-installer" / "WindowsInstaller.wixproj")
                     .SetConfiguration(BuildConfiguration)
-                    .SetMSBuildPath()
-                    .AddProperty("RunWixToolsOutOfProc", true)
                     .SetProperty("MonitoringHomeDirectory", MonitoringHomeDirectory)
-                    .SetMaxCpuCount(null)
                     .CombineWith(architectures, (o, arch) => o
                         .SetProperty("MsiOutputPath", ArtifactsDirectory / arch.ToString())
-                        .SetTargetPlatform(arch)),
+                        .SetProperty("Platform", arch.ToString())),
                 degreeOfParallelism: 2);
+
+            foreach (var arch in architectures)
+            {
+                var msiPath = ArtifactsDirectory / arch / "en-us" / $"datadog-dotnet-apm-{FullVersion}-{arch}.msi";
+                var verifiedPath = BuildProjectDirectory / nameof(MsiValidation) / $"msi-{arch}.verified.yml";
+                MsiSnapshot.ValidateMsiSnapshot(msiPath, verifiedPath, Version, FullVersion);
+            }
         });
 
     Target CreateBundleHome => _ => _
@@ -2377,6 +2394,14 @@ partial class Build
             // add Datadog projects to the root descriptors file
             datadogTraceTypes.Add(new(Projects.DatadogTrace, null));
 
+            // Add canary types used by TrimmingDetector when classifying trimming state.
+            // These are loaded via Type.GetType() so they don't appear in TypeRef tables.
+            // When the Datadog.Trace.Trimming package is referenced, these types must be
+            // preserved so the detector does not incorrectly classify the app as "missing trimming file".
+            // Keep in sync with tracer/src/Datadog.Trace/PlatformHelpers/TrimmingDetector.cs
+            datadogTraceTypes.Add(new("System.Resources.Writer", "System.Resources.ResourceWriter"));
+            datadogTraceTypes.Add(new("System.IO.IsolatedStorage", "System.IO.IsolatedStorage.IsolatedStorageScope"));
+
             var types = loaderTypes
                        .Concat(datadogTraceTypes)
                        .Distinct()
@@ -2507,6 +2532,8 @@ partial class Build
                new(@".*Noop\dArgumentsVoidIntegration\.OnMethodEnd.*CallTargetNativeTest.*", RegexOptions.Compiled | RegexOptions.Singleline),
                new(@".*System.Threading.ThreadAbortException: Thread was being aborted\.", RegexOptions.Compiled),
                new(@".*System.InvalidOperationException: Module Samples.Trimming.dll has no HINSTANCE.*", RegexOptions.Compiled),
+               // Error log testing
+               new(@".*Sending an error log using hacky reflection.*", RegexOptions.Compiled),
                // CI Visibility known errors
                new(@".*The Git repository couldn't be automatically extracted.*", RegexOptions.Compiled),
                new(@".*DD_GIT_REPOSITORY_URL is set with.*", RegexOptions.Compiled),
@@ -2519,6 +2546,8 @@ partial class Build
                new(@".*An error occurred while sending data to the agent at \\\\\.\\pipe\\trace-.*The operation has timed out.*", RegexOptions.Compiled),
                new(@".*An error occurred while sending data to the agent at \\\\\.\\pipe\\metrics-.*The operation has timed out.*", RegexOptions.Compiled),
                new(@".*Error detecting and reconfiguring git repository for shallow clone. System.IO.FileLoadException.*", RegexOptions.Compiled),
+               // Known errors in OpenTelemetrySdkTests
+               new(@".*An error occurred while sending data to the agent at http://test-agent.*", RegexOptions.Compiled),
                // These are thrown by the CallTargetNativeTests
                new(@".*Exception occurred when calling the CallTarget integration continuation. Datadog.Trace.DuckTyping.DuckTypeException: Throwing a ducktype exception.*"),
                new(@".*Exception occurred when calling the CallTarget integration continuation. System.MissingMethodException: Throwing a missing method exception.*"),
@@ -2538,6 +2567,7 @@ partial class Build
     Target CheckSmokeTestsForErrors => _ => _
        .Unlisted()
        .Description("Reads the logs from build_data and checks for error lines in the smoke test logs")
+       .After(RunArtifactSmokeTests)
        .Executes(async () =>
        {
            var knownPatterns = new List<Regex>();
@@ -2552,6 +2582,18 @@ partial class Build
            {
                // Profiler is not yet supported on Arm64
                knownPatterns.Add(new(@".*Profiler is deactivated because it runs on an unsupported architecture", RegexOptions.Compiled));
+           }
+
+           var isAzureFunctionsScenario = SmokeTestCategory is SmokeTests.SmokeTestCategory.LinuxAzureFunctionsNuGet or SmokeTests.SmokeTestCategory.WindowsAzureFunctionsNuGet;
+           if (isAzureFunctionsScenario)
+           {
+               // AzureFunctions NuGet currently uses the same loader.conf which attempts to load the profiler, even though no such file exists
+               knownPatterns.Add(new(
+                   @".*DynamicDispatcherImpl::LoadConfiguration: \[PROFILER\] Dynamic library for '.*Datadog\.Profiler\.Native\..*' cannot be loaded, file doesn't exist.*",
+                   RegexOptions.Compiled));
+               knownPatterns.Add(new(
+                   @".*Skipping hands-off configuration: as LibDatadog is not available.*",
+                   RegexOptions.Compiled));
            }
 
            // We disable the profiler in crash tests, so we expect these logs
@@ -2600,12 +2642,15 @@ partial class Build
                new("rejit_thread_timeout", new(@".*Timeout while waiting for the rejit requests to be processed. Rejit will continue asynchronously, but some initial calls may not be instrumented.*", RegexOptions.Compiled))
            };
 
-           await CheckLogsForErrors(knownPatterns, allFilesMustExist: true, minLogLevel: LogLevel.Warning, reportablePatterns);
+           // We won't have all the files in an Azure Functions scenario, so allow it
+           await CheckLogsForErrors(knownPatterns, allFilesMustExist: !isAzureFunctionsScenario, minLogLevel: LogLevel.Warning, reportablePatterns);
        });
 
     Target ExtractMetricsFromLogs => _ => _
        .Unlisted()
        .Description("Reads the logs from build_data, extracts the metrics, and submits them to Datadog")
+       .After(RunArtifactSmokeTests)
+       .Before(CheckSmokeTestsForErrors)
        .Executes(async () =>
        {
            var logDirectory = BuildDataDirectory / "logs";
@@ -2618,6 +2663,7 @@ partial class Build
         if (await LogParser.DoLogsContainErrors(logDirectory, knownPatterns, allFilesMustExist, minLogLevel, reportablePatterns))
         {
             ExitCode = 1;
+            throw new Exception("Found errors in the logs");
         }
     }
 

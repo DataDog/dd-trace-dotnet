@@ -1,4 +1,4 @@
-﻿// <copyright file="ManagedTraceExporter.cs" company="Datadog">
+// <copyright file="ManagedTraceExporter.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -15,6 +15,7 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util;
+using Datadog.Trace.Vendors.MessagePack.Decoders;
 
 namespace Datadog.Trace.LibDatadog.DataPipeline;
 
@@ -62,10 +63,17 @@ internal sealed class ManagedTraceExporter : IApi, IDisposable
         });
     }
 
+    public TracesEncoding TracesEncoding => Volatile.Read(ref _current)?.TracesEncoding ?? TracesEncoding.DatadogV0_4;
+
     public void Dispose()
     {
         _settingSubscription.Dispose();
         Interlocked.Exchange(ref _current, null)?.Dispose();
+    }
+
+    public Task<bool> Ping()
+    {
+        return Volatile.Read(ref _current)?.Ping() ?? Task.FromResult(false);
     }
 
     public Task<bool> SendTracesAsync(ArraySegment<byte> traces, int numberOfTraces, bool statsComputationEnabled, long numberOfDroppedP0Traces, long numberOfDroppedP0Spans, bool apmTracingEnabled = true)

@@ -11,7 +11,7 @@ namespace Datadog.Trace.Debugger.Expressions;
 
 internal partial class ProbeExpressionParser<T>
 {
-    private Expression Not(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
+    private UnaryExpression Not(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
     {
         var ex = ParseTree(reader, parameters, itParameter);
         return Expression.Not(ex);

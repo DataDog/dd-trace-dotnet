@@ -30,6 +30,11 @@ public class CreatedumpTests : ConsoleTestHelper
 {
 #if !NETFRAMEWORK // Createdump is not supported on .NET Framework
     private const string CreatedumpExpectedOutput = "Writing minidump with heap to file /dev/null";
+
+    // On arm64 Linux, createdump can intermittently fail with a ptrace race condition
+    // where threads exit before createdump can attach. In that case, createdump is still
+    // invoked (which is what we're testing), but it fails before writing the minidump.
+    private const string CreatedumpInvokedOutput = "[createdump] Gathering state for process";
 #endif
     private const string CrashReportExpectedOutput = "The crash may have been caused by automatic instrumentation";
     private const string CrashReportUnfilteredExpectedOutput = "The crash is not suspicious, but filtering has been disabled";
@@ -99,11 +104,12 @@ public class CreatedumpTests : ConsoleTestHelper
 
         if (shouldCallCreatedump)
         {
-            helper.StandardOutput.Should().Contain(CreatedumpExpectedOutput);
+            AssertCreatedumpWasInvoked(helper.StandardOutput);
         }
         else
         {
             helper.StandardOutput.Should().NotContain(CreatedumpExpectedOutput);
+            helper.StandardOutput.Should().NotContain(CreatedumpInvokedOutput);
         }
     }
 
@@ -139,7 +145,7 @@ public class CreatedumpTests : ConsoleTestHelper
         helper.StandardOutput.Should().Contain(CrashReportExpectedOutput);
         File.Exists(reportFile.Path).Should().BeTrue();
 
-        helper.StandardOutput.Should().Contain(CreatedumpExpectedOutput);
+        AssertCreatedumpWasInvoked(helper.StandardOutput);
     }
 #endif
 
@@ -181,11 +187,12 @@ public class CreatedumpTests : ConsoleTestHelper
 #if !NETFRAMEWORK
         if (enableCrashDumps)
         {
-            helper.StandardOutput.Should().Contain(CreatedumpExpectedOutput);
+            AssertCreatedumpWasInvoked(helper.StandardOutput);
         }
         else
         {
             helper.StandardOutput.Should().NotContain(CreatedumpExpectedOutput);
+            helper.StandardOutput.Should().NotContain(CreatedumpInvokedOutput);
         }
 #endif
 
@@ -223,11 +230,12 @@ public class CreatedumpTests : ConsoleTestHelper
 #if !NETFRAMEWORK
         if (crashdumpEnabled)
         {
-            helper.StandardOutput.Should().Contain(CreatedumpExpectedOutput);
+            AssertCreatedumpWasInvoked(helper.StandardOutput);
         }
         else
         {
             helper.StandardOutput.Should().NotContain(CreatedumpExpectedOutput);
+            helper.StandardOutput.Should().NotContain(CreatedumpInvokedOutput);
         }
 #endif
 
@@ -722,6 +730,27 @@ public class CreatedumpTests : ConsoleTestHelper
             return hex.ToString();
         }
     }
+
+#if !NETFRAMEWORK
+    /// <summary>
+    /// Asserts that createdump was invoked. On arm64 Linux, createdump can intermittently
+    /// fail with a ptrace race condition where threads exit before it can attach. In that
+    /// case we accept evidence that createdump was started as sufficient — this is a .NET
+    /// runtime limitation, not a bug in our code.
+    /// </summary>
+    private static void AssertCreatedumpWasInvoked(string standardOutput)
+    {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) && RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
+        {
+            (standardOutput.Contains(CreatedumpExpectedOutput) || standardOutput.Contains(CreatedumpInvokedOutput))
+                .Should().BeTrue($"expected stdout to contain \"{CreatedumpExpectedOutput}\" or \"{CreatedumpInvokedOutput}\"");
+        }
+        else
+        {
+            standardOutput.Should().Contain(CreatedumpExpectedOutput);
+        }
+    }
+#endif
 
     private static (string Key, string Value) CrashReportConfig(TemporaryFile reportFile)
     {

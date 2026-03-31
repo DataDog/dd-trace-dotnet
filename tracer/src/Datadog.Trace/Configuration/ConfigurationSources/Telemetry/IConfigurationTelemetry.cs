@@ -74,7 +74,7 @@ public interface IConfigurationTelemetry
     /// Gets the stored configuration data and clears the stored data
     /// </summary>
     /// <returns>The stored configuration data</returns>
-    public ICollection<ConfigurationKeyValue>? GetData();
+    public ICollection<ConfigurationKeyValue>? GetIncrementalData();
 
     /// <summary>
     /// Copies the stored configuration to the provided destination

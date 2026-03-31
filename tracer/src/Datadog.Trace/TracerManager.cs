@@ -24,6 +24,7 @@ using Datadog.Trace.LibDatadog.ServiceDiscovery;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.TracerFlare;
+using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Processors;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.RemoteConfigurationManagement;
@@ -57,7 +58,7 @@ namespace Datadog.Trace
 
         private readonly IDisposable _settingSubscription;
         private PerTraceSettings _perTraceSettings;
-        private volatile bool _isClosing = false;
+        private volatile bool _isClosing;
 
         public TracerManager(
             TracerSettings settings,
@@ -77,6 +78,7 @@ namespace Datadog.Trace
             ITracerFlareManager tracerFlareManager,
             ISpanEventsManager spanEventsManager,
             FeatureFlagsModule featureFlagsModule,
+            ServiceRemappingHash serviceRemappingHash,
             ITraceProcessor[] traceProcessors = null)
         {
             Settings = settings;
@@ -107,6 +109,8 @@ namespace Datadog.Trace
             TracerFlareManager = tracerFlareManager;
             SpanEventsManager = spanEventsManager;
             FeatureFlags = featureFlagsModule;
+
+            ServiceRemappingHash = serviceRemappingHash;
 
             SpanContextPropagator = SpanContextPropagatorFactory.GetSpanContextPropagator(settings.PropagationStyleInject, settings.PropagationStyleExtract, settings.PropagationExtractFirstOnly, settings.PropagationBehaviorExtract);
             UpdatePerTraceSettings(settings.Manager.InitialMutableSettings);
@@ -186,6 +190,8 @@ namespace Datadog.Trace
         public PerTraceSettings PerTraceSettings => Volatile.Read(ref _perTraceSettings);
 
         public SpanContextPropagator SpanContextPropagator { get; }
+
+        public ServiceRemappingHash ServiceRemappingHash { get; }
 
         /// <summary>
         /// Replaces the global <see cref="TracerManager"/> settings. This affects all <see cref="Tracer"/> instances
@@ -272,7 +278,10 @@ namespace Datadog.Trace
                 if (oldManager.Statsd != newManager.Statsd)
                 {
                     statsdReplaced = true;
-                    oldManager.Statsd?.Dispose();
+                    if (oldManager.Statsd is not null)
+                    {
+                        await oldManager.Statsd.DisposeAsync().ConfigureAwait(false);
+                    }
                 }
 
                 var discoveryReplaced = false;
@@ -774,8 +783,14 @@ namespace Datadog.Trace
                         await instance.Telemetry.DisposeAsync().ConfigureAwait(false);
                     }
 
+                    Log.Debug("Disposing RuntimeMetrics");
                     instance.RuntimeMetrics?.Dispose();
-                    instance.Statsd?.Dispose();
+
+                    if (instance.Statsd is { } statsd)
+                    {
+                        Log.Debug("Disposing StatsdManager");
+                        await statsd.DisposeAsync().ConfigureAwait(false);
+                    }
 
                     Log.Debug("Finished waiting for disposals.");
                 }

@@ -16,7 +16,7 @@ namespace Datadog.Trace.Ci.Coverage;
 internal sealed class CoverageContextContainer
 {
     private readonly List<ModuleValue> _container = new();
-    private ModuleValue? _currentModuleValue = null;
+    private ModuleValue? _currentModuleValue;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CoverageContextContainer"/> class.

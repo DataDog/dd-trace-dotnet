@@ -250,6 +250,7 @@ internal sealed class TestOptimization : ITestOptimization
             getDiscoveryServiceFunc: static s => DiscoveryService.CreateUnmanaged(
                 s.TracerSettings.Manager.InitialExporterSettings,
                 ContainerMetadata.Instance,
+                new ServiceRemappingHash(null),
                 tcpTimeout: TimeSpan.FromSeconds(5),
                 initialRetryDelayMs: 100,
                 maxRetryDelayMs: 1000,

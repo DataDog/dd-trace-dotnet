@@ -498,6 +498,63 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
+        [InlineData(null, null, null, 1.0d)]
+        [InlineData("0", null, null, 0.0d)]
+        [InlineData("0.5", null, null, 0.5d)]
+        [InlineData("1", null, null, 1.0d)]
+        [InlineData(null, "parentbased_traceidratio", "0.5", 0.5d)]
+        [InlineData(null, "parentbased_traceidratio", "1", 1.0d)]
+        [InlineData(null, "parentbased_traceidratio", null, 1.0d)]
+        [InlineData(null, "traceidratio", "0.5", 0.5d)]
+        [InlineData(null, "traceidratio", "1", 1.0d)]
+        [InlineData(null, "traceidratio", null, 1.0d)]
+        [InlineData(null, "parentbased_always_on", null, 1.0d)]
+        [InlineData(null, "always_on", null, 1.0d)]
+        [InlineData(null, "parentbased_always_off", null, 0.0d)]
+        [InlineData(null, "always_off", null, 0.0d)]
+        public void GlobalSamplingRateWithOtlpTracesExporter(string value, string otelSampler, string otelSampleRate, double? expected)
+        {
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.OpenTelemetry.TracesExporter, "otlp"),
+                (ConfigurationKeys.GlobalSamplingRate, value),
+                (ConfigurationKeys.OpenTelemetry.TracesSampler, otelSampler),
+                (ConfigurationKeys.OpenTelemetry.TracesSamplerArg, otelSampleRate));
+            var errorLog = new OverrideErrorLog();
+            var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance, errorLog);
+            var mutable = GetMutableSettings(source, settings);
+
+            // confirm the logs/metrics
+            mutable.GlobalSamplingRate.Should().Be(expected);
+            var metrics = new List<(Count?, string, string)>();
+
+            if (value is not null)
+            {
+                // hidden metrics
+                if (otelSampler is not null)
+                {
+                    metrics.Add((Count.OpenTelemetryConfigHiddenByDatadogConfig, ConfigurationKeys.OpenTelemetry.TracesSampler.ToLowerInvariant(), ConfigurationKeys.GlobalSamplingRate.ToLowerInvariant()));
+                }
+
+                if (otelSampleRate is not null)
+                {
+                    metrics.Add((Count.OpenTelemetryConfigHiddenByDatadogConfig, ConfigurationKeys.OpenTelemetry.TracesSamplerArg.ToLowerInvariant(), ConfigurationKeys.GlobalSamplingRate.ToLowerInvariant()));
+                }
+            }
+            else if (otelSampler is "invalid")
+            {
+                // we _don't_ report this one as invalid, and it "prevents" reporting the invalid arg
+            }
+            else if (otelSampler is "traceidratio" or "parentbased_traceidratio"
+                  && otelSampleRate is "invalid" or null)
+            {
+                // we _only_ report this one if we need to use it
+                metrics.Add((Count.OpenTelemetryConfigInvalid, ConfigurationKeys.OpenTelemetry.TracesSamplerArg.ToLowerInvariant(), ConfigurationKeys.GlobalSamplingRate.ToLowerInvariant()));
+            }
+
+            errorLog.ShouldHaveExpectedOtelMetric(metrics.ToArray());
+        }
+
+        [Theory]
         [MemberData(nameof(BooleanTestCases), true)]
         public void StartupDiagnosticLogEnabled(string value, bool expected)
         {
@@ -639,6 +696,25 @@ namespace Datadog.Trace.Tests.Configuration
             var mutable = GetMutableSettings(source, tracerSettings);
 
             mutable.LogsInjectionEnabled.Should().Be(expected);
+        }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void ProcessTagsEnabledIfPropagationEnabled(bool propagateTags)
+        {
+            var source = propagateTags ? CreateConfigurationSource((ConfigurationKeys.PropagateProcessTags, "true")) : CreateConfigurationSource();
+            var settings = new TracerSettings(source);
+            var mutable = GetMutableSettings(source, settings);
+
+            if (propagateTags)
+            {
+                mutable.ProcessTags.Should().NotBeNull();
+            }
+            else
+            {
+                mutable.ProcessTags.Should().BeNull();
+            }
         }
 
         private static (string Key, string Property, object Value1, object Value2)[] GetTestValues()

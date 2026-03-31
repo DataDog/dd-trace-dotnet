@@ -21,6 +21,7 @@ jobs:
       contents: read
       actions: read
       issues: write
+      id-token: write # required for dd-octo-sts OIDC token
     
     steps:
       - name: Calculate week number
@@ -94,9 +95,16 @@ jobs:
         if: steps.check_skip.outputs.should_proceed == 'true'
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
+      - name: Get GitHub Token via dd-octo-sts
+        if: steps.check_skip.outputs.should_proceed == 'true'
+        id: octo-sts
+        uses: DataDog/dd-octo-sts-action@96a25462dbcb10ebf0bfd6e2ccc917d2ab235b9a # v1.0.4
+        with:
+          scope: DataDog/datadog-aas-extension
+          policy: dd-trace-dotnet.github.deploy-aas-dev-apps
+
       - uses: ./.github/actions/deploy-aas-dev-apps
         if: steps.check_skip.outputs.should_proceed == 'true'
         name: 'Trigger AAS deploy'
         with:
-          github_app_id: ${{ secrets.GH_APP_ID }}
-          github_app_private_key: ${{ secrets.GH_APP_PRIVATE_KEY }}
+          github_token: ${{ steps.octo-sts.outputs.token }}

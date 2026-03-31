@@ -12,6 +12,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Debugger.Configurations;
 using Datadog.Trace.Telemetry;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Debugger
 {
@@ -70,17 +71,17 @@ namespace Datadog.Trace.Debugger
                               .Value;
 
             var thirdPartyIncludes = config
-                                  .WithKeys(ConfigurationKeys.Debugger.ThirdPartyDetectionIncludes)
-                                  .AsString()?
-                                  .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries) ??
-                                   Enumerable.Empty<string>();
+                                    .WithKeys(ConfigurationKeys.Debugger.ThirdPartyDetectionIncludes)
+                                    .AsString()?
+                                    .Split(Separators.Comma, StringSplitOptions.RemoveEmptyEntries) ??
+                                     Enumerable.Empty<string>();
 
             ThirdPartyDetectionIncludes = thirdPartyIncludes.ToImmutableHashSet(StringComparer.OrdinalIgnoreCase);
 
             var thirdPartyExcludes = config
                                     .WithKeys(ConfigurationKeys.Debugger.ThirdPartyDetectionExcludes)
                                     .AsString()?
-                                    .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries) ??
+                                    .Split(Separators.Comma, StringSplitOptions.RemoveEmptyEntries) ??
                                      Enumerable.Empty<string>();
 
             ThirdPartyDetectionExcludes = thirdPartyExcludes.ToImmutableHashSet(StringComparer.OrdinalIgnoreCase);
@@ -88,7 +89,7 @@ namespace Datadog.Trace.Debugger
             var symDb3rdPartyIncludeLibraries = config
                                                .WithKeys(ConfigurationKeys.Debugger.SymDbThirdPartyDetectionIncludes)
                                                .AsString()?
-                                               .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries) ??
+                                               .Split(Separators.Comma, StringSplitOptions.RemoveEmptyEntries) ??
                                                 Enumerable.Empty<string>();
 
             SymDbThirdPartyDetectionIncludes = new HashSet<string>([.. symDb3rdPartyIncludeLibraries, .. ThirdPartyDetectionIncludes]).ToImmutableHashSet();
@@ -96,7 +97,7 @@ namespace Datadog.Trace.Debugger
             var symDb3rdPartyExcludeLibraries = config
                                                .WithKeys(ConfigurationKeys.Debugger.SymDbThirdPartyDetectionExcludes)
                                                .AsString()?
-                                               .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries) ??
+                                               .Split(Separators.Comma, StringSplitOptions.RemoveEmptyEntries) ??
                                                 Enumerable.Empty<string>();
 
             SymDbThirdPartyDetectionExcludes = new HashSet<string>([.. symDb3rdPartyExcludeLibraries, .. ThirdPartyDetectionExcludes]).ToImmutableHashSet();
@@ -114,7 +115,7 @@ namespace Datadog.Trace.Debugger
             var redactedIdentifiers = config
                                  .WithKeys(ConfigurationKeys.Debugger.RedactedIdentifiers)
                                  .AsString()?
-                                 .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries) ??
+                                 .Split(Separators.Comma, StringSplitOptions.RemoveEmptyEntries) ??
                                   Enumerable.Empty<string>();
 
             RedactedIdentifiers = new HashSet<string>(redactedIdentifiers, StringComparer.OrdinalIgnoreCase);
@@ -136,7 +137,7 @@ namespace Datadog.Trace.Debugger
             var redactedTypes = config
                                      .WithKeys(ConfigurationKeys.Debugger.RedactedTypes)
                                      .AsString()?
-                                     .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries) ??
+                                     .Split(Separators.Comma, StringSplitOptions.RemoveEmptyEntries) ??
                                       Enumerable.Empty<string>();
 
             RedactedTypes = new HashSet<string>(redactedTypes, StringComparer.OrdinalIgnoreCase);

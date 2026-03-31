@@ -9,7 +9,6 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.Xml.Linq;
 using GeneratePackageVersions;
 using Nuke.Common.IO;
 using PrepareRelease;
@@ -69,15 +68,11 @@ namespace Honeypot
             }
         }
 
-        public static List<(string NugetName, Version LatestTestedVersion)> GetCurrentlyTestedVersions(AbsolutePath honeypotFolder)
-            => Directory.EnumerateFiles(honeypotFolder, "*.csproj", SearchOption.AllDirectories)
-                .Select(XElement.Load)
-                .Descendants("PackageReference")
-                .Select(x => ((string) x.Attribute("Include"), new Version(((string) x.Attribute("Version"))!)))
-                .Distinct()
-                .ToList();
-
-        public static async Task<List<IntegrationMap>> BuildDistinctIntegrationMaps(List<InstrumentedAssembly> targets, List<PackageVersionGenerator.TestedPackage> testedVersions)
+        public static async Task<List<IntegrationMap>> BuildDistinctIntegrationMaps(
+            List<InstrumentedAssembly> targets,
+            List<PackageVersionGenerator.TestedPackage> testedVersions,
+            Func<string, bool> shouldQueryNuGet,
+            Dictionary<(string AssemblyName, string PackageName), GeneratePackageVersions.GenerateSupportMatrix.SupportedNuGetPackage> previousSupportedVersions)
         {
             var distinctIntegrations = new List<IntegrationMap>();
 
@@ -113,7 +108,9 @@ namespace Honeypot
                         assemblyName: maxVersionTarget.TargetAssembly,
                         minSupportedVersion,
                         maxSupportedVersion,
-                        testedVersions));
+                        testedVersions,
+                        shouldQueryNuGet,
+                        previousSupportedVersions));
             }
 
             return distinctIntegrations;

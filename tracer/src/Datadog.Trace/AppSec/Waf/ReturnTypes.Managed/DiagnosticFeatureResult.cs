@@ -47,17 +47,17 @@ internal sealed class DiagnosticFeatureResult
         return null;
     }
 
-    private static IReadOnlyList<string> GetListKey(Dictionary<string, object> diagObject, string key)
+    private static List<string> GetListKey(Dictionary<string, object> diagObject, string key)
     {
         if (diagObject.TryGetValue(key, out var listObj) && listObj is List<object> list)
         {
             return list.Cast<string>().ToList();
         }
 
-        return new List<string>();
+        return [];
     }
 
-    private static IReadOnlyDictionary<string, object> GetDictionaryKey(Dictionary<string, object> diagObject, string key)
+    private static Dictionary<string, object> GetDictionaryKey(Dictionary<string, object> diagObject, string key)
     {
         if (diagObject.TryGetValue(key, out var dictObj) && dictObj is Dictionary<string, object> dict)
         {

@@ -3,23 +3,27 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if !NETFRAMEWORK
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Reflection;
+using Datadog.Trace.DiagnosticListeners.DuckTypes;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.DiagnosticListeners
 {
-    internal sealed class DiagnosticManager : IDiagnosticManager, IObserver<DiagnosticListener>, IDisposable
+    internal sealed class DiagnosticManager : IDiagnosticManager, IDisposable
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DiagnosticManager>();
 
         private readonly IEnumerable<DiagnosticObserver> _diagnosticObservers;
         private readonly List<IDisposable> _subscriptions = new List<IDisposable>();
-        private IDisposable _allListenersSubscription;
+        private IDisposable? _allListenersSubscription;
 
         public DiagnosticManager(IEnumerable<DiagnosticObserver> diagnosticSubscribers)
         {
@@ -31,7 +35,7 @@ namespace Datadog.Trace.DiagnosticListeners
             _diagnosticObservers = diagnosticSubscribers;
         }
 
-        public static DiagnosticManager Instance { get; set; }
+        public static DiagnosticManager? Instance { get; set; }
 
         public bool IsRunning => _allListenersSubscription != null;
 
@@ -40,19 +44,41 @@ namespace Datadog.Trace.DiagnosticListeners
             if (_allListenersSubscription == null)
             {
                 Log.Debug("Starting DiagnosticListener.AllListeners subscription");
-                _allListenersSubscription = DiagnosticListener.AllListeners.Subscribe(this);
+#if NETFRAMEWORK
+                try
+                {
+                    var diagnosticListenerType = Type.GetType("System.Diagnostics.DiagnosticListener, System.Diagnostics.DiagnosticSource");
+                    if (diagnosticListenerType == null)
+                    {
+                        Log.Warning("Unable to find DiagnosticListener type");
+                        return;
+                    }
+
+                    var iObserverType = typeof(IObserver<>).MakeGenericType(diagnosticListenerType);
+                    var observer = new FrameworkDiagnosticListenerObserver(this);
+                    var implementation = observer.DuckImplement(iObserverType);
+
+                    var allListenersProperty = diagnosticListenerType.GetProperty("AllListeners", BindingFlags.Public | BindingFlags.Static);
+                    var allListeners = allListenersProperty?.GetValue(null);
+                    var subscribeMethod = allListenersProperty?.PropertyType.GetMethod("Subscribe");
+                    _allListenersSubscription = subscribeMethod?.Invoke(allListeners, new[] { implementation }) as IDisposable;
+
+                    if (_allListenersSubscription != null)
+                    {
+                        Log.Debug("Successfully subscribed to DiagnosticListener.AllListeners");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Error starting DiagnosticListener.AllListeners subscription");
+                }
+#else
+                _allListenersSubscription = DiagnosticListener.AllListeners.Subscribe(new DiagnosticListenerObserver(this));
+#endif
             }
         }
 
-        void IObserver<DiagnosticListener>.OnCompleted()
-        {
-        }
-
-        void IObserver<DiagnosticListener>.OnError(Exception error)
-        {
-        }
-
-        void IObserver<DiagnosticListener>.OnNext(DiagnosticListener listener)
+        public void OnNext(IDiagnosticListener listener)
         {
             foreach (var subscriber in _diagnosticObservers)
             {
@@ -105,4 +131,3 @@ namespace Datadog.Trace.DiagnosticListeners
         }
     }
 }
-#endif

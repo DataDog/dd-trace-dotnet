@@ -1,4 +1,4 @@
-﻿// <copyright file="AgentWriter.cs" company="Datadog">
+// <copyright file="AgentWriter.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -14,6 +14,7 @@ using Datadog.Trace.Agent.MessagePack;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
+using Datadog.Trace.OpenTelemetry.Traces;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 
@@ -24,8 +25,6 @@ namespace Datadog.Trace.Agent
         private const TaskCreationOptions TaskOptions = TaskCreationOptions.RunContinuationsAsynchronously;
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AgentWriter>();
-
-        private static readonly ArraySegment<byte> EmptyPayload = new([0x90]);
 
         private readonly ConcurrentQueue<WorkItem> _pendingTraces = new ConcurrentQueue<WorkItem>();
         private readonly IStatsdManager _statsd;
@@ -95,12 +94,16 @@ namespace Datadog.Trace.Agent
             _batchInterval = batchInterval;
             _traceKeepRateCalculator = traceKeepRateCalculator;
 
-            var formatterResolver = SpanFormatterResolver.Instance;
+            ISpanBufferSerializer spanBufferSerializer = api.TracesEncoding switch
+            {
+                TracesEncoding.OtlpJson => new OtlpTracesJsonSerializer(),
+                _ => new SpanBufferMessagePackSerializer(SpanFormatterResolver.Instance),
+            };
 
             _forceFlush = new TaskCompletionSource<bool>(TaskOptions);
 
-            _frontBuffer = new SpanBuffer(maxBufferSize, formatterResolver);
-            _backBuffer = new SpanBuffer(maxBufferSize, formatterResolver);
+            _frontBuffer = new SpanBuffer(maxBufferSize, spanBufferSerializer);
+            _backBuffer = new SpanBuffer(maxBufferSize, spanBufferSerializer);
             _activeBuffer = _frontBuffer;
 
             _apmTracingEnabled = apmTracingEnabled;
@@ -126,7 +129,7 @@ namespace Datadog.Trace.Agent
 
         public bool CanComputeStats => _apmTracingEnabled && _statsAggregator?.CanComputeStats == true;
 
-        public Task<bool> Ping() => _api.SendTracesAsync(EmptyPayload, 0, false, 0, 0);
+        public Task<bool> Ping() => _api.Ping();
 
         public void WriteTrace(in SpanCollection trace)
         {
