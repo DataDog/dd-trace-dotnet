@@ -1441,15 +1441,5 @@ namespace Datadog.Trace.Configuration
             Log.Warning("Unsupported OTLP protocol '{Protocol}'. Supported values are 'grpc', 'http/protobuf' and 'http/json'. Using default: http/protobuf", inputValue);
             return ParsingResult<OtlpProtocol>.Failure();
         }
-
-        internal static TracerSettings Create(Dictionary<string, object?> settings)
-            => Create(settings, LibDatadogAvailabilityHelper.IsLibDatadogAvailable);
-
-        internal static TracerSettings Create(Dictionary<string, object?> settings, LibDatadogAvailableResult isLibDatadogAvailable) =>
-            new(
-                new DictionaryConfigurationSource(settings.ToDictionary(x => x.Key, x => x.Value?.ToString()!)),
-                new ConfigurationTelemetry(),
-                new OverrideErrorLog(),
-                isLibDatadogAvailable);
     }
 }

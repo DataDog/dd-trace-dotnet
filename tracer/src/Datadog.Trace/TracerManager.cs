@@ -784,13 +784,14 @@ namespace Datadog.Trace
                         await instance.Telemetry.DisposeAsync().ConfigureAwait(false);
                     }
 
+                    Log.Debug("Disposing RuntimeMetrics");
                     instance.RuntimeMetrics?.Dispose();
 
-                    // Fire-and-forget: on master the old sync Dispose() was already
-                    // fire-and-forget internally (Task.Run). DisposeAsync flushes buffers
-                    // and drains worker threads which can take several seconds, longer than
-                    // the window between repeated termination signals on .NET 10.
-                    instance.Statsd?.DisposeAsync().ContinueWith(t => Log.Error(t.Exception, "Error waiting for StatsD disposal"), TaskContinuationOptions.OnlyOnFaulted);
+                    if (instance.Statsd is { } statsd)
+                    {
+                        Log.Debug("Disposing StatsdManager");
+                        await statsd.DisposeAsync().ConfigureAwait(false);
+                    }
 
                     Log.Debug("Finished waiting for disposals.");
                 }
