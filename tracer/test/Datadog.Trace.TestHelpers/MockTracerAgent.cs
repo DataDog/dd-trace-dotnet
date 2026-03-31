@@ -1089,6 +1089,9 @@ namespace Datadog.Trace.TestHelpers
 
             [JsonProperty("span_events")]
             public bool SpanEvents { get; set; } = false;
+
+            [JsonProperty("obfuscation_version")]
+            public int ObfuscationVersion { get; set; } = 1;
         }
 
         public class TcpUdpAgent : MockTracerAgent
