@@ -21,6 +21,7 @@ using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
+using Datadog.Trace.Serverless;
 using Datadog.Trace.ServiceFabric;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
@@ -525,7 +526,7 @@ namespace Datadog.Trace.ClrProfiler
         private static bool SkipAspNetCoreDiagnosticObserver()
         {
             // this is extremely simple now, but will get more complex soon...
-            return EnvironmentHelpers.IsAzureFunctions();
+            return AzureInfo.Instance.IsAzureFunction;
         }
 #endif
 
