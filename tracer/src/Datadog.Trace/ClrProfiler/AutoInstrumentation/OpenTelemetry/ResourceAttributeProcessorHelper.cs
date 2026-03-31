@@ -17,9 +17,34 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
     {
         private static Func<object, object>? _getResourceDelegate;
 
+        /// <summary>
+        /// Cached OTel resource, populated on the first <see cref="OnStart"/> call from
+        /// the dynamic ResourceAttributeProcessor. Used by the CallTarget Activity
+        /// interception path to apply resource attributes after Activity.Start() returns,
+        /// because the processor's OnStart fires *during* Activity.Start() — before
+        /// the interception integration has had a chance to create the Datadog span.
+        /// </summary>
+        private static volatile IResource? _cachedResource;
+
         static ResourceAttributeProcessorHelper()
         {
             _getResourceDelegate = CreateGetResourceDelegate();
+        }
+
+        /// <summary>
+        /// Applies the cached OTel resource attributes (service.name, service.version, etc.)
+        /// to the given <paramref name="span"/>. Called from <c>ActivityStartIntegration.OnMethodEnd</c>
+        /// after the span has been created.
+        /// </summary>
+        internal static void ApplyCachedResourceAttributes(Span span)
+        {
+            var resource = _cachedResource;
+            if (resource is null)
+            {
+                return;
+            }
+
+            ApplyResourceToSpan(span, resource);
         }
 
         public static void OnStart(object processor, object activityData)
@@ -31,6 +56,27 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
                 return;
             }
 
+            // Cache the resource from the TracerProvider on first call so the interception path can use it later
+            if (_cachedResource is null && baseProcessor.ParentProvider is not null)
+            {
+                var resourceObject = _getResourceDelegate(baseProcessor.ParentProvider);
+                if (resourceObject.TryDuckCast<IResource>(out var resource))
+                {
+                    _cachedResource = resource;
+                }
+            }
+
+            // When CallTarget-based Activity interception is enabled, the span is set on the Activity
+            // custom property. However, the processor's OnStart fires during Activity.Start() — before
+            // our OnMethodEnd integration runs. So the custom property will be null at this point.
+            // The interception path applies resource attributes itself via ApplyCachedResourceAttributes().
+            if (Tracer.Instance.Settings.IsActivityInterceptionEnabled)
+            {
+                return;
+            }
+
+            // Managed ActivityListener path: look up the span via ConcurrentDictionary
+            Span? span;
             ActivityKey key;
             if (activityData.TryDuckCast<IW3CActivity>(out var w3cActivity) && w3cActivity.TraceId is { } traceId && w3cActivity.SpanId is { } spanId)
             {
@@ -41,44 +87,52 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
                 key = new(activity.Id);
             }
 
-            if (key.IsValid() && ActivityHandlerCommon.ActivityMappingById.TryGetValue(key, out var activityMapping))
+            if (!key.IsValid() || !ActivityHandlerCommon.ActivityMappingById.TryGetValue(key, out var activityMapping))
             {
-                if (baseProcessor.ParentProvider is not null)
+                return;
+            }
+
+            span = activityMapping.Scope?.Span;
+
+            if (span is not null && baseProcessor.ParentProvider is not null)
+            {
+                var resourceObject = _getResourceDelegate(baseProcessor.ParentProvider);
+                if (resourceObject.TryDuckCast<IResource>(out var resource))
                 {
-                    var resourceObject = _getResourceDelegate(baseProcessor.ParentProvider);
-                    if (resourceObject.TryDuckCast<IResource>(out var resource))
+                    ApplyResourceToSpan(span, resource);
+                }
+            }
+        }
+
+        private static void ApplyResourceToSpan(Span span, IResource resource)
+        {
+            foreach (var attribute in resource.Attributes)
+            {
+                span.SetTag(attribute.Key, attribute.Value?.ToString());
+
+                // In addition to copying the attribute as a tag, update span fields for specific keys
+                if (attribute.Value is not null)
+                {
+                    if (attribute.Key == "service.name")
                     {
-                        var span = activityMapping.Scope.Span;
-                        foreach (var attribute in resource.Attributes)
+                        var resourceServiceName = attribute.Value.ToString();
+
+                        // if OTEL_SERVICE_NAME isn't set, OpenTelemetry will set "service.name" to:
+                        // "unknown_service" or "unknown_service:ProcessName"
+                        if (string.IsNullOrEmpty(resourceServiceName)
+                         || string.Equals(resourceServiceName, "unknown_service", StringComparison.Ordinal)
+                         || resourceServiceName.StartsWith("unknown_service:", StringComparison.Ordinal))
                         {
-                            span.SetTag(attribute.Key, attribute.Value?.ToString());
+                            resourceServiceName = Tracer.Instance.DefaultServiceName;
 
-                            // In addition to copying the attribute as a tag, update span fields for specific keys
-                            if (attribute.Value is not null)
-                            {
-                                if (attribute.Key == "service.name")
-                                {
-                                    var resourceServiceName = attribute.Value.ToString();
-
-                                    // if OTEL_SERVICE_NAME isn't set, OpenTelemetry will set "service.name" to:
-                                    // "unknown_service" or "unknown_service:ProcessName"
-                                    if (string.IsNullOrEmpty(resourceServiceName)
-                                     || string.Equals(resourceServiceName, "unknown_service", StringComparison.Ordinal)
-                                     || resourceServiceName.StartsWith("unknown_service:", StringComparison.Ordinal))
-                                    {
-                                        resourceServiceName = Tracer.Instance.DefaultServiceName;
-
-                                        span.SetTag(attribute.Key, resourceServiceName);
-                                    }
-
-                                    span.SetService(resourceServiceName, null);
-                                }
-                                else if (attribute.Key == "service.version")
-                                {
-                                    span.SetTag(Tags.Version, attribute.Value.ToString());
-                                }
-                            }
+                            span.SetTag(attribute.Key, resourceServiceName);
                         }
+
+                        span.SetService(resourceServiceName, null);
+                    }
+                    else if (attribute.Key == "service.version")
+                    {
+                        span.SetTag(Tags.Version, attribute.Value.ToString());
                     }
                 }
             }

@@ -13975,6 +13975,284 @@
     "InstrumentationCategory": 1
   },
   {
+    "IntegrationName": "OpenTelemetry",
+    "AssemblyName": "System.Diagnostics.DiagnosticSource",
+    "TargetTypeName": "System.Diagnostics.Activity",
+    "TargetMethodName": "AddTag",
+    "TargetReturnType": "System.Diagnostics.Activity",
+    "TargetParameterTypes": [
+      "System.String",
+      "System.Object"
+    ],
+    "MinimumVersion": {
+      "Item1": 6,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 10,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity.ActivityAddTagObjectIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "OpenTelemetry",
+    "AssemblyName": "System.Diagnostics.DiagnosticSource",
+    "TargetTypeName": "System.Diagnostics.Activity",
+    "TargetMethodName": "AddTag",
+    "TargetReturnType": "System.Diagnostics.Activity",
+    "TargetParameterTypes": [
+      "System.String",
+      "System.String"
+    ],
+    "MinimumVersion": {
+      "Item1": 6,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 10,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity.ActivityAddTagStringIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "OpenTelemetry",
+    "AssemblyName": "System.Diagnostics.DiagnosticSource",
+    "TargetTypeName": "System.Diagnostics.Activity",
+    "TargetMethodName": "get_DisplayName",
+    "TargetReturnType": "System.String",
+    "TargetParameterTypes": [],
+    "MinimumVersion": {
+      "Item1": 6,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 10,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity.ActivityDisplayNameGetterIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "OpenTelemetry",
+    "AssemblyName": "System.Diagnostics.DiagnosticSource",
+    "TargetTypeName": "System.Diagnostics.Activity",
+    "TargetMethodName": "get_Status",
+    "TargetReturnType": "System.Diagnostics.ActivityStatusCode",
+    "TargetParameterTypes": [],
+    "MinimumVersion": {
+      "Item1": 6,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 10,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity.ActivityStatusGetterIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "OpenTelemetry",
+    "AssemblyName": "System.Diagnostics.DiagnosticSource",
+    "TargetTypeName": "System.Diagnostics.Activity",
+    "TargetMethodName": "get_StatusDescription",
+    "TargetReturnType": "System.String",
+    "TargetParameterTypes": [],
+    "MinimumVersion": {
+      "Item1": 6,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 10,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity.ActivityStatusDescriptionGetterIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "OpenTelemetry",
+    "AssemblyName": "System.Diagnostics.DiagnosticSource",
+    "TargetTypeName": "System.Diagnostics.Activity",
+    "TargetMethodName": "get_TagObjects",
+    "TargetReturnType": "System.Collections.Generic.IEnumerable`1[System.Collections.Generic.KeyValuePair`2[System.String,System.Object]]",
+    "TargetParameterTypes": [],
+    "MinimumVersion": {
+      "Item1": 6,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 10,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity.ActivityTagObjectsGetterIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "OpenTelemetry",
+    "AssemblyName": "System.Diagnostics.DiagnosticSource",
+    "TargetTypeName": "System.Diagnostics.Activity",
+    "TargetMethodName": "get_Tags",
+    "TargetReturnType": "System.Collections.Generic.IEnumerable`1[System.Collections.Generic.KeyValuePair`2[System.String,System.String]]",
+    "TargetParameterTypes": [],
+    "MinimumVersion": {
+      "Item1": 6,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 10,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity.ActivityTagsGetterIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "OpenTelemetry",
+    "AssemblyName": "System.Diagnostics.DiagnosticSource",
+    "TargetTypeName": "System.Diagnostics.Activity",
+    "TargetMethodName": "set_DisplayName",
+    "TargetReturnType": "System.Void",
+    "TargetParameterTypes": [
+      "System.String"
+    ],
+    "MinimumVersion": {
+      "Item1": 6,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 10,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity.ActivityDisplayNameIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "OpenTelemetry",
+    "AssemblyName": "System.Diagnostics.DiagnosticSource",
+    "TargetTypeName": "System.Diagnostics.Activity",
+    "TargetMethodName": "SetStatus",
+    "TargetReturnType": "System.Diagnostics.Activity",
+    "TargetParameterTypes": [
+      "System.Diagnostics.ActivityStatusCode",
+      "System.String"
+    ],
+    "MinimumVersion": {
+      "Item1": 6,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 10,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity.ActivitySetStatusIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "OpenTelemetry",
+    "AssemblyName": "System.Diagnostics.DiagnosticSource",
+    "TargetTypeName": "System.Diagnostics.Activity",
+    "TargetMethodName": "SetTag",
+    "TargetReturnType": "System.Diagnostics.Activity",
+    "TargetParameterTypes": [
+      "System.String",
+      "System.Object"
+    ],
+    "MinimumVersion": {
+      "Item1": 6,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 10,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity.ActivitySetTagIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "OpenTelemetry",
+    "AssemblyName": "System.Diagnostics.DiagnosticSource",
+    "TargetTypeName": "System.Diagnostics.Activity",
+    "TargetMethodName": "Start",
+    "TargetReturnType": "System.Diagnostics.Activity",
+    "TargetParameterTypes": [],
+    "MinimumVersion": {
+      "Item1": 6,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 10,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity.ActivityStartIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "OpenTelemetry",
+    "AssemblyName": "System.Diagnostics.DiagnosticSource",
+    "TargetTypeName": "System.Diagnostics.Activity",
+    "TargetMethodName": "Stop",
+    "TargetReturnType": "System.Void",
+    "TargetParameterTypes": [],
+    "MinimumVersion": {
+      "Item1": 6,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 10,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity.ActivityStopIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
     "IntegrationName": "Oracle",
     "AssemblyName": "Oracle.DataAccess",
     "TargetTypeName": "Oracle.DataAccess.Client.OracleCommand",

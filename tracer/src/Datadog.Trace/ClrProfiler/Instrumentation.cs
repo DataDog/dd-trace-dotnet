@@ -384,10 +384,14 @@ namespace Datadog.Trace.ClrProfiler
 
             try
             {
-                if (Tracer.Instance.Settings.IsActivityListenerEnabled)
+                if (Tracer.Instance.Settings.IsActivityListenerEnabled && !Tracer.Instance.Settings.IsActivityInterceptionEnabled)
                 {
                     Log.Debug("Initializing activity listener.");
                     Activity.ActivityListener.Initialize();
+                }
+                else if (Tracer.Instance.Settings.IsActivityInterceptionEnabled)
+                {
+                    Log.Debug("Activity interception is enabled via CallTarget; skipping managed ActivityListener.");
                 }
             }
             catch (Exception ex)

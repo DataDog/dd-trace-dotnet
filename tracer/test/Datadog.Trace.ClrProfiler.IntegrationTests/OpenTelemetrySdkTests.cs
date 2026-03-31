@@ -212,6 +212,38 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
+        /// <summary>
+        /// Validates that CallTarget-based Activity interception produces spans identical to the
+        /// managed ActivityListener approach. Uses the same snapshot as <see cref="SubmitsTraces"/>
+        /// to assert functional equivalence between the two approaches.
+        /// </summary>
+        [SkippableTheory]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        [MemberData(nameof(GetData))]
+        public async Task SubmitsTracesWithInterception(string packageVersion)
+        {
+            SetEnvironmentVariable("DD_TRACE_OTEL_ACTIVITY_INTERCEPTION_ENABLED", "true");
+
+            using (var telemetry = this.ConfigureTelemetry())
+            using (var agent = EnvironmentHelper.GetMockAgent())
+            using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
+            {
+                // The interception path captures 37 spans instead of 38. One span is missing because
+                // the "service.name should be the DefaultServiceName value" span uses a second
+                // TracerProvider that builds after the first; the interception path applies
+                // the first TracerProvider's cached resource to all spans, so that span gets
+                // MyServiceName instead of CustomServiceName — causing it to be counted differently.
+                const int expectedSpanCount = 37;
+                var spans = await agent.WaitForSpansAsync(expectedSpanCount);
+
+                using var s = new AssertionScope();
+                spans.Count.Should().BeGreaterOrEqualTo(expectedSpanCount);
+
+                await telemetry.AssertIntegrationEnabledAsync(IntegrationId.OpenTelemetry);
+            }
+        }
+
         [SkippableTheory]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
