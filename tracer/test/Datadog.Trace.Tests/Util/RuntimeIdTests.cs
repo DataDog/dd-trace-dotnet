@@ -11,6 +11,7 @@ using Xunit;
 
 namespace Datadog.Trace.Tests.Util
 {
+    [EnvironmentRestorer(ConfigurationKeys.Telemetry.RootSessionId)]
     public class RuntimeIdTests
     {
         [Fact]
