@@ -8,6 +8,7 @@ using System.Threading;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 
 namespace Datadog.Trace.Util
