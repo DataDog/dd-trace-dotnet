@@ -5,6 +5,7 @@
 
 using System;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Util;
 using FluentAssertions;
 using Xunit;
