@@ -26,8 +26,8 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable
 
     public override bool Contains(TValue item)
     {
-      if (this.Dictionary is ImmutableSortedDictionary<TKey, TValue> dictionary1)
-        return dictionary1.ContainsValue(item);
+      // if (this.Dictionary is ImmutableSortedDictionary<TKey, TValue> dictionary1)
+      //  return dictionary1.ContainsValue(item);
       return this.Dictionary is IImmutableDictionaryInternal<TKey, TValue> dictionary2 ? dictionary2.ContainsValue(item) : throw new NotSupportedException();
     }
   }
