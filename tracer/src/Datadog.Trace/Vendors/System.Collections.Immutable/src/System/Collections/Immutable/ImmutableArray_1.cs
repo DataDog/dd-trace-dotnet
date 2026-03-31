@@ -1345,7 +1345,6 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable
         /// NuGet package: System.Collections.Immutable (about immutable collections and how to install)</summary>
         /// <typeparam name="T" />
         [DebuggerDisplay("Count = {Count}")]
-        [DebuggerTypeProxy(typeof(ImmutableArrayBuilderDebuggerProxy<>))]
         internal sealed class Builder :
           IList<T>,
           ICollection<T>,
