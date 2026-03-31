@@ -261,13 +261,16 @@ namespace UpdateVendors
 
         public string[] RelativePathsToExclude { get; set; }
 
+        public string[] OnlyIncludeRelativePaths { get; set; }
+
         private static void Add(
             string libraryName,
             string version,
             string downloadUrl,
             string[] pathToSrc,
             Action<string> transform,
-            string[] relativePathsToExclude = null)
+            string[] relativePathsToExclude = null,
+            string[] onlyIncludePaths = null)
         {
             All.Add(new VendoredDependency()
             {
@@ -277,6 +280,7 @@ namespace UpdateVendors
                 PathToSrc = pathToSrc,
                 Transform = transform,
                 RelativePathsToExclude = relativePathsToExclude ?? Array.Empty<string>(),
+                OnlyIncludeRelativePaths = onlyIncludePaths,
             });
         }
 
