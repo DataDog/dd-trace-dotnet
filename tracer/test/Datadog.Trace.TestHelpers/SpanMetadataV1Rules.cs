@@ -20,6 +20,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("peer.service")
                 .IsOptional("peer.service.remapped_from")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
                 .IsOptional("_dd.svc_src")
                 .MatchesOneOf("_dd.peer.service.source", "db.name", "out.host", "peer.service")
                 .Matches("component", "AdoNet")
@@ -37,6 +38,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("peer.service")
                 .IsOptional("_dd.peer.service.source")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
                 .IsOptional("_dd.svc_src")
                 .Matches("component", "aerospike")
                 .Matches("span.kind", "client"));
@@ -55,6 +57,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("http.useragent")
                 .IsPresent("http.url")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
                 .IsOptional("_dd.svc_src")
                 .Matches("component", "aspnet")
                 .Matches("span.kind", "server"));
@@ -74,6 +77,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("http.useragent")
                 .IsPresent("http.url")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
                 .IsOptional("_dd.svc_src")
                 .Matches("component", "aspnet")
                 .Matches("span.kind", "server"));
@@ -102,6 +106,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("http.useragent")
                 .IsPresent("http.url")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
                 .IsOptional("_dd.svc_src")
                 .Matches("component", "aspnet")
                 .Matches("span.kind", "server"));
@@ -122,6 +127,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("http.useragent")
                 .IsPresent("http.url")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
                 .IsOptional("_dd.svc_src")
                 .Matches("component", "aspnet_core")
                 .Matches("span.kind", "server"));
@@ -138,6 +144,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("aspnet_core.page")
                 .IsPresent("aspnet_core.route")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
                 .IsOptional("_dd.svc_src")
                 .Matches("component", "aspnet_core")
                 .Matches("span.kind", "server"));
@@ -164,6 +171,7 @@ namespace Datadog.Trace.TestHelpers
                 .IfPresentMatches("component", "servicebus")
                 .IfPresentMatches("kind", "consumer")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
                 .IsOptional("_dd.svc_src")
                 .Matches("span.kind", "consumer"));
 
@@ -184,6 +192,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("component", "AzureServiceBus")
                 .IfPresentMatches("kind", "consumer")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
                 .IsOptional("_dd.svc_src")
                 .Matches("span.kind", "consumer"));
 
@@ -210,6 +219,7 @@ namespace Datadog.Trace.TestHelpers
                 .IfPresentMatches("component", "servicebus")
                 .IfPresentMatches("kind", "producer")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
                 .IsOptional("_dd.svc_src")
                 .Matches("span.kind", "producer"));
 
@@ -234,6 +244,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("component", "AzureServiceBus")
                 .IfPresentMatches("kind", "producer")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
                 .IsOptional("_dd.svc_src")
                 .Matches("span.kind", "producer"));
 
@@ -257,6 +268,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("component", "AzureServiceBus")
                 .IfPresentMatches("kind", "producer")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
                 .IsOptional("_dd.svc_src")
                 .Matches("span.kind", "producer"));
 
@@ -285,6 +297,7 @@ namespace Datadog.Trace.TestHelpers
                 .IfPresentMatches("component", "servicebus")
                 .IfPresentMatches("kind", "client")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
                 .IsOptional("_dd.svc_src")
                 .Matches("span.kind", "client"));
 
@@ -309,6 +322,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("component", "AzureEventHubs")
                 .IfPresentMatches("kind", "producer")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
                 .IsOptional("_dd.svc_src")
                 .Matches("span.kind", "producer"));
 
@@ -331,6 +345,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("component", "AzureEventHubs")
                 .IfPresentMatches("kind", "producer")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
                 .IsOptional("_dd.svc_src")
                 .Matches("span.kind", "producer"));
 
@@ -351,6 +366,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("component", "AzureEventHubs")
                 .IfPresentMatches("kind", "consumer")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
                 .IsOptional("_dd.svc_src")
                 .Matches("span.kind", "consumer"));
 
@@ -371,6 +387,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("cosmosdb.connection.mode")
                 .IsOptional("http.useragent")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
                 .IsOptional("_dd.svc_src")
                 .MatchesOneOf("_dd.peer.service.source", "db.name", "out.host", "peer.service")
                 .Matches("component", "CosmosDb")
@@ -390,6 +407,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("peer.service")
                 .IsOptional("peer.service.remapped_from")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
                 .IsOptional("_dd.svc_src")
                 .MatchesOneOf("_dd.peer.service.source", "db.couchbase.seed.nodes", "out.host", "peer.service")
                 .Matches("component", "Couchbase")
@@ -407,6 +425,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("peer.service")
                 .IsOptional("peer.service.remapped_from")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
                 .IsOptional("_dd.svc_src")
                 .MatchesOneOf("_dd.peer.service.source", "out.host", "peer.service")
                 .Matches("component", "elasticsearch-net")
@@ -421,6 +440,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("graphql.operation.type")
                 .IsPresent("graphql.source")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
                 .IsOptional("_dd.svc_src")
                 .Matches("component", "GraphQL")
                 .Matches("span.kind", "server")
@@ -443,6 +463,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("peer.service")
                 .IsOptional("peer.service.remapped_from")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
                 .IsOptional("_dd.svc_src")
                 .MatchesOneOf("_dd.peer.service.source", "rpc.service", "out.host", "peer.service")
                 .Matches("component", "Grpc")
@@ -461,6 +482,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("grpc.method.service")
                 .IsPresent("grpc.status.code")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
                 .IsOptional("_dd.svc_src")
                 .Matches("component", "Grpc")
                 .Matches("span.kind", "server"));
@@ -471,6 +493,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches(Type, "hangfire"))
             .Tags(s => s
                 .Matches("_dd.base_service", "Samples.Hangfire")
+                .IsOptional("_dd.tags.process")
                 .Matches("component", "hangfire")
                 .Matches("span.kind", "internal")
                 .IsPresent("job.createdat")
@@ -485,6 +508,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("graphql.operation.type")
                 .IsPresent("graphql.source")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
                 .IsOptional("_dd.svc_src")
                 .Matches("component", "HotChocolate")
                 .Matches("span.kind", "server"));
@@ -502,6 +526,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("peer.service")
                 .IsOptional("peer.service.remapped_from")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
                 .IsOptional("_dd.svc_src")
                 .MatchesOneOf("_dd.peer.service.source", "out.host", "peer.service")
                 .IsPresent("component")
@@ -524,6 +549,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("messaging.kafka.cluster_id")
                 .IsPresent("messaging.destination.name")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
                 .IsOptional("_dd.svc_src")
                 .Matches("component", "kafka")
                 .Matches("span.kind", "consumer"));
@@ -547,6 +573,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("peer.service")
                 .IsOptional("peer.service.remapped_from")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
                 .IsOptional("_dd.svc_src")
                 .MatchesOneOf("_dd.peer.service.source", "messaging.kafka.bootstrap.servers", "peer.service")
                 .Matches("component", "kafka")
@@ -565,6 +592,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("peer.service")
                 .IsOptional("peer.service.remapped_from")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
                 .IsOptional("_dd.svc_src")
                 .MatchesOneOf("_dd.peer.service.source", "db.name", "out.host", "peer.service")
                 .Matches("component", "MongoDb")
@@ -582,6 +610,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("msmq.queue.transactional")
                 .IsPresent("out.host")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
                 .IsOptional("_dd.svc_src")
                 .Matches("component", "msmq")
                 .Matches("span.kind", "consumer"));
@@ -602,6 +631,7 @@ namespace Datadog.Trace.TestHelpers
                 .MatchesOneOf("_dd.peer.service.source", "out.host", "peer.service")
                 .Matches("component", "msmq")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
                 .IsOptional("_dd.svc_src")
                 .Matches("span.kind", "producer"));
 
@@ -619,6 +649,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("peer.service")
                 .IsOptional("peer.service.remapped_from")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
                 .IsOptional("_dd.svc_src")
                 .MatchesOneOf("_dd.peer.service.source", "out.host", "peer.service")
                 .Matches("component", "msmq")
@@ -636,6 +667,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("peer.service")
                 .IsOptional("peer.service.remapped_from")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
                 .IsOptional("_dd.svc_src")
                 .MatchesOneOf("_dd.peer.service.source", "db.name", "out.host", "peer.service")
                 .Matches("component", "MySql")
@@ -653,6 +685,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("peer.service")
                 .IsOptional("peer.service.remapped_from")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
                 .IsOptional("_dd.svc_src")
                 .MatchesOneOf("_dd.peer.service.source", "db.name", "out.host", "peer.service")
                 .Matches("component", "Npgsql")
@@ -669,6 +702,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("otel.library.version")
                 .IsPresent("otel.trace_id")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
                 .IsOptional("_dd.svc_src")
                 .MatchesOneOf("otel.status_code", "STATUS_CODE_UNSET", "STATUS_CODE_OK", "STATUS_CODE_ERROR")
                 .IsOptional("otel.status_description")
@@ -685,6 +719,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("peer.service")
                 .IsOptional("peer.service.remapped_from")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
                 .IsOptional("_dd.svc_src")
                 .MatchesOneOf("_dd.peer.service.source", "db.name", "out.host", "peer.service")
                 .Matches("component", "Oracle")
@@ -700,6 +735,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("cmd.shell")
                 .IsOptional("cmd.truncated")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
                 .IsOptional("_dd.svc_src")
                 .Matches("component", "process")
                 .Matches("span.kind", "internal"));
@@ -711,7 +747,8 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent(Tags.SchemaOperation)
                 .IsPresent(Tags.SchemaId)
                 .IsPresent(Tags.SchemaDefinition)
-                .IsPresent(Tags.SchemaWeight));
+                .IsPresent(Tags.SchemaWeight)
+                .IsOptional("_dd.tags.process"));
 
         public static Result IsRabbitMQAdminV1(this MockSpan span) => Result.FromSpan(span)
             .WithMarkdownSection("Rabbit - Admin")
@@ -729,6 +766,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("peer.service")
                 .IsOptional("peer.service.remapped_from")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
                 .IsOptional("_dd.svc_src")
                 .MatchesOneOf("_dd.peer.service.source", "out.host", "peer.service")
                 .Matches("component", "RabbitMQ")
@@ -747,6 +785,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("amqp.queue")
                 .IsOptional("message.size")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
                 .IsOptional("_dd.svc_src")
                 .Matches("component", "RabbitMQ")
                 .Matches("span.kind", "consumer"));
@@ -767,6 +806,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("peer.service")
                 .IsOptional("peer.service.remapped_from")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
                 .IsOptional("_dd.svc_src")
                 .MatchesOneOf("_dd.peer.service.source", "out.host", "peer.service")
                 .Matches("component", "RabbitMQ")
@@ -783,6 +823,7 @@ namespace Datadog.Trace.TestHelpers
                      .Matches("component", "Remoting")
                      .IfPresentMatchesOneOf("_dd.peer.service.source", "peer.service", "rpc.service")
                      .IsOptional("_dd.base_service")
+                     .IsOptional("_dd.tags.process")
                 .IsOptional("_dd.svc_src")
                      .MatchesOneOf("span.kind", "client", "server"));
 
@@ -794,6 +835,7 @@ namespace Datadog.Trace.TestHelpers
                .Matches("rpc.system", "dotnet_remoting")
                .Matches("component", "Remoting")
                .IsOptional("_dd.base_service")
+               .IsOptional("_dd.tags.process")
                 .IsOptional("_dd.svc_src")
                .MatchesOneOf("span.kind", "client", "server"));
 
@@ -817,6 +859,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("peer.service")
                 .IsOptional("peer.service.remapped_from")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
                 .IsOptional("_dd.svc_src")
                 .MatchesOneOf("_dd.peer.service.source", "service-fabric.service-remoting.service", "service-fabric.service-remoting.uri", "peer.service")
                 .Matches("span.kind", "client"));
@@ -839,6 +882,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("service-fabric.service-remoting.interface-id")
                 .IsOptional("service-fabric.service-remoting.invocation-id")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
                 .IsOptional("_dd.svc_src")
                 .Matches("span.kind", "server"));
 
@@ -855,6 +899,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("peer.service")
                 .IsOptional("peer.service.remapped_from")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
                 .IsOptional("_dd.svc_src")
                 .MatchesOneOf("_dd.peer.service.source", "out.host", "peer.service")
                 .Matches("component", "ServiceStackRedis")
@@ -873,6 +918,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("peer.service")
                 .IsOptional("peer.service.remapped_from")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
                 .IsOptional("_dd.svc_src")
                 .MatchesOneOf("_dd.peer.service.source", "out.host", "peer.service")
                 .Matches("component", "StackExchangeRedis")
@@ -889,6 +935,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("peer.service")
                 .IsOptional("peer.service.remapped_from")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
                 .IsOptional("_dd.svc_src")
                 .MatchesOneOf("_dd.peer.service.source", "db.name", "out.host", "peer.service")
                 .Matches("component", "Sqlite")
@@ -905,6 +952,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("peer.service")
                 .IsOptional("peer.service.remapped_from")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
                 .IsOptional("_dd.svc_src")
                 .MatchesOneOf("_dd.peer.service.source", "db.name", "out.host", "peer.service")
                 .IsOptional("_dd.dbm_trace_injected")
@@ -921,6 +969,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("http.request.headers.host")
                 .IsPresent("http.url")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
                 .IsOptional("_dd.svc_src")
                 .Matches("component", "Wcf")
                 .Matches("span.kind", "server"));
@@ -938,6 +987,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("peer.service")
                 .IsOptional("peer.service.remapped_from")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process")
                 .IsOptional("_dd.svc_src")
                 .MatchesOneOf("_dd.peer.service.source", "out.host", "peer.service")
                 .MatchesOneOf("component", "HttpMessageHandler", "WebRequest")
@@ -959,6 +1009,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("scheduler.name")
                 .IsOptional("span.kind")
                 .IsPresent("trigger.group")
-                .IsPresent("trigger.name"));
+                .IsPresent("trigger.name")
+                .IsOptional("_dd.tags.process"));
     }
 }

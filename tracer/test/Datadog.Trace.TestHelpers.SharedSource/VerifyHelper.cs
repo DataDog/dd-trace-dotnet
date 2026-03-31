@@ -206,10 +206,15 @@ namespace Datadog.Trace.TestHelpers
                   // remove propagated tags because their positions in the snapshots are not stable
                   // with our span ordering. correct position (first span in every trace chunk) is covered by other tests.
                  ?.Where(kvp => !kvp.Key.StartsWith(TagPropagation.PropagatedTagPrefix, StringComparison.Ordinal))
-                  // We must ignore both `_dd.git.repository_url` and `_dd.git.commit.sha` because we are only setting it on the first span of a trace
-                  // no matter what. That means we have unstable snapshot results.
-                  // Also ignoring `_dd.parent_id` since we test specific headers combinations which check for the value, hence why not adding it to the snapshots
-                  .Where(kvp => kvp.Key != Tags.GitRepositoryUrl && kvp.Key != Tags.GitCommitSha && kvp.Key != Tags.LastParentId)
+                  .Where(kvp =>
+                             // We must ignore both `_dd.git.repository_url` and `_dd.git.commit.sha` because we are only setting it on the first span of a trace
+                             // no matter what. That means we have unstable snapshot results.
+                             kvp.Key != Tags.GitRepositoryUrl
+                          && kvp.Key != Tags.GitCommitSha
+                             // Also ignoring `_dd.parent_id` since we test specific headers combinations which check for the value, hence why not adding it to the snapshots
+                          && kvp.Key != Tags.LastParentId
+                             // same as git related tags above, process tags are only added to the first span of each payload, which makes snapshots unstable.
+                          && kvp.Key != Tags.ProcessTags)
                   .Select(
                        kvp => kvp.Key switch
                        {
@@ -217,8 +222,6 @@ namespace Datadog.Trace.TestHelpers
                            Tags.ErrorStack => new(kvp.Key, ScrubStackTrace(kvp.Value)),
                            // sort environment variables
                            Tags.ProcessEnvironmentVariables => new(kvp.Key, string.Join("\n", kvp.Value.Split('\n').OrderBy(x => x.Split('=')[0]))),
-                           // process tag values depend on the local process environment and paths
-                           Tags.ProcessTags => new(kvp.Key, ScrubProcessTags(kvp.Value)),
                            _ => kvp
                        })
                   .OrderBy(x => x.Key)
@@ -379,23 +382,6 @@ namespace Datadog.Trace.TestHelpers
             }
 
             return sb.ToString();
-        }
-
-        private static string ScrubProcessTags(string processTags)
-        {
-            var scrubbedTags = processTags
-                              .Split(',')
-                              .Select(static tag => tag.Trim())
-                              .Where(static tag => !string.IsNullOrEmpty(tag))
-                              .Select(
-                                   static tag => tag.Split(':', 2) switch
-                                   {
-                                       [var key, _] => $"{key}:VALUE",
-                                       _ => tag,
-                                   })
-                              .OrderBy(static tag => tag, StringComparer.Ordinal);
-
-            return string.Join(",", scrubbedTags);
         }
 
         // Based on https://github.com/VerifyTests/Verify.DiffPlex/blob/9f9f2a18f35074680be47c9043e95d1857e457e0/src/Verify.DiffPlex/VerifyDiffPlex.cs
