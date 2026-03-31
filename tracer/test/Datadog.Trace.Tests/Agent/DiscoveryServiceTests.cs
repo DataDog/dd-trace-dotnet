@@ -27,7 +27,7 @@ public class DiscoveryServiceTests
     private const int MaxRetryDelayMs = 50;
     private const int RecheckIntervalMs = 300_000;
 
-    private static readonly ContainerMetadata NullContainerMetadata = new(containerId: null, entityId: null);
+    private static readonly ServiceRemappingHash DisabledServiceRemappingHash = new(null);
 
     [Fact]
     public async Task HandlesFlakyConfiguration()
@@ -37,7 +37,7 @@ public class DiscoveryServiceTests
             x => new FaultyApiRequest(x),
             x => new TestApiRequest(x));
 
-        var ds = new DiscoveryService(factory, NullContainerMetadata, InitialRetryDelayMs, MaxRetryDelayMs, RecheckIntervalMs);
+        var ds = new DiscoveryService(factory, DisabledServiceRemappingHash, InitialRetryDelayMs, MaxRetryDelayMs, RecheckIntervalMs);
         ds.SubscribeToChanges(x => mutex.Set());
 
         mutex.Wait(30_000).Should().BeTrue("Should raise subscription changes");
@@ -56,7 +56,7 @@ public class DiscoveryServiceTests
         var factory = new TestRequestFactory(
             x => new TestApiRequest(x, responseContent: GetConfig(clientDropP0s, version)));
 
-        var ds = new DiscoveryService(factory, NullContainerMetadata, InitialRetryDelayMs, MaxRetryDelayMs, RecheckIntervalMs);
+        var ds = new DiscoveryService(factory, DisabledServiceRemappingHash, InitialRetryDelayMs, MaxRetryDelayMs, RecheckIntervalMs);
         ds.SubscribeToChanges(
             x =>
             {
@@ -89,7 +89,7 @@ public class DiscoveryServiceTests
         var factory = new TestRequestFactory(
             x => new TestApiRequest(x, responseContent: serializedConfig));
 
-        await using var ds = new DiscoveryService(factory, NullContainerMetadata, InitialRetryDelayMs, MaxRetryDelayMs, RecheckIntervalMs);
+        await using var ds = new DiscoveryService(factory, DisabledServiceRemappingHash, InitialRetryDelayMs, MaxRetryDelayMs, RecheckIntervalMs);
         ds.SubscribeToChanges(
             x =>
             {
@@ -123,7 +123,7 @@ public class DiscoveryServiceTests
                 return new TestApiRequest(x, responseContent: GetConfig());
             });
 
-        var ds = new DiscoveryService(factory, NullContainerMetadata, InitialRetryDelayMs, MaxRetryDelayMs, RecheckIntervalMs);
+        var ds = new DiscoveryService(factory, DisabledServiceRemappingHash, InitialRetryDelayMs, MaxRetryDelayMs, RecheckIntervalMs);
         ds.SubscribeToChanges(x => notificationFired = true);
 
         await Task.Delay(5_000); // should recheck 5 times in this duration
@@ -145,7 +145,7 @@ public class DiscoveryServiceTests
             },
             y => throw new Exception("Should not make a second request"));
 
-        var ds = new DiscoveryService(factory, NullContainerMetadata, InitialRetryDelayMs, MaxRetryDelayMs, RecheckIntervalMs);
+        var ds = new DiscoveryService(factory, DisabledServiceRemappingHash, InitialRetryDelayMs, MaxRetryDelayMs, RecheckIntervalMs);
         // make sure we have config
         ds.SubscribeToChanges(x => mutex.Set());
         mutex.Wait(30_000).Should().BeTrue("Should make request to api");
@@ -176,7 +176,7 @@ public class DiscoveryServiceTests
                 return new TestApiRequest(x, responseContent: GetConfig());
             });
 
-        var ds = new DiscoveryService(factory, NullContainerMetadata, InitialRetryDelayMs, MaxRetryDelayMs, recheckIntervalMs);
+        var ds = new DiscoveryService(factory, DisabledServiceRemappingHash, InitialRetryDelayMs, MaxRetryDelayMs, recheckIntervalMs);
         ds.SubscribeToChanges(x => Interlocked.Increment(ref notificationCount));
         // fire first request
         mutex1.Set();
@@ -208,7 +208,7 @@ public class DiscoveryServiceTests
                 return new TestApiRequest(x, responseContent: GetConfig(dropP0: false));
             });
 
-        var ds = new DiscoveryService(factory, NullContainerMetadata, InitialRetryDelayMs, MaxRetryDelayMs, recheckIntervalMs);
+        var ds = new DiscoveryService(factory, DisabledServiceRemappingHash, InitialRetryDelayMs, MaxRetryDelayMs, recheckIntervalMs);
         ds.SubscribeToChanges(x => Interlocked.Increment(ref notificationCount));
         // fire first request
         mutex1.Set();
@@ -241,7 +241,7 @@ public class DiscoveryServiceTests
                 return new TestApiRequest(x, responseContent: GetConfig(dropP0: false));
             });
 
-        var ds = new DiscoveryService(factory, NullContainerMetadata, InitialRetryDelayMs, MaxRetryDelayMs, recheckIntervalMs);
+        var ds = new DiscoveryService(factory, DisabledServiceRemappingHash, InitialRetryDelayMs, MaxRetryDelayMs, recheckIntervalMs);
 
         ds.SubscribeToChanges(Callback);
 
@@ -274,7 +274,7 @@ public class DiscoveryServiceTests
             },
             x => new TestApiRequest(x, responseContent: GetConfig(dropP0: false)));
 
-        var ds = new DiscoveryService(factory, NullContainerMetadata, InitialRetryDelayMs, MaxRetryDelayMs, RecheckIntervalMs);
+        var ds = new DiscoveryService(factory, DisabledServiceRemappingHash, InitialRetryDelayMs, MaxRetryDelayMs, RecheckIntervalMs);
 
         // should be inside recheck loop
         mutex.Wait(30_000).Should().BeTrue("Should make request to api");
@@ -357,7 +357,7 @@ public class DiscoveryServiceTests
     {
         var recheckIntervalMs = 30_000;
         var factory = new TestRequestFactory();
-        await using var ds = new DiscoveryService(factory, NullContainerMetadata, InitialRetryDelayMs, MaxRetryDelayMs, recheckIntervalMs);
+        await using var ds = new DiscoveryService(factory, DisabledServiceRemappingHash, InitialRetryDelayMs, MaxRetryDelayMs, recheckIntervalMs);
 
         var now = DateTimeOffset.UtcNow;
         ds.SetCurrentConfigStateHash(agentHash);
@@ -382,7 +382,7 @@ public class DiscoveryServiceTests
         // These are the default values in the other constructor
         // but setting them explicitly here as it's the behaviour we're testing
         // not the exact values we choose later
-        var ds = new DiscoveryService(factory, NullContainerMetadata, initialRetryDelayMs: 500, maxRetryDelayMs: 5_000, recheckIntervalMs: 30_000);
+        var ds = new DiscoveryService(factory, DisabledServiceRemappingHash, initialRetryDelayMs: 500, maxRetryDelayMs: 5_000, recheckIntervalMs: 30_000);
         ds.SubscribeToChanges(_ => mutex.Set());
 
         // wait for 0 + 500 + 1000 + 2000 + 4000 + 5000 ms (+ 2500 buffer).
@@ -407,15 +407,15 @@ public class DiscoveryServiceTests
             responseContent: GetConfig(),
             responseHeaders: new Dictionary<string, string> { { AgentHttpHeaderNames.ContainerTagsHash, expectedTagsHash } }));
 
-        var containerMetadata = new ContainerMetadata(containerId: null, entityId: null);
+        var serviceRemappingHash = new ServiceRemappingHash("process:tag,service:service-name");
 
-        var ds = new DiscoveryService(factory, containerMetadata, InitialRetryDelayMs, MaxRetryDelayMs, RecheckIntervalMs);
+        var ds = new DiscoveryService(factory, serviceRemappingHash, InitialRetryDelayMs, MaxRetryDelayMs, RecheckIntervalMs);
         ds.SubscribeToChanges(x => mutex.Set());
 
         mutex.Wait(30_000).Should().BeTrue("Should raise subscription changes");
 
         // Verify the container tags hash was extracted and stored
-        containerMetadata.ContainerTagsHash.Should().Be(expectedTagsHash);
+        serviceRemappingHash.ContainerTagsHash.Should().Be(expectedTagsHash);
 
         await ds.DisposeAsync();
     }

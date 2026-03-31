@@ -4,8 +4,6 @@
 // </copyright>
 #if !NETFRAMEWORK
 
-using System.Collections;
-using System.Collections.Generic;
 using System.Reflection;
 using Datadog.Trace.DuckTyping;
 using Microsoft.AspNetCore.Http;
@@ -38,9 +36,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
         public BindingSource BindingSource;
 
         /// <summary>
-        /// Gets or sets the ValueProvider
+        /// Gets or sets the ValueProvider.
+        /// Typed as object because the actual IValueProvider may not implement IList
+        /// (e.g., when a custom IModelBinder sets ValueProvider to a non-CompositeValueProvider).
         /// </summary>
-        public IList ValueProvider;
+        public object ValueProvider;
     }
 }
 #endif

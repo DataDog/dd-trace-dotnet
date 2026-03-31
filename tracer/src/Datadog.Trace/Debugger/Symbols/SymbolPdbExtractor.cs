@@ -452,14 +452,14 @@ internal sealed class SymbolPdbExtractor : SymbolExtractor
         return scopes.Slice(0, scopesLength).ToArray();
     }
 
-    private bool IsArgument(IReadOnlyList<Symbol>? args, string name, string type)
+    private bool IsArgument(Symbol[]? args, string name, string type)
     {
         if (args == null)
         {
             return false;
         }
 
-        for (int i = 0; i < args.Count; i++)
+        for (int i = 0; i < args.Length; i++)
         {
             var arg = args[i];
             if (arg.Name == name && arg.Type == type)

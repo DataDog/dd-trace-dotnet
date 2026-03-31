@@ -20,6 +20,7 @@ using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.Serverless;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
@@ -71,7 +72,7 @@ namespace Datadog.Trace.Configuration
         /// <param name="isLibDatadogAvailable">Used to check whether the libdatadog library is available. Useful for integration tests</param>
         internal TracerSettings(IConfigurationSource? source, IConfigurationTelemetry telemetry, OverrideErrorLog errorLog, LibDatadogAvailableResult isLibDatadogAvailable)
         {
-            var commaSeparator = new[] { ',' };
+            var commaSeparator = Separators.Comma;
             source ??= NullConfigurationSource.Instance;
             ErrorLog = errorLog;
             var config = new ConfigurationBuilder(source, telemetry);
@@ -575,10 +576,10 @@ namespace Datadog.Trace.Configuration
             IsDataStreamsMonitoringEnabled = config
                                             .WithKeys(ConfigurationKeys.DataStreamsMonitoring.Enabled)
                                             .AsBool(
-                                                  !EnvironmentHelpers.IsAwsLambda() &&
-                                                  !EnvironmentHelpers.IsAzureAppServices() &&
-                                                  !EnvironmentHelpers.IsAzureFunctions() &&
-                                                  !EnvironmentHelpers.IsGoogleCloudFunctions());
+                                                  !AwsInfo.Instance.IsAwsLambda &&
+                                                  !AzureInfo.Instance.IsAzureAppService &&
+                                                  !AzureInfo.Instance.IsAzureFunction &&
+                                                  !GcpInfo.Instance.IsCloudFunction);
 
             IsDataStreamsMonitoringInDefaultState = config
                                                     .WithKeys(ConfigurationKeys.DataStreamsMonitoring.Enabled)
@@ -628,6 +629,10 @@ namespace Datadog.Trace.Configuration
                                      defaultValue: new(DbmPropagationLevel.Disabled, nameof(DbmPropagationLevel.Disabled)),
                                      converter: x => ToDbmPropagationInput(x) ?? ParsingResult<DbmPropagationLevel>.Failure(),
                                      validator: null);
+
+            DbmInjectSqlBasehash = config
+                .WithKeys(ConfigurationKeys.DbmInjectSqlBasehash)
+                .AsBool(false);
 
             RemoteConfigurationEnabled = config.WithKeys(ConfigurationKeys.Rcm.RemoteConfigurationEnabled).AsBool(true);
 
@@ -1244,6 +1249,12 @@ namespace Datadog.Trace.Configuration
         internal DbmPropagationLevel DbmPropagationMode { get; }
 
         /// <summary>
+        /// Gets a value indicating whether the tracer should inject Base Hash in SQL Comments.
+        /// Default value is false (disabled).
+        /// </summary>
+        internal bool DbmInjectSqlBasehash { get; }
+
+        /// <summary>
         /// Gets a value indicating whether the tracer will generate 128-bit trace ids
         /// instead of 64-bits trace ids.
         /// </summary>
@@ -1431,15 +1442,5 @@ namespace Datadog.Trace.Configuration
             Log.Warning("Unsupported OTLP protocol '{Protocol}'. Supported values are 'grpc', 'http/protobuf' and 'http/json'. Using default: http/protobuf", inputValue);
             return ParsingResult<OtlpProtocol>.Failure();
         }
-
-        internal static TracerSettings Create(Dictionary<string, object?> settings)
-            => Create(settings, LibDatadogAvailabilityHelper.IsLibDatadogAvailable);
-
-        internal static TracerSettings Create(Dictionary<string, object?> settings, LibDatadogAvailableResult isLibDatadogAvailable) =>
-            new(
-                new DictionaryConfigurationSource(settings.ToDictionary(x => x.Key, x => x.Value?.ToString()!)),
-                new ConfigurationTelemetry(),
-                new OverrideErrorLog(),
-                isLibDatadogAvailable);
     }
 }

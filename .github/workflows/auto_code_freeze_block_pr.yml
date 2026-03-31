@@ -47,7 +47,7 @@ jobs:
         
         echo "$description, setting check status $state"
         
-        curl -X POST \
+        curl -fX POST \
           -H "Accept: application/vnd.github.v3+json" \
           -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
             "https://api.github.com/repos/DataDog/dd-trace-dotnet/statuses/$sha" \
