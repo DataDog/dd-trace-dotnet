@@ -28,8 +28,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable
     /// NuGet package: System.Collections.Immutable (about immutable collections and how to install)</summary>
     /// <typeparam name="T">The type of elements in the list.</typeparam>
     [DebuggerDisplay("Count = {Count}")]
-  [DebuggerTypeProxy(typeof (ImmutableEnumerableDebuggerProxy<>))]
-  internal sealed class ImmutableList<T> : 
+  internal sealed class ImmutableList<T> :
     IImmutableList<T>,
     IReadOnlyList<T>,
     IReadOnlyCollection<T>,
@@ -713,8 +712,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable
     /// <typeparam name="T" />
 #pragma warning restore CS1711
     [DebuggerDisplay("Count = {Count}")]
-    [DebuggerTypeProxy(typeof (ImmutableListBuilderDebuggerProxy<>))]
-    internal sealed class Builder : 
+    internal sealed class Builder :
       IList<T>,
       ICollection<T>,
       IEnumerable<T>,

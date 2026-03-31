@@ -30,8 +30,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable
     /// <typeparam name="TKey">The type of the keys in the dictionary.</typeparam>
     /// <typeparam name="TValue">The type of the values in the dictionary.</typeparam>
     [DebuggerDisplay("Count = {Count}")]
-  [DebuggerTypeProxy(typeof (ImmutableDictionaryDebuggerProxy<,>))]
-  internal sealed class ImmutableDictionary<TKey, TValue> : 
+  internal sealed class ImmutableDictionary<TKey, TValue> :
     IImmutableDictionary<TKey, TValue>,
     IReadOnlyDictionary<TKey, TValue>,
     IReadOnlyCollection<KeyValuePair<TKey, TValue>>,
@@ -703,8 +702,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable
     /// <typeparam name="TKey" />
     /// <typeparam name="TValue" />
     [DebuggerDisplay("Count = {Count}")]
-    [DebuggerTypeProxy(typeof (ImmutableDictionaryBuilderDebuggerProxy<,>))]
-    internal sealed class Builder : 
+    internal sealed class Builder :
       IDictionary<TKey, TValue>,
       ICollection<KeyValuePair<TKey, TValue>>,
       IEnumerable<KeyValuePair<TKey, TValue>>,

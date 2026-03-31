@@ -26,8 +26,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable
     /// NuGet package: System.Collections.Immutable (about immutable collections and how to install)</summary>
     /// <typeparam name="T">The type of elements in the hash set.</typeparam>
     [DebuggerDisplay("Count = {Count}")]
-  [DebuggerTypeProxy(typeof (ImmutableEnumerableDebuggerProxy<>))]
-  internal sealed class ImmutableHashSet<T> : 
+  internal sealed class ImmutableHashSet<T> :
     IImmutableSet<T>,
     IReadOnlyCollection<T>,
     IEnumerable<T>,
