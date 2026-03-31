@@ -188,25 +188,32 @@ libdatadog::Success Profile::AddUpscalingRulePoisson(std::vector<std::uintptr_t>
 
 libdatadog::profile_unique_ptr CreateProfile(std::vector<SampleValueType> const& valueTypes, std::string const& periodType, std::string const& periodUnit)
 {
-    std::vector<ddog_prof_ValueType> samplesTypes;
+    std::vector<ddog_prof_SampleType> samplesTypes;
     samplesTypes.reserve(valueTypes.size());
-
-    // TODO: create a vector<int32> containing the indexes of the valueTypes
-    std::vector<int32_t> indexes;
-    indexes.reserve(valueTypes.size());
 
     for (auto const& type : valueTypes)
     {
-        samplesTypes.push_back(CreateValueType(type.Name, type.Unit));
-        indexes.push_back(type.Index);
+        ddog_prof_SampleType sampleType;
+        if (!TryCreateSampleType(type.Name, type.Unit, sampleType))
+        {
+            Log::Error("Unsupported libdatadog sample type: ", type.Name, "/", type.Unit);
+            return nullptr;
+        }
+
+        samplesTypes.push_back(sampleType);
     }
 
-    struct ddog_prof_Slice_ValueType sample_types = {samplesTypes.data(), samplesTypes.size()};
+    ddog_prof_Slice_SampleType sample_types = {samplesTypes.data(), samplesTypes.size()};
 
-    auto period_value_type = CreateValueType(periodType, periodUnit);
+    ddog_prof_SampleType periodSampleType;
+    if (!TryCreateSampleType(periodType, periodUnit, periodSampleType))
+    {
+        Log::Error("Unsupported libdatadog period type: ", periodType, "/", periodUnit);
+        return nullptr;
+    }
 
     auto period = ddog_prof_Period{};
-    period.type_ = period_value_type;
+    period.sample_type = periodSampleType;
     period.value = 1;
 
     auto res = ddog_prof_Profile_new(sample_types, &period);

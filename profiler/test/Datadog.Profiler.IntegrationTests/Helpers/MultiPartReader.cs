@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
@@ -18,15 +19,8 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         private const string ContentTypeBoundary = "boundary=";
         private const int NewLibeBytesSize = 2;
 
-        // the request encoding seems to be ASCII for these parts
-#pragma warning disable SA1306 // Field names should begin with lower-case letter
-        private readonly byte[] ContentTypeBytes = Encoding.ASCII.GetBytes("content-type: ");
-        private readonly byte[] NameBytes = Encoding.ASCII.GetBytes("name=");
-        private readonly byte[] FilenameBytes = Encoding.ASCII.GetBytes("filename=");
-        private readonly byte[] QuoteBytes = Encoding.ASCII.GetBytes("\"");
         private readonly byte[] MinusBytes = Encoding.ASCII.GetBytes("-");
         private readonly byte[] NewLineBytes = { 0x0d, 0x0a };
-#pragma warning restore SA1306 // Field names should begin with lower-case letter
 
         private HttpListenerRequest _request;
         private byte[] _buffer;
@@ -101,11 +95,6 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             int pos = 0;
             while (true)
             {
-                // look for file info
-                string contentType;
-                string name;
-                string filename;
-
                 // skip boundary
                 pos = IndexAfterBoundary(pos);
                 if (pos == -1)
@@ -115,26 +104,11 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
                 pos += NewLibeBytesSize;
 
-                pos = GetContentType(pos, out contentType);
+                pos = ReadHeaders(pos, out var contentType, out var name, out var filename);
                 if (pos == -1)
                 {
                     return false;
                 }
-
-                pos = GetKey(pos, NameBytes, out name);
-                if (pos == -1)
-                {
-                    return false;
-                }
-
-                pos = GetKey(pos, FilenameBytes, out filename);
-                if (pos == -1)
-                {
-                    return false;
-                }
-
-                // skip 2 new line
-                pos += 2 * NewLineBytes.Length;
 
                 // file bytes start from pos
 
@@ -164,7 +138,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
         private static string ExtractBoundary(string contentType)
         {
-            var pos = contentType.IndexOf(ContentTypeBoundary);
+            var pos = contentType.IndexOf(ContentTypeBoundary, StringComparison.OrdinalIgnoreCase);
             if (pos == -1)
             {
                 return null;
@@ -204,52 +178,82 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             return IndexAfter(pos, _boundaryBytes, _boundarySize);
         }
 
-        private int GetContentType(int pos, out string contentType)
+        private int ReadHeaders(int pos, out string contentType, out string name, out string filename)
         {
             contentType = string.Empty;
+            name = string.Empty;
+            filename = string.Empty;
 
-            pos = IndexAfter(pos, ContentTypeBytes, ContentTypeBytes.Length);
-            if (pos == -1)
+            while (true)
             {
-                return -1;
+                var next = IndexAfter(pos, NewLineBytes, NewLineBytes.Length);
+                if (next == -1)
+                {
+                    return -1;
+                }
+
+                var line = _request.ContentEncoding.GetString(_buffer, pos, next - pos - NewLineBytes.Length);
+                pos = next;
+
+                // blank line ends the headers and the payload starts immediately after it
+                if (string.IsNullOrEmpty(line))
+                {
+                    return pos;
+                }
+
+                var separator = line.IndexOf(':');
+                if (separator == -1)
+                {
+                    continue;
+                }
+
+                var headerName = line.Substring(0, separator).Trim();
+                var headerValue = line.Substring(separator + 1).Trim();
+
+                if (headerName.Equals("content-type", StringComparison.OrdinalIgnoreCase))
+                {
+                    contentType = headerValue;
+                    continue;
+                }
+
+                if (!headerName.Equals("content-disposition", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                name = GetContentDispositionValue(headerValue, "name") ?? name;
+                filename = GetContentDispositionValue(headerValue, "filename") ?? filename;
             }
-
-            int next = IndexAfter(pos, NewLineBytes, NewLineBytes.Length);
-            if (next == -1)
-            {
-                return -1;
-            }
-
-            contentType = _request.ContentEncoding.GetString(_buffer, pos, next - pos - NewLineBytes.Length);
-
-            return next;
         }
 
-        // look for key="value" such as
-        //    name="event"; filename="event.json"
-        private int GetKey(int pos, byte[] keyBytes, out string value)
+        private static string GetContentDispositionValue(string headerValue, string key)
         {
-            value = string.Empty;
-
-            pos = IndexAfter(pos, keyBytes, keyBytes.Length);
-            if (pos == -1)
+            var segments = headerValue.Split(';');
+            foreach (var segment in segments)
             {
-                return -1;
+                var trimmed = segment.Trim();
+                var separator = trimmed.IndexOf('=');
+                if (separator == -1)
+                {
+                    continue;
+                }
+
+                var currentKey = trimmed.Substring(0, separator).Trim();
+                if (!currentKey.Equals(key, StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                var value = trimmed.Substring(separator + 1).Trim();
+                if (value.Length >= 2 && value[0] == '"' && value[^1] == '"')
+                {
+                    value = value.Substring(1, value.Length - 2);
+                }
+
+                return value;
             }
 
-            // skip "
-            pos += QuoteBytes.Length;
-
-            // look for the closing "
-            int next = IndexAfter(pos, QuoteBytes, QuoteBytes.Length);
-            if (next == -1)
-            {
-                return -1;
-            }
-
-            value = _request.ContentEncoding.GetString(_buffer, pos, next - pos - QuoteBytes.Length);
-
-            return next;
+            return null;
         }
 
         internal class MultiPartFileInfo
