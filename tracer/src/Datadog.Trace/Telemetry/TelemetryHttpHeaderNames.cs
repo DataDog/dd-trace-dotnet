@@ -85,18 +85,19 @@ namespace Datadog.Trace.Telemetry
             var sessionId = RuntimeId.Get();
             var rootSessionId = RuntimeId.GetRootSessionId();
 
-            var sb = StringBuilderCache.Acquire();
-            sb.Append(TelemetryConstants.ClientLibraryLanguageHeader).Append(": ").Append(TracerConstants.Language).Append(DatadogHttpValues.CrLf);
-            sb.Append(TelemetryConstants.ClientLibraryVersionHeader).Append(": ").Append(TracerConstants.AssemblyVersion).Append(DatadogHttpValues.CrLf);
-            sb.Append(HttpHeaderNames.TracingEnabled).Append(": false").Append(DatadogHttpValues.CrLf);
-            sb.Append(TelemetryConstants.SessionIdHeader).Append(": ").Append(sessionId).Append(DatadogHttpValues.CrLf);
-
             if (rootSessionId != sessionId)
             {
-                sb.Append(TelemetryConstants.RootSessionIdHeader).Append(": ").Append(rootSessionId).Append(DatadogHttpValues.CrLf);
+                return $"{TelemetryConstants.ClientLibraryLanguageHeader}: {TracerConstants.Language}" + DatadogHttpValues.CrLf +
+                    $"{TelemetryConstants.ClientLibraryVersionHeader}: {TracerConstants.AssemblyVersion}" + DatadogHttpValues.CrLf +
+                    $"{HttpHeaderNames.TracingEnabled}: false" + DatadogHttpValues.CrLf +
+                    $"{TelemetryConstants.SessionIdHeader}: {sessionId}" + DatadogHttpValues.CrLf +
+                    $"{TelemetryConstants.RootSessionIdHeader}: {rootSessionId}" + DatadogHttpValues.CrLf;
             }
 
-            return StringBuilderCache.GetStringAndRelease(sb);
+            return $"{TelemetryConstants.ClientLibraryLanguageHeader}: {TracerConstants.Language}" + DatadogHttpValues.CrLf +
+                $"{TelemetryConstants.ClientLibraryVersionHeader}: {TracerConstants.AssemblyVersion}" + DatadogHttpValues.CrLf +
+                $"{HttpHeaderNames.TracingEnabled}: false" + DatadogHttpValues.CrLf +
+                $"{TelemetryConstants.SessionIdHeader}: {sessionId}" + DatadogHttpValues.CrLf;
         }
     }
 }
