@@ -20,6 +20,8 @@ namespace Datadog.Trace.Util
 
         public static string GetRootSessionId() => LazyInitializer.EnsureInitialized(ref _rootSessionId, () => GetRootSessionIdImpl());
 
+        internal static void ResetForTests() => _rootSessionId = null;
+
         private static string GetImpl()
         {
             if (NativeLoader.TryGetRuntimeIdFromNative(out var runtimeId))

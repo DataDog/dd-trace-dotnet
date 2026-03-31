@@ -14,18 +14,32 @@ namespace Datadog.Trace.Tests.Util
     public class RuntimeIdTests
     {
         [Fact]
-        public void RootSessionId_DefaultsToRuntimeId()
+        public void RootSessionId_UsesRuntimeIdWhenNotInherited_AndInheritsWhenSet()
         {
-            var rootSessionId = RuntimeId.GetRootSessionId();
-            rootSessionId.Should().Be(RuntimeId.Get());
-        }
+            try
+            {
+                // When no env var is set, root session ID should default to runtime ID
+                RuntimeId.ResetForTests();
+                Environment.SetEnvironmentVariable(ConfigurationKeys.Telemetry.RootSessionId, null);
 
-        [Fact]
-        public void RootSessionId_SetsEnvVar()
-        {
-            var rootSessionId = RuntimeId.GetRootSessionId();
-            Environment.GetEnvironmentVariable(ConfigurationKeys.Telemetry.RootSessionId)
-                       .Should().Be(rootSessionId);
+                var rootSessionId = RuntimeId.GetRootSessionId();
+                rootSessionId.Should().Be(RuntimeId.Get());
+
+                // When env var is pre-set (simulating a child process), root session ID
+                // should return the inherited value instead of the current runtime ID
+                var inherited = "inherited-root-session-id";
+                RuntimeId.ResetForTests();
+                Environment.SetEnvironmentVariable(ConfigurationKeys.Telemetry.RootSessionId, inherited);
+
+                RuntimeId.GetRootSessionId().Should().Be(inherited);
+                RuntimeId.GetRootSessionId().Should().NotBe(RuntimeId.Get());
+            }
+            finally
+            {
+                RuntimeId.ResetForTests();
+                Environment.SetEnvironmentVariable(ConfigurationKeys.Telemetry.RootSessionId, null);
+                RuntimeId.GetRootSessionId();
+            }
         }
     }
 }
