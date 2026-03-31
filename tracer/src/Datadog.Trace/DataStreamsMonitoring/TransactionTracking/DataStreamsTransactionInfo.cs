@@ -11,6 +11,27 @@ using System.Threading;
 
 namespace Datadog.Trace.DataStreamsMonitoring.TransactionTracking;
 
+/// <summary>
+/// Represents a single tracked transaction and handles its binary serialization.
+///
+/// <para>
+/// <b>IMPORTANT:</b> The serialization format must stay in sync with the Java implementation:
+/// https://github.com/DataDog/dd-trace-java/blob/master/internal-api/src/main/java/datadog/trace/api/datastreams/TransactionInfo.java
+/// </para>
+///
+/// On-wire layout per transaction (written by <see cref="WriteTo"/>):
+/// <code>
+/// [1 byte ] checkpoint ID  – integer key into the checkpoint-name cache
+/// [8 bytes] timestamp      – Unix nanoseconds, big-endian
+/// [1 byte ] id length      – byte count of the UTF-8 transaction ID (max 255)
+/// [N bytes] transaction ID – UTF-8 encoded, truncated to 255 bytes if necessary
+/// </code>
+///
+/// The checkpoint-name cache (<see cref="GetCacheBytes"/>) is serialized separately
+/// and sent alongside the transaction data so the receiver can resolve checkpoint IDs
+/// back to their string names. Each entry: <c>[1 byte ID] [1 byte name length] [N bytes name]</c>.
+/// Checkpoint IDs are assigned monotonically starting at 1 on first use.
+/// </summary>
 internal readonly struct DataStreamsTransactionInfo
 {
     private const int MaxIdBytes = 255;
