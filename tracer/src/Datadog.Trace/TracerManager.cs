@@ -113,7 +113,6 @@ namespace Datadog.Trace
             ServiceRemappingHash = serviceRemappingHash;
 
             SpanContextPropagator = SpanContextPropagatorFactory.GetSpanContextPropagator(settings.PropagationStyleInject, settings.PropagationStyleExtract, settings.PropagationExtractFirstOnly, settings.PropagationBehaviorExtract);
-
             UpdatePerTraceSettings(settings.Manager.InitialMutableSettings);
             _settingSubscription = settings.Manager.SubscribeToChanges(changes =>
             {
