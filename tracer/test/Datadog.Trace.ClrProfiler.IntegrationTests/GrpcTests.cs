@@ -372,6 +372,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                         {
                             // May be missing in some cases
                             span.Tags["http.status_code"] = "200";
+                            span.Tags["grpc.status_code"] = "4";
                         }
 
                         // there is a race between the server cancelling a deadline and the client cancelling it
