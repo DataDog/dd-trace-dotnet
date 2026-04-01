@@ -24,6 +24,6 @@ public class Diagnostics
         messageFormat: "Remove unnecessary '{0}.ToString()' call — the generic log overload handles numeric formatting without allocating a string",
         category: "Performance",
         defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true,
+        isEnabledByDefault: false,
         description: "Calling .ToString() on numeric types when passing them as log arguments causes an unnecessary string allocation. The generic log overloads handle formatting directly.");
 }
