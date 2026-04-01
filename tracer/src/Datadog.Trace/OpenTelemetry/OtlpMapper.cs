@@ -179,14 +179,14 @@ internal static class OtlpMapper
 
         var tagWriter = new TagWriter(writeKeyValue, tagProcessors, count, limit);
         spanModel.Span.Tags.EnumerateTags(ref tagWriter);
-        count += tagWriter.Count;
+        count = tagWriter.Count;
         droppedAttributesCount += tagWriter.DroppedCount;
 
         // Write span metrics
         // Note: I could have done this earlier but I wanted to simulate the same behavior as the MessagePack formatter.
         var metricsWriter = new TagWriter(writeKeyValue, tagProcessors, count, limit);
         spanModel.Span.Tags.EnumerateMetrics(ref metricsWriter);
-        count += metricsWriter.Count;
+        count = metricsWriter.Count;
         droppedAttributesCount += metricsWriter.DroppedCount;
 
         // if (model.IsLocalRoot)
