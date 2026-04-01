@@ -26,7 +26,7 @@ public static class Diagnostics
         messageFormat: "Set ArrayPool = JsonArrayPool.Shared on {0} to avoid char[] allocations",
         category: "Performance",
         defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true,
+        isEnabledByDefault: false,
         description: "Without ArrayPool, Newtonsoft.Json allocates internal char[] buffers on every read/write. Use JsonArrayPool.Shared to pool these buffers.");
 #pragma warning restore RS2008
 }
