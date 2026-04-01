@@ -30,10 +30,10 @@ New Roslyn analyzers to detect heap-allocation anti-patterns at compile time. Ad
   - Severity: Info (suggestion)
   - [ ] Remove AP-12 from `.claude/skills/find-allocation-opportunities/references/anti-patterns.md` once analyzer is working
 
-- [ ] **DDALLOC004: `Enum.HasFlag()` boxing**
+- [x] **DDALLOC004: `Enum.HasFlag()` boxing**
   - Detect calls to `.HasFlag()` on enum-typed expressions
   - On .NET Framework and pre-.NET 7 runtimes, `Enum.HasFlag()` boxes both operands. Since the tracer targets `netstandard2.0`/`net462`+, this is always relevant
-  - Code fix: rewrite `flags.HasFlag(MyEnum.Value)` → `(flags & MyEnum.Value) != 0`. For multi-flag checks like `flags.HasFlag(MyEnum.A | MyEnum.B)`, rewrite to `(flags & (MyEnum.A | MyEnum.B)) == (MyEnum.A | MyEnum.B)`
+  - Code fix: when `HasFlagFast()` extension method is available (from `[EnumExtensions]` source generator), replaces `.HasFlag()` with `.HasFlagFast()`. Otherwise, diagnostic only (no code fix).
   - Severity: Warning
   - [ ] Remove AP-9 (`HasFlag` portion) from `.claude/skills/find-allocation-opportunities/references/anti-patterns.md` once analyzer is working
 
