@@ -29,6 +29,6 @@ public class Diagnostics
         messageFormat: "Enum.HasFlag() boxes both operands. Use HasFlagFast() extension method or bitwise operations instead.",
         category: "Performance",
         defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true,
+        isEnabledByDefault: false,
         description: "Enum.HasFlag() boxes both the receiver and argument on .NET Framework and pre-.NET 7. Replace with HasFlagFast() if available, or use bitwise AND comparison to avoid allocations.");
 }
