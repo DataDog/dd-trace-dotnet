@@ -9,27 +9,30 @@ namespace Datadog.Trace.Activity.Handlers
 {
     internal static class ActivityHandlersRegister
     {
-        // Disable Activity Handler does not listen to the activity source at all.
-        internal static readonly DisableActivityHandler DisableHandler = new();
-
         // Ignore Activity Handler catches existing integrations that also emits activities.
         internal static readonly IgnoreActivityHandler IgnoreHandler = new();
 
         // Activity handlers in order, the first handler where ShouldListenTo returns true will always handle that source.
-        internal static readonly IActivityHandler[] Handlers =
+        internal static IActivityHandler[] Handlers { get; private set; } = [];
+
+        internal static void Initialize(string[]? disabledActivitySources)
         {
-            DisableHandler,
+            Handlers =
+            [
+                // Disable Activity Handler does not listen to the activity source at all.
+                new DisableActivityHandler(disabledActivitySources),
 
-            IgnoreHandler,
+                IgnoreHandler,
 
-            // Azure Service Bus handlers
-            new AzureServiceBusActivityHandler(),
+                // Azure Service Bus handlers
+                new AzureServiceBusActivityHandler(),
 
-            // Quartz handlers
-            new QuartzActivityHandler(),
+                // Quartz handlers
+                new QuartzActivityHandler(),
 
-            // The default handler catches an activity and creates a datadog span from it.
-            new DefaultActivityHandler(),
-        };
+                // The default handler catches an activity and creates a datadog span from it.
+                new DefaultActivityHandler(),
+            ];
+        }
     }
 }

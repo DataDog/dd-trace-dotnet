@@ -87,9 +87,9 @@ namespace Datadog.Trace.Activity
             }
         }
 
-        public static void Initialize() => Initialize(CancellationToken.None);
+        public static void Initialize(string[]? disabledActivitySources = null) => Initialize(disabledActivitySources, CancellationToken.None);
 
-        public static void Initialize(CancellationToken cancellationToken)
+        public static void Initialize(string[]? disabledActivitySources, CancellationToken cancellationToken)
         {
             if (Interlocked.CompareExchange(ref _initialized, 1, 0) == 1)
             {
@@ -113,7 +113,7 @@ namespace Datadog.Trace.Activity
                         }
 
                         Interlocked.Exchange(ref _initialized, 0);
-                        Initialize(cancellationToken);
+                        Initialize(disabledActivitySources, cancellationToken);
                     },
                         cancellationToken,
                         TaskContinuationOptions.None,
@@ -123,7 +123,9 @@ namespace Datadog.Trace.Activity
                 return;
             }
 
-            // Initialize
+            // Initialize the activity handlers with settings
+            Handlers.ActivityHandlersRegister.Initialize(disabledActivitySources);
+
             var diagnosticSourceAssemblyName = diagnosticListenerType.Assembly.GetName();
             Log.Information("DiagnosticSource: {DiagnosticSourceAssemblyNameFullName}", diagnosticSourceAssemblyName.FullName);
 

@@ -14,8 +14,42 @@ namespace Datadog.Trace.Activity.Handlers
 {
     internal sealed class DisableActivityHandler : IActivityHandler
     {
-        private List<Regex>? _disabledSourceNameGlobs;
-        private bool _disableAll;
+        private readonly List<Regex> _disabledSourceNameGlobs;
+        private readonly bool _disableAll;
+
+        internal DisableActivityHandler(string[]? disabledActivitySources)
+        {
+            if (disabledActivitySources is null || disabledActivitySources.Length == 0)
+            {
+                _disabledSourceNameGlobs = [];
+                return;
+            }
+
+            PopulateGlobs(disabledActivitySources, out _disableAll, out _disabledSourceNameGlobs);
+
+            static void PopulateGlobs(string[] toDisable, out bool disableAll, out List<Regex> globs)
+            {
+                List<Regex>? globRegexs = null;
+                foreach (var disabledSourceNameGlob in toDisable)
+                {
+                    // HACK: using RegexBuilder here even though it isn't _really_ for this
+                    var globRegex = RegexBuilder.Build(disabledSourceNameGlob, SamplingRulesFormat.Glob, RegexBuilder.DefaultTimeout);
+                    // handle special case where a "*" pattern will be null
+                    if (globRegex is null)
+                    {
+                        disableAll = true;
+                        globs = [];
+                        return;
+                    }
+
+                    globRegexs ??= new(toDisable.Length);
+                    globRegexs.Add(globRegex);
+                }
+
+                disableAll = false;
+                globs = globRegexs ?? [];
+            }
+        }
 
         public void ActivityStarted<T>(string sourceName, T activity)
             where T : IActivity
@@ -43,7 +77,6 @@ namespace Datadog.Trace.Activity.Handlers
                 return true; // "*" was specified as a pattern, short circuit to disable all
             }
 
-            _disabledSourceNameGlobs ??= PopulateGlobs();
             if (_disabledSourceNameGlobs.Count == 0)
             {
                 return false; // no glob patterns specified, sourceName will not be disabled
@@ -59,32 +92,6 @@ namespace Datadog.Trace.Activity.Handlers
 
             // sources were specified to be disabled, but this sourceName didn't match any of them
             return false; // sourceName will _not_ be disabled
-        }
-
-        private List<Regex> PopulateGlobs()
-        {
-            var globs = new List<Regex>();
-            var toDisable = Tracer.Instance.Settings.DisabledActivitySources;
-            if (toDisable is null || toDisable.Length == 0)
-            {
-                return globs;
-            }
-
-            foreach (var disabledSourceNameGlob in toDisable)
-            {
-                // HACK: using RegexBuilder here even though it isn't _really_ for this
-                var globRegex = RegexBuilder.Build(disabledSourceNameGlob, SamplingRulesFormat.Glob, RegexBuilder.DefaultTimeout);
-                // handle special case where a "*" pattern will be null
-                if (globRegex is null)
-                {
-                    _disableAll = true;
-                    return [];
-                }
-
-                globs.Add(globRegex);
-            }
-
-            return globs;
         }
     }
 }
