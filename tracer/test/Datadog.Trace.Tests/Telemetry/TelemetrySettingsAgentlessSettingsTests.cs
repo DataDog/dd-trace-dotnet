@@ -12,11 +12,12 @@ using Xunit;
 
 namespace Datadog.Trace.Tests.Telemetry;
 
-[EnvironmentRestorer(PlatformKeys.GcpFunction.FunctionNameKey,
-                     PlatformKeys.AzureAppService.ContainerAppName,
-                     PlatformKeys.AzureAppService.RunFromZipKey,
-                     PlatformKeys.AzureAppService.AppServiceApplogsTraceEnabledKey,
-                     PlatformKeys.AzureAppService.SiteNameKey)]
+[EnvironmentRestorer(
+    PlatformKeys.GcpFunction.FunctionNameKey,
+    PlatformKeys.AzureAppService.ContainerAppName,
+    PlatformKeys.AzureAppService.RunFromZipKey,
+    PlatformKeys.AzureAppService.AppServiceApplogsTraceEnabledKey,
+    PlatformKeys.AzureAppService.SiteNameKey)]
 [Collection(nameof(EnvironmentVariablesTestCollection))]
 public class TelemetrySettingsAgentlessSettingsTests
 {
