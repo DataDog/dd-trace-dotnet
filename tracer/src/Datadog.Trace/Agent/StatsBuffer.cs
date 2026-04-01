@@ -192,7 +192,7 @@ namespace Datadog.Trace.Agent
             MessagePackBinary.WriteString(stream, bucket.Key.HttpEndpoint);
 
             MessagePackBinary.WriteString(stream, "GRPCStatusCode");
-            MessagePackBinary.WriteInt32(stream, bucket.Key.GrpcStatusCode);
+            MessagePackBinary.WriteString(stream, bucket.Key.GrpcStatusCode == 0 ? string.Empty : bucket.Key.GrpcStatusCode.ToString());
 
             if (hasServiceSource)
             {

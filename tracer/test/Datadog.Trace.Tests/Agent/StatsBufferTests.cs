@@ -257,7 +257,7 @@ namespace Datadog.Trace.Tests.Agent
             group.IsTraceRoot.Should().Be(expectedKey.IsTraceRoot ? 1 : 2);
             group.HttpMethod.Should().Be(expectedKey.HttpMethod);
             group.HttpEndpoint.Should().Be(expectedKey.HttpEndpoint);
-            group.GrpcStatusCode.Should().Be(expectedKey.GrpcStatusCode);
+            group.GrpcStatusCode.Should().Be(expectedKey.GrpcStatusCode == 0 ? string.Empty : expectedKey.GrpcStatusCode.ToString());
             group.ServiceSource.Should().Be(expectedKey.ServiceSource);
 
             var stream = new MemoryStream();
