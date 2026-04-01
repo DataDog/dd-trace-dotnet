@@ -62,7 +62,7 @@ public class MockClientGroupedStats
     public string HttpEndpoint { get; set; }
 
     [Key("GRPCStatusCode")]
-    public int GrpcStatusCode { get; set; }
+    public string GrpcStatusCode { get; set; }
 
     [Key("srv_src")]
     public string ServiceSource { get; set; }
