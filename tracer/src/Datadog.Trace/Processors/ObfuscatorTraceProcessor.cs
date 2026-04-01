@@ -23,7 +23,14 @@ namespace Datadog.Trace.Processors
         static ObfuscatorTraceProcessor()
         {
             var numericLiterals = new[] { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-', '+', '.' };
-            var splitterChars = new[] { ',', '(', ')', '|' };
+            // Operator characters must act as token splitters to match the Go agent's SQL obfuscation
+            // behavior (DataDog/go-sqllexer isOperator function). Without these, queries like
+            // WHERE id='1' (no spaces around =) won't have their literals replaced with ?.
+            // See: https://github.com/DataDog/go-sqllexer/blob/main/sqllexer_utils.go
+            // Note: '+' and '-' are excluded because they are already in numericLiteralPrefix
+            // and adding them as splitters would break negative number obfuscation (e.g., col > -123).
+            // The Go lexer handles this with look-ahead logic that our simpler approach can't replicate.
+            var splitterChars = new[] { ',', '(', ')', '|', '*', '/', '=', '<', '>', '!', '&', '^', '%', '~', '?', '@', ':', '#' };
 
             foreach (var c in numericLiterals)
             {

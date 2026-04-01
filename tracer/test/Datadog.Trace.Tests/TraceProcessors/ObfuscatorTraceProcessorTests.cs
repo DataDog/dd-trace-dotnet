@@ -34,6 +34,27 @@ namespace Datadog.Trace.Tests.TraceProcessors
             yield return new object[] { "SELECT * FROM TABLE WHERE userId = 'abc1287681964' ORDER BY FOO DESC", "SELECT * FROM TABLE WHERE userId = ? ORDER BY FOO DESC" };
             yield return new object[] { "SELECT * FROM TABLE WHERE userId = 'abc\\'1287\\'681\\'\\'\\'\\'964' ORDER BY FOO DESC", "SELECT * FROM TABLE WHERE userId = ? ORDER BY FOO DESC" };
             yield return new object[] { "SELECT * FROM TABLE JOIN SOMETHING ON TABLE.foo = SOMETHING.bar", "SELECT * FROM TABLE JOIN SOMETHING ON TABLE.foo = SOMETHING.bar" };
+
+            // No spaces around comparison operators (must match Go agent's go-sqllexer behavior)
+            yield return new object[] { "SELECT * FROM users WHERE id='1'", "SELECT * FROM users WHERE id=?" };
+            yield return new object[] { "SELECT * FROM users WHERE id='test'", "SELECT * FROM users WHERE id=?" };
+            yield return new object[] { "SELECT * FROM users WHERE age>30", "SELECT * FROM users WHERE age>?" };
+            yield return new object[] { "SELECT * FROM users WHERE age<100", "SELECT * FROM users WHERE age<?" };
+            yield return new object[] { "SELECT * FROM TABLE WHERE col='val' AND col2=123", "SELECT * FROM TABLE WHERE col=? AND col2=?" };
+            yield return new object[] { "SELECT * FROM TABLE WHERE col!='excluded'", "SELECT * FROM TABLE WHERE col!=?" };
+            yield return new object[] { "SELECT * FROM TABLE WHERE col<>'other'", "SELECT * FROM TABLE WHERE col<>?" };
+
+            // Arithmetic and other operators as splitters
+            yield return new object[] { "SELECT col*2 FROM TABLE", "SELECT col*? FROM TABLE" };
+            yield return new object[] { "SELECT col/2 FROM TABLE", "SELECT col/? FROM TABLE" };
+            yield return new object[] { "SELECT col%2 FROM TABLE", "SELECT col%? FROM TABLE" };
+            yield return new object[] { "SELECT col&0xFF FROM TABLE", "SELECT col&? FROM TABLE" };
+            yield return new object[] { "SELECT col^0xFF FROM TABLE", "SELECT col^? FROM TABLE" };
+            yield return new object[] { "SELECT ~1 FROM TABLE", "SELECT ~? FROM TABLE" };
+
+            // Operators should not interfere with non-literal identifiers
+            yield return new object[] { "SELECT a*b FROM TABLE", "SELECT a*b FROM TABLE" };
+            yield return new object[] { "SELECT * FROM TABLE", "SELECT * FROM TABLE" };
             yield return new object[] { "CREATE TABLE \"VALUE\"", "CREATE TABLE \"VALUE\"" };
             yield return new object[] { "INSERT INTO \"VALUE\" (\"column\") VALUES (\'ljahklshdlKASH\')", "INSERT INTO \"VALUE\" (\"column\") VALUES (?)" };
             yield return new object[] { "INSERT INTO \"VALUE\" (\"col1\",\"col2\",\"col3\") VALUES (\'blah\',12983,X'ff')", "INSERT INTO \"VALUE\" (\"col1\",\"col2\",\"col3\") VALUES (?,?,?)" };
