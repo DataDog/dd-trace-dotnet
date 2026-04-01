@@ -1,0 +1,195 @@
+# Instance provision file for running dd-trace-dotnet microbenchmarks
+#
+# This file is used by bp-infra to provision a Windows instance and run benchmarks.
+#
+# Steps:
+# 1. Verify the CPU model (for reproducibility)
+# 2. Fetch baseline metadata from S3 (_latest/env_vars.txt from master)
+# 3. Run bp-runner with the benchmark config
+# 4. Upload results to S3 (and update _latest if on master)
+
+name: &provision_name "dd-trace-dotnet-microbenchmarks"
+
+init_environment:
+  # S3 bucket for benchmark results
+  BP_INFRA_ARTIFACTS_BUCKET_NAME: "windows-benchmarking-results-us-east-1"
+
+source_ami:
+  ami_id_ssm_parameter: "/windows-benchmarking/dd-trace-dotnet-microbenchmarks-ami-id"
+
+tags:
+  Name: *provision_name
+
+provision_steps:
+  - check_cpu_model
+  - fetch_baseline_metadata
+  - run_benchmarks
+  - upload_results
+
+check_cpu_model:
+  remote_command: |
+    $ErrorActionPreference = "Stop"
+    $cpuModel = (Get-WmiObject -Class Win32_Processor).Name
+    if ($cpuModel -notlike "*8259CL CPU*") {
+        Write-Error "CPU model is not Intel(R) Xeon(R) Platinum 8259CL: $cpuModel"
+        exit 1
+    }
+    Write-Output "CPU model verified: Intel(R) Xeon(R) Platinum 8259CL"
+
+fetch_baseline_metadata:
+  populate_env: true
+  remote_command: |
+    $ErrorActionPreference = "Stop"
+
+    $s3Bucket = $env:BP_INFRA_ARTIFACTS_BUCKET_NAME
+    $latestPrefix = "$env:CI_PROJECT_NAME/_latest"
+    $baselineDir = "C:\baseline"
+
+    Write-Output "=== Fetching baseline metadata from master ==="
+    Write-Output "S3 source: s3://$s3Bucket/$latestPrefix/env_vars.txt"
+
+    New-Item -ItemType Directory -Path $baselineDir -Force | Out-Null
+
+    try {
+        # Only download env_vars.txt - baseline JSON files are fetched by GitLab runner
+        Read-S3Object `
+            -BucketName $s3Bucket `
+            -Key "$latestPrefix/env_vars.txt" `
+            -File "$baselineDir\env_vars.txt"
+
+        $envVarsFile = Join-Path $baselineDir "env_vars.txt"
+        if (Test-Path $envVarsFile) {
+            $baselineEnvVarsFile = Join-Path $baselineDir "baseline_env_vars.txt"
+            Copy-Item -Path $envVarsFile -Destination $baselineEnvVarsFile
+            Write-Output "Created baseline_env_vars.txt from master's env_vars.txt:"
+            Get-Content $baselineEnvVarsFile
+        }
+    }
+    catch {
+        Write-Output "Warning: Could not fetch baseline metadata: $_"
+        Write-Output "Continuing without baseline comparison (first run?)..."
+    }
+
+run_benchmarks:
+  populate_env: true
+  remote_command: |
+    $ErrorActionPreference = "Stop"
+
+    # DD_API_KEY is passed from the CI job via --env-regex
+
+    $env:ARTIFACTS_DIR = "C:\artifacts"
+    New-Item -ItemType Directory -Path $env:ARTIFACTS_DIR -Force | Out-Null
+
+    # BP_INFRA_TEST mode: skip benchmarks and use _latest results as candidate
+    # Useful for testing the pipeline without running actual benchmarks
+    if ($env:BP_INFRA_TEST -eq "true") {
+        Write-Output "=== BP_INFRA_TEST mode: mocking benchmarks with _latest results ==="
+        $s3Bucket = $env:BP_INFRA_ARTIFACTS_BUCKET_NAME
+        $latestPrefix = "$env:CI_PROJECT_NAME/_latest"
+
+        Write-Output "Downloading from s3://$s3Bucket/$latestPrefix..."
+        try {
+            Read-S3Object `
+                -BucketName $s3Bucket `
+                -KeyPrefix $latestPrefix `
+                -Folder $env:ARTIFACTS_DIR
+
+            # Rename files to candidate.* format (they're already named candidate.* in _latest)
+            $files = Get-ChildItem -Path $env:ARTIFACTS_DIR -Filter "*.json"
+            Write-Output "Downloaded $($files.Count) files for mock benchmarks"
+        }
+        catch {
+            Write-Error "Failed to download mock benchmark results: $_"
+            exit 1
+        }
+        return
+    }
+
+    # Clone dd-trace-dotnet to get the bp-runner config
+    $branch = if ($env:CI_COMMIT_REF_NAME) { $env:CI_COMMIT_REF_NAME } else { "master" }
+    $repoDir = "C:\app\dd-trace-dotnet-config"
+
+    Write-Output "Cloning dd-trace-dotnet (branch: $branch) to get bp-runner config..."
+    if ($env:GITHUB_TOKEN) {
+        git clone -b $branch --single-branch --depth 1 "https://x-access-token:$env:GITHUB_TOKEN@github.com/DataDog/dd-trace-dotnet.git" $repoDir
+    } else {
+        git clone -b $branch --single-branch --depth 1 "https://github.com/DataDog/dd-trace-dotnet.git" $repoDir
+    }
+
+    # Run bp-runner with the benchmark config
+    # bp-runner will handle cloning the repo for benchmarks into C:\app\candidate
+    Write-Output "Running bp-runner..."
+    Set-Location $repoDir
+    bp-runner .gitlab\benchmarks\microbenchmarks\bp-runner.windows.yml --debug
+
+upload_results:
+  populate_env: true
+  remote_command: |
+    $ErrorActionPreference = "Stop"
+
+    $artifactsDir = "C:\artifacts"
+    $baselineDir = "C:\baseline"
+    $s3Bucket = $env:BP_INFRA_ARTIFACTS_BUCKET_NAME
+    $s3Prefix = "$env:CI_PROJECT_NAME/$env:CI_COMMIT_REF_NAME/$env:CI_JOB_ID/reports"
+
+    Write-Output "=== Preparing benchmark results ==="
+
+    # Create env_vars.txt with current run metadata
+    $envVarsFile = Join-Path $artifactsDir "env_vars.txt"
+    $ciJobDate = [int][double](Get-Date -UFormat %s)
+    $lines = @(
+        "CI_COMMIT_SHA=$env:CI_COMMIT_SHA",
+        "CI_COMMIT_SHORT_SHA=$env:CI_COMMIT_SHORT_SHA",
+        "CI_PIPELINE_ID=$env:CI_PIPELINE_ID",
+        "CI_JOB_ID=$env:CI_JOB_ID",
+        "CI_JOB_DATE=$ciJobDate"
+    )
+    Set-Content -Path $envVarsFile -Value ($lines -join "`n")
+    Write-Output "Created env_vars.txt:"
+    Get-Content $envVarsFile
+
+    # Copy baseline_env_vars.txt from baseline dir if it exists
+    $baselineEnvVarsSource = Join-Path $baselineDir "baseline_env_vars.txt"
+    if (Test-Path $baselineEnvVarsSource) {
+        $baselineEnvVarsDest = Join-Path $artifactsDir "baseline_env_vars.txt"
+        Copy-Item -Path $baselineEnvVarsSource -Destination $baselineEnvVarsDest
+        Write-Output "Copied baseline_env_vars.txt to artifacts"
+    }
+
+    Write-Output "=== Uploading benchmark results to S3 ==="
+    Write-Output "Artifacts directory: $artifactsDir"
+    Write-Output "S3 destination: s3://$s3Bucket/$s3Prefix"
+
+    # List files to upload
+    $files = Get-ChildItem -Path $artifactsDir -ErrorAction SilentlyContinue
+    if ($files) {
+        Write-Output "Found $($files.Count) files to upload"
+        foreach ($file in $files) {
+            Write-Output "  - $($file.Name)"
+        }
+
+        # Upload to S3 using AWS PowerShell module
+        Write-S3Object `
+            -BucketName $s3Bucket `
+            -KeyPrefix $s3Prefix `
+            -Folder $artifactsDir `
+            -CannedACLName "bucket-owner-full-control" `
+            -Recurse
+
+        Write-Output "Upload complete!"
+
+        # Also update _latest if on master branch
+        if ($env:CI_COMMIT_REF_NAME -eq "master") {
+            $latestPrefix = "$env:CI_PROJECT_NAME/_latest"
+            Write-Output "Updating latest master results at s3://$s3Bucket/$latestPrefix"
+            Write-S3Object `
+                -BucketName $s3Bucket `
+                -KeyPrefix $latestPrefix `
+                -Folder $artifactsDir `
+                -CannedACLName "bucket-owner-full-control" `
+                -Recurse
+        }
+    } else {
+        Write-Warning "No files found in $artifactsDir"
+        Get-ChildItem -Path $artifactsDir -Recurse | ForEach-Object { Write-Output $_.FullName }
+    }

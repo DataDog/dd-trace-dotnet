@@ -17,6 +17,7 @@ using Datadog.Trace.Vendors.Newtonsoft.Json;
 namespace Benchmarks.Trace
 {
     [MemoryDiagnoser]
+    [IterationTime(500)]
     public class AgentWriterBenchmark
     {
         private const int SpanCount = 1000;
