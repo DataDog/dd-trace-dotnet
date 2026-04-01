@@ -25,7 +25,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             : base("WebRequest", output)
         {
             SetServiceVersion("1.0.0");
-            SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
             SetEnvironmentVariable("DD_TRACE_HTTP_CLIENT_ERROR_STATUSES", "410-499");
         }
 
