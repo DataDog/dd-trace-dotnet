@@ -242,6 +242,95 @@ public class StringBuilderCacheAnalyzerTests
     }
 
     [Fact]
+    public async Task NewStringBuilder_FieldInitializer_NoDiagnostic()
+    {
+        var source = """
+            using System.Text;
+
+            class TestClass
+            {
+                private readonly StringBuilder _sb = new StringBuilder();
+
+                void TestMethod()
+                {
+                    _sb.Clear();
+                    _sb.Append("hello");
+                }
+            }
+            """;
+
+        await Verifier.VerifyAnalyzerAsync(source);
+    }
+
+    [Fact]
+    public async Task NewStringBuilder_FieldInitializerWithCapacity_NoDiagnostic()
+    {
+        var source = """
+            using System.Text;
+
+            class TestClass
+            {
+                private readonly StringBuilder _sb = new StringBuilder(1024);
+
+                void TestMethod()
+                {
+                    _sb.Clear();
+                    _sb.Append("hello");
+                }
+            }
+            """;
+
+        await Verifier.VerifyAnalyzerAsync(source);
+    }
+
+    [Fact]
+    public async Task NewStringBuilder_ConstructorAssignmentToField_NoDiagnostic()
+    {
+        var source = """
+            using System.Text;
+
+            class TestClass
+            {
+                private readonly StringBuilder _sb;
+
+                TestClass()
+                {
+                    _sb = new StringBuilder(256);
+                }
+
+                void TestMethod()
+                {
+                    _sb.Clear();
+                    _sb.Append("hello");
+                }
+            }
+            """;
+
+        await Verifier.VerifyAnalyzerAsync(source);
+    }
+
+    [Fact]
+    public async Task NewStringBuilder_PropertyInitializer_NoDiagnostic()
+    {
+        var source = """
+            using System.Text;
+
+            class TestClass
+            {
+                private StringBuilder Sb { get; } = new StringBuilder();
+
+                void TestMethod()
+                {
+                    Sb.Clear();
+                    Sb.Append("hello");
+                }
+            }
+            """;
+
+        await Verifier.VerifyAnalyzerAsync(source);
+    }
+
+    [Fact]
     public async Task NewStringBuilder_VariableCapacity_ReportsDiagnostic()
     {
         var source = """

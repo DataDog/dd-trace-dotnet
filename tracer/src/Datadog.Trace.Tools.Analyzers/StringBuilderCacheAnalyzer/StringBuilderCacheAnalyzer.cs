@@ -68,6 +68,12 @@ public class StringBuilderCacheAnalyzer : DiagnosticAnalyzer
             return;
         }
 
+        // Suppress if assigned to a field or property (long-lived, not method-scoped)
+        if (IsAssignedToFieldOrProperty(context))
+        {
+            return;
+        }
+
         // Suppress if the enclosing function-like scope already calls StringBuilderCache.Acquire()
         var enclosingFunction = GetEnclosingFunction(context.Node);
         if (enclosingFunction is not null && ContainsStringBuilderCacheAcquireCall(enclosingFunction))
@@ -107,6 +113,40 @@ public class StringBuilderCacheAnalyzer : DiagnosticAnalyzer
         }
 
         return null;
+    }
+
+    private static bool IsAssignedToFieldOrProperty(SyntaxNodeAnalysisContext context)
+    {
+        var node = context.Node;
+
+        // Case 1: Field initializer — e.g., StringBuilder _sb = new(...);
+        // Walk up: ObjectCreation -> EqualsValueClause -> VariableDeclarator -> VariableDeclaration -> FieldDeclaration/PropertyDeclaration
+        for (var current = node.Parent; current is not null; current = current.Parent)
+        {
+            if (current is FieldDeclarationSyntax or PropertyDeclarationSyntax)
+            {
+                return true;
+            }
+
+            // Stop walking if we hit a statement or member boundary
+            if (current is StatementSyntax or MemberDeclarationSyntax)
+            {
+                break;
+            }
+        }
+
+        // Case 2: Constructor assignment to field — e.g., _sb = new StringBuilder(...);
+        if (node.Parent is AssignmentExpressionSyntax assignment
+            && assignment.Right == node)
+        {
+            var symbol = context.SemanticModel.GetSymbolInfo(assignment.Left, context.CancellationToken).Symbol;
+            if (symbol is IFieldSymbol or IPropertySymbol)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static bool ContainsStringBuilderCacheAcquireCall(SyntaxNode functionNode)
