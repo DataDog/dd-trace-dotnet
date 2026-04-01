@@ -24,7 +24,7 @@ public static class Diagnostics
         title: "Avoid capturing lambdas in Task.Run/ContinueWith",
         messageFormat: "Lambda passed to '{0}' captures variable(s) '{1}', causing a closure allocation. Use a static lambda with the state parameter overload, or mark the lambda 'static' if no captures are needed.",
         category: "Performance",
-        defaultSeverity: DiagnosticSeverity.Info,
-        isEnabledByDefault: true,
+        defaultSeverity: DiagnosticSeverity.Warning,
+        isEnabledByDefault: false,
         description: "Capturing lambdas allocate a compiler-generated display class and a delegate object. Use the state parameter overloads (e.g., Task.Factory.StartNew(static state => ..., stateObj)) to avoid closure allocations.");
 }
