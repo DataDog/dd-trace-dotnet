@@ -88,6 +88,12 @@ partial class Build : NukeBuild
     [Parameter("Override the default category filter for running benchmarks. (Optional)")]
     readonly string BenchmarkCategory;
 
+    [Parameter("Skip building benchmark projects in RunBenchmarks (use when already built)")]
+    readonly bool NoBenchmarkBuild;
+
+    [Parameter("The directory to store benchmark artifacts/results. Defaults to <projectDir>/BenchmarkDotNet.Artifacts")]
+    readonly AbsolutePath BenchmarkArtifactsDirectory;
+
     [Parameter("Enables code coverage")]
     readonly bool CodeCoverageEnabled;
 
@@ -567,33 +573,63 @@ partial class Build : NukeBuild
                 x => Compress(x.output, x.archive));
         });
 
+    // Gets the list of benchmark projects with their run settings.
+    // On PRs, excludes BenchmarksOpenTelemetryApi since nothing we do should change them.
+    // On master, includes BenchmarksOpenTelemetryApi for up-to-date comparison data.
+    List<(string Project, Func<DotNetRunSettings, DotNetRunSettings> Configure)> GetBenchmarkProjectsWithSettings()
+    {
+        var benchmarkProjectsWithSettings = new List<(string Project, Func<DotNetRunSettings, DotNetRunSettings> Configure)>
+        {
+            (Projects.BenchmarksTrace, s => s),
+            (Projects.BenchmarksOpenTelemetryInstrumentedApi,
+                s => s.SetProcessEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true")
+                      .SetProcessEnvironmentVariable("DD_INSTRUMENTATION_TELEMETRY_ENABLED", "false")
+                      .SetProcessEnvironmentVariable("DD_INTERNAL_AGENT_STANDALONE_MODE_ENABLED", "true")
+                      .SetProcessEnvironmentVariable("DD_CIVISIBILITY_FORCE_AGENT_EVP_PROXY", "V4")),
+        };
+
+        var isPr = int.TryParse(Environment.GetEnvironmentVariable("PR_NUMBER"), out var _);
+        // We don't run the base Otel benchmarks on PRs as nothing we do should change them.
+        // We _do_ run them on master, so we have up-to-date comparison data.
+        // We can't easily use the benchmark "category" approach that we use below, because the BenchmarksOpenTelemetryApi
+        // project shares the same tests as BenchmarksOpenTelemetryInstrumentedApi.
+        if (!isPr)
+        {
+            benchmarkProjectsWithSettings.Add((Projects.BenchmarksOpenTelemetryApi, s => s));
+        }
+
+        return benchmarkProjectsWithSettings;
+    }
+
+    Target BuildBenchmarks => _ => _
+        .After(BuildTracerHome)
+        .After(BuildProfilerHome)
+        .Description("Builds the Benchmark projects without running them")
+        .Executes(() =>
+        {
+            var benchmarkProjectsWithSettings = GetBenchmarkProjectsWithSettings();
+
+            foreach (var tuple in benchmarkProjectsWithSettings)
+            {
+                var benchmarksProject = Solution.GetProject(tuple.Project);
+
+                DotNetBuild(s => s
+                    .SetProjectFile(benchmarksProject)
+                    .SetConfiguration(BuildConfiguration)
+                    .EnableNoDependencies()
+                    .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
+                );
+            }
+        });
+
     Target RunBenchmarks => _ => _
         .After(BuildTracerHome)
         .After(BuildProfilerHome)
         .Description("Runs the Benchmarks project")
         .Executes(() =>
         {
-            var benchmarkProjectsWithSettings = new List<(string Project, Func<DotNetRunSettings, DotNetRunSettings> Configure)>
-            {
-                (Projects.BenchmarksTrace, s => s),
-                // new(Projects.BenchmarksOpenTelemetryApi, s => s),
-                (Projects.BenchmarksOpenTelemetryInstrumentedApi,
-                    s => s.SetProcessEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true")
-                          .SetProcessEnvironmentVariable("DD_INSTRUMENTATION_TELEMETRY_ENABLED", "false")
-                          .SetProcessEnvironmentVariable("DD_INTERNAL_AGENT_STANDALONE_MODE_ENABLED", "true")
-                          .SetProcessEnvironmentVariable("DD_CIVISIBILITY_FORCE_AGENT_EVP_PROXY", "V4")),
-            };
-
+            var benchmarkProjectsWithSettings = GetBenchmarkProjectsWithSettings();
             var isPr = int.TryParse(Environment.GetEnvironmentVariable("PR_NUMBER"), out var _);
-            // We don't run the base Otel benchmarks on PRs as nothing we do should change them.
-            // We _do_ run them on master, so we have up-to-date comparison data
-            // We can't easily use the benchmark "category" approach that we use below, because the BenchmarksOpenTelemetryApi
-            // project shares the same tests as BenchmarksOpenTelemetryInstrumentedApi.
-            if (!isPr)
-            {
-                benchmarkProjectsWithSettings.Add((Projects.BenchmarksOpenTelemetryApi, s => s));
-            }
-
 
             foreach (var tuple in benchmarkProjectsWithSettings)
             {
@@ -601,17 +637,28 @@ partial class Build : NukeBuild
                 var configureDotNetRunSettings = tuple.Configure;
 
                 var benchmarksProject = Solution.GetProject(benchmarkProjectName);
-                var resultsDirectory = benchmarksProject.Directory / "BenchmarkDotNet.Artifacts" / "results";
-                EnsureCleanDirectory(resultsDirectory);
+                // Use configurable artifacts directory, or project's default if not specified
+                var artifactsDirectory = BenchmarkArtifactsDirectory ?? benchmarksProject.Directory / "BenchmarkDotNet.Artifacts";
+                var resultsDirectory = artifactsDirectory / "results";
+
+                // Only clean results directory when running sequentially (not using --no-benchmark-build).
+                // When running in parallel with pre-built benchmarks, skip cleaning to avoid deleting other parallel runs' results.
+                if (!NoBenchmarkBuild)
+                {
+                    EnsureCleanDirectory(resultsDirectory);
+                }
 
                 try
                 {
-                    DotNetBuild(s => s
-                        .SetProjectFile(benchmarksProject)
-                        .SetConfiguration(BuildConfiguration)
-                        .EnableNoDependencies()
-                        .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
-                    );
+                    if (!NoBenchmarkBuild)
+                    {
+                        DotNetBuild(s => s
+                            .SetProjectFile(benchmarksProject)
+                            .SetConfiguration(BuildConfiguration)
+                            .EnableNoDependencies()
+                            .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
+                        );
+                    }
 
                     var (framework, runtimes) = IsOsx switch
                     {
@@ -627,13 +674,20 @@ partial class Build : NukeBuild
                         (_, false) => "master",
                     };
 
+                    // Build the arguments string, including --artifacts if a custom directory is specified
+                    var arguments = $"-r {runtimes} -m -f {Filter ?? "*"} --allCategories {categories} --iterationTime 200";
+                    if (BenchmarkArtifactsDirectory is not null)
+                    {
+                        arguments += $" --artifacts \"{artifactsDirectory}\"";
+                    }
+
                     DotNetRun(s => s
                         .SetProjectFile(benchmarksProject)
                         .SetConfiguration(BuildConfiguration)
                         .SetFramework(framework)
                         .EnableNoRestore()
                         .EnableNoBuild()
-                        .SetApplicationArguments($"-r {runtimes} -m -f {Filter ?? "*"} --allCategories {categories} --iterationTime 200")
+                        .SetApplicationArguments(arguments)
                         .SetProcessEnvironmentVariable("DD_SERVICE", "dd-trace-dotnet")
                         .SetProcessEnvironmentVariable("DD_ENV", "CI")
                         .SetProcessEnvironmentVariable("DD_DOTNET_TRACER_HOME", MonitoringHome)

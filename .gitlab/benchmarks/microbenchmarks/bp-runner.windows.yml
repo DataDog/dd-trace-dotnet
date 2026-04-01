@@ -1,0 +1,182 @@
+# bp-runner config for dd-trace-dotnet microbenchmarks on Windows.
+#
+# Two batches run in parallel on separate NUMA nodes:
+#   - batch-0 (stable benchmarks) on NUMA node 0
+#   - batch-1 (less stable benchmarks) on NUMA node 1
+#
+# batch-0 clones and builds; batch-1 waits for .build-complete marker file.
+# Artifact dirs are prefixed with b0-/b1- to avoid collisions between batches.
+#
+# bp-runner keywords (enable parallel benchmark execution on isolated CPU sets):
+#   - how_to_fetch_release: script to clone/build the repo for baseline/candidate
+#   - how_to_run_benchmarks: script invoked for each parallel item
+#   - cpus: CPU affinity mask for NUMA node isolation
+#   - parallelize.items: benchmark filters, each run in parallel within the batch
+#
+# YAML anchors (&name/*name) define reusable script blocks referenced below.
+
+.how_to_fetch_release_build: &how_to_fetch_release_build |
+  $ErrorActionPreference = "Stop"
+
+  Write-Output "=== Fetching release for $env:BASELINE_OR_CANDIDATE ==="
+  Write-Output "CODE_SRC: $env:CODE_SRC"
+  Write-Output "BRANCH: $env:BRANCH"
+  Write-Output "COMMIT_SHA: $env:COMMIT_SHA"
+
+  # Clone the repository
+  if (Test-Path $env:CODE_SRC) {
+      Remove-Item -Recurse -Force $env:CODE_SRC
+  }
+  New-Item -ItemType Directory -Path $env:CODE_SRC -Force | Out-Null
+
+  Write-Output "Cloning $env:REPO at $env:COMMIT_SHA..."
+  if ($env:GITHUB_TOKEN) {
+      git clone "https://x-access-token:$env:GITHUB_TOKEN@github.com/$env:REPO.git" $env:CODE_SRC
+  } else {
+      git clone "https://github.com/$env:REPO.git" $env:CODE_SRC
+  }
+
+  Set-Location $env:CODE_SRC
+  git checkout $env:COMMIT_SHA
+
+  # Add dotnet to PATH (installed at C:\dotnet on the AMI)
+  [Environment]::SetEnvironmentVariable("PATH", "C:\dotnet;" + [Environment]::GetEnvironmentVariable("PATH", [EnvironmentVariableTarget]::Process), [EnvironmentVariableTarget]::Process)
+
+  # Build the tracer and benchmarks using Nuke targets
+  # BuildTracerHome: builds the tracer (required for benchmarks to reference)
+  # BuildBenchmarks: builds all benchmark projects (so parallel runs can use --no-benchmark-build)
+  Write-Output "Building tracer and benchmarks using Nuke..."
+  Set-Location "$env:CODE_SRC\tracer"
+  & .\build.cmd BuildTracerHome BuildBenchmarks
+
+  # Signal that build is complete by creating a marker file
+  $markerPath = "$env:CODE_SRC\tracer\.build-complete"
+  New-Item -ItemType File -Path $markerPath -Force | Out-Null
+  Write-Output "Build complete marker created at: $markerPath"
+
+  Write-Output "=== Fetch and build complete for $env:BASELINE_OR_CANDIDATE ==="
+
+.how_to_fetch_release_wait: &how_to_fetch_release_wait |
+  $ErrorActionPreference = "Stop"
+
+  Write-Output "=== Waiting for build to complete for $env:BASELINE_OR_CANDIDATE ==="
+  Write-Output "CODE_SRC: $env:CODE_SRC"
+
+  # Both experiments share the same CODE_SRC (C:\app\candidate or C:\app\baseline).
+  # batch-0 does the actual build, batch-1 just waits for it to finish.
+  $markerPath = "$env:CODE_SRC\tracer\.build-complete"
+
+  Write-Output "Waiting for build marker at: $markerPath"
+
+  # Wait for the marker file (timeout after 30 minutes)
+  $timeout = 1800
+  $elapsed = 0
+  $interval = 5
+  while (-not (Test-Path $markerPath)) {
+      if ($elapsed -ge $timeout) {
+          Write-Error "Timeout waiting for build to complete"
+          exit 1
+      }
+      Write-Output "Waiting for build... ($elapsed seconds elapsed)"
+      Start-Sleep -Seconds $interval
+      $elapsed += $interval
+  }
+
+  Write-Output "Build complete marker found. Using shared CODE_SRC: $env:CODE_SRC"
+  Write-Output "=== Wait complete for $env:BASELINE_OR_CANDIDATE ==="
+
+.how_to_run_benchmarks: &how_to_run_benchmarks |
+  $ErrorActionPreference = "Stop"
+
+  $env:BENCHMARK_PROJECT = "Benchmarks.Trace"
+  $env:BENCHMARK_CATEGORY = "prs"
+  if ($env:CI_COMMIT_REF_NAME -eq "master") {
+    $env:BENCHMARK_CATEGORY = "master"
+  }
+
+  # BATCH_PREFIX set via env: in experiment step (e.g., "b0" or "b1")
+  $artifactsIndex = "$env:BATCH_PREFIX-$env:PARALLEL_INDEX"
+
+  Write-Output "=== Running benchmarks ==="
+  Write-Output "BASELINE_OR_CANDIDATE: $env:BASELINE_OR_CANDIDATE"
+  Write-Output "CODE_SRC: $env:CODE_SRC"
+  Write-Output "PARALLEL_ITEM: $env:PARALLEL_ITEM"
+  Write-Output "BENCHMARK_PROJECT: $env:BENCHMARK_PROJECT"
+  Write-Output "BENCHMARK_CATEGORY: $env:BENCHMARK_CATEGORY"
+  Write-Output "PARALLEL_INDEX: $env:PARALLEL_INDEX"
+  Write-Output "ARTIFACTS_INDEX: $artifactsIndex"
+  Write-Output "ARTIFACTS_DIR: $env:ARTIFACTS_DIR"
+
+  # Add dotnet to PATH
+  [Environment]::SetEnvironmentVariable("PATH", "C:\dotnet;" + [Environment]::GetEnvironmentVariable("PATH", [EnvironmentVariableTarget]::Process), [EnvironmentVariableTarget]::Process)
+
+  # Run benchmarks - each parallel run gets unique artifacts dir via prefixed index
+  & "$env:CODE_SRC\.gitlab\benchmarks\microbenchmarks\scripts\run-benchmarks.ps1" `
+    -Filter "$env:PARALLEL_ITEM" `
+    -ArtifactsIndex "$artifactsIndex"
+
+  Write-Output "=== Benchmarks completed for filter: $env:PARALLEL_ITEM ==="
+
+# Run experiments in parallel (each on different NUMA node)
+parallelize: true
+
+# Benchmarks are split into two batches:
+# - batch-0: stable benchmarks (low variance)
+# - batch-1: less stable benchmarks (higher variance, need isolation)
+
+experiments:
+  - name: batch-0
+    steps:
+      - name: batch-0
+        run: run_microbenchmarks
+        repo: DataDog/dd-trace-dotnet
+        baseline_branch: ""
+
+        cpus: "0,0xFFFFF"
+        parallelize:
+          # Stable benchmarks
+          items: >-
+            *ActivityBenchmark*
+            *AppSecBodyBenchmark*
+            *AppSecWafBenchmark*
+            *DbCommandBenchmark*
+            *HttpClientBenchmark*
+            *ILoggerBenchmark*
+            *NLogBenchmark*
+            *RedisBenchmark*
+            *SpanBenchmark*
+            *TraceAnnotationsBenchmark*
+          cpus_per_item: 2
+
+        env:
+          BATCH_PREFIX: "b0"
+        how_to_fetch_release: *how_to_fetch_release_build
+        how_to_run_benchmarks: *how_to_run_benchmarks
+
+  - name: batch-1
+    steps:
+      - name: batch-1
+        run: run_microbenchmarks
+        repo: DataDog/dd-trace-dotnet
+        baseline_branch: ""
+
+        cpus: "1,0xFFFFF"
+        parallelize:
+          # Less stable benchmarks
+          items: >-
+            *AgentWriterBenchmark*
+            *AppSecEncoderBenchmark*
+            *AspNetCoreBenchmark*
+            *CharSliceBenchmark*
+            *CIVisibilityProtocolWriterBenchmark*
+            *ElasticsearchBenchmark*
+            *GraphQLBenchmark*
+            *Log4netBenchmark*
+            *SerilogBenchmark*
+            *StringAspectsBenchmark*
+          cpus_per_item: 2
+
+        env:
+          BATCH_PREFIX: "b1"
+        how_to_fetch_release: *how_to_fetch_release_wait
+        how_to_run_benchmarks: *how_to_run_benchmarks
