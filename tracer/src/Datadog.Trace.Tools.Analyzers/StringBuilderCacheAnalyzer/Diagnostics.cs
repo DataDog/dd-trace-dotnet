@@ -23,7 +23,7 @@ public sealed class Diagnostics
         title: "Use StringBuilderCache instead of new StringBuilder()",
         messageFormat: "Use StringBuilderCache.Acquire() instead of new StringBuilder() to avoid heap allocation. Call StringBuilderCache.GetStringAndRelease() when done.",
         category: "Performance",
-        defaultSeverity: DiagnosticSeverity.Info,
-        isEnabledByDefault: true,
+        defaultSeverity: DiagnosticSeverity.Warning,
+        isEnabledByDefault: false,
         description: "StringBuilderCache uses a [ThreadStatic] cached instance to avoid allocating a new StringBuilder per call.");
 }
