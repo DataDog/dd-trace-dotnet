@@ -1589,6 +1589,15 @@ supportedConfigurations:
     documentation: |-
       Configuration key for whether telemetry metrics should be sent.
       <see cref="Datadog.Trace.Telemetry.TelemetrySettings.MetricsEnabled"/>
+  _DD_ROOT_DOTNET_SESSION_ID:
+  - implementation: A
+    type: string
+    default: null
+    product: Telemetry
+    const_name: RootSessionId
+    documentation: |-
+      Internal env var for propagating the root session ID to child processes.
+      Set automatically by the tracer at init time; not user-configurable.
   DD_TEST_MANAGEMENT_ATTEMPT_TO_FIX_RETRIES:
   - implementation: A
     type: int

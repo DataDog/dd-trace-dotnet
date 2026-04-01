@@ -38,7 +38,21 @@ jobs:
           global-json-file: global.json
 
       - name: "Regenerating package versions"
-        run: .\tracer\build.ps1 GeneratePackageVersions
+        run: .\tracer\build.ps1 GeneratePackageVersions --PackageVersionCooldownDays 2
+
+      - name: Read cooldown report
+        id: cooldown
+        if: always()
+        shell: pwsh
+        run: |
+          $report = ""
+          $reportPath = ".nuke/temp/cooldown_report.md"
+          if (Test-Path $reportPath) {
+            $report = Get-Content $reportPath -Raw
+          }
+          "report<<EOF" >> $env:GITHUB_OUTPUT
+          $report >> $env:GITHUB_OUTPUT
+          "EOF" >> $env:GITHUB_OUTPUT
 
       - name: Create Pull Request
         id: pr
@@ -54,6 +68,8 @@ jobs:
           labels: "area:dependabot,area:test-apps,dependencies"
           body: |
             Updates the package versions for integration tests.
+
+            ${{ steps.cooldown.outputs.report }}
 
       - name: Send Slack notification about generating failure
         if: failure()

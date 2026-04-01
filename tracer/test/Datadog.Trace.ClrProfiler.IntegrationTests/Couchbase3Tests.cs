@@ -42,6 +42,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public async Task SubmitTraces(string packageVersion, string metadataSchemaVersion)
         {
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+
+            if (GetPackageVersion(packageVersion) < new Version(3, 2, 0))
+            {
+                // Early versions of tracing just called new Activity(), which results in activities with no source, so
+                // our IgnoreActivityHandler fails to detect it: https://github.com/couchbase/couchbase-net-client/blob/3.1.0/src/Couchbase/Core/Diagnostics/Tracing/ActivityRequestTracer.cs#L24
+                // for simplicity, just disable OTEL integration for these cases
+                SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "false");
+            }
+
             var isExternalSpan = metadataSchemaVersion == "v0";
             var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-couchbase" : EnvironmentHelper.FullSampleName;
 
@@ -50,8 +59,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
                 var spans = (await agent.WaitForSpansAsync(10, 500))
-                                 .Where(s => s.Type == "db")
-                                 .ToList();
+                           .Where(s => s.Type == "db")
+                           .ToList();
 
                 ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
@@ -91,7 +100,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         private static string GetVersionSuffix(string packageVersion)
         {
-            var version = new Version(string.IsNullOrEmpty(packageVersion) ? "3.4.1" : packageVersion); // default version in csproj
+            var version = GetPackageVersion(packageVersion);
             if (version < new Version("3.1.2"))
             {
                 return "_3_0";
@@ -119,5 +128,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             return string.Empty;
         }
+
+        private static Version GetPackageVersion(string packageVersion)
+            => new(string.IsNullOrEmpty(packageVersion) ? "3.4.1" : packageVersion); // default version in csproj
     }
 }
