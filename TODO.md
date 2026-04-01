@@ -13,14 +13,14 @@ New Roslyn analyzers to detect heap-allocation anti-patterns at compile time. Ad
   - Extends the existing `LogAnalyzer` infrastructure in `tracer/src/Datadog.Trace.Tools.Analyzers/LogAnalyzer/`
   - [ ] Remove AP-2 from `.claude/skills/find-allocation-opportunities/references/anti-patterns.md` once analyzer is working
 
-- [ ] **DDALLOC002: Missing `JsonArrayPool` on Newtonsoft.Json readers/writers**
+- [x] **DDALLOC002: Missing `JsonArrayPool` on Newtonsoft.Json readers/writers**
   - Detect `new JsonTextReader(...)` and `new JsonTextWriter(...)` object creations (types: `Newtonsoft.Json.JsonTextReader`, `Newtonsoft.Json.JsonTextWriter`) where the `ArrayPool` property is not set to `JsonArrayPool.Shared` in an object initializer
   - Without `ArrayPool`, Newtonsoft.Json allocates internal `char[]` buffers on every read/write
   - Code fix: add `{ ArrayPool = JsonArrayPool.Shared }` object initializer (or append to existing initializer)
   - `JsonArrayPool` lives at `Datadog.Trace.Util.Json.JsonArrayPool`
   - Example: `new JsonTextReader(sr)` → `new JsonTextReader(sr) { ArrayPool = JsonArrayPool.Shared }`
   - Severity: Warning
-  - [ ] Remove AP-11 from `.claude/skills/find-allocation-opportunities/references/anti-patterns.md` once analyzer is working
+  - [x] Remove AP-11 from `.claude/skills/find-allocation-opportunities/references/anti-patterns.md` once analyzer is working
 
 - [ ] **DDALLOC003: `new StringBuilder()` instead of `StringBuilderCache`**
   - Detect `new StringBuilder()` and `new StringBuilder(int)` object creations in tracer code
