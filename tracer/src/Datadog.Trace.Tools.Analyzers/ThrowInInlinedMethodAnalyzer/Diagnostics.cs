@@ -25,7 +25,7 @@ public static class Diagnostics
         messageFormat: "Method '{0}' is marked [AggressiveInlining] but contains a throw statement, which prevents inlining. Extract the throw to a ThrowHelper method with [DoesNotReturn] and [MethodImpl(MethodImplOptions.NoInlining)].",
         category: "Performance",
         defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true,
+        isEnabledByDefault: false,
         description: "throw statements prevent the JIT from inlining a method. Move the throw to a separate helper method marked with [MethodImpl(MethodImplOptions.NoInlining)] and [DoesNotReturn].");
 #pragma warning restore RS2008
 }
