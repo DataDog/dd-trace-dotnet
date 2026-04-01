@@ -1,0 +1,264 @@
+// <copyright file="StringBuilderCacheAnalyzerTests.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
+// </copyright>
+
+using System.Threading.Tasks;
+using Datadog.Trace.Tools.Analyzers.StringBuilderCacheAnalyzer;
+using Microsoft.CodeAnalysis.Testing;
+using Xunit;
+using Verifier = Microsoft.CodeAnalysis.CSharp.Testing.CSharpAnalyzerVerifier<
+    Datadog.Trace.Tools.Analyzers.StringBuilderCacheAnalyzer.StringBuilderCacheAnalyzer,
+    Microsoft.CodeAnalysis.Testing.DefaultVerifier>;
+
+namespace Datadog.Trace.Tools.Analyzers.Tests.StringBuilderCacheAnalyzer;
+
+public class StringBuilderCacheAnalyzerTests
+{
+    private const string StringBuilderCacheStub = """
+        namespace Datadog.Trace.Util
+        {
+            internal static class StringBuilderCache
+            {
+                internal const int MaxBuilderSize = 360;
+                public static System.Text.StringBuilder Acquire(int capacity = 360) => new System.Text.StringBuilder(capacity);
+                public static string GetStringAndRelease(System.Text.StringBuilder sb) => sb.ToString();
+                public static void Release(System.Text.StringBuilder sb) { }
+            }
+        }
+        """;
+
+    [Fact]
+    public async Task EmptySource_NoDiagnostic()
+    {
+        await Verifier.VerifyAnalyzerAsync(string.Empty);
+    }
+
+    [Fact]
+    public async Task NewStringBuilder_NoArgs_ReportsDiagnostic()
+    {
+        var source = """
+            using System.Text;
+
+            class TestClass
+            {
+                void TestMethod()
+                {
+                    var sb = {|#0:new StringBuilder()|};
+                    sb.Append("hello");
+                    var result = sb.ToString();
+                }
+            }
+            """;
+
+        var expected = Verifier.Diagnostic(Diagnostics.DiagnosticId).WithLocation(0);
+        await Verifier.VerifyAnalyzerAsync(source, expected);
+    }
+
+    [Fact]
+    public async Task NewStringBuilder_WithCapacity_ReportsDiagnostic()
+    {
+        var source = """
+            using System.Text;
+
+            class TestClass
+            {
+                void TestMethod()
+                {
+                    var sb = {|#0:new StringBuilder(100)|};
+                    sb.Append("hello");
+                    var result = sb.ToString();
+                }
+            }
+            """;
+
+        var expected = Verifier.Diagnostic(Diagnostics.DiagnosticId).WithLocation(0);
+        await Verifier.VerifyAnalyzerAsync(source, expected);
+    }
+
+    [Fact]
+    public async Task NewStringBuilder_LargeCapacity_ReportsDiagnostic()
+    {
+        var source = """
+            using System.Text;
+
+            class TestClass
+            {
+                void TestMethod()
+                {
+                    var sb = {|#0:new StringBuilder(500)|};
+                    sb.Append("hello");
+                    var result = sb.ToString();
+                }
+            }
+            """;
+
+        var expected = Verifier.Diagnostic(Diagnostics.DiagnosticId).WithLocation(0);
+        await Verifier.VerifyAnalyzerAsync(source, expected);
+    }
+
+    [Fact]
+    public async Task NewStringBuilder_WithString_ReportsDiagnostic()
+    {
+        var source = """
+            using System.Text;
+
+            class TestClass
+            {
+                void TestMethod()
+                {
+                    var sb = {|#0:new StringBuilder("hello")|};
+                    sb.Append(" world");
+                    var result = sb.ToString();
+                }
+            }
+            """;
+
+        var expected = Verifier.Diagnostic(Diagnostics.DiagnosticId).WithLocation(0);
+        await Verifier.VerifyAnalyzerAsync(source, expected);
+    }
+
+    [Fact]
+    public async Task NewStringBuilder_WithStringAndCapacity_ReportsDiagnostic()
+    {
+        var source = """
+            using System.Text;
+
+            class TestClass
+            {
+                void TestMethod()
+                {
+                    var sb = {|#0:new StringBuilder("hello", 10)|};
+                    sb.Append(" world");
+                    var result = sb.ToString();
+                }
+            }
+            """;
+
+        var expected = Verifier.Diagnostic(Diagnostics.DiagnosticId).WithLocation(0);
+        await Verifier.VerifyAnalyzerAsync(source, expected);
+    }
+
+    [Fact]
+    public async Task MethodAlreadyUsesStringBuilderCache_NoDiagnostic()
+    {
+        var source = """
+            using System.Text;
+            using Datadog.Trace.Util;
+
+            class TestClass
+            {
+                void TestMethod()
+                {
+                    var sb = StringBuilderCache.Acquire();
+                    sb.Append("hello");
+                    var result = StringBuilderCache.GetStringAndRelease(sb);
+
+                    // This new StringBuilder should be suppressed because the method already uses StringBuilderCache
+                    var sb2 = new StringBuilder();
+                    sb2.Append("world");
+                    var result2 = sb2.ToString();
+                }
+            }
+            """ + StringBuilderCacheStub;
+
+        await Verifier.VerifyAnalyzerAsync(source);
+    }
+
+    [Fact]
+    public async Task InsideStringBuilderCacheClass_NoDiagnostic()
+    {
+        var source = """
+            using System.Text;
+
+            class StringBuilderCache
+            {
+                public static StringBuilder Acquire(int capacity = 360)
+                {
+                    return new StringBuilder(capacity);
+                }
+            }
+            """;
+
+        await Verifier.VerifyAnalyzerAsync(source);
+    }
+
+    [Fact]
+    public async Task NewStringBuilder_InLambda_WhenOuterMethodUsesCache_ReportsDiagnostic()
+    {
+        // The lambda is a separate scope — the outer method's StringBuilderCache.Acquire() doesn't suppress it
+        var source = """
+            using System;
+            using System.Text;
+            using Datadog.Trace.Util;
+
+            class TestClass
+            {
+                void TestMethod()
+                {
+                    var sb = StringBuilderCache.Acquire();
+                    sb.Append("hello");
+                    var result = StringBuilderCache.GetStringAndRelease(sb);
+
+                    Action action = () =>
+                    {
+                        var sb2 = {|#0:new StringBuilder()|};
+                        sb2.Append("world");
+                    };
+                }
+            }
+            """ + StringBuilderCacheStub;
+
+        var expected = Verifier.Diagnostic(Diagnostics.DiagnosticId).WithLocation(0);
+        await Verifier.VerifyAnalyzerAsync(source, expected);
+    }
+
+    [Fact]
+    public async Task NewStringBuilder_InLocalFunction_WhenOuterMethodUsesCache_ReportsDiagnostic()
+    {
+        var source = """
+            using System.Text;
+            using Datadog.Trace.Util;
+
+            class TestClass
+            {
+                void TestMethod()
+                {
+                    var sb = StringBuilderCache.Acquire();
+                    sb.Append("hello");
+                    var result = StringBuilderCache.GetStringAndRelease(sb);
+
+                    void LocalFunction()
+                    {
+                        var sb2 = {|#0:new StringBuilder()|};
+                        sb2.Append("world");
+                    }
+                }
+            }
+            """ + StringBuilderCacheStub;
+
+        var expected = Verifier.Diagnostic(Diagnostics.DiagnosticId).WithLocation(0);
+        await Verifier.VerifyAnalyzerAsync(source, expected);
+    }
+
+    [Fact]
+    public async Task NewStringBuilder_VariableCapacity_ReportsDiagnostic()
+    {
+        var source = """
+            using System.Text;
+
+            class TestClass
+            {
+                void TestMethod(int len)
+                {
+                    var sb = {|#0:new StringBuilder(len)|};
+                    sb.Append("hello");
+                    var result = sb.ToString();
+                }
+            }
+            """;
+
+        var expected = Verifier.Diagnostic(Diagnostics.DiagnosticId).WithLocation(0);
+        await Verifier.VerifyAnalyzerAsync(source, expected);
+    }
+}
