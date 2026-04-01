@@ -27,7 +27,10 @@ public sealed class StringBuilderAspects
     [AspectCtorReplace("System.Text.StringBuilder::.ctor(System.String)", AspectFilter.StringLiteral_1)]
     public static StringBuilder Init(string? value)
     {
+        // IAST aspects intentionally replace customer StringBuilder allocations — cannot use StringBuilderCache
+#pragma warning disable DDALLOC003
         var result = new StringBuilder(value);
+#pragma warning restore DDALLOC003
         try
         {
             PropagationModuleImpl.PropagateTaint(value, result);
@@ -47,7 +50,9 @@ public sealed class StringBuilderAspects
     [AspectCtorReplace("System.Text.StringBuilder::.ctor(System.String,System.Int32)", AspectFilter.StringLiteral_1)]
     public static StringBuilder Init(string? value, int capacity)
     {
+#pragma warning disable DDALLOC003
         var result = new StringBuilder(value, capacity);
+#pragma warning restore DDALLOC003
         try
         {
             PropagationModuleImpl.PropagateTaint(value, result);
@@ -69,7 +74,9 @@ public sealed class StringBuilderAspects
     [AspectCtorReplace("System.Text.StringBuilder::.ctor(System.String,System.Int32,System.Int32,System.Int32)", AspectFilter.StringLiteral_1)]
     public static StringBuilder Init(string? value, int startIndex, int length, int capacity)
     {
+#pragma warning disable DDALLOC003
         var result = new StringBuilder(value, startIndex, length, capacity);
+#pragma warning restore DDALLOC003
         try
         {
             StringBuilderModuleImpl.OnStringBuilderSubSequence(value, startIndex, length, result);
