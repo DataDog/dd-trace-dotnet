@@ -37,12 +37,12 @@ New Roslyn analyzers to detect heap-allocation anti-patterns at compile time. Ad
   - Severity: Warning
   - [ ] Remove AP-9 (`HasFlag` portion) from `.claude/skills/find-allocation-opportunities/references/anti-patterns.md` once analyzer is working
 
-- [ ] **DDALLOC005: `Enum.ToString()` allocates**
+- [x] **DDALLOC005: `Enum.ToString()` allocates**
   - Detect `.ToString()` calls on enum-typed expressions (use semantic model: check if receiver type's `TypeKind == TypeKind.Enum`)
   - `Enum.ToString()` boxes the value and allocates a string via reflection on all runtimes
-  - Code fix is hard to auto-generate (would need a switch expression over all enum members), so diagnostic-only is fine. Message should suggest using a switch expression or cached dictionary lookup
-  - Severity: Info (suggestion) — lower priority since the fix is manual
-  - [ ] Remove AP-9 (`ToString` portion) from `.claude/skills/find-allocation-opportunities/references/anti-patterns.md` once analyzer is working
+  - Code fix: replaces `.ToString()` with `.ToStringFast()` when the `[EnumExtensions]` source-generated extension method is available for the enum type
+  - Severity: Info (suggestion)
+  - [x] Remove AP-9 (`ToString` portion) from `.claude/skills/find-allocation-opportunities/references/anti-patterns.md` once analyzer is working
 
 - [ ] **DDALLOC006: Capturing lambdas in `Task.Run` / `ContinueWith`**
   - Detect lambdas passed to `Task.Run(...)`, `Task.Factory.StartNew(...)`, and `.ContinueWith(...)` that are not marked `static` (C# 9+) and capture variables from the enclosing scope
