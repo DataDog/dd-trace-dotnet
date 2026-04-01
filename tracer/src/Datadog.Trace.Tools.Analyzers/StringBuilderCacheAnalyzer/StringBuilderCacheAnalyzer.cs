@@ -74,9 +74,17 @@ public class StringBuilderCacheAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        // Suppress if the enclosing function-like scope already calls StringBuilderCache.Acquire()
         var enclosingFunction = GetEnclosingFunction(context.Node);
+
+        // Suppress if the enclosing function-like scope already calls StringBuilderCache.Acquire()
         if (enclosingFunction is not null && ContainsStringBuilderCacheAcquireCall(enclosingFunction))
+        {
+            return;
+        }
+
+        // Suppress if there are multiple StringBuilder allocations in the same scope
+        // (StringBuilderCache only caches one instance per thread)
+        if (enclosingFunction is not null && CountStringBuilderCreations(enclosingFunction) > 1)
         {
             return;
         }
@@ -147,6 +155,24 @@ public class StringBuilderCacheAnalyzer : DiagnosticAnalyzer
         }
 
         return false;
+    }
+
+    private static int CountStringBuilderCreations(SyntaxNode functionNode)
+    {
+        var count = 0;
+
+        // Use descendIntoChildren to skip nested function scopes — they are analyzed independently
+        foreach (var node in functionNode.DescendantNodes(descendIntoChildren: n => n is not (LocalFunctionStatementSyntax or AnonymousFunctionExpressionSyntax) || n == functionNode))
+        {
+            if (node is ObjectCreationExpressionSyntax creation
+                && creation.Type is IdentifierNameSyntax { Identifier.Text: "StringBuilder" } or
+                    QualifiedNameSyntax { Right.Identifier.Text: "StringBuilder" })
+            {
+                count++;
+            }
+        }
+
+        return count;
     }
 
     private static bool ContainsStringBuilderCacheAcquireCall(SyntaxNode functionNode)

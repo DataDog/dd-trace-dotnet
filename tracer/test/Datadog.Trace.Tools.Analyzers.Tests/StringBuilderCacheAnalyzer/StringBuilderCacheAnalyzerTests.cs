@@ -350,4 +350,87 @@ public class StringBuilderCacheAnalyzerTests
         var expected = Verifier.Diagnostic(Diagnostics.DiagnosticId).WithLocation(0);
         await Verifier.VerifyAnalyzerAsync(source, expected);
     }
+
+    [Fact]
+    public async Task NewStringBuilder_MultipleInSameMethod_NoDiagnostic()
+    {
+        var source = """
+            using System.Text;
+
+            class TestClass
+            {
+                void TestMethod()
+                {
+                    var sb1 = new StringBuilder();
+                    var sb2 = new StringBuilder();
+                    sb1.Append("hello");
+                    sb2.Append("world");
+                }
+            }
+            """;
+
+        await Verifier.VerifyAnalyzerAsync(source);
+    }
+
+    [Fact]
+    public async Task NewStringBuilder_MultipleInDifferentMethods_ReportsDiagnostic()
+    {
+        var source = """
+            using System.Text;
+
+            class TestClass
+            {
+                void Method1()
+                {
+                    var sb = {|#0:new StringBuilder()|};
+                    sb.Append("hello");
+                }
+
+                void Method2()
+                {
+                    var sb = {|#1:new StringBuilder()|};
+                    sb.Append("world");
+                }
+            }
+            """;
+
+        var expected = new[]
+        {
+            Verifier.Diagnostic(Diagnostics.DiagnosticId).WithLocation(0),
+            Verifier.Diagnostic(Diagnostics.DiagnosticId).WithLocation(1),
+        };
+        await Verifier.VerifyAnalyzerAsync(source, expected);
+    }
+
+    [Fact]
+    public async Task NewStringBuilder_MultipleButOneInLambda_ReportsDiagnostic()
+    {
+        // Each scope has only one StringBuilder, so both should be flagged
+        var source = """
+            using System;
+            using System.Text;
+
+            class TestClass
+            {
+                void TestMethod()
+                {
+                    var sb = {|#0:new StringBuilder()|};
+                    sb.Append("hello");
+
+                    Action action = () =>
+                    {
+                        var sb2 = {|#1:new StringBuilder()|};
+                        sb2.Append("world");
+                    };
+                }
+            }
+            """;
+
+        var expected = new[]
+        {
+            Verifier.Diagnostic(Diagnostics.DiagnosticId).WithLocation(0),
+            Verifier.Diagnostic(Diagnostics.DiagnosticId).WithLocation(1),
+        };
+        await Verifier.VerifyAnalyzerAsync(source, expected);
+    }
 }
