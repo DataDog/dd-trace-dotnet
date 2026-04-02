@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using Datadog.Trace.Activity.DuckTypes;
 using Datadog.Trace.Util;
 
@@ -16,28 +17,54 @@ namespace Datadog.Trace.Activity.Handlers
     /// </summary>
     internal sealed class IgnoreActivityHandler : IActivityHandler
     {
-        private static readonly string[] SourcesNames =
+        private readonly string[] _ignoredSourceNames;
+
+        internal IgnoreActivityHandler(string[]? forceEnabledActivitySources)
         {
-            "Couchbase.DotnetSdk.RequestTracer",
-            "Couchbase.DotnetSdk.OpenTelemetryRequestTracer",
-            "Grpc.Net.Client",
-            "HttpHandlerDiagnosticListener",
-            "Microsoft.AspNetCore",
-            "Microsoft.EntityFrameworkCore",
-            "MongoDB.Driver",
-            "MySqlConnector",
-            "connector-net",
-            "Npgsql",
-            "RabbitMQ.Client.Publisher",
-            "RabbitMQ.Client.Subscriber",
-            "System.Net.Http.Desktop",
-            "SqlClientDiagnosticListener",
-            "Experimental.System.Net.NameResolution",
-            "Experimental.System.Net.Http.Connections",
-            "Experimental.System.Net.Security",
-            "Experimental.System.Net.Sockets",
-            "Yarp.ReverseProxy",
-        };
+            // ActivitySource names that conflict with existing integrations.
+            // When we see an Activity from one of these sources, we ignore it (don't create a span)
+            // to avoid duplicates.
+            string[] defaultIgnoredSourceNames =
+            [
+                "Couchbase.DotnetSdk.RequestTracer",
+                "Couchbase.DotnetSdk.OpenTelemetryRequestTracer",
+                "Grpc.Net.Client",
+                "HttpHandlerDiagnosticListener",
+                "Microsoft.AspNetCore",
+                "Microsoft.EntityFrameworkCore",
+                "MongoDB.Driver",
+                "MySqlConnector",
+                "connector-net",
+                "Npgsql",
+                "RabbitMQ.Client.Publisher",
+                "RabbitMQ.Client.Subscriber",
+                "System.Net.Http.Desktop",
+                "SqlClientDiagnosticListener",
+                "Experimental.System.Net.NameResolution",
+                "Experimental.System.Net.Http.Connections",
+                "Experimental.System.Net.Security",
+                "Experimental.System.Net.Sockets",
+                "Yarp.ReverseProxy",
+            ];
+
+            if (forceEnabledActivitySources is null or { Length: 0 })
+            {
+                _ignoredSourceNames = defaultIgnoredSourceNames;
+                return;
+            }
+
+            // we assume all the ignored handlers are valid. If they're not, it's a bit more allocation
+            var filtered = new List<string>(defaultIgnoredSourceNames.Length - forceEnabledActivitySources.Length);
+            foreach (var sourceName in defaultIgnoredSourceNames)
+            {
+                if (Array.IndexOf(forceEnabledActivitySources, sourceName) < 0)
+                {
+                    filtered.Add(sourceName);
+                }
+            }
+
+            _ignoredSourceNames = filtered.ToArray();
+        }
 
         public static bool ShouldIgnoreByOperationName(string? operationName)
         {
@@ -80,7 +107,7 @@ namespace Datadog.Trace.Activity.Handlers
 
         public bool ShouldListenTo(string sourceName, string? version)
         {
-            foreach (var ignoreSourceName in SourcesNames)
+            foreach (var ignoreSourceName in _ignoredSourceNames)
             {
                 if (sourceName == ignoreSourceName)
                 {

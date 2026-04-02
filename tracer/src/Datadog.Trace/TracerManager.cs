@@ -112,7 +112,7 @@ namespace Datadog.Trace
             FeatureFlags = featureFlagsModule;
 
             ServiceRemappingHash = serviceRemappingHash;
-            ActivityHandlers = new ActivityHandlers(settings.IsActivityListenerEnabled, settings.DisabledActivitySources);
+            ActivityHandlers = new ActivityHandlers(settings.IsActivityListenerEnabled, settings.DisabledActivitySources, settings.ForceEnabledActivitySources);
 
             SpanContextPropagator = SpanContextPropagatorFactory.GetSpanContextPropagator(settings.PropagationStyleInject, settings.PropagationStyleExtract, settings.PropagationExtractFirstOnly, settings.PropagationBehaviorExtract);
             UpdatePerTraceSettings(settings.Manager.InitialMutableSettings);

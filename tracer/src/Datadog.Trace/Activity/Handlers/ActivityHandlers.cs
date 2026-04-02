@@ -9,11 +9,11 @@ namespace Datadog.Trace.Activity.Handlers
 {
     internal sealed class ActivityHandlers
     {
-        internal ActivityHandlers(bool isActivityListenerEnabled, string[]? disabledActivitySources)
+        internal ActivityHandlers(bool isActivityListenerEnabled, string[]? disabledActivitySources, string[]? forceEnabledActivitySources)
         {
             // Today, we have to have an ignore handler no matter what we do, because it's checked in Tracer.CreateSpanContext()
             // TODO: _Should_ Tracer.CreateSpanContext() be checking the ignore handler if the activity listener is _not_ enabled?
-            IgnoreHandler = new IgnoreActivityHandler();
+            IgnoreHandler = new IgnoreActivityHandler(forceEnabledActivitySources);
 
             if (!isActivityListenerEnabled)
             {
