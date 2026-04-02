@@ -80,6 +80,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
                 line = line.TrimStart();
 
+                // Is frame line (starts with `in `).
                 if (TryStripFramePrefix(line, out var frameLine))
                 {
                     var index = FindSourceLocationIndex(frameLine);
@@ -156,17 +157,20 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 return;
             }
 
+            // Check if it's a stack frame line (starts with "at ")
             if (!TryStripFramePrefix(line, out line))
             {
                 return;
             }
 
+            // Skip lambda and Datadog frames early
             if (line.Contains(LambdaMarker.AsSpan(), StringComparison.Ordinal) ||
                 line.StartsWith(DatadogFramePrefix.AsSpan(), StringComparison.Ordinal))
             {
                 return;
             }
 
+            // Find the " in " marker and truncate if found
             var inIndex = FindSourceLocationIndex(line);
 
             if (inIndex > 0)

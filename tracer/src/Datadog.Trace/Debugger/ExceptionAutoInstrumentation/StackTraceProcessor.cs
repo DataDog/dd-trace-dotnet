@@ -69,11 +69,13 @@ internal static class StackTraceProcessor
             return;
         }
 
+        // Check if it's a stack frame line (starts with "at ")
         if (!TryStripFramePrefix(line, out line))
         {
             return;
         }
 
+        // Find the " in " marker and truncate if found
         var inIndex = FindSourceLocationIndex(line);
 
         if (inIndex > 0)
