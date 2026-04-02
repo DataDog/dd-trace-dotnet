@@ -36,7 +36,6 @@ namespace Datadog.Trace.Activity.Handlers
             "Experimental.System.Net.Http.Connections",
             "Experimental.System.Net.Security",
             "Experimental.System.Net.Sockets",
-            "Yarp.ReverseProxy",
         };
 
         public static bool ShouldIgnoreByOperationName(string? operationName)

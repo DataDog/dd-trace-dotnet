@@ -103,6 +103,7 @@ Azure DevOps API call failed
   Resource: $Resource
   Exit Code: $LASTEXITCODE
   Error: $stderr
+  Tip: If this is an authentication or permissions error, check your active subscription with 'az account show' and switch if needed with 'az account set --subscription <name>'
 "@
             throw $errorMsg
         }
@@ -170,6 +171,101 @@ function Get-BuildIdFromPR {
     throw "Could not extract build ID from URL: $($azureCheck.link)"
 }
 
+function Test-Prerequisites {
+    <#
+    .SYNOPSIS
+        Validates that required CLI tools are installed, authenticated, and properly configured.
+
+    .DESCRIPTION
+        Collects all prerequisite issues and reports them together so the user can fix
+        everything in one pass rather than discovering problems one at a time.
+
+    .PARAMETER NeedsGh
+        When set, also validates that the GitHub CLI (gh) is installed and authenticated.
+        Required for PR-based build resolution.
+    #>
+    param(
+        [switch]$NeedsGh
+    )
+
+    $errors = @()
+
+    # 1. Azure CLI installed
+    $hasAz = [bool](Get-Command az -ErrorAction SilentlyContinue)
+    if (-not $hasAz) {
+        $errors += @"
+Azure CLI (az) not found.
+  Install: https://aka.ms/azure-cli
+  Windows: winget install Microsoft.AzureCLI
+  macOS:   brew install azure-cli
+"@
+    }
+
+    if ($hasAz) {
+        # 2. azure-devops extension installed
+        $null = & az extension show --name azure-devops 2>$null
+        if ($LASTEXITCODE -ne 0) {
+            $errors += @"
+Azure CLI 'azure-devops' extension not found.
+  Install with: az extension add --name azure-devops
+"@
+        }
+
+        # 3. Azure CLI authenticated
+        $accountOutput = $null
+        $accountOutput = & az account show --output json 2>$null
+        if ($LASTEXITCODE -ne 0) {
+            $errors += @"
+Azure CLI is not logged in.
+  Run: az login
+  For MFA-enabled tenants: az login --tenant <TENANT_ID> --use-device-code
+"@
+        }
+
+        # 4. Log current subscription for troubleshooting (warn only — the --org flag
+        #    targets the org directly, but the wrong subscription can affect token permissions)
+        if ($accountOutput) {
+            try {
+                $account = $accountOutput | ConvertFrom-Json
+                Write-Verbose "Current Azure subscription: '$($account.name)'"
+            }
+            catch {
+                # Non-fatal: if we can't parse the account info, just continue
+                Write-Verbose "Could not parse Azure account info for subscription check: $_"
+            }
+        }
+    }
+
+    if ($NeedsGh) {
+        # 5. GitHub CLI installed
+        $hasGh = [bool](Get-Command gh -ErrorAction SilentlyContinue)
+        if (-not $hasGh) {
+            $errors += @"
+GitHub CLI (gh) not found.
+  Install: https://cli.github.com
+  Windows: winget install GitHub.cli
+  macOS:   brew install gh
+"@
+        }
+
+        # 6. GitHub CLI authenticated
+        if ($hasGh) {
+            $null = & gh auth status --hostname github.com 2>$null
+            if ($LASTEXITCODE -ne 0) {
+                $errors += @"
+GitHub CLI is not authenticated for github.com.
+  Run: gh auth login --hostname github.com
+"@
+            }
+        }
+    }
+
+    if ($errors.Count -gt 0) {
+        $separator = "`n`n"
+        throw "Prerequisite check failed:`n`n$($errors -join $separator)"
+    }
+}
+
 function Resolve-BuildId {
     <#
     .SYNOPSIS
@@ -193,18 +289,11 @@ function Resolve-BuildId {
         [int]$PullRequest = 0
     )
 
-    # Prerequisite: az CLI
-    if (-not (Get-Command az -ErrorAction SilentlyContinue)) {
-        throw "Azure CLI (az) not found. Install from https://aka.ms/azure-cli"
-    }
+    $needsGh = $ParameterSetName -ne 'ByBuildId'
+    Test-Prerequisites -NeedsGh:$needsGh
 
     if ($ParameterSetName -eq 'ByBuildId') {
         return $BuildId
-    }
-
-    # gh CLI required for PR-based resolution
-    if (-not (Get-Command gh -ErrorAction SilentlyContinue)) {
-        throw "GitHub CLI (gh) not found. Install from https://cli.github.com"
     }
 
     if ($ParameterSetName -eq 'ByCurrentBranch') {
@@ -226,4 +315,4 @@ function Resolve-BuildId {
     return Get-BuildIdFromPR -PRNumber $PullRequest
 }
 
-Export-ModuleMember -Function Invoke-AzDevOpsApi, Get-BuildIdFromPR, Resolve-BuildId
+Export-ModuleMember -Function Invoke-AzDevOpsApi, Get-BuildIdFromPR, Resolve-BuildId, Test-Prerequisites
