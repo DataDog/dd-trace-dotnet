@@ -175,6 +175,10 @@ function Test-Prerequisites {
     .SYNOPSIS
         Validates that required CLI tools are installed, authenticated, and properly configured.
 
+    .DESCRIPTION
+        Collects all prerequisite issues and reports them together so the user can fix
+        everything in one pass rather than discovering problems one at a time.
+
     .PARAMETER NeedsGh
         When set, also validates that the GitHub CLI (gh) is installed and authenticated.
         Required for PR-based build resolution.
@@ -183,9 +187,12 @@ function Test-Prerequisites {
         [switch]$NeedsGh
     )
 
+    $errors = @()
+
     # 1. Azure CLI installed
-    if (-not (Get-Command az -ErrorAction SilentlyContinue)) {
-        throw @"
+    $hasAz = [bool](Get-Command az -ErrorAction SilentlyContinue)
+    if (-not $hasAz) {
+        $errors += @"
 Azure CLI (az) not found.
   Install: https://aka.ms/azure-cli
   Windows: winget install Microsoft.AzureCLI
@@ -193,79 +200,92 @@ Azure CLI (az) not found.
 "@
     }
 
-    # 2. azure-devops extension installed
-    $stderrFile = [System.IO.Path]::GetTempFileName()
-    try {
-        $null = & az extension show --name azure-devops 2>$stderrFile
-        if ($LASTEXITCODE -ne 0) {
-            throw @"
+    if ($hasAz) {
+        # 2. azure-devops extension installed
+        $stderrFile = [System.IO.Path]::GetTempFileName()
+        try {
+            $null = & az extension show --name azure-devops 2>$stderrFile
+            if ($LASTEXITCODE -ne 0) {
+                $errors += @"
 Azure CLI 'azure-devops' extension not found.
   Install with: az extension add --name azure-devops
 "@
+            }
         }
-    }
-    finally {
-        Remove-Item -Path $stderrFile -Force -ErrorAction SilentlyContinue
-    }
+        finally {
+            Remove-Item -Path $stderrFile -Force -ErrorAction SilentlyContinue
+        }
 
-    # 3. Azure CLI authenticated
-    $stderrFile = [System.IO.Path]::GetTempFileName()
-    try {
-        $accountOutput = & az account show --output json 2>$stderrFile
-        if ($LASTEXITCODE -ne 0) {
-            throw @"
+        # 3. Azure CLI authenticated
+        $stderrFile = [System.IO.Path]::GetTempFileName()
+        $accountOutput = $null
+        try {
+            $accountOutput = & az account show --output json 2>$stderrFile
+            if ($LASTEXITCODE -ne 0) {
+                $errors += @"
 Azure CLI is not logged in.
   Run: az login
   For MFA-enabled tenants: az login --tenant <TENANT_ID> --use-device-code
 "@
+            }
         }
-    }
-    finally {
-        Remove-Item -Path $stderrFile -Force -ErrorAction SilentlyContinue
-    }
+        finally {
+            Remove-Item -Path $stderrFile -Force -ErrorAction SilentlyContinue
+        }
 
-    # 4. Check subscription (warn only — the --org flag targets the org directly,
-    #    but the wrong subscription can affect token permissions)
-    try {
-        $account = $accountOutput | ConvertFrom-Json
-        $expectedSubscription = 'apm-libraries-build-and-sandbox'
-        if ($account.name -ne $expectedSubscription) {
-            Write-Warning @"
+        # 4. Check subscription (warn only — the --org flag targets the org directly,
+        #    but the wrong subscription can affect token permissions)
+        if ($accountOutput) {
+            try {
+                $account = $accountOutput | ConvertFrom-Json
+                $expectedSubscription = 'apm-libraries-build-and-sandbox'
+                if ($account.name -ne $expectedSubscription) {
+                    Write-Warning @"
 Current Azure subscription is '$($account.name)'.
   For Azure DevOps access, you may need: az account set --subscription '$expectedSubscription'
 "@
+                }
+            }
+            catch {
+                # Non-fatal: if we can't parse the account info, just continue
+                Write-Verbose "Could not parse Azure account info for subscription check: $_"
+            }
         }
     }
-    catch {
-        # Non-fatal: if we can't parse the account info, just continue
-        Write-Verbose "Could not parse Azure account info for subscription check: $_"
-    }
 
-    if (-not $NeedsGh) { return }
-
-    # 5. GitHub CLI installed
-    if (-not (Get-Command gh -ErrorAction SilentlyContinue)) {
-        throw @"
+    if ($NeedsGh) {
+        # 5. GitHub CLI installed
+        $hasGh = [bool](Get-Command gh -ErrorAction SilentlyContinue)
+        if (-not $hasGh) {
+            $errors += @"
 GitHub CLI (gh) not found.
   Install: https://cli.github.com
   Windows: winget install GitHub.cli
   macOS:   brew install gh
 "@
-    }
+        }
 
-    # 6. GitHub CLI authenticated
-    $stderrFile = [System.IO.Path]::GetTempFileName()
-    try {
-        $null = & gh auth status 2>$stderrFile
-        if ($LASTEXITCODE -ne 0) {
-            throw @"
+        # 6. GitHub CLI authenticated
+        if ($hasGh) {
+            $stderrFile = [System.IO.Path]::GetTempFileName()
+            try {
+                $null = & gh auth status 2>$stderrFile
+                if ($LASTEXITCODE -ne 0) {
+                    $errors += @"
 GitHub CLI is not authenticated.
   Run: gh auth login
 "@
+                }
+            }
+            finally {
+                Remove-Item -Path $stderrFile -Force -ErrorAction SilentlyContinue
+            }
         }
     }
-    finally {
-        Remove-Item -Path $stderrFile -Force -ErrorAction SilentlyContinue
+
+    if ($errors.Count -gt 0) {
+        $separator = "`n`n"
+        throw "Prerequisite check failed:`n`n$($errors -join $separator)"
     }
 }
 
