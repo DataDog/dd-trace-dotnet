@@ -189,8 +189,8 @@ namespace Datadog.Trace.Tests.Agent
             key7.Should().NotBe(key8);
 
             // Different GrpcStatusCode
-            var key9 = CreateKey("r", "s", "o", "t", 0, false, grpcStatusCode: 0);
-            var key10 = CreateKey("r", "s", "o", "t", 0, false, grpcStatusCode: 2);
+            var key9 = CreateKey("r", "s", "o", "t", 0, false, grpcStatusCode: "0");
+            var key10 = CreateKey("r", "s", "o", "t", 0, false, grpcStatusCode: "2");
             key9.Should().NotBe(key10);
 
             // Different ServiceSource
@@ -215,7 +215,7 @@ namespace Datadog.Trace.Tests.Agent
             bool isTraceRoot = false,
             string httpMethod = null,
             string httpEndpoint = null,
-            int grpcStatusCode = 0,
+            string grpcStatusCode = "",
             string serviceSource = null,
             ulong peerTagsHash = 0)
         {
@@ -257,7 +257,7 @@ namespace Datadog.Trace.Tests.Agent
             group.IsTraceRoot.Should().Be(expectedKey.IsTraceRoot ? 1 : 2);
             group.HttpMethod.Should().Be(expectedKey.HttpMethod);
             group.HttpEndpoint.Should().Be(expectedKey.HttpEndpoint);
-            group.GrpcStatusCode.Should().Be(expectedKey.GrpcStatusCode == 0 ? string.Empty : expectedKey.GrpcStatusCode.ToString());
+            group.GrpcStatusCode.Should().Be(expectedKey.GrpcStatusCode);
             group.ServiceSource.Should().Be(expectedKey.ServiceSource);
 
             var stream = new MemoryStream();

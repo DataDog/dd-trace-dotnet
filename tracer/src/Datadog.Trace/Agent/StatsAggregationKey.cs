@@ -23,7 +23,7 @@ namespace Datadog.Trace.Agent
         public readonly bool IsTraceRoot;
         public readonly string HttpMethod;
         public readonly string HttpEndpoint;
-        public readonly int GrpcStatusCode;
+        public readonly string GrpcStatusCode;
         public readonly string ServiceSource;
         public readonly ulong PeerTagsHash;
 
@@ -42,7 +42,7 @@ namespace Datadog.Trace.Agent
             bool isTraceRoot,
             string httpMethod,
             string httpEndpoint,
-            int grpcStatusCode,
+            string grpcStatusCode,
             string serviceSource,
             ulong peerTagsHash)
         {

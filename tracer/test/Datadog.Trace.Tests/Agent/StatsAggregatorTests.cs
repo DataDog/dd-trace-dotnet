@@ -682,7 +682,7 @@ namespace Datadog.Trace.Tests.Agent
                 var buffer = aggregator.CurrentBuffer;
                 buffer.Buckets.Should().HaveCount(1);
                 var key = buffer.Buckets.Keys.First();
-                key.GrpcStatusCode.Should().Be(5);
+                key.GrpcStatusCode.Should().Be("5");
             }
             finally
             {
@@ -710,7 +710,7 @@ namespace Datadog.Trace.Tests.Agent
                 var buffer = aggregator.CurrentBuffer;
                 buffer.Buckets.Should().HaveCount(1);
                 var key = buffer.Buckets.Keys.First();
-                key.GrpcStatusCode.Should().Be(1);
+                key.GrpcStatusCode.Should().Be("1");
             }
             finally
             {

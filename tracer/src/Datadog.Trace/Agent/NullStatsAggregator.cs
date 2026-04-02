@@ -53,7 +53,7 @@ namespace Datadog.Trace.Agent
                 isTraceRoot: false,
                 string.Empty,
                 string.Empty,
-                grpcStatusCode: 0,
+                grpcStatusCode: string.Empty,
                 string.Empty,
                 peerTagsHash: 0);
         }
