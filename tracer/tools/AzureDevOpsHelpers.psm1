@@ -203,27 +203,19 @@ Azure CLI (az) not found.
 
     if ($hasAz) {
         # 2. azure-devops extension installed
-        $stderrFile = [System.IO.Path]::GetTempFileName()
-        try {
-            $null = & az extension show --name azure-devops 2>$stderrFile
-            if ($LASTEXITCODE -ne 0) {
-                $errors += @"
+        $null = & az extension show --name azure-devops 2>$null
+        if ($LASTEXITCODE -ne 0) {
+            $errors += @"
 Azure CLI 'azure-devops' extension not found.
   Install with: az extension add --name azure-devops
 "@
-            }
-        }
-        finally {
-            Remove-Item -Path $stderrFile -Force -ErrorAction SilentlyContinue
         }
 
         # 3. Azure CLI authenticated
-        $stderrFile = [System.IO.Path]::GetTempFileName()
         $accountOutput = $null
-        try {
-            $accountOutput = & az account show --output json 2>$stderrFile
-            if ($LASTEXITCODE -ne 0) {
-                $errors += @"
+        $accountOutput = & az account show --output json 2>$null
+        if ($LASTEXITCODE -ne 0) {
+            $errors += @"
 Azure CLI is not logged in.
   Run: az login
   For MFA-enabled tenants: az login --tenant <TENANT_ID> --use-device-code
