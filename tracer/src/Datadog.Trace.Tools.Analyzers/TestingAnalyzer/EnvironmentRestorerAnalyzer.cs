@@ -15,7 +15,7 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace Datadog.Trace.Tools.Analyzers.TestingAnalyzer;
 
 /// <summary>
-/// DD0006: Detects Environment.SetEnvironmentVariable calls in xUnit test methods
+/// DD0014: Detects Environment.SetEnvironmentVariable calls in xUnit test methods
 /// that are not covered by an [EnvironmentRestorer] attribute.
 ///
 /// DD0013: Detects redundant [EnvironmentRestorer] attributes — either duplicated
@@ -47,7 +47,7 @@ public sealed class EnvironmentRestorerAnalyzer : DiagnosticAnalyzer
                 return;
             }
 
-            // DD0006: flag SetEnvironmentVariable without [EnvironmentRestorer]
+            // DD0014: flag SetEnvironmentVariable without [EnvironmentRestorer]
             compilationContext.RegisterSyntaxNodeAction(
                 ctx => AnalyzeInvocation(ctx, factAttributeType),
                 SyntaxKind.InvocationExpression);

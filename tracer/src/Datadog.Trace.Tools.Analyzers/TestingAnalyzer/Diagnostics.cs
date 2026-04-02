@@ -16,12 +16,12 @@ public class Diagnostics
     /// <summary>
     /// The DiagnosticID for <see cref="MissingEnvironmentRestorerRule"/>
     /// </summary>
-    public const string MissingEnvironmentRestorerDiagnosticId = "DD0006";
+    public const string MissingEnvironmentRestorerDiagnosticId = "DD0014";
 
     /// <summary>
     /// The DiagnosticID for <see cref="MissingEnvironmentRestorerNonConstantRule"/>
     /// </summary>
-    public const string MissingEnvironmentRestorerNonConstantDiagnosticId = "DD0006";
+    public const string MissingEnvironmentRestorerNonConstantDiagnosticId = "DD0014";
 
     /// <summary>
     /// The DiagnosticID for <see cref="RedundantEnvironmentRestorerRule"/>
