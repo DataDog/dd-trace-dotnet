@@ -77,20 +77,47 @@ internal static class OtlpMapper
         int count = 0;
         int droppedAttributesCount = 0;
 
-        // Write span tags
-        ITagProcessor[]? tagProcessors = null;
-        if (spanModel.Span.Context.TraceContext?.Tracer is Tracer tracer)
+        if (count < limit)
         {
-            tagProcessors = tracer.TracerManager?.TagProcessors;
+            writeKeyValue(new KeyValue("service.name", spanModel.Span.ServiceName));
+            count++;
+        }
+        else
+        {
+            droppedAttributesCount++;
         }
 
-        var tagWriter = new TagWriter(writeKeyValue, tagProcessors, count, limit);
-        spanModel.Span.Tags.EnumerateTags(ref tagWriter);
-        count += tagWriter.Count;
-        droppedAttributesCount += tagWriter.DroppedCount;
+        if (count < limit)
+        {
+            writeKeyValue(new KeyValue("operation.name", spanModel.Span.OperationName));
+            count++;
+        }
+        else
+        {
+            droppedAttributesCount++;
+        }
+
+        if (count < limit)
+        {
+            writeKeyValue(new KeyValue("resource.name", spanModel.Span.ResourceName));
+            count++;
+        }
+        else
+        {
+            droppedAttributesCount++;
+        }
+
+        if (count < limit)
+        {
+            writeKeyValue(new KeyValue("span.type", spanModel.Span.Type));
+            count++;
+        }
+        else
+        {
+            droppedAttributesCount++;
+        }
 
         // Write trace tags
-
         if (!string.IsNullOrEmpty(spanModel.Span.Context.LastParentId))
         {
             if (count < limit)
@@ -143,11 +170,23 @@ internal static class OtlpMapper
         // if (Security.Instance.AppsecEnabled && model.IsLocalRoot && span.Context.TraceContext?.WafExecuted is true)
         // AAS tags need to be set on any span for the backend to properly handle the billing.
 
+        // Write span tags
+        ITagProcessor[]? tagProcessors = null;
+        if (spanModel.Span.Context.TraceContext?.Tracer is Tracer tracer)
+        {
+            tagProcessors = tracer.TracerManager?.TagProcessors;
+        }
+
+        var tagWriter = new TagWriter(writeKeyValue, tagProcessors, count, limit);
+        spanModel.Span.Tags.EnumerateTags(ref tagWriter);
+        count = tagWriter.Count;
+        droppedAttributesCount += tagWriter.DroppedCount;
+
         // Write span metrics
         // Note: I could have done this earlier but I wanted to simulate the same behavior as the MessagePack formatter.
         var metricsWriter = new TagWriter(writeKeyValue, tagProcessors, count, limit);
         spanModel.Span.Tags.EnumerateMetrics(ref metricsWriter);
-        count += metricsWriter.Count;
+        count = metricsWriter.Count;
         droppedAttributesCount += metricsWriter.DroppedCount;
 
         // if (model.IsLocalRoot)
