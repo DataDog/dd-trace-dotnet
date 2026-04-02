@@ -250,11 +250,11 @@ GitHub CLI (gh) not found.
 
         # 6. GitHub CLI authenticated
         if ($hasGh) {
-            $null = & gh auth status 2>$null
+            $null = & gh auth status --hostname github.com 2>$null
             if ($LASTEXITCODE -ne 0) {
                 $errors += @"
-GitHub CLI is not authenticated.
-  Run: gh auth login
+GitHub CLI is not authenticated for github.com.
+  Run: gh auth login --hostname github.com
 "@
             }
         }
