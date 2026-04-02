@@ -151,7 +151,7 @@ internal static partial class ConfigurationKeys
     public const string Environment = "DD_ENV";
 
     /// <summary>
-    /// Enables propagation of process-level tags across traces. Type: `boolean`. Default: `false`
+    /// Enables propagation of process-level tags across traces. Type: `boolean`. Default: `true`
     /// </summary>
     public const string PropagateProcessTags = "DD_EXPERIMENTAL_PROPAGATE_PROCESS_TAGS_ENABLED";
 
