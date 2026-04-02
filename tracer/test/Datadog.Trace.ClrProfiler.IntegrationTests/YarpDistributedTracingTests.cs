@@ -24,6 +24,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             : base("Yarp.DistributedTracing", output)
         {
             SetServiceVersion(ServiceVersion);
+            // This generates an extra span in some versions of YARP, so for simplicity, we exclude it
+            SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "false");
         }
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => Result.DefaultSuccess;
