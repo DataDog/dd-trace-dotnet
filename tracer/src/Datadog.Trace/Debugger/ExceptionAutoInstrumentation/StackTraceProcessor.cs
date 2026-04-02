@@ -12,6 +12,18 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation;
 
 internal static class StackTraceProcessor
 {
+    private static readonly string[] FramePrefixes =
+    [
+        "at ",
+        "場所 "
+    ];
+
+    private static readonly string[] SourceLocationMarkers =
+    [
+        " in ",
+        " 場所 "
+    ];
+
     internal static List<string> ParseFrames(string exceptionString)
     {
         if (string.IsNullOrEmpty(exceptionString))
@@ -57,17 +69,12 @@ internal static class StackTraceProcessor
             return;
         }
 
-        // Check if it's a stack frame line (starts with "at ")
-        if (!line.StartsWith("at ".AsSpan(), StringComparison.Ordinal))
+        if (!TryStripFramePrefix(line, out line))
         {
             return;
         }
 
-        // Skip the "at " prefix
-        line = line.Slice(3);
-
-        // Find the " in " marker and truncate if found
-        var inIndex = line.IndexOf(" in ".AsSpan(), StringComparison.Ordinal);
+        var inIndex = FindSourceLocationIndex(line);
 
         if (inIndex > 0)
         {
@@ -75,5 +82,37 @@ internal static class StackTraceProcessor
         }
 
         results.Add(line.ToString());
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static bool TryStripFramePrefix(ReadOnlySpan<char> line, out ReadOnlySpan<char> frameLine)
+    {
+        for (var i = 0; i < FramePrefixes.Length; i++)
+        {
+            var prefix = FramePrefixes[i].AsSpan();
+            if (line.StartsWith(prefix, StringComparison.Ordinal))
+            {
+                frameLine = line.Slice(prefix.Length);
+                return true;
+            }
+        }
+
+        frameLine = default;
+        return false;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static int FindSourceLocationIndex(ReadOnlySpan<char> line)
+    {
+        for (var i = 0; i < SourceLocationMarkers.Length; i++)
+        {
+            var index = line.IndexOf(SourceLocationMarkers[i].AsSpan(), StringComparison.Ordinal);
+            if (index >= 0)
+            {
+                return index;
+            }
+        }
+
+        return -1;
     }
 }

@@ -13,6 +13,22 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 {
     internal class ExceptionNormalizer
     {
+        private const string LambdaMarker = "lambda_";
+        private const string MicrosoftFramePrefix = "Microsoft.";
+        private const string SystemFramePrefix = "System.";
+        private const string DatadogFramePrefix = "Datadog.";
+        private static readonly string[] FramePrefixes =
+        [
+            "at ",
+            "場所 "
+        ];
+
+        private static readonly string[] SourceLocationMarkers =
+        [
+            " in ",
+            " 場所 "
+        ];
+
         protected ExceptionNormalizer()
         {
         }
@@ -41,12 +57,6 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             }
 
             var exceptionSpan = exceptionString.AsSpan();
-            var inSpan = " in ".AsSpan();
-            var atSpan = "at ".AsSpan();
-            var lambdaSpan = "lambda_".AsSpan();
-            var microsoftSpan = "at Microsoft.".AsSpan();
-            var systemSpan = "at System.".AsSpan();
-            var datadogSpan = "at Datadog.".AsSpan();
 
             while (!exceptionSpan.IsEmpty)
             {
@@ -68,21 +78,22 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                     exceptionSpan = default;
                 }
 
-                // Is frame line (starts with `in `).
-                if (line.TrimStart().StartsWith(atSpan, StringComparison.Ordinal))
-                {
-                    var index = line.IndexOf(inSpan, StringComparison.Ordinal);
-                    line = index > 0 ? line.Slice(0, index) : line;
+                line = line.TrimStart();
 
-                    if (line.Contains(lambdaSpan, StringComparison.Ordinal) ||
-                        line.Contains(microsoftSpan, StringComparison.Ordinal) ||
-                        line.Contains(datadogSpan, StringComparison.Ordinal) ||
-                        line.Contains(systemSpan, StringComparison.Ordinal))
+                if (TryStripFramePrefix(line, out var frameLine))
+                {
+                    var index = FindSourceLocationIndex(frameLine);
+                    frameLine = index > 0 ? frameLine.Slice(0, index) : frameLine;
+
+                    if (frameLine.Contains(LambdaMarker.AsSpan(), StringComparison.Ordinal) ||
+                        frameLine.StartsWith(MicrosoftFramePrefix.AsSpan(), StringComparison.Ordinal) ||
+                        frameLine.StartsWith(DatadogFramePrefix.AsSpan(), StringComparison.Ordinal) ||
+                        frameLine.StartsWith(SystemFramePrefix.AsSpan(), StringComparison.Ordinal))
                     {
                         continue;
                     }
 
-                    fnvHashCode = HashLine(line, fnvHashCode);
+                    fnvHashCode = HashLine(frameLine, fnvHashCode);
                 }
             }
 
@@ -145,23 +156,18 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 return;
             }
 
-            // Check if it's a stack frame line (starts with "at ")
-            if (!line.StartsWith("at ".AsSpan(), StringComparison.Ordinal))
+            if (!TryStripFramePrefix(line, out line))
             {
                 return;
             }
 
-            // Skip the "at " prefix
-            line = line.Slice(3);
-
-            // Skip lambda and Datadog frames early
-            if (ContainsAny(line, "lambda_", "at Datadog."))
+            if (line.Contains(LambdaMarker.AsSpan(), StringComparison.Ordinal) ||
+                line.StartsWith(DatadogFramePrefix.AsSpan(), StringComparison.Ordinal))
             {
                 return;
             }
 
-            // Find the " in " marker and truncate if found
-            var inIndex = line.IndexOf(" in ".AsSpan(), StringComparison.Ordinal);
+            var inIndex = FindSourceLocationIndex(line);
 
             if (inIndex > 0)
             {
@@ -173,10 +179,35 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static bool ContainsAny(ReadOnlySpan<char> source, string first, string second)
+        private static bool TryStripFramePrefix(ReadOnlySpan<char> line, out ReadOnlySpan<char> frameLine)
         {
-            return source.Contains(first.AsSpan(), StringComparison.Ordinal) ||
-                   source.Contains(second.AsSpan(), StringComparison.Ordinal);
+            for (var i = 0; i < FramePrefixes.Length; i++)
+            {
+                var prefix = FramePrefixes[i].AsSpan();
+                if (line.StartsWith(prefix, StringComparison.Ordinal))
+                {
+                    frameLine = line.Slice(prefix.Length);
+                    return true;
+                }
+            }
+
+            frameLine = default;
+            return false;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int FindSourceLocationIndex(ReadOnlySpan<char> line)
+        {
+            for (var i = 0; i < SourceLocationMarkers.Length; i++)
+            {
+                var index = line.IndexOf(SourceLocationMarkers[i].AsSpan(), StringComparison.Ordinal);
+                if (index >= 0)
+                {
+                    return index;
+                }
+            }
+
+            return -1;
         }
     }
 }
