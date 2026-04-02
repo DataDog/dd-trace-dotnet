@@ -492,6 +492,15 @@ internal static partial class ConfigurationKeys
     public const string ExperimentalFeaturesEnabled = "DD_TRACE_EXPERIMENTAL_FEATURES_ENABLED";
 
     /// <summary>
+    /// Configuration key for a list of ActivitySource names that will be force-enabled.
+    /// Default is empty, so ActivitySources which are currently blocked (due to conflict with other
+    /// instrumentations) will not be enabled. Add entries to this configuration to remove them from the
+    /// blocklist. Note that this may result in duplicate spans for the same logical operation.
+    /// Supports multiple values separated with commas. Does not support globbing.
+    /// </summary>
+    public const string ForceEnabledActivitySources = "DD_TRACE_FORCE_ENABLED_ACTIVITY_SOURCES";
+
+    /// <summary>
     /// Configuration key for enabling the tagging of every telemetry event with git metadata.
     /// Default value is true (enabled).
     /// </summary>

@@ -1921,6 +1921,17 @@ supportedConfigurations:
       </list>
       </para>
       </remarks>
+  DD_TRACE_FORCE_ENABLED_ACTIVITY_SOURCES:
+  - implementation: A
+    type: string
+    default: null
+    const_name: ForceEnabledActivitySources
+    documentation: |-
+      Configuration key for a list of ActivitySource names that will be force-enabled.
+      Default is empty, so ActivitySources which are currently blocked (due to conflict with other
+      instrumentations) will not be enabled. Add entries to this configuration to remove them from the
+      blocklist. Note that this may result in duplicate spans for the same logical operation.
+      Supports multiple values separated with commas. Does not support globbing.
   DD_TRACE_DISABLED_ADONET_COMMAND_TYPES:
   - implementation: A
     type: string

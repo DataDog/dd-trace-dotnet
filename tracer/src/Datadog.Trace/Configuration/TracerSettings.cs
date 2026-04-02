@@ -692,6 +692,9 @@ namespace Datadog.Trace.Configuration
 
             DisabledActivitySources = !string.IsNullOrEmpty(disabledActivitySources) ? TrimSplitString(disabledActivitySources, commaSeparator) : [];
 
+            var forceEnabledActivitySources = config.WithKeys(ConfigurationKeys.ForceEnabledActivitySources).AsString();
+            ForceEnabledActivitySources = !string.IsNullOrEmpty(forceEnabledActivitySources) ? TrimSplitString(forceEnabledActivitySources, commaSeparator) : [];
+
             // we "enrich" with these values which aren't _strictly_ configuration, but which we want to track as we tracked them in v1
             telemetry.Record(ConfigTelemetryData.NativeTracerVersion, Instrumentation.GetNativeTracerVersion(), recordValue: true, ConfigurationOrigins.Default);
             telemetry.Record(ConfigTelemetryData.FullTrustAppDomain, value: AppDomain.CurrentDomain.IsFullyTrusted, ConfigurationOrigins.Default);
@@ -962,6 +965,12 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.DisabledActivitySources"/>
         internal string[] DisabledActivitySources { get; }
+
+        /// <summary>
+        /// Gets the names of force-enabled ActivitySources, removing them from the ignore blocklist.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.ForceEnabledActivitySources"/>
+        internal string[] ForceEnabledActivitySources { get; }
 
         /// <summary>
         /// Gets a value indicating the format for custom trace sampling rules ("regex" or "glob").
