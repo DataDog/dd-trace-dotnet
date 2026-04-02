@@ -220,10 +220,6 @@ Azure CLI is not logged in.
   Run: az login
   For MFA-enabled tenants: az login --tenant <TENANT_ID> --use-device-code
 "@
-            }
-        }
-        finally {
-            Remove-Item -Path $stderrFile -Force -ErrorAction SilentlyContinue
         }
 
         # 4. Log current subscription for troubleshooting (warn only — the --org flag
@@ -254,18 +250,12 @@ GitHub CLI (gh) not found.
 
         # 6. GitHub CLI authenticated
         if ($hasGh) {
-            $stderrFile = [System.IO.Path]::GetTempFileName()
-            try {
-                $null = & gh auth status 2>$stderrFile
-                if ($LASTEXITCODE -ne 0) {
-                    $errors += @"
+            $null = & gh auth status 2>$null
+            if ($LASTEXITCODE -ne 0) {
+                $errors += @"
 GitHub CLI is not authenticated.
   Run: gh auth login
 "@
-                }
-            }
-            finally {
-                Remove-Item -Path $stderrFile -Force -ErrorAction SilentlyContinue
             }
         }
     }
