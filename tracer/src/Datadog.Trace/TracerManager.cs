@@ -9,6 +9,7 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Activity.Handlers;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.AppSec;
@@ -111,6 +112,7 @@ namespace Datadog.Trace
             FeatureFlags = featureFlagsModule;
 
             ServiceRemappingHash = serviceRemappingHash;
+            ActivityHandlers = new ActivityHandlers(settings.IsActivityListenerEnabled, settings.DisabledActivitySources);
 
             SpanContextPropagator = SpanContextPropagatorFactory.GetSpanContextPropagator(settings.PropagationStyleInject, settings.PropagationStyleExtract, settings.PropagationExtractFirstOnly, settings.PropagationBehaviorExtract);
             UpdatePerTraceSettings(settings.Manager.InitialMutableSettings);
@@ -190,6 +192,8 @@ namespace Datadog.Trace
         public PerTraceSettings PerTraceSettings => Volatile.Read(ref _perTraceSettings);
 
         public SpanContextPropagator SpanContextPropagator { get; }
+
+        public ActivityHandlers ActivityHandlers { get; }
 
         public ServiceRemappingHash ServiceRemappingHash { get; }
 

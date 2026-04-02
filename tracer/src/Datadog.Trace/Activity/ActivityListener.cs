@@ -11,6 +11,7 @@ using System.Reflection.Emit;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Activity.DuckTypes;
+using Datadog.Trace.Activity.Handlers;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
@@ -31,6 +32,10 @@ namespace Datadog.Trace.Activity
 
         private static int _initialized;
         private static int _stopped;
+
+        // Static handlers used by the reflection.emit path (ActivityListenerHandler).
+        // Set during Initialize() from the Tracer's TracerManager instance.
+        internal static IActivityHandler[] Handlers { get; private set; } = [];
 
         public static bool IsRunning
         {
@@ -87,9 +92,9 @@ namespace Datadog.Trace.Activity
             }
         }
 
-        public static void Initialize(string[]? disabledActivitySources = null) => Initialize(disabledActivitySources, CancellationToken.None);
+        public static void Initialize(Tracer tracer) => Initialize(tracer, CancellationToken.None);
 
-        public static void Initialize(string[]? disabledActivitySources, CancellationToken cancellationToken)
+        public static void Initialize(Tracer tracer, CancellationToken cancellationToken)
         {
             if (Interlocked.CompareExchange(ref _initialized, 1, 0) == 1)
             {
@@ -113,7 +118,7 @@ namespace Datadog.Trace.Activity
                         }
 
                         Interlocked.Exchange(ref _initialized, 0);
-                        Initialize(disabledActivitySources, cancellationToken);
+                        Initialize(tracer, cancellationToken);
                     },
                         cancellationToken,
                         TaskContinuationOptions.None,
@@ -123,8 +128,8 @@ namespace Datadog.Trace.Activity
                 return;
             }
 
-            // Initialize the activity handlers with settings
-            Handlers.ActivityHandlersRegister.Initialize(disabledActivitySources);
+            // Set static handlers for the reflection.emit / DiagnosticObserver path
+            Handlers = tracer.TracerManager.ActivityHandlers.Handlers;
 
             var diagnosticSourceAssemblyName = diagnosticListenerType.Assembly.GetName();
             Log.Information("DiagnosticSource: {DiagnosticSourceAssemblyNameFullName}", diagnosticSourceAssemblyName.FullName);

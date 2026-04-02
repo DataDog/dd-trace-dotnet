@@ -360,7 +360,7 @@ namespace Datadog.Trace
                     bool useActivityTraceId = true;
 
                     // if the ignore handler _should_ listen to an activity, that activity _should_ be ignored
-                    if (activity is Activity.DuckTypes.IActivity5 activity5 && ActivityHandlersRegister.IgnoreHandler.ShouldListenTo(activity5.Source.Name, activity5.Source.Version))
+                    if (activity is Activity.DuckTypes.IActivity5 activity5 && TracerManager.ActivityHandlers.IgnoreHandler.ShouldListenTo(activity5.Source.Name, activity5.Source.Version))
                     {
                         // if the activity was ignored, we don't want to use its traceID as it'd create orphaned spans in the traces
                         useActivityTraceId = false;

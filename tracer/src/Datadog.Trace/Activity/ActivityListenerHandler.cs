@@ -44,7 +44,7 @@ namespace Datadog.Trace.Activity
             where T : ISource
         {
             var sName = source.Name ?? "(null)";
-            foreach (var handler in ActivityHandlersRegister.Handlers)
+            foreach (var handler in ActivityListener.Handlers)
             {
                 if (source is IActivitySource activitySource)
                 {

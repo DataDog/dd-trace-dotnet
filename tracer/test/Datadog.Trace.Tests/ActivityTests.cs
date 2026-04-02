@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Specialized;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Propagators;
@@ -39,9 +40,7 @@ namespace Datadog.Trace.Tests
             // We should unskip this once we have resolved the issues around Hierarchical IDs
             SkipOn.Platform(SkipOn.PlatformValue.MacOs);
 
-            var settings = new TracerSettings();
-            await using var tracer = TracerHelper.CreateWithFakeAgent(settings);
-            Tracer.UnsafeSetTracerInstance(tracer);
+            Tracer.UnsafeSetTracerInstance(_fixture.Tracer);
 
             Tracer.Instance.ActiveScope.Should().BeNull();
 
@@ -200,7 +199,7 @@ namespace Datadog.Trace.Tests
             Tracer.Instance.ActiveScope.Should().BeNull();
         }
 
-        public class ActivityFixture : IDisposable
+        public class ActivityFixture : IAsyncLifetime
         {
 #if (NETCOREAPP2_0_OR_GREATER || NETFRAMEWORK) && !NET5_0_OR_GREATER
             private readonly SD.DiagnosticSource source = new SD.DiagnosticListener("ActivityFixture");
@@ -208,12 +207,19 @@ namespace Datadog.Trace.Tests
 
             public ActivityFixture()
             {
-                Datadog.Trace.Activity.ActivityListener.Initialize();
+                var settings = TracerSettings.Create(new() { { ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled, "true" } });
+                Tracer = TracerHelper.CreateWithFakeAgent(settings);
+                Datadog.Trace.Activity.ActivityListener.Initialize(Tracer);
             }
 
-            public void Dispose()
+            internal ScopedTracer Tracer { get; }
+
+            public Task InitializeAsync() => Task.CompletedTask;
+
+            public async Task DisposeAsync()
             {
                 Datadog.Trace.Activity.ActivityListener.StopListeners();
+                await Tracer.DisposeAsync();
             }
 
             public void StartActivity(SD.Activity activity)

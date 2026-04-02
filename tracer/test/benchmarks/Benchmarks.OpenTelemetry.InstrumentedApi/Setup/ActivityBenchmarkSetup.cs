@@ -9,7 +9,7 @@ internal class ActivityBenchmarkSetup
     internal void GlobalSetup()
     {
         TracerHelper.SetGlobalTracer();
-        Datadog.Trace.Activity.ActivityListener.Initialize();
+        Datadog.Trace.Activity.ActivityListener.Initialize(Datadog.Trace.Tracer.Instance);
     }
 
     internal void GlobalCleanup()
