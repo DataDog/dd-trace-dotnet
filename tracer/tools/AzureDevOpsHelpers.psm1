@@ -170,6 +170,105 @@ function Get-BuildIdFromPR {
     throw "Could not extract build ID from URL: $($azureCheck.link)"
 }
 
+function Test-Prerequisites {
+    <#
+    .SYNOPSIS
+        Validates that required CLI tools are installed, authenticated, and properly configured.
+
+    .PARAMETER NeedsGh
+        When set, also validates that the GitHub CLI (gh) is installed and authenticated.
+        Required for PR-based build resolution.
+    #>
+    param(
+        [switch]$NeedsGh
+    )
+
+    # 1. Azure CLI installed
+    if (-not (Get-Command az -ErrorAction SilentlyContinue)) {
+        throw @"
+Azure CLI (az) not found.
+  Install: https://aka.ms/azure-cli
+  Windows: winget install Microsoft.AzureCLI
+  macOS:   brew install azure-cli
+"@
+    }
+
+    # 2. azure-devops extension installed
+    $stderrFile = [System.IO.Path]::GetTempFileName()
+    try {
+        $null = & az extension show --name azure-devops 2>$stderrFile
+        if ($LASTEXITCODE -ne 0) {
+            throw @"
+Azure CLI 'azure-devops' extension not found.
+  Install with: az extension add --name azure-devops
+"@
+        }
+    }
+    finally {
+        Remove-Item -Path $stderrFile -Force -ErrorAction SilentlyContinue
+    }
+
+    # 3. Azure CLI authenticated
+    $stderrFile = [System.IO.Path]::GetTempFileName()
+    try {
+        $accountOutput = & az account show --output json 2>$stderrFile
+        if ($LASTEXITCODE -ne 0) {
+            throw @"
+Azure CLI is not logged in.
+  Run: az login
+  For MFA-enabled tenants: az login --tenant <TENANT_ID> --use-device-code
+"@
+        }
+    }
+    finally {
+        Remove-Item -Path $stderrFile -Force -ErrorAction SilentlyContinue
+    }
+
+    # 4. Check subscription (warn only — the --org flag targets the org directly,
+    #    but the wrong subscription can affect token permissions)
+    try {
+        $account = $accountOutput | ConvertFrom-Json
+        $expectedSubscription = 'apm-libraries-build-and-sandbox'
+        if ($account.name -ne $expectedSubscription) {
+            Write-Warning @"
+Current Azure subscription is '$($account.name)'.
+  For Azure DevOps access, you may need: az account set --subscription '$expectedSubscription'
+"@
+        }
+    }
+    catch {
+        # Non-fatal: if we can't parse the account info, just continue
+        Write-Verbose "Could not parse Azure account info for subscription check: $_"
+    }
+
+    if (-not $NeedsGh) { return }
+
+    # 5. GitHub CLI installed
+    if (-not (Get-Command gh -ErrorAction SilentlyContinue)) {
+        throw @"
+GitHub CLI (gh) not found.
+  Install: https://cli.github.com
+  Windows: winget install GitHub.cli
+  macOS:   brew install gh
+"@
+    }
+
+    # 6. GitHub CLI authenticated
+    $stderrFile = [System.IO.Path]::GetTempFileName()
+    try {
+        $null = & gh auth status 2>$stderrFile
+        if ($LASTEXITCODE -ne 0) {
+            throw @"
+GitHub CLI is not authenticated.
+  Run: gh auth login
+"@
+        }
+    }
+    finally {
+        Remove-Item -Path $stderrFile -Force -ErrorAction SilentlyContinue
+    }
+}
+
 function Resolve-BuildId {
     <#
     .SYNOPSIS
@@ -193,18 +292,11 @@ function Resolve-BuildId {
         [int]$PullRequest = 0
     )
 
-    # Prerequisite: az CLI
-    if (-not (Get-Command az -ErrorAction SilentlyContinue)) {
-        throw "Azure CLI (az) not found. Install from https://aka.ms/azure-cli"
-    }
+    $needsGh = $ParameterSetName -ne 'ByBuildId'
+    Test-Prerequisites -NeedsGh:$needsGh
 
     if ($ParameterSetName -eq 'ByBuildId') {
         return $BuildId
-    }
-
-    # gh CLI required for PR-based resolution
-    if (-not (Get-Command gh -ErrorAction SilentlyContinue)) {
-        throw "GitHub CLI (gh) not found. Install from https://cli.github.com"
     }
 
     if ($ParameterSetName -eq 'ByCurrentBranch') {
@@ -226,4 +318,4 @@ function Resolve-BuildId {
     return Get-BuildIdFromPR -PRNumber $PullRequest
 }
 
-Export-ModuleMember -Function Invoke-AzDevOpsApi, Get-BuildIdFromPR, Resolve-BuildId
+Export-ModuleMember -Function Invoke-AzDevOpsApi, Get-BuildIdFromPR, Resolve-BuildId, Test-Prerequisites
