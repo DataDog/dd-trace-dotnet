@@ -243,15 +243,14 @@ namespace Datadog.Trace.Agent
                 httpStatusCode = 0;
             }
 
-            // Check gRPC status code tags in priority order per CSS v1.3.0 spec
-            var rawGrpcStatusCode = span.GetTag("rpc.grpc.status_code")
-                                 ?? span.GetTag("grpc.code")
-                                 ?? span.GetTag("rpc.grpc.status.code")
-                                 ?? span.GetTag(Tags.GrpcStatusCode);
-            if (rawGrpcStatusCode is null || !int.TryParse(rawGrpcStatusCode, out var grpcStatusCode))
-            {
-                grpcStatusCode = 0;
-            }
+            // Check gRPC status code tags in priority order per CSS v1.3.0 spec.
+            // Stored as string to match the Go agent's wire format (GRPCStatusCode is a string field).
+            // This preserves the distinction between "0" (gRPC OK) and "" (no gRPC status).
+            var grpcStatusCode = span.GetTag("rpc.grpc.status_code")
+                              ?? span.GetTag("grpc.code")
+                              ?? span.GetTag("rpc.grpc.status.code")
+                              ?? span.GetTag(Tags.GrpcStatusCode)
+                              ?? string.Empty;
 
             // Based on https://github.com/DataDog/datadog-agent/blob/ce22e11ee71e55be717b9d9a3f8f3d7721a9c6d7/pkg/trace/stats/aggregation.go
             var spanKind = (span.Tags is InstrumentationTags t ? t.SpanKind : span.GetTag(Tags.SpanKind)) ?? string.Empty;
