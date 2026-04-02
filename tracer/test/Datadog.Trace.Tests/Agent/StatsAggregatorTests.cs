@@ -107,6 +107,26 @@ namespace Datadog.Trace.Tests.Agent
         }
 
         [Fact]
+        public async Task StaleBuckets_DoNotTriggerFlush()
+        {
+            var api = new Mock<IApi>();
+            var aggregator = new StatsAggregator(api.Object, GetSettings(), new StubDiscoveryService(), isOtlp: false);
+            await aggregator.DisposeAsync();
+
+            // Add a span and flush — this should send stats
+            aggregator.Add(CreateTopLevelSpan(DateTimeOffset.UtcNow));
+            await aggregator.Flush();
+            api.Verify(a => a.SendStatsAsync(It.IsAny<StatsBuffer>(), It.IsAny<long>(), It.IsAny<int>()), Times.Once);
+            api.Reset();
+
+            // Flush again with no new spans. The buffer still has stale keys (retained
+            // for DDSketch reuse) but with Hits == 0. This should NOT trigger a send,
+            // otherwise the agent receives an empty stats array.
+            await aggregator.Flush();
+            api.Verify(a => a.SendStatsAsync(It.IsAny<StatsBuffer>(), It.IsAny<long>(), It.IsAny<int>()), Times.Never);
+        }
+
+        [Fact]
         public async Task CreatesDistinctBuckets_TS003()
         {
             const int millisecondsToNanoseconds = 1_000_000;
