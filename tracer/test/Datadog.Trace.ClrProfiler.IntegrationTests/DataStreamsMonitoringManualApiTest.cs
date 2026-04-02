@@ -28,7 +28,6 @@ public class DataStreamsMonitoringManualApiTest : TestHelper
     public async Task ContextPropagation()
     {
         SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.Enabled, "1");
-        SetEnvironmentVariable(ConfigurationKeys.PropagateProcessTags, "0");
 
         using var agent = EnvironmentHelper.GetMockAgent();
         using var processResult = await RunSampleAndWaitForExit(agent);

@@ -775,12 +775,12 @@ supportedConfigurations:
     const_name: UseUnsafeEncoder
     documentation: Use new unsafe encoder for the waf
   DD_EXPERIMENTAL_PROPAGATE_PROCESS_TAGS_ENABLED:
-  - implementation: B
+  - implementation: A
     type: boolean
-    default: 'true'
+    default: 'false'
     const_name: PropagateProcessTags
     documentation: |-
-      Enables propagation of process-level tags across traces. Type: `boolean`. Default: `true`
+      Enables propagation of process-level tags across traces. Type: `boolean`. Default: `false`
   DD_GIT_BRANCH:
   - implementation: A
     type: string

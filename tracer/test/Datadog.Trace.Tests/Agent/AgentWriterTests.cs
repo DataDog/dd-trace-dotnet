@@ -69,18 +69,6 @@ namespace Datadog.Trace.Tests.Agent
         public async Task SpanSampling_ShouldSend_SingleMatchedSpan_WhenStatsDrops()
         {
             var api = new Mock<IApi>();
-            ArraySegment<byte> actualData = default;
-            var actualDroppedP0Traces = 0L;
-            var actualDroppedP0Spans = 0L;
-            api.Setup(x => x.SendTracesAsync(It.IsAny<ArraySegment<byte>>(), It.IsAny<int>(), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<long>(), It.IsAny<bool>()))
-                .Callback((ArraySegment<byte> traces, int _, bool _, long numberOfDroppedP0Traces, long numberOfDroppedP0Spans, bool _) =>
-                {
-                    actualData = traces;
-                    actualDroppedP0Traces = numberOfDroppedP0Traces;
-                    actualDroppedP0Spans = numberOfDroppedP0Spans;
-                })
-                .ReturnsAsync(true);
-
             var statsAggregator = new StubStatsAggregator(shouldKeepTrace: false, x => x);
             var settings = SpanSamplingRule("*", "*");
             var agent = new AgentWriter(api.Object, statsAggregator, statsd: TestStatsdManager.NoOp, automaticFlush: false);
@@ -93,16 +81,14 @@ namespace Datadog.Trace.Tests.Agent
             traceContext.SetSamplingPriority(priority: SamplingPriorityValues.UserReject, mechanism: SamplingMechanism.Manual, rate: null, limiterRate: null);
             span.Finish();
             var traceChunk = new SpanCollection([span]);
-            var expectedData1 = Vendors.MessagePack.MessagePackSerializer.Serialize(new TraceChunkModel(traceChunk, SamplingPriorityValues.UserKeep, isFirstChunkInPayload: true), SpanFormatterResolver.Instance);
+            var expectedData1 = Vendors.MessagePack.MessagePackSerializer.Serialize(new TraceChunkModel(traceChunk, SamplingPriorityValues.UserKeep), SpanFormatterResolver.Instance);
 
             await agent.FlushTracesAsync(); // Force a flush to make sure the trace is written to the API
 
             var expectedDroppedP0Traces = 1;
             var expectedDroppedP0Spans = 0;
-            api.Verify(x => x.SendTracesAsync(It.IsAny<ArraySegment<byte>>(), 1, It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<long>(), It.IsAny<bool>()), Times.Once);
-            AssertPayloadEqual(actualData, expectedData1);
-            actualDroppedP0Traces.Should().Be(expectedDroppedP0Traces);
-            actualDroppedP0Spans.Should().Be(expectedDroppedP0Spans);
+
+            api.Verify(x => x.SendTracesAsync(It.Is<ArraySegment<byte>>(y => Equals(y, expectedData1)), It.Is<int>(i => i == 1), It.IsAny<bool>(), It.Is<long>(i => i == expectedDroppedP0Traces), It.Is<long>(i => i == expectedDroppedP0Spans), It.IsAny<bool>()), Times.Once);
 
             await _agentWriter.FlushAndCloseAsync();
         }
@@ -111,18 +97,6 @@ namespace Datadog.Trace.Tests.Agent
         public async Task SpanSampling_ShouldSend_MultipleMatchedSpans_WhenStatsDrops()
         {
             var api = new Mock<IApi>();
-            ArraySegment<byte> actualData = default;
-            var actualDroppedP0Traces = 0L;
-            var actualDroppedP0Spans = 0L;
-            api.Setup(x => x.SendTracesAsync(It.IsAny<ArraySegment<byte>>(), It.IsAny<int>(), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<long>(), It.IsAny<bool>()))
-                .Callback((ArraySegment<byte> traces, int _, bool _, long numberOfDroppedP0Traces, long numberOfDroppedP0Spans, bool _) =>
-                {
-                    actualData = traces;
-                    actualDroppedP0Traces = numberOfDroppedP0Traces;
-                    actualDroppedP0Spans = numberOfDroppedP0Spans;
-                })
-                .ReturnsAsync(true);
-
             var statsAggregator = new StubStatsAggregator(shouldKeepTrace: false, x => x);
             var settings = SpanSamplingRule("*", "*");
             var agent = new AgentWriter(api.Object, statsAggregator, statsd: TestStatsdManager.NoOp, automaticFlush: false);
@@ -141,16 +115,13 @@ namespace Datadog.Trace.Tests.Agent
 
             var expectedChunk = new SpanCollection([rootSpan, keptChildSpan]);
             // var size = ComputeSize(expectedChunk);
-            var expectedData1 = Vendors.MessagePack.MessagePackSerializer.Serialize(new TraceChunkModel(expectedChunk, SamplingPriorityValues.UserKeep, isFirstChunkInPayload: true), SpanFormatterResolver.Instance);
+            var expectedData1 = Vendors.MessagePack.MessagePackSerializer.Serialize(new TraceChunkModel(expectedChunk, SamplingPriorityValues.UserKeep), SpanFormatterResolver.Instance);
 
             await agent.FlushTracesAsync(); // Force a flush to make sure the trace is written to the API
 
             var expectedDroppedP0Traces = 1;
             var expectedDroppedP0Spans = 0;
-            api.Verify(x => x.SendTracesAsync(It.IsAny<ArraySegment<byte>>(), 1, It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<long>(), It.IsAny<bool>()), Times.Once);
-            AssertPayloadEqual(actualData, expectedData1);
-            actualDroppedP0Traces.Should().Be(expectedDroppedP0Traces);
-            actualDroppedP0Spans.Should().Be(expectedDroppedP0Spans);
+            api.Verify(x => x.SendTracesAsync(It.Is<ArraySegment<byte>>(y => Equals(y, expectedData1)), It.Is<int>(i => i == 1), It.IsAny<bool>(), It.Is<long>(i => i == expectedDroppedP0Traces), It.Is<long>(i => i == expectedDroppedP0Spans), It.IsAny<bool>()), Times.Once);
 
             await _agentWriter.FlushAndCloseAsync();
         }
@@ -211,14 +182,6 @@ namespace Datadog.Trace.Tests.Agent
         [Fact]
         public async Task WriteTrace_2Traces_SendToApi()
         {
-            ArraySegment<byte> actualPayload = default;
-            _api.Setup(x => x.SendTracesAsync(It.IsAny<ArraySegment<byte>>(), It.IsAny<int>(), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<long>(), It.IsAny<bool>()))
-                .Callback((ArraySegment<byte> traces, int _, bool _, long _, long _, bool _) =>
-                {
-                    actualPayload = traces;
-                })
-                .ReturnsAsync(true);
-
             var spans = CreateTraceChunk(1);
             var traceChunk = new TraceChunkModel(spans);
             var expectedData1 = Vendors.MessagePack.MessagePackSerializer.Serialize(traceChunk, SpanFormatterResolver.Instance);
@@ -226,11 +189,9 @@ namespace Datadog.Trace.Tests.Agent
             _agentWriter.WriteTrace(spans);
             await _agentWriter.FlushTracesAsync(); // Force a flush to make sure the trace is written to the API
 
-            _api.Verify(x => x.SendTracesAsync(It.IsAny<ArraySegment<byte>>(), 1, It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<long>(), It.IsAny<bool>()), Times.Once);
-            AssertPayloadEqual(actualPayload, expectedData1);
+            _api.Verify(x => x.SendTracesAsync(It.Is<ArraySegment<byte>>(y => Equals(y, expectedData1)), It.Is<int>(i => i == 1), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<long>(), It.IsAny<bool>()), Times.Once);
 
             _api.Invocations.Clear();
-            actualPayload = default;
 
             spans = CreateTraceChunk(1, 2);
             traceChunk = new TraceChunkModel(spans);
@@ -239,8 +200,7 @@ namespace Datadog.Trace.Tests.Agent
             _agentWriter.WriteTrace(spans);
             await _agentWriter.FlushTracesAsync(); // Force a flush to make sure the trace is written to the API
 
-            _api.Verify(x => x.SendTracesAsync(It.IsAny<ArraySegment<byte>>(), 1, It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<long>(), It.IsAny<bool>()), Times.Once);
-            AssertPayloadEqual(actualPayload, expectedData2);
+            _api.Verify(x => x.SendTracesAsync(It.Is<ArraySegment<byte>>(y => Equals(y, expectedData2)), It.Is<int>(i => i == 1), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<long>(), It.IsAny<bool>()), Times.Once);
 
             await _agentWriter.FlushAndCloseAsync();
         }
@@ -540,18 +500,10 @@ namespace Datadog.Trace.Tests.Agent
             return mutex.Wait(delay);
         }
 
-        private static void AssertPayloadEqual(ArraySegment<byte> data, byte[] expectedData)
+        private static bool Equals(ArraySegment<byte> data, byte[] expectedData)
         {
-            data.Array.Should().NotBeNull();
-            data.Count.Should().BeGreaterOrEqualTo(SpanBufferMessagePackSerializer.HeaderSizeConst);
-
-            var actualPayload = data.Array!
-                .Skip(data.Offset)
-                .Take(data.Count)
-                .Skip(SpanBufferMessagePackSerializer.HeaderSizeConst)
-                .ToArray();
-
-            actualPayload.Should().Equal(expectedData);
+            var equals = data.Array!.Skip(data.Offset).Take(data.Count).Skip(SpanBufferMessagePackSerializer.HeaderSizeConst).SequenceEqual(expectedData);
+            return equals;
         }
 
         private static int ComputeSize(SpanCollection spans)

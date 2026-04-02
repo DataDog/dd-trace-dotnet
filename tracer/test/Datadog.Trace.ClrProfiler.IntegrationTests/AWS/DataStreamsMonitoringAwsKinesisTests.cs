@@ -44,7 +44,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
         public async Task SubmitsDsmMetrics(string packageVersion, string metadataSchemaVersion)
         {
             SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.Enabled, "1");
-            SetEnvironmentVariable(ConfigurationKeys.PropagateProcessTags, "0");
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
             var isExternalSpan = metadataSchemaVersion == "v0";
             var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-aws-kinesis" : EnvironmentHelper.FullSampleName;
