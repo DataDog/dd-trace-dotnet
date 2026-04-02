@@ -1,0 +1,3 @@
+[*.{cs,vb}]
+dotnet_diagnostic.DD0006.severity = none # Environment.SetEnvironmentVariable in tests must use [EnvironmentRestorer], TODO: disabled until existing usages are migrated
+dotnet_diagnostic.DD0013.severity = none # redundant [EnvironmentRestorer] — consolidate to class level or remove, TODO: disabled until existing usages are migrated
