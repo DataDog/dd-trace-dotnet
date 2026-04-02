@@ -128,7 +128,9 @@ namespace UpdateVendors
             var fullTargetPath = Path.GetFullPath(Path.Combine(basePath, normalizedRelativePath));
 
             return string.Equals(normalizedFilePath, fullTargetPath, StringComparison.OrdinalIgnoreCase)
-                || normalizedFilePath.StartsWith(fullTargetPath + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase);
+                || normalizedFilePath.StartsWith(
+                       fullTargetPath.EndsWith(Path.DirectorySeparatorChar) ? fullTargetPath : fullTargetPath + Path.DirectorySeparatorChar,
+                       StringComparison.OrdinalIgnoreCase);
         }
 
         private static void SafeDeleteDirectory(string directoryPath)
