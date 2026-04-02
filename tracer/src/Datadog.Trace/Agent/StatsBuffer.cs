@@ -30,6 +30,23 @@ namespace Datadog.Trace.Agent
 
         public long Start { get; private set; }
 
+        /// <summary>
+        /// Returns true if any bucket has received hits in the current interval.
+        /// Buckets with zero hits are retained for sketch reuse but should not trigger a flush.
+        /// </summary>
+        public bool HasHits()
+        {
+            foreach (var bucket in Buckets.Values)
+            {
+                if (bucket.Hits != 0)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         public void Reset()
         {
             // We need to do some cleanup because the application could have an unlimited number of endpoints,

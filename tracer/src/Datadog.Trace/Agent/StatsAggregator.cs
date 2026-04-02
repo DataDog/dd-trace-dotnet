@@ -371,7 +371,7 @@ namespace Datadog.Trace.Agent
 
                 TelemetryFactory.Metrics.RecordGaugeStatsBuckets(buffer.Buckets.Count);
 
-                if (buffer.Buckets.Count > 0)
+                if (buffer.HasHits())
                 {
                     // Push the metrics
                     if (CanComputeStats == true)
