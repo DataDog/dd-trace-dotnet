@@ -28,8 +28,6 @@ namespace Datadog.Trace.Agent
 
         public Dictionary<StatsAggregationKey, StatsBucket> Buckets { get; }
 
-        public DateTimeOffset StartTime { get; private set; }
-
         public long Start { get; private set; }
 
         public void Reset()
@@ -56,8 +54,9 @@ namespace Datadog.Trace.Agent
 
             _keysToRemove.Clear();
 
-            StartTime = DateTimeOffset.UtcNow;
-            Start = StartTime.ToUnixTimeNanoseconds();
+            // Align to 10-second boundary to match the Go tracer's alignTs: ts - ts % bucketSize
+            var nowNs = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
+            Start = nowNs - (nowNs % 10_000_000_000);
         }
 
         public void Serialize(Stream stream, long bucketDuration)
