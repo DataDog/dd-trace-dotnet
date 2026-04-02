@@ -103,6 +103,7 @@ Azure DevOps API call failed
   Resource: $Resource
   Exit Code: $LASTEXITCODE
   Error: $stderr
+  Tip: If this is an authentication or permissions error, check your active subscription with 'az account show' and switch if needed with 'az account set --subscription <name>'
 "@
             throw $errorMsg
         }
@@ -233,18 +234,12 @@ Azure CLI is not logged in.
             Remove-Item -Path $stderrFile -Force -ErrorAction SilentlyContinue
         }
 
-        # 4. Check subscription (warn only — the --org flag targets the org directly,
-        #    but the wrong subscription can affect token permissions)
+        # 4. Log current subscription for troubleshooting (warn only — the --org flag
+        #    targets the org directly, but the wrong subscription can affect token permissions)
         if ($accountOutput) {
             try {
                 $account = $accountOutput | ConvertFrom-Json
-                $expectedSubscription = 'apm-libraries-build-and-sandbox'
-                if ($account.name -ne $expectedSubscription) {
-                    Write-Warning @"
-Current Azure subscription is '$($account.name)'.
-  For Azure DevOps access, you may need: az account set --subscription '$expectedSubscription'
-"@
-                }
+                Write-Verbose "Current Azure subscription: '$($account.name)'"
             }
             catch {
                 # Non-fatal: if we can't parse the account info, just continue
