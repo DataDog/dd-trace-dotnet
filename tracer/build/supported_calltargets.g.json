@@ -16914,122 +16914,6 @@
   },
   {
     "IntegrationName": "SqlClient",
-    "AssemblyName": "Microsoft.Data.Sqlite",
-    "TargetTypeName": "Microsoft.Data.Sqlite.SqliteDataReader",
-    "TargetMethodName": "Close",
-    "TargetReturnType": "System.Void",
-    "TargetParameterTypes": [],
-    "MinimumVersion": {
-      "Item1": 2,
-      "Item2": 0,
-      "Item3": 0
-    },
-    "MaximumVersion": {
-      "Item1": 10,
-      "Item2": 65535,
-      "Item3": 65535
-    },
-    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderCloseIntegration",
-    "IntegrationKind": 0,
-    "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 4
-  },
-  {
-    "IntegrationName": "SqlClient",
-    "AssemblyName": "Microsoft.Data.Sqlite",
-    "TargetTypeName": "Microsoft.Data.Sqlite.SqliteDataReader",
-    "TargetMethodName": "GetString",
-    "TargetReturnType": "System.String",
-    "TargetParameterTypes": [
-      "System.Int32"
-    ],
-    "MinimumVersion": {
-      "Item1": 2,
-      "Item2": 0,
-      "Item3": 0
-    },
-    "MaximumVersion": {
-      "Item1": 10,
-      "Item2": 65535,
-      "Item3": 65535
-    },
-    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderGetStringIntegration",
-    "IntegrationKind": 0,
-    "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 4
-  },
-  {
-    "IntegrationName": "SqlClient",
-    "AssemblyName": "Microsoft.Data.Sqlite",
-    "TargetTypeName": "Microsoft.Data.Sqlite.SqliteDataReader",
-    "TargetMethodName": "GetValue",
-    "TargetReturnType": "System.Object",
-    "TargetParameterTypes": [
-      "System.Int32"
-    ],
-    "MinimumVersion": {
-      "Item1": 2,
-      "Item2": 0,
-      "Item3": 0
-    },
-    "MaximumVersion": {
-      "Item1": 10,
-      "Item2": 65535,
-      "Item3": 65535
-    },
-    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderGetStringIntegration",
-    "IntegrationKind": 0,
-    "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 4
-  },
-  {
-    "IntegrationName": "SqlClient",
-    "AssemblyName": "Microsoft.Data.Sqlite",
-    "TargetTypeName": "Microsoft.Data.Sqlite.SqliteDataReader",
-    "TargetMethodName": "Read",
-    "TargetReturnType": "System.Boolean",
-    "TargetParameterTypes": [],
-    "MinimumVersion": {
-      "Item1": 2,
-      "Item2": 0,
-      "Item3": 0
-    },
-    "MaximumVersion": {
-      "Item1": 10,
-      "Item2": 65535,
-      "Item3": 65535
-    },
-    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderReadIntegration",
-    "IntegrationKind": 0,
-    "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 4
-  },
-  {
-    "IntegrationName": "SqlClient",
-    "AssemblyName": "Microsoft.Data.Sqlite",
-    "TargetTypeName": "Microsoft.Data.Sqlite.SqliteDataReader",
-    "TargetMethodName": "ReadAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Object]",
-    "TargetParameterTypes": [
-      "System.Threading.CancellationToken"
-    ],
-    "MinimumVersion": {
-      "Item1": 2,
-      "Item2": 0,
-      "Item3": 0
-    },
-    "MaximumVersion": {
-      "Item1": 10,
-      "Item2": 65535,
-      "Item3": 65535
-    },
-    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderReadAsyncIntegration",
-    "IntegrationKind": 0,
-    "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 4
-  },
-  {
-    "IntegrationName": "SqlClient",
     "AssemblyName": "System.Data",
     "TargetTypeName": "System.Data.SqlClient.SqlCommand",
     "TargetMethodName": "ExecuteDbDataReader",
@@ -17676,122 +17560,6 @@
     },
     "MaximumVersion": {
       "Item1": 4,
-      "Item2": 65535,
-      "Item3": 65535
-    },
-    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderReadAsyncIntegration",
-    "IntegrationKind": 0,
-    "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 4
-  },
-  {
-    "IntegrationName": "SqlClient",
-    "AssemblyName": "System.Data.SQLite",
-    "TargetTypeName": "System.Data.SQLite.SQLiteDataReader",
-    "TargetMethodName": "Close",
-    "TargetReturnType": "System.Void",
-    "TargetParameterTypes": [],
-    "MinimumVersion": {
-      "Item1": 1,
-      "Item2": 0,
-      "Item3": 0
-    },
-    "MaximumVersion": {
-      "Item1": 2,
-      "Item2": 65535,
-      "Item3": 65535
-    },
-    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderCloseIntegration",
-    "IntegrationKind": 0,
-    "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 4
-  },
-  {
-    "IntegrationName": "SqlClient",
-    "AssemblyName": "System.Data.SQLite",
-    "TargetTypeName": "System.Data.SQLite.SQLiteDataReader",
-    "TargetMethodName": "GetString",
-    "TargetReturnType": "System.String",
-    "TargetParameterTypes": [
-      "System.Int32"
-    ],
-    "MinimumVersion": {
-      "Item1": 1,
-      "Item2": 0,
-      "Item3": 0
-    },
-    "MaximumVersion": {
-      "Item1": 2,
-      "Item2": 65535,
-      "Item3": 65535
-    },
-    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderGetStringIntegration",
-    "IntegrationKind": 0,
-    "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 4
-  },
-  {
-    "IntegrationName": "SqlClient",
-    "AssemblyName": "System.Data.SQLite",
-    "TargetTypeName": "System.Data.SQLite.SQLiteDataReader",
-    "TargetMethodName": "GetValue",
-    "TargetReturnType": "System.Object",
-    "TargetParameterTypes": [
-      "System.Int32"
-    ],
-    "MinimumVersion": {
-      "Item1": 1,
-      "Item2": 0,
-      "Item3": 0
-    },
-    "MaximumVersion": {
-      "Item1": 2,
-      "Item2": 65535,
-      "Item3": 65535
-    },
-    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderGetStringIntegration",
-    "IntegrationKind": 0,
-    "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 4
-  },
-  {
-    "IntegrationName": "SqlClient",
-    "AssemblyName": "System.Data.SQLite",
-    "TargetTypeName": "System.Data.SQLite.SQLiteDataReader",
-    "TargetMethodName": "Read",
-    "TargetReturnType": "System.Boolean",
-    "TargetParameterTypes": [],
-    "MinimumVersion": {
-      "Item1": 1,
-      "Item2": 0,
-      "Item3": 0
-    },
-    "MaximumVersion": {
-      "Item1": 2,
-      "Item2": 65535,
-      "Item3": 65535
-    },
-    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderReadIntegration",
-    "IntegrationKind": 0,
-    "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 4
-  },
-  {
-    "IntegrationName": "SqlClient",
-    "AssemblyName": "System.Data.SQLite",
-    "TargetTypeName": "System.Data.SQLite.SQLiteDataReader",
-    "TargetMethodName": "ReadAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Object]",
-    "TargetParameterTypes": [
-      "System.Threading.CancellationToken"
-    ],
-    "MinimumVersion": {
-      "Item1": 1,
-      "Item2": 0,
-      "Item3": 0
-    },
-    "MaximumVersion": {
-      "Item1": 2,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -17966,6 +17734,122 @@
   },
   {
     "IntegrationName": "Sqlite",
+    "AssemblyName": "Microsoft.Data.Sqlite",
+    "TargetTypeName": "Microsoft.Data.Sqlite.SqliteDataReader",
+    "TargetMethodName": "Close",
+    "TargetReturnType": "System.Void",
+    "TargetParameterTypes": [],
+    "MinimumVersion": {
+      "Item1": 2,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 10,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderCloseIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": true,
+    "InstrumentationCategory": 4
+  },
+  {
+    "IntegrationName": "Sqlite",
+    "AssemblyName": "Microsoft.Data.Sqlite",
+    "TargetTypeName": "Microsoft.Data.Sqlite.SqliteDataReader",
+    "TargetMethodName": "GetString",
+    "TargetReturnType": "System.String",
+    "TargetParameterTypes": [
+      "System.Int32"
+    ],
+    "MinimumVersion": {
+      "Item1": 2,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 10,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderGetStringIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": true,
+    "InstrumentationCategory": 4
+  },
+  {
+    "IntegrationName": "Sqlite",
+    "AssemblyName": "Microsoft.Data.Sqlite",
+    "TargetTypeName": "Microsoft.Data.Sqlite.SqliteDataReader",
+    "TargetMethodName": "GetValue",
+    "TargetReturnType": "System.Object",
+    "TargetParameterTypes": [
+      "System.Int32"
+    ],
+    "MinimumVersion": {
+      "Item1": 2,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 10,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderGetStringIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": true,
+    "InstrumentationCategory": 4
+  },
+  {
+    "IntegrationName": "Sqlite",
+    "AssemblyName": "Microsoft.Data.Sqlite",
+    "TargetTypeName": "Microsoft.Data.Sqlite.SqliteDataReader",
+    "TargetMethodName": "Read",
+    "TargetReturnType": "System.Boolean",
+    "TargetParameterTypes": [],
+    "MinimumVersion": {
+      "Item1": 2,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 10,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderReadIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": true,
+    "InstrumentationCategory": 4
+  },
+  {
+    "IntegrationName": "Sqlite",
+    "AssemblyName": "Microsoft.Data.Sqlite",
+    "TargetTypeName": "Microsoft.Data.Sqlite.SqliteDataReader",
+    "TargetMethodName": "ReadAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Object]",
+    "TargetParameterTypes": [
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 2,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 10,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderReadAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": true,
+    "InstrumentationCategory": 4
+  },
+  {
+    "IntegrationName": "Sqlite",
     "AssemblyName": "System.Data.SQLite",
     "TargetTypeName": "System.Data.SQLite.SQLiteCommand",
     "TargetMethodName": "ExecuteDbDataReader",
@@ -18125,6 +18009,122 @@
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
     "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "Sqlite",
+    "AssemblyName": "System.Data.SQLite",
+    "TargetTypeName": "System.Data.SQLite.SQLiteDataReader",
+    "TargetMethodName": "Close",
+    "TargetReturnType": "System.Void",
+    "TargetParameterTypes": [],
+    "MinimumVersion": {
+      "Item1": 1,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 2,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderCloseIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": true,
+    "InstrumentationCategory": 4
+  },
+  {
+    "IntegrationName": "Sqlite",
+    "AssemblyName": "System.Data.SQLite",
+    "TargetTypeName": "System.Data.SQLite.SQLiteDataReader",
+    "TargetMethodName": "GetString",
+    "TargetReturnType": "System.String",
+    "TargetParameterTypes": [
+      "System.Int32"
+    ],
+    "MinimumVersion": {
+      "Item1": 1,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 2,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderGetStringIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": true,
+    "InstrumentationCategory": 4
+  },
+  {
+    "IntegrationName": "Sqlite",
+    "AssemblyName": "System.Data.SQLite",
+    "TargetTypeName": "System.Data.SQLite.SQLiteDataReader",
+    "TargetMethodName": "GetValue",
+    "TargetReturnType": "System.Object",
+    "TargetParameterTypes": [
+      "System.Int32"
+    ],
+    "MinimumVersion": {
+      "Item1": 1,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 2,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderGetStringIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": true,
+    "InstrumentationCategory": 4
+  },
+  {
+    "IntegrationName": "Sqlite",
+    "AssemblyName": "System.Data.SQLite",
+    "TargetTypeName": "System.Data.SQLite.SQLiteDataReader",
+    "TargetMethodName": "Read",
+    "TargetReturnType": "System.Boolean",
+    "TargetParameterTypes": [],
+    "MinimumVersion": {
+      "Item1": 1,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 2,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderReadIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": true,
+    "InstrumentationCategory": 4
+  },
+  {
+    "IntegrationName": "Sqlite",
+    "AssemblyName": "System.Data.SQLite",
+    "TargetTypeName": "System.Data.SQLite.SQLiteDataReader",
+    "TargetMethodName": "ReadAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Object]",
+    "TargetParameterTypes": [
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 1,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 2,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderReadAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": true,
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "Ssrf",

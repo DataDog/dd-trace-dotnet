@@ -26,34 +26,34 @@ public static class NuGetVersionCache
     /// <summary>
     /// Load the version cache from disk. Returns an empty dictionary if the file doesn't exist.
     /// </summary>
-    public static async Task<Dictionary<string, List<string>>> Load(string path)
+    public static async Task<Dictionary<string, List<VersionWithDate>>> Load(string path)
     {
         if (!File.Exists(path))
         {
-            return new Dictionary<string, List<string>>();
+            return new Dictionary<string, List<VersionWithDate>>();
         }
 
         await using var openStream = File.OpenRead(path);
 
-        var result = await JsonSerializer.DeserializeAsync<List<KeyValuePair<string, List<string>>>>(openStream, JsonOptions)
-                     ?? new List<KeyValuePair<string, List<string>>>();
-        return new Dictionary<string, List<string>>(result);
+        var result = await JsonSerializer.DeserializeAsync<List<KeyValuePair<string, List<VersionWithDate>>>>(openStream, JsonOptions)
+                     ?? new List<KeyValuePair<string, List<VersionWithDate>>>();
+
+        return new Dictionary<string, List<VersionWithDate>>(result);
     }
 
     /// <summary>
     /// Save the version cache to disk.
     /// </summary>
-    public static async Task Save(string path, Dictionary<string, List<string>> cache)
+    public static async Task Save(string path, Dictionary<string, List<VersionWithDate>> cache)
     {
         // convert to a list to make sure it has deterministic ordering
         var ordered = cache
             .OrderBy(x => x.Key)
-            .Select(x => new KeyValuePair<string, IEnumerable<string>>(
+            .Select(x => new KeyValuePair<string, IEnumerable<VersionWithDate>>(
                 x.Key,
                 x.Value
-                    .Select(Version.Parse)
-                    .OrderBy(version => version)
-                    .Select(version => version.ToString())));
+                    .Select(v => v with { Version = Version.Parse(v.Version).ToString() })
+                    .OrderBy(v => Version.Parse(v.Version))));
         await using var createStream = File.Create(path);
         await JsonSerializer.SerializeAsync(createStream, ordered, JsonOptions);
     }
