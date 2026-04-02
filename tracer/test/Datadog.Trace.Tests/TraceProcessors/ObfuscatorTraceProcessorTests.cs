@@ -35,16 +35,17 @@ namespace Datadog.Trace.Tests.TraceProcessors
             yield return new object[] { "SELECT * FROM TABLE WHERE userId = 'abc\\'1287\\'681\\'\\'\\'\\'964' ORDER BY FOO DESC", "SELECT * FROM TABLE WHERE userId = ? ORDER BY FOO DESC" };
             yield return new object[] { "SELECT * FROM TABLE JOIN SOMETHING ON TABLE.foo = SOMETHING.bar", "SELECT * FROM TABLE JOIN SOMETHING ON TABLE.foo = SOMETHING.bar" };
 
-            // No spaces around comparison operators (must match Go agent's go-sqllexer behavior)
-            yield return new object[] { "SELECT * FROM users WHERE id='1'", "SELECT * FROM users WHERE id=?" };
-            yield return new object[] { "SELECT * FROM users WHERE id='test'", "SELECT * FROM users WHERE id=?" };
-            yield return new object[] { "SELECT * FROM users WHERE age>30", "SELECT * FROM users WHERE age>?" };
-            yield return new object[] { "SELECT * FROM users WHERE age<100", "SELECT * FROM users WHERE age<?" };
-            yield return new object[] { "SELECT * FROM TABLE WHERE col='val' AND col2=123", "SELECT * FROM TABLE WHERE col=? AND col2=?" };
-            yield return new object[] { "SELECT * FROM TABLE WHERE col!='excluded'", "SELECT * FROM TABLE WHERE col!=?" };
-            yield return new object[] { "SELECT * FROM TABLE WHERE col<>'other'", "SELECT * FROM TABLE WHERE col<>?" };
+            // No spaces around comparison operators: spaces are inserted around operators adjacent to ?
+            // to match Go agent's go-sqllexer Normalizer output
+            yield return new object[] { "SELECT * FROM users WHERE id='1'", "SELECT * FROM users WHERE id = ?" };
+            yield return new object[] { "SELECT * FROM users WHERE id='test'", "SELECT * FROM users WHERE id = ?" };
+            yield return new object[] { "SELECT * FROM users WHERE age>30", "SELECT * FROM users WHERE age > ?" };
+            yield return new object[] { "SELECT * FROM users WHERE age<100", "SELECT * FROM users WHERE age < ?" };
+            yield return new object[] { "SELECT * FROM TABLE WHERE col='val' AND col2=123", "SELECT * FROM TABLE WHERE col = ? AND col2 = ?" };
+            yield return new object[] { "SELECT * FROM TABLE WHERE col!='excluded'", "SELECT * FROM TABLE WHERE col != ?" };
+            yield return new object[] { "SELECT * FROM TABLE WHERE col<>'other'", "SELECT * FROM TABLE WHERE col <> ?" };
 
-            // Arithmetic and other operators as splitters
+            // Arithmetic and other operators as splitters (no space normalization for non-comparison operators)
             yield return new object[] { "SELECT col*2 FROM TABLE", "SELECT col*? FROM TABLE" };
             yield return new object[] { "SELECT col/2 FROM TABLE", "SELECT col/? FROM TABLE" };
             yield return new object[] { "SELECT col%2 FROM TABLE", "SELECT col%? FROM TABLE" };

@@ -7,8 +7,10 @@
 
 using System;
 using System.Collections;
+using System.Text;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Processors
 {
@@ -129,7 +131,10 @@ namespace Datadog.Trace.Processors
 
                 if (modified)
                 {
-                    return new string(sqlChars, 0, outputLength);
+                    // The Go agent normalizes SQL by adding spaces between tokens (via go-sqllexer's
+                    // Normalizer). After replacing literals with ?, ensure spaces exist around operator
+                    // characters adjacent to ? so that e.g. "id='1'" becomes "id = ?" not "id=?".
+                    return NormalizeAroundPlaceholders(sqlChars, outputLength);
                 }
             }
             catch (Exception ex)
@@ -188,6 +193,62 @@ namespace Datadog.Trace.Processors
         {
             return NumericLiteralPrefix.Get(Convert.ToByte(c));
         }
+
+        /// <summary>
+        /// Scans forward through the obfuscated SQL, and when it encounters a run of comparison
+        /// operators (=, &lt;, &gt;, !) immediately followed by ?, it ensures spaces exist
+        /// around the operator run. For example, "id=?" becomes "id = ?" and "col&lt;>?" becomes "col &lt;> ?".
+        /// This matches the Go agent's go-sqllexer Normalizer, which adds spaces between all tokens.
+        /// Limited to comparison operators to avoid disrupting concatenation (||?||) and arithmetic patterns.
+        /// </summary>
+        private static string NormalizeAroundPlaceholders(char[] sqlChars, int length)
+        {
+            StringBuilder? sb = null;
+
+            for (var i = 0; i < length; i++)
+            {
+                if (IsComparisonOperator(sqlChars[i]))
+                {
+                    var opStart = i;
+                    var opEnd = i + 1;
+                    while (opEnd < length && IsComparisonOperator(sqlChars[opEnd]))
+                    {
+                        opEnd++;
+                    }
+
+                    if (opEnd < length && sqlChars[opEnd] == '?')
+                    {
+                        // Lazily allocate StringBuilder on first normalization needed,
+                        // copying everything we've already scanned past.
+                        if (sb is null)
+                        {
+                            sb = StringBuilderCache.Acquire();
+                            sb.Append(sqlChars, 0, i);
+                        }
+
+                        // Add space before operator if needed
+                        if (sb.Length > 0 && sb[sb.Length - 1] != ' ')
+                        {
+                            sb.Append(' ');
+                        }
+
+                        // Append the operator chars and a trailing space before ?
+                        sb.Append(sqlChars, opStart, opEnd - opStart);
+                        sb.Append(' ');
+
+                        i = opEnd - 1; // loop will increment to opEnd (the '?')
+                        continue;
+                    }
+                }
+
+                sb?.Append(sqlChars[i]);
+            }
+
+            return sb is null ? new string(sqlChars, 0, length) : StringBuilderCache.GetStringAndRelease(sb);
+        }
+
+        private static bool IsComparisonOperator(char c)
+            => c is '=' or '<' or '>' or '!';
 
         private static bool IsQuoted(char[] sqlChars, int start, int end)
         {
