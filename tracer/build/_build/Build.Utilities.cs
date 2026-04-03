@@ -212,8 +212,8 @@ partial class Build
         });
 
     Target GeneratePackageVersions => _ => _
-       .Description("Regenerate the PackageVersions props and .cs files")
-       .DependsOn(Clean, Restore, CreateRequiredDirectories, CompileManagedSrc, PublishManagedTracer)
+       .Description("Regenerate the PackageVersions props and test manifest files")
+       .DependsOn(CreateRequiredDirectories)
        .Executes(async () =>
        {
            if (IncludePackages is not null)
@@ -230,132 +230,84 @@ partial class Build
                throw new ArgumentException("You cannot specify IncludePackages AND ExcludePackages");
            }
 
-           var testDir = Solution.GetProject(Projects.ClrProfilerIntegrationTests).Directory;
-           var dependabotFolder = TracerDirectory / "dependabot" / "integrations";
-           var definitionsFile = BuildDirectory / FileNames.DefinitionsJson;
-           var supportedVersionsPath = BuildDirectory / "supported_versions.json";
-
-           // Build the shouldQueryNuGet predicate from include/exclude filters
-           Func<string, bool> shouldUpdatePackage = (IncludePackages, ExcludePackages) switch
+           // Build the filter predicate. Packages not matching are preserved from existing output.
+           Func<string, bool> shouldResolve = (IncludePackages, ExcludePackages) switch
            {
                ({ } include, _) => name => include.Contains(name, StringComparer.OrdinalIgnoreCase),
                (_, { } exclude) => name => !exclude.Contains(name, StringComparer.OrdinalIgnoreCase),
                _ => _ => true
            };
 
-           // Load caches for both pipelines
-           var cacheFilePath = BuildDirectory / "nuget_version_cache.json";
-           var previousVersionCache = await NuGetVersionCache.Load(cacheFilePath);
-           Logger.Information("Loaded NuGet version cache with {Count} entries", previousVersionCache.Count);
-           var previousSupportedVersions = await GenerateSupportMatrix.LoadPreviousVersions(supportedVersionsPath);
-           Logger.Information("Loaded previous supported versions with {Count} entries", previousSupportedVersions.Count);
-
-           // Derive baseline from supported_versions.json: the max tested version per package
-           // acts as a floor to prevent cooldown filtering from downgrading previously accepted versions.
-           // We collect all max tested versions per package (not just the global max) so that
-           // split-range packages (e.g., GraphQL 4.x-6.x and 7.x-9.x) get a per-range baseline.
-           var baseline = previousSupportedVersions
-               .Where(kvp => kvp.Value.MaxVersionTestedInclusive is not null)
-               .GroupBy(kvp => kvp.Key.PackageName)
-               .ToDictionary(
-                   g => g.Key,
-                   g => g.Select(kvp => new Version(kvp.Value.MaxVersionTestedInclusive!)).ToList());
-           Logger.Information("Derived version baseline with {Count} entries from supported_versions.json", baseline.Count);
-
            // Resolve effective cooldown:
            //  - Explicit --PackageVersionCooldownDays wins
            //  - --IncludePackages without explicit cooldown defaults to 0
            var effectiveCooldownDays = PackageVersionCooldownDays ?? (IncludePackages is not null ? 0 : 2);
-
-           // Pipeline A: generate .g.props/.g.cs files
            Logger.Information("Using package version cooldown of {Days} days", effectiveCooldownDays);
-           var versionGenerator = new PackageVersionGenerator(TracerDirectory, testDir, shouldUpdatePackage, previousVersionCache, effectiveCooldownDays, baseline);
-           var testedVersions = await versionGenerator.GenerateVersions(Solution);
-           await NuGetVersionCache.Save(cacheFilePath, versionGenerator.VersionCache);
 
-           // Log version changes: bumps, unchanged, and overridden
-           var versionCache = versionGenerator.VersionCache;
-           var bumped = 0;
-           var unchanged = 0;
-           foreach (var tested in testedVersions)
-           {
-               var packageName = tested.NugetPackageSearchName;
-               baseline.TryGetValue(packageName, out var previousMaxVersions);
-               var previousMax = previousMaxVersions?
-                   .Where(v => v >= tested.MinVersion && v <= tested.MaxVersion)
-                   .OrderByDescending(v => v)
-                   .FirstOrDefault();
+           // Load cooldown baseline (keyed per integration name, not per assembly -- handles split ranges)
+           var baselinePath = BuildDirectory / "cooldown_baseline.json";
+           var baseline = await CooldownBaseline.Load(baselinePath);
+           Logger.Information("Loaded cooldown baseline with {Count} entries", baseline.Count);
 
-               if (previousMax is null || tested.MaxVersion > previousMax)
-               {
-                   bumped++;
-                   var publishedDate = "(unknown)";
-                   if (versionCache.TryGetValue(packageName, out var cachedVersions))
-                   {
-                       var match = cachedVersions.FirstOrDefault(v => v.Version == tested.MaxVersion.ToString());
-                       if (match?.Published is not null)
-                       {
-                           publishedDate = match.Published.Value.ToString("yyyy-MM-dd");
-                       }
-                   }
+           // Resolve versions. Packages not matching the filter are preserved from existing output files.
+           var resolver = new PackageVersionResolver(shouldResolve, effectiveCooldownDays, baseline);
+           var result = await resolver.Resolve(IntegrationDefinitions.All);
+           Logger.Information("Resolved versions for {Count} integrations", result.Integrations.Count);
 
-                   Logger.Information(
-                       "  {Package} {Previous} -> {Current} (published {Date}, https://www.nuget.org/packages/{Package}/{Current})",
-                       packageName,
-                       previousMax?.ToString() ?? "(new)",
-                       tested.MaxVersion,
-                       publishedDate,
-                       packageName,
-                       tested.MaxVersion);
-               }
-               else
-               {
-                   unchanged++;
-               }
-           }
+           // Generate .g.props files (MSBuild consumption)
+           var propsDir = BuildDirectory.ToString();
+           PropsFileGenerator.Generate(
+               Path.Combine(propsDir, "PackageVersionsLatestMinors.g.props"),
+               result,
+               i => i.LatestMinors);
+           PropsFileGenerator.Generate(
+               Path.Combine(propsDir, "PackageVersionsLatestSpecific.g.props"),
+               result,
+               i => i.LatestSpecific);
+           Logger.Information("Generated .g.props files");
 
-           Logger.Information("{Bumped} package(s) bumped, {Unchanged} unchanged", bumped, unchanged);
+           // Generate test manifest (runtime JSON consumed by tests)
+           var testDir = Solution.GetProject(Projects.ClrProfilerIntegrationTests).Directory;
+           var manifestDir = Path.Combine(testDir, "PackageVersions");
+           await TestManifestGenerator.Generate(
+               Path.Combine(manifestDir, "package_versions.json"),
+               result,
+               i => i.LatestSpecific);
+           await TestManifestGenerator.Generate(
+               Path.Combine(manifestDir, "package_versions_all_minors.json"),
+               result,
+               i => i.LatestMinors);
+           Logger.Information("Generated test manifests");
 
-           if (versionGenerator.CooldownReport.HasEntries)
+           // Save updated cooldown baseline
+           var newBaseline = resolver.BuildNewBaseline(result);
+           await CooldownBaseline.Save(baselinePath, newBaseline);
+           Logger.Information("Saved cooldown baseline with {Count} entries", newBaseline.Count);
+
+           // Log cooldown exclusions
+           if (resolver.CooldownReport.HasEntries)
            {
                Logger.Warning(
                    "{Count} package version(s) were excluded due to the {Days}-day cooldown period",
-                   versionGenerator.CooldownReport.Entries.Count,
+                   resolver.CooldownReport.Entries.Count,
                    effectiveCooldownDays);
 
-               foreach (var entry in versionGenerator.CooldownReport.Entries)
+               foreach (var entry in resolver.CooldownReport.Entries)
                {
-                   var resolvedText = entry.ResolvedVersion is not null ? $"using: {entry.ResolvedVersion}" : "skipped";
+                   var fallbackText = entry.FallbackVersion is not null ? $"fallback: {entry.FallbackVersion}" : "skipped";
                    Logger.Warning(
-                       "  {Package} {Version} overridden (published {Date}, {Resolved})",
+                       "  {Package} {Version} excluded (published {Date}, cooldown {Days} days, {Fallback})",
                        entry.PackageName,
-                       entry.OverriddenVersion,
+                       entry.ExcludedVersion,
                        entry.PublishedDate?.ToString("yyyy-MM-dd") ?? "unknown",
-                       resolvedText);
+                       effectiveCooldownDays,
+                       fallbackText);
                }
 
                var reportPath = TemporaryDirectory / "cooldown_report.md";
-               await versionGenerator.CooldownReport.SaveToFile(reportPath);
+               await resolver.CooldownReport.SaveToFile(reportPath);
                Logger.Information("Cooldown report saved to {Path}", reportPath);
            }
-
-           var assemblies = MonitoringHomeDirectory
-                           .GlobFiles("**/Datadog.Trace.dll")
-                           .Select(x => x.ToString())
-                           .ToList();
-
-           var integrations = GenerateIntegrationDefinitions.GetAllIntegrations(assemblies, definitionsFile);
-
-           // Pipeline B: generate dependabot files + supported_versions.json
-           // TestedVersions are cooldown-filtered but the baseline prevents downgrades,
-           // so they accurately reflect what we're testing.
-           var distinctIntegrations = await DependabotFileManager.BuildDistinctIntegrationMaps(
-               integrations, testedVersions, shouldUpdatePackage, previousSupportedVersions);
-
-           await DependabotFileManager.UpdateIntegrations(dependabotFolder, distinctIntegrations);
-
-           var outputPath = TracerDirectory / "build" / "supported_versions.json";
-           await GenerateSupportMatrix.GenerateInstrumentationSupportMatrix(outputPath, distinctIntegrations);
        });
 
     Target GenerateSpanDocumentation => _ => _

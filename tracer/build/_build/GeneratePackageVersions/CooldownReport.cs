@@ -34,7 +34,7 @@ public class CooldownReport
     {
         // Deduplicate: the same version gets flagged once per framework and per selection group,
         // but we only need to report it once.
-        if (_seen.Add((entry.PackageName, entry.OverriddenVersion)))
+        if (_seen.Add((entry.PackageName, entry.ExcludedVersion)))
         {
             _entries.Add(entry);
         }
@@ -50,11 +50,11 @@ public class CooldownReport
         var sb = new StringBuilder();
         sb.AppendLine($"## Package Version Cooldown Report");
         sb.AppendLine();
-        sb.AppendLine($"The following versions were published less than **{_cooldownDays} days** ago and have been overridden.");
+        sb.AppendLine($"The following versions were published less than **{_cooldownDays} days** ago and have been excluded.");
         sb.AppendLine("These require manual review before inclusion.");
         sb.AppendLine();
-        sb.AppendLine("| Package | Integration | Overridden Version | Published | Age (days) | Using Instead |");
-        sb.AppendLine("|---------|-------------|--------------------|-----------|------------|---------------|");
+        sb.AppendLine("| Package | Integration | Excluded Version | Published | Age (days) | Fallback |");
+        sb.AppendLine("|---------|-------------|------------------|-----------|------------|----------|");
 
         foreach (var entry in _entries)
         {
@@ -62,9 +62,9 @@ public class CooldownReport
             var age = entry.PublishedDate.HasValue
                 ? ((int)(DateTimeOffset.UtcNow - entry.PublishedDate.Value).TotalDays).ToString()
                 : "?";
-            var usingInstead = entry.ResolvedVersion ?? "(skipped)";
+            var fallback = entry.FallbackVersion ?? "(skipped)";
 
-            sb.AppendLine($"| {entry.PackageName} | {entry.IntegrationName} | {entry.OverriddenVersion} | {published} | {age} | {usingInstead} |");
+            sb.AppendLine($"| {entry.PackageName} | {entry.IntegrationName} | {entry.ExcludedVersion} | {published} | {age} | {fallback} |");
         }
 
         return sb.ToString();
@@ -75,7 +75,6 @@ public class CooldownReport
         var markdown = ToMarkdown();
         if (!string.IsNullOrEmpty(markdown))
         {
-            // necessary to save to a file so that we can then output it in the PR description
             await File.WriteAllTextAsync(path, markdown);
         }
     }
@@ -83,7 +82,7 @@ public class CooldownReport
     public record CooldownEntry(
         string PackageName,
         string IntegrationName,
-        string OverriddenVersion,
+        string ExcludedVersion,
         DateTimeOffset? PublishedDate,
-        string ResolvedVersion);
+        string FallbackVersion);
 }
