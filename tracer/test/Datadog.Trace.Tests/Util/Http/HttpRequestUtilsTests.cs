@@ -199,4 +199,24 @@ public class HttpRequestUtilsTests
         var result = HttpRequestUtils.GetUrl(uri, queryStringManager);
         result.Should().Be(expected);
     }
+
+    [Theory]
+    [InlineData("http://localhost/path", "http://localhost/path")]
+    [InlineData("https://example.com/api/users?id=123", "https://example.com/api/users")]
+    [InlineData("http://localhost:8080/test", "http://localhost:8080/test")]
+    public void GetUrl_WithDerivedUri_ShouldFormatCorrectly(string url, string expected)
+    {
+        var uri = new DerivedUri(url);
+
+        var result = HttpRequestUtils.GetUrl(uri);
+        result.Should().Be(expected);
+    }
+
+    private class DerivedUri : Uri
+    {
+        public DerivedUri(string uriString)
+            : base(uriString)
+        {
+        }
+    }
 }
