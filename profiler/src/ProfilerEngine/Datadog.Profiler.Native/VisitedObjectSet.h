@@ -5,10 +5,16 @@
 
 #include <cstdint>
 #include <vector>
+#include "cor.h"
+#include "corprof.h"
 
-// Open-addressing hash set for visited object addresses.
+// Open-addressing hash map for visited object addresses.
 // Uses linear probing with a power-of-2 table and 0 as the empty sentinel
 // (valid because no real object lives at address 0).
+//
+// Each entry caches the ClassID and object size resolved during the first visit,
+// so that revisits (shared objects referenced by multiple parents) can record
+// type-level edges without redundant ICorProfilerInfo calls.
 //
 // Clear() is O(entries) not O(capacity): a side vector tracks which bucket
 // indices were written, so only those are zeroed. This avoids expensive
@@ -16,14 +22,21 @@
 // to prevent re-growing.
 class VisitedObjectSet
 {
+public:
+    struct VisitedEntry
+    {
+        uintptr_t address = 0;
+        ClassID classID = 0;
+        SIZE_T size = 0;
+    };
+
 private:
-    std::vector<uintptr_t> _buckets;
+    std::vector<VisitedEntry> _buckets;
     std::vector<size_t> _dirtyIndices;
     size_t _count = 0;
     size_t _mask = 0;
 
     static constexpr size_t DefaultCapacity = 512;
-    static constexpr uintptr_t EmptySentinel = 0;
 
     // Max load factor ~70% — keeps the table compact (fewer cache/TLB misses
     // on the first probe) while linear probing's sequential follow-up probes
@@ -36,25 +49,25 @@ private:
     void Grow()
     {
         size_t newCapacity = _buckets.size() * 2;
-        std::vector<uintptr_t> newBuckets(newCapacity, EmptySentinel);
+        std::vector<VisitedEntry> newBuckets(newCapacity);
         size_t newMask = newCapacity - 1;
 
         _dirtyIndices.clear();
         _dirtyIndices.reserve(_count);
 
-        for (uintptr_t addr : _buckets)
+        for (auto& entry : _buckets)
         {
-            if (addr == EmptySentinel)
+            if (entry.address == 0)
             {
                 continue;
             }
 
-            size_t idx = HashAddress(addr) & newMask;
-            while (newBuckets[idx] != EmptySentinel)
+            size_t idx = HashAddress(entry.address) & newMask;
+            while (newBuckets[idx].address != 0)
             {
                 idx = (idx + 1) & newMask;
             }
-            newBuckets[idx] = addr;
+            newBuckets[idx] = entry;
             _dirtyIndices.push_back(idx);
         }
 
@@ -79,7 +92,7 @@ public:
         {
             cap *= 2;
         }
-        _buckets.resize(cap, EmptySentinel);
+        _buckets.resize(cap);
         _mask = cap - 1;
     }
 
@@ -88,12 +101,12 @@ public:
         size_t idx = HashAddress(address) & _mask;
         while (true)
         {
-            uintptr_t bucket = _buckets[idx];
-            if (bucket == address)
+            auto& entry = _buckets[idx];
+            if (entry.address == address)
             {
                 return true;
             }
-            if (bucket == EmptySentinel)
+            if (entry.address == 0)
             {
                 return false;
             }
@@ -111,14 +124,14 @@ public:
         size_t idx = HashAddress(address) & _mask;
         while (true)
         {
-            uintptr_t bucket = _buckets[idx];
-            if (bucket == address)
+            auto& entry = _buckets[idx];
+            if (entry.address == address)
             {
                 return;
             }
-            if (bucket == EmptySentinel)
+            if (entry.address == 0)
             {
-                _buckets[idx] = address;
+                entry.address = address;
                 _dirtyIndices.push_back(idx);
                 _count++;
                 return;
@@ -139,17 +152,59 @@ public:
         size_t idx = HashAddress(address) & _mask;
         while (true)
         {
-            uintptr_t bucket = _buckets[idx];
-            if (bucket == address)
+            auto& entry = _buckets[idx];
+            if (entry.address == address)
             {
                 return false;
             }
-            if (bucket == EmptySentinel)
+            if (entry.address == 0)
             {
-                _buckets[idx] = address;
+                entry.address = address;
                 _dirtyIndices.push_back(idx);
                 _count++;
                 return true;
+            }
+            idx = (idx + 1) & _mask;
+        }
+    }
+
+    // Store ClassID and size for an already-inserted address.
+    void StoreInfo(uintptr_t address, ClassID classID, SIZE_T size)
+    {
+        size_t idx = HashAddress(address) & _mask;
+        while (true)
+        {
+            auto& entry = _buckets[idx];
+            if (entry.address == address)
+            {
+                entry.classID = classID;
+                entry.size = size;
+                return;
+            }
+            if (entry.address == 0)
+            {
+                return;
+            }
+            idx = (idx + 1) & _mask;
+        }
+    }
+
+    // Retrieve cached ClassID and size for a visited address.
+    bool GetInfo(uintptr_t address, ClassID& outClassID, SIZE_T& outSize) const
+    {
+        size_t idx = HashAddress(address) & _mask;
+        while (true)
+        {
+            auto& entry = _buckets[idx];
+            if (entry.address == address)
+            {
+                outClassID = entry.classID;
+                outSize = entry.size;
+                return true;
+            }
+            if (entry.address == 0)
+            {
+                return false;
             }
             idx = (idx + 1) & _mask;
         }
@@ -159,7 +214,7 @@ public:
     {
         for (size_t idx : _dirtyIndices)
         {
-            _buckets[idx] = EmptySentinel;
+            _buckets[idx] = VisitedEntry{};
         }
         _dirtyIndices.clear();
         _count = 0;
@@ -173,7 +228,7 @@ public:
     size_t GetMemorySize() const
     {
         return sizeof(VisitedObjectSet)
-             + _buckets.capacity() * sizeof(uintptr_t)
+             + _buckets.capacity() * sizeof(VisitedEntry)
              + _dirtyIndices.capacity() * sizeof(size_t);
     }
 

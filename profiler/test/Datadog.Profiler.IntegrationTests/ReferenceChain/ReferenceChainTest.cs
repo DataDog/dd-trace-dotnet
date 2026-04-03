@@ -61,7 +61,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             // At least one snapshot must contain the expected reference chains and Stack root
             Assert.True(
                 trees.Any(tree =>
-                    HasRootOfCategory(tree, "S") &&
+                    HasRootOfCategory(tree, "K") &&
                     HasAncestorDescendantChain(tree, "Order", "Customer") &&
                     HasAncestorDescendantChain(tree, "Customer", "Address") &&
                     HasAncestorDescendantChain(tree, "Order", "Product")),
@@ -343,8 +343,8 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             // At least one snapshot must contain the expected reference chains and static root with field name
             Assert.True(
                 trees.Any(tree =>
-                    HasRootOfCategory(tree, "s") &&
-                    tree.Roots.Any(r => r.CategoryCode == "s" && !string.IsNullOrEmpty(r.FieldName)) &&
+                    HasRootOfCategory(tree, "S") &&
+                    tree.Roots.Any(r => r.CategoryCode == "S" && !string.IsNullOrEmpty(r.FieldName)) &&
                     HasAncestorDescendantChain(tree, "Order", "Customer") &&
                     HasAncestorDescendantChain(tree, "Customer", "Address") &&
                     HasAncestorDescendantChain(tree, "Order", "Product")),
@@ -497,6 +497,37 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
                 "Expected at least one snapshot to contain AsyncLeakSource and HeavyContext types");
         }
 
+        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
+        public void CheckNestedValueTypeScenario(string appName, string framework, string appAssembly)
+        {
+            // Scenario 20: Nested inline value types - OuterHolder<InnerStruct> where InnerStruct
+            // contains a reference (NestedVtTarget) and a nested struct (NestedInnerStruct) that
+            // itself contains a reference (DeepVtTarget). Tests recursive inline VT traversal.
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 20");
+            runner.TestDurationInSeconds = 30;
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
+
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
+            runner.Run(agent);
+
+            var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
+            Assert.True(referenceTreeFiles.Length > 0, "No reference tree JSON files were generated for nested value type scenario");
+
+            var trees = LoadAndValidateAllTrees(referenceTreeFiles);
+
+            // The inline VT traversal should find both:
+            // - NestedVtTarget (referenced by InnerStruct.ShallowRef, 1 level deep)
+            // - DeepVtTarget (referenced by NestedInnerStruct.DeepRef inside InnerStruct.Nested, 2 levels deep)
+            Assert.True(
+                trees.Any(tree =>
+                    TypeExistsInTree(tree, "OuterHolder") &&
+                    TypeExistsInTree(tree, "NestedVtTarget") &&
+                    TypeExistsInTree(tree, "DeepVtTarget")),
+                "Expected at least one snapshot to contain OuterHolder, NestedVtTarget, and DeepVtTarget types");
+        }
+
         // ====================================================================
         // Static helpers
         // ====================================================================
@@ -645,7 +676,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
 
         /// <summary>
         /// Check if any root in the tree has the given category code.
-        /// Category codes: "S" (Stack), "s" (StaticVariable), "F" (Finalizer), "H" (Handle), "P" (Pinning), etc.
+        /// Category codes: "K" (Stack), "S" (StaticVariable), "F" (Finalizer), "H" (Handle), "P" (Pinning), "O" (Other), etc.
         /// </summary>
         private static bool HasRootOfCategory(ReferenceTree tree, string categoryCode)
         {

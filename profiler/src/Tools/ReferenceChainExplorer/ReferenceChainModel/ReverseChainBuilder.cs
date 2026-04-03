@@ -14,7 +14,7 @@ namespace ReferenceChainModel;
 /// </summary>
 public static class ReverseChainBuilder
 {
-    private static readonly string[] CategoryDisplayOrder = ["P", "H", "F", "S", "s", "W", "R", "?"];
+    private static readonly string[] CategoryDisplayOrder = ["P", "H", "F", "K", "S", "W", "R", "O", "?"];
 
     /// <summary>
     /// Build reverse chains for the given type index.
@@ -24,10 +24,12 @@ public static class ReverseChainBuilder
     {
         // Build a parent adjacency map from the forward tree.
         var parentMap = new Dictionary<int, List<ParentInfo>>();
+        var typeStats = new Dictionary<int, (long Count, long Size)>();
         foreach (var root in tree.Roots)
         {
             var rootNode = (ReferenceRootNode)root;
             CollectParents(root, parentMap, isRoot: true, rootNode.CategoryCode, rootNode.FieldName);
+            AggregateTypeStats(root, typeStats);
         }
 
         // Check if the type is a root with no parents referencing it
@@ -35,8 +37,6 @@ public static class ReverseChainBuilder
         {
             var categoryCodes = new HashSet<string>(StringComparer.Ordinal);
             string? fieldName = null;
-            long totalCount = 0;
-            long totalSize = 0;
 
             foreach (var root in tree.Roots)
             {
@@ -45,20 +45,19 @@ public static class ReverseChainBuilder
                     var rootNode = (ReferenceRootNode)root;
                     categoryCodes.Add(rootNode.CategoryCode);
                     fieldName ??= rootNode.FieldName;
-                    totalCount += root.InstanceCount;
-                    totalSize += root.TotalSize;
                 }
             }
 
             if (categoryCodes.Count > 0)
             {
+                typeStats.TryGetValue(selectedTypeIndex, out var stats);
                 var allCategories = string.Join(",", OrderCategoriesForDisplay(categoryCodes));
                 return
                 [
                     new ReverseChainNode(
                         selectedTypeIndex,
-                        totalCount,
-                        totalSize,
+                        stats.Count,
+                        stats.Size,
                         isRoot: true,
                         allCategories,
                         parents: Array.Empty<ReverseChainNode>(),
@@ -71,7 +70,7 @@ public static class ReverseChainBuilder
 
         var visited = new HashSet<int>();
         var cache = new Dictionary<int, ReverseChainNode>();
-        var reverseNode = BuildReverseNode(selectedTypeIndex, parentMap, tree, visited, cache);
+        var reverseNode = BuildReverseNode(selectedTypeIndex, parentMap, tree, typeStats, visited, cache);
         return reverseNode is not null ? [reverseNode] : Array.Empty<ReverseChainNode>();
     }
 
@@ -139,6 +138,7 @@ public static class ReverseChainBuilder
         int typeIndex,
         Dictionary<int, List<ParentInfo>> parentMap,
         ReferenceTree tree,
+        Dictionary<int, (long Count, long Size)> typeStats,
         HashSet<int> visited,
         Dictionary<int, ReverseChainNode> cache)
     {
@@ -161,8 +161,6 @@ public static class ReverseChainBuilder
         }
 
         // Check if this type is itself a root (may have multiple categories: Pinning, StaticVariable, etc.)
-        long instanceCount = 0;
-        long totalSize = 0;
         bool isRoot = false;
         var categoryCodes = new HashSet<string>(StringComparer.Ordinal);
 
@@ -172,12 +170,15 @@ public static class ReverseChainBuilder
             {
                 isRoot = true;
                 categoryCodes.Add(((ReferenceRootNode)root).CategoryCode);
-                instanceCount += root.InstanceCount;
-                totalSize += root.TotalSize;
             }
         }
 
         var categoryCode = categoryCodes.Count > 0 ? string.Join(",", OrderCategoriesForDisplay(categoryCodes)) : null;
+
+        // Use the pre-computed type stats (aggregated from the entire forward tree)
+        typeStats.TryGetValue(typeIndex, out var stats);
+        long instanceCount = stats.Count;
+        long totalSize = stats.Size;
 
         // Build parent chain: one node per unique parent type (DAG, not tree)
         var parentNodes = new List<ReverseChainNode>();
@@ -185,23 +186,15 @@ public static class ReverseChainBuilder
 
         if (parentMap.TryGetValue(typeIndex, out var parentInfos))
         {
-            if (instanceCount == 0 && totalSize == 0)
-            {
-                foreach (var p in parentInfos)
-                {
-                    instanceCount += p.InstanceCount;
-                    totalSize += p.TotalSize;
-                }
-            }
-
             foreach (var parentInfo in parentInfos)
             {
                 if (parentInfo.IsRoot)
                 {
+                    typeStats.TryGetValue(parentInfo.TypeIndex, out var parentStats);
                     parentNodes.Add(new ReverseChainNode(
                         parentInfo.TypeIndex,
-                        parentInfo.InstanceCount,
-                        parentInfo.TotalSize,
+                        parentStats.Count,
+                        parentStats.Size,
                         isRoot: true,
                         parentInfo.CategoryCode,
                         parents: Array.Empty<ReverseChainNode>(),
@@ -209,7 +202,7 @@ public static class ReverseChainBuilder
                 }
                 else if (seenNonRootTypes.Add(parentInfo.TypeIndex))
                 {
-                    var parentNode = BuildReverseNode(parentInfo.TypeIndex, parentMap, tree, visited, cache);
+                    var parentNode = BuildReverseNode(parentInfo.TypeIndex, parentMap, tree, typeStats, visited, cache);
                     if (parentNode is not null)
                     {
                         parentNodes.Add(parentNode);
@@ -262,6 +255,26 @@ public static class ReverseChainBuilder
         }
 
         return false;
+    }
+
+    private static void AggregateTypeStats(ReferenceNode node, Dictionary<int, (long Count, long Size)> stats)
+    {
+        if (node.TypeIndex >= 0)
+        {
+            if (stats.TryGetValue(node.TypeIndex, out var existing))
+            {
+                stats[node.TypeIndex] = (existing.Count + node.InstanceCount, existing.Size + node.TotalSize);
+            }
+            else
+            {
+                stats[node.TypeIndex] = (node.InstanceCount, node.TotalSize);
+            }
+        }
+
+        foreach (var child in node.Children)
+        {
+            AggregateTypeStats(child, stats);
+        }
     }
 
     private readonly record struct ParentInfo(

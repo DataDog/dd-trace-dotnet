@@ -25,7 +25,8 @@ public class ForwardTreeNode
         long instanceCount,
         long totalSize,
         IReadOnlyList<ForwardTreeNode> children,
-        string? fieldName = null)
+        string? fieldName = null,
+        bool isMatchingFilter = false)
     {
         Kind = kind;
         TypeIndex = typeIndex;
@@ -33,6 +34,7 @@ public class ForwardTreeNode
         InstanceCount = instanceCount;
         TotalSize = totalSize;
         FieldName = fieldName;
+        IsMatchingFilter = isMatchingFilter;
         _children = children;
         _childrenFactory = null;
     }
@@ -47,7 +49,8 @@ public class ForwardTreeNode
         long instanceCount,
         long totalSize,
         Func<IReadOnlyList<ForwardTreeNode>> childrenFactory,
-        string? fieldName = null)
+        string? fieldName = null,
+        bool isMatchingFilter = false)
     {
         Kind = kind;
         TypeIndex = typeIndex;
@@ -55,6 +58,7 @@ public class ForwardTreeNode
         InstanceCount = instanceCount;
         TotalSize = totalSize;
         FieldName = fieldName;
+        IsMatchingFilter = isMatchingFilter;
         _childrenFactory = childrenFactory;
     }
 
@@ -69,7 +73,7 @@ public class ForwardTreeNode
     public int TypeIndex { get; }
 
     /// <summary>
-    /// Root category code for Category and Root nodes (e.g., "S", "H").
+    /// Root category code for Category and Root nodes (e.g., "K", "H").
     /// </summary>
     public string? CategoryCode { get; }
 
@@ -82,6 +86,12 @@ public class ForwardTreeNode
     public long InstanceCount { get; }
 
     public long TotalSize { get; }
+
+    /// <summary>
+    /// True when the node's type matches the active filter text.
+    /// Used by the UI to highlight matching nodes.
+    /// </summary>
+    public bool IsMatchingFilter { get; }
 
     /// <summary>
     /// Child nodes in the tree. Created lazily when first accessed (on parent expand).

@@ -126,6 +126,117 @@ TEST(VisitedObjectSetTest, ClearRemovesAll)
     ASSERT_FALSE(visited.IsVisited(0x2000));
 }
 
+TEST(VisitedObjectSetTest, StoreInfoAndGetInfoRoundTrip)
+{
+    VisitedObjectSet visited;
+
+    visited.MarkIfAbsent(0x1000);
+    visited.StoreInfo(0x1000, 42, 256);
+
+    ClassID classID = 0;
+    SIZE_T size = 0;
+    ASSERT_TRUE(visited.GetInfo(0x1000, classID, size));
+    ASSERT_EQ(classID, 42);
+    ASSERT_EQ(size, 256);
+}
+
+TEST(VisitedObjectSetTest, GetInfoReturnsDefaultBeforeStoreInfo)
+{
+    VisitedObjectSet visited;
+
+    visited.MarkIfAbsent(0x1000);
+
+    ClassID classID = 99;
+    SIZE_T size = 99;
+    ASSERT_TRUE(visited.GetInfo(0x1000, classID, size));
+    ASSERT_EQ(classID, 0);
+    ASSERT_EQ(size, 0);
+}
+
+TEST(VisitedObjectSetTest, GetInfoReturnsFalseForUnknownAddress)
+{
+    VisitedObjectSet visited;
+
+    ClassID classID = 99;
+    SIZE_T size = 99;
+    ASSERT_FALSE(visited.GetInfo(0x1000, classID, size));
+}
+
+TEST(VisitedObjectSetTest, StoreInfoOnUnknownAddressIsNoOp)
+{
+    VisitedObjectSet visited;
+
+    visited.StoreInfo(0x1000, 42, 256);
+
+    ASSERT_FALSE(visited.IsVisited(0x1000));
+    ASSERT_EQ(visited.Size(), 0);
+
+    ClassID classID = 0;
+    SIZE_T size = 0;
+    ASSERT_FALSE(visited.GetInfo(0x1000, classID, size));
+}
+
+TEST(VisitedObjectSetTest, GrowPreservesAllEntriesAndInfo)
+{
+    VisitedObjectSet visited(16);
+
+    const size_t count = 1000;
+    for (size_t i = 1; i <= count; i++)
+    {
+        uintptr_t addr = i * 0x100;
+        visited.MarkIfAbsent(addr);
+        visited.StoreInfo(addr, static_cast<ClassID>(i), static_cast<SIZE_T>(i * 64));
+    }
+
+    ASSERT_EQ(visited.Size(), count);
+
+    for (size_t i = 1; i <= count; i++)
+    {
+        uintptr_t addr = i * 0x100;
+        ASSERT_TRUE(visited.IsVisited(addr));
+
+        ClassID classID = 0;
+        SIZE_T size = 0;
+        ASSERT_TRUE(visited.GetInfo(addr, classID, size));
+        ASSERT_EQ(classID, static_cast<ClassID>(i));
+        ASSERT_EQ(size, static_cast<SIZE_T>(i * 64));
+    }
+}
+
+TEST(VisitedObjectSetTest, ClearResetsStoredInfo)
+{
+    VisitedObjectSet visited;
+
+    visited.MarkIfAbsent(0x1000);
+    visited.StoreInfo(0x1000, 42, 256);
+
+    visited.Clear();
+
+    ASSERT_FALSE(visited.IsVisited(0x1000));
+
+    visited.MarkIfAbsent(0x1000);
+
+    ClassID classID = 99;
+    SIZE_T size = 99;
+    ASSERT_TRUE(visited.GetInfo(0x1000, classID, size));
+    ASSERT_EQ(classID, 0);
+    ASSERT_EQ(size, 0);
+}
+
+TEST(VisitedObjectSetTest, StoreInfoAfterMarkVisited)
+{
+    VisitedObjectSet visited;
+
+    visited.MarkVisited(0x1000);
+    visited.StoreInfo(0x1000, 77, 512);
+
+    ClassID classID = 0;
+    SIZE_T size = 0;
+    ASSERT_TRUE(visited.GetInfo(0x1000, classID, size));
+    ASSERT_EQ(classID, 77);
+    ASSERT_EQ(size, 512);
+}
+
 // ============================================================================
 // TypeTreeNode Tests
 // ============================================================================
@@ -397,8 +508,8 @@ TEST(TypeReferenceTreeJsonSerializerTest, SingleRootSerializes)
     // Check type table contains System.String
     ASSERT_NE(json.find("\"System.String\""), std::string::npos);
 
-    // Check root entry exists with category "S" (Stack)
-    ASSERT_NE(json.find("\"c\":\"S\""), std::string::npos);
+    // Check root entry exists with category "K" (stacK / locals)
+    ASSERT_NE(json.find("\"c\":\"K\""), std::string::npos);
 
     // Check instance count
     ASSERT_NE(json.find("\"ic\":1"), std::string::npos);
@@ -433,8 +544,8 @@ TEST(TypeReferenceTreeJsonSerializerTest, RootWithChildrenSerializes)
     // Check that children array exists
     ASSERT_NE(json.find("\"ch\":["), std::string::npos);
 
-    // Check root category "s" (StaticVariable)
-    ASSERT_NE(json.find("\"c\":\"s\""), std::string::npos);
+    // Check root category "S" (Static)
+    ASSERT_NE(json.find("\"c\":\"S\""), std::string::npos);
 }
 
 TEST(TypeReferenceTreeJsonSerializerTest, MultipleRootsSerialize)
@@ -495,14 +606,20 @@ TEST(TypeReferenceTreeJsonSerializerTest, AllRootCategoriesProduceValidCodes)
         RootCategory::Pinning,
         RootCategory::ConditionalWeakTable,
         RootCategory::COM,
+        RootCategory::Other,
         RootCategory::Unknown
     };
 
-    const char* expectedCodes[] = {"S", "s", "F", "H", "P", "W", "R", "?"};
+    const char* expectedCodes[] = {"K", "S", "F", "H", "P", "W", "R", "O", "?"};
 
-    for (int i = 0; i < 8; i++)
+    static_assert(sizeof(categories) / sizeof(categories[0]) == RootCategoryCount,
+                  "categories[] must list every RootCategory value");
+    static_assert(sizeof(expectedCodes) / sizeof(expectedCodes[0]) == RootCategoryCount,
+                  "expectedCodes[] must match categories[] length");
+
+    for (size_t i = 0; i < RootCategoryCount; i++)
     {
-        ClassID typeId = typeBase + i;
+        ClassID typeId = typeBase + static_cast<ClassID>(i);
         std::string typeName = "Type" + std::to_string(i);
         frameStore.RegisterType(typeId, typeName);
         tree.AddRoot(typeId, categories[i], 64);
@@ -510,7 +627,7 @@ TEST(TypeReferenceTreeJsonSerializerTest, AllRootCategoriesProduceValidCodes)
 
     auto json = TypeReferenceTreeJsonSerializer::Serialize(tree, &frameStore);
 
-    for (int i = 0; i < 8; i++)
+    for (size_t i = 0; i < RootCategoryCount; i++)
     {
         std::string expectedCode = std::string("\"c\":\"") + expectedCodes[i] + "\"";
         ASSERT_NE(json.find(expectedCode), std::string::npos)
@@ -780,6 +897,66 @@ TEST(TypeReferenceTreeTest, DiamondPattern)
     ASSERT_EQ(dUnderB->totalSize, 16);
     ASSERT_EQ(dUnderC->instanceCount, 1);
     ASSERT_EQ(dUnderC->totalSize, 24);
+}
+
+// ============================================================================
+// Edge Case: TypeReferenceTree — Shared object visited from multiple parents
+// ============================================================================
+
+// Simulates what the traverser produces for the SharedReferences scenario:
+// Root -> List<SharedHolder> -> SharedHolder[] -> SharedHolder -> SharedPayload
+// Root -> List<SharedPayload> -> SharedPayload[] -> SharedPayload  (first visit)
+//
+// Because SharedPayload is visited first via _sharedPayloads, it's already in the
+// visited set when reached via SharedHolder. The traverser still records the
+// type-level edge SharedHolder -> SharedPayload using cached ClassID/size.
+TEST(TypeReferenceTreeTest, SharedObjectEdgeRecordedFromMultipleParents)
+{
+    TypeReferenceTree tree;
+
+    ClassID typeRoot = 1;
+    ClassID typeListPayload = 2;
+    ClassID typePayloadArray = 3;
+    ClassID typePayload = 4;
+    ClassID typeListHolder = 5;
+    ClassID typeHolderArray = 6;
+    ClassID typeHolder = 7;
+
+    TypeTreeNode* root = tree.AddRoot(typeRoot, RootCategory::Stack, 128);
+
+    // Path 1 (visited first): Root -> List<Payload> -> Payload[] -> Payload
+    TypeTreeNode* listPayload = root->GetOrCreateChild(typeListPayload);
+    listPayload->AddInstance(64);
+    TypeTreeNode* payloadArr = listPayload->GetOrCreateChild(typePayloadArray);
+    payloadArr->AddInstance(256);
+    TypeTreeNode* payloadUnderArr = payloadArr->GetOrCreateChild(typePayload);
+    payloadUnderArr->AddInstance(48);
+
+    // Path 2: Root -> List<Holder> -> Holder[] -> Holder -> Payload (revisit)
+    TypeTreeNode* listHolder = root->GetOrCreateChild(typeListHolder);
+    listHolder->AddInstance(64);
+    TypeTreeNode* holderArr = listHolder->GetOrCreateChild(typeHolderArray);
+    holderArr->AddInstance(512);
+    TypeTreeNode* holder = holderArr->GetOrCreateChild(typeHolder);
+    holder->AddInstance(32);
+
+    // The traverser records the type edge even though the Payload object was
+    // already visited. Simulate that by adding a Payload child under Holder.
+    TypeTreeNode* payloadUnderHolder = holder->GetOrCreateChild(typePayload);
+    payloadUnderHolder->AddInstance(48);
+
+    // Payload appears as a SEPARATE tree node under both parents
+    ASSERT_NE(payloadUnderArr, payloadUnderHolder);
+
+    // Both have the correct type and counts
+    ASSERT_EQ(payloadUnderArr->typeID, typePayload);
+    ASSERT_EQ(payloadUnderHolder->typeID, typePayload);
+    ASSERT_EQ(payloadUnderArr->instanceCount, 1);
+    ASSERT_EQ(payloadUnderHolder->instanceCount, 1);
+
+    // Holder has Payload as a child
+    ASSERT_NE(holder->GetChild(typePayload), nullptr);
+    ASSERT_EQ(holder->GetChild(typePayload)->instanceCount, 1);
 }
 
 // ============================================================================
@@ -1094,7 +1271,7 @@ TEST(TypeReferenceTreeJsonSerializerTest, RootWithMultipleCategoriesShowsFirst)
 
     // The serializer picks the first category in the bitmask iteration (0..7).
     // Stack = 0, Handle = 3 → Stack is found first.
-    ASSERT_NE(json.find("\"c\":\"S\""), std::string::npos)
+    ASSERT_NE(json.find("\"c\":\"K\""), std::string::npos)
         << "Expected Stack category (first in bitmask). JSON: " << json;
 }
 

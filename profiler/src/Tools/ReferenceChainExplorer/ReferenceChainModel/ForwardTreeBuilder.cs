@@ -44,7 +44,7 @@ public static class ForwardTreeBuilder
         }
 
         // Stable order: use known category order, then any unknowns
-        var orderedCodes = new[] { "S", "s", "F", "H", "P", "W", "R", "?" };
+        var orderedCodes = new[] { "K", "S", "F", "H", "P", "W", "R", "O", "?" };
         var result = new List<ForwardTreeNode>();
 
         foreach (var code in orderedCodes)
@@ -125,23 +125,31 @@ public static class ForwardTreeBuilder
 
     private static ForwardTreeNode WrapRoot(ReferenceRootNode root, HashSet<int>? matchingTypes)
     {
+        bool isMatch = matchingTypes is not null && matchingTypes.Contains(root.TypeIndex);
         return new ForwardTreeNode(
             ForwardTreeNodeKind.Root,
             root.TypeIndex,
             root.CategoryCode,
             root.InstanceCount,
             root.TotalSize,
-            () => FilterAndWrapChildren(root.Children, matchingTypes),
-            root.FieldName);
+            () => FilterAndWrapChildren(root.Children, matchingTypes, filterBranches: !isMatch),
+            root.FieldName,
+            isMatchingFilter: isMatch);
     }
 
     private static IReadOnlyList<ForwardTreeNode> FilterAndWrapChildren(
         IReadOnlyList<ReferenceNode> children,
-        HashSet<int>? matchingTypes)
+        HashSet<int>? matchingTypes,
+        bool filterBranches)
     {
         if (matchingTypes is null)
         {
-            return children.Select(WrapNode).ToList();
+            return children.Select(c => WrapNode(c, null)).ToList();
+        }
+
+        if (!filterBranches)
+        {
+            return children.Select(c => WrapNode(c, matchingTypes)).ToList();
         }
 
         return children
@@ -152,24 +160,29 @@ public static class ForwardTreeBuilder
 
     private static ForwardTreeNode WrapNodeFiltered(ReferenceNode node, HashSet<int> matchingTypes)
     {
+        bool isMatch = matchingTypes.Contains(node.TypeIndex);
         return new ForwardTreeNode(
             ForwardTreeNodeKind.Child,
             node.TypeIndex,
             null,
             node.InstanceCount,
             node.TotalSize,
-            () => FilterAndWrapChildren(node.Children, matchingTypes),
-            fieldName: null);
+            () => FilterAndWrapChildren(node.Children, matchingTypes, filterBranches: !isMatch),
+            fieldName: null,
+            isMatchingFilter: isMatch);
     }
 
-    private static ForwardTreeNode WrapNode(ReferenceNode node)
+    private static ForwardTreeNode WrapNode(ReferenceNode node, HashSet<int>? matchingTypes)
     {
+        bool isMatch = matchingTypes is not null && matchingTypes.Contains(node.TypeIndex);
         return new ForwardTreeNode(
             ForwardTreeNodeKind.Child,
             node.TypeIndex,
             null,
             node.InstanceCount,
             node.TotalSize,
-            () => node.Children.Select(WrapNode).ToList());
+            () => node.Children.Select(c => WrapNode(c, matchingTypes)).ToList(),
+            fieldName: null,
+            isMatchingFilter: isMatch);
     }
 }

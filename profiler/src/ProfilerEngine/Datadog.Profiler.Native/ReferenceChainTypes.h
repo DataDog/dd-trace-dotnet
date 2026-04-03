@@ -4,6 +4,7 @@
 #pragma once
 
 #include "corprof.h"
+#include <cstddef>
 #include <string>
 
 // Root category enumeration
@@ -17,8 +18,14 @@ enum class RootCategory : uint8_t
     Pinning = 4,        // pinning handle
     ConditionalWeakTable = 5,
     COM = 6,  // COM/WinRT related
-    Unknown = 7
+    // ETW GCRootKind::Other (manifest "Other", same byte as PerfView GCRootKind.Older) — misc roots, not static fields
+    Other = 7,
+    Unknown = 8
 };
+
+// Number of RootCategory enumerators (Unknown must remain the last value).
+inline constexpr size_t RootCategoryCount =
+    static_cast<size_t>(RootCategory::Unknown) + 1u;
 
 inline const char* RootCategoryToString(RootCategory category)
 {
@@ -31,6 +38,8 @@ inline const char* RootCategoryToString(RootCategory category)
         case RootCategory::Pinning:            return "Pinning";
         case RootCategory::ConditionalWeakTable: return "ConditionalWeakTable";
         case RootCategory::COM:                return "COM";
+        case RootCategory::Other:              return "Other";
+        case RootCategory::Unknown:            return "Unknown";
         default:                               return "Unknown";
     }
 }

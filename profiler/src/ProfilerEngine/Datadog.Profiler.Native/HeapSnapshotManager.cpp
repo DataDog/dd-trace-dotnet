@@ -324,6 +324,14 @@ void HeapSnapshotManager::OnBulkRootEdges(
     {
         auto& root = pRoots[i];
 
+        // GCRootFlags::Interior: address points inside an object, not at the ObjectID header.
+        // GetClassFromObject expects a real ObjectID; resolving interior pointers to the containing
+        // object is not implemented (would need bulk-node range index or CLR API support).
+        if ((static_cast<uint32_t>(root.Flags) & static_cast<uint32_t>(GCRootFlags::Interior)) != 0)
+        {
+            continue;
+        }
+
         // Map GCRootKind to RootCategory
         RootCategory category;
         if (root.Kind == GCRootKind::Stack)
@@ -347,7 +355,7 @@ void HeapSnapshotManager::OnBulkRootEdges(
         }
         else if (root.Kind == GCRootKind::Other)
         {
-            category = RootCategory::StaticVariable;
+            category = RootCategory::Other;
         }
         else
         {

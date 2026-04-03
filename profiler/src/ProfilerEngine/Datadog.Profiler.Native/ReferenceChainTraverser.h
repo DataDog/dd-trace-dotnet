@@ -69,6 +69,17 @@ private:
         TypeTreeNode* currentNode,
         uint32_t depth);
 
+    // Follow reference fields inside an inline value type field within a heap object.
+    // Used for structs embedded in classes (e.g., the async state machine struct inside
+    // AsyncStateMachineBox<TStateMachine>). Recurses into nested inline value types.
+    void EnqueueInlineValueTypeReferences(
+        uintptr_t objectAddress,
+        ULONG baseOffset,
+        const ClassLayoutCache::ClassLayoutData& vtLayout,
+        SIZE_T objectSize,
+        TypeTreeNode* currentNode,
+        uint32_t depth);
+
     bool IsValidObjectAddress(uintptr_t address) const;
     std::string GetClassName(ClassID classID) const;
 
@@ -95,6 +106,6 @@ private:
     // Statistics
     uint64_t _objectsTraversed;
     uint64_t _rootsProcessed;
-    uint64_t _rootCategoryCounts[8] = {};
+    uint64_t _rootCategoryCounts[RootCategoryCount] = {};
     std::chrono::nanoseconds _totalTraversalDuration{0};
 };

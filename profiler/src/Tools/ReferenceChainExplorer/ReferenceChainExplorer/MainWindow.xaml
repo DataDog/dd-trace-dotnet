@@ -65,11 +65,11 @@
                         </Style>
                     </TextBlock.Style>
                 </TextBlock>
-                <TextBlock Text="{Binding TypeIndex, Converter={StaticResource TypeNameConverter}}"
-                           FontWeight="SemiBold">
+                <TextBlock Text="{Binding TypeIndex, Converter={StaticResource TypeNameConverter}}">
                     <TextBlock.Style>
                         <Style TargetType="TextBlock">
                             <Setter Property="Visibility" Value="Collapsed" />
+                            <Setter Property="FontWeight" Value="SemiBold" />
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding Kind}" Value="{x:Static model:ForwardTreeNodeKind.Root}">
                                     <Setter Property="Visibility" Value="Visible" />
@@ -77,6 +77,17 @@
                                 <DataTrigger Binding="{Binding Kind}" Value="{x:Static model:ForwardTreeNodeKind.Child}">
                                     <Setter Property="Visibility" Value="Visible" />
                                 </DataTrigger>
+                                <DataTrigger Binding="{Binding IsMatchingFilter}" Value="True">
+                                    <Setter Property="Foreground" Value="#2060D0" />
+                                    <Setter Property="FontWeight" Value="Bold" />
+                                </DataTrigger>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding IsMatchingFilter}" Value="True" />
+                                        <Condition Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=TreeViewItem}}" Value="True" />
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Foreground" Value="#90C0FF" />
+                                </MultiDataTrigger>
                             </Style.Triggers>
                         </Style>
                     </TextBlock.Style>
@@ -250,7 +261,9 @@
                               CanUserSortColumns="True"
                               GridLinesVisibility="None"
                               AlternatingRowBackground="#F8F8F8"
-                              Sorting="TypeGrid_Sorting">
+                              Sorting="TypeGrid_Sorting"
+                              ClipboardCopyMode="None"
+                              PreviewKeyDown="TypeGrid_PreviewKeyDown">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Type Name" Width="*"
                                                 Binding="{Binding TypeIndex, Converter={StaticResource TypeNameConverter}, ConverterParameter=short}"
@@ -258,6 +271,11 @@
                             <DataGridTextColumn Header="Count" Width="120"
                                                 Binding="{Binding TotalInstanceCount, StringFormat={}{0:N0}}"
                                                 SortMemberPath="TotalInstanceCount">
+                                <DataGridTextColumn.HeaderStyle>
+                                    <Style TargetType="DataGridColumnHeader">
+                                        <Setter Property="HorizontalContentAlignment" Value="Right" />
+                                    </Style>
+                                </DataGridTextColumn.HeaderStyle>
                                 <DataGridTextColumn.ElementStyle>
                                     <Style TargetType="TextBlock">
                                         <Setter Property="TextAlignment" Value="Right" />
@@ -267,6 +285,11 @@
                             <DataGridTextColumn Header="Size (bytes)" Width="120"
                                                 Binding="{Binding TotalSize, StringFormat={}{0:N0}}"
                                                 SortMemberPath="TotalSize">
+                                <DataGridTextColumn.HeaderStyle>
+                                    <Style TargetType="DataGridColumnHeader">
+                                        <Setter Property="HorizontalContentAlignment" Value="Right" />
+                                    </Style>
+                                </DataGridTextColumn.HeaderStyle>
                                 <DataGridTextColumn.ElementStyle>
                                     <Style TargetType="TextBlock">
                                         <Setter Property="TextAlignment" Value="Right" />
@@ -292,10 +315,12 @@
                             <Run Text="{Binding SelectedType.TypeIndex, Converter={StaticResource TypeNameConverter}, Mode=OneWay, FallbackValue='(select a type)'}" />
                         </TextBlock>
 
-                        <TreeView ItemsSource="{Binding ReverseChains}"
+                        <TreeView x:Name="ReverseTree"
+                                  ItemsSource="{Binding ReverseChains}"
                                   Margin="4"
                                   BorderThickness="1"
-                                  BorderBrush="#CCCCCC" />
+                                  BorderBrush="#CCCCCC"
+                                  KeyDown="ReverseTree_KeyDown" />
                     </DockPanel>
                 </Grid>
             </TabItem>
@@ -313,10 +338,12 @@
                                  Text="{Binding ForwardTreeFilterText, UpdateSourceTrigger=PropertyChanged}" />
                     </StackPanel>
                     <TreeView Grid.Row="1"
+                              x:Name="ForwardTree"
                               ItemsSource="{Binding ForwardTreeRoots}"
                               Margin="4"
                               BorderThickness="1"
-                              BorderBrush="#CCCCCC" />
+                              BorderBrush="#CCCCCC"
+                              KeyDown="ForwardTree_KeyDown" />
                 </Grid>
             </TabItem>
         </TabControl>

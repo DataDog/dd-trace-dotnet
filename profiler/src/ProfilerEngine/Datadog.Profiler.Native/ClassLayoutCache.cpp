@@ -147,6 +147,11 @@ ClassLayoutCache::ClassLayoutData ClassLayoutCache::BuildLayout(ClassID classID)
         fieldInfo.isReferenceType = IsFieldReferenceType(
             fieldInfo.fieldToken, moduleID, pMetadataImport.Get(), typeArgs);
 
+        if (!fieldInfo.isReferenceType)
+        {
+            ResolveValueTypeField(fieldInfo, moduleID, pMetadataImport.Get(), typeArgs);
+        }
+
         layout.fields.push_back(fieldInfo);
     }
 
@@ -395,6 +400,112 @@ bool ClassLayoutCache::IsReferenceType(mdTypeDef typeDef, IMetaDataImport* pMeta
 
     // Default: assume reference type if not explicitly a value type
     return true;
+}
+
+void ClassLayoutCache::ResolveValueTypeField(
+    FieldInfo& fieldInfo,
+    ModuleID moduleID,
+    IMetaDataImport* pMetadataImport,
+    const std::vector<ClassID>& typeArgs)
+{
+    if (pMetadataImport == nullptr || fieldInfo.fieldToken == 0)
+    {
+        return;
+    }
+
+    PCCOR_SIGNATURE pSignature = nullptr;
+    ULONG signatureSize = 0;
+
+    HRESULT hr = pMetadataImport->GetFieldProps(
+        fieldInfo.fieldToken, nullptr, nullptr, 0, nullptr,
+        nullptr, &pSignature, &signatureSize,
+        nullptr, nullptr, nullptr);
+
+    if (FAILED(hr) || pSignature == nullptr || signatureSize < 2)
+    {
+        return;
+    }
+
+    ULONG idx = 0;
+    idx++; // Skip calling convention byte (IMAGE_CEE_CS_CALLCONV_FIELD)
+
+    if (idx >= signatureSize)
+    {
+        return;
+    }
+
+    // Skip optional custom modifiers and prefixes (same as IsFieldReferenceType)
+    while (idx < signatureSize)
+    {
+        CorElementType prefix = static_cast<CorElementType>(pSignature[idx]);
+        if (prefix == ELEMENT_TYPE_CMOD_OPT || prefix == ELEMENT_TYPE_CMOD_REQD)
+        {
+            idx++;
+            mdToken token;
+            idx += CorSigUncompressToken(&pSignature[idx], &token);
+            continue;
+        }
+        if (prefix == ELEMENT_TYPE_PINNED || prefix == ELEMENT_TYPE_BYREF)
+        {
+            idx++;
+            continue;
+        }
+        break;
+    }
+
+    if (idx >= signatureSize)
+    {
+        return;
+    }
+
+    CorElementType elementType = static_cast<CorElementType>(pSignature[idx]);
+
+    ClassID valueTypeClassID = 0;
+
+    // Generic type parameter: resolve against the concrete type arguments.
+    // This covers the common case of AsyncStateMachineBox<TStateMachine> where the
+    // StateMachine field is of type TStateMachine (ELEMENT_TYPE_VAR, index 0).
+    if (elementType == ELEMENT_TYPE_VAR)
+    {
+        idx++;
+        if (idx >= signatureSize || typeArgs.empty())
+        {
+            return;
+        }
+        ULONG varIndex;
+        CorSigUncompressData(&pSignature[idx], &varIndex);
+
+        if (varIndex < static_cast<ULONG>(typeArgs.size()))
+        {
+            ClassID argClassID = typeArgs[varIndex];
+            if (!IsClassIDReferenceType(argClassID))
+            {
+                valueTypeClassID = argClassID;
+            }
+        }
+    }
+
+    if (valueTypeClassID == 0)
+    {
+        return;
+    }
+
+    // Check if the value type's layout contains any reference fields (direct or nested)
+    const ClassLayoutData* vtLayout = GetLayout(valueTypeClassID);
+    if (vtLayout == nullptr)
+    {
+        return;
+    }
+
+    for (const auto& subField : vtLayout->fields)
+    {
+        if (subField.isReferenceType || (subField.isValueType && subField.valueTypeClassID != 0))
+        {
+            fieldInfo.isValueType = true;
+            fieldInfo.valueTypeClassID = valueTypeClassID;
+            return;
+        }
+    }
 }
 
 size_t ClassLayoutCache::GetMemorySize() const

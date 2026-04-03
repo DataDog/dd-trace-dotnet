@@ -282,11 +282,13 @@ ClrEventsParser::ParseGcEvent(std::chrono::nanoseconds timestamp, DWORD id, DWOR
             ULONG offset = 0;
             if (!EventsParserHelper::Read<GCBulkEdgePayload>(payload, pEventData, cbEventData, offset))
             {
-                _pGCDumpListener->OnBulkEdges(
-                    payload.Index,
-                    payload.Count,
-                    (GCBulkEdgeValue*)(pEventData + offset));
+                return;
             }
+
+            _pGCDumpListener->OnBulkEdges(
+                payload.Index,
+                payload.Count,
+                (GCBulkEdgeValue*)(pEventData + offset));
         }
     }
     else if (id == EVENT_GC_BULK_ROOT_EDGE)
@@ -324,6 +326,7 @@ ClrEventsParser::ParseGcEvent(std::chrono::nanoseconds timestamp, DWORD id, DWOR
             ULONG offset = 0;
             if (!EventsParserHelper::Read<GCBulkRootStaticVarPayload>(payload, pEventData, cbEventData, offset))
             {
+                Log::Debug("[EVENT] GCBulkRootStaticVar: Read payload failed, cbEventData=", cbEventData);
                 return;
             }
 
@@ -336,6 +339,8 @@ ClrEventsParser::ParseGcEvent(std::chrono::nanoseconds timestamp, DWORD id, DWOR
                 GCBulkRootStaticVarValue value{0};
                 if (!EventsParserHelper::Read<GCBulkRootStaticVarValue>(value, pEventData, cbEventData, offset))
                 {
+                    Log::Debug("[EVENT] GCBulkRootStaticVar: Read entry failed, index=", i,
+                               " count=", payload.Count, " cbEventData=", cbEventData);
                     break;
                 }
 
@@ -354,7 +359,7 @@ ClrEventsParser::ParseGcEvent(std::chrono::nanoseconds timestamp, DWORD id, DWOR
     //
     if (id == EVENT_GC_TRIGGERED)
     {
-        LogGcEvent("OnGCTriggered");
+        //LogGcEvent("OnGCTriggered");
         OnGCTriggered();
     }
     else if (id == EVENT_GC_START)
@@ -366,7 +371,7 @@ ClrEventsParser::ParseGcEvent(std::chrono::nanoseconds timestamp, DWORD id, DWOR
             return;
         }
 
-        LogGcEvent("OnGCStart: ", payload.Count, " ", payload.Depth, " ", payload.Reason, " ", payload.Type);
+        //LogGcEvent("OnGCStart: ", payload.Count, " ", payload.Depth, " ", payload.Reason, " ", payload.Type);
         OnGCStart(timestamp, payload);
     }
     else if (id == EVENT_GC_END)
@@ -378,18 +383,18 @@ ClrEventsParser::ParseGcEvent(std::chrono::nanoseconds timestamp, DWORD id, DWOR
             return;
         }
 
-        LogGcEvent("OnGCEnd: ", payload.Count, " ", payload.Depth);
+        //LogGcEvent("OnGCEnd: ", payload.Count, " ", payload.Depth);
 
         OnGCEnd(payload);
     }
     else if (id == EVENT_GC_SUSPEND_EE_BEGIN)
     {
-        LogGcEvent("OnGCSuspendEEBegin");
+        //LogGcEvent("OnGCSuspendEEBegin");
         OnGCSuspendEEBegin(timestamp);
     }
     else if (id == EVENT_GC_RESTART_EE_END)
     {
-        LogGcEvent("OnGCRestartEEEnd");
+        //LogGcEvent("OnGCRestartEEEnd");
         OnGCRestartEEEnd(timestamp);
     }
     else if (id == EVENT_GC_HEAP_STAT)
@@ -428,7 +433,7 @@ ClrEventsParser::ParseGcEvent(std::chrono::nanoseconds timestamp, DWORD id, DWOR
             pohSize = payload.GenerationSize4;
         }
 
-        LogGcEvent("OnGCHeapStats");
+        //LogGcEvent("OnGCHeapStats");
         OnGCHeapStats(timestamp, gen2Size, lohSize, pohSize);
     }
     else if (id == EVENT_GC_GLOBAL_HEAP_HISTORY)
@@ -440,7 +445,7 @@ ClrEventsParser::ParseGcEvent(std::chrono::nanoseconds timestamp, DWORD id, DWOR
             return;
         }
 
-        LogGcEvent("OnGCGlobalHeapHistory");
+        //LogGcEvent("OnGCGlobalHeapHistory");
         OnGCGlobalHeapHistory(timestamp, payload);
     }
 }

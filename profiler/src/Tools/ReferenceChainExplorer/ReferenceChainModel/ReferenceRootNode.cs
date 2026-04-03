@@ -24,8 +24,8 @@ public class ReferenceRootNode : ReferenceNode
     }
 
     /// <summary>
-    /// Root category code: "S" (Stack), "s" (StaticVariable), "F" (Finalizer),
-    /// "H" (Handle), "P" (Pinning), "W" (ConditionalWeakTable), "R" (COM), "?" (Unknown).
+    /// Root category code: "K" (stacK / Stack), "S" (Static), "F" (Finalizer),
+    /// "H" (Handle), "P" (Pinning), "W" (ConditionalWeakTable), "R" (COM), "O" (Other), "?" (Unknown).
     /// </summary>
     public string CategoryCode { get; }
 

@@ -21,7 +21,14 @@ struct FieldInfo
     bool isReferenceType;   // True if field contains a reference
     mdFieldDef fieldToken;  // Metadata token for the field
 
-    FieldInfo() : offset(0), fieldTypeID(0), isReferenceType(false), fieldToken(0)
+    // For inline value type fields that contain reference sub-fields (e.g., the state machine
+    // struct inside AsyncStateMachineBox<TStateMachine>). When true, use valueTypeClassID
+    // with ClassLayoutCache::GetLayout() to enumerate the value type's sub-fields.
+    bool isValueType;
+    ClassID valueTypeClassID;
+
+    FieldInfo() : offset(0), fieldTypeID(0), isReferenceType(false), fieldToken(0),
+                  isValueType(false), valueTypeClassID(0)
     {
     }
 };
@@ -65,6 +72,15 @@ private:
     void GetParentClassFields(ClassID parentClassID, std::vector<FieldInfo>& fields);
     bool IsFieldReferenceType(
         mdFieldDef fieldToken,
+        ModuleID moduleID,
+        IMetaDataImport* pMetadataImport,
+        const std::vector<ClassID>& typeArgs);
+
+    // For non-reference fields, try to detect inline value types whose layout contains
+    // reference sub-fields.  Currently resolves ELEMENT_TYPE_VAR (generic type parameter)
+    // fields — this covers async state machine structs inside AsyncStateMachineBox<T>.
+    void ResolveValueTypeField(
+        FieldInfo& fieldInfo,
         ModuleID moduleID,
         IMetaDataImport* pMetadataImport,
         const std::vector<ClassID>& typeArgs);

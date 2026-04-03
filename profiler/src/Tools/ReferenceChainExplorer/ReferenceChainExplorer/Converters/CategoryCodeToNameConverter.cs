@@ -10,7 +10,7 @@ using ReferenceChainModel;
 namespace ReferenceChainExplorer.Converters;
 
 /// <summary>
-/// Converts a root category code (e.g., "S") to a human-readable name (e.g., "Stack").
+/// Converts a root category code (e.g., "K") to a human-readable name (e.g., "Stack").
 /// </summary>
 public class CategoryCodeToNameConverter : IValueConverter
 {

@@ -12,17 +12,18 @@ public static class RootCategoryHelper
 {
     private static readonly Dictionary<string, string> CategoryNames = new()
     {
-        ["S"] = "Stack",
-        ["s"] = "StaticVariable",
+        ["K"] = "Stack",
+        ["S"] = "StaticVariable",
         ["F"] = "Finalizer",
         ["H"] = "Handle",
         ["P"] = "Pinning",
         ["W"] = "ConditionalWeakTable",
         ["R"] = "COM",
+        ["O"] = "Other",
         ["?"] = "Unknown",
     };
 
-    private static readonly string[] CategoryDisplayOrder = ["P", "H", "F", "S", "s", "W", "R", "?"];
+    private static readonly string[] CategoryDisplayOrder = ["P", "H", "F", "K", "S", "W", "R", "O", "?"];
 
     /// <summary>
     /// Get the human-readable name for a root category code.
@@ -33,7 +34,7 @@ public static class RootCategoryHelper
     }
 
     /// <summary>
-    /// Convert comma-separated category codes (e.g., "P,s") to human-readable names (e.g., "Pinning, StaticVariable").
+    /// Convert comma-separated category codes (e.g., "P,S") to human-readable names (e.g., "Pinning, StaticVariable").
     /// </summary>
     public static string GetCategoryNamesForDisplay(string categoryCodes)
     {

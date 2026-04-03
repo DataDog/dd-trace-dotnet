@@ -272,6 +272,40 @@ namespace Samples.Computer01
         }
     }
 
+    // Scenario 20: Nested inline value types containing references.
+    // OuterHolder<InnerStruct> embeds InnerStruct as an inline field (ELEMENT_TYPE_VAR
+    // resolving to a value type). InnerStruct itself contains a reference field (Target)
+    // AND a nested value type (NestedInner) that also contains a reference field (DeepTarget).
+    // This exercises the recursive EnqueueInlineValueTypeReferences path.
+    public class NestedVtTarget
+    {
+        public byte[] Data { get; } = new byte[512];
+    }
+
+    public class DeepVtTarget
+    {
+        public byte[] Blob { get; } = new byte[256];
+    }
+
+    public struct NestedInnerStruct
+    {
+        public DeepVtTarget DeepRef { get; set; }
+        public int Padding { get; set; }
+    }
+
+    public struct InnerStruct
+    {
+        public NestedVtTarget ShallowRef { get; set; }
+        public NestedInnerStruct Nested { get; set; }
+        public int Value { get; set; }
+    }
+
+    public class OuterHolder<T>
+    {
+        public T Inline { get; set; }
+        public string Label { get; set; }
+    }
+
     /// <summary>
     /// Reference chain test scenarios for heap snapshot testing.
     /// Each scenario creates specific object graph patterns to validate
@@ -303,6 +337,7 @@ namespace Samples.Computer01
         private List<GCHandle> _gcHandles;
         private List<GCHandle> _pinnedHandles;
         private AsyncLeakSource _asyncLeakSource;
+        private List<OuterHolder<InnerStruct>> _nestedVtHolders;
 
         public ReferenceChainScenarios(int scenarioNumber)
         {
@@ -366,6 +401,9 @@ namespace Samples.Computer01
                     break;
                 case 19:
                     RunAsyncLeak();
+                    break;
+                case 20:
+                    RunNestedValueType();
                     break;
                 default:
                     RunSimpleChain();
@@ -983,6 +1021,39 @@ namespace Samples.Computer01
             }
 
             _asyncLeakSource = source;
+        }
+
+        /// <summary>
+        /// Scenario 20: Nested Inline Value Types (~100 objects)
+        /// OuterHolder&lt;InnerStruct&gt; embeds InnerStruct as a generic type parameter
+        /// that resolves to a value type. InnerStruct contains a reference (NestedVtTarget)
+        /// and a nested struct (NestedInnerStruct) that itself contains a reference (DeepVtTarget).
+        /// Tests the recursive EnqueueInlineValueTypeReferences traversal path.
+        /// </summary>
+        private void RunNestedValueType()
+        {
+            Console.WriteLine("ReferenceChain Scenario 20: Nested Inline Value Types");
+            var holders = new List<OuterHolder<InnerStruct>>();
+
+            for (int i = 0; i < 50; i++)
+            {
+                holders.Add(new OuterHolder<InnerStruct>
+                {
+                    Inline = new InnerStruct
+                    {
+                        ShallowRef = new NestedVtTarget(),
+                        Nested = new NestedInnerStruct
+                        {
+                            DeepRef = new DeepVtTarget(),
+                            Padding = i
+                        },
+                        Value = i
+                    },
+                    Label = $"holder-{i}"
+                });
+            }
+
+            _nestedVtHolders = holders;
         }
     }
 }

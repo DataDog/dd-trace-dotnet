@@ -187,17 +187,19 @@ void TypeReferenceTreeJsonSerializer::OutputNode(
     out += '}';
 }
 
+// Single-letter root category codes in JSON ("c" field). K=stack, S=static, O=other (see RootCategory).
 const char* TypeReferenceTreeJsonSerializer::GetRootCategoryCode(RootCategory category)
 {
     switch (category)
     {
-        case RootCategory::Stack: return "S";
-        case RootCategory::StaticVariable: return "s";
+        case RootCategory::Stack: return "K";
+        case RootCategory::StaticVariable: return "S";
         case RootCategory::Finalizer: return "F";
         case RootCategory::Handle: return "H";
         case RootCategory::Pinning: return "P";
         case RootCategory::ConditionalWeakTable: return "W";
         case RootCategory::COM: return "R";
+        case RootCategory::Other: return "O";
         case RootCategory::Unknown: return "?";
         default: return "?";
     }
