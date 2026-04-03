@@ -1,0 +1,3309 @@
+{
+  "generatedAt": "2026-04-02T21:13:17.7561787+00:00",
+  "integrations": {
+    "Hangfire": {
+      "versions": [
+        {
+          "version": "1.7.37",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "1.8.23",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        }
+      ]
+    },
+    "Quartz": {
+      "versions": [
+        {
+          "version": "3.17.0",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        }
+      ]
+    },
+    "AwsSdk": {
+      "versions": [
+        {
+          "version": "3.1.11",
+          "frameworks": [
+            "net48"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "3.3.107.40",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "3.7.500.95",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "4.0.3.24",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        }
+      ]
+    },
+    "AwsDynamoDb": {
+      "versions": [
+        {
+          "version": "3.1.5.3",
+          "frameworks": [
+            "net48"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "3.3.106.47",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "3.7.513.1",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "4.0.17.3",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        }
+      ]
+    },
+    "AwsKinesis": {
+      "versions": [
+        {
+          "version": "3.1.3.5",
+          "frameworks": [
+            "net48"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "3.3.101.1",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "3.7.506.18",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "4.0.8.6",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        }
+      ]
+    },
+    "AwsLambda": {
+      "versions": [
+        {
+          "version": "1.14.2",
+          "frameworks": [
+            "net6.0",
+            "net7.0",
+            "net8.0"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        }
+      ]
+    },
+    "AwsSqs": {
+      "versions": [
+        {
+          "version": "3.1.0.13",
+          "frameworks": [
+            "net48"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "3.3.103.26",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "3.7.502.54",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "4.0.2.20",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        }
+      ]
+    },
+    "AwsSns": {
+      "versions": [
+        {
+          "version": "3.1.2.1",
+          "frameworks": [
+            "net48"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "3.3.102.17",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "3.7.502.58",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "4.0.2.22",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        }
+      ]
+    },
+    "AwsEventBridge": {
+      "versions": [
+        {
+          "version": "3.3.102.16",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "3.5.6.5",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "3.7.502.59",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "4.0.5.21",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        }
+      ]
+    },
+    "AwsS3": {
+      "versions": [
+        {
+          "version": "3.3.113.2",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "3.5.10.2",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "3.7.511.5",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "4.0.20",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        }
+      ]
+    },
+    "AwsStepFunctions": {
+      "versions": [
+        {
+          "version": "3.3.104.87",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "3.5.3.37",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "3.7.502.47",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "4.0.2.15",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        }
+      ]
+    },
+    "MongoDB": {
+      "versions": [
+        {
+          "version": "2.0.2",
+          "frameworks": [
+            "net48"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "2.30.0",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "3.4.3",
+          "frameworks": [
+            "net10.0",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "3.7.1",
+          "frameworks": [
+            "net10.0",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        }
+      ]
+    },
+    "Npgsql": {
+      "versions": [
+        {
+          "version": "4.1.14",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "6.0.13",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "9.0.5",
+          "frameworks": [
+            "net10.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "10.0.2",
+          "frameworks": [
+            "net10.0",
+            "net8.0",
+            "net9.0"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        }
+      ]
+    },
+    "SystemDataSqlClient": {
+      "versions": [
+        {
+          "version": "4.1.0",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "4.5.3",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "4.8.6",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "4.9.1",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        }
+      ]
+    },
+    "MicrosoftDataSqlClient": {
+      "versions": [
+        {
+          "version": "1.1.4",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "2.1.7",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "3.1.7",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "4.1.1",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "6.1.4",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net8.0",
+            "net9.0"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "7.0.0",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net8.0",
+            "net9.0"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        }
+      ]
+    },
+    "MySqlData": {
+      "versions": [
+        {
+          "version": "6.7.9",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "6.10.9",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "8.0.32.1",
+          "frameworks": [
+            "netcoreapp2.1",
+            "netcoreapp3.0"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "8.4.0",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "9.6.0",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        }
+      ]
+    },
+    "MySqlConnector": {
+      "versions": [
+        {
+          "version": "0.61.0",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "1.0.1",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "1.3.14",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "2.5.0",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        }
+      ]
+    },
+    "MicrosoftDataSqlite": {
+      "versions": [
+        {
+          "version": "2.3.0",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "5.0.17",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "8.0.25",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "9.0.14",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "10.0.5",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        }
+      ]
+    },
+    "CosmosDb": {
+      "versions": [
+        {
+          "version": "3.6.0",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "3.28.0",
+          "frameworks": [
+            "netcoreapp2.1",
+            "netcoreapp3.0"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "3.58.0",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        }
+      ]
+    },
+    "CosmosDbVnext": {
+      "versions": [
+        {
+          "version": "3.12.0",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "3.28.0",
+          "frameworks": [
+            "netcoreapp2.1",
+            "netcoreapp3.0"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "3.58.0",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        }
+      ]
+    },
+    "Aerospike": {
+      "versions": [
+        {
+          "version": "4.0.3",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "4.3.1",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "5.4.1",
+          "frameworks": [
+            "net10.0",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "7.4.0",
+          "frameworks": [
+            "net10.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "8.0.2",
+          "frameworks": [
+            "net6.0",
+            "net7.0"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "8.3.1",
+          "frameworks": [
+            "net10.0",
+            "net8.0",
+            "net9.0"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        }
+      ]
+    },
+    "Couchbase": {
+      "versions": [
+        {
+          "version": "2.4.8",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "2.7.27",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        }
+      ]
+    },
+    "Couchbase3": {
+      "versions": [
+        {
+          "version": "3.0.7",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "3.2.5",
+          "frameworks": [
+            "netcoreapp2.1",
+            "netcoreapp3.0"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "3.9.0",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        }
+      ]
+    },
+    "ElasticSearch7": {
+      "versions": [
+        {
+          "version": "7.0.1",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "7.8.2",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "7.17.5",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        }
+      ]
+    },
+    "ElasticSearch6": {
+      "versions": [
+        {
+          "version": "6.0.2",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "6.8.11",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        }
+      ]
+    },
+    "ElasticSearch5": {
+      "versions": [
+        {
+          "version": "5.3.1",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "5.5.0",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "5.6.6",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        }
+      ]
+    },
+    "GraphQL": {
+      "versions": [
+        {
+          "version": "4.1.0",
+          "frameworks": [
+            "net10.0",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "4.3.0",
+          "frameworks": [
+            "net10.0",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "4.8.0",
+          "frameworks": [
+            "net10.0",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "5.4.0",
+          "frameworks": [
+            "net10.0",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        }
+      ]
+    },
+    "GraphQL7": {
+      "versions": [
+        {
+          "version": "7.9.0",
+          "frameworks": [
+            "net10.0",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "8.8.4",
+          "frameworks": [
+            "net10.0",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        }
+      ]
+    },
+    "HotChocolate": {
+      "versions": [
+        {
+          "version": "11.3.8",
+          "frameworks": [
+            "net10.0",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "12.21.0",
+          "frameworks": [
+            "net5.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "12.22.6",
+          "frameworks": [
+            "net10.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "13.9.15",
+          "frameworks": [
+            "net10.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "14.3.0",
+          "frameworks": [
+            "net10.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "15.1.12",
+          "frameworks": [
+            "net10.0",
+            "net8.0",
+            "net9.0"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        }
+      ]
+    },
+    "StackExchangeRedis": {
+      "versions": [
+        {
+          "version": "1.0.488",
+          "frameworks": [
+            "net48"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "1.2.6",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "2.1.58",
+          "frameworks": [
+            "netcoreapp2.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "2.6.122",
+          "frameworks": [
+            "netcoreapp3.0"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "2.12.8",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        }
+      ]
+    },
+    "ServiceStackRedis": {
+      "versions": [
+        {
+          "version": "4.5.14",
+          "frameworks": [
+            "net48"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "6.1.0",
+          "frameworks": [
+            "netcoreapp2.1",
+            "netcoreapp3.0"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "6.11.0",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "8.10.0",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "10.0.6",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        }
+      ]
+    },
+    "RabbitMQ": {
+      "versions": [
+        {
+          "version": "3.6.9",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "4.1.3",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "5.2.0",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "6.8.1",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "7.2.1",
+          "frameworks": [
+            "net10.0",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        }
+      ]
+    },
+    "DataStreamsRabbitMQ": {
+      "versions": [
+        {
+          "version": "3.6.9",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "4.1.3",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "5.2.0",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "6.8.1",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "7.2.1",
+          "frameworks": [
+            "net10.0",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        }
+      ]
+    },
+    "Kafka": {
+      "versions": [
+        {
+          "version": "1.4.4",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "1.9.3",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "2.13.2",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        }
+      ]
+    },
+    "AzureServiceBus": {
+      "versions": [
+        {
+          "version": "7.4.0",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "7.10.0",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "7.13.1",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "7.17.5",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        }
+      ]
+    },
+    "AzureServiceBusAPM": {
+      "versions": [
+        {
+          "version": "7.18.4",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "7.20.1",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        }
+      ]
+    },
+    "AzureEventHubs": {
+      "versions": [
+        {
+          "version": "5.11.6",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "5.12.2",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        }
+      ]
+    },
+    "Protobuf": {
+      "versions": [
+        {
+          "version": "3.12.4",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "3.34.1",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        }
+      ]
+    },
+    "Grpc": {
+      "versions": [
+        {
+          "version": "2.29.0",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": true,
+          "skipArm64": true
+        },
+        {
+          "version": "2.30.0",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": true,
+          "skipArm64": true
+        },
+        {
+          "version": "2.56.0",
+          "frameworks": [
+            "net5.0",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": true,
+          "skipArm64": false
+        },
+        {
+          "version": "2.71.0",
+          "frameworks": [
+            "net6.0",
+            "net7.0"
+          ],
+          "skipAlpine": true,
+          "skipArm64": false
+        },
+        {
+          "version": "2.76.0",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1"
+          ],
+          "skipAlpine": true,
+          "skipArm64": false
+        }
+      ]
+    },
+    "GrpcLegacy": {
+      "versions": [
+        {
+          "version": "2.29.0",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": true,
+          "skipArm64": true
+        },
+        {
+          "version": "2.30.0",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": true,
+          "skipArm64": true
+        },
+        {
+          "version": "2.46.6",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": true,
+          "skipArm64": false
+        }
+      ]
+    },
+    "XUnit": {
+      "versions": [
+        {
+          "version": "2.2.0",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "2.4.2",
+          "frameworks": [
+            "net5.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "2.9.3",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        }
+      ]
+    },
+    "XUnitRetries": {
+      "versions": [
+        {
+          "version": "2.2.0",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "2.4.2",
+          "frameworks": [
+            "net5.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "2.9.3",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        }
+      ]
+    },
+    "XUnitV3": {
+      "versions": [
+        {
+          "version": "2.0.3",
+          "frameworks": [
+            "net10.0",
+            "net8.0",
+            "net9.0"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "3.2.2",
+          "frameworks": [
+            "net10.0",
+            "net8.0",
+            "net9.0"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        }
+      ]
+    },
+    "XUnitRetriesV3": {
+      "versions": [
+        {
+          "version": "2.0.3",
+          "frameworks": [
+            "net10.0",
+            "net8.0",
+            "net9.0"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "3.2.2",
+          "frameworks": [
+            "net10.0",
+            "net8.0",
+            "net9.0"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        }
+      ]
+    },
+    "NUnit": {
+      "versions": [
+        {
+          "version": "3.6.1",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "3.10.1",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "3.14.0",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "4.5.1",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        }
+      ]
+    },
+    "NUnitRetries": {
+      "versions": [
+        {
+          "version": "3.6.1",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "3.10.1",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "3.14.0",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "4.5.1",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        }
+      ]
+    },
+    "MSTest": {
+      "versions": [
+        {
+          "version": "2.0.0",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "2.2.10",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "3.11.1",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "4.1.0",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net8.0",
+            "net9.0"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        }
+      ]
+    },
+    "MSTest2": {
+      "versions": [
+        {
+          "version": "2.0.0",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "2.2.10",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "3.11.1",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "4.1.0",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net8.0",
+            "net9.0"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        }
+      ]
+    },
+    "MSTest2Retries": {
+      "versions": [
+        {
+          "version": "2.0.0",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "2.2.10",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "3.11.1",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "4.1.0",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net8.0",
+            "net9.0"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        }
+      ]
+    },
+    "Serilog": {
+      "versions": [
+        {
+          "version": "1.4.214",
+          "frameworks": [
+            "net48"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "1.5.14",
+          "frameworks": [
+            "net48"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "2.12.0",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "3.0.1",
+          "frameworks": [
+            "netcoreapp2.1",
+            "netcoreapp3.0"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "3.1.1",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "4.3.1",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        }
+      ]
+    },
+    "NLog": {
+      "versions": [
+        {
+          "version": "1.0.0.505",
+          "frameworks": [
+            "net48"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "2.1.0",
+          "frameworks": [
+            "net48"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "4.7.15",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "5.5.1",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "6.1.1",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        }
+      ]
+    },
+    "log4net": {
+      "versions": [
+        {
+          "version": "1.2.11",
+          "frameworks": [
+            "net48"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "2.0.17",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "3.3.0",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        }
+      ]
+    },
+    "ILogger": {
+      "versions": [
+        {
+          "version": "8.10.0",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "9.10.0",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net8.0",
+            "net9.0"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "10.4.0",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net8.0",
+            "net9.0"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        }
+      ]
+    },
+    "OpenTelemetry": {
+      "versions": [
+        {
+          "version": "1.0.1",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "1.3.2",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "1.5.1",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "1.15.1",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        }
+      ]
+    },
+    "Yarp": {
+      "versions": [
+        {
+          "version": "1.0.1",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "1.1.0",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "2.3.0",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        }
+      ]
+    },
+    "Selenium": {
+      "versions": [
+        {
+          "version": "4.0.1",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "4.10.0",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "4.15.0",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "4.20.0",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "4.41.0",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        }
+      ]
+    },
+    "OpenFeature": {
+      "versions": [
+        {
+          "version": "2.0.0",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        },
+        {
+          "version": "2.10.0",
+          "frameworks": [
+            "net10.0",
+            "net48",
+            "net5.0",
+            "net6.0",
+            "net7.0",
+            "net8.0",
+            "net9.0",
+            "netcoreapp2.1",
+            "netcoreapp3.0",
+            "netcoreapp3.1"
+          ],
+          "skipAlpine": false,
+          "skipArm64": false
+        }
+      ]
+    }
+  }
+}

@@ -60,7 +60,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public static System.Collections.Generic.IEnumerable<object[]> GetTestData()
         {
-            return from item in PackageVersions.log4net
+            return from item in PackageVersions.log4Net
                    from logShipping in new[] { true, false }
                    from enable128BitInjection in new[] { true, false }
                    select new object[] { item[0], logShipping, enable128BitInjection };
@@ -186,7 +186,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
 
         [SkippableTheory]
-        [MemberData(nameof(PackageVersions.log4net), MemberType = typeof(PackageVersions))]
+        [MemberData(nameof(PackageVersions.log4Net), MemberType = typeof(PackageVersions))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
