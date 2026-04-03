@@ -146,6 +146,9 @@ struct CursorSnapshot
     std::int64_t frameType;
     std::int64_t cfaRegSp;
     std::int64_t cfaRegOffset;
+    std::int32_t dwarfStepResult;
+    std::int32_t stepMethod;
+    std::int32_t locInfo;
 };
 
 // ---------------------------------------------------------------------------
@@ -165,21 +168,22 @@ struct TraceEvent
 // ---------------------------------------------------------------------------
 // SnapshotCursor -- extract CursorSnapshot from opaque unw_cursor_t
 // ---------------------------------------------------------------------------
-inline CursorSnapshot SnapshotCursor(const unw_cursor_t& opaque)
+inline CursorSnapshot SnapshotCursor(const unw_cursor_snapshot_t& snapshot)
 {
-    using namespace libunwind_mirror;
-    const auto* c = reinterpret_cast<const cursor*>(&opaque);
     CursorSnapshot s;
-    s.ip                = c->dwarf.ip;
-    s.cfa               = c->dwarf.cfa;
-    s.locFp             = c->dwarf.loc[kLocFp].val;
-    s.locLr             = c->dwarf.loc[kLocLr].val;
-    s.locSp             = c->dwarf.loc[kLocSp].val;
-    s.nextToSignalFrame = (c->dwarf.bitfields >> kBitNextToSignalFrame) & 1;
-    s.cfaIsUnreliable   = (c->dwarf.bitfields >> kBitCfaIsUnreliable) & 1;
-    s.frameType         = c->frame_info.frame_type;
-    s.cfaRegSp          = c->frame_info.cfa_reg_sp;
-    s.cfaRegOffset      = c->frame_info.cfa_reg_offset;
+    s.ip                = snapshot.ip;
+    s.cfa               = snapshot.cfa;
+    s.locFp             = snapshot.loc_fp;
+    s.locLr             = snapshot.loc_ip;
+    s.locSp             = snapshot.loc_sp;
+    s.nextToSignalFrame = snapshot.next_to_signal_frame;
+    s.cfaIsUnreliable   = snapshot.cfa_is_unreliable;
+    s.frameType         = snapshot.frame_type;
+    s.cfaRegSp          = snapshot.cfa_reg_sp;
+    s.cfaRegOffset      = snapshot.cfa_reg_offset;
+    s.dwarfStepResult   = snapshot.dwarf_step_ret;
+    s.stepMethod        = snapshot.step_method;
+    s.locInfo           = snapshot.loc_info;
     return s;
 }
 
@@ -215,7 +219,7 @@ public:
         _totalEvents++;
     }
 
-    void Record(EventType eventType, std::int32_t result, const unw_cursor_t& cursor)
+    void Record(EventType eventType, std::int32_t result, const unw_cursor_snapshot_t& cursor)
     {
         if (_totalEvents < Capacity)
         {

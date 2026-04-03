@@ -58,7 +58,7 @@ std::int32_t HybridUnwinder::Unwind(void* ctx, std::uintptr_t* buffer, std::size
     if (ctx == nullptr)
     {
         flag = static_cast<unw_init_local2_flags_t>(0);
-        if (auto getResult =unw_getcontext(&localContext) != 0)
+        if (auto getResult = unw_getcontext(&localContext) != 0)
         {
             if (tracer) tracer->RecordFinish(getResult, FinishReason::FailedGetContext);
             return -1;
@@ -68,7 +68,9 @@ std::int32_t HybridUnwinder::Unwind(void* ctx, std::uintptr_t* buffer, std::size
 
     unw_cursor_t cursor;
     auto initResult = unw_init_local2(&cursor, context, flag);
-    if (tracer) tracer->Record(EventType::InitCursor, initResult, cursor);
+    unw_cursor_snapshot_t snapshot;
+    unw_get_cursor_snapshot(&cursor, &snapshot);
+    if (tracer) tracer->Record(EventType::InitCursor, initResult, snapshot);
     if (initResult != 0)
     {
         if (tracer) tracer->RecordFinish(initResult, FinishReason::FailedInitLocal2);
@@ -114,7 +116,8 @@ std::int32_t HybridUnwinder::Unwind(void* ctx, std::uintptr_t* buffer, std::size
         }
 
         auto stepResult = unw_step(&cursor);
-        if (tracer) tracer->Record(EventType::LibunwindStep, stepResult, cursor);
+        unw_get_cursor_snapshot(&cursor, &snapshot);
+        if (tracer) tracer->Record(EventType::LibunwindStep, stepResult, snapshot);
         if (stepResult <= 0)
         {
             if (tracer) tracer->RecordFinish(static_cast<std::int32_t>(i), FinishReason::FailedLibunwindStep);
