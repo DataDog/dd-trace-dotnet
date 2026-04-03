@@ -16,8 +16,6 @@ updates:
   - package-ecosystem: "nuget"
     directory: "/tracer/dependabot"
     registries: "*"
-    exclude-paths:
-      - "integrations"
     schedule:
       interval: "weekly" # these don't change often
     labels:
@@ -27,19 +25,6 @@ updates:
       - dependency-name: "MessagePack" # Locked at a version that supports our net452 build target
       - dependency-name: "*" # Ignore patches for all integrations
         update-types: ["version-update:semver-patch"]
-
-  # Mocked projects for integration dependency notifications
-    cooldown:
-      default-days: 2
-  - package-ecosystem: "nuget"
-    directory: "/tracer/dependabot/integrations"
-    registries: "*"
-    open-pull-requests-limit: 1
-    schedule:
-      interval: "daily"
-    labels:
-      - "dependencies"
-      - "area:dependabot"
 
   # Azure functions explicit testing - we can't include these with our "normal" process checks
   # Because they aren't compatible with the dotnet msbuild approach we're using
