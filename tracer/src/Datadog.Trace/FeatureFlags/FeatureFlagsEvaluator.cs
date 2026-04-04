@@ -117,9 +117,11 @@ namespace Datadog.Trace.FeatureFlags
                         continue;
                     }
 
-                    if (allocation.Rules is { Count: > 0 } allocationRules)
+                    // Track whether rules were matched for this allocation
+                    var hasRules = allocation.Rules is { Count: > 0 };
+                    if (hasRules)
                     {
-                        if (!EvaluateRules(allocationRules, context))
+                        if (!EvaluateRules(allocation.Rules!, context))
                         {
                             continue;
                         }
@@ -134,10 +136,11 @@ namespace Datadog.Trace.FeatureFlags
                                 throw new FormatException($"Empty variation key in allocation {allocation.Key}");
                             }
 
+                            var hasShards = split.Shards is { Count: > 0 };
                             var allShardsMatch = true;
-                            if (split.Shards is { Count: > 0 } splitShards)
+                            if (hasShards)
                             {
-                                foreach (var shard in splitShards)
+                                foreach (var shard in split.Shards!)
                                 {
                                     if (!MatchesShard(shard, targetingKey))
                                     {
@@ -149,7 +152,25 @@ namespace Datadog.Trace.FeatureFlags
 
                             if (allShardsMatch)
                             {
-                                return ResolveVariant(flagKey, resultType, defaultValue, flag, split.VariationKey, allocation, now, context);
+                                // Determine the reason based on evaluation path:
+                                // - Static: no rules AND no shards (direct assignment to everyone)
+                                // - TargetingMatch: rules were evaluated and matched
+                                // - Split: percentage-based shards were used
+                                EvaluationReason reason;
+                                if (hasShards)
+                                {
+                                    reason = EvaluationReason.Split;
+                                }
+                                else if (hasRules)
+                                {
+                                    reason = EvaluationReason.TargetingMatch;
+                                }
+                                else
+                                {
+                                    reason = EvaluationReason.Static;
+                                }
+
+                                return ResolveVariant(flagKey, resultType, defaultValue, flag, split.VariationKey, allocation, now, context, reason);
                             }
                         }
                     }
@@ -617,7 +638,8 @@ namespace Datadog.Trace.FeatureFlags
             string variationKey,
             Allocation allocation,
             DateTime evalTime,
-            EvaluationContext? context)
+            EvaluationContext? context,
+            EvaluationReason reason)
         {
             if (StringUtil.IsNullOrEmpty(flag.Key))
             {
@@ -643,7 +665,7 @@ namespace Datadog.Trace.FeatureFlags
             var evaluation = new Evaluation(
                 flagKey,
                 mappedValue,
-                EvaluationReason.TargetingMatch,
+                reason,
                 variant: variant.Key,
                 metadata: metadata);
 

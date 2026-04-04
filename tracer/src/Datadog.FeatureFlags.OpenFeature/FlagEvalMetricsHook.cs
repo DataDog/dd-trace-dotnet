@@ -51,7 +51,7 @@ internal sealed class FlagEvalMetricsHook : Hook, IDisposable
         }
         else
         {
-            reason = reason.ToLowerInvariant();
+            reason = ReasonToString(reason);
         }
 
         // Extract error type if present
@@ -92,6 +92,25 @@ internal sealed class FlagEvalMetricsHook : Hook, IDisposable
             ErrorType.ProviderFatal => "provider_fatal",
             ErrorType.General => "general",
             _ => "general"
+        };
+    }
+
+    private static string ReasonToString(string reason)
+    {
+        // Convert PascalCase reason values to snake_case
+        // OpenFeature standard reasons: Static, Default, TargetingMatch, Split, Disabled, Error, Cached, Stale
+        return reason switch
+        {
+            "Static" or "STATIC" => "static",
+            "Default" or "DEFAULT" => "default",
+            "TargetingMatch" or "TARGETING_MATCH" => "targeting_match",
+            "Split" or "SPLIT" => "split",
+            "Disabled" or "DISABLED" => "disabled",
+            "Error" or "ERROR" => "error",
+            "Cached" or "CACHED" => "cached",
+            "Stale" or "STALE" => "stale",
+            "Unknown" or "UNKNOWN" => "unknown",
+            _ => reason.ToLowerInvariant()
         };
     }
 }
