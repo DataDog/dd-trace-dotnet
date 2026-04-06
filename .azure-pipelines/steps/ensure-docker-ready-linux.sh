@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/sh
 # Linux Docker readiness check — mirrors the Windows PowerShell logic in ensure-docker-ready.yml.
 # Waits for the Docker daemon, attempts service restarts if needed, and fails fast
 # so the job can be rescheduled on a different agent.
