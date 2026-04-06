@@ -24,6 +24,7 @@
         "runtime-id": "05dff020-c9cc-4b50-9395-e1fe88603312",
         "language": "dotnet",
         "_dd.runtime_family": "dotnet",
+        "_dd.tags.process": "entrypoint.basedir:VALUE,entrypoint.name:VALUE,entrypoint.workdir:VALUE,svc.auto:VALUE",
         "_dd.appsec.event_rules.version": "1.15.0",
         "_dd.appsec.fp.http.endpoint": "http-get-7460da9d--",
         "_dd.appsec.fp.http.header": "hdr-0000000000--3-98425651",
@@ -62,6 +63,7 @@
         "_dd.p.tid": "67a4e73b00000000",
         "runtime-id": "05dff020-c9cc-4b50-9395-e1fe88603312",
         "language": "dotnet",
+        "_dd.tags.process": "entrypoint.basedir:VALUE,entrypoint.name:VALUE,entrypoint.workdir:VALUE,svc.auto:VALUE",
         "_dd.base_service": "AspNetCoreSmokeTest",
         "_dd.svc_src": "http-client"
       },
