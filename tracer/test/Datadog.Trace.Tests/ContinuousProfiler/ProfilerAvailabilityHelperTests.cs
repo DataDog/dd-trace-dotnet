@@ -29,7 +29,7 @@ public class ProfilerAvailabilityHelperTests
     [SkippableFact]
     public void IsContinuousProfilerAvailable_OnUnsupportedPlatforms_ReturnsFalse()
     {
-        // Skip on platforms that it's available
+        // Skip on platforms that it's available.
         SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Windows, SkipOn.ArchitectureValue.X64);
         SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Windows, SkipOn.ArchitectureValue.X86);
         SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Linux, SkipOn.ArchitectureValue.X64);
